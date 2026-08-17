@@ -58,6 +58,27 @@ def ticker_from_artifact_path(path: Path | str, store_dir: Path | str) -> str:
     return rel.stem
 
 
+def is_canonical_artifact_posix(value: object) -> bool:
+    """Return True iff *value* is exactly ``artifact_relative_path`` output.
+
+    The public R2 listing must name either a legacy all-uppercase
+    ``TICKER.parquet`` object or ``__case_v1/<UTF-8 hex>.parquet``. Mixed-case
+    names at the store root, traversal, extra slashes, and hex that does not
+    round-trip the producer are not canonical.
+    """
+    if type(value) is not str or not value or "\\" in value:
+        return False
+    if value != Path(value).as_posix() or value in {".", ".."}:
+        return False
+    decoded = ticker_from_artifact_path(value, ".")
+    if not decoded:
+        return False
+    try:
+        return artifact_relative_path(decoded).as_posix() == value
+    except ValueError:
+        return False
+
+
 def iter_artifact_paths(store_dir: Path | str) -> Iterator[Path]:
     """Yield legacy uppercase and v1 mixed-case parquet artifacts."""
     root = Path(store_dir)

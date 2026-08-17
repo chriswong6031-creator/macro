@@ -745,10 +745,11 @@ def test_absence_is_the_pre_activation_state_and_never_pages():
     false-positive factory the module's own falsifier law forbids."""
     entry = _sentinel_entry()
     assert entry["absent_ok"] is True
-    # The same exemption the evening board carries, for a different cause — and the
-    # only two surfaces that carry it, so the exemption stays reviewed.
+    # The same exemption the evening board and the CN runtime board carry, each
+    # for a different cause — and the only three surfaces that carry it, so the
+    # exemption stays reviewed.
     absent_ok = {s["id"] for s in FS.SURFACES if s.get("absent_ok")}
-    assert absent_ok == {"us_board_provisional", "entry_radar_live"}
+    assert absent_ok == {"us_board_provisional", "entry_radar_live", "cn_board_live"}
 
 
 def test_the_registration_is_the_only_surface_on_that_path():

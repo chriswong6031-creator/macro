@@ -856,7 +856,7 @@ jobs:
       # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, exactly this job's install line.
       - name: stock-identity atlas guards
-        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py -q
+        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py tests/test_stock_identity_replay.py tests/test_stock_identity_replay_leak.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
         # Registering the trial budget (above) is only half the chain: the number the
         # PAGE shows must equal the number the calibrator produced. The BTC Vector card
@@ -1220,6 +1220,8 @@ jobs:
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_market_memory_context.py"
+      - "engine/options_market_memory_local_receipts.py"
+      - "engine/options_market_memory_local_replica.py"
       - "engine/options_market_memory_receipt_store.py"
       - "engine/options_matrix.py"
       - "engine/options_signal_campaign.py"
@@ -1361,6 +1363,8 @@ jobs:
       - "tests/test_options_issue_desk_api.py"
       - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_options_matrix.py"
+      - "tests/test_options_market_memory_local_receipts.py"
+      - "tests/test_options_market_memory_local_replica.py"
       - "tests/test_options_signal_campaign.py"
       - "tests/test_options_signal_episode.py"
       - "tests/test_options_sparse_selector_prereg.py"
@@ -1411,7 +1415,9 @@ jobs:
         run: >-
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
-          tests/test_private_auth_dict.py -q -rs
+          tests/test_private_auth_dict.py
+          tests/test_options_market_memory_local_receipts.py
+          tests/test_options_market_memory_local_replica.py -q -rs
       - name: sparse selector sealed runtime carrier + bounded paper-only canary runner
         run: >-
           python -m pytest
@@ -1584,6 +1590,11 @@ jobs:
       # conviction-profile / B2 sites in scripts/build_intl_library.py. It belongs
       # next to test_intl_library_limited.py on this same run: line — same subject,
       # same pandas/pyarrow install, no new job.
+      #
+      # tests/test_fundamental_forensics_health.py rides this step (FF-0): same
+      # Filing Forensics workbench family as test_fundamental_forensics_ui.py and
+      # test_forensics_api.py. The install line already has fastapi/httpx/jsonschema;
+      # no new dependency.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1640,6 +1651,7 @@ jobs:
           tests/test_stock_personality_w4_surfaces.py
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
+          tests/test_fundamental_forensics_health.py
           tests/test_fundamental_forensics_ui.py
           tests/test_fundamental_forensics_acquisition.py
           tests/test_fundamental_forensics_disclosure_diff.py
@@ -1954,7 +1966,8 @@ jobs:
           tests/test_cn_live_clock.py
           tests/test_cn_live_pack.py
           tests/test_cn_live_evaluator.py
-          tests/test_cn_live_vps_lane.py -q
+          tests/test_cn_live_vps_lane.py
+          tests/test_cn_live_reconcile.py -q
 
   collector-registry:
     if: ${{ false }}
@@ -7886,7 +7899,7 @@ jobs:
       - name: customer-table backup dump/restore contracts (MMX-001)
         run: python -m pytest tests/test_backup_user_tables.py -q
       - name: store/ops builders behind the nightly data lanes
-        run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_close_pass_slo_report.py tests/test_ei_f1d_shadow.py tests/test_freshness_sentinel.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
+        run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_close_pass_slo_report.py tests/test_ei_f1d_shadow.py tests/test_freshness_sentinel.py tests/test_cn_live_watchdog.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
       # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup
       # nulls, RSI range, band ordering, value-area >=70%) are platform-
       # independent and run here.  TestFixtureDeterminism is DESELECTED: it

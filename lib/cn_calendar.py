@@ -223,3 +223,27 @@ def sessions_behind(latest: date, now: datetime | None = None) -> int:
     this expression and adding one would be a TypeError, not a style choice.
     """
     return sessions_between(latest, expected_last_session(now))
+
+
+def session_n_back(last: date, n: int) -> date | None:
+    """The session exactly ``n`` mainland sessions before ``last``, or None.
+
+    ``n=0`` returns ``last`` itself when it is a session. Returns None when the
+    calendar cannot reach that far back within the search horizon, or when
+    ``last`` is not itself a session. Horizon is ``3n+14`` calendar days so a
+    Golden Week stretch cannot truncate a short streak walk. ``sessions_between``
+    here returns a COUNT, not a list — this walk cannot copy the NYSE form.
+    """
+    if n < 0:
+        raise ValueError(f"session_n_back: n must be >= 0, got {n}")
+    if not is_session(last):
+        return None
+    found = 0
+    d = last
+    for _ in range(3 * n + 15):
+        if is_session(d):
+            if found == n:
+                return d
+            found += 1
+        d -= timedelta(days=1)
+    return None

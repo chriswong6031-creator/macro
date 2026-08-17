@@ -27,9 +27,15 @@ authority: China Intelligence produces evidence, ``china_board_rank`` decides wh
 evidence does to the board.  The interest composite is board-independent by
 construction (no board direction, no board label edge, no board-absent bonus, no board
 term in the leading-vs-lagging gap, and no Prophet score or rank anywhere in its
-inputs), so ranking by it closes no feedback loop.  A name whose interest score is
-genuinely unavailable is NOT scored zero: it keeps its v3 priority and is stamped
-``intel_interest_basis="fallback_v3"``.
+inputs), so ranking by it closes no feedback loop.
+
+A bake uses ONE ordering basis globally.  If every ranked name has a valid measured
+interest score — including a measured ``0.0`` — the board orders by intelligence
+interest.  If even one ranked name lacks valid Intelligence evidence (missing,
+unavailable, or malformed), the entire board reverts to v3 ``score_rank`` order.
+Individual Intelligence observations stay on the row; only their authority over this
+bake's order is disabled.  Mixed-scale ranking (interest for covered names, v3 score
+for uncovered names, compared in the same slot) is forbidden.
 
 The displaced v3 ORDERING keeps grading as a labeled shadow via
 :func:`v3_shadow_featured` under :data:`V3_SHADOW_DEFINITION`, exactly as the displaced
@@ -196,16 +202,24 @@ RELAY_LATE_MIN = 4
 RELAY_POSITIONS = ("early", "mid", "late")
 
 
-# V4 — the ordering contract.  ``measured`` rows order by their intelligence-interest
-# score; ``fallback_v3`` rows order by their v3 ``prophet_score`` instead.  Mixing the
-# two keys in one total order is deliberate and is why the basis is stamped on every
-# row: a name the desks never saw keeps its v3 standing rather than being sunk beneath
-# every covered name by a zero nobody measured.  Both keys are 0-100 board-wide
-# priorities, and neither is a return forecast.
+# V4 — the ordering contract.  A bake is coverage-atomic: either every ranked row
+# has valid measured Intelligence interest and the board orders by
+# :data:`INTEL_INTEREST_ORDER`, or the entire board reverts to v3 ``score_rank``.
+# A measured interest of 0.0 is valid coverage and does not trigger fallback.
+# Missing/unavailable/malformed evidence stamps ``intel_interest_basis="fallback_v3"``
+# and, if any ranked row has that stamp, disables intelligence authority for the
+# bake.  The observations themselves stay on the row for diagnostics.
 INTEL_BASIS_MEASURED = "measured"
 INTEL_BASIS_FALLBACK = "fallback_v3"
-#: Human-readable name of the v4 ordering, stamped on every row's ``prophet`` block.
+#: Requested v4 ordering.  Used as ``effective_order_basis`` only when coverage
+#: is complete.  Never mixed with a per-row v3-score substitute.
 INTEL_INTEREST_ORDER = "intel_interest_then_v3_score"
+#: Effective ordering when Intelligence coverage is incomplete.  Same token as
+#: the unchanged v3 score basis — the board definition stays ``cn_prophet_v4``.
+V3_SCORE_ORDER = "cn_prophet_v3_score"
+ORDER_MODE_INTELLIGENCE = "intelligence_complete"
+ORDER_MODE_V3_FALLBACK = "v3_coverage_fallback"
+FALLBACK_REASON_INCOMPLETE_COVERAGE = "incomplete_intel_interest_coverage"
 
 
 def _clip01(value: Any) -> float:
@@ -492,11 +506,12 @@ def _attach_intel(row: dict, record: Mapping[str, Any] | None) -> None:
 
 
 def intel_order_key(row: Mapping[str, Any]) -> tuple[float, float, str]:
-    """The v4 board ordering key: interest first, v3 priority second, ticker third.
+    """The v4 intelligence ordering key: interest first, v3 priority second, ticker third.
 
-    Descending on both scores, so the tuple negates them.  A ``fallback_v3`` row
-    substitutes its v3 ``prophet_score`` for the missing interest score — the explicit
-    fallback the ordering contract requires, never a fabricated zero.
+    Descending on both scores, so the tuple negates them.  Callers must only sort a
+    bake with this key when :func:`intel_coverage_complete` is true.  The per-row
+    v3-score substitute is retained as a defensive last resort so a single malformed
+    row cannot crash the sort; it is not a licensed mixed-scale ranking mode.
     """
     prophet = _finite_float(row.get("prophet_score"))
     if prophet is None:
@@ -508,6 +523,154 @@ def intel_order_key(row: Mapping[str, Any]) -> tuple[float, float, str]:
         else prophet
     )
     return (-float(primary), -float(prophet), str(row.get("ticker") or ""))
+
+
+def intel_interest_is_measured(row: Mapping[str, Any]) -> bool:
+    """True when the row carries valid measured Intelligence interest.
+
+    A score of ``0.0`` is measured evidence.  Missing, unavailable, or malformed
+    records are not — those stamp :data:`INTEL_BASIS_FALLBACK`.
+    """
+    if row.get("intel_interest_basis") != INTEL_BASIS_MEASURED:
+        return False
+    return _finite_float(row.get("intel_interest_score")) is not None
+
+
+def intel_coverage_summary(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    """Bake-level Intelligence coverage over already-enriched ranked rows.
+
+    Denominator is the ranked stock set (non-stock sectors already dropped).
+    ``complete`` is vacuously true on an empty board.
+    """
+    ranked = list(rows)
+    n_rows = len(ranked)
+    n_measured = sum(1 for row in ranked if intel_interest_is_measured(row))
+    n_unavailable = n_rows - n_measured
+    complete = n_unavailable == 0
+    return {
+        "n_rows": n_rows,
+        "n_measured": n_measured,
+        "n_unavailable": n_unavailable,
+        "n_fallback_v3": n_unavailable,
+        "measured_rate_pct": (
+            round(100.0 * n_measured / n_rows, 1) if n_rows else 0.0
+        ),
+        "complete": complete,
+        "intel_coverage_complete": complete,
+    }
+
+
+def intel_coverage_complete(rows: Iterable[Mapping[str, Any]]) -> bool:
+    """True iff every ranked row has valid measured Intelligence interest."""
+    return bool(intel_coverage_summary(rows)["complete"])
+
+
+def order_provenance(
+    rows: Iterable[Mapping[str, Any]] | None = None,
+    *,
+    coverage: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Requested/effective ordering receipt for one v4 bake.
+
+    Reads coverage from ``rows`` when ``coverage`` is omitted.  Empty input is
+    complete coverage with intelligence ordering (nothing mixed).
+    """
+    summary = dict(coverage) if coverage is not None else intel_coverage_summary(
+        rows or ()
+    )
+    complete = bool(summary.get("complete"))
+    effective = INTEL_INTEREST_ORDER if complete else V3_SCORE_ORDER
+    mode = ORDER_MODE_INTELLIGENCE if complete else ORDER_MODE_V3_FALLBACK
+    reason = None if complete else FALLBACK_REASON_INCOMPLETE_COVERAGE
+    return {
+        "requested_order_basis": INTEL_INTEREST_ORDER,
+        "effective_order_basis": effective,
+        "order_mode": mode,
+        "fallback_reason": reason,
+        "intel_order_active": complete,
+        "intel_coverage_complete": complete,
+        "n_rows": int(summary.get("n_rows") or 0),
+        "n_measured": int(summary.get("n_measured") or 0),
+        "n_unavailable": int(summary.get("n_unavailable") or 0),
+        "n_fallback_v3": int(summary.get("n_fallback_v3") or 0),
+        "measured_rate_pct": float(summary.get("measured_rate_pct") or 0.0),
+    }
+
+
+def emit_intel_coverage_warning(provenance: Mapping[str, Any]) -> None:
+    """Line-start warning when any ranked row lacks valid Intelligence interest.
+
+    Does not warn on measured zeros.  Warns on unavailable rows, including the
+    total-failure case of zero measured names.
+    """
+    n_rows = int(provenance.get("n_rows") or 0)
+    n_measured = int(provenance.get("n_measured") or 0)
+    n_unavailable = int(provenance.get("n_unavailable") or (n_rows - n_measured))
+    if n_rows <= 0 or n_unavailable <= 0:
+        return
+    print(
+        f"::warning title=cn-prophet-v4-intel-partial::Intelligence coverage "
+        f"{n_measured}/{n_rows}; entire board reverted to v3 ordering for this bake",
+        flush=True,
+    )
+
+
+def _stamp_order_provenance(rows: list[dict], provenance: Mapping[str, Any]) -> None:
+    """Write bake-level requested/effective ordering onto every row."""
+    requested = provenance["requested_order_basis"]
+    effective = provenance["effective_order_basis"]
+    mode = provenance["order_mode"]
+    reason = provenance.get("fallback_reason")
+    active = bool(provenance.get("intel_order_active"))
+    complete = bool(provenance.get("intel_coverage_complete"))
+    for row in rows:
+        row["requested_order_basis"] = requested
+        row["effective_order_basis"] = effective
+        row["order_mode"] = mode
+        row["intel_order_active"] = active
+        row["intel_coverage_complete"] = complete
+        if reason:
+            row["fallback_reason"] = reason
+        else:
+            row.pop("fallback_reason", None)
+        prophet = row.get("prophet")
+        if isinstance(prophet, dict):
+            prophet["requested_order_basis"] = requested
+            prophet["effective_order_basis"] = effective
+            prophet["order_mode"] = mode
+            prophet["order_basis"] = effective
+            if reason:
+                prophet["fallback_reason"] = reason
+            else:
+                prophet.pop("fallback_reason", None)
+
+
+def apply_v4_board_order(enriched: list[dict]) -> dict[str, Any]:
+    """Assign ``board_rank`` atomically from Intelligence coverage.
+
+    ``score_rank`` must already be set.  On complete coverage, sorts by
+    :func:`intel_order_key`.  On incomplete coverage, copies ``score_rank``
+    onto ``board_rank`` so the live board orders exactly as v3.  Intelligence
+    observations on the rows are not discarded.
+    """
+    coverage = intel_coverage_summary(enriched)
+    provenance = order_provenance(coverage=coverage)
+    if coverage["complete"]:
+        enriched.sort(key=intel_order_key)
+        for rank, row in enumerate(enriched, start=1):
+            row["board_rank"] = rank
+    else:
+        for row in enriched:
+            row["board_rank"] = row["score_rank"]
+        enriched.sort(
+            key=lambda row: (
+                int(row["board_rank"]),
+                str(row.get("ticker") or ""),
+            )
+        )
+    _stamp_order_provenance(enriched, provenance)
+    emit_intel_coverage_warning(provenance)
+    return provenance
 
 
 def _bottom_quality_value(row: Mapping[str, Any]) -> float:
@@ -634,8 +797,10 @@ def enrich_and_score_rows(
     ``intel_by`` carries the V4 board-independent interest records from
     :mod:`engine.china_intel_interest`.  It adds NO score — ``prophet_score`` is
     computed identically with or without it — and feeds only ``board_rank``, the v4
-    display/admission ORDER.  Omitting it leaves every row ``fallback_v3``, which
-    makes ``board_rank`` equal to ``score_rank`` and the board order exactly v3's.
+    display/admission ORDER, and only when every ranked row has valid measured
+    interest.  Omitting it, or leaving even one ranked row without measured
+    interest, makes ``board_rank`` equal to ``score_rank`` and the board order
+    exactly v3's.
     """
     enriched: list[dict] = []
     board_date = _as_date(board_asof)
@@ -759,21 +924,26 @@ def enrich_and_score_rows(
             },
             "points": points,
             "zero_score_authority": list(_ZERO_SCORE_AUTHORITY),
-            # V4: the SCORE is v3's, unchanged; only the ORDER is intelligence-ranked.
-            "score_basis": "cn_prophet_v3_score",
+            # V4: the SCORE is v3's, unchanged.  ``order_basis`` is overwritten
+            # below with the bake's effective ordering (intelligence or v3
+            # coverage fallback).  The requested basis is always intelligence.
+            "score_basis": V3_SCORE_ORDER,
+            "requested_order_basis": INTEL_INTEREST_ORDER,
+            "effective_order_basis": INTEL_INTEREST_ORDER,
             "order_basis": INTEL_INTEREST_ORDER,
+            "order_mode": ORDER_MODE_INTELLIGENCE,
         }
         row["board_definition"] = BOARD_DEFINITION
 
     # ``score_rank`` stays the v3 SCORE order — the displaced-v3 shadow, the ledger and
     # every historical consumer read it, and it must not silently start meaning
-    # something else.  ``board_rank`` is the new v4 DISPLAY/ADMISSION order.
+    # something else.  ``board_rank`` is the v4 DISPLAY/ADMISSION order, assigned
+    # atomically: intelligence when coverage is complete, otherwise equal to
+    # ``score_rank``.
     enriched.sort(key=lambda row: (-float(row["prophet_score"]), str(row.get("ticker") or "")))
     for rank, row in enumerate(enriched, start=1):
         row["score_rank"] = rank
-    enriched.sort(key=intel_order_key)
-    for rank, row in enumerate(enriched, start=1):
-        row["board_rank"] = rank
+    apply_v4_board_order(enriched)
     return enriched
 
 
@@ -1051,11 +1221,12 @@ def _partition(
 ) -> dict[str, Any]:
     """Shared lane machinery for the live v4 rule and both shadow rules.
 
-    ``rank_field`` selects the ORDER — ``board_rank`` (v4: interest, then v3 score) or
-    ``score_rank`` (v3: score only).  It governs both the iteration order, so the
-    featured/sector caps bind on that priority, and the per-lane display order.  A row
-    missing the field sorts last rather than raising, so a partially-enriched pool
-    degrades to "unranked at the bottom" instead of darkening the board.
+    ``rank_field`` selects the ORDER — ``board_rank`` (v4: intelligence when coverage
+    is complete, otherwise equal to ``score_rank``) or ``score_rank`` (v3: score only).
+    It governs both the iteration order, so the featured/sector caps bind on that
+    priority, and the per-lane display order.  A row missing the field sorts last
+    rather than raising, so a partially-enriched pool degrades to "unranked at the
+    bottom" instead of darkening the board.
     """
     rows = [deepcopy(dict(row)) for row in scored_rows]
 
@@ -1182,9 +1353,9 @@ def partition_board_rows(
     both display caps.
 
     V4: the admission RULES above are v3's, unchanged.  Only the ORDER is new — rows
-    are considered in ``board_rank`` (interest, then v3 score) order, so the featured
-    and sector caps admit the most interesting qualifying names rather than the
-    highest-v3-scoring ones.
+    are considered in ``board_rank`` order, so the featured and sector caps admit the
+    most interesting qualifying names when Intelligence coverage is complete, and
+    the same names the v3 shadow would admit when it is not.
     """
     return _partition(
         scored_rows,

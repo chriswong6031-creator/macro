@@ -8,7 +8,7 @@
 .github/workflows/daily.yml	2759	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
 .github/workflows/daily.yml	5039	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
-app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
+app/biocatalyst.py	2337	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	455	"""Render one sanitized, hash-bound immutable ``/version`` receipt."""
@@ -37,7 +37,7 @@ engine/capital_structure/source_store.py	187	or isinstance(max_byte_length, bool
 engine/earnings_narrative/private_publication.py	33	PRIVATE_PREFIX = "earnings_wire_private/v1"
 engine/fundamental_forensics/attested_history_store.py	1	"""Read-only store for the DEDICATED attested-history bucket.
 engine/fundamental_forensics/disclosure_bundle.py	56	DISCLOSURE_BUNDLE_PREFIX = "fundamental_forensics/disclosures/v1"
-engine/fundamental_forensics/private_state.py	24	STATE_KEY = "fundamental_forensics/state.json.gz"
+engine/fundamental_forensics/private_state.py	25	STATE_KEY = "fundamental_forensics/state.json.gz"
 engine/fundamental_forensics/query_snapshots.py	57	QUERY_SNAPSHOT_PREFIX = "fundamental_forensics/query-snapshots/v1"
 engine/fundamental_forensics/source_sync.py	48	SOURCE_SYNC_PREFIX = "fundamental_forensics/sec-source/v1"
 engine/fundamental_forensics/source_sync.py	243	if normalized != text:

@@ -7,6 +7,7 @@
   var DATA_URL = IS_LOOPBACK
     ? '/data/fundamental_forensics/private/state.json.gz'
     : '/api/forensics/state';
+  var HEALTH_URL = '/api/forensics/health';
   var ATTESTED_HISTORY_URL = '/api/forensics/v1/attested-history';
   var DESKTOP_QUERY = '(min-width: 1100px)';
   var state = {
@@ -111,7 +112,9 @@
     ui.workspace = byId('ff-workspace');
     ui.main = byId('ff-main');
     ui.asOf = byId('ff-as-of');
-    ui.generatedAt = byId('ff-generated-at');
+    ui.sourceSnapshot = byId('ff-source-snapshot');
+    ui.freshnessStatus = byId('ff-freshness-status');
+    ui.runMeta = byId('ff-run-meta');
     ui.sourceLabel = byId('ff-source-label');
     ui.search = byId('ff-company-search');
     ui.searchClear = byId('ff-search-clear');
@@ -798,13 +801,18 @@
         // not an all-clear, so it gets its own gate state rather than seven
         // panels of empty cards behind a live tab bar.
         setAccess(Object.keys(payload.companies).length ? 'open' : 'empty');
-        if (state.access === 'empty') return;
+        if (state.access === 'empty') {
+          loadHealth();
+          return;
+        }
         selectInitialCompany();
         renderAll();
+        loadHealth();
       })
       .catch(function (error) {
         if (token !== state.loadToken) return;
         showLoadError(error);
+        loadHealth();
       });
   }
 
@@ -867,14 +875,55 @@
     setTab(state.tab, false);
   }
 
+  function freshnessCopy(status) {
+    if (status === 'current') return ['Current', '当前'];
+    if (status === 'stale') return ['Stale', '已过期'];
+    if (status === 'degraded') return ['Degraded', '降级'];
+    return ['Unavailable', '不可用'];
+  }
+
+  function applyHealth(health) {
+    state.health = health && typeof health === 'object' ? health : { status: 'unavailable', clocks: {} };
+    renderRunMeta();
+  }
+
+  function loadHealth() {
+    return withAuth({ Accept: 'application/json' })
+      .then(function (headers) {
+        return fetch(HEALTH_URL, {
+          headers: headers,
+          credentials: 'same-origin',
+          cache: 'no-store'
+        });
+      })
+      .then(function (response) {
+        if (!response.ok) throw response;
+        return response.json();
+      })
+      .then(applyHealth)
+      .catch(function () {
+        applyHealth({ status: 'unavailable', clocks: {} });
+      });
+  }
+
   function renderRunMeta() {
-    var source = state.payload.source || {};
-    ui.asOf.textContent = formatDate(state.payload.as_of);
-    ui.generatedAt.textContent = formatDate(state.payload.generated_at);
+    var health = state.health || {};
+    var status = health.status;
+    if (status !== 'current' && status !== 'stale' && status !== 'degraded') status = 'unavailable';
+    var clocks = health.clocks || {};
+    var payload = state.payload || {};
+    var source = payload.source || {};
+    var filing = clocks.latest_source_filing_date || payload.as_of || '';
+    var snapshot = clocks.broad_source_at || clocks.composed_state_at || payload.generated_at || '';
+    var copy = freshnessCopy(status);
+    if (ui.runMeta) ui.runMeta.setAttribute('data-freshness', status);
+    if (ui.freshnessStatus) ui.freshnessStatus.innerHTML = pair(copy[0], copy[1]);
+    if (ui.asOf) ui.asOf.textContent = filing ? formatDate(filing) : '—';
+    if (ui.sourceSnapshot) ui.sourceSnapshot.textContent = snapshot ? formatDate(snapshot) : '—';
     var sourceName = translatedDataPhrase(
       localized(source.label, lang()) || localized(source.basis, lang()), lang()
     ) || '—';
-    ui.sourceLabel.textContent = sourceName;
+    if (ui.sourceLabel) ui.sourceLabel.textContent = sourceName;
   }
 
   function renderCompany() {
@@ -978,7 +1027,7 @@
     if (trigger) {
       trigger.setAttribute('data-open-primary-finding', '');
       trigger.removeAttribute('data-go-tab');
-      trigger.innerHTML = pair('See why it matters', '查看为什么重要') + ' <span aria-hidden="true">→</span>';
+      trigger.innerHTML = pair('Open signal analysis', '打开信号分析') + ' <span aria-hidden="true">→</span>';
     }
   }
 
@@ -2829,27 +2878,32 @@
     if (active) active.scrollIntoView({ block: 'nearest' });
   }
 
-  function openEvidence() {
-    var selected = state.evidenceKind === 'disclosure-finding' ? selectedDisclosureFinding() :
-      state.evidenceKind === 'redline' ? selectedRedline() : selectedFinding();
-    if (desktopMedia.matches || !selected) return;
-    // renderFindings replaces the clicked button before the sheet opens. Resolve
-    // its new DOM counterpart so closing the modal returns keyboard focus to the
-    // finding that launched it instead of leaving focus on <body> or a hidden tab.
+  function openAnalysisDrawer() {
     state.lastFocus = selectedEvidenceButton() || document.activeElement;
     ui.evidence.classList.add('is-open');
+    ui.workspace.setAttribute('data-analysis-open', 'true');
     ui.evidence.setAttribute('role', 'dialog');
     ui.evidence.setAttribute('aria-modal', 'true');
     ui.scrim.hidden = false;
     document.body.classList.add('ff-modal-open');
     setInert(ui.main, true);
     setInert(ui.siteNav, true);
-    window.requestAnimationFrame(function () { ui.evidenceClose.focus(); });
+    window.requestAnimationFrame(function () {
+      if (ui.evidenceClose) ui.evidenceClose.focus();
+    });
+  }
+
+  function openEvidence() {
+    var selected = state.evidenceKind === 'disclosure-finding' ? selectedDisclosureFinding() :
+      state.evidenceKind === 'redline' ? selectedRedline() : selectedFinding();
+    if (!selected) return;
+    openAnalysisDrawer();
   }
 
   function closeEvidence(restoreFocus) {
     var wasOpen = ui.evidence.classList.contains('is-open');
     ui.evidence.classList.remove('is-open');
+    ui.workspace.removeAttribute('data-analysis-open');
     ui.evidence.removeAttribute('role');
     ui.evidence.removeAttribute('aria-modal');
     ui.scrim.hidden = true;
@@ -3027,12 +3081,7 @@
       renderTopicOptions(findings);
       renderFindings();
       renderCurrentEvidence();
-      if (desktopMedia.matches) {
-        var selected = selectedFindingButton();
-        if (selected) selected.focus({ preventScroll: true });
-      } else {
-        openEvidence();
-      }
+      openEvidence();
     });
 
     ui.tabs.forEach(function (button, index) {
@@ -3267,6 +3316,20 @@
     });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-  else init();
+  if (window.__FF_WORKBENCH_TEST__ === true) {
+    window.__FF_WORKBENCH_TEST__ = {
+      openAnalysisDrawer: openAnalysisDrawer,
+      openEvidence: openEvidence,
+      closeEvidence: closeEvidence,
+      applyHealth: applyHealth,
+      freshnessCopy: freshnessCopy,
+      state: state,
+      ui: ui,
+      cacheUi: cacheUi
+    };
+  } else if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
 }());

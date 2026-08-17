@@ -2177,6 +2177,20 @@ lanes:
       # in-process build_china_library ProcessPool also gets the box to itself here.
       - id: build_china
         module: scripts.build_china
+      - id: build_cn_live_pack
+        module: scripts.build_cn_live_pack
+        note: >
+          CN Breathing Platform arming pass (CN-PR-2) — after build_china, probes
+          settled adjusted closes and publishes live_flow/cn_prophet_live_armed.json
+          for the VPS 5-minute lane. Writes NO data/ path. timeout-minutes 12 +
+          continue-on-error in asia-close.yml; a hung pack must not eat the asia job.
+      - id: reconcile_cn_live
+        module: scripts.reconcile_cn_live
+        note: >
+          CN Breathing Platform reconciler (CN-PR-2) — SOLE writer of
+          data/cn_prophet_live/forward.parquet. CN_LANE=asia is the ledger-write
+          gate. Confirmation receipt from same-session close_board vs china_standouts
+          (receipt-in-hand #5220). timeout-minutes 12 + continue-on-error; non-fatal.
       # ── parallel band A (2026-07-14): the post-spine builders run as 5 mutually
       # independent background clusters (engine-job pattern), each internally ordered
       # by its own data deps. Per-module doctrine notes retained as comments:

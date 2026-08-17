@@ -343,6 +343,79 @@ def test_append_board_w02a_new_fields_present(cn_store):
     assert str(row["entry_status"]) == "buy_now"
 
 
+def test_append_board_persists_v4_order_provenance(cn_store):
+    """Coverage-atomic bake provenance must be recoverable on the forward ledger.
+
+    R4 treatment eligibility reads these columns. A fallback bake stamped
+    board_definition=cn_prophet_v4 must still carry effective_order_basis=v3
+    so it cannot accrue as treatment.
+    """
+    _, dates = cn_store
+    asof = str(dates[0].date())
+    live = [{
+        "ticker": "600010.SS",
+        "price": 10.0,
+        "board_definition": "cn_prophet_v4",
+        "lane": "featured",
+        "order_mode": "intelligence_complete",
+        "requested_order_basis": "intel_interest_then_v3_score",
+        "effective_order_basis": "intel_interest_then_v3_score",
+        "intel_order_active": True,
+        "intel_coverage_complete": True,
+        "prophet": {
+            "version": "cn_prophet_v4",
+            "score": 70,
+            "order_mode": "intelligence_complete",
+            "requested_order_basis": "intel_interest_then_v3_score",
+            "effective_order_basis": "intel_interest_then_v3_score",
+            "components": {"signal": 0.9, "theme_timing": 0.6},
+        },
+    }]
+    fallback = [{
+        "ticker": "600011.SS",
+        "price": 11.0,
+        "board_definition": "cn_prophet_v4",
+        "lane": "featured",
+        "order_mode": "v3_coverage_fallback",
+        "requested_order_basis": "intel_interest_then_v3_score",
+        "effective_order_basis": "cn_prophet_v3_score",
+        "fallback_reason": "incomplete_intel_interest_coverage",
+        "intel_order_active": False,
+        "intel_coverage_complete": False,
+        "prophet": {
+            "version": "cn_prophet_v4",
+            "score": 80,
+            "order_mode": "v3_coverage_fallback",
+            "requested_order_basis": "intel_interest_then_v3_score",
+            "effective_order_basis": "cn_prophet_v3_score",
+            "fallback_reason": "incomplete_intel_interest_coverage",
+            "components": {"signal": 0.9, "theme_timing": 0.6},
+        },
+    }]
+    shadow = [{
+        "ticker": "600010.SS",
+        "price": 10.0,
+        "board_definition": "cn_prophet_v3_shadow",
+        "lane": "featured",
+        "prophet": {"version": "cn_prophet_v3_shadow", "score": 70, "components": {}},
+    }]
+    assert t.append_board(live, asof=asof, lane="asia") == 1
+    assert t.append_board(fallback, asof=asof, lane="asia") == 2
+    assert t.append_board(shadow, asof=asof, lane="asia") == 3
+    df = pd.read_parquet(t._store_path())
+    intel = df[df["ticker"] == "600010.SS"]
+    intel = intel[intel["board_definition"] == "cn_prophet_v4"].iloc[0]
+    fb = df[df["ticker"] == "600011.SS"].iloc[0]
+    sh = df[df["board_definition"] == "cn_prophet_v3_shadow"].iloc[0]
+    from engine import cn_v3_tripwires
+    assert cn_v3_tripwires.r4_treatment_eligible(intel.to_dict())
+    assert not cn_v3_tripwires.r4_treatment_eligible(fb.to_dict())
+    assert not cn_v3_tripwires.r4_treatment_eligible(sh.to_dict())
+    assert str(intel["effective_order_basis"]) == "intel_interest_then_v3_score"
+    assert str(fb["effective_order_basis"]) == "cn_prophet_v3_score"
+    assert str(fb["order_mode"]) == "v3_coverage_fallback"
+
+
 def test_append_board_hold_state_none_when_absent(cn_store):
     """W0.2a: hold_state is None (not a crash) when the row has no 'hold' key — the
     placeholder schema survives missing values until W0.1 wires the real HOLD builder."""
