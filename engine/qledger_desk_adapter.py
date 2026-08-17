@@ -530,9 +530,9 @@ def register_prospective(rows: Iterable[dict], *, family: str,
     try:
         if dry_run:
             with TemporaryDirectory(prefix="qledger_p3_dry_run_") as tmp:
-                results = qledger.register_batch(candidates, root=tmp, dedupe=True)
+                results = qledger.register_batch(candidates, root=tmp, dedupe=True, today=today)
         else:
-            results = qledger.register_batch(candidates, root=root, dedupe=True)
+            results = qledger.register_batch(candidates, root=root, dedupe=True, today=today)
     except Exception as exc:  # noqa: BLE001 — LOUD, never silent (blocker: silent total failure)
         stats["error"] = str(exc)
         print(f"::error title={family}-qledger-register-failed::qledger[{family}] "
