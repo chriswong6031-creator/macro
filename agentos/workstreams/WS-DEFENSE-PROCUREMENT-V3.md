@@ -27,11 +27,10 @@ waves:
   - id: D0R
     title: Financial-alpha reconnaissance and architecture freeze
     status: in_progress
-    pr: 5814
+    pr: [5814, 5819]
     next_action: >
-      Return closure packet (lineages, B/D/E/G/H harden, D1–D4 handoffs,
-      red-team DEC) to Sol for D0R acceptance. Do not start D1. Do not
-      merge #5424.
+      Sol reviews D0R closure on PR 5819. #5814 remains the checkpoint.
+      Do not start D1. Do not merge #5424.
   - id: D1
     title: Production truth and signed-in product rescue
     status: todo
@@ -75,7 +74,7 @@ discoveries:
   - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
 needs_ceo:
-  question: Accept the D0R closure packet on PR 5814 so the operator can authorize D1?
+  question: Accept the D0R closure packet on PR 5819 so the operator can authorize D1?
   options:
     - accept D0R; operator may then authorize D1 rescue only
     - request more Gate 5 primary pins before acceptance
@@ -86,8 +85,8 @@ needs_ceo:
     operator order.
   by_when: 2026-08-18
 next_action: >
-  Sol reviews D0R closure on PR 5814. D0R not accepted; D1 unauthorized.
-  No #5424, no Prophet authority, no rank/gate/size/entry/execute.
+  Sol reviews D0R closure on PR 5819. #5814 is the merged checkpoint.
+  D0R not accepted; D1 unauthorized. No #5424, no Prophet authority.
 ---
 
 ## Context
