@@ -743,3 +743,91 @@ class TestCiBoundToShaResidual2:
             return m
         with patch.object(mm.subprocess, "run", side_effect=fake_run):
             assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is False
+
+    def test_ci_green_at_sha_ignores_inactive_pilot_context(self):
+        import scripts.metabolism_merge as mm
+
+        def fake_run(cmd, **kw):
+            m = MagicMock()
+            m.returncode = 0
+            m.stdout = json.dumps({
+                "headRefOid": "AUDITED_SHA",
+                "baseRefName": "main",
+                "statusCheckRollup": [
+                    {"name": "ci-gate", "state": "SUCCESS"},
+                    {"name": "ci-authority/main", "state": "SUCCESS"},
+                    {
+                        "name": "ci-authority/codex/merge-queue-pilot",
+                        "state": "FAILURE",
+                    },
+                ],
+            })
+            return m
+
+        with patch.object(mm.subprocess, "run", side_effect=fake_run):
+            assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is True
+
+    def test_ci_green_at_sha_still_false_on_binding_failure(self):
+        import scripts.metabolism_merge as mm
+
+        def fake_run(cmd, **kw):
+            m = MagicMock()
+            m.returncode = 0
+            m.stdout = json.dumps({
+                "headRefOid": "AUDITED_SHA",
+                "baseRefName": "main",
+                "statusCheckRollup": [
+                    {"name": "ci-pack-3", "state": "FAILURE"},
+                    {"name": "ci-authority/main", "state": "SUCCESS"},
+                    {
+                        "name": "ci-authority/codex/merge-queue-pilot",
+                        "state": "FAILURE",
+                    },
+                ],
+            })
+            return m
+
+        with patch.object(mm.subprocess, "run", side_effect=fake_run):
+            assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is False
+
+
+class TestPrCiGreenBindingChecks:
+    """The merge-lane green gate used to treat ANY rollup failure as not-green.
+
+    That refused main-target PRs whose only red was the designed inactive
+    ci-authority complementary context — the same raw-any-failed-check bug
+    that would refuse to arm merge-on-green. Binding-check semantics match
+    scripts/merge_on_green.py.
+    """
+
+    def test_inactive_pilot_failure_does_not_block_green_on_main(self):
+        import scripts.metabolism_merge as mm
+
+        pr = {
+            "baseRefName": "main",
+            "statusCheckRollup": [
+                {"name": "ci-gate", "state": "SUCCESS"},
+                {"name": "ci-authority/main", "state": "SUCCESS"},
+                {
+                    "name": "ci-authority/codex/merge-queue-pilot",
+                    "state": "FAILURE",
+                },
+            ],
+        }
+        assert mm._pr_ci_green(pr) is True
+
+    def test_binding_failure_still_blocks_green(self):
+        import scripts.metabolism_merge as mm
+
+        pr = {
+            "baseRefName": "main",
+            "statusCheckRollup": [
+                {"name": "ci-gate", "state": "SUCCESS"},
+                {"name": "ci-authority/main", "state": "FAILURE"},
+                {
+                    "name": "ci-authority/codex/merge-queue-pilot",
+                    "state": "FAILURE",
+                },
+            ],
+        }
+        assert mm._pr_ci_green(pr) is False

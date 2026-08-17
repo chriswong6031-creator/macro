@@ -274,16 +274,28 @@ def _gh_pr_state(pr_number: int) -> str:
 
 
 def _pr_ci_green_at_sha(pr_number: int) -> tuple[bool, str]:
-    """Return (green, head_sha) for a PR.  Fail-closed on any error.  NEVER raises."""
+    """Return (green, head_sha) for a PR.  Fail-closed on any error.  NEVER raises.
+
+    Uses the shared merge-on-green binding-check semantics: for PRs targeting
+    main, the inactive ``ci-authority/codex/merge-queue-pilot`` context is not
+    a red this PR owns. ``ci-authority/main`` stays binding.
+    """
     try:
+        try:
+            from scripts.merge_on_green import binding_status_checks
+        except ImportError:  # ``python scripts/metabolism_immune.py``
+            from merge_on_green import binding_status_checks  # type: ignore[no-redef]
         data = _gh_json([
             "pr", "view", str(pr_number),
-            "--json", "headRefOid,statusCheckRollup",
+            "--json", "headRefOid,statusCheckRollup,baseRefName",
         ], timeout=30)
         if not isinstance(data, dict):
             return False, ""
         head_sha = data.get("headRefOid") or ""
-        checks = data.get("statusCheckRollup") or []
+        checks = binding_status_checks(
+            list(data.get("statusCheckRollup") or []),
+            base_ref=str(data.get("baseRefName") or "main"),
+        )
         if not checks:
             return False, head_sha  # No checks = fail-closed
         passing = {"SUCCESS", "NEUTRAL", "SKIPPED"}
