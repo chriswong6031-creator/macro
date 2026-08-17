@@ -277,10 +277,22 @@ class TestTemplateChipPresence:
     """
 
     def _template(self) -> str:
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
+        """The dashboard's board markup: dashboard.html.j2 + the us-board card
+        partial it includes.
+
+        The pv_card call site — and with it the sector_stance fold and its
+        bilingual disagreement copy — moved into _us_board_cards.html.j2 when the
+        us_stocks board gained its server-side tier split
+        (docs/TIER_PREVIEW_PATTERN.md), so the shell and the /premiumdata/ payload
+        render cards from ONE source. Reading the pair keeps these checks pointed
+        at the markup rather than at the file it used to sit in.
+        """
+        root = pathlib.Path(__file__).resolve().parent.parent / "templates"
+        tmpl = root / "dashboard.html.j2"
+        cards = root / "_us_board_cards.html.j2"
+        if not tmpl.exists() or not cards.exists():
             pytest.skip("template not found — running outside full repo")
-        return tmpl.read_text()
+        return tmpl.read_text() + cards.read_text()
 
     def test_stance_folded_into_flag_rows(self):
         """dashboard.html.j2 must fold sector_stance into the pv_card flag rows."""

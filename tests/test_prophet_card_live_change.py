@@ -107,7 +107,11 @@ def test_change_slot_is_opt_in_so_international_stays_unchanged() -> None:
 
 def test_requested_four_boards_opt_in_and_international_does_not() -> None:
     expected_calls = {
-        "dashboard.html.j2": 1,
+        # The us board's pv_card call moved out of dashboard.html.j2 into this
+        # partial with the us_stocks tier split (docs/TIER_PREVIEW_PATTERN.md):
+        # the free shell and the /premiumdata/ payload render cards from ONE
+        # source. Same single call, same opt-in — new home.
+        "_us_board_cards.html.j2": 1,
         "china.html.j2": 2,
         "hk.html.j2": 1,
         "canada.html.j2": 1,

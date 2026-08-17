@@ -44,6 +44,33 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+#: Marker identifying the nightly's us-board ``pv_card`` call site.
+_NIGHTLY_CARD_MARKER = "'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',"
+
+
+def _nightly_card_call_site() -> Path:
+    """The ONE template holding the nightly's us-board ``pv_card`` call.
+
+    Resolved by search rather than hardcoded, because it has already moved once:
+    the call site left ``dashboard.html.j2`` for ``_us_board_cards.html.j2`` when
+    the us_stocks board gained its server-side tier split
+    (docs/TIER_PREVIEW_PATTERN.md — the free shell and the /premiumdata/ payload
+    render cards from one source so they cannot drift). A hardcoded path turns
+    the next such move into a confusing "literal missing" failure that reads like
+    the convention was deleted, instead of naming the relocation.
+
+    Exactly one owner is the property the two tests below exist to protect: a
+    second call site is a second URL/price convention, which is the drift the
+    evening board must never introduce.
+    """
+    owners = sorted(p for p in (ROOT / "templates").glob("*.j2")
+                    if _NIGHTLY_CARD_MARKER in p.read_text(encoding="utf-8"))
+    assert len(owners) == 1, (
+        "expected exactly ONE template to own the nightly's us-board pv_card "
+        f"call site; found {[p.name for p in owners]}"
+    )
+    return owners[0]
+
 import scripts.close_pass_mirror as M  # noqa: E402
 import scripts.close_pass_publish as P  # noqa: E402
 import scripts.close_pass_reconcile as RC  # noqa: E402
@@ -676,7 +703,7 @@ def test_the_card_href_is_the_nightlys_own_ticker_page_url():
     """Read out of the nightly's pv_card call site, never invented. A second URL
     convention would send the evening board's cards somewhere the morning
     board's cards do not go, and the reader would find it before we did."""
-    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    call_site = _nightly_card_call_site().read_text(encoding="utf-8")
     assert "'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us'," in call_site
     card = CB.board_state(_carded())["board"]["cards"][0]
     assert card["href"] == f"stock.html#{card['tk']}"
@@ -684,7 +711,7 @@ def test_the_card_href_is_the_nightlys_own_ticker_page_url():
 
 
 def test_the_price_is_formatted_as_the_nightly_formats_it():
-    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    call_site = _nightly_card_call_site().read_text(encoding="utf-8")
     assert "'price_txt': ('$' ~ ('%.2f'|format(n.price)))" in call_site
     assert CB.board_state(_carded())["board"]["cards"][0]["price_txt"] == "$187.46"
 
