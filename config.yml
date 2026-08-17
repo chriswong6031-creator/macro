@@ -7143,6 +7143,21 @@ china_special_situations:
   preview_rows: 3
 
 # ---------------------------------------------------------------------------
+# us_board_gate — tier gate for the US Prophet stock board on us_stocks.html
+# (docs/TIER_PREVIEW_PATTERN.md). The board was server-rendering all rows into
+# #us-stocktable-data + the .nbgrid card grid while tier_preview.js only capped
+# them client-side — a view-source-readable anon leak of the whole ranked board.
+# Same mechanism as the special_situations desks above: the shell bakes only
+# `preview_rows` of us_standouts.buy (system order preserved, NOT resorted) plus
+# an upgrade wall; the withheld remainder ships as
+# site/premiumdata/us_stocks.json, which config/site_access.yml already enforces
+# under premium.enforced_early's /premiumdata/ prefix. Set gated:false to
+# re-open the whole board to anonymous/Free without touching code.
+us_board_gate:
+  gated: true
+  preview_rows: 3
+
+# ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies
 # (engine/qual_extraction.py, W5 §2.4 / Appendix P5).
 # Wired to the 8-K lane in collectors/special_situations.py.
