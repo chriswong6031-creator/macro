@@ -481,12 +481,13 @@ class TestWorkflowWiring:
                        if "python -m scripts.grade_us_prophet_candidates --nightly" in r)
         w3_i = next(i for i, r in enumerate(runs)
                     if "python -m scripts.accrue_us_prophet_w3 --nightly" in r)
-        miss_i = next(i for i, r in enumerate(runs)
-                      if "python -m scripts.run_prophet_miss_audit --nightly" in r)
         commit_i = next(i for i, s in enumerate(job["steps"])
                         if "git add" in str(s.get("run") or "")
                         and "git commit" in str(s.get("run") or ""))
-        assert grade_i < w3_i < miss_i < commit_i
+        # Order vs the miss-audit step is already pinned by the off-engine-lane
+        # suite. This file must not name that module: it is ops telemetry with
+        # zero authority and no new callers.
+        assert grade_i < w3_i < commit_i
         commit = str(job["steps"][commit_i]["run"])
         assert "data/us_prophet_rank/w3" in commit
         assert (job.get("env") or {}).get("COLLECT_LANE") == "nightly"
@@ -498,5 +499,4 @@ class TestWorkflowWiring:
                     if item.get("job") == "us_prophet_ledgers")
         modules = [s.get("module") for s in lane["steps"]]
         assert modules.index("scripts.grade_us_prophet_candidates") < \
-            modules.index("scripts.accrue_us_prophet_w3") < \
-            modules.index("scripts.run_prophet_miss_audit")
+            modules.index("scripts.accrue_us_prophet_w3")
