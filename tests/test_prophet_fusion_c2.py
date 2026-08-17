@@ -1203,7 +1203,7 @@ class TestTrainServeRatio:
 
 
 # --------------------------------------------------------------------------- #
-# 19. the two NITs, and the pit_settlement deferral ripple
+# 19. the two NITs, and the pit_settlement admission ripple (#5705 / PR-3A)
 # --------------------------------------------------------------------------- #
 
 class TestPermutationPEstimator:
@@ -1236,32 +1236,30 @@ class TestUnresolvableEdgeSpec:
                                                       "NOT_ESTIMABLE")
 
 
-class TestPitSettlementDeferral:
-    """RIPPLE: the commissioning session reverted BACKTEST_LAWFUL_STATUSES to {pit}."""
+class TestPitSettlementAdmission:
+    """RIPPLE: #5705 reconciled the producer; PR-3A admits pit_settlement.
+    Admission is a PIT gate, not an estimability claim, and does not assert that
+    short_interest enters a family score or a C2 fit on this shallow frame."""
 
     def test_the_suite_reads_the_gate_rather_than_assuming_it(self):
-        from scripts.prophet_fusion_arena import BACKTEST_LAWFUL_STATUSES
-        assert "pit_settlement" not in BACKTEST_LAWFUL_STATUSES
+        from scripts.prophet_fusion_arena import BACKTEST_LAWFUL_STATUSES, PIT_OK, PIT_SETTLEMENT
+        assert PIT_SETTLEMENT in BACKTEST_LAWFUL_STATUSES
+        assert BACKTEST_LAWFUL_STATUSES == frozenset({PIT_OK, PIT_SETTLEMENT})
 
     @NEEDS_REAL_FRAME
-    def test_short_interest_is_not_backtest_lawful_everywhere_it_appears(self,
-                                                                        real_report,
-                                                                        real_census):
+    def test_short_interest_is_backtest_lawful_and_still_not_an_admission_of_estimability(
+        self, real_report, real_census,
+    ):
         member = next(m for m in real_census["families"]["F5_FLOW_POSITIONING"]["members"]
                       if m["member"] == "F5_FLOW_POSITIONING.short_interest")
         assert member["pit_status"] == "pit_settlement"
-        assert member["backtest_lawful"] is False
-        assert "not_backtest_pit" in member["reasons"]
-        assert member["in_family_score"] is False and member["in_design_matrix"] is False
-        # It reaches no score, matrix or fit...
-        assert "short_int__short_shares" not in json.dumps(
-            real_report["c2_fit"]["would_have_entered"]["members_per_family"])
-        # ...but its frame-1 redundancy cells are still MEASURED, with the status
-        # attached so a structural fact cannot read as an admission.
+        assert member["backtest_lawful"] is True
+        assert "not_backtest_pit" not in member["reasons"]
+        # Remaining snapshot/forward-only members stay disclosed, never admitted.
         block = real_report["redundancy"]["frame1_stamp_20260807"]["families"][
             "F5_FLOW_POSITIONING"]
-        assert "F5_FLOW_POSITIONING.short_interest (pit_settlement)" in block[
-            "members_measured_but_not_backtest_lawful"]
+        unlawful = block.get("members_measured_but_not_backtest_lawful") or []
+        assert not any("short_interest" in str(item) for item in unlawful)
         assert "NEVER an admission" in block["pit_disclosure"]
 
 

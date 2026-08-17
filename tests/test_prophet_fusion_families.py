@@ -22,10 +22,11 @@ somewhere in this estate:
     This artifact ranks nothing, sizes nothing, gates nothing, originates nothing,
     escalates nothing.  Flipping a boolean here is a doctrine amendment, not a refactor.
 
-  * PIT STATUS IS LOAD-BEARING.  `snapshot_not_pit` members (short interest, forensics)
-    are HARD-REFUSED in backtest frames (§4.2 flags 2 and 4).  If the registry stops
-    marking them, a backtest reads today's snapshot into 2026-06 rows and the leakage is
-    invisible — it looks like signal.
+  * PIT STATUS IS LOAD-BEARING.  `snapshot_not_pit` / `forward_only` members are
+    HARD-REFUSED in backtest frames (§4.2).  `pit_settlement` is admitted after #5705
+    (8th NYSE session, not settlement+10 calendar days) but is still not estimable.
+    If the registry stops marking snapshot members, a backtest reads today's snapshot
+    into 2026-06 rows and the leakage is invisible — it looks like signal.
 
 Run: python3 -m pytest tests/test_prophet_fusion_families.py -q
 """
@@ -141,6 +142,15 @@ def _member_columns(member: dict) -> list[str]:
     return out
 
 
+def _baseline_role_columns(registry: dict) -> set[str]:
+    """Union of every baseline_roles column. Never read a timeless champion list."""
+    roles = registry["baseline_roles"]
+    out: set[str] = set()
+    for spec in roles.values():
+        out |= set(spec["columns"])
+    return out
+
+
 def _find(registry: dict, family_key: str, member_name: str) -> dict:
     for fam_key, member in _members(registry):
         if fam_key == family_key and member["name"] == member_name:
@@ -184,6 +194,102 @@ class TestRegistryShape:
     def test_every_family_has_members(self, registry):
         for key, fam in registry["families"].items():
             assert fam["members"], f"{key} has no members"
+
+    def test_member_names_are_unique_within_a_family(self, registry):
+        for key, fam in registry["families"].items():
+            names = [m["name"] for m in fam["members"]]
+            assert len(names) == len(set(names)), f"{key} has duplicate member names"
+
+
+# ---------------------------------------------------------------------------
+# 1b. definition-aware baseline roles — PR-3A / DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER
+# ---------------------------------------------------------------------------
+
+class TestBaselineRolesAreDefinitionAware:
+    """A timeless champion_baseline.columns list is the silent-swap defect: on a
+    us_prophet_v3 row prophet_score is C1, not the retired v2 heuristic."""
+
+    def test_there_is_no_timeless_champion_baseline_column_list(self, registry):
+        champion = registry["champion_baseline"]
+        assert "columns" not in champion, (
+            "timeless champion_baseline.columns is forbidden; roles are keyed by "
+            "board_definition"
+        )
+        by_def = champion["by_board_definition"]
+        for key in ("us_prophet_v2", "us_prophet_v2_fallback", "us_prophet_v3"):
+            assert key in by_def, key
+        assert "legacy_v2_decomposition" in by_def["us_prophet_v3"]["null_by_design"]
+        assert "retired_shadow_output" in by_def["us_prophet_v3"]["roles"]
+        assert "legacy_v2_decomposition" not in by_def["us_prophet_v3"]["roles"]
+        assert "retired_shadow_output" not in by_def["us_prophet_v2"]["roles"]
+
+    def test_published_and_shadow_roles_are_disjoint(self, registry):
+        roles = registry["baseline_roles"]
+        published = set(roles["published_ranker_output"]["columns"])
+        shadow = set(roles["retired_shadow_output"]["columns"])
+        board = set(roles["published_board_output"]["columns"])
+        legacy = set(roles["legacy_v2_decomposition"]["columns"])
+        assert published.isdisjoint(shadow)
+        assert published.isdisjoint(legacy)
+        assert shadow.isdisjoint(legacy)
+        assert board.isdisjoint(published | shadow | legacy)
+        assert "prophet_score" in published
+        assert "score_rank" in published
+        assert "display_rank" in published
+        assert "prophet_shadow_score" in shadow
+        assert "prophet_shadow_score_rank" in shadow
+        assert "featured" in board
+        assert "featured" not in published
+        assert "prophet_signal" in legacy
+        assert "prophet_signal" not in published
+
+    @staticmethod
+    def _score_roles_swapped(roles: dict) -> bool:
+        published = set(roles["published_ranker_output"]["columns"])
+        shadow = set(roles["retired_shadow_output"]["columns"])
+        return (
+            "prophet_shadow_score" in published
+            or "prophet_score" in shadow
+            or "prophet_shadow_score_rank" in published
+            or "score_rank" in shadow
+        )
+
+    def test_canonical_and_shadow_roles_cannot_be_silently_swapped(self, registry):
+        """MUTATION: renaming the shadow score into the canonical prophet_score
+        slot (or the reverse) must red.  That swap is how a W3 reader would
+        score C1 against itself."""
+        roles = registry["baseline_roles"]
+        assert not self._score_roles_swapped(roles)
+        mutated = {
+            "published_ranker_output": {
+                "columns": [
+                    "prophet_shadow_score" if c == "prophet_score" else c
+                    for c in roles["published_ranker_output"]["columns"]
+                ]
+            },
+            "retired_shadow_output": {
+                "columns": [
+                    "prophet_score" if c == "prophet_shadow_score" else c
+                    for c in roles["retired_shadow_output"]["columns"]
+                ]
+            },
+        }
+        assert self._score_roles_swapped(mutated)
+
+    def test_retired_shadow_columns_match_the_store_family(self, registry):
+        from engine.us_context_vector import SHADOW_COLUMNS
+        declared = tuple(registry["baseline_roles"]["retired_shadow_output"]["columns"])
+        assert declared == SHADOW_COLUMNS
+
+    def test_v3_published_ranker_is_not_the_legacy_five_leg_decomposition(self, registry):
+        v3 = registry["champion_baseline"]["by_board_definition"]["us_prophet_v3"]
+        published = set(registry["baseline_roles"]["published_ranker_output"]["columns"])
+        legacy = set(registry["baseline_roles"]["legacy_v2_decomposition"]["columns"])
+        assert published.isdisjoint(legacy)
+        assert "legacy_v2_decomposition" in v3["null_by_design"]
+        assert "us_prophet_v3" in registry["baseline_roles"]["legacy_v2_decomposition"][
+            "null_by_design_on"
+        ]
 
     def test_member_names_are_unique_within_a_family(self, registry):
         for key, fam in registry["families"].items():
@@ -243,7 +349,7 @@ class TestOneColumnOneFamily:
             set(registry["frame_keys"])
             | set(registry["frame_identity"])
             | set(registry["strata"]["columns"])
-            | set(registry["champion_baseline"]["columns"])
+            | _baseline_role_columns(registry)
         )
         for entry in registry["excluded_columns"]:
             reserved |= set(entry["columns"])
@@ -465,7 +571,7 @@ class TestColumnsExistInTheStore:
         pin = registry["store_schema_pin"]
         accounted = set(registry["frame_keys"]) | set(registry["frame_identity"])
         accounted |= set(registry["strata"]["columns"])
-        accounted |= set(registry["champion_baseline"]["columns"])
+        accounted |= _baseline_role_columns(registry)
         for entry in registry["excluded_columns"]:
             accounted |= set(entry["columns"])
         for _fam_key, member in _members(registry):
@@ -524,30 +630,40 @@ class TestPitIntegrityFlags:
                     f"together"
                 )
 
-    def test_pit_settlement_is_registered_vocabulary_but_backtest_admission_is_deferred(self, registry):
-        """The arena side of the PR-2 flip, asserted against the REAL registry — in the
-        DEFERRED direction the adversarial review ruled (finding F-5): the status is
-        valid vocabulary (the loader accepts it; the mechanism note is registry truth),
-        but a short_int column still REFUSES in a backtest frame, because the
-        producer's knowable_date is DERIVED at settlement + 10 CALENDAR days, which
-        under-waits the ~8-session FINRA publication lag by 2-3 days on every
-        committed settlement.  Admission follows the lag-constant reconciliation, not
-        this suite.  (The vocabulary twin lives in tests/test_prophet_fusion_arena.py.)"""
+    def test_pit_settlement_is_backtest_lawful_under_the_5705_session_rule(self, registry):
+        """PR-3A: #5705 replaced settlement+10 calendar days with the 8th NYSE session
+        floored by stored knowable_date and capture_date.  pit_settlement is therefore
+        backtest-lawful.  Snapshot/forward-only stay refused.  PIT-lawful is not an
+        estimability claim — the depth caveats remain in the change note."""
         import scripts.prophet_fusion_arena as arena
+        from lib.finra_knowable import KNOWABLE_LAG_SESSIONS
         real = arena.load_registry()
         member = _find(registry, "F5_FLOW_POSITIONING", "short_interest")
-        assert member["pit_status"] == "pit_settlement"   # vocabulary accepted
-        with pytest.raises(arena.PITRefusal) as exc:
-            arena.check_features(real, ["short_int__days_to_cover"],
-                                 frame_kind=arena.FRAME_KIND_BACKTEST)
-        assert exc.value.pit_status == "pit_settlement"
-        with pytest.raises(arena.PITRefusal):
+        assert member["pit_status"] == "pit_settlement"
+        assert KNOWABLE_LAG_SESSIONS == 8
+        assert arena.PIT_SETTLEMENT in arena.BACKTEST_LAWFUL_STATUSES
+        assert arena.BACKTEST_LAWFUL_STATUSES == frozenset(
+            {arena.PIT_OK, arena.PIT_SETTLEMENT}
+        )
+        gate = arena.check_features(
+            real, ["short_int__days_to_cover"],
+            frame_kind=arena.FRAME_KIND_BACKTEST,
+        )
+        assert "short_int__days_to_cover" in gate.columns
+        with pytest.raises(arena.PITRefusal) as snap:
             arena.check_features(real, ["forensics__action"],
                                  frame_kind=arena.FRAME_KIND_BACKTEST)
-        # The deferral is documented where the next consumer will look.
+        assert snap.value.pit_status == "snapshot_not_pit"
         note = member.get("pit_status_change_note", "")
-        assert "BACKTEST ADMISSION DEFERRED" in note
-        assert "10 CALENDAR days" in note
+        assert "#5705" in note
+        assert "8th NYSE session" in note
+        assert "BACKTEST ADMISSION DEFERRED" not in note
+        assert "settlement + 10 calendar days" in note  # named as RETIRED
+        assert "retired" in note.lower()
+        # The current-law sentence must not re-assert the retired derivation.
+        current, _sep, _rest = note.lower().partition("retired")
+        assert "_si_knowable_lag_days" not in current
+        assert "settlement + 10 calendar days" not in current
 
     def test_insider_is_pit_but_flagged_serving_dead(self, registry):
         """§4.2 flag 3: PIT-correct by construction (`filing_date`), but the panel
@@ -858,3 +974,44 @@ class TestLabelOnlyStores:
         assert not offenders, (
             "outcome columns are LABELS, never features — leakage by construction. "
             f"Offenders: {offenders}")
+
+
+# ---------------------------------------------------------------------------
+# 11. W3 race prereg — frozen before any forward outcome read (PR-3A)
+# ---------------------------------------------------------------------------
+
+class TestW3RacePreregIsFrozen:
+    """The freeze file is the decision.  This class pins the load-bearing sentences
+    so a later edit cannot silently unfreeze the race.  It does not read outcomes."""
+
+    PREREG = ROOT / "research" / "prophet_fusion" / "W3_RACE_PREREG.md"
+
+    def test_prereg_file_exists(self):
+        assert self.PREREG.is_file()
+
+    def test_freeze_tokens_are_present(self):
+        text = self.PREREG.read_text(encoding="utf-8")
+        required = (
+            "paired population",
+            "board_definition=us_prophet_v3",
+            "prophet_shadow_definition=us_prophet_v2_shadow",
+            "us_prophet_v2_fallback",
+            "0233445657e8",
+            "Pages-only",
+            "H=10",
+            "excess_spy",
+            "engine.us_prophet_grades.load_grades",
+            "positive IC = ranker worked",
+            "top-30",
+            "20 distinct matured H=10 paired sessions",
+            "Newey-West",
+            "L=9",
+            "t-referenced",
+            "no promotion arm",
+            "no C2 trigger",
+            "no second scorer",
+            "no second grader",
+            "no automatic reversion",
+        )
+        missing = [token for token in required if token not in text]
+        assert not missing, f"W3_RACE_PREREG.md missing freeze tokens: {missing}"

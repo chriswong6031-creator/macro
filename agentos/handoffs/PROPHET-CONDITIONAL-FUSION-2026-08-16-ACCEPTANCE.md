@@ -174,3 +174,16 @@ persists is still open — which is exactly what W3 Lane C is for.
 
 *Supersedes `PROPHET-CONDITIONAL-FUSION-2026-08-15-OVERRIDE.md` as the latest record for
 this workstream without altering it; that file remains the w2b implementation account.*
+
+## PR-3A reconciliation (2026-08-16)
+
+The YAML `unresolved` / `next_actions` blocks above are this acceptance session's
+record and are not rewritten. Subsequent merges closed two items a cold reader
+would otherwise reopen:
+
+- **Shadow-store / task_8c904665:** resolved by #5769 /
+  `DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY`. Canonical five-leg nulls on
+  v3 are correct. Do not copy `prophet_shadow_*` into canonical `prophet_*`.
+- **#5742** remains external availability/push-path debt, not Fusion ranking logic.
+  W3 counts durable paired stamps, not Pages-only nights.
+

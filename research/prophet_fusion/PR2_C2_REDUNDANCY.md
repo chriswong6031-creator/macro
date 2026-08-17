@@ -71,7 +71,7 @@ Frames are never pooled with each other.
 ## §2 Registry repairs landed in this PR (and what did NOT change)
 
 1. **`short_interest` `pit_status`: `snapshot_not_pit` → `pit_settlement` — with
-   backtest admission DEFERRED.** #5602's merged fix is real:
+   backtest admission DEFERRED in this PR.** #5602's merged fix is real:
    `context_api._short_int_dim` resolves historical query dates against the
    history+panel union gated on `knowable_date`, basis `pit_settlement`; current dates
    keep the snapshot path. The registry now records that mechanism truthfully. But the
@@ -87,6 +87,13 @@ Frames are never pooled with each other.
    carries the full receipt, and the two admission tests are written to flip the day
    the reconciliation lands. Depth (3 settlements) and basis-mixing caveats bind
    regardless. No frame in this PR consumes a `short_int__*` column.
+
+   > **PR-3A reconciliation (2026-08-16).** #5705 merged the producer-law
+   > reconciliation this item deferred (8th NYSE session after settlement, floored by
+   > stored `knowable_date` and `capture_date`). PR-3A admits `pit_settlement` to
+   > `BACKTEST_LAWFUL_STATUSES`. PIT-lawful is not estimable; the 3-settlement depth
+   > caveat still binds. This section remains the PR-2 historical record — do not
+   > rewrite it as if PR-2 admitted the status.
 2. **The variance-floor law** (`semantics.variance_floor` + `variance_floor_spec`):
    the registered resolution of `DSC:COVERAGE-FLOOR-MEASURES-PRESENCE-NOT-VARIANCE`.
    Defined on features alone — no outcome enters the rule: a member is VOTE-INERT on a
@@ -379,7 +386,7 @@ two blockers.
 | F-2 | BLOCKER | F5's published effect leaned on the serving-dead insider_cluster; "smartmoney-carried" was refuted by the decomposition | FIXED: `design_membership_effect` (serving-lawful, +0.052, CI covers 0) printed beside the verdict; doc rewritten; mutation receipt (h) |
 | F-3 | MAJOR | Variance-floor threshold set in the same PR as the table it flips; consequence undisclosed | FIXED: §7 sensitivity block bounds the m=4 variant at both extremes — zero rejections either way; "not tuned" stated with its basis |
 | F-4 | MAJOR | Doc's CMI H=5 p-column was mis-transcribed (three wrong cells) | FIXED: cells corrected from the artifact; doc table now machine-checked by suite |
-| F-5 | MAJOR | "Never a derived statutory lag" was false — knowable_date is derived at settlement+10 CALENDAR days, 2–3 days short of the 8-session publication lag | FIXED fail-closed: `pit_settlement` removed from `BACKTEST_LAWFUL_STATUSES`; registry note rewritten with the receipt; admission tests flip on reconciliation; engine-side constant chipped to the owning lane |
+| F-5 | MAJOR | "Never a derived statutory lag" was false — knowable_date is derived at settlement+10 CALENDAR days, 2–3 days short of the 8-session publication lag | FIXED fail-closed in PR-2: `pit_settlement` removed from `BACKTEST_LAWFUL_STATUSES`; registry note rewritten with the receipt; admission tests written to flip on reconciliation; engine-side constant chipped to the owning lane. **PR-3A (2026-08-16):** #5705 landed the producer law; Fusion now admits `pit_settlement`. This row is the PR-2 disposition, not current arena law. |
 | F-6 | MAJOR | No workstream handoff in the PR | FIXED: same-day handoff amended in place (this PR) |
 | F-7 | MAJOR | H=21 descriptive p-values published from 4–7 blocks while CMI refuses at 7 | FIXED: `DESCRIPTIVE_MIN_DATES = 8` registered; H=21 secondary table now refuses with counts |
 | F-8 | ADVISORY | PR-1b parity test used hand-typed literals; doc overstated its tolerance | FIXED: test reads PR-1b's committed report.json, abs 5e-4, every shared family |
