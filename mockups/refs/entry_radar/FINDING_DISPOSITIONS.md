@@ -6,10 +6,10 @@ do not reuse these numbers for a different finding.
 | ID | Sev | Disposition | Evidence |
 |---|---|---|---|
 | PRC-W8-001 | major | ACCEPT_FOR_W8 | Glance why-lines for C1/C2/board extras rewritten to plain word; remaining mechanical lines are lawful §14 copy. W9 glance pass. |
-| PRC-W8-002 | major | FIXED | `radar.css` candidate/featured bind `--ok`, not `--pv-buy`. `verify.py` R12f/R12g. Mutation M13. Crops recaptured 2026-08-15. |
+| PRC-W8-002 | major | SUPERSEDED | Originally `--pv-buy`; author then bound `--ok`. Independent VTC-004 moved candidate/featured to `--er-life`. Do not re-bind `--ok`. |
 | PRC-W8-003 | minor | RETAIN | Contract §14 lane name “Deep Washout”; card freshness says “confirmed 4H”. |
 | PRC-W8-004 | minor | RETAIN | C4 chip is visible, `aria-disabled`, `data-role=stratification_only`. |
-| PRC-W8-005 | minor | ACCEPT_FOR_W8 | Probe Set 42 is fixture metadata; quiet forces 0. W4 live count. |
+| PRC-W8-005 | minor | SUPERSEDED | Quiet no longer forces Probe Set to 0 (independent PRC-001). Fixture 42 remains page-level metadata until W4. |
 | PRC-W8-006 | minor | RETAIN | Drawer clocks are ISO by design. |
 | VTC-W8-001 | major | RETAIN | 232px Prophet card min; wrap is the sister pattern; 390 is 1-col. |
 | VTC-W8-002 | minor | RETAIN | Featured = Best-lane live candidate only. |

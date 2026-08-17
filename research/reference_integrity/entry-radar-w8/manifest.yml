@@ -14,15 +14,15 @@ author:
 
 reference_files:
   - path: mockups/refs/entry_radar/index.html
-    frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+    frozen_sha: 5ef3626d2e59c101dfd9cc76399fa97f11b0e561
   - path: mockups/refs/entry_radar/radar.css
-    frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+    frozen_sha: 5ef3626d2e59c101dfd9cc76399fa97f11b0e561
   - path: mockups/refs/entry_radar/radar.js
-    frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+    frozen_sha: 5ef3626d2e59c101dfd9cc76399fa97f11b0e561
   - path: mockups/refs/entry_radar/radar-data.js
-    frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+    frozen_sha: 5ef3626d2e59c101dfd9cc76399fa97f11b0e561
   - path: mockups/refs/entry_radar/DESIGN_NOTES.md
-    frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+    frozen_sha: 5ef3626d2e59c101dfd9cc76399fa97f11b0e561
 
 files:
   baseline: baseline.yml
