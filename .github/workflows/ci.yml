@@ -1666,6 +1666,7 @@ on:
       - "tests/test_spine_query.py"
       - "tests/test_ask_brain.py"
       - "tests/test_company_intelligence_neural_reader.py"
+      - "tests/test_company_intelligence_event_workspace.py"
       - "tests/test_world_state.py"
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"
@@ -3679,7 +3680,6 @@ on:
       # corpus, which tests/** does not do — it is not a catch-all in this repo.
       - "tests/test_company_intelligence_spine.py"
       - "tests/test_company_intelligence_spine_corpus.py"
-      - "tests/test_company_intelligence_event_workspace.py"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
