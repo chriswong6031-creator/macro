@@ -137,7 +137,7 @@
     },
     "build": {
       "agent": "builder",
-      "model": "opus",
+      "model": "sonnet",
       "purpose": "Shipping code, tests, refactors, implementation, or fully specified design implementation.",
       "required_prompt_sections": [
         "MISSION",

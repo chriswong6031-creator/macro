@@ -17,8 +17,16 @@ import sys
 from pathlib import Path
 
 FABLE_OK_TYPES = {"orchestrator"}
+# The line anchors are load-bearing: a mid-sentence prose mention ("we considered
+# FABLE-WHY: creative: ...") must never count as the audit line. But the DOCUMENTED
+# Workflow form of this line (CLAUDE.md §Model routing, operator re-enable
+# 2026-07-18) is a JavaScript comment inside the script:
+#     // FABLE-WHY: brainstorm: <specific reason>
+# so a bare `^FABLE-WHY` anchor can never match it and would deny every
+# fable-routed workflow stage. Leading comment markers/indentation are therefore
+# allowed before the label — and nothing else.
 FABLE_WHY_RE = re.compile(
-    r"(?mi)^FABLE-WHY\s*:\s*(orchestration|brainstorm|creative)\s*:\s*\S.{19,}$"
+    r"(?mi)^[ \t/#*\-]*FABLE-WHY\s*:\s*(orchestration|brainstorm|creative)\s*:\s*\S.{19,}$"
 )
 ROUTE_RE = re.compile(r"(?mi)^ROUTE\s*:\s*([a-z][a-z0-9_-]*)\s*$")
 HEADER_RE = re.compile(r"(?mi)^\s*(?:#{1,6}\s*)?([A-Z][A-Z0-9 /_-]{1,48})\s*:\s*(.*)$")

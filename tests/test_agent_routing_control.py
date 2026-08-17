@@ -260,8 +260,15 @@ def test_registry_cost_tiers_cannot_silently_drift():
     registry = json.loads(REGISTRY.read_text())
     routes = registry["routes"]
     assert routes["extract"]["model"] == "haiku"
+    # Build returned to Sonnet by standing operator order 2026-08-17, reversing the
+    # 2026-07-21 "Opus builds code" order. The design lane (2026-07-18) and the
+    # review lane did NOT reverse — they stay Opus, asserted as a closed set below.
+    assert routes["build"]["model"] == "sonnet"
     assert {r for r, s in routes.items() if s["model"] == "sonnet"} == {
-        "census", "research", "draft"
+        "census", "research", "draft", "build"
+    }
+    assert {r for r, s in routes.items() if s["model"] == "opus"} == {
+        "analysis", "debug", "review", "design"
     }
     assert {r for r, s in routes.items() if s["model"] == "fable"} == {
         "judgment", "orchestration"
@@ -270,8 +277,15 @@ def test_registry_cost_tiers_cannot_silently_drift():
     assert routes["orchestration"]["requires_fable_why"] is True
 
 
-def test_cheap_routes_are_not_shipping_code_routes():
+def test_read_only_routes_are_not_pointed_at_authoring_agents():
+    # A cheap MODEL is not a cheap AGENT IDENTITY. `build` is legitimately Sonnet
+    # (operator 2026-08-17), so the tier alone no longer separates read-only work
+    # from authoring work — the agent identity does. The extraction/census/research
+    # routes must never resolve to the builder or designer, whose contracts assume
+    # an owned-files write mandate, and the build route must keep its own agent.
     registry = json.loads(REGISTRY.read_text())
     for route in ("extract", "census", "research"):
         assert registry["routes"][route]["agent"] not in {"builder", "designer"}
         assert registry["routes"][route]["model"] in {"haiku", "sonnet"}
+    assert registry["routes"]["build"]["agent"] == "builder"
+    assert registry["routes"]["design"]["agent"] == "designer"

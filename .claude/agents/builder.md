@@ -1,7 +1,7 @@
 ---
 name: builder
-description: ROUTE build — Opus implementation worker for shipping code, tests, refactors, docs required by implementation, and fully specified designs. Executes a frozen packet; does not redesign it.
-model: opus
+description: ROUTE build — implementation worker for shipping code, tests, refactors, docs required by implementation, and fully specified designs. Runs Sonnet per the standing build-lane order (operator 2026-08-17). Executes a frozen packet; does not redesign it.
+model: sonnet
 effort: high
 ---
 
