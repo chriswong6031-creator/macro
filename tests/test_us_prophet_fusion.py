@@ -392,11 +392,16 @@ class TestTheFence:
 @pytest.mark.needs_full_checkout("site")
 class TestLegacyV2ByteParity:
     def test_the_frozen_scorer_reproduces_every_published_score(self, committed_board):
-        """69 rows the board actually PUBLISHED under us_prophet_v2, replayed.
+        """Published prophet_shadow scores on the committed v3 board, replayed.
 
-        If this drifts, the shadow is not a shadow and the "old" column of every
-        before/after comparison is a comparison against nothing — the same failure the
-        race harness's own replay gate refuses to emit results behind.
+        The board ranks by us_prophet_v3; the retired scorer lives on
+        prophet_shadow as us_prophet_v2_shadow. Comparing published prophet.score
+        (C1) against the frozen v2 replay is the v2-board contract and fails
+        the moment the artifact flips — DAR's published prophet 63.9 vs
+        replayed shadow 80.5. If the shadow drifts, the "old" column of every
+        before/after comparison is a comparison against nothing — the same
+        failure the race harness's own replay gate refuses to emit results
+        behind.
         """
         buy = committed_board.get("buy") or []
         assert buy, "fixture must carry a buy lane"
@@ -405,11 +410,11 @@ class TestLegacyV2ByteParity:
         verdicts = gate.get("verdicts") or {}
 
         rows = [dict(r) for r in buy]
-        published = {str(r["ticker"]): float((r.get("prophet") or {})["score"])
+        published = {str(r["ticker"]): float((r.get("prophet_shadow") or {})["score"])
                      for r in buy}
         for r in rows:
-            for key in ("prophet", "score_rank", "display_rank", "featured",
-                        "featured_blocked_by", "stage"):
+            for key in ("prophet", "prophet_shadow", "score_rank", "display_rank",
+                        "featured", "featured_blocked_by", "stage"):
                 r.pop(key, None)
 
         scored = ubr.score_rows(rows, verdict_by=verdicts,
@@ -424,7 +429,7 @@ class TestLegacyV2ByteParity:
         from scripts import us_prophet_fusion_compare as cmp_mod
 
         report = cmp_mod.compare(top=30)
-        assert report["old_definition"] == "us_prophet_v2"
+        assert report["old_definition"] == ubr.SHADOW_DEFINITION == "us_prophet_v2_shadow"
         assert report["new_definition"] == ubr.BOARD_DEFINITION
         assert len(report["new_top"]) == 30
         assert report["fusion_receipt"]["families_active"]
@@ -438,16 +443,16 @@ class TestLegacyV2ByteParity:
             self, committed_board, tmp_path, monkeypatch):
         """The acceptance surface must still work once the board IS the new ranker.
 
-        THE TRAP THIS PINS.  The committed comparison was generated against a
-        `us_prophet_v2` board, where the published `prophet.score` and the frozen v2
-        replay are the SAME number and `display_rank` IS the retired order.  From the
-        first fusion nightly onward neither holds: the published score is C1 and the
+        THE TRAP THIS PINS.  A pre-override `us_prophet_v2` board publishes the
+        retired scorer as `prophet.score` and `display_rank` IS that order.  On the
+        shipped fusion board neither holds: the published score is C1 and the
         retired scorer has moved to `prophet_shadow`.  Read the wrong block and the
         script fails twice — the freeze check compares a C1 score against a v2 score
-        and refuses all 69 rows, and `old_rank` becomes the FUSION rank, which would
-        compare the new order against itself and report every delta as zero.  The test
-        above cannot see any of this: it only ever runs against the committed v2
-        board.
+        and refuses the buy lane, and `old_rank` becomes the FUSION rank, which would
+        compare the new order against itself and report every delta as zero.  The
+        tests above now pin the shipped v3 / shadow contract; this one still proves
+        the SAME pool produces the SAME comparison when the artifact is re-derived
+        as a v3 board.
 
         The invariant asserted here is the strong one — the SAME pool must produce the
         SAME comparison whichever generation of board it is read from.

@@ -8785,6 +8785,7 @@ jobs:
       - "engine/us_early_turn.py"
       - "engine/us_prophet_fusion.py"
       - "engine/us_prophet_grades.py"
+      - "engine/us_prophet_w3.py"
       - "engine/validation.py"
       - "engine/valuation.py"
       - "engine/velocity.py"
@@ -8868,6 +8869,7 @@ jobs:
       - "scripts/grade_bottom_calls.py"
       - "scripts/grade_us_board.py"
       - "scripts/grade_us_prophet_candidates.py"
+      - "scripts/accrue_us_prophet_w3.py"
       - "scripts/heal_stage_forward_ledger.py"
       - "scripts/measure_us_track_era_recompute.py"
       - "scripts/notify.py"
@@ -8951,6 +8953,7 @@ jobs:
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
       - "tests/test_us_prophet_fusion.py"
+      - "tests/test_us_prophet_w3.py"
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_accrual.py"
       - "tests/test_weinstein_stage.py"
@@ -9078,7 +9081,7 @@ jobs:
       # see the install-line comment above for why it had to join and why that is not a
       # canary-lane widening.
       - name: US context vector + full-population grades + miss-audit scorecards
-        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py tests/test_us_scan_tier.py -q
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_prophet_w3.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py tests/test_us_scan_tier.py -q
       - name: US entry-status full-population remeasurement
         run: python -m pytest tests/test_us_entry_status_remeasure.py -q
       # The candidate-pool lanes ride this job because they ride this STORE: the nine
