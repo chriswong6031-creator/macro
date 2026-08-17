@@ -17,6 +17,7 @@ waves:
   - id: AD-0
     title: Recovery archaeology + production truth + AD-1 freeze
     status: awaiting_ci
+    pr: 5830
     next_action: Chairman reviews the AD-0 ledger and AD-1 handoff.
   - id: AD-1
     title: Daily EOD Options Intelligence Brief
