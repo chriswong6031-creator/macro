@@ -830,6 +830,29 @@
   .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
               overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
+  /* ---- tier gate (docs/TIER_PREVIEW_PATTERN.md) — preview shell only; hydration
+     removes every trace. Controls are baked FULL and marked inert (never omitted —
+     the entitled viewer hydrates into the same DOM and would otherwise get no
+     filters), per the pattern doc's "Controls" section. */
+  .pbf-bar.gated { opacity: .45; pointer-events: none; user-select: none; }
+  .us-gate-note { display: flex; align-items: flex-start; gap: 8px; margin: 2px 0 10px;
+             padding: 10px 13px; border-radius: 11px; font-size: 12px; line-height: 1.5;
+             color: var(--muted); background: color-mix(in srgb, var(--link) 7%, transparent);
+             border: 1px solid color-mix(in srgb, var(--link) 20%, transparent); }
+  .us-gate-note svg { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--link); }
+  .us-tier-wall { margin: 10px 0 4px; border-radius: 16px; border: 1px solid var(--line);
+             background: var(--panel); padding: 22px 24px 20px; text-align: center; }
+  .us-tw-h { font-size: 17px; font-weight: 800; letter-spacing: -.01em; color: var(--text); margin-bottom: 8px; }
+  .us-tw-p { font-size: 12.5px; line-height: 1.55; color: var(--muted); max-width: 440px; margin: 0 auto 16px; }
+  .us-tw-acts { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .us-tw-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px;
+             border-radius: 11px; text-decoration: none; font-size: 13px; font-weight: 700; color: #fff;
+             background: linear-gradient(135deg, var(--link), #8b5cf6); }
+  .us-tw-note { font-size: 10.5px; color: var(--faint); }
+  .us-tw-signed { margin-top: 10px; font-size: 11.5px; }
+  .us-tw-signed a { color: var(--ink-link, var(--link)); text-decoration: none;
+             border-bottom: 1px solid color-mix(in srgb, var(--link) 40%, transparent); }
+
   /* filter visibility. The hide half and the reveal half target DISJOINT sets
      (`:not([data-stage=X])` vs `[data-stage=X]`), so they never fight on specificity.
      The reveal half exists because .sm-hidden is `display:none!important` — without
@@ -15729,7 +15752,7 @@ html[data-theme="light"] :is(
         {# the id is W-L1d's hook, nothing more: this subtitle counts the nightly board and
            spells out its dot legend, and the provisional board has neither that count nor
            any dots to read, so the client hides it while tonight's cards are mounted. #}
-        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" id="us-board-sub" style="font-size:11.5px">{{ _su.buy|length }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {% if _su_delayed %}{{ t("setups · dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "个形态 · 价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
+        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" id="us-board-sub" style="font-size:11.5px">{{ (gate.total if gate else _su.buy|length) }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {% if _su_delayed %}{{ t("setups · dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "个形态 · 价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
           <span class="help">?<span class="tip tip-wide">{% if _su_delayed %}<span class="l-en">Board is delayed — prices are as of {{ ((_su.staleness or {}).get('price_through') or '?') }}. Dots and entry signals may not reflect current prices. Use the card to judge the company, then check a live quote before acting.</span><span class="l-zh">数据延迟 — 价格截至 {{ ((_su.staleness or {}).get('price_through') or '?') }}。绿点及入场信号可能不反映最新价格。先用卡片判断公司，再查看实时报价后操作。</span>{% else %}<span class="l-en">Each card separates two questions: is the stock worth owning, and is today a good entry? A strong company can still be a wait if price has run too far. Green means the entry is open; yellow means wait.</span><span class="l-zh">每张卡片分开回答两个问题：这只股票是否值得持有，以及今天是否适合入场。好公司若股价已经跑远，仍然应该等待。绿点表示入场窗口已开；黄点表示等待。</span>{% endif %}</span></span></span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t("Up to 10 names per sector · grouped by setup, strongest names first.", "每个板块最多 10 只 · 按形态分组，较强者优先。") }}
           {{ help("Shows up to ten holdings from each sector when their price action reaches a clear buy, turning or topping point. Cards are grouped by setup stage; stronger names within the sector appear first. A cap keeps one sector from taking over. Click any card for the full breakdown.", "当价格走势出现明确的买入、转向或见顶时，每个板块最多展示十只股票。卡片按形态阶段分组，同板块中较强者优先。数量上限可避免单一板块占满页面。点击卡片查看完整拆解。") }}</span>{% endif %}
@@ -15867,7 +15890,12 @@ html[data-theme="light"] :is(
       {%- for _lk in _lane_order -%}
         {%- set _grp = _board | selectattr('lane', 'equalto', _lk) | list -%}
         {%- if _grp -%}
-          {%- set _render_list.items = _render_list.items + [{'_heading': true, 'lane': _lk, 'count': _grp|length}] + _grp -%}
+          {#- Tier gate (docs/TIER_PREVIEW_PATTERN.md): "state and totals are free,
+              names are paid" — when gated, `_board` is only the preview slice, so
+              a raw _grp|length would undercount every heading. gate.stage_counts
+              carries the TRUE full-board count keyed the same way (scripts/
+              build_site.py::_us_board_stage_counts). -#}
+          {%- set _render_list.items = _render_list.items + [{'_heading': true, 'lane': _lk, 'count': (gate.stage_counts[_lk] if gate else _grp|length)}] + _grp -%}
         {%- endif -%}
       {%- endfor -%}
       {# 3. CATCH-ALL: cards whose lane is truthy but not in the canonical list (e.g. a future
@@ -15970,7 +15998,10 @@ html[data-theme="light"] :is(
       {%- for _sk in _stage_order -%}
         {%- set _grp = _board | selectattr('stage', 'equalto', _sk) | list -%}
         {%- if _grp -%}
-          {%- set _render_list.items = _render_list.items + [{'_heading': true, 'stage_hd': _sk, 'count': _grp|length}] + _grp -%}
+          {#- Tier gate: same honest-total fix as the lane path above — gate is
+              only set when `_board` is a preview slice, so _grp|length would
+              undercount. -#}
+          {%- set _render_list.items = _render_list.items + [{'_heading': true, 'stage_hd': _sk, 'count': (gate.stage_counts[_sk] if gate else _grp|length)}] + _grp -%}
         {%- endif -%}
       {%- endfor -%}
       {# CATCH-ALL, deliberately LAST (the lane path puts its strays first): a row with
@@ -15988,10 +16019,28 @@ html[data-theme="light"] :is(
       {%- set _ = _sc.update({'ran': _sc['ran'] + (_ran_rows|length)}) -%}
       {# ── stage filter chips (G0.6). Empty buckets render NO chip (China precedent) —
            a chip you can press into a void is worse than no chip. #}
-      <div class="pbf-bar" id="us-stage-filter" role="group" aria-label="Filter the board by entry stage">
+      {#- Tier gate (docs/TIER_PREVIEW_PATTERN.md, "Controls"): the filter bar only
+          ever filters the rows THIS document holds, and while gated that is the
+          preview slice — so a chip would appear to promise a full-board result it
+          cannot deliver. Baked in FULL (never omitted, hydration hands the SAME
+          bar a full board a moment later) and marked inert with one plain line
+          saying why, rather than shipping dead buttons with no explanation. -#}
+      {% if gate %}
+      <div class="us-gate-note" id="us-gate-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span class="l-en">Filtering runs across the full {{ gate.total }}-name board once you sign in. This preview shows the first {{ gate.preview }}.</span>
+        <span class="l-zh">登录后可对全部 {{ gate.total }} 只股票进行筛选。当前预览展示前 {{ gate.preview }} 只。</span>
+      </div>
+      {% endif %}
+      <div class="pbf-bar{% if gate %} gated{% endif %}" id="us-stage-filter" role="group" aria-label="Filter the board by entry stage">
         <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _board|length + _ran_rows|length }}</span></button>
-        {%- for _sk in _stage_order %}{% if _sc[_sk] %}
-        <button type="button" data-stagepick="{{ _sk }}" aria-pressed="false" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span><span class="pbf-n">{{ _sc[_sk] }}</span></button>
+        {#- Gated: a stage the 3-row preview happens not to contain still exists on
+            the withheld board, so bake its chip HIDDEN rather than omitting it —
+            hydration re-counts and reveals it. Omitting it outright would leave a
+            paid viewer with cards no chip can filter to. While gated the chip stays
+            hidden, so the bar never offers a control that would empty the board. -#}
+        {%- for _sk in _stage_order %}{% set _sk_full = (gate.stage_counts.get(_sk) or 0) if gate else 0 %}{% if _sc[_sk] or _sk_full %}
+        <button type="button" data-stagepick="{{ _sk }}"{% if not _sc[_sk] %} hidden{% endif %} aria-pressed="false" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span><span class="pbf-n">{{ _sc[_sk] }}</span></button>
         {% endif %}{% endfor %}
       </div>
       <span class="pbf-live" id="us-stage-status" aria-live="polite"></span>
@@ -15999,217 +16048,12 @@ html[data-theme="light"] :is(
       {% endif %}
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
-      {% for n in _render_list.items %}
-        {# heading sentinel — two idioms, one loop: `stage_hd` is the priority-order
-           path (G0.1), `lane` is the legacy lane partition an old artifact still gets. #}
-        {% if n.get('_heading') and n.get('stage_hd') %}
-        {% set _sk = n.stage_hd %}
-        <div class="nb-stage-hd sg-{{ _sk }}" data-stage="{{ _sk }}" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}">
-          <span class="sh-l"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span></span>
-          <span class="sh-n">{{ n.count }}</span>
-          <span class="sh-s"><span class="l-en">{{ _stage_sub_en[_sk] }}</span><span class="l-zh">{{ _stage_sub_zh[_sk] }}</span></span>
-        </div>
-        {% elif n.get('_heading') %}
-        <div class="nb-lane-hd">
-          <span class="l-en">{{ _lane_labels_en.get(n.lane, n.lane) }} · {{ n.count }}</span>
-          <span class="l-zh">{{ _lane_labels_zh.get(n.lane, n.lane) }} · {{ n.count }}</span>
-        </div>
-        {% else %}
-        {# ═══ PROPHET CARD (flagship redesign, operator-ratified 2026-07-21) ═══
-           The old multi-chip standout card is retired; every prior at-rest disclosure
-           survives DEMOTED, not deleted: verdict sentence + entry headline → verb-chip
-           tooltip; cautions / sector-stance / anti-chase / extension / earnings-window /
-           base-broken → the single ⚠N popover; Edge %ile meaning → Edge tooltip; tier/sig
-           badge + cycle detail → stock.html analyzer (one click). Builder fields consumed
-           unchanged — display-tier change only; lane grouping (R7) untouched. #}
-        {% set c = n.conviction %}
-        {% set es = n.entry_signal %}
-        {% set _is_triage = (c and c.get('score_edge') is not none and c.score_edge >= 80) and (es and es.get('status') in ['buy_now','partial']) %}
-        {% set _st = es.status if es else none %}
-        {% set _verb = 'buy' if _st in ('buy_now','partial')
-                 else ('near' if _st in ('buy_soon','await_confluence')
-                 else ('hold' if _st in ('hold','topping')
-                 else ('avoid' if _st in ('exit','avoid')
-                 else ('wait' if _st
-                 else ('near' if n.dir == 'up' else ('avoid' if n.dir == 'down' else 'wait')))))) %}
-        {% set _stage = {'bottoming':1,'recovery':2,'continuation':3,'trend':4}.get(n.get('lane') or '', 0) %}
-        {% set _vs = c.vol_squeeze if c else none %}
-        {% set _vs_fired = _vs and _vs.state in ['FIRED_UP','EXPANSION'] %}
-        {% set _entry_ok = not (es and es.get('status') in ['extended','topping','exit','avoid','blocked']) %}
-        {% set _fl = namespace(rows=[]) %}
-        {% if c %}{% for cau in (c.cautions or []) %}{% if cau != 'accounting watch' %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endif %}{% endfor %}{% endif %}
-        {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] %}{% endif %}
-        {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] %}{% endif %}
-        {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
-        {# ── COPY FENCE: the two rows ABOVE are the ext_z anti-chase read (px/SMA200
-             z-scored).  The "Blow-off risk" chip built in the marks row BELOW is a
-             SEPARATE, separately-measured construction (12-session ROC at its own
-             trailing p99 inside a burst-mover uptrend, engine/roc_blowoff.py), and the
-             battery's PM4 redundancy read puts max |rho| between them at 0.43 — so both
-             can legitimately fire on one card.  Because they can co-render, the blow-off
-             chip must NEVER use the bare word "Extended": that word already belongs to
-             the ext_z family here and in engine/stock_score.py's conviction verdict, and
-             two different measurements wearing one word is how a card starts arguing with
-             itself.  "Blow-off risk" / 冲顶风险 is the label; the numbers in its hover are
-             ITS OWN measured rates, never the ext_z ones. #}
-        {% set _es_chip = n.get('earnings_soon') %}
-        {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
-        {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a sector call.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。个股信号，非板块判断。')] %}{% endif %}
-        {% if n.get('hold') and n.hold.get('state') == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken: price hit the level that voids the thesis.', '筑底破位：价格已触及使论点失效的水平。')] %}{% endif %}
-        {# OEU M-PRO: display-tier options context, folded into the SAME ⚠ popover as every
-           other caution (no new chip, no layout change). Rows are pre-derived (en, zh) pairs
-           attached by build_site._attach_board_display_chips via lib/options_context.py; the
-           fence lives there — nothing here touches verb, stage, zone or edge. Names without
-           options coverage carry no key and the card renders exactly as before. #}
-        {% for _o in (n.get('options_flags') or []) %}{% set _fl.rows = _fl.rows + [(_o[0], _o[1])] %}{% endfor %}
-        {# ── MARKS ROW (priority engine): four categorically different facts in
-             descending weight — rank, recency, setup shape, theme. Built only on the
-             priority path; on the legacy path the lane IS the heading, so no chip.
-             `featured` supersedes the triage ring: one accent per card. #}
-        {% set _feat = _sg.any and n.get('featured') %}
-        {% set _mk = namespace(rows=[]) %}
-        {% if _sg.any %}
-          {# m5: the featured edge gate is "residual alpha at or above zero" — an ABSOLUTE
-             floor, not a rank against the rest of the board (engine/us_board_rank.py
-             ranking_block, featured_requirements). "Above the board's midpoint" described
-             a cross-sectional test the engine never runs, and on a weak board it would
-             have promised the opposite of what the gate actually does. #}
-          {# Blow-off risk FIRST: it is the only risk read in this row, and a marks row
-             wraps — buried behind a theme name it would be the one chip a reader misses.
-             Display-only (engine/us_board_rank.ZERO_SCORE_AUTHORITY carries blowoff_risk);
-             see the copy fence above for why it never says "Extended". #}
-          {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
-            'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
-            'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
-          {# THE EXTENSION CLAUSE IS CONDITIONAL, because the check it describes does not
-             always run.  Until 2026-08-08 a row with no extension reading was VETOED
-             out of featured, so "price is not extended" was true of every row that
-             carried this chip.  ANTICIPATION v1 replaced that veto with a disclosure
-             (engine/us_board_rank.py — an outage published a featured lane of 0 of 69),
-             so a featured row may now carry `ext_unknown: true` — and on that row the
-             old sentence is a verification the board never performed, asserted in the
-             one place a reader goes to find out what the gate tested.  Plain-word
-             printed null instead (DESIGN_DOCTRINE Law 5): the absence is stated on the
-             same tier as the claim it replaces, in the reader's own words, no slug.
-
-             THIS TIP IS STILL NOT RENDERED — `_prophet_card.html.j2` carries
-             `_MK_NOTIP = ('feat', 'new')` (operator 2026-08-05 — the featured explainer
-             covered neighbouring cards), so the string below is built and dropped on
-             the floor. It is kept correct rather than deleted because the suppression
-             is a layout decision that can be revisited, and a string that comes back
-             wrong is worse than one that comes back right. The visible carrier the
-             disclosure needs is the `nck` chip immediately below, NOT this tip. #}
-          {% set _xu = n.get('ext_unknown') %}
-          {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
-            'tip_en':'One of today’s featured names: the signal is fresh, the entry is open and stock strength is positive' ~ ('. We could not check how far it has already run tonight.' if _xu else ', with room left to run.') ~ ' Up to 12 names can be featured, with no more than four per sector.',
-            'tip_zh':'今日精选之一：信号新鲜、入场窗口已打开，个股强度为正' ~ ('。今晚无法检查它已经涨了多远。' if _xu else '，仍有上行空间。') ~ '精选区最多12只，每个板块不超过4只。'}] %}{% endif %}
-          {# ── THE PER-ROW CARRIER (ANTICIPATION v1 · the design call #4976 deferred).
-               ★ Featured is a claim about which checks this name passed; on an
-               `ext_unknown` row one of those checks never ran, and until now the only
-               place that said so was the board footnote's aggregate count. The reader
-               could learn that N of the picks were unmeasured but never WHICH — so the
-               mark goes on the card, immediately after the claim it qualifies. Adjacency
-               is the whole point: "★ Featured · Extended? Not checked" is one sentence.
-
-               FEATURED ROWS ONLY, deliberately, though the engine stamps `ext_unknown`
-               on every row. The extension reading feeds the featured gate; on a Wait or
-               Blocked card nothing on the card leans on it, so the mark would answer no
-               question the reader is asking (doctrine Law 1) while spending a slot in a
-               row whose median card shows one chip. It qualifies a claim, so it renders
-               only where the claim is.
-
-               SUPPRESSED WHEN THE WHOLE SHELF IS UNKNOWN — see `_xu_allfeat` above.
-
-               COPY: "Extended?" is the board's own word for this measurement (the
-               footnote below says "price not extended"), and the question mark does the
-               work no adjective can — it says the matter is open, so the chip can be
-               neither read as "this name IS extended" nor as an all-clear. Question-as-
-               label is ratified house case law (DESIGN_DOCTRINE §7, census-distilled
-               patterns). It must NOT borrow the blow-off chip's vocabulary or hue: that
-               is a different measurement with its own rates, and the copy fence above
-               keeps the two apart in both directions. #}
-          {% if _feat and _xu and not _xu_allfeat %}{% set _mk.rows = _mk.rows + [{'k':'nck','en':'Extended? Not checked','zh':'涨过头？未检查',
-            'tip_en':'One of the checks behind ★ Featured did not run for this name tonight: whether price has already run too far to be worth buying here. No reading came through, so nothing was scored — an absence, not a finding that it has. Everything else the shelf tests was scored and passed: fresh signal, entry window open, edge above zero. Tonight, judge the run-up off the chart above yourself.',
-            'tip_zh':'「★ 精选」背后有一项检查今晚没能对这只股票完成：价格是不是已经涨过头、现在买不划算。今晚没取到读数，这一条就没参与判定 —— 是「没查」，不是「查出来涨过头了」。其余几项都已判定并通过：信号新鲜、入场窗口已打开、优势为正。今晚这一项，请自己看上面的走势图判断。'}] %}{% endif %}
-          {% if n.get('new') %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
-            'tip_en':'This signal fired in tonight’s run — the name was not on the board yesterday.',
-            'tip_zh':'该信号在今晚这一轮才触发 — 昨天不在榜上。'}] %}{% endif %}
-          {# W-L1 `Adjusted` (spec §2 C, §4.3, §6.4) — the receipt of a name that MOVED when
-             the overnight pass countersigned last evening's board. Sits with `New` because
-             both are recency-class facts ("what changed since you last looked"), ahead of
-             setup shape and theme. It is the quietest chip in the row by design and by hue.
-             `_bs_adj` is the publish-together fence: the mark cannot render unless the
-             receipt line it belongs to rendered, so a reader never meets a per-card delta
-             with no line explaining what the delta is against. #}
-          {% if _bs_adj and n.get('adjusted') %}{% set _mk.rows = _mk.rows + [{'k':'adj','en':'Adjusted','zh':'已调整',
-            'tip_en':'The overnight pass changed something on this name after last evening’s board — most often the entry range or where it sits in the order. The card already shows the updated numbers.',
-            'tip_zh':'隔夜复核后，这只股票有变动 —— 多为入场区间或排序位置。卡片上显示的已是更新后的数值。'}] %}{% endif %}
-          {% if n.get('theme_confirmed') %}{% set _mk.rows = _mk.rows + [{'k':'warm','en':'Theme just turned','zh':'主题刚转向',
-            'tip_en':'The stock’s own signal is older, but the basket it belongs to only just turned up. Context for why it may keep working — never a reason to chase.',
-            'tip_zh':'个股信号本身较早，但其所属篮子刚刚转强。这解释了它为何可能延续 — 但绝不是追高的理由。'}] %}{% endif %}
-          {# The `watch` lane is deliberately NOT chipped here.  Every other lane value
-             names the SHAPE of the setup; `watch` names its TIMING — and timing is now
-             the stage bucket's job.  Printed as a chip it put two stances on one card:
-             a Live-now featured pick reading "★ Featured · Watch". #}
-          {% if n.get('lane') and n.lane != 'watch' %}{% set _mk.rows = _mk.rows + [{'k':'lane',
-            'en':_lane_labels_en.get(n.lane, n.lane), 'zh':_lane_labels_zh.get(n.lane, n.lane),
-            'tip_en':'The shape of the setup: bottoming = turning up off a base · continuation = an existing uptrend resuming · trend / recovery = further along. It groups risk, it does not rank the name.',
-            'tip_zh':'形态类型：筑底＝自底部转强 · 延续＝原有上升趋势重启 · 趋势／复苏＝走得更远。它用于摆放风险，不决定排名。'}] %}{% endif %}
-          {% if n.get('theme') and n.theme.get('name') %}{% set _mk.rows = _mk.rows + [{'k':'theme',
-            'en':n.theme.name, 'zh':(n.theme.get('name_zh') or n.theme.name),
-            'tip_en':'This stock belongs to a theme that is strengthening. Use it to understand the story; it does not change this card’s Priority.',
-            'tip_zh':'该股属于正在转强的主题。可用来理解背景，但不会改变卡片的优先级。'}] %}{% endif %}
-        {% endif %}
-        {# ── Priority score in the Edge slot (CN cn_prophet_v2 precedent, china.html.j2).
-             Rows without prophet.score keep today's conviction-percentile "Edge" display
-             exactly as-is — the label, the value and the tooltip all fall back together,
-             so a mixed artifact never shows a Priority label over an Edge number. #}
-        {% set _prs = (n.get('prophet') or {}).get('score') %}
-        {% set _prs = _prs if (_prs is number) else none %}
-        {# `none` on the legacy path so an old artifact renders byte-identically;
-           `[]` on the priority path so even an unmarked card reserves its slot and the
-           tracker/zone rows stay aligned across a grid row. #}
-        {% set _mk_slot = _mk.rows if _sg.any else none %}
-        {% set _bz = es.buy_zone if es else none %}
-        {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
-        {# ⚡ fresh-trigger chip: kind from the setups row's own signal tier (T3 = imminent,
-           else fired). Tips are plain strings (attribute-safe — no t() in attrs). The verb
-           stays the ruling stance; the tip says so for the Wait+⚡ case. #}
-        {% set _tsr = _trg_map.get(n.ticker) %}
-        {% set _tsg = (_tsr.get('signal') or {}) if _tsr else {} %}
-        {% set _trg_kind = ('imminent' if _tsg.get('tier_cascade') == 'T3' else 'fired') if _tsr else none %}
-        {% set _trg_prov = ' Provisional: projected off an incomplete bar — about 1 in 10 of these vanish when the bar completes.' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
-        {% set _trg_prov_zh = '（暂定：基于未完成的K线推算 — 约十分之一会在K线完成后消失。）' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
-        {% set _trg_tip_en = ('Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don\'t chase.') if _trg_kind == 'fired' else ('Entry trigger is close — it should fire within the next day or two.' ~ _trg_prov ~ ' The main chip still rules the stance.') %}
-        {% set _trg_tip_zh = ('新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。') if _trg_kind == 'fired' else ('入场触发快到了 — 预计一两天内触发。' ~ _trg_prov_zh ~ '主标签仍然是最终判断。') %}
-        {{ pv.pv_card({
-          'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
-          'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
-          'price_txt': ('$' ~ ('%.2f'|format(n.price))) if n.get('price') is not none else none,
-          'show_change': true,
-          'verb': _verb,
-          'edge': (('%.0f'|format(_prs)) if _prs is not none
-                   else (c.score_edge if (c and c.score_edge is defined and c.score_edge is not none) else none)),
-          'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
-          'edge_label_zh': ('优先级' if _prs is not none else '优势'),
-          'edge_tip_en': ('Priority (0–100) ranks how ready this setup is today. Higher combines a fresher signal, a better entry, room to run and stronger stock quality. It is not a win probability.' ~ _rw_en
-                          if _prs is not none
-                          else 'Edge (0–100) compares this stock with the rest of the market using stock selection, entry and quality. Higher is stronger; it is not a win rate.'),
-          'edge_tip_zh': ('优先级（0–100）表示这个形态今天有多接近可操作。数值越高，通常意味着信号更新、入场更好、上行空间更大、个股质量更强。它不是胜率。' ~ _rw_zh
-                          if _prs is not none
-                          else '强度（0–100）用选股、入场和质量与全市场比较。数值越高越强，但不是胜率。'),
-          'stage': _stage, 'spark': n.get('spark_svg'),
-          'zone_kind': _zk,
-          'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
-          'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
-          'date': (n.signal or {}).get('asof'),
-          'flags': _fl.rows, 'triage': (_is_triage and not _feat),
-          'featured': _feat, 'stage_key': (n.get('stage') if _sg.any else none),
-          'marks': _mk_slot,
-          'trigger': ({'kind': _trg_kind, 'tip_en': _trg_tip_en, 'tip_zh': _trg_tip_zh} if _trg_kind else none)
-        }) }}
-        {% endif %}{# end if not heading #}
-      {% endfor %}{# end for n in _render_list.items #}
+      {#- Tier gate (docs/TIER_PREVIEW_PATTERN.md): the card loop lives in
+         _us_board_cards.html.j2 now — ONE source for the shell (included here,
+         with-context) and the paid payload (rendered from build_site.py via
+         env.get_template(...).render(...) for the locked remainder), so the two
+         can never drift apart. -#}
+      {% with items=_render_list.items, sg_any=_sg.any, bs_adj=_bs_adj, xu_allfeat=_xu_allfeat, trg_map=_trg_map, rw_en=_rw_en, rw_zh=_rw_zh %}{% include "_us_board_cards.html.j2" %}{% endwith %}
       {% else %}
       {% for n in action_board.notable %}
         {% set _d = n.dir or 'caution' %}
@@ -16279,6 +16123,32 @@ html[data-theme="light"] :is(
       {% endfor %}
       {% endif %}
       </div>{# end .nbgrid #}
+      {#- ---- tier wall (gated build only) ----
+          The rows behind this panel are NOT in this document: they live in the
+          paid payload (site/premiumdata/us_stocks.json) the hydration script
+          below asks the server for. This panel is what an anonymous/Free
+          visitor keeps when that request comes back 401/403.
+          docs/TIER_PREVIEW_PATTERN.md reference implementation:
+          templates/special_situations.html.j2. -#}
+      {% if gate %}
+      <div class="us-tier-wall" id="us-tier-wall">
+        <div class="us-tw-h">
+          <span class="l-en">{{ gate.locked }} more names on tonight's board</span>
+          <span class="l-zh">今晚榜单还有 {{ gate.locked }} 只股票</span>
+        </div>
+        <div class="us-tw-p">
+          <span class="l-en">You're seeing the first {{ gate.preview }} of {{ gate.total }} names. Sign in to see the full ranked board, every entry stage, and the table view.</span>
+          <span class="l-zh">当前显示 {{ gate.total }} 只中的前 {{ gate.preview }} 只。登录后可查看完整排名榜单、全部入场阶段与表格视图。</span>
+        </div>
+        <div class="us-tw-acts">
+          <a class="us-tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
+          <span class="us-tw-note">{{ t('7-day Pro trial · cancel anytime', 'Pro 7 天试用 · 随时取消') }}</span>
+        </div>
+        <div class="us-tw-signed" id="us-tw-signin" hidden>
+          <a href="#" data-act="signin">{{ t('Already a member? Sign in', '已是会员？登录') }}</a>
+        </div>
+      </div>
+      {% endif %}
       {# ═══ PASSED ON TONIGHT (ANTICIPATION §6.9 R5) — the per-name "why not" shelf.
            BELOW the plans, never between them: the cards are what to act on, this is the
            accounting for everything the same intake looked at and put down. A closed
@@ -19267,9 +19137,7 @@ function initStockTableView(){
   var dataEl = document.getElementById('us-stocktable-data');
   if (!dataEl) return;  /* no data — safe no-op */
 
-  window.USStockTable = { _setView: applyView };
-
-  StockTable.init({
+  var STINIT = {
     dataId: 'us-stocktable-data',
     containerId: 'us-stocktable-wrap',
     market: 'us',
@@ -19277,7 +19145,28 @@ function initStockTableView(){
     columns: cols,
     optionLabels: { lane: LANE_LABELS, sector: SECTOR_LABELS },
     searchPlaceholder: ['Search name…','搜索名称…'],
-  });
+  };
+
+  /* Tier gate (docs/TIER_PREVIEW_PATTERN.md): merges the hydrated payload's
+     `rows` (same flat schema this data element already carries — see
+     scripts/build_site.py::_us_board_row_flat) into #us-stocktable-data and
+     re-runs StockTable.init so the table view picks up the full board. No-op
+     on a bad/empty payload — the caller (the hydrate script below) already
+     verified the fetch succeeded before calling this. */
+  function mergeRows(newRows){
+    if (!Array.isArray(newRows) || !newRows.length) return;
+    try {
+      var raw = JSON.parse(dataEl.textContent || dataEl.innerText || '{}');
+      raw.rows = (raw.rows || []).concat(newRows);
+      dataEl.textContent = JSON.stringify(raw);
+    } catch (e) { return; }
+    StockTable.init(STINIT);
+    applyView(currentView);
+  }
+
+  window.USStockTable = { _setView: applyView, _mergeRows: mergeRows };
+
+  StockTable.init(STINIT);
 
   /* restore persisted view */
   applyView(currentView);
@@ -19289,6 +19178,125 @@ if (document.readyState === 'loading') {
 }
 })();
 </script>
+{% if gate %}
+{#- ── tier gate — attempt-hydrate (docs/TIER_PREVIEW_PATTERN.md) ──────────────
+   On the gated build this document holds only the preview slice; the rest of
+   the board lives at GATE.payload, which config/site_access.yml enforces as
+   Essential+ (premium.enforced_early) regardless of PAYWALL_ENABLED. So the
+   SERVER decides who sees the desk — nothing here is load-bearing, we simply
+   ask and keep the wall when the answer is 401/403/offline. Idiom copied from
+   templates/confluence_screener.html.j2:380-420,509-541 and
+   templates/special_situations.html.j2 (the pattern's reference implementation). -#}
+<script>
+(function(){
+  'use strict';
+  var GATE = {{ gate | tojson }};
+  if (!GATE || !GATE.payload) return;
+
+  /* Session trampoline: the shared cookie carries a ~1h access token, so a
+     long-idle member can be signed in with a token the server will reject.
+     getSession() refreshes and rewrites the cookie before we ask (same fix as
+     the onboarding wall, PR #3454). No-op when signed out. */
+  function freshSession(){
+    try{
+      if (window.MDXAuth && window.MDXAuth.client && window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client().then(function(sb){ return sb.auth.getSession(); }).catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js is deferred, so MDXAuth may not exist yet while this inline
+     script runs. Wait for its first auth broadcast, with a timeout so a
+     missing/broken auth layer still lets the request through (the server
+     re-decides regardless). */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if (done) return; done = true; resolve(); }
+      if (window.MDXAuth){ go(); return; }
+      window.addEventListener('mdx-auth', go, { once: true });
+      setTimeout(go, 3000);
+    });
+  }
+
+  function hydrate(payload){
+    if (!payload || payload.schema !== 'tier_payload.v1' || payload.page !== 'us_stocks'){
+      throw new Error('invalid payload');
+    }
+    var grid = document.querySelector('#us-standouts .nbgrid');
+    if (grid && payload.cards_html) grid.insertAdjacentHTML('beforeend', payload.cards_html);
+    if (Array.isArray(payload.rows) && payload.rows.length &&
+        window.USStockTable && window.USStockTable._mergeRows){
+      window.USStockTable._mergeRows(payload.rows);
+    }
+    var wall = document.getElementById('us-tier-wall');
+    if (wall) wall.remove();
+    var note = document.getElementById('us-gate-note');
+    if (note) note.remove();
+    var bar = document.getElementById('us-stage-filter');
+    if (bar){ bar.classList.remove('gated'); recountStageChips(bar); }
+  }
+
+  /* The chips were baked from the preview slice, which is honest while the bar
+     is inert. Hydration makes it interactive over the WHOLE board, so the
+     numbers have to be re-derived or they state the same defect the baked
+     counts exist to avoid ("a filter chip whose number disagrees with what
+     filtering shows is a defect"). Count the very elements the data-stagef CSS
+     acts on — [data-stage] inside #us-standouts, minus the stage HEADINGS,
+     which carry data-stage too — so the chip can never disagree with the
+     filtered result, whatever the card markup later becomes. */
+  function recountStageChips(bar){
+    var box = document.getElementById('us-standouts');
+    if (!box) return;
+    var cards = box.querySelectorAll('[data-stage]:not(.nb-stage-hd)');
+    var byStage = {}, total = 0;
+    for (var i = 0; i < cards.length; i++){
+      var sk = cards[i].getAttribute('data-stage') || '';
+      if (!sk) continue;
+      byStage[sk] = (byStage[sk] || 0) + 1;
+      total += 1;
+    }
+    var btns = bar.querySelectorAll('button[data-stagepick]');
+    for (var j = 0; j < btns.length; j++){
+      var pick = btns[j].getAttribute('data-stagepick');
+      var slot = btns[j].querySelector('.pbf-n');
+      if (!slot) continue;
+      var n = pick === 'all' ? total : (byStage[pick] || 0);
+      slot.textContent = String(n);
+      /* Chips for stages absent from the preview were baked hidden; reveal the
+         ones the withheld rows just filled, and keep any that are still empty
+         hidden rather than offering a control that filters to nothing. */
+      if (pick !== 'all') btns[j].hidden = (n === 0);
+    }
+  }
+
+  whenAuthSettled()
+    .then(freshSession)
+    .then(function(){
+      return fetch(GATE.payload, { credentials: 'same-origin', cache: 'no-store' });
+    })
+    .then(function(r){ if (!r || !r.ok) throw new Error('locked'); return r.json(); })
+    .then(hydrate)
+    .catch(function(){
+      /* Locked (or offline): the wall stays exactly as rendered. Offer
+         sign-in when there is no session at all — a member on a fresh
+         browser would otherwise only see an upgrade CTA. */
+      var si = document.getElementById('us-tw-signin');
+      var signedIn = false;
+      try{ signedIn = !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }catch(e){}
+      if (si && !signedIn){
+        si.hidden = false;
+        var a = si.querySelector('[data-act="signin"]');
+        if (a) a.addEventListener('click', function(ev){
+          ev.preventDefault();
+          try{ window.MDXAuth.open('signin'); }catch(e2){ location.href = 'plans.html'; }
+        });
+      }
+    });
+})();
+</script>
+{% endif %}
 {% endif %}
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>

@@ -4757,6 +4757,239 @@ def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
         return None
 
 
+# ── US Prophet board tier gate (docs/TIER_PREVIEW_PATTERN.md) ──────────────────
+# us_stocks.html server-rendered ALL of us_standouts.buy into #us-stocktable-data
+# and the .nbgrid card grid while templates/tier_preview.js only capped rows
+# CLIENT-SIDE — the whole ranked board was one view-source away from an anonymous
+# visitor. The fix follows the ratified split: the shell ships only
+# `preview_rows` (system order preserved, never resorted — this board is a single
+# confluence-ranked feed like the ETF board, not a newest-first queue), and the
+# withheld remainder renders into site/premiumdata/us_stocks.json from the SAME
+# card partial (templates/_us_board_cards.html.j2) the shell includes, so the two
+# can never drift apart. Reference: _etf_gated/_write_etf_payload above.
+
+US_PAYLOAD_DIR = "premiumdata"
+US_PAYLOAD_NAME = "us_stocks.json"
+US_PAYLOAD_URL = f"/{US_PAYLOAD_DIR}/{US_PAYLOAD_NAME}"
+
+# The two heading vocabularies templates/dashboard.html.j2's `_render_list`
+# construction can group by — priority `stage` (G0.1, the artifact's newer
+# shape) or legacy `lane` (an older artifact takes this path when no row
+# carries `stage`). See dashboard.html.j2:15966-15980 (stage) and
+# :15861-15880 (lane). Only one path is active per build, but stage_counts
+# below computes both so the gate dict stays correct either way.
+_US_STAGE_KEYS = ["live", "setting_up", "ran", "basing", "blocked"]
+_US_LANE_KEYS = ["bottoming", "continuation", "trend", "recovery", "watch"]
+
+# The exact lane -> flat "stage" mapping #us-stocktable-data emits
+# (dashboard.html.j2:15797-15823) — NOT the same vocabulary as row.get('stage')
+# above (that is the priority-engine bucket; this is the JS table's own
+# ENTRY/RIPENING/RAN_LATE grouping). Kept identical so a payload row merges into
+# stocktable.js with no JS change.
+_US_LANE_TO_TABLE_STAGE = {
+    "bottoming": "ENTRY", "continuation": "ENTRY", "trend": "ENTRY",
+    "recovery": "RIPENING", "watch": "RAN_LATE",
+}
+
+
+def _us_board_gate_cfg() -> dict:
+    """The US board's tier-gate switch, from config.yml (`us_board_gate`).
+    A config read must NEVER fail the render — mirrors `_etf_gated()`."""
+    try:
+        cfg = config.load().get("us_board_gate") or {}
+        return {"gated": bool(cfg.get("gated", False)),
+                "preview_rows": int(cfg.get("preview_rows") or 3)}
+    except Exception:  # noqa: BLE001
+        return {"gated": False, "preview_rows": 3}
+
+
+def _us_board_stage_counts(full_buy: list[dict]) -> dict:
+    """TRUE counts over the FULL board (never the sliced preview), keyed exactly
+    the way the template groups headings on both paths it can take. Used so a
+    gated shell's heading counts ("Live now · 12") stay honest even though only
+    the preview slice of cards renders under them (docs/TIER_PREVIEW_PATTERN.md:
+    "state and totals are free, names are paid")."""
+    counts = {sk: 0 for sk in _US_STAGE_KEYS}
+    counts.update({lk: 0 for lk in _US_LANE_KEYS})
+    for r in full_buy:
+        sk = r.get("stage")
+        if sk in counts:
+            counts[sk] += 1
+        lk = r.get("lane")
+        if lk in counts:
+            counts[lk] += 1
+    return counts
+
+
+def _us_board_group_items(rows: list[dict], sg_any: bool, stage_counts: dict) -> list[dict]:
+    """Group `rows` into the same heading-sentinel + card list shape
+    `_render_list.items` builds in dashboard.html.j2 (the priority `stage_hd`
+    path at :15966-15980 when `sg_any`, else the legacy `lane` path at
+    :15837-15880), so _us_board_cards.html.j2 renders identically whichever side
+    of the wall it came from. Heading `count` is the TRUE full-board count
+    (`stage_counts`), never `len(group)` here — this only ever groups the LOCKED
+    remainder, so a raw length would undercount every bucket."""
+    items: list[dict] = []
+    if sg_any:
+        for sk in _US_STAGE_KEYS:
+            grp = [r for r in rows if r.get("stage") == sk]
+            if grp:
+                items.append({"_heading": True, "stage_hd": sk, "count": stage_counts.get(sk, len(grp))})
+                items.extend(grp)
+        for r in rows:
+            if r.get("stage") not in _US_STAGE_KEYS:
+                items.append(r)
+    else:
+        for r in rows:
+            if not r.get("lane"):
+                items.append(r)
+        for lk in _US_LANE_KEYS:
+            grp = [r for r in rows if r.get("lane") == lk]
+            if grp:
+                items.append({"_heading": True, "lane": lk, "count": stage_counts.get(lk, len(grp))})
+                items.extend(grp)
+        for r in rows:
+            if r.get("lane") and r.get("lane") not in _US_LANE_KEYS:
+                items.append(r)
+    return items
+
+
+def _split_us_board(us_standouts: "dict | None", preview_rows: int, *, gated: bool = True):
+    """Tier-preview split for the US Prophet board.
+
+    `gated` is the caller-supplied switch (read once via _us_board_gate_cfg() in
+    main() and threaded through) rather than re-read from config.yml here — this
+    keeps the split itself a pure function of its arguments, so a test can
+    exercise both branches without monkeypatching config.load().
+
+    Returns (shell_su, gate, locked_rows):
+      shell_su    — a SHALLOW COPY of us_standouts with `buy` sliced to the first
+                    `preview_rows` entries (system order preserved). NEVER the
+                    original object/dict — vm["us_standouts"] is shared with
+                    other page renders (macro.html).
+      gate        — {tier, payload, preview, locked, total, stage_counts} when
+                    gated and there is a board to split, else None.
+      locked_rows — the withheld remainder of `buy`.
+    """
+    if not gated or not us_standouts or not us_standouts.get("buy"):
+        return us_standouts, None, []
+    full_buy = us_standouts["buy"]
+    preview_n = max(0, preview_rows)
+    preview = full_buy[:preview_n]
+    locked = full_buy[preview_n:]
+    if not locked:
+        # Nothing withheld (board smaller than the preview cap) — ship it whole,
+        # same as the ungated path, rather than baking a wall over nothing.
+        return us_standouts, None, []
+    shell_su = dict(us_standouts)
+    shell_su["buy"] = preview
+    gate = {
+        "tier": "essential",  # config/site_access.yml premium.default_tier
+        "payload": US_PAYLOAD_URL,
+        "preview": len(preview),
+        "locked": len(locked),
+        "total": len(full_buy),
+        "stage_counts": _us_board_stage_counts(full_buy),
+    }
+    return shell_su, gate, locked
+
+
+def _us_board_row_flat(n: dict) -> dict:
+    """Same flat key schema #us-stocktable-data emits (dashboard.html.j2:
+    15797-15823, including the lane->stage mapping dict), so a payload row
+    merges into stocktable.js with no JS change."""
+    conviction = n.get("conviction") or {}
+    signal = n.get("signal") or {}
+    entry_signal = n.get("entry_signal") or {}
+    return {
+        "ticker": n.get("ticker"),
+        "name": n.get("name"),
+        "sector": n.get("sector") or "",
+        "lane": n.get("lane") or "",
+        "stage": _US_LANE_TO_TABLE_STAGE.get(n.get("lane") or "watch", "ENTRY"),
+        "price": n.get("price"),
+        "conviction_score": conviction.get("score"),
+        "alpha": n.get("alpha"),
+        "off_high": n.get("off_high"),
+        "factor_z": n.get("factor_z"),
+        "sue_z": n.get("sue_z"),
+        "insider_buyers": n.get("insider_buyers"),
+        "sig_tier": signal.get("tier_cascade") or "",
+        "entry_status": entry_signal.get("status") or "",
+        "days_since_signal": n.get("days_since_signal"),
+        "dir": n.get("dir") or "",
+    }
+
+
+def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
+                       locked_rows: list[dict], us_standouts: "dict | None",
+                       top_setups: "dict | None", built: str) -> None:
+    """Render the paid remainder of the US Prophet board into
+    site/premiumdata/us_stocks.json.
+
+    Written on EVERY build — including the ungated one, where it is an empty
+    payload — so flipping `us_board_gate.gated` off never strands a readable
+    full board at a path the page has stopped asking for.
+
+    `cards_html` is rendered from the SAME partial the shell includes
+    (_us_board_cards.html.j2), so the hydrated page and the server-rendered one
+    cannot drift apart.
+    """
+    path = site / US_PAYLOAD_DIR / US_PAYLOAD_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if gate is None:
+        payload = {"schema": "tier_payload.v1", "page": "us_stocks", "gated": False,
+                   "built": built, "cards_html": "", "rows": []}
+    else:
+        full_buy = (us_standouts or {}).get("buy") or []
+        # sg_any/bs_adj/xu_allfeat/trg_map mirror dashboard.html.j2's own derivation
+        # of `_sg.any` (:15916-15918), `_bs_adj` (:15698), `_xu_allfeat`
+        # (:15915-15919) and `_trg_map` (:15862) so the payload cards carry the
+        # same chips/marks the shell's cards would have.
+        sg_any = any(r.get("stage") for r in full_buy)
+        bs = (us_standouts or {}).get("board_state_view") or {}
+        bs_adj = bs.get("note") == "confirmed"
+        feat = [r for r in full_buy if r.get("featured")]
+        xu_allfeat = bool(feat) and all(r.get("ext_unknown") for r in feat)
+        trg_map: dict = {}
+        if top_setups and top_setups.get("buy"):
+            for r in top_setups["buy"]:
+                if r.get("ticker"):
+                    trg_map[r["ticker"]] = r
+        # rw_en/rw_zh mirror dashboard.html.j2's M1 runway-coverage receipt
+        # (:15952-15960) — board-level (from us_standouts.ranking), not
+        # row-derived, so it is identical on both sides of the wall.
+        _rwc = (((us_standouts or {}).get("ranking") or {}).get("component_coverage") or {}).get("runway")
+        _rw_n = (_rwc.get("n") or 0) if _rwc else 0
+        _rw_dead = not (_rwc and (_rwc.get("nonzero") or 0) > 0)
+        rw_en = ((" Room to run could not be checked for "
+                  + (("all " + str(_rw_n) + " names") if _rw_n else "these names")
+                  + " tonight, so that part adds no points.") if _rw_dead else "")
+        rw_zh = (("今晚无法检查"
+                  + (("全部 " + str(_rw_n) + " 只股票") if _rw_n else "这些股票")
+                  + "的上行空间，因此这一项不加分。") if _rw_dead else "")
+        items = _us_board_group_items(locked_rows, sg_any, gate["stage_counts"])
+        try:
+            cards_html = env.get_template("_us_board_cards.html.j2").render(
+                items=items, sg_any=sg_any, bs_adj=bs_adj, xu_allfeat=xu_allfeat,
+                trg_map=trg_map, rw_en=rw_en, rw_zh=rw_zh)
+        except Exception as e:  # noqa: BLE001 — payload must still write with an
+            # honest empty card block rather than aborting the whole build.
+            log.error("us_stocks: locked card render failed (%s)", e)
+            cards_html = ""
+        payload = {
+            "schema": "tier_payload.v1", "page": "us_stocks", "gated": True,
+            "required_tier": gate["tier"], "built": built,
+            "total": gate["total"], "preview": gate["preview"],
+            "locked": gate["locked"], "as_of": (us_standouts or {}).get("as_of") or "",
+            "cards_html": cards_html,
+            "rows": [_us_board_row_flat(n) for n in locked_rows],
+        }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    log.info("us_stocks: premium payload %s (%d locked rows)",
+              US_PAYLOAD_URL, len(locked_rows))
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -6037,8 +6270,20 @@ def main() -> int:
     log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
 
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
+    # Tier gate (docs/TIER_PREVIEW_PATTERN.md): _split_us_board NEVER mutates
+    # vm["us_standouts"] (shared with the macro.html render above/below) — the
+    # sliced shell and the `gate` dict are passed only into THIS render call via
+    # an overridden copy of vm, and the withheld remainder is written to
+    # site/premiumdata/us_stocks.json regardless of the switch (empty when off).
+    _us_gate_cfg = _us_board_gate_cfg()
+    _us_shell_su, _us_gate, _us_locked = _split_us_board(
+        vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+    _write_us_payload(env, site, _us_gate, locked_rows=_us_locked,
+                       us_standouts=vm.get("us_standouts"),
+                       top_setups=vm.get("top_setups"), built=generated)
     out_st = site / "us_stocks.html"
-    write_page(out_st, env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
+    write_page(out_st, env.get_template("dashboard.html.j2").render(
+        **{**vm, "us_standouts": _us_shell_su, "gate": _us_gate}, mode="stocks"))
     _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
@@ -6432,9 +6677,20 @@ def main() -> int:
                         vm["top_setups"] = json.loads(_setups_path.read_text())
                     except Exception:  # noqa: BLE001 — keep prior setups on parse error
                         pass
+                # Tier gate (docs/TIER_PREVIEW_PATTERN.md): the fresh board just
+                # replaced vm["us_standouts"] above, so re-split it and rewrite the
+                # payload from THIS generation — otherwise the re-render would bake
+                # the fresh board's full row set straight into the shell and
+                # silently reopen the leak on every one-build-lag refresh.
+                _us_shell_su2, _us_gate2, _us_locked2 = _split_us_board(
+                    vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+                _write_us_payload(env, site, _us_gate2, locked_rows=_us_locked2,
+                                   us_standouts=vm.get("us_standouts"),
+                                   top_setups=vm.get("top_setups"), built=generated)
                 _dash = env.get_template("dashboard.html.j2")
                 write_page(site / "macro.html", _dash.render(**vm, mode="macro"))
-                write_page(site / "us_stocks.html", _dash.render(**vm, mode="stocks"))
+                write_page(site / "us_stocks.html", _dash.render(
+                    **{**vm, "us_standouts": _us_shell_su2, "gate": _us_gate2}, mode="stocks"))
                 log.info(
                     "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
                     "(as_of %s -> %s, delayed %s -> %s)",
