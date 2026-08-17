@@ -41,7 +41,16 @@ changed:
   - path: agentos/decisions/DEC-PROPHET-V4-THEIA-SOURCE-RIGHTS.md
     what: new decision — default original-build ruling; licensed TIIC/TWI recorded as Chairman procurement option; no scraping
   - path: agentos/workstreams/WS-GMI-THEME-GRAPH.md
-    what: staleness fix from merged evidence only — blocked→active, W3A wave row added (pr 5718), transmission next_action updated to name the ThemeState merge-order ruling
+    what: staleness fix from merged evidence only — blocked→active, W3A wave row added (pr 5718), owns_paths added, transmission next_action updated to name the ThemeState merge-order ruling
+  - path: tests/test_agentos_status.py
+    what: >
+      CI heal owed by the GMI status flip — three contract tests built fixtures by
+      string-replacing the record's LITERAL "status: blocked" (a silent no-op once the
+      status legitimately changed, turning fail-closed assertions green-blind) and one
+      asserted the live record's blocked state as its blocked-parent case. Mutations are
+      now status-agnostic (re.sub on the status line) and the blocked parent is
+      SYNTHESIZED in the fixture copy. 41/41 pass on the branch; the same 3 failed
+      before the fix and pass on origin/main (attribution receipt).
 verified:
   - claim: fresh origin/main at execution is fc0557bb0873 (newer than Sol's 16874921e638)
     command: git fetch origin && git rev-parse origin/main
@@ -64,6 +73,9 @@ verified:
   - claim: agentos records validate
     command: python3 scripts/agentos.py validate
     result: exit 0 (run at packet completion; re-run before merge)
+  - claim: the ci-pack-0 red was caused by test-pinned GMI status literals, not the records themselves
+    command: python3 -m pytest tests/test_agentos_status.py -q (on branch pre-fix, on origin/main, and on branch post-fix)
+    result: pre-fix branch 3 failed/38 deselected; origin/main 3 passed; post-fix branch 41 passed
 unverified:
   - claim: root cause of run 31977372592 engine-job failure
     what_would_verify: that run's engine job logs (V4-A1 gate 1)
