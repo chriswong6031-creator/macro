@@ -62,6 +62,9 @@ def test_render_checkout_uses_a_shallow_blobless_partial_clone():
     assert checkout["with"]["filter"] == "blob:none"
     assert checkout["with"]["fetch-depth"] == 1
     assert checkout["with"]["persist-credentials"] is False
+    assert "token" not in checkout["with"], (
+        "checkout must not persist ADMIN_GH_TOKEN; the publish step owns the push identity"
+    )
     assert "sparse-checkout" not in checkout["with"], (
         "render builders require the complete current data/ and site/ tree"
     )
@@ -83,10 +86,21 @@ def test_render_publish_commits_from_index_to_avoid_promisor_blob_materializatio
     script = publish["run"]
 
     assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
-    assert publish["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert publish["env"]["ADMIN_GH_TOKEN"] == "${{ secrets.ADMIN_GH_TOKEN }}"
+    assert "GITHUB_TOKEN" not in publish.get("env", {})
+    assert "${{ github.token }}" not in publish.get("env", {}).values()
+    assert "ADMIN_GH_TOKEN is required to publish through the main freeze" in script
+    assert "printf 'x-access-token:%s' \"$ADMIN_GH_TOKEN\"" in script
+    assert "printf 'x-access-token:%s' \"$GITHUB_TOKEN\"" not in script
+    assert "github.token" not in script
+    assert "secrets.GITHUB_TOKEN" not in script
     assert "git config --local --unset-all http.https://github.com/.extraheader" in script
     assert "GIT_CONFIG_KEY_0=http.https://github.com/.extraheader" in script
     assert 'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"' in script
+    assert "unset ADMIN_GH_TOKEN GIT_AUTH" in script
+    assert "trap cleanup_publish_auth EXIT" in script
+    assert 'push_do origin "$PUBLISH_REF:refs/heads/main"' in script
+    assert "typically GH013 repository rules" in script
     assert "tree=$(git write-tree --missing-ok)" in script
     assert 'git commit-tree "$tree" -p "$parent"' in script
     assert 'git update-ref HEAD "$commit" "$parent"' in script

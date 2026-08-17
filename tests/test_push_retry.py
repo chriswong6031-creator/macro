@@ -1226,7 +1226,14 @@ def _lane_fixture(tmp_path: Path, rejects: int = 0, collision: bool = False):
     return bare, lane, stub, collision_paths
 
 
-def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool):
+def _run_lane(
+    block: str,
+    lane: Path,
+    stub: Path,
+    summary: Path,
+    render_ok: bool,
+    admin_token: str | None = "test-admin-token",
+):
     runner_temp = summary.parent / "runner-temp"
     runner_temp.mkdir(exist_ok=True)
     env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}",
@@ -1234,6 +1241,10 @@ def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool
            "GITHUB_ACTIONS": "true",
            "RUNNER_TEMP": str(runner_temp), "GITHUB_RUN_ID": "123",
            "GITHUB_RUN_ATTEMPT": "1"}
+    if admin_token:
+        env["ADMIN_GH_TOKEN"] = admin_token
+    else:
+        env.pop("ADMIN_GH_TOKEN", None)
     if render_ok:
         env["RENDER_OK"] = "1"
     else:
@@ -1263,7 +1274,68 @@ def test_render_lane_block_lands_the_render_over_a_racing_commit(tmp_path):
         "the step committed its dirty ledger write — only the pre-existing canonical data may remain"
     )
     assert "from=deadbeef" in log, "RENDER_OK=1 run did not stamp the from= watermark"
-    assert summary.read_text() == "", "a first-attempt win should stay out of the summary"
+    assert summary.read_text() == ""
+    extraheader = subprocess.run(
+        ["git", "-C", str(lane), "config", "--local", "--get",
+         "http.https://github.com/.extraheader"],
+        capture_output=True, text=True,
+    )
+    assert extraheader.returncode != 0, extraheader.stdout + extraheader.stderr
+
+
+def test_render_lane_fails_closed_without_admin_token(tmp_path):
+    """Protected main cannot be published with an empty admin PAT; do not fall back."""
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub, _ = _lane_fixture(tmp_path)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=True, admin_token=None)
+    assert r.returncode == 1, r.stdout + r.stderr
+    combined = r.stdout + r.stderr
+    assert "ADMIN_GH_TOKEN is required to publish through the main freeze" in combined
+    log = subprocess.run(
+        ["git", "-C", str(bare), "log", "--oneline", "-5", "main"],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    assert "render:" not in log
+    extraheader = subprocess.run(
+        ["git", "-C", str(lane), "config", "--local", "--get",
+         "http.https://github.com/.extraheader"],
+        capture_output=True, text=True,
+    )
+    assert extraheader.returncode != 0, extraheader.stdout + extraheader.stderr
+
+
+def test_render_lane_fails_immediately_on_ruleset_denial(tmp_path):
+    """GH013 is a deterministic identity rejection, not contention. Do not retry 20 times."""
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub, _ = _lane_fixture(tmp_path)
+    real_git = subprocess.run(["which", "git"], capture_output=True, text=True).stdout.strip()
+    (stub / "git").write_text(textwrap.dedent(f"""\
+        #!/usr/bin/env bash
+        if [ "$1" = "push" ]; then
+          echo "remote: error: GH013: Repository rule violations found for refs/heads/main." >&2
+          echo " ! [remote rejected] main -> main (push declined due to repository rule violations)" >&2
+          exit 1
+        fi
+        exec {real_git} "$@"
+        """))
+    (stub / "git").chmod(0o755)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=True)
+    assert r.returncode == 1, r.stdout + r.stderr
+    combined = r.stdout + r.stderr
+    assert "typically GH013 repository rules" in combined
+    assert "attempt 2/" not in combined
+    extraheader = subprocess.run(
+        ["git", "-C", str(lane), "config", "--local", "--get",
+         "http.https://github.com/.extraheader"],
+        capture_output=True, text=True,
+    )
+    assert extraheader.returncode != 0, extraheader.stdout + extraheader.stderr
 
 
 def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
