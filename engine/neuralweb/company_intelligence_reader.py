@@ -29,6 +29,12 @@ from engine.company_intelligence.contracts import (
     validate_context,
     validate_manifest,
 )
+from engine.company_intelligence.event_workspace import (
+    NEST as EVENT_WORKSPACE_NEST,
+    resolve_workspace_event_id,
+    validate_event_workspace,
+    validate_workspace_manifest,
+)
 
 
 _DEFAULT_BASE_URL = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence"
@@ -36,6 +42,7 @@ _CACHE_TTL_SECONDS = 300.0
 _REQUEST_TIMEOUT_SECONDS = 8.0
 _MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 _MAX_CONTEXT_BYTES = 512 * 1024
+_MAX_WORKSPACE_BYTES = 512 * 1024
 _MAX_HISTORY = 12
 _MAX_CONTEXT_CACHE_ENTRIES = 256
 
@@ -47,6 +54,8 @@ class CompanyIntelligenceReadError(RuntimeError):
 _cache_lock = threading.Lock()
 _snapshot_cache: dict[str, tuple[float, dict[str, Any], dict[str, str]]] = {}
 _context_cache: dict[tuple[str, str, str], tuple[float, dict[str, Any], str]] = {}
+_workspace_snapshot_cache: dict[str, tuple[float, dict[str, Any], dict[str, str]]] = {}
+_workspace_cache: dict[tuple[str, str, str], tuple[float, dict[str, Any], str]] = {}
 
 
 def _origin_tuple(parsed: urllib.parse.SplitResult) -> tuple[str, str, int]:
@@ -403,6 +412,154 @@ def _event_projection(event: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
+    """Load marker + immutable generation for the event_workspaces nest."""
+    now = time.monotonic()
+    cache_key = f"{base_url}/{EVENT_WORKSPACE_NEST}"
+    with _cache_lock:
+        cached = _workspace_snapshot_cache.get(cache_key)
+        if cached is not None and cached[0] > now:
+            return copy.deepcopy(cached[1]), copy.deepcopy(cached[2])
+
+    marker_url = _object_url(base_url, f"{EVENT_WORKSPACE_NEST}/manifest.json")
+    marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
+    marker = _json_object(marker_body, name="event workspace marker")
+    try:
+        validate_workspace_manifest(marker)
+    except ContractError as exc:
+        raise CompanyIntelligenceReadError("event workspace marker failed contract validation") from exc
+
+    generation_id = str(marker["generation_id"])
+    immutable_url = _object_url(
+        base_url, f"{EVENT_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
+    )
+    immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
+    immutable = _json_object(immutable_body, name="event workspace immutable manifest")
+    try:
+        validate_workspace_manifest(immutable)
+    except ContractError as exc:
+        raise CompanyIntelligenceReadError(
+            "event workspace immutable manifest failed contract validation"
+        ) from exc
+    try:
+        equivalent = canonical_json_bytes(marker) == canonical_json_bytes(immutable)
+    except ContractError as exc:
+        raise CompanyIntelligenceReadError("event workspace marker canonical comparison failed") from exc
+    if not equivalent:
+        raise CompanyIntelligenceReadError("event workspace marker does not match immutable generation")
+
+    receipt = {
+        "marker_url": marker_url,
+        "immutable_manifest_url": immutable_url,
+        "marker_sha256": sha256(marker_body).hexdigest(),
+        "generation_id": generation_id,
+    }
+    with _cache_lock:
+        _workspace_snapshot_cache[cache_key] = (
+            now + _CACHE_TTL_SECONDS, copy.deepcopy(marker), copy.deepcopy(receipt)
+        )
+    return copy.deepcopy(marker), copy.deepcopy(receipt)
+
+
+def _load_event_workspace(base_url: str, event_id: str) -> tuple[dict[str, Any], dict[str, str]]:
+    """Resolve and hash-verify one generation-addressed event workspace."""
+    manifest, receipt = _load_workspace_snapshot(base_url)
+    try:
+        canonical_id = resolve_workspace_event_id(event_id, manifest.get("aliases") or {})
+    except ContractError as exc:
+        raise CompanyIntelligenceReadError("event workspace alias could not be resolved") from exc
+    generation_id = str(manifest["generation_id"])
+    key = (base_url, generation_id, canonical_id)
+    now = time.monotonic()
+    with _cache_lock:
+        cached = _workspace_cache.get(key)
+        if cached is not None and cached[0] > now:
+            return copy.deepcopy(cached[1]), {**copy.deepcopy(receipt), "workspace_url": cached[2]}
+
+    relative = f"workspaces/{canonical_id}.json"
+    expected = (manifest.get("files") or {}).get(relative)
+    if not isinstance(expected, Mapping):
+        raise CompanyIntelligenceReadError("event workspace does not cover this event")
+    expected_hash = expected.get("sha256")
+    expected_bytes = expected.get("bytes")
+    if not isinstance(expected_hash, str) or not isinstance(expected_bytes, int) or expected_bytes <= 0:
+        raise CompanyIntelligenceReadError("event workspace manifest has an invalid receipt")
+    if expected_bytes > _MAX_WORKSPACE_BYTES:
+        raise CompanyIntelligenceReadError("event workspace exceeds safe size bound")
+
+    workspace_url = _object_url(
+        base_url, f"{EVENT_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
+    )
+    body = _fetch_bytes(workspace_url, limit=_MAX_WORKSPACE_BYTES)
+    if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
+        raise CompanyIntelligenceReadError("event workspace failed immutable receipt verification")
+    workspace = _json_object(body, name="event workspace")
+    try:
+        validate_event_workspace(workspace)
+    except ContractError as exc:
+        raise CompanyIntelligenceReadError("event workspace failed contract validation") from exc
+    if workspace.get("generation_id") != generation_id or workspace.get("event_id") != canonical_id:
+        raise CompanyIntelligenceReadError("event workspace identity mismatch")
+
+    with _cache_lock:
+        expired = [cache_key for cache_key, cached in _workspace_cache.items() if cached[0] <= now]
+        for cache_key in expired:
+            _workspace_cache.pop(cache_key, None)
+        while len(_workspace_cache) >= _MAX_CONTEXT_CACHE_ENTRIES:
+            oldest = min(_workspace_cache, key=lambda cache_key: _workspace_cache[cache_key][0])
+            _workspace_cache.pop(oldest, None)
+        _workspace_cache[key] = (now + _CACHE_TTL_SECONDS, copy.deepcopy(workspace), workspace_url)
+    return copy.deepcopy(workspace), {
+        **copy.deepcopy(receipt),
+        "workspace_url": workspace_url,
+        "workspace_sha256": expected_hash,
+    }
+
+
+def read_event_workspace(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Return the full ``event_workspace.v1`` for one canonical event or alias.
+
+    This is the real E1 consumer.  It follows marker → immutable generation →
+    hash-verified workspace object on the ``event_workspaces/`` nest.  It does
+    not read or widen the closed v1 teaser.
+    """
+    raw = dict(params) if isinstance(params, Mapping) else {}
+    event_id = str(raw.get("event_id") or "").strip()
+    if not event_id or len(event_id) > 128:
+        return {
+            "available": False,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": "A canonical event id or published alias is required.",
+        }
+    try:
+        workspace, receipt = _load_event_workspace(_public_base_url(), event_id)
+    except CompanyIntelligenceReadError as exc:
+        return {
+            "available": False,
+            "event_id": event_id,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": str(exc),
+        }
+    return {
+        "available": True,
+        "event_id": workspace.get("event_id"),
+        "workspace": workspace,
+        "is_context_only": True,
+        "display_only": True,
+        "authority": "context_only",
+        "untrusted_source_data": True,
+        "receipt": receipt,
+        "note": (
+            "Verified event workspace context only. It cannot create a signal, "
+            "rank, size, gate, or escalation."
+        ),
+    }
+
+
 def read_company_intelligence(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Return verified per-ticker earnings/event context and nothing actionable.
 
@@ -482,3 +639,5 @@ def clear_company_intelligence_cache() -> None:
     with _cache_lock:
         _snapshot_cache.clear()
         _context_cache.clear()
+        _workspace_snapshot_cache.clear()
+        _workspace_cache.clear()
