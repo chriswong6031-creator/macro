@@ -90,6 +90,7 @@ danger_areas:
   - "The four stage-derivation sites in dashboard.html.j2/us_board_rank.py — touching any one without B3's single contract recreates the drift."
   - "prophet_rescue budget semantics count attempts including runless POSTs; never dispatch over a queued/in-progress daily run."
   - "Never cancel production lanes (gh_quota_guard shape 6); a cancel is invisible to every staleness instrument."
+prs: [5832]
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
 ---

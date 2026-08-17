@@ -95,6 +95,7 @@ waves:
   - id: 0a
     title: "V4-0A — estate archaeology + architecture freeze (this packet)"
     status: in_progress
+    pr: 5832
   - id: 0b
     depends_on: [0a]
     title: "V4-0B — AgentOS reconciliation (records only, no code)"
