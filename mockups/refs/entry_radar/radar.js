@@ -179,7 +179,7 @@
           <span class="pv-axis">${t(C.life_axis)}</span>
           <span class="pv-chip er-lifechip ${r.unavailable ? "pv-chip--unav" : ""}">${esc(life)}</span>
         </span>
-        <span class="er-xchip" data-expert="${esc(r.expert)}" title="${esc(r.expert_id)}">
+        <span class="er-xchip" data-expert="${esc(r.expert)}">
           <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}
         </span>
       </div>
@@ -195,7 +195,9 @@
             <span class="pv-tk">${esc(r.ticker)}</span>
             <span class="pv-nm">${esc(name)}</span>
           </span>
-          <span class="pv-pri" title="${esc(t(C.pri_tip))}">
+          <span class="pv-pri" tabindex="0"
+            data-tip-t-en="${esc(C.pri_label.en)}" data-tip-t-zh="${esc(C.pri_label.zh)}"
+            data-tip-en="${esc(C.pri_tip.en)}" data-tip-zh="${esc(C.pri_tip.zh)}">
             <span class="pv-pril">${t(C.pri_label)}</span>
             <span class="pv-prin pv-prin--na" data-priority="accruing">—</span>
           </span>
@@ -412,4 +414,33 @@
     const first = document.querySelector(".er-drawer-btn");
     if (first) first.click();
   }
+
+  /* Sister lens: one language at a time. Never title= (house i18n law). */
+  const pop = document.createElement("div");
+  pop.className = "lens-pop";
+  pop.setAttribute("role", "tooltip");
+  document.body.appendChild(pop);
+  function lensShow(el) {
+    const zh = lang === "zh";
+    const title = el.getAttribute(zh ? "data-tip-t-zh" : "data-tip-t-en") || el.getAttribute("data-tip-t-en");
+    const body = el.getAttribute(zh ? "data-tip-zh" : "data-tip-en") || el.getAttribute("data-tip-en");
+    if (!body) return;
+    pop.innerHTML = (title ? `<div class="lens-ttl">${title}</div>` : "") +
+                    `<div class="lens-body">${body}</div>`;
+    const r = el.getBoundingClientRect();
+    pop.style.left = Math.max(10, Math.min(window.innerWidth - 312, r.left - 8)) + "px";
+    pop.style.top = (r.bottom + 8) + "px";
+    pop.classList.add("open");
+  }
+  function lensHide() { pop.classList.remove("open"); }
+  document.addEventListener("mouseover", (e) => {
+    const el = e.target.closest("[data-tip-en]"); if (el) lensShow(el);
+  });
+  document.addEventListener("mouseout", (e) => {
+    if (e.target.closest("[data-tip-en]")) lensHide();
+  });
+  document.addEventListener("focusin", (e) => {
+    const el = e.target.closest("[data-tip-en]"); if (el) lensShow(el);
+  });
+  document.addEventListener("focusout", lensHide);
 })();

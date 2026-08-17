@@ -109,9 +109,17 @@ MUTATIONS = [
      '            <span class="pv-prin pv-prin--na" data-priority="accruing">${t(C.pri_accruing)}</span>',
      "R23"),
     ("M24-c2-overlay", "radar.js",
-     '        <span class="er-xchip" data-expert="${esc(r.expert)}" title="${esc(r.expert_id)}">\n          <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}\n        </span>\n      </div>',
-     '        <span class="er-xchip" data-expert="${esc(r.expert)}" title="${esc(r.expert_id)}">\n          <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}\n        </span>\n        ${v ? `<span class="pv-mk-i" data-c2-variant="${esc(r.c2_variant)}">${esc(t(v))}</span>` : ""}\n      </div>',
+     '        <span class="er-xchip" data-expert="${esc(r.expert)}">\n          <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}\n        </span>\n      </div>',
+     '        <span class="er-xchip" data-expert="${esc(r.expert)}">\n          <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}\n        </span>\n        ${v ? `<span class="pv-mk-i" data-c2-variant="${esc(r.c2_variant)}">${esc(t(v))}</span>` : ""}\n      </div>',
      "R25c"),
+    ("M25-overlay-nowrap", "radar.css",
+     ".pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; max-width: calc(100% - 122px); }",
+     ".pv-ov.pv-ovl { flex-wrap: nowrap; max-width: calc(100% - 96px); }",
+     "R25e"),
+    ("M26-title-zh", "radar.js",
+     '          <span class="pv-pri" tabindex="0"',
+     '          <span class="pv-pri" title="${esc(t(C.pri_tip))}" tabindex="0"',
+     "R26"),
 ]
 
 

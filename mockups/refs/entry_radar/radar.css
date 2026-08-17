@@ -424,8 +424,8 @@ html[data-theme="light"] .pvcard.pv-featured {
   color: var(--muted); opacity: .72; line-height: 1;
 }
 .pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; }
-.pv-ov.pv-ovl { flex-wrap: nowrap; max-width: calc(100% - 96px); }
-.pv-ov.pv-ovr { max-width: 40%; }
+.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; max-width: calc(100% - 122px); }
+.pv-ov.pv-ovr { max-width: 60%; }
 .pv-ovl { left: 9px; }
 .pv-ovr { right: 9px; }
 
@@ -492,6 +492,23 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pv-pri { display: flex; align-items: baseline; gap: 4px; flex: none; cursor: help; }
+[data-tip-en] { cursor: help; }
+.pv-pri:focus-visible, [data-tip-en]:focus-visible {
+  outline: 2px solid var(--link); outline-offset: 2px;
+}
+
+/* Sister lens popover — Prophet board.css @ d540f493a097, copied not reinvented. */
+.lens-pop {
+  position: fixed; z-index: 999; width: min(300px, calc(100vw - 24px));
+  border-radius: 15px; background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: var(--popover-shadow);
+  opacity: 0; pointer-events: none; transform: translateY(6px) scale(.97);
+  transition: opacity .12s ease, transform .12s ease; text-align: left;
+}
+.lens-pop.open { opacity: 1; transform: none; }
+.lens-ttl { display: block; padding: 13px 15px 0; font: 700 12.5px/1.38 var(--font-ui); color: var(--text); }
+.lens-body { padding: 6px 15px 13px; font: 450 12.5px/1.6 var(--font-ui); color: color-mix(in srgb, var(--text) 88%, var(--muted)); }
 .pv-pril { font-size: 8px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .pv-prin { font-size: 11px; font-weight: 800; color: var(--muted); line-height: 1; letter-spacing: .04em; }
 .pv-prin--na { color: var(--muted); font-weight: 700; }
@@ -596,7 +613,7 @@ html[data-chrome="0"] .harness { display: none; }
   .bh { padding: 10px 0 0; }
   .bh-title { font-size: 19px; }
   .bh-stamp { margin-left: 0; width: 100%; }
-  .bh-purpose { display: none; }
+  .er-sister { display: none; }
   .ladder-n { font-size: 27px; }
   .ladder-block { margin: 10px 0 0; }
   /* 3 live + gap + 2 terminal on row 2 — keep Invalidated/Expired outside

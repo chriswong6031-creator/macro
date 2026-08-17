@@ -214,12 +214,24 @@ def static_checks() -> None:
     # R24 — third mix token exists
     ok("R24 er-life-token", "--er-life:" in css and "--ink-life:" in css, "token")
 
-    # R25 — overlay unwrap + footer wrap (VTC-005/006)
+    # R25 — overlay wraps (sister); C2 variant is not in the overlay (VTC-006 / VTC-C-001)
     ovl = js.split("pv-ov pv-ovl", 1)[-1].split("pv-ov pv-ovr", 1)[0]
     ok("R25c c2-not-in-overlay", "data-c2-variant" not in ovl, "overlay unwrap")
+    ok("R25e overlay-wraps",
+       ".pv-ov.pv-ovl { flex-wrap: wrap;" in css,
+       "nowrap occludes Candidate as CAN")
     ok("R25d zn-wraps",
        "white-space: nowrap; overflow: hidden" not in css.split(".pv-zn", 1)[-1][:280],
        "footer must wrap, not clip")
+
+    # R26 — no translated title= (DESIGN_DOCTRINE §5.5 / check_title_i18n)
+    ok("R26 no-title-attr", ' title="' not in js and " title='" not in js, "title=")
+    ok("R26b priority-data-tip",
+       'data-tip-en="' in js and 'data-tip-zh="' in js and "data-priority" in js,
+       "Priority disclosure is data-tip, not title")
+    ok("R26c 390-keeps-purpose",
+       ".bh-purpose { display: none; }" not in css and ".er-sister { display: none; }" in css.split("@media (max-width: 720px)", 1)[-1],
+       "purpose stays; sister may hide")
 
 
 def playwright_checks(url: str) -> None:
@@ -304,6 +316,29 @@ def playwright_checks(url: str) -> None:
         pg390 = page_at("theme=dark&lang=en&state=board", 390, 844)
         overflow = pg390.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
         ok("P8 no-hscroll-390", overflow <= 1, f"overflow {overflow}px")
+        purpose_390 = pg390.evaluate(
+            "() => getComputedStyle(document.querySelector('.bh-purpose')).display")
+        ok("P8b 390-purpose-visible", purpose_390 != "none", purpose_390)
+
+        overlap = pg.evaluate("""() => {
+          const cards = [...document.querySelectorAll('.pvcard')];
+          let n = 0;
+          for (const c of cards) {
+            const life = c.querySelector('.er-lifechip');
+            const x = c.querySelector('.er-xchip');
+            if (!life || !x) continue;
+            const a = life.getBoundingClientRect();
+            const b = x.getBoundingClientRect();
+            const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+            const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+            if (ox > 1 && oy > 1) n += 1;
+          }
+          return n;
+        }""")
+        ok("P11 no-chip-occlusion", overlap == 0, f"{overlap} cards overlap")
+        titles = pg.evaluate(
+            "() => [...document.querySelectorAll('[title]')].map(el => el.getAttribute('title'))")
+        ok("P12 no-title-tooltips", len(titles) == 0, str(titles[:3]))
 
         pgl = page_at("theme=light&lang=en&state=board")
         bg = pgl.evaluate("() => getComputedStyle(document.querySelector('.pvcard')).backgroundColor")

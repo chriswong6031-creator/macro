@@ -9,8 +9,13 @@ Binding receipts (RIG V1 §6):
 - `research/reference_integrity/entry-radar-w8/reviews/product_regression.yml` (CRITIC_A)
 - `research/reference_integrity/entry-radar-w8/reviews/visual_taste.yml` (CRITIC_B)
 
-Judged SHA: `b4f5576330b079c7704102c2af8d59e7ed989f17` (matches `proposal.yml` frozen_sha).
-Pinned Prophet Board: merge `168a9be006914441051cff393927ce465e39138e` / tree `d540f493a097`.
+First freeze judged: `b4f5576330b079c7704102c2af8d59e7ed989f17` (APPROVE-WITH-NITS).
+Nits applied at `5ef3626d2e59c101dfd9cc76399fa97f11b0e561`.
+Continuation visual critic C (opus designer, identity distinct from author and from A/B)
+judged `5ef3626` and returned **REVISE** — two freeze blockers introduced by the nits
+commit (overlay `nowrap` occluding Candidate as “CAN”; translated `title=`). Those
+are repaired on the current working tree; a new freeze SHA will be recorded after
+the repair commit. Pinned Prophet Board: merge `168a9be006914441051cff393927ce465e39138e` / tree `d540f493a097`.
 
 Both receipts are from one commissioning session wearing two lenses, not two
 quarantined Opus spawns. The design authority should weigh that. They are still

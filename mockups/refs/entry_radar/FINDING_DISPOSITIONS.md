@@ -29,6 +29,16 @@ Independent critic must-fix nits (PR #5737 commissioning pass) — applied on th
 | PRC-007 / PRC-008 | major | FIXED | W9 CAN COPY no longer lists the reduced card as §14 complete. Missing slots are BLOCKED_DATA / ACCRUING. `verify.py` R22. Mutation M20. |
 | VTC-002 | major | FIXED | One board-level Priority ACCRUING line; card slot is an em-dash. `verify.py` R23. Mutation M21. |
 | VTC-004 | major | FIXED | Candidate / featured / C3 use `--er-life`, not `--ok` or `--pv-buy`. `verify.py` R12f/R24. Mutation M13. |
-| VTC-005 / VTC-006 | major | FIXED | `overflow-x: hidden` removed. C2 variant left the overlay. Footer wraps. `verify.py` R25. Mutations M12, M24. |
+| VTC-005 / VTC-006 | major | FIXED | `overflow-x: hidden` removed. C2 variant left the overlay. Footer wraps. Overlay wrap restored to sister (`flex-wrap: wrap`). `verify.py` R25. Mutations M12, M24, M25. |
 
-No blocker-severity findings in the author pass. Independent critics filed APPROVE-WITH-NITS. This revision is the nits. Do not self-approve. Do not start W9.
+Continuation critic C (artifact `5ef3626`, REVISE) — bounded repairs on this PR, not a second architecture:
+
+| ID | Sev | Disposition | Evidence |
+|---|---|---|---|
+| VTC-C-001 | blocker | FIXED | Overlay restored to sister wrap (`calc(100% - 122px)`). Playwright P11: 0 card chip occlusions. Mutation M25. C2 variant stays out of the overlay (R25c / M24). |
+| VTC-C-002 | blocker | FIXED | `title=` removed. Priority uses `data-tip-en/zh` + sister lens popover + `tabindex="0"`. Expert slug is not a tooltip. `verify.py` R26 / P12. Mutation M26. |
+| VTC-C-003 | major | NOT_ACCEPTED_AS_BLOCKER | Featured = Best was the commissioned PRC-004 / VTC-003 fix. Best count stays dashed (unranked) until W6. Do not reverse. |
+| VTC-C-006 | major | FIXED | ≤720px keeps `.bh-purpose`; `.er-sister` may hide. Playwright P8b. |
+
+No blocker-severity findings remain in the author pass. Independent critic C's two freeze blockers are repaired on this revision. Do not self-approve. Do not start W9.
+

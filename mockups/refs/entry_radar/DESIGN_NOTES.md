@@ -61,7 +61,7 @@ Lane mapping (contract §14 names → W3 detector ids):
 
 ### Card (glance) — W8 founding subset, **not** contract §14 complete
 1. Hero spark *or* printed null at equal 74px (VTC-301 lesson). Stale has a path; it must not print “No path yet.”
-2. Lifecycle chip (axis labelled) + expert identity chip (G0/C1/C2/C3/C5). C2 variant lives on the marks row / drawer — not the overlay (unwrap on 232px).
+2. Lifecycle chip (axis labelled) + expert identity chip (G0/C1/C2/C3/C5). Overlay wraps (sister `flex-wrap: wrap` at `calc(100% - 122px)`). C2 variant lives on the marks row / drawer — not the overlay.
 3. Live/session quote (em-dash when unavailable — never invented)
 4. Ticker + bilingual name. **Not a link** — founding surface has no `stock.html`.
 5. Priority slot: **em-dash** on the card. One board-level line says `Priority ACCRUING — W6 has not measured a rank.` Never a number.
@@ -146,7 +146,7 @@ From the R4 closure ledger (PR #5560), Radar refuses:
 - `prefers-reduced-motion` kills hover lift
 - No emoji as functional icons (caution banner is a CSS border + words)
 - Critical states (stale, unavailable, C4-not-a-fire, false-start history, provisional) are on the card, not tooltip-only
-- 390px: one column that fits. Do not pin “no hscroll” with `overflow-x: hidden`. Overlay does not wrap the C2 variant on the 232px card.
+- 390px: one column that fits. Do not pin “no hscroll” with `overflow-x: hidden`. Overlay wraps (sister rule); C2 variant is not in the overlay. At ≤720px the purpose sentence stays; the sister “not Prophet” line may hide. Never drop both.
 
 ---
 

@@ -78,4 +78,4 @@ def test_mutations_are_caught() -> None:
         text=True,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "23/23 mutations caught" in proc.stdout
+    assert "25/25 mutations caught" in proc.stdout
