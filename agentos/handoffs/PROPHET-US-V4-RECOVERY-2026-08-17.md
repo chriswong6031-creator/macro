@@ -23,7 +23,9 @@ changed:
   - path: research/prophet_v4/CAPABILITY_LEDGER.md
     what: 45-row capability ledger with closed state vocabulary, refreshing masterplan §3 at the execution pin
   - path: research/prophet_v4/ARCHITECTURE_FREEZE.md
-    what: the ten frozen decisions, six-plane ratification, schema-name freeze, no-rebuild boundaries, repin deltas incl. MP-1 reconciliation ruling
+    what: nine numbered frozen decisions (the tenth — wave deps/file ownership — lives in the wave-graph doc), six-plane ratification, the 25 laws inlined verbatim, schema-name freeze, no-rebuild boundaries, repin deltas incl. MP-1 reconciliation, §12.7 DNR confrontations
+  - path: research/prophet_v4/ADVERSARIAL_REVIEW_2026-08-17.md
+    what: both adversarial-review lanes (packet review + owner-map/DNR sweep) with every CRITICAL/HIGH/BLOCKER dispositioned in-PR
   - path: research/prophet_v4/CONTRACT_AND_OWNER_MAP.md
     what: canonical owner table (8 authorities), Prophet-internal migration estate, frozen contract names, consumer map
   - path: research/prophet_v4/SOURCE_RIGHTS_AND_COVERAGE_REGISTRY.md
@@ -100,8 +102,9 @@ decisions:
 Prophet US V4 is commissioned (Sol masterplan, committed in-packet). This 0A session
 produced the complete orchestration packet in `research/prophet_v4/` — read
 `CURRENT_STATE_2026-08-17.md` first (the estate as measured), then
-`ARCHITECTURE_FREEZE.md` (the ten frozen decisions), then
-`WAVE_GRAPH_AND_MERGE_ORDER.md` (what runs when). The single most important live fact:
+`ARCHITECTURE_FREEZE.md` (nine numbered frozen decisions + §12.7 DNR gates), then
+`WAVE_GRAPH_AND_MERGE_ORDER.md` (what runs when; §4 carries the nine merge-order
+rulings for every sibling-owned path). The single most important live fact:
 the availability outage is ACTIVE (served picks are 2026-08-13); the next session
 executes `V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md` exactly. No production code changed
 in 0A; the only AgentOS mutations besides the new records are the evidence-proven

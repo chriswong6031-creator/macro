@@ -71,11 +71,13 @@ graph LR
     E4 --> E6
     E5 --> E6
   end
-  A0B --> A1
-  A4 -.-> B1
+  A0A --> A1
+  A1 --> B1
+  D1 --> D5
+  D3 -.-> D5
 ```
 
-(Dashed edge: B1 may start once A1–A3 are merged; A4's fire-drill week runs concurrently and only gates E2.)
+(B1 starts once A1 merges — A2/A3 continue in parallel on the publication plane, which B1 never touches. Dashed D3→D5: the vector contract may ship with the theme family `ACCRUING`; D3 enriches it. A4 gates only E2.)
 
 ## 2. The 29 waves
 
@@ -98,13 +100,13 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 ### Phase 2 — candidate and entry truth (Lanes B/C)
 | Wave | Deps | Owned paths | Status |
 |---|---|---|---|
-| **V4-B1** canonical candidate episode registry | A1–A3 | new episode module + store (minted at handoff; extends the candidate-store plane, consumes `mastermind.entry_event.v1` + TURN WATCH triggers read-only) | NOT STARTED |
-| **V4-B2** entry-event correction hardening (B-15…B-19) | B1 | `engine/us_early_turn.py`, its `engine/prophet_bridge.py` wiring (`:4018,:4318-4319`), manifest/roster tests | NOT STARTED |
+| **V4-B1** canonical candidate episode registry | A1 | new episode module + store (minted at handoff; extends the candidate-store plane, consumes `mastermind.entry_event.v1` + TURN WATCH triggers read-only; **reconciles-not-rebuilds `engine/prophet_doors.py` preregistered doors and the Radar runtime ledger — freeze §3; join-key ruling required first**) | NOT STARTED |
+| **V4-B2** entry-event correction hardening (B-15…B-19) | B1 | `engine/us_early_turn.py`, its `engine/prophet_bridge.py` wiring (`:4262,:4278,:4410-4412,:4490` at pin), manifest/roster tests — **joint with WS:PROPHET-US-ENTRY-TIMING (§4.1)** | NOT STARTED |
 | **V4-B3** orthogonal lifecycle contract | B1 | server state fields (bridge/board-rank stage vocab: `engine/us_board_rank.py:418-448`, `engine/prophet_bridge.py` status vocab), `templates/dashboard.html.j2` prophet stage plumbing, retires the four-way split per MP-1 | NOT STARTED |
-| **V4-B4** deterministic buyability/chase firewall | B2, B3 | new availability engine module + mutation tests (minted at handoff); geometry prior art read-only (`us_early_turn` chase decay, live-states plane) | NOT STARTED |
+| **V4-B4** deterministic buyability/chase firewall | B2, B3 | new availability engine module + mutation tests (minted at handoff) — **must explicitly reconcile-or-supersede `engine/entry_signal.py` (`assess()` buy_zone/chase_above/stop/null_reason — the existing per-ticker availability semantics) and `engine/prophet_live/live_states.py` (5-min predecessor: state its retirement or coexistence fence, incl. its hysteresis and unknown-vs-dark distinction); joint with WS:PROPHET-US-ENTRY-TIMING (§4.1)** | NOT STARTED |
 | **V4-B5** Early Entry Desk MVP | B3, B4 | `templates/dashboard.html.j2` prophet section per MP-1 + `mockups/refs/institutionalize/us_stocks/` refs; TURN WATCH consumption (`site/turn_watch/turn_watch.json` read-only) | NOT STARTED |
 | **V4-B6** Radar observation-only activation | B2; *Radar W4 staged (merged)* | Radar activation config + receipts only (`/etc/macro-live.env` arm via operator; Radar WS owns detectors) | NOT STARTED |
-| **V4-B7** Radar production UI + Prophet integration | B6 | new `templates/entry_radar.html.j2` + route (closes Radar W9; #5737 reference input only) | NOT STARTED |
+| **V4-B7** Radar production UI + Prophet integration | B6; *Radar W6+W8 or Radar-side waiver (§4.3)* | `templates/entry_radar.html.j2` + `site/entry_radar.html` — **Radar-owned paths; executes as Radar W9 under §4.3** (#5737 reference input only) | NOT STARTED |
 
 ### Phase 3 — evaluation and learning plane (Lane F)
 | Wave | Deps | Owned paths | Status |
@@ -121,7 +123,7 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 | **V4-D3** ThemeState v1 | D2 | GMI-owned (dynamic state layer = GMI W3B territory; merge-order ruling required before start) | NOT STARTED |
 | **V4-D4** peer and transmission features | D3 | GMI-owned | NOT STARTED |
 | **V4-D5** V4 intelligence-vector contract | D3 (may start on D1 census with theme family `ACCRUING`) | `engine/us_context_vector.py` extension + new `prophet.intelligence_vector/v1` emitter (family states governed by the Fusion registry, read-only) | NOT STARTED |
-| **V4-D6** earnings adapter | *EIOS stable contract* | thin adapter only | BLOCKED EXTERNALLY (EIOS in E0) |
+| **V4-D6** earnings adapter | D5; *EIOS stable contract* | thin adapter only | BLOCKED EXTERNALLY (EIOS in E0) |
 | **V4-D7** alt-data family adapters | D5 | one adapter per family | NOT STARTED |
 
 ### Phase 5 — ranking and product cutover (Lanes G/H)
@@ -145,4 +147,14 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 
 ## 4. Appended merge-order rulings
 
-*(none yet — append dated rulings here when two lanes need the same canonical authority)*
+**2026-08-17 (V4-0A, from adversarial review — these rulings exist because six wave paths collide with REGISTERED `owns_paths` of active workstreams, and the AgentOS collision detector only sees declared `owns_paths`):**
+
+1. **B2/B3/B4 × `WS:PROPHET-US-ENTRY-TIMING`** (registered owner of `engine/prophet_*.py`, same p0): these waves execute as **joint work under that workstream's ownership** — each wave's PR updates WS-PROPHET-US-ENTRY-TIMING (or records its concurrence), and `WS:PROPHET-US-V4-RECOVERY.depends_on` now lists it. No V4 wave touches `engine/prophet_*.py` without this pairing.
+2. **A1/A2 × `WS:PROPHET-US-AVAILABILITY`** (registered owner of `scripts/prophet_rescue.py` + rescue lane; de-facto owner of `scripts/check_nightly_liveness.py` per its 08-15 handoff): A-lane waves touch those files only as that workstream's continuation — the A1/A2 sessions update its record in the same PR. A1's handoff §3 is amended accordingly (no unilateral freeze of a sibling's files).
+3. **B6/B7 × `WS:LIVE-ENTRY-RADAR`** (registered owner of `engine/entry_radar/`, `templates/entry_radar.html.j2`, `site/entry_radar.html`): B6 changes NO Radar-owned file (activation = operator env arm + receipts); B7 builds the production UI **as Radar's W9 under Radar's ownership** — and inherits Radar's own dependency law: W9 `depends_on: [W4, W6, W8]`, so **B7 additionally depends on Radar W6 (research priority) and W8 (reference) or an explicit Radar-side ruling waiving them**. `scripts/reconcile_entry_radar.py` is treated as Radar-owned even though its `owns_paths` prefix misses it (gap flagged to V4-0B).
+4. **E1 × `WS:PROPHET-CONDITIONAL-FUSION`**: E1 executes as a Fusion-registry EXTENSION inside that workstream's ownership after PR-3D acceptance — never as a parallel edit. **E1 additionally requires an explicit DNR adjudication before spawn** (freeze §12.7): `DNR:KILL-FUSED-COMPOSITE` Amendment 3 currently licenses exactly one construction (the Fusion challenger under the Fusion masterplan); V4-E1 must either be adjudicated as that same construction's lineage or obtain a further amendment. Silence does not clear it.
+5. **0B × `WS:AGENT-OS`** (`agentos/**`): records-only edits are that plane's normal operation; 0B coordinates by citing this ruling, and edits only the six named sibling records + its own.
+6. **D3 (ThemeState) × `WS:GMI-THEME-GRAPH`** (ruling still REQUIRED before D3 starts, per §3): additionally, GMI masterplan G0.11 fences ThemeState from "any ordering path" — before E1 may include the theme family in RANK (not display), a GMI-side ruling must supersede/scope G0.11 for the V4 intelligence vector. Until then the theme family is display/context only.
+7. **Nightly-advancer law (B1/B4/C-lane stores):** every V4 durable store (episode registry, availability artifacts, cohort ledgers) advances **nightly-only** per house ledger law; intraday passes (Radar 5-min, live states) are display-plane and discard `data/` writes. The lawful precedent is Radar's append-only events reconciled by `scripts/reconcile_entry_radar.py --nightly`.
+8. **Path visibility:** as each wave starts, its owned paths are promoted into `WS-PROPHET-US-V4-RECOVERY.md:owns_paths` (or the partner workstream's), so `scripts/agentos.py`'s collision detector can actually see them — a markdown table is invisible to it.
+9. **DNR confrontation gate:** every V4 wave handoff greps `research/DO_NOT_REBUILD.md` for engaged rows and confronts them **by name** (masterplan §28 format gains this line). Freeze §13's reject list is a summary, NOT a substitute for the registry.

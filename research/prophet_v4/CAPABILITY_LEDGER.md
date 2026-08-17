@@ -33,10 +33,10 @@
 | 27 | Alt-data families (16 censused) | PARTIAL (mixed liveness) | registry §3: insider DEAD since Q1; short-int 3 settlements; revisions 0.67% | D7 one-family-per-PR adapters with honest states |
 | 28 | Context vector (sensory spine) | LIVE_DEGRADED (stalled with outage) | `us_context_vector.py`; store last commit 08-14 | D5 extends it into `prophet.intelligence_vector/v1` |
 | 29 | Stock Identity routing | EXTERNAL_IN_PROGRESS | W0/W1/W1-A1 merged; W2 in flight | Consume interfaces; E4 only via its Method Law |
-| 30 | Candidate episode plane (`prophet.candidate_episode/v1`) | NOT_BUILT | grep: no episode registry exists; "episode" today = calibration vocabulary in `us_board_rank.py:247-336` | B1 |
-| 31 | Deterministic entry availability (`prophet.entry_availability/v1`) | NOT_BUILT | no availability engine; nearest prior art = early-entry geometry (#5370) + live states plane | B4 |
+| 30 | DURABLE candidate episode plane (`prophet.candidate_episode/v1`) | NOT_BUILT (at this grain) | **Prior art exists at other grains (review correction):** Radar's RUNTIME ledger `engine/entry_radar/live_ledger.py` (`mastermind.live_entry_episode.v1`, expert-keyed, ephemeral, "not the durable evidence store") and `options.signal_episode/v1`; plus preregistered origination doors `engine/prophet_doors.py`. No durable per-(security, anchor) plane exists | B1 extends/joins per freeze §3 — never rebuilds these |
+| 31 | Deterministic entry availability (`prophet.entry_availability/v1`) | **PARTIAL (semantics exist, authority scattered)** | `engine/entry_signal.py` `assess()` already computes buy_zone/chase_above/stop with `null_reason()` discipline; `engine/prophet_live/live_states.py` runs the 5-min detection pass; early-entry geometry (#5370) adds chase decay | B4 unifies-or-supersedes both EXPLICITLY (owner map §2); never a second parallel zone/stop |
 | 32 | Orthogonal lifecycle contract | NOT_BUILT | single-stage semantics live; CONFIRMING/CONFIRMED literals unreachable (`us_early_turn.py:886-887,1093`) | B3 |
-| 33 | All-candidate searchable product | NOT_BUILT | no such view; TURN WATCH capped-deck precedent | B5/E2 |
+| 33 | All-candidate searchable product | **PARTIAL (data plane exists, no UI)** | **Review correction:** `engine/us_candidate_lanes.py` (`us_candidate_pool_v1`) already ships the operator-commissioned LOSSLESS nightly partition — lanes featured/more_actionable/late_or_unfillable/forming + fail-closed `OFF_BOARD_REASONS`, riding the candidate store. What is NOT built is the user surface (search/sort/filter table) | B5/E2 build the UI OVER this plane; C1 cohorts extend it — no rival partition |
 | 34 | Cohort-separated ledger (§16.1 list) | NOT_BUILT | only `tier: curated/scan` split exists today | C1 (from-scratch; QLedger substrate) |
 | 35 | `us_prophet_v3_legacy_shadow` | NOT_BUILT | zero code hits | C2 at cutover; reuse two-grain shadow precedent |
 | 36 | `us_prophet_v2_shadow` | LIVE_DEGRADED (stalled with store) | paired `prophet_shadow_*` columns + `data/prophet/legacy_shadow/` parts (end 08-13) | Fusion-owned until its race closes |
@@ -48,6 +48,6 @@
 | 41 | CN Prophet V4 precedent | BUILT (CN only) | PR #5754 | Reuse pattern (rank-by-intelligence, gate-by-entry), not weights |
 | 42 | Broad all-name grading precedent | BUILT (historical) | PR #4555 pattern | Reuse cohort separation approach in C1 |
 | 43 | V4 learned rankers (listwise/router/graph) | NOT_BUILT | no US code | E3/E4/E5 challengers only, after substrates |
-| 44 | Settlement manifest (`prophet.settlement_manifest/v1`) | NOT_BUILT | rescue keys on `source_asof`+cohorts ad hoc | A2 |
+| 44 | Settlement manifest (`prophet.settlement_manifest/v1`) | **PARTIAL (hardest leg instrumented)** | **Review correction:** `scripts/freshness_sentinel.py` already owns reader-visibility truth — `client_visible_session()` over the served bytes, `sentinel.first_fresh/v1` append-only settlement receipts; rescue separately keys on `source_asof`+cohorts | A2 EXTENDS the sentinel's receipts into the manifest; one truth both instruments read |
 
 **Ledger law:** a row may only move toward `LIVE` through its wave's production proof (masterplan law 24: production proof beats green CI). Waves update this file in their PRs; the ledger is the program's single capability truth from 0A forward.

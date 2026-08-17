@@ -23,6 +23,7 @@ owns_paths:
   - research/prophet_v4/
   - engine/us_turn_watch.py
   - scripts/build_turn_watch.py
+  - site/turn_watch/
 depends_on:
   - WS:PROPHET-US-AVAILABILITY
   - WS:LIVE-ENTRY-RADAR
@@ -30,6 +31,8 @@ depends_on:
   - WS:GMI-THEME-GRAPH
   - WS:EARNINGS-INTELLIGENCE-OS
   - WS:STOCK-IDENTITY
+  - WS:PROPHET-US-ENTRY-TIMING
+  - WS:EVAL-OS-MEASUREMENT-LAW
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
 landmines:
@@ -66,9 +69,10 @@ landmines:
     ENTRY_RADAR_LIVE_ENABLE); B-15..B-19 dispositions post-#5370-heal are UNKNOWN —
     B2 opens with the matrix, do not assume the heal closed them."
 do_not_redo:
-  - "Do not re-remove the bridge candidate cap: N_CANDIDATES is already None on main;
-    observed narrow boards come from admission/eligibility/episodes, not a constant
-    (masterplan ledger row 'Current hard production cap')."
+  - "Do not spend a PR removing the bridge candidate cap: N_CANDIDATES=12 survives
+    only as an OVERRIDDEN DEFAULT (prophet_bridge.py:146,1147) — production passes
+    n=None (:4127; daily.yml:2270). A grep hitting the constant does not contradict
+    this; observed narrow boards come from the admission gate chain, not a cap."
   - "Do not widen Conditional Fusion PR-3B (outcome-blind LOFO + member census, its
     own fresh session) into availability/Radar/lifecycle/V4-UI work — V4-E1 consumes
     the ACCEPTED registry after PR-3D."
@@ -231,8 +235,13 @@ epochs/routing), GMI (theme graph/state), EIOS (earnings), Conditional Fusion
 ## Scope boundary
 
 Wave definitions and acceptance live in masterplan §21; dependencies, merge order, and
-path ownership in `research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md`; the ten frozen
-architecture decisions in `research/prophet_v4/ARCHITECTURE_FREEZE.md`. Sibling wave
+path ownership in `research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md` (its §4 rulings
+govern every path shared with a registered sibling owner — engine/prophet_*.py belongs
+to WS:PROPHET-US-ENTRY-TIMING and B2/B3/B4 execute jointly under it); nine numbered
+architecture decisions in `research/prophet_v4/ARCHITECTURE_FREEZE.md` with the tenth
+(wave dependencies/file ownership) frozen in the wave-graph doc. As each wave starts,
+its owned paths are PROMOTED into this record's owns_paths (or the partner
+workstream's) so the AgentOS collision detector can see them. Sibling wave
 IDs (Radar W0-W9, Fusion PR-3x, GMI W3x, EIOS E0-E2) are never renamed by this program.
 Future stores (candidate episode registry, availability artifacts, V4 rank projection)
 enter `owns_paths:` when their waves create them — not before.

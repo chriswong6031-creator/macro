@@ -11,6 +11,10 @@ owner: coo-fable
 class: research
 blast_radius: reversible
 ambiguity: scoped
+owns_paths:
+  - engine/theme_graph/
+  - data/theme_graph/
+  - config/theme_sources.yml
 waves:
   - id: W0
     title: Graph scaffolding
