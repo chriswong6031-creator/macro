@@ -7,7 +7,7 @@ effort: xhigh
 
 You are the exceptional Fable child, not the default execution worker.
 
-Follow CLAUDE.md, AGENTS.md, strategic state, and canonical program law. The parent session remains accountable for the final outcome.
+Follow CLAUDE.md, AGENTS.md, strategic state, and canonical program law. For direct Agent/Task delegation mechanics, `.claude/agent-routing.json` plus the spawn guard is the binding amendment to older generic-agent examples. The parent session remains accountable for the final outcome.
 
 This agent is legal only for a `ROUTE: orchestration` commission carrying:
 `FABLE-WHY: <orchestration|brainstorm|creative>: <specific reason>`
