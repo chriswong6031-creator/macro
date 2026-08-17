@@ -158,6 +158,60 @@ def test_failing_check_names_excludes_the_inactive_context_like_decide_verdict()
     assert "ci-authority/main" in MOG.failing_check_names(active_red)
 
 
+#: Spelled out rather than read off the subject: this suite must be able to
+#: fail against a build that dropped the inactive-context exclusion.
+INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def test_non_binding_check_keeps_the_active_authority_context_binding() -> None:
+    assert MOG.CI_AUTHORITY_INACTIVE_CONTEXT == INACTIVE_CONTEXT
+    assert MOG.is_non_binding_check(INACTIVE_CONTEXT, base_ref="main")
+    assert not MOG.is_non_binding_check("ci-authority/main", base_ref="main")
+    assert not MOG.is_spurious_check(INACTIVE_CONTEXT)
+
+
+def test_main_pr_can_be_armed_when_only_the_inactive_pilot_context_is_red() -> None:
+    """A main-target PR may receive merge-on-green despite the designed pilot red.
+
+    ci-authority fails the unused complementary context on every PR so a
+    retarget cannot reuse a success. That standing failure is not a CI
+    verdict on a main PR; arming must use the same binding-check filter as
+    decide_verdict, not raw "any check failed".
+    """
+    runs = [
+        _check("ci-gate", "success"),
+        _check("fence-pack", "success"),
+        _check("ci-authority/main", "success"),
+        _check(INACTIVE_CONTEXT, "failure"),
+    ]
+    assert MOG.decide_verdict(runs) == ("clean", [])
+    assert MOG.can_arm_merge_on_green(runs, base_ref="main") is True
+
+
+def test_real_ci_failure_still_prevents_arming_merge_on_green() -> None:
+    """A binding red still refuses the label, even next to the inactive context."""
+    pack_red = [
+        _check("ci-gate", "success"),
+        _check("ci-pack-3", "failure"),
+        _check("ci-authority/main", "success"),
+        _check(INACTIVE_CONTEXT, "failure"),
+    ]
+    assert MOG.can_arm_merge_on_green(pack_red, base_ref="main") is False
+    verdict, names = MOG.decide_verdict(pack_red)
+    assert verdict == "blocked"
+    assert names == ["ci-pack-3 (failure)"]
+
+    active_red = [
+        _check("ci-gate", "success"),
+        _check("ci-authority/main", "failure"),
+        _check(INACTIVE_CONTEXT, "failure"),
+    ]
+    assert MOG.can_arm_merge_on_green(active_red, base_ref="main") is False
+    verdict, names = MOG.decide_verdict(active_red)
+    assert verdict == "blocked"
+    assert names == ["ci-authority/main (failure)"]
+
+
 def test_main_red_without_semantic_overlap_does_not_pause_candidate(monkeypatch):
     monkeypatch.setattr(
         MOG.semantic_proof,

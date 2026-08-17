@@ -137,7 +137,7 @@ def _list_build_draft_prs(cycle_id: str) -> list[dict[str, Any]]:
                 "--state", "open",
                 "--draft",
                 "--search", f"head:metabolism/build-",
-                "--json", "number,headRefName,title,statusCheckRollup,isDraft,files",
+                "--json", "number,headRefName,baseRefName,title,statusCheckRollup,isDraft,files",
                 "--limit", "50",
             ],
             capture_output=True, text=True, timeout=60,
@@ -156,10 +156,33 @@ def _list_build_draft_prs(cycle_id: str) -> list[dict[str, Any]]:
         return []
 
 
+def _pr_base_ref(pr: dict[str, Any]) -> str:
+    """PR base branch; metabolism PRs target main, but fail closed on others."""
+    return str(
+        pr.get("baseRefName")
+        or ((pr.get("base") or {}) if isinstance(pr.get("base"), dict) else {}).get("ref")
+        or "main"
+    )
+
+
 def _pr_ci_green(pr: dict[str, Any]) -> bool:
-    """Return True if all CI checks on the PR are green (success/neutral). NEVER raises."""
+    """Return True if all BINDING CI checks on the PR are green. NEVER raises.
+
+    Uses the shared merge-on-green binding-check semantics: the known-spurious
+    Cloudflare X and, for PRs targeting main, the inactive
+    ``ci-authority/codex/merge-queue-pilot`` context are not reds this PR owns.
+    ``ci-authority/main`` stays binding. An empty rollup, or a rollup whose
+    every remaining check is non-binding, is fail-closed (not green).
+    """
     try:
-        checks = pr.get("statusCheckRollup") or []
+        try:
+            from scripts.merge_on_green import binding_status_checks
+        except ImportError:  # ``python scripts/metabolism_merge.py``
+            from merge_on_green import binding_status_checks  # type: ignore[no-redef]
+        checks = binding_status_checks(
+            list(pr.get("statusCheckRollup") or []),
+            base_ref=_pr_base_ref(pr),
+        )
         if not checks:
             # No checks registered — treat as not green (fail-closed)
             return False
@@ -185,7 +208,7 @@ def _pr_ci_green_at_sha(pr_number: int, expect_sha: str) -> bool:
     try:
         result = subprocess.run(
             ["gh", "pr", "view", str(pr_number), "--json",
-             "statusCheckRollup,headRefOid"],
+             "statusCheckRollup,headRefOid,baseRefName"],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:

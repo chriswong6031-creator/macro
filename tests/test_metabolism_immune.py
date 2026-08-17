@@ -627,6 +627,48 @@ def test_spurious_check_filtered_from_red_detection():
     assert _get_spurious_check_names({"spurious_checks": []}) == set()
 
 
+def test_immune_pr_ci_green_ignores_inactive_pilot_context_on_main():
+    """The unused immune automerge green gate must use binding-check semantics.
+
+    Raw statusCheckRollup all() treated the designed inactive ci-authority
+    context as a blocking red. A main-target PR with ci-authority/main green
+    and the pilot context red is still green.
+    """
+    from scripts.metabolism_immune import _pr_ci_green_at_sha
+
+    payload = {
+        "headRefOid": "abc123",
+        "baseRefName": "main",
+        "statusCheckRollup": [
+            {"name": "ci-gate", "state": "SUCCESS"},
+            {"name": "ci-authority/main", "state": "SUCCESS"},
+            {"name": "ci-authority/codex/merge-queue-pilot", "state": "FAILURE"},
+        ],
+    }
+    with patch("scripts.metabolism_immune._gh_json", return_value=payload):
+        green, sha = _pr_ci_green_at_sha(42)
+    assert green is True
+    assert sha == "abc123"
+
+
+def test_immune_pr_ci_green_still_false_on_binding_failure():
+    from scripts.metabolism_immune import _pr_ci_green_at_sha
+
+    payload = {
+        "headRefOid": "abc123",
+        "baseRefName": "main",
+        "statusCheckRollup": [
+            {"name": "ci-pack-3", "state": "FAILURE"},
+            {"name": "ci-authority/main", "state": "SUCCESS"},
+            {"name": "ci-authority/codex/merge-queue-pilot", "state": "FAILURE"},
+        ],
+    }
+    with patch("scripts.metabolism_immune._gh_json", return_value=payload):
+        green, sha = _pr_ci_green_at_sha(42)
+    assert green is False
+    assert sha == "abc123"
+
+
 def test_spurious_check_not_in_loaded_config():
     """The loaded config/metabolism_immune.yml must contain 'Workers Builds: macro'."""
     import yaml
