@@ -101,7 +101,7 @@ unresolved:
   - "Q2 TEST remains ACCRUING (n=1/6). The matched FIT tables are exploratory, not the confirmatory contrast."
 
 next_actions:
-  - "ADDENDUM W6: Sol reviews the Research Priority PR against the frozen outcome/authority firewall. Do not mark W6 done at merge."
+  - "ADDENDUM W6: Sol reviews PR #5834 against the frozen outcome/authority firewall. Do not mark W6 done at merge."
   - "ADDENDUM W6: after merge, commission RP1 against a real live payload (developing episodes), then mark W6 done."
   - "Do not start W7 or W9."
   - "Optional: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
@@ -125,6 +125,7 @@ danger_areas:
   - "Do not git-add the 278MB per-row A census. Counts live in refusal_census_summary."
 
 discoveries: ["DSC:REFUSAL-BRANCH-HIDES-A-DEAD-LOOKUP"]
+prs: [5825, 5827, 5834]
 ---
 
 ## Continuation

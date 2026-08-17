@@ -90,6 +90,7 @@ waves:
   - id: W6
     title: PR-6 deterministic Research Priority (ACCRUING)
     status: in_progress
+    pr: 5834
     depends_on: [W5]
     # In progress this session: RP1 policy frozen, pure ranker + live_eval
     # projection wiring, adversarial battery, real-input receipt. NOT done.
