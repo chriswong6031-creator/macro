@@ -33,12 +33,12 @@ def main() -> None:
             contracts.append(f"{route}=" + "/".join(required))
 
     print(
-        "AGENT ROUTING CONTROL (hook-enforced): For every direct Agent/Task delegation, "
+        "AGENT ROUTING CONTROL (hook-enforced direct-spawn amendment): For every direct Agent/Task delegation, "
         "Fable chooses semantic ROUTE, never a model tier. Use the exact custom agent in "
         ".claude/agent-routing.json; generic/general-purpose/Explore/Plan/fork are not "
-        "routing bypasses. Model overrides may not change the route's model family. "
-        "Final judgment stays in Fable. Exceptional Fable child = ROUTE orchestration + "
-        "orchestrator + explicit model fable + valid FABLE-WHY. "
+        "routing bypasses. This supersedes older CLAUDE.md examples that name Explore/general-purpose for direct fan-out; the existing model-tier law itself is unchanged. "
+        "Model overrides may not change the route's model family. Final judgment stays in Fable. "
+        "Exceptional Fable child = ROUTE orchestration + orchestrator + explicit model fable + valid FABLE-WHY. "
         "ROUTES: " + "; ".join(mappings) + ". "
         "Commission fields (exact SECTION: labels): " + "; ".join(contracts) + ". "
         "Every normal worker RETURN must request STATUS/RESULT/EVIDENCE/GAPS/DEVIATIONS. "
