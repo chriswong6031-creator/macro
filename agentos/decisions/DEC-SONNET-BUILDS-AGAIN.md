@@ -47,6 +47,7 @@ evidence:
   - "Chat instruction, this session, 2026-08-17: \"Change the agents.md file so that the ban on Sonnet being used as a worker is removed.\""
   - "Scope confirmed via an explicit follow-up question before any file was edited: user selected \"Full reversal\" (CLAUDE.md + AGENTS.md + builder.md pin + routing-guard hook text + ruling_graph.yml HOUSE-U2), not a docs-only edit"
   - "config/ruling_graph.yml HOUSE-U2 updated + site/neuralwebdata/ruling_graph.json and docs/NEURAL_WEB_CASE_LAW.md regenerated via scripts/build_ruling_graph.py in the same PR"
+  - "PR #5824 — full diff, test plan (test_ruling_graph.py + test_model_routing_guard.py, agentos validate, build_ruling_graph.py --check, check_template_site_sync)"
 affects: [".claude/agents/builder.md", ".claude/hooks/model_routing_guard.py", "CLAUDE.md", "AGENTS.md", "config/ruling_graph.yml"]
 confidence: high
 reversibility: easy
