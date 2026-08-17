@@ -19,56 +19,58 @@ ambiguity: scoped
 owns_paths:
   - research/MASTERMIND_FINANCIAL_INTELLIGENCE_FABRIC_MASTERPLAN_2026-08-16.md
   - research/financial_intelligence_fabric/
+  - contracts/financial_intelligence_packet.schema.json
+  - engine/fundamental_forensics/financial_intelligence_packet.py
+  - scripts/build_financial_intelligence_packet.py
+  - tests/test_fundamental_forensics_financial_intelligence_packet.py
+  - tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json
+  - tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json
 depends_on:
   - WS:CALCBENCH-FILING-FORENSICS-PARITY
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
+decisions:
+  - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
 next_action: >
-  Operator decides how FIF-1 may obtain governed metric cells from
-  tests/fixtures/fundamental_forensics/companyfacts_versions.json. Do not implement
-  the packet until that decision is recorded. Recommended default: re-spec FIF-1
-  onto filing-package-shaped facts (dimensions_known=true, typed revision_of) and
-  keep Company Facts as occurrence-inventory receipts only.
+  Operator reviews FIF-1 PR #5809 (independent filing-package fixture, packet
+  contract, builder, golden packet). Do not start FIF-2 until that review
+  accepts the packet and the PR is merged.
 landmines:
   - >
-    PR #5794 still owns app/forensics.py, private_state, health, Filing Forensics
-    UI/site, and CI registration files. FIF-1 must not touch those files.
-  - >
-    PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
-  - >
     Core catalog is consolidated_only. Company Facts conversion sets
-    dimensions_known=false. Querying the fixture through load_core_metric_registry
-    yields unknown_dimension_scope, never 1050/1060. See
-    DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY.
+    dimensions_known=false. Querying companyfacts_versions.json through
+    load_core_metric_registry yields unknown_dimension_scope, never 1050/1060.
+    See DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY and
+    DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE.
   - >
     Relabeling the B4 attested_occurrence evidence bridge as revenue is a hard
     registry error. Monkeypatching _fact_dimensions_allowed is a workaround the
     kernel exists to prevent.
+  - >
+    PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
 do_not_redo:
   - Do not create a second semantic model, query kernel, or metric registry.
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
   - Do not debug or replace the attested-history Wave 0B credential path.
-  - Do not start FIF-2 until FIF-1 is accepted and PR #5794 no longer owns app routes.
+  - Do not start FIF-2 until FIF-1 is accepted.
+  - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
 waves:
   - id: FIF-0
     title: Program reset — land masterplan, naming, and collision map
-    status: in_progress
-    next_action: >
-      Keep the 2026-08-16 masterplan and FIF-1 execution handoff as the program
-      source of truth. Do not expand FIF-0 into a capability-ledger build in the
-      same PR as the FIF-1 stop.
+    status: done
+    next_action: Masterplan and FIF-1 handoff remain the program source of truth.
   - id: FIF-1
     title: Golden financial_intelligence_packet.v1 hermetic vertical slice
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Stopped on preflight. Operator must choose the query input shape before any
-      packet code is written.
+      Operator reviews PR #5809. Packet consumes the independent filing-package
+      fixture; Company Facts remains a hashed occurrence-inventory witness.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
     depends_on: [FIF-1]
-    next_action: Wait for FIF-1 acceptance and PR #5794 route-conflict clearance.
+    next_action: Wait for FIF-1 acceptance. PR #5794 has merged; do not start FIF-2 until the packet is reviewed.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -121,6 +123,6 @@ Legacy attested-history completion remains `WS:CALCBENCH-FILING-FORENSICS-PARITY
 and is blocked on the protected writer credential. This workstream does not
 replace that credential path.
 
-FIF-1 preflight on `origin/main` `3b0c7dbbcc4d` found no existing
-`financial_intelligence_packet` contract. The first code PR is blocked on
-`DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY`.
+FIF-1 preflight found no existing packet contract. The operator chose
+`DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`. PR #5809 now carries the
+hermetic packet over that fixture. Company Facts remains a witness only.

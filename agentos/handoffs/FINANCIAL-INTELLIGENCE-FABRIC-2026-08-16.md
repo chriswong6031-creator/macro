@@ -2,104 +2,79 @@
 workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
 session: claude/fif-1-golden-financial-intelligence-packet
 model: codex
-ended_because: blocked
+ended_because: complete
 mission: >
-  Place the Financial Intelligence Fabric masterplan and FIF-1 execution handoff
-  into the macro repository, then execute FIF-1 (golden financial_intelligence_packet.v1)
-  and stop for operator review.
+  Execute FIF-1 as a hermetic financial_intelligence_packet.v1 over an independent
+  synthetic filing-package raw ledger. Keep Company Facts as a separate
+  occurrence-inventory witness. Stop for operator review. Do not start FIF-2.
 state_before: >
-  origin/main at 3b0c7dbbcc4d. No financial_intelligence_packet contract or adapter
-  existed. PR #5794 open (FF-0 freshness/UI/CI). PR #5799 open (Earnings E0 docs).
-  WS:CALCBENCH-FILING-FORENSICS-PARITY still blocked on the attested-history writer
-  credential.
+  PR #5809 held the FIF-0 docs and DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY.
+  Operator forbade manufacturing a filing-authority fixture by flipping
+  dimensions_known or injecting revision_of onto Company Facts rows.
 changed:
-  - path: research/MASTERMIND_FINANCIAL_INTELLIGENCE_FABRIC_MASTERPLAN_2026-08-16.md
-    what: Landed the 2026-08-16 FIF replacement masterplan as the program source of truth.
-  - path: research/financial_intelligence_fabric/FIF_1_GOLDEN_FINANCIAL_INTELLIGENCE_PACKET_HANDOFF_2026-08-16.md
-    what: Landed the bounded FIF-1 execution packet unchanged.
-  - path: agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md
-    what: Created the FIF workstream with waves FIF-0..FIF-11 and the FIF-1 stop.
-  - path: agentos/discoveries/DSC-COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY.md
-    what: Recorded the verified fixture-to-core-query refusal.
+  - path: agentos/decisions/DEC-FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE.md
+    what: Recorded the operator fixture choice.
+  - path: tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json
+    what: Independent synthetic sec-edgar ledger with typed restatements and known dimensions.
+  - path: contracts/financial_intelligence_packet.schema.json
+    what: Closed-world Draft 2020-12 packet contract.
+  - path: engine/fundamental_forensics/financial_intelligence_packet.py
+    what: Pure packet adapter over BitemporalMetricQueryEngine.
+  - path: scripts/build_financial_intelligence_packet.py
+    what: Offline CLI with mandatory cutoffs and atomic write.
+  - path: tests/test_fundamental_forensics_financial_intelligence_packet.py
+    what: Laws 1-12 plus independence and witness-hash proofs.
+  - path: tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json
+    what: Golden latest_known_as_of packet bytes.
+decisions:
+  - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
+prs:
+  - 5809
 verified:
   - claim: >
-      No equivalent financial_intelligence_packet contract or adapter existed on
-      origin/main 3b0c7dbbcc4d.
+      Independent filing-package fixture query_cell returns FY2023 revenue 1050
+      as-reported at 2024-12-31 and 1060 latest_known_as_of at 2025-12-31.
     command: >
-      git grep -n financial_intelligence_packet origin/main -- '*.py' '*.json' '*.md' '*.yml'
-    result: no matches
-  - claim: >
-      PR #5794 is open and owns app/forensics.py, private_state, health, Filing
-      Forensics templates/site, and .github/ci/legacy-jobs.yml plus ci.yml.
-    command: gh pr view 5794 --json state,files,url
-    result: state open; 23 files including the forbidden FIF-1 surfaces and CI registration
-  - claim: >
-      PR #5799 is open and owns only Earnings Intelligence docs/AgentOS records.
-    command: gh pr view 5799 --json state,files
-    result: state open; 18 files, none under engine/fundamental_forensics query/registry
-  - claim: >
-      convert_companyfacts_to_raw_ledger of the FIF-1 fixtures retains FY2023
-      revenue 1050 and 1060 as unlinked filed rows with dimensions_known=false.
-    command: >
-      project-venv python conversion probe on
-      tests/fixtures/fundamental_forensics/companyfacts_versions.json and
-      submissions_versions.json
+      project-venv python probe of BitemporalMetricQueryEngine.query_cell on
+      build_synthetic_filing_package_fixture()
     result: >
-      39 events; 1050 accn 0000000001-24-000001; 1060 accn 0000000001-25-000001;
-      both event_type=filed, revision_of=None, dimensions_known=False
-  - claim: >
-      Core-catalog query_cell for revenue/FY2023 never returns 1050 or 1060 from
-      that ledger.
+      as_reported 2024-12-31 = 1050 accn 0000999999-24-000010; latest_known_as_of
+      2025-12-31 = 1060 accn 0000999999-25-000010; pre-original 2024-01-01 = missing
+  - claim: Packet tests including Laws 1-12 pass.
     command: >
-      BitemporalMetricQueryEngine.query_cell FIXT revenue FY2023 against the
-      converted fixture with recorded_at 2026-08-05T12:00:02Z
-    result: >
-      pre-2024-filing missing_standard_fact; 2024-12-31 and 2025-12-31 as_reported,
-      latest_known_as_of, and latest_restated all not_evaluable
-      unknown_dimension_scope
+      project-venv python -m pytest tests/test_fundamental_forensics_financial_intelligence_packet.py -q
+    result: 17 passed
+  - claim: Related query/registry/companyfacts ledger tests still pass.
+    command: >
+      project-venv python -m pytest tests/test_fundamental_forensics_query.py
+      tests/test_fundamental_forensics_metric_registry.py
+      tests/test_fundamental_forensics_companyfacts_ledger.py -q
+    result: 146 passed
+  - claim: Agent OS records validate.
+    command: python3 scripts/agentos.py validate
+    result: 0 error(s)
 unverified:
-  - claim: Filing-package facts for the same synthetic issuer would satisfy FIF-1 temporal laws through the core catalog.
-    what_would_verify: Construct dimensions_known=true sec-edgar facts with typed revision_of matching the fixture values and re-run query_cell.
-  - claim: Production AAPL Company Facts would behave identically.
-    what_would_verify: Convert a live attested AAPL capture and query revenue through load_core_metric_registry without monkeypatch.
+  - claim: PR #5809 CI packs are green on the packet head.
+    what_would_verify: gh pr checks 5809 after push
+  - claim: Production Company Facts still cannot feed core-catalog revenue.
+    what_would_verify: Convert a live attested AAPL capture and query revenue through load_core_metric_registry without monkeypatch
 unresolved:
-  - >
-    Operator decision required before FIF-1 code: how the golden packet may obtain
-    governed metric cells from the specified Company Facts fixture. Options in
-    next_actions. Recommended default is option A.
+  - Operator review of FIF-1 before merge and before any FIF-2 work
 next_actions:
-  - >
-    Decide FIF-1 input shape. Recommended default A: re-spec the golden packet to
-    use filing-package-shaped facts (dimensions_known=true, explicit revision_of)
-    whose values still match the fixture laws 1050/1060, and keep Company Facts
-    rows as occurrence-inventory receipts only.
-  - >
-    Rejected unless explicitly authorized: B monkeypatch _fact_dimensions_allowed
-    in the packet builder; C relabel attested_occurrence as revenue; D infer
-    revision_of from later accessions.
-  - After that decision, implement the bounded FIF-1 file list from the execution handoff. Do not start FIF-2.
+  - Review PR https://github.com/mastermindx-market-intelligence/macro/pull/5809
+  - Merge only after that review; do not start FIF-2 in this PR
 do_not_redo:
-  - Do not implement financial_intelligence_packet.v1 against core-catalog query of companyfacts_versions.json expecting CellState.VALUE 1050/1060.
-  - Do not edit app/forensics.py, private_state.py, health.py, Filing Forensics templates/site, or CI files owned by PR #5794.
-  - Do not edit Earnings Intelligence E0/E1/E2 documents owned by PR #5799.
-  - Do not add a second metric registry, query kernel, SEC fetch, R2 write, API, page, detector, peer engine, LLM, or score.
-  - Do not debug or replace the attested-history Wave 0B credential path.
+  - Do not convert companyfacts_versions.json into the packet query ledger
+  - Do not flip dimensions_known or inject revision_of onto Company Facts rows
+  - Do not monkeypatch _fact_dimensions_allowed or relabel attested_occurrence as revenue
+  - Do not add a second metric registry, query kernel, API, page, detector, score, or SEC fetch
 danger_areas:
-  - engine/fundamental_forensics/query.py _fact_dimensions_allowed and GovernanceBundle validation around attested_occurrence
-  - engine/fundamental_forensics/companyfacts_ledger.py dimensions_known=False and revision_evidence caller contract
-  - tests/fixtures/fundamental_forensics/companyfacts_versions.json duplicate FY2022 revenue rows and unlinked 1050/1060 vintages
+  - engine/fundamental_forensics/query.py consolidated_only / _fact_dimensions_allowed
+  - Golden packet bytes include packet_builder_digest of financial_intelligence_packet.py; regenerating is required after any builder edit
+  - tests/fixtures/fundamental_forensics/companyfacts_versions.json remains an inventory witness only
 ---
 
-# FIF-1 stop
-
-Base SHA: `3b0c7dbbcc4d27b77ab5c47c3efdba9b2aab7155` (`origin/main`).
-
-FIF-1 preflight completed. Equivalent packet does not exist. The query kernel
-can be invoked. The specified fixtures cannot supply core-catalog metric cells
-that satisfy Laws 1, 2, and 6. Per handoff stop conditions 2, 8, and 9, no
-packet builder was written.
-
-Next session continues from the operator decision in `next_actions`, not from
-a half-built adapter.
+FIF-1 implementation is ready for operator review on PR #5809. The packet is
+display/context only. FIF-2 is not started.

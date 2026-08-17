@@ -381,10 +381,19 @@ A repeated build with identical inputs must produce byte-identical output.
 
 # 8. Fixture laws
 
-Use:
+**Operator supersession 2026-08-16 (`DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`):**
+do not manufacture the filing-authority ledger from Company Facts rows. Query
+input is the independent synthetic filing-package fixture:
+
+- `tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json`
+
+Keep as separate occurrence-inventory witnesses (hashed in packet receipts only):
 
 - `tests/fixtures/fundamental_forensics/companyfacts_versions.json`
 - `tests/fixtures/fundamental_forensics/submissions_versions.json`
+
+The tests must prove these laws against the filing-package fixture through the
+existing query kernel. The numeric/temporal laws are unchanged.
 
 The tests must prove these laws.
 
@@ -523,11 +532,12 @@ Provide a small offline CLI:
 
 ```text
 python3 scripts/build_financial_intelligence_packet.py \
-  --companyfacts tests/fixtures/fundamental_forensics/companyfacts_versions.json \
-  --submissions tests/fixtures/fundamental_forensics/submissions_versions.json \
+  --ledger tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json \
+  --companyfacts-witness tests/fixtures/fundamental_forensics/companyfacts_versions.json \
+  --submissions-witness tests/fixtures/fundamental_forensics/submissions_versions.json \
   --policy latest_known_as_of \
-  --source-event-cutoff 2024-12-31T23:59:59Z \
-  --system-recorded-cutoff 2024-12-31T23:59:59Z \
+  --source-event-cutoff 2025-12-31T23:59:59Z \
+  --system-recorded-cutoff 2026-08-05T12:00:02Z \
   --output /tmp/financial_intelligence_packet.json
 ```
 
