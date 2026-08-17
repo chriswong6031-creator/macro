@@ -1,0 +1,910 @@
+[
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1440x1000.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1440x1000.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": false
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 812,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 1000
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1440x1000_full.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1440x1000_full.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": true
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 812,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 3179
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 3179,
+      "png_dimensions_valid": true,
+      "full_page": true
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_00_y0.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_00_y0.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": false
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 1000
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 0,
+    "scroll_y": 0,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    },
+    "requested_scroll_y": 0,
+    "observed_scroll_y": 0
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_01_y1000.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_01_y1000.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": false
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 1000
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 1,
+    "scroll_y": 1000,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    },
+    "requested_scroll_y": 1000,
+    "observed_scroll_y": 1000
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_02_y2000.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_02_y2000.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": false
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 2000,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 1000
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 2,
+    "scroll_y": 2000,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    },
+    "requested_scroll_y": 2000,
+    "observed_scroll_y": 2000
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_03_y3000.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_1440x1000/board_seg_03_y3000.png",
+    "requested": {
+      "w": 1440,
+      "h": 1000,
+      "full": false
+    },
+    "inner": {
+      "w": 1440,
+      "h": 1000
+    },
+    "visual": {
+      "w": 1440,
+      "h": 1000
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 2179,
+      "w": 1440,
+      "h": 3179
+    },
+    "screenshot_px": {
+      "w": 1440,
+      "h": 1000
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 3,
+    "scroll_y": 2179,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3179,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3179
+    },
+    "requested_scroll_y": 3000,
+    "observed_scroll_y": 2179
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1280x900.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1280x900.png",
+    "requested": {
+      "w": 1280,
+      "h": 900,
+      "full": false
+    },
+    "inner": {
+      "w": 1280,
+      "h": 900
+    },
+    "visual": {
+      "w": 1280,
+      "h": 900
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 858,
+      "w": 1280,
+      "h": 3225
+    },
+    "screenshot_px": {
+      "w": 1280,
+      "h": 900
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1280,
+      "requested_height": 900,
+      "inner_width": 1280,
+      "inner_height": 900,
+      "DPR": 1,
+      "PNG_width": 1280,
+      "PNG_height": 900,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1280,
+      "document_scroll_height": 3225,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3225
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1024x800.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_1024x800.png",
+    "requested": {
+      "w": 1024,
+      "h": 800,
+      "full": false
+    },
+    "inner": {
+      "w": 1024,
+      "h": 800
+    },
+    "visual": {
+      "w": 1024,
+      "h": 800
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 1916,
+      "w": 1024,
+      "h": 3729
+    },
+    "screenshot_px": {
+      "w": 1024,
+      "h": 800
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1024,
+      "requested_height": 800,
+      "inner_width": 1024,
+      "inner_height": 800,
+      "DPR": 1,
+      "PNG_width": 1024,
+      "PNG_height": 800,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1024,
+      "document_scroll_height": 3729,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3729
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_768x900.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_768x900.png",
+    "requested": {
+      "w": 768,
+      "h": 900,
+      "full": false
+    },
+    "inner": {
+      "w": 768,
+      "h": 900
+    },
+    "visual": {
+      "w": 768,
+      "h": 900
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 2451,
+      "w": 768,
+      "h": 4574
+    },
+    "screenshot_px": {
+      "w": 768,
+      "h": 900
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 768,
+      "requested_height": 900,
+      "inner_width": 768,
+      "inner_height": 900,
+      "DPR": 1,
+      "PNG_width": 768,
+      "PNG_height": 900,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 768,
+      "document_scroll_height": 4574,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 4574
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_390x844.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_390x844.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 3066,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_390x844_full.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_default_390x844_full.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": true
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 3066,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 5485
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 5485,
+      "png_dimensions_valid": true,
+      "full_page": true
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    }
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_00_y0.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_00_y0.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 0,
+    "scroll_y": 0,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 0,
+    "observed_scroll_y": 0
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_01_y844.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_01_y844.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 844,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 1,
+    "scroll_y": 844,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 844,
+    "observed_scroll_y": 844
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_02_y1688.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_02_y1688.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 1688,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 2,
+    "scroll_y": 1688,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 1688,
+    "observed_scroll_y": 1688
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_03_y2532.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_03_y2532.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 2532,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 3,
+    "scroll_y": 2532,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 2532,
+    "observed_scroll_y": 2532
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_04_y3376.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_04_y3376.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 3376,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 4,
+    "scroll_y": 3376,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 3376,
+    "observed_scroll_y": 3376
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_05_y4220.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_05_y4220.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 4220,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 5,
+    "scroll_y": 4220,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 4220,
+    "observed_scroll_y": 4220
+  },
+  {
+    "path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_06_y5064.png",
+    "repo_relative_path": "ux-evidence/pages/us-stocks-prophet-board/screenshots/board_full_segments_390x844/board_seg_06_y5064.png",
+    "requested": {
+      "w": 390,
+      "h": 844,
+      "full": false
+    },
+    "inner": {
+      "w": 390,
+      "h": 844
+    },
+    "visual": {
+      "w": 390,
+      "h": 844
+    },
+    "dpr": 1,
+    "scroll": {
+      "x": 0,
+      "y": 4641,
+      "w": 390,
+      "h": 5485
+    },
+    "screenshot_px": {
+      "w": 390,
+      "h": 844
+    },
+    "horizontal_overflow": false,
+    "pass": true,
+    "segment_index": 6,
+    "scroll_y": 4641,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 390,
+      "document_scroll_height": 5485,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 5485
+    },
+    "requested_scroll_y": 5064,
+    "observed_scroll_y": 4641
+  }
+]

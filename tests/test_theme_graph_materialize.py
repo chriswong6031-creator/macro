@@ -235,8 +235,13 @@ def test_the_seed_constant_rule_is_per_document_not_per_market(tree):
 
 
 def test_crosswalk_derived_edges_declare_their_own_provenance(tree):
+    """Scoped to the edges the CROSSWALK derives — the ones whose destination is
+    canonical vocabulary. W3A added source-local EXPRESSES edges (basket→ltheme) that
+    come from a vendor snapshot instead, and they carry that provenance honestly."""
     view = _build(tree)
-    for e in _by_type(view, "EXPRESSES"):
+    canonical = [e for e in _by_type(view, "EXPRESSES") if e["dst"].startswith("theme:")]
+    assert canonical, "no crosswalk-derived edges — a vacuous check proves nothing"
+    for e in canonical:
         assert e["date_provenance"] == "crosswalk"
         assert e["valid_from"] == XWALK_DATE
 
@@ -267,14 +272,28 @@ def test_without_a_raw_snapshot_the_membership_receipt_stands_alone(tree):
     assert len(_edge(view, "MEMBER_OF", "co:cn:600001.SS", ths_basket)["evidence_refs"]) == 1
 
 
-def test_vendor_derived_receipts_are_not_redistributable(tree):
+def test_receipt_licensing_is_derived_from_the_rights_registry(tree):
+    """W3A §9.4: the REGISTRY is the single rights authority and a new receipt's booleans
+    are derived from it, never from a constant in the builder. The expected values are
+    read from the registry FILE here — parsed independently, not through rights.py — so
+    this pins the derivation without pinning today's classes, and it keeps holding on the
+    day the operator resolves a vendor family."""
+    registry = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "config" / "theme_sources.yml")
+        .read_text(encoding="utf-8"))["families"]
+    display_ok = {"derived_display_ok", "direct_display_ok"}
+
     view = _build(tree)
     ev = {e["source_ref"]: e for e in view.evidence}
-    ths = ev["data/baskets_china_ths/membership.json"]
-    house = ev["data/baskets/membership.json"]
-    assert ths["licensing_internal_ok"] and ths["licensing_display_ok"]
-    assert ths["licensing_redistribution_ok"] is False
-    assert house["licensing_redistribution_ok"] is True
+    for source_ref, family in (("data/baskets_china_ths/membership.json", "ths_concepts"),
+                               ("data/baskets/membership.json", "mastermind_curated")):
+        row = ev[source_ref]
+        cls = registry[family]["rights_class"]
+        assert row["licensing_internal_ok"] is True
+        assert row["licensing_display_ok"] is (cls in display_ok), family
+        # Only house-authored content may be republished, whatever the display class.
+        assert row["licensing_redistribution_ok"] is (
+            cls in display_ok and registry[family]["auth_class"] == "house"), family
 
 
 def test_every_edge_cites_at_least_one_dated_receipt(tree):
@@ -291,13 +310,17 @@ def test_every_edge_cites_at_least_one_dated_receipt(tree):
 
 def test_expresses_comes_from_all_three_crosswalk_paths(tree):
     view = _build(tree)
-    srcs = {e["src"] for e in _by_type(view, "EXPRESSES")}
-    assert srcs == {
+    canonical = [e for e in _by_type(view, "EXPRESSES") if e["dst"].startswith("theme:")]
+    assert {e["src"] for e in canonical} == {
         "basket:baskets:solar_us",                          # basket_ids (US)
         "basket:baskets_china:cn_solar",                    # cn_basket_ids (curated CN)
         f"basket:baskets_china_ths:thsc{KNOWN_CODE}",       # ths_concept -> code join
+        # W3A: the concept's own vocabulary resolution. NOT a fourth expression path —
+        # it resolves a vendor id to canonical vocabulary, and the guard asserts it can
+        # never name a different theme than the one-hop basket path does.
+        f"ltheme:ths:{KNOWN_CODE}",
     }
-    assert {e["dst"] for e in _by_type(view, "EXPRESSES")} == {"theme:solar"}
+    assert {e["dst"] for e in canonical} == {"theme:solar"}
 
 
 def test_a_crosswalk_basket_that_does_not_exist_mints_nothing(tree):
@@ -340,7 +363,7 @@ def test_node_kinds_and_names(tree):
     kinds = {}
     for n in view.nodes:
         kinds.setdefault(n["kind"], []).append(n)
-    assert set(kinds) == {"company", "basket", "etf", "theme"}
+    assert set(kinds) == {"company", "basket", "etf", "theme", "local_theme"}
     assert {n["status"] for n in view.nodes} == {"canonical"}
     assert {n["identity_epoch"] for n in view.nodes} == {1}
     theme = kinds["theme"][0]

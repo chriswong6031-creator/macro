@@ -989,6 +989,10 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # Post-P-B2 China Intelligence PIT hist (wired into china-native-collectors).
+      # collectors/** already covers the five subject modules; the suite itself
+      # must be named so a test-only re-pin still starts the pack.
+      - "tests/test_cn_intel_pit_accrual.py"
       # W3 CNH policy/OMO/trade-detail collectors. Same wiring law: collectors/**
       # already triggers the job, but a test-only edit (a re-pinned live fixture) must
       # re-run it too. test_china_official_corpora.py was named by NO job before this —
@@ -1223,8 +1227,11 @@ on:
       - "config/fundamental_forensics/**"
       - "config/fundamental_forensics_disclosure_diff.v1.json"
       - "contracts/fundamental_forensics_run.schema.json"
+      - "contracts/fundamental_forensics_health.schema.json"
       - "contracts/fundamental_forensics_attested_history_operator.schema.json"
       - "contracts/fundamental_forensics_attested_history_preflight_receipt.schema.json"
+      - "contracts/financial_intelligence_packet.schema.json"
+      - "scripts/build_financial_intelligence_packet.py"
       - ".github/workflows/attested-history-operator.yml"
       - "templates/fundamental_forensics.html.j2"
       - "templates/fundamental_forensics.css"
@@ -1256,6 +1263,7 @@ on:
       - "tests/test_fundamental_forensics_attested_history_pilot.py"
       - "tests/test_fundamental_forensics_attested_history_seed.py"
       - "tests/test_fundamental_forensics_attested_occurrence_governance.py"
+      - "tests/test_fundamental_forensics_health.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
@@ -1660,6 +1668,7 @@ on:
       - "tests/test_spine_query.py"
       - "tests/test_ask_brain.py"
       - "tests/test_company_intelligence_neural_reader.py"
+      - "tests/test_company_intelligence_event_workspace.py"
       - "tests/test_world_state.py"
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"
@@ -2062,6 +2071,20 @@ on:
       # PR touching only a unit file must retrigger the suite that reads it.
       - "app/deploy/macro-live-closepass.service"
       - "app/deploy/macro-live-closepass.timer"
+      # CLOSE-PASS HOST CLOCK (Breathing PR-B, 2026-08-15). The evening pass's
+      # PRIMARY clock is now launchd on the Mac Studio, not the close-pass.yml
+      # cron — measured 27 min of schedule drift plus a 95 min queue wait on
+      # 2026-08-14, publishing ~19:20 ET against a 16:15 ET target. Neither the
+      # runner nor its host wiring lives under a directory any other entry
+      # covers (ops/launchd/** is named by nothing here), so without these lines
+      # a PR editing ONLY the clock would run no guard at all — the #3488 shape
+      # again, on the lane that decides when the board ships. Both halves, as
+      # always: the subjects AND their suites.
+      - "scripts/close_pass_host_runner.py"
+      - "scripts/install_closepass_launchd.sh"
+      - "ops/launchd/com.macro.closepass.plist"
+      - "tests/test_close_pass_host_runner.py"
+      - "tests/test_close_pass_lane.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -2741,6 +2764,7 @@ on:
       - "tests/test_regwall_json_gate.py"
       - "tests/test_paywall.py"
       - "tests/test_api_paywall.py"
+      - "tests/test_auth_cache_outage.py"
       - "tests/test_paywall_pro_gate.py"
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
@@ -2995,6 +3019,11 @@ on:
       - "tests/test_fetch_dead_name_prices_polygon.py"
       - "tests/test_fetch_r2.py"
       - "tests/test_finviz_archival.py"
+      # The refresh contract's own suite (W3A, 2026-08-14). Its SUBJECT
+      # (scripts/fetch_finviz_themes.py, below) already triggers, but a test-only
+      # edit that weakened an interlock assertion would otherwise fire no run —
+      # the exact half-registration this list exists to close.
+      - "tests/test_finviz_tree_refresh.py"
       - "tests/test_notify_turn_events.py"
       - "tests/test_polygon_intraday.py"
       - "tests/test_thetadata_tape_sessions.py"
@@ -3223,6 +3252,19 @@ on:
       - "scripts/freshness_sentinel.py"
       - "app/deploy/macro-sentinel.service"
       - "app/deploy/macro-sentinel.timer"
+      # MMX-001 customer-table backup — same #3509 lesson as the sentinel:
+      # listing only the suite leaves a unit/script-only edit unable to start
+      # the job that owns it. update.sh already appears above.
+      - "tests/test_backup_user_tables.py"
+      - "scripts/backup_user_tables.py"
+      - "app/deploy/macro-user-backup.service"
+      - "app/deploy/macro-user-backup.timer"
+      # PR-C — the W-L1 acceptance record built on top of that sentinel. It
+      # reads the sentinel's own state file, so a change to either side of that
+      # contract must be able to START this workflow; same #3509 lesson as the
+      # four lines above.
+      - "tests/test_close_pass_slo_report.py"
+      - "scripts/close_pass_slo_report.py"
       # The china half of that dead-man switch: the board-lag disclosure the
       # sentinel's china surface anchors on, and the A-share session calendar the
       # engine computes `delayed` from. Both halves listed for the same reason as
@@ -3528,6 +3570,12 @@ on:
       - "tests/test_cn_prophet_audit.py"
       - "tests/test_htf_super_tiers.py"
       - "tests/test_prophet_stage_fusion.py"
+      # P-B3 persistence-robust certification (#5729): the suite and its
+      # research-resident instrument. research/** already starts this workflow;
+      # these lines are the executable provenance so a test-only or instrument-
+      # only edit still names the job that runs them.
+      - "tests/test_pb3_persistence_robust_cert.py"
+      - "research/cn_prophet_audit/pb3_persistence_robust_cert.py"
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"
@@ -3675,6 +3723,7 @@ on:
       - "tests/test_russell_breadth.py"
       # unrun-brain-gateway
       - "tests/test_brain_gateway.py"
+      - "tests/test_brain_gateway_quota_safety.py"
       # unrun-macro-panels
       # engine/equity_factors.py was STRICTLY DARK (2026-08-06): named by no `run:` step
       # and by no path here, so an edit to the module carrying `composite_rank` — the
@@ -4112,6 +4161,11 @@ on:
       - "scripts/build_security_master.py"
       - "data/reference/**"
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact main SHA the semantic baseline request observed
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -4172,39 +4226,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
-  # PLAN ONCE, ADJUDICATE ONCE (Wave B, 2026-08-11). Before this job existed all
-  # twelve packs re-derived the selection independently, so twelve runners could
-  # silently disagree about what the suite even IS, and nothing published a single
-  # stable check name that branch protection or an external controller could read.
-  # `ci-plan` computes the partition ONCE, hands `ci-pack` its matrix, and hands
-  # every pack the plan's sha256 so a pack that would have executed a DIFFERENT
-  # partition refuses before running a single test.
+  # PLAN ONCE, EXECUTE MANY, ADJUDICATE ONCE. `ci-plan` is the sole selection and
+  # partition authority. Its v2 artifact binds the exact tested tree, PR subject
+  # head, tested base, changed-file digest, logical jobs, semantic proof IDs, and
+  # execution-spec digests. Packs consume that artifact verbatim and emit raw
+  # bounded observations; they never recompute the proof universe or declare
+  # causality. `ci-gate` reconciles complete accounting into the one stable
+  # `ci.semantic_evidence.v1` verdict. Pack indices remain transport only.
   #
-  # THIS JOB COSTS TIME TODAY. Do not read a saving into it, in either direction:
-  #
-  #   * It used to save ZERO pack launches: scope inference derived scopes for
-  #     179 of 180 jobs, but those scopes inherited `tests/**` and `*` from
-  #     opaque traversals inside named pytest suites, so every realistic diff
-  #     still selected 115-130 jobs and filled all 12 packs (measured 2026-08-11;
-  #     still true on PR #5550 / run 31729769728: one test file → 133/187 jobs,
-  #     12/12 packs, slowest pack 56 min of which 31 min was fetch-depth:0).
-  #     `exclude_peer_test_ownership` strips those catch-alls from named pytest
-  #     jobs; the dynamic matrix then emits only the packs that still carry work.
-  #   * It saves ZERO planning passes. `--expect-plan-sha` REQUIRES each pack to
-  #     recompute the plan, and a pack has always had to derive the partition to
-  #     know its own jobs, so all selected packs still re-infer. Measured on the
-  #     real manifest: `infer_job_scopes` 106.5s, `load_legacy_jobs` + partition 0.2s.
-  #     With checkout and setup, Wave B adds roughly one pack startup — about 4-5
-  #     minutes — to the critical path of every pull request.
-  #
-  # What it buys is correctness, not speed: one planning authority instead of
-  # twelve that could disagree, and `ci-gate` as a nameable aggregate (see the
-  # bottom of this file — the sweeper needs an affirmative pass, #4779, and today
-  # no single check name is guaranteed to be present on a PR head). The non-empty
-  # filter becomes load-bearing only once selection narrows. Making the packs
-  # CONSUME this plan instead of recomputing it would turn the cost into a saving,
-  # and is deliberately NOT done here: directive §6.6 wants the twelve independent
-  # recomputations as the drift guard. That trade is the operator's to revisit.
+  # This is a proof-semantics boundary, not the CI SPEED wave. Pack count,
+  # weighting, runner fleet, dependency caching, and existing scope selection are
+  # deliberately unchanged here.
   ci-plan:
     # Same closed-event fence as `ci-pack` below: a closed PR needs only the
     # workflow-level concurrency side effect above.
@@ -4229,6 +4261,11 @@ jobs:
       reason: ${{ steps.plan.outputs.reason }}
       changed_files_sha256: ${{ steps.plan.outputs.changed_files_sha256 }}
       changed_files_count: ${{ steps.plan.outputs.changed_files_count }}
+      plan_artifact_name: ${{ steps.identity.outputs.plan_artifact_name }}
+      tested_tree_sha: ${{ steps.identity.outputs.tested_tree_sha }}
+      subject_head_sha: ${{ steps.identity.outputs.subject_head_sha }}
+      tested_base_sha: ${{ steps.identity.outputs.tested_base_sha }}
+      semantic_role: ${{ steps.identity.outputs.semantic_role }}
     steps:
       # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
       # those exist for conditions this job cannot meet: the sparse-clear guards a
@@ -4238,9 +4275,13 @@ jobs:
       # which planning never executes. Adding either would be cargo cult.
       - uses: actions/checkout@v4
         with:
-          # `fetch-depth: 0` is REQUIRED, not an optimisation. The planner diffs
-          # against the immutable PR base SHA, and a shallow clone does not contain
-          # that commit — the diff would fail, the planner would widen to the full
+          # Semantic evidence binds the exact tree this runner executes. A PR
+          # run proves GitHub's synthetic merge commit, not a later API-resolved
+          # branch tip, so make the event SHA explicit.
+          ref: ${{ github.sha }}
+          # `fetch-depth: 0` is REQUIRED, not an optimisation. The planner derives
+          # the tested base from parent 1 of this exact synthetic merge commit, and
+          # a shallow clone may not contain that commit — the diff would fail, the planner would widen to the full
           # suite by law, and the plan would be meaningless on every PR. The
           # blob:none filter keeps full history cheap. Packs do NOT repeat this
           # fetch: they download the `ci-changed-files` artifact and
@@ -4250,6 +4291,49 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - id: identity
+        name: bind the exact tested tree and base
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_DISPATCH_SHA: ${{ inputs.expected_sha || '' }}
+        run: |
+          set -euo pipefail
+          tested_tree_sha=$(git rev-parse HEAD)
+          if [ "$tested_tree_sha" != "$GITHUB_SHA" ]; then
+            echo "::error title=ci-tested-tree::checkout $tested_tree_sha does not match event SHA $GITHUB_SHA"
+            exit 1
+          fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            if ! [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$GITHUB_SHA" != "$EXPECTED_DISPATCH_SHA" ]; then
+              echo "::error title=ci-tested-tree::dispatch expected $EXPECTED_DISPATCH_SHA but main resolved to $GITHUB_SHA"
+              exit 1
+            fi
+          fi
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            read -r merge_sha tested_base_sha subject_head_sha extra < <(git rev-list --parents -n 1 "$GITHUB_SHA")
+            if [ "$merge_sha" != "$GITHUB_SHA" ] || [ -z "${tested_base_sha:-}" ] || [ -z "${subject_head_sha:-}" ] || [ -n "${extra:-}" ]; then
+              echo "::error title=ci-tested-base::PR event SHA is not an exact two-parent merge commit"
+              exit 1
+            fi
+            if [ "$subject_head_sha" != "$EVENT_HEAD_SHA" ]; then
+              echo "::error title=ci-tested-base::merge parent 2 $subject_head_sha does not match event head $EVENT_HEAD_SHA"
+              exit 1
+            fi
+            semantic_role=pr_head
+          else
+            subject_head_sha=$GITHUB_SHA
+            tested_base_sha=$GITHUB_SHA
+            semantic_role=main
+          fi
+          {
+            echo "tested_tree_sha=$tested_tree_sha"
+            echo "subject_head_sha=$subject_head_sha"
+            echo "tested_base_sha=$tested_base_sha"
+            echo "semantic_role=$semantic_role"
+            echo "plan_artifact_name=ci-semantic-plan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          } >> "$GITHUB_OUTPUT"
       - name: install isolated pack runner
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
@@ -4259,11 +4343,10 @@ jobs:
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
       # so main's baseline and every workflow_dispatch stay full-suite.
       #
-      # The base SHA is `github.event.pull_request.base.sha` — the IMMUTABLE commit
-      # the PR was opened against — never `github.head_ref`, `github.base_ref` or any
-      # other branch NAME. A name is resolved at runtime, so main moving under a
-      # long-running PR would silently change what the plan selected, and the packs
-      # would then verify a plan hash for a diff nobody reviewed.
+      # The authoritative tested base is parent 1 of the exact synthetic merge
+      # commit checked out above. The event's base SHA is trigger provenance and may
+      # be stale by runner pickup; a branch name is mutable and is never substituted.
+      # Parent 2 must equal the signed event head before this value is published.
       - id: plan
         name: plan the CI packs once
         env:
@@ -4278,15 +4361,26 @@ jobs:
           # therefore still audits the complete manifest.
           CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
           CI_DYNAMIC_MATRIX_MODE: ${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', steps.identity.outputs.tested_base_sha) || '' }}
+          TESTED_TREE_SHA: ${{ steps.identity.outputs.tested_tree_sha }}
+          SUBJECT_HEAD_SHA: ${{ steps.identity.outputs.subject_head_sha }}
+          TESTED_BASE_SHA: ${{ steps.identity.outputs.tested_base_sha }}
+          SEMANTIC_ROLE: ${{ steps.identity.outputs.semantic_role }}
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-count 12
           --plan-only
           --github-output "$GITHUB_OUTPUT"
-          --emit-plan-json -
+          --emit-plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json"
           --emit-changed-files "$RUNNER_TEMP/ci-changed-files/changed-files.json"
+          --workflow-run-id "$GITHUB_RUN_ID"
+          --workflow-name ci
+          --event "$GITHUB_EVENT_NAME"
+          --role "$SEMANTIC_ROLE"
+          --tested-tree-sha "$TESTED_TREE_SHA"
+          --subject-head-sha "$SUBJECT_HEAD_SHA"
+          --base-sha "$TESTED_BASE_SHA"
           $CI_SCOPE_ARG
       # THE CHANGED-FILE LIST'S TRANSPORT (2026-08-14, run 31775693780). An
       # artifact rather than a job output, because a job output becomes an `env:`
@@ -4309,6 +4403,14 @@ jobs:
         with:
           name: ci-changed-files
           path: ${{ runner.temp }}/ci-changed-files/changed-files.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: publish the authoritative semantic plan
+        if: steps.plan.outputs.plan_sha != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.identity.outputs.plan_artifact_name }}
+          path: ${{ runner.temp }}/ci-semantic-plan/ci-plan.json
           if-no-files-found: error
           retention-days: 14
   ci-pack:
@@ -4396,8 +4498,8 @@ jobs:
       # the sweeper had nothing to merge, and a heal had to rerun every pack
       # from zero. execute_pack already continues after a red INSIDE a pack
       # so one run reports every legacy failure; the matrix must do the same
-      # BETWEEN packs. A real red still fails ci-gate (`PACK_RESULT != success`)
-      # and still blocks merge. workflow_dispatch (main's heal) was already
+      # BETWEEN packs. A real red remains present in the raw fragment and the
+      # reconciled semantic evidence still blocks merge. workflow_dispatch was already
       # fail-fast:false. Do not add max-parallel (#5465).
       #
       # Literal boolean, not an expression. `fail-fast: "${{ ... }}"` evaluates
@@ -4462,6 +4564,7 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
           # Packs consume ci-plan's changed-file list and only need the current
           # tree. fetch-depth: 0 on all twelve packs at once was the 56-minute
           # wall-clock: measured PR #5550 / run 31729769728, ci-pack-1 spent
@@ -4485,6 +4588,12 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
+      - name: download the authoritative semantic plan
+        if: needs.ci-plan.outputs.plan_sha != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
+          path: ${{ runner.temp }}/ci-semantic-plan
       # THE CHANGED-FILE LIST ARRIVES AS A FILE (2026-08-14, run 31775693780).
       # ci-plan uploads it; this step downloads it and the next exports only the
       # PATH. Both halves of that sentence are the repair: the list is what the
@@ -4507,52 +4616,59 @@ jobs:
           path: ${{ runner.temp }}/ci-changed-files
       - name: publish the changed-file handle
         run: echo "CI_CHANGED_FILES_FILE=$RUNNER_TEMP/ci-changed-files/changed-files.json" >> "$GITHUB_ENV"
-      # `--changed-from` is passed ONLY on pull requests, so a legacy job that
-      # has a proven derived/declared scope runs only when the immutable PR diff
-      # can reach it. Main's baseline and every workflow_dispatch omit the flag
-      # and therefore run the complete manifest (180 jobs at this revision). That
-      # full-main run is an audit/backstop,
-      # not permission to under-scope a PR: uncertain jobs remain always-on and
-      # any unknown path widens the PR back to the full suite.
-      #
-      # The scope flag is built in `env`, NOT inline in the folded scalar. A
-      # more-indented continuation line inside `>-` keeps its newline instead of
-      # folding to a space, which put `--execute` on its own line and silently
-      # split one command into two. Same family as the `#`-in-a-folded-scalar
-      # trap: no `#` may appear here either, and every line of the command must
-      # sit at the SAME indent so folding joins them with spaces.
-      #
-      # `$CI_SCOPE_ARG` is intentionally unquoted: it word-splits into
-      # `--changed-from <immutable-base-sha>` on a pull request and disappears
-      # entirely on every other event, which keeps main's baseline full-suite.
-      #
-      # `$PLAN_SHA_ARG` (Wave B, 2026-08-11) rides the identical idiom for the
-      # identical reason. It carries `--expect-plan-sha <sha>` when `ci-plan`
-      # published a hash, and word-splits away to NOTHING when it did not — which is
-      # the planner's fail-safe path, where the plan could not be computed and every
-      # pack was launched anyway. An unpinned pack there is correct: the pack
-      # recomputes and runs the full widened selection, and a genuine manifest defect
-      # still fails all twelve packs red on their own `run_ci_pack.py` invocation.
-      # Pinning is a PARITY check between plan and execution, never the only gate.
+      # Pack index is transport only. Each runner consumes the one hashed plan,
+      # verifies the exact tree/head/base identities, and emits raw semantic facts.
+      # Causality is computed later by ci-gate; a pack never labels itself inherited.
       - name: validate and run legacy CI pack
+        if: needs.ci-plan.outputs.plan_sha != ''
+        id: execute_semantic_pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
-          # Active unless the repository variable is exactly `off` (2026-08-13).
-          # A leftover `shadow` from the first deployment would keep copying
-          # every main-red onto every pull request. `off` is the emergency
-          # full-suite kill switch.
-          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
-          PLAN_SHA_ARG: ${{ needs.ci-plan.outputs.plan_sha && format('--expect-plan-sha {0}', needs.ci-plan.outputs.plan_sha) || '' }}
+          EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
+          TESTED_TREE_SHA: ${{ needs.ci-plan.outputs.tested_tree_sha }}
+          SUBJECT_HEAD_SHA: ${{ needs.ci-plan.outputs.subject_head_sha }}
+          TESTED_BASE_SHA: ${{ needs.ci-plan.outputs.tested_base_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
+          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json" \
+            --changed-files-file "$CI_CHANGED_FILES_FILE" \
+            --expect-plan-sha "$EXPECTED_PLAN_SHA" \
+            --expect-tested-tree-sha "$TESTED_TREE_SHA" \
+            --expect-subject-head-sha "$SUBJECT_HEAD_SHA" \
+            --expect-base-sha "$TESTED_BASE_SHA" \
+            --pack-index ${{ matrix.pack }} \
+            --pack-count 12 \
+            --base-replay-budget-seconds 900 \
+            --emit-semantic-fragment "$RUNNER_TEMP/ci-semantic-fragments/pack-${{ matrix.pack }}.json" \
+            --execute
+      # Planner uncertainty still widens to the full suite. It cannot mint
+      # semantic authority because no exact plan exists, so ci-gate will block
+      # even if these compatibility packs happen to pass.
+      - name: fail-safe full suite when no authoritative plan was produced
+        if: needs.ci-plan.outputs.plan_sha == ''
+        env:
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
           --pack-count 12
-          $CI_SCOPE_ARG
-          $PLAN_SHA_ARG
           --execute
+      - name: publish this pack's raw semantic fragment
+        if: always() && needs.ci-plan.outputs.plan_sha != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-semantic-pack-${{ github.run_id }}-${{ matrix.pack }}
+          path: ${{ runner.temp }}/ci-semantic-fragments/pack-${{ matrix.pack }}.json
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 14
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan
   # selected pack N, and the whole matrix is skipped on a proven no-work PR. That
@@ -4577,30 +4693,119 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # Plain `run: |` block, not a folded scalar — shell `if` blocks need their
-      # newlines, and the folded-scalar rules above (no `#`, one indent) would
-      # forbid this shape outright.
-      - name: adjudicate CI result
+      - name: check out the one shared semantic-proof law
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/ci_semantic_proof.py
+          sparse-checkout-cone-mode: false
+      - name: download the authoritative semantic plan
+        if: needs.ci-plan.outputs.plan_sha != ''
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
+          path: ${{ runner.temp }}/ci-semantic-plan
+      - name: download every raw semantic pack fragment
+        if: needs.ci-plan.outputs.plan_sha != '' && needs.ci-plan.outputs.has_work == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ci-semantic-pack-${{ github.run_id }}-*
+          path: ${{ runner.temp }}/ci-semantic-fragments
+          merge-multiple: true
+      # This is the one causal decision. Pack conclusions are scheduling and
+      # transport facts only; complete plan accounting, exact-base comparison,
+      # and missing/malformed refusal all live in ci_semantic_proof.py.
+      - id: semantic_reconcile
+        name: reconcile complete semantic evidence
+        continue-on-error: true
         env:
           PLAN_RESULT: ${{ needs.ci-plan.result }}
-          PACK_RESULT: ${{ needs.ci-pack.result }}
-          HAS_WORK: ${{ needs.ci-plan.outputs.has_work }}
           PLAN_REASON: ${{ needs.ci-plan.outputs.reason }}
+          FALLBACK_RUN_ID: ${{ github.run_id }}
+          FALLBACK_EVENT: ${{ github.event_name }}
+          FALLBACK_ROLE: ${{ needs.ci-plan.outputs.semantic_role }}
+          FALLBACK_TESTED_TREE: ${{ needs.ci-plan.outputs.tested_tree_sha }}
+          FALLBACK_SUBJECT_HEAD: ${{ needs.ci-plan.outputs.subject_head_sha }}
+          FALLBACK_BASE: ${{ needs.ci-plan.outputs.tested_base_sha }}
         run: |
-          echo "plan=$PLAN_RESULT pack=$PACK_RESULT has_work=$HAS_WORK"
-          echo "reason: $PLAN_REASON"
-          if [ "$PLAN_RESULT" != "success" ]; then
-            echo "::error title=ci-gate::CI planning did not succeed ($PLAN_RESULT)"
+          set -u
+          mkdir -p "$RUNNER_TEMP/ci-semantic-fragments" "$RUNNER_TEMP/ci-semantic-final"
+          fallback_args=()
+          if [ -n "$FALLBACK_ROLE" ] && [ -n "$FALLBACK_TESTED_TREE" ] && [ -n "$FALLBACK_SUBJECT_HEAD" ] && [ -n "$FALLBACK_BASE" ]; then
+            fallback_args=(
+              --fallback-workflow-run-id "$FALLBACK_RUN_ID"
+              --fallback-workflow ci
+              --fallback-event "$FALLBACK_EVENT"
+              --fallback-role "$FALLBACK_ROLE"
+              --fallback-tested-tree-sha "$FALLBACK_TESTED_TREE"
+              --fallback-subject-head-sha "$FALLBACK_SUBJECT_HEAD"
+              --fallback-base-sha "$FALLBACK_BASE"
+            )
+          fi
+          python3 scripts/ci_semantic_proof.py reconcile \
+            --plan "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json" \
+            --fragments-dir "$RUNNER_TEMP/ci-semantic-fragments" \
+            --planner-outcome "$PLAN_RESULT" \
+            --planner-detail "$PLAN_REASON" \
+            --output "$RUNNER_TEMP/ci-semantic-final/ci-semantic-evidence.json" \
+            "${fallback_args[@]}"
+      # Published on success AND failure. The fixed run-scoped name plus
+      # overwrite prevents reruns from leaving two apparently authoritative
+      # artifacts; consumers reject duplicates anyway.
+      - name: publish final semantic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-semantic-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/ci-semantic-final/ci-semantic-evidence.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+      - name: summarize semantic verdict
+        if: always()
+        env:
+          EVIDENCE: ${{ runner.temp }}/ci-semantic-final/ci-semantic-evidence.json
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["EVIDENCE"])
+          if not path.is_file():
+              print("Semantic evidence was not materialized.")
+              raise SystemExit(0)
+          doc = json.loads(path.read_text(encoding="utf-8"))
+          counts = {}
+          for job in doc.get("jobs", []):
+              for step in job.get("steps", []):
+                  key = step.get("classification", "unknown")
+                  counts[key] = counts.get(key, 0) + 1
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          text = (
+              "## CI semantic proof\n\n"
+              f"- status: `{doc.get('status', 'failure')}`\n"
+              f"- evidence: `{doc.get('evidence_sha256', 'missing')}`\n"
+              f"- classifications: `{json.dumps(counts, sort_keys=True)}`\n"
+              f"- infrastructure findings: `{len(doc.get('infrastructure', []))}`\n"
+          )
+          if summary:
+              with open(summary, "a", encoding="utf-8") as handle:
+                  handle.write(text)
+          print(text)
+          PY
+      - name: enforce semantic verdict
+        if: always()
+        env:
+          RECONCILE_OUTCOME: ${{ steps.semantic_reconcile.outcome }}
+        run: |
+          if [ "$RECONCILE_OUTCOME" != "success" ]; then
+            echo "::error title=ci-gate::semantic proof is blocking ($RECONCILE_OUTCOME)"
             exit 1
           fi
-          if [ "$HAS_WORK" = "false" ]; then
-            echo "::notice title=ci-gate::planner proved no pack work is required"
-            exit 0
-          fi
-          # cancelled here is a workflow cancel (new SHA / operator), not
-          # fail-fast sibling-cancel: the pack matrix is fail-fast:false so
-          # one red pack cannot wipe the other eleven proofs.
-          if [ "$PACK_RESULT" != "success" ]; then
-            echo "::error title=ci-gate::one or more selected CI packs did not succeed ($PACK_RESULT)"
-            exit 1
-          fi
+          echo "::notice title=ci-gate::complete semantic proof is clear"

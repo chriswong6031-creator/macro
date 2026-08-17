@@ -884,6 +884,188 @@ if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[0]}" /
 		echo "macro-update: refusing Market Memory experience unit update — systemd-analyze verify failed" >&2
 	fi
 fi
+# API serving deploys independently of Market Memory attestation. W2C owner
+# replay may still exit 1 after this transaction; experience/options stay
+# fail-closed. The fence is minted here so a later W2C failure cannot strand
+# the updater restarting macro-api on every cron tick.
+# BEGIN MACRO_API_RESTART_TRANSACTION
+# macro-api: restart ONLY when its own code changed (avoid blipping /api on every
+# site/ render commit). "Its own code" = every Python module import-cached by the
+# running uvicorn, because sys.modules pins the OLD module object for the life of
+# the process: without a restart the new file sits on disk while the API keeps
+# serving the previous code — live in git, dead in production, with no signal.
+#
+# INCLUSION RULE (keep the list narrow but complete). A path belongs here when the
+# API process imports it, either:
+#   (a) at load     — app/*.py and their module-level engine/lib closure; or
+#   (b) at request  — a function-level import on a path an API endpoint reaches
+#                     (cached after the first call, same trap, just later).
+# Every module below was confirmed against the import graph of app/*.py, not
+# guessed. When adding a lazy `from engine...` / `from lib...` import to any app/
+# router or to a module already listed here, extend this list in the same commit —
+# tests/test_deploy_update_self_heal.py recomputes the load-time closure and fails
+# CI if it drifts out of this regex.
+#
+# Why each group is here:
+#   app/.*\.py             every router is import-cached (the old list omitted
+#                          regwall.py/paywall.py: code could deploy while the
+#                          running API kept the previous access policy)
+#   neuralweb/*            /api/ask + /api/brain: ask_brain → cortex, llm_auth,
+#                          envelope → synapse, tushare_freshness; brain_gateway →
+#                          chart_perception, doctrine, key_pool (CMX W2/W4)
+#   earnings evidence      brain_gateway lazily reaches earnings_context_reader,
+#                          whose exact-evidence validator imports the named
+#                          earnings_narrative contract closure and PRESS adapter.
+#                          All become request-time cached after the first read.
+#   codex_provider/runner  llm_auth's request-time Codex fallback imports both;
+#                          either module stays cached after the first Codex turn
+#   research_vault/        app/research.py imports catalog, corpus, download_quota,
+#                          view_ratelimit, watermark (→ sidecar, r2_store) at MODULE
+#                          level. Whole-package pattern on purpose: this is the
+#                          vault's serving layer, so a new module added here is
+#                          API-cached too and must not need a second fix. Omitting
+#                          it silently froze download caps / anti-scrape limits —
+#                          #3654 escaped only because it also touched app/research.py.
+#   fundamental_forensics/ app/forensics.py imports private_state through the
+#                          package, whose __init__ loads the pure kernel modules;
+#                          all are therefore pinned in macro-api sys.modules.
+#   capital_structure/*    app/capital_structure.py imports projection at module
+#                          load; projection and its package __init__ pull the
+#                          event spine, normalized document-term kernel, and
+#                          source-identity helpers into sys.modules. All stay
+#                          pinned until macro-api restarts. Named narrowly so
+#                          nightly-only compilers do not blip the serving plane.
+#   government_revenue/*   app/government_revenue.py imports workspace through
+#                          the non-inert package __init__, which loads the award,
+#                          dossier, exact entity-resolution, federation,
+#                          freshness, metric, opportunity, PIT, budget-program,
+#                          IDV-dossier, and subaward-dossier helpers.
+#                          These serving-plane modules remain cached for the
+#                          life of macro-api and must advance with a deploy.
+#                          Their lru_cache'd validators pin the referenced
+#                          contracts/government_revenue schemas in-process for
+#                          the same lifetime, so those schema files are named
+#                          in the trigger too; schema reads with no cache (the
+#                          budget graph, the coverage builders) re-read per
+#                          call, self-heal without a restart, and stay out.
+#                          tests/test_deploy_update_self_heal.py derives the
+#                          pinned set from the app/ import closure.
+#   company_intelligence/* app/company_intelligence.py imports the verified
+#                          reader's public artifact contract.  Importing this
+#                          package executes its non-inert __init__, which loads
+#                          contracts, health, and views; all are pinned in the
+#                          API process for the lifetime of the public ticker
+#                          context route.
+#   seasonality/           app/seasonality.py's single `from engine.seasonality
+#                          import screener` executes the package __init__, which
+#                          eagerly re-exports contracts, event_clock, model,
+#                          multiplicity, prophet_bridge, regime, screener and
+#                          universe. All nine were confirmed against a live
+#                          interpreter's sys.modules, not read off import lines.
+#                          Named, not globbed, and the seven exclusions are
+#                          load-bearing: calendar, calibration, event_study,
+#                          foundation, panel, scanner and state are the
+#                          numpy/pandas research modules that __init__ keeps out
+#                          on purpose (calibration and event_study resolve
+#                          through its PEP 562 __getattr__ only when something
+#                          asks, and no app/ path asks). Globbing would blip /api
+#                          on every research commit in an actively-built program.
+#   context_index/         brain_gateway → packet.build_packet, which top-level
+#                          imports fusion/gitinfo/lexical/structured. Named, not
+#                          globbed: ingest/chunking/health/schema/sources are
+#                          nightly-only builders the API never imports.
+#   marketing/             brain_gateway's chart path → chart_render (load_ohlcv,
+#                          render_chart_v2) + confluence_source. The other twelve
+#                          are NOT optional and NOT reached by reading import
+#                          lines: importing ANY engine.marketing submodule first
+#                          executes the PACKAGE __init__, which imports state →
+#                          authority, charter, claims, cmo, departments, economics,
+#                          events, ledgers, opportunity_bus, publication. All
+#                          fourteen were confirmed against a live interpreter's
+#                          sys.modules, not inferred. Named, not globbed: 34 of the
+#                          48 marketing modules are nightly-only, and outbox/
+#                          rejections are admin-only (see the admin list below).
+#   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
+#   lib/*                  ai_costs + mastermind_response_log log every chat call;
+#                          config.py is a module-level dep of live_quotes;
+#                          commercial_path.py is the GATE-4 emit module reached
+#                          from billing / require_user / brain_gateway (function-
+#                          level, cached after the first money-path event)
+#
+# Deliberately NOT here (do not "fix" these — they would blip /api for nothing):
+#   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md AND analyst/*.md): both
+#     libraries reload the .md files on mtime change, so prose-only edits go
+#     live with no restart.
+#   - Data/artifact files read from disk per request.
+#   - The nightly-only closure behind cortex.run() (constitution → qledger →
+#     ai_desk → master_brain → china_*): the API imports cortex for its tool
+#     schemas/implementations only and never calls run(), so those ~90 modules are
+#     NOT in the API's sys.modules. Adding them would restart /api on nearly every
+#     engine commit — exactly what this narrow list exists to prevent.
+API_RESTART_CONFIRMED=0
+API_RESTART_NEEDED=0
+# BEGIN MACRO_API_RESTART_TRIGGER
+if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
+   [ "$API_DEPS_UPDATED" -eq 1 ]; then
+	API_RESTART_NEEDED=1
+
+fi
+# END MACRO_API_RESTART_TRIGGER
+if [ "$API_RESTART_NEEDED" -eq 1 ]; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
+	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
+	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
+	# Log the PID transition, and retry once when the restart failed or the PID
+	# provably did not change — all output lands in macro-update.log.
+	if [ "$API_UNIT_READY" -ne 1 ]; then
+		echo "macro-update: macro-api restart skipped because the reviewed unit is not installed exactly" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: macro-api restart skipped because dependency reconciliation failed" >&2
+	elif systemctl is-enabled macro-api >/dev/null 2>&1; then
+		systemctl daemon-reload
+		API_NEED_DAEMON_RELOAD=$(systemctl show -p NeedDaemonReload --value macro-api)
+		[ "$API_NEED_DAEMON_RELOAD" = no ] || {
+			echo "macro-update: macro-api manager state remains stale after daemon-reload" >&2
+			exit 1
+		}
+		PRE_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+		API_RESTART_RC=0
+		systemctl restart macro-api || API_RESTART_RC=$?
+		POST_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+		if [ "$API_RESTART_RC" -eq 0 ] && [[ "$POST_PID" =~ ^[1-9][0-9]*$ ]] && [ "$POST_PID" != "$PRE_PID" ]; then
+			API_RESTART_CONFIRMED=1
+			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+		else
+			echo "macro-api restart ANOMALY rc=$API_RESTART_RC pid $PRE_PID -> $POST_PID; retrying once"
+			sleep 2
+			API_RETRY_RC=0
+			systemctl restart macro-api || API_RETRY_RC=$?
+			FINAL_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+			if [ "$API_RETRY_RC" -eq 0 ] && [[ "$FINAL_PID" =~ ^[1-9][0-9]*$ ]] && [ "$FINAL_PID" != "$PRE_PID" ]; then
+				API_RESTART_CONFIRMED=1
+				echo "macro-api restart retry succeeded pid $PRE_PID -> $FINAL_PID"
+			else
+				echo "macro-api restart RETRY FAILED rc=$API_RETRY_RC pid $PRE_PID -> $FINAL_PID" >&2
+			fi
+		fi
+	fi
+fi
+
+# The marker attests a verified PID transition into the installed unit that
+# hides both the disjoint raw store and its dedicated credential source.  It is
+# removed whenever that unit changes and /run clears it on reboot, so option
+# evidence cannot exist while an older API namespace remains able to read it.
+if [ "$API_RESTART_CONFIRMED" -eq 1 ] && [ "$API_UNIT_READY" -eq 1 ] && \
+   [ "$(systemctl show -p NeedDaemonReload --value macro-api)" = no ] && \
+   cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
+	mm_write_api_fence_marker
+fi
+# END MACRO_API_RESTART_TRANSACTION
+
 # BEGIN W2C_RUNTIME_ATTESTATION
 MARKET_MEMORY_EXPERIENCE_RUN_NEEDED=0
 MARKET_MEMORY_EXPERIENCE_INSTALLATION_REQUIRED=0
@@ -1096,179 +1278,9 @@ if [ "$OPTIONS_UNITS_READY" -eq 1 ] && { \
 	MARKET_MEMORY_OPTIONS_RUN_NEEDED=1
 fi
 
-# macro-api: restart ONLY when its own code changed (avoid blipping /api on every
-# site/ render commit). "Its own code" = every Python module import-cached by the
-# running uvicorn, because sys.modules pins the OLD module object for the life of
-# the process: without a restart the new file sits on disk while the API keeps
-# serving the previous code — live in git, dead in production, with no signal.
-#
-# INCLUSION RULE (keep the list narrow but complete). A path belongs here when the
-# API process imports it, either:
-#   (a) at load     — app/*.py and their module-level engine/lib closure; or
-#   (b) at request  — a function-level import on a path an API endpoint reaches
-#                     (cached after the first call, same trap, just later).
-# Every module below was confirmed against the import graph of app/*.py, not
-# guessed. When adding a lazy `from engine...` / `from lib...` import to any app/
-# router or to a module already listed here, extend this list in the same commit —
-# tests/test_deploy_update_self_heal.py recomputes the load-time closure and fails
-# CI if it drifts out of this regex.
-#
-# Why each group is here:
-#   app/.*\.py             every router is import-cached (the old list omitted
-#                          regwall.py/paywall.py: code could deploy while the
-#                          running API kept the previous access policy)
-#   neuralweb/*            /api/ask + /api/brain: ask_brain → cortex, llm_auth,
-#                          envelope → synapse, tushare_freshness; brain_gateway →
-#                          chart_perception, doctrine, key_pool (CMX W2/W4)
-#   earnings evidence      brain_gateway lazily reaches earnings_context_reader,
-#                          whose exact-evidence validator imports the named
-#                          earnings_narrative contract closure and PRESS adapter.
-#                          All become request-time cached after the first read.
-#   codex_provider/runner  llm_auth's request-time Codex fallback imports both;
-#                          either module stays cached after the first Codex turn
-#   research_vault/        app/research.py imports catalog, corpus, download_quota,
-#                          view_ratelimit, watermark (→ sidecar, r2_store) at MODULE
-#                          level. Whole-package pattern on purpose: this is the
-#                          vault's serving layer, so a new module added here is
-#                          API-cached too and must not need a second fix. Omitting
-#                          it silently froze download caps / anti-scrape limits —
-#                          #3654 escaped only because it also touched app/research.py.
-#   fundamental_forensics/ app/forensics.py imports private_state through the
-#                          package, whose __init__ loads the pure kernel modules;
-#                          all are therefore pinned in macro-api sys.modules.
-#   capital_structure/*    app/capital_structure.py imports projection at module
-#                          load; projection and its package __init__ pull the
-#                          event spine, normalized document-term kernel, and
-#                          source-identity helpers into sys.modules. All stay
-#                          pinned until macro-api restarts. Named narrowly so
-#                          nightly-only compilers do not blip the serving plane.
-#   government_revenue/*   app/government_revenue.py imports workspace through
-#                          the non-inert package __init__, which loads the award,
-#                          dossier, exact entity-resolution, federation,
-#                          freshness, metric, opportunity, PIT, budget-program,
-#                          IDV-dossier, and subaward-dossier helpers.
-#                          These serving-plane modules remain cached for the
-#                          life of macro-api and must advance with a deploy.
-#                          Their lru_cache'd validators pin the referenced
-#                          contracts/government_revenue schemas in-process for
-#                          the same lifetime, so those schema files are named
-#                          in the trigger too; schema reads with no cache (the
-#                          budget graph, the coverage builders) re-read per
-#                          call, self-heal without a restart, and stay out.
-#                          tests/test_deploy_update_self_heal.py derives the
-#                          pinned set from the app/ import closure.
-#   company_intelligence/* app/company_intelligence.py imports the verified
-#                          reader's public artifact contract.  Importing this
-#                          package executes its non-inert __init__, which loads
-#                          contracts, health, and views; all are pinned in the
-#                          API process for the lifetime of the public ticker
-#                          context route.
-#   seasonality/           app/seasonality.py's single `from engine.seasonality
-#                          import screener` executes the package __init__, which
-#                          eagerly re-exports contracts, event_clock, model,
-#                          multiplicity, prophet_bridge, regime, screener and
-#                          universe. All nine were confirmed against a live
-#                          interpreter's sys.modules, not read off import lines.
-#                          Named, not globbed, and the seven exclusions are
-#                          load-bearing: calendar, calibration, event_study,
-#                          foundation, panel, scanner and state are the
-#                          numpy/pandas research modules that __init__ keeps out
-#                          on purpose (calibration and event_study resolve
-#                          through its PEP 562 __getattr__ only when something
-#                          asks, and no app/ path asks). Globbing would blip /api
-#                          on every research commit in an actively-built program.
-#   context_index/         brain_gateway → packet.build_packet, which top-level
-#                          imports fusion/gitinfo/lexical/structured. Named, not
-#                          globbed: ingest/chunking/health/schema/sources are
-#                          nightly-only builders the API never imports.
-#   marketing/             brain_gateway's chart path → chart_render (load_ohlcv,
-#                          render_chart_v2) + confluence_source. The other twelve
-#                          are NOT optional and NOT reached by reading import
-#                          lines: importing ANY engine.marketing submodule first
-#                          executes the PACKAGE __init__, which imports state →
-#                          authority, charter, claims, cmo, departments, economics,
-#                          events, ledgers, opportunity_bus, publication. All
-#                          fourteen were confirmed against a live interpreter's
-#                          sys.modules, not inferred. Named, not globbed: 34 of the
-#                          48 marketing modules are nightly-only, and outbox/
-#                          rejections are admin-only (see the admin list below).
-#   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
-#   lib/*                  ai_costs + mastermind_response_log log every chat call;
-#                          config.py is a module-level dep of live_quotes
-#
-# Deliberately NOT here (do not "fix" these — they would blip /api for nothing):
-#   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md AND analyst/*.md): both
-#     libraries reload the .md files on mtime change, so prose-only edits go
-#     live with no restart.
-#   - Data/artifact files read from disk per request.
-#   - The nightly-only closure behind cortex.run() (constitution → qledger →
-#     ai_desk → master_brain → china_*): the API imports cortex for its tool
-#     schemas/implementations only and never calls run(), so those ~90 modules are
-#     NOT in the API's sys.modules. Adding them would restart /api on nearly every
-#     engine commit — exactly what this narrow list exists to prevent.
-API_RESTART_CONFIRMED=0
-API_RESTART_NEEDED=0
-# BEGIN MACRO_API_RESTART_TRIGGER
-if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
-   [ "$API_DEPS_UPDATED" -eq 1 ]; then
-	API_RESTART_NEEDED=1
-
-fi
-# END MACRO_API_RESTART_TRIGGER
-if [ "$API_RESTART_NEEDED" -eq 1 ]; then
-	disarm_options_timer
-	rm -f "$OPTIONS_API_FENCE_MARKER"
-	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
-	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
-	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
-	# Log the PID transition, and retry once when the restart failed or the PID
-	# provably did not change — all output lands in macro-update.log.
-	if [ "$API_UNIT_READY" -ne 1 ]; then
-		echo "macro-update: macro-api restart skipped because the reviewed unit is not installed exactly" >&2
-	elif [ "$API_DEPS_OK" -ne 1 ]; then
-		echo "macro-update: macro-api restart skipped because dependency reconciliation failed" >&2
-	elif systemctl is-enabled macro-api >/dev/null 2>&1; then
-		systemctl daemon-reload
-		API_NEED_DAEMON_RELOAD=$(systemctl show -p NeedDaemonReload --value macro-api)
-		[ "$API_NEED_DAEMON_RELOAD" = no ] || {
-			echo "macro-update: macro-api manager state remains stale after daemon-reload" >&2
-			exit 1
-		}
-		PRE_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		API_RESTART_RC=0
-		systemctl restart macro-api || API_RESTART_RC=$?
-		POST_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		if [ "$API_RESTART_RC" -eq 0 ] && [[ "$POST_PID" =~ ^[1-9][0-9]*$ ]] && [ "$POST_PID" != "$PRE_PID" ]; then
-			API_RESTART_CONFIRMED=1
-			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
-		else
-			echo "macro-api restart ANOMALY rc=$API_RESTART_RC pid $PRE_PID -> $POST_PID; retrying once"
-			sleep 2
-			API_RETRY_RC=0
-			systemctl restart macro-api || API_RETRY_RC=$?
-			FINAL_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-			if [ "$API_RETRY_RC" -eq 0 ] && [[ "$FINAL_PID" =~ ^[1-9][0-9]*$ ]] && [ "$FINAL_PID" != "$PRE_PID" ]; then
-				API_RESTART_CONFIRMED=1
-				echo "macro-api restart retry succeeded pid $PRE_PID -> $FINAL_PID"
-			else
-				echo "macro-api restart RETRY FAILED rc=$API_RETRY_RC pid $PRE_PID -> $FINAL_PID" >&2
-			fi
-		fi
-	fi
-fi
-
-# The marker attests a verified PID transition into the installed unit that
-# hides both the disjoint raw store and its dedicated credential source.  It is
-# removed whenever that unit changes and /run clears it on reboot, so option
-# evidence cannot exist while an older API namespace remains able to read it.
-if [ "$API_RESTART_CONFIRMED" -eq 1 ] && [ "$API_UNIT_READY" -eq 1 ] && \
-   [ "$(systemctl show -p NeedDaemonReload --value macro-api)" = no ] && \
-   cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service && \
-   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
-   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
-	mm_write_api_fence_marker
-fi
-
+# Consume the API fence minted with the earlier restart transaction. Do not
+# rewrite it here: a W2C exit 1 must not reach this block, and the marker
+# already attests the verified PID.
 OPTIONS_API_FENCE_READY=0
 if mm_api_fence_marker_ready && \
    [ "$API_UNIT_READY" -eq 1 ] && \
@@ -1498,6 +1510,40 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# CN PROPHET LIVE lane (CN-PR-1). Own block — a widened regex would restart the
+# US prophet timer whenever this unit changed. Same self-arming contract: go-live
+# is a REPO COMMIT, so a CHANGED-only trigger would install a timer nobody ever
+# enables. The live-fast guard marks the serving VPS. The .service is NEVER
+# restarted (oneshot — that would run a pass off the CST-windowed schedule).
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-cnprophet\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-cnprophet.timer ]; }; then
+	CNPROPHET_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-cnprophet.service"
+		"$APP_DIR/app/deploy/macro-live-cnprophet.timer"
+	)
+	if systemd-analyze verify "${CNPROPHET_UNIT_SOURCES[@]}"; then
+		CNPROPHET_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${CNPROPHET_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				CNPROPHET_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$CNPROPHET_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-cnprophet.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-cnprophet units updated"
+		fi
+		systemctl enable --now macro-live-cnprophet.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-cnprophet.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-cnprophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # CLOSE-PASS MIRROR lane (W-L1a). Its own block for the same reason the Prophet
 # block is separate: a widened regex would restart unrelated timers whenever this
 # unit changed. Same self-arming contract — go-live for this lane is a REPO COMMIT
@@ -1573,6 +1619,127 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 			echo "macro-update: macro-sentinel.timer could not be enabled" >&2
 	else
 		echo "macro-update: refusing macro-sentinel unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# LIVE ENTRY RADAR lanes — the pre-open pack builder and the 5-min RTH evaluator
+# (research/live_entry_radar/W4_LIVE_EVALUATOR_DESIGN.md §3b, W4_DEPLOY_PLAN.md).
+# Four units in ONE block because they are one program: they go live together, they
+# share a cap set, and a session evaluated against a pack built by a different code
+# version is exactly the thing pack_hash exists to refuse.
+#
+# THE ARM GATE IS WHAT MAKES THIS BLOCK DIFFERENT FROM THE FOUR ABOVE. For Prophet,
+# close-pass and the sentinel, go-live is a REPO COMMIT and nothing else. For this
+# program the commissioning drew the deployment boundary at ACTIVATION (design §3b:
+# build + validate, no autonomous production service state), so go-live is an
+# explicit OPERATOR act — `ENTRY_RADAR_LIVE_ENABLE=1` in /etc/macro-live.env — and
+# the merge alone must leave the box exactly as it found it. The code path is still
+# the house self-arming shape: once the flag is set, the next macro-update tick
+# installs, verifies, enables and heals with no further operator step, and the
+# absent-file clause self-heals a failed verify or a removed unit.
+#
+# ENTRY_RADAR_LIVE_ENABLE is read by GREP, not by sourcing. update.sh reads no env
+# file anywhere else and runs under `set -euo pipefail` as root: sourcing an
+# operator-edited file here would execute whatever is in it, inside this script's
+# shell, with its `set -e` semantics — a deploy script that can be killed (or worse)
+# by a stray line in an unrelated env file. The `|| true` is load-bearing for the
+# same reason: under pipefail an unmatched grep is exit 1, which `set -e` would take
+# as a fatal error on the ordinary unarmed path.
+#
+# The ARM CHECK SITS OUTSIDE THE CHANGED TRIGGER, deliberately. A disarm has to work
+# on a tick where nothing changed at all: the operator's rollback is to DELETE the
+# env line, which touches no repo file, so a CHANGED-gated block would never notice
+# and the timers would run on forever. So the structure is: live-plane guard →
+# armed? → (CHANGED or absent) install/enable : disarm-if-installed. Only the INSTALL
+# half is CHANGED-gated; both arm directions are evaluated every pass.
+#
+# The .service files are NEVER restarted. They are oneshots — `systemctl restart`
+# would RUN a pass out of band: an evaluator pass outside the ET window against a
+# stale pack, or a pack build mid-session that the stale-pack gate would then have to
+# refuse. Only the timers are (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1; then
+	ENTRY_RADAR_ARM=$(grep -E '^ENTRY_RADAR_LIVE_ENABLE=' /etc/macro-live.env 2>/dev/null \
+		| tail -1 | cut -d= -f2- | tr -d "\"'[:space:]" || true)
+	if [ "${ENTRY_RADAR_ARM:-}" = "1" ]; then
+		if echo "$CHANGED" | grep -qE '^(app/deploy/macro-(live-entry-radar|entry-radar-pack)\.(service|timer)|scripts/entry_radar_live(_pack)?\.py|engine/entry_radar/live_.*\.py)$' || \
+		   [ ! -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ ! -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			ENTRY_RADAR_UNIT_SOURCES=(
+				"$APP_DIR/app/deploy/macro-live-entry-radar.service"
+				"$APP_DIR/app/deploy/macro-live-entry-radar.timer"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.service"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.timer"
+			)
+			if systemd-analyze verify "${ENTRY_RADAR_UNIT_SOURCES[@]}"; then
+				ENTRY_RADAR_UNIT_UPDATED=0
+				for UNIT_SOURCE in "${ENTRY_RADAR_UNIT_SOURCES[@]}"; do
+					UNIT=$(basename "$UNIT_SOURCE")
+					if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+						install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+						ENTRY_RADAR_UNIT_UPDATED=1
+					fi
+				done
+				if [ "$ENTRY_RADAR_UNIT_UPDATED" -eq 1 ]; then
+					systemctl daemon-reload
+					systemctl restart macro-live-entry-radar.timer macro-entry-radar-pack.timer 2>/dev/null || true
+					RECONCILED=1
+					echo "macro-update: entry-radar units updated"
+				fi
+				systemctl enable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || \
+					echo "macro-update: entry-radar timers could not be enabled" >&2
+			else
+				echo "macro-update: refusing entry-radar unit update — systemd-analyze verify failed" >&2
+			fi
+		fi
+	else
+		echo "macro-update: entry-radar: staged, not armed (ENTRY_RADAR_LIVE_ENABLE unset)"
+		# SYMMETRIC DISARM. Rollback is "remove the env line", so the block that
+		# arms on a flag must also stand the lane down when the flag goes away —
+		# otherwise the only rollback is a manual systemctl call the deploy plan
+		# does not describe. `disable --now` both stops the running timer and
+		# removes the timers.target wants link, so a reboot does not resurrect it.
+		if [ -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			systemctl disable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || true
+			RECONCILED=1
+			echo "macro-update: entry-radar: disarmed — both timers disabled and stopped"
+		fi
+	fi
+fi
+
+# CUSTOMER-TABLE BACKUP — MMX-001 / GATE-1. Same self-arming contract as the
+# sentinel: go-live is a REPO COMMIT, so a CHANGED-only trigger would install a
+# timer nobody ever enables. Gated on macro-api.service (the box that already
+# holds Supabase + R2 env). The .service is a oneshot and is NEVER restarted;
+# only the timer is (re)armed. Absent-file clause self-heals an earlier failed
+# verify or an operator removal. The job fail-closes without
+# BACKUP_ENCRYPTION_KEY — that is visible, not silent.
+if systemctl is-enabled macro-api.service >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-user-backup\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-user-backup.timer ]; }; then
+	USER_BACKUP_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-user-backup.service"
+		"$APP_DIR/app/deploy/macro-user-backup.timer"
+	)
+	if systemd-analyze verify "${USER_BACKUP_UNIT_SOURCES[@]}"; then
+		USER_BACKUP_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${USER_BACKUP_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				USER_BACKUP_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$USER_BACKUP_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-user-backup.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-user-backup units updated"
+		fi
+		systemctl enable --now macro-user-backup.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-user-backup.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-user-backup unit update — systemd-analyze verify failed" >&2
 	fi
 fi
 
@@ -1842,7 +2009,7 @@ fi
 # the panel queueing against the OLD rule out of sys.modules — the outbox gap
 # (2026-07-26) again, but on the path where being stale means a wrong-desk or
 # double-owner post rather than a stale reading.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|project_runtime_state|tiers)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|social_publisher|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|project_runtime_state|tiers)\.py|lib/dataos/(__init__|identity|nulls|price|quality|registry|temporal)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity|intelligence_registry|output_health)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|social_publisher|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/(marketing_publisher|build_intelligence_registry|build_output_health)\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 

@@ -269,6 +269,17 @@ def test_dollar_volume_pool_respects_n(tmp_path):
     assert len(top_by_dollar_volume(tmp_path, 4, as_of=TODAY)) == 4
 
 
+def test_dollar_volume_pool_does_not_alias_mixed_case_vendor_identity(tmp_path):
+    from engine.marketing.attention_source import top_by_dollar_volume
+    fresh = _sessions_ago(1)
+    _write_pack(tmp_path, {
+        "TPC": _pack_record("TPC", adv=9e9, rank=1, last=94.67, prev=94, last_date=fresh),
+        "TpC": _pack_record("TpC", adv=8e9, rank=2, last=16.98, prev=17, last_date=fresh),
+    }, trade_date=fresh)
+
+    assert [r["ticker"] for r in top_by_dollar_volume(tmp_path, 10, as_of=TODAY)] == ["TPC"]
+
+
 def test_dollar_volume_pool_is_empty_and_loud_when_stale(tmp_path, capsys):
     from engine.marketing.attention_source import top_by_dollar_volume
     old = _sessions_ago(9)
@@ -714,6 +725,20 @@ def test_top_movers_draws_from_the_pack_as_well_as_the_index(tmp_path):
     src = {m["ticker"]: m["source"] for m in res["gainers"] + res["losers"]}
     assert src["WILDUP"] == "hot_tape_pack"
     assert src["INDEXUP"] == "sp500_heatmap"
+
+
+def test_top_movers_does_not_alias_mixed_case_vendor_identity(tmp_path):
+    from engine.marketing.movers_source import load_movers
+    trade_date = _sessions_ago(1)
+    _write_heatmap(tmp_path, [], asof=trade_date)
+    _write_pack(tmp_path, {
+        "TPC": _pack_record("TPC", adv=9e9, rank=1, last=94.67, prev=94,
+                            last_date=trade_date),
+        "TpC": _pack_record("TpC", adv=8e9, rank=2, last=16.98, prev=17,
+                            last_date=trade_date),
+    }, trade_date=trade_date)
+
+    assert [t["t"] for t in load_movers(tmp_path)["pack_tiles"]] == ["TPC"]
 
 
 def test_top_movers_pack_rows_obey_min_abs_and_the_pack_guards(tmp_path):

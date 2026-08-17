@@ -97,8 +97,31 @@ def newest_published_call_date(catalog: Mapping[str, Any]) -> date | None:
     return best
 
 
-def upstream_dates(index: Mapping[str, Any]) -> list[date]:
-    """Every call date advertised by the Terminal transcript index."""
+def as_of_day(index: Mapping[str, Any] | None = None, *, now: date | None = None) -> date:
+    """The last day a transcript can be treated as an already-completed call.
+
+    The Terminal index `dates` map includes scheduled/future call days. Using
+    those as the upstream freshness ceiling reports an impossible date
+    (observed 2026-08-16: published=2026-07-29 upstream=2026-08-20). Prefer the
+    index's own `generated_at` day, then the supplied clock.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc).date()
+    if isinstance(index, Mapping):
+        generated = index.get("generated_at")
+        if isinstance(generated, str) and len(generated) >= 10:
+            parsed = _parse_day(generated[:10])
+            if parsed is not None:
+                return min(parsed, now)
+    return now
+
+
+def upstream_dates(
+    index: Mapping[str, Any],
+    *,
+    as_of: date | None = None,
+) -> list[date]:
+    """Completed call dates advertised by the Terminal transcript index."""
     dates = index.get("dates")
     if not isinstance(dates, Mapping):
         # `dates` is a documented optional extension of the tx-index schema. With
@@ -108,7 +131,11 @@ def upstream_dates(index: Mapping[str, Any]) -> list[date]:
         raise EarningsWireFreshnessError(
             "terminal transcript index carries no `dates` map; lag is unmeasurable"
         )
-    out = [d for d in (_parse_day(v) for v in dates.values()) if d is not None]
+    ceiling = as_of if as_of is not None else as_of_day(index)
+    out = [
+        d for d in (_parse_day(v) for v in dates.values())
+        if d is not None and d <= ceiling
+    ]
     if not out:
         raise EarningsWireFreshnessError("terminal transcript index `dates` map is empty")
     return out
@@ -120,9 +147,11 @@ def audit(
     *,
     warn_days: int = DEFAULT_WARN_DAYS,
     error_days: int = DEFAULT_ERROR_DAYS,
+    as_of: date | None = None,
 ) -> dict:
     published = newest_published_call_date(catalog)
-    upstream = upstream_dates(index)
+    ceiling = as_of if as_of is not None else as_of_day(index)
+    upstream = upstream_dates(index, as_of=ceiling)
     newest_upstream = max(upstream)
 
     if published is None:
@@ -143,6 +172,7 @@ def audit(
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "newest_published_call_date": published.strftime(_ISO_DATE),
         "newest_upstream_call_date": newest_upstream.strftime(_ISO_DATE),
+        "as_of": ceiling.strftime(_ISO_DATE),
         "lag_days": lag_days,
         "upstream_bodies_newer_than_published": backlog,
         "article_count": catalog.get("article_count"),

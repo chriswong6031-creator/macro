@@ -1,0 +1,7 @@
+# Default Codex local environment for Macro Dashboard worktrees.
+# Codex runs this at the project root after creating a managed worktree.
+version = 1
+name = "Macro sparse worktree"
+
+[setup]
+script = "python3 scripts/worktree_sparse.py auto"

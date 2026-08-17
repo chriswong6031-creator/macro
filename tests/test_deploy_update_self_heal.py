@@ -106,6 +106,23 @@ def test_changed_systemd_unit_forces_api_restart():
     assert '<<<"$CHANGED"' in trigger
 
 
+def test_api_restart_transaction_precedes_w2c_runtime_attestation():
+    restart = SCRIPT.index("# BEGIN MACRO_API_RESTART_TRANSACTION")
+    trigger = SCRIPT.index("# BEGIN MACRO_API_RESTART_TRIGGER")
+    fence = SCRIPT.index("mm_write_api_fence_marker")
+    w2c = SCRIPT.index("# BEGIN W2C_RUNTIME_ATTESTATION")
+    fence_ready = SCRIPT.index("OPTIONS_API_FENCE_READY=0")
+    assert restart < trigger < fence < w2c < fence_ready
+    transaction = SCRIPT.split("# BEGIN MACRO_API_RESTART_TRANSACTION\n", 1)[1].split(
+        "# END MACRO_API_RESTART_TRANSACTION", 1
+    )[0]
+    assert 'if [ "$API_UNIT_READY" -ne 1 ]; then' in transaction
+    assert 'elif [ "$API_DEPS_OK" -ne 1 ]; then' in transaction
+    assert "API_RESTART_CONFIRMED=1" in transaction
+    assert "mm_write_api_fence_marker" in transaction
+    assert "w2c_start_owner_chain" not in transaction
+
+
 # --------------------------------------------------------------------------
 # macro-api restart trigger: a module import-cached by uvicorn but missing from
 # the trigger regex deploys to the VPS and never goes live (sys.modules pins the

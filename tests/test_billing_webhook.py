@@ -164,9 +164,10 @@ def test_compute_entitlement_canceled_is_free(monkeypatch):
 # --------------------------------------------------------------------------- #
 # 4. webhook signature verification
 # --------------------------------------------------------------------------- #
-def test_webhook_good_signature_dispatches(monkeypatch):
+def test_webhook_good_signature_dispatches(monkeypatch, tmp_path):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_dummy")
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", WHSEC)
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
     seen = {}
     monkeypatch.setattr(billing, "_event_seen", lambda eid: False)
     monkeypatch.setattr(billing, "_record_event", lambda eid, t: seen.setdefault("recorded", (eid, t)))
@@ -177,17 +178,25 @@ def test_webhook_good_signature_dispatches(monkeypatch):
     out = asyncio.run(billing.webhook(req))
     assert out["status"] == "ok" and out["id"] == "evt_good"
     assert seen["handled"] == "evt_good" and seen["recorded"][0] == "evt_good"
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "webhook.ok" and r.get("event_id") == "evt_good" for r in rows)
 
 
-def test_webhook_bad_signature_400(monkeypatch):
+def test_webhook_bad_signature_400(monkeypatch, tmp_path):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_dummy")
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", WHSEC)
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
     monkeypatch.setattr(billing, "_handle_event", lambda ev: pytest.fail("must not dispatch on bad sig"))
     payload = _event("customer.subscription.updated", {"customer": "cus_1"})
     req = _FakeRequest(payload, {"stripe-signature": "t=1,v1=deadbeef"})
     with pytest.raises(HTTPException) as ei:
         asyncio.run(billing.webhook(req))
     assert ei.value.status_code == 400
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "webhook.error" and r.get("reason") == "invalid_signature"
+               for r in rows)
 
 
 def test_webhook_missing_secret_503(monkeypatch):
@@ -431,3 +440,30 @@ def test_the_decision_still_happens_inside_the_lock(monkeypatch):
     billing._handle_event({"id": "evt_lk2", "type": "customer.subscription.updated",
                            "data": {"object": {"customer": "cus_1"}}})
     assert seen["locked_during_decide"] is True
+
+
+def test_checkout_failure_emits_commercial_path_event(monkeypatch, tmp_path):
+    """GATE-4: a Stripe Checkout create failure must land on the commercial ledger."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+
+    class _Boom:
+        class Session:
+            @staticmethod
+            def create(**kwargs):
+                raise RuntimeError("stripe down")
+
+        checkout = types.SimpleNamespace(Session=Session)
+
+    monkeypatch.setattr(billing, "_stripe", lambda: _Boom())
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: None)
+    monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
+    with pytest.raises(HTTPException) as ei:
+        billing.checkout(
+            billing.CheckoutRequest(tier="pro", interval="monthly"),
+            user={"id": "user_1", "email": "buyer@example.com"},
+        )
+    assert ei.value.status_code == 502
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "checkout.fail" and r.get("reason") == "RuntimeError"
+               for r in rows)

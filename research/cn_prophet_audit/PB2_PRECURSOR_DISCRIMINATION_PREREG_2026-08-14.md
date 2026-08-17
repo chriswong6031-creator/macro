@@ -427,6 +427,16 @@ include the §1 cross-sectional-estimand scope).
   weights, user-facing priority, or any production candidate population. No
   cn_prophet_v4. The first production evolution is a future fork under its own
   preregistration after the exact-plane gates.
+  > **Annotation 2026-08-15 (does not amend this prereg).** `cn_prophet_v4` SHIPPED on
+  > an operator commission ("Handoff B"), as a separate PR and a separate authority
+  > from this study. It is not a P-B2 output and consumed no P-B2/P-B3/P-C artifact:
+  > it changed the board's ORDER only (rank by a board-independent intelligence-interest
+  > composite), left `SCORE_WEIGHTS` and every admission gate untouched, and it ships
+  > with NO claim of statistical promotion — its evidence line reads "NO forward
+  > evidence" (`cn_v3_tripwires` R4). The fences in this section remain binding **on
+  > this study**: P-B2 still may not touch the board, and the exact-plane reopen chain
+  > is unmodified. Recorded here so a later reader does not read "No cn_prophet_v4" as
+  > a live prohibition that the operator had already lifted elsewhere.
 - No new data store, no competing expert-event store (`mastermind.entry_event.v1`
   is Live Entry Radar's), no per-security expert routing (Stock Identity's), no
   outcome audition (`DNR:KILL-OUTCOME-AUDITION`).

@@ -10365,12 +10365,6 @@ artifacts:
       - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
-      PR-D compact history of daily brief snapshots. One row per as_of date;
-      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
-      Chronologically sorted. Used for delta detection in next run. Display/ops only.
-      - scripts/build_measurement.py
-    external_consumers: []
-    notes: >
       CPI substrate v0 — 15-seed truth ledger (truths.jsonl) for cycle-pattern
       claims. Fields: truth_id, statement, target, scope, effect_class, status,
       n_summary, ci_summary, pit_class, era_stability, evidence_refs, falsifiers,
@@ -12732,16 +12726,6 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/query.py
-    external_consumers: []
-    notes: >
-      DARK (NW context feed — Wave-2 tech-signal suite). Display-only descriptive
-      fire-metrics from engine.tech_catalog over the mega-cap survivor universe.
-      Registered and plumbed into the NW spine index as direction=0 / is_context=True
-      rows; NOT consumed by any Article-2 surface (alert_triage, board_ordering,
-      top_setups, attention_queue, push_floor). Promotion gate: Article-3 gauntlet
-      with n_dates>=25 and Wilson CI lower-bound > 0 vs matched control. Until that
-      gate fires, these rows are pure display context.
-      - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
       R5 macro context rail — daily intelligence briefing snapshot.
@@ -18844,6 +18828,46 @@ artifacts:
       land quietly. Licensing tags travel with the receipt: house-authored curation is
       internal/display/redistribution true, vendor-derived (同花顺) rows keep
       redistribution false. Corroborating and contradictory receipts are separate rows.
+
+  theme-graph-capability:
+    path: data/theme_graph/capability.parquet
+    format: parquet
+    producer: scripts/build_theme_graph.py
+    known_extra_writers: []
+    owner_program: gmi-theme-graph
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 36
+    schema: theme_graph.capability.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Capability classification of the source-local theme plane (rule capability.v1,
+      W3A): semantic_only | measurement_candidate | measurable, where
+      measurement_candidate means >=3 live members resolve to a price artifact — the
+      definitional minimum for a cross-sectional aggregate to BE an aggregate, not an
+      eligibility judgment and not a market state. INTERNAL: never user-facing, never an
+      input to a rank, size or gate. A SIDE-CAR rather than a nodes.parquet column
+      because node rows are keep-first write-once: a capability on the row would be a
+      one-way ratchet whose first verdict outlived every later substrate improvement.
+      Rows are re-derived by every build and the current view is the max computed_at per
+      node_id, so a classification moves in BOTH directions — W3B may promote a
+      semantic_only node whose substrate improved, and may demote any candidate its
+      preregistered gates fail. measurable is unreachable in W3A. Row contract:
+      contracts/theme_graph/capability.v1.schema.json, checked by
+      scripts/check_theme_graph_contracts.py.
 
   # --- Price Pressure lobe (DRL W1) — display-tier single-name residual shocks ---
 

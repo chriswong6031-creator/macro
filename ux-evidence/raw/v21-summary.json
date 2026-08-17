@@ -1,0 +1,143 @@
+[
+  {
+    "page_id": "us-stocks-prophet-board",
+    "cycle": null,
+    "unresolved_controls": [],
+    "sections": [
+      {
+        "id": "S.shell",
+        "status": "RESOLVED",
+        "h": 42
+      },
+      {
+        "id": "S.board",
+        "status": "RESOLVED",
+        "h": 2127
+      },
+      {
+        "id": "S.board.filters",
+        "status": "RESOLVED",
+        "h": 39
+      },
+      {
+        "id": "S.board.track",
+        "status": "RESOLVED",
+        "h": 36
+      },
+      {
+        "id": "S.board.live",
+        "status": "RESOLVED",
+        "h": 0
+      }
+    ]
+  },
+  {
+    "page_id": "stock-detail",
+    "cycle": {
+      "interaction_id": "I.detail.cycle",
+      "element_stable_id": "E.detail.cycle.summary",
+      "section_id": "S.detail.cycle",
+      "preconditions": {
+        "url": "https://www.mastermind-x.com/stock.html#ONTO",
+        "baseline_state": "DETAIL_DEFAULT",
+        "cookies_injected": true,
+        "fresh_baseline": true
+      },
+      "baseline_state": "DETAIL_DEFAULT",
+      "action": {
+        "type": "click",
+        "target": "details.sv-deep > summary"
+      },
+      "expected_postconditions": {
+        "open": true,
+        "expr": "details.sv-deep.open === true"
+      },
+      "URL_before": "https://www.mastermind-x.com/stock.html#ONTO",
+      "side_effect_class": "READ_ONLY",
+      "screenshot_refs": [
+        "ux-evidence/pages/stock-detail/screenshots/CYCLE_EXPANDED_1440x1000.png"
+      ],
+      "animation_evidence": null,
+      "persistence": "none",
+      "observed_postconditions": {
+        "found": true,
+        "open": true,
+        "match_count": 1,
+        "summary_text": "Cycle & timing detail"
+      },
+      "URL_after": "https://www.mastermind-x.com/stock.html#ONTO",
+      "url_changed": false,
+      "pass": true,
+      "attempt_status": "passed",
+      "resulting_state": "CYCLE_EXPANDED"
+    },
+    "unresolved_controls": [],
+    "sections": [
+      {
+        "id": "S.shell",
+        "status": "RESOLVED",
+        "h": 42
+      },
+      {
+        "id": "S.detail.identity",
+        "status": "RESOLVED",
+        "h": 71
+      },
+      {
+        "id": "S.detail.decision",
+        "status": "RESOLVED",
+        "h": 292
+      },
+      {
+        "id": "S.detail.cycle",
+        "status": "RESOLVED",
+        "h": 31
+      },
+      {
+        "id": "S.detail.chart",
+        "status": "RESOLVED",
+        "h": 559
+      },
+      {
+        "id": "S.detail.momentum",
+        "status": "RESOLVED",
+        "h": 228
+      },
+      {
+        "id": "S.detail.evidence",
+        "status": "RESOLVED",
+        "h": 316
+      },
+      {
+        "id": "S.detail.outlook",
+        "status": "RESOLVED",
+        "h": 0
+      },
+      {
+        "id": "S.detail.fundamentals",
+        "status": "RESOLVED",
+        "h": 46
+      },
+      {
+        "id": "S.detail.options",
+        "status": "RESOLVED",
+        "h": 46
+      },
+      {
+        "id": "S.detail.personality",
+        "status": "RESOLVED",
+        "h": 368
+      },
+      {
+        "id": "S.detail.calibration",
+        "status": "RESOLVED",
+        "h": 353
+      },
+      {
+        "id": "S.detail.method",
+        "status": "RESOLVED",
+        "h": 35
+      }
+    ]
+  }
+]

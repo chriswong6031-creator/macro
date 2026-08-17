@@ -31,6 +31,10 @@ import pandas as pd
 import pytest
 
 import collectors.massive_stock_day as msd
+from lib.massive_ticker import (
+    artifact_relative_path,
+    is_canonical_artifact_posix,
+)
 
 
 @pytest.fixture()
@@ -66,6 +70,54 @@ def _day_frame(_d: date) -> pd.DataFrame:
     an empty frame counts as 'skipped', not 'fetched', and would never trip the cap)."""
     return pd.DataFrame({"ticker": ["SPY"], "open": [1.0], "high": [1.0], "low": [1.0],
                          "close": [1.0], "volume": [1], "transactions": [1]})
+
+
+@pytest.mark.parametrize("upper,mixed", [("TPC", "TpC"), ("BCPC", "BCpC")])
+def test_case_distinct_vendor_tickers_have_apfs_safe_artifact_paths(store, upper, mixed):
+    upper_path = msd._ticker_path(upper)
+    mixed_path = msd._ticker_path(mixed)
+
+    assert upper_path.name == f"{upper}.parquet"  # legacy compatibility
+    assert mixed_path.parent.name == "__case_v1"
+    assert upper_path.relative_to(store).as_posix().casefold() != \
+        mixed_path.relative_to(store).as_posix().casefold()
+
+
+def test_case_distinct_vendor_rows_do_not_last_row_win_into_one_parquet(store):
+    tutor = _bar("2026-08-14")
+    note = _bar("2026-08-14")
+    tutor.loc[:, "close"] = 94.67
+    note.loc[:, "close"] = 16.98
+
+    msd._upsert_ticker("TPC", tutor)
+    msd._upsert_ticker("TpC", note)
+
+    assert float(msd.load_ticker("TPC")["close"].iloc[-1]) == pytest.approx(94.67)
+    assert float(msd.load_ticker("TpC")["close"].iloc[-1]) == pytest.approx(16.98)
+    assert sum(1 for _ in store.rglob("*.parquet")) == 2
+
+
+def test_canonical_artifact_posix_round_trips_producer_paths():
+    assert is_canonical_artifact_posix("SPY.parquet")
+    assert is_canonical_artifact_posix("TPC.parquet")
+    assert is_canonical_artifact_posix(artifact_relative_path("TpC").as_posix())
+    assert is_canonical_artifact_posix(artifact_relative_path("BCpC").as_posix())
+    assert is_canonical_artifact_posix(artifact_relative_path("Åbc").as_posix())
+    assert artifact_relative_path("TpC").as_posix() == "__case_v1/547043.parquet"
+    assert not is_canonical_artifact_posix("TpC.parquet")
+    assert not is_canonical_artifact_posix("BCpC.parquet")
+    assert not is_canonical_artifact_posix(
+        "__case_v1/" + "TPC".encode("utf-8").hex() + ".parquet"
+    )
+    assert not is_canonical_artifact_posix("foo/bar.parquet")
+    assert not is_canonical_artifact_posix("../TPC.parquet")
+    assert not is_canonical_artifact_posix("__case_v1/../TPC.parquet")
+    assert not is_canonical_artifact_posix("__case_v1/not-hex.parquet")
+    assert not is_canonical_artifact_posix("__case_v1//547043.parquet")
+    mutated = "__case_v1/545043.parquet"
+    assert mutated != artifact_relative_path("TpC").as_posix()
+    assert bytes.fromhex("545043").decode("utf-8") == "TPC"
+    assert not is_canonical_artifact_posix(mutated)
 
 
 # --- 1 + 2: the fence -------------------------------------------------------

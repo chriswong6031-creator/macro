@@ -183,8 +183,14 @@ _TIER_WEIGHTED = frozenset({"scored", "confirmer"})
 # Tiers that are claim-registered and graded (shadow) or weighted.
 _TIER_EVALUATED = frozenset({"shadow", "scored", "confirmer"})
 
-# Placeholder producer tokens, mirroring engine/neuralweb/synapse.py:58. These are
-# exempted from the producer-exists check there and are not engines here.
+# Placeholder PRODUCER tokens. Deliberately NARROWER than engine/neuralweb/synapse.py's
+# `_PLACEHOLDER_RE`, which widened to `<[A-Za-z_]+>` on 2026-08-14 to catch lowercase
+# placeholder families in PATHS (`.../<compound_id>.jsonl`). This one is applied to
+# producers only, and every placeholder producer in the live registry is SCREAMING_CASE —
+# measured when synapse widened: 2 artifact paths changed classification and ZERO
+# producers. Keeping it upper-only means a producer that legitimately contains an
+# angle-bracketed lowercase token is not silently demoted out of being an engine. It is
+# not a mirror; do not "restore" it to synapse's pattern without re-measuring producers.
 _PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
 
 # ---------------------------------------------------------------------------

@@ -181,8 +181,9 @@ present its numbers, then arm.
 Operator-ratified during the same disk-pressure incident that armed the sweeper.
 GC reclaims FINISHED trees; this shrinks LIVE ones, which is why both were needed.
 
-**Mechanism.** `.claude/hooks/worktree_create_sparse.py` runs on the harness's
-`WorktreeCreate` event, wired in the checked-in `.claude/settings.json`. It fetches
+**Claude mechanism.** `.claude/hooks/worktree_create_sparse.py` runs on the
+harness's `WorktreeCreate` event, wired in the checked-in
+`.claude/settings.json`. It fetches
 `origin/main`, adds the worktree `--no-checkout`, sets a cone-mode sparse profile
 holding every tracked top-level directory except those in
 `config/sparse_worktree.json`, then `read-tree -mu HEAD` to populate it. A name of
@@ -190,6 +191,38 @@ the form `pr-<N>` bases the tree on that PR's head instead. It replaces an
 unversioned zsh prototype that lived in `~/.local/bin` and was wired through
 `.claude/settings.local.json` — globally gitignored, so the behaviour existed on one
 host but could never ship, be reviewed, or be tested.
+
+**Codex mechanism (shipped 2026-08-15).** The default local environment at
+`.codex/environments/environment.toml` runs `python3
+scripts/worktree_sparse.py auto` when Codex creates a worktree. The checked-in
+`.codex/hooks.json` `SessionStart` hook is the fallback when no environment was
+selected. `auto` refuses the primary checkout, honors the same profile and off
+switch, and preserves any existing sparse selection so a session's explicit
+`add site` is not undone. Codex requires one-time trust for a new or changed
+project-local hook definition. Current Codex lifecycle events are post-checkout,
+not a pre-checkout replacement for Claude's `WorktreeCreate`: the steady-state
+tree reaches the same 0.35–0.57 GiB, while initial creation may transiently write
+the full checkout before the setup removes the excluded paths.
+
+**Cursor IDE mechanism (shipped 2026-08-15).** Cursor has no pre-checkout
+`WorktreeCreate`. `.cursor/hooks.json` runs `python3 scripts/worktree_sparse.py
+auto` on `sessionStart` and `workspaceOpen`. `auto` converts only a linked
+worktree under a session root (`.claude/worktrees/` and siblings). That extra
+path check exists because the operator's designated local project root is
+itself a linked worktree of the occupied primary — a SessionStart hook keyed
+only on `git-dir != common-dir` would sparsify that 3.8 GiB tree on every
+Cursor chat.
+
+**Cursor CLI + Grok mechanism (shipped 2026-08-15).** Cursor CLI / Agents
+Window runs `.cursor/worktrees.json` `setup-worktree-unix` after it creates
+the worktree. Grok Build runs `.grok/hooks/sparse-worktree.json` on
+`SessionStart` (unknown Claude events such as `WorktreeCreate` are skipped).
+Both call `python3 scripts/worktree_sparse.py auto`, so they share the
+post-checkout thinning, session-root refusal, and "do not re-apply over an
+existing sparse selection" rule. Grok project hooks need one-time
+`/hooks-trust`. `--worktree` / `-w` still bases on current HEAD unless the
+session passes `--ref origin/main` (Grok) or `--worktree-base origin/main`
+(Cursor).
 
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
@@ -214,7 +247,8 @@ active window drops from ~330 GiB toward ~30–50 GiB as trees turn over.
 a full checkout (worktree-scoped — `core.sparseCheckout` lives in `config.worktree`,
 so siblings are untouched); `… add <dir>` materialises one tree; `… status` reports
 state and any stray files a local tool wrote into an omitted tree. Repo-wide revert
-is `"enabled": false` in `config/sparse_worktree.json`.
+is `"enabled": false` in `config/sparse_worktree.json`; it disables both Claude
+creation and Codex automatic conversion.
 
 **Honesty properties (the reason this is more than a setup script).** A sparse tree
 must never make a guard or test pass for the wrong reason:

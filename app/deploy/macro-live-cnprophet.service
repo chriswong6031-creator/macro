@@ -1,0 +1,35 @@
+# CN Breathing Platform evaluator — the product lane
+# (research/CN_BREATHING_PLATFORM_ARCHITECTURE_2026-08-15.md §5).
+# GitHub cron is disqualified for a 5-minute mainland cadence; this unit is the
+# clock. .github/workflows/cn-prophet-live.yml is a self-disabling backstop.
+#
+# Reads the box's quote plane, evaluates the nightly CN armed pack, publishes
+# to R2 and writes the served copy at
+# /var/lib/macro-live/public/live/cn_prophet_live.json by atomic rename. Writes
+# no data/ path and runs no git command (LEDGER LAW G0.2).
+#
+# Resource caps match the US prophet lane's measured envelope (~0.5 CPU-s /
+# ~95 MB). Lowest scheduling tier: this lane consumes what the quote lanes
+# publish. TimeoutStartSec 120 keeps two passes from overlapping.
+[Unit]
+Description=Mastermind CN Prophet Live mainland-session evaluator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.cn_live_evaluator
+TimeoutStartSec=120
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=256M
+MemoryMax=512M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

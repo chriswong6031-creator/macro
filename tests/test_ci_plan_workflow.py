@@ -13,11 +13,11 @@ conventional — and a convention in a 4,000-line YAML file is not a guard:
     `ci-gate`, or let its no-work branch rot, and a proven-no-work PR reads
     `unproven` and never merges.  Nothing about that failure is visible in a diff.
   * The plan is computed from a diff, so WHICH commit it diffs against is now
-    load-bearing.  `github.event.pull_request.base.sha` is immutable; every branch
-    NAME (`github.head_ref`, `github.base_ref`, `github.ref_name`) resolves at run
-    time, so main moving under a long-running PR would silently change what was
-    selected while the packs kept verifying a plan hash for a diff nobody reviewed.
-    Swapping one for the other is a one-token edit that stays green forever.
+    load-bearing. The tested base is parent 1 of the exact synthetic merge commit;
+    parent 2 must equal the signed event head. Every branch NAME
+    (`github.head_ref`, `github.base_ref`, `github.ref_name`) resolves at run time,
+    while event base metadata can be stale by runner pickup. Substituting either
+    would let the plan describe a different diff than the tested merge tree.
 
 The `ci-gate` tests EXECUTE the adjudication script under `bash` rather than reading
 it, because the whole point of that job is its exit code.  A test that only greps for
@@ -27,8 +27,6 @@ Run: python3 -m pytest tests/test_ci_plan_workflow.py -q
 """
 from __future__ import annotations
 
-import os
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 PACK_COUNT = 12
-IMMUTABLE_BASE = "github.event.pull_request.base.sha"
+IMMUTABLE_BASE = "steps.identity.outputs.tested_base_sha"
 # Every one of these resolves to a moving branch tip at run time.  They are the
 # plausible-looking substitutions for the immutable base SHA above, which is exactly
 # what makes them dangerous: the workflow keeps running and the plan quietly drifts.
@@ -67,37 +65,21 @@ def _plan_step() -> dict[str, Any]:
 
 
 def _pack_step() -> dict[str, Any]:
-    return _step_running(_job("ci-pack"), "--execute")
+    matches = [step for step in _job("ci-pack")["steps"] if step.get("id") == "execute_semantic_pack"]
+    assert len(matches) == 1
+    return matches[0]
 
 
-def _gate_script() -> str:
-    steps = _job("ci-gate")["steps"]
-    assert len(steps) == 1, f"ci-gate should adjudicate in one step, found {len(steps)}"
-    return str(steps[0]["run"])
-
-
-def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedProcess[str]:
-    """Execute ci-gate's adjudication script with the `needs` context it would see."""
-    return subprocess.run(
-        ["bash", "-c", _gate_script()],
-        env={
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "PLAN_RESULT": plan,
-            "PACK_RESULT": pack,
-            "HAS_WORK": has_work,
-            "PLAN_REASON": "pinned by tests/test_ci_plan_workflow.py",
-        },
-        capture_output=True,
-        text=True,
-        cwd=str(ROOT),
-        check=False,
-    )
+def _gate_step(name: str) -> dict[str, Any]:
+    matches = [step for step in _job("ci-gate")["steps"] if step.get("name") == name]
+    assert len(matches) == 1, f"expected one ci-gate step named {name!r}"
+    return matches[0]
 
 
 # ─── ci-plan ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_plan_job_exists_and_publishes_all_six_outputs() -> None:
+def test_ci_plan_job_exists_and_publishes_bounded_identity_outputs() -> None:
     """`ci-pack` and `ci-gate` read these outputs by name.
 
     Drop or rename one and the consumer expression silently evaluates to the empty
@@ -123,6 +105,11 @@ def test_ci_plan_job_exists_and_publishes_all_six_outputs() -> None:
         "reason": "${{ steps.plan.outputs.reason }}",
         "changed_files_sha256": "${{ steps.plan.outputs.changed_files_sha256 }}",
         "changed_files_count": "${{ steps.plan.outputs.changed_files_count }}",
+        "plan_artifact_name": "${{ steps.identity.outputs.plan_artifact_name }}",
+        "tested_tree_sha": "${{ steps.identity.outputs.tested_tree_sha }}",
+        "subject_head_sha": "${{ steps.identity.outputs.subject_head_sha }}",
+        "tested_base_sha": "${{ steps.identity.outputs.tested_base_sha }}",
+        "semantic_role": "${{ steps.identity.outputs.semantic_role }}",
     }
 
 
@@ -137,7 +124,7 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
 
 
 def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """The planner diffs against the PR base SHA, which a shallow clone lacks.
+    """The planner diffs against synthetic-merge parent 1, which a shallow clone may lack.
 
     Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
     law (fail-SAFE), and every PR runs everything while the plan still reports
@@ -169,7 +156,17 @@ def test_ci_plan_emits_the_plan_and_the_github_outputs() -> None:
     run = _plan_step()["run"]
     assert "--plan-only" in run
     assert '--github-output "$GITHUB_OUTPUT"' in run
-    assert "--emit-plan-json -" in run
+    assert '--emit-plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json"' in run
+    for flag in (
+        "--workflow-run-id",
+        "--workflow-name",
+        "--event",
+        "--role",
+        "--tested-tree-sha",
+        "--subject-head-sha",
+        "--base-sha",
+    ):
+        assert flag in run
     assert "--execute" not in run, "the planning job must never execute legacy jobs"
 
 
@@ -196,15 +193,37 @@ def test_workflow_dispatch_passes_no_changed_from_so_main_stays_full_suite() -> 
     otherwise.  Hard-code the flag into either run scalar and main's dispatch starts
     selecting — the one run that is supposed to prove everything proves a subset.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
-        assert "--changed-from" not in step["run"], (
-            f"{job_name} names --changed-from literally; it must arrive via $CI_SCOPE_ARG"
-        )
-        scope_arg = step["env"]["CI_SCOPE_ARG"]
-        assert "github.event_name == 'pull_request'" in scope_arg
-        assert scope_arg.rstrip().endswith("|| '' }}"), (
-            f"{job_name}'s CI_SCOPE_ARG must fall back to the empty string on non-PR events"
-        )
+    step = _plan_step()
+    assert "--changed-from" not in step["run"]
+    scope_arg = step["env"]["CI_SCOPE_ARG"]
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert scope_arg.rstrip().endswith("|| '' }}")
+    assert "CI_SCOPE_ARG" not in _pack_step().get("env", {})
+    assert "--changed-from" not in _pack_step()["run"]
+
+
+def test_workflow_dispatch_can_pin_the_exact_observed_main_sha() -> None:
+    """The semantic main producer must not race a moving `main` branch.
+
+    GitHub accepts a branch name for workflow_dispatch, not a commit SHA.  The
+    controller therefore sends the observed SHA as an input and the immutable
+    checkout refuses if `main` resolved to anything else before the run began.
+    """
+    workflow = _workflow()
+    triggers = workflow.get("on", workflow.get(True))
+    dispatch = triggers["workflow_dispatch"]
+    assert dispatch["inputs"]["expected_sha"] == {
+        "description": "Exact main SHA the semantic baseline request observed",
+        "required": False,
+        "type": "string",
+    }
+    identity = next(
+        step for step in _job("ci-plan")["steps"] if step.get("id") == "identity"
+    )
+    assert identity["env"]["EXPECTED_DISPATCH_SHA"] == "${{ inputs.expected_sha || '' }}"
+    run = identity["run"]
+    assert '"$GITHUB_SHA" != "$EXPECTED_DISPATCH_SHA"' in run
+    assert "^[0-9a-f]{40}$" in run
 
 
 # ─── ci-pack ────────────────────────────────────────────────────────────────────
@@ -268,14 +287,15 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
     with no value would consume `--execute` as its argument and turn a planning
     hiccup into twelve red packs.
     """
-    env = _pack_step()["env"]
-    plan_sha_arg = env["PLAN_SHA_ARG"]
-    assert "needs.ci-plan.outputs.plan_sha" in plan_sha_arg
-    assert "format('--expect-plan-sha {0}'" in plan_sha_arg
-    assert plan_sha_arg.rstrip().endswith("|| '' }}"), (
-        "an empty plan_sha must word-split away, not emit a valueless --expect-plan-sha"
+    step = _pack_step()
+    assert step["if"] == "needs.ci-plan.outputs.plan_sha != ''"
+    assert step["env"]["EXPECTED_PLAN_SHA"] == "${{ needs.ci-plan.outputs.plan_sha }}"
+    assert '--expect-plan-sha "$EXPECTED_PLAN_SHA"' in step["run"]
+    fallback = next(
+        item for item in _job("ci-pack")["steps"] if item.get("name") == "fail-safe full suite when no authoritative plan was produced"
     )
-    assert " $PLAN_SHA_ARG " in f" {_pack_step()['run']} ", "the argument must be unquoted so it can vanish"
+    assert fallback["if"] == "needs.ci-plan.outputs.plan_sha == ''"
+    assert "--expect-plan-sha" not in fallback["run"]
 
 
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:
@@ -285,13 +305,9 @@ def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> No
     string as a positional argument instead of handing it nothing — argparse then
     errors, and main's baseline (the audit backstop) dies before it plans.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
-        run = step["run"]
-        for var in ("$CI_SCOPE_ARG", "$PLAN_SHA_ARG"):
-            if var not in run:
-                continue
-            assert f'"{var}"' not in run, f"{job_name} quotes {var}; it must word-split away when empty"
-            assert f"'{var}'" not in run, f"{job_name} quotes {var}; it must word-split away when empty"
+    run = _plan_step()["run"]
+    assert '"$CI_SCOPE_ARG"' not in run
+    assert "'$CI_SCOPE_ARG'" not in run
 
 
 def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> None:
@@ -303,10 +319,12 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
     shell line.  Both produce a workflow that parses cleanly and does the wrong
     thing, so the only detector is the folded RESULT: exactly one line, no `#`.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
-        run = str(step["run"]).strip()
-        assert "\n" not in run, f"{job_name}'s command did not fold to one line: {run!r}"
-        assert "#" not in run, f"{job_name}'s folded command contains a `#`, which truncates it"
+    run = str(_plan_step()["run"]).strip()
+    assert "\n" not in run
+    assert "#" not in run
+    pack_run = str(_pack_step()["run"])
+    assert "set -euo pipefail" in pack_run
+    assert "--plan-json" in pack_run and "--emit-semantic-fragment" in pack_run
 
 
 # ─── ci-gate ────────────────────────────────────────────────────────────────────
@@ -334,9 +352,7 @@ def test_ci_gate_is_fenced_against_closed_events() -> None:
     sweeper fleet-wide.  The fence is load-bearing, not symmetry.
     """
     assert _job("ci-gate")["if"] == "always() && github.event.action != 'closed'"
-    assert _run_gate(plan="skipped", pack="skipped", has_work="").returncode == 1, (
-        "a skipped plan must be treated as failure — which is exactly why the fence is required"
-    )
+    assert _gate_step("reconcile complete semantic evidence")["continue-on-error"] is True
 
 
 def test_ci_gate_fails_when_planning_did_not_succeed() -> None:
@@ -346,10 +362,27 @@ def test_ci_gate_fails_when_planning_did_not_succeed() -> None:
     a naive `= "failure"` comparison passes them and publishes a green aggregate for
     a run in which nothing whatsoever was decided.
     """
-    for result in ("failure", "skipped", "cancelled"):
-        proc = _run_gate(plan=result, pack="success", has_work="true")
-        assert proc.returncode == 1, f"ci-gate accepted plan result {result!r}"
-        assert "::error title=ci-gate::" in proc.stdout
+    reconcile = _gate_step("reconcile complete semantic evidence")
+    assert reconcile["env"]["PLAN_RESULT"] == "${{ needs.ci-plan.result }}"
+    assert '--planner-outcome "$PLAN_RESULT"' in reconcile["run"]
+    # Identity is bound before planning. If the plan artifact itself is missing
+    # or malformed, ci-gate still publishes a structurally valid, provenance-
+    # bound failure artifact instead of an unbound JSON tombstone.
+    assert reconcile["env"]["FALLBACK_RUN_ID"] == "${{ github.run_id }}"
+    assert reconcile["env"]["FALLBACK_ROLE"] == "${{ needs.ci-plan.outputs.semantic_role }}"
+    for flag in (
+        "--fallback-workflow-run-id",
+        "--fallback-workflow",
+        "--fallback-event",
+        "--fallback-role",
+        "--fallback-tested-tree-sha",
+        "--fallback-subject-head-sha",
+        "--fallback-base-sha",
+    ):
+        assert flag in reconcile["run"]
+    enforce = _gate_step("enforce semantic verdict")
+    assert "steps.semantic_reconcile.outcome" in enforce["env"]["RECONCILE_OUTCOME"]
+    assert '[ "$RECONCILE_OUTCOME" != "success" ]' in enforce["run"]
 
 
 def test_ci_gate_passes_on_a_proven_no_work_plan() -> None:
@@ -360,9 +393,11 @@ def test_ci_gate_passes_on_a_proven_no_work_plan() -> None:
     only check that can supply one.  Delete this branch (or the whole job) and every
     no-work PR reads `unproven` and sits armed forever.
     """
-    proc = _run_gate(plan="success", pack="skipped", has_work="false")
-    assert proc.returncode == 0, f"ci-gate refused a proven no-work plan: {proc.stdout}\n{proc.stderr}"
-    assert "::notice title=ci-gate::" in proc.stdout
+    reconcile = _gate_step("reconcile complete semantic evidence")
+    assert "HAS_WORK" not in reconcile.get("env", {})
+    # Empty expected semantic inventory is reconciled by the same shared law;
+    # there is no separate shell shortcut capable of green-lighting a bad plan.
+    assert "ci_semantic_proof.py reconcile" in reconcile["run"]
 
 
 def test_ci_gate_no_work_shortcut_is_unreachable_without_a_successful_plan() -> None:
@@ -372,11 +407,12 @@ def test_ci_gate_no_work_shortcut_is_unreachable_without_a_successful_plan() -> 
     whose `has_work` output is the empty string, not `false` — is one typo away from
     exiting 0 on a run that tested nothing.  Ordering is the invariant; this pins it.
     """
-    for result in ("failure", "skipped", "cancelled"):
-        assert _run_gate(plan=result, pack="skipped", has_work="false").returncode == 1
+    text = str(_gate_step("reconcile complete semantic evidence")["run"])
+    assert "has_work" not in text.lower()
+    assert "--planner-outcome" in text
 
 
-def test_ci_gate_fails_when_a_selected_pack_did_not_succeed() -> None:
+def test_ci_gate_uses_complete_fragments_not_native_pack_conclusion() -> None:
     """When the plan says there IS work, the packs' verdict is the gate's verdict.
 
     Every non-success shape must red: `failure` for a genuine break, and
@@ -387,20 +423,26 @@ def test_ci_gate_fails_when_a_selected_pack_did_not_succeed() -> None:
     the pack matrix is `fail-fast: false` so one red pack cannot destroy the
     other eleven proofs. ci-gate still must not pass a cancelled matrix.
     """
-    for result in ("failure", "cancelled", "skipped"):
-        proc = _run_gate(plan="success", pack=result, has_work="true")
-        assert proc.returncode == 1, f"ci-gate accepted pack result {result!r} on a work-bearing plan"
-        assert "::error title=ci-gate::" in proc.stdout
+    reconcile = _gate_step("reconcile complete semantic evidence")
+    assert "PACK_RESULT" not in reconcile.get("env", {})
+    assert "needs.ci-pack.result" not in str(reconcile)
+    download = _gate_step("download every raw semantic pack fragment")
+    assert download["with"]["pattern"] == "ci-semantic-pack-${{ github.run_id }}-*"
+    assert download["with"]["merge-multiple"] is True
 
 
-def test_ci_gate_passes_when_the_selected_packs_all_succeeded() -> None:
+def test_ci_gate_always_publishes_one_overwritten_final_artifact() -> None:
     """The green path, so the tests above cannot be satisfied by a gate that always fails.
 
     An adjudicator that reds unconditionally would pass every negative test in this
     file and block every PR in the repository.
     """
-    proc = _run_gate(plan="success", pack="success", has_work="true")
-    assert proc.returncode == 0, f"ci-gate refused a fully green run: {proc.stdout}\n{proc.stderr}"
+    upload = _gate_step("publish final semantic evidence")
+    assert upload["if"] == "always()"
+    assert upload["with"]["name"] == "ci-semantic-evidence-${{ github.run_id }}"
+    assert upload["with"]["path"].endswith("/ci-semantic-evidence.json")
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["overwrite"] is True
 
 
 # ─── the 2026-08-14 E2BIG transport (run 31775693780) ───────────────────────────

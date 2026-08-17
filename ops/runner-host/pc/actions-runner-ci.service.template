@@ -45,7 +45,10 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 InaccessiblePaths=/mnt/c /mnt/d /home/longr /root
 ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git
 ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag
-UMask=0027
+# Match GitHub-hosted checkout/temp semantics. Several CI contracts intentionally
+# require executable/traversable 0755 directories created inside the isolated
+# runner work tree; 0027 silently turns those into 0750.
+UMask=0022
 
 [Install]
 WantedBy=multi-user.target

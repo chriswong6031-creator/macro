@@ -217,6 +217,14 @@ lanes:
           event compiler's telemetry-last receipt before publishing a canonical JSON
           artifact and byte-identical public twin. Context-only; unknown terms and
           issuer-state capabilities remain explicitly unavailable.
+      - id: check_capital_structure_health
+        module: scripts.check_capital_structure_health
+        note: >
+          Fail-closed ingestion-truth gate. Distinguishes compiler generation time
+          (telemetry.as_of) from latest retained source freshness. Reds this job
+          when filings were selected but zero durable verified evidence progressed;
+          a proven empty/already-known queue is the only permitted zero-progress
+          non-fail. Collect stays green so the market plane is not frozen.
 
   # ── daily.yml / collect_tail ─────────────────────────────────────────────
   # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData
@@ -2169,6 +2177,20 @@ lanes:
       # in-process build_china_library ProcessPool also gets the box to itself here.
       - id: build_china
         module: scripts.build_china
+      - id: build_cn_live_pack
+        module: scripts.build_cn_live_pack
+        note: >
+          CN Breathing Platform arming pass (CN-PR-2) — after build_china, probes
+          settled adjusted closes and publishes live_flow/cn_prophet_live_armed.json
+          for the VPS 5-minute lane. Writes NO data/ path. timeout-minutes 12 +
+          continue-on-error in asia-close.yml; a hung pack must not eat the asia job.
+      - id: reconcile_cn_live
+        module: scripts.reconcile_cn_live
+        note: >
+          CN Breathing Platform reconciler (CN-PR-2) — SOLE writer of
+          data/cn_prophet_live/forward.parquet. CN_LANE=asia is the ledger-write
+          gate. Confirmation receipt from same-session close_board vs china_standouts
+          (receipt-in-hand #5220). timeout-minutes 12 + continue-on-error; non-fatal.
       # ── parallel band A (2026-07-14): the post-spine builders run as 5 mutually
       # independent background clusters (engine-job pattern), each internally ordered
       # by its own data deps. Per-module doctrine notes retained as comments:
@@ -3551,6 +3573,41 @@ modules:
     impure: false
     needs_secrets: false
     event_driven: false
+
+  - module: scripts.build_theme_graph
+    reads:
+      - data/baskets/membership.json
+      - data/baskets_china/membership.json
+      - data/baskets_china_ths/membership.json
+      - data/baskets_china_ths/concept_map.json
+      - data/baskets_hk/membership.json
+      - data/baskets_canada/membership.json
+      - data/baskets_intl/membership.json
+      - config/theme_crosswalk.yml
+      - config/theme_graph_identity_breaks.yml
+      - config/theme_sources.yml
+      - finviz_themes/finviz_themes_map.json
+      - data/themes_heatmap/themes_tree.json
+      - data/themes_heatmap/tree_history.jsonl
+      - data/baskets/ohlcv/<T>.parquet
+      - data/stocks/<T>.parquet
+      - data/china_search/closes.parquet
+    writes:
+      - data/theme_graph/nodes.parquet
+      - data/theme_graph/edges.parquet
+      - data/theme_graph/evidence.parquet
+      - data/theme_graph/capability.parquet
+      - data/theme_graph/_meta.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      GMI semantic spine (W1b + W3A local-theme plane). Assembles what owners already
+      publish; computes no score, rank or weight. The Finviz seed + tree history are read
+      as a DATED VINTAGE LADDER (the tree itself carries no date, so the tape is the
+      dating authority); the price stores are read for the capability side-car only, as
+      an existence question per symbol — no price series is loaded. Ledger writes are
+      lane-gated to COLLECT_LANE=nightly, fail-closed.
 
   - module: scripts.build_signal_quality
     reads:

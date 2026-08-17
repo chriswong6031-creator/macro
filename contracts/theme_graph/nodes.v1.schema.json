@@ -20,14 +20,14 @@
     "node_id": {
       "type": "string",
       "minLength": 1,
-      "description": "Stable slug, unique per row. Company nodes are 'co:<market>:<SYMBOL>' with an optional '#<epoch>' suffix from epoch 2 on; themes 'theme:<id>'; baskets 'basket:<suite>:<basket_id>'; ETFs 'etf:<SYMBOL>'."
+      "description": "Stable slug, unique per row. Company nodes are 'co:<market>:<SYMBOL>' with an optional '#<epoch>' suffix from epoch 2 on; themes 'theme:<id>'; baskets 'basket:<suite>:<basket_id>'; ETFs 'etf:<SYMBOL>'; source-local themes 'ltheme:<family>:<source_local_id>' where family is finviz|ths and the local id is the SOURCE's own key or code (ASCII only — 中文 concept names are labels, never ids)."
     },
     "kind": {
-      "enum": ["theme", "company", "etf", "catalyst", "policy_program", "commodity", "participant_class", "market", "basket"]
+      "enum": ["theme", "company", "etf", "catalyst", "policy_program", "commodity", "participant_class", "market", "basket", "local_theme"]
     },
     "name_en": {
       "type": ["string", "null"],
-      "description": "English display name, or null. G0.9: a node with no SAME_AS/EXPRESSES edge into an existing vocabulary carries no user-visible name — the join key is not a name."
+      "description": "English display name, or null. G0.9: a node with no SAME_AS/EXPRESSES edge into an existing vocabulary carries no user-visible name — the join key is not a name. For local_theme nodes this is the SOURCE's own label captured at MINT TIME, and it is a snapshot, not an authority: node rows are keep-first write-once, so a later vendor rename changes no bytes here and the current label resolves from the live source artifact. Rights govern the subtheme→member STRUCTURE as a dataset; the vendor's label itself is already-public vocabulary and rides here lawfully (W3A §9.4/F19)."
     },
     "name_zh": {"type": ["string", "null"], "description": "中文 display name, or null."},
     "market_scope": {
@@ -61,7 +61,11 @@
       "description": "Which artifact minted this node, e.g. 'membership_doc:baskets_china_ths' or 'crosswalk:config/theme_crosswalk.yml'."
     },
     "computed_at": {"$ref": "#/$defs/clock"},
-    "engine_version": {"type": "string", "minLength": 1}
+    "engine_version": {"type": "string", "minLength": 1},
+    "source_meta": {
+      "type": ["string", "null"],
+      "description": "JSON-encoded object for SOURCE-LOCAL nodes; null for every node minted from house vocabulary. Keys: source_family (the join key into config/theme_sources.yml), source_local_id, market, source_label, source_description, grain (finviz_subtheme|ths_concept), parent_source_label/parent_source_key (the source's own parent — metadata, NOT hierarchy: PARENT_OF edges are a later wave's), supergroup_index, key_aliases (empty unless a ratified continuity act), rights_family. Like name_en this is a MINT-TIME snapshot. The guard fails closed on a rights_family with no registry row."
+    }
   },
   "$defs": {
     "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},

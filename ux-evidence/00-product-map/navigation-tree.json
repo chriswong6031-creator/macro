@@ -1,0 +1,2477 @@
+{
+  "schema_version": "1.1-candidate",
+  "edges": [
+    {
+      "edge_id": "NAV.src.001",
+      "nav_path": [
+        "Brand"
+      ],
+      "nav_label": "Home",
+      "destination": "start.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.002",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "United States",
+      "destination": "macro.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.003",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Macro Dashboard",
+      "destination": "macro.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.004",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Stock Dashboard",
+      "destination": "us_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.005",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Intraday Flow Tracker",
+      "destination": "intraday_flow.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.006",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Stage Analysis",
+      "destination": "stage_analysis.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.007",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Winner Health",
+      "destination": "winner_health.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.008",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Sector Intelligence",
+      "destination": "sector_central.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.009",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Subsector Confluence",
+      "destination": "sector_central.html#confluence",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.010",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Strategies",
+      "destination": "strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.011",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "News Feed",
+      "destination": "news.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.012",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Alert Center",
+      "destination": "alerts.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.013",
+      "nav_path": [
+        "United States",
+        "Options & Market Structure"
+      ],
+      "nav_label": "Options & Market Structure",
+      "destination": "options.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.014",
+      "nav_path": [
+        "United States",
+        "Options & Market Structure"
+      ],
+      "nav_label": "Options — the workspace",
+      "destination": "options.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.015",
+      "nav_path": [
+        "United States",
+        "Options & Market Structure"
+      ],
+      "nav_label": "Dark Pool Desk",
+      "destination": "darkpool.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.016",
+      "nav_path": [
+        "United States",
+        "Options & Market Structure"
+      ],
+      "nav_label": "Market Structure",
+      "destination": "market_structure.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.017",
+      "nav_path": [
+        "United States"
+      ],
+      "nav_label": "Leader Radar",
+      "destination": "leader_radar.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.018",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "China",
+      "destination": "china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.019",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Macro Dashboard",
+      "destination": "china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.020",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Stock Dashboard",
+      "destination": "china_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.021",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Sector Intelligence",
+      "destination": "sector_central_china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.022",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Subsector Confluence",
+      "destination": "sector_central_china.html#confluence",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.023",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Market Heatmap",
+      "destination": "china_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.024",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "Strategies",
+      "destination": "china_strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.025",
+      "nav_path": [
+        "China"
+      ],
+      "nav_label": "China News Feed",
+      "destination": "china_news.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.026",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Research",
+      "destination": "china_intel.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.027",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Intelligence Hub",
+      "destination": "china_intel.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.028",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Market Mechanics",
+      "destination": "china_mechanics.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.029",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "同花顺 Theme Baskets",
+      "destination": "baskets_china_ths.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.030",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Capital Flow Velocity",
+      "destination": "flow_velocity.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.031",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Alternative Data",
+      "destination": "china_altdata.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.032",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "PBoC & Policy Watch",
+      "destination": "china_policy_watch.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.033",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Divergence Radar",
+      "destination": "china_radar.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.034",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Special Situations",
+      "destination": "china_special_situations.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.035",
+      "nav_path": [
+        "China",
+        "Research"
+      ],
+      "nav_label": "Narrative Basket Radar",
+      "destination": "narrative_radar.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.036",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Hong Kong",
+      "destination": "hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.037",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Macro Dashboard",
+      "destination": "hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.038",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Stock Dashboard",
+      "destination": "hk_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.039",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Market Heatmap",
+      "destination": "hk_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.040",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Capital Flow Velocity",
+      "destination": "flow_velocity.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.041",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Thematic Baskets",
+      "destination": "baskets_hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.042",
+      "nav_path": [
+        "Hong Kong"
+      ],
+      "nav_label": "Narrative Rotation",
+      "destination": "allocation_hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.043",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Canada",
+      "destination": "canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.044",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Macro Dashboard",
+      "destination": "canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.045",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Stock Dashboard",
+      "destination": "canada_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.046",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Market Heatmap",
+      "destination": "canada_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.047",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Thematic Baskets",
+      "destination": "baskets_canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.048",
+      "nav_path": [
+        "Canada"
+      ],
+      "nav_label": "Narrative Rotation",
+      "destination": "allocation_canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.049",
+      "nav_path": [
+        "International"
+      ],
+      "nav_label": "International",
+      "destination": "intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.050",
+      "nav_path": [
+        "International"
+      ],
+      "nav_label": "Macro Dashboard",
+      "destination": "intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.051",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "Country Dashboards",
+      "destination": "japan.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.052",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "Japan Macro",
+      "destination": "japan.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.053",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "South Korea Macro",
+      "destination": "south_korea.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.054",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "Euro Area Macro",
+      "destination": "euro_area.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.055",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "United Kingdom Macro",
+      "destination": "united_kingdom.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.056",
+      "nav_path": [
+        "International",
+        "Country Dashboards"
+      ],
+      "nav_label": "India Macro",
+      "destination": "india.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.057",
+      "nav_path": [
+        "International"
+      ],
+      "nav_label": "Stock Dashboard",
+      "destination": "intl_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.058",
+      "nav_path": [
+        "International"
+      ],
+      "nav_label": "Thematic Baskets",
+      "destination": "baskets_intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.059",
+      "nav_path": [
+        "Other Assets",
+        "Commodities"
+      ],
+      "nav_label": "Commodities",
+      "destination": "commodities.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.060",
+      "nav_path": [
+        "Other Assets",
+        "Commodities"
+      ],
+      "nav_label": "Commodity Dashboard",
+      "destination": "commodities.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.061",
+      "nav_path": [
+        "Other Assets",
+        "Commodities"
+      ],
+      "nav_label": "Strategies",
+      "destination": "commodity_strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.062",
+      "nav_path": [
+        "Other Assets",
+        "Commodities"
+      ],
+      "nav_label": "Strategic Reserves",
+      "destination": "spr.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.063",
+      "nav_path": [
+        "Other Assets"
+      ],
+      "nav_label": "Forex",
+      "destination": "forex.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.064",
+      "nav_path": [
+        "Other Assets"
+      ],
+      "nav_label": "Bonds",
+      "destination": "bonds.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.065",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Research",
+      "destination": "intelligence_hub.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.066",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Intelligence Hub",
+      "destination": "intelligence_hub.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.067",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Mastermind Portfolio",
+      "destination": "watchlist.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.068",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Mastermind Bot",
+      "destination": "https://bot.mastermind-x.com",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.069",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Research Reports",
+      "destination": "reports.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.070",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Research Vault",
+      "destination": "research_vault.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.071",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Earnings Wire",
+      "destination": "stocks/earnings/index.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.072",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Filing Forensics",
+      "destination": "fundamental_forensics.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.073",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Neural Web",
+      "destination": "neural_web.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.074",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Market Memory",
+      "destination": "market_memory.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.075",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Foresight",
+      "destination": "foresight.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.076",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Theme Tracker",
+      "destination": "state_of_themes.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.077",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Divergence Radar",
+      "destination": "radar.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.078",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Stock Seasonality",
+      "destination": "stock_seasonality.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.079",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Signal Board",
+      "destination": "confluence_screener.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.080",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Smart Money",
+      "destination": "smart_money.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.081",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Fund Flows",
+      "destination": "etfs.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.082",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Cycle Intelligence",
+      "destination": "cycle.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.083",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Macro Weather",
+      "destination": "macro_context.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.084",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Policy Watch",
+      "destination": "policy_watch.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.085",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Government Revenue",
+      "destination": "government_revenue.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.086",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Alternative Data",
+      "destination": "alt_data.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.087",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Special Situations",
+      "destination": "special_situations.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.088",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "BioCatalyst Intelligence",
+      "destination": "biocatalyst.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.089",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Capital Structure",
+      "destination": "capital_structure.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.090",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Global Market Cycles",
+      "destination": "markets.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.091",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Country Cycles",
+      "destination": "country_cycles.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.092",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "U.S. Sector Cycles",
+      "destination": "sector_cycles.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.093",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "China Sector Cycles",
+      "destination": "sector_cycles_china.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.src.094",
+      "nav_path": [
+        "Research"
+      ],
+      "nav_label": "Browse all research",
+      "destination": "intelligence_hub.html",
+      "edge_type": "MEGA_NAV",
+      "evidence_status": "OBSERVED_SOURCE",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.001",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "MASTERMINDX",
+      "destination": "start.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.002",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "United States ▾",
+      "destination": "macro.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.003",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀",
+      "destination": "macro.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.004",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流",
+      "destination": "us_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.005",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes ·",
+      "destination": "intraday_flow.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.006",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读",
+      "destination": "sector_central.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.007",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股",
+      "destination": "sector_central.html#confluence",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.008",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位",
+      "destination": "strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.009",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报",
+      "destination": "alerts.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.010",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪",
+      "destination": "news.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.011",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 ",
+      "destination": "options.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.012",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · A",
+      "destination": "darkpool.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.013",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 ",
+      "destination": "market_structure.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.014",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Heatmap市场热力图↗",
+      "destination": "sector_central.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.015",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Subsector Confluence子行业汇聚↗",
+      "destination": "sector_central.html#confluence",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.016",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse U.S. markets浏览美国全部页面↗",
+      "destination": "macro.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.017",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "China ▾",
+      "destination": "china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.018",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度",
+      "destination": "china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.019",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点",
+      "destination": "china_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.020",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽",
+      "destination": "china_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.021",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事",
+      "destination": "china_intel.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.022",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完",
+      "destination": "sector_central_china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.023",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走",
+      "destination": "narrative_radar.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.024",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速",
+      "destination": "flow_velocity.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.025",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Policy Watch政策观察PBoC and sector policy shifts央行动向与行业政策",
+      "destination": "china_policy_watch.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.026",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Mechanics盘面机制Participation, limits and tape参与度、涨跌停与盘面",
+      "destination": "china_mechanics.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.027",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Special Situations特殊事件Unlocks, pledges and catalysts解禁、质押与催化事件",
+      "destination": "china_special_situations.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.028",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "China News中国新闻↗",
+      "destination": "china_news.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.029",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Strategies策略↗",
+      "destination": "china_strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.030",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Alternative Data另类数据↗",
+      "destination": "china_altdata.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.031",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse China research浏览中国全部研究↗",
+      "destination": "china_intel.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.032",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Hong Kong ▾",
+      "destination": "hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.033",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Dashboard宏观仪表盘HSI, liquidity and global risk恒指、流动性与全球风险",
+      "destination": "hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.034",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Dashboard股票仪表盘Hong Kong standouts and alpha港股领涨股与阿尔法",
+      "destination": "hk_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.035",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Heatmap市场热力图Turnover-sized market overview按成交额加权的全景",
+      "destination": "hk_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.036",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Capital Flow Velocity资金流速Southbound money in motion南向资金动向",
+      "destination": "flow_velocity.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.037",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Thematic Baskets主题篮子Equal-weight themes versus HSI等权主题篮子 vs 恒指",
+      "destination": "baskets_hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.038",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Narrative Rotation主题轮动What to hold and rotate持有哪个主题 · 何时轮动",
+      "destination": "allocation_hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.039",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "China Intelligence中国情报中心↗",
+      "destination": "china_intel.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.040",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Policy Watch政策观察↗",
+      "destination": "china_policy_watch.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.041",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Hong Kong baskets香港主题篮子↗",
+      "destination": "baskets_hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.042",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse Hong Kong浏览香港全部页面↗",
+      "destination": "hk.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.043",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Canada ▾",
+      "destination": "canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.044",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Dashboard宏观仪表盘TSX, BoC and commoditiesTSX、加央行与大宗商品",
+      "destination": "canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.045",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Dashboard股票仪表盘Canadian standouts and alpha加股领涨股与阿尔法",
+      "destination": "canada_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.046",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Heatmap市场热力图Every TSX name at a glance全部TSX个股一眼看尽",
+      "destination": "canada_heatmap.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.047",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Thematic Baskets主题篮子Themes versus the TSX主题篮子 vs 标普/多伦多",
+      "destination": "baskets_canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.048",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Narrative Rotation主题轮动What to hold and rotate持有哪个主题 · 何时轮动",
+      "destination": "allocation_canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.049",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Banks & insurers银行与保险↗",
+      "destination": "canada_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.050",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Energy complex能源板块↗",
+      "destination": "commodities.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.051",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Gold & materials黄金与原材料↗",
+      "destination": "baskets_canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.052",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse Canada浏览加拿大全部页面↗",
+      "destination": "canada.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.053",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "International ▾",
+      "destination": "intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.054",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "World Dashboard全球仪表盘Major markets compared together主要市场同台对比",
+      "destination": "intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.055",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Dashboard股票仪表盘Cross-market standouts and sectors跨市场领涨股与板块",
+      "destination": "intl_stocks.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.056",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Global Market Cycles全球市场周期Every major market on one clock主要市场同在一张周期钟上",
+      "destination": "markets.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.057",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Country Cycles国家周期Countries and regions compared国家与区域对比",
+      "destination": "country_cycles.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.058",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Thematic Baskets主题篮子Cross-country themes outside America跨国主题篮子 · 除美",
+      "destination": "baskets_intl.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.059",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Japan日本↗",
+      "destination": "japan.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.060",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "South Korea韩国↗",
+      "destination": "south_korea.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.061",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Euro Area欧元区↗",
+      "destination": "euro_area.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.062",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "United Kingdom英国↗",
+      "destination": "united_kingdom.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.063",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "India印度↗",
+      "destination": "india.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.064",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Crypto Intelligence加密情报Market state, flows, leverage and asset lanes市场状态、资金流、杠杆与",
+      "destination": "crypto.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.065",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Bitcoin Vector比特币向量Bitcoin state, risk and cycle evidence比特币状态、风险与周期实证",
+      "destination": "vector.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.066",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Strategy Track Record策略战绩Cycle and allocation evidence周期与配置的实证",
+      "destination": "vector.html#strategy-track-record",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.067",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Commodity Dashboard商品仪表盘Gold, oil, copper and silver黄金、原油、铜与白银",
+      "destination": "commodities.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.068",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Commodity Strategies商品策略Tactical views by commodity分品种的战术观点",
+      "destination": "commodity_strategies.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.069",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Strategic Reserves战略储备Global stockpiles versus oil各国储备水平与油价对照",
+      "destination": "spr.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.070",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Forex外汇Dollar, carry and currency pairs美元、套息与货币对",
+      "destination": "forex.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.071",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Bonds债券Curve, credit and duration曲线、信用与久期",
+      "destination": "bonds.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.072",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Gold黄金↗",
+      "destination": "commodities.html#gold",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.073",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Crude oil原油↗",
+      "destination": "commodities.html#oil",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.074",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Copper铜↗",
+      "destination": "commodities.html#copper",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.075",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Bitcoin Terminal比特币终端↗",
+      "destination": "stock.html?ticker=BTC-USD",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.076",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse other assets浏览其他资产↗",
+      "destination": "commodities.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.077",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Research ▾",
+      "destination": "intelligence_hub.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.078",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Intelligence Hub Your complete market command center",
+      "destination": "intelligence_hub.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.079",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Mastermind Portfolio Your holdings with tonight’s signals",
+      "destination": "watchlist.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.080",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Mastermind BotPRO The AI’s own paper account — every trade explained",
+      "destination": "https://bot.mastermind-x.com",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.081",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Research Reports Deep dives and market calls",
+      "destination": "reports.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.082",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Research Vault Search every published research note",
+      "destination": "research_vault.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.083",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Earnings Wire Verified calls, weekly intelligence and company context",
+      "destination": "stocks/earnings/index.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.084",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Filing Forensics Find the accounting changes worth reviewing",
+      "destination": "fundamental_forensics.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.085",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Neural Web See how every signal votes",
+      "destination": "neural_web.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.086",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Market Memory Put today beside comparable episodes",
+      "destination": "market_memory.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.087",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Foresight Themes before markets price them",
+      "destination": "foresight.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.088",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Theme Tracker What’s strengthening and fading now",
+      "destination": "state_of_themes.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.089",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Divergence Radar Where price and reality split",
+      "destination": "radar.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.090",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Stock Seasonality Which calendar windows actually repeat",
+      "destination": "stock_seasonality.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.091",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Signal Board Today’s strongest confirmed setups",
+      "destination": "confluence_screener.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.092",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Smart Money How top investors are positioned",
+      "destination": "smart_money.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.093",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Fund Flows Where institutional capital is moving",
+      "destination": "etfs.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.094",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Cycle Intelligence Where the economy is heading",
+      "destination": "cycle.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.095",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Macro Weather Growth, inflation and liquidity now",
+      "destination": "macro_context.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.096",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Policy Watch ↗",
+      "destination": "policy_watch.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.097",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Government Revenue ↗",
+      "destination": "government_revenue.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.098",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Alternative Data ↗",
+      "destination": "alt_data.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.099",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Special Situations ↗",
+      "destination": "special_situations.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.100",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "BioCatalyst Intelligence ↗",
+      "destination": "biocatalyst.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.101",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Capital Structure ↗",
+      "destination": "capital_structure.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.102",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "markets.html",
+      "destination": "markets.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.103",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "country_cycles.html",
+      "destination": "country_cycles.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.104",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "sector_cycles.html",
+      "destination": "sector_cycles.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.105",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "sector_cycles_china.html",
+      "destination": "sector_cycles_china.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.106",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "cycle.html",
+      "destination": "cycle.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.107",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "macro_context.html",
+      "destination": "macro_context.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.108",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse all research →",
+      "destination": "intelligence_hub.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.109",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Browse all research →",
+      "destination": "intelligence_hub.html",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    },
+    {
+      "edge_id": "NAV.live.110",
+      "nav_path": [
+        "(live DOM)"
+      ],
+      "nav_label": "Terminal",
+      "destination": "https://app.mastermind-x.com",
+      "edge_type": "PRIMARY_NAV",
+      "evidence_status": "OBSERVED_BROWSER",
+      "channel": "desktop",
+      "link_class": "GLOBAL_NAV"
+    }
+  ]
+}

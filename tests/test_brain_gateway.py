@@ -437,6 +437,22 @@ def test_token_ceiling_trips(tmp_path):
     assert q["remaining"] == 0
 
 
+def test_quota_dir_unavailable_emits_fail_open(tmp_path, monkeypatch):
+    """GATE-4: the existing ::error:: fail-open line must also hit the commercial ledger."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+    blocked = tmp_path / "blocked-quota"
+    blocked.write_text("not a directory")
+    with patch.object(gw, "_brain_quota_dir", return_value=blocked):
+        allowed, q = gw._check_and_increment_quota(
+            "userZ", "fast", "free", "active", None, tmp_path)
+    assert allowed is True
+    assert q["remaining"] == -1
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "quota.fail_open" and r.get("reason") == "dir_unavailable"
+               for r in rows)
+
+
 # ---------------------------------------------------------------------------
 # 7. Tool allowlist refuses unknown tool
 # ---------------------------------------------------------------------------

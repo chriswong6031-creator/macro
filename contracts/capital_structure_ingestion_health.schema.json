@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_ingestion_health.schema.json",
+  "title": "Capital Structure ingestion health receipt",
+  "description": "Machine-readable health for one Capital Structure ingest/compile run. compiler_generated_at is telemetry generation time and is not source freshness; latest_source_retrieved_at is the high-watermark of retained evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "generated_at", "authority", "compiler_generated_at",
+    "latest_source_retrieved_at", "latest_source_filing_date", "store_id",
+    "counters", "source_high_watermark_before", "source_high_watermark_after",
+    "census", "backlog", "verdict", "verdict_reason", "no_new_work_proven",
+    "no_new_work_reason"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.ingestion_health/v1"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "compiler_generated_at": {"type": ["string", "null"], "format": "date-time"},
+    "latest_source_retrieved_at": {"type": ["string", "null"]},
+    "latest_source_filing_date": {"type": ["string", "null"]},
+    "store_id": {"type": ["string", "null"], "minLength": 1},
+    "counters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected", "retrieved", "verified_retained_sources", "manifested_sources",
+        "compiled_events", "deferred", "parser_deferred", "storage_deferred", "parked"
+      ],
+      "properties": {
+        "selected": {"type": "integer", "minimum": 0},
+        "retrieved": {"type": "integer", "minimum": 0},
+        "verified_retained_sources": {"type": "integer", "minimum": 0},
+        "manifested_sources": {"type": "integer", "minimum": 0},
+        "compiled_events": {"type": ["integer", "null"], "minimum": 0},
+        "deferred": {"type": "integer", "minimum": 0},
+        "parser_deferred": {"type": "integer", "minimum": 0},
+        "storage_deferred": {"type": "integer", "minimum": 0},
+        "parked": {"type": "integer", "minimum": 0}
+      }
+    },
+    "source_high_watermark_before": {"$ref": "#/$defs/watermark"},
+    "source_high_watermark_after": {"$ref": "#/$defs/watermark"},
+    "census": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/census_row"}
+    },
+    "backlog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pending", "parked", "oldest_pending_first_seen", "deferred_count",
+        "selected_count"
+      ],
+      "properties": {
+        "pending": {"type": ["integer", "null"], "minimum": 0},
+        "parked": {"type": ["integer", "null"], "minimum": 0},
+        "oldest_pending_first_seen": {"type": ["string", "null"]},
+        "deferred_count": {"type": ["integer", "null"], "minimum": 0},
+        "selected_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "verdict": {"type": "string", "enum": ["ok", "fail", "no_new_work"]},
+    "verdict_reason": {"type": "string", "minLength": 1},
+    "no_new_work_proven": {"type": "boolean"},
+    "no_new_work_reason": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "watermark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_count", "complete_submission_count",
+        "latest_retrieved_at", "latest_filing_date"
+      ],
+      "properties": {
+        "source_manifest_count": {"type": "integer", "minimum": 0},
+        "complete_submission_count": {"type": "integer", "minimum": 0},
+        "latest_retrieved_at": {"type": ["string", "null"]},
+        "latest_filing_date": {"type": ["string", "null"]}
+      }
+    },
+    "census_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage", "outcome", "error_class", "error_fingerprint", "http_status",
+        "storage_operation", "lane", "count", "first_occurrence", "latest_occurrence"
+      ],
+      "properties": {
+        "stage": {"type": "string", "minLength": 1},
+        "outcome": {"type": "string", "minLength": 1},
+        "error_class": {"type": ["string", "null"]},
+        "error_fingerprint": {"type": "string"},
+        "http_status": {"type": ["integer", "null"]},
+        "storage_operation": {"type": ["string", "null"]},
+        "lane": {"type": ["string", "null"]},
+        "count": {"type": "integer", "minimum": 1},
+        "first_occurrence": {"type": ["string", "null"]},
+        "latest_occurrence": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

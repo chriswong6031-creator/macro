@@ -92,9 +92,17 @@ def _validate_manifest(payload: object) -> None:
     validator(payload)
 
 
-def _verify_store(out_dir: Path, manifest: Mapping[str, Any]) -> Mapping[str, Any]:
+def _verify_store(
+    out_dir: Path,
+    manifest: Mapping[str, Any],
+    *,
+    lineage_depth: int | None = None,
+) -> Mapping[str, Any]:
     _validator, verifier = _story_contracts()
-    result = verifier(Path(out_dir), manifest=manifest)
+    if lineage_depth is None:
+        result = verifier(Path(out_dir), manifest=manifest)
+    else:
+        result = verifier(Path(out_dir), manifest=manifest, lineage_depth=lineage_depth)
     if not isinstance(result, Mapping):
         raise ImmutableAddressIntegrityError("story packet store verifier did not return health")
     return result
@@ -636,7 +644,12 @@ def _generation_id(manifest: Mapping[str, Any]) -> str:
     return generation_id
 
 
-def _validate_staging(out_dir: Path, manifest: Mapping[str, Any]) -> None:
+def _validate_staging(
+    out_dir: Path,
+    manifest: Mapping[str, Any],
+    *,
+    lineage_depth: int | None = None,
+) -> None:
     root = Path(out_dir)
     marker = canonical_json_bytes(manifest)
     try:
@@ -651,7 +664,7 @@ def _validate_staging(out_dir: Path, manifest: Mapping[str, Any]) -> None:
             if len(body) != receipt["bytes"] or sha256_bytes(body) != receipt["sha256"]:
                 raise ImmutableAddressIntegrityError(f"local story packet receipt mismatch: {relative}")
             _canonical_object(body, label=f"local story packet object {relative}")
-        health = _verify_store(root, manifest)
+        health = _verify_store(root, manifest, lineage_depth=lineage_depth)
         if health.get("status") != "ready":
             raise ImmutableAddressIntegrityError("local story packet store is not ready")
     except ImmutableAddressIntegrityError:
@@ -1076,6 +1089,7 @@ def publish(
     require_absent_root: bool = False,
     s3: Any | None = None,
     bucket: str | None = None,
+    verify_lineage_depth: int | None = None,
 ) -> int:
     """Publish one ready deterministic packet catalog; no credentials is a no-op."""
     client = s3 if s3 is not None else _client()
@@ -1095,7 +1109,7 @@ def publish(
         if manifest.get("status") != "ready":
             raise ImmutableAddressIntegrityError("only ready story packet catalogs may advance the public root")
         _catalog_keys(manifest)
-        _validate_staging(Path(out_dir), manifest)
+        _validate_staging(Path(out_dir), manifest, lineage_depth=verify_lineage_depth)
         remote, remote_etag = _remote_marker(client, target_bucket)
         if remote is not None and remote_etag is None:
             raise ImmutableAddressIntegrityError(

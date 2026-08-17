@@ -41,6 +41,27 @@ jobs:
           df -h "$runner_root"
           "$HOME/runner-guard/bin/runner_disk_guard.py" \
             --path "$runner_root" --mode lightweight
-          listeners=$(pgrep -fc 'Runner.Listener' || true)
-          echo "runner_listeners_on_host=$listeners"
-          test "$listeners" -eq 3
+          listener_pids=()
+          listener_count=0
+          while read -r service expected_root expected_name; do
+            service_state=$(launchctl print "gui/$(id -u)/$service")
+            grep -q 'state = running' <<<"$service_state"
+            pid=$(awk '$1 == "pid" && $2 == "=" {print $3; exit}' <<<"$service_state")
+            test -n "$pid"
+            kill -0 "$pid"
+            command=$(ps -p "$pid" -o command=)
+            test "$command" = "$expected_root/bin/Runner.Listener run --startuptype service"
+            registered_name=$(/usr/bin/plutil -extract agentName raw -o - "$expected_root/.runner")
+            test "$registered_name" = "$expected_name"
+            echo "listener_service=$service runner_root=$expected_root runner_name=$registered_name pid=$pid"
+            listener_pids+=("$pid")
+            listener_count=$((listener_count + 1))
+          done <<'SERVICES'
+          actions.runner.mastermindx-market-intelligence-macro.m1-nightly-1 /Users/chriswong/actions-runner-1 m1-nightly-1
+          actions.runner.mastermindx-market-intelligence-macro.m1-nightly-2 /Users/chriswong/actions-runner-2 m1-nightly-2
+          actions.runner.mastermindx-market-intelligence-macro.m1-light-1 /Users/chriswong/actions-runner-3 m1-light-1
+          SERVICES
+          unique_listener_count=$(printf '%s\n' "${listener_pids[@]}" | sort -u | wc -l | tr -d ' ')
+          echo "runner_listeners_on_host=$listener_count unique_listener_pids=$unique_listener_count"
+          test "$listener_count" -eq 3
+          test "$unique_listener_count" -eq 3

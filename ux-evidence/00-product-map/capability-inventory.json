@@ -1,0 +1,849 @@
+{
+  "schema_version": "1.1-candidate",
+  "capabilities": [
+    {
+      "capability_id": "C.navigate_product",
+      "neutral_name": "Navigate the product shell",
+      "concise_observed_description": "Observed on surface shell navigation",
+      "supporting_surface_ids": [
+        "SUR.shell.global",
+        "SUR.macro.japan.international_macro_comm",
+        "SUR.macro.korea.international_macro_comm",
+        "SUR.macro.euro_area.international_macro_comm",
+        "SUR.macro.uk.international_macro_comm",
+        "SUR.macro.india.international_macro_comm"
+      ],
+      "supporting_route_family_ids": [
+        "RF.home.signed_in",
+        "RF.macro.japan",
+        "RF.macro.korea",
+        "RF.macro.euro_area",
+        "RF.macro.uk",
+        "RF.macro.india"
+      ],
+      "evidence_status": "OBSERVED_BOTH",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.shell.global",
+          "note": "shell navigation"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "shell navigation"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_macro_regime",
+      "neutral_name": "Inspect macro regime",
+      "concise_observed_description": "Observed on surface Reflation · Shifting — not all-clear ⓘ 0 50 100 77 Risk-on GREEN — Trend-followi",
+      "supporting_surface_ids": [
+        "SUR.macro.us.regime_radar",
+        "SUR.equities.dashboard.us.stocks_header",
+        "SUR.derivatives.market_structure.gex_bars_coloured_by_dea",
+        "SUR.equities.dashboard.cn.stocks_header"
+      ],
+      "supporting_route_family_ids": [
+        "RF.macro.us",
+        "RF.equities.dashboard.us",
+        "RF.derivatives.market_structure",
+        "RF.equities.dashboard.cn"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.macro.us.regime_radar",
+          "note": "Reflation · Shifting — not all-clear ⓘ 0 50 100 77 Risk-on GREEN — Trend-followi"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Reflation · Shifting — not all-clear ⓘ 0 50 100 77 Risk-on GREEN — Trend-followi"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_market_divergences",
+      "neutral_name": "Inspect market divergences",
+      "concise_observed_description": "Observed on surface release-radar",
+      "supporting_surface_ids": [
+        "SUR.macro.us.release_radar",
+        "SUR.equities.leader_radar.primary",
+        "SUR.research.china_radar.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.macro.us",
+        "RF.equities.leader_radar",
+        "RF.research.china_radar"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.macro.us.release_radar",
+          "note": "release-radar"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "release-radar"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_sector_rotation",
+      "neutral_name": "Inspect sector rotation",
+      "concise_observed_description": "Observed on surface WHAT TO ACT ON NOW ? THEME REASONS → SECTOR INTELLIGENCE BUY NOW 9 Entry confirm",
+      "supporting_surface_ids": [
+        "SUR.equities.dashboard.us.action_board",
+        "SUR.equities.dashboard.us.sectors",
+        "SUR.equities.dashboard.us.accumulation",
+        "SUR.sectors.intelligence.us.action_board",
+        "SUR.sectors.intelligence.cn.act_now",
+        "SUR.flow.velocity.sector_members_4wk_vs_no",
+        "SUR.equities.dashboard.hk.act_now",
+        "SUR.equities.dashboard.hk.sector_rotation",
+        "SUR.equities.dashboard.ca.act_now",
+        "SUR.equities.dashboard.intl.what_to_act_on_now_sec",
+        "SUR.macro.sector_cycles_us.primary",
+        "SUR.macro.sector_cycles_cn.primary",
+        "SUR.equities.detail.ca.r_alpha_panel",
+        "SUR.equities.detail.intl.r_alpha_panel",
+        "SUR.sectors.intelligence.us.action_board_R.sector_central.confluence"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.dashboard.us",
+        "RF.sectors.intelligence.us",
+        "RF.sectors.intelligence.cn",
+        "RF.flow.velocity",
+        "RF.equities.dashboard.hk",
+        "RF.equities.dashboard.ca",
+        "RF.equities.dashboard.intl",
+        "RF.macro.sector_cycles_us",
+        "RF.macro.sector_cycles_cn",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.dashboard.us.action_board",
+          "note": "WHAT TO ACT ON NOW ? THEME REASONS → SECTOR INTELLIGENCE BUY NOW 9 Entry confirm"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "WHAT TO ACT ON NOW ? THEME REASONS → SECTOR INTELLIGENCE BUY NOW 9 Entry confirm"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.rank_actionable_stock_setups",
+      "neutral_name": "Rank actionable stock setups",
+      "concise_observed_description": "Observed on surface Forming today今日正在形成 ? settles 4:00 pm ET美东 16:00 结算 Now当前 Cross level上穿价位 Since起",
+      "supporting_surface_ids": [
+        "SUR.equities.dashboard.us.prophet_live",
+        "SUR.equities.dashboard.us.us_standouts",
+        "SUR.equities.dashboard.cn.standouts",
+        "SUR.equities.dashboard.hk.standouts",
+        "SUR.equities.dashboard.ca.standouts",
+        "SUR.equities.dashboard.intl.prophet_stock_signals"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.dashboard.us",
+        "RF.equities.dashboard.cn",
+        "RF.equities.dashboard.hk",
+        "RF.equities.dashboard.ca",
+        "RF.equities.dashboard.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.dashboard.us.prophet_live",
+          "note": "Forming today今日正在形成 ? settles 4:00 pm ET美东 16:00 结算 Now当前 Cross level上穿价位 Since起"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Forming today今日正在形成 ? settles 4:00 pm ET美东 16:00 结算 Now当前 Cross level上穿价位 Since起"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_leader_lifecycle",
+      "neutral_name": "Inspect leader lifecycle",
+      "concise_observed_description": "Observed on surface LAST SESSION · SETTLED上一交易时段 · 已收盘 as of Aug 14, 01:00 PM PDT截至 Aug 14, 01:00 PM",
+      "supporting_surface_ids": [
+        "SUR.equities.dashboard.us.dash_tape_band",
+        "SUR.equities.dashboard.hk.stocks_header",
+        "SUR.bot.external.alloc"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.dashboard.us",
+        "RF.equities.dashboard.hk",
+        "RF.bot.external"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.dashboard.us.dash_tape_band",
+          "note": "LAST SESSION · SETTLED上一交易时段 · 已收盘 as of Aug 14, 01:00 PM PDT截至 Aug 14, 01:00 PM"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "LAST SESSION · SETTLED上一交易时段 · 已收盘 as of Aug 14, 01:00 PM PDT截至 Aug 14, 01:00 PM"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.monitor_intraday_tape",
+      "neutral_name": "Monitor intraday tape",
+      "concise_observed_description": "Observed on surface Look here first the strongest setups on the tape right now No fresh setups right",
+      "supporting_surface_ids": [
+        "SUR.flow.intraday.spotlight_panel"
+      ],
+      "supporting_route_family_ids": [
+        "RF.flow.intraday"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.flow.intraday.spotlight_panel",
+          "note": "Look here first the strongest setups on the tape right now No fresh setups right"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Look here first the strongest setups on the tape right now No fresh setups right"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_stock_cycle_stage",
+      "neutral_name": "Inspect stock cycle stage",
+      "concise_observed_description": "Observed on surface The market, placed on the cycle",
+      "supporting_surface_ids": [
+        "SUR.equities.stage_analysis.primary",
+        "SUR.bot.external.positions"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.stage_analysis",
+        "RF.bot.external"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.stage_analysis.primary",
+          "note": "The market, placed on the cycle"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "The market, placed on the cycle"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_winner_deterioration",
+      "neutral_name": "Inspect winner deterioration",
+      "concise_observed_description": "Observed on surface Has your winner changed character?",
+      "supporting_surface_ids": [
+        "SUR.equities.winner_health.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.winner_health"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.winner_health.primary",
+          "note": "Has your winner changed character?"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Has your winner changed character?"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.browse_news_catalysts",
+      "neutral_name": "Browse news / catalysts",
+      "concise_observed_description": "Observed on surface Latest economic releases 10 CPI (Consumer Price Index) Notable Neutral ACTUAL · ",
+      "supporting_surface_ids": [
+        "SUR.news.us.latest_economic_releases"
+      ],
+      "supporting_route_family_ids": [
+        "RF.news.us"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.news.us.latest_economic_releases",
+          "note": "Latest economic releases 10 CPI (Consumer Price Index) Notable Neutral ACTUAL · "
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Latest economic releases 10 CPI (Consumer Price Index) Notable Neutral ACTUAL · "
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.monitor_ranked_alerts",
+      "neutral_name": "Monitor ranked alerts",
+      "concise_observed_description": "Observed on surface Nothing matches these filters.没有符合当前筛选的警报。 Try widening the priority or story fi",
+      "supporting_surface_ids": [
+        "SUR.alerts.us.noresults"
+      ],
+      "supporting_route_family_ids": [
+        "RF.alerts.us"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.alerts.us.noresults",
+          "note": "Nothing matches these filters.没有符合当前筛选的警报。 Try widening the priority or story fi"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Nothing matches these filters.没有符合当前筛选的警报。 Try widening the priority or story fi"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_options_positioning",
+      "neutral_name": "Inspect options positioning",
+      "concise_observed_description": "Observed on surface Options\nOne workspace for the settled close — brief, scanner, per-name, leaders.",
+      "supporting_surface_ids": [
+        "SUR.options.workspace.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.options.workspace"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.options.workspace.primary",
+          "note": "Options\nOne workspace for the settled close — brief, scanner, per-name, leaders."
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Options\nOne workspace for the settled close — brief, scanner, per-name, leaders."
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_darkpool",
+      "neutral_name": "Inspect dark-pool activity",
+      "concise_observed_description": "Observed on surface Dark Pool How much of each stock's volume traded away from the public tape today",
+      "supporting_surface_ids": [
+        "SUR.flow.darkpool.dark_pool_how_much_of_ea"
+      ],
+      "supporting_route_family_ids": [
+        "RF.flow.darkpool"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.flow.darkpool.dark_pool_how_much_of_ea",
+          "note": "Dark Pool How much of each stock's volume traded away from the public tape today"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Dark Pool How much of each stock's volume traded away from the public tape today"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_etf_positioning",
+      "neutral_name": "Inspect ETF / fund positioning",
+      "concise_observed_description": "Observed on surface VOLATILITY-CONTROL FUNDS $220B Adding ▼ $0.2B today ▲ $3.5B over 5 days 73% of t",
+      "supporting_surface_ids": [
+        "SUR.derivatives.market_structure.volatility_control_funds",
+        "SUR.derivatives.market_structure.trend_following_funds_1",
+        "SUR.derivatives.market_structure.vol_target_fund_exposure",
+        "SUR.fundamentals.forensics.ff_main",
+        "SUR.equities.seasonality.sx_root",
+        "SUR.fundamentals.smart_money.primary",
+        "SUR.flow.etf.primary",
+        "SUR.fundamentals.capital_structure.cs_shell",
+        "SUR.fund.index.primary",
+        "SUR.equities.detail.us.fundamentals_financial",
+        "SUR.equities.detail.ca.fundamentals_analyst",
+        "SUR.equities.detail.ca.r_fund_panel",
+        "SUR.equities.detail.intl.fundamentals_analyst",
+        "SUR.equities.detail.intl.r_fund_panel"
+      ],
+      "supporting_route_family_ids": [
+        "RF.derivatives.market_structure",
+        "RF.fundamentals.forensics",
+        "RF.equities.seasonality",
+        "RF.fundamentals.smart_money",
+        "RF.flow.etf",
+        "RF.fundamentals.capital_structure",
+        "RF.fund.index",
+        "RF.equities.detail.us",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.derivatives.market_structure.volatility_control_funds",
+          "note": "VOLATILITY-CONTROL FUNDS $220B Adding ▼ $0.2B today ▲ $3.5B over 5 days 73% of t"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "VOLATILITY-CONTROL FUNDS $220B Adding ▼ $0.2B today ▲ $3.5B over 5 days 73% of t"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_thematic_baskets",
+      "neutral_name": "Inspect thematic baskets",
+      "concise_observed_description": "Observed on surface WHAT TO ACT ON NOW V2 ? themes as of 2026-08-14 theme desk → BUY NOW (1) Clean e",
+      "supporting_surface_ids": [
+        "SUR.equities.dashboard.cn.act_now",
+        "SUR.equities.dashboard.cn.cn_theme_tape",
+        "SUR.theme.ths_boards.basket_score_60d_1d_5d_2",
+        "SUR.theme.ths_boards.all_none",
+        "SUR.theme.narrative_radar.primary",
+        "SUR.theme.baskets_hk.hang_seng_breadth_mixed",
+        "SUR.theme.baskets_hk.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_hk.china_tech_internet_2",
+        "SUR.theme.rotation_hk.risk_time",
+        "SUR.theme.rotation_hk.rot_alerts",
+        "SUR.theme.baskets_ca.s_p_tsx_breadth_broad_a",
+        "SUR.theme.baskets_ca.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_ca.big_banks_20_2_insurer",
+        "SUR.theme.rotation_ca.risk_time",
+        "SUR.theme.rotation_ca.rot_alerts",
+        "SUR.theme.baskets_intl.intl_ex_us_breadth_broad",
+        "SUR.theme.baskets_intl.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_intl.global_semiconductors_5",
+        "SUR.research.foresight.primary",
+        "SUR.theme.tracker.primary",
+        "SUR.research.divergence_radar.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.dashboard.cn",
+        "RF.theme.ths_boards",
+        "RF.theme.narrative_radar",
+        "RF.theme.baskets_hk",
+        "RF.theme.rotation_hk",
+        "RF.theme.baskets_ca",
+        "RF.theme.rotation_ca",
+        "RF.theme.baskets_intl",
+        "RF.research.foresight",
+        "RF.theme.tracker",
+        "RF.research.divergence_radar"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.dashboard.cn.act_now",
+          "note": "WHAT TO ACT ON NOW V2 ? themes as of 2026-08-14 theme desk → BUY NOW (1) Clean e"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "WHAT TO ACT ON NOW V2 ? themes as of 2026-08-14 theme desk → BUY NOW (1) Clean e"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_market_heatmap",
+      "neutral_name": "Inspect market heatmap",
+      "concise_observed_description": "Observed on surface 🔥 China A-share Heatmap",
+      "supporting_surface_ids": [
+        "SUR.equities.heatmap.cn.primary",
+        "SUR.equities.heatmap.hk.primary",
+        "SUR.equities.heatmap.ca.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.heatmap.cn",
+        "RF.equities.heatmap.hk",
+        "RF.equities.heatmap.ca"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.heatmap.cn.primary",
+          "note": "🔥 China A-share Heatmap"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "🔥 China A-share Heatmap"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_policy_changes",
+      "neutral_name": "Inspect policy changes",
+      "concise_observed_description": "Observed on surface 📡 China Tape 24 stories cleared the macro filter; official policy tone steady. ",
+      "supporting_surface_ids": [
+        "SUR.news.cn.china_tape_24_stories",
+        "SUR.flow.china_mechanics.current_phase_policy_put",
+        "SUR.policy.china.primary",
+        "SUR.policy.reserves.primary",
+        "SUR.macro.weather.rates_policy_rate_3_63",
+        "SUR.policy.watch.market_policy_fed_poli",
+        "SUR.policy.government_revenue.gov_workspace"
+      ],
+      "supporting_route_family_ids": [
+        "RF.news.cn",
+        "RF.flow.china_mechanics",
+        "RF.policy.china",
+        "RF.policy.reserves",
+        "RF.macro.weather",
+        "RF.policy.watch",
+        "RF.policy.government_revenue"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.news.cn.china_tape_24_stories",
+          "note": "📡 China Tape 24 stories cleared the macro filter; official policy tone steady. "
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "📡 China Tape 24 stories cleared the macro filter; official policy tone steady. "
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_multi_timeframe_momentum",
+      "neutral_name": "Inspect multi-timeframe momentum",
+      "concise_observed_description": "Observed on surface FAST MOVERS — 1-DAY MOMENTUM ? as of 2026-08-14 0027.HK HK$34.74 Galaxy Entertai",
+      "supporting_surface_ids": [
+        "SUR.equities.dashboard.hk.hk_velocity_desk",
+        "SUR.assets.commodities.how_many_agree_12_month",
+        "SUR.assets.commodities.do_the_signals_agree_ti",
+        "SUR.assets.commodities.do_the_signals_agree",
+        "SUR.equities.detail.us.panel_mtf",
+        "SUR.equities.detail.ca.panel_mtf",
+        "SUR.equities.detail.intl.panel_mtf"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.dashboard.hk",
+        "RF.assets.commodities",
+        "RF.equities.detail.us",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.dashboard.hk.hk_velocity_desk",
+          "note": "FAST MOVERS — 1-DAY MOMENTUM ? as of 2026-08-14 0027.HK HK$34.74 Galaxy Entertai"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "FAST MOVERS — 1-DAY MOMENTUM ? as of 2026-08-14 0027.HK HK$34.74 Galaxy Entertai"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_macro_playbook",
+      "neutral_name": "Inspect current macro playbook",
+      "concise_observed_description": "Observed on surface WHAT TO DO NOW Watch — not enough signal yet stacking up: Momentum rolling over ",
+      "supporting_surface_ids": [
+        "SUR.assets.commodities.what_to_do_now_watch_n",
+        "SUR.assets.commodities.what_to_do_now_wat"
+      ],
+      "supporting_route_family_ids": [
+        "RF.assets.commodities"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.assets.commodities.what_to_do_now_watch_n",
+          "note": "WHAT TO DO NOW Watch — not enough signal yet stacking up: Momentum rolling over "
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "WHAT TO DO NOW Watch — not enough signal yet stacking up: Momentum rolling over "
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_portfolio_watchlist",
+      "neutral_name": "Inspect portfolio / watchlist",
+      "concise_observed_description": "Observed on surface wl_starters",
+      "supporting_surface_ids": [
+        "SUR.monitoring.watchlist.wl_starters",
+        "SUR.monitoring.watchlist.ws_att"
+      ],
+      "supporting_route_family_ids": [
+        "RF.monitoring.watchlist"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.monitoring.watchlist.wl_starters",
+          "note": "wl_starters"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "wl_starters"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.browse_research_reports",
+      "neutral_name": "Browse research reports",
+      "concise_observed_description": "Observed on surface Research Reports",
+      "supporting_surface_ids": [
+        "SUR.research.reports_index.primary",
+        "SUR.bot.external.brainlog",
+        "SUR.bot.external.research"
+      ],
+      "supporting_route_family_ids": [
+        "RF.research.reports_index",
+        "RF.bot.external"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.research.reports_index.primary",
+          "note": "Research Reports"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Research Reports"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.browse_institutional_research",
+      "neutral_name": "Browse institutional research",
+      "concise_observed_description": "Observed on surface The desk research, the way the analysts wrote it.",
+      "supporting_surface_ids": [
+        "SUR.research.vault.primary"
+      ],
+      "supporting_route_family_ids": [
+        "RF.research.vault"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.research.vault.primary",
+          "note": "The desk research, the way the analysts wrote it."
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "The desk research, the way the analysts wrote it."
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_earnings_records",
+      "neutral_name": "Inspect earnings records",
+      "concise_observed_description": "Observed on surface EARNINGS CALL RECORD Source-first earnings records. A live archive of receipt-bo",
+      "supporting_surface_ids": [
+        "SUR.research.earnings_index.main",
+        "SUR.equities.detail.ca.r_earn_panel",
+        "SUR.equities.detail.intl.r_earn_panel"
+      ],
+      "supporting_route_family_ids": [
+        "RF.research.earnings_index",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.research.earnings_index.main",
+          "note": "EARNINGS CALL RECORD Source-first earnings records. A live archive of receipt-bo"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "EARNINGS CALL RECORD Source-first earnings records. A live archive of receipt-bo"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_signal_votes",
+      "neutral_name": "Inspect how signals vote",
+      "concise_observed_description": "Observed on surface NEURAL WEB · LIVE SYSTEM Signals do not arrive unchallenged. The Neural Web conn",
+      "supporting_surface_ids": [
+        "SUR.research.neural_web.neural_web_live_system"
+      ],
+      "supporting_route_family_ids": [
+        "RF.research.neural_web"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.research.neural_web.neural_web_live_system",
+          "note": "NEURAL WEB · LIVE SYSTEM Signals do not arrive unchallenged. The Neural Web conn"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "NEURAL WEB · LIVE SYSTEM Signals do not arrive unchallenged. The Neural Web conn"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_market_memory",
+      "neutral_name": "Inspect market memory",
+      "concise_observed_description": "Observed on surface HISTORICAL CONTEXT · NEURAL WEB MEMORY Market Memory Put today beside comparable",
+      "supporting_surface_ids": [
+        "SUR.research.market_memory.historical_context_neu"
+      ],
+      "supporting_route_family_ids": [
+        "RF.research.market_memory"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.research.market_memory.historical_context_neu",
+          "note": "HISTORICAL CONTEXT · NEURAL WEB MEMORY Market Memory Put today beside comparable"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "HISTORICAL CONTEXT · NEURAL WEB MEMORY Market Memory Put today beside comparable"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_biocatalyst_events",
+      "neutral_name": "Inspect biopharma catalysts",
+      "concise_observed_description": "Observed on surface BIOCATALYST INTELLIGENCE Trial Intelligence Workspace Screen the register, compa",
+      "supporting_surface_ids": [
+        "SUR.events.biocatalyst.bci_workspace"
+      ],
+      "supporting_route_family_ids": [
+        "RF.events.biocatalyst"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.events.biocatalyst.bci_workspace",
+          "note": "BIOCATALYST INTELLIGENCE Trial Intelligence Workspace Screen the register, compa"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "BIOCATALYST INTELLIGENCE Trial Intelligence Workspace Screen the register, compa"
+      ],
+      "market_contexts": []
+    },
+    {
+      "capability_id": "C.inspect_stock_verdict",
+      "neutral_name": "Inspect stock verdict / action",
+      "concise_observed_description": "Observed on surface THE NAME Solid name 62/100 board rank 🛈 Validated edge ACT NOW? WAIT Extended — ",
+      "supporting_surface_ids": [
+        "SUR.equities.detail.us.sv_decision",
+        "SUR.equities.detail.ca.sv_decision",
+        "SUR.equities.detail.intl.sv_decision"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.detail.us",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.detail.us.sv_decision",
+          "note": "THE NAME Solid name 62/100 board rank 🛈 Validated edge ACT NOW? WAIT Extended — "
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "THE NAME Solid name 62/100 board rank 🛈 Validated edge ACT NOW? WAIT Extended — "
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    },
+    {
+      "capability_id": "C.inspect_entry_timing",
+      "neutral_name": "Inspect entry timing",
+      "concise_observed_description": "Observed on surface Cycle & timing detail",
+      "supporting_surface_ids": [
+        "SUR.equities.detail.us.cycle_timing_detail",
+        "SUR.equities.detail.ca.panel_deep",
+        "SUR.equities.detail.intl.panel_deep"
+      ],
+      "supporting_route_family_ids": [
+        "RF.equities.detail.us",
+        "RF.equities.detail.ca",
+        "RF.equities.detail.intl"
+      ],
+      "evidence_status": "OBSERVED_BROWSER",
+      "evidence_refs": [
+        {
+          "ref_type": "surface",
+          "ref": "SUR.equities.detail.us.cycle_timing_detail",
+          "note": "Cycle & timing detail"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "synonyms_labels_observed": [
+        "Cycle & timing detail"
+      ],
+      "market_contexts": [],
+      "possible_overlap": []
+    }
+  ]
+}

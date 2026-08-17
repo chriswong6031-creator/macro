@@ -783,6 +783,8 @@ def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None
     assert "push_abort_rebase" not in workflow
     assert "push_do origin HEAD:main" in workflow
     assert "push_backoff" in workflow
+    assert "secrets.ADMIN_GH_TOKEN" in workflow
+    assert "ADMIN_GH_TOKEN is required to publish through the main freeze" in workflow
     assert "Sitemap: https://www.mastermind-x.com/stocks/earnings/sitemap.xml" in robots
 
 

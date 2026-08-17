@@ -1,8 +1,8 @@
 """China Prophet V3 auto-tripwire specifications (G0.8 scaffolding).
 
 CONTRACT
-    This module is DATA, not a grader.  It declares the three comparisons the
-    ratified V3 slate must be watched on, each with its cohort definition, its
+    This module is DATA, not a grader.  It declares the four comparisons the
+    ratified V3/V4 slate must be watched on, each with its cohort definition, its
     threshold, and the action a breach triggers.  The nightly CN loser+miss
     telemetry engine (masterplan §5 W0, ``engine/cn_prophet_audit.py``) is the
     consumer: it computes each comparison from the accrued forward ledger, writes
@@ -17,8 +17,15 @@ WHY IT EXISTS
     G0.8 (masterplan §0, added 2026-08-04) requires every operator-ratified direct
     wiring to ship with (a) parallel shadow grading of the displaced definition,
     (b) a NAMED auto-tripwire with its threshold and revert action, and (c) a clean
-    single-commit revert path.  ``china_board_rank.v2_shadow_featured`` is (a);
-    this module is (b); the single R1-R3 commit is (c).
+    single-commit revert path.  ``china_board_rank.v2_shadow_featured`` is (a) for
+    the v3 admission change; ``china_board_rank.v3_shadow_featured`` is (a) for
+    the v4 ordering change; this module is (b); each race keeps its own one-field
+    revert path as (c).
+
+    R1-R3 are the v3 admission/theme/relay studies, carried forward into the v4
+    era.  V4 preserved every v3 admission rule and changed only the ORDER, so
+    those three comparisons stay meaningful against the live shelf.  R4 is the
+    v4-vs-v3 ordering race.  No forward v4 ordering edge is currently claimed.
 
 READING THE SPECS
     ``direction`` states which side the tripwire expects to be BETTER.  A breach is
@@ -31,7 +38,27 @@ READING THE SPECS
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
+
+#: The definition the LIVE board stamps today.  Every R1-R3 cohort below is drawn
+#: from the live shelf, so this must move with ``china_board_rank.BOARD_DEFINITION``
+#: on every definition bump — a spec left pointing at a retired stamp matches zero
+#: rows, and a tripwire that matches nothing reads as "no breach" while it is
+#: actually blind.  It is a literal rather than an import so this module stays
+#: dependency-free; ``tests/test_china_board_rank_v4.py`` pins the two equal, so a
+#: future bump fails CI here instead of silently disarming the alarms.
+LIVE_BOARD_DEFINITION = "cn_prophet_v4"
+
+#: V4 preserved every v3 admission rule (R1 prime window, R2 theme_timing, R3
+#: relay_late) and changed only the ORDER, so R1-R3 stay meaningful against the live
+#: shelf.  Their accrual clocks restart at the v3→v4 boundary rather than pooling
+#: across it: v4's shelf COMPOSITION differs (the caps now bind on intelligence
+#: interest), and pooling two shelf compositions into one cohort would confound the
+#: very comparison the tripwire exists to make.
+ERA_BOUNDARY_NOTE = (
+    "cn_prophet_v3 -> cn_prophet_v4 (2026-08-15): ordering changed, admission did "
+    "not. R1-R3 cohorts do not pool across the boundary."
+)
 
 # The comparison cohorts are keyed on ledger columns the board store already
 # carries: ``board_definition`` (append_board), ``lane`` + ``lane_reasons``
@@ -44,7 +71,7 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "win_rate_pct",
         "treatment": {
             "label": "v3_featured",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "featured",
         },
         "control": {
@@ -69,12 +96,12 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "loser_rate_pct",
         "treatment": {
             "label": "theme_timing_1_0",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "theme_timing": 1.0,
         },
         "control": {
             "label": "theme_timing_0_25",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "theme_timing": 0.25,
         },
         # Loser rate is a cost, so the favoured side is the LOWER one.
@@ -98,13 +125,13 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "median_excess_pct",
         "treatment": {
             "label": "relay_late_demoted",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "more_actionable",
             "lane_reason": "relay_late",
         },
         "control": {
             "label": "v3_featured",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "featured",
         },
         # The demotion is wrong if the names it moved BEAT the shelf it protected.
@@ -124,14 +151,51 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
             "(chase x HOT −2.04pp vs chase x no-theme −1.51pp, n=7,816)."
         ),
     },
+    {
+        "id": "cn_v4_vs_v3_order_shadow_excess",
+        "slate_item": "R4",
+        "title": "V4 intelligence-ordered shelf vs the displaced v3 score-ordered shadow shelf",
+        "metric": "median_excess_pct",
+        "treatment": {
+            "label": "v4_featured",
+            "board_definition": LIVE_BOARD_DEFINITION,
+            "lane": "featured",
+            # Coverage-atomic: a v4 bake that reverted to v3 score order is still
+            # board_definition=cn_prophet_v4, but it received control behavior.
+            # Those episodes stay in telemetry and must not accrue as treatment.
+            "effective_order_basis": "intel_interest_then_v3_score",
+        },
+        "control": {
+            "label": "v3_order_shadow_featured",
+            "board_definition": "cn_prophet_v3_shadow",
+            "lane": "featured",
+        },
+        "direction": "treatment_higher",
+        "threshold": 0.0,
+        "threshold_unit": "pp",
+        "min_matured": 60,
+        "action": (
+            "emit ::warning cn-v4-order-trails-v3 and propose reverting R4 "
+            "(partition_board_rows rank_field -> 'score_rank') to the operator"
+        ),
+        "evidence": (
+            "NO forward evidence — this wiring ships on a first-principles argument "
+            "(rank by interestingness, gate by entry) and an operator's read of the "
+            "resulting names, NOT on a measured edge. The two shelves differ only in "
+            "ORDER, so this race is the whole test of the ordering claim, and it has "
+            "n=0 today. Until it matures, 'v4 ranks better' is a hypothesis."
+        ),
+    },
 )
 
 
 def tripwire_specs() -> tuple[dict[str, Any], ...]:
-    """Return the three V3 tripwire specs as plain data.
+    """Return the four named tripwire specs as plain data.
 
-    A tuple of dicts, safe to serialise straight into the W0 nightly artifact.
-    Callers must not mutate the returned dicts in place — treat them as frozen.
+    R1-R3 are the v3 admission/theme/relay studies carried into the v4 era.
+    R4 is the v4-vs-v3 ordering race.  A tuple of dicts, safe to serialise
+    straight into the W0 nightly artifact.  Callers must not mutate the
+    returned dicts in place — treat them as frozen.
     """
     return TRIPWIRES
 
@@ -142,3 +206,51 @@ def tripwire_by_id(tripwire_id: str) -> dict[str, Any] | None:
         if spec["id"] == tripwire_id:
             return spec
     return None
+
+
+def episode_matches_arm(episode: Mapping[str, Any], arm: Mapping[str, Any]) -> bool:
+    """Return True if a ledger episode satisfies one tripwire arm.
+
+    Known keys (besides ``label``, which is display-only):
+
+    * ``board_definition`` — exact string match
+    * ``lane`` — exact string match
+    * ``lane_reason`` — must appear in the episode's ``lane_reasons`` list
+    * ``theme_timing`` — compared to ``prophet_theme_timing`` (or ``theme_timing``)
+    * ``effective_order_basis`` / ``order_mode`` / ``intel_order_active`` /
+      ``intel_coverage_complete`` — exact match on the persisted bake provenance
+
+    Unknown arm keys fail closed: the episode must carry an equal value.
+    A missing episode field never matches a required arm key.
+    """
+    for key, expected in arm.items():
+        if key == "label":
+            continue
+        if key == "lane_reason":
+            reasons = episode.get("lane_reasons")
+            if isinstance(reasons, str):
+                reasons = [reasons]
+            if not isinstance(reasons, (list, tuple)) or expected not in reasons:
+                return False
+            continue
+        if key == "theme_timing":
+            actual = episode.get("prophet_theme_timing", episode.get("theme_timing"))
+            if actual != expected:
+                return False
+            continue
+        if episode.get(key) != expected:
+            return False
+    return True
+
+
+def r4_treatment_eligible(episode: Mapping[str, Any]) -> bool:
+    """True iff this episode accrues toward the R4 v4-vs-v3 ordering race.
+
+    Requires the live v4 definition, the featured lane, and that intelligence
+    ordering actually ran.  A coverage-fallback bake is a v4 operational bake
+    and is not R4 treatment.
+    """
+    spec = tripwire_by_id("cn_v4_vs_v3_order_shadow_excess")
+    if spec is None:
+        return False
+    return episode_matches_arm(episode, spec["treatment"])

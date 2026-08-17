@@ -1,0 +1,212 @@
+[
+  {
+    "id": "E.shell.brand",
+    "stable_id": "E.shell.brand",
+    "section": "S.shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.nav-brand"
+  },
+  {
+    "id": "E.shell.search",
+    "stable_id": "E.shell.search",
+    "section": "S.shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "nav.site-nav .nav-search input"
+  },
+  {
+    "id": "E.detail.h1",
+    "stable_id": "E.detail.h1",
+    "section": "S.detail.identity",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#r_name"
+  },
+  {
+    "id": "E.detail.decision",
+    "stable_id": "E.detail.decision",
+    "section": "S.detail.decision",
+    "status": "tested",
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#sv-decision"
+  },
+  {
+    "id": "E.detail.lock",
+    "stable_id": "E.detail.lock",
+    "section": "S.detail.decision",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": false,
+    "resolution_status": "UNRESOLVED",
+    "selector_used": ".lock-cta"
+  },
+  {
+    "id": "E.detail.cycle",
+    "stable_id": "E.detail.cycle",
+    "section": "S.detail.cycle",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "details.sv-deep"
+  },
+  {
+    "id": "E.detail.cycle.summary",
+    "stable_id": "E.detail.cycle.summary",
+    "section": "S.detail.cycle",
+    "status": "tested",
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "details.sv-deep > summary"
+  },
+  {
+    "id": "E.detail.chart",
+    "stable_id": "E.detail.chart",
+    "section": "S.detail.chart",
+    "status": "attempted_failed",
+    "reason": "plot found but tooltip/crosshair not verified",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox"
+  },
+  {
+    "id": "E.detail.chart.plot",
+    "stable_id": "E.detail.chart.plot",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox .bchart-plot"
+  },
+  {
+    "id": "E.detail.tf.1D",
+    "stable_id": "E.detail.tf.1D",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button[data-tf='1D']"
+  },
+  {
+    "id": "E.detail.tf.3D",
+    "stable_id": "E.detail.tf.3D",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button[data-tf='3D']"
+  },
+  {
+    "id": "E.detail.tf.1W",
+    "stable_id": "E.detail.tf.1W",
+    "section": "S.detail.chart",
+    "status": "tested",
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button[data-tf='1W']"
+  },
+  {
+    "id": "E.detail.tf.1M",
+    "stable_id": "E.detail.tf.1M",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button[data-tf='1M']"
+  },
+  {
+    "id": "E.detail.ind.EMA",
+    "stable_id": "E.detail.ind.EMA",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-chip[data-k='ema']"
+  },
+  {
+    "id": "E.detail.ind.RSI",
+    "stable_id": "E.detail.ind.RSI",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-chip[data-k='rsi']"
+  },
+  {
+    "id": "E.detail.ind.Stoch",
+    "stable_id": "E.detail.ind.Stoch",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-chip[data-k='stoch']"
+  },
+  {
+    "id": "E.detail.ind.MACD",
+    "stable_id": "E.detail.ind.MACD",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-chip[data-k='macd']"
+  },
+  {
+    "id": "E.detail.ind.StochRSI",
+    "stable_id": "E.detail.ind.StochRSI",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-chip[data-k='stochrsi']"
+  },
+  {
+    "id": "E.detail.chart.fullscreen",
+    "stable_id": "E.detail.chart.fullscreen",
+    "section": "S.detail.chart",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#tvbox button.bchart-fsbtn"
+  },
+  {
+    "id": "E.detail.alerts",
+    "stable_id": "E.detail.alerts",
+    "section": "S.detail.identity",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#r_afbtn"
+  },
+  {
+    "id": "E.detail.ask",
+    "stable_id": "E.detail.ask",
+    "section": "S.shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#mmb-launch"
+  }
+]

@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "product-topology.schema.json",
+  "title": "Product Topology Contract 1.1-candidate",
+  "type": "object",
+  "$defs": {
+    "evidence_status": {
+      "type": "string",
+      "enum": ["OBSERVED_BROWSER", "OBSERVED_SOURCE", "OBSERVED_BOTH", "INFERRED", "UNKNOWN"]
+    },
+    "access_status": {
+      "type": "string",
+      "enum": ["ANONYMOUS_ACCESSIBLE", "ACCESSIBLE_CURRENT_SESSION", "AUTH_REQUIRED", "SUBSCRIPTION_GATED", "ROLE_GATED", "BROKEN", "UNKNOWN"]
+    },
+    "route_class": {
+      "type": "string",
+      "enum": ["LIVE_PRODUCT", "REDIRECT_STUB", "SEO_TWIN", "GENERATED_INSTANCE", "UTILITY", "LEGACY_ORPHAN", "MARKETING", "UNKNOWN"]
+    },
+    "confidence": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"]},
+    "discovery_source": {
+      "type": "string",
+      "enum": ["LIVE_BROWSER_DOM", "NAV_TEMPLATE_SOURCE", "GENERATED_SITE", "CONTEXT_LINK_BROWSER", "CONTEXT_LINK_SOURCE", "SOURCE_REGISTRY", "REDIRECT_TARGET", "MANUAL_SEED"]
+    },
+    "link_class": {
+      "type": "string",
+      "enum": ["GLOBAL_NAV", "LOCAL_NAV", "CONTEXTUAL", "PRIMARY_CTA", "CARD_LINK", "SEARCH_RESULT", "FOOTER", "SEARCH", "EXTERNAL", "OTHER", "UNKNOWN"]
+    },
+    "evidence_ref": {
+      "type": "object",
+      "required": ["ref_type", "ref"],
+      "properties": {
+        "ref_type": {"type": "string"},
+        "ref": {"type": "string"},
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "access_observation": {
+      "type": "object",
+      "required": ["session_kind", "access_status", "evidence_status"],
+      "properties": {
+        "session_kind": {"type": "string", "enum": ["authenticated_session", "anonymous_session"]},
+        "access_status": {"$ref": "#/$defs/access_status"},
+        "http_status": {"type": ["integer", "null"]},
+        "lock_cta": {"type": ["boolean", "null"]},
+        "meaningful_content": {"type": ["boolean", "null"]},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "route_family": {
+      "type": "object",
+      "required": ["route_family_id", "canonical_pattern", "route_class", "product_domain", "evidence_status"],
+      "properties": {
+        "route_family_id": {"type": "string"},
+        "canonical_pattern": {"type": "string"},
+        "route_class": {"$ref": "#/$defs/route_class"},
+        "market_contexts": {"type": "array", "items": {"type": "string"}},
+        "product_domain": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "template_source_family": {"type": ["string", "null"]},
+        "instance_generation_rule": {"type": ["string", "null"]},
+        "representative_instances": {"type": "array", "items": {"type": "string"}},
+        "canonical_target": {"type": ["string", "null"]},
+        "review_tier": {"type": "string", "enum": ["A", "B", "C", "D"]},
+        "discovery_sources": {"type": "array", "items": {"$ref": "#/$defs/discovery_source"}},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/evidence_ref"}},
+        "instance_count_source": {"type": ["integer", "null"]}
+      }
+    },
+    "route_instance": {
+      "type": "object",
+      "required": ["route_id", "route_family_id", "requested_url", "route_class", "discovery_sources"],
+      "properties": {
+        "route_id": {"type": "string"},
+        "route_family_id": {"type": "string"},
+        "requested_url": {"type": "string"},
+        "normalized_url": {"type": "string"},
+        "final_url": {"type": ["string", "null"]},
+        "route_class": {"$ref": "#/$defs/route_class"},
+        "route_parameters": {"type": "object"},
+        "route_instance_role": {"type": "string"},
+        "canonical_target": {"type": ["string", "null"]},
+        "discovery_sources": {"type": "array", "items": {"$ref": "#/$defs/discovery_source"}, "minItems": 1},
+        "access_status": {"$ref": "#/$defs/access_status"},
+        "access_observations": {"type": "array", "items": {"$ref": "#/$defs/access_observation"}},
+        "screenshot_refs": {"type": "object"},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"}
+      }
+    },
+    "surface": {
+      "type": "object",
+      "required": ["surface_id", "route_family_id", "label", "evidence_status"],
+      "properties": {
+        "surface_id": {"type": "string"},
+        "route_family_id": {"type": "string"},
+        "representative_route_id": {"type": ["string", "null"]},
+        "label": {"type": "string"},
+        "page_order": {"type": ["integer", "null"]},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "visible": {"type": ["boolean", "null"]},
+        "is_global_shell": {"type": "boolean"}
+      }
+    },
+    "capability": {
+      "type": "object",
+      "required": ["capability_id", "neutral_name", "supporting_surface_ids", "evidence_status", "evidence_refs"],
+      "properties": {
+        "capability_id": {"type": "string"},
+        "neutral_name": {"type": "string"},
+        "supporting_surface_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "supporting_route_family_ids": {"type": "array", "items": {"type": "string"}},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "evidence_refs": {"type": "array", "minItems": 1},
+        "confidence": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "workflow_edge": {
+      "type": "object",
+      "required": ["edge_id", "from_ref", "to_ref", "edge_type", "evidence_status"],
+      "properties": {
+        "edge_id": {"type": "string"},
+        "from_ref": {"type": "string"},
+        "to_ref": {"type": "string"},
+        "edge_type": {"type": "string"},
+        "link_class": {"$ref": "#/$defs/link_class"},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"}
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "required": ["workflow_id", "name", "ordered_steps", "evidence_status"],
+      "properties": {
+        "workflow_id": {"type": "string"},
+        "name": {"type": "string"},
+        "ordered_steps": {"type": "array"},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "confidence": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "navigation_node": {
+      "type": "object",
+      "required": ["node_id", "label", "nav_path"],
+      "properties": {
+        "node_id": {"type": "string"},
+        "label": {"type": "string"},
+        "nav_path": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "navigation_edge": {
+      "type": "object",
+      "required": ["edge_id", "nav_path", "nav_label", "destination", "edge_type", "evidence_status"],
+      "properties": {
+        "edge_id": {"type": "string"},
+        "nav_path": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "nav_label": {"type": "string"},
+        "destination": {"type": "string"},
+        "edge_type": {"type": "string"},
+        "evidence_status": {"$ref": "#/$defs/evidence_status"},
+        "channel": {"type": "string", "enum": ["desktop", "mobile", "both", "unknown"]}
+      }
+    }
+  }
+}

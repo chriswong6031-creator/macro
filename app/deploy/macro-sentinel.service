@@ -19,6 +19,13 @@
 # it can override). All are optional — with no transport configured the sentinel
 # still publishes staleness.json and fails the unit visibly on breach.
 #
+# GATE-4 commercial-path pass rides the SAME unit and the SAME env files (no
+# new vendor, no second timer). It is ExecStart'd FIRST with a leading '-' so a
+# commercial-path exit cannot skip the freshness dead-man switch, and so a
+# freshness breach (exit 1) cannot skip the money-path page — oneshot stops
+# later ExecStart lines on the first non-zero. Freshness still owns the unit
+# status.
+#
 # Resource caps: the pass is 4 HTTPS fetches (~2 MB total) + two small JSON
 # writes; 128M/256M and 30% CPU bound a runaway, not the work. TimeoutStartSec
 # 300 covers four 20s fetch timeouts plus alert transports with slack, well
@@ -34,6 +41,7 @@ WorkingDirectory=/opt/macro
 EnvironmentFile=-/etc/macro-api.env
 EnvironmentFile=-/etc/macro-live.env
 EnvironmentFile=-/etc/macro-sentinel.env
+ExecStart=-/opt/macro/.venv/bin/python -m scripts.commercial_path_sentinel
 ExecStart=/opt/macro/.venv/bin/python -m scripts.freshness_sentinel
 TimeoutStartSec=300
 Nice=10

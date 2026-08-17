@@ -1,0 +1,6076 @@
+{
+  "artifact": "PB3_PERSISTENCE_ROBUST_CERT_2026-08-15.md",
+  "authority": "none_research_display_only",
+  "tier_stamp": "display / research tier \u2014 a persistence-robust certification of within-name transition timing (A, primary) and occupancy-to-outcome association under a no-merge spell-sequence null (B, corroborative); not a promotion, not a gate, not a ranker, not a sizing input, and no production consumer exists or is proposed",
+  "pb2_preservation_sentence": "P-B2 remains NO DISCRIMINATOR AT THE PREREGISTERED BAR. The numbers below are P-B3 verdicts on a new estimand and a new null.",
+  "seed": 20260815,
+  "constants": {
+    "N_PERM": 2000,
+    "N_ASSIGN": 2000,
+    "N_BOOT_SESSION": 4000,
+    "N_BOOT_NAME": 2000,
+    "BLOCK_LEN": 21,
+    "DWELL": {
+      "dd_le_m20": 5,
+      "dd_le_m35": 5,
+      "under_ma200": 5,
+      "quiet_base": 5,
+      "volz_gt1": 2
+    },
+    "cells": 20
+  },
+  "vintage": {
+    "base_sha": "e1871a39aeb9f412d9b5885e0d52239d1ecf64d1",
+    "build_head_sha": "b473cad20da08a274a3c7914b2edec1827433783",
+    "freeze_commit": "6419ca5ed5744d562b7c22093b52065502f802f3",
+    "amend_commit": "dbd97668f4f60ad8805de29ed9b3a87dc57eeea7",
+    "w1_sha256": "11ac61de71f0f595e618f6f152dcea2334370d34cb736df919fb7127f1325cbf",
+    "pb_sha256": "f42b0566beb60bec707af142a492aa52c2c06790ad3464ae41aa875fc48bbad3",
+    "pb2_prereg_sha256": "043a85d69f76ea86d2f7b46b32313e57d0bcd4c5727faa157193b1efb71a7947",
+    "prereg_sha256": "75fb38e1e6b5aefe6ad3651b9c93e296840e9fd2a01e9499bf1d6f93ff1b5d25",
+    "raw_store_commit": "2c39d8afca95d1415648095a68d601c60bdb739b",
+    "determinism": "no wall-clock, runtime or hostname enters either receipt; the artifact date is a frozen constant and every random stream is keyed by a sha256 of its own identity rather than by visit order."
+  },
+  "amendments": [
+    {
+      "id": "A9",
+      "what": "\u00a710 table has no row for (A NULL, B NOT_EVALUABLE/INSUFFICIENT) or for A status UNINFORMATIVE (G6/concentration cap). Those cells take an existing headline: A NULL + B silent \u2192 NULL; A UNINFORMATIVE \u2192 UNINFORMATIVE. CERTIFIED_TIMING + B NULL with df on a short-spell footprint uses the same UNINFORMATIVE / A_B_CONTRADICT close as row 8 (contradiction is not rescued because the footprint is short).",
+      "why": "The later session may not invent a fifth headline. These A\u00d7B pairs are unspecified; mapping them onto an existing headline is the un-shoppable close.",
+      "risk_controlled_by": "verify.headline_most_specific and the A9 rows in tests/test_pb3_persistence_robust_cert.py. No floor, gate, sign, or cell list moved."
+    },
+    {
+      "id": "A10",
+      "what": "B's N_PERM distribution is computed on FIT and HOLDOUT only. AUDIT prints observed excess and the inert/retention census; it does not draw the permutation. AUDIT never gates (prereg \u00a73).",
+      "why": "P-B2 A2 precedent: a diagnostic that no gate reads is not worth the whole-matrix cost. Three splits \u00d7 2000 draws would spend a third of B compute on a split no headline reads.",
+      "risk_controlled_by": "G2B/G5B read FIT then HOLDOUT only. AUDIT remains in the receipt as descriptive occupancy."
+    },
+    {
+      "id": "A11",
+      "what": "The non-gating S\u2208{250,500,1000} diagnostic calls P-B2 shift_footprints after setting pb2.FKEYS_ORDER from the loaded P-B FKEYS. P-B2 only fills that tuple inside its own main(); leaving it empty KeyErrors and voids the receipt. A shift exception is recorded and does not prevent the receipt write. \u00a711.5's probe asserts 'A is still null' as n_onsets==0 after dropping session-regime matching (A's estimand), not as a 0.05pp unmatched y-excess. \u00a711.1's probe plants a dwell-legal 6-bar flip, not a one-bar flicker the dwell rule would ignore. \u00a711.2\u2013\u00a711.4 planted A z uses the nearest same-regime stay-FALSE control, not the first-in-name bar (that control is biased and left |z| alive after a 20\u201360 session shift). Planted A z uses a session-clustered SE (plants on the same first-board wave are not independent pairs). \u00a711.4 'drop below 1.96' is the planted positive direction, not |z|. \u00a711.3 uses the same planted-direction fallback (z < 1.96) and scores A on moved onsets of the transition estimand, not unmatched occupancy.",
+      "why": "A check that cannot fail, or a diagnostic that crashes the receipt, is an instrument defect (prereg \u00a711). No cell, floor, gate, sign, or headline moved.",
+      "risk_controlled_by": "tests/test_pb3_persistence_robust_cert.py test_diagnostic_shift_does_not_require_pb2_main and test_regime_probe_fires_on_visible_transitions."
+    }
+  ],
+  "headline_tally": {
+    "NULL": 12,
+    "UNINFORMATIVE": 8
+  },
+  "headline_tally_line": "NULL=12, UNINFORMATIVE=8",
+  "cells": [
+    {
+      "key": "DD20|main|H10",
+      "fkey": "dd_le_m20",
+      "board": "main",
+      "horizon": 10,
+      "A": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "main",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U0",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": false,
+          "G4": false,
+          "G5": false,
+          "G6": true
+        },
+        "a_status": "NULL",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 16998,
+              "matched_events": 9424,
+              "unmatched_events": 7574,
+              "unmatched_frac": 0.4456,
+              "distinct_names_matched": 1107,
+              "distinct_sessions_treat": 1963,
+              "rows_pairs": 9424,
+              "n_pos_treat": 467,
+              "n_pos_ctrl": 919
+            },
+            "excess_pp": -4.7963,
+            "se_2way_cgm_pp": 0.8978,
+            "z_2way": -5.3422,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -5.2898,
+            "era": {
+              "e1_2011_14": {
+                "n": 2787,
+                "excess_pp": -4.915679942590599,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 407,
+                "excess_pp": 2.9484029484029453,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 3104,
+                "excess_pp": -7.667525773195877,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1534,
+                "excess_pp": -1.694915254237288,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1592,
+                "excess_pp": -3.9572864321608043,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.16882427843803055,
+              "stamp": null,
+              "cuts": [
+                0.6179770403812368,
+                0.7095629420663151
+              ],
+              "n_top": 1591,
+              "n_mid": 3156,
+              "n_bot": 4677,
+              "bot_excess_pp": -2.8009407740004275,
+              "mid_excess_pp": -5.608365019011407
+            },
+            "prevalence": 0.64281,
+            "max_name_share": 0.0023,
+            "n_opposite_eligible": 16813,
+            "name_event_counts_top": {
+              "884": 39,
+              "969": 35,
+              "166": 34,
+              "873": 34,
+              "914": 34
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 4895,
+              "matched_events": 2681,
+              "unmatched_events": 2214,
+              "unmatched_frac": 0.4523,
+              "distinct_names_matched": 932,
+              "distinct_sessions_treat": 450,
+              "rows_pairs": 2681,
+              "n_pos_treat": 132,
+              "n_pos_ctrl": 342
+            },
+            "excess_pp": -7.8329,
+            "se_2way_cgm_pp": 1.35297,
+            "z_2way": -5.7894,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -8.7156,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 2681,
+                "excess_pp": -7.83289817232376,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.46605,
+            "max_name_share": 0.0027,
+            "n_opposite_eligible": 4883,
+            "name_event_counts_top": {
+              "1371": 13,
+              "17": 12,
+              "221": 12,
+              "108": 11,
+              "150": 11
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 73,
+              "matched_events": 0,
+              "unmatched_events": 73,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0274,
+            "n_opposite_eligible": 69,
+            "name_event_counts_top": {
+              "1178": 2,
+              "4": 1,
+              "5": 1,
+              "33": 1,
+              "50": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "main",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 207,
+              "n_retained": 1483,
+              "true_pos_episodes_all": 11221,
+              "true_pos_episodes_retained": 11099,
+              "retained_episode_share": 0.9891,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 95,
+                "two_longest_true_gt_70pct": 191,
+                "fewer_than_20_legal_placements": 105,
+                "fewer_than_2_true_spells": 64,
+                "longest_true_gt_70pct": 123
+              }
+            },
+            "observed_excess_pp": 1.0481,
+            "perm_median_pp": 1.1588,
+            "perm_p_two_sided": 0.192904,
+            "perm_p_one_sided": 0.904048,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 22,
+              "n_retained": 61,
+              "true_pos_episodes_all": 2960,
+              "true_pos_episodes_retained": 2960,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "longest_true_gt_70pct": 7,
+                "two_longest_true_gt_70pct": 20,
+                "fewer_than_2_true_spells": 5,
+                "fewer_than_3_true_spells": 7,
+                "fewer_than_20_legal_placements": 8
+              }
+            },
+            "observed_excess_pp": 2.4484,
+            "perm_median_pp": 2.4168,
+            "perm_p_two_sided": 0.104948,
+            "perm_p_one_sided": 0.052474,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 242,
+              "true_pos_episodes_retained": 242,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -6.2138,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 5,
+        "headline": "NULL",
+        "stamp": null,
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "DD20|main|H5",
+      "fkey": "dd_le_m20",
+      "board": "main",
+      "horizon": 5,
+      "A": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "main",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U0",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": false,
+          "G4": false,
+          "G5": false,
+          "G6": true
+        },
+        "a_status": "NULL",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 17335,
+              "matched_events": 9650,
+              "unmatched_events": 7685,
+              "unmatched_frac": 0.4433,
+              "distinct_names_matched": 1109,
+              "distinct_sessions_treat": 1978,
+              "rows_pairs": 9650,
+              "n_pos_treat": 227,
+              "n_pos_ctrl": 629
+            },
+            "excess_pp": -4.1658,
+            "se_2way_cgm_pp": 0.4454,
+            "z_2way": -9.3529,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -4.523,
+            "era": {
+              "e1_2011_14": {
+                "n": 2918,
+                "excess_pp": -3.564084989718986,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 457,
+                "excess_pp": -10.284463894967178,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 3120,
+                "excess_pp": -5.641025641025641,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1559,
+                "excess_pp": -1.9884541372674793,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1596,
+                "excess_pp": -2.756892230576441,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.17046632124352332,
+              "stamp": null,
+              "cuts": [
+                0.6180568710203218,
+                0.7097776954999152
+              ],
+              "n_top": 1645,
+              "n_mid": 3236,
+              "n_bot": 4769,
+              "bot_excess_pp": -2.369469490459216,
+              "mid_excess_pp": -5.222496909765143
+            },
+            "prevalence": 0.64303,
+            "max_name_share": 0.0022,
+            "n_opposite_eligible": 17097,
+            "name_event_counts_top": {
+              "884": 39,
+              "914": 35,
+              "969": 35,
+              "166": 34,
+              "873": 34
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 4932,
+              "matched_events": 2705,
+              "unmatched_events": 2227,
+              "unmatched_frac": 0.4515,
+              "distinct_names_matched": 934,
+              "distinct_sessions_treat": 452,
+              "rows_pairs": 2705,
+              "n_pos_treat": 76,
+              "n_pos_ctrl": 223
+            },
+            "excess_pp": -5.4344,
+            "se_2way_cgm_pp": 1.02409,
+            "z_2way": -5.3065,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -5.8616,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 2705,
+                "excess_pp": -5.434380776340111,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.4667,
+            "max_name_share": 0.0026,
+            "n_opposite_eligible": 4892,
+            "name_event_counts_top": {
+              "1371": 13,
+              "17": 12,
+              "221": 12,
+              "108": 11,
+              "150": 11
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 73,
+              "matched_events": 0,
+              "unmatched_events": 73,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0274,
+            "n_opposite_eligible": 69,
+            "name_event_counts_top": {
+              "1178": 2,
+              "4": 1,
+              "5": 1,
+              "33": 1,
+              "50": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "main",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 207,
+              "n_retained": 1483,
+              "true_pos_episodes_all": 10817,
+              "true_pos_episodes_retained": 10700,
+              "retained_episode_share": 0.9892,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 95,
+                "two_longest_true_gt_70pct": 191,
+                "fewer_than_20_legal_placements": 105,
+                "fewer_than_2_true_spells": 64,
+                "longest_true_gt_70pct": 123
+              }
+            },
+            "observed_excess_pp": 0.5354,
+            "perm_median_pp": 0.615,
+            "perm_p_two_sided": 0.084958,
+            "perm_p_one_sided": 0.958021,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 22,
+              "n_retained": 61,
+              "true_pos_episodes_all": 2768,
+              "true_pos_episodes_retained": 2768,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "longest_true_gt_70pct": 7,
+                "two_longest_true_gt_70pct": 20,
+                "fewer_than_2_true_spells": 5,
+                "fewer_than_3_true_spells": 7,
+                "fewer_than_20_legal_placements": 8
+              }
+            },
+            "observed_excess_pp": 1.2649,
+            "perm_median_pp": 1.2437,
+            "perm_p_two_sided": 0.061969,
+            "perm_p_one_sided": 0.030985,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 202,
+              "true_pos_episodes_retained": 202,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -5.1819,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 5,
+        "headline": "NULL",
+        "stamp": null,
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "DD20|chinext20|H10",
+      "fkey": "dd_le_m20",
+      "board": "chinext20",
+      "horizon": 10,
+      "A": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "chinext20",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U0",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.583 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1422,
+              "matched_events": 593,
+              "unmatched_events": 829,
+              "unmatched_frac": 0.583,
+              "distinct_names_matched": 196,
+              "distinct_sessions_treat": 317,
+              "rows_pairs": 593,
+              "n_pos_treat": 7,
+              "n_pos_ctrl": 22
+            },
+            "excess_pp": -2.5295,
+            "se_2way_cgm_pp": 0.98699,
+            "z_2way": -2.5628,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -2.6,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 299,
+                "excess_pp": -1.6722408026755855,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 294,
+                "excess_pp": -3.4013605442176873,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.2748735244519393,
+              "stamp": null,
+              "cuts": [
+                0.6479481641468683,
+                0.7366737739872068
+              ],
+              "n_top": 163,
+              "n_mid": 188,
+              "n_bot": 242,
+              "bot_excess_pp": -0.8264462809917356,
+              "mid_excess_pp": -2.659574468085106
+            },
+            "prevalence": 0.71402,
+            "max_name_share": 0.0127,
+            "n_opposite_eligible": 1444,
+            "name_event_counts_top": {
+              "650": 18,
+              "597": 16,
+              "611": 13,
+              "625": 13,
+              "533": 12
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1547,
+              "matched_events": 735,
+              "unmatched_events": 812,
+              "unmatched_frac": 0.5249,
+              "distinct_names_matched": 237,
+              "distinct_sessions_treat": 241,
+              "rows_pairs": 735,
+              "n_pos_treat": 13,
+              "n_pos_ctrl": 49
+            },
+            "excess_pp": -4.898,
+            "se_2way_cgm_pp": 0.4354,
+            "z_2way": -11.2493,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -4.2088,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 735,
+                "excess_pp": -4.8979591836734695,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.6435,
+            "max_name_share": 0.0084,
+            "n_opposite_eligible": 1698,
+            "name_event_counts_top": {
+              "561": 13,
+              "598": 13,
+              "645": 13,
+              "766": 13,
+              "550": 11
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 67,
+              "matched_events": 0,
+              "unmatched_events": 67,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0299,
+            "n_opposite_eligible": 26,
+            "name_event_counts_top": {
+              "685": 2,
+              "699": 2,
+              "829": 2,
+              "513": 1,
+              "523": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "chinext20",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 207,
+              "n_retained": 1483,
+              "true_pos_episodes_all": 291,
+              "true_pos_episodes_retained": 280,
+              "retained_episode_share": 0.9622,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 95,
+                "two_longest_true_gt_70pct": 191,
+                "fewer_than_20_legal_placements": 105,
+                "fewer_than_2_true_spells": 64,
+                "longest_true_gt_70pct": 123
+              }
+            },
+            "observed_excess_pp": -0.4428,
+            "perm_median_pp": 0.298,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 1.0,
+            "n_perm": 2000,
+            "sign_ok": false
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 22,
+              "n_retained": 61,
+              "true_pos_episodes_all": 423,
+              "true_pos_episodes_retained": 413,
+              "retained_episode_share": 0.9764,
+              "inert_reasons": {
+                "longest_true_gt_70pct": 7,
+                "two_longest_true_gt_70pct": 20,
+                "fewer_than_2_true_spells": 5,
+                "fewer_than_3_true_spells": 7,
+                "fewer_than_20_legal_placements": 8
+              }
+            },
+            "observed_excess_pp": -0.1456,
+            "perm_median_pp": -0.1853,
+            "perm_p_two_sided": 0.71964,
+            "perm_p_one_sided": 0.35982,
+            "n_perm": 2000,
+            "sign_ok": false
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 19,
+              "true_pos_episodes_retained": 19,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -2.7966,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "DD20|chinext20|H5",
+      "fkey": "dd_le_m20",
+      "board": "chinext20",
+      "horizon": 5,
+      "A": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "chinext20",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U0",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.583 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1423,
+              "matched_events": 594,
+              "unmatched_events": 829,
+              "unmatched_frac": 0.5826,
+              "distinct_names_matched": 196,
+              "distinct_sessions_treat": 318,
+              "rows_pairs": 594,
+              "n_pos_treat": 4,
+              "n_pos_ctrl": 17
+            },
+            "excess_pp": -2.1886,
+            "se_2way_cgm_pp": 1.24473,
+            "z_2way": -1.7583,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -2.1236,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 300,
+                "excess_pp": -0.6666666666666666,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 294,
+                "excess_pp": -3.741496598639456,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.2760942760942761,
+              "stamp": null,
+              "cuts": [
+                0.6479481641468683,
+                0.7366737739872068
+              ],
+              "n_top": 164,
+              "n_mid": 188,
+              "n_bot": 242,
+              "bot_excess_pp": -1.2396694214876034,
+              "mid_excess_pp": -2.127659574468085
+            },
+            "prevalence": 0.71402,
+            "max_name_share": 0.0126,
+            "n_opposite_eligible": 1445,
+            "name_event_counts_top": {
+              "650": 18,
+              "597": 16,
+              "611": 13,
+              "625": 13,
+              "533": 12
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1549,
+              "matched_events": 740,
+              "unmatched_events": 809,
+              "unmatched_frac": 0.5223,
+              "distinct_names_matched": 237,
+              "distinct_sessions_treat": 242,
+              "rows_pairs": 740,
+              "n_pos_treat": 9,
+              "n_pos_ctrl": 34
+            },
+            "excess_pp": -3.3784,
+            "se_2way_cgm_pp": 0.83055,
+            "z_2way": -4.0676,
+            "cgm_degenerate": true,
+            "thin_excess_pp": -2.9268,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 740,
+                "excess_pp": -3.3783783783783785,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.6435,
+            "max_name_share": 0.0084,
+            "n_opposite_eligible": 1702,
+            "name_event_counts_top": {
+              "561": 13,
+              "598": 13,
+              "645": 13,
+              "766": 13,
+              "550": 11
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 67,
+              "matched_events": 0,
+              "unmatched_events": 67,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0299,
+            "n_opposite_eligible": 26,
+            "name_event_counts_top": {
+              "685": 2,
+              "699": 2,
+              "829": 2,
+              "513": 1,
+              "523": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m20",
+        "short": "DD20",
+        "board": "chinext20",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 207,
+              "n_retained": 1483,
+              "true_pos_episodes_all": 265,
+              "true_pos_episodes_retained": 254,
+              "retained_episode_share": 0.9585,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 95,
+                "two_longest_true_gt_70pct": 191,
+                "fewer_than_20_legal_placements": 105,
+                "fewer_than_2_true_spells": 64,
+                "longest_true_gt_70pct": 123
+              }
+            },
+            "observed_excess_pp": -0.3328,
+            "perm_median_pp": 0.1572,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 1.0,
+            "n_perm": 2000,
+            "sign_ok": false
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 22,
+              "n_retained": 61,
+              "true_pos_episodes_all": 385,
+              "true_pos_episodes_retained": 376,
+              "retained_episode_share": 0.9766,
+              "inert_reasons": {
+                "longest_true_gt_70pct": 7,
+                "two_longest_true_gt_70pct": 20,
+                "fewer_than_2_true_spells": 5,
+                "fewer_than_3_true_spells": 7,
+                "fewer_than_20_legal_placements": 8
+              }
+            },
+            "observed_excess_pp": -0.3189,
+            "perm_median_pp": -0.3138,
+            "perm_p_two_sided": 0.946527,
+            "perm_p_one_sided": 0.527236,
+            "n_perm": 2000,
+            "sign_ok": false
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 15,
+              "true_pos_episodes_retained": 15,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -1.8702,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "DD35|main|H10",
+      "fkey": "dd_le_m35",
+      "board": "main",
+      "horizon": 10,
+      "A": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "main",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": true,
+          "G4": true,
+          "G5": false,
+          "G6": true
+        },
+        "a_status": "NULL",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 14388,
+              "matched_events": 9454,
+              "unmatched_events": 4934,
+              "unmatched_frac": 0.3429,
+              "distinct_names_matched": 1146,
+              "distinct_sessions_treat": 1748,
+              "rows_pairs": 9454,
+              "n_pos_treat": 569,
+              "n_pos_ctrl": 532
+            },
+            "excess_pp": 0.3914,
+            "se_2way_cgm_pp": 0.3068,
+            "z_2way": 1.2757,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 0.4015,
+            "era": {
+              "e1_2011_14": {
+                "n": 2635,
+                "excess_pp": 0.03795066413662257,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1882,
+                "excess_pp": 0.4250797024442081,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 2139,
+                "excess_pp": -0.09350163627863534,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 2693,
+                "excess_pp": 0.11139992573338253,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 105,
+                "excess_pp": 25.71428571428571,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.30664269092447644,
+              "stamp": null,
+              "cuts": [
+                0.25078223434461594,
+                0.36195315756650376
+              ],
+              "n_top": 2899,
+              "n_mid": 3555,
+              "n_bot": 3000,
+              "bot_excess_pp": 1.1666666666666665,
+              "mid_excess_pp": 0.6469760900140641
+            },
+            "prevalence": 0.30181,
+            "max_name_share": 0.0022,
+            "n_opposite_eligible": 11658,
+            "name_event_counts_top": {
+              "949": 31,
+              "274": 29,
+              "66": 28,
+              "167": 28,
+              "312": 28
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2704,
+              "matched_events": 1569,
+              "unmatched_events": 1135,
+              "unmatched_frac": 0.4197,
+              "distinct_names_matched": 740,
+              "distinct_sessions_treat": 339,
+              "rows_pairs": 1569,
+              "n_pos_treat": 140,
+              "n_pos_ctrl": 144
+            },
+            "excess_pp": -0.2549,
+            "se_2way_cgm_pp": 1.1412,
+            "z_2way": -0.2234,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 0.0,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1569,
+                "excess_pp": -0.25493945188017897,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.19436,
+            "max_name_share": 0.0041,
+            "n_opposite_eligible": 2021,
+            "name_event_counts_top": {
+              "60": 11,
+              "1093": 11,
+              "1107": 11,
+              "91": 10,
+              "236": 10
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 162,
+              "matched_events": 0,
+              "unmatched_events": 162,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0123,
+            "n_opposite_eligible": 44,
+            "name_event_counts_top": {
+              "41": 2,
+              "299": 2,
+              "339": 2,
+              "851": 2,
+              "893": 2
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "main",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 128,
+              "n_retained": 1562,
+              "true_pos_episodes_all": 6882,
+              "true_pos_episodes_retained": 6849,
+              "retained_episode_share": 0.9952,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 44,
+                "fewer_than_3_true_spells": 102,
+                "fewer_than_20_legal_placements": 107,
+                "fewer_than_2_true_spells": 61,
+                "longest_true_gt_70pct": 28
+              }
+            },
+            "observed_excess_pp": 2.9242,
+            "perm_median_pp": 1.0664,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 23,
+              "n_retained": 60,
+              "true_pos_episodes_all": 1398,
+              "true_pos_episodes_retained": 1395,
+              "retained_episode_share": 0.9979,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 18,
+                "fewer_than_3_true_spells": 22,
+                "fewer_than_20_legal_placements": 22,
+                "longest_true_gt_70pct": 1,
+                "two_longest_true_gt_70pct": 2
+              }
+            },
+            "observed_excess_pp": 4.9976,
+            "perm_median_pp": 4.9942,
+            "perm_p_two_sided": 0.837581,
+            "perm_p_one_sided": 0.418791,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 164,
+              "true_pos_episodes_retained": 164,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 4.2832,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 5,
+        "headline": "NULL",
+        "stamp": null,
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "DD35|main|H5",
+      "fkey": "dd_le_m35",
+      "board": "main",
+      "horizon": 5,
+      "A": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "main",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": false,
+          "G4": false,
+          "G5": false,
+          "G6": false
+        },
+        "a_status": "UNINFORMATIVE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 14675,
+              "matched_events": 9666,
+              "unmatched_events": 5009,
+              "unmatched_frac": 0.3413,
+              "distinct_names_matched": 1147,
+              "distinct_sessions_treat": 1763,
+              "rows_pairs": 9666,
+              "n_pos_treat": 296,
+              "n_pos_ctrl": 351
+            },
+            "excess_pp": -0.569,
+            "se_2way_cgm_pp": 0.16299,
+            "z_2way": -3.4911,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -0.7606,
+            "era": {
+              "e1_2011_14": {
+                "n": 2786,
+                "excess_pp": -0.8973438621679829,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1904,
+                "excess_pp": -0.5252100840336134,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 2143,
+                "excess_pp": -0.8866075594960339,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 2707,
+                "excess_pp": -0.3324713705208718,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 126,
+                "excess_pp": 6.349206349206349,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": false,
+              "top_share": 0.3063314711359404,
+              "stamp": "PROPENSITY_CONCENTRATED",
+              "cuts": [
+                0.2502492522432702,
+                0.36163643380934
+              ],
+              "n_top": 2961,
+              "n_mid": 3645,
+              "n_bot": 3060,
+              "bot_excess_pp": 0.39215686274509803,
+              "mid_excess_pp": -0.4938271604938274
+            },
+            "prevalence": 0.30179,
+            "max_name_share": 0.0021,
+            "n_opposite_eligible": 11877,
+            "name_event_counts_top": {
+              "949": 31,
+              "167": 29,
+              "274": 29,
+              "66": 28,
+              "102": 28
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2743,
+              "matched_events": 1595,
+              "unmatched_events": 1148,
+              "unmatched_frac": 0.4185,
+              "distinct_names_matched": 745,
+              "distinct_sessions_treat": 341,
+              "rows_pairs": 1595,
+              "n_pos_treat": 83,
+              "n_pos_ctrl": 91
+            },
+            "excess_pp": -0.5016,
+            "se_2way_cgm_pp": 0.30418,
+            "z_2way": -1.6489,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -0.3631,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1595,
+                "excess_pp": -0.5015673981191224,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.19464,
+            "max_name_share": 0.004,
+            "n_opposite_eligible": 2023,
+            "name_event_counts_top": {
+              "60": 11,
+              "1093": 11,
+              "1107": 11,
+              "91": 10,
+              "236": 10
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 162,
+              "matched_events": 0,
+              "unmatched_events": 162,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0123,
+            "n_opposite_eligible": 44,
+            "name_event_counts_top": {
+              "41": 2,
+              "299": 2,
+              "339": 2,
+              "851": 2,
+              "893": 2
+            }
+          }
+        },
+        "propensity_stamp": "PROPENSITY_CONCENTRATED"
+      },
+      "B": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "main",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 128,
+              "n_retained": 1562,
+              "true_pos_episodes_all": 6569,
+              "true_pos_episodes_retained": 6537,
+              "retained_episode_share": 0.9951,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 44,
+                "fewer_than_3_true_spells": 102,
+                "fewer_than_20_legal_placements": 107,
+                "fewer_than_2_true_spells": 61,
+                "longest_true_gt_70pct": 28
+              }
+            },
+            "observed_excess_pp": 1.5526,
+            "perm_median_pp": 0.5603,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 23,
+              "n_retained": 60,
+              "true_pos_episodes_all": 1305,
+              "true_pos_episodes_retained": 1302,
+              "retained_episode_share": 0.9977,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 18,
+                "fewer_than_3_true_spells": 22,
+                "fewer_than_20_legal_placements": 22,
+                "longest_true_gt_70pct": 1,
+                "two_longest_true_gt_70pct": 2
+              }
+            },
+            "observed_excess_pp": 2.6637,
+            "perm_median_pp": 2.6622,
+            "perm_p_two_sided": 0.849575,
+            "perm_p_one_sided": 0.424788,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 134,
+              "true_pos_episodes_retained": 134,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 1.7722,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M2",
+        "m3": "NOT_APPLICABLE",
+        "note": "name propensity / persistent level"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "PROPENSITY_CONCENTRATED",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "DD35|chinext20|H10",
+      "fkey": "dd_le_m35",
+      "board": "chinext20",
+      "horizon": 10,
+      "A": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "chinext20",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": false,
+          "G4": false,
+          "G5": false,
+          "G6": false
+        },
+        "a_status": "UNINFORMATIVE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1535,
+              "matched_events": 821,
+              "unmatched_events": 714,
+              "unmatched_frac": 0.4651,
+              "distinct_names_matched": 242,
+              "distinct_sessions_treat": 366,
+              "rows_pairs": 821,
+              "n_pos_treat": 7,
+              "n_pos_ctrl": 15
+            },
+            "excess_pp": -0.9744,
+            "se_2way_cgm_pp": 0.44909,
+            "z_2way": -2.1698,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -1.173,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 325,
+                "excess_pp": -1.846153846153846,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 496,
+                "excess_pp": -0.4032258064516129,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": false,
+              "top_share": 0.26552984165651644,
+              "stamp": "PROPENSITY_CONCENTRATED",
+              "cuts": [
+                0.32607193698851783,
+                0.4261525617713835
+              ],
+              "n_top": 218,
+              "n_mid": 284,
+              "n_bot": 319,
+              "bot_excess_pp": -1.2539184952978057,
+              "mid_excess_pp": 0.0
+            },
+            "prevalence": 0.40119,
+            "max_name_share": 0.0078,
+            "n_opposite_eligible": 1338,
+            "name_event_counts_top": {
+              "521": 12,
+              "595": 12,
+              "647": 12,
+              "678": 12,
+              "729": 12
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1416,
+              "matched_events": 764,
+              "unmatched_events": 652,
+              "unmatched_frac": 0.4605,
+              "distinct_names_matched": 275,
+              "distinct_sessions_treat": 257,
+              "rows_pairs": 764,
+              "n_pos_treat": 11,
+              "n_pos_ctrl": 23
+            },
+            "excess_pp": -1.5707,
+            "se_2way_cgm_pp": 0.86174,
+            "z_2way": -1.8227,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -1.8721,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 764,
+                "excess_pp": -1.5706806282722516,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.311,
+            "max_name_share": 0.0092,
+            "n_opposite_eligible": 1228,
+            "name_event_counts_top": {
+              "562": 13,
+              "592": 12,
+              "644": 12,
+              "670": 12,
+              "688": 12
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 62,
+              "matched_events": 0,
+              "unmatched_events": 62,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0323,
+            "n_opposite_eligible": 31,
+            "name_event_counts_top": {
+              "628": 2,
+              "772": 2,
+              "835": 2,
+              "840": 2,
+              "520": 1
+            }
+          }
+        },
+        "propensity_stamp": "PROPENSITY_CONCENTRATED"
+      },
+      "B": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "chinext20",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 128,
+              "n_retained": 1562,
+              "true_pos_episodes_all": 167,
+              "true_pos_episodes_retained": 163,
+              "retained_episode_share": 0.976,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 44,
+                "fewer_than_3_true_spells": 102,
+                "fewer_than_20_legal_placements": 107,
+                "fewer_than_2_true_spells": 61,
+                "longest_true_gt_70pct": 28
+              }
+            },
+            "observed_excess_pp": 0.1991,
+            "perm_median_pp": 0.155,
+            "perm_p_two_sided": 0.807596,
+            "perm_p_one_sided": 0.403798,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 23,
+              "n_retained": 60,
+              "true_pos_episodes_all": 254,
+              "true_pos_episodes_retained": 254,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 18,
+                "fewer_than_3_true_spells": 22,
+                "fewer_than_20_legal_placements": 22,
+                "longest_true_gt_70pct": 1,
+                "two_longest_true_gt_70pct": 2
+              }
+            },
+            "observed_excess_pp": 1.2975,
+            "perm_median_pp": 1.208,
+            "perm_p_two_sided": 0.306847,
+            "perm_p_one_sided": 0.153423,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 8,
+              "true_pos_episodes_retained": 8,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -1.9198,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M2",
+        "m3": "NOT_APPLICABLE",
+        "note": "name propensity / persistent level"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "PROPENSITY_CONCENTRATED",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "DD35|chinext20|H5",
+      "fkey": "dd_le_m35",
+      "board": "chinext20",
+      "horizon": 5,
+      "A": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "chinext20",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": false,
+          "G3": false,
+          "G4": false,
+          "G5": false,
+          "G6": true
+        },
+        "a_status": "NULL",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1536,
+              "matched_events": 822,
+              "unmatched_events": 714,
+              "unmatched_frac": 0.4648,
+              "distinct_names_matched": 242,
+              "distinct_sessions_treat": 367,
+              "rows_pairs": 822,
+              "n_pos_treat": 4,
+              "n_pos_ctrl": 9
+            },
+            "excess_pp": -0.6083,
+            "se_2way_cgm_pp": 0.5335,
+            "z_2way": -1.1402,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -0.7153,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 326,
+                "excess_pp": -1.5337423312883436,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 496,
+                "excess_pp": 0.0,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.26520681265206814,
+              "stamp": null,
+              "cuts": [
+                0.32607193698851783,
+                0.4261525617713835
+              ],
+              "n_top": 218,
+              "n_mid": 284,
+              "n_bot": 320,
+              "bot_excess_pp": -0.9375000000000001,
+              "mid_excess_pp": -0.352112676056338
+            },
+            "prevalence": 0.40119,
+            "max_name_share": 0.0078,
+            "n_opposite_eligible": 1339,
+            "name_event_counts_top": {
+              "521": 12,
+              "595": 12,
+              "647": 12,
+              "678": 12,
+              "729": 12
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1416,
+              "matched_events": 768,
+              "unmatched_events": 648,
+              "unmatched_frac": 0.4576,
+              "distinct_names_matched": 275,
+              "distinct_sessions_treat": 258,
+              "rows_pairs": 768,
+              "n_pos_treat": 2,
+              "n_pos_ctrl": 13
+            },
+            "excess_pp": -1.4323,
+            "se_2way_cgm_pp": 0.20593,
+            "z_2way": -6.9553,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -1.5198,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 768,
+                "excess_pp": -1.4322916666666665,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.311,
+            "max_name_share": 0.0092,
+            "n_opposite_eligible": 1228,
+            "name_event_counts_top": {
+              "562": 13,
+              "592": 12,
+              "644": 12,
+              "670": 12,
+              "688": 12
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 62,
+              "matched_events": 0,
+              "unmatched_events": 62,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0323,
+            "n_opposite_eligible": 31,
+            "name_event_counts_top": {
+              "628": 2,
+              "772": 2,
+              "835": 2,
+              "840": 2,
+              "520": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "dd_le_m35",
+        "short": "DD35",
+        "board": "chinext20",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 128,
+              "n_retained": 1562,
+              "true_pos_episodes_all": 151,
+              "true_pos_episodes_retained": 148,
+              "retained_episode_share": 0.9801,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 44,
+                "fewer_than_3_true_spells": 102,
+                "fewer_than_20_legal_placements": 107,
+                "fewer_than_2_true_spells": 61,
+                "longest_true_gt_70pct": 28
+              }
+            },
+            "observed_excess_pp": 0.0779,
+            "perm_median_pp": 0.0748,
+            "perm_p_two_sided": 0.965517,
+            "perm_p_one_sided": 0.482759,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 23,
+              "n_retained": 60,
+              "true_pos_episodes_all": 220,
+              "true_pos_episodes_retained": 220,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 18,
+                "fewer_than_3_true_spells": 22,
+                "fewer_than_20_legal_placements": 22,
+                "longest_true_gt_70pct": 1,
+                "two_longest_true_gt_70pct": 2
+              }
+            },
+            "observed_excess_pp": 0.4944,
+            "perm_median_pp": 0.4488,
+            "perm_p_two_sided": 0.355822,
+            "perm_p_one_sided": 0.177911,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 8,
+              "true_pos_episodes_retained": 8,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -0.6724,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": "NOT_APPLICABLE",
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 5,
+        "headline": "NULL",
+        "stamp": null,
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "MA200|main|H10",
+      "fkey": "under_ma200",
+      "board": "main",
+      "horizon": 10,
+      "A": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "main",
+        "horizon": 10,
+        "edge": "exit",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": true
+        },
+        "a_status": "CERTIFIED_TIMING",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 12284,
+              "matched_events": 6630,
+              "unmatched_events": 5654,
+              "unmatched_frac": 0.4603,
+              "distinct_names_matched": 1117,
+              "distinct_sessions_treat": 1964,
+              "rows_pairs": 6630,
+              "n_pos_treat": 396,
+              "n_pos_ctrl": 148
+            },
+            "excess_pp": 3.7406,
+            "se_2way_cgm_pp": 0.60137,
+            "z_2way": 6.2201,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 4.1437,
+            "era": {
+              "e1_2011_14": {
+                "n": 1997,
+                "excess_pp": 2.1532298447671505,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1357,
+                "excess_pp": 3.389830508474576,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1345,
+                "excess_pp": 2.602230483271375,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 1920,
+                "excess_pp": 6.406249999999999,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 11,
+                "excess_pp": null,
+                "measurable": false
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.34901960784313724,
+              "stamp": null,
+              "cuts": [
+                0.5189048239895697,
+                0.5843608046722907
+              ],
+              "n_top": 2314,
+              "n_mid": 2377,
+              "n_bot": 1939,
+              "bot_excess_pp": 2.21763795771016,
+              "mid_excess_pp": 4.669751787968027
+            },
+            "prevalence": 0.54462,
+            "max_name_share": 0.0023,
+            "n_opposite_eligible": 15638,
+            "name_event_counts_top": {
+              "1022": 28,
+              "864": 27,
+              "1054": 26,
+              "1342": 26,
+              "1076": 25
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2564,
+              "matched_events": 1038,
+              "unmatched_events": 1526,
+              "unmatched_frac": 0.5952,
+              "distinct_names_matched": 592,
+              "distinct_sessions_treat": 364,
+              "rows_pairs": 1038,
+              "n_pos_treat": 114,
+              "n_pos_ctrl": 29
+            },
+            "excess_pp": 8.1888,
+            "se_2way_cgm_pp": 1.26979,
+            "z_2way": 6.449,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 8.4523,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1038,
+                "excess_pp": 8.188824662813103,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.49546,
+            "max_name_share": 0.0035,
+            "n_opposite_eligible": 3400,
+            "name_event_counts_top": {
+              "447": 9,
+              "1358": 9,
+              "1552": 9,
+              "3": 8,
+              "92": 8
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 18,
+              "matched_events": 0,
+              "unmatched_events": 18,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0556,
+            "n_opposite_eligible": 75,
+            "name_event_counts_top": {
+              "19": 1,
+              "36": 1,
+              "72": 1,
+              "85": 1,
+              "86": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "main",
+        "horizon": 10,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 105,
+              "n_retained": 1585,
+              "true_pos_episodes_all": 8618,
+              "true_pos_episodes_retained": 8584,
+              "retained_episode_share": 0.9961,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 83,
+                "fewer_than_20_legal_placements": 70,
+                "fewer_than_2_true_spells": 38,
+                "longest_true_gt_70pct": 52,
+                "fewer_than_3_true_spells": 59
+              }
+            },
+            "observed_excess_pp": -2.7345,
+            "perm_median_pp": -0.2253,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 9,
+              "n_retained": 74,
+              "true_pos_episodes_all": 1988,
+              "true_pos_episodes_retained": 1988,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 6,
+                "fewer_than_3_true_spells": 8,
+                "fewer_than_20_legal_placements": 8,
+                "longest_true_gt_70pct": 4,
+                "two_longest_true_gt_70pct": 4
+              }
+            },
+            "observed_excess_pp": -4.5949,
+            "perm_median_pp": -4.5381,
+            "perm_p_two_sided": 0.715642,
+            "perm_p_one_sided": 0.357821,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 189,
+              "true_pos_episodes_retained": 189,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -21.4139,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M1",
+        "m3": null,
+        "note": "persistent structural state or certified occupancy after G6B"
+      },
+      "headline": {
+        "row": 8,
+        "headline": "UNINFORMATIVE",
+        "stamp": "A_B_CONTRADICT",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "MA200|main|H5",
+      "fkey": "under_ma200",
+      "board": "main",
+      "horizon": 5,
+      "A": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "main",
+        "horizon": 5,
+        "edge": "exit",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": true
+        },
+        "a_status": "CERTIFIED_TIMING",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 12505,
+              "matched_events": 6781,
+              "unmatched_events": 5724,
+              "unmatched_frac": 0.4577,
+              "distinct_names_matched": 1118,
+              "distinct_sessions_treat": 1983,
+              "rows_pairs": 6781,
+              "n_pos_treat": 233,
+              "n_pos_ctrl": 77
+            },
+            "excess_pp": 2.3005,
+            "se_2way_cgm_pp": 0.42967,
+            "z_2way": 5.3542,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 2.537,
+            "era": {
+              "e1_2011_14": {
+                "n": 2095,
+                "excess_pp": 0.8591885441527445,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 1393,
+                "excess_pp": 2.0100502512562812,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1347,
+                "excess_pp": 2.3014105419450632,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 1932,
+                "excess_pp": 4.037267080745342,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 14,
+                "excess_pp": null,
+                "measurable": false
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.34935850169591504,
+              "stamp": null,
+              "cuts": [
+                0.5187223938013394,
+                0.5842570369638349
+              ],
+              "n_top": 2369,
+              "n_mid": 2439,
+              "n_bot": 1973,
+              "bot_excess_pp": 1.2671059300557526,
+              "mid_excess_pp": 2.829028290282903
+            },
+            "prevalence": 0.54457,
+            "max_name_share": 0.0022,
+            "n_opposite_eligible": 15890,
+            "name_event_counts_top": {
+              "1022": 28,
+              "864": 27,
+              "1054": 27,
+              "1342": 26,
+              "1076": 25
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2567,
+              "matched_events": 1042,
+              "unmatched_events": 1525,
+              "unmatched_frac": 0.5941,
+              "distinct_names_matched": 594,
+              "distinct_sessions_treat": 366,
+              "rows_pairs": 1042,
+              "n_pos_treat": 82,
+              "n_pos_ctrl": 18
+            },
+            "excess_pp": 6.142,
+            "se_2way_cgm_pp": 1.13863,
+            "z_2way": 5.3942,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 6.5591,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1042,
+                "excess_pp": 6.142034548944339,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.49514,
+            "max_name_share": 0.0035,
+            "n_opposite_eligible": 3429,
+            "name_event_counts_top": {
+              "447": 9,
+              "1358": 9,
+              "1552": 9,
+              "3": 8,
+              "92": 8
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 18,
+              "matched_events": 0,
+              "unmatched_events": 18,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0556,
+            "n_opposite_eligible": 75,
+            "name_event_counts_top": {
+              "19": 1,
+              "36": 1,
+              "72": 1,
+              "85": 1,
+              "86": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "main",
+        "horizon": 5,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 105,
+              "n_retained": 1585,
+              "true_pos_episodes_all": 8137,
+              "true_pos_episodes_retained": 8105,
+              "retained_episode_share": 0.9961,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 83,
+                "fewer_than_20_legal_placements": 70,
+                "fewer_than_2_true_spells": 38,
+                "longest_true_gt_70pct": 52,
+                "fewer_than_3_true_spells": 59
+              }
+            },
+            "observed_excess_pp": -1.6077,
+            "perm_median_pp": -0.1196,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 9,
+              "n_retained": 74,
+              "true_pos_episodes_all": 1844,
+              "true_pos_episodes_retained": 1844,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 6,
+                "fewer_than_3_true_spells": 8,
+                "fewer_than_20_legal_placements": 8,
+                "longest_true_gt_70pct": 4,
+                "two_longest_true_gt_70pct": 4
+              }
+            },
+            "observed_excess_pp": -2.547,
+            "perm_median_pp": -2.5235,
+            "perm_p_two_sided": 0.69965,
+            "perm_p_one_sided": 0.349825,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 162,
+              "true_pos_episodes_retained": 162,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -11.738,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M1",
+        "m3": null,
+        "note": "persistent structural state or certified occupancy after G6B"
+      },
+      "headline": {
+        "row": 8,
+        "headline": "UNINFORMATIVE",
+        "stamp": "A_B_CONTRADICT",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "MA200|chinext20|H10",
+      "fkey": "under_ma200",
+      "board": "chinext20",
+      "horizon": 10,
+      "A": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "chinext20",
+        "horizon": 10,
+        "edge": "exit",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.627 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1358,
+              "matched_events": 506,
+              "unmatched_events": 852,
+              "unmatched_frac": 0.6274,
+              "distinct_names_matched": 221,
+              "distinct_sessions_treat": 281,
+              "rows_pairs": 506,
+              "n_pos_treat": 12,
+              "n_pos_ctrl": 1
+            },
+            "excess_pp": 2.1739,
+            "se_2way_cgm_pp": 0.82179,
+            "z_2way": 2.6453,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 2.4664,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 119,
+                "excess_pp": 5.042016806722689,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 387,
+                "excess_pp": 1.2919896640826873,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.3339920948616601,
+              "stamp": null,
+              "cuts": [
+                0.47701665360508866,
+                0.5568327625659661
+              ],
+              "n_top": 169,
+              "n_mid": 177,
+              "n_bot": 160,
+              "bot_excess_pp": 3.75,
+              "mid_excess_pp": 2.2598870056497176
+            },
+            "prevalence": 0.55215,
+            "max_name_share": 0.0096,
+            "n_opposite_eligible": 1636,
+            "name_event_counts_top": {
+              "556": 13,
+              "665": 12,
+              "678": 12,
+              "585": 11,
+              "684": 11
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1185,
+              "matched_events": 355,
+              "unmatched_events": 830,
+              "unmatched_frac": 0.7004,
+              "distinct_names_matched": 182,
+              "distinct_sessions_treat": 193,
+              "rows_pairs": 355,
+              "n_pos_treat": 27,
+              "n_pos_ctrl": 1
+            },
+            "excess_pp": 7.3239,
+            "se_2way_cgm_pp": 1.48096,
+            "z_2way": 4.9454,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 7.2785,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 355,
+                "excess_pp": 7.323943661971831,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.49637,
+            "max_name_share": 0.0076,
+            "n_opposite_eligible": 1399,
+            "name_event_counts_top": {
+              "541": 9,
+              "557": 9,
+              "629": 9,
+              "643": 9,
+              "744": 9
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 19,
+              "matched_events": 0,
+              "unmatched_events": 19,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0526,
+            "n_opposite_eligible": 29,
+            "name_event_counts_top": {
+              "535": 1,
+              "538": 1,
+              "548": 1,
+              "574": 1,
+              "587": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "chinext20",
+        "horizon": 10,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 105,
+              "n_retained": 1585,
+              "true_pos_episodes_all": 179,
+              "true_pos_episodes_retained": 177,
+              "retained_episode_share": 0.9888,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 83,
+                "fewer_than_20_legal_placements": 70,
+                "fewer_than_2_true_spells": 38,
+                "longest_true_gt_70pct": 52,
+                "fewer_than_3_true_spells": 59
+              }
+            },
+            "observed_excess_pp": -0.7541,
+            "perm_median_pp": -0.2779,
+            "perm_p_two_sided": 0.013993,
+            "perm_p_one_sided": 0.006997,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 9,
+              "n_retained": 74,
+              "true_pos_episodes_all": 279,
+              "true_pos_episodes_retained": 279,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 6,
+                "fewer_than_3_true_spells": 8,
+                "fewer_than_20_legal_placements": 8,
+                "longest_true_gt_70pct": 4,
+                "two_longest_true_gt_70pct": 4
+              }
+            },
+            "observed_excess_pp": -2.3038,
+            "perm_median_pp": -2.4349,
+            "perm_p_two_sided": 0.536732,
+            "perm_p_one_sided": 0.732134,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 11,
+              "true_pos_episodes_retained": 11,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -1.1537,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": null,
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "MA200|chinext20|H5",
+      "fkey": "under_ma200",
+      "board": "chinext20",
+      "horizon": 5,
+      "A": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "chinext20",
+        "horizon": 5,
+        "edge": "exit",
+        "expected_sign": 1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.626 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1360,
+              "matched_events": 508,
+              "unmatched_events": 852,
+              "unmatched_frac": 0.6265,
+              "distinct_names_matched": 222,
+              "distinct_sessions_treat": 281,
+              "rows_pairs": 508,
+              "n_pos_treat": 5,
+              "n_pos_ctrl": 1
+            },
+            "excess_pp": 0.7874,
+            "se_2way_cgm_pp": 0.48208,
+            "z_2way": 1.6334,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 0.883,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 120,
+                "excess_pp": 0.8333333333333334,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 388,
+                "excess_pp": 0.7731958762886598,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.33267716535433073,
+              "stamp": null,
+              "cuts": [
+                0.47686663699262,
+                0.5563547242502277
+              ],
+              "n_top": 169,
+              "n_mid": 178,
+              "n_bot": 161,
+              "bot_excess_pp": 1.2422360248447204,
+              "mid_excess_pp": 1.1235955056179776
+            },
+            "prevalence": 0.55257,
+            "max_name_share": 0.0096,
+            "n_opposite_eligible": 1636,
+            "name_event_counts_top": {
+              "556": 13,
+              "665": 12,
+              "678": 12,
+              "585": 11,
+              "684": 11
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1185,
+              "matched_events": 356,
+              "unmatched_events": 829,
+              "unmatched_frac": 0.6996,
+              "distinct_names_matched": 182,
+              "distinct_sessions_treat": 194,
+              "rows_pairs": 356,
+              "n_pos_treat": 18,
+              "n_pos_ctrl": 1
+            },
+            "excess_pp": 4.7753,
+            "se_2way_cgm_pp": 1.63746,
+            "z_2way": 2.9163,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 5.0,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 356,
+                "excess_pp": 4.775280898876404,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.49637,
+            "max_name_share": 0.0076,
+            "n_opposite_eligible": 1399,
+            "name_event_counts_top": {
+              "541": 9,
+              "557": 9,
+              "629": 9,
+              "643": 9,
+              "744": 9
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 19,
+              "matched_events": 0,
+              "unmatched_events": 19,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0526,
+            "n_opposite_eligible": 29,
+            "name_event_counts_top": {
+              "535": 1,
+              "538": 1,
+              "548": 1,
+              "574": 1,
+              "587": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "under_ma200",
+        "short": "MA200",
+        "board": "chinext20",
+        "horizon": 5,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": false,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1690,
+              "n_inert": 105,
+              "n_retained": 1585,
+              "true_pos_episodes_all": 156,
+              "true_pos_episodes_retained": 154,
+              "retained_episode_share": 0.9872,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 83,
+                "fewer_than_20_legal_placements": 70,
+                "fewer_than_2_true_spells": 38,
+                "longest_true_gt_70pct": 52,
+                "fewer_than_3_true_spells": 59
+              }
+            },
+            "observed_excess_pp": -0.3109,
+            "perm_median_pp": -0.1491,
+            "perm_p_two_sided": 0.110945,
+            "perm_p_one_sided": 0.055472,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 83,
+              "n_inert": 9,
+              "n_retained": 74,
+              "true_pos_episodes_all": 250,
+              "true_pos_episodes_retained": 250,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_2_true_spells": 6,
+                "fewer_than_3_true_spells": 8,
+                "fewer_than_20_legal_placements": 8,
+                "longest_true_gt_70pct": 4,
+                "two_longest_true_gt_70pct": 4
+              }
+            },
+            "observed_excess_pp": -1.1833,
+            "perm_median_pp": -1.2345,
+            "perm_p_two_sided": 0.665667,
+            "perm_p_one_sided": 0.667666,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 9,
+              "true_pos_episodes_retained": 9,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 0.0478,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": null,
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "QB|main|H10",
+      "fkey": "quiet_base",
+      "board": "main",
+      "horizon": 10,
+      "A": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "main",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": -1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": true
+        },
+        "a_status": "CERTIFIED_TIMING",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 29452,
+              "matched_events": 24395,
+              "unmatched_events": 5057,
+              "unmatched_frac": 0.1717,
+              "distinct_names_matched": 1184,
+              "distinct_sessions_treat": 2720,
+              "rows_pairs": 24395,
+              "n_pos_treat": 1244,
+              "n_pos_ctrl": 3019
+            },
+            "excess_pp": -7.2761,
+            "se_2way_cgm_pp": 0.59303,
+            "z_2way": -12.2694,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -7.6931,
+            "era": {
+              "e1_2011_14": {
+                "n": 7032,
+                "excess_pp": -4.707053469852104,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 453,
+                "excess_pp": -34.437086092715234,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 5524,
+                "excess_pp": -5.195510499637943,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 6742,
+                "excess_pp": -8.676950459804212,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 4644,
+                "excess_pp": -8.957795004306632,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.26743185078909615,
+              "stamp": null,
+              "cuts": [
+                0.3623060457232267,
+                0.38980812847873747
+              ],
+              "n_top": 6524,
+              "n_mid": 8845,
+              "n_bot": 9026,
+              "bot_excess_pp": -6.880124085973854,
+              "mid_excess_pp": -7.42792538157151
+            },
+            "prevalence": 0.37337,
+            "max_name_share": 0.0018,
+            "n_opposite_eligible": 23388,
+            "name_event_counts_top": {
+              "245": 52,
+              "68": 48,
+              "169": 47,
+              "147": 46,
+              "1085": 46
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 5742,
+              "matched_events": 4920,
+              "unmatched_events": 822,
+              "unmatched_frac": 0.1432,
+              "distinct_names_matched": 1130,
+              "distinct_sessions_treat": 510,
+              "rows_pairs": 4920,
+              "n_pos_treat": 313,
+              "n_pos_ctrl": 676
+            },
+            "excess_pp": -7.378,
+            "se_2way_cgm_pp": 0.42369,
+            "z_2way": -17.4139,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -8.1023,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 4920,
+                "excess_pp": -7.378048780487805,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.3069,
+            "max_name_share": 0.0026,
+            "n_opposite_eligible": 4257,
+            "name_event_counts_top": {
+              "888": 15,
+              "1138": 13,
+              "1215": 13,
+              "80": 12,
+              "170": 12
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 70,
+              "matched_events": 0,
+              "unmatched_events": 70,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0143,
+            "n_opposite_eligible": 54,
+            "name_event_counts_top": {
+              "34": 1,
+              "44": 1,
+              "56": 1,
+              "57": 1,
+              "62": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "main",
+        "horizon": 10,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1678,
+              "n_inert": 38,
+              "n_retained": 1640,
+              "true_pos_episodes_all": 5428,
+              "true_pos_episodes_retained": 5424,
+              "retained_episode_share": 0.9993,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 18,
+                "fewer_than_2_true_spells": 17,
+                "longest_true_gt_70pct": 11,
+                "fewer_than_3_true_spells": 29,
+                "fewer_than_20_legal_placements": 33
+              }
+            },
+            "observed_excess_pp": -1.4658,
+            "perm_median_pp": -0.1736,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 89,
+              "n_inert": 4,
+              "n_retained": 85,
+              "true_pos_episodes_all": 1391,
+              "true_pos_episodes_retained": 1391,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 4,
+                "fewer_than_20_legal_placements": 4,
+                "fewer_than_2_true_spells": 1
+              }
+            },
+            "observed_excess_pp": -1.6768,
+            "perm_median_pp": -1.6551,
+            "perm_p_two_sided": 0.610695,
+            "perm_p_one_sided": 0.305347,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 34,
+              "true_pos_episodes_retained": 34,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -0.1696,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M1",
+        "m3": null,
+        "note": "persistent structural state or certified occupancy after G6B"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "A_B_CONTRADICT",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "QB|main|H5",
+      "fkey": "quiet_base",
+      "board": "main",
+      "horizon": 5,
+      "A": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "main",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": -1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": true
+        },
+        "a_status": "CERTIFIED_TIMING",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 29929,
+              "matched_events": 24874,
+              "unmatched_events": 5055,
+              "unmatched_frac": 0.1689,
+              "distinct_names_matched": 1184,
+              "distinct_sessions_treat": 2725,
+              "rows_pairs": 24874,
+              "n_pos_treat": 630,
+              "n_pos_ctrl": 2226
+            },
+            "excess_pp": -6.4163,
+            "se_2way_cgm_pp": 0.45293,
+            "z_2way": -14.1662,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -6.733,
+            "era": {
+              "e1_2011_14": {
+                "n": 7328,
+                "excess_pp": -4.012008733624454,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 484,
+                "excess_pp": -31.40495867768595,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 5626,
+                "excess_pp": -4.621400639886243,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 6784,
+                "excess_pp": -7.45872641509434,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 4652,
+                "excess_pp": -8.25451418744626,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.26618155503738844,
+              "stamp": null,
+              "cuts": [
+                0.3623060457232267,
+                0.38980812847873747
+              ],
+              "n_top": 6621,
+              "n_mid": 9012,
+              "n_bot": 9241,
+              "bot_excess_pp": -6.233091656747105,
+              "mid_excess_pp": -6.347092765201953
+            },
+            "prevalence": 0.37337,
+            "max_name_share": 0.0018,
+            "n_opposite_eligible": 23799,
+            "name_event_counts_top": {
+              "245": 53,
+              "68": 49,
+              "147": 48,
+              "1085": 48,
+              "169": 47
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 5771,
+              "matched_events": 4951,
+              "unmatched_events": 820,
+              "unmatched_frac": 0.1421,
+              "distinct_names_matched": 1132,
+              "distinct_sessions_treat": 510,
+              "rows_pairs": 4951,
+              "n_pos_treat": 147,
+              "n_pos_ctrl": 494
+            },
+            "excess_pp": -7.0087,
+            "se_2way_cgm_pp": 0.32913,
+            "z_2way": -21.2949,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -7.3963,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 4951,
+                "excess_pp": -7.00868511411836,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.30723,
+            "max_name_share": 0.0026,
+            "n_opposite_eligible": 4322,
+            "name_event_counts_top": {
+              "888": 15,
+              "1138": 13,
+              "1215": 13,
+              "80": 12,
+              "170": 12
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 70,
+              "matched_events": 0,
+              "unmatched_events": 70,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0143,
+            "n_opposite_eligible": 54,
+            "name_event_counts_top": {
+              "34": 1,
+              "44": 1,
+              "56": 1,
+              "57": 1,
+              "62": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "main",
+        "horizon": 5,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1678,
+              "n_inert": 38,
+              "n_retained": 1640,
+              "true_pos_episodes_all": 4547,
+              "true_pos_episodes_retained": 4543,
+              "retained_episode_share": 0.9991,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 18,
+                "fewer_than_2_true_spells": 17,
+                "longest_true_gt_70pct": 11,
+                "fewer_than_3_true_spells": 29,
+                "fewer_than_20_legal_placements": 33
+              }
+            },
+            "observed_excess_pp": -0.8895,
+            "perm_median_pp": -0.094,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 89,
+              "n_inert": 4,
+              "n_retained": 85,
+              "true_pos_episodes_all": 1126,
+              "true_pos_episodes_retained": 1126,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 4,
+                "fewer_than_20_legal_placements": 4,
+                "fewer_than_2_true_spells": 1
+              }
+            },
+            "observed_excess_pp": -1.0298,
+            "perm_median_pp": -1.0201,
+            "perm_p_two_sided": 0.689655,
+            "perm_p_one_sided": 0.344828,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 24,
+              "true_pos_episodes_retained": 24,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -1.0192,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M1",
+        "m3": null,
+        "note": "persistent structural state or certified occupancy after G6B"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "A_B_CONTRADICT",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "QB|chinext20|H10",
+      "fkey": "quiet_base",
+      "board": "chinext20",
+      "horizon": 10,
+      "A": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "chinext20",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": -1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": false
+        },
+        "a_status": "UNINFORMATIVE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2808,
+              "matched_events": 2187,
+              "unmatched_events": 621,
+              "unmatched_frac": 0.2212,
+              "distinct_names_matched": 286,
+              "distinct_sessions_treat": 623,
+              "rows_pairs": 2187,
+              "n_pos_treat": 37,
+              "n_pos_ctrl": 59
+            },
+            "excess_pp": -1.0059,
+            "se_2way_cgm_pp": 0.23339,
+            "z_2way": -4.3101,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -1.1885,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 752,
+                "excess_pp": -1.0638297872340423,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1435,
+                "excess_pp": -0.9756097560975612,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": false,
+              "top_share": 0.2706904435299497,
+              "stamp": "PROPENSITY_CONCENTRATED",
+              "cuts": [
+                0.3525674960296453,
+                0.399737876802097
+              ],
+              "n_top": 592,
+              "n_mid": 828,
+              "n_bot": 767,
+              "bot_excess_pp": -2.607561929595828,
+              "mid_excess_pp": 0.24154589371980678
+            },
+            "prevalence": 0.41822,
+            "max_name_share": 0.0068,
+            "n_opposite_eligible": 2461,
+            "name_event_counts_top": {
+              "701": 19,
+              "651": 18,
+              "688": 18,
+              "549": 17,
+              "642": 17
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2099,
+              "matched_events": 1935,
+              "unmatched_events": 164,
+              "unmatched_frac": 0.0781,
+              "distinct_names_matched": 329,
+              "distinct_sessions_treat": 424,
+              "rows_pairs": 1935,
+              "n_pos_treat": 37,
+              "n_pos_ctrl": 92
+            },
+            "excess_pp": -2.8424,
+            "se_2way_cgm_pp": 0.46319,
+            "z_2way": -6.1365,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -3.2505,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1935,
+                "excess_pp": -2.842377260981912,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.31454,
+            "max_name_share": 0.0067,
+            "n_opposite_eligible": 1632,
+            "name_event_counts_top": {
+              "684": 14,
+              "518": 13,
+              "533": 13,
+              "738": 13,
+              "754": 13
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 19,
+              "matched_events": 0,
+              "unmatched_events": 19,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.1053,
+            "n_opposite_eligible": 22,
+            "name_event_counts_top": {
+              "546": 2,
+              "517": 1,
+              "531": 1,
+              "533": 1,
+              "542": 1
+            }
+          }
+        },
+        "propensity_stamp": "PROPENSITY_CONCENTRATED"
+      },
+      "B": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "chinext20",
+        "horizon": 10,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.098451,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1678,
+              "n_inert": 38,
+              "n_retained": 1640,
+              "true_pos_episodes_all": 131,
+              "true_pos_episodes_retained": 129,
+              "retained_episode_share": 0.9847,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 18,
+                "fewer_than_2_true_spells": 17,
+                "longest_true_gt_70pct": 11,
+                "fewer_than_3_true_spells": 29,
+                "fewer_than_20_legal_placements": 33
+              }
+            },
+            "observed_excess_pp": -0.7564,
+            "perm_median_pp": -0.2075,
+            "perm_p_two_sided": 0.001999,
+            "perm_p_one_sided": 0.001,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 89,
+              "n_inert": 4,
+              "n_retained": 85,
+              "true_pos_episodes_all": 196,
+              "true_pos_episodes_retained": 195,
+              "retained_episode_share": 0.9949,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 4,
+                "fewer_than_20_legal_placements": 4,
+                "fewer_than_2_true_spells": 1
+              }
+            },
+            "observed_excess_pp": -0.4446,
+            "perm_median_pp": -0.4935,
+            "perm_p_two_sided": 0.574713,
+            "perm_p_one_sided": 0.713143,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 1,
+              "true_pos_episodes_retained": 1,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -0.7407,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M2",
+        "m3": null,
+        "note": "name propensity / persistent level"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "PROPENSITY_CONCENTRATED",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "QB|chinext20|H5",
+      "fkey": "quiet_base",
+      "board": "chinext20",
+      "horizon": 5,
+      "A": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "chinext20",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": -1,
+        "dwell": 5,
+        "universe": "U1",
+        "floors": {
+          "passed": true,
+          "status": "EVALUABLE",
+          "reasons": [],
+          "concentrated": false
+        },
+        "gates": {
+          "G1": true,
+          "G2": true,
+          "G3": true,
+          "G4": true,
+          "G5": true,
+          "G6": true
+        },
+        "a_status": "CERTIFIED_TIMING",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2809,
+              "matched_events": 2188,
+              "unmatched_events": 621,
+              "unmatched_frac": 0.2211,
+              "distinct_names_matched": 286,
+              "distinct_sessions_treat": 623,
+              "rows_pairs": 2188,
+              "n_pos_treat": 17,
+              "n_pos_ctrl": 39
+            },
+            "excess_pp": -1.0055,
+            "se_2way_cgm_pp": 0.21087,
+            "z_2way": -4.7682,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -1.228,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 753,
+                "excess_pp": -0.9296148738379815,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1435,
+                "excess_pp": -1.0452961672473868,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.27056672760511885,
+              "stamp": null,
+              "cuts": [
+                0.3525674960296453,
+                0.399737876802097
+              ],
+              "n_top": 592,
+              "n_mid": 828,
+              "n_bot": 768,
+              "bot_excess_pp": -1.8229166666666665,
+              "mid_excess_pp": -0.4830917874396135
+            },
+            "prevalence": 0.41822,
+            "max_name_share": 0.0068,
+            "n_opposite_eligible": 2462,
+            "name_event_counts_top": {
+              "701": 19,
+              "651": 18,
+              "688": 18,
+              "549": 17,
+              "642": 17
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 2099,
+              "matched_events": 1935,
+              "unmatched_events": 164,
+              "unmatched_frac": 0.0781,
+              "distinct_names_matched": 329,
+              "distinct_sessions_treat": 424,
+              "rows_pairs": 1935,
+              "n_pos_treat": 9,
+              "n_pos_ctrl": 62
+            },
+            "excess_pp": -2.739,
+            "se_2way_cgm_pp": 0.31646,
+            "z_2way": -8.6551,
+            "cgm_degenerate": false,
+            "thin_excess_pp": -3.0965,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1935,
+                "excess_pp": -2.7390180878552974,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.31454,
+            "max_name_share": 0.0067,
+            "n_opposite_eligible": 1632,
+            "name_event_counts_top": {
+              "684": 14,
+              "518": 13,
+              "533": 13,
+              "738": 13,
+              "754": 13
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 19,
+              "matched_events": 0,
+              "unmatched_events": 19,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.1053,
+            "n_opposite_eligible": 22,
+            "name_event_counts_top": {
+              "546": 2,
+              "517": 1,
+              "531": 1,
+              "533": 1,
+              "542": 1
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "quiet_base",
+        "short": "QB",
+        "board": "chinext20",
+        "horizon": 5,
+        "expected_sign": -1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.071964,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1678,
+              "n_inert": 38,
+              "n_retained": 1640,
+              "true_pos_episodes_all": 106,
+              "true_pos_episodes_retained": 104,
+              "retained_episode_share": 0.9811,
+              "inert_reasons": {
+                "two_longest_true_gt_70pct": 18,
+                "fewer_than_2_true_spells": 17,
+                "longest_true_gt_70pct": 11,
+                "fewer_than_3_true_spells": 29,
+                "fewer_than_20_legal_placements": 33
+              }
+            },
+            "observed_excess_pp": -0.432,
+            "perm_median_pp": -0.097,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 89,
+              "n_inert": 4,
+              "n_retained": 85,
+              "true_pos_episodes_all": 154,
+              "true_pos_episodes_retained": 154,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 4,
+                "fewer_than_20_legal_placements": 4,
+                "fewer_than_2_true_spells": 1
+              }
+            },
+            "observed_excess_pp": -0.2334,
+            "perm_median_pp": -0.2356,
+            "perm_p_two_sided": 0.957521,
+            "perm_p_one_sided": 0.521739,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 1,
+              "true_pos_episodes_retained": 1,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": -0.6584,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M1",
+        "m3": null,
+        "note": "persistent structural state or certified occupancy after G6B"
+      },
+      "headline": {
+        "row": "A9",
+        "headline": "UNINFORMATIVE",
+        "stamp": "A_B_CONTRADICT",
+        "timing_language": false,
+        "amendment": "A9"
+      }
+    },
+    {
+      "key": "VZ|main|H10",
+      "fkey": "volz_gt1",
+      "board": "main",
+      "horizon": 10,
+      "A": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "main",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 2,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.740 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 117426,
+              "matched_events": 30591,
+              "unmatched_events": 86835,
+              "unmatched_frac": 0.7395,
+              "distinct_names_matched": 1186,
+              "distinct_sessions_treat": 2814,
+              "rows_pairs": 30591,
+              "n_pos_treat": 1911,
+              "n_pos_ctrl": 66
+            },
+            "excess_pp": 6.0312,
+            "se_2way_cgm_pp": 0.50738,
+            "z_2way": 11.8869,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 6.1587,
+            "era": {
+              "e1_2011_14": {
+                "n": 8855,
+                "excess_pp": 4.652738565782045,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 88,
+                "excess_pp": 12.499999999999998,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 7652,
+                "excess_pp": 5.358076319916362,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 7949,
+                "excess_pp": 7.573279657818594,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 6047,
+                "excess_pp": 6.780221597486356,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.36187113857016767,
+              "stamp": null,
+              "cuts": [
+                0.1686019507663725,
+                0.17586694975230008
+              ],
+              "n_top": 11070,
+              "n_mid": 10691,
+              "n_bot": 8830,
+              "bot_excess_pp": 6.149490373725934,
+              "mid_excess_pp": 5.771209428491255
+            },
+            "prevalence": 0.17273,
+            "max_name_share": 0.0015,
+            "n_opposite_eligible": 56075,
+            "name_event_counts_top": {
+              "169": 175,
+              "1277": 171,
+              "956": 170,
+              "1357": 168,
+              "1234": 166
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 22959,
+              "matched_events": 4488,
+              "unmatched_events": 18471,
+              "unmatched_frac": 0.8045,
+              "distinct_names_matched": 997,
+              "distinct_sessions_treat": 547,
+              "rows_pairs": 4488,
+              "n_pos_treat": 464,
+              "n_pos_ctrl": 19
+            },
+            "excess_pp": 9.9153,
+            "se_2way_cgm_pp": 0.76714,
+            "z_2way": 12.925,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 9.9406,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 4488,
+                "excess_pp": 9.915329768270945,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.18038,
+            "max_name_share": 0.0021,
+            "n_opposite_eligible": 10605,
+            "name_event_counts_top": {
+              "128": 48,
+              "874": 47,
+              "64": 45,
+              "401": 45,
+              "319": 44
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1013,
+              "matched_events": 0,
+              "unmatched_events": 1013,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0039,
+            "n_opposite_eligible": 453,
+            "name_event_counts_top": {
+              "258": 4,
+              "397": 4,
+              "403": 4,
+              "409": 4,
+              "850": 4
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "main",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1741,
+              "n_inert": 9,
+              "n_retained": 1732,
+              "true_pos_episodes_all": 6900,
+              "true_pos_episodes_retained": 6900,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 9,
+                "fewer_than_20_legal_placements": 9,
+                "fewer_than_2_true_spells": 6
+              }
+            },
+            "observed_excess_pp": 1.4052,
+            "perm_median_pp": 0.018,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 33,
+              "n_inert": 0,
+              "n_retained": 33,
+              "true_pos_episodes_all": 2003,
+              "true_pos_episodes_retained": 2003,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 2.759,
+            "perm_median_pp": 2.7595,
+            "perm_p_two_sided": 0.963518,
+            "perm_p_one_sided": 0.518741,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 133,
+              "true_pos_episodes_retained": 133,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 1.0518,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": null,
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "VZ|main|H5",
+      "fkey": "volz_gt1",
+      "board": "main",
+      "horizon": 5,
+      "A": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "main",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 2,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.737 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 119324,
+              "matched_events": 31364,
+              "unmatched_events": 87960,
+              "unmatched_frac": 0.7372,
+              "distinct_names_matched": 1186,
+              "distinct_sessions_treat": 2820,
+              "rows_pairs": 31364,
+              "n_pos_treat": 1093,
+              "n_pos_ctrl": 32
+            },
+            "excess_pp": 3.3829,
+            "se_2way_cgm_pp": 0.30615,
+            "z_2way": 11.0497,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 3.4512,
+            "era": {
+              "e1_2011_14": {
+                "n": 9458,
+                "excess_pp": 2.71727637978431,
+                "measurable": true
+              },
+              "e2_2015_mania": {
+                "n": 98,
+                "excess_pp": 8.16326530612245,
+                "measurable": true
+              },
+              "e3_2016_18_crackdown": {
+                "n": 7773,
+                "excess_pp": 2.8689051846134053,
+                "measurable": true
+              },
+              "e4_2019_21_revival": {
+                "n": 7981,
+                "excess_pp": 4.260117779726851,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 6054,
+                "excess_pp": 3.8486950776346216,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.3628682565999235,
+              "stamp": null,
+              "cuts": [
+                0.1686019507663725,
+                0.17586694975230008
+              ],
+              "n_top": 11381,
+              "n_mid": 10970,
+              "n_bot": 9013,
+              "bot_excess_pp": 3.372905802729391,
+              "mid_excess_pp": 3.2543299908842296
+            },
+            "prevalence": 0.17273,
+            "max_name_share": 0.0015,
+            "n_opposite_eligible": 56889,
+            "name_event_counts_top": {
+              "169": 175,
+              "956": 172,
+              "1277": 172,
+              "1357": 172,
+              "1234": 169
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 23106,
+              "matched_events": 4542,
+              "unmatched_events": 18564,
+              "unmatched_frac": 0.8034,
+              "distinct_names_matched": 1001,
+              "distinct_sessions_treat": 547,
+              "rows_pairs": 4542,
+              "n_pos_treat": 280,
+              "n_pos_ctrl": 12
+            },
+            "excess_pp": 5.9005,
+            "se_2way_cgm_pp": 0.62886,
+            "z_2way": 9.3829,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 5.7297,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 4542,
+                "excess_pp": 5.900484368119771,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.18037,
+            "max_name_share": 0.0021,
+            "n_opposite_eligible": 10649,
+            "name_event_counts_top": {
+              "128": 48,
+              "874": 47,
+              "64": 45,
+              "401": 45,
+              "907": 45
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 1013,
+              "matched_events": 0,
+              "unmatched_events": 1013,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0039,
+            "n_opposite_eligible": 453,
+            "name_event_counts_top": {
+              "258": 4,
+              "397": 4,
+              "403": 4,
+              "409": 4,
+              "850": 4
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "main",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": false
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.0005,
+          "n_assign": 2000,
+          "name_propensity": false
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1741,
+              "n_inert": 9,
+              "n_retained": 1732,
+              "true_pos_episodes_all": 5356,
+              "true_pos_episodes_retained": 5356,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 9,
+                "fewer_than_20_legal_placements": 9,
+                "fewer_than_2_true_spells": 6
+              }
+            },
+            "observed_excess_pp": 1.0129,
+            "perm_median_pp": 0.015,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 33,
+              "n_inert": 0,
+              "n_retained": 33,
+              "true_pos_episodes_all": 1619,
+              "true_pos_episodes_retained": 1619,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 2.2764,
+            "perm_median_pp": 2.2788,
+            "perm_p_two_sided": 0.689655,
+            "perm_p_one_sided": 0.655672,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 91,
+              "true_pos_episodes_retained": 91,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 1.2128,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": null,
+        "m3": null,
+        "note": "no surviving mechanism"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "VZ|chinext20|H10",
+      "fkey": "volz_gt1",
+      "board": "chinext20",
+      "horizon": 10,
+      "A": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "chinext20",
+        "horizon": 10,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 2,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.771 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 10915,
+              "matched_events": 2497,
+              "unmatched_events": 8418,
+              "unmatched_frac": 0.7712,
+              "distinct_names_matched": 282,
+              "distinct_sessions_treat": 680,
+              "rows_pairs": 2497,
+              "n_pos_treat": 43,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": 1.7221,
+            "se_2way_cgm_pp": 0.59883,
+            "z_2way": 2.8757,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 1.6645,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 730,
+                "excess_pp": 3.8356164383561646,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1767,
+                "excess_pp": 0.8488964346349746,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.3872647176611934,
+              "stamp": null,
+              "cuts": [
+                0.17196514858578202,
+                0.1796086231272005
+              ],
+              "n_top": 967,
+              "n_mid": 855,
+              "n_bot": 675,
+              "bot_excess_pp": 1.4814814814814816,
+              "mid_excess_pp": 1.2865497076023393
+            },
+            "prevalence": 0.17091,
+            "max_name_share": 0.0059,
+            "n_opposite_eligible": 5577,
+            "name_event_counts_top": {
+              "552": 64,
+              "557": 63,
+              "676": 62,
+              "732": 59,
+              "681": 58
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 8419,
+              "matched_events": 1878,
+              "unmatched_events": 6541,
+              "unmatched_frac": 0.7769,
+              "distinct_names_matched": 313,
+              "distinct_sessions_treat": 496,
+              "rows_pairs": 1878,
+              "n_pos_treat": 69,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": 3.6741,
+            "se_2way_cgm_pp": 0.93241,
+            "z_2way": 3.9405,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 3.2733,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1878,
+                "excess_pp": 3.6741214057507987,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.18363,
+            "max_name_share": 0.0056,
+            "n_opposite_eligible": 4336,
+            "name_event_counts_top": {
+              "686": 47,
+              "521": 43,
+              "723": 43,
+              "742": 43,
+              "785": 43
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 369,
+              "matched_events": 0,
+              "unmatched_events": 369,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0108,
+            "n_opposite_eligible": 170,
+            "name_event_counts_top": {
+              "531": 4,
+              "549": 4,
+              "579": 4,
+              "596": 4,
+              "719": 4
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "chinext20",
+        "horizon": 10,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": true,
+          "stamp": "NAME_PROPENSITY"
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.111944,
+          "n_assign": 2000,
+          "name_propensity": true
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1741,
+              "n_inert": 9,
+              "n_retained": 1732,
+              "true_pos_episodes_all": 183,
+              "true_pos_episodes_retained": 183,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 9,
+                "fewer_than_20_legal_placements": 9,
+                "fewer_than_2_true_spells": 6
+              }
+            },
+            "observed_excess_pp": 0.7258,
+            "perm_median_pp": 0.0347,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 33,
+              "n_inert": 0,
+              "n_retained": 33,
+              "true_pos_episodes_all": 299,
+              "true_pos_episodes_retained": 299,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 0.9327,
+            "perm_median_pp": 0.9732,
+            "perm_p_two_sided": 0.107946,
+            "perm_p_one_sided": 0.946527,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 8,
+              "true_pos_episodes_retained": 8,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 0.6899,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M2",
+        "m3": null,
+        "note": "name propensity / persistent level"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    },
+    {
+      "key": "VZ|chinext20|H5",
+      "fkey": "volz_gt1",
+      "board": "chinext20",
+      "horizon": 5,
+      "A": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "chinext20",
+        "horizon": 5,
+        "edge": "onset",
+        "expected_sign": 1,
+        "dwell": 2,
+        "universe": "U1",
+        "floors": {
+          "passed": false,
+          "status": "NOT_EVALUABLE",
+          "reasons": [
+            "unmatched 0.771 > 0.5"
+          ],
+          "concentrated": false
+        },
+        "gates": null,
+        "a_status": "NOT_EVALUABLE",
+        "splits": {
+          "FIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 10922,
+              "matched_events": 2498,
+              "unmatched_events": 8424,
+              "unmatched_frac": 0.7713,
+              "distinct_names_matched": 282,
+              "distinct_sessions_treat": 680,
+              "rows_pairs": 2498,
+              "n_pos_treat": 23,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": 0.9207,
+            "se_2way_cgm_pp": 0.34779,
+            "z_2way": 2.6474,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 1.0391,
+            "era": {
+              "e4_2019_21_revival": {
+                "n": 730,
+                "excess_pp": 2.4657534246575343,
+                "measurable": true
+              },
+              "e5_2022_23_grind": {
+                "n": 1768,
+                "excess_pp": 0.2828054298642534,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": 0.3875100080064051,
+              "stamp": null,
+              "cuts": [
+                0.17196514858578202,
+                0.1796086231272005
+              ],
+              "n_top": 968,
+              "n_mid": 855,
+              "n_bot": 675,
+              "bot_excess_pp": 0.8888888888888888,
+              "mid_excess_pp": 0.46783625730994155
+            },
+            "prevalence": 0.17091,
+            "max_name_share": 0.0059,
+            "n_opposite_eligible": 5583,
+            "name_event_counts_top": {
+              "552": 64,
+              "557": 63,
+              "676": 62,
+              "732": 59,
+              "681": 58
+            }
+          },
+          "HOLDOUT": {
+            "honest_n": {
+              "distinct_name_transition_events": 8431,
+              "matched_events": 1887,
+              "unmatched_events": 6544,
+              "unmatched_frac": 0.7762,
+              "distinct_names_matched": 314,
+              "distinct_sessions_treat": 497,
+              "rows_pairs": 1887,
+              "n_pos_treat": 44,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": 2.3317,
+            "se_2way_cgm_pp": 0.65944,
+            "z_2way": 3.5359,
+            "cgm_degenerate": false,
+            "thin_excess_pp": 1.8794,
+            "era": {
+              "e6_2024_26_current": {
+                "n": 1887,
+                "excess_pp": 2.3317435082140965,
+                "measurable": true
+              }
+            },
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": 0.18358,
+            "max_name_share": 0.0056,
+            "n_opposite_eligible": 4344,
+            "name_event_counts_top": {
+              "686": 47,
+              "521": 43,
+              "723": 43,
+              "742": 43,
+              "785": 43
+            }
+          },
+          "AUDIT": {
+            "honest_n": {
+              "distinct_name_transition_events": 369,
+              "matched_events": 0,
+              "unmatched_events": 369,
+              "unmatched_frac": 1.0,
+              "distinct_names_matched": 0,
+              "distinct_sessions_treat": 0,
+              "rows_pairs": 0,
+              "n_pos_treat": 0,
+              "n_pos_ctrl": 0
+            },
+            "excess_pp": null,
+            "se_2way_cgm_pp": null,
+            "z_2way": null,
+            "cgm_degenerate": true,
+            "thin_excess_pp": null,
+            "era": {},
+            "propensity": {
+              "ok": true,
+              "top_share": null,
+              "stamp": null
+            },
+            "prevalence": null,
+            "max_name_share": 0.0108,
+            "n_opposite_eligible": 170,
+            "name_event_counts_top": {
+              "531": 4,
+              "549": 4,
+              "579": 4,
+              "596": 4,
+              "719": 4
+            }
+          }
+        },
+        "propensity_stamp": null
+      },
+      "B": {
+        "fkey": "volz_gt1",
+        "short": "VZ",
+        "board": "chinext20",
+        "horizon": 5,
+        "expected_sign": 1,
+        "b_status": "NULL",
+        "b_had_df": true,
+        "gates": {
+          "G2B": true,
+          "G5B": false,
+          "G6B_name_propensity": true,
+          "stamp": "NAME_PROPENSITY"
+        },
+        "g6b": {
+          "ran": true,
+          "p_one_sided": 0.117941,
+          "n_assign": 2000,
+          "name_propensity": true
+        },
+        "splits": {
+          "FIT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 1741,
+              "n_inert": 9,
+              "n_retained": 1732,
+              "true_pos_episodes_all": 145,
+              "true_pos_episodes_retained": 145,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {
+                "fewer_than_3_true_spells": 9,
+                "fewer_than_20_legal_placements": 9,
+                "fewer_than_2_true_spells": 6
+              }
+            },
+            "observed_excess_pp": 0.4667,
+            "perm_median_pp": 0.0075,
+            "perm_p_two_sided": 0.001,
+            "perm_p_one_sided": 0.0005,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "HOLDOUT": {
+            "status": "EVALUABLE",
+            "census": {
+              "n_names_split": 33,
+              "n_inert": 0,
+              "n_retained": 33,
+              "true_pos_episodes_all": 246,
+              "true_pos_episodes_retained": 246,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 0.4036,
+            "perm_median_pp": 0.4094,
+            "perm_p_two_sided": 0.729635,
+            "perm_p_one_sided": 0.635682,
+            "n_perm": 2000,
+            "sign_ok": true
+          },
+          "AUDIT": {
+            "status": "DESCRIPTIVE",
+            "census": {
+              "n_names_split": 0,
+              "n_inert": 0,
+              "n_retained": 0,
+              "true_pos_episodes_all": 6,
+              "true_pos_episodes_retained": 6,
+              "retained_episode_share": 1.0,
+              "inert_reasons": {}
+            },
+            "observed_excess_pp": 0.1487,
+            "n_perm": 0,
+            "note": "AUDIT never gates; permutation not computed (A10)"
+          }
+        }
+      },
+      "mechanism": {
+        "code": "M2",
+        "m3": null,
+        "note": "name propensity / persistent level"
+      },
+      "headline": {
+        "row": 6,
+        "headline": "NULL",
+        "stamp": "A_SILENT_B_NULL",
+        "timing_language": false,
+        "amendment": null
+      }
+    }
+  ],
+  "adversarial": {
+    "persistent_state_null": {
+      "why": "prereg \u00a711.1 \u2014 synthetic F = name-level constant (FIT median dd250 \u2264 \u22120.35)",
+      "passed": true,
+      "detail": {
+        "n_transitions": 0,
+        "non_inert_in_sample40": 0,
+        "rule": "name-constant F has no lawful dwell-5 transitions; B is PERM-INERT"
+      },
+      "mutation_probe": {
+        "mutation": "force this feature to flip once per name and assert no transitions",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "force this feature to flip once per name and assert no transitions",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    },
+    "planted_timing": {
+      "why": "prereg \u00a711.2 \u2014 short-spell dummy 5 sessions before a random 5% of first boards",
+      "passed": true,
+      "detail": {
+        "z_A": 47.0847,
+        "p_B": 0.001,
+        "p_G6B": 0.0005,
+        "n_planted": 6983,
+        "shuffled_labels": false
+      },
+      "mutation_probe": {
+        "mutation": "run the plant with labels shuffled (must not certify)",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "run the plant with labels shuffled (must not certify)",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    },
+    "permuted_plant_falls_back": {
+      "why": "prereg \u00a711.3 \u2014 apply the no-merge shuffle to the planted feature",
+      "passed": true,
+      "detail": {
+        "z_A": -2.4838,
+        "p_B": 0.352824,
+        "rule": "A |z|<1.96 and B p>0.10 after \u00a76.1 shuffle of the plant"
+      },
+      "mutation_probe": {
+        "mutation": "assert the permuted plant is still certified",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "assert the permuted plant is still certified",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    },
+    "mutated_transition_timing": {
+      "why": "prereg \u00a711.4 \u2014 move each planted transition by \u00b1 Uniform{20,\u2026,60}",
+      "passed": true,
+      "detail": {
+        "z_A": -9.6178,
+        "rule": "shifted plant z drops below 1.96 (planted +)"
+      },
+      "mutation_probe": {
+        "mutation": "assert the mutated plant still meets G2",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "assert the mutated plant still meets G2",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    },
+    "regime_placebo": {
+      "why": "prereg \u00a711.5 \u2014 F = 1 on sessions whose U1 fraction exceeds the FIT-session median",
+      "passed": true,
+      "detail": {
+        "n_onsets": 64274,
+        "rule": "session-constant F is NULL/NOT_EVALUABLE after regime match"
+      },
+      "mutation_probe": {
+        "mutation": "drop session-regime matching and assert A is still null",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "drop session-regime matching and assert A is still null",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    },
+    "name_propensity_constant": {
+      "why": "prereg \u00a711.6 \u2014 F = 1 iff the name's FIT-only under_ma200 fraction exceeds the median",
+      "passed": true,
+      "detail": {
+        "n_transitions": 0,
+        "non_inert_in_sample60": 0,
+        "rule": "name-constant under_ma200 propensity: A no transitions, B PERM-INERT"
+      },
+      "mutation_probe": {
+        "mutation": "assert this constant certifies on B",
+        "detected": true,
+        "via": "check returned failure",
+        "probes": [
+          {
+            "mutation": "assert this constant certifies on B",
+            "detected": true,
+            "via": "check returned failure"
+          }
+        ]
+      }
+    }
+  },
+  "verify": {
+    "checks": {
+      "label_identity": {
+        "why": "prereg \u00a712.1 \u2014 fb_H matches the panel-re-derived next-board distance",
+        "passed": true,
+        "detail": {
+          "per_horizon": {
+            "H5": {
+              "mismatches": 0,
+              "rows_scoped": 4831182
+            },
+            "H10": {
+              "mismatches": 0,
+              "rows_scoped": 4822287
+            }
+          },
+          "off": 0
+        },
+        "mutation_probe": {
+          "mutation": "off-by-one the re-derivation",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "off-by-one the re-derivation",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "no_lookahead": {
+        "why": "prereg \u00a712.2 \u2014 post-cut scaling must not move a pre-cut F",
+        "passed": true,
+        "detail": {
+          "past_rows": 1924,
+          "cells_moved": 0,
+          "corrupt_past": false
+        },
+        "mutation_probe": {
+          "mutation": "scale a slab inside the pre-cut history",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "scale a slab inside the pre-cut history",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "transition_dwell": {
+        "why": "prereg \u00a712.3 \u2014 every admitted A event satisfies \u00a75.1",
+        "passed": true,
+        "detail": {
+          "checked_onsets": 31649,
+          "violations": 0
+        },
+        "mutation_probe": {
+          "mutation": "admit a one-bar flicker",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "admit a one-bar flicker",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "within_name_control": {
+        "why": "prereg \u00a712.4 \u2014 every A control shares the treatment's ticker",
+        "passed": true,
+        "detail": {
+          "pairs_checked_by_construction": 20,
+          "rule": "match_one_name iterates one name axis"
+        },
+        "mutation_probe": {
+          "mutation": "pair a control from a different name",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "pair a control from a different name",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "edge_map_frozen": {
+        "why": "prereg \u00a712.5 \u2014 primary events match \u00a75.2; opposite edge never gates",
+        "passed": true,
+        "detail": {
+          "primary_edges": {
+            "DD20": "onset",
+            "DD35": "onset",
+            "MA200": "exit",
+            "QB": "onset",
+            "VZ": "onset"
+          },
+          "gated_edges_seen": [
+            "exit",
+            "onset"
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "swap MA200 to onset",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "swap MA200 to onset",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "split_permutation": {
+        "why": "prereg \u00a712.6 \u2014 B never moves a FIT bar's F into HOLDOUT",
+        "passed": true,
+        "detail": {
+          "rule": "extract_name_spells keeps segments inside one split_gcode"
+        },
+        "mutation_probe": {
+          "mutation": "permute across the split boundary",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "permute across the split boundary",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "spell_length_preserved": {
+        "why": "prereg \u00a712.7 \u2014 TRUE spell-length multiset identical after each B draw",
+        "passed": true,
+        "detail": {
+          "true_in": [
+            3,
+            5,
+            2
+          ],
+          "true_out": [
+            3,
+            2,
+            5
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "jitter one spell length",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "jitter one spell length",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "false_spell_length_preserved": {
+        "why": "prereg \u00a712.7a \u2014 FALSE spell-length multiset identical after each B draw",
+        "passed": true,
+        "detail": {
+          "false_in": [
+            4,
+            6
+          ],
+          "false_out": [
+            6,
+            4
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "jitter a FALSE length",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "jitter a FALSE length",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "no_true_spell_merge": {
+        "why": "prereg \u00a712.7b \u2014 no two TRUE spells abut after a B draw",
+        "passed": true,
+        "detail": {
+          "seq": [
+            [
+              true,
+              3
+            ],
+            [
+              false,
+              4
+            ],
+            [
+              true,
+              2
+            ],
+            [
+              false,
+              6
+            ],
+            [
+              true,
+              5
+            ]
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "force two TRUE spells to abut",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "force two TRUE spells to abut",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "inert_exclusion": {
+        "why": "prereg \u00a712.8 \u2014 PERM-INERT names are absent from B's contrast and counted",
+        "passed": true,
+        "detail": {
+          "inert_counted": 2180,
+          "retained": 33260
+        },
+        "mutation_probe": {
+          "mutation": "force-include an inert name",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "force-include an inert name",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "censoring_partition": {
+        "why": "prereg \u00a712.9 \u2014 eligible = pos + neg + censored; no censored row in any estimator",
+        "passed": true,
+        "detail": {
+          "H10": {
+            "pos": 377811,
+            "neg": 4322852,
+            "cens": 139414,
+            "n": 4840077
+          },
+          "H5": {
+            "pos": 216102,
+            "neg": 4557249,
+            "cens": 66726,
+            "n": 4840077
+          }
+        },
+        "mutation_probe": {
+          "mutation": "count censored as negative",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "count censored as negative",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "board_era_disjointness": {
+        "why": "prereg \u00a712.10 \u2014 no pooled board or era key",
+        "passed": true,
+        "detail": {
+          "boards": [
+            "chinext20",
+            "main"
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "inject ALL_BOARDS",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "inject ALL_BOARDS",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "concentration_guard": {
+        "why": "prereg \u00a712.11 \u2014 max single-name share printed; >40% flags CONCENTRATED",
+        "passed": true,
+        "detail": {
+          "concentrated_cells": []
+        },
+        "mutation_probe": {
+          "mutation": "duplicate one name's treatments",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "duplicate one name's treatments",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "propensity_past_only": {
+        "why": "prereg \u00a712.12 \u2014 FIT terciles use no HOLDOUT or future bar",
+        "passed": true,
+        "detail": {
+          "rule": "pl.fit_occ is computed on split_gcode==0 only"
+        },
+        "mutation_probe": {
+          "mutation": "leak HOLDOUT occupancy into the FIT tercile",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "leak HOLDOUT occupancy into the FIT tercile",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "stop_ship_reference_scan": {
+        "why": "prereg \u00a712.13 \u2014 P-B fragment-assembled token scan over instrument + receipts",
+        "passed": true,
+        "detail": {
+          "hits": {},
+          "tokens_scanned": 14,
+          "surfaces": [
+            "instrument",
+            "prereg"
+          ]
+        },
+        "mutation_probe": {
+          "mutation": "inject a withdrawn token",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "inject a withdrawn token",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "pin_match": {
+        "why": "prereg \u00a712.14 \u2014 W-P0 / P-B / P-B2-prereg sha prefixes match \u00a73",
+        "passed": true,
+        "detail": {
+          "prefixes": {
+            "washout_onset_w1.py": "11ac61de71f0f595",
+            "pb_case_decomposition.py": "f42b0566beb60bec",
+            "PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md": "043a85d69f76ea86"
+          },
+          "got": {
+            "washout_onset_w1.py": "11ac61de71f0f595",
+            "pb_case_decomposition.py": "f42b0566beb60bec",
+            "PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md": "043a85d69f76ea86"
+          }
+        },
+        "mutation_probe": {
+          "mutation": "assert a mutated pin passes",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "assert a mutated pin passes",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "no_shift_null_as_gate": {
+        "why": "prereg \u00a712.15 \u2014 no \u00a710 headline field is the P-B2 S\u2208{250,500,1000} shift rate",
+        "passed": true,
+        "detail": {
+          "row": 5,
+          "headline": "NULL",
+          "stamp": null,
+          "timing_language": false,
+          "amendment": null
+        },
+        "mutation_probe": {
+          "mutation": "wire the shift rate into the headline function",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "wire the shift rate into the headline function",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "pb2_sentence": {
+        "why": "prereg \u00a712.16 \u2014 the receipt contains the \u00a710 P-B2-preservation sentence verbatim",
+        "passed": true,
+        "detail": {
+          "sentence": "P-B2 remains NO DISCRIMINATOR AT THE PREREGISTERED BAR. The numbers below are P-B3 verdicts on a new estimand and a new null."
+        },
+        "mutation_probe": {
+          "mutation": "delete it",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "delete it",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      },
+      "battery_can_fail": {
+        "why": "prereg \u00a712.17 \u2014 each \u00a711 control has detected:true on its probe",
+        "passed": true,
+        "detail": {
+          "detected": {
+            "persistent_state_null": true,
+            "planted_timing": true,
+            "permuted_plant_falls_back": true,
+            "mutated_transition_timing": true,
+            "regime_placebo": true,
+            "name_propensity_constant": true
+          }
+        },
+        "mutation_probe": {
+          "mutation": "skip probe 2",
+          "detected": true,
+          "via": "check returned failure",
+          "probes": [
+            {
+              "mutation": "skip probe 2",
+              "detected": true,
+              "via": "check returned failure"
+            }
+          ]
+        }
+      }
+    },
+    "summary": {
+      "prereg_checks_run": 19,
+      "prereg_checks_passed": 19,
+      "prereg_probes_detected": 19,
+      "all_passed": true,
+      "all_probes_detected": true
+    }
+  },
+  "shift_diag": {
+    "S250|DD20|main|H10": {
+      "shift": 250,
+      "shifted_excess_pp": 0.8379,
+      "real_excess_pp": 1.0433,
+      "gates_nothing": true
+    },
+    "S250|DD20|main|H5": {
+      "shift": 250,
+      "shifted_excess_pp": 0.4265,
+      "real_excess_pp": 0.5321,
+      "gates_nothing": true
+    },
+    "S250|DD20|chinext20|H10": {
+      "shift": 250,
+      "shifted_excess_pp": 0.4477,
+      "real_excess_pp": -0.4991,
+      "gates_nothing": true
+    },
+    "S250|DD20|chinext20|H5": {
+      "shift": 250,
+      "shifted_excess_pp": 0.228,
+      "real_excess_pp": -0.3591,
+      "gates_nothing": true
+    },
+    "S250|DD35|main|H10": {
+      "shift": 250,
+      "shifted_excess_pp": 0.7975,
+      "real_excess_pp": 2.9544,
+      "gates_nothing": true
+    },
+    "S250|DD35|main|H5": {
+      "shift": 250,
+      "shifted_excess_pp": 0.4321,
+      "real_excess_pp": 1.5682,
+      "gates_nothing": true
+    },
+    "S250|DD35|chinext20|H10": {
+      "shift": 250,
+      "shifted_excess_pp": 0.2751,
+      "real_excess_pp": 0.1402,
+      "gates_nothing": true
+    },
+    "S250|DD35|chinext20|H5": {
+      "shift": 250,
+      "shifted_excess_pp": 0.1387,
+      "real_excess_pp": 0.0447,
+      "gates_nothing": true
+    },
+    "S500|DD20|main|H10": {
+      "shift": 500,
+      "shifted_excess_pp": 1.0563,
+      "real_excess_pp": 1.0433,
+      "gates_nothing": true
+    },
+    "S500|DD20|main|H5": {
+      "shift": 500,
+      "shifted_excess_pp": 0.5565,
+      "real_excess_pp": 0.5321,
+      "gates_nothing": true
+    },
+    "S500|DD20|chinext20|H10": {
+      "shift": 500,
+      "shifted_excess_pp": 0.5934,
+      "real_excess_pp": -0.4991,
+      "gates_nothing": true
+    },
+    "S500|DD20|chinext20|H5": {
+      "shift": 500,
+      "shifted_excess_pp": 0.2461,
+      "real_excess_pp": -0.3591,
+      "gates_nothing": true
+    },
+    "S500|DD35|main|H10": {
+      "shift": 500,
+      "shifted_excess_pp": 1.1075,
+      "real_excess_pp": 2.9544,
+      "gates_nothing": true
+    },
+    "S500|DD35|main|H5": {
+      "shift": 500,
+      "shifted_excess_pp": 0.5709,
+      "real_excess_pp": 1.5682,
+      "gates_nothing": true
+    },
+    "S500|DD35|chinext20|H10": {
+      "shift": 500,
+      "shifted_excess_pp": 0.6262,
+      "real_excess_pp": 0.1402,
+      "gates_nothing": true
+    },
+    "S500|DD35|chinext20|H5": {
+      "shift": 500,
+      "shifted_excess_pp": 0.3486,
+      "real_excess_pp": 0.0447,
+      "gates_nothing": true
+    },
+    "S1000|DD20|main|H10": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.3635,
+      "real_excess_pp": 1.0433,
+      "gates_nothing": true
+    },
+    "S1000|DD20|main|H5": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.1727,
+      "real_excess_pp": 0.5321,
+      "gates_nothing": true
+    },
+    "S1000|DD20|chinext20|H10": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.2406,
+      "real_excess_pp": -0.4991,
+      "gates_nothing": true
+    },
+    "S1000|DD20|chinext20|H5": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.1113,
+      "real_excess_pp": -0.3591,
+      "gates_nothing": true
+    },
+    "S1000|DD35|main|H10": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.8921,
+      "real_excess_pp": 2.9544,
+      "gates_nothing": true
+    },
+    "S1000|DD35|main|H5": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.4672,
+      "real_excess_pp": 1.5682,
+      "gates_nothing": true
+    },
+    "S1000|DD35|chinext20|H10": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.3208,
+      "real_excess_pp": 0.1402,
+      "gates_nothing": true
+    },
+    "S1000|DD35|chinext20|H5": {
+      "shift": 1000,
+      "shifted_excess_pp": 0.1876,
+      "real_excess_pp": 0.0447,
+      "gates_nothing": true
+    }
+  },
+  "pd_implication": {
+    "timing_family_inputs": [],
+    "occupancy_covariates_only": [],
+    "not_a_pd_input_null": [
+      "DD20|main|H10",
+      "DD20|main|H5",
+      "DD20|chinext20|H10",
+      "DD20|chinext20|H5",
+      "DD35|main|H10",
+      "DD35|chinext20|H5",
+      "MA200|chinext20|H10",
+      "MA200|chinext20|H5",
+      "VZ|main|H10",
+      "VZ|main|H5",
+      "VZ|chinext20|H10",
+      "VZ|chinext20|H5"
+    ],
+    "not_a_pd_input_insufficient": [],
+    "instrument_defect_uninformative": [
+      "DD35|main|H5",
+      "DD35|chinext20|H10",
+      "MA200|main|H10",
+      "MA200|main|H5",
+      "QB|main|H10",
+      "QB|main|H5",
+      "QB|chinext20|H10",
+      "QB|chinext20|H5"
+    ],
+    "carrier_series_not_incremental_to_washout": [],
+    "production_authority": false,
+    "do_not_reshop_placebo": true,
+    "do_not_open_pd_this_session": true,
+    "prose": "TIMING-stamped cells are eligible P-D timing-family inputs. Occupancy-stamped cells are eligible only as named occupancy covariates; P-D must still beat name propensity and the washout carrier. A CARRIER_SERIES cell is not incremental information over the washout carrier. NULL is not a P-D input and is not re-shopped. INSUFFICIENT SUPPORT is not a P-D input and not a kill of the search space. UNINFORMATIVE is an instrument defect. Nothing here is production authority. P-D is not opened."
+  },
+  "regime_cuts": {
+    "q1": 0.5011086583272013,
+    "q2": 0.6307003417742714,
+    "fit_min": 0.0011160714285714285,
+    "fit_max": 0.8823058446757406
+  }
+}

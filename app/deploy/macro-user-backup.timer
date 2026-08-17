@@ -1,0 +1,18 @@
+# Nightly customer-table backup — 05:17 UTC, every day.
+#
+# 05:17 sits after biocatalyst-history (02:20) and market-memory-experience
+# (04:30) and clear of the :00/:05 live-plane lanes. Persistent=true so a box
+# that was down overnight fires the missed dump on boot rather than waiting
+# another 24 hours — a reboot is exactly when a backup is most valuable.
+[Unit]
+Description=Run the encrypted customer-table backup every night
+
+[Timer]
+OnCalendar=*-*-* 05:17:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-user-backup.service
+
+[Install]
+WantedBy=timers.target

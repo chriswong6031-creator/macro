@@ -1,0 +1,32 @@
+{
+  "note": "detail payload gated; HTML compared in parent file",
+  "items": [
+    {
+      "artifact": "us_stocks.html",
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "status": "VERIFIED",
+      "live_sha256": "7a014653c9d8abe1b22ca1e8005c25892377664e643d10975a520b4f2eeec9dd",
+      "local_sha256": "7a014653c9d8abe1b22ca1e8005c25892377664e643d10975a520b4f2eeec9dd",
+      "live_bytes": 1123351,
+      "local_bytes": 1123351
+    },
+    {
+      "artifact": "stock.html",
+      "url": "https://www.mastermind-x.com/stock.html",
+      "status": "VERIFIED",
+      "live_sha256": "b981b9bd3fa9a0ae2b0bb900e6baad9454da1e12f009e8aea7c6499f7b6a0588",
+      "local_sha256": "b981b9bd3fa9a0ae2b0bb900e6baad9454da1e12f009e8aea7c6499f7b6a0588",
+      "live_bytes": 260194,
+      "local_bytes": 260194
+    },
+    {
+      "artifact": "stockdata/ONTO.json",
+      "url": "https://www.mastermind-x.com/stockdata/ONTO.json",
+      "status": "UNVERIFIED",
+      "http": 401,
+      "reason": "account-gated or missing locally (site/stockdata is gitignored)"
+    }
+  ],
+  "repo_head_sha": "e5431db19e69902d8b93fbb60d12c9085e5f8ecc",
+  "parity_method": "sha256_live_vs_local_generated_html"
+}

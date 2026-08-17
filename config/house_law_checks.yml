@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-14"
+updated: "2026-08-16"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1279,6 +1279,39 @@ checks:
     notes: >
       Allowlist is config/dag.yml divergences section.
 
+  - law_id: cs.ingestion_health_gate
+    summary: >
+      Capital Structure selected filings with zero durable verified evidence
+      must fail the isolated capital_structure job. Compiler telemetry.as_of
+      is generation time, not source freshness. A proven empty/already-known
+      queue is the only permitted non-failing zero-progress result. Collect
+      stays green so the market plane is not frozen.
+    source_ref:
+      - scripts/check_capital_structure_health.py
+      - engine/capital_structure/ingestion_health.py
+      - "PR #5792"
+    severity: hard
+    check_script: scripts/check_capital_structure_health.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: capital_structure
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Gate script over on-disk ingestion_run/health artifacts; behavioral
+      coverage is tests/test_capital_structure_ingestion_health.py, including
+      an all-storage-failure path that must exit 1.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The gate reads collector receipts after the CS compilers; it cannot
+        repair a dedicated-R2 AccessDenied ACL, only fail closed or fall back
+        at collect time via build_source_store(require_writable=True).
+    owner_program: capital-structure-intelligence
+    notes: >
+      Measured 2026-08-08→08-14: dedicated PutObject AccessDenied froze
+      source_manifest at 1,258 while both nightly jobs stayed green.
+
   - law_id: ops.builder_failstreaks
     summary: >
       Nightly observability sentinel (added by #2704): scans the engine job's
@@ -2226,6 +2259,37 @@ checks:
     notes: >
       Landed on main concurrently with this registry (2026-07-06); registered
       during the registry PR's merge-with-main — the census pass caught it.
+
+  - law_id: auth.no_client_supplied_identity
+    summary: >
+      Route handlers must not derive user_id (or equivalent identity) from the
+      request body, query string, or path. _pg() uses SUPABASE_SERVICE_ROLE_KEY,
+      which bypasses RLS, so token-derived identity is the only thing preventing
+      cross-tenant access. Law source: MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      §2.1 (WS-9 / GATE-6).
+    source_ref:
+      - scripts/check_no_client_supplied_identity.py
+      - research/MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      - research/MASTERMIND_RED_TEAM_REMEDIATION_PLAN.md
+      - "WS-9 GATE-6 MMX isolation invariant"
+    severity: hard
+    check_script: scripts/check_no_client_supplied_identity.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: no-client-supplied-identity
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - AST over app/** FastAPI/Starlette handlers only. Operator admin tools are a different trust boundary and are not scanned.
+      - Dynamic key construction (body.get("user_" + "id"), getattr with a non-literal) is invisible.
+      - Pydantic models defined in another module are not joined; only same-file body models are checked for identity fields.
+      - A Depends() wrapper that itself reads a client field is a known miss — the parameter then looks injected.
+    owner_program: mastermind-security-auth-billing
+    notes: >
+      Mutation-proven in-script (--selftest plants each surface, then requires
+      the live app/ tree to stay clean). Registering the file is not the proof.
 
   # ── Discipline-only laws (no check_script, no ci_wiring) ──────────────────
 

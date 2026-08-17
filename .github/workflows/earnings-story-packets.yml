@@ -90,7 +90,7 @@ jobs:
       ${{ github.event_name != 'workflow_dispatch'
           || (github.ref == 'refs/heads/main' && !inputs.initialize_journal) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,6 +123,8 @@ jobs:
           ARGS=(
             --work-dir "$RUNNER_TEMP/earnings-story-packets"
             --out-dir "$RUNNER_TEMP/earnings-story-packets/output"
+            --max-new-events 500
+            --verify-lineage-depth 1
           )
           if [ "${SHOULD_PROMOTE}" = "true" ]; then
             ARGS+=(--promote)

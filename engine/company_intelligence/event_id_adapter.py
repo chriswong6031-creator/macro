@@ -33,10 +33,15 @@ from .contracts import event_key as company_intelligence_event_key
 from .events import CompanyEvent, FiscalPeriod, canonical_event_id, parse_canonical_event_id
 from .identity import IssuerRegistry
 from ..earnings_narrative.contracts import event_key as earnings_narrative_event_key
+from ..earnings_narrative.public_wire import wire_slug
 
 
 _NARRATIVE_KEY_RE = re.compile(r"^(?P<ticker>[^/]+)/(?P<period>\d{4}Q[1-4])$")
 _CIE_ID_RE = re.compile(r"^cie_[0-9a-f]{24}$")
+_CANONICAL_ID_RE = re.compile(r"^evt_cik\d{10}_\d{4}(?:q[1-4]|fy)_[a-z0-9]+$")
+_PUBLIC_SLUG_RE = re.compile(
+    r"^(?P<slug_ticker>[a-z0-9.-]+)-(?P<period>\d{4}q[1-4])-call-record$"
+)
 
 
 class AliasError(ContractError):
@@ -57,6 +62,13 @@ def earnings_narrative_alias(ticker: object, period: FiscalPeriod) -> str:
     return earnings_narrative_event_key(
         {"ticker": safe_ticker(ticker), "transcript_id": f"{period.year}Q{period.quarter}"}
     )
+
+
+def public_wire_alias(ticker: object, period: FiscalPeriod) -> str:
+    """The compiler-owned public Wire slug for one listing of an event."""
+    if period.quarter is None:
+        raise AliasError("the public wire slug has no annual form")
+    return wire_slug(safe_ticker(ticker), f"{period.year}Q{period.quarter}")
 
 
 def parse_earnings_narrative_key(key: object) -> tuple[str, FiscalPeriod]:
@@ -80,11 +92,19 @@ class EventAliases:
     tickers: tuple[str, ...]
     company_intelligence_ids: tuple[str, ...]
     earnings_narrative_keys: tuple[str, ...]
+    public_slugs: tuple[str, ...] = ()
 
     @property
     def listing_keyed_id_count(self) -> int:
         """What a listing-keyed scheme would have counted for this ONE event."""
         return len(set(self.company_intelligence_ids))
+
+    def all_legacy_ids(self) -> tuple[str, ...]:
+        return tuple(dict.fromkeys((
+            *self.company_intelligence_ids,
+            *self.earnings_narrative_keys,
+            *self.public_slugs,
+        )))
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -94,6 +114,7 @@ class EventAliases:
             "tickers": list(self.tickers),
             "company_intelligence_ids": list(self.company_intelligence_ids),
             "earnings_narrative_keys": list(self.earnings_narrative_keys),
+            "public_slugs": list(self.public_slugs),
             "listing_keyed_id_count": self.listing_keyed_id_count,
         }
 
@@ -122,6 +143,9 @@ def aliases_for(
         earnings_narrative_keys=tuple(
             earnings_narrative_alias(symbol, fiscal_period) for symbol in symbols
         ),
+        public_slugs=tuple(
+            public_wire_alias(symbol, fiscal_period) for symbol in symbols
+        ),
     )
 
 
@@ -137,6 +161,7 @@ class EventAliasIndex:
     def __init__(self) -> None:
         self._by_cie: dict[str, str] = {}
         self._by_narrative: dict[str, str] = {}
+        self._by_slug: dict[str, str] = {}
         self._aliases: dict[str, EventAliases] = {}
 
     def __len__(self) -> int:
@@ -163,6 +188,7 @@ class EventAliasIndex:
         for legacy, table in (
             (aliases.company_intelligence_ids, self._by_cie),
             (aliases.earnings_narrative_keys, self._by_narrative),
+            (aliases.public_slugs, self._by_slug),
         ):
             for key in legacy:
                 owner = table.get(key)
@@ -185,8 +211,12 @@ class EventAliasIndex:
             raise AliasError(f"unregistered canonical event: {canonical_event_id_!r}") from None
 
     def to_canonical(self, legacy_id: object) -> str:
-        """Resolve either legacy scheme's id to its canonical event."""
+        """Resolve a canonical id or either live alias scheme to the event."""
         text = str(legacy_id or "").strip()
+        if _CANONICAL_ID_RE.fullmatch(text):
+            if text in self._aliases:
+                return text
+            raise AliasError(f"unindexed canonical event: {text}") from None
         if _CIE_ID_RE.fullmatch(text):
             try:
                 return self._by_cie[text]
@@ -197,6 +227,11 @@ class EventAliasIndex:
                 return self._by_narrative[text]
             except KeyError:
                 raise AliasError(f"unindexed transcript event key: {text}") from None
+        if _PUBLIC_SLUG_RE.fullmatch(text):
+            try:
+                return self._by_slug[text]
+            except KeyError:
+                raise AliasError(f"unindexed public wire slug: {text}") from None
         raise AliasError(f"not a known legacy event id: {legacy_id!r}")
 
     def resolve_narrative_key(

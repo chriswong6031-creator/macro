@@ -1412,6 +1412,33 @@ FAMILY_CONTROL_POLICY: dict[str, str] = {
     "thematic_desk": CONTROL_POLICY_BENCHMARK_ONLY,
     "basket_turn.v1": CONTROL_POLICY_BENCHMARK_ONLY,
     "flip_confirmation.v1": CONTROL_POLICY_BENCHMARK_ONLY,
+    # Live Entry Radar W5 (prereg §17, `research/live_entry_radar/
+    # W5_FORWARD_EVIDENCE_PREREG.md`) — the five detectors that register, plus
+    # the `entry_radar` desk fallback for any claim whose family resolves to the
+    # desk name. C4_MTF_TURN@1 and F1_FUSION are ABSENT on purpose: C4 is
+    # registered role=stratification_only and cannot fire, F1 has no locked
+    # spec, and neither ever produces a claim — an entry for a family that never
+    # registers would be a policy for a population that does not exist.
+    #
+    # WHY benchmark_only, when the reconciler DOES populate `control`. The two
+    # are different acts, and the P0d contract (research/
+    # PREREG_P0D_MATCHED_CONTROL_CONTRACT.md, C1.4) turns exactly on the
+    # difference: registration fills `control` MECHANICALLY from
+    # `control_for_sector(sector)` — that is a field, produced by a lookup, on a
+    # family with no accrued coverage yet. Matched-control AUTHORITY is a later
+    # GOVERNED act, taken only after prospective coverage clears the census §5
+    # condition, and it is never inferred from the fact that rows happen to
+    # carry control legs. Classifying these families the other way today would
+    # claim matched-control evaluation on zero prospective observations, which
+    # is the precise defect P0d repaired. Radar's own §7 matched controls are a
+    # separate, richer construction inside W5's replay and are not this table's
+    # subject; §17's separation law keeps the two rulers apart.
+    "entry_radar": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_G0_GREY_DOT@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C1_1D_LIVE_WASHOUT@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C2_1D_TURN@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C3_1D_4H_RECOVERY@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C5_BOTTOM_WATCH@1": CONTROL_POLICY_BENCHMARK_ONLY,
     # --- not_applicable ------------------------------------------------------
     # Salience/descriptive species: no directional skill proposition exists, so
     # no directional matched-control contract can apply. They grade MAGNITUDE
@@ -1997,7 +2024,7 @@ def _start_control_clocks_for(new_rows: Iterable[dict],
 
 
 def register(claim: dict, root: Path | str | None = None,
-             *, dedupe: bool = True) -> dict:
+             *, dedupe: bool = True, today: date | None = None) -> dict:
     """Register ONE claim. Validates against the schema, stamps `claim_id`,
     `timestamp`, and `status`, then appends to data/qledger/claims.jsonl.
 
@@ -2030,12 +2057,12 @@ def register(claim: dict, root: Path | str | None = None,
     # P0d C3.1: the control evidence clock starts HERE, on the newly stored row
     # only — a dedupe hit above returns before this, so re-registering a claim can
     # never restart or re-stamp a clock.
-    _start_control_clocks_for([stored], root)
+    _start_control_clocks_for([stored], root, today=today)
     return stored
 
 
 def register_batch(claims: Iterable[dict], root: Path | str | None = None,
-                   *, dedupe: bool = True) -> list[dict]:
+                   *, dedupe: bool = True, today: date | None = None) -> list[dict]:
     """Register MANY claims with ONE store read and ONE append write
     (§5.1 sub-task 3 / §5.2 — required before any volume increase).
 
@@ -2085,7 +2112,7 @@ def register_batch(claims: Iterable[dict], root: Path | str | None = None,
                 fh.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
         # P0d C3.1: NEW rows only. A batch that deduped entirely against the
         # store appends nothing and starts nothing.
-        _start_control_clocks_for(new_rows, root)
+        _start_control_clocks_for(new_rows, root, today=today)
     return results
 
 

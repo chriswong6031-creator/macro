@@ -63,12 +63,30 @@ waves:
     # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15.md.
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
-    status: todo
+    status: done
+    pr: 5768
     depends_on: [W1, W3]
+    # DONE at ACTUAL merge (never at armed): PR #5768 MERGED 2026-08-16T03:13:45Z,
+    # squash commit 1a170f9ceba1005ca79af6a631cb02045bf62f36; merged-main verified
+    # (owned-path byte diff head-vs-squash empty; six frozen detector hashes
+    # asserted in-suite, F1 still NotYetSpecified; entry-radar CI step now the
+    # W1..W5 union, 22 suites). Ships STAGED NOT ARMED behind
+    # ENTRY_RADAR_LIVE_ENABLE per the commissioning's deployment boundary;
+    # activation + the §15 full-RTH cadence measurement are the operator's per
+    # research/live_entry_radar/W4_DEPLOY_PLAN.md. Adversarial receipts:
+    # research/live_entry_radar/W4_REVIEW_DISPOSITIONS.md; real-data receipts
+    # (incl. closing W3's vendor-minute unverified row): W4_REAL_DATA_SMOKE.md;
+    # handoff: agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15-w4.md. The parallel
+    # W5 lane's code merged mid-session; #5768 reconciled the shared files
+    # (producers-guard union, sentinel SURFACES union, update.sh sibling
+    # blocks); W5's own row/handoff remain that session's to write.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
-    status: todo
+    status: done
+    pr: 5825
     depends_on: [W3]
+    # Confirmatory receipts on main: #5825 squash 0394d6e16407 (2026-08-17T10:08:44Z).
+    # Code path #5741/#5780. 0 control_match_unavailable on both panels.
   - id: W6
     title: PR-6 deterministic Research Priority (ACCRUING)
     status: todo
@@ -82,10 +100,9 @@ waves:
     status: in_progress
     pr: 5737
     depends_on: [W0]
-    # Opened this session as a reviewable reference PR. NOT done — flagship
-    # reference UI; commissioning session reviews and owns merge. Do not mark
-    # done at armed or at open PR. Artifact freeze:
-    # b4f5576330b079c7704102c2af8d59e7ed989f17
+    # Opened as a reviewable reference PR (#5737). NOT done until merged.
+    # Commissioning session 2026-08-17 re-freezes the nits artifact at
+    # 5ef3626d2e59c101dfd9cc76399fa97f11b0e561. Do not auto-roll W9.
 
   - id: W9
     title: PR-9 production UI + live RTH verification
@@ -99,7 +116,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W8 in_progress on PR #5737 (draft, reviewable; do not merge from the authoring session; do not auto-roll W9). Parallel next waves remain W4 (live evaluator) and W5 (forward evidence). W6/W7 still blocked on W5.
+next_action: W5 is done (#5825). W8 is in commissioning on PR #5737 (reference-only; do not auto-roll W9). Parallel next wave is W6 (Research Priority). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
 ---
 
 ## Context

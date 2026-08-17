@@ -49,6 +49,7 @@ not in it is omitted. The emptiness heuristic is only the non-cone fallback.
 
 Usage:
     python3 scripts/worktree_sparse.py status        # what is / is not materialized
+    python3 scripts/worktree_sparse.py auto          # new linked worktree: apply profile
     python3 scripts/worktree_sparse.py full          # opt IN to a full checkout
     python3 scripts/worktree_sparse.py sparse        # re-apply the configured profile
     python3 scripts/worktree_sparse.py add site      # materialize ONE excluded dir
@@ -111,6 +112,63 @@ def _git(root: Path, *args: str) -> str | None:
 def sparse_enabled(root: Path = ROOT) -> bool:
     """True when this worktree has sparse-checkout switched on."""
     return (_git(root, "config", "--get", "core.sparseCheckout") or "").lower() == "true"
+
+
+def is_linked_worktree(root: Path = ROOT) -> bool:
+    """True for a linked Git worktree, false for the repository's primary checkout.
+
+    Codex has no pre-checkout equivalent of Claude's ``WorktreeCreate`` event.
+    Its supported local-environment setup and ``SessionStart`` hooks therefore
+    call :func:`auto_profile` after Git has created the checkout.  Both hooks can
+    also fire for a Local chat, so this discriminator is load-bearing: the
+    occupied primary checkout must never be sparsified as a side effect of
+    starting Codex.
+    """
+    git_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-dir")
+    common_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if not git_dir or not common_dir:
+        return False
+    try:
+        return Path(git_dir).resolve() != Path(common_dir).resolve()
+    except OSError:
+        return git_dir != common_dir
+
+
+# Path markers that identify a *session* worktree rather than any linked checkout.
+# The operator's designated local root (macro-main) is itself a linked worktree of
+# the occupied primary; a SessionStart/workspaceOpen hook that keyed only on
+# :func:`is_linked_worktree` would sparsify that 3.8 GiB tree on every Cursor
+# chat. Keep this tuple in step with ``config/worktree_gc.json`` roots plus the
+# Cursor/Grok in-repo worktree folders those harnesses mint.
+SESSION_WORKTREE_MARKERS: tuple[tuple[str, ...], ...] = (
+    (".claude", "worktrees"),
+    (".claire", "worktrees"),
+    (".codex", "worktrees"),
+    (".codex-worktrees",),
+    (".cursor", "worktrees"),
+    (".grok", "worktrees"),
+)
+
+
+def is_session_worktree(root: Path = ROOT) -> bool:
+    """True when ``root`` is a linked worktree sitting under a session root.
+
+    Linked-worktree is necessary but not sufficient. ``auto`` must refuse the
+    operator's designated local project root even though that folder is a
+    linked worktree of the occupied primary.
+    """
+    if not is_linked_worktree(root):
+        return False
+    try:
+        parts = Path(root).resolve().parts
+    except OSError:
+        parts = Path(root).parts
+    for marker in SESSION_WORKTREE_MARKERS:
+        length = len(marker)
+        for index in range(len(parts) - length + 1):
+            if parts[index:index + length] == marker:
+                return True
+    return False
 
 
 def _cone_included(root: Path) -> list[str]:
@@ -202,6 +260,34 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
     _drop_husks(root, sorted(excludes))
     print(f"worktree-sparse: profile applied — omitting {', '.join(sorted(excludes))}")
     return 0
+
+
+def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
+    """Apply the configured profile once to a newly created linked worktree.
+
+    This is the safe entry point for Codex/Cursor/Grok lifecycle automation.
+    It deliberately skips the primary checkout, skips a linked checkout that
+    is not under a session worktree root (the operator's designated local
+    root is one of those), and preserves any sparse selection already present
+    in a session worktree, including an explicit ``add site`` opt-in.
+    ``enabled: false`` remains the single repo-wide off switch.
+    """
+    if not is_session_worktree(root):
+        print("worktree-sparse: auto skipped — only session worktrees are changed")
+        return 0
+
+    profile_path = config_path or root / "config" / "sparse_worktree.json"
+    profile = load_profile(profile_path)
+    if not profile["enabled"]:
+        print("worktree-sparse: auto disabled by config/sparse_worktree.json")
+        return 0
+
+    if sparse_enabled(root):
+        print("worktree-sparse: auto skipped — linked worktree is already sparse; "
+              "preserving its current selection")
+        return 0
+
+    return apply_profile(root, exclude_dirs=list(profile["exclude_dirs"]))
 
 
 def disable_profile(root: Path = ROOT) -> int:
@@ -326,6 +412,8 @@ def main(argv: list[str]) -> int:
     cmd = argv[0] if argv else "status"
     if cmd == "status":
         return status()
+    if cmd == "auto":
+        return auto_profile()
     if cmd == "full":
         return disable_profile()
     if cmd == "sparse":

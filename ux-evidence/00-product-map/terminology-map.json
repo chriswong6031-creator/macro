@@ -1,0 +1,195 @@
+{
+  "terms": [
+    {
+      "label": "Prophet",
+      "surfaces": [
+        "SUR.equities.dashboard.us.us_standouts",
+        "SUR.equities.dashboard.cn.standouts",
+        "SUR.equities.dashboard.hk.standouts",
+        "SUR.equities.dashboard.ca.standouts",
+        "SUR.equities.dashboard.intl.prophet_stock_signals"
+      ],
+      "possible_synonym": [
+        "Stock Dashboard",
+        "setups"
+      ],
+      "possible_conflict": null
+    },
+    {
+      "label": "Priority",
+      "surfaces": [],
+      "source_term": "cx.edge / us_board_rank",
+      "possible_conflict": "conviction_score"
+    },
+    {
+      "label": "conviction_score",
+      "surfaces": [],
+      "source_term": "#us-stocktable-data",
+      "possible_conflict": "Priority"
+    },
+    {
+      "label": "Stock Dashboard",
+      "surfaces": [
+        "SUR.equities.dashboard.us.stocks_header",
+        "SUR.equities.dashboard.us.megacap_tape",
+        "SUR.equities.dashboard.us.action_board",
+        "SUR.equities.dashboard.us.prophet_live",
+        "SUR.equities.dashboard.us.us_standouts",
+        "SUR.equities.dashboard.us.dash_tape_band",
+        "SUR.equities.dashboard.us.equity_scoreboard",
+        "SUR.equities.dashboard.us.sectors",
+        "SUR.equities.dashboard.us.dash_mtf_section",
+        "SUR.equities.dashboard.us.accumulation",
+        "SUR.equities.dashboard.cn.stocks_header",
+        "SUR.equities.dashboard.cn.act_now",
+        "SUR.equities.dashboard.cn.standouts",
+        "SUR.equities.dashboard.cn.cn_theme_tape",
+        "SUR.equities.dashboard.cn.stock_screener",
+        "SUR.equities.dashboard.cn.reversion_desk",
+        "SUR.equities.dashboard.cn.cn_mtf_upturn",
+        "SUR.equities.dashboard.hk.stocks_header",
+        "SUR.equities.dashboard.hk.act_now",
+        "SUR.equities.dashboard.hk.standouts",
+        "SUR.equities.dashboard.hk.track_record",
+        "SUR.equities.dashboard.hk.hk_velocity_desk",
+        "SUR.equities.dashboard.hk.washout_watch",
+        "SUR.equities.dashboard.hk.mainland_money",
+        "SUR.equities.dashboard.hk.sector_rotation",
+        "SUR.equities.dashboard.hk.hk_screener",
+        "SUR.equities.dashboard.ca.act_now",
+        "SUR.equities.dashboard.ca.standouts",
+        "SUR.equities.dashboard.intl.international_stock_dash",
+        "SUR.equities.dashboard.intl.what_to_act_on_now_sec",
+        "SUR.equities.dashboard.intl.prophet_stock_signals"
+      ],
+      "possible_synonym": [
+        "Prophet"
+      ],
+      "note": "Same nav label in US/China/HK/Canada/International with different destinations"
+    },
+    {
+      "label": "Cycle",
+      "surfaces": [
+        "SUR.equities.stage_analysis.primary",
+        "SUR.equities.dashboard.cn.cn_theme_tape",
+        "SUR.assets.commodities.the_long_cycle_where_e",
+        "SUR.macro.cycle_intelligence.primary",
+        "SUR.equities.detail.us.cycle_timing_detail",
+        "SUR.equities.detail.ca.panel_deep",
+        "SUR.equities.detail.ca.r_conviction_panel",
+        "SUR.equities.detail.intl.panel_deep",
+        "SUR.equities.detail.intl.r_conviction_panel"
+      ],
+      "possible_synonym": [
+        "Stage",
+        "timing"
+      ]
+    },
+    {
+      "label": "Verdict / Action",
+      "surfaces": [
+        "SUR.bot.external.decisions",
+        "SUR.equities.detail.us.sv_decision",
+        "SUR.equities.detail.ca.sv_decision",
+        "SUR.equities.detail.ca.r_conviction_panel",
+        "SUR.equities.detail.intl.sv_decision",
+        "SUR.equities.detail.intl.r_conviction_panel"
+      ],
+      "possible_conflict": "board verb vs detail WAIT"
+    },
+    {
+      "label": "Smart Money",
+      "surfaces": [
+        "SUR.fundamentals.smart_money.primary"
+      ],
+      "possible_synonym": [
+        "Ownership",
+        "13F"
+      ]
+    },
+    {
+      "label": "Flow",
+      "surfaces": [
+        "SUR.flow.intraday.spotlight_panel",
+        "SUR.flow.darkpool.dark_pool_how_much_of_ea",
+        "SUR.flow.china_mechanics.current_phase_policy_put",
+        "SUR.flow.velocity.sector_members_4wk_vs_no",
+        "SUR.flow.velocity.mainland_southbound_p",
+        "SUR.flow.etf.primary"
+      ],
+      "possible_synonym": [
+        "tape",
+        "dark pool"
+      ]
+    },
+    {
+      "label": "Theme / Narrative / Sector",
+      "surfaces": [
+        "SUR.sectors.intelligence.us.action_board",
+        "SUR.sectors.intelligence.cn.act_now",
+        "SUR.theme.ths_boards.basket_score_60d_1d_5d_2",
+        "SUR.theme.ths_boards.all_none",
+        "SUR.theme.narrative_radar.primary",
+        "SUR.theme.baskets_hk.hang_seng_breadth_mixed",
+        "SUR.theme.baskets_hk.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_hk.china_tech_internet_2",
+        "SUR.theme.rotation_hk.risk_time",
+        "SUR.theme.rotation_hk.rot_alerts",
+        "SUR.theme.baskets_ca.s_p_tsx_breadth_broad_a",
+        "SUR.theme.baskets_ca.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_ca.big_banks_20_2_insurer",
+        "SUR.theme.rotation_ca.risk_time",
+        "SUR.theme.rotation_ca.rot_alerts",
+        "SUR.theme.baskets_intl.intl_ex_us_breadth_broad",
+        "SUR.theme.baskets_intl.basket_60d_1d_5d_20d_6",
+        "SUR.theme.baskets_intl.global_semiconductors_5",
+        "SUR.theme.tracker.primary",
+        "SUR.macro.sector_cycles_us.primary",
+        "SUR.macro.sector_cycles_cn.primary",
+        "SUR.sectors.intelligence.us.action_board_R.sector_central.confluence"
+      ],
+      "possible_overlap": true
+    },
+    {
+      "label": "Regime",
+      "surfaces": [
+        "SUR.macro.us.regime_radar",
+        "SUR.macro.us.release_radar",
+        "SUR.macro.us.health",
+        "SUR.equities.dashboard.us.stocks_header",
+        "SUR.derivatives.market_structure.gex_bars_coloured_by_dea",
+        "SUR.macro.china.primary",
+        "SUR.equities.dashboard.cn.stocks_header",
+        "SUR.macro.hk.primary",
+        "SUR.macro.ca.primary",
+        "SUR.macro.intl.global_macro_compass_2",
+        "SUR.macro.intl.world_markets_turns",
+        "SUR.macro.intl.what_changed_2026_08_14",
+        "SUR.macro.intl.performance_in_us_dollar",
+        "SUR.macro.intl.us_vs_the_world_capita",
+        "SUR.macro.intl.panel",
+        "SUR.macro.intl.contagion_board_how_co",
+        "SUR.macro.intl.central_bank_desk_what",
+        "SUR.macro.intl.credit_bond_stress_a",
+        "SUR.macro.intl.what_s_driving_the_dolla",
+        "SUR.macro.japan.international_macro_comm",
+        "SUR.macro.korea.international_macro_comm",
+        "SUR.macro.euro_area.international_macro_comm",
+        "SUR.macro.uk.international_macro_comm",
+        "SUR.macro.india.international_macro_comm",
+        "SUR.macro.cycle_intelligence.primary",
+        "SUR.macro.weather.rates_policy_rate_3_63",
+        "SUR.macro.weather.liquidity_plumbing_net_l",
+        "SUR.macro.weather.rates_transmission_s_p_5",
+        "SUR.macro.weather.fx_dollar_dollar_impac",
+        "SUR.macro.global_cycles.primary",
+        "SUR.macro.country_cycles.primary",
+        "SUR.macro.sector_cycles_us.primary",
+        "SUR.macro.sector_cycles_cn.primary"
+      ],
+      "possible_synonym": [
+        "What To Do Now"
+      ]
+    }
+  ]
+}

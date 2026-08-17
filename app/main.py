@@ -736,26 +736,31 @@ def status() -> dict:
 def require_user(authorization: str | None = Header(default=None)) -> dict:
     """Verify a Supabase access token without any server-side secret.
 
-    Calls Supabase's ``GET /auth/v1/user`` with the bearer token + the public
-    anon key. Valid token -> 200 + the user record; bad/expired -> 401. No JWT
-    secret to store or leak; the trade-off is one short upstream call per
-    request (fine at MVP scale; cache later if needed).
+    Identity is the existing paywall token cache (``app.paywall._fresh_identity``
+    / ``_AUTH_CACHE``): ``sha256(token)`` key, TTL clamped 1–60s. A cached valid
+    record is served through a vendor blip for that TTL only. Invalid or expired
+    tokens are cached as rejected and never become a bypass. Concurrent upstream
+    calls are semaphore-bounded so a slow vendor sheds instead of pinning the
+    thread pool (and ``/api/health`` with it). No second auth cache is minted
+    here — two divergent identity paths was the MMX-004 finding.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "missing bearer token")
     token = authorization.split(" ", 1)[1]
-    req = urllib.request.Request(
-        f"{SUPABASE_URL}/auth/v1/user",
-        headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        raise HTTPException(401, f"invalid token ({e.code})") from None
-    except Exception as e:  # noqa: BLE001 - network/upstream failure, not the user's fault
-        log.warning("auth check upstream failure (%s)", e)
+    from app.paywall import _resolve_identity  # noqa: PLC0415 — shared cache, not a second one
+
+    ident = _resolve_identity(token)
+    if ident.status in {"outage", "busy"}:
+        log.warning("auth check upstream failure (%s)", ident.status)
+        try:
+            from lib.commercial_path import emit as _commercial_emit
+            _commercial_emit("auth.502", reason=ident.status)
+        except Exception:  # noqa: BLE001 — alerting must not mask the 502
+            pass
         raise HTTPException(502, "auth check failed, please try again") from None
+    if not ident.uid or not isinstance(ident.record, dict):
+        raise HTTPException(401, "invalid token")
+    return dict(ident.record)
 
 
 def require_site_full_user(user: dict = Depends(require_user)) -> dict:
@@ -2004,9 +2009,10 @@ app.include_router(market_memory_router)
 # this route enforces the same authenticated site_full entitlement as the paid
 # site before reading the private Research Vault bucket. These are paid product
 # contracts, so router wiring errors fail startup loudly — the same rule the
-# BioCatalyst block below states. A swallowed ImportError here deleted all five
-# entitled routes (/api/forensics/state plus the four attested-history receipt
-# routes) at once and presented only as a 404 on a paid endpoint: no startup
+# BioCatalyst block below states. A swallowed ImportError here deleted all six
+# entitled routes (/api/forensics/state, /api/forensics/health, plus the four
+# attested-history receipt routes) at once and presented only as a 404 on a
+# paid endpoint: no startup
 # error, no log line, nothing anybody would attribute to a renamed dependency
 # or a missing optional package on the VPS.
 from app.forensics import router as forensics_router  # noqa: E402

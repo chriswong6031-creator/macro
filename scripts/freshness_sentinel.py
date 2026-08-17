@@ -69,6 +69,26 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     weekend or a market holiday can never manufacture a breach, so the budget
     can be far tighter than the page budgets above without flapping.
 
+  * the Prophet Live ARMED PACK's own watermark — ``as_of`` in the public R2
+    object ``live_flow/prophet_live_armed.json``. The nightly builds it
+    (daily.yml) and the */5 intraday evaluator reads it and nothing else, so a
+    frozen pack means every intraday arm/trigger decision all day is being made
+    against a session that has already ended — and it is the third instance of
+    the same re-stamp shape: measured 2026-08-15, the object answered HTTP 200
+    with ``Last-Modified: Fri, 14 Aug 2026 04:29:13 GMT`` and ``as_of``
+    2026-08-13, i.e. the pack is being SERVED fine and is a session behind. No
+    surface above can see that: the pack feeds no page bake, no board delay
+    marker and no Prophet index field.
+
+    Its coverage is DISCLOSED and not budgeted (``meta.armed_n`` /
+    ``meta.universe_n`` / ``meta.skipped.probe_cap_cross`` ride the operator
+    line — the same 2026-08-15 read showed 91 armed of a 1,763 universe with
+    1,535 names cut by the probe cap). The arming budget is a product question
+    owned by the Prophet Live lane, so alarming on it here would be this
+    module inventing a threshold it has no standing to set; printing the three
+    numbers every pass is what makes the next wave's threshold arguable from
+    evidence instead of from memory.
+
 Verdict discipline (borrowed from scripts/audit_r2.py): a definitive server answer
 (HTTP 200 with an over-budget stamp) is a BREACH and alerts immediately; a network
 error or non-200 is INDETERMINATE and only escalates to a "sentinel is blind"
@@ -132,6 +152,28 @@ Outputs:
     factory the falsifier law below forbids. It can only withhold a stamp, and a
     withheld stamp reads as a MISSED session in the streak — measurement, never
     an alarm.
+
+    Each stamp additionally carries the W-L1 LATENCY DECOMPOSITION (PR-C): the
+    close the board was built from, the instant the payload was built, the
+    instant a reader could first see it, and the two gaps between them. A
+    pass/fail on one deadline says the estate missed; it never says WHERE the
+    time went, and the Fri 2026-08-14 board is the case in point — published
+    23:19:14Z (19:19 ET) against an 18:30 SLA and a 16:15 product target, with
+    the record unable to say whether the hour went into waiting for closes or
+    into the pass itself. The decomposition is measured, never asserted: every
+    field is OPTIONAL and reads null when the payload does not carry it (the
+    close-provenance keys are a sibling lane's addition and are absent on every
+    board published before it), a missing input yields null rather than a
+    fabricated zero, and ``visible_resolution_sec`` publishes the 30-minute
+    cadence as the honest error bar on ``candidate_to_visible_sec`` instead of
+    letting a second-precision number imply second-precision knowledge.
+
+    Those facts, and the armed pack's coverage counts, ride the PRIVATE record
+    and the operator's stdout only — never /live/staleness.json, which Caddy
+    serves to anyone. Coverage counts and per-session provenance for a walled
+    artifact are a paywall decision (#3391, the same one that keeps the board
+    itself off the public plane), and a watchdog must not make it as a side
+    effect of measuring. ``public_report`` is where that boundary is drawn.
 
 Stdlib-only ON PURPOSE (urllib, json, re): the sentinel must not depend on the
 venv contents, the engine tree, or lib.config being healthy — it is the observer
@@ -219,6 +261,40 @@ FIRST_FRESH_SCHEMA = "sentinel.first_fresh/v1"
 #: tighter budget — it is the surface a reader acts on, and the nightly that
 #: writes it is the same `needs: engine` chain whose death this catches.
 PROPHET_MAX_SESSIONS_BEHIND = 1
+
+#: The sentinel's own cadence in seconds (app/deploy/macro-sentinel.timer fires
+#: every 30 minutes). It is the RESOLUTION of every "first user-visible at"
+#: instant this module records, and it is published beside those measurements
+#: rather than left implicit: a board that landed at 18:04 and was first seen at
+#: 18:31 reads as "27 minutes to visible" and the true figure is anywhere in
+#: [0, 30] minutes. Stating the error bar is the difference between a
+#: measurement and a number. Tightening it is a timer change, not a code change,
+#: and this constant is what a later cadence must be re-derived from.
+VISIBLE_RESOLUTION_SECONDS = 1800
+
+#: Completed NYSE sessions the Prophet Live ARMED PACK may lag before it is a
+#: breach — deliberately the same 1 as prophet_us above, and NOT 0.
+#:
+#: 0 was measured wrong before it was written. The pack is produced by the
+#: NIGHTLY (daily.yml) and lands late: the object's own Last-Modified on
+#: 2026-08-15 was 04:29:13Z, i.e. ~00:30 ET the morning AFTER the session it
+#: describes. ``expected_last_session`` rolls to today at 17:00 ET, so a 0
+#: budget declares a breach from 17:00 ET until the nightly's pack step lands —
+#: about seven hours, every session day, on a healthy estate. That is the
+#: false-positive factory this module's own falsifier law forbids, and it would
+#: have been discovered by being paged five times a week.
+#:
+#: 1 keeps the "breach by day 2" shape the two sibling content surfaces already
+#: use: the first missed nightly is absorbed, the second pages. The cost is
+#: named rather than hidden — a pack that dies on a Thursday night is reported
+#: (the sessions-behind count is on the operator line from the first pass) but
+#: does not PAGE until the following Monday evening. A publication-deadline
+#: budget ("session D's pack is expected by 06:00 UTC on D+1", the clock
+#: engine/close_pass/board.NIGHTLY_EXPECTED_BY_UTC already encodes) is the
+#: instrument that would page the same evening; it is a different budget SHAPE
+#: than anything here uses, so it belongs to a wave that can prove it against a
+#: month of real landing times rather than to this one.
+ARMED_PACK_MAX_SESSIONS_BEHIND = 1
 
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
@@ -337,6 +413,11 @@ SURFACES: list[dict] = [
         "asof_field": "as_of",
         "asof_max_sessions_behind": 1,
         "absent_ok": True,
+        # PR-C: the payload facts the latency decomposition is measured FROM.
+        # Named rather than inlined so the extractor is one function with one
+        # test, and so a surface that carries no such payload simply omits the
+        # key instead of every reader having to know which shapes exist.
+        "facts": "close_pass",
         # masterplan §0 W-L1: live by 18:30 ET, five consecutive green sessions.
         "sla": {
             "by_et": "18:30",
@@ -345,6 +426,113 @@ SURFACES: list[dict] = [
             "client_state_path": ("board_state",),
             "client_contract": "wl1.provisional_cards/paintable-v1",
             "client_session_path": ("board_state", "board", "as_of"),
+        },
+    },
+    # W4 — the Live Entry Radar intraday payload, on the VPS live plane (kind
+    # live_file, same plane as the entry above: the daemons write it, NOT the
+    # git-rsynced site.served tree). This is the mandated positive liveness
+    # registration for that lane (research/live_entry_radar/
+    # W4_LIVE_EVALUATOR_DESIGN.md §3b): silence pages through the sentinel plane
+    # that already exists rather than through a new watchdog of its own.
+    #
+    # ``absent_ok`` is the load-bearing key, for the same reason it is above but
+    # from a different cause. The evening board is absent for most of every DAY;
+    # this artifact is absent until the OPERATOR ARMS THE LANE. The units ship
+    # staged-not-armed behind ENTRY_RADAR_LIVE_ENABLE=1 (design §3b — go-live is
+    # an explicit operator act), so from the merge until that act there is no
+    # writer and there is nothing to serve. Without the exemption a missing file
+    # would count toward the blindness escalation and page "the sentinel is
+    # blind" every 30 minutes from the day W4 lands — the false-positive factory
+    # the module's own falsifier law forbids. Absence here is the ordinary
+    # PRE-ACTIVATION state, not blindness; what this entry measures is whether an
+    # ARMED lane keeps advancing.
+    #
+    # ``asof`` (not a publication clock) for the re-stamp reason the prophet_us
+    # entry records: the payload's own ``asof`` is the evaluated session, so a
+    # re-run over a frozen pack cannot green it. The budget is 1 session — a
+    # single missed session is absorbed, the SECOND is a definitive breach —
+    # matching us_board_provisional and prophet_us, and it is a SESSION-grain
+    # question on purpose: the 5-minute cadence describes itself inside the
+    # payload's own health receipt (``pass.prev_gap_intervals``), which is the
+    # right instrument for an intraday gap. A richer intraday watchdog is a
+    # follow-up, not this entry.
+    {
+        "id": "entry_radar_live",
+        "kind": "live_file",
+        "path": "/live/entry_radar.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "asof",
+        "asof_max_sessions_behind": 1,
+        "absent_ok": True,
+    },
+    # PR-C — the intraday lane's INPUT, on the public R2 read base.
+    #
+    # Read over HTTP rather than off a live-plane path because the VPS does not
+    # hold this artifact: the pack is a GitHub-Actions product that the */5
+    # evaluator pulls from R2 (engine/prophet_live/r2io.PACK_KEY), so R2 is the
+    # plane where "is the pack stale" is actually answerable. That makes this
+    # the one content surface whose transport can fail independently of the
+    # box the sentinel runs on, which is a feature — the two other content
+    # surfaces are both local file reads and would go silent together.
+    #
+    # bake_budget_hours is None for the reason prophet_us's is: the object is
+    # re-PUT on every nightly, so Last-Modified reports the publish and says
+    # nothing about the content. ``as_of`` against the session calendar is the
+    # only honest read, and it is the only one budgeted.
+    #
+    # No ``absent_ok``. Unlike the evening board this artifact has no legitimate
+    # absent state — it is written once a night and stays. A 404 (the shape a
+    # migration to the private operational bucket would take;
+    # config/r2_delivery_plane_classification.v1.json classifies this key
+    # PRIVATE_OPERATIONAL with that move still pending) therefore reads as the
+    # sentinel losing sight of the surface and escalates through the blindness
+    # counter after BLIND_AFTER passes. That is the correct outcome for a
+    # repointed artifact: loud, honest, and repaired by a config change rather
+    # than silently green.
+    {
+        "id": "prophet_live_armed",
+        "kind": "r2",
+        "path": "/live_flow/prophet_live_armed.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "as_of",
+        "asof_max_sessions_behind": ARMED_PACK_MAX_SESSIONS_BEHIND,
+        # Coverage is DISCLOSED, never budgeted — see the module docstring.
+        "facts": "armed_pack",
+    },
+    # CN-W-L3 — the mainland runtime board, on the same VPS live plane as the
+    # US evening board. The ARTIFACT path is /live/cn_prophet_live.json (the
+    # file the china_stocks client polls). The SURFACE ID is cn_board_live on
+    # purpose: an earlier US-program pin treated the substring ``prophet_live``
+    # in a surface id as the reader's own file, and this id must never trip
+    # that (or a future revival of it). The path and the id are different
+    # nouns and that is load-bearing.
+    #
+    # ``absent_ok``: the file is legitimately absent until the first evaluator
+    # tick of a mainland session, and on holidays / weekends there is nothing
+    # to publish. Absence is the ordinary pre-publication state, not blindness.
+    #
+    # ``calendar``: "cn" routes sessions_behind and the SLA streak through
+    # lib.cn_calendar, not NYSE. A Friday NYSE session that is a mainland
+    # holiday must not green this surface, and Golden Week must not page it.
+    #
+    # The SLA is the close-board clock (spec §8): first_close_board_at ≤ 15:20
+    # CST on the session. Intraday ticks without a close_board do not stamp.
+    {
+        "id": "cn_board_live",
+        "kind": "live_file",
+        "path": "/live/cn_prophet_live.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "session",
+        "asof_max_sessions_behind": 1,
+        "absent_ok": True,
+        "calendar": "cn",
+        "facts": "cn_live",
+        "sla": {
+            "by_cst": "15:20",
+            "sessions_required": 3,
         },
     },
 ]
@@ -433,21 +621,30 @@ def read_served(served_dir: Path, path: str) -> FetchResult:
     )
 
 
-def sessions_behind(asof: str, now: datetime) -> int:
-    """Completed NYSE sessions the store stamped ``asof`` is missing (0 = current).
+def _calendar_mod(name: str | None):
+    """The session calendar a surface named, defaulting to NYSE.
 
+    Lazy, failure-guarded: the sentinel must survive a broken tree. Both
+    calendars are pure rule arithmetic with zero data dependencies.
+    """
+    if name == "cn":
+        from lib import cn_calendar  # noqa: PLC0415 — see sessions_behind
+        return cn_calendar
+    from lib import nyse_calendar  # noqa: PLC0415 — see sessions_behind
+    return nyse_calendar
+
+
+def sessions_behind(asof: str, now: datetime, *, calendar: str | None = None) -> int:
+    """Completed sessions the store stamped ``asof`` is missing (0 = current).
+
+    ``calendar="cn"`` routes through lib.cn_calendar; anything else is NYSE.
     Lazy, failure-guarded import for the same reason app.mailer is one: the
-    sentinel must survive a broken tree. lib/nyse_calendar is pure rule
-    arithmetic with zero data dependencies, so importing it costs the sentinel
-    none of its independence — but an ImportError still has to degrade to
-    "I can't tell" rather than to a verdict. Raises so the caller can map the
+    sentinel must survive a broken tree. Raises so the caller can map the
     failure to INDETERMINATE.
     """
     from datetime import date as _date  # noqa: PLC0415 — stdlib, kept with its one caller
 
-    from lib import nyse_calendar  # noqa: PLC0415 — see docstring
-
-    return nyse_calendar.sessions_behind(_date.fromisoformat(asof), now)
+    return _calendar_mod(calendar).sessions_behind(_date.fromisoformat(asof), now)
 
 
 def board_delay_stamp(body: str) -> str | None:
@@ -460,6 +657,169 @@ def board_delay_stamp(body: str) -> str | None:
     """
     dates = _DELAY_RE.findall(body or "")
     return min(dates) if dates else None
+
+
+# --------------------------------------------------------------------------- #
+# Payload FACTS — the optional inputs to the W-L1 latency decomposition and to
+# the armed pack's coverage disclosure.
+#
+# EVERY reader here is total and every field is optional. The producers these
+# read are moving: the close-provenance keys are a sibling lane's addition, so
+# every board published before it carries none of them, and a replay of an
+# archived payload must not crash the watchdog or — much worse — read a missing
+# field as a zero. A null says "not measured"; a zero says "measured, and it was
+# instant". Those are different claims and only one of them is true here.
+#
+# Nothing in this section can produce a VERDICT. Facts annotate; the budgets
+# above are the only things that decide stale/ok, and a fact that fails to parse
+# costs its own line and nothing else.
+# --------------------------------------------------------------------------- #
+def _opt_str(value: object) -> str | None:
+    """A non-empty string, or None. Anything else is unmeasured, not coerced."""
+    return value if isinstance(value, str) and value else None
+
+
+def _opt_int(value: object) -> int | None:
+    """An integer count, or None. ``bool`` is excluded explicitly — it is an
+    ``int`` subclass in Python, so a stray ``True`` would otherwise publish as a
+    coverage count of 1."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _opt_bool(value: object) -> bool | None:
+    """A real boolean, or None. ``False`` is a MEASUREMENT (the close was not
+    final) and must never collapse into "absent" — which is exactly what a
+    falsy-test here would do."""
+    return value if isinstance(value, bool) else None
+
+
+def _from_meta_or_top(doc: dict, meta: dict, key: str) -> object:
+    """One field, preferring ``meta`` and falling back to the payload root.
+
+    The close-provenance keys are landing in a sibling PR that this one must not
+    touch, and its final nesting is not merged yet. Reading both places costs
+    two dict lookups and removes the failure mode where a correct producer and a
+    correct watchdog ship a null between them; ``meta`` wins so that if the two
+    ever disagree, the more specific location is authoritative rather than
+    whichever the reader happened to check first.
+    """
+    if key in meta:
+        return meta[key]
+    return doc.get(key)
+
+
+def close_pass_facts(doc: object) -> dict:
+    """The close-pass board payload's latency + coverage + provenance facts.
+
+    Keys mirror the payload's own vocabulary (engine/close_pass/board.build_board
+    and its meta block) so a reader of the record can grep straight back to the
+    producer. ``board_generated_at`` is the ONE rename: the payload calls it
+    ``built_at`` and the board_state projection calls the identical value
+    ``generated_at``, so the record picks the name the reader-facing projection
+    uses and states here that the two are the same instant.
+    """
+    if not isinstance(doc, dict):
+        return {}
+    meta = doc.get("meta")
+    meta = meta if isinstance(meta, dict) else {}
+    skipped = meta.get("skipped")
+    return {
+        "board_generated_at": _opt_str(doc.get("built_at")),
+        "close_observed_at": _opt_str(_from_meta_or_top(doc, meta, "close_observed_at")),
+        "close_source": _opt_str(_from_meta_or_top(doc, meta, "close_source")),
+        "close_basis": _opt_str(_from_meta_or_top(doc, meta, "close_basis")),
+        "close_finalized": _opt_bool(_from_meta_or_top(doc, meta, "close_finalized")),
+        "coverage": {
+            "universe_n": _opt_int(meta.get("universe_n")),
+            "evaluated_n": _opt_int(meta.get("evaluated_n")),
+            "admitted_n": _opt_int(meta.get("admitted_n")),
+        },
+        # Passed through whole rather than key-by-key: the producer adds skip
+        # reasons as it learns them (``corp_action_today`` is a sibling lane's),
+        # and an allowlist here would silently drop every reason invented after
+        # this line was written — the exact shape of disclosure rot.
+        "skipped": dict(skipped) if isinstance(skipped, dict) else None,
+    }
+
+
+def armed_pack_facts(doc: object) -> dict:
+    """The Prophet Live armed pack's coverage counts. Disclosure only.
+
+    ``probe_cap_cross`` is broken out of ``skipped`` because it is the count the
+    arming budget is actually about — names the probe budget refused to look at,
+    as opposed to names it looked at and declined. The whole ``skipped`` map
+    rides along for the same anti-rot reason as above.
+    """
+    if not isinstance(doc, dict):
+        return {}
+    meta = doc.get("meta")
+    meta = meta if isinstance(meta, dict) else {}
+    skipped = meta.get("skipped")
+    skipped = skipped if isinstance(skipped, dict) else {}
+    return {
+        "coverage": {
+            "universe_n": _opt_int(meta.get("universe_n")),
+            "probed_n": _opt_int(meta.get("probed_n")),
+            "armed_n": _opt_int(meta.get("armed_n")),
+            "probe_cap_cross": _opt_int(skipped.get("probe_cap_cross")),
+        },
+        "skipped": dict(skipped) or None,
+    }
+
+
+#: Surface ``facts`` name → extractor. A surface that names an UNKNOWN reader
+#: gets no facts rather than an exception: an unimplemented extractor must
+#: degrade the disclosure, never the watchdog.
+def cn_live_facts(doc: object) -> dict:
+    """The CN runtime-board payload's close-board stamp + coverage.
+
+    Total and optional: an intraday tick carries no close_board, and a missing
+    first_close_board_at must read as unmeasured — that is what withholds the
+    15:20 CST SLA stamp rather than inventing a zero.
+    """
+    if not isinstance(doc, dict):
+        return {}
+    board = doc.get("close_board")
+    board = board if isinstance(board, dict) else {}
+    liv = doc.get("liveness")
+    liv = liv if isinstance(liv, dict) else {}
+    cov = doc.get("coverage")
+    cov = cov if isinstance(cov, dict) else {}
+    first = board.get("first_close_board_at") or liv.get("first_close_board_at")
+    return {
+        "first_close_board_at": _opt_str(first),
+        "close_pending": _opt_bool(doc.get("close_pending")),
+        "coverage": {
+            "universe_n": _opt_int(cov.get("universe_n")),
+            "armed_n": _opt_int(cov.get("armed_n")),
+            "observable_n": _opt_int(cov.get("observable_n")),
+        },
+    }
+
+
+FACT_READERS = {
+    "close_pass": close_pass_facts,
+    "armed_pack": armed_pack_facts,
+    "cn_live": cn_live_facts,
+}
+
+
+def _seconds_between(earlier: object, later: object) -> float | None:
+    """``later - earlier`` in seconds, or None when either instant is unusable.
+
+    Both arguments go through ``_instant``, which requires a TIMEZONE-QUALIFIED
+    ISO string: a naive stamp answers None rather than being assumed UTC. The
+    assumption would be free five months of the year and an hour wrong for the
+    rest, and this figure's whole job is to be trusted to the minute.
+
+    A negative result is returned as measured. Clamping it at zero would hide
+    the one thing a negative can mean — a producer stamping a close it had not
+    observed yet — behind a plausible-looking 0.0.
+    """
+    start, end = _instant(earlier), _instant(later)
+    if start is None or end is None:
+        return None
+    return round((end - start).total_seconds(), 1)
 
 
 # --------------------------------------------------------------------------- #
@@ -481,6 +841,11 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         "asof": None,
         "asof_sessions_behind": None,
         "absent": False,
+        # PR-C. PRIVATE annotations — latency/coverage/provenance read off the
+        # payload. Always present and always a dict so no consumer has to
+        # branch on its existence; ``public_report`` strips it before anything
+        # reaches the publicly-served staleness file.
+        "facts": {},
         "detail": "",
     }
     if fr.error or fr.status != 200:
@@ -555,6 +920,13 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
             out["status"] = "indeterminate"
             out["detail"] = f"served body is not JSON ({exc})"
             return out
+        # Facts are read from a payload that PARSED, before any budget runs and
+        # regardless of what the budgets go on to decide. A stale board's
+        # decomposition is exactly as interesting as a fresh one's — more so,
+        # since it is the pass that has to explain itself.
+        reader = FACT_READERS.get(surface.get("facts") or "")
+        if reader is not None:
+            out["facts"] = reader(doc)
         stamp = doc.get(surface["asof_field"]) if isinstance(doc, dict) else None
         for field in surface.get("required_false_fields", ()):
             value = doc.get(field) if isinstance(doc, dict) else None
@@ -584,18 +956,20 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
             out["asof"] = stamp
             budget = surface["asof_max_sessions_behind"]
             try:
-                behind = sessions_behind(stamp, now)
+                behind = sessions_behind(stamp, now, calendar=surface.get("calendar"))
             except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
+                cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 out["status"] = "indeterminate"
                 out["detail"] = (
-                    f"cannot measure {stamp!r} against the NYSE calendar"
+                    f"cannot measure {stamp!r} against the {cal_label} calendar"
                     f" ({type(exc).__name__}: {exc})"
                 )
                 return out
             out["asof_sessions_behind"] = behind
             if behind > budget:
+                cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 msg = (
-                    f"store as of {stamp} is {behind} completed NYSE session(s)"
+                    f"store as of {stamp} is {behind} completed {cal_label} session(s)"
                     f" behind the calendar (budget {budget})"
                 )
                 if bake_age_h is not None and bake_age_h <= BAKE_BUDGET_HOURS:
@@ -814,6 +1188,20 @@ def _et(stamp: datetime) -> datetime | None:
         return None
 
 
+def _cst(stamp: datetime) -> datetime | None:
+    """A UTC instant on the Shanghai clock, or None when that is unknowable.
+
+    Same degrade-to-unknown contract as ``_et``: no tzdata must never answer
+    in UTC, which would read 07:10Z as "07:10, made 15:20" on a session the
+    close board actually missed by eight hours.
+    """
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415 — see _et
+        return stamp.astimezone(ZoneInfo("Asia/Shanghai"))
+    except Exception:  # noqa: BLE001 — no tzdata must never fabricate a verdict
+        return None
+
+
 def record_first_fresh(record: dict, report: dict, now: datetime,
                        surfaces: list[dict] | None = None) -> dict:
     """Stamp the first definitively-fresh read of each SLA surface, per session.
@@ -855,21 +1243,80 @@ def record_first_fresh(record: dict, report: dict, now: datetime,
         # unmet gate, never a free pass.
         if sla.get("client_path") and c.get("client_session") != session:
             continue
-        et = _et(now)
-        # Met means BOTH: on the session's own ET day, and by the deadline. The
-        # date half is not pedantry — a board published at 02:00 ET the next
-        # morning reads "02:00 ≤ 18:30" and would score as a pass on a session
-        # it missed entirely.
-        met = (
-            None if et is None
-            else (et.date().isoformat() == session
-                  and et.strftime("%H:%M") <= sla["by_et"])
-        )
-        per[s["id"]] = {
+        if "by_cst" in sla:
+            # CN close-board SLA: the artifact's own first_close_board_at, not
+            # the sentinel's now. An intraday tick without a close board does
+            # not stamp — lunch and the morning session stay quiet.
+            landed = _instant((c.get("facts") or {}).get("first_close_board_at"))
+            if landed is None:
+                continue
+            cst = _cst(landed)
+            et = None
+            met = (
+                None if cst is None
+                else (cst.date().isoformat() == session
+                      and cst.strftime("%H:%M") <= sla["by_cst"])
+            )
+        else:
+            et = _et(now)
+            # Met means BOTH: on the session's own ET day, and by the deadline. The
+            # date half is not pedantry — a board published at 02:00 ET the next
+            # morning reads "02:00 ≤ 18:30" and would score as a pass on a session
+            # it missed entirely.
+            met = (
+                None if et is None
+                else (et.date().isoformat() == session
+                      and et.strftime("%H:%M") <= sla["by_et"])
+            )
+        # THE DECOMPOSITION (PR-C). Written HERE, in the same append-only act
+        # that stamps the session, because these five instants are only jointly
+        # meaningful at the moment of first visibility: `now` is the visible
+        # edge and it is unrecoverable one pass later. Additive by construction —
+        # every existing stamp keeps its four keys and simply carries no
+        # `latency`, which is what makes the older record readable rather than
+        # broken (see `sla_streak`, which asks for nothing added here).
+        facts = c.get("facts") or {}
+        generated_at = facts.get("board_generated_at")
+        observed_at = facts.get("close_observed_at")
+        stamp: dict = {
             "first_fresh_at": now.isoformat(),
             "first_fresh_et": et.strftime("%H:%M") if et else None,
-            "by_et": sla["by_et"],
             "met": met,
+        }
+        if "by_cst" in sla:
+            stamp["by_cst"] = sla["by_cst"]
+            stamp["first_fresh_cst"] = (
+                cst.strftime("%H:%M") if cst is not None else None
+            )
+        else:
+            stamp["by_et"] = sla["by_et"]
+        per[s["id"]] = {
+            **stamp,
+            "latency": {
+                # The two producer-side instants, verbatim and possibly null.
+                "close_observed_at": observed_at,
+                "board_generated_at": generated_at,
+                # The sentinel's own first-fresh instant, under the name the
+                # question is asked in. Same value as `first_fresh_at` above,
+                # spelled twice ON PURPOSE: the SLA key answers "when did the
+                # gate clear" and this one answers "when could a reader first
+                # see it", and a future change to either must be forced to say
+                # which of the two it means.
+                "first_user_visible_at": now.isoformat(),
+                "close_to_candidate_sec": _seconds_between(observed_at, generated_at),
+                "candidate_to_visible_sec": _seconds_between(
+                    generated_at, now.isoformat()
+                ),
+                # The error bar, published beside the figure it qualifies.
+                "visible_resolution_sec": VISIBLE_RESOLUTION_SECONDS,
+            },
+            "coverage": facts.get("coverage") or {},
+            "provenance": {
+                "close_source": facts.get("close_source"),
+                "close_basis": facts.get("close_basis"),
+                "close_finalized": facts.get("close_finalized"),
+            },
+            "skipped": facts.get("skipped"),
         }
         sessions[session] = per
         changed = True
@@ -896,9 +1343,10 @@ def sla_streak(record: dict, surface_id: str, now: datetime,
 
     (None, []) when the calendar cannot be imported: unknown, never a verdict.
     """
+    surface = next((s for s in SURFACES if s["id"] == surface_id), {})
     try:
-        from lib import nyse_calendar  # noqa: PLC0415 — see module docstring
-        last = nyse_calendar.expected_last_session(now)
+        cal = _calendar_mod(surface.get("calendar"))
+        last = cal.expected_last_session(now)
     except Exception:  # noqa: BLE001
         return None, []
 
@@ -906,7 +1354,7 @@ def sla_streak(record: dict, surface_id: str, now: datetime,
     rows: list[dict] = []
     streak, broken = 0, False
     for n in range(cap):
-        day = last if n == 0 else nyse_calendar.session_n_back(last, n)
+        day = last if n == 0 else cal.session_n_back(last, n)
         if day is None:
             break
         entry = (sessions.get(day.isoformat()) or {}).get(surface_id) or {}
@@ -935,12 +1383,45 @@ def sla_summary(record: dict, now: datetime,
         if not sla:
             continue
         streak, rows = sla_streak(record, s["id"], now)
-        out[s["id"]] = {
-            "by_et": sla["by_et"],
+        block: dict = {
             "sessions_required": sla.get("sessions_required"),
             "consecutive_met": streak,
             "recent": rows,
         }
+        if "by_cst" in sla:
+            block["by_cst"] = sla["by_cst"]
+        if "by_et" in sla:
+            block["by_et"] = sla["by_et"]
+        out[s["id"]] = block
+    return out
+
+
+def public_report(report: dict) -> dict:
+    """The pass report minus every PRIVATE annotation — what /live/staleness.json gets.
+
+    Caddy serves that file to anyone, with no registration wall in front of it
+    (it is the input the on-site staleness banner reads). The freshness verdicts
+    there are deliberately public; the ``facts`` block is not, and the two only
+    ride the same object because they are measured in the same pass.
+
+    What ``facts`` carries is per-session coverage and provenance for artifacts
+    that are themselves DEFAULT-DENY at the Caddy boundary — how many names the
+    evening board admitted, which price source it used, how many the intraday
+    probe budget cut. Whether any of that becomes free content is a paywall
+    decision with an owner (#3391 made exactly this call for the board itself),
+    and a watchdog that publishes it as a side effect of measuring has taken
+    that decision away from its owner. Stripping is the fail-safe direction: an
+    operator who wants a number here can read the private record, whereas a
+    number already served to the internet cannot be recalled.
+
+    Shallow-copies down to the per-surface dicts only, which is exactly as deep
+    as the key being removed — the callers publish and discard.
+    """
+    out = dict(report)
+    out["surfaces"] = {
+        sid: {k: v for k, v in c.items() if k != "facts"} if isinstance(c, dict) else c
+        for sid, c in (report.get("surfaces") or {}).items()
+    }
     return out
 
 
@@ -1098,13 +1579,18 @@ def send_discord(msg: str) -> bool:
     return _post_json(url, {"content": msg[:1990]})
 
 
-def send_email(msg: str, now: datetime) -> bool:
+def send_email(msg: str, now: datetime, *, subject: str | None = None,
+               template: str = "freshness_sentinel") -> bool:
     """Operator email through the estate's one send path (app.mailer, stdlib-only).
 
     Lazy, failure-guarded import: the sentinel must survive a broken app tree.
     idem_key = (message digest, REALERT_HOURS bucket): a crash-loop resending the
     SAME alert in one window collapses to a single email via the ledger, while a
     different alert in the same window (breach then recovery) still goes out.
+
+    ``subject`` / ``template`` default to the freshness sentinel. The commercial-
+    path sibling reuses this function with its own names so GATE-4 does not
+    mint a second mail vendor.
     """
     to_addr = (
         os.environ.get("MAIL_SENTINEL_TO") or os.environ.get("MAIL_SUPPORT_TO") or ""
@@ -1120,14 +1606,15 @@ def send_email(msg: str, now: datetime) -> bool:
 
     bucket = int(now.timestamp()) // int(REALERT_HOURS * 3600)
     digest = hashlib.sha256(msg.encode()).hexdigest()[:12]
+    subject = subject or "Mastermind freshness sentinel alert"
     status = mailer.send(
-        template="freshness_sentinel",
+        template=template,
         cls="transactional",
         to_email=to_addr,
-        subject="Mastermind freshness sentinel alert",
+        subject=subject,
         html="",
         text=msg,
-        idem_key=f"freshness-sentinel:{bucket}:{digest}",
+        idem_key=f"{template}:{bucket}:{digest}",
     )
     return status in ("sent", "duplicate")
 
@@ -1187,6 +1674,50 @@ def load_first_fresh(state_dir: Path) -> dict:
 # --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
+def facts_line(check: dict) -> str | None:
+    """The operator's coverage/provenance line for one surface, or None.
+
+    Stdout, not the served file — see ``public_report``. This is the disclosure
+    the armed-pack surface exists to make (arming coverage is not budgeted here,
+    so an unprinted count would be an unmeasured one) and the running commentary
+    on the evening board's decomposition.
+
+    ``?`` for every unmeasured field, never a blank and never a zero: a reader
+    scanning journalctl has to be able to tell "the producer did not say" from
+    "the producer said none".
+    """
+    facts = check.get("facts") or {}
+    if not facts:
+        return None
+    parts: list[str] = []
+    coverage = facts.get("coverage") or {}
+    shown = " ".join(
+        f"{name}={'?' if value is None else value}" for name, value in coverage.items()
+    )
+    if shown:
+        parts.append(f"coverage {shown}")
+    # Only the close-pass shape carries provenance; keyed on presence rather
+    # than on the surface id so a second board-shaped surface inherits it.
+    if "close_observed_at" in facts:
+        observed, generated = facts["close_observed_at"], facts.get("board_generated_at")
+        gap = _seconds_between(observed, generated)
+        parts.append(
+            f"close {observed or '?'} → built {generated or '?'}"
+            + (f" (+{gap:.0f}s)" if gap is not None else "")
+        )
+        finalized = facts.get("close_finalized")
+        parts.append(
+            f"source {facts.get('close_source') or '?'}"
+            f" basis {facts.get('close_basis') or '?'}"
+            f" finalized {'?' if finalized is None else finalized}"
+        )
+    skipped = facts.get("skipped")
+    if skipped:
+        parts.append("skipped " + " ".join(f"{k}={v}" for k, v in sorted(skipped.items())))
+    return " | ".join(parts) or None
+
+
+
 def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Path,
         dry_run: bool = False, fetcher=fetch, served_dir: Path | None = None,
         served_reader=read_served) -> int:
@@ -1204,8 +1735,14 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
             results[s["id"]] = served_reader(public_dir, s["path"])
             continue
         root = r2_base if s["kind"] == "r2" else base
+        # A body is fetched only when something must be PARSED out of it — the
+        # delayed-board marker on a page, or a JSON watermark on an object. The
+        # massive-store manifest is judged on its header alone and stays a HEAD:
+        # a surface that needs no body must not pay for one on a lane that runs
+        # every 30 minutes forever.
         results[s["id"]] = fetcher(
-            root.rstrip("/") + s["path"], want_body=s["delay_budget_days"] is not None
+            root.rstrip("/") + s["path"],
+            want_body=s["delay_budget_days"] is not None or bool(s.get("asof_field")),
         )
 
     # The reader's own artifacts, read off the same live plane. NOT surfaces:
@@ -1238,13 +1775,18 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
                if "client_session" in c else "")
             + (f" | {c['detail']}" if c["detail"] else "")
         )
+        extra = facts_line(c)
+        if extra:
+            print(f"  {sid}: {extra}")
 
     if dry_run:
         # Read the SLA record without stamping it — this is the operator's lever
         # for evaluating the W-L1 gate ("five consecutive green sessions")
         # without perturbing the very measurement being read.
         for sid, s in sorted(sla_summary(load_first_fresh(state_dir), now).items()):
-            print(f"{sid}: SLA by {s['by_et']} ET | {s['consecutive_met']} consecutive"
+            zone = "CST" if s.get("by_cst") else "ET"
+            deadline = s.get("by_cst") or s.get("by_et")
+            print(f"{sid}: SLA by {deadline} {zone} | {s['consecutive_met']} consecutive"
                   f" of {s['sessions_required']} required"
                   + "".join(f"\n    {r['session']} {r['first_fresh_et'] or '--:--'}"
                             f" {'met' if r['met'] else 'MISSED'}" for r in s["recent"]))
@@ -1291,7 +1833,9 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     report["sla"] = sla_summary(first_fresh, now)
 
     for target, payload in (
-        (public_dir / "live" / "staleness.json", report),
+        # public_report, never `report` — the private facts stop at the Caddy
+        # boundary while the freshness verdicts cross it.
+        (public_dir / "live" / "staleness.json", public_report(report)),
         (state_dir / "state.json", new_state),
         (state_dir / "first_fresh.json", first_fresh),
     ):

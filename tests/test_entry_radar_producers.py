@@ -11,6 +11,7 @@ end to end against a synthetic repo root and proves ``data/`` is untouched.
 """
 from __future__ import annotations
 
+import ast
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -374,15 +375,75 @@ def test_no_publish_env_refuses_the_spool(tmp_path, monkeypatch, capsys):
     assert line.startswith("::warning"), "annotations must start the line"
 
 
+#: The ONE module allowed a columnar writer, by name, with its reason.
+#:
+#: W4's nightly pack persists its frozen substrate as ``substrate.parquet`` under
+#: the INJECTED runtime state dir (``/var/lib/macro-live/state/entry_radar`` in
+#: production) — W4 design §1/§4 "runtime state, operational, never evidence".
+#: The law this test enforces is "Radar writes no DURABLE EVIDENCE store"; a
+#: columnar writer is a PROXY for that law, and here the proxy over-fires.  The
+#: exemption is narrow and pays for itself: the companion assertion below proves
+#: the exempted module names no ``data/`` path at all, which is the actual law.
+#: Widening this set requires the same proof.
+_COLUMNAR_WRITER_EXEMPT: dict[str, str] = {
+    "live_pack.py": "W4 pack substrate, written under the injected state_dir",
+}
+
+
 def test_no_production_module_uses_a_parquet_or_csv_writer():
-    """A static backstop for the behavioural test above."""
+    """A static backstop for the behavioural test above.
+
+    W5 amendment (lawful update with the contract, not a weakening): PR-5
+    introduces the two SANCTIONED writers — the nightly reconciler
+    (``scripts/reconcile_entry_radar.py``, the contract §7 sole durable
+    evidence writer, gated by ``ledger_lane.nightly_advance_enabled()`` and
+    covered by its own test suite) and the vendor SESSION-CACHE writer
+    (``scripts/entry_radar_vendor.py``), whose parquet writes land only under
+    a runner-injected cache dir OUTSIDE the repo (its own docstring law; it
+    hardcodes no repo path).  The pure engine package — including all of
+    ``engine/entry_radar/replay/`` — still writes nothing, and every OTHER
+    entry_radar script stays writer-free.  The reconciler's filename sits
+    outside this glob by construction; the vendor module is the one named
+    exemption.
+    """
+    # entry_radar_replay.py: the W5 results runner — writes ONLY under its
+    # --out-dir (research/live_entry_radar/w5_results) + the TrialLedger; the
+    # durable store stays the reconciler's alone (same fenced assertion below).
+    exempt = {"entry_radar_vendor.py", "entry_radar_replay.py"}
     sources = [*(ROOT / "engine" / "entry_radar").rglob("*.py"),
                *(ROOT / "scripts").glob("entry_radar_*.py")]
     assert len(sources) >= 10
     for path in sources:
+        if path.name in _COLUMNAR_WRITER_EXEMPT:
+            continue
+        if path.name in exempt:
+            text = path.read_text(encoding="utf-8")
+            assert "data/entry_radar" not in text, (
+                "the vendor cache writer must never target the durable store — "
+                "that path belongs to the nightly reconciler alone")
+            continue
         text = path.read_text(encoding="utf-8")
         for banned in ("to_parquet", "to_csv", "to_feather"):
-            assert banned not in text, f"{path.name} calls {banned} — W1 writes no durable store"
+            assert banned not in text, f"{path.name} calls {banned} — W5 keeps the engine and non-writer scripts store-free"
+
+
+def test_the_columnar_writer_exemption_names_no_data_path():
+    """The exemption above is only lawful while the exempted module avoids ``data/``.
+
+    Checked, not asserted in prose: the module may persist runtime state, and it
+    may not reach the durable evidence plane.  A module that grew a ``data/``
+    literal loses its exemption here rather than in a review nobody ran.
+    """
+    assert _COLUMNAR_WRITER_EXEMPT, "an empty exemption set makes this test vacuous"
+    for name in _COLUMNAR_WRITER_EXEMPT:
+        path = ROOT / "engine" / "entry_radar" / name
+        assert path.is_file(), f"{name} is exempted but does not exist"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        literals = [n.value for n in ast.walk(tree)
+                    if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+        offenders = [s for s in literals
+                     if s == "data" or s.startswith("data/") or "/data/" in s]
+        assert offenders == [], f"{name} names a data/ path: {offenders}"
 
 
 @pytest.mark.parametrize("source_id,expected_max_minutes", [

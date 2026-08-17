@@ -5,9 +5,10 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2747	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	4999	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
-app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
+.github/workflows/daily.yml	2759	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+.github/workflows/daily.yml	5039	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
+app/biocatalyst.py	2337	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	455	"""Render one sanitized, hash-bound immutable ``/version`` receipt."""
@@ -24,19 +25,19 @@ config/site_access.yml	303	# (The armed trigger LEVELS are not in it; they stay 
 config/site_access.yml	346	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
 config/synapse.yml	5885	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
 config/synapse.yml	6082	path: data/options_entry/state.parquet
-config/synapse.yml	11525	# --- prophet-ledger: Prophet forward outcome ledger ---
+config/synapse.yml	11519	# --- prophet-ledger: Prophet forward outcome ledger ---
 engine/biocatalyst/activation.py	577	"contract_id": "biocatalyst_retention_preflight.v1",
 engine/biocatalyst/prospective.py	509	def build_public_model(
 engine/biocatalyst/publication.py	1137	def build_private_mirror_manifest(
 engine/biocatalyst/storage.py	19	_REQUIRED_R2_ENV = (
 engine/biocatalyst/storage.py	112	class DedicatedR2Store:
 engine/capital_structure/share_count_publication.py	65	HEAD_GUARD_KEY = "capital_structure/share_counts/v2/current_head.json"
-engine/capital_structure/source_store.py	23	SEC_OBJECT_PREFIX = "capital_structure/sec/sha256"
-engine/capital_structure/source_store.py	164	or isinstance(max_byte_length, bool)
+engine/capital_structure/source_store.py	24	SEC_OBJECT_PREFIX = "capital_structure/sec/sha256"
+engine/capital_structure/source_store.py	187	or isinstance(max_byte_length, bool)
 engine/earnings_narrative/private_publication.py	33	PRIVATE_PREFIX = "earnings_wire_private/v1"
 engine/fundamental_forensics/attested_history_store.py	1	"""Read-only store for the DEDICATED attested-history bucket.
 engine/fundamental_forensics/disclosure_bundle.py	56	DISCLOSURE_BUNDLE_PREFIX = "fundamental_forensics/disclosures/v1"
-engine/fundamental_forensics/private_state.py	24	STATE_KEY = "fundamental_forensics/state.json.gz"
+engine/fundamental_forensics/private_state.py	25	STATE_KEY = "fundamental_forensics/state.json.gz"
 engine/fundamental_forensics/query_snapshots.py	57	QUERY_SNAPSHOT_PREFIX = "fundamental_forensics/query-snapshots/v1"
 engine/fundamental_forensics/source_sync.py	48	SOURCE_SYNC_PREFIX = "fundamental_forensics/sec-source/v1"
 engine/fundamental_forensics/source_sync.py	243	if normalized != text:
@@ -60,6 +61,8 @@ engine/research_vault/ingest.py	55	VAULT_PREFIX = "research_vault/"
 engine/research_vault/ingest.py	56	CORPUS_KEY = "research_vault/corpus.sqlite"
 engine/research_vault/ingest.py	142	def _receipt_key(item_id: str) -> str:
 engine/research_vault/r2_store.py	1	"""research_vault.r2_store — object store for the PRIVATE research bucket.
+lib/commercial_path.py	75	return Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api")) / "commercial_path"
+lib/commercial_path.py	79	return state_dir(root) / "events" / f"{_utc(day).strftime('%Y-%m-%d')}.jsonl"
 lib/mastermind_response_log.py	1	"""Mastermind AI response log — the shared write contract for every user-facing
 lib/mastermind_response_log.py	318	"""R2 key for a row: mastermind_response_logs/<surface>/<date>/<id>.json.
 ops/THETADATA_R2_SYNC_RUNBOOK.md	1	# ThetaData EOD store — nightly R2 offsite sync
@@ -94,8 +97,9 @@ scripts/build_stock_library.py	4412	_calls = _collect_potential_calls(to_write)
 scripts/build_tape_flow_daily.py	12	Storage:
 scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).
-scripts/close_pass_publish.py	50	BOARD_KEY = "live_flow/us_board_provisional.json"
+scripts/close_pass_publish.py	51	BOARD_KEY = "live_flow/us_board_provisional.json"
 scripts/close_pass_reconcile.py	39	RECEIPT_KEY = "live_flow/us_board_confirmation.json"
+scripts/commercial_path_sentinel.py	59	def _transports(now: datetime):
 scripts/freshness_sentinel.py	49	Read from the served tree on disk (SERVED_DIR, default the Caddyfile's
 scripts/institutional_13f_r2_conformance.py	36	CONFORMANCE_KEY_PREFIX = f"{EVIDENCE_PREFIX}/conformance/v1"
 scripts/live_flow_poller.py	30	New R2 objects emitted each cycle (live_flow/ prefix):

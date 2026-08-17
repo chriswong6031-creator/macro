@@ -117,6 +117,29 @@ def test_verify_uid_cached(monkeypatch):
     assert m._mm_verify_uid_cached("bad-token") is None
 
 
+def test_require_user_502_emits_commercial_path_event(monkeypatch, tmp_path):
+    """GATE-4: a Supabase outage on require_user must land on the commercial ledger."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+    from app import paywall
+
+    def boom(req, timeout=0):
+        raise TimeoutError("supabase down")
+
+    # require_user now fetches through paywall._resolve_identity (WS-3); the
+    # emit still fires on the 502 path. reason is the identity status, not the
+    # exception class — transport failures are not cached as invalid.
+    monkeypatch.setattr(paywall.urllib.request, "urlopen", boom)
+    paywall._AUTH_CACHE.clear()
+    from fastapi import HTTPException
+    import pytest
+    with pytest.raises(HTTPException) as ei:
+        m.require_user("Bearer sometoken")
+    assert ei.value.status_code == 502
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "auth.502" and r.get("reason") == "outage" for r in rows)
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-q"]))

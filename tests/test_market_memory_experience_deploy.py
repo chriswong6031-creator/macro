@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -906,6 +907,331 @@ w2c_verify_installation() {{
     assert sealed.returncode == 0, sealed.stderr
     assert "disable --now macro-market-memory-experience.timer" in sealed_events
     assert not any(event.startswith("start ") for event in sealed_events)
+
+
+_API_W2C_SLICE_HARNESS = r"""
+set -euo pipefail
+OPTIONS_TIMER_DISARMED=0
+API_UNIT_UPDATED="${API_UNIT_UPDATED:-0}"
+API_UNIT_READY="${API_UNIT_READY:-1}"
+API_DEPS_OK="${API_DEPS_OK:-1}"
+API_DEPS_UPDATED="${API_DEPS_UPDATED:-0}"
+CHANGED="${CHANGED:-}"
+RECIPROCAL_TIMERS_PAUSED=0
+MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED=0
+MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^runtime-change$'
+W2C_TIMER_ENABLED="${W2C_TIMER_ENABLED:-0}"
+W2C_TIMER_ACTIVE="${W2C_TIMER_ACTIVE:-0}"
+API_PID=$(cat "$HARNESS_STATE/pid")
+API_INVOCATION=$(cat "$HARNESS_STATE/invocation")
+: > "$EVENT_LOG"
+source "$RUNTIME_FENCE"
+OPTIONS_API_FENCE_MARKER="$HARNESS_MARKER"
+sleep() { :; }
+stat() { printf '%s\n' root:root:644; }
+chown() { return 0; }
+mktemp() { command mktemp "$HARNESS_STATE/fence.XXXXXX"; }
+cmp() {
+  if [ "${1:-}" = -s ]; then
+    command cmp -s "$HARNESS_API_UNIT" "$HARNESS_API_UNIT"
+    return
+  fi
+  command cmp "$@"
+}
+grep() {
+  if [ "${1:-}" = -Fxq ]; then
+    command grep -Fxq "$2" "$HARNESS_API_UNIT"
+    return
+  fi
+  command grep "$@"
+}
+disarm_options_timer() {
+  printf '%s\n' "disarm_options_timer" >> "$EVENT_LOG"
+  OPTIONS_TIMER_DISARMED=1
+}
+systemctl() {
+  printf '%s\n' "$*" >> "$EVENT_LOG"
+  case "$1" in
+    restart)
+      if [ "$2" = macro-api ]; then
+        if [ "${API_RESTART_FAIL:-0}" -eq 1 ]; then
+          return 1
+        fi
+        API_PID=$((API_PID + 1))
+        API_INVOCATION=$(printf '%032x' "$API_PID")
+        printf '%s\n' "$API_PID" > "$HARNESS_STATE/pid"
+        printf '%s\n' "$API_INVOCATION" > "$HARNESS_STATE/invocation"
+        return 0
+      fi
+      ;;
+    show)
+      case "${3:-}" in
+        NeedDaemonReload) printf '%s\n' no ;;
+        MainPID) printf '%s\n' "$API_PID" ;;
+        InvocationID) printf '%s\n' "$API_INVOCATION" ;;
+        *) return 1 ;;
+      esac
+      ;;
+    daemon-reload) return 0 ;;
+    is-enabled)
+      if [ "$2" = macro-api ]; then
+        return 0
+      fi
+      [ "${W2C_TIMER_ENABLED:-0}" -eq 1 ]
+      return
+      ;;
+    is-active)
+      [ "${W2C_TIMER_ACTIVE:-0}" -eq 1 ]
+      return
+      ;;
+    start)
+      if [ "$2" = "${FAIL_UNIT:-}" ]; then
+        return 23
+      fi
+      if [ "$2" = macro-market-memory-experience.service ] && \
+         [ "${PUBLISH_RECEIPT:-0}" -eq 1 ]; then
+        : > "$MARKET_MEMORY_EXPERIENCE_INSTALLATION"
+      fi
+      ;;
+    enable)
+      W2C_TIMER_ENABLED=1
+      W2C_TIMER_ACTIVE=1
+      ;;
+    disable)
+      W2C_TIMER_ENABLED=0
+      W2C_TIMER_ACTIVE=0
+      ;;
+  esac
+}
+"""
+
+
+def _prepare_api_w2c_state(tmp_path: Path) -> Path:
+    state = tmp_path / "state"
+    state.mkdir()
+    (state / "pid").write_text("1000\n", encoding="utf-8")
+    (state / "invocation").write_text(f"{1000:032x}\n", encoding="utf-8")
+    unit = state / "macro-api.service"
+    unit.write_text(
+        "InaccessiblePaths=/var/lib/macro-market-memory-options\n"
+        "InaccessiblePaths=/etc/macro-market-memory-options\n",
+        encoding="utf-8",
+    )
+    experience = state / "experience"
+    experience.mkdir()
+    (experience / "registration_installation.json").write_text("{}\n", encoding="utf-8")
+    marker = state / "api.ready"
+    return state
+
+
+def _run_api_w2c_slice(
+    tmp_path: Path,
+    *,
+    name: str,
+    changed: str = "",
+    fail_unit: str = "",
+    publish_receipt: str = "1",
+    restart_fail: str = "0",
+    timer_enabled: str = "0",
+    timer_active: str = "0",
+    seed_fence: bool = False,
+    state: Path | None = None,
+    transaction: str | None = None,
+    attestation: str | None = None,
+    helpers: str | None = None,
+) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
+    if state is None:
+        root = tmp_path / name
+        root.mkdir()
+        state = _prepare_api_w2c_state(root)
+    event_log = state / "events"
+    marker = state / "api.ready"
+    if seed_fence:
+        marker.write_text(f"1000 {1000:032x}\n", encoding="utf-8")
+    helpers = helpers or _marked_shell(UPDATE, "W2C_DEPLOY_HELPERS")
+    transaction = transaction or _marked_shell(
+        UPDATE, "MACRO_API_RESTART_TRANSACTION"
+    )
+    attestation = attestation or _marked_shell(UPDATE, "W2C_RUNTIME_ATTESTATION")
+    source = f"""
+{_API_W2C_SLICE_HARNESS}
+MARKET_MEMORY_EXPERIENCE_ROOT={shlex.quote(str(state / "experience"))}
+MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
+MARKET_MEMORY_EXPERIENCE_TERMINAL="$MARKET_MEMORY_EXPERIENCE_ROOT/TERMINAL.json"
+APP_DIR={shlex.quote(str(state))}
+{helpers}
+w2c_terminal_ledger_state() {{ return 3; }}
+w2c_verify_installation() {{
+  [ -f "$MARKET_MEMORY_EXPERIENCE_INSTALLATION" ] &&
+    [ ! -L "$MARKET_MEMORY_EXPERIENCE_INSTALLATION" ]
+}}
+{transaction}
+{attestation}
+"""
+    result = _run_shell(
+        source,
+        environment={
+            "HARNESS_STATE": str(state),
+            "HARNESS_MARKER": str(marker),
+            "HARNESS_API_UNIT": str(state / "macro-api.service"),
+            "RUNTIME_FENCE": str(RUNTIME_FENCE),
+            "EVENT_LOG": str(event_log),
+            "CHANGED": changed,
+            "FAIL_UNIT": fail_unit,
+            "PUBLISH_RECEIPT": publish_receipt,
+            "API_RESTART_FAIL": restart_fail,
+            "W2C_TIMER_ENABLED": timer_enabled,
+            "W2C_TIMER_ACTIVE": timer_active,
+        },
+    )
+    events = (
+        event_log.read_text(encoding="utf-8").splitlines()
+        if event_log.exists()
+        else []
+    )
+    return result, events, marker
+
+
+def _restart_count(events: list[str]) -> int:
+    return sum(1 for event in events if event == "restart macro-api")
+
+
+def test_app_py_change_restarts_api_before_context_owner_failure(
+    tmp_path: Path,
+) -> None:
+    result, events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="biocatalyst-context-fail",
+        changed="app/biocatalyst.py",
+        fail_unit="macro-market-memory-context.service",
+    )
+    assert result.returncode == 1, result.stderr
+    assert "refusing W2C activation before owner replay completion" in result.stderr
+    assert _restart_count(events) == 1
+    assert events.index("restart macro-api") < events.index(
+        "start macro-market-memory-context.service"
+    )
+    assert "start macro-market-memory-experience.service" not in events
+    assert "enable --now macro-market-memory-experience.timer" not in events
+    assert marker.is_file()
+    body = marker.read_text(encoding="utf-8").strip().split()
+    assert body[0] == "1001"
+
+
+def test_w2c_failure_with_valid_api_fence_does_not_restart(
+    tmp_path: Path,
+) -> None:
+    result, events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="fence-valid-no-api-change",
+        changed="",
+        fail_unit="macro-market-memory-context.service",
+        seed_fence=True,
+    )
+    assert result.returncode == 1, result.stderr
+    assert _restart_count(events) == 0
+    assert "start macro-market-memory-experience.service" not in events
+    assert marker.read_text(encoding="utf-8") == f"1000 {1000:032x}\n"
+
+
+def test_missing_api_fence_with_w2c_failure_restarts_once_then_is_stable(
+    tmp_path: Path,
+) -> None:
+    first, first_events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="missing-fence",
+        changed="",
+        fail_unit="macro-market-memory-context.service",
+    )
+    assert first.returncode == 1, first.stderr
+    assert _restart_count(first_events) == 1
+    assert marker.is_file()
+    first_body = marker.read_text(encoding="utf-8")
+    assert first_body.split()[0] == "1001"
+
+    second, second_events, second_marker = _run_api_w2c_slice(
+        tmp_path,
+        name="missing-fence-tick2",
+        changed="",
+        fail_unit="macro-market-memory-context.service",
+        state=marker.parent,
+    )
+    assert second.returncode == 1, second.stderr
+    assert _restart_count(second_events) == 0
+    assert second_marker.read_text(encoding="utf-8") == first_body
+    assert "start macro-market-memory-experience.service" not in second_events
+
+
+def test_api_restart_failure_plus_w2c_failure_mints_no_fence(
+    tmp_path: Path,
+) -> None:
+    result, events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="restart-fail",
+        changed="app/biocatalyst.py",
+        fail_unit="macro-market-memory-context.service",
+        restart_fail="1",
+    )
+    assert result.returncode == 1, result.stderr
+    assert "RETRY FAILED" in result.stderr
+    assert "refusing W2C activation before owner replay completion" in result.stderr
+    assert _restart_count(events) == 2
+    assert "disarm_options_timer" in events
+    assert "start macro-market-memory-experience.service" not in events
+    assert not marker.exists() or marker.read_text(encoding="utf-8") == ""
+
+
+def test_successful_w2c_keeps_owner_order_and_one_api_restart(
+    tmp_path: Path,
+) -> None:
+    result, events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="w2c-success",
+        changed="app/biocatalyst.py",
+        fail_unit="",
+        publish_receipt="1",
+        timer_enabled="0",
+        timer_active="0",
+    )
+    assert result.returncode == 0, result.stderr
+    assert _restart_count(events) == 1
+    owner = [
+        "start macro-market-memory-source.service",
+        "start macro-market-memory-context.service",
+        "start macro-market-memory-technicals.service",
+    ]
+    for event in owner:
+        assert event in events
+    assert events.index("restart macro-api") < events.index(owner[0])
+    assert events.index(owner[0]) < events.index(owner[1]) < events.index(owner[2])
+    writer = "start macro-market-memory-experience.service"
+    assert writer not in events
+    assert "enable --now macro-market-memory-experience.timer" in events
+    assert events.index(owner[-1]) < events.index(
+        "enable --now macro-market-memory-experience.timer"
+    )
+    assert marker.is_file()
+
+
+def test_mutation_api_restart_below_w2c_misses_biocatalyst_restart(
+    tmp_path: Path,
+) -> None:
+    helpers = _marked_shell(UPDATE, "W2C_DEPLOY_HELPERS")
+    transaction = _marked_shell(UPDATE, "MACRO_API_RESTART_TRANSACTION")
+    attestation = _marked_shell(UPDATE, "W2C_RUNTIME_ATTESTATION")
+    result, events, marker = _run_api_w2c_slice(
+        tmp_path,
+        name="mutated-order",
+        changed="app/biocatalyst.py",
+        fail_unit="macro-market-memory-context.service",
+        helpers=helpers,
+        transaction=attestation,
+        attestation=transaction,
+    )
+    assert result.returncode == 1, result.stderr
+    assert _restart_count(events) == 0
+    assert "start macro-market-memory-experience.service" not in events
+    assert not marker.exists()
 
 
 def test_terminal_installation_path_never_restarts_owners_or_w2c(

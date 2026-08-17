@@ -187,6 +187,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ needs.plan.outputs.primary_pack }}" \
@@ -196,6 +197,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true
@@ -267,15 +269,22 @@ jobs:
           cp scripts/monitor_ci_host_resources.py \
              scripts/capture_ci_canary_receipt.py \
              "$RUNNER_TEMP/ci-canary-control/"
-      - name: checkout exact candidate tree after cache prewarm
-        uses: actions/checkout@v4
+      - name: materialize exact candidate with negotiated incremental fetch
         env:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
-        with:
-          ref: ${{ needs.plan.outputs.tested_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+          TESTED_SHA: ${{ needs.plan.outputs.tested_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git config --get-regexp '^http\..*\.extraheader$' || true)"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/false \
+          git -c credential.helper= -c fetch.negotiationAlgorithm=skipping fetch \
+            --no-tags --no-write-fetch-head --recurse-submodules=no \
+            --filter=blob:none --depth=1 origin "$TESTED_SHA"
+          GIT_NO_LAZY_FETCH=0 git checkout --force --detach "$TESTED_SHA"
+          git reset --hard "$TESTED_SHA"
+          git clean -ffdx
+          test -z "$(git config --local --get-regexp '^http\..*\.extraheader$' || true)"
       - name: verify exact checkout and close timing
         run: |
           test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.tested_sha }}"
@@ -306,7 +315,8 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
-          test "$HOME" = "$RUNNER_WORKSPACE/_home"
+          expected_home="$(dirname "$RUNNER_TEMP")/_home"
+          test "$HOME" = "$expected_home"
           touch .ci-canary-contamination-sentinel
           touch "$RUNNER_WORKSPACE/.ci-canary-outside-sentinel"
           touch "$HOME/.ci-canary-home-sentinel"
@@ -322,6 +332,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ matrix.pack }}" \
@@ -331,6 +342,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true
@@ -368,6 +380,9 @@ jobs:
           path: ${{ runner.temp }}/selfhosted-${{ matrix.pack }}.json
           if-no-files-found: error
           retention-days: 14
+      - name: surface a red pack after preserving its three-slot receipt
+        if: inputs.slots == '3'
+        run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
 
   cache-negative-control:
     name: diagnostic-cache-disabled-negative-control
@@ -407,13 +422,13 @@ jobs:
             --repository "${{ github.repository }}" \
             --repository-url "https://github.com/${{ github.repository }}.git" \
             --base-sha "${{ needs.plan.outputs.control_sha }}"
-      - name: checkout a second different exact tree
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.plan.outputs.contamination_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+      - name: detach the second different exact tree from the shared cache
+        env:
+          GIT_NO_LAZY_FETCH: "1"
+        run: |
+          git checkout --force --detach "${{ needs.plan.outputs.contamination_sha }}"
+          git reset --hard "${{ needs.plan.outputs.contamination_sha }}"
+          git clean -ffdx
       - name: prove the persistent workspace is clean and isolated
         shell: bash
         run: |

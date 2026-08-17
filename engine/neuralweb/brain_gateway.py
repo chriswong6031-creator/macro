@@ -14,7 +14,15 @@ DESIGN PRINCIPLES
   no-op pass-through.  sanitize_question still runs.  Every response is_context_only: true.
 * QUOTA LEDGER: JSON files under MACRO_API_STATE_DIR/brain_quota/ keyed
   (user_id, lane, period_key).  Token ceilings also tracked per
-  (user_id, lane, month) — first limit hit wins.  Fail-open on I/O error.
+  (user_id, lane, month) — first limit hit wins.  Check-and-increment holds
+  fcntl.flock across the read AND the write (sidecar .lock; the data-file
+  inode changes under tmp+os.replace).  A truncated/corrupt ledger alarms
+  and is never treated as count=0.
+  ASYMMETRY (deliberate, WS-2 / GATE-2): quota-state failure fail-OPENS for
+  authenticated payers (a broken ledger must never lock out someone who
+  paid) and fail-CLOSES for guests (a broken ledger must never grant the
+  internet unlimited free LLM).  A global daily spend ceiling (request
+  count + recorded tokens) is independent of every per-user ledger.
 * TIER RESOLVER: PostgREST GET /user_entitlements with SUPABASE_SERVICE_ROLE_KEY.
   60s in-process cache.  Table missing / key absent / error → tier 'free'.
   status='trialing' → trial allowances; 'active' → tier allowances; else → free.
@@ -28,6 +36,7 @@ DESIGN PRINCIPLES
 from __future__ import annotations
 
 import base64
+import fcntl
 import json
 import logging
 import os
@@ -39,6 +48,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable
@@ -66,6 +76,15 @@ def _repo_root(root: Path | None = None) -> Path:
 
 def _brain_quota_dir() -> Path:
     return _STATE_DIR / "brain_quota"
+
+
+def _commercial_emit(kind: str, **fields) -> None:
+    """GATE-4 emit. Never raises — alerting must not break a paying turn."""
+    try:
+        from lib.commercial_path import emit
+        emit(kind, **fields)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +158,11 @@ def _load_brain_config(root: Path | None = None) -> dict:
             "pro":     {"fast": {"limit": 1000, "period": "month"},"pro": {"limit": 150, "period": "month"}},
         },
         "token_ceilings": {"fast": 5_000_000, "pro": 2_000_000},
+        # Global daily spend ceiling — independent of every per-user ledger
+        # (WS-2 / GATE-2). 0 would disable the backstop; keep a real default
+        # so a missing brain.yml cannot uncap the house.
+        "global_daily_request_ceiling": 5000,
+        "global_daily_token_ceiling": 50_000_000,
         "tier_cache_ttl_seconds": 60,
     }
 
@@ -4454,25 +4478,161 @@ def _token_ceiling_file(user_id: str, lane: str) -> Path:
     return _brain_quota_dir() / f"tokens_{_safe_uid(user_id)}_{lane}_{_month_key()}.json"
 
 
-def _read_quota(path: Path) -> dict:
+def _global_spend_file() -> Path:
+    """UTC-day ledger for the house-wide spend ceiling (independent of per-user files)."""
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return _brain_quota_dir() / f"global_spend_{day}.json"
+
+
+def _int_ceiling(env_name: str, cfg_key: str, cfg: dict) -> int:
+    raw = os.environ.get(env_name)
+    if raw is None or not str(raw).strip():
+        raw = cfg.get(cfg_key)
     try:
-        if path.exists():
-            return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:  # noqa: BLE001
-        pass
-    return {"count": 0}
+        return max(0, int(raw or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _global_daily_ceilings(root: Path | None = None) -> tuple[int, int]:
+    """Return (request_ceiling, token_ceiling). 0 = that half is disabled.
+
+    Env overrides win so ops can tighten without a deploy.
+    """
+    cfg = _load_brain_config(root)
+    return (
+        _int_ceiling("BRAIN_GLOBAL_DAILY_REQUEST_CEILING", "global_daily_request_ceiling", cfg),
+        _int_ceiling("BRAIN_GLOBAL_DAILY_TOKEN_CEILING", "global_daily_token_ceiling", cfg),
+    )
+
+
+def _global_spend_blocks(gdata: dict, req_ceil: int, tok_ceil: int) -> bool:
+    if req_ceil > 0 and int(gdata.get("count") or 0) >= req_ceil:
+        return True
+    if tok_ceil > 0 and int(gdata.get("tokens") or 0) >= tok_ceil:
+        return True
+    return False
+
+
+class QuotaLedgerCorrupt(ValueError):
+    """Ledger file exists but is not a JSON object.
+
+    Must never be treated as ``{"count": 0}`` — that silently grants a fresh
+    allowance after a torn write (MMX-003).
+    """
+
+
+@contextmanager
+def _held_quota_locks(*paths: Path | None):
+    """Hold exclusive flock on sidecar ``.lock`` files across a read-modify-write.
+
+    Locks are acquired in sorted path order to avoid deadlock when a caller
+    touches more than one ledger (user + device + global). The lock lives on a
+    sidecar, not the data file: ``os.replace`` changes the data-file inode, so
+    locking the data file itself would drop the lock mid-write.
+
+    Releasing between the read and the write is the MMX-002 bug. Callers must
+    keep this context open for both.
+    """
+    ordered = sorted({p.resolve() for p in paths if p is not None})
+    fds: list[int] = []
+    try:
+        for p in ordered:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            lock_path = p.with_name(p.name + ".lock")
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            fds.append(fd)
+        yield
+    finally:
+        for fd in reversed(fds):
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+
+def _read_quota(path: Path) -> dict:
+    """Read a ledger. Missing file → fresh ``{"count": 0}``. Corrupt file → raise.
+
+    A torn/truncated write must be visible and loud. Swallowing ``ValueError``
+    and returning ``{"count": 0}`` was MMX-003: the cap silently reset.
+    """
+    if not path.exists():
+        return {"count": 0}
+    try:
+        obj = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.error(
+            "::error::brain_gateway: QUOTA LEDGER CORRUPT (%s) path=%s — "
+            "refusing to treat as count=0",
+            exc, path,
+        )
+        raise QuotaLedgerCorrupt(str(path)) from exc
+    if not isinstance(obj, dict):
+        log.error(
+            "::error::brain_gateway: QUOTA LEDGER CORRUPT (not an object) path=%s — "
+            "refusing to treat as count=0",
+            path,
+        )
+        raise QuotaLedgerCorrupt(str(path))
+    return obj
 
 
 def _write_quota(path: Path, data: dict) -> None:
+    """Crash-safe ledger write: tmp + os.replace. Raises on failure (callers decide).
+
+    Authenticated-payer callers fail-OPEN after this raises (availability).
+    Guest callers fail-CLOSED (a broken ledger must not uncap anonymous LLM).
+    The ::error:: line is the ops page; do not swallow it here.
+    """
     try:
-        _brain_quota_dir().mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(json.dumps(data), encoding="utf-8")
+        os.replace(tmp, path)
     except Exception as exc:  # noqa: BLE001
-        # A silently-failing counter write means the ledger stops advancing → unlimited
-        # free/paid until fixed. We keep fail-open for availability (a broken ledger must
-        # never lock out paying users), but make it LOUD so ops sees it, not a swallowed warn.
-        log.error("::error::brain_gateway: QUOTA WRITE FAILED (%s) — ledger not advancing, "
-                  "usage uncapped until the state dir is writable", exc)
+        log.error(
+            "::error::brain_gateway: QUOTA WRITE FAILED (%s) path=%s — ledger not advancing",
+            exc, path,
+        )
+        # GATE-4 hook (PR #5734). Callers still decide fail-open vs fail-closed;
+        # authenticated payers fail-open after this raises.
+        _commercial_emit("quota.fail_open", reason="write_failed")
+        raise
+
+
+def _auth_fail_open(lane: str, period: str, reason: str, exc: BaseException | None = None) -> tuple[bool, dict]:
+    """Authenticated-payer availability: allow, uncapped sentinel, loud.
+
+    Deliberate asymmetry with ``_guest_fail_closed``. A broken ledger must
+    never lock out someone who paid. Guests must never become uncapped spend.
+    """
+    if exc is None:
+        log.error("::error::brain_gateway: AUTH QUOTA fail-open (%s) lane=%s", reason, lane)
+    else:
+        log.error(
+            "::error::brain_gateway: AUTH QUOTA fail-open (%s) lane=%s (%s)",
+            reason, lane, exc,
+        )
+    _commercial_emit("quota.fail_open", reason=reason, lane=lane)
+    return True, {"lane": lane, "remaining": -1, "limit": -1, "period": period}
+
+
+def _guest_fail_closed(lane: str, limit: int, reason: str, exc: BaseException | None = None) -> tuple[bool, dict]:
+    """Guest quota-state failure: deny. Deliberate asymmetry with ``_auth_fail_open``."""
+    if exc is None:
+        log.error("::error::brain_gateway: GUEST QUOTA fail-closed (%s) lane=%s", reason, lane)
+    else:
+        log.error(
+            "::error::brain_gateway: GUEST QUOTA fail-closed (%s) lane=%s (%s)",
+            reason, lane, exc,
+        )
+    return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
 
 
 def _check_and_increment_quota(
@@ -4489,7 +4649,10 @@ def _check_and_increment_quota(
 
     Returns (allowed, quota_info_dict).
     quota_info_dict: {lane, remaining, limit, period}
-    Fails open (allowed=True) on I/O error — never blocks a user due to broken ledger.
+
+    ASYMMETRY (deliberate): this path is authenticated. Quota-state failure
+    fail-OPENS (allowed=True, limit=-1). A broken ledger must never lock out a
+    paying user. The guest sibling fail-CLOSES — see ``_check_and_increment_guest_quota``.
 
     DEVICE POOLING (anti-farming): when tier == 'free' AND device_key is non-empty, a
     SECOND ledger keyed by device (qd_{device}_{lane}_{pk}.json) shares the SAME free
@@ -4507,80 +4670,117 @@ def _check_and_increment_quota(
 
     cfg = _load_brain_config(root)
     token_ceilings = cfg.get("token_ceilings") or {}
+    req_ceil, tok_ceil = _global_daily_ceilings(root)
 
     try:
         _brain_quota_dir().mkdir(parents=True, exist_ok=True)
     except Exception as exc:  # noqa: BLE001
-        log.error("::error::brain_gateway: QUOTA DIR UNAVAILABLE (%s) — fail-open, usage "
-                  "uncapped until the state dir is writable", exc)
-        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unknown"}
+        # GATE-4 reason string is "dir_unavailable" (test_quota_dir_unavailable_emits_fail_open).
+        _commercial_emit("quota.fail_open", reason="dir_unavailable", lane=lane)
+        return _auth_fail_open(lane, "unknown", "quota dir unavailable", exc)
 
     allowance = _get_allowance(tier, status, lane, root)
     limit = allowance["limit"]
     period = allowance["period"]
     pk = _period_key(period, status, current_period_end)
 
-    qf = _quota_file(user_id, lane, pk)
-    qdata = _read_quota(qf)
-    count = int(qdata.get("count") or 0)
-
-    # Zero limit = lane forbidden for this tier
+    # Zero limit = lane forbidden for this tier — no ledger I/O.
     if limit == 0:
         return False, {"lane": lane, "remaining": 0, "limit": 0, "period": period}
 
     # Negative limit = config-level "Unlimited" for this (tier, lane) — operator
     # ruling 2026-07-28: pro fast. Unlike the allowlist bypass above, the monthly
-    # token ceiling below STILL applies as the fair-use backstop.
+    # token ceiling below STILL applies as the fair-use backstop, and the global
+    # daily spend ceiling still applies (that is the house backstop).
     uncapped = limit < 0
 
-    if not uncapped and count >= limit:
-        return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
-
-    # Device pooling — only for the FREE tier (paid tiers may legitimately use N
-    # devices). Never pool an uncapped lane: dcount >= negative-limit is always
-    # true, which would turn "Unlimited" into an instant block.
+    # Uncapped lanes do not read or write a per-user request ledger (existing
+    # contract: no q_ files). Skip that path so we also do not mint a q_*.lock.
+    qf: Path | None = None if uncapped else _quota_file(user_id, lane, pk)
     pool = tier == "free" and bool(device_key) and not uncapped
-    dqf: Path | None = None
-    dcount = 0
-    if pool:
-        dqf = _device_quota_file(device_key, lane, pk)
-        ddata = _read_quota(dqf)
-        dcount = int(ddata.get("count") or 0)
-        if dcount >= limit:
-            # Device pool exhausted even though this fresh user still has headroom.
-            return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
-
-    # Token backstop ceiling check (calendar month)
+    dqf: Path | None = _device_quota_file(device_key, lane, pk) if pool else None
     ceiling = int(token_ceilings.get(lane) or 0)
-    if ceiling > 0:
-        tf = _token_ceiling_file(user_id, lane)
-        tdata = _read_quota(tf)
-        used_tokens = int(tdata.get("tokens") or 0)
-        if used_tokens >= ceiling:
-            log.info("brain_gateway: token ceiling hit for %s lane=%s (%d >= %d)",
-                     user_id, lane, used_tokens, ceiling)
-            return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
+    tf: Path | None = _token_ceiling_file(user_id, lane) if ceiling > 0 else None
+    gf = _global_spend_file()
 
-    # Uncapped lane: no request-ledger writes — mirrors the allowlist sentinel
-    # shape exactly (clients already understand remaining=-1/limit=-1), and
-    # ai_costs + the token ledger carry the usage telemetry.
-    if uncapped:
-        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unlimited"}
+    try:
+        with _held_quota_locks(qf, dqf, tf, gf):
+            qdata: dict = {"count": 0}
+            count = 0
+            if qf is not None:
+                try:
+                    qdata = _read_quota(qf)
+                except QuotaLedgerCorrupt as exc:
+                    return _auth_fail_open(lane, period, "user ledger corrupt", exc)
+                count = int(qdata.get("count") or 0)
 
-    # Increment request counter(s) — user always; device too when pooling.
-    qdata["count"] = count + 1
-    _write_quota(qf, qdata)
+            if not uncapped and count >= limit:
+                return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
 
-    user_remaining = limit - (count + 1)
-    remaining = user_remaining
-    if pool and dqf is not None:
-        ddata["count"] = dcount + 1
-        _write_quota(dqf, ddata)
-        device_remaining = limit - (dcount + 1)
-        remaining = min(user_remaining, device_remaining)
-        _record_device_link(device_key, user_id)
+            # Device pooling — only for the FREE tier (paid tiers may legitimately use N
+            # devices). Never pool an uncapped lane: dcount >= negative-limit is always
+            # true, which would turn "Unlimited" into an instant block.
+            ddata: dict | None = None
+            dcount = 0
+            if pool and dqf is not None:
+                try:
+                    ddata = _read_quota(dqf)
+                except QuotaLedgerCorrupt as exc:
+                    return _auth_fail_open(lane, period, "device ledger corrupt", exc)
+                dcount = int(ddata.get("count") or 0)
+                if dcount >= limit:
+                    # Device pool exhausted even though this fresh user still has headroom.
+                    return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
 
-    return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": period}
+            # Token backstop ceiling check (calendar month)
+            if ceiling > 0 and tf is not None:
+                try:
+                    tdata = _read_quota(tf)
+                except QuotaLedgerCorrupt as exc:
+                    return _auth_fail_open(lane, period, "token ledger corrupt", exc)
+                used_tokens = int(tdata.get("tokens") or 0)
+                if used_tokens >= ceiling:
+                    log.info("brain_gateway: token ceiling hit for %s lane=%s (%d >= %d)",
+                             user_id, lane, used_tokens, ceiling)
+                    return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
+
+            try:
+                gdata = _read_quota(gf)
+            except QuotaLedgerCorrupt as exc:
+                return _auth_fail_open(lane, period, "global spend ledger corrupt", exc)
+            if _global_spend_blocks(gdata, req_ceil, tok_ceil):
+                log.info("brain_gateway: global daily spend ceiling hit lane=%s", lane)
+                return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
+
+            # Debit the house-wide request counter even for uncapped lanes — that
+            # is the point of a ceiling independent of per-user ledgers.
+            gdata["count"] = int(gdata.get("count") or 0) + 1
+            _write_quota(gf, gdata)
+
+            # Uncapped lane: no per-user request-ledger writes — mirrors the
+            # allowlist sentinel shape (clients already understand remaining=-1
+            # / limit=-1), and ai_costs + the token ledger carry the usage
+            # telemetry.
+            if uncapped:
+                return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unlimited"}
+
+            qdata["count"] = count + 1
+            _write_quota(qf, qdata)
+
+            user_remaining = limit - (count + 1)
+            remaining = user_remaining
+            if pool and dqf is not None and ddata is not None:
+                ddata["count"] = dcount + 1
+                _write_quota(dqf, ddata)
+                device_remaining = limit - (dcount + 1)
+                remaining = min(user_remaining, device_remaining)
+                _record_device_link(device_key, user_id)
+
+            return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": period}
+    except QuotaLedgerCorrupt as exc:
+        return _auth_fail_open(lane, period, "ledger corrupt", exc)
+    except Exception as exc:  # noqa: BLE001
+        return _auth_fail_open(lane, period, "rmw failed", exc)
 
 
 def _check_and_increment_guest_quota(
@@ -4598,8 +4798,11 @@ def _check_and_increment_guest_quota(
     reset the cap — the IP ledger still holds the count.
 
     limit = the operator's guest daily_limit (from _guest_cfg). Pro/other lanes → forbidden (0).
-    Fails OPEN (allowed) only when the ledger dir is genuinely unwritable, matching the
-    signed-in path — a broken ledger must never hard-lock the public surface.
+
+    ASYMMETRY (deliberate): quota-state failure fail-CLOSES. Anonymous traffic must
+    not become uncapped LLM spend when the ledger is broken. Authenticated payers
+    fail-OPEN on the sibling path — a broken ledger must never lock out someone
+    who paid.
     """
     cfg = _guest_cfg(root)
     limit = int(cfg.get("daily_limit") or _GUEST_CFG_DEFAULT["daily_limit"])
@@ -4617,34 +4820,47 @@ def _check_and_increment_guest_quota(
     try:
         _brain_quota_dir().mkdir(parents=True, exist_ok=True)
     except Exception as exc:  # noqa: BLE001
-        log.error("::error::brain_gateway: GUEST QUOTA DIR UNAVAILABLE (%s) — fail-open", exc)
-        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "day"}
+        # GATE-4 still records the hook (#5734). WS-2 fail-closes the guest
+        # (anonymous traffic must not become uncapped LLM spend).
+        _commercial_emit("quota.fail_open", reason="guest_dir_unavailable", lane=lane)
+        return _guest_fail_closed(lane, limit, "quota dir unavailable", exc)
 
     pk = _period_key("day", "active", None)
-
-    # Read both ledgers. Either identity may be empty (no cookie yet, or unroutable IP);
-    # an empty key hashes to '' and its ledger is skipped — the OTHER key still caps.
     cf = _guest_cookie_quota_file(aid_hash, lane, pk) if aid_hash else None
     ipf = _guest_ip_quota_file(ip_hash, lane, pk) if ip_hash else None
-    cdata = _read_quota(cf) if cf is not None else {"count": 0}
-    ipdata = _read_quota(ipf) if ipf is not None else {"count": 0}
-    ccount = int(cdata.get("count") or 0)
-    ipcount = int(ipdata.get("count") or 0)
+    gf = _global_spend_file()
+    req_ceil, tok_ceil = _global_daily_ceilings(root)
 
-    # Blocked when EITHER identity has already hit the limit for the day.
-    if ccount >= limit or ipcount >= limit:
-        return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
+    try:
+        with _held_quota_locks(cf, ipf, gf):
+            cdata = _read_quota(cf) if cf is not None else {"count": 0}
+            ipdata = _read_quota(ipf) if ipf is not None else {"count": 0}
+            gdata = _read_quota(gf)
+            ccount = int(cdata.get("count") or 0)
+            ipcount = int(ipdata.get("count") or 0)
 
-    # Increment both present ledgers.
-    if cf is not None:
-        cdata["count"] = ccount + 1
-        _write_quota(cf, cdata)
-    if ipf is not None:
-        ipdata["count"] = ipcount + 1
-        _write_quota(ipf, ipdata)
+            # Blocked when EITHER identity has already hit the limit for the day.
+            if ccount >= limit or ipcount >= limit:
+                return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
 
-    remaining = limit - (max(ccount, ipcount) + 1)
-    return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": "day"}
+            if _global_spend_blocks(gdata, req_ceil, tok_ceil):
+                return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
+
+            if cf is not None:
+                cdata["count"] = ccount + 1
+                _write_quota(cf, cdata)
+            if ipf is not None:
+                ipdata["count"] = ipcount + 1
+                _write_quota(ipf, ipdata)
+            gdata["count"] = int(gdata.get("count") or 0) + 1
+            _write_quota(gf, gdata)
+
+            remaining = limit - (max(ccount, ipcount) + 1)
+            return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": "day"}
+    except QuotaLedgerCorrupt as exc:
+        return _guest_fail_closed(lane, limit, "ledger corrupt", exc)
+    except Exception as exc:  # noqa: BLE001
+        return _guest_fail_closed(lane, limit, "rmw failed", exc)
 
 
 def _guest_quota_status(aid_hash: str, ip_hash: str, root: Path | None = None) -> dict:
@@ -4652,21 +4868,73 @@ def _guest_quota_status(aid_hash: str, ip_hash: str, root: Path | None = None) -
     cfg = _guest_cfg(root)
     limit = int(cfg.get("daily_limit") or _GUEST_CFG_DEFAULT["daily_limit"])
     pk = _period_key("day", "active", None)
-    ccount = int(_read_quota(_guest_cookie_quota_file(aid_hash, "fast", pk)).get("count") or 0) if aid_hash else 0
-    ipcount = int(_read_quota(_guest_ip_quota_file(ip_hash, "fast", pk)).get("count") or 0) if ip_hash else 0
+    try:
+        ccount = int(_read_quota(_guest_cookie_quota_file(aid_hash, "fast", pk)).get("count") or 0) if aid_hash else 0
+        ipcount = int(_read_quota(_guest_ip_quota_file(ip_hash, "fast", pk)).get("count") or 0) if ip_hash else 0
+    except QuotaLedgerCorrupt:
+        # Guest display fail-closes: do not report a fresh allowance after corruption.
+        return {"remaining": 0, "limit": limit, "period": "day"}
     remaining = max(0, limit - max(ccount, ipcount))
     return {"remaining": remaining, "limit": limit, "period": "day"}
 
 
 def _record_token_usage(user_id: str, lane: str, input_tokens: int, output_tokens: int) -> None:
-    """Accumulate token usage for the monthly ceiling backstop.  Never raises."""
+    """Accumulate token usage for the monthly + global ceilings.  Never raises.
+
+    Holds flock across the per-user token file AND the global spend file so a
+    concurrent check-and-increment cannot miss the just-recorded spend.
+    A corrupt token ledger is left untouched (never rewritten as tokens=0).
+    """
+    added = int(input_tokens or 0) + int(output_tokens or 0)
+    if added == 0:
+        return
     try:
         tf = _token_ceiling_file(user_id, lane)
-        tdata = _read_quota(tf)
-        tdata["tokens"] = int(tdata.get("tokens") or 0) + input_tokens + output_tokens
-        _write_quota(tf, tdata)
+        gf = _global_spend_file()
+        with _held_quota_locks(tf, gf):
+            try:
+                tdata = _read_quota(tf)
+            except QuotaLedgerCorrupt:
+                log.error(
+                    "::error::brain_gateway: token ledger corrupt path=%s — "
+                    "not resetting to zero; skip per-user increment",
+                    tf,
+                )
+                tdata = None
+            if tdata is not None:
+                tdata["tokens"] = int(tdata.get("tokens") or 0) + added
+                _write_quota(tf, tdata)
+            try:
+                gdata = _read_quota(gf)
+            except QuotaLedgerCorrupt:
+                log.error(
+                    "::error::brain_gateway: global spend ledger corrupt path=%s — "
+                    "not resetting to zero; skip global token increment",
+                    gf,
+                )
+                return
+            gdata["tokens"] = int(gdata.get("tokens") or 0) + added
+            _write_quota(gf, gdata)
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: token ceiling record failed (%s)", exc)
+    try:
+        usd = None
+        try:
+            from lib.ai_costs import estimate_cost_usd
+            model = "claude-haiku-4-5" if lane == "fast" else "claude-opus-5"
+            usd = estimate_cost_usd(model, int(input_tokens or 0), int(output_tokens or 0))
+        except Exception:  # noqa: BLE001
+            usd = None
+        if usd is None:
+            usd = (int(input_tokens or 0) * 3 + int(output_tokens or 0) * 15) / 1_000_000
+        _commercial_emit(
+            "llm.spend",
+            usd=round(float(usd), 6),
+            lane=lane,
+            tokens=int(input_tokens or 0) + int(output_tokens or 0),
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -9183,8 +9451,14 @@ def get_user_quotas(user_id: str, root: Path | None = None, user_email: str = ""
             continue
         pk = _period_key(period, status, cpe)
         qf = _quota_file(user_id, lane, pk)
-        qdata = _read_quota(qf)
-        count = int(qdata.get("count") or 0)
+        try:
+            qdata = _read_quota(qf)
+            count = int(qdata.get("count") or 0)
+        except QuotaLedgerCorrupt:
+            # Authenticated display fail-opens: do not report remaining=0 (exhausted)
+            # after corruption — that would lock the widget while chat fail-opens.
+            result["quotas"][lane] = {"remaining": -1, "limit": -1, "period": period}
+            continue
         remaining = max(0, limit - count)
         result["quotas"][lane] = {"remaining": remaining, "limit": limit, "period": period}
 

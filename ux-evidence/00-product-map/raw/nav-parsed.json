@@ -1,0 +1,584 @@
+[
+  {
+    "href": "macro.html",
+    "label": "macro.html",
+    "parent_group": "unknown",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "start.html",
+    "label": "start.html",
+    "parent_group": "unknown",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "macro.html",
+    "label": "United States",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "macro.html",
+    "label": "Macro Dashboard",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "us_stocks.html",
+    "label": "Stock Dashboard",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "intraday_flow.html",
+    "label": "Intraday Flow Tracker",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "stage_analysis.html",
+    "label": "Stage Analysis",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "winner_health.html",
+    "label": "Winner Health",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "sector_central.html",
+    "label": "Sector Intelligence",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "sector_central.html#confluence",
+    "label": "Subsector Confluence",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "strategies.html",
+    "label": "Strategies",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "news.html",
+    "label": "News Feed",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "alerts.html",
+    "label": "Alert Center",
+    "parent_group": "United States",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "options.html",
+    "label": "Options & Market Structure",
+    "parent_group": "Options & Market Structure",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "options.html",
+    "label": "Options — the workspace",
+    "parent_group": "Options & Market Structure",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "darkpool.html",
+    "label": "Dark Pool Desk",
+    "parent_group": "Options & Market Structure",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "market_structure.html",
+    "label": "Market Structure",
+    "parent_group": "Options & Market Structure",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "leader_radar.html",
+    "label": "Leader Radar",
+    "parent_group": "Options & Market Structure",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china.html",
+    "label": "China",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china.html",
+    "label": "Macro Dashboard",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china_stocks.html",
+    "label": "Stock Dashboard",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "sector_central_china.html",
+    "label": "Sector Intelligence",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "sector_central_china.html#confluence",
+    "label": "Subsector Confluence",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china_heatmap.html",
+    "label": "Market Heatmap",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china_strategies.html",
+    "label": "Strategies",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china_news.html",
+    "label": "China News Feed",
+    "parent_group": "China",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "china_intel.html",
+    "label": "Research",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_intel.html",
+    "label": "Intelligence Hub",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_mechanics.html",
+    "label": "Market Mechanics",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "baskets_china_ths.html",
+    "label": "同花顺 Theme Baskets",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "flow_velocity.html",
+    "label": "Capital Flow Velocity",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_altdata.html",
+    "label": "Alternative Data",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_policy_watch.html",
+    "label": "PBoC & Policy Watch",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_radar.html",
+    "label": "Divergence Radar",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "china_special_situations.html",
+    "label": "Special Situations",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "narrative_radar.html",
+    "label": "Narrative Basket Radar",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "hk.html",
+    "label": "Hong Kong",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "hk.html",
+    "label": "Macro Dashboard",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "hk_stocks.html",
+    "label": "Stock Dashboard",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "hk_heatmap.html",
+    "label": "Market Heatmap",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "flow_velocity.html",
+    "label": "Capital Flow Velocity",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "baskets_hk.html",
+    "label": "Thematic Baskets",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "allocation_hk.html",
+    "label": "Narrative Rotation",
+    "parent_group": "Hong Kong",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "canada.html",
+    "label": "Canada",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "canada.html",
+    "label": "Macro Dashboard",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "canada_stocks.html",
+    "label": "Stock Dashboard",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "canada_heatmap.html",
+    "label": "Market Heatmap",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "baskets_canada.html",
+    "label": "Thematic Baskets",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "allocation_canada.html",
+    "label": "Narrative Rotation",
+    "parent_group": "Canada",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "intl.html",
+    "label": "International",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "intl.html",
+    "label": "Macro Dashboard",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "japan.html",
+    "label": "Country Dashboards",
+    "parent_group": "Country Dashboards",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "japan.html",
+    "label": "Japan Macro",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "south_korea.html",
+    "label": "South Korea Macro",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "euro_area.html",
+    "label": "Euro Area Macro",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "united_kingdom.html",
+    "label": "United Kingdom Macro",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "india.html",
+    "label": "India Macro",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "intl_stocks.html",
+    "label": "Stock Dashboard",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "baskets_intl.html",
+    "label": "Thematic Baskets",
+    "parent_group": "International",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "commodities.html",
+    "label": "Commodities",
+    "parent_group": "Commodities",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "commodities.html",
+    "label": "Commodity Dashboard",
+    "parent_group": "Other Assets",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "commodity_strategies.html",
+    "label": "Strategies",
+    "parent_group": "Other Assets",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "spr.html",
+    "label": "Strategic Reserves",
+    "parent_group": "Other Assets",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "forex.html",
+    "label": "Forex",
+    "parent_group": "Other Assets",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "bonds.html",
+    "label": "Bonds",
+    "parent_group": "Other Assets",
+    "discovery_source": "PRIMARY_NAV"
+  },
+  {
+    "href": "intelligence_hub.html",
+    "label": "Research",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "intelligence_hub.html",
+    "label": "intelligence_hub.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "watchlist.html",
+    "label": "watchlist.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "https://bot.mastermind-x.com",
+    "label": "https://bot.mastermind-x.com",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "reports.html",
+    "label": "Research Reports",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "research_vault.html",
+    "label": "Research Vault",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "stocks/earnings/index.html",
+    "label": "Earnings Wire",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "fundamental_forensics.html",
+    "label": "fundamental_forensics.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "neural_web.html",
+    "label": "neural_web.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "market_memory.html",
+    "label": "market_memory.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "foresight.html",
+    "label": "Foresight",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "state_of_themes.html",
+    "label": "state_of_themes.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "radar.html",
+    "label": "Divergence Radar",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "stock_seasonality.html",
+    "label": "Stock Seasonality",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "confluence_screener.html",
+    "label": "Signal Board",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "smart_money.html",
+    "label": "Smart Money",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "etfs.html",
+    "label": "Fund Flows",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "cycle.html",
+    "label": "Cycle Intelligence",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "macro_context.html",
+    "label": "macro_context.html",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "policy_watch.html",
+    "label": "Policy Watch",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "government_revenue.html",
+    "label": "Government Revenue",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "alt_data.html",
+    "label": "Alternative Data",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "special_situations.html",
+    "label": "Special Situations",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "biocatalyst.html",
+    "label": "BioCatalyst Intelligence",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "capital_structure.html",
+    "label": "Capital Structure",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "markets.html",
+    "label": "Global Market Cycles",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "country_cycles.html",
+    "label": "Country Cycles",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "sector_cycles.html",
+    "label": "U.S. Sector Cycles",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "sector_cycles_china.html",
+    "label": "China Sector Cycles",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "cycle.html",
+    "label": "Cycle Intelligence",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "macro_context.html",
+    "label": "Macro Weather",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  },
+  {
+    "href": "intelligence_hub.html",
+    "label": "Browse all research",
+    "parent_group": "Research",
+    "discovery_source": "MEGA_NAV"
+  }
+]

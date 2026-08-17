@@ -539,7 +539,8 @@
                                   : '<span class="dash">—</span>') + '</td>' +
       '<td class="c-evt">' + evt + '</td>' +
       '<td class="c-exp"><button class="exp" type="button" data-row-exp="' + esc(String(r.id)) +
-        '" aria-label="' + (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
+        '" aria-expanded="' + (isOpen ? 'true' : 'false') + '" aria-label="' +
+        (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
       '</tr>' +
       (isOpen ? '<tr class="row-drawer" data-drawer="' + esc(String(r.id)) + '"><td colspan="9">' +
         drawerBody(r) + '</td></tr>' : '');
@@ -1005,9 +1006,14 @@
     });
   }
 
-  var pending = {}, rafOn = false;
-  function repaintRow(t) {
+  var pending = {}, rafOn = false, focusAfter = null;
+  function focusExp(id) {
+    var btn = document.querySelector('#tbl_pf .exp[data-row-exp="' + CSS_escape(id) + '"]');
+    if (btn && btn.focus) btn.focus();
+  }
+  function repaintRow(t, keepFocusId) {
     pending[t] = 1;
+    if (keepFocusId) focusAfter = keepFocusId;
     if (rafOn) return;
     rafOn = true;
     var run = function () {
@@ -1028,6 +1034,7 @@
         parent.removeChild(row);
         while (frag.firstElementChild) parent.insertBefore(frag.firstElementChild, anchor);
       });
+      if (focusAfter) { focusExp(focusAfter); focusAfter = null; }
     };
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
     else setTimeout(run, 16);
@@ -1248,8 +1255,8 @@
   function toggleDrawer(id) {
     if (openDrawers[id]) delete openDrawers[id]; else openDrawers[id] = true;
     var row = document.querySelector('#tbl_pf tr.pfx-row[data-row="' + CSS_escape(id) + '"]');
-    if (row) repaintRow(row.getAttribute('data-t'));
-    else renderTable();
+    if (row) repaintRow(row.getAttribute('data-t'), id);
+    else { renderTable(); focusExp(id); }
   }
   // attribute-selector safety for ids that came from Supabase (uuid) or 'loc-<n>'
   function CSS_escape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
@@ -1283,10 +1290,17 @@
   // ---- event wiring --------------------------------------------------------
   function wireEvents() {
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        var dlg = el('dlg-holding');
-        if (dlg && dlg.classList.contains('open')) pfCloseDlg();
-      }
+      if (e.key !== 'Escape') return;
+      var dlg = el('dlg-holding');
+      if (dlg && dlg.classList.contains('open')) { pfCloseDlg(); return; }
+      var ids = Object.keys(openDrawers);
+      if (!ids.length) return;
+      var id = ids[0];
+      delete openDrawers[id];
+      var row = document.querySelector('#tbl_pf tr.pfx-row[data-row="' + CSS_escape(id) + '"]');
+      if (row) repaintRow(row.getAttribute('data-t'), id);
+      else { renderTable(); focusExp(id); }
+      e.preventDefault();
     });
     var dlg = el('dlg-holding');
     if (dlg) dlg.addEventListener('click', function (e) {

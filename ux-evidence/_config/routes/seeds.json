@@ -1,0 +1,36 @@
+{
+  "origin": "https://www.mastermind-x.com",
+  "seed_pages": ["start.html", "us_stocks.html", "stock.html#ONTO"],
+  "parameterized_families": [
+    {
+      "route_family_id": "RF.us.stock_detail",
+      "pattern": "stock.html#<ticker>",
+      "sample": "stock.html#ONTO",
+      "reason": "ticker analyzer instances share stock.html.j2"
+    },
+    {
+      "route_family_id": "RF.ca.stock_detail",
+      "pattern": "canada_stock.html#<ticker>",
+      "sample": "canada_stock.html",
+      "reason": "canada_stock.html.j2 ticker instances"
+    },
+    {
+      "route_family_id": "RF.intl.stock_detail",
+      "pattern": "intl_stock.html#<ticker>",
+      "sample": "intl_stock.html",
+      "reason": "intl_stock.html.j2 ticker instances"
+    },
+    {
+      "route_family_id": "RF.fund.profile",
+      "pattern": "fund_<slug>.html",
+      "sample": "fund_berkshire.html",
+      "reason": "generated super-investor profiles; one template family"
+    },
+    {
+      "route_family_id": "RF.strategy.tactical",
+      "pattern": "strategy_<slug>.html",
+      "sample": "strategy_mm_moderate.html",
+      "reason": "generated tactical strategy pages; one template family"
+    }
+  ]
+}

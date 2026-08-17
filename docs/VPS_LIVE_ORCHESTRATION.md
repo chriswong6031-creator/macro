@@ -192,7 +192,15 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   "fresh"). Alert transports come from
   `/etc/macro-api.env` (mail) plus the operator slot `/etc/macro-sentinel.env`
   (read last, may override). With no transport configured the pass still
-  publishes the state and fails the unit visibly. Budgets follow the masterplan
+  publishes the state and fails the unit visibly.
+  The same unit also runs `scripts.commercial_path_sentinel` first
+  (`ExecStart=-`, so its exit cannot skip freshness and a freshness breach
+  cannot skip it): GATE-4 money-path alarms (Stripe webhook silence / errors,
+  checkout create failures, `require_user` 502 spike, LLM daily spend, brain
+  quota fail-open) reuse that transport. Prove locally with
+  `python3 -m scripts.commercial_path_sentinel --prove-all`. A missing
+  Telegram/Discord/email credential is SKIP, never a papered-over PASS.
+  Budgets follow the masterplan
   B5 falsifier law: >2 false-positive pages a month means the budgets are wrong
   — fix the budgets, never mute the sentinel. Acceptance drill (no killing
   anything): `python3 -m scripts.freshness_sentinel --now <now+30h ISO>

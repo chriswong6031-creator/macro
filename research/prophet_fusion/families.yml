@@ -43,7 +43,7 @@ authority:
 frame_keys: [stamp_date, ticker, board_definition, tier]
 
 # Orphan guard.  Read 2026-08-14: the registry homes ALL 180 columns of the pinned schema
-# exactly once, across families + frame_keys + frame_identity + strata + champion_baseline +
+# exactly once, across families + frame_keys + frame_identity + strata + baseline_roles +
 # excluded_columns.  The store self-heals FORWARD by schema union (§13 adds telemetry columns
 # within days), so a NEW column must not red the suite — but a member deleted out from under
 # its columns must.  The test therefore asserts accounted >= n_columns, never equality.
@@ -115,29 +115,81 @@ strata:
     - {id: score_scale_v1_v2, note: "replayed v1-era scores diverge up to 16.3 pts from published (§6.6)"}
     - {id: cv_universe_widening, note: "08-05/06 curated rows = 0, 08-07 = 1,717; coverage is reported PER STAMP DATE, never pooled across this break"}
 
-# The champion's own output.  Arena BASELINES (§8.1 G0/G0'/G1/G3/G4), never features:
-# ingesting the score as evidence reproduces the champion by construction.
+# Ranker / board OUTPUTS.  Arena BASELINES, never features: ingesting a score as
+# evidence reproduces that ranker by construction.  Roles are DEFINITION-AWARE.
+# A timeless `champion_baseline.columns` list is forbidden — on us_prophet_v3 the
+# canonical prophet_score is C1, not the retired v2 heuristic (DSC:CHAMPION-BASELINE-
+# COLUMNS-CARRY-THE-CHALLENGER).  The W3 reader must never infer comparator identity
+# from a bare column name.
+baseline_roles:
+  published_ranker_output:
+    columns: [prophet_score, score_rank, display_rank]
+    interpreted_under: board_definition
+    note: >-
+      Canonical published score/rank.  Meaning follows board_definition: v2/v2_fallback
+      rows carry the retired heuristic; us_prophet_v3 rows carry C1.  Always pair with
+      board_definition.  Not a shadow comparator by column name alone.
+  retired_shadow_output:
+    columns:
+      # Order matches engine.us_context_vector.SHADOW_COLUMNS (store family).
+      - prophet_shadow_definition
+      - prophet_shadow_score
+      - prophet_shadow_score_rank
+      - prophet_shadow_signal
+      - prophet_shadow_entry
+      - prophet_shadow_edge
+      - prophet_shadow_runway
+      - prophet_shadow_quality
+      - prophet_shadow_signal_points
+      - prophet_shadow_entry_points
+      - prophet_shadow_edge_points
+      - prophet_shadow_runway_points
+      - prophet_shadow_quality_points
+    valid_when:
+      board_definition: us_prophet_v3
+      prophet_shadow_definition: us_prophet_v2_shadow
+    note: >-
+      Zero-authority retired v2 scorer, stamped on the same row (#5769 /
+      DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY).  Null on off-board rows and
+      on us_prophet_v2_fallback nights.  Never copy these values into canonical
+      prophet_* columns.
+  legacy_v2_decomposition:
+    columns:
+      - prophet_signal
+      - prophet_signal_points
+      - prophet_entry
+      - prophet_entry_points
+      - prophet_edge
+      - prophet_edge_points
+      - prophet_runway
+      - prophet_runway_points
+      - prophet_quality
+      - prophet_quality_points
+    null_by_design_on: [us_prophet_v3]
+    note: >-
+      The retired five-leg decomposition.  Populated on historical v1/v2 and explicit
+      fallback rows.  NULL BY DESIGN on us_prophet_v3 because C1 has no five-leg
+      decomposition.  That null is attribution, not a bug.
+  published_board_output:
+    columns: [featured]
+    note: >-
+      Board consequence of canonical order (who is featured), not a shadow comparator
+      and not a ranker score.
+
+# Compatibility: definition-keyed mapping, NEVER a timeless column list.
+# Consumers that still look up champion_baseline must go through by_board_definition.
 champion_baseline:
-  columns:
-    - prophet_score
-    - score_rank
-    - display_rank
-    - featured
-    - prophet_signal
-    - prophet_signal_points
-    - prophet_entry
-    - prophet_entry_points
-    - prophet_edge
-    - prophet_edge_points
-    - prophet_runway
-    - prophet_runway_points
-    - prophet_quality
-    - prophet_quality_points
+  by_board_definition:
+    us_prophet_v2:
+      roles: [published_ranker_output, published_board_output, legacy_v2_decomposition]
+    us_prophet_v2_fallback:
+      roles: [published_ranker_output, published_board_output, legacy_v2_decomposition]
+    us_prophet_v3:
+      roles: [published_ranker_output, published_board_output, retired_shadow_output]
+      null_by_design: [legacy_v2_decomposition]
   note: >-
-    Baseline comparators only.  The five legs are the champion's own decomposition and are
-    forbidden as challenger features for the same reason §5.2 forbids `conviction` — a
-    composite's legs are the composite.  The families below re-derive the same evidence
-    from its producers, which is the point of the arena.
+    Kept as a definition-keyed index so older readers do not invent a timeless
+    champion from a bare column name.  There is no champion_baseline.columns list.
 
 # Present in the store, deliberately not evidence.
 # The OUTCOME stores are labels, never features (masterplan §7; the arena label
@@ -793,41 +845,28 @@ families:
         null_semantics: unmeasured
         pit_status_change_note: >-
           PIT STATUS MOVED snapshot_not_pit -> pit_settlement IN PR-2, on #5602's merged
-          fix (2026-08-14).  The old note here read "PIT-BROKEN BY CONSTRUCTION:
-          `_short_int_dim` IGNORES the query date" — that was true when written and is
-          now FALSE: `context_api._short_int_dim` resolves a HISTORICAL query date
-          against the history+panel union gated on `knowable_date` (= settlement + 10
-          calendar days, the publication-lag guard), emitting basis `pit_settlement`
-          with as_of = the settlement actually knowable on the query date; a current
-          date (within 1 day) keeps the snapshot path and its `snapshot_not_pit` basis,
-          which is the correct live read and is what the nightly stamps.
-          BACKTEST ADMISSION DEFERRED (PR-2 adversarial review, F-5): `pit_settlement`
-          is deliberately NOT in the arena's BACKTEST_LAWFUL_STATUSES yet.  The
-          producer does gate historical resolutions on `knowable_date`, but on every
-          frame this repo can build that field is DERIVED — `_si_normalise` computes
-          `settlement_date + 10 CALENDAR days` (`_SI_KNOWABLE_LAG_DAYS`) because the
-          history parquet carries no native knowable column — and 10 calendar days is
-          2-3 days SHORT of the "~8 sessions" publication lag this member's own note
-          records (measured on all 3 committed settlements: +10cal lands 2026-07-10 /
-          07-25 / 08-10 vs 8 US sessions landing 07-13 / 07-27 / 08-12).  A derived
-          lag that under-waits manufactures look-ahead at exactly the publication
-          boundary, so the status stays REFUSED in backtest frames until the owning
-          lane reconciles the constant (8 business sessions, or
-          max(derived, capture_date) — the store's real capture_date is currently
-          unused).  Three caveats BIND every consumer once admitted.
-          (1) DEPTH: committed history is 3 settlements (first knowable 2026-07-10);
-          re-run scripts/backfill_finra_short_interest.py before any deep historical
-          join (the 2018+ panel parquet is absent on the primary checkout) — a
-          three-settlement series supports coverage receipts, not inference.
+          fix (2026-08-14).  Producer knowability RECONCILED IN #5705 (merged
+          2026-08-15 as 7811075a): `lib/finra_knowable.py` defines the 8th NYSE session
+          strictly after settlement (`KNOWABLE_LAG_SESSIONS = 8`), then `_si_normalise`
+          floors that date by the stored `knowable_date` and by `capture_date` (monotone
+          later only).  The retired `settlement + 10 calendar days` rule is gone from
+          the producer; it under-waited 2-3 days on every committed settlement and
+          preceded capture on every row.  BACKTEST ADMISSION (PR-3A): `pit_settlement`
+          is in the arena's BACKTEST_LAWFUL_STATUSES because the #5705 producer law is
+          the registered publication-lag gate.  PIT-lawful is NOT estimable.  Three
+          caveats BIND every consumer.
+          (1) DEPTH: committed history is 3 settlements; under #5705 the first
+          knowable date is 2026-07-22 (the 06-30 settlement's capture floor), not
+          2026-07-10.  Re-run scripts/backfill_finra_short_interest.py before any deep
+          historical join (the 2018+ panel parquet is absent on the primary checkout)
+          — a three-settlement series supports coverage receipts, not inference.
           (2) BASIS MIXING: the five stamped store columns above are the snapshot-era
           emission; `short_int__knowable_date` joins the store schema only when
           reconstruction rows stamp.  Key on `basis_field` — a frame mixing
           `pit_settlement` and `snapshot_not_pit` bases without disclosure is not a
           PIT frame.
-          (3) LAG PROVENANCE: any admission must first reconcile the knowable-lag
-          convention above; the engine constant's own "deliberately conservative"
-          comment is contradicted by the session arithmetic and must not be cited as
-          the reconciliation.
+          (3) LAG PROVENANCE: cite `lib/finra_knowable.py` / #5705.  Do not cite the
+          retired `_SI_KNOWABLE_LAG_DAYS = 10` comment as current law.
         note: >-
           `settlement_date` is the OBSERVATION date, not the publication date (FINRA
           publishes ~8 sessions later) — the reader's knowable_date gate is what makes a

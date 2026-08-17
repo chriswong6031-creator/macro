@@ -1722,6 +1722,124 @@ def _pf_code() -> str:
     return re.sub(r"//[^\n]*", "", src)
 
 
+# ===========================================================================
+# W4 2026-08-15 signed-in acceptance repair — list selector + mode-switch feed
+# ===========================================================================
+
+@needs_node
+def test_bind_list_rereads_storage_on_the_same_id():
+    """Defect 2. First click on W4-ACCEPT-THROWAWAY called bindList before the
+    cache was written, then setActive wrote 2 names and rebound the SAME id.
+    The same-id early-return kept the 53-name default on screen.
+
+    MUTATION CHECK: restore `if (nextId === listId) { listName = ...; return; }`
+    and items stay empty after the second bind."""
+    out = _run(
+        "require(%s);\n"
+        """
+        window.WL.bindList('L-T', 'W4-ACCEPT-THROWAWAY');
+        var first = window.WL.getBlob().items.map(function (i) { return i.t; });
+        localStorage.setItem('mdash.wl.L-T.v1', JSON.stringify({
+          v: 1, updated: '2026-08-15T00:00:00.000Z',
+          items: [{t:'AAA', added:'2026-08-15T00:00:00.000Z', note:''},
+                  {t:'BBB', added:'2026-08-15T00:00:00.000Z', note:''}],
+          order: ['AAA','BBB'], settings: {}}));
+        window.WL.bindList('L-T', 'W4-ACCEPT-THROWAWAY');
+        OUT({first: first, second: window.WL.getBlob().items.map(function (i) { return i.t; }),
+             name: window.WL.listName(), share: window.WL.shareParam()});
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["first"] == []
+    assert out["second"] == ["AAA", "BBB"], out
+    assert out["name"] == "W4-ACCEPT-THROWAWAY"
+    assert out["share"] == "wl.W4-ACCEPT-THROWAWAY"
+
+
+@needs_node
+def test_bind_list_resolves_the_name_from_the_store_when_the_caller_omits_it():
+    """Defect 2, label lag. pull/setActive used to dispatch only listId; the
+    handler rebound with the stale empty listName and the button kept saying
+    'My watchlist'.
+
+    MUTATION CHECK: drop resolveListName() and share falls back to the raw id."""
+    out = _run(
+        "require(%s);\n"
+        """
+        window.WatchStore = { lists: { all: function () {
+          return [{id:'L-DEF', name:'Default'}];
+        } } };
+        window.WL.bindList('L-DEF');
+        OUT({name: window.WL.listName(), share: window.WL.shareParam()});
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["name"] == "Default"
+    assert out["share"] == "wl.Default"
+
+
+@needs_node
+def test_set_active_event_carries_the_list_name():
+    """Companion to the label-lag bind: the store must publish the name, not
+    just the id. Source-pinned on the dispatcher; the bind test above is the
+    consumer.
+
+    MUTATION CHECK: revert the event detail to `{listId: listId}` and this reds."""
+    src = WATCHSTORE.read_text()
+    assert "name: listNameOf(listId)" in src or "name: listNameOf(wlId)" in src
+    assert "function listNameOf(" in src
+
+
+@needs_node
+def test_portfolio_mode_does_not_feed_the_watchlist_blob_to_fx():
+    """Defect 3. Watchlists → Portfolio called FX.update(watchlist symbols) on
+    every render, so Risk Center painted the watchlist as 'this book's risk'
+    while Holdings said 0 rows. BOOKS chips died because MB.refresh(watchlist,
+    null) ran while PF existed.
+
+    MUTATION CHECK: move FX.update back above the mode branch and fxCalls is
+    non-empty after setMode('portfolio')."""
+    out = _run(
+        """
+        var fxCalls = [];
+        var mbCalls = [];
+        var pfRenders = 0;
+        var nodes = {};
+        function node(id) {
+          if (!nodes[id]) nodes[id] = {
+            id: id, innerHTML: '', textContent: '', style: {}, className: '',
+            classList: { contains: function () { return false; }, toggle: function () {},
+                         add: function () {}, remove: function () {} },
+            setAttribute: function () {}, getAttribute: function () { return null; },
+            querySelector: function () { return null; },
+            querySelectorAll: function () { return []; },
+            addEventListener: function () {}
+          };
+          return nodes[id];
+        }
+        document.getElementById = function (id) { return node(id); };
+        window.SD = {};
+        window.FX = { update: function (s) { fxCalls.push((s || []).slice()); } };
+        window.MB = {
+          refresh: function (w, r) { mbCalls.push({w: (w||[]).slice(), rows: r}); },
+          modeledOnly: function (s) { return s; },
+          marketOf: function () { return 'us'; },
+          inActive: function () { return true; }
+        };
+        window.PF = { count: function () { return 0; }, render: function () { pfRenders++; } };
+        var WLT = require(%s);
+        window.WL.replace({v:1, updated:'2026-08-15T00:00:00.000Z',
+          items:[{t:'AAPL', added:'2026-08-15T00:00:00.000Z', note:''}],
+          order:['AAPL'], settings:{}});
+        fxCalls = []; mbCalls = []; pfRenders = 0;
+        WLT.setMode('portfolio', false);
+        OUT({fx: fxCalls, mb: mbCalls, pf: pfRenders, mode: window.WS.mode()});
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["mode"] == "portfolio"
+    assert out["fx"] == [], out
+    assert out["mb"] == [], out
+    assert out["pf"] == 1, out
+
+
 def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition():
     """PR #5575 structural half: elevated is named once and read by all three sites.
 
