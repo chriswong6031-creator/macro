@@ -12,7 +12,7 @@ program: government-revenue-foresight
 repos: [macro, terminal, mastermind]
 owner: coo-fable
 class: research
-blast_radius: reversible
+blast_radius: user_facing
 ambiguity: specified
 owns_paths:
   - research/DEFENSE_PROCUREMENT_INTELLIGENCE_OS_V3_FINANCIAL_ALPHA_SUPERINTELLIGENCE_MASTERPLAN_2026-08-16.md
@@ -23,18 +23,23 @@ owns_paths:
   - scripts/build_government_revenue.py
   - scripts/build_government_revenue_candidates.py
   - templates/government_revenue.html.j2
+  - templates/government-revenue-candidate-radar.js
+  - templates/government-revenue-dossiers.js
 waves:
   - id: D0R
     title: Financial-alpha reconnaissance and architecture freeze
-    status: in_progress
+    status: done
     pr: [5814, 5819]
     next_action: >
-      Sol reviews D0R closure on PR 5819. #5814 remains the checkpoint.
-      Do not start D1. Do not merge #5424.
+      D0R accepted on #5819. Do not reopen Gate 5 as a D0R architecture gap.
+      Historical corpus remains mandatory before any alpha promotion.
   - id: D1
     title: Production truth and signed-in product rescue
-    status: todo
+    status: in_progress
     depends_on: [D0R]
+    next_action: >
+      Ship the entitled desk rescue PR, merge, deploy, and prove the
+      signed-in journey. Do not start D2. Do not merge #5424.
   - id: D2
     title: Defense Identity Atlas vertical slice
     status: todo
@@ -66,6 +71,7 @@ do_not_redo:
   - "Do not grant rank, gate, size, entry, or execution authority."
   - "Do not treat SPR as a live golden ticker."
   - "Do not invent 60 VERIFIED_CASE primaries."
+  - "Do not fold #5424 into D1. Do not start D2 in the D1 session."
 decisions:
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
 discoveries:
@@ -73,33 +79,19 @@ discoveries:
   - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
   - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
-needs_ceo:
-  question: Accept the D0R closure packet on PR 5819 so the operator can authorize D1?
-  options:
-    - accept D0R; operator may then authorize D1 rescue only
-    - request more Gate 5 primary pins before acceptance
-    - reject; name remaining D0R gaps
-  recommendation: >
-    Accept as D0R research close with Gate 5 honest-labeled (6 VERIFIED_CASE,
-    61 RESEARCH_CANDIDATE). Do not authorize collectors. D1 remains a separate
-    operator order.
-  by_when: 2026-08-18
 next_action: >
-  Sol reviews D0R closure on PR 5819. #5814 is the merged checkpoint.
-  D0R not accepted; D1 unauthorized. No #5424, no Prophet authority.
+  Merge and live-prove the D1 entitled-desk rescue. Stop after that proof.
+  Do not start Atlas/D2. Do not merge #5424.
 ---
 
 ## Context
 
-V3 architecture and the D0R handoff merged in #5803 (`455284b7beae`). D0R is
-research/design only. Canonical docs:
-
-- `research/DEFENSE_PROCUREMENT_INTELLIGENCE_OS_V3_FINANCIAL_ALPHA_SUPERINTELLIGENCE_MASTERPLAN_2026-08-16.md`
-- `research/DEFENSE_PROCUREMENT_D0R_FINANCIAL_ALPHA_RECONNAISSANCE_HANDOFF_2026-08-16.md`
-
-Kickoff evidence: `research/defense_intelligence/D0R_EVIDENCE_INDEX.md`.
-Closure packet (lineages L1–L6, B/D/E/G/H harden, I handoffs, red-team DEC)
-is on PR 5814 awaiting Sol D0R acceptance. D1 is not authorized.
+V3 architecture and the D0R handoff merged in #5803 (`455284b7beae`). D0R
+closed on #5819 (`0d10acdd`) and was accepted; Gate 5 stays honest-labeled
+(6 VERIFIED_CASE + 61 RESEARCH_CANDIDATE) and is not alpha validation.
+D1 is the authorized production rescue of `government_revenue.html` for an
+already-entitled `site_full` user. Canonical D1 contract:
+`research/defense_intelligence/DEFENSE_D1_PRODUCTION_TRUTH_AND_PRODUCT_RESCUE_HANDOFF.md`.
 Discoveries: `DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT`,
 `DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT`,
 `DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES`,

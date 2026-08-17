@@ -20,6 +20,12 @@
       return headers;
     }).catch(function(){return headers});
   }
+  function authSettled(){
+    if(global.__govrevAuthSettled)return true;
+    try{if(global.MDXAuth&&typeof global.MDXAuth.enabled==='function'&&!global.MDXAuth.enabled())return true;}catch(e){}
+    return false;
+  }
+  function markAuthSettled(){global.__govrevAuthSettled=true;}
 
   global.createGovernmentRevenueDossier=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,factCell=api.factCell,hostFor=api.host,getSelected=api.selected;
@@ -208,7 +214,7 @@
 
   global.createGovernmentRevenueBudget=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
-    var contentId=null,detailEpoch=0,detailCache={},loadState='loading',listing=null;
+    var contentId=null,detailEpoch=0,loadEpoch=0,detailCache={},loadState='loading',listing=null;
 
     function validAuthority(value){return obj(value)&&value.tier==='display'&&value.context_only===true&&value.can_rank===false&&value.can_size===false&&value.can_gate===false&&value.can_originate_signal===false&&value.can_add_candidates===false&&value.can_escalate===false}
     function fetchBudget(route){
@@ -223,9 +229,34 @@
     function programKind(value){return value==='procurement_line_item'?tr('P-1 procurement line','P-1 采购项目行'):tr('R-1 RDT&E program element','R-1 研发试验项目要素')}
     function rowsFrom(value){return arr(value.programs).filter(obj).map(function(program){return{id:'budget:'+text(program.program_key),kind:'budget_program',truth:'official',truthCopy:tr("Official President's Budget request","总统预算请求官方记录"),linked:false,defense:true,tickers:[],agency:'Department of Defense',date:value.known_at,title:text(program.name,tr('Unnamed DoD program','未命名国防部项目')),subtitle:programKind(program.kind)+' · '+text(program.native_identifier),program:program,budgetEnvelope:{content_id:value.content_id,known_at:value.known_at,as_of:value.as_of,source_coverage:value.source_coverage,documents:value.documents,limitations:value.limitations}}})}
     function load(){
-      loadState='loading';
-      return fetchBudget('budget-programs').then(function(value){listing=value;contentId=value.content_id;loadState='ok';var rows=rowsFrom(value);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows}).catch(function(){listing=null;contentId=null;detailCache={};loadState='unavailable';if(typeof api.onRows==='function')api.onRows([],{status:'unavailable',content_id:null,total:0});return[]});
+      var ticket=++loadEpoch;loadState='loading';
+      if(typeof api.onRows==='function'&&!listing)api.onRows([],{status:'loading',content_id:null,total:0});
+      return fetchBudget('budget-programs').then(function(value){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        listing=value;contentId=value.content_id;loadState='ok';
+        var rows=rowsFrom(value);
+        if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});
+        return rows;
+      }).catch(function(error){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        var message=error&&error.message||'';
+        if((message==='http_401'||message==='http_403')&&!authSettled()){
+          loadState='loading';
+          if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+          return[];
+        }
+        listing=null;contentId=null;detailCache={};
+        loadState=(message==='http_404'||message==='http_503'||message==='contract')?'projection_missing':'unavailable';
+        if(typeof api.onRows==='function')api.onRows([],{status:loadState,content_id:null,total:0});
+        return[];
+      });
     }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();load();}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
     function semanticValue(line,semantic){var cell=arr((line||{}).amounts).find(function(item){return obj(item)&&item.semantic===semantic});return cell?n(cell.amount_usd):null}
     function latestLine(lines){return arr(lines).filter(obj).slice().sort(function(a,b){return(n(b.fiscal_year)||0)-(n(a.fiscal_year)||0)||String(b.known_at||'').localeCompare(String(a.known_at||''))})[0]||null}
     function statusClass(status){return status==='ok'?'ok':status==='partial'?'warn':'muted'}
