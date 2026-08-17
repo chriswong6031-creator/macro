@@ -4,15 +4,13 @@ title: Global Market Intelligence theme graph
 objective: >
   Connect global themes, evidence, transmission, and contagion into a governed graph.
   Done = the graph answers transmission questions with cited evidence at display tier.
-status: blocked
+status: active
 program: gmi-theme-graph
 repos: [macro]
 owner: coo-fable
 class: research
 blast_radius: reversible
 ambiguity: scoped
-blocked_by:
-  - "Waiting on the scheduled Saturday 2026-08-15 scrape. External dependency, on time — not stalled."
 waves:
   - id: W0
     title: Graph scaffolding
@@ -21,11 +19,20 @@ waves:
     title: "R1 answered (#5402)"
     status: done
     pr: 5402
+  - id: W3A
+    title: "Local theme plane — rights-gated Finviz/THS ltheme nodes (268+373), PIT
+      MEMBER_OF memberships, capability sidecar, probation mapping; engine/theme_graph/*
+      + data/theme_graph/*. No ThemeState, no ranking authority, no user surface."
+    status: done
+    pr: 5718
   - id: TRANSMISSION
     title: Transmission/contagion layer
     status: todo
     depends_on: [R1]
-    next_action: Start after the 2026-08-15 scrape lands.
+    next_action: >
+      Reconcile with W3B ThemeState sequencing (Prophet V4 D-lane consumes it; see
+      research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md §3 — a merge-order ruling is
+      required before ThemeState work starts anywhere).
 landmines:
   - >-
     Wave ids other than W0 were MINTED by the Phase 0 seeding session, not taken from

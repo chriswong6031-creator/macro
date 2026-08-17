@@ -1,0 +1,48 @@
+# PROPHET US V4 — CONTRACT AND OWNER MAP (V4-0A)
+
+**Pinned main:** `fc0557bb0873` (2026-08-17). Every canonical owner V4 consumes, the exact contract surface, and the paths no V4 wave may duplicate. Companion: `ARCHITECTURE_FREEZE.md` §9–11 (the rulings), `WAVE_GRAPH_AND_MERGE_ORDER.md` (who may touch what, when).
+
+## 1. Owner table
+
+| Authority | Owner (workstream) | Contract surface at pin | V4 consumes via | Never duplicated |
+|---|---|---|---|---|
+| Expert-event production | `WS:LIVE-ENTRY-RADAR` | `engine/entry_radar/entry_events.py` — `mastermind.entry_event.v1` (append-only store; fields incl. `producer, family, subtype, detector_id, bar_state, final, finality_basis, authority, event_id`); experts G0/C1–C5 per PR-0 contract §3–4; durable forward store `data/entry_radar/forward.parquet` via `scripts/reconcile_entry_radar.py --nightly` | V4-B1 episode intake maps registered expert fires → episodes; V4-B6/B7 activation/product | detector logic, event minting, F1_FUSION (entry-detector fusion is Radar's reserved slot) |
+| Identity epochs / behavioral fingerprints | `WS:STOCK-IDENTITY` | `engine/stock_identity/` interfaces (`stock_identity.*`); W1 Atlas v0 (#5612) + W1-A1 correction (#5660); W2 replay in flight | `security_id`/`company_id`/`identity_epoch` fields of `prophet.candidate_episode/v1`; later E4 routing via its Method Law channels | any rival fingerprint/epoch/personality stack |
+| Company–theme relationships & theme state | `WS:GMI-THEME-GRAPH` | `engine/theme_graph/{store,materialize,capability,identity,local_sources,probation,rights}.py`; stores `data/theme_graph/{nodes,edges,capability,evidence}.parquet` + `probation/proposals.jsonl`; `config/theme_sources.yml` + `engine/theme_graph/rights.py` emission gate; `config/theme_crosswalk.yml` | V4-D2..D4 extend in/with the GMI lane; ThemeState v1 target `data/theme_graph/state/YYYY-MM-DD.parquet` (spec'd in GMI masterplan, NOT built) | a second graph or theme truth store |
+| Earnings events/facts/claims | `WS:EARNINGS-INTELLIGENCE-OS` | E0 artifacts under `research/earnings_intelligence/`; runtime `engine/company_intelligence/*` + `engine/earnings_narrative/*` (planes currently DISAGREE per-issuer — adapter binds to the canonical event workspace only when E1 ships) | V4-D6 thin adapter, `ACCRUING` until stable | calendars, transcripts, event identity, claim extraction |
+| Cross-family ranking/fusion machinery | `WS:PROPHET-CONDITIONAL-FUSION` | `engine/us_prophet_fusion.py` (`admit_members/aggregate/fuse_board`; 8 families F1–F8); registry `research/prophet_fusion/families.yml`; called from `engine/us_board_rank.py:1182-1184`; `BOARD_DEFINITION="us_prophet_v3"` | V4-E1 extends the ACCEPTED registry after PR-3D | a second cross-family ranker; **PR-3B forbidden zone = that WS's `owns_paths` verbatim** (8 paths incl. `engine/us_prophet_fusion.py`, `scripts/prophet_fusion_*.py`, `research/prophet_fusion/`) |
+| Outcome labels / promotion evidence | Evaluation OS / QLedger (`WS:EVAL-OS-*`) | `engine/qledger.py` claim/grade substrate (`make_claim/register_batch`; `data/qledger/{claims,grades}.jsonl`); board grader `scripts/grade_us_board.py` → `data/us_board_ledger/retro_grades.parquet`; all-name grades `engine/us_prophet_grades.py` → `data/us_prophet_rank/grades/` (`us.prophet_grades/v1`); plan ledger `data/prophet/ledger.jsonl` | V4-C1 cohorts project from the common episode outcome; claims registered per the LER Track-E pattern | a second forward grader; an alternate scoreboard |
+| Rescue/liveness (availability response) | `WS:PROPHET-US-AVAILABILITY` | `scripts/prophet_rescue.py` + `.github/workflows/prophet-rescue.yml` (sole auto-redispatcher, 2-attempts/night budget, `prophet-outage` issue receipts); detection sibling PR #5487 nightly-liveness | V4-A-lane reconciles + extends with the settlement manifest; manifest becomes what liveness/rescue READ | a second rescue plane or detection stack |
+| Candidate episodes, lifecycle, availability, product projection, operator workflow | **`WS:PROPHET-US-V4-RECOVERY` (this program)** | new contracts: `prophet.candidate_episode/v1`, `prophet.entry_availability/v1`, `prophet.intelligence_vector/v1`, `prophet.settlement_manifest/v1` | — | (V4 is the owner; sibling stores above are inputs) |
+| Publication/auth/queue/state planes | existing platform owners | Git gate: `prophet_checkpoint` (`daily.yml:2630-2852`; closed allowlist `:2717-2732`; 12-attempt push; fails closed). Site gate: `upload pages artifact` `:5326` + `publish` job `:6888-6895` (both `if: always()`). R2 mirror: ancestry+hash re-verify `:2875-2902`. Production: VPS Caddy git-pull ~3 min (`app/deploy/Caddyfile:343,469,513` allowlists; `/prophet/index.json` auth-gated). Tier/auth: Supabase `/api/me` + `templates/tier_preview.js` (client caps — see leak, CURRENT_STATE §8) | V4-A2/A3 make the settlement manifest + bundle hash the machine-verifiable spine every projection carries | a second publication truth |
+
+## 2. Prophet-internal estate V4 migrates (not sibling-owned)
+
+| Component | Path (writer) | Role today | V4 disposition |
+|---|---|---|---|
+| Bridge / admission | `engine/prophet_bridge.py` (`N_CANDIDATES=None`; T1/T2/T3 required when `tier_cascade` present; admitted statuses exclude `buy_soon`) | originates board rows | authority migrates to episode registry (B1) + lifecycle (B3) + availability (B4); 3D cascade demoted to maturity expert |
+| Board ranker | `engine/us_board_rank.py` (stamps `board_definition`, `SELECTION_ERA="anticipation-v1-2026-08-08"`, `published_definition()`) | ranks + stamps the served board | V3 path frozen at cutover (C2); V4 rank = E1 |
+| Context vector | `engine/us_context_vector.py` → `data/us_prophet_rank/candidates/YYYY-MM.parquet` (PIT, keep-first, schema-union; `SHADOW_COLUMNS` carry v2 shadow) | nightly sensory spine, zero authority | substrate the V4 intelligence vector (D5) extends; **accrual stalled since 2026-08-14 — A1 scope** |
+| Early-turn union | `engine/us_early_turn.py` (+ bridge wiring `engine/prophet_bridge.py:4018,4318-4319`) | early-turn watch deck; B-15…B-19 audit findings recorded in `research/US_PROPHET_COMMERCIAL_LAUNCH_READINESS_2026-08.md` §5.4/§8 | B2 dispositions each finding before early evidence gains authority |
+| TURN WATCH | `engine/us_turn_watch.py`, `scripts/build_turn_watch.py` → `site/turn_watch/turn_watch.json` (DECK_CAP=40 + `beyond_cap`; **orphan: no owning workstream; artifact stale at 2026-08-13**) | data plane real, page never shipped | B5 Early Desk consumes it; ownership lands in this WS |
+| Legacy shadow (plan grain) | `engine/prophet_bridge.py` `LEGACY_SHADOW_DIR` → `data/prophet/legacy_shadow/YYYY-MM/…` (parts end 08-13) | v2 shadow plan rows | precedent for C2's `us_prophet_v3_legacy_shadow` (zero code today) |
+| Execution-policy arena | `engine/prophet_arena.py` → `data/prophet_arena/C0..C6_*.jsonl` | frozen entry/execution policy challengers | untouched by V4 rank work; **naming collision documented in CURRENT_STATE §vocabularies** |
+| Live states plane | `engine/prophet_live/live_states.py` (5-min pass, R2 armed pack) | intraday detection, ungraded | availability engine (B4) is the successor authority for "entry validity now" |
+
+## 3. Contract quick-reference (frozen names)
+
+- `prophet.candidate_episode/v1` — episode identity plane (B1). Owner: V4.
+- `prophet.entry_availability/v1` — deterministic buyability (B4). Owner: V4. Prohibited inputs enumerated in freeze §5.
+- `prophet.intelligence_vector/v1` — missing-aware evidence envelope (D5). Owner: V4; families governed by the Fusion registry.
+- `theme_state/v1` — deterministic theme dynamics (D3). Owner: GMI lane.
+- `prophet.settlement_manifest/v1` — session settlement spine (A2). Owner: V4 A-lane, read by liveness/rescue.
+- `mastermind.entry_event.v1` — existing Radar event contract. Owner: Radar. V4 reads, never writes.
+- `us.prophet_grades/v1` — existing all-name grade parts. Owner: Evaluation plane. V4-C1 projects cohorts from it.
+
+## 4. Consumers (who reads V4's outputs)
+
+- **Dashboard/product pages** (server-stage contract; browser renders byte-for-byte — no client inference after B3).
+- **Liveness/rescue instruments** (read the settlement manifest from A2 on).
+- **Evaluation OS** (episode outcomes → cohort ledgers → promotion gauntlet).
+- **Neural Web / Mastermind chat** (product artifacts only, per CXI-R23 — chat context reads served artifacts, never repo internals).
+- **Conditional Fusion arena** (same-tape comparison rows for the V3/V2/V4 races).
