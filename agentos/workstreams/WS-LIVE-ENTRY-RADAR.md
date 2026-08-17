@@ -82,8 +82,12 @@ waves:
     # blocks); W5's own row/handoff remain that session's to write.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
-    status: todo
+    status: in_progress
     depends_on: [W3]
+    # Code on main since #5741/#5780. Confirmatory Panel-A/B runs completed
+    # 2026-08-16/17 (0 control_match_unavailable on both panels). Artifacts in
+    # research/live_entry_radar/w5_results/ and W5_CONFIRMATORY_RESULTS_2026-08-17.md.
+    # This wave is done at merge of the confirmatory-receipt PR, not at the local commit.
   - id: W6
     title: PR-6 deterministic Research Priority (ACCRUING)
     status: todo
@@ -108,7 +112,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W4 DONE (PR #5768, squash 1a170f9c, 2026-08-16) — live evaluator merged STAGED-NOT-ARMED; operator activation per W4_DEPLOY_PLAN.md closes the §15 full-RTH cadence line. W5 code is on main (replay/**, reconciler, vendor, stage-terminal) with its records still unwritten — that session owns them. Next fresh commissionings: W6 (Research Priority, needs W5 records/acceptance closed) and W8 (UI reference), per the wave graph.
+next_action: Merge the W5 confirmatory-receipt PR (Panel-A/B JSON+tables+ledger+handoff). After it is on main, W5 is done and W6 (Research Priority) / W8 (UI reference) are the next fresh commissionings. Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
 ---
 
 ## Context
