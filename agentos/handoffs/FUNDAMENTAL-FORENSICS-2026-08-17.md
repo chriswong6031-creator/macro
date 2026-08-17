@@ -30,8 +30,10 @@ changed:
     what: "Small retrieve_current hook. Same retry/pacing/stream caps as fetch,
       without writing the Wave-2 raw tree."
   - path: scripts/run_fundamental_forensics_broad_sec.py
-    what: "CLI. Schedule is incremental only; recovery requires --recovery-from.
-      Samples poll clocks on the CLI path, not inside the kernel."
+    what: "CLI. Repo-root pin before imports. Schedule is incremental only;
+      recovery requires --recovery-from. Samples poll_started_at before work;
+      recorded_at and poll_completed_at are sampled inside the kernel after
+      issuer I/O. Does not stamp one retrieved_at onto every fetch."
   - path: contracts/fundamental_forensics_broad_sec_run.schema.json
     what: "Draft 2020-12 run receipt. additionalProperties false."
   - path: contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
@@ -72,9 +74,19 @@ changed:
       reviews FF-1."
 
 verified:
-  - claim: "Two-run idempotence keeps object count and issuer source pointers still; poll clocks move; SEC source clock does not. One new 10-Q fetches Company Facts only for the affected issuer. Amendment keeps the prior manifest reachable. Cutoff withholds a later accession while retaining raw Submissions bytes. Company Facts as_of is refused. Partial failure persists the successful issuer and does not advance latest-complete; retry can. Queue overflow fetches no Company Facts. CAS lie does not move latest-complete. Recovery window predating recent Submissions is historical_submissions_required. retrieve_current retries 429 then succeeds, and four 429s exhaust. 5xx maps to sec_5xx_exhausted. Lane is off daily.yml, shares filing-forensics-sec, and cannot enter recovery on schedule."
+  - claim: "Entry script pins repo root before repo imports. Kernel still has no datetime.now/utcnow."
+    command: "PYTHONPATH=$PWD /Users/chriswong/Documents/Cluade/Macro\\ Dashboard/.venv/bin/python -m pytest tests/test_check_script_import_pinning.py::test_unpinned_entry_scripts_only_shrink tests/test_fundamental_forensics_contract.py::test_kernel_sources_do_not_use_an_implicit_current_clock -q"
+    result: "passed in the combined pin/clock/census run"
+  - claim: "Repaired FF-1 acceptance: honest CLI clocks, empty-store recovery bootstrap without mass Company Facts, accumulate-only accession ledger, >64-issuer recovery convergence, compact heads, PIT fail-closed, noncanonical universe cannot advance latest-complete."
     command: "PYTHONPATH=$PWD /Users/chriswong/Documents/Cluade/Macro\\ Dashboard/.venv/bin/python -m pytest tests/test_fundamental_forensics_broad_sec.py tests/test_filing_forensics_broad_sec_lane.py -q"
-    result: "19 passed"
+    result: "30 passed"
+  - claim: "R2 census receipt for engine/fundamental_forensics/broad_sec_store.py re-pinned at PREFIX line 50."
+    command: "PYTHONPATH=$PWD /Users/chriswong/Documents/Cluade/Macro\\ Dashboard/.venv/bin/python -m pytest tests/test_r2_delivery_plane_classification.py::test_all_evidence_anchors_are_pinned_to_reproducible_file_receipts -q"
+    result: "passed after TSV update"
+  - claim: "Two-issuer live SEC canary against a local temp store: incremental established submissions baselines with zero Company Facts; recovery from 2026-07-12T11:23:15Z fetched Company Facts for both AAPL and MSFT; Submissions and Company Facts retrieval clocks were distinct; no production R2 write."
+    command: "local two-issuer live_fetchers canary (AAPL/MSFT, LocalStore, no R2)"
+    result: "incremental complete cf_fetched=0; recovery complete cf_fetched=2 bytes=8670295; AAPL sub_at 13:20:10Z cf_at 13:20:11Z recorded 13:20:12Z"
+
   - claim: "Existing edgar collector fetch contracts still pass after retrieve_current was extracted from the same retry loop."
     command: "PYTHONPATH=$PWD /Users/chriswong/Documents/Cluade/Macro\\ Dashboard/.venv/bin/python -m pytest tests/test_edgar_forensics_collector.py -q"
     result: "included in the 152-pass combined run"
@@ -106,6 +118,9 @@ do_not_redo:
   - "Do not write a second data.sec.gov HTTP client. retrieve_current and SecCompanyFactsCollector.fetch are the hooks."
   - "Do not point persist_response at Wave-2 latest from this plane."
   - "Do not let poll_completed_at or retrieved_at masquerade as sec_accepted_at or broad_source_at."
+  - "Do not default recorded_at to poll_started_at, and do not stamp one retrieved_at onto every fetch."
+  - "Do not treat prior_manifest is None as equivalent to every issuer needing Company Facts."
+  - "Do not write the full run receipt into latest-observation or latest-complete; those pointers are 16KiB."
   - "Do not advance latest-complete on a partial poll."
   - "Do not overload fundamental_forensics/sec-source/v1 for this plane."
   - "Do not scale Wave-2 or invent a second 1,500-name universe JSON."

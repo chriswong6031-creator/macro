@@ -14,7 +14,7 @@ Clocks stay separate:
 * ``poll_started_at`` / ``poll_completed_at`` — operational observation
 * ``sec_accepted_at`` — SEC ``acceptanceDateTime``
 * ``filed_on`` — SEC filing date
-* ``retrieved_at`` — when the collector received the bytes
+* ``submissions_retrieved_at`` / ``companyfacts_retrieved_at`` — after exact bytes
 * ``recorded_at`` — when a verified receipt crossed durable storage
 
 Company Facts is a current observed snapshot.  It is never labelled as-of the
@@ -53,6 +53,9 @@ UNIVERSE_ID = "edgar.fundamentals"
 UNIVERSE_RELATIVE_PATH = "data/edgar/fundamentals.parquet"
 RUN_SCHEMA = "fundamental_forensics.broad_sec.run.v1"
 MANIFEST_SCHEMA = "fundamental_forensics.broad_sec.issuer_manifest.v1"
+HEAD_SCHEMA = "fundamental_forensics.broad_sec.head.v1"
+OBSERVATION_SCHEMA = "fundamental_forensics.broad_sec.issuer_observations.v1"
+CONTINUATION_SCHEMA = "fundamental_forensics.broad_sec.recovery_continuation.v1"
 POINTER_MAX_BYTES = 16 * 1024
 MAX_UNIVERSE_ISSUERS = 2500
 MAX_SUBMISSIONS_BYTES = 8 * 1024 * 1024
@@ -92,6 +95,8 @@ _ISO_Z_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z$"
 )
 _DATE_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+
+NowFn = Callable[[], str]
 
 
 class BroadSecError(RuntimeError):
@@ -141,6 +146,7 @@ class UniverseBinding:
     issuer_count: int
     unique_ticker_count: int
     unique_cik_count: int
+    canonical: bool
     issuers: tuple[Issuer, ...]
 
     def to_dict(self) -> dict[str, Any]:
@@ -151,16 +157,17 @@ class UniverseBinding:
             "issuer_count": self.issuer_count,
             "unique_ticker_count": self.unique_ticker_count,
             "unique_cik_count": self.unique_cik_count,
+            "canonical": self.canonical,
         }
 
 
 @dataclass
 class PollClocks:
     poll_started_at: str
-    poll_completed_at: str
-    recorded_at: str
     selection_cutoff_at: str
     recovery_from: str | None = None
+    recorded_at: str | None = None
+    poll_completed_at: str | None = None
 
 
 @dataclass
@@ -198,7 +205,11 @@ def issuer_latest_key(cik: str) -> str:
 
 
 def run_key(run_id: str) -> str:
-    return f"{PREFIX}/runs/{run_id}.json"
+    return f"{PREFIX}/runs/{run_id}/receipt.json"
+
+
+def issuer_observations_key(run_id: str) -> str:
+    return f"{PREFIX}/runs/{run_id}/issuer-observations.json.gz"
 
 
 def latest_observation_key() -> str:
@@ -207,6 +218,14 @@ def latest_observation_key() -> str:
 
 def latest_complete_key() -> str:
     return f"{PREFIX}/latest-complete.json"
+
+
+def recovery_continuation_pointer_key() -> str:
+    return f"{PREFIX}/recovery/continuation.json"
+
+
+def recovery_continuation_object_key(digest: str) -> str:
+    return f"{PREFIX}/recovery/objects/{digest[:2]}/{digest}.json.gz"
 
 
 def _gzip_bytes(content: bytes) -> bytes:
@@ -240,9 +259,8 @@ def _parse_acceptance(value: Any) -> str | None:
     if "T" not in text:
         return None
     if "." in text:
-        head, frac = text[:-1].split(".", 1)
+        head, _frac = text[:-1].split(".", 1)
         text = head + "Z"
-        del frac
     if not _ISO_Z_RE.fullmatch(text):
         return None
     return text
@@ -255,7 +273,7 @@ def _max_iso(values: list[str | None]) -> str | None:
     return max(present)
 
 
-def load_universe(path: Path) -> UniverseBinding:
+def load_universe(path: Path, *, repo_root: Path | None = None) -> UniverseBinding:
     try:
         import pandas as pd
     except ImportError as exc:  # pragma: no cover - CI install line carries pandas
@@ -314,13 +332,23 @@ def load_universe(path: Path) -> UniverseBinding:
             "universe_invalid",
             f"universe has {len(issuers)} issuers; hard max is {MAX_UNIVERSE_ISSUERS}",
         )
+    canonical = False
+    recorded_path = str(path)
+    universe_id = f"{UNIVERSE_ID}.noncanonical"
+    if repo_root is not None:
+        canonical_path = (repo_root / UNIVERSE_RELATIVE_PATH).resolve()
+        if path.resolve() == canonical_path:
+            canonical = True
+            recorded_path = UNIVERSE_RELATIVE_PATH
+            universe_id = UNIVERSE_ID
     return UniverseBinding(
-        path=UNIVERSE_RELATIVE_PATH,
-        universe_id=UNIVERSE_ID,
+        path=recorded_path,
+        universe_id=universe_id,
         content_sha256=sha256(raw).hexdigest(),
         issuer_count=len(issuers),
         unique_ticker_count=len(ticker_to_cik),
         unique_cik_count=len(cik_to_ticker),
+        canonical=canonical,
         issuers=tuple(issuers),
     )
 
@@ -368,7 +396,12 @@ def parse_relevant_filings(
     selection_cutoff_at: str,
     recovery_from: str | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
-    """Return (admitted relevant filings, withheld after cutoff, historical_required)."""
+    """Return (baseline relevant filings, withheld/unevaluable, historical_required).
+
+    Recovery does not drop pre-vintage rows from the baseline.  The recovery
+    delta is computed by the caller as admitted rows with
+    ``acceptance_datetime >= recovery_from``.
+    """
     filings = payload.get("filings")
     if not isinstance(filings, Mapping):
         raise BroadSecError("invalid_sec_json", f"{ticker} Submissions.filings is not an object")
@@ -403,14 +436,9 @@ def parse_relevant_filings(
     withheld: list[dict[str, Any]] = []
     accept_times: list[str] = []
     for index, accession_raw in enumerate(accessions):
-        if not isinstance(accession_raw, str) or not _ACCESSION_RE.fullmatch(accession_raw):
-            continue
         form = forms[index]
         if form not in RELEVANT_FORMS:
             continue
-        accepted = _parse_acceptance(acceptances[index])
-        if accepted:
-            accept_times.append(accepted)
         filing_date = filing_dates[index] if isinstance(filing_dates[index], str) else None
         if filing_date and not _DATE_RE.fullmatch(filing_date):
             filing_date = None
@@ -420,19 +448,32 @@ def parse_relevant_filings(
         row = {
             "cik": cik,
             "ticker": ticker,
-            "accession_number": accession_raw,
+            "accession_number": accession_raw if isinstance(accession_raw, str) else None,
             "form": form,
             "filing_date": filing_date,
             "report_date": report_date,
-            "acceptance_datetime": accepted,
+            "acceptance_datetime": None,
             "primary_document": primaries[index] if isinstance(primaries[index], str) else None,
             "is_xbrl": bool(xbrl[index]) if isinstance(xbrl[index], (int, bool)) else None,
             "is_inline_xbrl": bool(inline[index]) if isinstance(inline[index], (int, bool)) else None,
         }
-        if accepted and accepted > selection_cutoff_at:
+        if not isinstance(accession_raw, str) or not _ACCESSION_RE.fullmatch(accession_raw):
+            row["withheld_reason"] = "invalid_sec_json"
+            row["withheld_cause"] = "malformed_accession"
             withheld.append(row)
             continue
-        if recovery_from and accepted and accepted < recovery_from:
+        accepted = _parse_acceptance(acceptances[index])
+        row["acceptance_datetime"] = accepted
+        if not accepted:
+            row["withheld_reason"] = "source_binding_failure"
+            row["withheld_cause"] = "unevaluable_acceptance"
+            withheld.append(row)
+            continue
+        accept_times.append(accepted)
+        if accepted > selection_cutoff_at:
+            row["withheld_reason"] = "source_binding_failure"
+            row["withheld_cause"] = "after_selection_cutoff"
+            withheld.append(row)
             continue
         admitted.append(row)
 
@@ -454,6 +495,9 @@ def issuer_source_identity(manifest: Mapping[str, Any]) -> str:
         "relevant_accessions": [
             item["accession_number"] for item in manifest.get("relevant_filings", [])
         ],
+        "cumulative_relevant_accessions": list(
+            manifest.get("cumulative_relevant_accessions") or []
+        ),
         "previous_manifest_id": manifest.get("previous_manifest_id"),
     }
     return sha256(canonical_json(body).encode("utf-8")).hexdigest()
@@ -472,7 +516,7 @@ def _read_json(store: BroadSecStore, key: str, *, maximum_bytes: int) -> dict[st
     return payload
 
 
-def _put_immutable(store: BroadSecStore, key: str, data: bytes) -> None:
+def _put_immutable(store: BroadSecStore, key: str, data: bytes, *, content_type: str = "application/json") -> None:
     existing = store.get_bytes_strict(key)
     if existing == data:
         return
@@ -480,7 +524,7 @@ def _put_immutable(store: BroadSecStore, key: str, data: bytes) -> None:
         raise BroadSecError("store_write_failure", f"immutable key already holds different bytes: {key}")
     try:
         written = store.put_bytes_strict_conditional(
-            key, data, expected_version=None, content_type="application/json"
+            key, data, expected_version=None, content_type=content_type
         )
     except Exception as exc:
         raise BroadSecError("store_write_failure", str(exc)) from exc
@@ -565,6 +609,18 @@ def _build_run_id(*, mode: str, poll_started_at: str, universe_sha: str) -> str:
     return "run_" + sha256(payload).hexdigest()[:20]
 
 
+def _empty_universe_dict() -> dict[str, Any]:
+    return {
+        "path": UNIVERSE_RELATIVE_PATH,
+        "universe_id": UNIVERSE_ID,
+        "content_sha256": None,
+        "issuer_count": 0,
+        "unique_ticker_count": 0,
+        "unique_cik_count": 0,
+        "canonical": False,
+    }
+
+
 def _empty_receipt(
     *,
     run_id: str,
@@ -577,6 +633,9 @@ def _empty_receipt(
     change_summary: dict[str, int],
     latest_relevant_sec_accepted_at: str | None,
     failures: list[dict[str, str]],
+    observation_key: str | None = None,
+    observation_sha256: str | None = None,
+    observation_row_count: int = 0,
 ) -> dict[str, Any]:
     return {
         "schema": RUN_SCHEMA,
@@ -590,25 +649,122 @@ def _empty_receipt(
         "selection_cutoff_at": clocks.selection_cutoff_at,
         "recovery_from": clocks.recovery_from,
         "latest_relevant_sec_accepted_at": latest_relevant_sec_accepted_at,
-        "universe": universe.to_dict() if universe is not None else {
-            "path": UNIVERSE_RELATIVE_PATH,
-            "universe_id": UNIVERSE_ID,
-            "content_sha256": None,
-            "issuer_count": 0,
-            "unique_ticker_count": 0,
-            "unique_cik_count": 0,
-        },
+        "universe": universe.to_dict() if universe is not None else _empty_universe_dict(),
         "coverage": coverage,
         "change_summary": change_summary,
         "failures": failures,
         "storage": {
             "prefix": PREFIX,
             "run_key": run_key(run_id),
+            "observation_key": observation_key or issuer_observations_key(run_id),
+            "observation_sha256": observation_sha256,
+            "observation_row_count": observation_row_count,
             "latest_observation_key": latest_observation_key(),
             "latest_complete_key": latest_complete_key(),
         },
         "companyfacts_as_of_policy": "current_observed_snapshot",
     }
+
+
+def _compact_head(
+    receipt: Mapping[str, Any],
+    *,
+    observation_key: str,
+    observation_sha256: str | None,
+) -> dict[str, Any]:
+    return {
+        "schema": HEAD_SCHEMA,
+        "run_id": receipt["run_id"],
+        "run_key": receipt["storage"]["run_key"],
+        "run_receipt_sha256": sha256(canonical_json(receipt).encode("utf-8")).hexdigest(),
+        "status": receipt["status"],
+        "poll_completed_at": receipt["poll_completed_at"],
+        "universe_sha256": receipt["universe"].get("content_sha256"),
+        "observation_key": observation_key,
+        "observation_sha256": observation_sha256,
+    }
+
+
+def _prior_ledger(prior_manifest: Mapping[str, Any] | None) -> list[str]:
+    if prior_manifest is None:
+        return []
+    ledger = prior_manifest.get("cumulative_relevant_accessions")
+    if isinstance(ledger, list) and all(isinstance(item, str) for item in ledger):
+        seen: dict[str, None] = {}
+        for item in ledger:
+            seen.setdefault(item, None)
+        return list(seen)
+    accessions: list[str] = []
+    for item in prior_manifest.get("relevant_filings", []):
+        if isinstance(item, dict) and isinstance(item.get("accession_number"), str):
+            accessions.append(item["accession_number"])
+    return accessions
+
+
+def _load_continuation(
+    store: BroadSecStore,
+    *,
+    recovery_from: str,
+    universe_sha: str,
+) -> dict[str, Any] | None:
+    pointer = _read_json(store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES)
+    if pointer is None:
+        return None
+    if pointer.get("recovery_from") != recovery_from or pointer.get("universe_sha256") != universe_sha:
+        return None
+    object_ref = pointer.get("object_key")
+    digest = pointer.get("sha256")
+    if not isinstance(object_ref, str) or not isinstance(digest, str):
+        return None
+    packed = store.get_bytes_strict(object_ref)
+    if packed is None:
+        return None
+    payload = json.loads(_ungzip_bytes(packed))
+    if not isinstance(payload, dict):
+        return None
+    if sha256(canonical_json(payload).encode("utf-8")).hexdigest() != digest:
+        raise BroadSecError("store_readback_failure", "recovery continuation digest mismatch")
+    return payload
+
+
+def _write_continuation(
+    store: BroadSecStore,
+    *,
+    recovery_from: str,
+    universe_sha: str,
+    pending_ciks: list[str],
+    completed_ciks: list[str],
+) -> None:
+    body = {
+        "schema": CONTINUATION_SCHEMA,
+        "recovery_from": recovery_from,
+        "universe_sha256": universe_sha,
+        "pending_ciks": pending_ciks,
+        "completed_ciks": completed_ciks,
+    }
+    raw = canonical_json(body).encode("utf-8")
+    digest = sha256(raw).hexdigest()
+    key = recovery_continuation_object_key(digest)
+    _put_immutable(store, key, _gzip_bytes(raw), content_type="application/gzip")
+    _put_pointer(
+        store,
+        recovery_continuation_pointer_key(),
+        {
+            "schema": "fundamental_forensics.broad_sec.recovery_continuation_head.v1",
+            "recovery_from": recovery_from,
+            "universe_sha256": universe_sha,
+            "object_key": key,
+            "sha256": digest,
+            "pending_count": len(pending_ciks),
+            "completed_count": len(completed_ciks),
+        },
+    )
+
+
+def _stamp_after_fetch(headers: Mapping[str, str | None], *, now: NowFn) -> dict[str, str | None]:
+    meta = dict(headers)
+    meta["retrieved_at"] = _require_iso_z(now(), field="retrieved_at")
+    return meta
 
 
 def run_broad_sec_poll(
@@ -618,7 +774,9 @@ def run_broad_sec_poll(
     fetch_submissions: FetchBytes,
     fetch_companyfacts: FetchBytes,
     clocks: PollClocks,
+    now: NowFn,
     mode: str = "incremental",
+    repo_root: Path | None = None,
     max_affected_issuers: int = MAX_AFFECTED_ISSUERS,
     max_companyfacts_bytes_per_run: int = MAX_COMPANYFACTS_BYTES_PER_RUN,
 ) -> PollResult:
@@ -629,11 +787,13 @@ def run_broad_sec_poll(
     if mode == "incremental" and clocks.recovery_from:
         raise BroadSecError("universe_invalid", "incremental mode cannot carry a recovery window")
     _require_iso_z(clocks.poll_started_at, field="poll_started_at")
-    _require_iso_z(clocks.poll_completed_at, field="poll_completed_at")
-    _require_iso_z(clocks.recorded_at, field="recorded_at")
     _require_iso_z(clocks.selection_cutoff_at, field="selection_cutoff_at")
     if clocks.recovery_from:
         _require_iso_z(clocks.recovery_from, field="recovery_from")
+    if clocks.recorded_at:
+        _require_iso_z(clocks.recorded_at, field="recorded_at")
+    if clocks.poll_completed_at:
+        _require_iso_z(clocks.poll_completed_at, field="poll_completed_at")
 
     coverage = {
         "expected_issuers": 0,
@@ -642,6 +802,8 @@ def run_broad_sec_poll(
         "companyfacts_fetched": 0,
         "companyfacts_skipped_unchanged": 0,
         "companyfacts_bytes_fetched": 0,
+        "companyfacts_deferred": 0,
+        "recovery_backlog": 0,
     }
     change_summary = {
         "new_relevant_accessions": 0,
@@ -651,11 +813,13 @@ def run_broad_sec_poll(
     }
 
     try:
-        universe = load_universe(universe_path)
+        universe = load_universe(universe_path, repo_root=repo_root)
     except BroadSecError as exc:
         run_id = _build_run_id(
             mode=mode, poll_started_at=clocks.poll_started_at, universe_sha="invalid"
         )
+        clocks.poll_completed_at = clocks.poll_completed_at or now()
+        clocks.recorded_at = clocks.recorded_at or now()
         receipt = _empty_receipt(
             run_id=run_id,
             mode=mode,
@@ -677,12 +841,46 @@ def run_broad_sec_poll(
     )
     coverage["expected_issuers"] = universe.issuer_count
     failures: list[IssuerFailure] = []
+    observations: list[dict[str, Any]] = []
+    prepared: list[dict[str, Any]] = []
     source_accepts: list[str | None] = []
-    pending_facts: list[tuple[Issuer, dict[str, Any], str, Mapping[str, str | None], list[dict[str, Any]], dict[str, Any] | None]] = []
+    continuation = None
+    continuation_pointer = _read_json(
+        store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES
+    )
+    outstanding_backlog = (
+        continuation_pointer is not None
+        and continuation_pointer.get("universe_sha256") == universe.content_sha256
+        and int(continuation_pointer.get("pending_count") or 0) > 0
+    )
+    if mode == "recovery" and clocks.recovery_from:
+        continuation = _load_continuation(
+            store, recovery_from=clocks.recovery_from, universe_sha=universe.content_sha256
+        )
+    continuation_completed = set(continuation.get("completed_ciks", []) if continuation else [])
+    continuation_pending = set(continuation.get("pending_ciks", []) if continuation else [])
 
     for issuer in universe.issuers:
+        observation: dict[str, Any] = {
+            "ticker": issuer.ticker,
+            "cik": issuer.cik,
+            "outcome": "failed",
+            "reason_code": None,
+            "submissions_sha256": None,
+            "submissions_object_key": None,
+            "submissions_retrieved_at": None,
+            "manifest_id": None,
+            "manifest_key": None,
+            "companyfacts_fetched": False,
+            "companyfacts_sha256": None,
+            "companyfacts_object_key": None,
+            "companyfacts_retrieved_at": None,
+            "cumulative_manifest_id": None,
+            "withheld_count": 0,
+        }
         try:
             body, headers = fetch_submissions(issuer.cik)
+            headers = _stamp_after_fetch(headers, now=now)
             url = _bind_sec_url(headers.get("url"), cik=issuer.cik, endpoint="submissions")
             try:
                 payload = json.loads(body)
@@ -690,13 +888,18 @@ def run_broad_sec_poll(
                 raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not JSON") from exc
             if not isinstance(payload, dict):
                 raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not an object")
-            admitted, _withheld, historical_required = parse_relevant_filings(
+            admitted, withheld, historical_required = parse_relevant_filings(
                 payload,
                 cik=issuer.cik,
                 ticker=issuer.ticker,
                 selection_cutoff_at=clocks.selection_cutoff_at,
                 recovery_from=clocks.recovery_from,
             )
+            if historical_required:
+                raise BroadSecError(
+                    "historical_submissions_required",
+                    f"{issuer.ticker} recovery window predates current Submissions.recent",
+                )
             submissions_sha, created = admit_source_bytes(store, body)
             if created:
                 change_summary["objects_admitted"] += 1
@@ -709,113 +912,296 @@ def run_broad_sec_poll(
                 prior_manifest = _read_json(store, manifest_key, maximum_bytes=POINTER_MAX_BYTES)
                 if prior_manifest is None:
                     raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} prior manifest missing")
-            prior_accessions = []
-            if prior_manifest is not None:
-                prior_accessions = [
-                    item["accession_number"]
-                    for item in prior_manifest.get("relevant_filings", [])
-                    if isinstance(item, dict) and "accession_number" in item
-                ]
-            current_accessions = [item["accession_number"] for item in admitted]
-            relevant_changed = prior_manifest is None or current_accessions != prior_accessions
-            if historical_required:
-                raise BroadSecError(
-                    "historical_submissions_required",
-                    f"{issuer.ticker} recovery window predates current Submissions.recent",
-                )
-            new_accessions = [item for item in admitted if item["accession_number"] not in prior_accessions]
-            if relevant_changed:
-                pending_facts.append(
-                    (issuer, payload, submissions_sha, headers, admitted, prior_manifest)
-                )
-                change_summary["new_relevant_accessions"] += len(new_accessions)
+            prior_ledger = _prior_ledger(prior_manifest)
+            current_accessions = [
+                item["accession_number"]
+                for item in admitted
+                if isinstance(item.get("accession_number"), str)
+            ]
+            new_accessions = [acc for acc in current_accessions if acc not in prior_ledger]
+            recovery_delta = [
+                item
+                for item in admitted
+                if clocks.recovery_from
+                and isinstance(item.get("acceptance_datetime"), str)
+                and item["acceptance_datetime"] >= clocks.recovery_from
+            ]
+            if mode == "recovery":
+                needs_facts = bool(recovery_delta) or issuer.cik in continuation_pending
+                if issuer.cik in continuation_completed and not new_accessions:
+                    needs_facts = False
             else:
-                coverage["companyfacts_skipped_unchanged"] += 1
-                coverage["observed_issuers"] += 1
-                if prior_manifest is not None:
-                    source_accepts.append(prior_manifest.get("sec_accepted_at"))
+                needs_facts = prior_manifest is not None and bool(new_accessions)
+            change_summary["new_relevant_accessions"] += len(
+                recovery_delta if mode == "recovery" else new_accessions
+            )
+            observation.update(
+                {
+                    "outcome": "observed",
+                    "submissions_sha256": submissions_sha,
+                    "submissions_object_key": object_key(submissions_sha),
+                    "submissions_retrieved_at": headers.get("retrieved_at"),
+                    "withheld_count": len(withheld),
+                }
+            )
+            prepared.append(
+                {
+                    "issuer": issuer,
+                    "submissions_sha": submissions_sha,
+                    "submissions_headers": headers,
+                    "admitted": admitted,
+                    "withheld": withheld,
+                    "prior_manifest": prior_manifest,
+                    "prior_ledger": prior_ledger,
+                    "new_accessions": new_accessions,
+                    "recovery_delta": recovery_delta,
+                    "needs_facts": needs_facts,
+                    "observation": observation,
+                }
+            )
             del url
         except BroadSecError as exc:
-            failures.append(
-                IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail)
-            )
+            observation["reason_code"] = exc.reason_code
+            observations.append(observation)
+            failures.append(IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail))
             coverage["failed_issuers"] += 1
         except Exception as exc:
             reason = classify_fetch_error(exc)
+            observation["reason_code"] = reason
+            observations.append(observation)
             failures.append(IssuerFailure(issuer.ticker, issuer.cik, reason, str(exc)))
             coverage["failed_issuers"] += 1
 
-    change_summary["affected_issuers"] = len(pending_facts)
+    facts_candidates = [item for item in prepared if item["needs_facts"]]
+    facts_candidates.sort(key=lambda item: (item["issuer"].ticker, item["issuer"].cik))
+    change_summary["affected_issuers"] = len(facts_candidates)
     overflow = False
-    if len(pending_facts) > max_affected_issuers:
+    selected: list[dict[str, Any]] = []
+    deferred: list[dict[str, Any]] = []
+    if mode == "incremental" and (
+        len(facts_candidates) > max_affected_issuers or outstanding_backlog
+    ):
         overflow = True
+        deferred = list(facts_candidates)
         failures.append(
             IssuerFailure(
                 "",
                 "",
                 "queue_overflow",
-                f"{len(pending_facts)} issuers need Company Facts; cap is {max_affected_issuers}",
+                (
+                    f"{len(facts_candidates)} issuers need Company Facts; "
+                    f"incremental cap is {max_affected_issuers}"
+                    + ("; recovery continuation is outstanding" if outstanding_backlog else "")
+                ),
             )
         )
-        pending_facts = []
+    elif len(facts_candidates) > max_affected_issuers:
+        overflow = True
+        selected = facts_candidates[:max_affected_issuers]
+        deferred = facts_candidates[max_affected_issuers:]
+        failures.append(
+            IssuerFailure(
+                "",
+                "",
+                "queue_overflow",
+                f"{len(facts_candidates)} issuers need Company Facts; processing {len(selected)} this run",
+            )
+        )
+    else:
+        selected = list(facts_candidates)
+    selected_ciks = {item["issuer"].cik for item in selected}
+    coverage["companyfacts_deferred"] = len(deferred)
+    coverage["recovery_backlog"] = len(deferred)
+    if mode == "incremental" and outstanding_backlog:
+        coverage["recovery_backlog"] = max(
+            coverage["recovery_backlog"],
+            int(continuation_pointer.get("pending_count") or 0),
+        )
 
     facts_bytes = 0
-    for issuer, _payload, submissions_sha, sub_headers, admitted, prior_manifest in pending_facts:
+    stop_facts_network = False
+    for item in prepared:
+        issuer = item["issuer"]
+        observation = item["observation"]
+        fetch_this = item["needs_facts"] and issuer.cik in selected_ciks and not stop_facts_network
+        facts_sha = None
+        facts_retrieved_at = None
+        snapshot_kind = "not_fetched"
         try:
-            facts_body, facts_headers = fetch_companyfacts(issuer.cik)
-            _bind_sec_url(facts_headers.get("url"), cik=issuer.cik, endpoint="companyfacts")
-            try:
-                facts_payload = json.loads(facts_body)
-            except json.JSONDecodeError as exc:
-                raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Company Facts is not JSON") from exc
-            if not isinstance(facts_payload, dict):
-                raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Company Facts is not an object")
-            if "as_of" in facts_payload or facts_headers.get("as_of"):
-                raise BroadSecError(
-                    "source_binding_failure",
-                    "Company Facts must not be labelled historical as-of",
-                )
-            facts_bytes += len(facts_body)
-            if facts_bytes > max_companyfacts_bytes_per_run:
-                raise BroadSecError(
-                    "queue_overflow",
-                    f"Company Facts byte budget exceeded ({facts_bytes} > {max_companyfacts_bytes_per_run})",
-                )
-            facts_sha, facts_created = admit_source_bytes(store, facts_body)
-            if facts_created:
-                change_summary["objects_admitted"] += 1
-            coverage["companyfacts_fetched"] += 1
-            coverage["companyfacts_bytes_fetched"] = facts_bytes
+            if fetch_this:
+                remaining = max_companyfacts_bytes_per_run - facts_bytes
+                if remaining <= 0:
+                    stop_facts_network = True
+                    overflow = True
+                    fetch_this = False
+                    deferred.append(item)
+                    coverage["companyfacts_deferred"] += 1
+                    coverage["recovery_backlog"] = len(
+                        {row["issuer"].cik for row in deferred}
+                    )
+                else:
+                    facts_body, facts_headers = fetch_companyfacts(issuer.cik)
+                    facts_headers = _stamp_after_fetch(facts_headers, now=now)
+                    if len(facts_body) > remaining:
+                        stop_facts_network = True
+                        overflow = True
+                        fetch_this = False
+                        deferred.append(item)
+                        coverage["companyfacts_deferred"] += 1
+                        coverage["recovery_backlog"] = len(
+                            {row["issuer"].cik for row in deferred}
+                        )
+                        failures.append(
+                            IssuerFailure(
+                                issuer.ticker,
+                                issuer.cik,
+                                "queue_overflow",
+                                "Company Facts byte budget exhausted; body not admitted",
+                            )
+                        )
+                    else:
+                        _bind_sec_url(facts_headers.get("url"), cik=issuer.cik, endpoint="companyfacts")
+                        try:
+                            facts_payload = json.loads(facts_body)
+                        except json.JSONDecodeError as exc:
+                            raise BroadSecError(
+                                "invalid_sec_json", f"{issuer.ticker} Company Facts is not JSON"
+                            ) from exc
+                        if not isinstance(facts_payload, dict):
+                            raise BroadSecError(
+                                "invalid_sec_json", f"{issuer.ticker} Company Facts is not an object"
+                            )
+                        if "as_of" in facts_payload or facts_headers.get("as_of"):
+                            raise BroadSecError(
+                                "source_binding_failure",
+                                "Company Facts must not be labelled historical as-of",
+                            )
+                        facts_bytes += len(facts_body)
+                        facts_sha, facts_created = admit_source_bytes(store, facts_body)
+                        if facts_created:
+                            change_summary["objects_admitted"] += 1
+                        coverage["companyfacts_fetched"] += 1
+                        coverage["companyfacts_bytes_fetched"] = facts_bytes
+                        facts_retrieved_at = facts_headers.get("retrieved_at")
+                        snapshot_kind = "current_observed"
+                        observation["companyfacts_fetched"] = True
+                        observation["companyfacts_sha256"] = facts_sha
+                        observation["companyfacts_object_key"] = object_key(facts_sha)
+                        observation["companyfacts_retrieved_at"] = facts_retrieved_at
+            if not fetch_this:
+                prior = item["prior_manifest"]
+                if prior and prior.get("companyfacts_snapshot_kind") == "current_observed":
+                    facts_sha = prior.get("companyfacts_sha256")
+                    snapshot_kind = "current_observed"
+                    facts_retrieved_at = prior.get("companyfacts_retrieved_at")
+                    observation["companyfacts_sha256"] = facts_sha
+                    observation["companyfacts_object_key"] = (
+                        object_key(facts_sha) if isinstance(facts_sha, str) else None
+                    )
+                    observation["companyfacts_retrieved_at"] = facts_retrieved_at
+                if item["needs_facts"] and issuer.cik not in selected_ciks:
+                    coverage["companyfacts_skipped_unchanged"] += 0
+                elif not item["needs_facts"]:
+                    coverage["companyfacts_skipped_unchanged"] += 1
+
+            prior_manifest = item["prior_manifest"]
+            submissions_unchanged = (
+                prior_manifest is not None
+                and prior_manifest.get("submissions_sha256") == item["submissions_sha"]
+                and not item["new_accessions"]
+                and snapshot_kind == prior_manifest.get("companyfacts_snapshot_kind")
+                and facts_sha == prior_manifest.get("companyfacts_sha256")
+            )
+            if submissions_unchanged:
+                observation["manifest_id"] = prior_manifest["manifest_id"]
+                observation["manifest_key"] = issuer_manifest_key(issuer.cik, prior_manifest["manifest_id"])
+                observation["cumulative_manifest_id"] = prior_manifest["manifest_id"]
+                observation["outcome"] = "observed"
+                observations.append(observation)
+                coverage["observed_issuers"] += 1
+                source_accepts.append(prior_manifest.get("sec_accepted_at"))
+                continue
+
+            cumulative = list(dict.fromkeys([*item["prior_ledger"], *item["new_accessions"]]))
+            if not cumulative:
+                cumulative = [
+                    row["accession_number"]
+                    for row in item["admitted"]
+                    if isinstance(row.get("accession_number"), str)
+                ]
+            else:
+                for acc in item["admitted"]:
+                    number = acc.get("accession_number")
+                    if isinstance(number, str) and number not in cumulative:
+                        cumulative.append(number)
             previous_id = prior_manifest["manifest_id"] if prior_manifest else None
-            retrieved_at = sub_headers.get("retrieved_at") or clocks.recorded_at
             manifest = {
                 "schema": MANIFEST_SCHEMA,
                 "cik": issuer.cik,
                 "ticker": issuer.ticker,
-                "submissions_sha256": submissions_sha,
+                "submissions_sha256": item["submissions_sha"],
                 "submissions_url": endpoint_url(issuer.cik, "submissions"),
-                "submissions_object_key": object_key(submissions_sha),
+                "submissions_object_key": object_key(item["submissions_sha"]),
+                "submissions_retrieved_at": item["submissions_headers"].get("retrieved_at"),
                 "companyfacts_sha256": facts_sha,
-                "companyfacts_url": endpoint_url(issuer.cik, "companyfacts"),
-                "companyfacts_object_key": object_key(facts_sha),
-                "companyfacts_snapshot_kind": "current_observed",
-                "relevant_filings": admitted,
+                "companyfacts_url": endpoint_url(issuer.cik, "companyfacts") if facts_sha else None,
+                "companyfacts_object_key": object_key(facts_sha) if facts_sha else None,
+                "companyfacts_retrieved_at": facts_retrieved_at,
+                "companyfacts_snapshot_kind": snapshot_kind,
+                "relevant_filings": [
+                    {key: value for key, value in row.items() if not key.startswith("withheld_")}
+                    for row in item["admitted"]
+                ],
+                "withheld_filings": item["withheld"],
+                "cumulative_relevant_accessions": cumulative,
                 "previous_manifest_id": previous_id,
-                "retrieved_at": retrieved_at,
-                "recorded_at": clocks.recorded_at,
+                "recorded_at": None,
                 "sec_accepted_at": _max_iso(
-                    [item.get("acceptance_datetime") for item in admitted]
+                    [row.get("acceptance_datetime") for row in item["admitted"]]
                 ),
                 "filed_on": max(
-                    (item["filing_date"] for item in admitted if item.get("filing_date")),
+                    (row["filing_date"] for row in item["admitted"] if row.get("filing_date")),
                     default=None,
                 ),
             }
-            if "as_of" in manifest:
-                raise BroadSecError("source_binding_failure", "issuer manifest must not carry as_of")
-            manifest_id = issuer_source_identity(manifest)
-            manifest["manifest_id"] = manifest_id
-            encoded = canonical_json(manifest).encode("utf-8")
+            item["manifest"] = manifest
+            item["cumulative"] = cumulative
+            item["snapshot_kind"] = snapshot_kind
+            item["facts_sha"] = facts_sha
+            prepared_ok = item
+            del prepared_ok
+        except BroadSecError as exc:
+            if exc.reason_code == "queue_overflow":
+                overflow = True
+            observation["outcome"] = "failed"
+            observation["reason_code"] = exc.reason_code
+            observations.append(observation)
+            failures.append(IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail))
+            coverage["failed_issuers"] += 1
+            item["failed"] = True
+        except Exception as exc:
+            reason = classify_fetch_error(exc)
+            observation["outcome"] = "failed"
+            observation["reason_code"] = reason
+            observations.append(observation)
+            failures.append(IssuerFailure(issuer.ticker, issuer.cik, reason, str(exc)))
+            coverage["failed_issuers"] += 1
+            item["failed"] = True
+
+    clocks.recorded_at = clocks.recorded_at or now()
+    for item in prepared:
+        if item.get("failed") or "manifest" not in item:
+            continue
+        issuer = item["issuer"]
+        observation = item["observation"]
+        manifest = item["manifest"]
+        manifest["recorded_at"] = clocks.recorded_at
+        if "as_of" in manifest:
+            raise BroadSecError("source_binding_failure", "issuer manifest must not carry as_of")
+        manifest_id = issuer_source_identity(manifest)
+        manifest["manifest_id"] = manifest_id
+        encoded = canonical_json(manifest).encode("utf-8")
+        try:
             _put_immutable(store, issuer_manifest_key(issuer.cik, manifest_id), encoded)
             change_summary["manifests_admitted"] += 1
             pointer = {
@@ -824,34 +1210,91 @@ def run_broad_sec_poll(
                 "ticker": issuer.ticker,
                 "manifest_id": manifest_id,
                 "manifest_key": issuer_manifest_key(issuer.cik, manifest_id),
-                "submissions_sha256": submissions_sha,
-                "companyfacts_sha256": facts_sha,
+                "submissions_sha256": item["submissions_sha"],
+                "companyfacts_sha256": item.get("facts_sha"),
             }
             _put_pointer(store, issuer_latest_key(issuer.cik), pointer)
+            observation["manifest_id"] = manifest_id
+            observation["manifest_key"] = issuer_manifest_key(issuer.cik, manifest_id)
+            observation["cumulative_manifest_id"] = manifest_id
+            observation["outcome"] = "observed"
+            observations.append(observation)
             coverage["observed_issuers"] += 1
             source_accepts.append(manifest.get("sec_accepted_at"))
         except BroadSecError as exc:
-            if exc.reason_code == "queue_overflow":
-                overflow = True
-            failures.append(
-                IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail)
-            )
-            coverage["failed_issuers"] += 1
-        except Exception as exc:
-            reason = classify_fetch_error(exc)
-            failures.append(IssuerFailure(issuer.ticker, issuer.cik, reason, str(exc)))
+            observation["outcome"] = "failed"
+            observation["reason_code"] = exc.reason_code
+            observations.append(observation)
+            failures.append(IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail))
             coverage["failed_issuers"] += 1
 
-    latest_source = _max_iso(source_accepts)
-    complete = coverage["failed_issuers"] == 0 and not overflow and coverage["observed_issuers"] == universe.issuer_count
-    if overflow and not any(item.reason_code == "queue_overflow" for item in failures):
-        failures.append(
-            IssuerFailure("", "", "queue_overflow", "Company Facts queue exceeded its hard bound")
+    if mode == "recovery" and clocks.recovery_from:
+        pending_ciks = sorted(
+            {
+                item["issuer"].cik
+                for item in prepared
+                if item.get("needs_facts")
+                and not item["observation"].get("companyfacts_fetched")
+            }
         )
-    if complete:
+        completed_ciks = sorted(
+            (
+                continuation_completed
+                | {
+                    item["issuer"].cik
+                    for item in prepared
+                    if item["observation"].get("companyfacts_fetched")
+                }
+            )
+            - set(pending_ciks)
+        )
+        coverage["recovery_backlog"] = len(pending_ciks)
+        try:
+            _write_continuation(
+                store,
+                recovery_from=clocks.recovery_from,
+                universe_sha=universe.content_sha256,
+                pending_ciks=pending_ciks,
+                completed_ciks=completed_ciks,
+            )
+        except BroadSecError as exc:
+            failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
+        if pending_ciks:
+            overflow = True
+
+    clocks.poll_completed_at = clocks.poll_completed_at or now()
+    latest_source = _max_iso(source_accepts)
+    backlog_remaining = coverage["recovery_backlog"] > 0
+    complete = (
+        coverage["failed_issuers"] == 0
+        and not overflow
+        and not backlog_remaining
+        and coverage["observed_issuers"] == universe.issuer_count
+        and universe.canonical
+    )
+    poll_complete = (
+        coverage["failed_issuers"] == 0
+        and not overflow
+        and not backlog_remaining
+        and coverage["observed_issuers"] == universe.issuer_count
+    )
+    if complete or (poll_complete and not universe.canonical):
         status = "complete"
         reason_code = "complete"
-        exit_code = 0
+        exit_code = 0 if universe.canonical else 1
+        if not universe.canonical:
+            status = "degraded"
+            reason_code = "universe_invalid"
+            failures.append(
+                IssuerFailure(
+                    "",
+                    "",
+                    "universe_invalid",
+                    "noncanonical universe cannot advance the complete broad census",
+                )
+            )
+            exit_code = 1
+            poll_complete = False
     elif coverage["observed_issuers"] > 0:
         status = "degraded"
         reason_code = failures[0].reason_code if failures else "store_write_failure"
@@ -861,6 +1304,16 @@ def run_broad_sec_poll(
         reason_code = failures[0].reason_code if failures else "store_write_failure"
         exit_code = 1
 
+    observations.sort(key=lambda row: (row["ticker"], row["cik"]))
+    observation_payload = {
+        "schema": OBSERVATION_SCHEMA,
+        "run_id": run_id,
+        "row_count": len(observations),
+        "issuers": observations,
+    }
+    observation_raw = canonical_json(observation_payload).encode("utf-8")
+    observation_sha = sha256(observation_raw).hexdigest()
+    observation_key = issuer_observations_key(run_id)
     receipt = _empty_receipt(
         run_id=run_id,
         mode=mode,
@@ -872,13 +1325,27 @@ def run_broad_sec_poll(
         change_summary=change_summary,
         latest_relevant_sec_accepted_at=latest_source,
         failures=[item.to_dict() for item in failures],
+        observation_key=observation_key,
+        observation_sha256=observation_sha,
+        observation_row_count=len(observations),
     )
     encoded_receipt = canonical_json(receipt).encode("utf-8")
+    census_complete = status == "complete" and universe.canonical and exit_code == 0
     try:
+        _put_immutable(
+            store,
+            observation_key,
+            _gzip_bytes(observation_raw),
+            content_type="application/gzip",
+        )
         _put_immutable(store, run_key(run_id), encoded_receipt)
-        if complete:
-            _put_pointer(store, latest_complete_key(), receipt)
-        _put_pointer(store, latest_observation_key(), receipt)
+        _put_pointer(store, latest_observation_key(), _compact_head(
+            receipt, observation_key=observation_key, observation_sha256=observation_sha
+        ))
+        if census_complete:
+            _put_pointer(store, latest_complete_key(), _compact_head(
+                receipt, observation_key=observation_key, observation_sha256=observation_sha
+            ))
     except BroadSecError as exc:
         receipt["status"] = "failed"
         receipt["reason_code"] = exc.reason_code
@@ -886,7 +1353,11 @@ def run_broad_sec_poll(
             {"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}
         ]
         try:
-            _put_pointer(store, latest_observation_key(), receipt)
+            failed_head = _compact_head(
+                receipt, observation_key=observation_key, observation_sha256=observation_sha
+            )
+            failed_head["status"] = "failed"
+            _put_pointer(store, latest_observation_key(), failed_head)
         except BroadSecError:
             pass
         return PollResult(receipt=receipt, exit_code=1)
@@ -899,11 +1370,12 @@ def live_fetchers(
     scratch_root: Path,
     submissions_session: Any = None,
     companyfacts_fetcher: Any = None,
-    retrieved_at: str,
+    retrieved_at: str | None = None,
 ) -> tuple[FetchBytes, FetchBytes]:
     from collectors.edgar_forensics import SecForensicsCollector
     from collectors.fundamental_forensics_companyfacts import SecCompanyFactsCollector
 
+    del retrieved_at
     submissions = SecForensicsCollector(
         scratch_root,
         user_agent=user_agent,
@@ -923,9 +1395,7 @@ def live_fetchers(
             )
         except Exception as exc:
             raise BroadSecError(classify_fetch_error(exc), str(exc)) from exc
-        meta = dict(headers)
-        meta["retrieved_at"] = retrieved_at
-        return body, meta
+        return body, dict(headers)
 
     def fetch_companyfacts(cik: str) -> tuple[bytes, Mapping[str, str | None]]:
         try:
@@ -933,7 +1403,6 @@ def live_fetchers(
         except Exception as exc:
             raise BroadSecError(classify_fetch_error(exc), str(exc)) from exc
         meta = dict(headers)
-        meta["retrieved_at"] = retrieved_at
         if "as_of" in meta:
             raise BroadSecError("source_binding_failure", "Company Facts headers must not carry as_of")
         return body, meta

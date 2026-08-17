@@ -11,9 +11,13 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
-from collectors.edgar_forensics import _user_agent
-from engine.fundamental_forensics.broad_sec_store import (
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.edgar_forensics import _user_agent  # noqa: E402
+from engine.fundamental_forensics.broad_sec_store import (  # noqa: E402
     BroadSecError,
     PollClocks,
     UNIVERSE_RELATIVE_PATH,
@@ -21,15 +25,19 @@ from engine.fundamental_forensics.broad_sec_store import (
     open_store,
     run_broad_sec_poll,
 )
-from engine.fundamental_forensics.models import canonical_json
-from lib import config
+from engine.fundamental_forensics.models import canonical_json  # noqa: E402
+from lib import config  # noqa: E402
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    now: Callable[[], str] | None = None,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("incremental", "recovery"), default="incremental")
     parser.add_argument("--recovery-from", default=None, help="ISO-8601 Z stale vintage; recovery only")
@@ -51,9 +59,9 @@ def main(argv: list[str] | None = None) -> int:
         print("incremental mode refuses --recovery-from", file=sys.stderr)
         return 1
 
-    poll_started_at = args.poll_started_at or _utc_now()
+    clock = now or _utc_now
+    poll_started_at = args.poll_started_at or clock()
     selection_cutoff_at = args.selection_cutoff_at or poll_started_at
-    recorded_at = args.recorded_at or poll_started_at
     repo_root = args.repo_root.resolve()
     universe = args.universe or (repo_root / UNIVERSE_RELATIVE_PATH)
     scratch = args.scratch_root or Path("/tmp/ff-broad-sec-scratch")
@@ -64,7 +72,6 @@ def main(argv: list[str] | None = None) -> int:
         fetch_submissions, fetch_companyfacts = live_fetchers(
             user_agent=args.user_agent or _user_agent(repo_root),
             scratch_root=scratch,
-            retrieved_at=recorded_at,
         )
         result = run_broad_sec_poll(
             store=store,
@@ -73,12 +80,14 @@ def main(argv: list[str] | None = None) -> int:
             fetch_companyfacts=fetch_companyfacts,
             clocks=PollClocks(
                 poll_started_at=poll_started_at,
-                poll_completed_at=args.poll_completed_at or _utc_now(),
-                recorded_at=recorded_at,
                 selection_cutoff_at=selection_cutoff_at,
                 recovery_from=args.recovery_from,
+                recorded_at=args.recorded_at,
+                poll_completed_at=args.poll_completed_at,
             ),
+            now=clock,
             mode=args.mode,
+            repo_root=repo_root,
         )
     except BroadSecError as exc:
         print(json.dumps({"status": "failed", "reason_code": exc.reason_code, "detail": exc.detail}))

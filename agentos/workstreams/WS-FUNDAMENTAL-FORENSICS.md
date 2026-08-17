@@ -47,7 +47,9 @@ landmines:
   - "Desktop evidence used to early-return in openEvidence(); the CTA only focused a finding. The analysis drawer (is-open + data-analysis-open + scrim) is the FF-0 visible transition."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "FF-1 object identity is SHA-256 of exact SEC bytes. Poll clocks must not enter that identity. Company Facts is a current observed snapshot, never as-of poll_started_at."
-  - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial."
+  - "recorded_at must not default to poll_started_at. Submissions and Company Facts each carry their own retrieved_at stamped after exact bytes. poll_completed_at is sampled only after issuer attempts conclude."
+  - "Empty-store recovery establishes a Submissions baseline for every observed issuer. Company Facts is only for a genuine recovery_delta / new accession versus the cumulative ledger. filings.recent removal is not a new filing."
+  - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial. latest-complete is a compact pointer and commits last."
   - "FF-1 shares concurrency group filing-forensics-sec with Wave-2. Do not give it a second group."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
@@ -55,7 +57,8 @@ do_not_redo:
   - "Do not scale Wave-2, raise HARD_MAX_TICKERS, or turn run_fundamental_forensics_wave2.py into a universe crawler."
   - "Do not productionize scripts/backfill_edgar_quarterly.py or write a second data.sec.gov HTTP client."
   - "Do not create a second hand-maintained 1,500-name universe JSON. Universe is data/edgar/fundamentals.parquet."
-  - "Do not present page render time or evaluated_at as source freshness."
+  - "Do not treat prior_manifest is None as equivalent to every issuer needing Company Facts."
+  - "Do not write the full run receipt into latest-observation.json or latest-complete.json; those pointers are 16KiB."
   - "Do not relabel generated_at or public_summary generated_at as a build, composition, or publication clock."
   - "Do not merge the FF-1 PR from the worker session; return it to Sol for review."
 next_action: Sol reviews the FF-1 PR. Do not merge from the worker session. Do not start FF-2.
