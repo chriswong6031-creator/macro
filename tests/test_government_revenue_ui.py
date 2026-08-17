@@ -127,7 +127,10 @@ def _run_runtime(
               rows:runtime.workspaceRows(), tickerStates:tickerStates, tickerRoutes:tickerRoutes,
               selection:runtime.currentSelection(), inspectorHtml:node('inspector').innerHTML,
               queueHtml:node('queueList').innerHTML, queueSummary:node('queueSummary').textContent,
-              filmstripHtml:node('companyFilmstrip').innerHTML};
+              filmstripHtml:node('companyFilmstrip').innerHTML,
+              agencyFilterHtml:node('agencyFilter').innerHTML,
+              agencyNames:runtime.agencyNames(),
+              workspaceComplete:runtime.workspaceIsComplete(PAYLOAD.procurement_workspace)};
             LANG = 'zh';
             var langError = null;
             try { (docListeners['langchange']||[]).forEach(function(fn){fn({type:'langchange'})}); }
@@ -264,44 +267,187 @@ def test_candidate_radar_loads_every_candidate_and_mapping_page(tmp_path: Path) 
     }
 
 
+def _radar_node_helpers() -> str:
+    return (
+        "function obj(x){return !!x&&typeof x==='object'&&!Array.isArray(x)}"
+        "function arr(x){return Array.isArray(x)?x:[]}"
+        "function text(x,f){return x==null||x===''?(f==null?'':String(f)):String(x)}"
+        "function n(x){var v=Number(x);return Number.isFinite(v)?v:null}"
+        "var api={obj:obj,arr:arr,esc:String,text:text,n:n,money:String,date:String,"
+        "tr:function(en){return en},safeUrl:function(){return''},host:function(){return null}};"
+    )
+
+
+def _run_radar_script(tmp_path: Path, name: str, script: str) -> dict:
+    path = tmp_path / name
+    path.write_text(script, encoding="utf-8")
+    result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr or result.stdout
+    assert result.stdout.strip(), result.stderr
+    return json.loads(result.stdout)
+
+
 @needs_node
 def test_candidate_radar_reports_an_unentitled_lane_as_locked(tmp_path: Path) -> None:
     """PR #5432 made /api/government-revenue/* a paid surface router-wide.
 
-    The desk branches its copy on this status, so collapsing a 401 into
-    `unavailable` is what made an unentitled visitor read "the candidate ledger
-    could not be verified" — a verification failure that never happened.
+    A 401 before MDXAuth has settled is the entitled race, not a lock. After
+    auth is ready, the same 401 is membership. Other HTTP failures stay
+    unavailable so an outage cannot render as a sales pitch.
     """
 
-    def run(status: int) -> dict:
+    def run(status: int, *, auth_settled: bool) -> dict:
         script = textwrap.dedent(
             """
-            var window={};
+            var window={__govrevAuthSettled:%(settled)s};
             window.fetch=function(){return Promise.resolve({ok:false,status:%(status)s,
               json:function(){return Promise.resolve({})}})};
             %(candidate_source)s
             var published=null;
-            var radar=window.createGovernmentRevenueCandidateRadar({obj:function(x){return !!x&&typeof x==='object'&&!Array.isArray(x)},arr:function(x){return Array.isArray(x)?x:[]},esc:String,text:function(x,f){return x==null?f:String(x)},n:function(x){var v=Number(x);return Number.isFinite(v)?v:null},money:String,date:String,tr:function(en){return en},safeUrl:function(){return''},host:function(){return null},onRows:function(rows,meta){published={rows:rows.length,meta:meta}}});
+            %(helpers)s
+            api.onRows=function(rows,meta){published={rows:rows.length,meta:meta}};
+            var radar=window.createGovernmentRevenueCandidateRadar(api);
             radar.load().then(function(){process.stdout.write(JSON.stringify({published:published,state:radar.state()}))});
             """
-        ) % {"candidate_source": CANDIDATE_RADAR, "status": status}
-        path = tmp_path / f"candidate_locked_{status}.js"
-        path.write_text(script, encoding="utf-8")
-        result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
-        assert result.returncode == 0, result.stderr
-        return json.loads(result.stdout)
+        ) % {
+            "candidate_source": CANDIDATE_RADAR,
+            "status": status,
+            "settled": "true" if auth_settled else "false",
+            "helpers": _radar_node_helpers(),
+        }
+        return _run_radar_script(tmp_path, f"candidate_locked_{status}_{auth_settled}.js", script)
 
     for status in (401, 403):
-        out = run(status)
+        racing = run(status, auth_settled=False)
+        assert racing["state"] == "loading", status
+        assert racing["published"]["meta"]["status"] == "loading", status
+        assert racing["published"]["rows"] == 0, status
+
+        out = run(status, auth_settled=True)
         assert out["state"] == "locked", status
         assert out["published"]["meta"]["status"] == "locked", status
         assert out["published"]["rows"] == 0, status
 
-    # Everything else is still an honest outage, not a sales opportunity.
     for status in (404, 500, 503):
-        out = run(status)
+        out = run(status, auth_settled=True)
         assert out["state"] == "unavailable", status
         assert out["published"]["meta"]["status"] == "unavailable", status
+
+
+_RADAR_QUEUE_FIXTURE = """
+var authority={tier:'display',context_only:true,can_rank:false,can_size:false,can_gate:false,can_originate_signal:false,can_add_candidates:false,can_escalate:false};
+function candidateRow(){return {contract:'government_revenue_candidate.v1',schema_version:'1.0.0',candidate_id:'grc1-025ab7cfdb7f9735f0e1e575',candidate_scope:'government_revenue_research',is_neuralweb_trade_candidate:false,candidate_family:'new_award',candidate_state:'awaiting_crosscheck',ticker:'IRDM',issuer_company_id:'issuer:irdm',issuer:{company_name:'Iridium Communications',ticker:'IRDM'},issuer_resolution_ref:{contract:'government_recipient_resolution.v1',graph_id:'defense19-v1',evidence_refs:['evidence:1']},known_at:'2026-08-02T00:00:00Z',effective_at:'2026-08-01T00:00:00Z',transmission_direction:'possible_positive',event_refs:['event:1'],source_receipt_refs:[{ref_id:'receipt:1'}],ownership_path_refs:['edge:1'],authority:authority};}
+function queueEnvelope(items,total){return {contract:'government_revenue_candidate_queue.v1',schema_version:'1.0.0',content_id:'grcq1-d93ebaf6878402e3be09e490',authority:authority,items:items,candidates:items,total:total,next_cursor:null,mapping_backlog_total:0,mapping_backlog_tickers:[],mapping_backlog_states:{},known_at:'2026-08-02T00:00:00Z',as_of:'2026-08-03T00:00:00Z',freshness:{},limitations:[]};}
+"""
+
+
+@needs_node
+def test_candidate_radar_hydrates_cookie_queue_when_bearer_is_401(tmp_path: Path) -> None:
+    """Entitled cookie JSON is a live plane even while the bearer API 401s."""
+    script = textwrap.dedent(
+        """
+        var window={__govrevAuthSettled:true};
+        %(fixture)s
+        window.fetch=function(url){
+          if(String(url).indexOf('government-revenue-data/candidates.json')>=0){
+            return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(queueEnvelope([candidateRow()],1))}});
+          }
+          return Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({})}});
+        };
+        %(candidate_source)s
+        var published=null;
+        %(helpers)s
+        api.onRows=function(rows,meta){published={rows:rows.length,ids:rows.map(function(r){return r.id}),meta:meta}};
+        var radar=window.createGovernmentRevenueCandidateRadar(api);
+        radar.load().then(function(){process.stdout.write(JSON.stringify({published:published,state:radar.state()}))});
+        """
+    ) % {
+        "candidate_source": CANDIDATE_RADAR,
+        "helpers": _radar_node_helpers(),
+        "fixture": _RADAR_QUEUE_FIXTURE,
+    }
+    out = _run_radar_script(tmp_path, "candidate_cookie_hydrate.js", script)
+    assert out["state"] == "ok"
+    assert out["published"]["rows"] == 1
+    assert out["published"]["ids"] == ["candidate:grc1-025ab7cfdb7f9735f0e1e575"]
+    assert out["published"]["meta"]["status"] == "ok"
+    assert "locked" not in json.dumps(out)
+
+
+@needs_node
+def test_candidate_radar_cookie_outage_after_bearer_401_is_unavailable(tmp_path: Path) -> None:
+    """Cookie 5xx is a data-plane failure, not a sales pitch, even if bearer 401'd first."""
+    script = textwrap.dedent(
+        """
+        var window={__govrevAuthSettled:true};
+        window.fetch=function(url){
+          if(String(url).indexOf('government-revenue-data/candidates.json')>=0){
+            return Promise.resolve({ok:false,status:500,json:function(){return Promise.resolve({})}});
+          }
+          return Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({})}});
+        };
+        %(candidate_source)s
+        var published=null;
+        %(helpers)s
+        api.onRows=function(rows,meta){published={rows:rows.length,meta:meta}};
+        var radar=window.createGovernmentRevenueCandidateRadar(api);
+        radar.load().then(function(){process.stdout.write(JSON.stringify({published:published,state:radar.state()}))});
+        """
+    ) % {
+        "candidate_source": CANDIDATE_RADAR,
+        "helpers": _radar_node_helpers(),
+    }
+    out = _run_radar_script(tmp_path, "candidate_cookie_outage.js", script)
+    assert out["state"] == "unavailable"
+    assert out["published"]["meta"]["status"] == "unavailable"
+    assert out["published"]["rows"] == 0
+
+
+@needs_node
+def test_candidate_radar_reloads_after_late_mdxauth_session(tmp_path: Path) -> None:
+    """theme.js loads after Radar; the first 401 must not stick as membership."""
+    script = textwrap.dedent(
+        """
+        var window={__govrevAuthSettled:false, token:null, authCbs:[]};
+        %(fixture)s
+        window.MDXAuth={
+          enabled:function(){return true},
+          onChange:function(cb){window.authCbs.push(cb)},
+          client:function(){return Promise.resolve({auth:{getSession:function(){return Promise.resolve({data:{session:window.token?{access_token:window.token}:null}})}}})}
+        };
+        window.fetch=function(url, opts){
+          var headers=(opts&&opts.headers)||{};
+          var bearer=headers.Authorization==='Bearer tok';
+          if(String(url).indexOf('/api/government-revenue/')===0 && bearer){
+            var mapping=String(url).indexOf('/mapping-backlog')>=0;
+            var items=mapping?[]:[candidateRow()];
+            return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(queueEnvelope(items, items.length))}});
+          }
+          return Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({})}});
+        };
+        %(candidate_source)s
+        var published=null;
+        %(helpers)s
+        api.onRows=function(rows,meta){published={rows:rows.length,meta:meta}};
+        var radar=window.createGovernmentRevenueCandidateRadar(api);
+        radar.load().then(function(){
+          var first={published:published,state:radar.state()};
+          window.token='tok';
+          window.authCbs.forEach(function(cb){cb({id:'user'},'INITIAL_SESSION')});
+          return radar.state()==='ok'?Promise.resolve():new Promise(function(resolve){setTimeout(resolve,20)});
+        }).then(function(){
+          process.stdout.write(JSON.stringify({firstRows:published&&published.rows,firstWasLocked:false,state:radar.state(),rows:published&&published.rows,status:published&&published.meta.status}));
+        });
+        """
+    ) % {
+        "candidate_source": CANDIDATE_RADAR,
+        "helpers": _radar_node_helpers(),
+        "fixture": _RADAR_QUEUE_FIXTURE,
+    }
+    out = _run_radar_script(tmp_path, "candidate_late_auth.js", script)
+    assert out["state"] == "ok"
+    assert out["rows"] == 1
+    assert out["status"] == "ok"
 
 
 def test_company_ticker_filmstrip_stays_honest_and_routes_to_the_right_dossier() -> None:
@@ -910,6 +1056,233 @@ def test_runtime_reads_a_locked_candidate_ledger_as_members_only(tmp_path: Path)
     assert "could not be verified" in down_desk["queueHtml"]
     assert down_desk["queueSummary"] == "Candidate ledger unavailable"
     assert "plans.html" not in down_desk["queueHtml"]
+    assert "Retry candidate ledger" in down_desk["queueHtml"]
+    assert "View membership plans" not in down_desk["queueHtml"]
+
+
+@needs_node
+def test_d1_complete_workspace_hides_compact_loading_banner(tmp_path: Path) -> None:
+    events = [
+        {
+            "contract": "government_procurement_event.v2",
+            "event_id": f"govws-complete-{i:02d}",
+            "record_id": f"award:CONT_{i:02d}",
+            "kind": "award_change",
+            "title_original": f"Obligation {i}",
+            "agency": {"name": "Department of the Air Force"},
+            "change": {
+                "type": "obligation",
+                "known_at": "2026-08-01T01:00:00Z",
+                "what_changed_en": f"Obligation {i}",
+                "changed_fields": [],
+            },
+            "award_change": {
+                "award_key": f"CONT_{i:02d}",
+                "piid": f"FA{i:04d}",
+                "action_id": f"action-{i:04d}",
+                "recipient_name": "Acme Defense Systems",
+                "event_type": "obligation",
+                "source_rail": "usaspending_award_action",
+                "is_late_discovery": False,
+            },
+            "evidence": {"source_class": "official_award_action", "receipts": []},
+            "listed_company_impacts": [],
+        }
+        for i in range(2)
+    ]
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "a" * 24,
+        "total": 2,
+        "next_cursor": None,
+        "events": events,
+        "coverage": {"events_visible": 2},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "IRDM", "name": "Iridium Communications"}],
+        "market": {},
+        "freshness": {"status": "ok", "opportunities": {"status": "unavailable"}},
+        "opportunity_intelligence": {
+            "market": {},
+            "opportunities": [],
+            "events": [],
+            "freshness": {"status": "unavailable", "records_visible": 0, "observed_at": None},
+        },
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(tmp_path, payload, workspace, 1_785_548_460_000)
+    assert out["workspaceComplete"] is True
+    assert out["initial"]["hidden"] is True
+    assert "compact evidence cut" not in (out["initial"]["copy"] or "")
+    assert "Members only" not in out["filmstripHtml"]
+
+
+@needs_node
+def test_d1_agency_filters_are_human_names_not_python_dicts(tmp_path: Path) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "b" * 24,
+        "total": 2,
+        "next_cursor": None,
+        "events": [
+            {
+                "contract": "government_procurement_event.v2",
+                "event_id": "govws-agency-object",
+                "record_id": "award:CONT_OBJ",
+                "kind": "award_change",
+                "title_original": "Object agency",
+                "agency": {"name": None, "department_name": "Department of the Navy"},
+                "change": {
+                    "type": "obligation",
+                    "known_at": "2026-08-01T01:00:00Z",
+                    "what_changed_en": "Object agency",
+                    "changed_fields": [],
+                },
+                "award_change": {
+                    "award_key": "CONT_OBJ",
+                    "piid": "N00024",
+                    "action_id": "action-obj",
+                    "recipient_name": "Acme",
+                    "event_type": "obligation",
+                    "source_rail": "usaspending_award_action",
+                    "is_late_discovery": True,
+                },
+                "evidence": {"source_class": "official_award_action", "receipts": []},
+                "listed_company_impacts": [],
+            },
+            {
+                "contract": "government_procurement_event.v2",
+                "event_id": "govws-agency-repr",
+                "record_id": "award:CONT_REPR",
+                "kind": "award_change",
+                "title_original": "Repr agency",
+                "agency": "{'name': None, 'department_name': None}",
+                "change": {
+                    "type": "obligation",
+                    "known_at": "2026-08-01T01:00:00Z",
+                    "what_changed_en": "Repr agency",
+                    "changed_fields": [],
+                },
+                "award_change": {
+                    "award_key": "CONT_REPR",
+                    "piid": "FA0001",
+                    "action_id": "action-repr",
+                    "recipient_name": "Acme",
+                    "event_type": "obligation",
+                    "source_rail": "usaspending_award_action",
+                    "is_late_discovery": False,
+                },
+                "evidence": {"source_class": "official_award_action", "receipts": []},
+                "listed_company_impacts": [],
+            },
+        ],
+        "coverage": {"events_visible": 2},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}, "opportunities": []},
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(tmp_path, payload, workspace, 1_785_548_460_000)
+    html = out["agencyFilterHtml"]
+    assert "Department of the Navy" in html
+    assert "Unspecified agency" in html
+    assert "[object Object]" not in html
+    assert "{'name': None" not in html
+    assert "{name: None" not in html
+    agencies = set(out["agencyNames"])
+    assert "Department of the Navy" in agencies
+    assert "Unspecified agency" in agencies
+
+
+@needs_node
+def test_d1_entitled_complete_workspace_does_not_mark_filmstrip_members_only(
+    tmp_path: Path,
+) -> None:
+    payload, full_workspace = _locked_shell()
+    payload["procurement_workspace"] = {
+        **full_workspace,
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "c" * 24,
+        "total": 1,
+        "next_cursor": None,
+        "events": [
+            {
+                "contract": "government_procurement_event.v2",
+                "event_id": "govws-irdm",
+                "record_id": "award:IRDM",
+                "kind": "award_change",
+                "title_original": "P00032",
+                "agency": {"name": "Department of the Air Force"},
+                "change": {
+                    "type": "obligation",
+                    "known_at": "2026-08-01T01:00:00Z",
+                    "what_changed_en": "P00032",
+                    "changed_fields": [],
+                },
+                "award_change": {
+                    "award_key": "IRDM",
+                    "piid": "HC101319C0006",
+                    "action_id": "P00032",
+                    "recipient_name": "Iridium",
+                    "event_type": "obligation",
+                    "source_rail": "usaspending_award_action",
+                    "is_late_discovery": True,
+                },
+                "evidence": {"source_class": "official_award_action", "receipts": []},
+                "listed_company_impacts": [{"ticker": "IRDM"}],
+            }
+        ],
+    }
+    payload["companies"] = [{"ticker": "IRDM", "name": "Iridium Communications"}]
+    rail = _run_runtime(
+        tmp_path,
+        payload,
+        payload["procurement_workspace"],
+        1_785_548_460_000,
+        candidate_rows=[],
+        candidate_status="locked",
+        ticker_routes=["IRDM"],
+        fetch_status=200,
+    )
+    assert rail["workspaceComplete"] is True
+    assert rail["tickerStates"] == ["unavailable"]
+    assert "Members only" not in rail["filmstripHtml"]
+    assert "Link status unavailable" in rail["filmstripHtml"]
+
+
+@needs_node
+def test_d1_opportunities_and_budget_render_typed_failure_states(tmp_path: Path) -> None:
+    payload, full_workspace = _locked_shell()
+    payload["freshness"] = {"opportunities": {"status": "unavailable"}}
+    payload["opportunity_intelligence"] = {
+        "market": {},
+        "opportunities": [],
+        "freshness": {"status": "unavailable", "records_visible": 0, "observed_at": None},
+    }
+    opps = _run_runtime(
+        tmp_path,
+        payload,
+        full_workspace,
+        1_785_548_460_000,
+        location_search="?mode=opportunities",
+    )
+    assert "SOURCE_UNAVAILABLE" in opps["queueHtml"]
+    assert opps["queueSummary"] == "SOURCE_UNAVAILABLE"
+    assert "valid empty bid week" in opps["queueHtml"] or "no observation" in opps["queueHtml"].lower() or "SOURCE_UNAVAILABLE" in opps["queueHtml"]
+
+    assert "PROJECTION_MISSING" in TEMPLATE
+    assert "SOURCE_UNAVAILABLE" in TEMPLATE
+    assert "Retry candidate ledger" in TEMPLATE
+    assert "重试候选账本" in TEMPLATE
+    assert "Unspecified agency" in TEMPLATE
+    assert "未指定机构" in TEMPLATE
 
 
 def test_locked_arms_are_bilingual_and_keep_translations_out_of_title_attributes() -> None:
