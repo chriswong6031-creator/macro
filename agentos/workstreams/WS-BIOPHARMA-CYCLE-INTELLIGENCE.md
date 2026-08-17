@@ -31,9 +31,8 @@ waves:
     title: Federated architecture and program reset
     status: awaiting_ci
     next_action: >
-      Open the architecture-only draft PR, run Agent OS validation, reconcile it
-      against current main, and obtain Chairman acceptance or amendments. Do not
-      start runtime work.
+      Complete architecture-only draft-PR checks and obtain Chairman acceptance or
+      amendments. Do not start runtime work merely because CI is green.
   - id: BCI-0B
     title: Current-state archaeology and supersession ledger
     status: todo
@@ -58,34 +57,36 @@ waves:
       Separately harden Macro-to-Portfolio contradiction eligibility so
       context-only BCI edges cannot change candidacy or shrink through a generic count.
   - id: BCI-1
-    title: Prospective biopharma market episode packet
-    status: todo
-    depends_on: [BCI-0C]
-    next_action: >
-      Commission one real event family from BioCatalyst input through an immutable
-      decision-time market episode, an outcome sidecar, a real inspection consumer,
-      and a liveness heartbeat. No model.
-  - id: BCI-2
     title: BioCatalyst-owned machine event projection
     status: todo
     depends_on: [BCI-0C]
     next_action: >
-      Freeze and ship a producer-owned immutable event/revision projection with
-      exact pointer and receipt semantics. BCI reads; it does not scrape the paid API.
+      Freeze and ship one producer-owned immutable event/revision projection with
+      exact pointer, receipt, temporal, correction, rights, and identity semantics,
+      plus a real inspection/verifier consumer. BCI reads; it does not scrape the paid API.
+  - id: BCI-2
+    title: Prospective biopharma market episode packet
+    status: todo
+    depends_on: [BCI-1]
+    next_action: >
+      Consume the real BCI-1 projection for one event family and append an immutable
+      decision-time market episode plus outcome sidecar, real inspection consumer,
+      and liveness heartbeat. No model and no general analogue engine.
   - id: BCI-3
     title: Commissioned event-study vertical
     status: todo
-    depends_on: [BCI-1, BCI-2]
+    depends_on: [BCI-2]
     next_action: >
       Run the existing event-study implementation through a real builder, real
       registered family, versioned artifact, contamination rules, health, and one consumer.
   - id: BCI-4
     title: Current four-clock BCI context and morning change feed
     status: todo
-    depends_on: [BCI-1, BCI-2]
+    depends_on: [BCI-0D, BCI-1, BCI-2]
     next_action: >
       Publish a current biopharma Context Snapshot dimension, compact Neural Web
-      state, typed freshness, and a real What Changed feed with all-false authority.
+      state, typed freshness, and a real What Changed feed. Decision-visible
+      contradiction paths remain impossible unless BCI-0D has proven the typed fence.
   - id: BCI-5
     title: First complete user investigation vertical
     status: todo
@@ -96,14 +97,14 @@ waves:
   - id: BCI-6
     title: Expectations, collision, financing, and financial context
     status: todo
-    depends_on: [BCI-1, BCI-4]
+    depends_on: [BCI-2, BCI-4]
     next_action: >
       Consume Options, FIF, Capital Structure, and canonical market context to expose
       independent expectation and collision dimensions without an opaque score.
   - id: BCI-7
     title: Market Memory analogues and peer read-through
     status: todo
-    depends_on: [BCI-1, BCI-6]
+    depends_on: [BCI-2, BCI-6]
     next_action: >
       Integrate immutable BCI episodes with the operational Market Memory index and
       retriever; provide diverse analogues, counterexamples, and complete sponsor/peer paths.
@@ -162,8 +163,9 @@ do_not_redo:
 landmines:
   - Current main moved after the first architecture freeze and now includes event_workspace.v1; BCI-0B must adjudicate reuse rather than invent a parallel user-facing workspace.
   - BioCatalyst P0-C1 merged, but entitled production-browser acceptance is still not proven by the merge alone.
+  - BCI market episodes cannot precede their producer-owned real event/revision projection; BCI-1 is the projection and BCI-2 is the consuming episode vertical.
   - Market Memory M0A's first repair merged, but the prospective W2C disposition and remaining freshness chain must stay honest; no backfill.
-  - Portfolio currently has a Neural Web decision ladder capable of candidacy/shrink. Context-only BCI contradictions must not influence it through generic graph-conflict counts.
+  - Portfolio currently has a Neural Web decision ladder capable of candidacy/shrink. Context-only BCI contradictions must not influence it through generic graph-conflict counts; BCI-4 depends on BCI-0D.
   - The checked-in Seasonality program watch is stale and its unavailable workflow-order check greps an implementation file after the lane was extracted.
   - The existing semantic registry already has one biocatalyst parent. A separate BCI program card before archaeology would create ownership ambiguity.
 ---
