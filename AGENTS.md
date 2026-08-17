@@ -244,6 +244,38 @@ the generated views `docs/AGENT_OS_STATE.md` and `data/governance/agent_os_state
 — the nightly is their only regenerator — and never author `created`/`updated` fields;
 the generator derives both from git history.
 
+## Model routing
+
+Every Agent/Task spawn and every Workflow `agent()` call must carry an explicit
+model — a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in
+`.claude/settings.json`) denies spawns that would silently inherit the session
+model, `fable` spawns outside the `orchestrator` + FABLE-WHY gate, fable-pinned
+agent frontmatter outside that gate, and Workflow scripts whose `agent()`
+calls carry no `model:`/`agentType` routing.
+
+Current tiers: Sonnet builds shipping code — writing code, PRs, refactors,
+tests — via the `builder` agent type (model-pinned `sonnet`; spawns using it
+pass the guard without a `model:` param), alongside its existing role in
+census/exploration/mechanical non-code fan-out. Opus reviews (`reviewer`),
+handles hard debugging, judge/red-team critics, and stats/math review, and
+owns user-facing design (`designer`) — design is judgment work and is never
+routed to a sonnet builder, a separate 2026-07-18 ruling that this build-lane
+change does not touch. Fable (the main loop) plans, adjudicates, and merges,
+and may be spawned only as the triple `subagent_type: 'orchestrator'` +
+explicit `model: 'fable'` + a `FABLE-WHY: <orchestration|brainstorm|creative>:
+<specific reason>` line — reserved for work that fails the draft-and-review
+test, never bulk ×N mechanical fan-outs. Haiku handles trivial
+extraction/format sweeps.
+
+The build-lane tier was reversed 2026-08-17 (operator instruction) from the
+2026-07-21 "no more sonnet building code" order, and the `builder` agent type
+is re-pinned `sonnet` accordingly. The autonomous metabolism build loop
+(`scripts/metabolism_build.py`, R-V4-2) is a separate system and stays
+Opus-pinned unless amended on its own terms. See Macro `CLAUDE.md` §Model
+routing for the full tier table, and
+`agentos/decisions/DEC-SONNET-BUILDS-AGAIN.md` (supersedes
+`DEC-OPUS-BUILDS-SONNET-EXPLORES-FABLE-GATED`) for the decision record.
+
 ## Context economy (frontier burn is CONTEXT × TURNS)
 
 Measured 2026-08-06 across 3,043 local transcripts (week of 07-30→08-06): of all
