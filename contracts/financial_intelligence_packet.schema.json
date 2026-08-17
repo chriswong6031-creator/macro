@@ -13,6 +13,7 @@
     "governance",
     "periods",
     "cells",
+    "evidence_cells",
     "revisions",
     "disclosure_changes",
     "coverage",
@@ -30,6 +31,7 @@
     "governance": {"$ref": "#/$defs/governance"},
     "periods": {"type": "array", "items": {"$ref": "#/$defs/period"}},
     "cells": {"type": "array", "items": {"$ref": "#/$defs/cell"}},
+    "evidence_cells": {"type": "array", "items": {"$ref": "#/$defs/cell"}},
     "revisions": {"type": "array", "items": {"$ref": "#/$defs/revision"}},
     "disclosure_changes": {"type": "array", "items": {"$ref": "#/$defs/disclosureChange"}},
     "coverage": {"$ref": "#/$defs/coverage"},
@@ -204,19 +206,86 @@
         },
         "reason": {"type": ["string", "null"]}
       },
+      "oneOf": [
+        {
+          "title": "valued_cell",
+          "properties": {
+            "value": {"$ref": "#/$defs/decimal"},
+            "non_value_state": {"type": "null"}
+          },
+          "required": ["value", "non_value_state"]
+        },
+        {
+          "title": "non_valued_cell",
+          "properties": {
+            "value": {"type": "null"},
+            "non_value_state": {"$ref": "#/$defs/nonValueState"}
+          },
+          "required": ["value", "non_value_state"]
+        }
+      ],
       "allOf": [
         {
-          "if": {"properties": {"value": {"type": "string"}}, "required": ["value"]},
+          "if": {
+            "properties": {
+              "value": {"$ref": "#/$defs/decimal"},
+              "provenance_kind": {"const": "direct"}
+            },
+            "required": ["value", "provenance_kind"]
+          },
           "then": {
-            "properties": {"non_value_state": {"type": "null"}},
-            "required": ["non_value_state"]
+            "properties": {
+              "accession": {"type": "string", "minLength": 1},
+              "source_occurrence_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              },
+              "source_digest": {"$ref": "#/$defs/sha256"},
+              "mapping_rule_id": {"type": "string", "minLength": 1},
+              "mapping_rule_digest": {"$ref": "#/$defs/sha256"}
+            },
+            "required": [
+              "accession",
+              "source_occurrence_ids",
+              "source_digest",
+              "mapping_rule_id",
+              "mapping_rule_digest"
+            ]
           }
         },
         {
-          "if": {"properties": {"non_value_state": {"$ref": "#/$defs/nonValueState"}}, "required": ["non_value_state"]},
+          "if": {
+            "properties": {
+              "value": {"$ref": "#/$defs/decimal"},
+              "provenance_kind": {"const": "formula"}
+            },
+            "required": ["value", "provenance_kind"]
+          },
           "then": {
-            "properties": {"value": {"type": "null"}},
+            "properties": {
+              "formula_rule_id": {"type": "string", "minLength": 1},
+              "formula_rule_digest": {"$ref": "#/$defs/sha256"},
+              "dependency_cell_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            },
+            "required": [
+              "formula_rule_id",
+              "formula_rule_digest",
+              "dependency_cell_ids"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {"value": {"$ref": "#/$defs/decimal"}},
             "required": ["value"]
+          },
+          "then": {
+            "properties": {"provenance_kind": {"enum": ["direct", "formula"]}}
           }
         }
       ]
@@ -327,6 +396,8 @@
         "unsupported_metrics",
         "direct_cells",
         "formula_cells",
+        "evidence_cells",
+        "formula_evidence_closed",
         "periods_requested",
         "periods_returned",
         "source_trace_complete_count",
@@ -343,6 +414,8 @@
         "unsupported_metrics": {"type": "array", "items": {"type": "string"}},
         "direct_cells": {"type": "integer", "minimum": 0},
         "formula_cells": {"type": "integer", "minimum": 0},
+        "evidence_cells": {"type": "integer", "minimum": 0},
+        "formula_evidence_closed": {"const": true},
         "periods_requested": {"type": "integer", "minimum": 0},
         "periods_returned": {"type": "integer", "minimum": 0},
         "source_trace_complete_count": {"type": "integer", "minimum": 0},

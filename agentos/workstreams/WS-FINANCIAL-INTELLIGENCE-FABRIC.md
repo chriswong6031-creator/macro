@@ -31,10 +31,11 @@ discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
+  - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
 next_action: >
-  Operator reviews FIF-1 PR #5809 (independent filing-package fixture, packet
-  contract, builder, golden packet). Do not start FIF-2 until that review
-  accepts the packet and the PR is merged.
+  Operator re-reviews FIF-1R on PR #5809 (pure kernel, evidence_cells,
+  oneOf cell invariant, adversarial tests). Do not merge until that review
+  accepts. Do not start FIF-2.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -54,6 +55,8 @@ do_not_redo:
   - Do not debug or replace the attested-history Wave 0B credential path.
   - Do not start FIF-2 until FIF-1 is accepted.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
+  - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
+  - Do not silently add unrequested metrics to the user cells array.
 waves:
   - id: FIF-0
     title: Program reset — land masterplan, naming, and collision map
@@ -64,8 +67,9 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Operator reviews PR #5809. Packet consumes the independent filing-package
-      fixture; Company Facts remains a hashed occurrence-inventory witness.
+      Operator re-reviews FIF-1R on PR #5809. Packet assembly is a pure
+      function of injected context; formula evidence is recursively closed
+      in evidence_cells; cells are exactly one of value or non_value_state.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
@@ -124,5 +128,7 @@ and is blocked on the protected writer credential. This workstream does not
 replace that credential path.
 
 FIF-1 preflight found no existing packet contract. The operator chose
-`DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`. PR #5809 now carries the
-hermetic packet over that fixture. Company Facts remains a witness only.
+`DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`. Operator review of PR #5809
+then required FIF-1R (`DEC:FIF-1R-HERMETIC-PACKET-CONTRACT`): a pure
+assembler, recursively closed `evidence_cells`, and an exact oneOf cell
+invariant. Company Facts remains a witness only. FIF-2 is still stopped.

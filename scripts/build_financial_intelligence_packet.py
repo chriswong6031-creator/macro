@@ -19,7 +19,7 @@ sys.path.insert(0, str(_ROOT))
 from engine.fundamental_forensics.financial_intelligence_packet import (
     PACKET_SCHEMA,
     PacketQueryRequest,
-    build_financial_intelligence_packet,
+    build_financial_intelligence_packet_from_repo,
     canonical_packet_bytes,
     default_packet_periods,
     load_core_registry,
@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     fixture = load_filing_package_fixture(args.ledger)
     metrics = tuple(item.strip() for item in args.metrics.split(",") if item.strip())
-    packet = build_financial_intelligence_packet(
+    packet = build_financial_intelligence_packet_from_repo(
         entity=fixture.entity,
         ledger=fixture.ledger,
         filing_metadata=fixture.filing_metadata,
@@ -99,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
             metrics=metrics,
             periods=default_packet_periods(),
         ),
+        repo_root=args.repo_root,
         metric_registry=load_core_registry(args.repo_root),
         built_at=args.built_at,
         input_digests={
@@ -124,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"packet_id={packet['packet_id']}",
                 f"digest={packet['content_sha256']}",
                 f"cells={len(packet['cells'])}",
+                f"evidence_cells={len(packet['evidence_cells'])}",
                 f"revisions={len(packet['revisions'])}",
                 f"valued_metrics={len(coverage['valued_metrics'])}",
                 f"unsupported_metrics={len(coverage['unsupported_metrics'])}",

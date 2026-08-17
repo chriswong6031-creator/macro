@@ -9,6 +9,18 @@
 **Authority:** Display/context/research only  
 **Primary outcome:** One deterministic, reusable packet proving that the existing governed metric query and provenance machinery can serve a product, API, dossier, Terminal client, and Neural Web without creating another semantic model.
 
+## FIF-1R closure (operator review of 674f3a07)
+
+FIF-1R stays on PR #5809. Do not start FIF-2.
+
+- Pure kernel: `assemble_financial_intelligence_packet(...)` takes `PacketBuildContext` and `PacketEvidenceDigests`. Filesystem, schema load, and builder hashing live in `build_financial_intelligence_packet_from_repo` / the CLI.
+- Formula evidence: unrequested dependencies occupy `evidence_cells`. Every formula `dependency_cell_id` must resolve inside the packet down to a direct source fact. User `cells` stay exactly the requested metric set.
+- Schema: cell `oneOf` valued XOR non-valued. Both-null and both-set are invalid. Valued direct cells require accession/source/mapping receipts; valued formula cells require formula rule/digest/dependencies.
+- Nested acceptance: synthetic 2024-12-31 debt/cash facts support a `net_debt` request that walks `total_debt` → three direct debt leaves + cash. Those facts are not in `DEFAULT_REQUESTED_METRICS`.
+- Golden `content_sha256` is regenerated after this contract freeze and must be regenerated again after any builder-source edit.
+
+See `DEC:FIF-1R-HERMETIC-PACKET-CONTRACT`.
+
 ---
 
 # 1. Mission

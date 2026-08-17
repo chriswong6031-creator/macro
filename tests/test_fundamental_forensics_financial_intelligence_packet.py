@@ -1,31 +1,52 @@
 """FIF-1 golden financial intelligence packet: independent filing-package fixture."""
 from __future__ import annotations
 
+import copy
 import json
+import os
 from datetime import datetime
 from pathlib import Path
+import socket
 import subprocess
 import sys
+import types
+import urllib.request
 
 import pytest
+from jsonschema import Draft202012Validator, FormatChecker
 
 from engine.fundamental_forensics import financial_intelligence_packet as packet_module
 from engine.fundamental_forensics.financial_intelligence_packet import (
     FORBIDDEN_COMPANYFACTS_MARKERS,
     PACKET_SCHEMA,
+    PacketBuildContext,
+    PacketEvidenceDigests,
     PacketQueryRequest,
-    build_financial_intelligence_packet,
+    all_packet_cells,
+    assemble_financial_intelligence_packet,
+    assert_formula_evidence_closed,
+    build_financial_intelligence_packet_from_repo,
     build_synthetic_filing_package_fixture,
     canonical_packet_bytes,
     default_packet_periods,
-    default_packet_query,
+    digest_builder_source,
+    formula_leaves,
     load_core_registry,
     load_filing_package_fixture,
+    load_packet_schema,
+    packet_cell_index,
     packet_digest,
     sha256_file,
+    validate_packet,
 )
-from engine.fundamental_forensics.query import QueryPolicy
-from engine.fundamental_forensics.raw_ledger import canonical_json
+from engine.fundamental_forensics.query import PeriodRequest, QueryPolicy
+from engine.fundamental_forensics.raw_ledger import (
+    FactContext,
+    FactEventType,
+    RawFactLedger,
+    canonical_json,
+    make_raw_fact,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,26 +55,56 @@ LEDGER_PATH = FIXTURES / "filing_package_raw_ledger_v1.json"
 GOLDEN_PATH = FIXTURES / "expected_financial_intelligence_packet_v1.json"
 COMPANYFACTS_WITNESS = FIXTURES / "companyfacts_versions.json"
 SUBMISSIONS_WITNESS = FIXTURES / "submissions_versions.json"
+SCHEMA_PATH = ROOT / "contracts" / "financial_intelligence_packet.schema.json"
+BUILDER_PATH = ROOT / "engine" / "fundamental_forensics" / "financial_intelligence_packet.py"
 CLI = ROOT / "scripts" / "build_financial_intelligence_packet.py"
 PYTHON = sys.executable
+FORBIDDEN_PACKET_MARKERS = (
+    "/Users/",
+    "/home/",
+    "AKIA",
+    "BEGIN PRIVATE",
+    "aws_secret",
+    "AWS_SECRET",
+    ".ssh/",
+    str(LEDGER_PATH),
+    str(ROOT),
+)
 
 
-def _cell(packet: dict, metric_id: str, label: str) -> dict:
+def _cell(packet: dict, metric_id: str, label: str, *, plane: str = "cells") -> dict:
     matches = [
         cell
-        for cell in packet["cells"]
+        for cell in packet[plane]
+        if cell["metric_id"] == metric_id and cell["period"].get("label") == label
+    ]
+    assert len(matches) == 1, (plane, metric_id, label, len(matches))
+    return matches[0]
+
+
+def _find_cell(packet: dict, metric_id: str, label: str) -> dict:
+    matches = [
+        cell
+        for cell in all_packet_cells(packet)
         if cell["metric_id"] == metric_id and cell["period"].get("label") == label
     ]
     assert len(matches) == 1, (metric_id, label, len(matches))
     return matches[0]
 
 
-def _input_digests() -> dict[str, str]:
-    return {
-        "filing_package_fixture_sha256": sha256_file(LEDGER_PATH),
-        "companyfacts_witness_sha256": sha256_file(COMPANYFACTS_WITNESS),
-        "submissions_witness_sha256": sha256_file(SUBMISSIONS_WITNESS),
-    }
+def _input_digests() -> PacketEvidenceDigests:
+    return PacketEvidenceDigests(
+        filing_package_fixture_sha256=sha256_file(LEDGER_PATH),
+        companyfacts_witness_sha256=sha256_file(COMPANYFACTS_WITNESS),
+        submissions_witness_sha256=sha256_file(SUBMISSIONS_WITNESS),
+    )
+
+
+def _context() -> PacketBuildContext:
+    return PacketBuildContext(
+        packet_builder_digest=digest_builder_source(BUILDER_PATH.read_bytes()),
+        packet_schema=load_packet_schema(SCHEMA_PATH),
+    )
 
 
 def _build(
@@ -62,24 +113,29 @@ def _build(
     source_event_cutoff: str = "2025-12-31T23:59:59Z",
     system_recorded_cutoff: str = "2026-08-05T12:00:02Z",
     built_at: str | None = None,
+    metrics: tuple[str, ...] | None = None,
+    periods: tuple[PeriodRequest, ...] | None = None,
+    fixture=None,
+    input_digests: PacketEvidenceDigests | None = None,
 ) -> dict:
-    fixture = load_filing_package_fixture(LEDGER_PATH)
-    return build_financial_intelligence_packet(
-        entity=fixture.entity,
-        ledger=fixture.ledger,
-        filing_metadata=fixture.filing_metadata,
+    loaded = fixture if fixture is not None else load_filing_package_fixture(LEDGER_PATH)
+    return assemble_financial_intelligence_packet(
+        entity=loaded.entity,
+        ledger=loaded.ledger,
+        filing_metadata=loaded.filing_metadata,
         query_request=PacketQueryRequest(
             policy=QueryPolicy(
                 source_snapshot_at=source_event_cutoff,
                 recorded_at=system_recorded_cutoff,
                 selection=policy,
             ),
-            metrics=packet_module.DEFAULT_REQUESTED_METRICS,
-            periods=default_packet_periods(),
+            metrics=metrics or packet_module.DEFAULT_REQUESTED_METRICS,
+            periods=periods or default_packet_periods(),
         ),
         metric_registry=load_core_registry(ROOT),
+        context=_context(),
         built_at=built_at,
-        input_digests=_input_digests(),
+        input_digests=input_digests if input_digests is not None else _input_digests(),
     )
 
 
@@ -198,11 +254,24 @@ def test_law9_formula_gross_margin_carries_dependency_receipts() -> None:
     assert revenue["value"] == "1060"
     assert revenue["source_occurrence_ids"]
     assert cell["accession"] == revenue["accession"]
+    index = packet_cell_index(packet)
+    resolved = [index[dep_id] for dep_id in cell["dependency_cell_ids"]]
+    by_metric = {item["metric_id"]: item for item in resolved}
+    assert set(by_metric) == {"gross_profit", "revenue"}
+    assert by_metric["revenue"]["cell_id"] == revenue["cell_id"]
+    assert by_metric["gross_profit"]["cell_id"] not in {item["cell_id"] for item in packet["cells"]}
+    assert by_metric["gross_profit"] in packet["evidence_cells"]
+    assert by_metric["gross_profit"]["value"] == "500"
+    assert by_metric["gross_profit"]["provenance_kind"] == "direct"
+    assert by_metric["gross_profit"]["source_occurrence_ids"]
+    assert "gross_profit" not in packet["query"]["requested_metrics"]
+    assert all(item["metric_id"] != "gross_profit" for item in packet["cells"])
 
 
 def test_law10_every_valued_cell_is_reversible() -> None:
     packet = _build()
-    valued = [cell for cell in packet["cells"] if cell["value"] is not None]
+    assert_formula_evidence_closed(packet["cells"], packet["evidence_cells"])
+    valued = [cell for cell in all_packet_cells(packet) if cell["value"] is not None]
     assert valued
     for cell in valued:
         assert cell["non_value_state"] is None
@@ -211,10 +280,16 @@ def test_law10_every_valued_cell_is_reversible() -> None:
             assert cell["source_occurrence_ids"]
             assert cell["accession"]
             assert cell["source_digest"]
+            assert cell["mapping_rule_id"]
+            assert cell["mapping_rule_digest"]
         elif cell["provenance_kind"] == "formula":
             assert cell["dependency_cell_ids"]
             assert cell["formula_rule_id"]
             assert cell["formula_rule_digest"]
+            leaves = formula_leaves(packet, cell)
+            assert leaves
+            assert all(leaf["provenance_kind"] == "direct" for leaf in leaves)
+            assert all(leaf["source_occurrence_ids"] and leaf["source_digest"] for leaf in leaves)
         else:
             raise AssertionError(cell["provenance_kind"])
 
@@ -317,6 +392,7 @@ def test_authority_is_display_only_and_cutoffs_have_no_now_default() -> None:
 
 def test_golden_packet_is_schema_valid_and_content_addressed() -> None:
     packet = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+    validate_packet(packet, load_packet_schema(SCHEMA_PATH))
     assert packet["packet_id"] == f"fip_{packet['content_sha256'][:24]}"
     assert packet["content_sha256"] == packet_digest(packet)
     rebuilt = _build()
@@ -337,3 +413,301 @@ def test_constructor_fixture_round_trips_through_loader() -> None:
     ]
     assert len(duplicates) == 2
     assert {str(event.parsed_value) for event in duplicates} == {"1000"}
+
+
+def _income_fixture(*, revenue: str, gross_profit: str, decimals: str = "0"):
+    fixture = build_synthetic_filing_package_fixture()
+    fy2024 = FactContext(
+        context_id="c-fy2024-numeric",
+        entity_scheme="http://www.sec.gov/CIK",
+        entity_identifier=packet_module.SYNTHETIC_ENTITY_ID,
+        start="2024-01-01",
+        end="2024-12-31",
+    )
+    filing = packet_module._filing(
+        accession="0000999999-26-000010",
+        document_id="fip1-numeric.htm",
+        accepted_at="2026-02-15T16:00:00Z",
+        recorded_at="2026-02-15T16:05:00Z",
+        filed_at="2026-02-15",
+    )
+
+    def _fact(concept: str, value: str, key: str, span: tuple[int, int]):
+        return make_raw_fact(
+            source=filing["source"],
+            concept_qname=concept,
+            context=fy2024,
+            unit=packet_module._USD,
+            raw_token=value,
+            parsed_value=value,
+            dimensions_known=True,
+            decimals=decimals,
+            source_span=span,
+            source_occurrence_key=key,
+            accepted_at=filing["accepted_at"],
+            recorded_at=filing["recorded_at"],
+            event_type=FactEventType.FILED,
+        )
+
+    events = (
+        _fact("us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", revenue, "num-rev", (0, 4)),
+        _fact("us-gaap:GrossProfit", gross_profit, "num-gp", (8, 11)),
+    )
+    metadata = {
+        event.occurrence_id: {
+            "accession": event.source.accession,
+            "document_id": event.source.document_id,
+            "source_body_sha256": event.source.body_sha256,
+            "available_at": filing["recorded_at"],
+            "form": "10-K",
+            "filed_at": filing["filed_at"],
+        }
+        for event in events
+    }
+    return packet_module.FilingPackageFixture(
+        entity=fixture.entity,
+        ledger=RawFactLedger(events),
+        filing_metadata=metadata,
+    )
+
+
+def test_nested_formula_net_debt_closes_through_total_debt() -> None:
+    packet = _build(
+        metrics=("net_debt",),
+        periods=(PeriodRequest.instant("2024-12-31", label="2024-12-31"),),
+    )
+    assert [cell["metric_id"] for cell in packet["cells"]] == ["net_debt"]
+    net_debt = _cell(packet, "net_debt", "2024-12-31")
+    assert net_debt["value"] == "85"
+    assert net_debt["provenance_kind"] == "formula"
+    assert net_debt["formula_rule_id"] == "formula.net_debt/v1"
+    evidence_ids = {cell["metric_id"] for cell in packet["evidence_cells"]}
+    assert evidence_ids == {
+        "total_debt",
+        "short_term_debt",
+        "long_term_debt_current",
+        "long_term_debt",
+        "cash_and_cash_equivalents",
+    }
+    assert "net_debt" not in evidence_ids
+    total_debt = _find_cell(packet, "total_debt", "2024-12-31")
+    assert total_debt["value"] == "100"
+    assert total_debt["provenance_kind"] == "formula"
+    assert total_debt in packet["evidence_cells"]
+    leaves = formula_leaves(packet, net_debt)
+    by_metric = {leaf["metric_id"]: leaf for leaf in leaves}
+    assert by_metric["short_term_debt"]["value"] == "10"
+    assert by_metric["long_term_debt_current"]["value"] == "20"
+    assert by_metric["long_term_debt"]["value"] == "70"
+    assert by_metric["cash_and_cash_equivalents"]["value"] == "15"
+    assert all(leaf["provenance_kind"] == "direct" for leaf in leaves)
+    assert_formula_evidence_closed(packet["cells"], packet["evidence_cells"])
+
+
+def test_pure_kernel_does_not_touch_filesystem_env_network_or_object_store(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = load_filing_package_fixture(LEDGER_PATH)
+    registry = load_core_registry(ROOT)
+    context = _context()
+    digests = _input_digests()
+    request = PacketQueryRequest(
+        policy=QueryPolicy(
+            source_snapshot_at="2025-12-31T23:59:59Z",
+            recorded_at="2026-08-05T12:00:02Z",
+            selection="latest_known_as_of",
+        ),
+        metrics=packet_module.DEFAULT_REQUESTED_METRICS,
+        periods=default_packet_periods(),
+    )
+
+    def explode(*_args, **_kwargs):
+        raise AssertionError("pure kernel I/O is forbidden")
+
+    monkeypatch.setattr("builtins.open", explode)
+    monkeypatch.setattr(Path, "read_bytes", explode)
+    monkeypatch.setattr(Path, "read_text", explode)
+    monkeypatch.setattr(Path, "open", explode)
+    monkeypatch.setattr(os, "getenv", explode)
+    monkeypatch.setattr(os, "environ", {"get": explode, "__getitem__": explode})
+    monkeypatch.setattr(socket, "socket", explode)
+    monkeypatch.setattr(urllib.request, "urlopen", explode)
+    fake_boto = types.SimpleNamespace(client=explode, resource=explode)
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto)
+    packet = assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=request,
+        metric_registry=registry,
+        context=context,
+        input_digests=digests,
+    )
+    assert packet["schema"] == PACKET_SCHEMA
+    assert packet["content_sha256"] == packet_digest(packet)
+
+
+def test_packet_bytes_are_independent_of_absolute_paths_and_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = canonical_packet_bytes(_build())
+    monkeypatch.setenv("TZ", "America/New_York")
+    monkeypatch.setenv("LANG", "zh_CN.UTF-8")
+    monkeypatch.setenv("LC_ALL", "zh_CN.UTF-8")
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "0")
+    monkeypatch.setenv("PYTHONHASHSEED", "1")
+    assert canonical_packet_bytes(_build()) == expected
+    out_a = tmp_path / "nested" / "a.json"
+    out_b = tmp_path / "other-root" / "b.json"
+    cmd = [
+        PYTHON,
+        str(CLI.resolve()),
+        "--ledger",
+        str(LEDGER_PATH.resolve()),
+        "--companyfacts-witness",
+        str(COMPANYFACTS_WITNESS.resolve()),
+        "--submissions-witness",
+        str(SUBMISSIONS_WITNESS.resolve()),
+        "--policy",
+        "latest_known_as_of",
+        "--source-event-cutoff",
+        "2025-12-31T23:59:59Z",
+        "--system-recorded-cutoff",
+        "2026-08-05T12:00:02Z",
+        "--repo-root",
+        str(ROOT.resolve()),
+    ]
+    subprocess.run([*cmd, "--output", str(out_a)], check=True, cwd=tmp_path, capture_output=True, text=True)
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
+    subprocess.run([*cmd, "--output", str(out_b)], check=True, cwd=other_cwd, capture_output=True, text=True)
+    assert out_a.read_bytes().strip() == out_b.read_bytes().strip() == expected
+
+
+def test_packet_bytes_never_contain_local_paths_or_credentials() -> None:
+    blob = canonical_packet_bytes(_build()).decode("utf-8")
+    for marker in FORBIDDEN_PACKET_MARKERS:
+        assert marker not in blob
+    home = os.environ.get("HOME")
+    if home:
+        assert home not in blob
+
+
+def test_schema_rejects_both_null_and_both_set_cells() -> None:
+    packet = _build()
+    schema = load_packet_schema(SCHEMA_PATH)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    valued = next(cell for cell in packet["cells"] if cell["value"] is not None)
+    both_null = copy.deepcopy(valued)
+    both_null["value"] = None
+    both_null["non_value_state"] = None
+    both_set = copy.deepcopy(valued)
+    both_set["non_value_state"] = "missing"
+    missing_accession = copy.deepcopy(valued)
+    missing_accession["provenance_kind"] = "direct"
+    missing_accession["accession"] = None
+    missing_formula = copy.deepcopy(_cell(packet, "gross_margin", "FY2023"))
+    missing_formula["formula_rule_id"] = None
+    missing_formula["dependency_cell_ids"] = []
+    malformed_authority = copy.deepcopy(packet)
+    malformed_authority["authority"] = {"class": "tradeable", "display_only": False}
+    malformed_root = copy.deepcopy(packet)
+    del malformed_root["query"]
+    cases = {
+        "both_null": {**copy.deepcopy(packet), "cells": [both_null, *packet["cells"][1:]]},
+        "both_set": {**copy.deepcopy(packet), "cells": [both_set, *packet["cells"][1:]]},
+        "valued_direct_without_accession": {
+            **copy.deepcopy(packet),
+            "cells": [missing_accession, *packet["cells"][1:]],
+        },
+        "valued_formula_without_dependencies": {
+            **copy.deepcopy(packet),
+            "cells": [missing_formula, *packet["cells"][1:]],
+        },
+        "malformed_authority": malformed_authority,
+        "missing_query": malformed_root,
+    }
+    for name, invalid in cases.items():
+        errors = list(validator.iter_errors(invalid))
+        assert errors, name
+
+
+def test_validate_packet_requires_injected_schema() -> None:
+    packet = _build()
+    with pytest.raises(TypeError, match="injected"):
+        validate_packet(packet, None)  # type: ignore[arg-type]
+
+
+def test_zero_negative_and_high_precision_numeric_cells() -> None:
+    zero = _build(
+        fixture=_income_fixture(revenue="0", gross_profit="10"),
+        metrics=("gross_margin", "revenue"),
+        periods=(PeriodRequest.duration("2024-01-01", "2024-12-31", label="FY2024"),),
+        source_event_cutoff="2026-12-31T23:59:59Z",
+        input_digests=PacketEvidenceDigests(),
+    )
+    zero_margin = _cell(zero, "gross_margin", "FY2024")
+    assert zero_margin["value"] is None
+    assert zero_margin["non_value_state"] == "not_evaluable"
+    assert "division_by_zero" in (zero_margin["reason"] or "")
+    assert_formula_evidence_closed(zero["cells"], zero["evidence_cells"])
+
+    negative = _build(
+        fixture=_income_fixture(revenue="-100", gross_profit="-40"),
+        metrics=("gross_margin", "revenue"),
+        periods=(PeriodRequest.duration("2024-01-01", "2024-12-31", label="FY2024"),),
+        source_event_cutoff="2026-12-31T23:59:59Z",
+        input_digests=PacketEvidenceDigests(),
+    )
+    negative_margin = _cell(negative, "gross_margin", "FY2024")
+    assert negative_margin["value"] == "0.4"
+    assert negative_margin["non_value_state"] is None
+    assert _cell(negative, "revenue", "FY2024")["value"] == "-100"
+
+    precise = _build(
+        fixture=_income_fixture(revenue="3", gross_profit="1", decimals="8"),
+        metrics=("gross_margin",),
+        periods=(PeriodRequest.duration("2024-01-01", "2024-12-31", label="FY2024"),),
+        source_event_cutoff="2026-12-31T23:59:59Z",
+        input_digests=PacketEvidenceDigests(),
+    )
+    precise_margin = _cell(precise, "gross_margin", "FY2024")
+    assert precise_margin["value"] is not None
+    assert precise_margin["value"].startswith("0.3333333333333333333333333333333333")
+    leaves = formula_leaves(precise, precise_margin)
+    assert {leaf["metric_id"] for leaf in leaves} == {"gross_profit", "revenue"}
+
+
+def test_repo_adapter_matches_pure_kernel() -> None:
+    fixture = load_filing_package_fixture(LEDGER_PATH)
+    request = PacketQueryRequest(
+        policy=QueryPolicy(
+            source_snapshot_at="2025-12-31T23:59:59Z",
+            recorded_at="2026-08-05T12:00:02Z",
+            selection="latest_known_as_of",
+        ),
+        metrics=packet_module.DEFAULT_REQUESTED_METRICS,
+        periods=default_packet_periods(),
+    )
+    assembled = assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=request,
+        metric_registry=load_core_registry(ROOT),
+        context=_context(),
+        input_digests=_input_digests(),
+    )
+    adapted = build_financial_intelligence_packet_from_repo(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=request,
+        repo_root=ROOT,
+        metric_registry=load_core_registry(ROOT),
+        input_digests=_input_digests(),
+    )
+    assert canonical_packet_bytes(assembled) == canonical_packet_bytes(adapted)
+    assert assembled["coverage"]["formula_evidence_closed"] is True
+    assert assembled["coverage"]["evidence_cells"] == len(assembled["evidence_cells"])

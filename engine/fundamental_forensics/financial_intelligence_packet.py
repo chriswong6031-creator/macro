@@ -13,6 +13,7 @@ from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 from typing import Any, Mapping, Sequence
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -21,6 +22,7 @@ from .metric_registry import MetricRegistry, load_core_metric_registry
 from .query import (
     BitemporalMetricQueryEngine,
     BitemporalPolicy,
+    CellNode,
     CellState,
     FilingMetadata,
     MetricCell,
@@ -57,6 +59,8 @@ SYNTHETIC_ENTITY_ID = "0000999999"
 SYNTHETIC_TICKER = "FIP1"
 SYNTHETIC_NAME = "SYNTHETIC FILING PACKAGE CORP"
 IDENTITY_EXCLUDED_FIELDS = frozenset({"packet_id", "content_sha256", "built_at"})
+_SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+PACKET_BUILDER_RELATIVE_PATH = Path("engine") / "fundamental_forensics" / "financial_intelligence_packet.py"
 FORBIDDEN_COMPANYFACTS_MARKERS = (
     "0000000001-24-000001",
     "0000000001-25-000001",
@@ -117,6 +121,73 @@ class PacketQueryRequest:
 
 
 @dataclass(frozen=True)
+class PacketBuildContext:
+    """Immutable, already-loaded inputs for the pure packet assembler."""
+
+    packet_builder_digest: str
+    packet_schema: Mapping[str, Any]
+    query_engine_version: str = QUERY_SCHEMA
+    packet_builder_version: str = PACKET_BUILDER_VERSION
+
+    def __post_init__(self) -> None:
+        digest = str(self.packet_builder_digest)
+        if not _SHA256_RE.fullmatch(digest):
+            raise ValueError("packet_builder_digest must be lowercase 64-hex")
+        schema = self.packet_schema
+        if not isinstance(schema, Mapping) or not schema:
+            raise TypeError("packet_schema must be a non-empty mapping")
+        object.__setattr__(self, "packet_builder_digest", digest)
+        object.__setattr__(self, "packet_schema", dict(schema))
+        object.__setattr__(self, "query_engine_version", str(self.query_engine_version))
+        object.__setattr__(self, "packet_builder_version", str(self.packet_builder_version))
+
+
+@dataclass(frozen=True)
+class PacketEvidenceDigests:
+    """Witness hashes computed by the execution adapter, never by the kernel."""
+
+    filing_package_fixture_sha256: str | None = None
+    companyfacts_witness_sha256: str | None = None
+    submissions_witness_sha256: str | None = None
+
+    def __post_init__(self) -> None:
+        for name in (
+            "filing_package_fixture_sha256",
+            "companyfacts_witness_sha256",
+            "submissions_witness_sha256",
+        ):
+            value = getattr(self, name)
+            if value is None:
+                continue
+            text = str(value)
+            if not _SHA256_RE.fullmatch(text):
+                raise ValueError(f"{name} must be lowercase 64-hex")
+            object.__setattr__(self, name, text)
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "filing_package_fixture_sha256": self.filing_package_fixture_sha256,
+            "companyfacts_witness_sha256": self.companyfacts_witness_sha256,
+            "submissions_witness_sha256": self.submissions_witness_sha256,
+        }
+
+    @classmethod
+    def from_mapping(
+        cls,
+        value: "PacketEvidenceDigests | Mapping[str, str | None] | None",
+    ) -> "PacketEvidenceDigests":
+        if value is None:
+            return cls()
+        if isinstance(value, PacketEvidenceDigests):
+            return value
+        return cls(
+            filing_package_fixture_sha256=value.get("filing_package_fixture_sha256"),
+            companyfacts_witness_sha256=value.get("companyfacts_witness_sha256"),
+            submissions_witness_sha256=value.get("submissions_witness_sha256"),
+        )
+
+
+@dataclass(frozen=True)
 class FilingPackageFixture:
     entity: EntityInput
     ledger: RawFactLedger
@@ -139,12 +210,17 @@ class FilingPackageFixture:
         }
 
 
-def packet_builder_digest() -> str:
-    return sha256(Path(__file__).read_bytes()).hexdigest()
+def digest_builder_source(source: bytes) -> str:
+    if not isinstance(source, (bytes, bytearray)):
+        raise TypeError("builder source must be bytes")
+    payload = bytes(source)
+    if not payload:
+        raise ValueError("builder source is empty")
+    return sha256(payload).hexdigest()
 
 
-def load_packet_schema() -> dict[str, Any]:
-    return _load_json_object(PACKET_SCHEMA_PATH)
+def load_packet_schema(path: Path | str | None = None) -> dict[str, Any]:
+    return _load_json_object(Path(path) if path is not None else PACKET_SCHEMA_PATH)
 
 
 def canonical_packet_bytes(packet: Mapping[str, Any]) -> bytes:
@@ -160,16 +236,108 @@ def packet_digest(packet_body: Mapping[str, Any]) -> str:
     return sha256(canonical_packet_bytes(body)).hexdigest()
 
 
-def validate_packet(packet: Mapping[str, Any], schema: Mapping[str, Any] | None = None) -> None:
-    validator = Draft202012Validator(
-        schema or load_packet_schema(),
-        format_checker=FormatChecker(),
-    )
+def validate_packet(packet: Mapping[str, Any], schema: Mapping[str, Any]) -> None:
+    if not isinstance(schema, Mapping) or not schema:
+        raise TypeError("packet schema must be injected; the kernel does not load it")
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
     errors = sorted(validator.iter_errors(packet), key=lambda item: list(item.path))
     if errors:
         first = errors[0]
         path = ".".join(str(part) for part in first.path) or "<root>"
         raise ValueError(f"packet schema invalid at {path}: {first.message}") from first
+
+
+def all_packet_cells(packet: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [*packet["cells"], *packet["evidence_cells"]]
+
+
+def packet_cell_index(packet: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for cell in all_packet_cells(packet):
+        cell_id = cell["cell_id"]
+        existing = index.get(cell_id)
+        if existing is not None and existing != cell:
+            raise ValueError(f"conflicting packet cell_id {cell_id}")
+        index[cell_id] = cell
+    return index
+
+
+def formula_leaves(packet: Mapping[str, Any], cell: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+    index = packet_cell_index(packet)
+    leaves: dict[str, dict[str, Any]] = {}
+
+    def walk(node: Mapping[str, Any], seen: set[str]) -> None:
+        cell_id = node["cell_id"]
+        if cell_id in seen:
+            return
+        seen.add(cell_id)
+        kind = node["provenance_kind"]
+        if kind == "direct":
+            leaves[cell_id] = dict(node)
+            return
+        if kind != "formula":
+            raise ValueError(f"formula evidence is not a direct fact: {cell_id} kind={kind}")
+        deps = node["dependency_cell_ids"]
+        if not deps:
+            raise ValueError(f"formula cell {cell_id} has no dependency_cell_ids")
+        for dep_id in deps:
+            if dep_id not in index:
+                raise ValueError(f"unresolved dependency {dep_id} of {cell_id}")
+            walk(index[dep_id], seen)
+
+    walk(cell, set())
+    return tuple(leaves[key] for key in sorted(leaves))
+
+
+def assert_formula_evidence_closed(
+    cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
+) -> None:
+    packet = {"cells": list(cells), "evidence_cells": list(evidence_cells)}
+    requested_ids = {cell["cell_id"] for cell in cells}
+    evidence_ids = {cell["cell_id"] for cell in evidence_cells}
+    overlap = requested_ids & evidence_ids
+    if overlap:
+        raise ValueError(f"evidence_cells duplicate requested cells: {sorted(overlap)}")
+    index = packet_cell_index(packet)
+    for cell in all_packet_cells(packet):
+        if cell["value"] is None:
+            for dep_id in cell["dependency_cell_ids"]:
+                if dep_id not in index:
+                    raise ValueError(
+                        f"unresolved dependency {dep_id} of {cell['cell_id']}"
+                    )
+            continue
+        kind = cell["provenance_kind"]
+        if kind == "direct":
+            _assert_valued_direct(cell)
+        elif kind == "formula":
+            _assert_valued_formula(cell)
+            formula_leaves(packet, cell)
+        else:
+            raise ValueError(
+                f"valued cell {cell['cell_id']} has unsupported provenance_kind {kind}"
+            )
+
+
+def _assert_valued_direct(cell: Mapping[str, Any]) -> None:
+    if not cell.get("source_occurrence_ids"):
+        raise ValueError(f"valued direct cell {cell['cell_id']} missing source_occurrence_ids")
+    if not cell.get("accession"):
+        raise ValueError(f"valued direct cell {cell['cell_id']} missing accession")
+    if not cell.get("source_digest"):
+        raise ValueError(f"valued direct cell {cell['cell_id']} missing source_digest")
+    if not cell.get("mapping_rule_id") or not cell.get("mapping_rule_digest"):
+        raise ValueError(f"valued direct cell {cell['cell_id']} missing mapping provenance")
+
+
+def _assert_valued_formula(cell: Mapping[str, Any]) -> None:
+    if not cell.get("formula_rule_id"):
+        raise ValueError(f"valued formula cell {cell['cell_id']} missing formula_rule_id")
+    if not cell.get("formula_rule_digest"):
+        raise ValueError(f"valued formula cell {cell['cell_id']} missing formula_rule_digest")
+    if not cell.get("dependency_cell_ids"):
+        raise ValueError(f"valued formula cell {cell['cell_id']} missing dependency_cell_ids")
 
 
 def default_packet_periods() -> tuple[PeriodRequest, ...]:
@@ -334,6 +502,22 @@ def build_synthetic_filing_package_fixture() -> FilingPackageFixture:
         recorded_at=k25["recorded_at"],
         event_type=FactEventType.FILED,
     )
+    short_term_debt_2024 = _usd_fact(
+        k25, "us-gaap:ShortTermBorrowings", instant_2024, "10",
+        source_span=(200, 202), source_occurrence_key="std-2024",
+    )
+    long_term_debt_current_2024 = _usd_fact(
+        k25, "us-gaap:LongTermDebtCurrent", instant_2024, "20",
+        source_span=(204, 206), source_occurrence_key="ltdc-2024",
+    )
+    long_term_debt_2024 = _usd_fact(
+        k25, "us-gaap:LongTermDebtNoncurrent", instant_2024, "70",
+        source_span=(208, 210), source_occurrence_key="ltd-2024",
+    )
+    cash_2024 = _usd_fact(
+        k25, "us-gaap:CashAndCashEquivalentsAtCarryingValue", instant_2024, "15",
+        source_span=(212, 214), source_occurrence_key="cash-2024",
+    )
 
     events = (
         fy2022_revenue_a,
@@ -349,6 +533,10 @@ def build_synthetic_filing_package_fixture() -> FilingPackageFixture:
         ar_2024,
         ar_2023_restated,
         customer_count,
+        short_term_debt_2024,
+        long_term_debt_current_2024,
+        long_term_debt_2024,
+        cash_2024,
     )
     metadata = {}
     for event in events:
@@ -393,19 +581,23 @@ def load_filing_package_fixture(path: Path | str) -> FilingPackageFixture:
     return FilingPackageFixture(entity=entity, ledger=ledger, filing_metadata=metadata)
 
 
-def build_financial_intelligence_packet(
+def assemble_financial_intelligence_packet(
     *,
     entity: EntityInput,
     ledger: RawFactLedger,
     filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
     query_request: PacketQueryRequest,
     metric_registry: MetricRegistry,
+    context: PacketBuildContext,
+    input_digests: PacketEvidenceDigests | Mapping[str, str | None] | None = None,
     disclosure_projection: Mapping[str, Any] | None = None,
     built_at: datetime | str | None = None,
-    input_digests: Mapping[str, str | None] | None = None,
 ) -> dict[str, Any]:
     if disclosure_projection:
         raise ValueError("FIF-1 does not accept a disclosure projection")
+    if not isinstance(context, PacketBuildContext):
+        raise TypeError("context must be a PacketBuildContext")
+    digests = PacketEvidenceDigests.from_mapping(input_digests)
     built_at_text = None
     if built_at is not None:
         built_at_text = utc_text(parse_utc(built_at, field_name="built_at"))
@@ -452,6 +644,8 @@ def build_financial_intelligence_packet(
             cells.append(_adapt_kernel_cell(kernel_cell, metric_registry.metric(metric_id)))
 
     cells.sort(key=lambda item: (item["metric_id"], canonical_json(item["period"])))
+    evidence_cells = _evidence_cells(kernel_cells, cells, metric_registry)
+    assert_formula_evidence_closed(cells, evidence_cells)
     revisions = _revision_records(
         ledger=ledger,
         registry=metric_registry,
@@ -459,13 +653,21 @@ def build_financial_intelligence_packet(
         cells=cells,
     )
     extension_evidence = _extension_evidence(ledger)
-    coverage = _coverage(query_request, cells, revisions, extension_evidence)
+    coverage = _coverage(
+        query_request,
+        cells,
+        evidence_cells,
+        revisions,
+        extension_evidence,
+    )
     limitations = _limitations(entity)
     receipts = _receipts(
         metric_registry=metric_registry,
         query_request=query_request,
         cells=cells,
-        input_digests=input_digests or {},
+        evidence_cells=evidence_cells,
+        builder_digest=context.packet_builder_digest,
+        input_digests=digests,
     )
     periods = [_period_record(period) for period in query_request.periods]
     body: dict[str, Any] = {
@@ -488,12 +690,13 @@ def build_financial_intelligence_packet(
         "governance": {
             "metric_registry_version": metric_registry.catalog_version,
             "metric_registry_digest": metric_registry.catalog_content_sha256,
-            "query_engine_version": QUERY_SCHEMA,
-            "packet_builder_version": PACKET_BUILDER_VERSION,
-            "packet_builder_digest": packet_builder_digest(),
+            "query_engine_version": context.query_engine_version,
+            "packet_builder_version": context.packet_builder_version,
+            "packet_builder_digest": context.packet_builder_digest,
         },
         "periods": periods,
         "cells": cells,
+        "evidence_cells": evidence_cells,
         "revisions": revisions,
         "disclosure_changes": [],
         "coverage": coverage,
@@ -512,8 +715,50 @@ def build_financial_intelligence_packet(
     }
     if built_at_text is not None:
         packet["built_at"] = built_at_text
-    validate_packet(packet)
+    validate_packet(packet, context.packet_schema)
     return packet
+
+
+def build_financial_intelligence_packet_from_repo(
+    *,
+    entity: EntityInput,
+    ledger: RawFactLedger,
+    filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
+    query_request: PacketQueryRequest,
+    repo_root: Path | str,
+    metric_registry: MetricRegistry | None = None,
+    packet_schema: Mapping[str, Any] | None = None,
+    builder_source: bytes | None = None,
+    disclosure_projection: Mapping[str, Any] | None = None,
+    built_at: datetime | str | None = None,
+    input_digests: PacketEvidenceDigests | Mapping[str, str | None] | None = None,
+) -> dict[str, Any]:
+    root = Path(repo_root)
+    schema = (
+        dict(packet_schema)
+        if packet_schema is not None
+        else load_packet_schema(root / "contracts" / "financial_intelligence_packet.schema.json")
+    )
+    source = (
+        builder_source
+        if builder_source is not None
+        else (root / PACKET_BUILDER_RELATIVE_PATH).read_bytes()
+    )
+    registry = metric_registry if metric_registry is not None else load_core_registry(root)
+    return assemble_financial_intelligence_packet(
+        entity=entity,
+        ledger=ledger,
+        filing_metadata=filing_metadata,
+        query_request=query_request,
+        metric_registry=registry,
+        context=PacketBuildContext(
+            packet_builder_digest=digest_builder_source(source),
+            packet_schema=schema,
+        ),
+        input_digests=PacketEvidenceDigests.from_mapping(input_digests),
+        disclosure_projection=disclosure_projection,
+        built_at=built_at,
+    )
 
 
 def _filing(
@@ -589,7 +834,7 @@ def _assert_independent_fixture(raw: Mapping[str, Any]) -> None:
         raise ValueError("filing-package fixture must declare filing-package authority")
 
 
-def _adapt_kernel_cell(cell: MetricCell, contract: Any) -> dict[str, Any]:
+def _adapt_kernel_cell(cell: MetricCell | CellNode, contract: Any) -> dict[str, Any]:
     provenance = cell.provenance
     non_value_state, quality_state, coverage_state = _cell_states(cell)
     value = decimal_text(cell.value) if cell.state is CellState.VALUE else None
@@ -667,7 +912,7 @@ def _unsupported_cell(
     }
 
 
-def _cell_states(cell: MetricCell) -> tuple[str | None, str, str]:
+def _cell_states(cell: MetricCell | CellNode) -> tuple[str | None, str, str]:
     if cell.state is CellState.VALUE:
         complete = bool(cell.provenance.source_occurrence_ids or cell.provenance.dependency_cell_ids)
         return None, "valued", "source_trace_complete" if complete else "source_trace_incomplete"
@@ -677,6 +922,28 @@ def _cell_states(cell: MetricCell) -> tuple[str | None, str, str]:
     if cell.state is CellState.MISSING:
         return "missing", "missing", "source_trace_incomplete"
     return "not_evaluable", "not_evaluable", "source_trace_incomplete"
+
+
+def _evidence_cells(
+    kernel_cells: Sequence[MetricCell],
+    cells: Sequence[Mapping[str, Any]],
+    registry: MetricRegistry,
+) -> list[dict[str, Any]]:
+    requested_ids = {cell["cell_id"] for cell in cells}
+    evidence_by_id: dict[str, dict[str, Any]] = {}
+    for kernel_cell in kernel_cells:
+        for node in kernel_cell.dependency_nodes:
+            if node.cell_id in requested_ids:
+                continue
+            adapted = _adapt_kernel_cell(node, registry.metric(node.metric_id))
+            existing = evidence_by_id.get(node.cell_id)
+            if existing is not None and existing != adapted:
+                raise ValueError(f"conflicting evidence cell {node.cell_id}")
+            evidence_by_id[node.cell_id] = adapted
+    return sorted(
+        evidence_by_id.values(),
+        key=lambda item: (item["metric_id"], canonical_json(item["period"]), item["cell_id"]),
+    )
 
 
 def _concept_to_metrics(registry: MetricRegistry) -> dict[str, tuple[str, ...]]:
@@ -804,19 +1071,22 @@ def _extension_evidence(ledger: RawFactLedger) -> list[dict[str, Any]]:
 def _coverage(
     query_request: PacketQueryRequest,
     cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
     revisions: Sequence[Mapping[str, Any]],
     extension_evidence: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    audited = [*cells, *evidence_cells]
     valued = [cell for cell in cells if cell["non_value_state"] is None]
     missing = [cell for cell in cells if cell["non_value_state"] == "missing"]
     unsupported = [cell for cell in cells if cell["non_value_state"] == "unsupported"]
     direct = [cell for cell in valued if cell["provenance_kind"] == "direct"]
     formula = [cell for cell in valued if cell["provenance_kind"] == "formula"]
-    source_complete = [cell for cell in cells if cell["coverage_state"] == "source_trace_complete"]
+    source_complete = [cell for cell in audited if cell["coverage_state"] == "source_trace_complete"]
     governance_complete = [
         cell
-        for cell in valued
-        if cell["mapping_rule_digest"] or cell["formula_rule_digest"]
+        for cell in audited
+        if cell["non_value_state"] is None
+        and (cell["mapping_rule_digest"] or cell["formula_rule_digest"])
     ]
     valued_metrics = sorted({cell["metric_id"] for cell in valued})
     missing_metrics = sorted({cell["metric_id"] for cell in missing})
@@ -834,6 +1104,8 @@ def _coverage(
         "unsupported_metrics": unsupported_metrics,
         "direct_cells": len(direct),
         "formula_cells": len(formula),
+        "evidence_cells": len(evidence_cells),
+        "formula_evidence_closed": True,
         "periods_requested": len(query_request.periods),
         "periods_returned": len(returned_periods),
         "source_trace_complete_count": len(source_complete),
@@ -864,7 +1136,9 @@ def _receipts(
     metric_registry: MetricRegistry,
     query_request: PacketQueryRequest,
     cells: Sequence[Mapping[str, Any]],
-    input_digests: Mapping[str, str | None],
+    evidence_cells: Sequence[Mapping[str, Any]],
+    builder_digest: str,
+    input_digests: PacketEvidenceDigests,
 ) -> dict[str, Any]:
     query_payload = {
         "policy": query_request.policy.selection.value,
@@ -874,18 +1148,17 @@ def _receipts(
         "requested_periods": [period.to_dict() for period in query_request.periods],
         "evaluation_mode": query_request.evaluation_mode,
     }
-    source_receipts = sum(len(cell["source_occurrence_ids"]) for cell in cells)
+    audited = [*cells, *evidence_cells]
+    source_receipts = sum(len(cell["source_occurrence_ids"]) for cell in audited)
     governance_receipts = sum(
         1
-        for cell in cells
+        for cell in audited
         if cell["mapping_rule_digest"] or cell["formula_rule_digest"]
     )
     return {
-        "filing_package_fixture_sha256": input_digests.get("filing_package_fixture_sha256"),
-        "companyfacts_witness_sha256": input_digests.get("companyfacts_witness_sha256"),
-        "submissions_witness_sha256": input_digests.get("submissions_witness_sha256"),
+        **input_digests.to_dict(),
         "metric_registry_digest": metric_registry.catalog_content_sha256,
-        "packet_builder_digest": packet_builder_digest(),
+        "packet_builder_digest": builder_digest,
         "query_request_digest": sha256(canonical_json(query_payload).encode("utf-8")).hexdigest(),
         "source_receipt_count": source_receipts,
         "governance_receipt_count": governance_receipts,
@@ -912,9 +1185,8 @@ def sha256_file(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()
 
 
-def load_core_registry(repo_root: Path | None = None) -> MetricRegistry:
-    root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[2]
-    return load_core_metric_registry(root)
+def load_core_registry(repo_root: Path | str) -> MetricRegistry:
+    return load_core_metric_registry(Path(repo_root))
 
 
 # Imported datetime_module so tests can fail the builder if wall clock is used.
