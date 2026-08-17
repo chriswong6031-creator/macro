@@ -5,7 +5,7 @@ date: 2026-08-17
 session: claude/prophet-fusion-pr3b-lofo
 model: local
 ended_because: complete
-prs: []
+prs: ["#5829"]
 repo: mastermindx-market-intelligence/macro
 main_at_start: c76767c72d41cd74e498d514d502cea0c2b364c0
 mission: >
