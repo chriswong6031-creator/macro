@@ -56,8 +56,9 @@ the two orders are two columns on one row, not two keyed populations — valid p
 because the population, the outcome and the grader are shared and the shadow holds no
 authority.
 
-**Pre-registration — fixed BEFORE any read.** Registering these after watching a few
-nights is how a guardrail becomes a post-hoc story.
+**Pre-registration — frozen in [`W3_RACE_PREREG.md`](W3_RACE_PREREG.md) before any
+forward outcome read (PR-3A).** The bullets below are the charter; the freeze file
+is the decision. Do not inspect C1-vs-shadow outcomes until that file is the law.
 
 * **Horizons**: the existing maturation law, unchanged. H=10 first, H=63 for episodes.
   No early reads, no new horizon invented for this race.
@@ -176,7 +177,7 @@ fusion nightly exists:*
 | `engine/us_prophet_fusion.py` | `lofo_displacement(members, admitted)` — deterministic, no outcomes |
 | `engine/us_board_rank.py` | extend the fusion receipt with the per-family diagnostic triple |
 | nightly accrual | one row per (date, family); one row per (date) for coverage |
-| `research/prophet_fusion/W3_RACE_PREREG.md` | the §2 pre-registration, registered before the first lawful read |
+| `research/prophet_fusion/W3_RACE_PREREG.md` | the §2 pre-registration, **frozen in PR-3A** before the first lawful read |
 | display tier | the diagnostic table; the race surface stays "not gradeable yet, N nights accrued" |
 
 **Explicitly not in scope, at any point in W3:** fitting C2 (the fold law is unchanged —

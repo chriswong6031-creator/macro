@@ -206,3 +206,14 @@ names.
 this workstream without altering it; that file remains the fuller account of the override
 itself — its byte-parity proofs, the as-of-night floor derivation, and the family
 separation limits — and its still-live items are carried forward above.*
+
+## PR-3A reconciliation (2026-08-16)
+
+The YAML `unresolved` block above is this session's record. PR-3A recut
+`families.yml` so baseline roles are definition-aware
+(`DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER`): there is no timeless
+`champion_baseline.columns` list. Canonical v3 output is
+`published_ranker_output`; the retired v2 scorer is `retired_shadow_output`
+under `prophet_shadow_*`. Do not treat the 2026-08-15 champion_baseline drift as
+still live registry law.
+

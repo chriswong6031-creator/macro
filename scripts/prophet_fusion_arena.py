@@ -86,30 +86,29 @@ DEFAULT_COVERAGE_FLOOR = 0.50
 
 PIT_OK = "pit"
 #: PR-2, on #5602's merged fix: the short-interest dim resolves HISTORICAL query dates
-#: against the history+panel union gated on the store's own ``knowable_date``
-#: (= settlement + publication lag), basis ``pit_settlement``.  The §9.1 availability
-#: gate is enforced INSIDE the producer, so the status is backtest-lawful — with the
-#: registry's own depth caveat (3 committed settlements) binding every consumer.
+#: against the history+panel union gated on the store's own ``knowable_date``, basis
+#: ``pit_settlement``.  Producer law is #5705 / ``lib/finra_knowable.py``: the 8th
+#: NYSE session after settlement, floored by stored ``knowable_date`` and by
+#: ``capture_date``.  The §9.1 availability gate is enforced INSIDE the producer, so
+#: the status is backtest-lawful.  PIT-lawful is not estimable — the registry's depth
+#: caveat (3 committed settlements; first knowable 2026-07-22 under the capture floor)
+#: binds every consumer.
 PIT_SETTLEMENT = "pit_settlement"
 PIT_FORWARD_ONLY = "forward_only"
 PIT_SNAPSHOT = "snapshot_not_pit"
 PIT_STATUSES = (PIT_OK, PIT_SETTLEMENT, PIT_FORWARD_ONLY, PIT_SNAPSHOT)
 
-#: The statuses a BACKTEST frame may join.  ``pit_settlement`` is DELIBERATELY NOT
-#: here yet (PR-2 adversarial review, finding F-5): the producer's knowable_date is
-#: itself DERIVED on every buildable frame — ``_si_normalise`` computes
-#: ``settlement_date + 10 CALENDAR days`` because the history parquet ships no native
-#: knowable column — and 10 calendar days under-waits the "~8 sessions" FINRA
-#: publication lag by 2-3 days on all three committed settlements, which manufactures
-#: look-ahead at exactly the publication boundary.  Admission requires the owning lane
-#: to reconcile the lag constant first (8 business sessions, or
-#: ``max(derived, capture_date)``); the registry's short_interest note carries the
-#: full receipt.  ``forward_only`` and ``snapshot_not_pit`` stay refused as before.
-BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK})
+#: The statuses a BACKTEST frame may join.  ``pit_settlement`` is admitted after #5705
+#: replaced the retired ``settlement + 10 calendar days`` derivation with the 8th NYSE
+#: session floored by stored knowable_date and capture_date.  ``forward_only`` and
+#: ``snapshot_not_pit`` stay refused.  Admission is a PIT gate, not an estimability
+#: claim — a three-settlement series still cannot support inference.
+BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK, PIT_SETTLEMENT})
 
-#: A backtest frame may only join ``pit`` members; a LIVE (serving) read has no future
-#: to leak, so a snapshot is lawful there.  The distinction is a parameter rather than
-#: a hard-coded law because the same registry serves both reads.
+#: A backtest frame may only join ``pit`` / ``pit_settlement`` members; a LIVE
+#: (serving) read has no future to leak, so a snapshot is lawful there.  The
+#: distinction is a parameter rather than a hard-coded law because the same
+#: registry serves both reads.
 FRAME_KIND_BACKTEST = "backtest"
 FRAME_KIND_LIVE = "live"
 FRAME_KINDS = (FRAME_KIND_BACKTEST, FRAME_KIND_LIVE)
