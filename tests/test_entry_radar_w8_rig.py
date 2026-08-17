@@ -70,6 +70,32 @@ def test_verify_static_green() -> None:
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
+def test_verify_live_geometry() -> None:
+    """P11 vs quote. Skip is not a pass — CI without Playwright still has R29."""
+    pytest.importorskip("playwright.sync_api")
+    import http.server
+    import threading
+    from functools import partial
+
+    handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(REF))
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    port = httpd.server_address[1]
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(VERIFY), "--url", f"http://127.0.0.1:{port}"],
+            cwd=str(REF),
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert "P11 no-chip-occlusion" in proc.stdout
+    finally:
+        httpd.shutdown()
+
+
 def test_mutations_are_caught() -> None:
     proc = subprocess.run(
         [sys.executable, str(MUTATE)],
@@ -78,4 +104,4 @@ def test_mutations_are_caught() -> None:
         text=True,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "27/27 mutations caught" in proc.stdout
+    assert "28/28 mutations caught" in proc.stdout

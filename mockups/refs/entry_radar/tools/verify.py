@@ -218,8 +218,12 @@ def static_checks() -> None:
     ovl = js.split("pv-ov pv-ovl", 1)[-1].split("pv-ov pv-ovr", 1)[0]
     ok("R25c c2-not-in-overlay", "data-c2-variant" not in ovl, "overlay unwrap")
     ok("R25e overlay-wraps",
-       ".pv-ov.pv-ovl { flex-wrap: wrap;" in css,
+       ".pv-ov.pv-ovl { flex-wrap: wrap;" in css and "max-width: calc(100% - 122px)" in css,
        "nowrap occludes Candidate as CAN")
+    ok("R27b stance-breakable",
+       ".pv-ovl .pv-stance > .pv-axis { display: none; }" in css
+       and "min-width: auto" not in css.split(".pv-stance {", 1)[-1][:180],
+       "duplicate overlay axis overflows Pre-candidate into the quote")
     ok("R25d zn-wraps",
        "white-space: nowrap; overflow: hidden" not in css.split(".pv-zn", 1)[-1][:280],
        "footer must wrap, not clip")
@@ -237,9 +241,11 @@ def static_checks() -> None:
     ok("R27 path-null-branches",
        "Path unavailable" in js and "Path refused" in js and "Path closed" in js,
        "unavailable/raw/terminal must not fall through to No path yet")
-    ok("R27b stance-does-not-shrink",
-       ".pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: auto; }" in css,
-       "min-width:0 lets the chip spill under the expert")
+    src = Path(__file__).read_text(encoding="utf-8")
+    ok("R29 p11-vs-quote",
+       ".pv-ovr .pv-quote" in src and "ovl.scrollWidth" in src
+       and "1280" in src and "1024" in src,
+       "P11 must observe quote collision and rail overflow at 1024/1280/1440")
 
     # R28 — provisional glance is dashed, not the filled confirmed chip (RGX-003)
     ok("R28 provisional-dashed",
@@ -334,22 +340,33 @@ def playwright_checks(url: str) -> None:
             "() => getComputedStyle(document.querySelector('.bh-purpose')).display")
         ok("P8b 390-purpose-visible", purpose_390 != "none", purpose_390)
 
-        overlap = pg.evaluate("""() => {
+        OCCLUSION_JS = """() => {
           const cards = [...document.querySelectorAll('.pvcard')];
           let n = 0;
           for (const c of cards) {
-            const life = c.querySelector('.er-lifechip');
-            const x = c.querySelector('.er-xchip');
-            if (!life || !x) continue;
+            const life = c.querySelector('.pv-ovl .er-lifechip');
+            const quote = c.querySelector('.pv-ovr .pv-quote');
+            const ovl = c.querySelector('.pv-ovl');
+            if (!life) continue;
             const a = life.getBoundingClientRect();
-            const b = x.getBoundingClientRect();
-            const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-            const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-            if (ox > 1 && oy > 1) n += 1;
+            if (quote) {
+              const b = quote.getBoundingClientRect();
+              const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+              const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+              if (ox > 1 && oy > 1) n += 1;
+            }
+            if (ovl && ovl.scrollWidth - ovl.clientWidth > 1) n += 1;
           }
           return n;
-        }""")
-        ok("P11 no-chip-occlusion", overlap == 0, f"{overlap} cards overlap")
+        }"""
+        overlap = pg.evaluate(OCCLUSION_JS)
+        ok("P11 no-chip-occlusion", overlap == 0, f"{overlap} overlay overflows or hits quote")
+        pg1280 = page_at("theme=dark&lang=en&state=board", 1280, 900)
+        overlap1280 = pg1280.evaluate(OCCLUSION_JS)
+        ok("P11b no-chip-occlusion-1280", overlap1280 == 0, f"{overlap1280} overlay overflows or hits quote at 1280")
+        pg1024 = page_at("theme=dark&lang=en&state=board", 1024, 900)
+        overlap1024 = pg1024.evaluate(OCCLUSION_JS)
+        ok("P11c no-chip-occlusion-1024", overlap1024 == 0, f"{overlap1024} overlay overflows or hits quote at 1024")
         titles = pg.evaluate(
             "() => [...document.querySelectorAll('[title]')].map(el => el.getAttribute('title'))")
         ok("P12 no-title-tooltips", len(titles) == 0, str(titles[:3]))

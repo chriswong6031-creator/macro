@@ -424,7 +424,7 @@ html[data-theme="light"] .pvcard.pv-featured {
   color: var(--muted); opacity: .72; line-height: 1;
 }
 .pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; }
-.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; max-width: calc(100% - 122px); }
+.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; align-items: flex-start; max-width: calc(100% - 122px); min-width: 0; }
 .pv-ov.pv-ovr { max-width: 60%; }
 .pv-ovl { left: 9px; }
 .pv-ovr { right: 9px; }
@@ -470,7 +470,11 @@ html[data-theme="light"] .pvcard.pv-featured {
   text-transform: none; letter-spacing: .02em; font-weight: 700;
 }
 
-.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: auto; }
+.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; }
+/* Overlay "LIFECYCLE" axis is a duplicate of .pv-life in the body. Keeping it
+   makes Pre-candidate (~110px) + label (~48px) overflow the 122px quote reserve
+   and paint under the price (RGXB-001). Expert keeps its axis. */
+.pv-ovl .pv-stance > .pv-axis { display: none; }
 .pv-axis {
   font-size: 7.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   color: var(--muted); white-space: nowrap; flex: none; line-height: 1;

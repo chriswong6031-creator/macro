@@ -23,8 +23,8 @@ Approved visual / component / reference behaviour from `mockups/refs/entry_radar
 - Opportunity drawer slot: `NOT YET MEASURED`
 - Cards are **not links** (no `stock.html` — Prophet PRC-301 is not closed)
 - Lifecycle hue is `--er-life`, never `--pv-buy` or `--ok`
-- 390px is one column that **fits** — do not pin it with `overflow-x: hidden`. Overlay wraps (sister). C2 variant is not in the overlay. At ≤720px keep the purpose sentence; the sister line may hide.
-- RIG checks in `tools/verify.py` + `tests/test_entry_radar_w8_rig.py` as the production regression floor (adapt selectors, do not weaken)
+- 390px is one column that **fits** — do not pin it with `overflow-x: hidden`. Overlay wraps (sister). Overlay does not repeat the LIFECYCLE axis (it overflowed Pre-candidate under the price). C2 variant is not in the overlay. At ≤720px keep the purpose sentence; the sister line may hide.
+- RIG checks in `tools/verify.py` + `tests/test_entry_radar_w8_rig.py` as the production regression floor (adapt selectors, do not weaken). **Static checks always run in CI.** Live geometry (P11 vs `.pv-ovr .pv-quote` at 1024/1280/1440, including rail overflow) runs when Playwright is installed via `verify.py --url` / `test_verify_live_geometry`. A skip without Playwright is **not** a pass of overlay geometry. Do not restore P11 to comparing two chips in the same left rail.
 
 Copy the **look and the information model**, not the synthetic payload.
 

@@ -61,7 +61,7 @@ Lane mapping (contract §14 names → W3 detector ids):
 
 ### Card (glance) — W8 founding subset, **not** contract §14 complete
 1. Hero spark *or* printed null at equal 74px (VTC-301 lesson). Stale has a path; it must not print “No path yet.”
-2. Lifecycle chip (axis labelled) + expert identity chip (G0/C1/C2/C3/C5). Overlay wraps (sister `flex-wrap: wrap` at `calc(100% - 122px)`). C2 variant lives on the marks row / drawer — not the overlay.
+2. Lifecycle chip + expert identity chip (G0/C1/C2/C3/C5). Overlay wraps (sister `flex-wrap: wrap` at `calc(100% - 122px)`). The overlay does **not** repeat the LIFECYCLE axis — that word already sits in the body next to the weight mark; duplicating it overflowed Pre-candidate under the price. Expert keeps its axis. C2 variant lives on the marks row / drawer — not the overlay.
 3. Live/session quote (em-dash when unavailable — never invented)
 4. Ticker + bilingual name. **Not a link** — founding surface has no `stock.html`.
 5. Priority slot: **em-dash** on the card. One board-level line says `Priority ACCRUING — W6 has not measured a rank.` Never a number.
@@ -92,7 +92,7 @@ Why-now copy is mechanical. No “huge upside”, no “92% likely”, no “AI 
 | G0 nightly confirmed | `nightly · confirmed` |
 | C3 confirmed 4H | `confirmed 4H` — not provisional |
 | Stale | dashed card, no featured aura, no hover lift, banner on the page |
-| Unavailable / raw-basis | condition is **null**, chip says UNAVAILABLE, not a non-fire |
+| Unavailable / raw-basis | condition is **null**; freshness footer says UNAVAILABLE; lifecycle chip stays the lifecycle word (dashed/muted). Not a non-fire |
 | Degraded evaluator | header pill + banner; cards demoted |
 | Invalidated false start | terminal weight + struck mark; ledger row kept |
 | Expired | terminal muted weight; ledger row kept |
@@ -133,7 +133,7 @@ From the R4 closure ledger (PR #5560), Radar refuses:
 - Header that can only say “settled close” (PRC-305) — freshness branches
 - Chartless 24px void (VTC-301) — equalised 74px printed null. Stale is a freshness fact and keeps its path. Unavailable / raw-basis / degraded / terminal print Path unavailable / refused / retained / closed. “No path yet” is only for a true missing spark.
 - Stance/tape one-colour collision (DA-002) — tape uses `--ink-up/--ink-down`; lifecycle uses `--er-life`, never `--pv-buy` or `--ok`
-- Amber meaning three things (VTC-304) — amber is caution / stale only
+- Amber as a single meaning (VTC-304) — **not fully inherited.** Stale / degraded / false-start use `--warn` (caution). Pre-candidate still uses `--pv-wait` (forming, not caution). Words disambiguate; do not tell W9 amber is single-meaning.
 
 ---
 
