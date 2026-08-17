@@ -115,6 +115,8 @@ def test_store_binds_exact_evidence_root_and_reuses_unchanged_packet(tmp_path: P
     health = verify_story_packet_store(store)
     assert health["status"] == "ready"
     assert health["packet_count"] == 1
+    shallow = verify_story_packet_store(store, lineage_depth=1)
+    assert shallow["status"] == "ready"
 
     _same_generation, same = write_story_packet_generation(store, evidence)
     assert same["generation_id"] == manifest["generation_id"]

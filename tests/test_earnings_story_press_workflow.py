@@ -52,6 +52,9 @@ def test_story_packet_projection_workflow_is_scheduled_and_serialized() -> None:
     assert "cancel-in-progress: false" in body
     assert 'cron: "37 6 * * *"' in body
     assert "--audit-remote" in body
+    assert "--max-new-events 500" in body
+    assert "--verify-lineage-depth 1" in body
+    assert "timeout-minutes: 40" in body
     assert body.count("github.ref == 'refs/heads/main'") == 3
 
 
