@@ -22,6 +22,8 @@ blast_radius: user_facing
 ambiguity: scoped
 owns_paths:
   - engine/us_prophet_fusion.py
+  - engine/us_prophet_w3.py
+  - scripts/accrue_us_prophet_w3.py
   - scripts/us_prophet_fusion_compare.py
   - research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md
   - research/prophet_fusion/
@@ -139,8 +141,8 @@ waves:
       research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
       outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
       until PR-3D live-accepts instrumentation. PR-3A (#5813) is semantics+prereg.
-      PR-3B is outcome-blind LOFO + member census (no durable W3 store, no nightly
-      wiring)."
+      PR-3B (#5829) is outcome-blind LOFO + member census. PR-3C is the durable
+      paired ledger + us_prophet_ledgers wiring (this wave)."
     status: todo
   - id: w4
     depends_on: [w3]
@@ -160,15 +162,16 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  PR-3B (this wave) lands exact outcome-blind LOFO plus the full member census on
-  the existing fusion receipt. After it merges, a FRESH session starts PR-3C only:
-  the durable paired forward ledger + us_prophet_ledgers wiring. Do not read
-  forward C1-vs-shadow outcomes. Do not create data/us_prophet_rank/w3 in this
-  wave. w2 is done (#5700) but real C2 commissioning is still data-gated. w2b
-  live-accepted. w3 stays todo until PR-3D. Durable paired-race N remains 0 until
-  the first post-#5769 candidates-store commit. #5742 is external availability
-  debt. Canonical five-leg nulls on v3 are correct (#5769). STILL OPEN from w1:
-  the §13.0 live-accrual closure.
+  PR-3C (this wave) lands the durable W3 paired/family/coverage ledger and wires
+  it into us_prophet_ledgers after grading. After it merges, a FRESH session
+  starts PR-3D only: live instrumentation acceptance + lawful status/display
+  (accrual/maturity/gap only before the 20 matured-H10-session floor). Do not
+  read forward C1-vs-shadow outcomes. Do not implement PR-3D in the PR-3C
+  session. w2 is done (#5700) but real C2 commissioning is still data-gated.
+  w2b live-accepted. w3 stays todo until PR-3D. Durable paired-race N remains 0
+  until the first post-#5769 candidates-store commit matures at H=10. #5742 is
+  external availability debt. Canonical five-leg nulls on v3 are correct (#5769).
+  STILL OPEN from w1: the §13.0 live-accrual closure.
 ---
 
 ## Context
