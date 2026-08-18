@@ -42,12 +42,20 @@ def main() -> None:
     ap.add_argument("--require-stamp", default=None,
                     help="fail closed if this stamp_date is not in the durable "
                          "candidates store (never fetch Pages)")
+    ap.add_argument("--require-board-as-of", action="store_true",
+                    help="resolve the required stamp from the committed board "
+                         "as_of (never wall-clock / run id / Pages)")
     args = ap.parse_args()
 
     try:
+        # --nightly is the production advancer: observation identity is the
+        # committed board as_of, never wall-clock / run id. The explicit flag
+        # remains for daily.yml documentation; DAG args stay [--nightly] so
+        # this file is not a global CI invalidator.
         doc = w3.accrue(
             dry_run=bool(args.dry_run or not args.nightly),
             require_stamp=args.require_stamp,
+            require_board_as_of=bool(args.require_board_as_of or args.nightly),
         )
     except (W3ConflictError, W3IntegrityError, W3SchemaError) as exc:
         print(f"::error title=w3-ledger::{exc}", flush=True)

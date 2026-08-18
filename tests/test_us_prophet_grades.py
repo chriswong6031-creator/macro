@@ -800,6 +800,7 @@ class TestZeroAuthorityFence:
             # outcome ruler. Zero rank/gate/featured/plan authority.
             "engine/us_prophet_w3.py",
             "scripts/accrue_us_prophet_w3.py",
+            "scripts/report_us_prophet_w3.py",
             "tests/test_us_prophet_w3.py",
             # PR-1a (WS:PROPHET-CONDITIONAL-FUSION): the arena LABEL builder reads
             # grades as OUTCOMES, never as features — research-tier, zero authority,

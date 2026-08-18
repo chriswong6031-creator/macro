@@ -61,7 +61,9 @@ SCHEMA_PAIRED = "us.prophet_w3_paired/v1"
 SCHEMA_FAMILY = "us.prophet_w3_family/v1"
 SCHEMA_COVERAGE = "us.prophet_w3_coverage/v1"
 SCHEMA_STATUS = "us.prophet_w3_status/v1"
+SCHEMA_SESSION = "us.prophet_w3_session/v1"
 STRUCTURAL_SCHEMA = "prophet_fusion.w3_structural.v1"
+HONEST_N_FLOOR = 20
 
 STORE_DIR = ucv.STORE_DIR
 STORE_SUBDIR = "w3"
@@ -119,6 +121,18 @@ LIVENESS_STATES = (
     LIVENESS_UNMATURED,
     LIVENESS_DEGRADED,
     LIVENESS_MISSING,
+)
+#: session_missing and degraded_or_unpaired are terminal W3 race dispositions.
+#: A later generic product backfill (#5878) must not resurrect them as race sessions.
+TERMINAL_LIVENESS = (LIVENESS_MISSING, LIVENESS_DEGRADED)
+LAWFUL_LIVENESS_TRANSITION = {(LIVENESS_UNMATURED, LIVENESS_PAIRED_ACCRUED)}
+#: Tokens the pre-floor status surface must never emit. Sealed: we do not
+#: compute hidden comparison statistics and hide them; we do not compute them.
+FORBIDDEN_STATUS_TOKENS = (
+    "IC_C1", "IC_shadow", "delta IC", "delta_ic", "ΔIC",
+    "p-value", "pvalue", "p_value",
+    "HAC", "confidence interval", "confidence_interval",
+    "who is winning", "leader", "winner",
 )
 
 CANDIDATE_COLUMNS = (
@@ -191,6 +205,10 @@ def _part_path(grain: str, stamp_date: str, root: Any = None) -> Path:
 
 def status_path(root: Any = None) -> Path:
     return _store_dir(root) / "status.json"
+
+
+def sessions_path(root: Any = None) -> Path:
+    return _store_dir(root) / "sessions.jsonl"
 
 
 def _coerce_null(value: Any) -> Any:
@@ -433,8 +451,27 @@ def append_coverage(rows: list[dict], root: Any = None) -> dict[str, int]:
 # --------------------------------------------------------------------------- #
 
 def _require_committed_source(label: str, value: Any) -> None:
+    """Refuse Pages/reconstructed/backfill *inputs*, not coincidental path substrings.
+
+    Filesystem paths to git-committed artifacts are legal even when a pytest tmp
+    directory or a folder name happens to contain ``pages``. Network URLs and
+    candidate ``source`` fields are what this fence actually polices.
+    """
+    if isinstance(value, Path):
+        text = str(value)
+        if text.startswith(("http://", "https://")):
+            raise W3IntegrityError(
+                f"W3 refuses {label}={value!r} — Pages-only / reconstructed / "
+                "backfilled input cannot enter the durable race store")
+        return
     text = str(value or "").strip().lower()
     if not text:
+        return
+    if text.startswith("/") or text.startswith("data/") or text.startswith("site/"):
+        if text.startswith(("http://", "https://")):
+            raise W3IntegrityError(
+                f"W3 refuses {label}={text!r} — Pages-only / reconstructed / "
+                "backfilled input cannot enter the durable race store")
         return
     for token in _FORBIDDEN_SOURCE_TOKENS:
         if token in text:
@@ -851,9 +888,246 @@ def write_status(doc: Mapping[str, Any], root: Any = None) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = dict(doc)
     payload.setdefault("schema", SCHEMA_STATUS)
+    _assert_no_comparison_payload(payload)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n",
                     encoding="utf-8")
     return True
+
+
+def _assert_no_comparison_payload(payload: Mapping[str, Any]) -> None:
+    text = json.dumps(payload, default=str)
+    lowered = text.lower()
+    for token in FORBIDDEN_STATUS_TOKENS:
+        if token.lower() in lowered:
+            raise W3IntegrityError(
+                f"W3 status surface refused forbidden comparison token {token!r} "
+                "before the honest-N floor")
+
+
+def load_sessions(root: Any = None) -> list[dict[str, Any]]:
+    path = sessions_path(root)
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        item = json.loads(line)
+        if isinstance(item, Mapping):
+            rows.append(dict(item))
+    return rows
+
+
+def sessions_by_stamp(root: Any = None) -> dict[str, dict[str, Any]]:
+    """Current disposition per stamp_date. Keep-first, then lawful maturation only."""
+    by: dict[str, dict[str, Any]] = {}
+    for row in load_sessions(root):
+        stamp = str(row.get("stamp_date") or "")[:10]
+        if len(stamp) != 10:
+            continue
+        existing = by.get(stamp)
+        if existing is None:
+            by[stamp] = dict(row)
+            continue
+        prior = str(existing.get("liveness") or "")
+        incoming = str(row.get("liveness") or "")
+        if (prior, incoming) in LAWFUL_LIVENESS_TRANSITION:
+            by[stamp] = dict(row)
+    return by
+
+
+def is_terminal_excluded(stamp: str, root: Any = None) -> dict[str, Any] | None:
+    rec = sessions_by_stamp(root).get(str(stamp)[:10])
+    if rec and rec.get("liveness") in TERMINAL_LIVENESS:
+        return rec
+    return None
+
+
+def append_sessions(records: Iterable[Mapping[str, Any]], root: Any = None) -> dict[str, int]:
+    """Append-only session dispositions. Terminal states cannot become race sessions."""
+    if not ledger_lane.nightly_advance_enabled():
+        log.info("us_prophet_w3 sessions append gated — not the US nightly lane")
+        return {"written": 0, "identical": 0, "matured": 0, "refused": 0}
+    incoming = [dict(row) for row in records]
+    if not incoming:
+        return {"written": 0, "identical": 0, "matured": 0, "refused": 0}
+
+    existing = sessions_by_stamp(root)
+    written = identical = matured = refused = 0
+    path = sessions_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        for raw in incoming:
+            stamp = str(raw.get("stamp_date") or "")[:10]
+            if len(stamp) != 10:
+                raise W3IntegrityError(f"session record missing stamp_date: {raw!r}")
+            rec = dict(raw)
+            rec["schema"] = SCHEMA_SESSION
+            rec["stamp_date"] = stamp
+            state = str(rec.get("liveness") or "")
+            if state not in LIVENESS_STATES:
+                raise W3IntegrityError(f"unknown W3 liveness {state!r} on {stamp}")
+            rec["terminal"] = state in TERMINAL_LIVENESS
+            rec.setdefault("source", SOURCE_CANDIDATES)
+            prior = existing.get(stamp)
+            if prior is None:
+                handle.write(json.dumps(rec, sort_keys=True, default=str) + "\n")
+                existing[stamp] = rec
+                written += 1
+                continue
+            prior_state = str(prior.get("liveness") or "")
+            if prior_state == state:
+                identical += 1
+                continue
+            if prior_state in TERMINAL_LIVENESS:
+                refused += 1
+                log.info(
+                    "us_prophet_w3 refusing resurrection of terminal session %s "
+                    "(%s → %s); generic backfill cannot enter the race",
+                    stamp, prior_state, state)
+                continue
+            if (prior_state, state) in LAWFUL_LIVENESS_TRANSITION:
+                handle.write(json.dumps(rec, sort_keys=True, default=str) + "\n")
+                existing[stamp] = rec
+                matured += 1
+                continue
+            refused += 1
+            log.info(
+                "us_prophet_w3 refusing unlawful liveness transition %s: %s → %s",
+                stamp, prior_state, state)
+    return {"written": written, "identical": identical, "matured": matured,
+            "refused": refused}
+
+
+def resolve_board_as_of(root: Any = None) -> str | None:
+    """Committed board as_of is the observation identity. Never wall-clock / run id."""
+    standouts = _repo_root(root) / STANDOUTS_REL
+    _require_committed_source("path", standouts)
+    payload = _read_json(standouts) if standouts.exists() else None
+    if not isinstance(payload, Mapping):
+        return None
+    as_of = str(payload.get("as_of") or payload.get("asof") or "")[:10]
+    if len(as_of) != 10:
+        return None
+    return as_of
+
+
+def store_is_commissioned(root: Any = None) -> bool:
+    store = _store_dir(root)
+    if not store.exists():
+        return False
+    if sessions_path(root).exists() or status_path(root).exists():
+        return True
+    for grain in ("paired", "family", "coverage"):
+        if any((_store_dir(root) / grain).glob("*/*.parquet")):
+            return True
+    return False
+
+
+def build_status_surface(root: Any = None, *,
+                         run_doc: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Lawful pre-floor operator/research status. No comparison computation."""
+    commissioned = store_is_commissioned(root)
+    by = sessions_by_stamp(root)
+    sessions = sorted(by.values(), key=lambda row: str(row.get("stamp_date") or ""))
+    missing = [s for s in sessions if s.get("liveness") == LIVENESS_MISSING]
+    degraded = [s for s in sessions if s.get("liveness") == LIVENESS_DEGRADED]
+    unmatured = [s for s in sessions if s.get("liveness") == LIVENESS_UNMATURED]
+    accrued = [s for s in sessions if s.get("liveness") == LIVENESS_PAIRED_ACCRUED]
+    race = unmatured + accrued
+    first_paired = min((str(s["stamp_date"])[:10] for s in race), default=None)
+    latest = sessions[-1] if sessions else None
+    family = load_family(root)
+    coverage = load_coverage(root)
+    payload: dict[str, Any] = {
+        "schema": SCHEMA_STATUS,
+        "commissioned": bool(commissioned),
+        "authority": "measurement only / none",
+        "comparison_surface": "forbidden",
+        "first_lawful_comparison_read": (
+            f"PENDING until {HONEST_N_FLOOR} matured H=10 sessions"),
+        "honest_n_floor": HONEST_N_FLOOR,
+        "paired_sessions_accrued": len(race),
+        "matured_h10_sessions": len(accrued),
+        "unmatured_sessions": len(unmatured),
+        "first_eligible_paired_stamp": first_paired,
+        "latest_session": (
+            {
+                "stamp_date": latest.get("stamp_date"),
+                "liveness": latest.get("liveness"),
+                "reason": latest.get("reason"),
+            } if latest else None),
+        "missing_sessions": [
+            {"stamp_date": s.get("stamp_date"), "reason": s.get("reason")}
+            for s in missing
+        ],
+        "degraded_or_unpaired_sessions": [
+            {"stamp_date": s.get("stamp_date"), "reason": s.get("reason")}
+            for s in degraded
+        ],
+        "n_missing": len(missing),
+        "n_degraded_or_unpaired": len(degraded),
+        "structural": {
+            "schema": STRUCTURAL_SCHEMA,
+            "outcome_blind": True,
+            "n_family_rows": int(len(family)),
+            "n_coverage_rows": int(len(coverage)),
+        },
+    }
+    if not commissioned:
+        payload["w3_not_commissioned_reason"] = (
+            "W3 store missing — not commissioned; no false green")
+    if run_doc:
+        payload["last_run"] = {
+            "n_paired_rows": run_doc.get("n_paired_rows", 0),
+            "n_family_rows": run_doc.get("n_family_rows", 0),
+            "n_coverage_rows": run_doc.get("n_coverage_rows", 0),
+            "paired": run_doc.get("paired") or {},
+            "family": run_doc.get("family") or {},
+            "coverage": run_doc.get("coverage") or {},
+            "sessions_written": run_doc.get("sessions_written") or {},
+            "reconstruction_refused": list(run_doc.get("reconstruction_refused") or []),
+            "failures": list(run_doc.get("failures") or []),
+            "board_as_of": run_doc.get("board_as_of"),
+            "require_stamp": run_doc.get("require_stamp"),
+            "dry_run": bool(run_doc.get("dry_run")),
+        }
+    _assert_no_comparison_payload(payload)
+    return payload
+
+
+def render_status_text(payload: Mapping[str, Any]) -> str:
+    """Human-readable lawful status. Machine/operator artifact, not a dashboard."""
+    _assert_no_comparison_payload(payload)
+    if not payload.get("commissioned"):
+        reason = payload.get("w3_not_commissioned_reason") or "W3 store missing"
+        return f"W3 STATUS: NOT COMMISSIONED\n{reason}\n"
+    latest = payload.get("latest_session") or {}
+    missing = payload.get("missing_sessions") or []
+    degraded = payload.get("degraded_or_unpaired_sessions") or []
+    lines = [
+        "W3 STATUS: COMMISSIONED (measurement only / none)",
+        f"paired sessions accrued: {payload.get('paired_sessions_accrued', 0)}",
+        f"matured H=10 sessions: {payload.get('matured_h10_sessions', 0)}",
+        f"unmatured sessions: {payload.get('unmatured_sessions', 0)}",
+        f"first eligible paired stamp: {payload.get('first_eligible_paired_stamp')}",
+        f"latest session: {latest.get('stamp_date')} {latest.get('liveness')}",
+        f"missing sessions: {payload.get('n_missing', 0)}",
+    ]
+    for item in missing:
+        lines.append(f"  missing {item.get('stamp_date')}: {item.get('reason')}")
+    lines.append(f"degraded/unpaired sessions: {payload.get('n_degraded_or_unpaired', 0)}")
+    for item in degraded:
+        lines.append(f"  degraded {item.get('stamp_date')}: {item.get('reason')}")
+    lines.append(f"first lawful comparison read: {payload.get('first_lawful_comparison_read')}")
+    lines.append(f"prereg honest-N floor: {payload.get('honest_n_floor')}")
+    lines.append(f"W3 authority: {payload.get('authority')}")
+    structural = payload.get("structural") or {}
+    lines.append(
+        f"structural (outcome-blind): family_rows={structural.get('n_family_rows', 0)} "
+        f"coverage_rows={structural.get('n_coverage_rows', 0)}")
+    return "\n".join(lines) + "\n"
 
 
 # --------------------------------------------------------------------------- #
@@ -865,13 +1139,62 @@ def _candidate_columns_present(root: Any) -> list[str]:
     return wanted
 
 
+def _receipt_for_stamp(
+    stamp: str,
+    root: Any,
+    structural_by_stamp: Mapping[str, Mapping[str, Any] | None] | None,
+) -> Mapping[str, Any] | None:
+    if structural_by_stamp is not None:
+        if stamp in structural_by_stamp:
+            return structural_by_stamp[stamp]
+        return None
+    return load_committed_structural_receipt(stamp, root)
+
+
+def _persist_run(doc: dict[str, Any], *,
+                 session_records: list[dict[str, Any]],
+                 paired_rows: list[dict],
+                 family_rows: list[dict],
+                 coverage_rows: list[dict],
+                 root: Any,
+                 dry_run: bool) -> None:
+    """Write grains + gap receipts BEFORE any fail-closed raise so commit can land them."""
+    current = sessions_by_stamp(root)
+    matured = {stamp for stamp, rec in current.items()
+               if rec.get("liveness") == LIVENESS_PAIRED_ACCRUED}
+    matured.update(s["stamp_date"] for s in session_records
+                   if s.get("liveness") == LIVENESS_PAIRED_ACCRUED)
+    # Terminal history still counts as matured only if already paired_accrued.
+    doc["honest_n_matured_h10_sessions"] = len(matured)
+    doc["sessions"] = session_records
+    doc["n_paired_rows"] = len(paired_rows)
+    doc["n_family_rows"] = len(family_rows)
+    doc["n_coverage_rows"] = len(coverage_rows)
+    if dry_run:
+        doc["paired"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        doc["family"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        doc["coverage"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        doc["sessions_written"] = {"written": 0, "identical": 0, "matured": 0, "refused": 0}
+        return
+    doc["paired"] = append_paired(paired_rows, root)
+    doc["family"] = append_family(family_rows, root)
+    doc["coverage"] = append_coverage(coverage_rows, root)
+    doc["sessions_written"] = append_sessions(session_records, root)
+    write_status(build_status_surface(root, run_doc=doc), root)
+
+
 def accrue(root: Any = None, *,
            dry_run: bool = False,
            candidates: pd.DataFrame | None = None,
            grades: pd.DataFrame | None = None,
            structural_by_stamp: Mapping[str, Mapping[str, Any] | None] | None = None,
-           require_stamp: str | None = None) -> dict[str, Any]:
-    """Accrue paired + structural grains. Never emits a comparative W3 read."""
+           require_stamp: str | None = None,
+           require_board_as_of: bool = False) -> dict[str, Any]:
+    """Accrue paired + structural grains. Never emits a comparative W3 read.
+
+    Gap receipts (session_missing / degraded_or_unpaired) are persisted before
+    fail-closed raises so the nightly ``if: always()`` commit can still land them.
+    """
     doc: dict[str, Any] = {
         "schema": SCHEMA_STATUS,
         "dry_run": bool(dry_run),
@@ -889,12 +1212,44 @@ def accrue(root: Any = None, *,
         "honest_n_matured_h10_sessions": 0,
         "note": (
             "W3 measurement plumbing. Accrual/maturity/gap status only. "
-            "No C1 IC, no shadow IC, no delta, no p-value, no leader."
+            "Comparison surface forbidden before the honest-N floor."
         ),
         "degraded": [],
+        "failures": [],
+        "reconstruction_refused": [],
+        "require_stamp": None,
+        "board_as_of": None,
     }
+    board_as_of = resolve_board_as_of(root)
+    doc["board_as_of"] = board_as_of
+    if require_board_as_of and not require_stamp:
+        require_stamp = board_as_of
+        if not require_stamp:
+            doc["failures"].append(
+                "workflow cannot identify a durable candidate stamp from the "
+                "committed board as_of — refusing Pages / wall-clock inference")
+            missing = _session_liveness(
+                "unresolved", in_candidates=False, n_v3_buy=0,
+                n_paired=0, n_pending=0, degraded=False)
+            missing["stamp_date"] = "unresolved"
+            missing["reason"] = doc["failures"][-1]
+            # Do not persist a fake stamp_date. Status records the unresolved run.
+            if not dry_run:
+                write_status(build_status_surface(root, run_doc=doc), root)
+            raise W3IntegrityError(doc["failures"][-1])
     if require_stamp:
         _require_committed_source("require_stamp", require_stamp)
+        require_stamp = str(require_stamp)[:10]
+        doc["require_stamp"] = require_stamp
+
+    existing = sessions_by_stamp(root)
+    reconstruction_refused: list[str] = []
+    required_already_terminal = False
+    if require_stamp:
+        prior_required = existing.get(require_stamp)
+        if prior_required and prior_required.get("liveness") in TERMINAL_LIVENESS:
+            required_already_terminal = True
+            reconstruction_refused.append(require_stamp)
 
     if candidates is None:
         wanted = _candidate_columns_present(root)
@@ -902,32 +1257,66 @@ def accrue(root: Any = None, *,
     if grades is None:
         grades = upg.load_grades(root, columns=list(GRADE_COLUMNS))
 
-    if candidates is None or candidates.empty:
-        if require_stamp:
-            raise W3IntegrityError(
-                f"workflow cannot identify a durable candidate stamp {require_stamp!r} "
-                "— refusing Pages backfill")
-        doc["note"] = (
-            "no candidate rows in the durable store — nothing accrued; "
-            "gaps remain gaps")
-        doc["sessions"] = []
-        if not dry_run:
-            write_status(doc, root)
+    if candidates is None:
+        candidates = pd.DataFrame()
+    else:
+        candidates = candidates.copy()
+        if not candidates.empty and "stamp_date" in candidates.columns:
+            candidates["stamp_date"] = candidates["stamp_date"].astype(str).str.slice(0, 10)
+            drop = candidates["stamp_date"].map(
+                lambda stamp: bool(existing.get(str(stamp)[:10], {}).get("liveness")
+                                   in TERMINAL_LIVENESS))
+            refused_stamps = sorted({
+                str(stamp)[:10] for stamp in candidates.loc[drop, "stamp_date"].tolist()
+            })
+            for stamp in refused_stamps:
+                if stamp not in reconstruction_refused:
+                    reconstruction_refused.append(stamp)
+            if int(drop.sum()):
+                candidates = candidates.loc[~drop].copy()
+    doc["reconstruction_refused"] = list(reconstruction_refused)
+
+    stamps: list[str] = []
+    if not candidates.empty and "stamp_date" in candidates.columns:
+        stamps = sorted(set(candidates["stamp_date"].dropna().astype(str).str.slice(0, 10)))
+
+    failures: list[str] = list(doc["failures"])
+
+    missing_required: dict[str, Any] | None = None
+    if require_stamp and require_stamp not in stamps and not required_already_terminal:
+        missing_required = _session_liveness(
+            require_stamp, in_candidates=False, n_v3_buy=0,
+            n_paired=0, n_pending=0, degraded=False)
+        failures.append(
+            f"expected candidate stamp {require_stamp} absent from the durable "
+            "store — session_missing; refusing Pages backfill")
+
+    if candidates.empty:
+        session_records: list[dict[str, Any]] = []
+        if missing_required is not None:
+            session_records.append(missing_required)
+            doc["failures"] = failures
+            _persist_run(
+                doc, session_records=session_records, paired_rows=[], family_rows=[],
+                coverage_rows=[], root=root, dry_run=dry_run)
+            raise W3IntegrityError(failures[-1])
+        if required_already_terminal and require_stamp:
+            session_records.append(dict(existing[require_stamp]))
+            doc["note"] = (
+                f"required stamp {require_stamp} already terminal "
+                f"({existing[require_stamp].get('liveness')}); reconstruction refused")
+        else:
+            doc["note"] = (
+                "no candidate rows in the durable store — nothing accrued; "
+                "gaps remain gaps")
+        doc["failures"] = failures
+        _persist_run(
+            doc, session_records=session_records, paired_rows=[], family_rows=[],
+            coverage_rows=[], root=root, dry_run=dry_run)
         return doc
 
     paired_rows, pair_doc = build_paired_rows(candidates, grades)
     doc["paired_qualify"] = pair_doc
-
-    # Session census over candidate stamps (durable store only).
-    frame = candidates.copy()
-    frame["stamp_date"] = frame["stamp_date"].astype(str).str.slice(0, 10)
-    stamps = sorted(set(frame["stamp_date"].dropna().tolist()))
-    if require_stamp:
-        want = str(require_stamp)[:10]
-        if want not in stamps:
-            raise W3IntegrityError(
-                f"workflow cannot identify a durable candidate stamp {want!r} "
-                "— refusing Pages backfill")
 
     paired_by_stamp: dict[str, list[dict]] = {}
     for row in paired_rows:
@@ -937,63 +1326,77 @@ def accrue(root: Any = None, *,
     coverage_rows: list[dict] = []
     sessions: list[dict] = []
 
-    definition = (frame["board_definition"].astype(str)
-                  if "board_definition" in frame.columns
-                  else pd.Series([""] * len(frame), index=frame.index))
-    lane = (frame["lane"].astype(str)
-            if "lane" in frame.columns
-            else pd.Series([""] * len(frame), index=frame.index))
+    definition = (candidates["board_definition"].astype(str)
+                  if "board_definition" in candidates.columns
+                  else pd.Series([""] * len(candidates), index=candidates.index))
+    lane = (candidates["lane"].astype(str)
+            if "lane" in candidates.columns
+            else pd.Series([""] * len(candidates), index=candidates.index))
 
     for stamp in stamps:
-        mask = frame["stamp_date"] == stamp
+        mask = candidates["stamp_date"] == stamp
         defs = set(definition.loc[mask].tolist())
         degraded = FALLBACK_DEFINITION in defs and CANONICAL_BOARD not in defs
         n_v3_buy = int(((definition.loc[mask] == CANONICAL_BOARD)
                         & (lane.loc[mask] == BUY_LANE)).sum())
         stamp_paired = paired_by_stamp.get(stamp, [])
         n_pending = sum(1 for row in stamp_paired if _outcome_pending(row))
-        sessions.append(_session_liveness(
+        session = _session_liveness(
             stamp, in_candidates=True, n_v3_buy=n_v3_buy,
-            n_paired=len(stamp_paired), n_pending=n_pending, degraded=degraded))
+            n_paired=len(stamp_paired), n_pending=n_pending, degraded=degraded)
+        if board_as_of:
+            session["board_as_of"] = board_as_of
+        sessions.append(session)
+        if session["liveness"] == LIVENESS_DEGRADED:
+            doc["degraded"].append({"stamp_date": stamp, "reason": session["reason"]})
 
-        receipt: Mapping[str, Any] | None
-        if structural_by_stamp is not None:
-            if stamp in structural_by_stamp:
-                receipt = structural_by_stamp[stamp]
-            else:
-                receipt = None
-        else:
-            receipt = load_committed_structural_receipt(stamp, root)
+        receipt = _receipt_for_stamp(stamp, root, structural_by_stamp)
         if receipt is not None:
             family_rows.extend(family_rows_from_receipt(stamp, receipt))
             coverage_rows.extend(coverage_rows_from_receipt(stamp, receipt))
-        elif degraded:
-            # Fallback nights have no canonical W3 structural observation.
-            pass
+            session["structural_schema"] = STRUCTURAL_SCHEMA
+        elif session["liveness"] in (LIVENESS_UNMATURED, LIVENESS_PAIRED_ACCRUED):
+            # Valid pair with no structural receipt: do not fabricate family/coverage.
+            # Fail closed on the required/current stamp; historical pre-receipt
+            # stamps are named but do not abort the run.
+            target = require_stamp or board_as_of
+            msg = (f"structural receipt absent for otherwise valid pair {stamp} "
+                   f"— not fabricating family/coverage diagnostics")
+            if target and stamp == target:
+                failures.append(msg)
+            else:
+                session["reason"] = f"{session['reason']}; {msg}"
 
-    if require_stamp and str(require_stamp)[:10] not in stamps:
-        sessions.append(_session_liveness(
-            str(require_stamp)[:10], in_candidates=False, n_v3_buy=0,
-            n_paired=0, n_pending=0, degraded=False))
+    if missing_required is not None:
+        sessions.append(missing_required)
 
-    matured = {s["stamp_date"] for s in sessions
-               if s["liveness"] == LIVENESS_PAIRED_ACCRUED}
-    doc["honest_n_matured_h10_sessions"] = len(matured)
-    doc["sessions"] = sessions
-    doc["n_paired_rows"] = len(paired_rows)
-    doc["n_family_rows"] = len(family_rows)
-    doc["n_coverage_rows"] = len(coverage_rows)
+    if board_as_of and require_stamp and board_as_of != require_stamp:
+        failures.append(
+            f"committed board as_of {board_as_of} mismatches required stamp "
+            f"{require_stamp}")
 
-    if dry_run:
-        doc["paired"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
-        doc["family"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
-        doc["coverage"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+    doc["failures"] = failures
+    race_paired = [row for row in paired_rows
+                   if row["stamp_date"] not in {
+                       s["stamp_date"] for s in sessions
+                       if s["liveness"] == LIVENESS_DEGRADED
+                   }]
+    # Degraded sessions already have zero paired rows by construction of the
+    # qualify filter; keep the list explicit so a future filter bug cannot
+    # silently write a fallback night into the race.
+    _persist_run(
+        doc, session_records=sessions, paired_rows=race_paired,
+        family_rows=family_rows, coverage_rows=coverage_rows,
+        root=root, dry_run=dry_run)
+
+    if required_already_terminal:
+        doc["note"] = (
+            f"required stamp {require_stamp} already terminal; "
+            "reconstruction refused; honest-N unchanged")
         return doc
 
-    doc["paired"] = append_paired(paired_rows, root)
-    doc["family"] = append_family(family_rows, root)
-    doc["coverage"] = append_coverage(coverage_rows, root)
-    write_status(doc, root)
+    if failures:
+        raise W3IntegrityError("; ".join(failures))
     return doc
 
 

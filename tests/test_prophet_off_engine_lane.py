@@ -221,6 +221,13 @@ class TestLedgerLaneGate:
         assert gpd.append_grades([grade], root=tmp_path) == 0
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 0
         assert w3.append_paired([w3_row], tmp_path)["written"] == 0
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 0
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is False
         assert not list((tmp_path / "data").rglob("*")), (
             "an off-lane run left bytes in data/ — the gate is not the sole writer path")
 
@@ -232,6 +239,13 @@ class TestLedgerLaneGate:
         assert gpd.append_grades([grade], root=tmp_path) == 1
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 1
         assert w3.append_paired([w3_row], tmp_path)["written"] == 1
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 1
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is True
 
     def test_the_stores_the_commit_stages_are_the_stores_the_modules_write(self, job):
         """The add list is derived from the modules, not copied from the workflow."""

@@ -282,7 +282,13 @@ class TestAppendOnlyLaws:
                 structural_by_stamp={},
                 require_stamp="2026-08-17",
             )
-        assert w3.load_paired(tmp_path).empty
+        paired = w3.load_paired(tmp_path)
+        if not paired.empty:
+            assert "2026-08-17" not in set(paired["stamp_date"].astype(str))
+        sessions = w3.sessions_by_stamp(tmp_path)
+        assert sessions["2026-08-17"]["liveness"] == w3.LIVENESS_MISSING
+        assert w3.status_path(tmp_path).exists()
+        assert w3.sessions_path(tmp_path).exists()
 
     def test_candidate_row_order_permutation_does_not_change_output(self):
         a = [_cand(ticker="AAA", score_rank=1, prophet_shadow_score_rank=2),
@@ -488,6 +494,7 @@ class TestWorkflowWiring:
         # suite. This file must not name that module: it is ops telemetry with
         # zero authority and no new callers.
         assert grade_i < w3_i < commit_i
+        assert runs[w3_i].strip() == "python -m scripts.accrue_us_prophet_w3 --nightly"
         commit = str(job["steps"][commit_i]["run"])
         assert "data/us_prophet_rank/w3" in commit
         assert (job.get("env") or {}).get("COLLECT_LANE") == "nightly"
@@ -500,3 +507,290 @@ class TestWorkflowWiring:
         modules = [s.get("module") for s in lane["steps"]]
         assert modules.index("scripts.grade_us_prophet_candidates") < \
             modules.index("scripts.accrue_us_prophet_w3")
+        w3_step = next(s for s in lane["steps"]
+                       if s.get("module") == "scripts.accrue_us_prophet_w3")
+        # DAG args stay [--nightly]; the CLI maps --nightly onto
+        # require_board_as_of so config/dag.yml is not a global CI invalidator.
+        assert (w3_step.get("args") or []) == ["--nightly"]
+        cli = (REPO / "scripts/accrue_us_prophet_w3.py").read_text(encoding="utf-8")
+        assert "require_board_as_of=bool(args.require_board_as_of or args.nightly)" in cli
+
+
+def _write_board(tmp_path, as_of="2026-08-18", receipt=None, definition="us_prophet_v3"):
+    payload = {
+        "as_of": as_of,
+        "board_definition": definition,
+        "ranking": {
+            "definition": definition,
+            "fusion": {},
+        },
+    }
+    if receipt is not None:
+        payload["ranking"]["fusion"]["w3_structural"] = receipt
+    path = tmp_path / "site" / "factordata" / "us_standouts.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+# --------------------------------------------------------------------------- #
+# PR-3D: durable missing-session, provenance fence, lawful status
+# --------------------------------------------------------------------------- #
+
+class TestDurableMissingSession:
+
+    def test_expected_stamp_absent_persists_session_missing_and_fails_visible(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        with pytest.raises(w3.W3IntegrityError) as exc:
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame(),
+                grades=pd.DataFrame(),
+                structural_by_stamp={},
+                require_stamp="2026-08-17",
+            )
+        assert "2026-08-17" in str(exc.value)
+        assert w3.load_paired(tmp_path).empty
+        assert w3.load_family(tmp_path).empty
+        assert w3.load_coverage(tmp_path).empty
+        rec = w3.sessions_by_stamp(tmp_path)["2026-08-17"]
+        assert rec["liveness"] == w3.LIVENESS_MISSING
+        assert rec["terminal"] is True
+        assert w3.status_path(tmp_path).exists()
+        status = json.loads(w3.status_path(tmp_path).read_text(encoding="utf-8"))
+        assert status["n_missing"] == 1
+        assert status["missing_sessions"][0]["stamp_date"] == "2026-08-17"
+
+    def test_gap_receipt_survives_nonzero_exit(self, tmp_path, monkeypatch):
+        """The always-run commit can stage the gap even though the step failed."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        with pytest.raises(w3.W3IntegrityError):
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame(),
+                grades=pd.DataFrame(),
+                structural_by_stamp={},
+                require_stamp="2026-08-15",
+            )
+        staged = {
+            w3.sessions_path(tmp_path).relative_to(tmp_path).as_posix(),
+            w3.status_path(tmp_path).relative_to(tmp_path).as_posix(),
+        }
+        assert staged <= {
+            p.relative_to(tmp_path).as_posix()
+            for p in (tmp_path / "data").rglob("*") if p.is_file()
+        }
+
+
+class TestProvenanceFence:
+
+    def test_session_missing_then_reconstructed_payload_does_not_upgrade(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        with pytest.raises(w3.W3IntegrityError):
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame(),
+                grades=pd.DataFrame(),
+                structural_by_stamp={},
+                require_stamp="2026-08-17",
+            )
+        n_before = w3.build_status_surface(tmp_path)["paired_sessions_accrued"]
+        doc = w3.accrue(
+            root=tmp_path,
+            candidates=pd.DataFrame([_cand(stamp_date="2026-08-17")]),
+            grades=pd.DataFrame([_grade(stamp_date="2026-08-17")]),
+            structural_by_stamp={"2026-08-17": _receipt()},
+            require_stamp="2026-08-17",
+        )
+        assert "2026-08-17" in doc["reconstruction_refused"]
+        assert w3.load_paired(tmp_path).empty
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-17"]["liveness"] == w3.LIVENESS_MISSING
+        assert w3.build_status_surface(tmp_path)["paired_sessions_accrued"] == n_before
+        assert w3.build_status_surface(tmp_path)["matured_h10_sessions"] == 0
+
+    def test_degraded_then_canonical_replay_does_not_upgrade(
+            self, tmp_path, monkeypatch):
+        _accrue(
+            tmp_path, monkeypatch,
+            [_cand(board_definition=w3.FALLBACK_DEFINITION,
+                   prophet_shadow_definition=None,
+                   prophet_shadow_score=None,
+                   prophet_shadow_score_rank=None)],
+            [_grade(board_definition=w3.FALLBACK_DEFINITION)],
+            None,
+        )
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-18"]["liveness"] == w3.LIVENESS_DEGRADED
+        doc = _accrue(tmp_path, monkeypatch, [_cand()], [_grade()], _receipt())
+        assert "2026-08-18" in doc["reconstruction_refused"]
+        assert w3.load_paired(tmp_path).empty
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-18"]["liveness"] == w3.LIVENESS_DEGRADED
+
+    def test_unmatured_to_matured_is_allowed(self, tmp_path, monkeypatch):
+        _accrue(tmp_path, monkeypatch, [_cand()], [], _receipt())
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-18"]["liveness"] == w3.LIVENESS_UNMATURED
+        doc = _accrue(tmp_path, monkeypatch, [_cand()], [_grade()], _receipt())
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-18"]["liveness"] == w3.LIVENESS_PAIRED_ACCRUED
+        assert len(w3.load_paired(tmp_path)) == 1
+        assert doc["sessions_written"]["matured"] == 1
+
+    def test_commit_utc_date_is_not_the_observation_identity(
+            self, tmp_path, monkeypatch):
+        import datetime as dt
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        class _FrozenDate(dt.date):
+            @classmethod
+            def today(cls):
+                return cls(2099, 1, 1)
+
+        class _FrozenDateTime(dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2099, 1, 1, 12, 0, 0, tzinfo=tz)
+
+            @classmethod
+            def utcnow(cls):
+                return cls(2099, 1, 1, 12, 0, 0)
+
+        monkeypatch.setattr(dt, "date", _FrozenDate)
+        monkeypatch.setattr(dt, "datetime", _FrozenDateTime)
+        doc = _accrue(
+            tmp_path, monkeypatch,
+            [_cand(stamp_date="2026-08-14")],
+            [_grade(stamp_date="2026-08-14")],
+            _receipt(),
+        )
+        paired = w3.load_paired(tmp_path)
+        assert list(paired["stamp_date"].astype(str)) == ["2026-08-14"]
+        assert "2099-01-01" not in json.dumps(doc, default=str)
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-14"]["stamp_date"] == "2026-08-14"
+
+    def test_pages_only_board_without_candidates_is_not_a_w3_session(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        _write_board(tmp_path, as_of="2026-08-16", receipt=_receipt())
+        with pytest.raises(w3.W3IntegrityError):
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame(),
+                grades=pd.DataFrame(),
+                structural_by_stamp=None,
+                require_board_as_of=True,
+            )
+        assert w3.load_paired(tmp_path).empty
+        rec = w3.sessions_by_stamp(tmp_path)["2026-08-16"]
+        assert rec["liveness"] == w3.LIVENESS_MISSING
+
+
+class TestStructuralFailClosed:
+
+    def test_structural_receipt_absent_for_valid_pair_fails_and_names(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        with pytest.raises(w3.W3IntegrityError) as exc:
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame([_cand()]),
+                grades=pd.DataFrame([_grade()]),
+                structural_by_stamp={},
+                require_stamp="2026-08-18",
+            )
+        assert "structural receipt absent" in str(exc.value)
+        assert w3.load_family(tmp_path).empty
+        assert w3.load_coverage(tmp_path).empty
+        # Paired race rows may persist; family/coverage must not be fabricated.
+        paired = w3.load_paired(tmp_path)
+        assert len(paired) == 1
+
+    def test_board_as_of_mismatch_with_required_stamp_fails_closed(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        _write_board(tmp_path, as_of="2026-08-17", receipt=_receipt())
+        with pytest.raises(w3.W3IntegrityError) as exc:
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame([_cand(stamp_date="2026-08-18")]),
+                grades=pd.DataFrame([_grade(stamp_date="2026-08-18")]),
+                structural_by_stamp={"2026-08-18": _receipt()},
+                require_stamp="2026-08-18",
+            )
+        assert "as_of" in str(exc.value) and "mismatches" in str(exc.value)
+
+    def test_same_stamp_board_candidate_structural_agree(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        _write_board(tmp_path, as_of="2026-08-18", receipt=_receipt())
+        doc = w3.accrue(
+            root=tmp_path,
+            candidates=pd.DataFrame([_cand()]),
+            grades=pd.DataFrame([_grade()]),
+            structural_by_stamp=None,
+            require_board_as_of=True,
+        )
+        assert doc["board_as_of"] == "2026-08-18"
+        assert doc["require_stamp"] == "2026-08-18"
+        assert doc["sessions"][0]["stamp_date"] == "2026-08-18"
+        assert doc["sessions"][0]["structural_schema"] == w3.STRUCTURAL_SCHEMA
+        assert len(w3.load_family(tmp_path)) >= 1
+        assert len(w3.load_coverage(tmp_path)) >= 1
+
+
+class TestLawfulStatusSurface:
+
+    def test_missing_store_is_not_commissioned(self, tmp_path):
+        payload = w3.build_status_surface(tmp_path)
+        assert payload["commissioned"] is False
+        text = w3.render_status_text(payload)
+        assert "NOT COMMISSIONED" in text
+        assert "no false green" in text.lower() or "not commissioned" in text.lower()
+        for token in w3.FORBIDDEN_STATUS_TOKENS:
+            assert token.lower() not in text.lower()
+
+    def test_status_emits_accrual_not_comparison(self, tmp_path, monkeypatch):
+        _accrue(tmp_path, monkeypatch, [_cand()], [], _receipt())
+        payload = w3.build_status_surface(tmp_path)
+        assert payload["commissioned"] is True
+        assert payload["paired_sessions_accrued"] == 1
+        assert payload["matured_h10_sessions"] == 0
+        assert payload["first_eligible_paired_stamp"] == "2026-08-18"
+        assert payload["latest_session"]["liveness"] == w3.LIVENESS_UNMATURED
+        assert "PENDING" in payload["first_lawful_comparison_read"]
+        assert payload["honest_n_floor"] == 20
+        assert payload["authority"] == "measurement only / none"
+        dumped = json.dumps(payload)
+        for token in w3.FORBIDDEN_STATUS_TOKENS:
+            assert token.lower() not in dumped.lower()
+        text = w3.render_status_text(payload)
+        for token in w3.FORBIDDEN_STATUS_TOKENS:
+            assert token.lower() not in text.lower()
+
+    def test_no_comparison_code_in_w3_modules(self):
+        blobs = []
+        for rel in ("engine/us_prophet_w3.py",
+                    "scripts/accrue_us_prophet_w3.py",
+                    "scripts/report_us_prophet_w3.py"):
+            blobs.append((rel, (REPO / rel).read_text(encoding="utf-8")))
+        banned_calls = (
+            "spearmanr", "newey_west", "def compute_w3", "rank_ic(",
+            "top30_alpha",
+        )
+        for rel, text in blobs:
+            for token in banned_calls:
+                assert token not in text, f"{rel} contains comparison token {token!r}"
+
+    def test_cli_report_reads_store_without_nightly_lane(self, tmp_path, monkeypatch):
+        _accrue(tmp_path, monkeypatch, [_cand()], [], _receipt())
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        payload = w3.build_status_surface(tmp_path)
+        assert payload["commissioned"] is True
+        # The reporter must not write. Do not import scripts.report_us_prophet_w3
+        # here: that exclusive-job import would require listing the file in
+        # legacy-jobs.yml, a global CI invalidator.
+        before = list((tmp_path / "data").rglob("*"))
+        text = w3.render_status_text(payload)
+        assert "paired sessions accrued" in text
+        assert list((tmp_path / "data").rglob("*")) == before
+        report_src = (REPO / "scripts/report_us_prophet_w3.py").read_text(encoding="utf-8")
+        assert "def main" in report_src
+        assert "build_status_surface" in report_src
