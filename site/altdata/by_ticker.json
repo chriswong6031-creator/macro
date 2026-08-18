@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-18",
-  "generated_utc": "2026-08-18T04:09:44.985734+00:00",
+  "generated_utc": "2026-08-18T05:42:35.413151+00:00",
   "n_tickers": 2582,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -590,7 +590,7 @@
       "app_reviews": 26179041,
       "hf_downloads_30d": 276689601.0,
       "analyst_bull_ratio": 0.73,
-      "github_stars": 196990,
+      "github_stars": 196991,
       "congress_position_usd": 248536000.0,
       "convergence_score": 4,
       "trump_linked": false,
@@ -3143,7 +3143,7 @@
       "next_earnings": "2026-08-18",
       "earnings_surprise_pct": 0.9,
       "congress_position_usd": 82085500.0,
-      "donor_usd": 136500.0,
+      "donor_usd": 116500.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -3261,7 +3261,7 @@
       "days_to_earnings": 9,
       "next_earnings": "2026-08-27",
       "earnings_surprise_pct": 88.9,
-      "github_stars": 77805,
+      "github_stars": 77806,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -3946,7 +3946,7 @@
         "stocktwits_bull"
       ],
       "weighted_score": 0.65,
-      "stocktwits_bull_ratio": 1.0,
+      "stocktwits_bull_ratio": 0.92,
       "stocktwits_watchers": 137990,
       "convergence_score": 2,
       "trump_linked": false,
