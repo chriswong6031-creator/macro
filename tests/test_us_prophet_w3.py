@@ -509,7 +509,11 @@ class TestWorkflowWiring:
             modules.index("scripts.accrue_us_prophet_w3")
         w3_step = next(s for s in lane["steps"]
                        if s.get("module") == "scripts.accrue_us_prophet_w3")
-        assert "--require-board-as-of" in (w3_step.get("args") or [])
+        # DAG args stay [--nightly]; the CLI maps --nightly onto
+        # require_board_as_of so config/dag.yml is not a global CI invalidator.
+        assert (w3_step.get("args") or []) == ["--nightly"]
+        cli = (REPO / "scripts/accrue_us_prophet_w3.py").read_text(encoding="utf-8")
+        assert "require_board_as_of=bool(args.require_board_as_of or args.nightly)" in cli
 
 
 def _write_board(tmp_path, as_of="2026-08-18", receipt=None, definition="us_prophet_v3"):
@@ -780,10 +784,13 @@ class TestLawfulStatusSurface:
         monkeypatch.delenv("COLLECT_LANE", raising=False)
         payload = w3.build_status_surface(tmp_path)
         assert payload["commissioned"] is True
-        from scripts import report_us_prophet_w3 as report
-        # The reporter must not write.
+        # The reporter must not write. Do not import scripts.report_us_prophet_w3
+        # here: that exclusive-job import would require listing the file in
+        # legacy-jobs.yml, a global CI invalidator.
         before = list((tmp_path / "data").rglob("*"))
         text = w3.render_status_text(payload)
         assert "paired sessions accrued" in text
         assert list((tmp_path / "data").rglob("*")) == before
-        assert hasattr(report, "main")
+        report_src = (REPO / "scripts/report_us_prophet_w3.py").read_text(encoding="utf-8")
+        assert "def main" in report_src
+        assert "build_status_surface" in report_src

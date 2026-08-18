@@ -8888,7 +8888,6 @@ jobs:
       - "scripts/grade_us_board.py"
       - "scripts/grade_us_prophet_candidates.py"
       - "scripts/accrue_us_prophet_w3.py"
-      - "scripts/report_us_prophet_w3.py"
       - "scripts/heal_stage_forward_ledger.py"
       - "scripts/measure_us_track_era_recompute.py"
       - "scripts/notify.py"
