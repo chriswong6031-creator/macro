@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T22:10:58.027920+00:00",
-  "count": 1356,
+  "generated_at": "2026-08-18T23:11:43.956529+00:00",
+  "count": 1360,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -32,6 +32,7 @@
     "Goldman Sachs",
     "HSBC",
     "Halcyon",
+    "Handelsbanken",
     "ING",
     "ING Direct",
     "Ing Econ",
@@ -79,6 +80,68 @@
   ],
   "items": [
     {
+      "id": "marketdesk-9vjczla6ost-b0629a",
+      "title": "JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T22:35:45Z",
+      "summary_points": [
+        "**US Market Sell-Off Drivers**: Momentum/AI exposure (semis, big tech) drove declines; July Housing Starts missed, Building Permits rose, oil at $85.12 amid US/Iran tensions; low volume and lack of catalysts amplified moves.",
+        "**Anthropic ARR Catalyst**: $65B ARR (vs.",
+        "$75-80B implied) triggered low-volume sell-off; JPM notes \"flows not busy\" (3/10), limited de-risking in semis, minimal flow impact.",
+        "**US-IRAN Geopolitical Tension**: Strait of Hormuz ship attacks persist; Iran threatens Hormuz closure until interim deal conditions met; no near-term off-ramp, elevating oil and risk-off sentiment.",
+        "**JPM Tactical View**: Bullish on US market despite sell-off; Tech/Healthcare flows dominated, momentum reversal reversing prior price action; flows low (3/10) indicating contained de-risking."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fmwxzm9ifti-1e6a8f",
+      "title": "Campbells Aug 18",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T22:27:53Z",
+      "summary_points": [
+        "**FY27 Guidance Headwinds**: FY27 EPS guidance ($1.83 vs.",
+        "$1.90 consensus) pressured by Snacks channel decline (-4.9% YoY), inflation, reinvestment needs, La Regina dilution, and higher interest expense (EPS ~3.5% below consensus).",
+        "**Analyst Bearish Sentiment**: All 16 Deutsche Bank recommendations remain \"Hold\" with declining price targets ($48 → $23), while stock trades below targets (22.68 vs.",
+        "00), signaling persistent underperformance and no catalysts.",
+        "**MiFID-Linked Sell Bias**: Deutsche Bank’s MiFID-covered stocks show 89% Sell recommendations (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w3ugz4xdg7d-32f106",
+      "title": "Trojan fire horse amv",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:27:00Z",
+      "summary_points": [
+        "**Structural Imbalance**: Soaring exports (post-2020) contrast with volatile retail sales (↓ post-2022), declining real estate investment, and low private investment, creating unsustainable excess supply risks.",
+        "**Subsidy-Driven Industrial Risk**: 30% of Chinese industrial firms are unprofitable \"zombies\" sustained by massive subsidies; state investment funds and below-market credit fuel overcapacity (e.g., solar PV: 1,045 GW capacity vs.",
+        "587 GW production), triggering ASEAN job losses (250k in textiles) and regional industrialization threats.",
+        "**Geopolitical Industrial Dominance**: China dominates high-tech manufacturing (EVs, solar) via subsidies and below-market credit while suppressing labor-intensive sectors, \"pulling up the ladder\" to prevent competitors' industrialization, evidenced by EU battery factory delays (11/16 canceled) and retaliatory trade measures against EU policies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-s2u67gkhqby-6919b3",
       "title": "DGB preview DGB28 and DGB35 Wednesday",
       "institution": "Other",
@@ -114,6 +177,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6nswxway1ro-23c45a",
+      "title": "Fast Comment UK",
+      "institution": "Handelsbanken",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:13:11Z",
+      "summary_points": [
+        "**Labor Market Deterioration**: Unemployment at 4.9% (above 4.8% forecast), payroll decline of 13k, and vacancies down 6k quarterly; unemployment-vacancy ratio at 2.5 (10-year high excluding pandemic), signaling sustained economic softening.",
+        "**Pay Growth Above Target**: Total earnings growth at 4.1% (vs 4% expected), regular earnings at 3.5% (vs 3.4% expected), indicating persistent wage pressures complicating BoE inflation control.",
+        "**Public Sector Pay Disparity**: Public sector pay growth (6.1%) significantly outpacing private sector (2.8%), though base effects may distort near-term data; highlights structural wage divergence risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
