@@ -159,6 +159,23 @@ def index_lock_path(root: Path = ROOT) -> Path | None:
     return Path(git_dir) / "index.lock"
 
 
+def sparse_checkout_lock_path(root: Path = ROOT) -> Path | None:
+    """The ``info/sparse-checkout.lock`` this checkout's git-dir would use.
+
+    ``git sparse-checkout`` acquires this lock BEFORE ``index.lock``, so the
+    same SIGKILL that orphans ``index.lock`` orphans this one too — and can
+    orphan this one ALONE: a re-run after a kill can exit 128 on this lock
+    with no ``index.lock`` ever having been created, and fall straight into
+    the repair path without ``refuse_if_locked`` ever having tripped. Same
+    worktree-aware ``--git-dir`` resolution and None-on-unreadable contract as
+    :func:`index_lock_path`.
+    """
+    git_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-dir")
+    if not git_dir:
+        return None
+    return Path(git_dir) / "info" / "sparse-checkout.lock"
+
+
 def _lock_age_desc(lock: Path) -> str:
     try:
         age_s = max(0.0, time.time() - lock.stat().st_mtime)
@@ -171,34 +188,59 @@ def _lock_age_desc(lock: Path) -> str:
 
 def refuse_if_locked(root: Path = ROOT) -> bool:
     """Print a loud, actionable refusal and return True when a stale/live
-    ``index.lock`` already sits in this checkout's git-dir.
+    ``index.lock`` OR ``info/sparse-checkout.lock`` already sits in this
+    checkout's git-dir.
 
-    Never deletes the lock: another process may legitimately hold it. This is
-    the up-front half of the fix — it stops a NEW ``add`` from running into a
-    lock a previous failed attempt (or a genuinely concurrent git process)
-    left behind, instead of proceeding into the same partial-write corruption.
+    ``git sparse-checkout`` acquires ``info/sparse-checkout.lock`` before
+    ``index.lock``, and the same SIGKILL that leaves one can leave the other
+    — either alone or both — so both are checked, and every lock found is
+    named (with its age) in the refusal.
+
+    Never deletes a lock: another process may legitimately hold it. This is
+    the up-front half of the fix — it stops a NEW sparse-checkout operation
+    from running into a lock a previous failed attempt (or a genuinely
+    concurrent git process) left behind, instead of proceeding into the same
+    partial-write corruption.
     """
-    lock = index_lock_path(root)
-    if lock is None or not lock.exists():
+    candidates = [index_lock_path(root), sparse_checkout_lock_path(root)]
+    locks = [lock for lock in candidates if lock is not None and lock.exists()]
+    if not locks:
         return False
-    age = _lock_age_desc(lock)
+    named = ", ".join(f"{lock} ({_lock_age_desc(lock)})" for lock in locks)
+    remove_cmds = "; ".join(f"rm '{lock}'" for lock in locks)
     print(
-        f"::error title=worktree-sparse-locked::{lock} exists ({age}) — refusing "
-        f"to run `git sparse-checkout add`. Check for a live git process using "
+        f"::error title=worktree-sparse-locked::{named} exists — refusing "
+        f"to run `git sparse-checkout`. Check for a live git process using "
         f"this worktree (e.g. `ps aux | grep '[g]it.*{root.name}'`); if none is "
-        f"running, a previous `worktree_sparse.py add` was likely killed (a slow "
-        f"or timed-out materialization) and left this lock stale. Only remove it "
-        f"once you've confirmed nothing else holds it: rm '{lock}'",
+        f"running, a previous `worktree_sparse.py` operation was likely killed "
+        f"(a slow or timed-out materialization) and left this lock stale. Only "
+        f"remove it once you've confirmed nothing else holds it: {remove_cmds}",
         flush=True,
     )
     return True
 
 
-def _committed_sizes(root: Path, name: str) -> dict[str, int]:
+def _committed_sizes(root: Path, name: str) -> dict[str, int] | None:
     """``{relative_path: committed byte size}`` for every file HEAD tracks under
     ``name`` — read straight from the tree object, independent of whatever
-    inconsistent state a killed checkout left the index/sparse patterns in."""
+    inconsistent state a killed checkout left the index/sparse patterns in.
+
+    Returns ``None`` when the read could not be trusted — the underlying
+    ``git`` call failed outright, or a size field was present but not an
+    integer. The latter is exactly what ``git ls-tree -r -l`` prints
+    (``BAD``) under ``GIT_NO_LAZY_FETCH=1`` on a blobless partial clone whose
+    promisor remote is unreachable: the command still exits 0 and produces
+    real-looking output, so an exception is not what signals the failure —
+    the unparseable field is. Silently skipping that record (the previous
+    behaviour) let the caller conclude "nothing truncated" while a genuinely
+    0-byte file sat on disk. A legitimate submodule record (size field ``-``)
+    is not an error and is still skipped, not treated as unreadable. A
+    successful call that lists no files under ``name`` returns ``{}`` — a
+    real all-clear, and must stay distinguishable from this ``None``.
+    """
     out = _git(root, "ls-tree", "-r", "-l", "HEAD", "--", name)
+    if out is None:
+        return None
     sizes: dict[str, int] = {}
     if not out:
         return sizes
@@ -208,20 +250,75 @@ def _committed_sizes(root: Path, name: str) -> dict[str, int]:
         except ValueError:
             continue
         fields = meta.split()
-        if len(fields) < 4 or fields[3] == "-":  # "-" = submodule; no blob size
+        if len(fields) < 4:
+            continue
+        if fields[3] == "-":  # "-" = submodule; no blob size — legitimate skip
             continue
         try:
             sizes[path] = int(fields[3])
         except ValueError:
-            continue
+            return None  # corrupt/unavailable size read (e.g. lazy-fetch "BAD")
     return sizes
 
 
-def verify_and_repair(root: Path, names: list[str]) -> list[str]:
+def dirty_paths(root: Path, names: list[str]) -> set[str] | None:
+    """Repo-relative paths under ``names`` that git already reports as
+    modified/added/renamed/etc — i.e. the pre-existing local-changes set a
+    repair must never revert. ``None`` when the status read itself failed, so
+    the caller can fail closed instead of assuming nothing is dirty.
+
+    Uses ``git status --porcelain -z`` — NUL-separated records, paths never
+    C-quoted, so this parses exactly even with spaces/unicode in a path. Each
+    record is two status characters, a space, then the path. A rename/copy
+    record (first status character ``R``/``C``) is followed by an ADDITIONAL
+    NUL-separated field holding the origin path, which must be consumed here
+    so it is not mistaken for the start of the next record; both the origin
+    and destination paths are reported dirty.
+    """
+    try:
+        out = subprocess.run(
+            ("git", "-C", str(root), "status", "--porcelain", "-z", "--", *names),
+            capture_output=True, text=True, timeout=60, check=False,
+        )
+    except Exception:  # noqa: BLE001 — git missing, or a hung filesystem
+        return None
+    if out.returncode != 0:
+        return None
+    fields = out.stdout.split("\0")
+    paths: set[str] = set()
+    i = 0
+    n = len(fields)
+    while i < n:
+        record = fields[i]
+        i += 1
+        if not record:
+            continue
+        if len(record) < 4:
+            continue
+        status, path = record[:2], record[3:]
+        paths.add(path)
+        if status[0] in ("R", "C") and i < n:
+            origin = fields[i]
+            i += 1
+            if origin:
+                paths.add(origin)
+    return paths
+
+
+def verify_and_repair(
+    root: Path, names: list[str], protected: set[str],
+) -> tuple[list[str], list[str], list[str]]:
     """Restore, byte-for-byte from HEAD, any on-disk tracked file under ``names``
     whose size no longer matches what HEAD committed — the exact signature a
     process killed mid-``sparse-checkout add`` leaves (materialized via
     open+truncate, killed before the content write landed).
+
+    A size mismatch is ALSO exactly what an ordinary uncommitted edit looks
+    like, so this refuses to rewrite anything whose path is in ``protected``
+    (the pre-existing dirty set the caller captured via :func:`dirty_paths`
+    BEFORE running the sparse-checkout command that might fail) — otherwise
+    the repair silently reverts a session's own uncommitted work to the
+    committed original, which is worse than the corruption it exists to fix.
 
     Deliberately never uses ``git checkout --`` — the stale ``index.lock`` this
     same failure typically leaves behind makes that refuse (measured: `fatal:
@@ -229,12 +326,25 @@ def verify_and_repair(root: Path, names: list[str]) -> list[str]:
     reads straight from the object database and writing it out bypasses the
     index entirely, so it works even while that lock is still sitting there.
 
-    Returns the list of relative paths actually rewritten, for the caller to
-    report.
+    Returns ``(repaired, skipped, unreadable)``:
+      * ``repaired`` — relative paths actually rewritten from HEAD.
+      * ``skipped`` — size-mismatched paths left alone, either because they
+        are in ``protected`` or because a post-write re-stat did not match
+        the expected size (so the repair itself would have been a fresh
+        truncation — counted as a failure, not a success).
+      * ``unreadable`` — directory ``names`` whose committed sizes could not
+        be read at all (``_committed_sizes`` returned ``None``); nothing
+        under an unreadable directory is repaired, since truncation there
+        can be neither confirmed nor ruled out.
     """
     repaired: list[str] = []
+    skipped: list[str] = []
+    unreadable: list[str] = []
     for name in names:
         committed = _committed_sizes(root, name)
+        if committed is None:
+            unreadable.append(name)
+            continue
         for rel_path, expected_size in committed.items():
             abs_path = root / rel_path
             try:
@@ -244,6 +354,9 @@ def verify_and_repair(root: Path, names: list[str]) -> list[str]:
                     continue  # matches HEAD — nothing to repair
             except OSError:
                 continue
+            if rel_path in protected:
+                skipped.append(rel_path)
+                continue
             content = _git_bytes(root, "show", f"HEAD:{rel_path}")
             if content is None:
                 continue
@@ -252,8 +365,15 @@ def verify_and_repair(root: Path, names: list[str]) -> list[str]:
                 abs_path.write_bytes(content)
             except OSError:
                 continue
+            try:
+                new_size = abs_path.stat().st_size
+            except OSError:
+                new_size = -1
+            if new_size != expected_size:
+                skipped.append(rel_path)  # the repair itself would truncate
+                continue
             repaired.append(rel_path)
-    return repaired
+    return repaired, skipped, unreadable
 
 
 def sparse_enabled(root: Path = ROOT) -> bool:
@@ -467,6 +587,8 @@ def disable_profile(root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
     if refuse_if_locked(root):
         return 1
     omitted_before = missing_dirs(root)
+    # Captured BEFORE the sparse-checkout command, same reasoning as `add_dirs`.
+    protected = dirty_paths(root, omitted_before) if omitted_before else set()
     ok, reason = _run_sparse_checkout_disable(root, timeout=timeout)
     if not ok:
         print(
@@ -477,17 +599,15 @@ def disable_profile(root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
             f"verifying and repairing from HEAD now",
             flush=True,
         )
-        repaired = verify_and_repair(root, omitted_before) if omitted_before else []
-        if repaired:
-            print(
-                f"worktree-sparse: restored {len(repaired)} truncated tracked "
-                f"file(s) from HEAD: {', '.join(repaired[:10])}"
-                f"{' …' if len(repaired) > 10 else ''}",
-                file=sys.stderr,
-            )
-        else:
+        if not omitted_before:
             print("worktree-sparse: no truncated tracked file found to repair",
                   file=sys.stderr)
+            return 1
+        if protected is None:
+            _report_dirty_set_unreadable(omitted_before)
+            return 1
+        repaired, skipped, unreadable = verify_and_repair(root, omitted_before, protected)
+        _report_repair_outcome(repaired, skipped, unreadable)
         return 1
     still = missing_dirs(root)
     if still:
@@ -538,6 +658,52 @@ def _run_sparse_checkout_disable(root: Path, timeout: float = ADD_TIMEOUT_S) -> 
     return _run_git_timed(root, ("sparse-checkout", "disable"), timeout)
 
 
+def _report_dirty_set_unreadable(names: list[str]) -> None:
+    """`dirty_paths` itself failed — the repair must not run at all, since
+    there is no way left to tell a pre-existing edit from fresh corruption."""
+    print(
+        f"::error title=worktree-sparse-dirty-unreadable::the pre-existing "
+        f"local-changes set under {', '.join(names)} could not be read "
+        f"(`git status` failed), so no automatic repair was attempted; "
+        f"nothing was repaired",
+        flush=True,
+    )
+
+
+def _report_repair_outcome(repaired: list[str], skipped: list[str], unreadable: list[str]) -> None:
+    """Shared post-`verify_and_repair` reporting for `add_dirs`/`disable_profile`.
+
+    The old unconditional "no truncated tracked file found" all-clear is now
+    gated on ``unreadable`` being empty — printing a clean bill of health
+    while a directory's committed sizes could not even be read would be a
+    silent green on exactly the case the module's docstring forbids.
+    """
+    if repaired:
+        print(
+            f"worktree-sparse: restored {len(repaired)} truncated tracked "
+            f"file(s) from HEAD: {', '.join(repaired[:10])}"
+            f"{' …' if len(repaired) > 10 else ''}",
+            file=sys.stderr,
+        )
+    for rel in skipped:
+        print(
+            f"worktree-sparse: {rel} differs from HEAD but was left alone — "
+            f"it holds uncommitted local changes",
+            file=sys.stderr,
+        )
+    if unreadable:
+        print(
+            f"::error title=worktree-sparse-unverified::committed sizes for "
+            f"{', '.join(unreadable)} could not be read, so truncation could "
+            f"NOT be ruled out — do not commit anything under "
+            f"{', '.join(unreadable)} until this is checked",
+            flush=True,
+        )
+    elif not repaired:
+        print("worktree-sparse: no truncated tracked file found to repair",
+              file=sys.stderr)
+
+
 def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
     """Materialize specific excluded directories, keeping the rest sparse."""
     tracked = set(tracked_top_level_dirs(root))
@@ -550,6 +716,10 @@ def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S
         return 0
     if refuse_if_locked(root):
         return 1
+    # Captured BEFORE the sparse-checkout command — this is the only moment
+    # the pre-existing dirty set is knowable, since the command itself is
+    # what may leave the working tree in a state indistinguishable from it.
+    protected = dirty_paths(root, names)
     _drop_husks(root, names)
     ok, reason = _run_sparse_checkout_add(root, names, timeout=timeout)
     if not ok:
@@ -560,17 +730,11 @@ def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S
             f"repairing from HEAD now",
             flush=True,
         )
-        repaired = verify_and_repair(root, names)
-        if repaired:
-            print(
-                f"worktree-sparse: restored {len(repaired)} truncated tracked "
-                f"file(s) from HEAD: {', '.join(repaired[:10])}"
-                f"{' …' if len(repaired) > 10 else ''}",
-                file=sys.stderr,
-            )
-        else:
-            print("worktree-sparse: no truncated tracked file found to repair",
-                  file=sys.stderr)
+        if protected is None:
+            _report_dirty_set_unreadable(names)
+            return 1
+        repaired, skipped, unreadable = verify_and_repair(root, names, protected)
+        _report_repair_outcome(repaired, skipped, unreadable)
         return 1
     print(f"worktree-sparse: materialized {', '.join(names)}")
     return 0

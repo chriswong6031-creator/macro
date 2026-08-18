@@ -350,3 +350,167 @@ def test_preexisting_lock_refuses_apply_profile_before_any_write(repo, monkeypat
     assert "::error" in blob and str(lock) in blob, (
         f"refusal did not name the lock path in an ::error annotation:\n{blob}")
     assert lock.exists(), "a lock this run did not create must never be auto-deleted"
+
+
+# ── 6. adversarial review of #5907: repair must not clobber pre-existing ────
+#      local work, and an unreadable size read must not be reported as clean.
+#
+# `verify_and_repair` originally treated ANY size mismatch against HEAD as
+# corruption and rewrote the file from HEAD — which is equally the signature
+# of an ordinary uncommitted edit. Reproduced two ways in the review: `add
+# data site` where `site/` is already in the cone and holds an uncommitted
+# edit, and a single-directory `add site` where a stale
+# `info/sparse-checkout.lock` (the SAME kill that orphans `index.lock`) makes
+# the run exit 128 and fall into the repair path anyway. `_committed_sizes`
+# also returned `{}` (a real all-clear) on BOTH a failed git call and an
+# unparseable size field (`BAD`, what `git ls-tree -l` prints for a size under
+# `GIT_NO_LAZY_FETCH=1` against an unreachable promisor on this repo's
+# blobless clone) — so a genuinely truncated file could be reported as
+# "nothing found" instead of "could not check".
+
+def test_verify_and_repair_protects_a_dirty_file_but_still_repairs_a_truncated_sibling(repo):
+    """A size mismatch is ALSO what an ordinary local edit looks like. The
+    repair must not clobber a path git already reports dirty, but must still
+    repair a genuinely truncated sibling in the SAME directory and pass —
+    pinning that the protection narrows the repair rather than disabling it."""
+    ok, reason = WS._run_sparse_checkout_add(repo, ["big"])
+    assert ok, f"fixture setup: materializing big/ failed: {reason}"
+
+    edited = b"a locally edited, uncommitted, different-length blob\n"
+    (repo / "big" / "other.txt").write_bytes(edited)  # uncommitted edit, BEFORE the kill
+
+    # `protected` is captured at this point in the real flow — BEFORE the
+    # sparse-checkout command that might corrupt something runs. Only the
+    # pre-existing edit is dirty here; data.json is still intact.
+    protected = WS.dirty_paths(repo, ["big"])
+    assert protected == {"big/other.txt"}, (
+        "fixture precondition: only the pre-existing edit should be dirty "
+        f"before the simulated kill: {protected}")
+
+    (repo / "big" / "data.json").write_bytes(b"")  # simulates the kill-truncation, AFTER capture
+
+    repaired, skipped, unreadable = WS.verify_and_repair(repo, ["big"], protected)
+
+    assert unreadable == []
+    assert "big/data.json" in repaired, (
+        "the genuinely truncated sibling must still be repaired in the same pass")
+    assert "big/other.txt" in skipped, (
+        "the dirty file must be reported skipped, not silently ignored")
+    assert "big/other.txt" not in repaired, (
+        "a protected path must never land in the repaired list")
+    assert (repo / "big" / "other.txt").read_bytes() == edited, (
+        "an uncommitted local edit was reverted by the repair — the exact "
+        "clobber this fix exists to prevent")
+    assert (repo / "big" / "data.json").read_bytes() == _BIG_CONTENT, (
+        "the truncated sibling was not actually restored")
+
+
+def test_committed_sizes_none_vs_empty_dict_are_distinguishable(repo, monkeypatch):
+    """`{}` must mean a real all-clear (no tracked files found); `None` must
+    mean the read could not be trusted. Collapsing the two — the original bug
+    — lets a genuinely truncated file get reported as "nothing to repair"."""
+    # A successful read that finds nothing is a real all-clear: {}.
+    assert WS._committed_sizes(repo, "does-not-exist-anywhere") == {}
+
+    # The underlying git call failing outright must propagate as None.
+    monkeypatch.setattr(WS, "_git", lambda *a, **k: None)
+    assert WS._committed_sizes(repo, "big") is None
+
+
+def test_committed_sizes_returns_none_on_unparseable_size_field(repo, monkeypatch):
+    """`git ls-tree -l` prints `BAD` in the size column under
+    `GIT_NO_LAZY_FETCH=1` against an unreachable promisor (this repo's own
+    blobless-clone shape). That must return None, not silently skip the row —
+    a corrupt/unavailable size read is not the same as a legitimate
+    submodule's `-`."""
+    fake_ls_tree = "100644 blob abc123def0000000000000000000000000000000       BAD\tbig/data.json"
+    monkeypatch.setattr(WS, "_git", lambda *a, **k: fake_ls_tree)
+    assert WS._committed_sizes(repo, "big") is None
+
+
+def test_committed_sizes_still_skips_a_legitimate_submodule_marker(repo, monkeypatch):
+    """A `-` size field (submodule; no blob size) stays a legitimate skip, not
+    an unreadable result — only an unparseable non-`-` field is."""
+    fake_ls_tree = "160000 commit abc123def0000000000000000000000000000000       -\tbig/submod"
+    monkeypatch.setattr(WS, "_git", lambda *a, **k: fake_ls_tree)
+    assert WS._committed_sizes(repo, "big") == {}
+
+
+def test_failed_add_reports_unverified_when_committed_sizes_unreadable(repo, monkeypatch, capsys):
+    """When the committed-size read itself fails, the caller must say so
+    loudly (`worktree-sparse-unverified`) and must NOT print the old
+    unconditional "no truncated tracked file found to repair" clean bill of
+    health — that message on an unreadable directory is exactly the silent
+    green the module's own docstring forbids."""
+    _install_kill_mid_write(monkeypatch, repo, "big/data.json", _BIG_CONTENT)
+    monkeypatch.setattr(WS, "_committed_sizes", lambda *a, **k: None)
+
+    rc = WS.add_dirs(["big"], root=repo, timeout=0.01)
+    blob = "".join(capsys.readouterr())
+
+    assert rc != 0
+    assert "worktree-sparse-unverified" in blob, (
+        f"no unreadable-sizes annotation emitted:\n{blob}")
+    assert "no truncated tracked file found to repair" not in blob, (
+        f"printed a clean bill of health while sizes were unreadable:\n{blob}")
+
+
+def test_dirty_paths_parses_a_rename_record(repo):
+    """`git status --porcelain -z` writes a rename as TWO NUL-separated
+    fields (destination path in the `XY path` record, then the origin path as
+    an extra field) — the extra field must be consumed as the origin, not
+    mistaken for an unrelated next record."""
+    _git(repo, "mv", "scripts/keep.txt", "scripts/kept.txt")
+
+    result = WS.dirty_paths(repo, ["scripts"])
+
+    assert result is not None
+    assert "scripts/kept.txt" in result, f"destination path missing: {result}"
+    assert "scripts/keep.txt" in result, (
+        f"origin path was not consumed as the rename's extra field: {result}")
+
+
+def test_dirty_paths_returns_none_when_git_status_fails(repo, monkeypatch):
+    def fake_run(cmd, *a, **kw):
+        class _R:
+            returncode = 1
+            stdout = ""
+        return _R()
+    monkeypatch.setattr(WS.subprocess, "run", fake_run)
+    assert WS.dirty_paths(repo, ["big"]) is None
+
+
+def test_preexisting_sparse_checkout_lock_alone_refuses_before_any_write(repo, monkeypatch, capsys):
+    """`git sparse-checkout` acquires `info/sparse-checkout.lock` BEFORE
+    `index.lock`, so the same kill can orphan the sparse-checkout lock with no
+    index.lock ever created. The preflight must catch this lock on its own,
+    not only the `index.lock` case already covered above."""
+    gitdir = _real_git_dir(repo)
+    lock = gitdir / "info" / "sparse-checkout.lock"
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_bytes(b"")
+    index_lock = gitdir / "index.lock"
+    assert not index_lock.exists(), "fixture precondition: index.lock absent"
+
+    call_log = []
+    real_run = subprocess.run
+
+    def spy_run(cmd, *a, **kw):
+        if (isinstance(cmd, (list, tuple)) and len(cmd) >= 5
+                and cmd[0] == "git" and cmd[3] == "sparse-checkout" and cmd[4] == "add"):
+            call_log.append(cmd)
+        return real_run(cmd, *a, **kw)
+
+    monkeypatch.setattr(WS.subprocess, "run", spy_run)
+
+    rc = WS.add_dirs(["big"], root=repo)
+    blob = "".join(capsys.readouterr())
+
+    assert rc != 0, "a pre-existing sparse-checkout.lock must refuse, not proceed"
+    assert not call_log, (
+        "`git sparse-checkout add` was invoked despite a pre-existing "
+        "sparse-checkout.lock — the refusal must happen BEFORE any write")
+    assert not (repo / "big").exists(), "nothing should have been materialized"
+    assert "::error" in blob and str(lock) in blob, (
+        f"refusal did not name the sparse-checkout.lock path:\n{blob}")
+    assert lock.exists(), "a lock this run did not create must never be auto-deleted"
