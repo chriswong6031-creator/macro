@@ -1451,26 +1451,73 @@ def test_registered_b_prefix_snapshot_is_immutable_and_matches_registration():
 
 
 @pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
-def test_live_b_plane_tripwire_tolerates_vendor_readjustment_and_fires_on_revision(
+def test_live_b_plane_tripwire_passes_any_uniform_rescale_including_a_dividend(
+    monkeypatch,
+):
+    """The regression this guard exists to prevent.
+
+    `auto_adjust=True` rescales the WHOLE elapsed history on every future dividend, so a
+    band on the LEVEL fires on the next ordinary ex-dividend date. B's tape is ~$41 and a
+    routine quarterly is ~$0.10, i.e. ~2.4e-03 -- 240x any sane noise band. A uniform
+    rescale changes no return, drawdown or percentage gap, so it must pass at ANY size.
+    """
+    registered = amendment_builder._load_registered_b_prefix()
+    columns = ["open", "high", "low", "close"]
+    for factor in (1 - 0.10 / 41, 1 - 2.4e-4, 1 + 5e-7, 1 - 0.25 / 41):
+        rescaled = registered.copy()
+        rescaled[columns] = rescaled[columns] * factor
+        monkeypatch.setattr(
+            amendment_builder, "load_symbol", lambda s, p, r, f=rescaled: f
+        )
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+def test_live_b_plane_tripwire_fires_on_a_single_restated_print(monkeypatch):
+    registered = amendment_builder._load_registered_b_prefix()
+    revised = registered.copy()
+    # One cent on one session's close: a uniform re-adjustment cannot move close alone.
+    revised.iloc[1500, revised.columns.get_loc("close")] += 0.01
+    monkeypatch.setattr(
+        amendment_builder, "load_symbol", lambda s, p, r: revised
+    )
+    with pytest.raises(SystemExit, match="not coherent"):
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+def test_live_b_plane_tripwire_fires_when_one_session_misses_the_rescale(monkeypatch):
+    registered = amendment_builder._load_registered_b_prefix()
+    columns = ["open", "high", "low", "close"]
+    skewed = registered.copy()
+    skewed[columns] = skewed[columns] * (1 - 0.10 / 41)
+    # One session left un-rescaled: coherent within the row, but out of step with the window.
+    skewed.iloc[900, [skewed.columns.get_loc(c) for c in columns]] = (
+        registered[columns].iloc[900].to_numpy()
+    )
+    monkeypatch.setattr(amendment_builder, "load_symbol", lambda s, p, r: skewed)
+    with pytest.raises(SystemExit, match="did not follow the window"):
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+def test_live_b_plane_tripwire_bands_the_asof_bar_volume_but_not_settled_volume(
     monkeypatch,
 ):
     registered = amendment_builder._load_registered_b_prefix()
+    vol = registered.columns.get_loc("volume")
 
-    noise = registered.copy()
-    noise[["open", "high", "low", "close"]] = (
-        noise[["open", "high", "low", "close"]] * (1 + 5e-7)
-    )
-    monkeypatch.setattr(
-        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: noise
-    )
+    # The ASOF bar's consolidated tape settles late: tolerated and disclosed.
+    settling = registered.copy()
+    settling.iloc[-1, vol] = settling["volume"].iloc[-1] + 4600
+    monkeypatch.setattr(amendment_builder, "load_symbol", lambda s, p, r: settling)
     amendment_builder._validate_live_b_plane_tracks_registration(registered)
 
-    revised = registered.copy()
-    revised.loc[revised.index[-1], "close"] = revised["close"].iloc[-1] * 1.01
-    monkeypatch.setattr(
-        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: revised
-    )
-    with pytest.raises(SystemExit, match="real revision"):
+    # A settled session's volume carries no adjustment factor, so any move is real.
+    restated = registered.copy()
+    restated.iloc[1200, vol] = restated["volume"].iloc[1200] + 1
+    monkeypatch.setattr(amendment_builder, "load_symbol", lambda s, p, r: restated)
+    with pytest.raises(SystemExit, match="settled volume changed"):
         amendment_builder._validate_live_b_plane_tracks_registration(registered)
 
 
