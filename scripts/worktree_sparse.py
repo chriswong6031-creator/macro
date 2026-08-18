@@ -85,11 +85,32 @@ CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
 # mechanism is timeout -> SIGKILL -> a file already `open()`ed (which
 # truncates) never receives its content write, and the same kill orphans the
 # lock because the rename-into-place that would have cleared it never runs.
-# ADD_TIMEOUT_S is the same 60s budget `_git()` uses elsewhere, shared by both
-# operations and exposed as a parameter so a test can shrink it instead of
-# waiting on real timing. Left at 60s deliberately — the repair path below
-# covers the corruption regardless of what makes the checkout exceed it.
-ADD_TIMEOUT_S = 60
+# ADD_TIMEOUT_S is exposed as a parameter so a test can shrink it instead of
+# waiting on real timing. The 60s the module used to share with `_git()` was
+# wrong by luck, not by measurement. Measured wall time for `git
+# sparse-checkout disable` (what `full` runs — the LARGER hazard, since it
+# materializes every omitted tree at once) over 12 fresh worktrees: median
+# 24.89s, worst observed 83.49s — an ~8% exceedance rate against the old 60s
+# cap. Page cache was warm for 11 of the 12 samples, coldest at 37.25s, so
+# the median is optimistic. `disable` also performs a live promisor fetch to
+# github.com inside the timed window (traced: `fetch --filter=blob:none` plus
+# `index-pack --promisor`), so wall time is not bounded by local I/O at all —
+# a stalled `git-remote-https` blows any finite cap regardless of its size.
+# 300s is chosen from the TAIL and from failure asymmetry, not from the
+# median: a cap costs a fast run nothing (it only matters when exceeded),
+# while a tight cap buys a silent, destructive, non-idempotent failure. 300s
+# holds every observed sample with 3.6x headroom over the worst (83.49s).
+ADD_TIMEOUT_S = 300
+
+# Grace period between SIGTERM and SIGKILL in `_run_git_timed`'s escalation
+# ladder. Git installs cleanup handlers (removing `index.lock`, finishing or
+# discarding the in-flight write) that run on SIGTERM and cannot run on
+# SIGKILL — that handler running is what this grace period buys. 10s is
+# generous for that cleanup (measured SIGTERM aborts land well under a
+# second) while still bounded enough that a genuinely wedged process — one
+# that ignores SIGTERM outright — dies promptly rather than hanging the
+# caller indefinitely.
+TERM_GRACE_S = 10
 
 # Fallback when config/sparse_worktree.json is unreadable. Kept in step with that
 # file by tests/test_sparse_worktree_profile.py so the two can never drift.
@@ -618,31 +639,63 @@ def disable_profile(root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
 
 
 def _run_git_timed(root: Path, args: tuple[str, ...], timeout: float) -> tuple[bool, str]:
-    """Run a git subcommand under an explicit timeout.
+    """Run a git subcommand under an explicit timeout, escalating SIGTERM
+    before SIGKILL on expiry.
 
     Returns ``(True, "")`` on success, else ``(False, reason)`` — distinguishing
     a timeout-triggered kill from an ordinary nonzero exit so a failure
     annotation can say which. ``timeout`` is a parameter (not a hard-coded
     constant) so a test can shrink it to deterministically race a real git
-    checkout instead of waiting out the production 60s budget.
+    checkout instead of waiting out the production budget.
 
     Shared by ``sparse-checkout add`` and ``sparse-checkout disable`` — both
     materialize a heavy tree in one shot and are equally exposed to the
     SIGKILL-mid-write corruption this module guards against (`disable` is the
     LARGER hazard: it checks out every omitted tree at once, not just one).
+
+    ``subprocess.run(..., timeout=...)`` sends SIGKILL on expiry, which is
+    exactly what corrupts the checkout: git installs cleanup handlers
+    (removing `index.lock`, finishing or discarding an in-flight write) that
+    run on SIGTERM and CANNOT run on SIGKILL. So on expiry this sends SIGTERM
+    first via ``Popen.terminate()`` and gives git ``TERM_GRACE_S`` to use its
+    own cleanup handlers; only if git ignores SIGTERM for that whole grace
+    period does it escalate to ``Popen.kill()`` (SIGKILL) as a last resort.
+    The repair path elsewhere in this module stays as the backstop for that
+    last resort (and for ENOSPC, which corrupts identically with no timeout
+    and no lock involved at all) — this demotes it from primary defense to
+    backstop, it does not retire it.
     """
     try:
-        out = subprocess.run(
+        proc = subprocess.Popen(
             ("git", "-C", str(root)) + args,
-            capture_output=True, text=True, timeout=timeout, check=False,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
         )
-    except subprocess.TimeoutExpired:
-        return False, f"timed out after {timeout}s and was killed"
     except Exception as exc:  # noqa: BLE001 — git missing, or a hung filesystem
         return False, str(exc)
-    if out.returncode != 0:
-        stderr = out.stderr.strip()
-        return False, f"exited {out.returncode}" + (f": {stderr[:300]}" if stderr else "")
+
+    try:
+        _, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.terminate()  # SIGTERM — lets git's own cleanup handlers run
+        try:
+            _, stderr = proc.communicate(timeout=TERM_GRACE_S)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # SIGKILL — last resort; reap unconditionally below
+            proc.communicate()
+            return False, (
+                f"timed out after {timeout}s, ignored SIGTERM for "
+                f"{TERM_GRACE_S}s, and was killed with SIGKILL — a "
+                f"SIGKILLed checkout can leave a truncated file"
+            )
+        return False, f"timed out after {timeout}s and was terminated cleanly with SIGTERM"
+    except Exception as exc:  # noqa: BLE001 — unexpected failure mid-wait
+        proc.kill()
+        proc.communicate()  # always reap, even on an unexpected exception
+        return False, str(exc)
+
+    if proc.returncode != 0:
+        stderr = (stderr or "").strip()
+        return False, f"exited {proc.returncode}" + (f": {stderr[:300]}" if stderr else "")
     return True, ""
 
 
