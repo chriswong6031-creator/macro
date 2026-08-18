@@ -1,37 +1,36 @@
 {
-  "date": "2026-08-13",
+  "date": "2026-08-17",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": 0.5356802793783106,
-  "turnover_z60": -0.6549112961034148,
-  "margin_balance": 26757.18219519,
-  "margin_chg_5d": 1.3583604551048456,
-  "margin_to_mcap": 2.63679,
-  "southbound_net": 3666.93999999999,
-  "southbound_z": 0.28524403715722507,
-  "etf_share_chg": 0.37585233845563415,
+  "turnover_z20": 0.1054410126466651,
+  "turnover_z60": -0.9362327872215056,
+  "margin_balance": 26924.7360301,
+  "margin_chg_5d": 1.1388242170117246,
+  "margin_to_mcap": 2.60349,
+  "southbound_net": 3076.98,
+  "southbound_z": 0.2157517854556914,
+  "etf_share_chg": 0.0,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 18.39,
-  "qvix_z": -1.5643492076781609,
-  "broker_rs": 0.030079619217603205,
+  "qvix": 17.92,
+  "qvix_z": -1.7998404825994452,
+  "broker_rs": -0.02917257183628099,
   "regime": "unclear",
   "who_controls": "mixed",
   "risk": "normal",
   "evidence": [
-    "turnover_z20=0.54",
-    "margin_chg_5d=1.36% (rising)",
-    "fin_pct_float=2.64%",
-    "broker_rs=0.0301 (positive, sector leading)",
-    "qvix_z=-1.56 (inverted-semantics: high=stress)"
+    "turnover_z20=0.11",
+    "margin_chg_5d=1.14% (rising)",
+    "fin_pct_float=2.60%",
+    "qvix_z=-1.80 (inverted-semantics: high=stress)"
   ],
   "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-08-13",
+    "zt_breadth:null on 2026-08-17",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-08-13 is 1d behind tape tail 2026-08-14; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-08-17 is 1d behind tape tail 2026-08-18; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": false,
-  "snapshot_note": "core legs null on 2026-08-14; publishing last fully-populated row (2026-08-13)"
+  "snapshot_note": "core legs null on 2026-08-18; publishing last fully-populated row (2026-08-17)"
 }

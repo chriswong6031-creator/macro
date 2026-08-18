@@ -3,8 +3,8 @@
   "authority": {
     "tier": "context_only"
   },
-  "built": "2026-08-14T10:45:49.834364+00:00",
-  "asof": "2026-08-14",
+  "built": "2026-08-18T10:25:27.074203+00:00",
+  "asof": "2026-08-18",
   "phase": "POLICY_PUT",
   "confidence": 0.75,
   "evidence": [
@@ -259,10 +259,10 @@
     }
   ],
   "ledger_summary": {
-    "total_graded": 22769,
-    "held": 8079,
-    "fired": 1962,
-    "indeterminate": 12728
+    "total_graded": 22775,
+    "held": 8082,
+    "fired": 1964,
+    "indeterminate": 12729
   },
   "caveat": "regime_history is a current-best-estimate non-PIT series; policy_impulse for HISTORICAL rows is per-date reconstructed from ACTUAL RRR and LPR-1Y series deltas (PBoC data) using a 90-calendar-day trailing window: a date is marked 'easing' when at least one RRR cut or LPR-1Y cut occurred in the prior 90 days (direction from series deltas only, not from event titles or communique text); dates before the first PBoC series observation are set to null (data_gap, no fabrication); the LIVE TAIL only (dates beyond the last PBoC data point) uses the live engine snapshot impulse (may include 'targeted_support' or 'market_rescue' labels not reconstructable from rate-series deltas); all outputs are context_only (CN-SYS-R1)"
 }
