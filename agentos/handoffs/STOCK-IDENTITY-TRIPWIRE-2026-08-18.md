@@ -155,3 +155,56 @@ actually protects A1 is the *uniformity* of the rescale: any uniform rescale pre
 every return, drawdown and percentage gap, so it cannot move a conclusion, while a change
 in relative prices can. Corporate actions remain covered on a separate channel, because
 split adjustment rescales share counts and settled volume must match exactly.
+
+## Final session state (appended at stop)
+
+The record above was written mid-session. What follows is what the session actually
+ended as, so a stranger does not have to reconstruct it from PR archaeology.
+
+**Both PRs merged and live-verified.** `#5875` (this record's subject) merged
+2026-08-18T08:21:18Z as `9cf29183`. A second, unrelated heal followed: `#5888`
+(`claude/leader-radar-grade-join-heal`, merged 10:44:13Z as `e343b8be`) fixed
+`_build_fire_history` in `scripts/build_leader_radar.py`, which accepted `data_root` and
+ignored it — it read the ambient grade ledger, so its documented "grades absent" branch
+had never once executed. It went red only when the nightly graded
+`(plab_leader_onset, CRWD, 2026-07-15)` and `accruing` became `matured`.
+
+**Both are proven green on a main descendant, affirmatively.** Baseline
+`32128288210` (head `e343b8be`, covering both merges): `ci-pack-3` `conclusion: success`,
+`Selected jobs:` containing BOTH `trial-budgets` and `leader-radar-unit`, and
+`CI_PACK_FAILED_JOBS=[]` — an empty list, not merely an absence of red.
+
+**The session nevertheless ended SHIP LOOP BLOCKED, and the reason is durable.**
+Both PRs touch `scripts/**`, so semantic evidence records `authority_changed=true`. In
+`.claude/hooks/ship_loop_guard.py`, `_semantic_has_nonunit_blocker()` returns True on that
+flag (:1146) and the merged-head path refuses on it BEFORE per-unit attribution (:2098) —
+so sibling attribution, base-inherited excuses and descendant healing are all structurally
+unavailable. The only clearing condition is the PR's OWN run being clean, which is frozen
+at merge. **Merging an authority-changing PR while main is red therefore buys a
+permanently unclearable gate**; nothing done afterwards, including healing main, can
+clear it. Treat this as a merge-time check, not a post-merge repair.
+
+**Main's red set rotates**, which is why per-pack chasing does not converge here:
+`{5}` (08:12Z) → `{3,4,5,9}` (09:02Z) → `{6,10}` (a merge ref) → `{1,4,5,9}` (11:2xZ) →
+`{5}` (12:0xZ). Diagnostic before healing any pack: compare failing job NAMES across two
+consecutive baselines — same names mean a real break, different names mean the
+live-nightly-data family. At session end main was ONE red from green (`contract-drift`,
+owned by armed PR #5874).
+
+**Two of this session's own branches were abandoned rather than merged**, both because a
+sibling landed first and forcing through would have reverted merged work: the original
+W1-A1 heal (`#5868`, superseded by `#5865`) and an `unrun-hk-board` fixture re-pin
+(superseded by `DEC:HK-G1-FIXTURE-BANDS-THE-REFRESH-SUFFIX`, which bands the drift SHAPE
+via `rescale_diagnosis` instead of re-pinning — the durable form, since a re-pin recurs on
+the next dividend).
+
+**Open, with receipts, not carried by this workstream:** a data-loss hazard where a
+partially-successful `worktree_sparse.py add site` left tracked `site/flow/CORZ.json` at
+0 bytes against 5040 at HEAD (restored via `git show HEAD:<path> > <path>`, which needs no
+index). Three candidate mechanisms are DISPROVEN by reproduction — a held `index.lock`
+fails cleanly without creating the file; `git reset --hard` in a sparse tree leaves no
+husk; `_drop_husks()` only rmdirs empty directories. The surviving hypothesis is partial
+materialization during a large add. Separately, `scripts/check_contract_drift.py`
+UNDER-reports in a sparse worktree — it printed `0 drift(s), 6 clean, 5 skipped (no live
+sample)` and exited 0 while failing in CI, so a local GREEN is as untrustworthy as a local
+red there.
