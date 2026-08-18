@@ -1,116 +1,45 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-18T00:53:25Z",
+  "produced_at": "2026-08-18T10:51:46Z",
   "as_of": "2026-08-18",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 16,
-    "passed": 15,
-    "quarantined": 1,
-    "quarantined_policy": 1,
+    "items": 12,
+    "passed": 12,
+    "quarantined": 0,
+    "quarantined_policy": 0,
     "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
-  "reasons_histogram": {
-    "near_dup": 1
-  },
-  "quarantined": [
-    {
-      "id": "post-sophia-012",
-      "account": "sophia",
-      "slot": "D1-S12",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-flagship-020"
-      ]
-    }
-  ],
+  "reasons_histogram": {},
+  "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-015",
+      "id": "post-flagship-034",
       "account": "flagship",
-      "slot": "D1-S15",
+      "slot": "D1-S34",
       "type": "receipt",
       "cashtag": "$HD",
-      "headline": "$HD held its 50-day average (337) for the 6th time in a year."
-    },
-    {
-      "id": "post-flagship-020",
-      "account": "flagship",
-      "slot": "D1-S20",
-      "type": "macro",
-      "cashtag": "",
       "headline": ""
-    },
-    {
-      "id": "post-flagship-049",
-      "account": "flagship",
-      "slot": "D1-S49",
-      "type": "chart",
-      "cashtag": "$AYI",
-      "headline": ""
-    },
-    {
-      "id": "post-flagship-051",
-      "account": "flagship",
-      "slot": "D1-S51",
-      "type": "signal",
-      "cashtag": "$XEL",
-      "headline": ""
-    },
-    {
-      "id": "post-conf-flagship-004",
-      "account": "flagship",
-      "slot": "CONF-04",
-      "type": "signal",
-      "cashtag": "$MAR",
-      "headline": "$MAR just lined up a pattern we track."
     },
     {
       "id": "post-theme-003",
       "account": "flagship",
       "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$WDAY",
-      "headline": "Software ripping, +3.6% avg today"
+      "cashtag": "$UAVS",
+      "headline": "Agriculture & FoodTech selling off, -1.1% avg on Monday"
     },
     {
-      "id": "post-housepick-001",
-      "account": "flagship",
-      "slot": "D1-S9",
-      "type": "watchlist",
-      "cashtag": "$ENS",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-028",
-      "account": "founder",
-      "slot": "D1-S28",
-      "type": "receipt",
-      "cashtag": "$HD",
-      "headline": "$HD found buyers at its 50-day average again."
-    },
-    {
-      "id": "post-housepick-002",
+      "id": "post-insider-002",
       "account": "founder",
       "slot": "D1-S19",
-      "type": "watchlist",
-      "cashtag": "$TGT",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-004",
-      "account": "meagan",
-      "slot": "D1-S4",
-      "type": "chart",
-      "cashtag": "$OZK",
+      "type": "insider",
+      "cashtag": "$CDNL",
       "headline": ""
     },
     {
@@ -118,24 +47,40 @@
       "account": "meagan",
       "slot": "D1-S5",
       "type": "theme_list",
-      "cashtag": "$PATH",
-      "headline": "Artificial Intelligence ripping, +1.8% avg today"
+      "cashtag": "$BALY",
+      "headline": "Digital Entertainment selling off, -2.2% avg on Monday"
     },
     {
-      "id": "post-sophia-047",
+      "id": "post-sophia-023",
       "account": "sophia",
-      "slot": "D1-S47",
+      "slot": "D1-S23",
       "type": "chart",
-      "cashtag": "$SOFI",
-      "headline": "$SOFI has held 17.1 for 11 straight sessions."
+      "cashtag": "$TMUS",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-042",
+      "account": "sophia",
+      "slot": "D1-S42",
+      "type": "chart",
+      "cashtag": "$WBD",
+      "headline": "$WBD third green week, and today is the tightest range of the last seven sessions."
+    },
+    {
+      "id": "post-kelly-012",
+      "account": "kelly",
+      "slot": "D1-S12",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
     },
     {
       "id": "post-theme-005",
       "account": "kelly",
       "slot": "D1-S3",
       "type": "theme_list",
-      "cashtag": "$RPD",
-      "headline": "Cybersecurity ripping, +3.5% avg today"
+      "cashtag": "$ENVX",
+      "headline": "Electric Vehicles selling off, -1.2% avg on Monday"
     },
     {
       "id": "post-cici-003",
@@ -146,18 +91,34 @@
       "headline": ""
     },
     {
+      "id": "post-cici-007",
+      "account": "cici",
+      "slot": "D1-S7",
+      "type": "chart",
+      "cashtag": "$HEI",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-055",
+      "account": "cici",
+      "slot": "D1-S55",
+      "type": "chart",
+      "cashtag": "$HLI",
+      "headline": ""
+    },
+    {
       "id": "post-theme-006",
       "account": "cici",
       "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$CSGP",
-      "headline": "Big Data ripping, +2.6% avg today"
+      "cashtag": "$AUID",
+      "headline": "Biometrics selling off, -2.5% avg on Monday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 83,
-      "hits": 1,
+      "pairs_checked": 57,
+      "hits": 0,
       "shared_media_hits": 0
     },
     "cadence": {
@@ -182,7 +143,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 5,
+      "age_days": 1,
       "max": 7
     },
     "kill_switch": {
