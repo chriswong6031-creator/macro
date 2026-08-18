@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T16:17:56.225274+00:00",
-  "count": 1347,
+  "generated_at": "2026-08-18T17:17:05.592886+00:00",
+  "count": 1350,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,63 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-7d3kbqswapn-84db6c",
+      "title": "Global Markets Daily Europe’s Fixed Maturity Funds — A Fading Marginal Tailwind for EUR Credit",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:12Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zijryd4fom6-433b9c",
+      "title": "Global daily the heat you feel isnt just the summer sun",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:06:19Z",
+      "summary_points": [
+        "**US-Iran Military Escalation**: $23bn Tomahawk contract (1,000 missiles vs.",
+        "and $59bn Patriot deal (600→2,000 interceptors) amid lapsed 60-day Memorandum; US unlikely to restart major action until November midterms, driving near-term energy volatility and defense sector flows.",
+        "**Geopolitical Fragmentation & Market Stress**: US-China tech/trade war (tariffs, AI scrutiny) and Middle East escalation causing supply crunch (copper), energy volatility, and bond yields at multi-decade highs (US 5.31%, Germany 3.74%); Japan insurers' $200bn private credit strain signals systemic risk.",
+        "**Critical Market Dynamics**: Central bank policy paralysis (rate cuts vs.",
+        "hikes) amid geopolitical fragmentation; US dollar reserve status questioned (FT op-ed) and Japan's reliance on US for JPY stability heighten FX and liquidity risks for portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u6f0echyxnk-d05663",
+      "title": "Long Taiwan, short Consumer & India",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T16:00:41Z",
+      "summary_points": [
+        "**US Consumer Strategy**: Short US Consumer Discretionary (RSPD) vs long global Cyclical (MXI/IXN/IXG/IXC/EXI) amid weaker consumer spending fundamentals.",
+        "**India Economic Risks**: Robust FY26 GDP (~7-8%) faces FY27 slowdown from oil prices, weak monsoon, unsustainable ad hoc policies, and waning local momentum.",
+        "**Fed Policy Shift**: Rotation into equities from HY credit driven by strong global earnings and soft US wage growth reducing Fed urgency.",
+        "**Taiwan-India Trade**: Long Taiwan (EWT) vs India (EPI) on chip-price momentum and Indian growth risks (oil, monsoon, policy).",
+        "**Bloomberg Consumer Spend**: Stable proxy for consumer health aligning with US Retail Sales post-2022, signaling recovery amid inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-msc6awsokaq-c5663b",
       "title": "European equity: earning(s) respect",
