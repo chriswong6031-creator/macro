@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T07:37:12.172119+00:00",
-  "count": 1322,
+  "generated_at": "2026-08-18T08:21:28.214643+00:00",
+  "count": 1324,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,21 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-wf3rhq8qmja-7d76c4",
+      "title": "JPM International Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:07:11Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-qb1azmtmsen-ef0447",
       "title": "GS Contessa US Equities Color MO vs Consumer 17 Aug 2026",
@@ -1019,6 +1034,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vgsx4yleedp-614b6d",
+      "title": "China July activity data broadly weakened and missed expectations, pointing to a soft start to Q3",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:08Z",
+      "summary_points": [
+        "**July Data Misses Signal Q3 Weakness**: Industrial production slowed to 4.5% yoy (vs.",
+        "3% June), fixed asset investment fell to -12.8% yoy (vs.",
+        "9.3% June), and retail sales eased to +0.6% yoy (vs.",
+        "+1.0% June), driving Goldman Sachs to downgrade Q3 GDP forecast to 4.6% yoy.",
+        "**Property Sector Collapse**: Property investment contracted -27.5% yoy, property sales fell 13.5% yoy, and floor space started declined sharply since 2022, signaling persistent real estate stress below 2019 levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
