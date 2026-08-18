@@ -1,14 +1,49 @@
 {
-  "ts": "2026-08-09T08:13:13+00:00",
-  "main_sha": "fd2394640d913754b55aaf6249c5a990b000b381",
+  "ts": "2026-08-18T20:54:08+00:00",
+  "main_sha": "fda2cfee4cb894a5dc22a27f941ba64b1ce5271c",
   "red_required": [
     {
-      "name": "Supabase Preview",
-      "conclusion": "failure",
+      "name": "engine-render-guards",
+      "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/93218304269"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367784"
+    },
+    {
+      "name": "tier-gate",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367181"
+    },
+    {
+      "name": "chronicle-suite",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367176"
+    },
+    {
+      "name": "contract-drift",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367134"
+    },
+    {
+      "name": "workflow-yaml",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367097"
+    },
+    {
+      "name": "nav-gap",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367088"
     }
   ],
   "green": false,
-  "consecutive_failures": 2
+  "consecutive_failures": 3,
+  "sensed_shas": [
+    "fda2cfee4cb894a5dc22a27f941ba64b1ce5271c",
+    "dba6069b427913c5befdcef6e8414e16df095833"
+  ],
+  "heartbeat_degraded": false
 }
