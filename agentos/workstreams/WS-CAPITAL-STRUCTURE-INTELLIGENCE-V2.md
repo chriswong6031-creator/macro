@@ -87,8 +87,9 @@ waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
     status: in_progress
+    pr: 5901
     next_action: >
-      This research PR. Stop when CI is green and the PR is handed to
+      PR #5901. Stop when CI is green and the PR is handed to
       Sol/Chairman. Do not merge. Do not start W1.
   - id: W1
     title: Identity dual-read, observation log, concurrent-safe ledger merge
