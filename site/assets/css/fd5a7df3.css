@@ -1,0 +1,77 @@
+
+  /* ── MEGA-CAP TAPE (F2) ────────────────────────────────────────────────────
+     Every value below resolves from an existing theme.css token. No new hex is
+     introduced and theme.css is untouched, so light / dark / zh all repaint at
+     `color-mix` time with nothing to keep in sync. */
+  body.page-stocks #megacap-tape{padding:15px 18px 14px}
+  body.page-stocks .m7t-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 11px}
+  body.page-stocks .m7t-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking (theme.css makes the same call
+     for headings) — the eyebrow keeps its rhythm from weight and colour instead. */
+  html[data-lang="zh"] body.page-stocks .m7t-eyebrow{letter-spacing:.06em}
+  body.page-stocks .m7t-asof{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10.5px;
+    color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* THE SIGNATURE — the tape rail. These three lines are quotations of realized
+     fact; the rail is what separates them from the strip's own stance below the
+     footer rule. Neutral by construction — it is drawn from the muted token, never
+     from a directional one, so it cannot read as a direction and has nothing to
+     flip under 红涨绿跌. */
+  body.page-stocks .m7t-rec{border-left:2px solid color-mix(in srgb,var(--muted) 48%,transparent);
+    padding-left:13px;margin:0 0 11px}
+  /* Fixed columns, not max-content: each row is its own grid, so max-content would
+     size per ROW and the tickers would not form a column. The mega-cap set is a
+     seven-symbol engine constant whose longest ticker is 5 characters — 42px clears
+     that at 12px mono (~7.2px/char) with slack; 56px clears a 7-character figure
+     ("+100.0%"). Both nowrap, so an over-long value overflows into the gap rather
+     than reflowing the sentence column. */
+  body.page-stocks .m7t-line{display:grid;grid-template-columns:42px 56px 1fr;
+    align-items:baseline;gap:0 10px;padding:4px 0;cursor:help}
+  body.page-stocks .m7t-sym{font-family:var(--font-mono,monospace);font-size:12px;font-weight:700;
+    letter-spacing:.02em;color:var(--text);white-space:nowrap}
+  body.page-stocks .m7t-fig{font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:700;
+    font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  /* The ONLY colour on the strip, and only ever on a figure. --ink-* is the
+     text-grade form of the state palette (raw --up/--down is fill-grade and fails
+     the contrast floor as light-theme text); the var() fallback keeps a
+     cache-stale theme.css rendering today's colours rather than an invalid decl. */
+  body.page-stocks .m7t-fig.is-up{color:var(--ink-up,var(--up))}
+  body.page-stocks .m7t-fig.is-dn{color:var(--ink-down,var(--down))}
+  body.page-stocks .m7t-say{font-size:12.5px;line-height:1.5;color:var(--text)}
+  /* The rarity annotation hangs off the tape line behind a middot. The separator is
+     a pseudo, not a text node: it keeps its spacing symmetric no matter how the
+     surrounding markup is wrapped, and it stays out of the copy a vocabulary scan
+     reads. Both languages take the same rule — a middot needs no translation. */
+  body.page-stocks .m7t-rare{color:var(--muted)}
+  body.page-stocks .m7t-rare::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* The two PROSE blocks take a reading measure; the tape lines above keep their
+     natural length. On a span12 panel the stance ran 1,108px unwrapped — a ~95
+     character line, well past where the eye loses the return sweep. 74ch lands
+     English at a comfortable measure and, because `ch` is the width of "0" while a
+     Hanzi is roughly two of them, gives the Chinese twin ~37 characters a line,
+     which is its own comfortable measure. One number, both languages. */
+  body.page-stocks .m7t-split{font-size:12.5px;line-height:1.5;color:var(--text);
+    margin:0 0 11px;max-width:74ch}
+  /* A real thematic break, and it carries the strip's only structural claim: above
+     the rule is what the tape did, below it is what we do about it. Full-width on
+     purpose — the measure cap belongs to the prose, not to the boundary. */
+  body.page-stocks .m7t-rule{border:0;border-top:1px solid var(--line);margin:0 0 10px}
+  body.page-stocks .m7t-foot{margin:0;font-size:12.5px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-stocks .m7t-stance{color:var(--text);font-weight:650}
+  /* nowrap: the quoted lane name is a single label the reader has to match against
+     the board below. At 375px zh it broke as 「已启 / 动」 — a bracketed term split
+     across two lines stops looking like a name. */
+  body.page-stocks .m7t-lane{font-weight:650;color:var(--text);white-space:nowrap}
+  @media (max-width:900px){
+    body.page-stocks #megacap-tape .m7t-asof{margin-left:0}
+  }
+  @media (max-width:560px){
+    /* The three-column almanac alignment is a desktop luxury; on a phone the
+       reading order is what matters, so the row becomes one flowing sentence. */
+    body.page-stocks #megacap-tape{padding:13px 14px}
+    body.page-stocks .m7t-line{display:block;padding:5px 0}
+    body.page-stocks .m7t-sym{margin-right:7px}
+    body.page-stocks .m7t-fig{margin-right:5px;text-align:left}
+  }
+  
