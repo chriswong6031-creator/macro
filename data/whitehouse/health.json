@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-18T18:56:04.383653+00:00",
+  "as_of": "2026-08-18T20:40:34.173906+00:00",
   "posts_seen": 5,
   "seen_total": 122,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-18-president-trump-delivers-the-largest-drop-in-violent-crime-in-american-history",
-      "importance": 10,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
