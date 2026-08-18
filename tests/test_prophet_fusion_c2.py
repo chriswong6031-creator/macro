@@ -69,6 +69,9 @@ from scripts.prophet_fusion_labels import LabelFrame               # noqa: E402
 LEDGER = ROOT / "data" / "us_board_ledger" / "retro_grades.parquet"
 SNAPSHOTS = ROOT / "data" / "us_board_ledger" / "snapshots.jsonl"
 REPORT_PATH = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "report.json"
+# These two are named in unrun-picks-boards exclusive paths. A new
+# research/prophet_fusion path literal here must be named there too, or
+# pack-1's curated-closure ratchet reds (legacy-job-workflow-yaml).
 ERA_KEYS = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "era_frame_keys.parquet"
 ERA_PIN = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "era_frame_pin.json"
 PR1B_REPORT = (ROOT / "research" / "prophet_fusion" / "pr1b_baseline_race"
