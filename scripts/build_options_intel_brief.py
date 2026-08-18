@@ -197,14 +197,26 @@ def _load_prophet() -> tuple[dict[str, str | None], dict[str, str | None], dict[
         lifecycle_state[asset] = pl.get("lifecycle_state")
         closed[asset] = bool(pl.get("closed"))
 
+    # F13 (2026-08-18): a ticker can appear in MORE THAN ONE intake.receipts.groups
+    # bucket in the same file (e.g. both `not_ready` and `ran_too_far`); the keep
+    # must resolve by the SAME ruled precedence B4 already uses for cross-domain
+    # collisions (EXTENDED > ALREADY_OPEN > NOT_READY > READY > OTHER), never by
+    # file/array order — a `setdefault` silently kept whichever bucket happened to
+    # be enumerated first, which rendered a genuinely `ran_too_far`/EXTENDED name
+    # as "Entry not ready yet" whenever `not_ready` preceded it in the array.
     group_reason: dict[str, str | None] = {}
     groups = (((payload.get("intake") or {}).get("receipts") or {}).get("groups")) or []
     for g in groups:
         reason = g.get("reason")
         for entry in (g.get("names") or []):
             ticker = entry.get("ticker") if isinstance(entry, dict) else entry
-            if ticker:
-                group_reason.setdefault(ticker, reason)
+            if not ticker:
+                continue
+            if ticker not in group_reason or (
+                brief.prophet_group_precedence_rank(reason)
+                < brief.prophet_group_precedence_rank(group_reason[ticker])
+            ):
+                group_reason[ticker] = reason
 
     return entry_status, lifecycle_state, closed, group_reason, payload.get("asof")
 
@@ -217,6 +229,16 @@ def _load_signing_gate() -> tuple[bool, str | None]:
     except Exception:
         return False, None
     return bool(payload.get("direction_reliable")), payload.get("asof")
+
+
+def _gex_cfg() -> dict[str, Any]:
+    """F2a — the ``polygon.gex`` config block, read INDEPENDENTLY of
+    ``options_universe.gex_symbols()``'s own internal resolution (mirrors it exactly:
+    same nested-get chain) so this fail-closed diagnostic probe never touches that
+    call's signature or its existing zero-arg test monkeypatch surface across the
+    whole b1-b5 fixture family."""
+    from lib import config as _config
+    return (_config.load().get("polygon", {}) or {}).get("gex", {}) or {}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -331,12 +353,83 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
             "asof": s, "sha256": _sha256_file(fp), "state": "ok" if fp.exists() else "missing",
         })
 
+    # F1 — the `chains` source_manifest domain: per-file sha256 of EVERY chain
+    # parquet actually loaded above (every session <= S consumed for d1/d3/Q_oi
+    # history/tiers/skew history, plus D). This is the receipt-closure blocker fix:
+    # a HISTORICAL (< S) chain was already read into scoring but never hashed
+    # anywhere before this domain existed, so mutating it moved the payload without
+    # ever moving receipt_id. `chains_S`/`chains_D` above are unchanged (existing,
+    # narrower per-session receipts); this is the CLOSURE domain over the full set.
+    chains_manifest: dict[str, str] = {}
+    for s in sorted(set(chains_by_session.keys()) | {D}):
+        fp = CHAINS_DIR / f"{s}.parquet"
+        h = _sha256_file(fp)
+        if h is not None:
+            chains_manifest[str(fp.relative_to(_REPO_ROOT))] = h
+    chains_root = brief.sha256_of(sorted(chains_manifest.items())) if chains_manifest else None
+    input_receipts.append({
+        "logical_source": "chains_manifest", "path": "data/polygon_gex/chains/*.parquet",
+        "asof": S, "sha256": chains_root, "member_count": len(chains_manifest),
+        "state": "ok" if chains_manifest else "missing",
+    })
+
     present_names = sorted(brief.session_metrics(chains_by_session[S]).keys())
 
     # B2 — the canonical current universe (config anchors + baskets, capped), resolved
     # ONCE here and handed to the pure engine as an explicit list+count. Never derived
     # from the chain store itself (that was the deleted historical-max heuristic).
+    # The call signature is UNCHANGED (zero-arg) — F2a's own config read below is a
+    # deliberately SEPARATE, independently-mockable probe (`_gex_cfg()`), so this
+    # line's existing monkeypatch surface (`producer.options_universe.gex_symbols`,
+    # used across the whole b1-b5 fixture family) is untouched.
     universe = options_universe.gex_symbols()
+
+    # F1 — universe_resolution receipt: the resolved universe binds into receipt_id
+    # too, same as every other §2 input (contract §5 `receipt_id` formula already
+    # hashes the full input_receipts list). Not a file — sha256 over the resolved
+    # LIST itself (mirrors the two merkle-style aggregate roots below).
+    universe_sha = brief.sha256_of(sorted(universe))
+    input_receipts.append({
+        "logical_source": "universe_resolution", "path": "engine/options_universe.py::gex_symbols",
+        "asof": S, "sha256": universe_sha, "count": len(universe),
+        "state": "ok" if universe else "missing",
+    })
+
+    # F2a — fail CLOSED (producer-only; engine/options_universe.py is a shared plane
+    # and is never touched here) when the config wants baskets folded in
+    # (`include_baskets: true`) but the resolved universe came back no larger than
+    # the config anchor list — the OBSERVABLE signature of
+    # `options_universe.baskets_universe()`'s own swallowed-error empty return (that
+    # function logs and returns `[]` on any read failure rather than raising). A
+    # silently-empty basket resolution used to fail OPEN: the board scored against
+    # just the anchor list while still claiming full coverage. `_gex_cfg()` is a
+    # deliberately separate read from `options_universe.gex_symbols()`'s own internal
+    # config resolution so this diagnostic probe never changes that call's signature
+    # or its existing test monkeypatch surface.
+    gex_cfg = _gex_cfg()
+    _anchor_list = list(gex_cfg.get("symbols") or options_universe.DEFAULT_ANCHORS)
+    n_anchors = len({str(t).upper() for t in _anchor_list})
+    if bool(gex_cfg.get("include_baskets", False)) and len(universe) <= n_anchors:
+        panel = brief.SessionPanel(
+            as_of_session=S, oi_counted_date=D, pending_session=pending,
+            pending_reason=("OI_NOT_YET_SETTLED" if pending else None),
+            chains_by_session=chains_by_session, chain_next=chain_D, lawful_pairs=lawful_pairs,
+        )
+        watermarks = {
+            "chains_session_S": S, "chains_session_D": D, "summaries_max_session": None,
+            "events_loaded": False, "prophet_asof": None, "signing_gate_asof": None,
+        }
+        partial_manifest = {
+            "gex_summary": {"root": None, "member_count": 0, "files": {}},
+            "gex_confirm": {"root": None, "member_count": 0, "files": {}},
+            "chains": {"root": chains_root, "member_count": len(chains_manifest),
+                       "files": dict(sorted(chains_manifest.items()))},
+        }
+        return brief.degraded_payload(
+            reason="UNIVERSE_RESOLUTION_FAILED", panel=panel, source_watermarks=watermarks,
+            input_receipts=input_receipts, built_at_utc=now.isoformat(),
+            source_manifest=partial_manifest,
+        )
 
     summary_spot = {sym: _load_summary_spot(sym, S) for sym in present_names}
     summaries_max_session = None
@@ -376,6 +469,10 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
                          "files": dict(sorted(summary_manifest.items()))},
         "gex_confirm": {"root": gex_confirm_root, "member_count": len(gex_confirm_manifest),
                          "files": dict(sorted(gex_confirm_manifest.items()))},
+        # F1 — chains domain, computed earlier (before the F2a fail-closed check) so
+        # it is available on both the healthy AND the UNIVERSE_RESOLUTION_FAILED path.
+        "chains": {"root": chains_root, "member_count": len(chains_manifest),
+                   "files": dict(sorted(chains_manifest.items()))},
     }
 
     input_receipts.append({

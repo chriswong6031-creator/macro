@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import glob
 import json
+import math
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -284,6 +285,9 @@ def test_14_config_constants_pinned_verbatim():
     assert lives["V"] == 5 and lives["P"] == 1 and lives["C_0DTE"] == 0 and lives["E"] == "event_close"
     assert CONFIG["MODEL_VERSION"] == "intel_brief_heuristic/v1.2"
     assert CONFIG["SCHEMA"] == "options.intel_brief/v1"
+    # F4a (2026-08-18) — a COVERAGE PREDICATE, not a scoring threshold: c1 requires
+    # the finite-sd_share cross-section to actually exist market-wide.
+    assert CONFIG["C1_XS_MIN_PRESENT_SHARE"] == 0.50
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -540,6 +544,26 @@ def test_09_stale_source_withholds_cards():
     assert payload["board_state"] == "STALE_SOURCE"
     assert payload["opportunities"] == [] and payload["event_board"] == [] and payload["risk_warnings"] == []
     assert payload["as_of_session"] == S   # last-good stamped, not blanked
+
+
+def test_f8_stale_source_present_coherent_with_source_coverage_pct():
+    """F8 (2026-08-18): the STALE_SOURCE header's eligibility.present must be
+    populated from the S chain that WAS already read (present_names is known
+    before the staleness check fires) — never left at the Eligibility() default 0
+    beside a real, nonzero source_coverage_pct (itself computed FROM present_names
+    two lines earlier). present=0 next to a real coverage fraction would claim
+    "zero names loaded" while the fraction implies hundreds."""
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+    names = {sym: _typical_spec(salt=i) for i, sym in enumerate(_alpha_names("STL", 12))}
+    panel = _panel(names, sessions)
+    payload = _build(panel, S=S, D=D, universe=list(names.keys()), stale=True)
+    assert payload["board_state"] == "STALE_SOURCE"
+    elig = payload["eligibility"]
+    assert elig["present"] == 12, f"present not populated from the loaded S chain: {elig}"
+    assert elig["source_coverage_pct"] == pytest.approx(1.0, abs=1e-4)
+    assert not (elig["present"] == 0 and (elig["source_coverage_pct"] or 0) > 0), \
+        "incoherent header: present=0 beside a real source_coverage_pct"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -929,6 +953,52 @@ def test_20b_event_family_absent_below_five_names():
     assert payload["event_board"] == []
 
 
+def test_f6_event_implied_move_pct_uses_event_horizon_never_5_session():
+    """F6 (2026-08-18): the engine emits `event_implied_move_pct` on event rows via
+    the EXISTING `market_implied_move_pct(..., event_horizon_sessions=...)`
+    parameter (sessions S->event, via the injected NYSE calendar), NOT the fixed
+    5-session horizon the card-level `market_implied_move_pct` uses. Proven by
+    building the SAME chain twice with two different event horizons (10 vs 20
+    sessions out) — event_implied_move_pct must scale by sqrt(20/10), the
+    signature of a genuinely horizon-aware computation rather than a copy of the
+    fixed 5-session figure (which would be IDENTICAL across both builds)."""
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+
+    def spec(s, i):
+        return dict(spot=100.0, base_iv=0.30 + 0.01 * (i % 3), oi_base=100.0)
+
+    names = {f"EV{chr(65+i)}": spec for i in range(6)}
+    panel = _panel(names, sessions)
+    near_date = nc.session_n_forward(date.fromisoformat(S), 10).isoformat()
+    far_date = nc.session_n_forward(date.fromisoformat(S), 20).isoformat()
+    payload_near = _build(panel, S=S, D=D, event_date={n: near_date for n in names}, events_loaded=True)
+    payload_far = _build(panel, S=S, D=D, event_date={n: far_date for n in names}, events_loaded=True)
+    assert payload_near["event_board"] and payload_far["event_board"], \
+        "fixture produced no event_board rows to assert on"
+
+    near_by_symbol = {c["symbol"]: c["event"]["event_implied_move_pct"] for c in payload_near["event_board"]}
+    far_by_symbol = {c["symbol"]: c["event"]["event_implied_move_pct"] for c in payload_far["event_board"]}
+    checked = 0
+    for sym, near_move in near_by_symbol.items():
+        far_move = far_by_symbol.get(sym)
+        if near_move is None or far_move is None:
+            continue
+        assert far_move != near_move, "event_implied_move_pct did not move with the event horizon"
+        assert far_move == pytest.approx(near_move * math.sqrt(20.0 / 10.0), abs=1e-5)
+        checked += 1
+    assert checked > 0, "no symbol carried a usable event_implied_move_pct in both builds"
+
+    # card-level market_implied_move_pct (when present at all) stays the fixed
+    # 5-session figure regardless of the event horizon — the two builds' card-level
+    # figures for the same symbol, if both present, must be IDENTICAL.
+    near_card_move = {c["symbol"]: c["market_implied_move_pct"] for c in payload_near["event_board"]}
+    far_card_move = {c["symbol"]: c["market_implied_move_pct"] for c in payload_far["event_board"]}
+    for sym in near_card_move:
+        if near_card_move[sym] is not None and far_card_move.get(sym) is not None:
+            assert near_card_move[sym] == far_card_move[sym]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Test 21 / 29 — Prophet boundary.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1198,6 +1268,12 @@ def _write_fake_repo(tmp_path, monkeypatch, *, symbols: list[str], sessions: lis
     # INSUFFICIENT_COVERAGE against the real repo's ~375-name universe. Tests that
     # exercise B2 itself (test_b2_4) re-patch this afterward.
     monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
+    # F2a: default the fail-closed probe's OWN config read to include_baskets=False
+    # so a test with no opinion on F2a never trips UNIVERSE_RESOLUTION_FAILED against
+    # the REAL repo config.yml (include_baskets: true, ~25 real anchors vs this
+    # fixture's handful of fake symbols — a false positive on every other test in
+    # this fixture family). Tests that exercise F2a itself re-patch this afterward.
+    monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": False})
     return chains_dir, summary_dir, gex_dir
 
 
@@ -1307,26 +1383,47 @@ def test_b1_4_identical_rerun_is_a_byte_level_no_op(tmp_path, monkeypatch):
 
 
 def test_b1_5_manifest_enumerates_every_consumed_file_closure(tmp_path, monkeypatch):
-    """A spy wraps producer._sha256_file to record every path it was ever asked to
-    hash for the gex_summary/gex_confirm domains; the manifest's own file set must
-    equal exactly the set of paths the loaders actually opened and bound — no more,
-    no less (closure, not merely non-emptiness)."""
+    """F7t rewrite (2026-08-18): a spy instruments file-OPEN level (``_load_chain``,
+    never just the hasher) so the closure claim actually covers what the producer
+    reads, not merely what it eventually hashes; a second spy on ``_sha256_file``
+    keeps the pre-existing gex_summary/gex_confirm closure check. The test FAILS if
+    a consumed path is left unbound anywhere in source_manifest — proven both by the
+    set-closure assertions below AND by literally replaying the F1 blocker attack
+    (mutating a HISTORICAL, non-S/D chain and requiring receipt_id to move)."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
+    chains_dir, summary_dir, gex_dir = _write_fake_repo(
+        tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
+
+    opened_chains: list[Path] = []
+    real_load_chain = producer._load_chain
+
+    def spy_load_chain(session):
+        opened_chains.append(producer.CHAINS_DIR / f"{session}.parquet")
+        return real_load_chain(session)
+
+    monkeypatch.setattr(producer, "_load_chain", spy_load_chain)
 
     hashed: list[Path] = []
     real_hasher = producer._sha256_file
 
-    def spy(path):
+    def spy_hash(path):
         hashed.append(path)
         return real_hasher(path)
 
-    monkeypatch.setattr(producer, "_sha256_file", spy)
+    monkeypatch.setattr(producer, "_sha256_file", spy_hash)
     payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    summary_dir = tmp_path / "data" / "polygon_gex"
-    gex_dir = tmp_path / "site" / "gex"
+    # F1 closure: EVERY chain file the producer actually opened (S, D, and every
+    # historical session <= S used for d1/d3/Q_oi/skew history) must be bound into
+    # source_manifest.chains — this is the exact set the pre-fix attack exploited
+    # (a historical session was opened/scored but never bound anywhere).
+    opened_chain_relpaths = {str(p.relative_to(tmp_path)) for p in opened_chains}
+    assert opened_chain_relpaths, "fixture never opened a chain file — test is vacuous"
+    chains_manifest_files = set(payload["source_manifest"]["chains"]["files"].keys())
+    unbound = opened_chain_relpaths - chains_manifest_files
+    assert not unbound, f"chain file(s) opened but never bound into source_manifest.chains: {unbound}"
+
     expected_summary = {str((summary_dir / f"summary_{s}.parquet").relative_to(tmp_path)) for s in symbols}
     expected_gex = {str((gex_dir / f"{s}.json").relative_to(tmp_path)) for s in symbols}
 
@@ -1342,6 +1439,19 @@ def test_b1_5_manifest_enumerates_every_consumed_file_closure(tmp_path, monkeypa
     assert hashed_gex == expected_gex
     assert payload["source_manifest"]["gex_summary"]["member_count"] == len(expected_summary)
     assert payload["source_manifest"]["gex_confirm"]["member_count"] == len(expected_gex)
+
+    # Attack-1 replay (F1 blocker, converted from test_attack_receipt.py): mutate a
+    # HISTORICAL (< S, not D) chain — a session opened above but not S/D — and prove
+    # the closure is real by requiring receipt_id to actually move.
+    historical = sorted(s for s in sessions if s < S)[0]
+    df = pd.read_parquet(chains_dir / f"{historical}.parquet")
+    mask = df["underlying"].astype(str) == symbols[0]
+    df.loc[mask, "volume"] = (df.loc[mask, "volume"] * 100.0).astype("float32")
+    df.loc[mask, "oi"] = (df.loc[mask, "oi"] * 7.0).astype("float32")
+    df.to_parquet(chains_dir / f"{historical}.parquet")
+    payload2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert payload["receipt_id"] != payload2["receipt_id"], \
+        "F1 BLOCKER: mutating a historical (non-S/D) chain moved the payload but not receipt_id"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1419,10 +1529,57 @@ def test_b2_4_universe_membership_change_moves_the_denominator_no_historical_max
     assert p_shrunk_coverage["eligibility"]["universe_count"] == 16
     assert p_shrunk_coverage["eligibility"]["source_coverage_pct"] == pytest.approx(6 / 16, abs=1e-4)
     assert p_shrunk_coverage["board_state"] == "INSUFFICIENT_COVERAGE"
-    # the universe list is a config-resolved runtime input, not a file with its own
-    # sha256 — it deliberately does NOT participate in receipt_id (only §2's file-based
-    # sources do); the denominator move is proven via eligibility/board_state above.
-    assert p_full["receipt_id"] == p_shrunk_coverage["receipt_id"]
+    # F1 (2026-08-18) supersedes the old "universe never participates in receipt_id"
+    # premise: a `universe_resolution` input_receipts entry now binds
+    # sha256(canonical_json(sorted(universe_list))) + count, same as every other §2
+    # source — a different resolved universe MUST move receipt_id.
+    assert p_full["receipt_id"] != p_shrunk_coverage["receipt_id"]
+    full_receipt = next(r for r in p_full["input_receipts"] if r["logical_source"] == "universe_resolution")
+    shrunk_receipt = next(r for r in p_shrunk_coverage["input_receipts"] if r["logical_source"] == "universe_resolution")
+    assert full_receipt["count"] == 6 and shrunk_receipt["count"] == 16
+    assert full_receipt["sha256"] != shrunk_receipt["sha256"]
+
+
+def test_b2_5_universe_resolution_failed_fails_closed_on_swallowed_basket_error(tmp_path, monkeypatch):
+    """F2a (2026-08-18, converted from ATTACK 3's real locus — the reviewer's
+    engine-level shrunk-universe scenario stays lawful at the engine level per the
+    ruling's own text, since an EXPLICIT universe there is a legitimate engine
+    input; the fix is entirely in the PRODUCER's resolution of that universe).
+    ``engine/options_universe.py::baskets_universe()`` swallows any read failure and
+    returns ``[]`` (by design, never crashes the build) — but a producer that then
+    quietly scores against just the anchor list while still claiming
+    ``include_baskets`` succeeded was failing OPEN. Simulated here by making
+    ``gex_symbols()`` resolve to exactly the (fixture-sized) anchor list while
+    ``_gex_cfg()`` reports ``include_baskets: true`` — the SAME observable signature
+    a real swallowed ``baskets_universe()`` exception produces."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": True, "symbols": list(symbols)})
+    monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert payload["board_state"] == "DEGRADED"
+    assert payload["board_reason"] == "UNIVERSE_RESOLUTION_FAILED"
+    assert payload["opportunities"] == [] and payload["risk_warnings"] == [] and payload["event_board"] == []
+    assert payload["source_manifest"]["chains"]["member_count"] > 0   # chains already loaded, still bound
+
+
+def test_b2_6_universe_resolution_succeeds_when_baskets_actually_widen_it(tmp_path, monkeypatch):
+    """Negative control for F2a: the SAME include_baskets=true config does NOT trip
+    the fail-closed path when the resolved universe genuinely grew beyond the
+    anchors (a healthy basket resolution) — proves the check is the OBSERVABLE
+    signature (universe <= anchors), never a blanket "include_baskets=true always
+    degrades" regression."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    anchors = symbols[:2]
+    monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": True, "symbols": anchors})
+    monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))  # 6 > 2 anchors
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert payload["board_reason"] != "UNIVERSE_RESOLUTION_FAILED"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1514,64 +1671,299 @@ def test_b3_6_neutral_and_display_only_background_never_shortens():
 
 
 def test_b3_7_stale_contributing_evidence_end_to_end_multi_family_degradation():
-    """A single scored card where GEX mechanics (life 1) AND a same-day crowd fire
-    (life 0) BOTH genuinely contribute, through the REAL build_intel_brief pipeline —
-    proving the min-of-mins rule holds under composition, not just in isolated unit
-    calls, and that it forces an EARLIER fresh_until than the LONG baseline (S+3) would
-    give on its own (contract ruling: "a LONG cut by the crowd multiplier where the
-    firing input is same-day c1 carries current-session expiry"). Also re-confirms the
-    PRE-EXISTING fresh_ok/FRESH_PENALTY actionability mechanism (unrelated to B3, but
-    living in the same code region) is untouched by the fresh_until rewrite.
-    """
+    """F7t rewrite (2026-08-18): the ORIGINAL fixture never actually landed HOT on
+    its engineered LONG/c1 path (every session's ``_symbol_rows`` spreads ``volume``
+    UNIFORMLY across all 4 expiry bands, so same-day share never differentiated
+    cross-sectionally) — it silently exercised only the vacuous ``>= S`` fallback
+    every run, proving nothing. This version hand-builds HOT's chain rows with a
+    massively inflated same-day (``zero``-band) volume relative to 9 flat peers
+    (deterministic, same ``_wiggle`` seeding as the rest of this file) so c1
+    genuinely fires cross-sectionally, and binds a ``caution`` GEX verdict — an
+    EXACT ``fresh_until`` is asserted, never the old ``>= S`` escape hatch, and the
+    fixture's actual outcome (RISK_ONLY route, c1 fired) is asserted explicitly
+    rather than assumed, so a fixture regression fails loudly instead of silently
+    re-opening the vacuous branch."""
     sessions = _real_sessions(30)
     S, D = sessions[-2], sessions[-1]
+    peer_names = [f"PR{chr(65+j)}" for j in range(9)]
 
-    def spec(s, i):
-        # engineered to qualify LONG (Q_oi/Q_skew/D_salience all clear their thresholds)
-        # AND fire c1 (same-day/0DTE volume share far above its cross-sectional peers).
-        oi_bump = 60.0 if s == D else 0.0
-        return dict(spot=100.0, base_iv=0.30 * _wiggle(i, salt=900), oi_base=100.0,
-                    oi_call_bump=oi_bump, volume=50.0)
+    def _hot_rows(s: str, i: int) -> list[dict]:
+        rows = _symbol_rows("HOT", s, spot=100.0, base_iv=0.30 * _wiggle(i, salt=900),
+                             oi_base=100.0, oi_call_bump=(80.0 if s == D else 0.0),
+                             volume=10.0, anchor=sessions[0])
+        zero_vol = 5000.0 if s == S else 20.0   # same-day tape spikes ONLY on S itself
+        ss = pd.Timestamp(s)
+        for r in rows:
+            if r["expiry"] == ss:
+                r["volume"] = zero_vol
+        return rows
 
-    names = {"HOT": spec}
-    # peers give the XS c1 rank something to be a high percentile AGAINST — c1 fires
-    # when sd_share for HOT ranks far above its own cross-sectional peers.
-    for j in range(9):
-        def peer_spec(s, i, salt=j):
-            return dict(spot=100.0, base_iv=0.30 * _wiggle(i, salt=910 + salt), oi_base=100.0, volume=50.0)
-        names[f"PR{chr(65+j)}"] = peer_spec
+    panel_sessions: dict[str, pd.DataFrame] = {}
+    for i, s in enumerate(sessions):
+        rows = _hot_rows(s, i)
+        for j, sym in enumerate(peer_names):
+            rows.extend(_symbol_rows(sym, s, spot=100.0, base_iv=0.30 * _wiggle(i, salt=910 + j),
+                                      oi_base=100.0, volume=10.0, anchor=sessions[0]))
+        panel_sessions[s] = _mk_chain(rows, session=s)
 
-    panel = _panel(names, sessions)
-    # inject a genuinely 0DTE-heavy HOT session at S by construction: _symbol_rows
-    # already always emits a same-session ("zero") expiry band with real volume, so a
-    # cross-sectional c1 percentile is driven structurally rather than hand-set.
-    payload = _build(panel, S=S, D=D, universe=list(names.keys()))
+    payload = _build(panel_sessions, S=S, D=D, universe=["HOT"] + peer_names,
+                      gex_verdict={"HOT": "caution"})
     hot = None
-    for c in payload["opportunities"] + payload["risk_warnings"]:
+    for c in payload["opportunities"] + payload["risk_warnings"] + payload["directional_watch"]:
         if c["symbol"] == "HOT":
             hot = c
     if hot is None and payload["no_signal_exemplar"] and payload["no_signal_exemplar"]["symbol"] == "HOT":
         hot = payload["no_signal_exemplar"]
     assert hot is not None, "HOT never scored — fixture failed to produce a card to assert on"
-    if hot["direction"] in ("LONG", "SHORT") and hot["crowding"] is not None and "c1" in hot["crowding"]["fired"]:
-        assert hot["fresh_until"] == S   # same-day leg present -> forced to current session
-    elif hot["direction"] == "RISK_ONLY" and hot["crowding"] is not None and "c1" in hot["crowding"]["fired"]:
-        assert hot["fresh_until"] == S
-    else:
-        # the fixture didn't land exactly on the engineered path this run (percentile
-        # thresholds are data-dependent) — the CONTRACT the test protects is exercised
-        # regardless via the direct unit tests above; assert the field is at minimum a
-        # lawful date so this branch is never a silent no-op pass.
-        assert hot["fresh_until"] >= S
+    assert hot["direction"] == "RISK_ONLY", f"fixture landed on {hot['direction']!r}, not the engineered RISK_ONLY/c1 path"
+    assert hot["crowding"] is not None and "c1" in hot["crowding"]["fired"], \
+        f"fixture never fired c1: {hot['crowding']!r}"
+    assert hot["fresh_until"] == S   # same-day (life 0) leg present -> forced to current session, EXACT
 
 
 def test_b3_8_plain_long_baseline_through_the_real_pipeline():
-    panel, S, D = _std_panel()
-    payload = _build(panel, S=S, D=D)
-    for c in payload["opportunities"]:
-        if c["direction"] in ("LONG", "SHORT") and c["crowding"] is None \
-                and c["mechanics_context"]["gex_confirm_verdict"] is None:
-            assert c["fresh_until"] == _session_n_forward(S, 3)
+    """F7t (2026-08-18): the original ``for``-loop body never executed at all if no
+    card matched the predicate, silently passing vacuously — ``_std_panel()``'s AAA/BBB
+    always resolve VOLATILITY, never LONG/SHORT, so this test ALWAYS passed
+    vacuously. Replaced with a hand-built fixture (:func:`_engineered_long_panel`)
+    that deliberately flattens AAA's downside skew at S alone (put-side IV dropped
+    only in the S session's "front" 7-60 DTE band, everywhere else held at a normal
+    smile) while bumping call ΔOI at D — the same OI-bump idiom every other fixture
+    in this file uses — so AAA genuinely qualifies LONG with no crowding/GEX
+    contribution, and asserts the exact baseline fresh_until (S+3 sessions)."""
+    sessions, S, D, panel_sessions = _engineered_long_panel()
+    payload = _build(panel_sessions, S=S, D=D, universe=["AAA", "BBB"])
+    aaa = next((c for c in payload["opportunities"] + payload["directional_watch"] if c["symbol"] == "AAA"), None)
+    assert aaa is not None, "fixture produced no AAA card to assert on"
+    assert aaa["direction"] in ("LONG", "SHORT"), f"fixture landed on {aaa['direction']!r}, not directional"
+    assert aaa["crowding"] is None
+    assert aaa["mechanics_context"]["gex_confirm_verdict"] is None
+    assert aaa["fresh_until"] == _session_n_forward(S, 3)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F3 — event contamination joins fresh_until's min-set for LONG/SHORT (a); the
+# VOLATILITY branch keeps V(5) whenever F_V genuinely contributed, not merely
+# whenever F_E is absent (b). Converted from the reviewer's test_attack_fresh.py.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _engineered_long_panel(*, n_sessions: int = 20):
+    """AAA deterministically qualifies LONG (Q_oi/Q_skew/D_salience all clear
+    threshold) with no crowding/GEX contribution; BBB is a plain VOLATILITY peer.
+    Shared by test_b3_8 and the F3 wiring tests below — same construction, single
+    source of truth for "how this suite engineers a real qualified LONG card"."""
+    sessions = _real_sessions(n_sessions)
+    S, D = sessions[-2], sessions[-1]
+    put_lo, put_hi = CONFIG["SKEW_PUT_DELTA"]
+    call_lo, call_hi = CONFIG["SKEW_CALL_DELTA"]
+    front_expiry = pd.Timestamp(sessions[0]) + pd.Timedelta(days=35)
+
+    def _aaa_rows(s: str) -> list[dict]:
+        rows = _symbol_rows("AAA", s, spot=100.0, base_iv=0.30, oi_base=100.0,
+                             oi_call_bump=(80.0 if s == D else 0.0), volume=50.0, anchor=sessions[0])
+        for r in rows:
+            if r["expiry"] != front_expiry:
+                continue
+            d = r["delta"]
+            if not r["is_call"] and put_lo <= d <= put_hi:
+                r["iv"] = 0.15 if s == S else 0.45   # downside skew flattens ONLY at S
+            elif r["is_call"] and call_lo <= d <= call_hi:
+                r["iv"] = 0.30
+        return rows
+
+    panel_sessions: dict[str, pd.DataFrame] = {}
+    for s in sessions:
+        rows = _aaa_rows(s) + _symbol_rows("BBB", s, spot=100.0, base_iv=0.30, oi_base=100.0,
+                                            volume=50.0, anchor=sessions[0])
+        panel_sessions[s] = _mk_chain(rows, session=s)
+    return sessions, S, D, panel_sessions
+
+
+def test_f3a_attack_fresh_2b_long_ignores_event_for_directional_defeated():
+    """ATTACK 2b (test_attack_fresh_until_for_ignores_event_for_directional)
+    defeated: the LONG/SHORT branch of ``fresh_until_for`` now consumes
+    ``f_e_active``/``event_date`` — when the caller marks the event contamination
+    as having entered M_ad, the event close must join the min-set, never be
+    structurally dropped."""
+    S = "2026-03-16"
+    ev = _session_n_forward(S, 1)
+    fu = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward,
+                                gex_active=False, crowd_fired_legs=[],
+                                f_e_active=True, event_date=ev, d3_bonus_applied=True)
+    assert fu <= ev, "LONG branch structurally drops the event contribution"
+    assert fu == ev   # min(S+3, ev=S+1) == ev exactly
+
+
+def test_f3a_attack_fresh_1_event_imminent_wiring_end_to_end(monkeypatch):
+    """ATTACK 1 (test_attack_event_imminent_long_freshness) defeated, converted to a
+    call-site WIRING proof rather than an exposed-board assertion: a genuinely
+    qualified LONG's own contamination-cut R (event_mult=0.6x, contract-frozen)
+    structurally can fall below R_MIN — asserting through opportunities/
+    directional_watch would be circular (the SAME fix that must widen fresh_until
+    also shrinks R below the board cut for a card this close to the floor). A spy
+    on ``brief.fresh_until_for`` instead proves the real pipeline call for AAA (the
+    deterministic engineered LONG fixture) passes ``f_e_active=True,
+    event_date=<the event>`` ONLY when the event actually entered M_ad
+    (event_imminent), and ``f_e_active=False`` with no event."""
+    sessions, S, D, panel_sessions = _engineered_long_panel()
+    ev = _session_n_forward(S, 1)   # 1 session out -> within EVENT_CONTAM_SESSIONS(2)
+
+    calls: list[dict] = []
+    real_fresh_until_for = brief.fresh_until_for
+
+    def spy(**kwargs):
+        calls.append(kwargs)
+        return real_fresh_until_for(**kwargs)
+
+    monkeypatch.setattr(brief, "fresh_until_for", spy)
+    try:
+        base = _build(panel_sessions, S=S, D=D, universe=["AAA", "BBB"])
+        calls.clear()
+        with_ev = _build(panel_sessions, S=S, D=D, universe=["AAA", "BBB"],
+                          event_date={"AAA": ev, "BBB": None}, events_loaded=True)
+    finally:
+        monkeypatch.setattr(brief, "fresh_until_for", real_fresh_until_for)
+
+    long_calls_with_ev = [c for c in calls if c.get("direction") == "LONG"]
+    assert len(long_calls_with_ev) == 1, f"expected exactly one LONG call, got {long_calls_with_ev}"
+    assert long_calls_with_ev[0]["f_e_active"] is True
+    assert long_calls_with_ev[0]["event_date"] == ev
+
+    aaa_base = next(c for c in base["opportunities"] + base["directional_watch"] if c["symbol"] == "AAA")
+    aaa_with_ev_card = next((c for c in with_ev["opportunities"] + with_ev["directional_watch"]
+                              if c["symbol"] == "AAA"), None)
+    # the event contamination structurally lowers R (event_mult=0.6, contract-frozen)
+    # -- proving it "entered M_ad" the same way the original attack script did,
+    # WITHOUT relying on the card surviving R_MIN afterward.
+    if aaa_with_ev_card is not None:
+        assert aaa_with_ev_card["research_priority_score"] < aaa_base["research_priority_score"]
+        assert not (aaa_with_ev_card["fresh_until"] > ev), "FRESHNESS OVERSTATED past the contaminating event"
+    else:
+        assert aaa_base["research_priority_score"] >= CONFIG["R_MIN"], \
+            "baseline R was never above R_MIN -- the contamination-drop premise doesn't hold"
+
+
+def test_f3b_attack_fresh_2c_volatility_v_life_never_exclusively_event():
+    """ATTACK 2c (test_attack_volatility_fv_routed_with_far_event) defeated,
+    adapted for the fixed function's real signature: the VOLATILITY branch appends
+    V(5) whenever the V family genuinely contributed (``f_v_active=True``, F3b),
+    never exclusively because an event is absent — a GIS-class row (both F_E and
+    F_V contributing) becomes ``min(event_close, V(5), d3-bonus-life)``, so a FAR
+    event (outside V's own 5-session life) must not silently drop V's tighter
+    life."""
+    S = "2026-03-16"
+    far = "2026-04-28"   # ~30 sessions out, inside the 45d event window
+    fu = brief.fresh_until_for(direction="VOLATILITY", S=S, session_n_forward_fn=_session_n_forward,
+                                f_e_active=True, event_date=far, f_v_active=True, d3_bonus_applied=False)
+    assert fu <= _session_n_forward(S, 5), "V-family life dropped when a far event also exists"
+    assert fu == _session_n_forward(S, 5)   # min(V(5), far) == V(5) since far >> S+5
+
+
+def test_f3b_pre_existing_event_driven_volatility_unaffected_when_f_v_inactive():
+    """Negative control for F3b: a PURELY event-driven VOLATILITY card (F_E present,
+    F_V never contributed -- ``f_v_active`` defaults False) still gets event-close
+    alone, exactly the pre-existing b3_3 behavior -- the F3b widening is additive,
+    never a regression on the case it doesn't apply to."""
+    S = "2026-03-16"
+    event_date = _session_n_forward(S, 10)
+    fu = brief.fresh_until_for(direction="VOLATILITY", S=S, session_n_forward_fn=_session_n_forward,
+                                f_e_active=True, event_date=event_date)
+    assert fu == event_date
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F4a — c1's cross-section coverage predicate (C1_XS_MIN_PRESENT_SHARE). Converted
+# from the reviewer's attack_crowd.py, which called session_metrics_and_exclusions
+# / percentile_xs directly against the real store; this synthetic version
+# reproduces the same shape deterministically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_f4a_thin_session_c1_predicate_attack_crowd_converted():
+    """ATTACK 4 (attack_crowd.py) converted: a THIN session — a finite-sd_share
+    population well below C1_XS_MIN_PRESENT_SHARE (50%) of present names, even
+    though it clears the OLD absolute MIN_HISTORY(10) floor comfortably (12 >= 10)
+    — must resolve c1 = None universe-wide, never let a couple of names
+    self-certify as crowded against a near-empty cross-section (the same pre-fix
+    shape the crowding-percentile ruling closed for mass-ties, here reproduced via
+    genuine sparse coverage instead)."""
+    session = "2026-03-02"
+    names = _alpha_names("THN", 30)
+    finite_names = set(names[:12])   # 12/30 = 40% < C1_XS_MIN_PRESENT_SHARE (50%)
+    hot = names[0]
+
+    rows: list[dict] = []
+    for sym in names:
+        sym_rows = _symbol_rows(sym, session, spot=100.0, base_iv=0.30, oi_base=100.0, volume=50.0)
+        ss = pd.Timestamp(session)
+        for r in sym_rows:
+            if r["expiry"] != ss:
+                continue
+            if sym not in finite_names:
+                r["volume"] = 0.0            # no same-day tape -> sd_share = None
+            elif sym == hot:
+                r["volume"] = 5000.0         # extreme same-day concentration
+        rows.extend(sym_rows)
+    df = _mk_chain(rows, session=session)
+
+    m, _ = brief.session_metrics_and_exclusions(df)
+    xs_sd = {n: m[n]["sd_share"] for n in m}
+    finite_count = sum(1 for v in xs_sd.values() if v is not None)
+    assert finite_count == 12, f"fixture didn't produce the expected 12 finite members: {finite_count}"
+
+    # OLD behaviour (plain percentile_xs against the absolute MIN_HISTORY(10) floor
+    # only): 12 >= 10 clears the floor, so `hot` self-certifies as maximally
+    # crowded against just its 11 finite peers — the exact pre-F4a false positive.
+    old_c1 = brief.percentile_xs(xs_sd, hot)
+    assert old_c1 is not None and old_c1 >= CONFIG["C1_TH"], \
+        "fixture doesn't reproduce the pre-fix false-positive shape"
+
+    # NEW behaviour: the coverage predicate itself.
+    present_n = len(names)
+    c1_xs_present = finite_count >= CONFIG["C1_XS_MIN_PRESENT_SHARE"] * present_n
+    assert not c1_xs_present, "fixture's coverage share unexpectedly clears the F4a predicate"
+
+
+def test_f4a_thin_session_c1_none_through_the_real_pipeline():
+    """Same THIN-coverage shape as above, wired through the REAL build_intel_brief
+    pipeline (10+ history sessions so eligibility clears) — `hot`'s own crowding
+    must come back None despite the same extreme same-day concentration that would
+    have fired c1 pre-fix."""
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+    names = _alpha_names("THN", 30)
+    finite_names = set(names[:12])
+    hot = names[0]
+
+    def _rows_for_session(s: str, i: int) -> list[dict]:
+        rows: list[dict] = []
+        for sym in names:
+            sym_rows = _symbol_rows(sym, s, spot=100.0, base_iv=0.30 * _wiggle(i, salt=abs(hash(sym)) % 1000),
+                                     oi_base=100.0, volume=50.0, anchor=sessions[0])
+            ss = pd.Timestamp(s)
+            for r in sym_rows:
+                if r["expiry"] != ss:
+                    continue
+                if sym not in finite_names:
+                    r["volume"] = 0.0
+                elif sym == hot and s == S:
+                    r["volume"] = 5000.0
+            rows.extend(sym_rows)
+        return rows
+
+    panel_sessions = {s: _mk_chain(_rows_for_session(s, i), session=s) for i, s in enumerate(sessions)}
+    payload = _build(panel_sessions, S=S, D=D, universe=names)
+
+    hot_card = None
+    for c in payload["opportunities"] + payload["risk_warnings"] + payload["directional_watch"]:
+        if c["symbol"] == hot:
+            hot_card = c
+    if hot_card is None and payload["no_signal_exemplar"] and payload["no_signal_exemplar"]["symbol"] == hot:
+        hot_card = payload["no_signal_exemplar"]
+    assert hot_card is not None, "fixture never scored `hot` at all"
+    assert hot_card["crowding"] is None, \
+        f"c1 fired on a thin (12/30) cross-section: {hot_card['crowding']!r}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1606,6 +1998,47 @@ def test_b4_1_engine_precedence_extended_beats_not_ready_biib_class_collision():
     assert plan_state == "NOT_READY"
     assert group_state == "EXTENDED"
     assert brief.prophet_state_combined(plan_state, group_state) == "EXTENDED"
+
+
+def test_f13_attack_group_bucket_order_beats_ruled_precedence(tmp_path, monkeypatch):
+    """ATTACK 5 (test_attack_group_bucket_order_beats_ruled_precedence) defeated:
+    the SAME ticker in TWO intake.receipts.groups buckets in one file must resolve
+    by the ruled precedence (EXTENDED > ALREADY_OPEN > NOT_READY > READY > OTHER),
+    never by file/array order. ``not_ready`` appears BEFORE the ruled-higher
+    ``ran_too_far`` in this payload — a plain keep-first (`setdefault`) would keep
+    NOT_READY; the precedence-aware keep must overwrite it to EXTENDED."""
+    payload = {
+        "schema": "prophet.index/v1", "asof": "2026-08-17", "plans": [],
+        "intake": {"receipts": {"groups": [
+            _group("not_ready", ["BIIB"]),      # earlier in file order -> NOT_READY
+            _group("ran_too_far", ["BIIB"]),    # ruled EXTENDED, must win
+        ]}},
+    }
+    fp = tmp_path / "index.json"
+    fp.write_text(json.dumps(payload))
+    monkeypatch.setattr(producer, "PROPHET_INDEX_PATH", fp)
+    es, ls, cl, gr, asof = producer._load_prophet()
+    assert gr.get("BIIB") == "ran_too_far", f"file order beat ruled precedence: kept {gr.get('BIIB')!r}"
+    state = brief.prophet_state_combined(None, brief.prophet_group_state(gr.get("BIIB")))
+    assert state == "EXTENDED", "a ran_too_far name renders as NOT_READY ('Entry not ready yet')"
+
+
+def test_f13_precedence_holds_regardless_of_which_bucket_is_declared_first(tmp_path, monkeypatch):
+    """Negative control: reversing the array order (ran_too_far first, not_ready
+    second) must land on the SAME EXTENDED result — proving the keep is genuinely
+    precedence-driven, not merely "second write always wins"."""
+    payload = {
+        "schema": "prophet.index/v1", "asof": "2026-08-17", "plans": [],
+        "intake": {"receipts": {"groups": [
+            _group("ran_too_far", ["BIIB"]),
+            _group("not_ready", ["BIIB"]),
+        ]}},
+    }
+    fp = tmp_path / "index.json"
+    fp.write_text(json.dumps(payload))
+    monkeypatch.setattr(producer, "PROPHET_INDEX_PATH", fp)
+    es, ls, cl, gr, asof = producer._load_prophet()
+    assert gr.get("BIIB") == "ran_too_far"
 
 
 def test_b4_2_wait_pullback_and_bounce_wait_map_not_ready():
@@ -1844,16 +2277,24 @@ def test_b5_7_ordering_law_watch_and_boards_are_order_stable_not_insertion_order
 
 
 def test_b5_8_no_signal_reason_state_closed_vocabulary():
+    """F5 (2026-08-18): 4-entry closed vocabulary — legs both active AND agreeing in
+    sign (the direction law's OWN Q-leg predicate satisfied) is a materially
+    different state (SALIENCE_FAIL) from a genuinely quiet leg pair
+    (LEGS_BELOW_THRESHOLD): the FORMER means classify_direction's salience gate (or
+    a downstream low-R cut) withheld the hypothesis, never "the legs are inside
+    their normal range"."""
     # both legs active (>= Q_TH), opposite sign -> disagree
     assert brief.no_signal_reason_state(0.6, -0.6) == "DISAGREE"
     assert brief.no_signal_reason_state(-0.7, 0.55) == "DISAGREE"
     # exactly one leg active -> one-sided
     assert brief.no_signal_reason_state(0.6, 0.1) == "ONE_SIDED"
     assert brief.no_signal_reason_state(None, 0.6) == "ONE_SIDED"
-    # neither active, or both active with the same sign -> weak/aligned (default)
-    assert brief.no_signal_reason_state(0.1, -0.2) == "WEAK"
-    assert brief.no_signal_reason_state(None, None) == "WEAK"
-    assert brief.no_signal_reason_state(0.6, 0.6) == "WEAK"
+    # neither active -> legs genuinely below threshold
+    assert brief.no_signal_reason_state(0.1, -0.2) == "LEGS_BELOW_THRESHOLD"
+    assert brief.no_signal_reason_state(None, None) == "LEGS_BELOW_THRESHOLD"
+    # both active AND agreeing in sign (Q-pass) -> the F5 4th entry, never WEAK
+    assert brief.no_signal_reason_state(0.6, 0.6) == "SALIENCE_FAIL"
+    assert brief.no_signal_reason_state(-0.55, -0.9) == "SALIENCE_FAIL"
 
 
 def test_b5_9_no_signal_exemplar_attaches_reason_from_its_own_evidence():
@@ -1883,6 +2324,49 @@ def test_b5_9_no_signal_exemplar_attaches_reason_from_its_own_evidence():
     assert best["no_signal_reason"]["en"] == "the two readings disagree and activity is normal"
 
 
+def test_b5_9b_salience_fail_and_activity_normal_clause_gated_on_d_salience():
+    """F5 (2026-08-18): (a) both Q legs active + agreeing renders the NEW
+    SALIENCE_FAIL text, never the LEGS_BELOW_THRESHOLD wording; (b) the "...and
+    activity is normal" clause on ONE_SIDED/DISAGREE may ONLY render when the
+    exemplar's own D_salience reading is ACTUALLY below SALIENCE_TH — an elevated
+    D_salience beside a one-sided/disagreeing leg pair must not claim "activity is
+    normal" (that claim would be false: salience is why nothing fired, not the
+    legs)."""
+    def card(symbol, q_oi, q_skew, d_sal, *, tier_metric=1.0):
+        return {
+            "symbol": symbol, "board_state_symbol": "NO_SIGNAL", "coverage_complete": True,
+            "tier_metric": tier_metric,
+            "evidence": [{"name": "Q_oi", "value": q_oi}, {"name": "Q_skew", "value": q_skew},
+                         {"name": "D_salience", "value": d_sal}],
+        }
+
+    # legs agree and both pass Q_TH, salience genuinely low -> SALIENCE_FAIL
+    sal_fail = brief.no_signal_exemplar([card("SFL", 0.65, 0.7, 0.2, tier_metric=3.0)])
+    assert sal_fail["no_signal_reason"]["en"] == "readings agree but activity is ordinary"
+    assert sal_fail["no_signal_reason"]["zh"] == "读数一致，但活跃度平平"
+
+    # legs agree and pass Q_TH but D_salience is ALSO high (qualified direction, low
+    # R elsewhere) -> still SALIENCE_FAIL text; no "activity is normal" claim exists
+    # on this entry to falsely gate.
+    sal_fail_high = brief.no_signal_exemplar([card("SFH", 0.7, 0.75, 0.95, tier_metric=3.0)])
+    assert sal_fail_high["no_signal_reason"]["en"] == "readings agree but activity is ordinary"
+
+    # ONE_SIDED with salience genuinely low -> the normal-activity clause renders
+    one_sided_low_sal = brief.no_signal_exemplar([card("OSL", 0.6, 0.1, 0.2, tier_metric=3.0)])
+    assert one_sided_low_sal["no_signal_reason"]["en"] == "only one reading moved and activity is normal"
+
+    # ONE_SIDED with an ELEVATED D_salience -> claiming "activity is normal" would
+    # be false; the clause must NOT render.
+    one_sided_high_sal = brief.no_signal_exemplar([card("OSH", 0.6, 0.1, 0.9, tier_metric=3.0)])
+    assert one_sided_high_sal["no_signal_reason"]["en"] == "only one reading moved"
+    assert "activity is normal" not in one_sided_high_sal["no_signal_reason"]["en"]
+
+    # DISAGREE with an ELEVATED D_salience -> same gate.
+    disagree_high_sal = brief.no_signal_exemplar([card("DGH", 0.6, -0.6, 0.9, tier_metric=3.0)])
+    assert disagree_high_sal["no_signal_reason"]["en"] == "the two readings disagree"
+    assert "，活跃度正常" not in disagree_high_sal["no_signal_reason"]["zh"]
+
+
 def test_b5_10_empty_header_builders_carry_the_nine_fields_at_empty_defaults():
     """Every degraded/insufficient/stale payload must ship the nine B5 fields at
     their empty defaults — never absent-by-branch (contract §5a closing note)."""
@@ -1894,6 +2378,29 @@ def test_b5_10_empty_header_builders_carry_the_nine_fields_at_empty_defaults():
     assert payload["directional_qualified_count"] == 0
     assert payload["event_board_overflow"] == 0 and payload["risk_board_overflow"] == 0
     assert payload["no_signal_exemplar"] is None
+    # F1: the "chains" domain exists at the empty shape too — never a two-domain
+    # source_manifest that only MIXED_VINTAGE (or any other empty-header path) forgot.
+    assert payload["source_manifest"]["chains"] == {"root": None, "member_count": 0, "files": {}}
+
+
+def test_f2a_degraded_payload_public_wrapper_matches_internal_shape():
+    """F2a: `brief.degraded_payload` is the public seam a producer-side check uses
+    to reach the same DEGRADED shape the engine's own internal short-circuits
+    produce — proven here to be byte-identical (besides receipt_id inputs) to
+    `_degraded_payload` for the same reason/panel/receipts."""
+    panel = brief.SessionPanel(as_of_session="2026-03-16", oi_counted_date="2026-03-17",
+                                pending_session=None, pending_reason=None,
+                                chains_by_session={}, chain_next=None, lawful_pairs={})
+    kwargs = dict(panel=panel, source_watermarks={"chains_session_S": "2026-03-16"},
+                  input_receipts=[{"logical_source": "x", "path": "y", "asof": "2026-03-16",
+                                    "sha256": "z", "state": "ok"}],
+                  built_at_utc="2026-01-01T00:00:00+00:00")
+    internal = brief._degraded_payload(reason="UNIVERSE_RESOLUTION_FAILED", **kwargs)
+    public = brief.degraded_payload(reason="UNIVERSE_RESOLUTION_FAILED", **kwargs)
+    assert internal == public
+    assert public["board_state"] == "DEGRADED"
+    assert public["board_reason"] == "UNIVERSE_RESOLUTION_FAILED"
+    assert public["opportunities"] == [] and public["risk_warnings"] == [] and public["event_board"] == []
 
 
 def test_b5_11_end_to_end_artifact_carries_the_nine_fields_with_correct_types():

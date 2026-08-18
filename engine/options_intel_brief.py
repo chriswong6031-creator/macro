@@ -108,6 +108,15 @@ CONFIG: dict[str, Any] = {
     "D1_PERSIST_TH": 0.8,
     "D1_PERSIST_WINDOW": 10,
     "DOI_CLAMP": 3.0,
+    # F4a crowding-defect follow-up (2026-08-18, contract §4): a COVERAGE PREDICATE,
+    # not a scoring threshold — c1 (cross-sectional 0DTE-share percentile) requires
+    # the cross-section to actually EXIST market-wide. A thin session (e.g. 11-16
+    # finite sd_share members out of ~350 present names) can still clear the
+    # absolute MIN_HISTORY(10) floor while representing <5% of the market, letting
+    # a couple of names self-certify as "crowded" against a near-empty peer set.
+    # c1 is None whenever the finite-sd_share population is below this SHARE of
+    # present names, regardless of the absolute MIN_HISTORY floor.
+    "C1_XS_MIN_PRESENT_SHARE": 0.50,
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -327,6 +336,22 @@ def prophet_group_state(reason: str | None) -> str | None:
     if reason is None:
         return None
     return _PROPHET_GROUP_MAP.get(reason, "OTHER")
+
+
+def prophet_group_precedence_rank(reason: str | None) -> int:
+    """F13 (2026-08-18) — precedence rank (lower wins) of a raw group ``reason`` under
+    the SAME closed EXTENDED>ALREADY_OPEN>NOT_READY>READY>OTHER order B4 already uses
+    for cross-domain (plans[] vs groups) collisions. The real artifact can ALSO place
+    one ticker in more than one ``intake.receipts.groups`` bucket in the same file
+    (e.g. both ``not_ready`` and ``ran_too_far``) — the producer's group-reason keep
+    must resolve by this precedence, never by file/iteration order (the bug: a
+    ``ran_too_far`` name rendering as "Entry not ready yet" because ``not_ready``
+    happened to appear earlier in the groups array)."""
+    state = prophet_group_state(reason)
+    try:
+        return _PROPHET_STATE_PRECEDENCE.index(state)
+    except ValueError:
+        return len(_PROPHET_STATE_PRECEDENCE)
 
 
 def prophet_state_combined(plan_state: str | None, group_state: str | None) -> str:
@@ -796,6 +821,7 @@ def _crowd_leg_life(leg: str, *, lives: Mapping[str, Any]) -> int:
 def fresh_until_for(*, direction: str, S: str, session_n_forward_fn,
                      gex_active: bool = False, crowd_fired_legs: Sequence[str] = (),
                      f_e_active: bool = False, event_date: str | None = None,
+                     f_v_active: bool = False,
                      d3_bonus_applied: bool = False,
                      lives: Mapping[str, Any] = CONFIG["FRESH_LIVES_SESSIONS"]) -> str:
     """B3 evidence-derived freshness (Fable's binding rulings, transcribed exactly):
@@ -814,11 +840,21 @@ def fresh_until_for(*, direction: str, S: str, session_n_forward_fn,
     * LONG/SHORT: Q_oi(3) + Q_skew(3) + D_salience(3) always (the direction-qualification
       law requires all three present) ``+`` P/GEX-mechanics(1) when ``M_gex != 1.0``
       (a qualified LONG under caution) ``+`` the fired crowd leg's own life when a crowd
-      multiplier cut this LONG's actionability (same-day c1 -> 0; c2 -> 5; c3 -> 3).
-    * VOLATILITY: event-driven (F_E contributed, i.e. ``f_e_active``) -> the event-close
-      date alone, UNLESS the confidence d3 persist-bonus also applied (D_salience(3)
-      contributed to evidence_confidence), in which case the min of the two; V-driven
-      non-event VOLATILITY (F_V used instead) -> V(5), again refined by the d3 bonus.
+      multiplier cut this LONG's actionability (same-day c1 -> 0; c2 -> 5; c3 -> 3)
+      ``+`` the event-close date (F3a, 2026-08-18) when ``f_e_active`` — for this
+      direction pair that flag carries "the event-contamination multiplier actually
+      entered M_ad" (the caller passes the same ``event_imminent`` gate that
+      :func:`actionability` used, never a bare "in the 45d window" reading) — a LONG
+      whose M_ad was genuinely cut by an imminent event must not claim freshness past
+      that event's close.
+    * VOLATILITY: the V(5) life is included whenever the V family actually
+      contributed (``f_v_active``, F3b, 2026-08-18) OR the card is non-event-driven
+      (``not f_e_active``) — "event-driven ALONE" (V excluded) only holds when F_E is
+      the sole contributor; a GIS-class row where BOTH F_E and F_V contributed to the
+      VOLATILITY route becomes ``min(event_close, V(5), d3-bonus-life)``, never
+      event-close alone. The event-close date itself joins whenever ``f_e_active``
+      (shared with LONG/SHORT above), refined by the d3 persist-bonus life exactly as
+      before.
     * RISK_ONLY (always crowd-fired by construction — ``fallback_route`` only routes
       here when ``c_fire``): the fired leg's own life, refined by the d3 bonus.
     * Anything else (NEUTRAL): life 0 -> fresh_until == S (no lawful positive claim to
@@ -837,7 +873,7 @@ def fresh_until_for(*, direction: str, S: str, session_n_forward_fn,
         if crowd_fired_legs:
             session_lives.append(min(_crowd_leg_life(leg, lives=lives) for leg in crowd_fired_legs))
     elif direction == "VOLATILITY":
-        if not f_e_active:
+        if f_v_active or not f_e_active:
             session_lives.append(int(lives["V"]))
         if d3_bonus_applied:
             session_lives.append(int(lives["D_salience"]))
@@ -852,7 +888,11 @@ def fresh_until_for(*, direction: str, S: str, session_n_forward_fn,
     candidates: list[str] = []
     if session_lives:
         candidates.append(session_n_forward_fn(S, min(session_lives)))
-    if direction == "VOLATILITY" and f_e_active and event_date:
+    # F3a: the event-close date joins the min-set for ANY direction whose caller
+    # marks ``f_e_active`` — for LONG/SHORT the caller only sets this when the event
+    # contamination multiplier genuinely entered M_ad (event_imminent), never merely
+    # "in the 45d window"; for VOLATILITY it is the pre-existing event-driven case.
+    if f_e_active and event_date:
         candidates.append(event_date)
     if not candidates:
         candidates.append(S)
@@ -932,17 +972,32 @@ def compose_risk_board(risk_cards: Sequence[Mapping[str, Any]], *, cap: int = CO
 
 # AD-1 B5 §4.9 — the no-signal exemplar's own closed-vocabulary reason, keyed purely
 # on the exemplar's own Q_oi/Q_skew leg state (never a new gate; display-only, no
-# score/order authority). Three entries, deterministic.
+# score/order authority). F5 (2026-08-18): FOUR entries, reading the ACTUAL failing
+# gate — a name whose Q_oi/Q_skew legs are BOTH active and AGREE in sign (the
+# direction law's own leg predicate is satisfied) is a fundamentally different
+# no-signal case from one where the legs themselves never moved: the former means
+# classify_direction's SALIENCE gate (or a downstream low-R cut) is what actually
+# withheld a hypothesis, never "the legs are inside their normal range" — that
+# claim is reserved for a genuinely quiet leg pair.
 _NO_SIGNAL_REASON_EN = {
-    "DISAGREE": "the two readings disagree and activity is normal",
-    "ONE_SIDED": "only one reading moved and activity is normal",
-    "WEAK": "both readings are inside their normal range",
+    "LEGS_BELOW_THRESHOLD": "both readings are inside their normal range",
+    "ONE_SIDED": "only one reading moved",
+    "DISAGREE": "the two readings disagree",
+    "SALIENCE_FAIL": "readings agree but activity is ordinary",
 }
 _NO_SIGNAL_REASON_ZH = {
-    "DISAGREE": "两项读数不一致，活跃度正常",
-    "ONE_SIDED": "仅一项读数变动，活跃度正常",
-    "WEAK": "两项读数均在正常区间内",
+    "LEGS_BELOW_THRESHOLD": "两项读数均在正常区间内",
+    "ONE_SIDED": "仅一项读数变动",
+    "DISAGREE": "两项读数不一致",
+    "SALIENCE_FAIL": "读数一致，但活跃度平平",
 }
+# The "...and activity is normal" / "，活跃度正常" clause on ONE_SIDED/DISAGREE may
+# ONLY render when D_salience is ACTUALLY below SALIENCE_TH (F5) — claiming
+# "activity is normal" beside an elevated D_salience would be false (the legs, not
+# salience, are why no hypothesis fired). SALIENCE_FAIL's own text never takes this
+# suffix — it already names activity/salience directly.
+_NO_SIGNAL_ACTIVITY_NORMAL_SUFFIX_EN = " and activity is normal"
+_NO_SIGNAL_ACTIVITY_NORMAL_SUFFIX_ZH = "，活跃度正常"
 
 
 def _evidence_value(card: Mapping[str, Any], name: str) -> float | None:
@@ -956,14 +1011,19 @@ def no_signal_reason_state(q_oi_v: float | None, q_skew_v: float | None,
                             *, q_th: float = CONFIG["Q_TH"]) -> str:
     """Pure leg-state classifier feeding :data:`_NO_SIGNAL_REASON_EN`/``_ZH`` — the
     same two readings (Q_oi, Q_skew) and the same ``Q_TH`` gate the direction law
-    itself uses (contract §4), never a new threshold."""
+    itself uses (contract §4), never a new threshold. F5: legs both active AND
+    agreeing in sign (the direction law's own Q-leg predicate satisfied) is
+    ``SALIENCE_FAIL`` — a materially different state from a genuinely quiet leg
+    pair (``LEGS_BELOW_THRESHOLD``); the caller (:func:`no_signal_exemplar`)
+    additionally gates the ONE_SIDED/DISAGREE "activity is normal" clause on the
+    exemplar's actual D_salience reading, never on leg state alone."""
     oi_active = q_oi_v is not None and abs(q_oi_v) >= q_th
     sk_active = q_skew_v is not None and abs(q_skew_v) >= q_th
     if oi_active and sk_active:
-        return "DISAGREE" if (q_oi_v > 0) != (q_skew_v > 0) else "WEAK"
+        return "DISAGREE" if (q_oi_v > 0) != (q_skew_v > 0) else "SALIENCE_FAIL"
     if oi_active or sk_active:
         return "ONE_SIDED"
-    return "WEAK"
+    return "LEGS_BELOW_THRESHOLD"
 
 
 def no_signal_exemplar(cards: Sequence[Mapping[str, Any]]) -> dict | None:
@@ -974,7 +1034,14 @@ def no_signal_exemplar(cards: Sequence[Mapping[str, Any]]) -> dict | None:
     cands.sort(key=lambda c: (-c.get("tier_metric", 0.0), c["symbol"]))
     exemplar = dict(cands[0])
     state = no_signal_reason_state(_evidence_value(exemplar, "Q_oi"), _evidence_value(exemplar, "Q_skew"))
-    exemplar["no_signal_reason"] = {"en": _NO_SIGNAL_REASON_EN[state], "zh": _NO_SIGNAL_REASON_ZH[state]}
+    en, zh = _NO_SIGNAL_REASON_EN[state], _NO_SIGNAL_REASON_ZH[state]
+    if state in ("ONE_SIDED", "DISAGREE"):
+        d_sal_v = _evidence_value(exemplar, "D_salience")
+        salience_low = d_sal_v is None or d_sal_v < CONFIG["SALIENCE_TH"]
+        if salience_low:
+            en += _NO_SIGNAL_ACTIVITY_NORMAL_SUFFIX_EN
+            zh += _NO_SIGNAL_ACTIVITY_NORMAL_SUFFIX_ZH
+    exemplar["no_signal_reason"] = {"en": en, "zh": zh}
     return exemplar
 
 
@@ -1180,9 +1247,13 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         )
 
     if panel.stale:
+        # F8: present_names (the S chain's own name set) is already known at this
+        # point — populate `present` from it rather than leaving the Eligibility
+        # default 0 beside a real source_coverage_pct (itself derived FROM
+        # present_names two paragraphs up).
         return _stale_payload(
             panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
-            built_at_utc=built_at_utc, universe_count=universe_count,
+            built_at_utc=built_at_utc, present=len(present_names), universe_count=universe_count,
             source_coverage_pct=source_coverage_pct, source_manifest=source_manifest,
         )
 
@@ -1260,6 +1331,14 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
                                source_coverage_pct=source_coverage_pct)
     cards: list[dict[str, Any]] = []
     xs_today = {k: {n: metrics_by_session[S][n].get(k) for n in present_names} for k in ("term", "sd_share")}
+    # F4a — c1's own COVERAGE PREDICATE (contract §4, crowding-defect follow-up): the
+    # cross-section must actually exist market-wide, not merely clear the absolute
+    # MIN_HISTORY floor. A thin session's finite-sd_share population below
+    # C1_XS_MIN_PRESENT_SHARE of present names makes c1 None universe-wide this
+    # session, same "honest family absence" shape as the MIN_HISTORY floor itself.
+    _sd_finite_n = sum(1 for v in xs_today["sd_share"].values() if _finite(v))
+    c1_xs_present = (len(present_names) > 0
+                      and _sd_finite_n >= CONFIG["C1_XS_MIN_PRESENT_SHARE"] * len(present_names))
     v1_today: dict[str, float | None] = {n: metrics_by_session[S][n].get("atm_iv") for n in present_names}
     spreads: dict[str, float | None] = {}
     for n in present_names:
@@ -1354,7 +1433,7 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         q_skew_v = q_skew(skew_delta_today.get(n), skew_delta_hist.get(n, []))
 
         # C family
-        c1 = percentile_xs(xs_today["sd_share"], n)
+        c1 = percentile_xs(xs_today["sd_share"], n) if c1_xs_present else None
         c2 = 0
         hist_spot = panel.summary_spot.get(n) or []
         window_spot = hist_spot[-CONFIG["LOOKBACK"]:]
@@ -1386,10 +1465,14 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         if p_v2 is not None:
             fresh_ok = len(hist_spot) > 0  # summary series exists and contributed -> current by construction
 
+        # F6 — sessions S->event (shared by event_imminent's contamination gate below
+        # AND the event-board's own event_implied_move_pct emission), computed once
+        # per in-event name regardless of direction.
+        event_gap = sessions_apart_fn(S, ed) if (in_event and ed) else None
+
         event_imminent = False
         if in_event and direction in ("LONG", "SHORT"):
-            gap = sessions_apart_fn(S, ed) if ed else None
-            event_imminent = gap is not None and gap <= CONFIG["EVENT_CONTAM_SESSIONS"]
+            event_imminent = event_gap is not None and event_gap <= CONFIG["EVENT_CONTAM_SESSIONS"]
 
         m_gex_value = m_gex_multiplier(direction, gex_verdict)
         es = evidence_strength(direction, q_oi_v=q_oi_v, q_skew_v=q_skew_v, d_sal=d_sal,
@@ -1405,10 +1488,17 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         # `evidence_confidence`'s own persist-bonus condition exactly (contract ruling:
         # "the confidence d3 bonus is salience evidence").
         d3_bonus_applied = (d3 or 0.0) >= 0.5
+        # F3a: for LONG/SHORT, "f_e_active" must mean the event contamination
+        # multiplier actually entered M_ad (event_imminent, the same gate
+        # `actionability()` used just above) -- never merely "in the 45d window with
+        # a valid F_E reading" (that weaker condition would truncate freshness for
+        # cards the event never actually touched). VOLATILITY/RISK_ONLY keep the
+        # pre-existing "F_E computed at all" reading.
+        fresh_event_active = event_imminent if direction in ("LONG", "SHORT") else (in_event and f_e is not None)
         fresh_until_date = fresh_until_for(
             direction=direction, S=S, session_n_forward_fn=session_n_forward_fn,
             gex_active=(m_gex_value != 1.0), crowd_fired_legs=fired_legs,
-            f_e_active=(in_event and f_e is not None), event_date=ed,
+            f_e_active=fresh_event_active, event_date=ed, f_v_active=(f_v is not None),
             d3_bonus_applied=d3_bonus_applied,
         )
 
@@ -1465,6 +1555,15 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
                     ("NORMAL" if p_xs_event is not None else None)
                 ),
                 "fresh_until": panel.event_date.get(n),
+                # F6 — event-horizon implied move (existing market_implied_move_pct
+                # primitive, event_horizon_sessions=sessions S->event via the
+                # producer-injected NYSE calendar); the card-level
+                # `market_implied_move_pct` below stays the unchanged 5-session read
+                # with its own horizon label — this is the event rail's OWN figure.
+                "event_implied_move_pct": (
+                    round(market_implied_move_pct(m.get("atm_iv"), event_horizon_sessions=event_gap), 6)
+                    if event_gap is not None and m.get("atm_iv") else None
+                ),
             } if in_event else None),
             "market_implied_move_pct": (round(market_implied_move_pct(m.get("atm_iv"), horizon_sessions=5), 6)
                                          if direction in ("LONG", "SHORT", "VOLATILITY") and m.get("atm_iv") else None),
@@ -1574,9 +1673,16 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
 
 def _empty_source_manifest() -> dict[str, Any]:
     """The B1 ``source_manifest`` shape when the producer hasn't (or couldn't) resolve
-    one — e.g. MIXED_VINTAGE, where no chain[S] was ever loaded to consume anything."""
+    one — e.g. MIXED_VINTAGE, where no chain[S] was ever loaded to consume anything.
+    F1 (2026-08-18): ``chains`` is a third domain alongside ``gex_summary``/
+    ``gex_confirm`` — every chain parquet actually loaded (all sessions <= S used for
+    histories, plus D), closing the historical-chain receipt-closure blocker."""
     empty_domain = {"root": None, "member_count": 0, "files": {}}
-    return {"gex_summary": dict(empty_domain, files={}), "gex_confirm": dict(empty_domain, files={})}
+    return {
+        "gex_summary": dict(empty_domain, files={}),
+        "gex_confirm": dict(empty_domain, files={}),
+        "chains": dict(empty_domain, files={}),
+    }
 
 
 def _base_header(*, panel: SessionPanel, source_watermarks, input_receipts, built_at_utc,
@@ -1618,10 +1724,34 @@ def _degraded_payload(*, reason: str, panel: SessionPanel, source_watermarks, in
                          eligibility=eligibility, source_manifest=source_manifest)
 
 
+def degraded_payload(*, reason: str, panel: SessionPanel, source_watermarks,
+                      input_receipts, built_at_utc, eligibility: Eligibility | None = None,
+                      source_manifest: Mapping[str, Any] | None = None) -> dict:
+    """Public entry point for a PRODUCER-detected fail-closed short-circuit (F2a:
+    ``UNIVERSE_RESOLUTION_FAILED`` when ``include_baskets`` is configured true but the
+    resolved universe came back no larger than the anchor list — the observable
+    signature of ``engine/options_universe.py::baskets_universe()``'s own
+    swallowed-error empty return, detected in the producer since this module never
+    touches that file). Thin wrapper over the existing DEGRADED payload builder —
+    every other DEGRADED reason (``ELIGIBILITY_COLLAPSE``, ``MIXED_VINTAGE``) is still
+    engine-detected via :func:`_degraded_payload` internally; this is the one seam a
+    producer-side check needs to reach the same board_state/board_reason shape."""
+    return _degraded_payload(reason=reason, panel=panel, source_watermarks=source_watermarks,
+                              input_receipts=input_receipts, built_at_utc=built_at_utc,
+                              eligibility=eligibility, source_manifest=source_manifest)
+
+
 def _stale_payload(*, panel: SessionPanel, source_watermarks, input_receipts, built_at_utc,
-                    universe_count: int | None = None, source_coverage_pct: float | None = None,
+                    present: int = 0, universe_count: int | None = None,
+                    source_coverage_pct: float | None = None,
                     source_manifest: Mapping[str, Any] | None = None) -> dict:
-    elig = Eligibility(universe_count=universe_count, source_coverage_pct=source_coverage_pct)
+    """F8 (2026-08-18): ``present`` is populated from the S chain that WAS already
+    read before the staleness check fires (``present_names`` is known by this point
+    in :func:`build_intel_brief`) — a bare ``0`` here beside a real
+    ``source_coverage_pct`` (itself derived FROM ``present_names``) was an incoherent
+    header: the coverage fraction implied hundreds of real names while ``present``
+    claimed none were ever loaded."""
+    elig = Eligibility(present=present, universe_count=universe_count, source_coverage_pct=source_coverage_pct)
     return _base_header(panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
                          built_at_utc=built_at_utc, board_state="STALE_SOURCE", board_reason=None,
                          eligibility=elig, source_manifest=source_manifest)

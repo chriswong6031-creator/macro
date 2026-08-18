@@ -412,12 +412,20 @@ def _b5_healthy_with_cards_brief() -> dict:
         {"board_rank": 9, "symbol": "XOM", "direction": "SHORT"},
     ]
     events = [
-        {"symbol": "QQQ", "event": {"event_date": "2026-08-21", "event_premium_state": "HIGH"},
-         "market_implied_move_pct": 0.08, "board_rank": 4, "null_reason": None},
-        {"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL"},
-         "market_implied_move_pct": 0.05, "board_rank": None, "null_reason": None},
-        {"symbol": "ORCL", "event": {"event_date": "2026-09-02", "event_premium_state": "LOW"},
-         "market_implied_move_pct": 0.04, "board_rank": None, "null_reason": None},
+        # F6 (2026-08-18): the event rail's OWN move figure lives inside `event.
+        # event_implied_move_pct` — a card-level `market_implied_move_pct` (0.041,
+        # the unchanged 5-session read every _b5_opp_card carries) is ALSO present
+        # here to prove the two are read from genuinely different fields, never
+        # conflated.
+        {"symbol": "QQQ", "event": {"event_date": "2026-08-21", "event_premium_state": "HIGH",
+                                     "event_implied_move_pct": 0.08},
+         "market_implied_move_pct": 0.041, "board_rank": 4, "null_reason": None},
+        {"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL",
+                                     "event_implied_move_pct": 0.05},
+         "market_implied_move_pct": 0.041, "board_rank": None, "null_reason": None},
+        {"symbol": "ORCL", "event": {"event_date": "2026-09-02", "event_premium_state": "LOW",
+                                      "event_implied_move_pct": 0.04},
+         "market_implied_move_pct": 0.041, "board_rank": None, "null_reason": None},
     ]
     risks = [
         {"symbol": "TSLA", "crowding": {"fired": ["c1", "c2"], "severity": 0.9}, "board_rank": 5, "null_reason": None},
@@ -532,6 +540,34 @@ def test_b5_band2_watch_prints_real_gapped_ordinals_in_array_order():
     assert "+2" in sec   # directional_watch_overflow
 
 
+def test_f10_watch_row_refuses_unexpected_direction_never_fabricates_upside(capsys):
+    """F10 (2026-08-18): a directional_watch row carrying a direction other than
+    LONG/SHORT (a producer/adapter contract mismatch — this array is supposed to
+    carry LONG/SHORT exclusively) must be OMITTED, never rendered as a fabricated
+    "Upside" (the pre-fix `.get(direction, ...LONG...)` fallback). One
+    ::warning-style annotation is emitted for the omitted row; the lawful rows
+    around it still render, array order preserved."""
+    brief_payload = _b5_healthy_with_cards_brief()
+    brief_payload["directional_watch"] = [
+        {"board_rank": 7, "symbol": "AMD", "direction": "LONG"},
+        {"board_rank": 8, "symbol": "GLITCH", "direction": "VOLATILITY"},   # unexpected
+        {"board_rank": 9, "symbol": "XOM", "direction": "SHORT"},
+    ]
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief_payload)
+    sec = _aib_section(page)
+    assert "AMD" in sec and "XOM" in sec
+    assert "GLITCH" not in sec, "unexpected-direction row rendered instead of being omitted"
+    assert _order_ok(sec, "AMD", "XOM")
+
+    out = capsys.readouterr().out
+    lines = [ln for ln in out.splitlines() if "GLITCH" in ln]
+    assert lines, "no annotation emitted for the omitted row"
+    assert lines[0].startswith("::warning"), \
+        "annotation must START the line for GitHub to surface it (house law) — " \
+        f"got: {lines[0]!r}"
+    assert "VOLATILITY" in lines[0]
+
+
 def test_b5_band2_omitted_when_watch_empty_but_qualified_positive():
     """§6: empty strip AND directional_qualified_count>0 -> band OMITTED
     entirely (not even the null line) — the six cards above already contain
@@ -571,6 +607,41 @@ def test_b5_band3_event_rail_populated_with_backref_and_without():
     assert "+1" in sec                          # events_overflow
 
 
+def test_f6_event_rail_move_pct_reads_event_implied_move_never_card_level():
+    """F6 (2026-08-18): the event rail's ± figure must come from
+    `event.event_implied_move_pct` (QQQ's fixture value 0.08 -> "±8.0%"), never
+    the card-level `market_implied_move_pct` (0.041 -> "±4.1%", which every
+    _b5_opp_card ALSO carries, hence legitimately appears in the Band-1 grid) —
+    the two coexist in the fixture specifically so a regression back to the old
+    field would print the wrong number. Scoped to just the event-rail slice (not
+    the whole #aib panel) since ±4.1% is EXPECTED to appear in the grid cards."""
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "±4.1%" in sec, "sanity: the card-level move should still render in the grid"
+    rail_start = sec.index("Ahead of an event")
+    rail_end = sec.index("Crowded tape", rail_start)
+    event_rail = sec[rail_start:rail_end]
+    assert "±8.0%" in event_rail    # QQQ event_implied_move_pct
+    assert "±5.0%" in event_rail    # LLY event_implied_move_pct
+    assert "±4.0%" in event_rail    # ORCL event_implied_move_pct
+    assert "±4.1%" not in event_rail, "event rail printed the card-level 5-session move, not its own event-horizon figure"
+
+
+def test_f10_event_tooltip_claim_scoped_to_event_moves_not_the_crowding_copy():
+    """F10 (2026-08-18): the event-rail tooltip's "never says X is cheap or
+    expensive" claim must be scoped to an EVENT move specifically (EN "...an event
+    move is cheap or expensive.") — the OLD unscoped wording ("...a move is cheap
+    or expensive.") contradicted the crowding rail's own tooltip, which
+    legitimately calls options "costly" (c2 leg, "Expensive options at a high") a
+    few lines below on the SAME panel."""
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "it never says an event move is cheap or expensive" in sec
+    assert "绝不表示某次事件变动是便宜还是昂贵" in sec
+    # the crowding rail's own "costly options" language coexists without contradiction
+    assert "options costly while price sits at a high" in sec
+
+
 def test_b5_band3_event_rail_empty_causes_never_collapse():
     none_page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief())
     none_sec = _aib_section(none_page)
@@ -585,8 +656,9 @@ def test_b5_band3_event_rail_empty_causes_never_collapse():
 def test_b5_band3_event_rail_shows_populated_rows_on_the_quiet_scene():
     """Design packet §2 Scene B / §6: the rails may still speak even though
     Band 1's grid and Band 2's strip are both empty."""
-    events = [{"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL"},
-               "market_implied_move_pct": 0.05, "board_rank": None, "null_reason": None}]
+    events = [{"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL",
+                                           "event_implied_move_pct": 0.05},
+               "market_implied_move_pct": 0.041, "board_rank": None, "null_reason": None}]
     page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief(events=events))
     sec = _aib_section(page)
     assert "oew-aib-empty" in sec

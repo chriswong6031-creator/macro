@@ -92,15 +92,36 @@ The header's `eligibility` block additionally reports `universe_count` and
 No collector is invoked; no network; missing optional input → family absent; missing core
 input (chains for the pair) → `STALE_SOURCE`/`DEGRADED` per §5.
 
-**B1 — receipt closure.** Every score-affecting per-symbol input the producer actually
-reads must bind the receipt: `data/polygon_gex/summary_{SYM}.parquet` (input #2) for
-every name present in chain[S], and every `site/gex/{SYM}.json` (input #3) whose own
-`meta.asof` binds to S (a file opened but rejected for a stale `asof` was never
-"consumed" — its bytes never influenced the payload, so it is deliberately excluded).
-The producer hashes exactly this consumed set (never the whole directory) into a
-deterministic `source_manifest` (§5) and folds a merkle-style aggregate root per domain
-into `input_receipts` — see §5's `receipt_id` formula, which already hashes the full
-`input_receipts` list, so the two roots are what actually binds them.
+**B1 — receipt closure (F1 extends this, 2026-08-18).** Every score-affecting
+per-symbol input the producer actually reads must bind the receipt:
+`data/polygon_gex/summary_{SYM}.parquet` (input #2) for every name present in
+chain[S], every `site/gex/{SYM}.json` (input #3) whose own `meta.asof` binds to S (a
+file opened but rejected for a stale `asof` was never "consumed" — its bytes never
+influenced the payload, so it is deliberately excluded), and — the F1 fix —
+**every `data/polygon_gex/chains/{session}.parquet` actually loaded** (input #1):
+all sessions ≤ S consumed for d1/d3/Q_oi/skew HISTORY, plus D. Pre-F1, a historical
+(< S) chain contributed to every history-dependent feature but was never hashed
+anywhere, so mutating one moved the payload without ever moving `receipt_id` — the
+blocker Sol's review closed. The producer hashes exactly this consumed set (never
+the whole directory) into a deterministic `source_manifest` (§5) and folds a
+merkle-style aggregate root per domain (`gex_summary`, `gex_confirm`, and now
+`chains`) into `input_receipts` — see §5's `receipt_id` formula, which already
+hashes the full `input_receipts` list, so the three roots are what actually binds
+them. `input_receipts` also carries a **`universe_resolution`** entry (F1): `sha256
+(canonical_json(sorted(universe_list))) + count` over the resolved universe (input
+#7) — the resolved universe now binds into `receipt_id` too, same as every other §2
+source (superseding the earlier "the universe list deliberately does NOT
+participate in receipt_id" note).
+
+**F2a — universe resolution fails CLOSED (producer-only).** After resolving input
+#7, if the config says `include_baskets: true` but the resolved universe came back
+no larger than the config anchor list — the OBSERVABLE signature of
+`options_universe.baskets_universe()`'s own swallowed-error empty return (that
+function logs and returns `[]` on any read failure, by design, rather than raising)
+— the board fails CLOSED: `board_state = "DEGRADED"`, `board_reason =
+"UNIVERSE_RESOLUTION_FAILED"`, cards withheld. `engine/options_universe.py` is a
+shared plane and is NEVER edited for this check; the probe lives entirely in
+`scripts/build_options_intel_brief.py`.
 
 ## 3. Frozen CONFIG (every constant; tests pin verbatim)
 
@@ -157,6 +178,10 @@ DTE_BUCKETS              = {0-7, 8-30, 31-90, >90}
 MONEYNESS_BUCKETS        = {<=0.95, 0.95-1.05, >=1.05}
 D1_PERSIST_TH            = 0.8 ; D1_PERSIST_WINDOW = 10
 DOI_CLAMP                = 3.0         # z clamped to [-3,3]/3
+C1_XS_MIN_PRESENT_SHARE  = 0.50        # F4a: c1 COVERAGE PREDICATE (not a scoring threshold) —
+                                        # finite-sd_share population must be >= this share of
+                                        # present names, else c1 = None universe-wide regardless
+                                        # of the absolute MIN_HISTORY floor
 ```
 
 ## 4. Feature semantics (v1.2 — see AD-1 handoff §5.3 for prose law)
@@ -187,6 +212,14 @@ DOI_CLAMP                = 3.0         # z clamped to [-3,3]/3
 - C family: c1 = XS rank of 0DTE volume share (≥0.90 fires); c2 = v1 ≥ 0.95 AND spot ≥ 0.98×
   max spot over min(20,H) (floor 10); c3 = d1 ≥ 0.95 ∧ d3 ≥ 0.5 ∧ v2 ≥ 0.90. Severity =
   max(fired inputs).
+  - **c1 cross-section COVERAGE PREDICATE (F4a, 2026-08-18)**: c1 is computed ONLY
+    when the finite-`sd_share` population is ≥ `C1_XS_MIN_PRESENT_SHARE` (0.50) of
+    present names — a coverage predicate ("does the cross-section exist market-wide"),
+    explicitly NOT a scoring threshold. A thin session (e.g. 11-16 finite of ~350
+    present) could clear the absolute `MIN_HISTORY`(10) floor alone while
+    representing <5% of the market, letting a couple of names self-certify as
+    "crowded" against a near-empty peer set; below the share, c1 = None
+    universe-wide for that session (honest family absence).
   - Cross-sectional percentile convention (`percentile_xs`, crowding-defect ruling,
     2026-08-18, `MODEL_VERSION` unchanged at v1.2 — this is a primitive-correctness fix,
     not a semantic model revision): MIDRANK ties — `p = (count_strictly_less + 0.5·count_equal) / n`. A
@@ -232,15 +265,26 @@ DOI_CLAMP                = 3.0         # z clamped to [-3,3]/3
   - LONG/SHORT: Q_oi(3) + Q_skew(3) + D_salience(3) always (the direction law requires
     all three present) `+` P/GEX-mechanics(1) when `M_gex ≠ 1.0` (a qualified LONG under
     caution) `+` the fired crowd leg's own life when a crowd multiplier cut this LONG's
-    actionability. A qualified LONG with `M_gex=0.75` -> `fresh_until` = next session
-    (life 1 wins the min). A LONG cut by the crowd multiplier where the firing leg is
-    same-day `c1` -> current-session expiry (life 0).
+    actionability `+` the event-close date (**F3a, 2026-08-18**) whenever the event
+    contamination multiplier actually entered `M_ad` for this card (the same
+    `event_imminent` gate `actionability()` used, never merely "in the 45d event
+    window") — a LONG whose `M_ad` was genuinely cut by an imminent event must not
+    claim freshness past that event's close. A qualified LONG with `M_gex=0.75` ->
+    `fresh_until` = next session (life 1 wins the min). A LONG cut by the crowd
+    multiplier where the firing leg is same-day `c1` -> current-session expiry (life 0).
   - Crowd leg lives (used for RISK_ONLY too, always crowd-fired by construction — the
     only route to RISK_ONLY): `c1` (same-day/0DTE) = 0; `c2` (V(5) + spot-history(5)) =
     5; `c3` (min(D_salience(3), V(5))) = 3. Multiple fired legs -> the MIN across them.
-  - VOLATILITY: event-driven (F_E contributed) -> the event-close date, refined by
-    `min()` against D_salience(3) when the confidence d3 persist-bonus also applied;
-    V-driven non-event VOLATILITY (F_V used instead) -> V(5), same d3 refinement.
+  - VOLATILITY: the event-close date joins whenever the event contamination entered
+    the route (F_E contributed), refined by `min()` against D_salience(3) when the
+    confidence d3 persist-bonus also applied. **F3b (2026-08-18)**: the V(5) life is
+    ALSO included whenever the V family genuinely contributed to the route
+    (`f_v_active`) OR the card is non-event-driven — "event-driven ALONE" (V
+    excluded) only holds when F_E is the sole contributor; a GIS-class row where
+    BOTH F_E and F_V contributed becomes `min(event_close, V(5), d3-bonus-life)`,
+    never event-close alone (the pre-fix defect: V's tighter life was silently
+    dropped whenever any F_E reading existed, even a far one outside V's own
+    5-session life).
   - The confidence d3 persist-bonus (`evidence_confidence`'s `[d3 ≥ 0.5]` term) is
     ITSELF salience evidence (life 3) and folds into every direction's contribution set
     — a no-op for LONG/SHORT (D_salience(3) is already unconditionally present there).
@@ -264,15 +308,20 @@ built_at_utc              ISO-8601 (provenance only; excluded from receipt)
 source_watermarks         {chains_session_S, chains_session_D, summaries_max_session,
                            events_loaded(bool), prophet_asof|null, signing_gate_asof}
 input_receipts[]          {logical_source, path, asof, sha256, state} (B1: includes the
-                          gex_summary_manifest/gex_confirm_manifest aggregate-root entries)
+                          gex_summary_manifest/gex_confirm_manifest aggregate-root entries,
+                          the F1 chains_manifest aggregate-root entry (every chain parquet
+                          actually loaded, all sessions <= S plus D), and the F1
+                          universe_resolution entry {sha256, count} over the resolved §2
+                          input #7 universe list — ALL FOUR bind into receipt_id)
 eligibility               {present, eligible, insufficient_history, insufficient_coverage,
                           universe_count, source_coverage_pct}   (B2, last two)
 board_state               "OK" | "NO_SIGNAL" | "INSUFFICIENT_COVERAGE" | "STALE_SOURCE" | "DEGRADED"
-board_reason              null | "ELIGIBILITY_COLLAPSE" | "MIXED_VINTAGE" | "NO_SETTLED_OI_PAIR" | ...
-source_manifest           (B1) {gex_summary, gex_confirm} — each domain:
-                          {root: sha256|null, member_count: int, files: {path: sha256}}
+board_reason              null | "ELIGIBILITY_COLLAPSE" | "MIXED_VINTAGE" | "NO_SETTLED_OI_PAIR" |
+                          "UNIVERSE_RESOLUTION_FAILED" (F2a) | ...
+source_manifest           (B1, F1 adds a third domain) {gex_summary, gex_confirm, chains} —
+                          each domain: {root: sha256|null, member_count: int, files: {path: sha256}}
                           sorted by path; root = sha256(canonical_json(sorted(files.items())));
-                          the two roots are ALSO folded into input_receipts above (that is
+                          the roots are ALSO folded into input_receipts above (that is
                           what actually binds them into receipt_id, not this field itself)
 receipt_id                sha256(canonical_json({schema, model_version, as_of_session,
                           oi_counted_date, source_watermarks, sorted(input_receipts)}))
@@ -295,8 +344,18 @@ evidence[]                {name, value, history_n, observed_or_inferred}
 contradictions[]          deterministic
 mechanics_context         {gex_confirm_verdict|null, gamma_regime|null, flip_proximity|null}
 crowding                  {fired[], severity} | null
-event                     {event_date, history_mode, event_premium_state, ...} | null
-market_implied_move_pct   float | null  (+ horizon basis)
+event                     {event_date, history_mode, event_premium_state,
+                          event_implied_move_pct, ...} | null — event_implied_move_pct
+                          (F6, 2026-08-18) is `market_implied_move_pct(atm_iv,
+                          event_horizon_sessions=<sessions S->event via
+                          lib/nyse_calendar>)`, a GENUINELY DIFFERENT figure from the
+                          card-level market_implied_move_pct below (always the
+                          unchanged 5-session read, unaffected by this field); the
+                          adapter's event rail uses event_implied_move_pct, never the
+                          card-level figure
+market_implied_move_pct   float | null  (+ horizon basis; always the 5-session read —
+                          see event.event_implied_move_pct above for the event rail's
+                          OWN figure)
 trigger_watch             deterministic string (what would confirm)
 invalidation_watch        deterministic string (what would change the read)
 fresh_until               YYYY-MM-DD — evidence-derived per the card's ACTUAL contribution
@@ -350,18 +409,36 @@ event_board_overflow                  int >=0 — event-eligible members beyond 
                                        existing EVENT_BOARD_N (4) cap.
 risk_board_overflow                   int >=0 — risk-eligible members beyond the
                                        existing RISK_BOARD_N (4) cap.
-no_signal_exemplar.no_signal_reason   {en, zh} — deterministic 3-entry closed
-                                       vocabulary keyed purely on the exemplar's own
+no_signal_exemplar.no_signal_reason   {en, zh} — deterministic FOUR-entry closed
+                                       vocabulary (F5, 2026-08-18 — reads the ACTUAL
+                                       failing gate) keyed on the exemplar's own
                                        Q_oi/Q_skew leg state (same two readings + the
                                        same Q_TH gate the direction law itself uses,
-                                       never a new threshold):
-                                         both active, opposite sign -> "the two
-                                           readings disagree and activity is normal"
-                                         exactly one active                -> "only one
-                                           reading moved and activity is normal"
-                                         neither active (or both active, same sign)
-                                           -> "both readings are inside their normal
-                                           range" (default)
+                                       never a new threshold) PLUS its D_salience
+                                       reading vs SALIENCE_TH:
+                                         both legs active, opposite sign -> "the two
+                                           readings disagree" (+" and activity is
+                                           normal" ONLY when D_salience is actually
+                                           below SALIENCE_TH)
+                                         exactly one leg active -> "only one reading
+                                           moved" (same D_salience-gated suffix)
+                                         neither leg active -> "both readings are
+                                           inside their normal range" (default,
+                                           no suffix — this entry never claimed
+                                           anything about salience to begin with)
+                                         both legs active AND agreeing in sign (the
+                                           direction law's OWN Q-leg predicate
+                                           satisfied — Q-pass-salience-fail) -> "readings
+                                           agree but activity is ordinary" (the 4th
+                                           entry; NEVER the "inside their normal
+                                           range" wording, which would be false — the
+                                           legs did move)
+                                       The "...and activity is normal" clause on the
+                                       first two entries may ONLY render when
+                                       D_salience is genuinely below SALIENCE_TH —
+                                       claiming "activity is normal" beside an
+                                       elevated D_salience would misattribute a
+                                       leg-state no-signal to salience.
                                        Producer-side so the UI stays dumb; null only
                                        when no_signal_exemplar itself is null.
 ```
@@ -389,13 +466,21 @@ never affects any score):
   collisions exist — e.g. BIIB: plans[].entry_status=`bounce_wait` → NOT_READY, but
   receipts.groups reason=`ran_too_far` → EXTENDED):
   `EXTENDED > ALREADY_OPEN > NOT_READY > READY > OTHER > UNAVAILABLE`.
+- **Same-domain duplicate-ticker precedence (F13, 2026-08-18)**: a ticker can ALSO
+  appear in more than one `intake.receipts.groups` bucket within the SAME file
+  (e.g. both `not_ready` and `ran_too_far` for one symbol). The producer's
+  group-reason keep resolves by this SAME ruled precedence, never by
+  array/file order — a plain keep-first was rendering a genuinely
+  `ran_too_far`/EXTENDED name as "Entry not ready yet" whenever `not_ready`
+  happened to be enumerated first.
 - Absent from BOTH domains → UNAVAILABLE. Never blank.
 - OTHER's display words are `"Reviewed · no entry call"` / `"已评估 · 无入场判定"`
   (EXTENDED/ALREADY_OPEN/NOT_READY/READY/UNAVAILABLE words unchanged) — the word table
   itself lives in `scripts/build_options_command.py` (`_AIB_PROPHET_EN`/`_AIB_PROPHET_ZH`,
   outside this packet's OWNED FILES; the enum-level resolution above is complete and
-  correct as of this contract, but the downstream word swap for OTHER is a NAMED FOLLOW-UP,
-  not yet applied — see the B1-B4 fix's GAPS).
+  correct as of this contract, and the downstream word swap for OTHER **IS applied**
+  (F14, 2026-08-18 — the prior "not yet applied" note was itself stale; verify against
+  `_AIB_PROPHET_EN["OTHER"]` in that file).
 
 ## 6. Authority table
 
@@ -432,3 +517,55 @@ A spec change demanding more depth than the canonical producer supplies must fai
   would suggest. Recorded as a v1.3 candidate (tighten the bucket-rank aggregation or the
   `D1_PERSIST_TH`/`C3_D1` thresholds against the inflated distribution); NOT touched by the
   crowding-defect fix above — `d1`/`d3` aggregation is explicitly out of scope for that ruling.
+- **Universe + earnings calendar are AS-OF-NOW vintage (E1 review, 2026-08-18).** Both
+  `engine/options_universe.py::gex_symbols()` (§2 input #7) and
+  `data/earnings/earnings.parquet` (§2 input #4) are read at BUILD TIME with no
+  point-in-time (PIT) store behind either — a backfilled or corrected historical
+  build re-reads TODAY's universe/calendar, not the vintage that was actually live
+  on the as-of-session in question. No PIT store exists for either input yet;
+  minting one is explicitly OUT OF SCOPE for this wave (a genuine new data-plane
+  commitment, not a scoring fix). Every receipt this contract mints (including F1's
+  `universe_resolution` entry) still binds the ACTUAL bytes/list read at build time —
+  the limitation is vintage fidelity for reconstruction, not receipt honesty.
+- **Risk rail is currently c3-DOMINATED, pending the v1.3 `d1` revisit (E1 review,
+  2026-08-18).** Sampled against the real committed store (2026-08-12 session,
+  `--ignore-staleness`): of the crowding-fired rows surfaced across every board that
+  session, `c3` fired in 5 of 6 and `c2` in 2 of 6 (some rows fire both); `c1` fired
+  in none this session. This is the DIRECT consequence of the `d1` inflation
+  documented above — `c3` requires `d1 ≥ 0.95 ∧ d3 ≥ 0.5 ∧ v2 ≥ 0.90`, and since
+  `d1 ≥ 0.95` alone already fires at ≈60% (not the ≈5% its threshold implies), `c3`'s
+  necessary condition is far more common than the CONFIG numbers alone suggest,
+  making it the highest-base-rate leg of the C family well before `d3`/`v2` narrow
+  it further. F4a's coverage predicate (this wave) fixes `c1`'s THIN-SESSION false
+  positive but does not touch `d1`'s own aggregation — recorded here as the SAME
+  v1.3 candidate named above, now with its concrete downstream symptom.
+- **`directional_watch[]`/`event_board[]` ship FULL card bodies as a
+  forward-compatible projection (E1 review, 2026-08-18) — intentional, not hidden
+  intelligence.** Both arrays carry the complete card shape (§5), not a thin
+  reference, even though the current AD-1 UI only renders a few fields from each
+  (contract §5a). This is deliberate: it lets a future consumer (or a UI revision)
+  read richer detail without a producer/contract change, and every field is already
+  governed by the SAME authority table (§6) as the boards that do render fully — no
+  additional score/rank/threshold leaks through the wider shape.
+- **`FRESH_PENALTY` (0.5) is structurally unreachable at build time by construction
+  (E1 review, 2026-08-18).** `fresh_ok` is `True` unless `p_v2` (the V-family
+  spot-history spread) is present AND `hist_spot` is empty — but `p_v2` can only be
+  non-None when `percentile_xs` already found `spreads[n]`, which itself requires
+  `len(window) >= MIN_HISTORY` sessions of `hist_spot` to have computed `rv` in the
+  first place (§4 V family `v2`). A `p_v2` that is present therefore implies
+  `hist_spot` was non-empty at computation time, and `fresh_ok`'s check reads the
+  SAME `hist_spot` list — the two conditions cannot disagree given how the
+  producer's own per-session loading works today. Recorded as a known structural
+  no-op, not a new defect; changing it (e.g. an independently-staled summary store)
+  is out of scope for this wave.
+- **`verify_shots/adib2_*.png` provenance is the `--ignore-staleness` diagnostic
+  build, not the committed artifact (E1 review, 2026-08-18).** The committed
+  `site/options_intel_brief.json`/`site/options.html` are honestly `STALE_SOURCE`
+  against the real store's wall-clock age (§4 input #1, ">36h after close"); the OK
+  scenes in `verify_shots/` are rendered from a SEPARATE, uncommitted
+  `--ignore-staleness` build (never written to `site/`) purely so the OK/quiet
+  scenes have real data to render against. This is the same diagnostic convention
+  the contract's `--ignore-staleness` flag already documents ("local verification of
+  the scoring math against a deliberately frozen test store") — never used by the
+  nightly lane, never reflected in the committed STALE_SOURCE artifact's own
+  `board_state`.

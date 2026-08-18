@@ -430,30 +430,41 @@ def _aib_card(card: dict) -> dict:
     }
 
 
-def _aib_watch_row(card: dict) -> dict:
+def _aib_watch_row(card: dict) -> dict | None:
     """Band 2 row — verbatim board_rank/symbol + a closed-vocab direction word.
-    LONG/SHORT only (the producer's own composition rule; `.get` with no
-    default would KeyError on an unexpected enum, so this falls back to the
-    slug/word for LONG rather than raise on a display-only path)."""
+    LONG/SHORT only (the producer's own composition rule). F10 (2026-08-18): an
+    unexpected `direction` (a producer/adapter contract mismatch — this array is
+    supposed to carry LONG/SHORT exclusively) is REFUSED — the row is omitted and
+    one ::warning-style annotation is emitted — never silently rendered as a
+    fabricated "Upside" (the pre-fix `.get(direction, ...LONG...)` fallback)."""
     direction = card.get("direction")
+    if direction not in _AIB_WATCH_DIR_EN:
+        print(f"::warning title=build_options_command::directional_watch row for "
+              f"symbol {card.get('symbol')!r} carries unexpected direction "
+              f"{direction!r} (expected LONG/SHORT) — row omitted, never fabricated "
+              f"as Upside", flush=True)
+        return None
     return {
         "board_rank": card.get("board_rank"),
         "symbol": card.get("symbol") or "—",
-        "dir_slug": _AIB_WATCH_DIR_SLUG.get(direction, "up"),
-        "dir_en": _AIB_WATCH_DIR_EN.get(direction, _AIB_WATCH_DIR_EN["LONG"]),
-        "dir_zh": _AIB_WATCH_DIR_ZH.get(direction, _AIB_WATCH_DIR_ZH["LONG"]),
+        "dir_slug": _AIB_WATCH_DIR_SLUG[direction],
+        "dir_en": _AIB_WATCH_DIR_EN[direction],
+        "dir_zh": _AIB_WATCH_DIR_ZH[direction],
     }
 
 
 def _aib_event_row(card: dict) -> dict:
     """Band 3 · event group row — verbatim fields + a closed-vocab state lookup
-    on `event.event_premium_state`. `move_pct` reuses the card's own
-    `market_implied_move_pct` (the only move-percent field the contract ships;
-    there is no separate figure inside the `event` sub-object) through the
-    same formatting convention `_aib_card` already uses."""
+    on `event.event_premium_state`. `move_pct` reads the event's OWN
+    `event_implied_move_pct` (F6, 2026-08-18 — the event-horizon figure, via
+    `market_implied_move_pct(..., event_horizon_sessions=...)`), NOT the card-level
+    `market_implied_move_pct` (that stays the unchanged 5-session read used
+    elsewhere, e.g. `_aib_card`, under its own `next_5_sessions` horizon label —
+    mixing the two here would print a 5-session move percent next to an event date
+    it was never computed against)."""
     event = card.get("event") if isinstance(card.get("event"), dict) else {}
     state = event.get("event_premium_state")
-    move = _num(card.get("market_implied_move_pct"))
+    move = _num(event.get("event_implied_move_pct"))
     return {
         "symbol": card.get("symbol") or "—",
         "state_en": _AIB_EVENT_STATE_EN.get(state, _AIB_EVENT_STATE_EN[None]),
@@ -530,7 +541,9 @@ def build_aib(intel_brief: dict | None) -> dict:
 
     # ── AD-1 B5 · Band 2 — directional watch (verbatim array order; contract §5a) ──
     watch_raw = intel_brief.get("directional_watch") if isinstance(intel_brief.get("directional_watch"), list) else []
-    watch = [_aib_watch_row(c) for c in watch_raw if isinstance(c, dict)]
+    # F10: _aib_watch_row returns None (never a fabricated direction) for an
+    # unexpected direction value — filtered out here, array order preserved.
+    watch = [row for row in (_aib_watch_row(c) for c in watch_raw if isinstance(c, dict)) if row is not None]
     no_directional = (intel_brief.get("directional_qualified_count") or 0) == 0
 
     # ── Band 3 · event group ──
