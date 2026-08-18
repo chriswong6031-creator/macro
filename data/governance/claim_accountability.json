@@ -1,9 +1,9 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-08-18T03:41:17.654246+00:00",
+  "generated_at": "2026-08-18T04:00:48.538650+00:00",
   "global": {
     "n_claims": 46792,
-    "n_grades": 63718,
+    "n_grades": 63722,
     "n_with_falsifier": 532,
     "falsifier_coverage": 0.011369,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
@@ -307,15 +307,15 @@
       "n_hit_gradeable": 9307,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 8874,
-        "graded_5d_share": 0.935879,
-        "matured_21d_count": 6465,
+        "graded_5d_count": 8876,
+        "graded_5d_share": 0.936089,
+        "matured_21d_count": 6467,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 987,
-        "next_bar_count": 14352,
+        "next_bar_count": 14356,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -860,15 +860,15 @@
       "n_hit_gradeable": 9307,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 8874,
-        "graded_5d_share": 0.935879,
-        "matured_21d_count": 6465,
+        "graded_5d_count": 8876,
+        "graded_5d_share": 0.936089,
+        "matured_21d_count": 6467,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 987,
-        "next_bar_count": 14352,
+        "next_bar_count": 14356,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -970,7 +970,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-08-18T03:39:54.963485+00:00",
+    "generated_at": "2026-08-18T03:59:23.231245+00:00",
     "grade_horizons": [
       5,
       21,

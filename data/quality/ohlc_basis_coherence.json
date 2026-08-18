@@ -3,7 +3,7 @@
     "breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 24,
+      "noise_tickers": 23,
       "findings": [
         {
           "ticker": "HON",
@@ -173,16 +173,6 @@
           "bad_share": 0.0161,
           "worst_excess": 0.001522,
           "worst_date": "2026-07-06",
-          "inverted_bars": 0
-        },
-        {
-          "ticker": "OTIS",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 62,
-          "bad_share": 0.0161,
-          "worst_excess": 0.001447,
-          "worst_date": "2026-08-11",
           "inverted_bars": 0
         },
         {
@@ -631,5 +621,5 @@
   },
   "splits": 1,
   "status": "split",
-  "noise_tickers": 59
+  "noise_tickers": 58
 }
