@@ -25,18 +25,23 @@ owns_paths:
   - scripts/build_financial_intelligence_packet.py
   - tests/test_fundamental_forensics_financial_intelligence_packet.py
   - tests/test_fundamental_forensics_financial_intelligence_packet_r2.py
+  - tests/test_fundamental_forensics_financial_intelligence_packet_r3.py
   - tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json
   - tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json
 depends_on: []
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
   - DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM
+  - DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
+  - DEC:FIF-ENTITY-ID-IS-NOT-CIK
+  - DEC:FIF-REVISION-ROOT-PRIOR-REVISED
 next_action: >
-  Sol reviews the FIF-1R2 packet-contract PR. Do not merge until that review
-  accepts. Do not start FIF-2. Native auto-merge and merge-on-green stay disarmed.
+  Sol reviews the FIF-1R3 semantic-closure PR. Do not merge until that review
+  accepts. Do not start FIF-2. Do not mix a CI-control-plane redesign into this
+  packet PR.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -57,7 +62,8 @@ landmines:
     FIF-1 packet-contract work.
   - >
     Removing merge-on-green does not disable GitHub native auto-merge.
-    See DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM.
+    See DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM. Even both disarmed plus
+    PR-body prose is not fail-closed; see DSC:REVIEW-HOLD-PROSE-IS-NOT-FAIL-CLOSED.
 do_not_redo:
   - Do not create a second semantic model, query kernel, or metric registry.
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
@@ -67,6 +73,8 @@ do_not_redo:
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
   - Do not silently add unrequested metrics to the user cells array.
   - Do not treat removal of merge-on-green as a merge hold; disable GitHub native auto-merge too.
+  - Do not treat PR-body "do not merge" prose as a fail-closed Sol-review gate.
+  - Do not mix a CI-control-plane / sol-review-required queue into a FIF packet PR.
 waves:
   - id: FIF-0
     title: Program reset — land masterplan, naming, and collision map
@@ -77,9 +85,10 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Sol reviews FIF-1R2 contract closure. Packet assembly remains a pure
-      function of injected context; requested cells stay distinct from
-      evidence_cells; v1 freeze waits on that review.
+      Sol reviews FIF-1R3 semantic closure. Against-input must prove numbers
+      against the query kernel; revision rows separate root/prior/revised;
+      entity_id is not CIK; graph validation is O(V+E). v1 freeze waits on
+      that review. Do not start FIF-2.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
@@ -141,7 +150,9 @@ that gate; production issuer promotion still is.
 FIF-1 preflight found no existing packet contract. The operator chose
 `DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`. Operator review of PR #5809
 then required FIF-1R (`DEC:FIF-1R-HERMETIC-PACKET-CONTRACT`) and FIF-1R2
-contract closure: bounded evidence, hostile fixture admission, entity
-isolation, two-clock plus rule-availability proofs, and packet-internal plus
-against-build-input validators. Company Facts remains a witness only. FIF-1
-stays in progress until Sol accepts. FIF-2 is still stopped.
+contract closure. #5837 merged those R2 foundations prematurely on
+2026-08-17. Sol's source review accepted the R2 architecture but rejected
+v1 freeze over against-input numeric proof, mixed multi-hop revision
+semantics, accidental entity_id==CIK law, and unbounded reconvergent graph
+validation. FIF-1R3 closes those defects. FIF-1 stays in progress until Sol
+accepts. FIF-2 is still stopped.
