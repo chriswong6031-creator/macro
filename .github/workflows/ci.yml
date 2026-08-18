@@ -1439,6 +1439,15 @@ on:
       # needed: .github/workflows/** covers the lanes, these cover the policy itself.
       - "scripts/ci/push_retry.sh"
       - "tests/test_push_retry.py"
+      # Append-only base fence: the second policy that loop sources. `-X theirs` on a
+      # file both sides appended to REPLACES the other side's rows — measured twice on
+      # data/government_revenue/ (2026-08-07, 2026-08-18), the second orphaning a 26-row
+      # candidate_ledger.jsonl issuance batch and reddening ci-pack-6 through ci-gate for
+      # the whole fleet. Same two-halves law: .github/workflows/** covers the lanes that
+      # call it, these cover the fence and its registry.
+      - "scripts/ci/append_only_base_fence.py"
+      - "config/append_only_artifacts.json"
+      - "tests/test_append_only_base_fence.py"
       # Publish-ops / worker / live-plane guards (unrun backfill 2026-08-03):
       # dead-asset refs, ticker links, autostash containment, checkout bound,
       # admin research tools, earnings worker, china board watch lane, live

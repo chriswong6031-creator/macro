@@ -254,13 +254,32 @@ def jsonl_prefix_verdict(member: Member, base: bytes | None, head: bytes | None)
     )
 
 
+# Row-identity fields, in preference order, for naming a dropped JSONL line in an
+# annotation. A full receipt body is ~300 characters of URL and hashes; three of them
+# make the annotation unreadable at 3am, which is the only time anyone reads it.
+_JSONL_LABEL_FIELDS = ("receipt_id", "candidate_id", "id")
+
+
 def _lost_jsonl_lines(base: bytes, head: bytes) -> list[str]:
     head_lines = {line for line in head.split(b"\n") if line.strip()}
     return [
-        line.decode(errors="replace")[:160]
+        _jsonl_label(line)
         for line in base.split(b"\n")
         if line.strip() and line not in head_lines
     ]
+
+
+def _jsonl_label(line: bytes) -> str:
+    try:
+        row = json.loads(line)
+    except Exception:  # noqa: BLE001 - a label is never worth raising over
+        row = None
+    if isinstance(row, dict):
+        for field in _JSONL_LABEL_FIELDS:
+            value = row.get(field)
+            if isinstance(value, str) and value:
+                return value
+    return line.decode(errors="replace")[:80]
 
 
 def parquet_rows_verdict(member: Member, base: bytes | None, head: bytes | None) -> MemberVerdict:
@@ -294,8 +313,10 @@ def _identity_set(blob: bytes, identity: tuple[str, ...]) -> set[str]:
         raise KeyError(f"identity column(s) absent: {', '.join(missing)}")
     if frame.empty:
         return set()
+    # " | " rather than a control character: these tuples are printed into GitHub
+    # annotations, and \x1f renders as nothing at all.
     return {
-        "\x1f".join(values)
+        " | ".join(values)
         for values in frame[list(identity)].astype("string").fillna("").itertuples(
             index=False, name=None
         )
@@ -382,10 +403,12 @@ def run(
         return 0
 
     violations = 0
+    checked = 0
     for family in families:
         verdict = evaluate_family(repo, family, onto, head, touched)
         if not verdict.members:
             continue
+        checked += len(verdict.members)
         if not verdict.violated:
             print(
                 f"append-only-base-fence: {family.key} ok "
@@ -416,6 +439,13 @@ def run(
             + ". This run's rows are dropped on purpose; the next collection re-derives "
             "them. Overlapping runs are the cause — preflight `gh run list --workflow "
             "daily.yml --json status` before dispatching.",
+        )
+    if not checked:
+        # Say so out loud. A fence that prints nothing is indistinguishable from a
+        # fence that never ran, and this one is silent on almost every push.
+        print(
+            "append-only-base-fence: no registered append-only artifact in this push",
+            flush=True,
         )
     return 1 if (violations and not restore) else 0
 

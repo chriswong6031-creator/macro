@@ -3209,7 +3209,23 @@ jobs:
     # and replays the incident against real git repos, then asserts the LANES still
     # source it — so deleting the policy from a workflow reds here too.
     #
-    # Triggers on: .github/workflows/**, scripts/ci/push_retry.sh, tests/test_push_retry.py.
+    # The same job now also covers the APPEND-ONLY BASE FENCE, which is the second
+    # policy every lane's push loop sources from push_retry.sh. `-X theirs` is right for
+    # the bulk market plane and catastrophic for an append-only ledger: on a file both
+    # sides appended to it REPLACES the other side's rows. Measured twice on
+    # data/government_revenue/ (2026-08-07 and 2026-08-18), the second orphaning a 26-row
+    # candidate_ledger.jsonl issuance batch and reddening ci-pack-6 through ci-gate for
+    # the whole fleet. The suite replays the real incident against real git repos and
+    # pins the property that keeps it quiet — it looks only at members THIS run's commits
+    # changed, because the 30-minute govrev-live lane appends to the same directory while
+    # the nightly collect job is still running.
+    #
+    # pandas + pyarrow are here for that suite only: the fence's identity check reads the
+    # committed parquet spine, and a stub would prove nothing about the real frames.
+    #
+    # Triggers on: .github/workflows/**, scripts/ci/push_retry.sh, tests/test_push_retry.py,
+    # scripts/ci/append_only_base_fence.py, config/append_only_artifacts.json,
+    # tests/test_append_only_base_fence.py.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -3217,9 +3233,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml pandas pyarrow
       - name: push-retry policy tests (classification, budgets, jitter, real git races)
         run: python -m pytest tests/test_push_retry.py -q
+      - name: append-only base fence (real-incident replay, withhold, quiet-night property)
+        run: python -m pytest tests/test_append_only_base_fence.py -q
 
   transmission-chains:
     if: ${{ false }}
