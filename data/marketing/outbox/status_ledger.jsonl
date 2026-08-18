@@ -2622,3 +2622,4 @@
 {"id":"ob-2026-08-14-6020af9f71","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
 {"id":"ob-2026-08-14-cbad5b13c2","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
 {"id":"ob-2026-08-14-a6cf2ff959","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-17-838c09d512","from":"queued","to":"quarantined","at":"2026-08-18T01:13:34Z","actor":"press_wire_reap","note":"expired_session_language: copy's day words are no longer true: stale_session_claim:2026-08-12!=2026-08-17 (copy names Wednesday's tape)","receipt":null}
