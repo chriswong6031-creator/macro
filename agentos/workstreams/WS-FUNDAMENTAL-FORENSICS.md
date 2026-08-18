@@ -14,11 +14,15 @@ class: build
 blast_radius: user_facing
 ambiguity: specified
 blocked_by:
-  - "Live canonical parquet has 2837 issuers; merged MAX_UNIVERSE_ISSUERS=2500 fail-closed the first scheduled incremental (run 32097495749, universe_invalid). Repair raises the bind cap to 4000. Do not resume July recovery until that repair is on main."
+  - "Production incremental 32116597760 cancelled at the 90-minute job budget on the 2837-issuer per-issuer census. FF-1 is not PROVEN_LIVE. July recovery has not started. Do not start FF-2."
+  - "Live SEC bulk submissions.zip Content-Length is 1558585919 bytes (~1.45 GiB), above the ~1 GiB canary stop. Do not freeze MAX_BULK_ARCHIVE_BYTES without Sol."
 discoveries:
   - DSC:FF-1-LIVE-UNIVERSE-EXCEEDS-2500
+  - DSC:FF-1-PER-ISSUER-CENSUS-EXCEEDS-90M
+  - DSC:FF-1-SEC-BULK-ARCHIVE-EXCEEDS-1GIB
 decisions:
   - DEC:FF-1-UNIVERSE-BIND-CAP-4000
+  - DEC:FF-1-BROAD-SUBMISSIONS-USES-SEC-BULK-ARCHIVE
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -28,6 +32,7 @@ owns_paths:
   - contracts/fundamental_forensics_health.schema.json
   - contracts/fundamental_forensics_broad_sec_run.schema.json
   - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
+  - collectors/edgar_forensics.py
   - scripts/run_fundamental_forensics_broad_sec.py
   - .github/workflows/filing-forensics-broad-sec.yml
   - tests/test_fundamental_forensics_health.py
@@ -42,7 +47,7 @@ waves:
     title: Incremental Broad SEC Source Plane
     status: in_progress
     depends_on: [FF-0]
-    pr: [5820]
+    pr: [5820, 5864]
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -59,6 +64,8 @@ landmines:
   - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial. latest-complete is a compact pointer and commits last."
   - "FF-1 shares concurrency group filing-forensics-sec with Wave-2. Do not give it a second group."
   - "Live data/edgar/fundamentals.parquet can exceed an outdated MAX_UNIVERSE_ISSUERS. Measure unique issuer count against the cap before dispatching recovery. Do not shrink the parquet to fit the cap."
+  - "Broad FF-1 scheduled acquisition is the SEC bulk Submissions ZIP. Do not fan 2837 data.sec.gov requests. Wave-2 stays per-issuer/realtime. Never purge fundamental_forensics/broad-sec/v1/."
+  - "A cancelled 90-minute run may have admitted valid immutable objects with no latest-complete. Reconcile issuer latest pointers; do not infer emptiness from list_prefix."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -71,7 +78,11 @@ do_not_redo:
   - "Do not treat PR #5820 merge as production proof. The first scheduled incremental failed universe_invalid."
   - "Do not dispatch July recovery while the live parquet exceeds the bind cap on main."
   - "Do not raise MAX_AFFECTED_ISSUERS or the Company Facts byte budget to finish recovery in one run."
-next_action: Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge #5864 once required CI/fences are green on the current head. FF-1 remains blocked and not PROVEN_LIVE until production commissioning finishes. FF-2 remains forbidden.
+  - "Do not raise timeout-minutes to finish the 2837-issuer census. Do not treat PR #5864 merge as production proof."
+  - "Do not purge fundamental_forensics/broad-sec/v1/ after a cancelled run."
+  - "Do not ingest companyfacts.zip in FF-1P2. Do not change Wave-2."
+  - "Do not freeze a bulk-archive compressed maximum above ~1 GiB without Sol. Live Content-Length was 1558585919."
+next_action: Sol must authorize a compressed bulk-archive bound that can admit the live 1558585919-byte submissions.zip (~1.45 GiB) before FF-1P2 acquisition code may freeze MAX_BULK_ARCHIVE_BYTES. Do not stream the archive under a silent >1 GiB cap. FF-1 remains blocked and not PROVEN_LIVE. FF-2 remains forbidden.
 ---
 
 ## Context
@@ -82,7 +93,11 @@ every issuer in `data/edgar/fundamentals.parquet`, admit exact bytes into
 `fundamental_forensics/broad-sec/v1/`, and fetch Company Facts only when
 relevant periodic filing state changes. It does not rebuild broad FF state.
 
-PR #5820 merged (`cd064848298063faac82059f71daf24bdd4112a2`). The first
-scheduled incremental (run 32097495749) failed `universe_invalid` because the
-live parquet has 2837 issuers and the merged cap was 2500. FF-1 is not
-PROVEN_LIVE. July recovery has not started.
+PR #5820 merged (`cd064848298063faac82059f71daf24bdd4112a2`). PR #5864
+merged the 4000 bind-cap repair (`4f59f720a0a1459a11a7bd131e41833c38cbe0d4`).
+The first scheduled incremental (run 32097495749) failed `universe_invalid`.
+The first incremental after the cap raise (run 32116597760) cancelled at the
+90-minute job timeout on the per-issuer census and emitted no receipt. FF-1
+is not PROVEN_LIVE. July recovery has not started. Broad scheduled
+acquisition is the official SEC bulk Submissions archive
+(`DEC:FF-1-BROAD-SUBMISSIONS-USES-SEC-BULK-ARCHIVE`).
