@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PINS-BULL-20260227",
-  "asof": "2026-08-13",
+  "asof": "2026-08-17",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 57.7,
@@ -10,21 +10,21 @@
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 84.4,
+    "validity": 81.0,
     "progress": 0.0,
-    "pace": 46.9,
+    "pace": 24.9,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.882,
+    "dist_to_stop_r": 0.855,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 33.3,
-    "p1": -0.0788,
-    "p2": -0.0394,
+    "horizon_pct_used": 42.2,
+    "p1": -0.0963,
+    "p2": -0.0482,
     "p3": null,
-    "move_r": -0.118,
+    "move_r": -0.145,
     "mfe_r": 0.0,
     "mae_r": -0.162
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 15,
-  "tau": 0.3333
+  "days_elapsed": 19,
+  "tau": 0.4222
 }

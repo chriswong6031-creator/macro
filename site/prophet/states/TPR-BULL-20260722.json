@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TPR-BULL-20260722",
-  "asof": "2026-08-13",
+  "asof": "2026-08-17",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 44.2,
-  "raw_confidence": 26.0,
-  "delta_vs_base": -15.8,
+  "management_confidence": 35.1,
+  "raw_confidence": 24.0,
+  "delta_vs_base": -24.9,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 3.5,
+    "validity": 5.2,
     "progress": 0.0,
-    "pace": 41.0,
+    "pace": 20.3,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.128,
+    "dist_to_stop_r": 0.153,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 35.6,
-    "p1": -0.5812,
-    "p2": -0.2906,
+    "horizon_pct_used": 44.4,
+    "p1": -0.5649,
+    "p2": -0.2825,
     "p3": null,
-    "move_r": -0.872,
+    "move_r": -0.847,
     "mfe_r": 0.538,
     "mae_r": -0.872
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

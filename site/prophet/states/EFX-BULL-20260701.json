@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "EFX-BULL-20260701",
-  "asof": "2026-08-13",
+  "asof": "2026-08-17",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.0,
-  "raw_confidence": 57.0,
-  "delta_vs_base": -6.0,
+  "management_confidence": 50.0,
+  "raw_confidence": 45.2,
+  "delta_vs_base": -10.0,
   "recommended_action": "hold",
-  "human_state": "On Track",
+  "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 30.5,
-    "pace": 34.6,
+    "progress": 13.1,
+    "pace": 11.5,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.514,
-    "dist_to_t1_r": 0.986,
-    "dist_to_t2_r": 2.486,
-    "horizon_pct_used": 66.7,
-    "p1": 0.343,
-    "p2": 0.1715,
+    "dist_to_stop_r": 1.166,
+    "dist_to_t1_r": 1.334,
+    "dist_to_t2_r": 2.834,
+    "horizon_pct_used": 75.6,
+    "p1": 0.111,
+    "p2": 0.0555,
     "p3": null,
-    "move_r": 0.514,
+    "move_r": 0.166,
     "mfe_r": 0.573,
     "mae_r": -0.556
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 30,
-  "tau": 0.6667
+  "days_elapsed": 34,
+  "tau": 0.7556
 }
