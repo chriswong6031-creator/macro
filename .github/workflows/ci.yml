@@ -1619,6 +1619,7 @@ on:
       # WorktreeCreate hook; this is the test half so a test-only edit still
       # starts the job that runs it.
       - "tests/test_sparse_worktree_profile.py"
+      - "tests/test_worktree_sparse_add_lock_safety.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
