@@ -22,7 +22,7 @@ falsifier: >
   `usaspending-97b25ea228b65919c41eab1a` and `usaspending-643af6aaa406bdd6db068f65`, or
   a code path that mutates `known_at` on an existing snapshot row (there is none:
   `_append_event_versions` SKIPS a re-observation whose state hash is unchanged,
-  collectors/usaspending_awards.py:1916-1917, and retains prior rows verbatim at
+  collectors/usaspending_awards.py:1915-1916, and retains prior rows verbatim at
   :1888-1899). Or show the two `collect` jobs did not overlap:
   `gh run view 32077948964 --json jobs --jq '[.jobs[]|select(.name=="collect")]'` and
   the same for 32084697588. Or show `collection_receipts.jsonl` at 93ab221b81dd still
@@ -43,10 +43,22 @@ so_what: >
   collectors/usaspending_awards.py (torn-generation refusal :3956-3972, staged-replay
   binding :4030-4044) compares the run's state to the ledgers on the run's OWN disk, so a
   run whose entire base is stale is internally consistent and passes all of them; the
-  missing check is base-freshness against origin/main at push time. Fourth: do NOT wait
+  missing check is base-freshness against origin/main at push time — and the mechanism that
+  actually discards the rows is `git pull --rebase --autostash -X theirs origin main`
+  (.github/workflows/daily.yml:702, :751, :772, :1313): during a rebase the replayed commit
+  is "theirs", so two runs appending different tails to an append-only file always conflict
+  and the later run wins WHOLESALE, silently. `.gitattributes` already solves this class 24
+  times (20 `merge=union` + 4 `-merge`) but carries NO entry for `data/government_revenue/` —
+  and `merge=union` is DECLINED there, not merely missing: see the detail section, the
+  ledger's byte-prefix hash binding makes it actively wrong.
+  Fourth: do NOT wait
   this class of red out. Measured — the projection lane returns `status: ok`,
   `append_count: 0` against the corrupted tree because it reads the committed
-  `latest.json`, not the spine the failing test rebuilds; see the detail section.
+  `latest.json`, not the spine the failing test rebuilds. The repair is to REVERT the
+  losing collector run's whole generation — and to scope that revert by what
+  `build_payload()` reads (`data/government_revenue/` AND `data/usaspending/`), not by the
+  directory the symptom names; a partial revert fails closed and looks like an
+  unrepairable wedge. Shipped as #5870; see the detail section.
 kind: landmine
 verified_at: 2026-08-18
 verified_by: >
@@ -61,7 +73,9 @@ verified_by: >
   `source_receipt_id`) on exactly 16 rows at positions 194-209 — the 16 rows run A
   appended over the 194-row 08-14 base — with `event_state_sha256`, `first_seen_at` and
   `source_response_sha256` identical on all of them. Per-commit walk of the previous 8
-  transitions of that file (08-07 through 08-14): 0 rewritten rows in every one.
+  transitions of that FILE (08-07 through 08-14): 0 rewritten rows in every one — but see
+  the detail section: walking the RECEIPTS ledgers instead finds a silent prior occurrence
+  on 2026-08-07, so this is the second event, not the first.
   `git diff --stat 59ccb9c774c8 93ab221b81dd -- data/government_revenue/` →
   `collection_receipts.jsonl | 752 +++---` (376 removed, 376 added). Chain into the
   failure: `_event_id` folds `known_at` (engine/government_revenue/award_events.py:1409-1419,
@@ -101,7 +115,7 @@ first recorded THIS state version" — it is excluded from `AWARD_EVENT_SNAPSHOT
 (collectors/usaspending_awards.py:302-320), the state hash docstring reads "Hash only
 semantic direct-source state, never a receipt or retrieval clock"
 (collectors/usaspending_awards.py:857-860), and an identical re-observation is skipped
-rather than re-stamped (:1916-1917). Pinning `known_at` per `(award_key, state_hash)` to
+rather than re-stamped (:1915-1916). Pinning `known_at` per `(award_key, state_hash)` to
 first-observation would be actively wrong: for `A→B→A→B`, the fourth row's event carries
 an award_key, source_rail, state_hash, event_type and changed_fields tuple identical to
 the second row's, so the two would collide into one `event_id` and `_merge`
@@ -118,7 +132,7 @@ stale, because such a run is perfectly self-consistent — it simply does not kn
 newer generation exists. Nothing in the write path, and nothing in the push retry, asks
 whether `origin/main` moved under an append-only artifact between checkout and push.
 
-### What clears the CI red — MEASURED, and it is NOT the projection lane
+### What clears the CI red — NOT the projection lane; a generation revert (RESOLVED)
 
 An earlier revision of this record said the govrev projection lane would issue the 26
 forward and green the test. That was reasoning, not measurement, and **it is wrong.**
@@ -166,20 +180,132 @@ and `issued_row_sha256` — it quarantines rows that ARE in the ledger and were 
 error. These 26 were never issued. The historical-suppression manifest is held in exact
 bijection with that same 8-identity cohort by the failing test itself.
 
-**No file-level revert restores coherence.** Measured in the sandbox against
-59ccb9c774c8 (run A's generation): restoring `award_event_snapshots.parquet` alone →
-rebuild yields **0** candidates (the state binding fails closed); + `award_event_projection_state.json`
-→ still **0** (the state binds the action-versions parquet too); + `collection_receipts.jsonl`
-→ still **0**; reverting all **25** changed `data/government_revenue/` artifacts → 56 rows,
-0 orphaned, but **26 still unaccounted**. The two generations are entangled across the
-whole artifact set.
+### RESOLVED — a generation revert IS the repair, and it shipped
 
-**Therefore ci-pack-6 is WEDGED pending an operator decision.** Do not hand-write ledger
-rows, allowlist ids, or silence the guard — the guard is correct and is reporting a real
-divergence. The live options are (a) a reviewed disposition class for corruption-artifact
-identities, which neither existing manifest currently expresses, or (b) a full
-receipt-bound govrev re-baseline that rebuilds the canonical payload and the spine into
-one coherent generation. Both are operator calls.
+An earlier revision of this section concluded "no file-level revert restores coherence,
+therefore ci-pack-6 is WEDGED pending an operator decision". **That was wrong**, and the
+error is instructive. PR #5870 (`fix(govrev): restore the collection generation the
+candidate projection was frozen against`, merged 2026-08-18T07:38:11Z) reverted run B's
+write and the red cleared. Verified at main `fc9d58195e16`:
+`python3 -m pytest tests/test_government_revenue_candidates.py -q` → **39 passed**.
+
+**Why the sandbox revert failed and the real one worked: the payload spans two data
+directories.** The experiment reverted all 25 changed `data/government_revenue/`
+artifacts and stopped there, leaving `data/usaspending/_meta.json`,
+`data/usaspending/grants_loans.parquet` and `data/usaspending/obligations.parquet` on
+run B's generation — a mixed generation, which is why the rebuild still showed 26
+unaccounted. #5870 reverted all 18 of the files that actually moved, across BOTH trees.
+So the lesson is not "reverts don't work"; it is **scope the revert by what the payload
+reads, not by the directory the symptom points at** — `build_payload()` composes
+`data/government_revenue/` AND `data/usaspending/`, and a partial revert fails closed in
+a way that looks exactly like an unrepairable wedge.
+
+The rest of this section stands and is the reason the repair had to be a generation
+revert rather than a wait or a manifest edit:
+
+- The projection lane is a **stable no-op** against a corrupted tree (measured above):
+  it reads the committed `latest.json`, not the spine. Waiting never clears this class.
+- The 26 could not have been issued forward: `known_at` `01:55:22.848864Z` sits behind
+  the frozen anti-backfill clock `04:17:31.654847Z`, so
+  `_match_historical_suppressions` (scripts/build_government_revenue_candidates.py:993-1004)
+  would have raised.
+- Neither reviewed manifest fits them:
+  `candidate_issuance_corrections.v1.json` is `policy: exact_issued_source_identity_only`
+  and every entry carries `issued_row_sha256` — it quarantines rows already in the
+  ledger. These were never issued.
+
+Do not hand-write ledger rows, allowlist ids, or silence the guard. The guard is correct
+and was reporting a real divergence. The repair for this class is: **revert the losing
+collector run's whole generation, across every tree the canonical payload reads.**
+
+### Corrections from two sibling lanes (2026-08-18, verified here)
+
+**This was NOT the first occurrence, and the blast radius was five artifacts, not two.**
+Both corrections come from `claude/append-only-base-fence` (PR #5885) and are re-verified
+in this checkout.
+
+- **Prior silent occurrence, 2026-08-07.** `1fc6d1181e4c -> 08ad4d836d6a`:
+  `collection_receipts.jsonl` went 720 -> 720 lines with **360 receipt ids dropped and 360
+  substituted**, and is not a prefix-extension of its predecessor. Re-verified here by
+  reading both blobs and diffing the line sets. It went unnoticed because that night's swap
+  did not happen to move a `candidate_id` anything had already issued against. Two
+  occurrences in sixteen transitions — 2026-08-18 is simply the first time the loss was
+  loud. Any claim in this record that reads as "first occurrence" is superseded by this.
+- **Five artifacts lost rows, not two:** `collection_receipts.jsonl` −376,
+  `subaward_collection_receipts.jsonl` −192, `idv_collection_receipts.jsonl` −26,
+  `award_event_snapshots.parquet` 16 of 210 identities, and
+  **`award_action_versions.parquet` 18 of 35,257** — the last had not been named anywhere,
+  including in the first revision of this record.
+
+**The resolver has a name: `-X theirs`.** From
+`claude/govrev-event-identity-adjudication` (PR #5882), verified here:
+`.github/workflows/daily.yml:702` — and :751, :772, :1313 — push via
+`git pull --rebase --autostash -X theirs origin main`. During a rebase the replayed commit
+is "theirs", so two runs appending different tails to an append-only file always conflict
+and the later run wins **wholesale, with no conflict reported**. Base-freshness at push
+time (this record's original framing) is the right refusal, but `-X theirs` is what
+actually performs the discard on every retry that proceeds.
+
+**`merge=union` looks like the cheap fix here. It is not — it is DECLINED.**
+`.gitattributes` does solve this class 24 times elsewhere (20 `merge=union` + 4 `-merge`)
+and carries **no entry for `data/government_revenue/`** (`git check-attr merge -- <path>`
+returns `unspecified` for `collection_receipts.jsonl`, `candidate_ledger.jsonl` and
+`award_event_snapshots.parquet`), so the instinct to add it is natural and wrong. Three
+blockers, increasing in severity — recorded so the next session with the same good
+instinct finds the answer instead of shipping it:
+
+1. **It cannot cover the parquet spine at all.** A union merge of two binary frames is
+   garbage. `award_event_snapshots.parquet` and `award_action_versions.parquet` are exactly
+   what moved `candidate_id` in this incident (16 of 210 and 18 of 35,257 identities), so
+   the exposure that caused the red survives untouched.
+2. **It is actively WRONG for `candidate_ledger.jsonl`.** `candidate_projection_state.json`
+   binds that ledger by `prior_sha256` over an exact byte prefix —
+   scripts/build_government_revenue_candidates.py:540-542 hashes
+   `ledger.raw[:prior_byte_count]` and raises `"candidate ledger prior prefix does not match
+   projection state"` on mismatch (verified by reading it here). A union-merged tail no
+   longer reproduces that hash, so union would convert a silent lost update into a hard
+   projection-lane failure.
+3. **Partial application is the worst of the three.** Even where union WOULD work — the
+   three receipt ledgers — applying it there while the parquets stay unmerged yields
+   receipts from both runs against a spine from one: precisely the mixed generation the
+   collector's own torn-generation refusal (collectors/usaspending_awards.py:3956-3972)
+   exists to prevent.
+
+The distinction from the 20 existing entries is the durable lesson. Every one of those
+(`data/qledger/claims.jsonl`, `data/trial_ledger.jsonl`, `data/neuralweb/causal_*.jsonl`,
+`data/marketing/outbox/*.jsonl`) is a **standalone ledger with no cross-artifact hash
+binding**. `data/government_revenue/` is **ONE hash-bound generation**, so the unit of
+correctness is the FAMILY, not the file — which is why the repair (#5870) had to revert
+every moved file across both trees, and why the push-path fence withholds the whole
+coherence family rather than reverting the offending file. Full reasoning:
+`DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`.
+
+**Do not over-generalize that refutation.** The rule is not "`merge=union` is unsafe"; it is
+**union is correct for a standalone ledger and wrong for a hash-bound family**. The 20
+existing entries are right where they are. The test to apply before proposing a merge driver
+anywhere: *does any consumer hash this file's bytes, or bind it to a sibling artifact?* If
+no — union. If yes — a driver that rewrites the byte stream breaks the binding, and the
+remedy is a push-path fence over the whole family instead.
+
+That cuts the other way too, and is an open exposure rather than a finding: the `-X theirs`
+push sites (daily.yml:702, :751, :772, :1313) are shared by every lane, so any append-only
+artifact written by two overlapping runs is exposed to the same silent wholesale loss — and
+for the standalone ledgers that already carry `merge=union`, git resolves it correctly, while
+any append-only artifact carrying NEITHER union nor fence coverage does not. Whether that has
+actually cost rows outside `data/government_revenue/` is unmeasured here. The cheap check, for
+whoever picks it up: for each append-only artifact lacking a `.gitattributes` entry, walk its
+commits and assert each version is a byte-prefix extension of its predecessor — the same test
+that surfaced both govrev occurrences.
+
+**The source published nothing in the window.** All 376 differing rows of
+`collection_receipts.jsonl` between the two commits carry identical `request_sha256` AND
+`response_sha256`, identical `record_count` and `has_next`, across 168 award keys and 21
+tickers. Only `run_id`, `observed_at` and `receipt_id` moved. The 15 rail reclassifications
+are pure re-derivation, definitively not a source correction.
+
+Owning lanes: #5885 (artifact-layer base-freshness fence, push path), #5880 (scheduler-level
+single-nightly mutex in `et_gate`), #5882 (adjudication: keep the `known_at` fold, no
+supersession on `candidate_ledger.jsonl`, arm `GOVREV_CANDIDATE_PROOF_FATAL`).
 
 ### Residue this leaves on main
 
