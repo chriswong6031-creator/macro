@@ -69,16 +69,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
 
-# `git sparse-checkout add` on a heavy tree materializes it file-by-file; a
-# process that dies mid-loop (our own wrapper timing out and SIGKILLing it, an
-# OOM kill, a session getting torn down) leaves whatever file it was writing
-# truncated on disk AND a stale `index.lock` that git created but never got to
-# rename into place (measured 2026-08-18: a 0-byte tracked JSON file plus a
-# ~49-minute-old `.git/worktrees/<name>/index.lock`; reproduced deterministically
-# here by racing a short subprocess timeout against a real `sparse-checkout add`
-# — see tests/test_worktree_sparse_add_lock_safety.py). ADD_TIMEOUT_S is the
-# same 60s budget `_git()` uses elsewhere, exposed here so a test can shrink it
-# instead of waiting on real timing.
+# `git sparse-checkout add` (and `disable`, which is the same hazard at LARGER
+# scale — it materializes every omitted tree at once, ~3.31 of the repo's
+# 3.8 GiB, where `add` materializes one) checks out a heavy tree file-by-file;
+# a process that dies mid-loop (our own wrapper timing out and SIGKILLing it,
+# an OOM kill, a session getting torn down) leaves whatever file it was
+# writing truncated on disk AND a stale `index.lock` that git created but
+# never got to rename into place (measured 2026-08-18: a 0-byte tracked JSON
+# file plus a ~49-minute-old `.git/worktrees/<name>/index.lock`; reproduced
+# deterministically here by racing a short subprocess timeout against a real
+# `sparse-checkout add` — see tests/test_worktree_sparse_add_lock_safety.py).
+# The originating report's own hypothesis ("the stale lock caused it") was
+# WRONG BUT USEFUL: it correctly named the worktree state to look at while
+# misattributing cause. The lock is a CO-SYMPTOM, not the trigger — the real
+# mechanism is timeout -> SIGKILL -> a file already `open()`ed (which
+# truncates) never receives its content write, and the same kill orphans the
+# lock because the rename-into-place that would have cleared it never runs.
+# ADD_TIMEOUT_S is the same 60s budget `_git()` uses elsewhere, shared by both
+# operations and exposed as a parameter so a test can shrink it instead of
+# waiting on real timing. Left at 60s deliberately — the repair path below
+# covers the corruption regardless of what makes the checkout exceed it.
 ADD_TIMEOUT_S = 60
 
 # Fallback when config/sparse_worktree.json is unreadable. Kept in step with that
@@ -378,7 +388,18 @@ def _drop_husks(root: Path, dirs: list[str]) -> list[str]:
 
 
 def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> int:
-    """(Re-)apply the sparse profile to an existing worktree."""
+    """(Re-)apply the sparse profile to an existing worktree.
+
+    Narrowing the cone is mostly a DELETE (files leaving the working tree, not
+    a from-scratch write of new content), so it does not carry `add`/`full`'s
+    truncation risk the same way — but this still runs `git sparse-checkout
+    set`, a checkout that can leave a stale `index.lock` if killed regardless
+    of which direction it moves the cone, and `auto` calls this on every
+    session-worktree creation across four agent runtimes. A lock left behind
+    here is inherited by the very next git command any of those runtimes runs
+    in this worktree, so the cheap up-front refusal is worth it even though
+    the heavier byte-for-byte repair below is not (PR discussion, 2026-08-18).
+    """
     excludes = set(exclude_dirs if exclude_dirs is not None else load_profile()["exclude_dirs"])
     tracked = tracked_top_level_dirs(root)
     if not tracked:
@@ -387,6 +408,8 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
     include = [d for d in tracked if d not in excludes]
     if not include:
         print("worktree-sparse: refusing to exclude every tracked directory", file=sys.stderr)
+        return 1
+    if refuse_if_locked(root):
         return 1
     if _git(root, "sparse-checkout", "init", "--cone") is None:
         print("worktree-sparse: `git sparse-checkout init --cone` failed", file=sys.stderr)
@@ -427,13 +450,44 @@ def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
     return apply_profile(root, exclude_dirs=list(profile["exclude_dirs"]))
 
 
-def disable_profile(root: Path = ROOT) -> int:
-    """Opt in to a full checkout. Worktree-scoped: siblings are untouched."""
+def disable_profile(root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
+    """Opt in to a full checkout. Worktree-scoped: siblings are untouched.
+
+    `sparse-checkout disable` is the LARGER version of `add`'s hazard, not a
+    different one: it materializes every currently-omitted tree in one pass
+    (measured ~3.31 of the repo's 3.8 GiB) instead of just the one(s) named to
+    `add`, so it is more, not less, likely to exceed ``timeout`` and get
+    SIGKILLed mid-write. Same three protections as `add_dirs`: refuse up front
+    on an existing lock, fail loud on a killed/failed disable, and repair any
+    tracked file the partial checkout left truncated.
+    """
     if not sparse_enabled(root):
         print("worktree-sparse: already a full checkout")
         return 0
-    if _git(root, "sparse-checkout", "disable") is None:
-        print("worktree-sparse: `git sparse-checkout disable` failed", file=sys.stderr)
+    if refuse_if_locked(root):
+        return 1
+    omitted_before = missing_dirs(root)
+    ok, reason = _run_sparse_checkout_disable(root, timeout=timeout)
+    if not ok:
+        print(
+            f"::error title=worktree-sparse-full-failed::`git sparse-checkout "
+            f"disable` {reason} in {root} — the working tree may hold partially "
+            f"materialized or truncated tracked files across "
+            f"{', '.join(omitted_before) if omitted_before else 'the omitted trees'}; "
+            f"verifying and repairing from HEAD now",
+            flush=True,
+        )
+        repaired = verify_and_repair(root, omitted_before) if omitted_before else []
+        if repaired:
+            print(
+                f"worktree-sparse: restored {len(repaired)} truncated tracked "
+                f"file(s) from HEAD: {', '.join(repaired[:10])}"
+                f"{' …' if len(repaired) > 10 else ''}",
+                file=sys.stderr,
+            )
+        else:
+            print("worktree-sparse: no truncated tracked file found to repair",
+                  file=sys.stderr)
         return 1
     still = missing_dirs(root)
     if still:
@@ -443,20 +497,23 @@ def disable_profile(root: Path = ROOT) -> int:
     return 0
 
 
-def _run_sparse_checkout_add(
-    root: Path, names: list[str], timeout: float = ADD_TIMEOUT_S,
-) -> tuple[bool, str]:
-    """Run ``git sparse-checkout add -- <names>``.
+def _run_git_timed(root: Path, args: tuple[str, ...], timeout: float) -> tuple[bool, str]:
+    """Run a git subcommand under an explicit timeout.
 
     Returns ``(True, "")`` on success, else ``(False, reason)`` — distinguishing
-    a timeout-triggered kill from an ordinary nonzero exit so the failure
-    annotation can say which. ``timeout`` is a parameter rather than a hard-coded
-    constant so a test can shrink it to deterministically race a real
-    ``sparse-checkout add`` instead of waiting out the production 60s budget.
+    a timeout-triggered kill from an ordinary nonzero exit so a failure
+    annotation can say which. ``timeout`` is a parameter (not a hard-coded
+    constant) so a test can shrink it to deterministically race a real git
+    checkout instead of waiting out the production 60s budget.
+
+    Shared by ``sparse-checkout add`` and ``sparse-checkout disable`` — both
+    materialize a heavy tree in one shot and are equally exposed to the
+    SIGKILL-mid-write corruption this module guards against (`disable` is the
+    LARGER hazard: it checks out every omitted tree at once, not just one).
     """
     try:
         out = subprocess.run(
-            ("git", "-C", str(root), "sparse-checkout", "add", "--", *names),
+            ("git", "-C", str(root)) + args,
             capture_output=True, text=True, timeout=timeout, check=False,
         )
     except subprocess.TimeoutExpired:
@@ -467,6 +524,18 @@ def _run_sparse_checkout_add(
         stderr = out.stderr.strip()
         return False, f"exited {out.returncode}" + (f": {stderr[:300]}" if stderr else "")
     return True, ""
+
+
+def _run_sparse_checkout_add(
+    root: Path, names: list[str], timeout: float = ADD_TIMEOUT_S,
+) -> tuple[bool, str]:
+    """Run ``git sparse-checkout add -- <names>``. See ``_run_git_timed``."""
+    return _run_git_timed(root, ("sparse-checkout", "add", "--", *names), timeout)
+
+
+def _run_sparse_checkout_disable(root: Path, timeout: float = ADD_TIMEOUT_S) -> tuple[bool, str]:
+    """Run ``git sparse-checkout disable``. See ``_run_git_timed``."""
+    return _run_git_timed(root, ("sparse-checkout", "disable"), timeout)
 
 
 def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:

@@ -211,3 +211,142 @@ def test_successful_add_still_works_and_reports_nothing_wrong(repo, capsys):
     assert rc == 0, f"a normal, uninterrupted add must still succeed:\n{blob}"
     assert (repo / "big" / "data.json").read_bytes() == _BIG_CONTENT
     assert "::error" not in blob
+
+
+# ── 4. `full` (disable_profile) is the LARGER version of the same hazard ────
+#
+# `add` materializes one directory; `disable` materializes every omitted tree
+# in one pass (measured ~3.31 of the repo's 3.8 GiB) — so if a 60s timeout can
+# SIGKILL an `add`, it fires far more readily on `disable`, and the corruption
+# signature (a truncated tracked file + a stale index.lock) is identical.
+# Follow-up requested by the commissioning session after review of the initial
+# PR, which had scoped the fix to `add` alone.
+
+def _install_kill_mid_write_disable(monkeypatch, repo: Path, target_rel: str):
+    """Same shape as `_install_kill_mid_write`, but intercepts
+    `sparse-checkout disable` instead of `sparse-checkout add -- <names>`."""
+    real_run = subprocess.run
+    gitdir = _real_git_dir(repo)
+
+    def fake_run(cmd, *args, **kwargs):
+        if (isinstance(cmd, (list, tuple))
+                and len(cmd) >= 5
+                and cmd[0] == "git" and cmd[3] == "sparse-checkout"
+                and cmd[4] == "disable"):
+            abs_path = repo / target_rel
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_bytes(b"")  # truncated mid-write, like the real incident
+            gitdir.mkdir(parents=True, exist_ok=True)
+            (gitdir / "index.lock").write_bytes(b"")  # stale lock left behind
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 0.01))
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(WS.subprocess, "run", fake_run)
+
+
+def test_failed_full_repairs_a_truncated_tracked_file(repo, monkeypatch, capsys):
+    """`python3 scripts/worktree_sparse.py full` (disable_profile) killed
+    mid-checkout must not leave `big/data.json` truncated, same guarantee as
+    `add`. Fails against origin/main: `disable_profile` there has no `timeout`
+    parameter and no repair path at all."""
+    _install_kill_mid_write_disable(monkeypatch, repo, "big/data.json")
+
+    rc = WS.disable_profile(root=repo, timeout=0.01)
+    blob = "".join(capsys.readouterr())
+
+    assert rc != 0, "a failed `git sparse-checkout disable` must exit non-zero"
+    assert "::error" in blob and any(
+        ln.startswith("::error") for ln in blob.splitlines()
+    ), f"failed `full` produced no line-starting ::error annotation:\n{blob}"
+
+    restored = (repo / "big" / "data.json").read_bytes()
+    assert restored == _BIG_CONTENT, (
+        "a tracked file left truncated by a killed `sparse-checkout disable` "
+        f"was NOT repaired back to its committed content (got {len(restored)} "
+        f"bytes, want {len(_BIG_CONTENT)}):\n{blob}"
+    )
+
+
+def test_preexisting_lock_refuses_full_before_any_write(repo, monkeypatch, capsys):
+    """A stale lock must stop `full` before it ever calls `sparse-checkout
+    disable`, exactly like it stops `add`. Fails against origin/main:
+    `disable_profile` there has no preflight lock check, so it always
+    attempts the disable regardless of a lock sitting in the git-dir."""
+    gitdir = _real_git_dir(repo)
+    lock = gitdir / "index.lock"
+    lock.write_bytes(b"")
+
+    call_log = []
+    real_run = subprocess.run
+
+    def spy_run(cmd, *a, **kw):
+        if (isinstance(cmd, (list, tuple)) and len(cmd) >= 5
+                and cmd[0] == "git" and cmd[3] == "sparse-checkout" and cmd[4] == "disable"):
+            call_log.append(cmd)
+        return real_run(cmd, *a, **kw)
+
+    monkeypatch.setattr(WS.subprocess, "run", spy_run)
+
+    rc = WS.disable_profile(root=repo)
+    blob = "".join(capsys.readouterr())
+
+    assert rc != 0, "a pre-existing lock must refuse `full`, not proceed"
+    assert not call_log, (
+        "`git sparse-checkout disable` was invoked despite a pre-existing lock — "
+        "the refusal must happen BEFORE any write is attempted")
+    assert not (repo / "big").exists(), "nothing should have been materialized"
+    assert "::error" in blob and str(lock) in blob, (
+        f"refusal did not name the lock path in an ::error annotation:\n{blob}")
+    assert lock.exists(), "a lock this run did not create must never be auto-deleted"
+
+
+def test_successful_full_still_works(repo, capsys):
+    rc = WS.disable_profile(root=repo)
+    blob = "".join(capsys.readouterr())
+
+    assert rc == 0, f"a normal, uninterrupted full checkout must still succeed:\n{blob}"
+    assert (repo / "big" / "data.json").read_bytes() == _BIG_CONTENT
+    assert WS.missing_dirs(repo) == []
+    assert "::error" not in blob
+
+
+# ── 5. `sparse`/`auto` (apply_profile): preflight refusal only ──────────────
+#
+# Narrowing the cone is mostly a delete, not a from-scratch write, so it does
+# not carry the same truncation risk — but `auto` runs on every session-
+# worktree creation across four agent runtimes, and a lock left behind here is
+# inherited by the very next git command any of them runs. The cheap up-front
+# refusal is applied; the heavier byte-for-byte repair deliberately is not
+# (see the docstring on `apply_profile` for the reasoning, and the PR body for
+# the decision record).
+
+def test_preexisting_lock_refuses_apply_profile_before_any_write(repo, monkeypatch, capsys):
+    """Fails against origin/main: `apply_profile` there has no lock check at
+    all, so it always proceeds into `sparse-checkout init`/`set` regardless of
+    a lock already sitting in the git-dir."""
+    gitdir = _real_git_dir(repo)
+    lock = gitdir / "index.lock"
+    lock.write_bytes(b"")
+
+    call_log = []
+    real_run = subprocess.run
+
+    def spy_run(cmd, *a, **kw):
+        if (isinstance(cmd, (list, tuple)) and len(cmd) >= 5
+                and cmd[0] == "git" and cmd[3] == "sparse-checkout"
+                and cmd[4] in ("init", "set")):
+            call_log.append(cmd)
+        return real_run(cmd, *a, **kw)
+
+    monkeypatch.setattr(WS.subprocess, "run", spy_run)
+
+    rc = WS.apply_profile(repo, exclude_dirs=["big"])
+    blob = "".join(capsys.readouterr())
+
+    assert rc != 0, "a pre-existing lock must refuse apply_profile, not proceed"
+    assert not call_log, (
+        "`sparse-checkout init`/`set` was invoked despite a pre-existing lock — "
+        "the refusal must happen BEFORE any write is attempted")
+    assert "::error" in blob and str(lock) in blob, (
+        f"refusal did not name the lock path in an ::error annotation:\n{blob}")
+    assert lock.exists(), "a lock this run did not create must never be auto-deleted"
