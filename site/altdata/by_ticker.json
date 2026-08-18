@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-18",
-  "generated_utc": "2026-08-18T11:21:15.510487+00:00",
+  "generated_utc": "2026-08-18T12:44:28.225357+00:00",
   "n_tickers": 2591,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -26227,6 +26227,16 @@
     },
     "NTCL": {
       "ticker": "NTCL",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "MSI": {
+      "ticker": "MSI",
       "channels": [
         "special_situation"
       ],
