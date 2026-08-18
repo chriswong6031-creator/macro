@@ -327,6 +327,10 @@
   
   
   
+  <div class="panel span12" style="border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel));padding:9px 13px;font-size:12px;line-height:1.55">
+    <span class="l-en"><strong>⚠ BOARD DELAYED</strong> — prices as of 2026-08-14 (4d behind). Data is stale; entry signals may not reflect latest prices. Check a live quote before acting.</span><span class="l-zh"><strong>⚠ 数据延迟</strong> — 价格截至 2026-08-14（落后 4 天）。当前数据过期，入场信号可能不反映最新价格，操作前请确认最新报价。</span>
+  </div>
+  
 
   
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
@@ -343,9 +347,9 @@
       <h1>🇨🇳 <span class="l-en">A-Share Stock Dashboard</span><span class="l-zh">A股个股看板</span>
         <span class="help">?<span class="tip"><span class="l-en">A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.</span><span class="l-zh">A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。</span></span></span></h1>
       <div class="stk-head-meta">
-        <span class="stk-status">
+        <span class="stk-status is-delayed">
           <span class="stk-fresh-dot" aria-hidden="true"></span>
-          <span class="l-en">Fresh</span><span class="l-zh">新鲜</span>
+          <span class="l-en">Delayed</span><span class="l-zh">数据延迟</span>
           <strong>2026-08-14</strong>
         </span>
       
@@ -16699,7 +16703,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-18 08:01 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-18 09:26 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -17021,6 +17025,5 @@ if (document.readyState === 'loading') {
   }, true);
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

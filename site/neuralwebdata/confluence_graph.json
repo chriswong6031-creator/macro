@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 18
+        "n_spine_rows": 37
       }
     },
     {
@@ -27,7 +27,7 @@
       "type": "engine",
       "label": "basket_turn.v1",
       "meta": {
-        "n_spine_rows": 2
+        "n_spine_rows": 3
       }
     },
     {
@@ -35,7 +35,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 1456
+        "n_spine_rows": 1528
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 80
+        "n_spine_rows": 81
       }
     },
     {
@@ -59,7 +59,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 576
+        "n_spine_rows": 672
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 3192
+        "n_spine_rows": 3202
       }
     },
     {
@@ -75,7 +75,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 3192
+        "n_spine_rows": 3202
       }
     },
     {
@@ -91,7 +91,7 @@
       "type": "engine",
       "label": "desk:stock_desk",
       "meta": {
-        "n_spine_rows": 110
+        "n_spine_rows": 115
       }
     },
     {
@@ -99,7 +99,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 81
+        "n_spine_rows": 82
       }
     },
     {
@@ -107,7 +107,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1776
+        "n_spine_rows": 1816
       }
     },
     {
@@ -115,7 +115,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 2993
+        "n_spine_rows": 3251
       }
     },
     {
@@ -123,7 +123,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 316
+        "n_spine_rows": 327
       }
     },
     {
@@ -131,7 +131,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 629
+        "n_spine_rows": 907
       }
     },
     {
@@ -155,7 +155,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 53
+        "n_spine_rows": 56
       }
     },
     {
@@ -163,7 +163,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 15539
+        "n_spine_rows": 15949
       }
     },
     {
@@ -179,7 +179,7 @@
       "type": "engine",
       "label": "reflex.cortex_attention",
       "meta": {
-        "n_spine_rows": 44
+        "n_spine_rows": 50
       }
     },
     {
@@ -187,7 +187,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 257
+        "n_spine_rows": 275
       }
     },
     {
@@ -195,7 +195,7 @@
       "type": "engine",
       "label": "reflex.regime_stale_selfheal",
       "meta": {
-        "n_spine_rows": 17
+        "n_spine_rows": 18
       }
     },
     {
@@ -203,7 +203,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 1719
+        "n_spine_rows": 2940
       }
     },
     {
@@ -219,7 +219,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 294870
+        "n_spine_rows": 294925
       }
     },
     {
@@ -227,7 +227,7 @@
       "type": "engine",
       "label": "us_board",
       "meta": {
-        "n_spine_rows": 3876
+        "n_spine_rows": 4077
       }
     },
     {
@@ -235,7 +235,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 17482
+        "n_spine_rows": 17923
       }
     },
     {
@@ -243,7 +243,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 17482
+        "n_spine_rows": 17923
       }
     },
     {
@@ -251,7 +251,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 92
+        "n_spine_rows": 118
       }
     },
     {
@@ -1832,6 +1832,42 @@
       }
     },
     {
+      "id": "thesis:2026-08-17-radar-space_economy",
+      "type": "thesis",
+      "label": "2026-08-17-radar-space_economy",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-17-radar-us_sector_comm",
+      "type": "thesis",
+      "label": "2026-08-17-radar-us_sector_comm",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-17-radar-us_sector_staples",
+      "type": "thesis",
+      "label": "2026-08-17-radar-us_sector_staples",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-17-radar-non_ai_tech",
+      "type": "thesis",
+      "label": "2026-08-17-radar-non_ai_tech",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "macro:fx_dollar",
       "type": "macro",
       "label": "FX / Dollar",
@@ -1840,7 +1876,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "mixed",
-        "asof": "2026-08-13",
+        "asof": "2026-08-14",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "mixed",
@@ -1848,7 +1884,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 116
+        "days_in_regime": 117
       }
     },
     {
@@ -1859,20 +1895,20 @@
         "subtype": "rates_transmission",
         "state": {
           "rates": {
-            "real_10y": 2.43,
-            "real_10y_pctile": 0.99,
-            "real_10y_chg_63d_bp": 33.0,
-            "nominal_10y": 4.7,
+            "real_10y": 2.42,
+            "real_10y_pctile": 0.98,
+            "real_10y_chg_63d_bp": 29.0,
+            "nominal_10y": 4.68,
             "curve_2s10s": 0.48,
             "curve_tp_adj": 1.31,
-            "policy_gap": 0.59,
+            "policy_gap": 0.57,
             "regime": "restrictive",
             "direction": "rising",
-            "real_10y_chg_22d_bp": 7.0,
+            "real_10y_chg_22d_bp": 9.0,
             "turn_watch": "extreme_watch",
             "label": {
-              "en": "Real 10y 2.43% (restrictive, rising — at a 5y extreme)",
-              "zh": "实际10年期 2.43%（偏紧，处于5年极值）"
+              "en": "Real 10y 2.42% (restrictive, rising — at a 5y extreme)",
+              "zh": "实际10年期 2.42%（偏紧，处于5年极值）"
             }
           },
           "inflation": {
@@ -1880,7 +1916,7 @@
             "core_cpi_yoy": 2.79,
             "headline_cpi_yoy": 3.54,
             "core_pce_3m_ann": 2.89,
-            "ppi_core_yoy": 4.68,
+            "ppi_core_yoy": 4.16,
             "eci_comp_yoy": 3.38,
             "vs_target_pp": 1.29,
             "regime": "above target",
@@ -1891,15 +1927,15 @@
             }
           },
           "expectations": {
-            "breakeven_10y": 2.26,
-            "breakeven_5y5y": 2.28,
+            "breakeven_10y": 2.24,
+            "breakeven_5y5y": 2.27,
             "model_5y": 2.48,
             "survey_1y": 4.6,
-            "market_minus_model_bp": -20.0,
+            "market_minus_model_bp": -21.0,
             "anchoring": "anchored",
             "label": {
-              "en": "5y5y breakeven 2.28% vs model 2.48% (anchored)",
-              "zh": "5年5年盈亏平衡 2.28% vs 模型 2.48%（锚定）"
+              "en": "5y5y breakeven 2.27% vs model 2.48% (anchored)",
+              "zh": "5年5年盈亏平衡 2.27% vs 模型 2.48%（锚定）"
             }
           }
         },
@@ -1908,7 +1944,7 @@
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
         "yield_curve_regime": "bear_steepener",
-        "asof": "2026-08-12",
+        "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -1921,8 +1957,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.523381438570942,
-        "asof": "2026-08-12",
+        "recession_risk": 4.5258011056247565,
+        "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -1950,9 +1986,9 @@
       "meta": {
         "subtype": "cross_asset_flows",
         "label_zh": "跨资产流",
-        "regime": "risk-on trends",
+        "regime": "mixed / no clear trend",
         "correlation_verdict": "converging",
-        "state_text": "risk-on trends",
+        "state_text": "mixed / no clear trend",
         "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
@@ -1968,7 +2004,7 @@
         "quad_name": "Reflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-08-12",
+        "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2011,9 +2047,9 @@
         "subtype": "global_regime:canada",
         "quad": "Q2",
         "quad_name": "Reflation",
-        "cycle_tag": "mid",
+        "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-12",
+        "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2036,9 +2072,9 @@
       "meta": {
         "subtype": "market_structure",
         "regime": "long",
-        "agreement": "split",
+        "agreement": "aligned_adding",
         "cor1m_regime": "dispersion",
-        "asof": "2026-08-12",
+        "asof": "2026-08-13",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
       }
@@ -6824,6 +6860,26 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_stock_library.py writes site/factordata/us_standouts.json"
+    },
+    {
+      "src": "artifact:site-us-standouts",
+      "dst": "module:engine/entry_radar/producers/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/us_standouts.json consumed by engine/entry_radar/producers/__init__.py"
+    },
+    {
+      "src": "artifact:site-us-standouts",
+      "dst": "module:engine/entry_radar/producers/boards.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/us_standouts.json consumed by engine/entry_radar/producers/boards.py"
     },
     {
       "src": "artifact:site-us-standouts",
@@ -16687,6 +16743,26 @@
     },
     {
       "src": "artifact:intraday-flow-pulse",
+      "dst": "module:engine/entry_radar/producers/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/live/flow_pulse.json consumed by engine/entry_radar/producers/__init__.py"
+    },
+    {
+      "src": "artifact:intraday-flow-pulse",
+      "dst": "module:engine/entry_radar/producers/live_flow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/live/flow_pulse.json consumed by engine/entry_radar/producers/live_flow.py"
+    },
+    {
+      "src": "artifact:intraday-flow-pulse",
       "dst": "module:templates/intraday_flow.html.j2",
       "edge_type": "feeds",
       "n": null,
@@ -16816,6 +16892,16 @@
       "note": "structural: data/options_signal_episode/episodes.jsonl consumed by engine/options_signal_campaign.py"
     },
     {
+      "src": "artifact:options-signal-episodes",
+      "dst": "module:scripts/run_options_sparse_selector.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/episodes.jsonl consumed by scripts/run_options_sparse_selector.py"
+    },
+    {
       "src": "module:scripts/build_options_signal_episode.py",
       "dst": "artifact:options-signal-episode-h60-outcomes",
       "edge_type": "feeds",
@@ -16847,6 +16933,16 @@
     },
     {
       "src": "artifact:options-signal-episode-h60-outcomes",
+      "dst": "module:scripts/audit_options_episode_outcome_coverage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by scripts/audit_options_episode_outcome_coverage.py"
+    },
+    {
+      "src": "artifact:options-signal-episode-h60-outcomes",
       "dst": "module:engine/options_signal_campaign.py",
       "edge_type": "feeds",
       "n": null,
@@ -16854,6 +16950,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "artifact:options-signal-episode-h60-outcomes",
+      "dst": "module:engine/options_episode_coverage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by engine/options_episode_coverage.py"
     },
     {
       "src": "module:scripts/build_options_signal_episode.py",
@@ -16906,6 +17012,16 @@
       "note": "structural: data/options_signal_campaign/campaigns.jsonl consumed by engine/options_signal_campaign.py"
     },
     {
+      "src": "artifact:options-signal-campaign-revisions",
+      "dst": "module:scripts/run_options_sparse_selector.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_campaign/campaigns.jsonl consumed by scripts/run_options_sparse_selector.py"
+    },
+    {
       "src": "module:engine/options_signal_campaign.py",
       "dst": "artifact:options-signal-campaign-outcomes",
       "edge_type": "feeds",
@@ -16944,6 +17060,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/options_signal_campaign/checkpoint.json consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "artifact:options-signal-campaign-checkpoint",
+      "dst": "module:scripts/run_options_sparse_selector.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_campaign/checkpoint.json consumed by scripts/run_options_sparse_selector.py"
     },
     {
       "src": "module:scripts/build_options_signal_episode.py",
@@ -20176,6 +20302,16 @@
       "note": "structural: scripts/build_theme_graph.py writes data/theme_graph/evidence.parquet"
     },
     {
+      "src": "module:scripts/build_theme_graph.py",
+      "dst": "artifact:theme-graph-capability",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_theme_graph.py writes data/theme_graph/capability.parquet"
+    },
+    {
       "src": "module:scripts/build_price_pressure.py",
       "dst": "artifact:price-pressure-latest",
       "edge_type": "feeds",
@@ -20243,7 +20379,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['GS', 'GOOG', 'RKLB', 'PG', '"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=50 ticker-level demand-vs-supply divergences b=n_divergences=50, top tickers=['GOOGL', 'AIG', 'IRDM', 'HOOD"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -20259,23 +20395,23 @@
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 28,
-      "lift": 0.00596,
+      "n": 30,
+      "lift": 0.00614,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0060 n=28 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0061 n=30 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 102,
-      "lift": -0.02769,
+      "n": 105,
+      "lift": -0.027,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0277 n=102 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0270 n=105 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20292,34 +20428,34 @@
       "src": "engine:altdata",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 23,
-      "lift": 0.0082,
+      "n": 25,
+      "lift": 0.0025,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0082 n=23 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0025 n=25 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:whitehouse",
       "edge_type": "confirms",
-      "n": 5,
+      "n": 7,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=5 < MIN_N=10 — lift=null (insufficient sample; display-only)"
+      "note": "n=7 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 861,
-      "lift": 0.00158,
+      "n": 896,
+      "lift": 0.00024,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0016 n=861 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0002 n=896 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20337,11 +20473,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 30,
-      "lift": -0.02143,
+      "lift": -0.02186,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0214 n=30 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0219 n=30 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20359,7 +20495,7 @@
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 17,
-      "lift": -0.01891,
+      "lift": -0.01887,
       "stable": null,
       "display_only": true,
       "regime": null,
@@ -20381,42 +20517,53 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 94,
-      "lift": 0.0006,
+      "lift": 0.00048,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0006 n=94 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0005 n=94 (pre-gauntlet estimate; display-only)"
+    },
+    {
+      "src": "engine:radar",
+      "dst": "engine:whitehouse",
+      "edge_type": "confirms",
+      "n": 3,
+      "lift": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "n=3 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:track_record",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 35,
+      "n": 36,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=35 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
+      "note": "n=36 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
     },
     {
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 4,
+      "n": 12,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-31); e.g. ABNB, ASTS, LVS, SHW. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-08-07); e.g. AEIS, ANET, APH, AVGO, ELV, GPCR, ISRG, MDB. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
       "dst": "us_board.buy_lane",
       "edge_type": "confirms",
-      "n": 0,
+      "n": 1,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-31); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-08-07); e.g. RGTI. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
@@ -20426,7 +20573,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-31); e.g. ALB, DAL, FIX. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-08-07); e.g. ALB, TJX, TOL. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -20446,7 +20593,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.313 verdict=headwind source_lobe=rates_transmission asof=2026-08-12"
+      "note": "rates headwind: asset=XLB net=-0.289 verdict=headwind source_lobe=rates_transmission asof=2026-08-13"
     },
     {
       "src": "macro:rates_transmission",
@@ -20456,7 +20603,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.296 verdict=headwind source_lobe=rates_transmission asof=2026-08-12"
+      "note": "rates headwind: asset=XLF net=-0.285 verdict=headwind source_lobe=rates_transmission asof=2026-08-13"
     },
     {
       "src": "macro:rates_transmission",
@@ -20466,7 +20613,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.261 verdict=headwind source_lobe=rates_transmission asof=2026-08-12"
+      "note": "rates headwind: asset=XLK net=-0.241 verdict=headwind source_lobe=rates_transmission asof=2026-08-13"
     },
     {
       "src": "macro:fx_dollar",
@@ -20476,7 +20623,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-08-12 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-08-13 source_lobe=contradictions/cross_asset_confirm"
     },
     {
       "src": "macro:rates_credit",
@@ -20486,7 +20633,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-08-12 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-08-13 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
@@ -20504,16 +20651,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "33 ticker-level demand-vs-supply divergences"
+        "reading": "50 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=33, top tickers=['GS', 'GOOG', 'RKLB', 'PG', 'IRDM']"
+        "reading": "n_divergences=50, top tickers=['GOOGL', 'AIG', 'IRDM', 'HOOD', 'PL']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-14",
-      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: GS, GOOG, RKLB, PG, IRDM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-18",
+      "note": "50 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: GOOGL, AIG, IRDM, HOOD, PL.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -20528,8 +20675,8 @@
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-13",
-      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit, usd_positioning).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
+      "as_of": "2026-08-17",
+      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (usd_positioning).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
   ],
@@ -20551,7 +20698,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-14T05:31:41Z",
-  "inputs_hash": "sha256:c50fd6768aa0895387fbb69498f7f2d7c8e4f9d13e35d4a8c4905211be329b5f",
+  "produced_at": "2026-08-18T07:57:24Z",
+  "inputs_hash": "sha256:051ee2f1e1aad8676d97b4b9d687dfa568f8e028eb7a9758908cdb1cf37a4805",
   "tier": "display"
 }

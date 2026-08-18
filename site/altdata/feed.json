@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-18T07:22:10.871114+00:00",
+  "generated_utc": "2026-08-18T08:57:56.796239+00:00",
   "as_of": "2026-08-18",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26941,14 +26941,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -28671,13 +28671,6 @@
         "days_to": 2,
         "eps_forecast": 1.77,
         "last_surprise_pct": -106.9
-      },
-      {
-        "ticker": "ROST",
-        "next_date": "2026-08-20",
-        "days_to": 2,
-        "eps_forecast": 1.93,
-        "last_surprise_pct": 18.8
       },
       {
         "ticker": "WMT",
