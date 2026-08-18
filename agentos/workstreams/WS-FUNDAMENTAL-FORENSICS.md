@@ -71,7 +71,7 @@ do_not_redo:
   - "Do not treat PR #5820 merge as production proof. The first scheduled incremental failed universe_invalid."
   - "Do not dispatch July recovery while the live parquet exceeds the bind cap on main."
   - "Do not raise MAX_AFFECTED_ISSUERS or the Company Facts byte budget to finish recovery in one run."
-next_action: Sol reviews the MAX_UNIVERSE_ISSUERS=4000 repair PR. Do not merge from the worker session. Do not resume July recovery until that head is on main. Do not start FF-2.
+next_action: Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge #5864 once required CI/fences are green on the current head. FF-1 remains blocked and not PROVEN_LIVE until production commissioning finishes. FF-2 remains forbidden.
 ---
 
 ## Context

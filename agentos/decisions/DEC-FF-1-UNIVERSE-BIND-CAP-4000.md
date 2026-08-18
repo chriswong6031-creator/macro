@@ -14,9 +14,12 @@ rationale: >
   The parquet IS the universe. 2500 was a safety fence, not a product census.
   2837 unique ticker/CIK pairs with zero duplicates is a legal bind. 4000 admits
   the measured census with growth room and still fail-closes an accidental
-  full-EDGAR dump. Submissions pacing is 0.12s, so 2837 issuers are ~6 minutes
-  of Submissions I/O inside the 90-minute job. Recovery Company Facts remains
-  bounded by the existing 64-issuer / 32MiB continuation design.
+  full-EDGAR dump. At the 0.12s SEC pacing floor, 2837 Submissions requests imply
+  roughly 5.7 minutes of minimum pacing time before network latency, response
+  transfer, retries and durable publication. Actual fit inside the 90-minute
+  workflow remains a production-commissioning fact to measure, not assume.
+  Recovery Company Facts remains bounded by the existing 64-issuer / 32MiB
+  continuation design.
 alternatives:
   - option: Shrink or filter the parquet to <=2500
     why_not: Commission forbids altering the universe. DNR forbids a second
@@ -41,10 +44,10 @@ affects:
   - tests/test_fundamental_forensics_broad_sec.py
 confidence: high
 reversibility: easy
-decided_by: coo-fable
+decided_by: ceo-sol
 decided_at: 2026-08-18
-review_by: 2026-08-19
 ---
 
-Sol reviews and merges this cap change. Commissioning of July recovery stays
-stopped until the repaired head is on main and a new production bind succeeds.
+Sol accepted MAX_UNIVERSE_ISSUERS=4000 on 2026-08-18. Do not restore 2500, do
+not shrink the parquet, and do not start FF-2. July recovery stays stopped
+until this repair is on main and production commissioning resumes.
