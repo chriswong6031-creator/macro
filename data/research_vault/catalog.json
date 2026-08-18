@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T13:34:11.556943+00:00",
-  "count": 1339,
+  "generated_at": "2026-08-18T14:21:18.049229+00:00",
+  "count": 1341,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,23 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-8pvavzjboxt-af7488",
+      "title": "GS Novak Industrials Materials 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:43:38Z",
+      "summary_points": [
+        "**Machinery Sector Sentiment Split**: Construction (most positive), Truck (negative), Agricultural (flat); CAT leads construction amid gas turbine vs backlog debate - **Geopolitical & Commodity Risks**: Strait of Hormuz attack spiking crude (WTI $85+, Brent $91), dollar flat (DXY ~100), S&P futures down 50bps on long-end Treasuries pressure"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-rddxdga6nln-fb37f8",
       "title": "GS Johnstone TMT Spec Sales 18 Aug 2026",
@@ -370,6 +387,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2vstkfieon6-996f33",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:14Z",
+      "summary_points": [
+        "**USD Resilience & Fed Shift**: US retail sales fell 0.6% MoM (first decline since Oct 2025), moderating inflation scaled back Fed rate hike expectations (30% Sept hike vs 55% prior); fiscal concerns (30-yr bonds yield 5.216%) and potential USD weakening as Fed holds rates.",
+        "**High-Yield Currency Carry**: GBP, NOK, AUD, NZD, and CNY offer carry potential amid USD weakness, supported by interest rate differentials and China’s subdued export growth.",
+        "**Japan Policy & Sector Alpha**: Japan Q2 GDP miss (1.1% vs 2.0% forecast) doesn’t alter gradual tightening outlook; maintain \"Attractive\" on Japanese chip/component makers (AI supply chain) amid geopolitical/energy risks driving sector catch-up gains."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
