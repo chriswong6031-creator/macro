@@ -1,0 +1,42 @@
+{
+  "adjustment_mode": "auto_adjust=True (dividend/split adjusted total-return), frozen at cut time",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "gate": "registration §1/§4: the W1-A1 result is sealed, so its price input is frozen here rather than re-read from the nightly-re-adjusted curated plane. This store is an immutable build INPUT: no lane appends to it, and nothing derives authority from it.",
+  "immutable": true,
+  "price_plane_id": "baskets_ohlcv_v1",
+  "schema": "stock_identity.frozen_source_manifest.v1",
+  "snapshots": {
+    "w1a1_b_ohlcv_prefix_v0": {
+      "asof": "2026-08-13",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "cut_from": {
+        "commit": "6d04e9b3100af7afaf834ceb2c9c307a48808f0b",
+        "container_sha256": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f",
+        "path": "data/baskets/ohlcv/B.parquet",
+        "pull_request": "#5632"
+      },
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-13",
+      "normalization": "engine.stock_identity.plane.load_symbol, then rows <= asof",
+      "path": "data/stock_identity/sources/w1a1_b_ohlcv_prefix_v0.parquet",
+      "prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+      "prefix_sha256_algorithm": "stock_identity.w1a1.ohlcv_prefix.v1",
+      "rows": 3172,
+      "sha256": "ba200fe4eb0b881eec4f7a2962c949dea4450d0ffbc1713ab465f440b008d878",
+      "symbol": "B",
+      "why_frozen": "the curated plane re-downloads the full auto-adjusted history nightly, so the elapsed 2014..asof prefix is re-derived to a slightly different float every collection night; an exact-equality digest over the live file cannot hold. The live plane is checked by a tolerance-aware revision tripwire instead."
+    }
+  }
+}

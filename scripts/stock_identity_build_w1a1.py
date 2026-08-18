@@ -134,10 +134,62 @@ if FROZEN_SHA256 != W1A1_SEALED_W1_SHA256:
 # The #5632 seed container itself was sha256 dc126c36..., but this curated store is
 # advanced nightly. A durable A1 input receipt therefore pins the logical OHLCV prefix
 # through ASOF, not mutable parquet container bytes or post-ASOF appends.
+#
+# Post-ASOF appends are NOT the only nightly mutation, which is what the original
+# registration assumed. `scripts/fetch_basket_ohlcv.py` re-downloads the full
+# auto-adjusted history every collection night and lets the new vendor frame win, so
+# the already-elapsed 2014..ASOF prefix is re-derived nightly and lands at a slightly
+# different float: measured 2026-08-18, two collections 21 minutes apart moved 2,214
+# then 2,341 of the 3,172 prefix rows. An exact-equality digest over the LIVE plane
+# therefore reds the fleet on every collection night by construction. The prefix the
+# A1 result was computed from is consequently frozen as a program-owned immutable
+# snapshot, and the live plane is checked by a revision tripwire (see below) instead.
 B_SOURCE_SEED_CONTAINER_SHA256 = (
     "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
 )
 B_SOURCE_PREFIX_SHA256 = "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db"
+
+#: Immutable 2014-01-02..ASOF prefix the A1 artifacts were built from, extracted from
+#: the #5632 seed container (commit 6d04e9b3, `data/baskets/ohlcv/B.parquet`, container
+#: sha256 dc126c36...) under the `plane.load_symbol` normalization. Its logical digest
+#: is B_SOURCE_PREFIX_SHA256 unchanged — freezing the bytes re-anchored the registered
+#: receipt, it did not restamp it.
+B_SOURCE_SNAPSHOT_RELATIVE_PATH = (
+    "data/stock_identity/sources/w1a1_b_ohlcv_prefix_v0.parquet"
+)
+B_SOURCE_SNAPSHOT_PATH = REPO_ROOT / B_SOURCE_SNAPSHOT_RELATIVE_PATH
+B_SOURCE_SNAPSHOT_SHA256 = (
+    "ba200fe4eb0b881eec4f7a2962c949dea4450d0ffbc1713ab465f440b008d878"
+)
+B_SOURCE_SNAPSHOT_PROVENANCE_COMMIT = "6d04e9b3100af7afaf834ceb2c9c307a48808f0b"
+
+# Revision-tripwire bands. Measured seed->live over the 3,172-row prefix on 2026-08-18:
+#   * O/H/L/C move by a single per-row multiplicative factor, coherent across the four
+#     columns to 4.4e-16 (machine epsilon) — the signature of adjustment arithmetic,
+#     not of a restated print.
+#   * normalized by the window-wide median factor, that per-row factor stays within
+#     8.63e-07 of uniform (worst row, 2014; 8.8e-08 by 2026) and does NOT accumulate:
+#     seed->mid and mid->live were each ~8.5e-07, seed->live 8.63e-07.
+#   * volume is byte-identical on all 3,171 settled rows across three collections
+#     spanning four days; only the ASOF row itself moved (10,621,100 -> 10,625,700,
+#     4.33e-04), the final session's tape still consolidating when the seed was cut.
+#
+# The band is on UNIFORMITY, not on the level, because the level is not the thing that
+# can invalidate A1. `auto_adjust=True` rescales the whole elapsed history on every
+# future dividend — a routine ~$0.10 Barrick quarterly on a ~$41 tape is a ~2.4e-3
+# coherent shift, 240x any noise band — but a uniform rescale leaves every return,
+# drawdown and percentage gap identical, so it cannot move an A1 conclusion. Banding
+# the level would therefore re-red the fleet on the next ordinary dividend, which is
+# the exact failure this heal exists to end. What does invalidate A1 is a change in
+# RELATIVE prices, which is what the residual-vs-median test sees. Splits stay covered
+# through the volume channel: split adjustment rescales share counts too, and settled
+# volume must match exactly.
+B_LIVE_PRICE_COHERENCE_BAND = 1e-12
+B_LIVE_PRICE_REVISION_BAND = 1e-5
+B_LIVE_ASOF_VOLUME_BAND = 1e-2
+#: Sanity bound on the gross rescale. Not a corporate-action test — it only catches a
+#: vendor catastrophe that somehow left volume intact.
+B_LIVE_GROSS_RESCALE_BOUNDS = (0.2, 5.0)
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
 
@@ -490,19 +542,147 @@ def _validate_b_membership(manifest: dict[str, Any]) -> pd.DataFrame:
     return snapshot
 
 
-def _validate_b_source() -> pd.DataFrame:
-    source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
-    if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
-        raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
-    frame = source.loc[source.index <= ASOF].copy()
-    if len(frame) != 3172 or frame.index.max() != ASOF:
-        raise SystemExit("B source prefix row/date receipt drifted")
+def _load_b_prefix_snapshot() -> pd.DataFrame:
+    """The frozen A1 input prefix, checked at both the byte and the logical layer."""
+    if not B_SOURCE_SNAPSHOT_PATH.exists():
+        raise SystemExit(
+            f"frozen A1 B prefix snapshot is absent: {B_SOURCE_SNAPSHOT_RELATIVE_PATH}"
+        )
+    container = _sha256(B_SOURCE_SNAPSHOT_PATH)
+    if container != B_SOURCE_SNAPSHOT_SHA256:
+        raise SystemExit(
+            f"frozen A1 B prefix snapshot container drifted: {container}"
+        )
+    frame = pd.read_parquet(B_SOURCE_SNAPSHOT_PATH)
+    if len(frame) != 3172:
+        raise SystemExit(f"frozen A1 B prefix snapshot row receipt drifted: {len(frame)}")
+    if frame.index.min() != pd.Timestamp("2014-01-02") or frame.index.max() != ASOF:
+        raise SystemExit("frozen A1 B prefix snapshot date receipt drifted")
     actual = _ohlcv_prefix_sha256(frame)
     if actual != B_SOURCE_PREFIX_SHA256:
         raise SystemExit(
-            f"B source logical prefix differs from registration: {actual}"
+            f"frozen A1 B prefix snapshot logical digest differs from registration: {actual}"
         )
     return frame
+
+
+def _tripwire_b_live_plane(snapshot: pd.DataFrame) -> dict[str, Any]:
+    """Fire when the LIVE curated plane revises the frozen A1 evidence window.
+
+    The live plane is re-derived from the vendor every collection night, so equality
+    is not the question — whether the re-derivation is adjustment arithmetic or a real
+    revision is. Prices must move as ONE UNIFORM rescale of the whole window (any
+    uniform rescale is return-preserving, so it cannot move an A1 conclusion); settled
+    volume must not move at all.
+    """
+    live = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
+    if live.index.min() != pd.Timestamp("2014-01-02") or ASOF not in live.index:
+        raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
+    prefix = live.loc[live.index <= ASOF]
+    if len(prefix) != len(snapshot) or not prefix.index.equals(snapshot.index):
+        raise SystemExit(
+            "B live prefix no longer spans the frozen A1 session index "
+            f"({len(prefix)} rows vs {len(snapshot)}) — a session was added, dropped or "
+            "restamped inside the sealed window; adjudicate before rebuilding A1"
+        )
+    if list(prefix.columns) != list(snapshot.columns):
+        raise SystemExit(f"B live prefix columns drifted: {list(prefix.columns)}")
+
+    prices = ["open", "high", "low", "close"]
+    base = snapshot[prices].to_numpy(dtype="float64")
+    live_prices = prefix[prices].to_numpy(dtype="float64")
+    if not bool(np.isfinite(live_prices).all()):
+        raise SystemExit("B live prefix carries non-finite OHLC")
+    if not bool((base > 0).all()):
+        raise SystemExit("frozen A1 B prefix snapshot carries a non-positive price")
+
+    ratio = live_prices / base
+    coherence = np.abs(ratio.max(axis=1) - ratio.min(axis=1))
+    worst_coherence = float(coherence.max())
+    if worst_coherence > B_LIVE_PRICE_COHERENCE_BAND:
+        stamp = snapshot.index[int(coherence.argmax())].date()
+        raise SystemExit(
+            f"B live prefix restated an individual price at {stamp}: O/H/L/C moved by "
+            f"different factors (spread {worst_coherence:.3e} > "
+            f"{B_LIVE_PRICE_COHERENCE_BAND:.0e}). Auto-adjustment rescales the four "
+            "together, so this is a print revision, not vendor noise — adjudicate "
+            "against the sealed A1 result before rebuilding"
+        )
+
+    row_factor = np.median(ratio, axis=1)
+    gross = float(np.median(row_factor))
+    low, high = B_LIVE_GROSS_RESCALE_BOUNDS
+    if not low <= gross <= high:
+        raise SystemExit(
+            f"B live prefix rescaled the whole window by {gross:.6g}, outside "
+            f"[{low}, {high}] with settled volume intact — that is not an adjustment, "
+            "it is a broken vendor frame; adjudicate before rebuilding"
+        )
+    residual = np.abs(row_factor / gross - 1.0)
+    worst_price = float(residual.max())
+    if worst_price > B_LIVE_PRICE_REVISION_BAND:
+        stamp = snapshot.index[int(residual.argmax())].date()
+        raise SystemExit(
+            f"B live prefix moved NON-UNIFORMLY at {stamp}: residual against the "
+            f"window rescale {gross:.9g} is {worst_price:.3e} > "
+            f"{B_LIVE_PRICE_REVISION_BAND:.0e}. A dividend or split rescales the whole "
+            "window and preserves every return; this changed relative prices, so it is "
+            "a restatement inside the frozen A1 window — adjudicate against the sealed "
+            "A1 result before rebuilding"
+        )
+
+    settled = snapshot.index < ASOF
+    base_volume = snapshot["volume"].to_numpy(dtype="float64")
+    live_volume = prefix["volume"].to_numpy(dtype="float64")
+    moved = settled & (base_volume != live_volume)
+    if bool(moved.any()):
+        stamps = [str(s.date()) for s in snapshot.index[moved][:5]]
+        raise SystemExit(
+            f"B live prefix restated settled volume on {int(moved.sum())} session(s) "
+            f"({', '.join(stamps)}) — settled share counts are stable under "
+            "re-adjustment, so this is a vendor restatement; adjudicate against the "
+            "sealed A1 result before rebuilding"
+        )
+    asof_base = float(base_volume[-1])
+    asof_live = float(live_volume[-1])
+    asof_dev = abs(asof_live / asof_base - 1.0) if asof_base else 0.0
+    if asof_dev > B_LIVE_ASOF_VOLUME_BAND:
+        raise SystemExit(
+            f"B live prefix moved ASOF-session volume by {asof_dev:.3e} > "
+            f"{B_LIVE_ASOF_VOLUME_BAND:.0e} ({asof_base:.0f} -> {asof_live:.0f}); that "
+            "exceeds late tape consolidation — adjudicate before rebuilding"
+        )
+
+    return {
+        "checked_path": B_SOURCE_RELATIVE_PATH,
+        "rows_compared": int(len(prefix)),
+        "live_prefix_sha256": _ohlcv_prefix_sha256(prefix),
+        "max_price_coherence_spread": worst_coherence,
+        "gross_window_rescale": gross,
+        "max_nonuniform_residual": worst_price,
+        "price_coherence_band": B_LIVE_PRICE_COHERENCE_BAND,
+        "price_revision_band": B_LIVE_PRICE_REVISION_BAND,
+        "settled_volume_rows_moved": 0,
+        "asof_volume_relative_deviation": asof_dev,
+        "asof_volume_band": B_LIVE_ASOF_VOLUME_BAND,
+        "gross_rescale_note": (
+            "a gross rescale away from 1.0 is post-asof dividend/split adjustment; it "
+            "is return-preserving and disclosed here rather than treated as a revision"
+        ),
+        "verdict": "adjustment arithmetic only; no revision to the frozen A1 window",
+    }
+
+
+def _validate_b_source() -> pd.DataFrame:
+    """Return the frozen A1 prefix, having tripwired the live curated plane.
+
+    A1 math reads the snapshot, never the live file: the nightly re-adjustment means
+    the live plane can no longer reproduce the sealed A1 outputs, and a result whose
+    inputs move every night is not a sealed result.
+    """
+    snapshot = _load_b_prefix_snapshot()
+    _tripwire_b_live_plane(snapshot)
+    return snapshot
 
 
 def _validate_reference(reference_dir: Path) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
@@ -972,6 +1152,14 @@ def _build_and_stage(
             "prefix_asof": str(ASOF.date()),
             "prefix_sha256": B_SOURCE_PREFIX_SHA256,
             "seed_container_sha256": B_SOURCE_SEED_CONTAINER_SHA256,
+            "snapshot_path": B_SOURCE_SNAPSHOT_RELATIVE_PATH,
+            "snapshot_sha256": B_SOURCE_SNAPSHOT_SHA256,
+            "snapshot_provenance_commit": B_SOURCE_SNAPSHOT_PROVENANCE_COMMIT,
+            "snapshot_read_note": (
+                "A1 math reads the frozen snapshot; `path` names the curated plane it "
+                "was cut from and is re-checked by the live revision tripwire"
+            ),
+            "live_plane_revision": _tripwire_b_live_plane(frame),
             "file_sha256_at_run": _sha256(B_SOURCE_PATH),
             "file_rows_at_run": int(len(source_at_run)),
             "file_last_date_at_run": str(source_at_run.index.max().date()),

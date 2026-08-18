@@ -212,8 +212,15 @@ class TestZeroAuthority:
             assert isinstance(payload, dict), p.name
             assert is_zero_authority(payload), f"{p.name} lacks a complete all-false block"
 
+    #: Price-parquet stores: raw OHLCV rows, so the authority block rides on the
+    #: store manifest instead of on every price row. Each is covered by
+    #: ``test_the_price_stores_declare_authority_in_their_manifests``.
+    PRICE_STORE_DIRS = ("ohlcv", "sources")
+
     def test_every_parquet_artifact_carries_authority_columns(self):
-        files = [p for p in _parquet_files() if p.parent.name != "ohlcv"]
+        files = [
+            p for p in _parquet_files() if p.parent.name not in self.PRICE_STORE_DIRS
+        ]
         if not files:
             pytest.skip("no artifacts in this checkout")
         for p in files:
@@ -223,13 +230,27 @@ class TestZeroAuthority:
                 assert col in df.columns, f"{p.name} missing {col}"
                 assert not df[col].any(), f"{p.name}: {col} is not all-false"
 
-    def test_the_ohlcv_store_declares_authority_in_its_manifest(self):
+    def test_the_price_stores_declare_authority_in_their_manifests(self):
         # The collected price parquets are raw history, so the block rides on the
-        # store's manifest rather than on every price row.
-        m = DATA / "ohlcv" / "manifest.json"
-        if not m.exists():
-            pytest.skip("program-owned ohlcv store not present")
-        assert is_zero_authority(json.loads(m.read_text(encoding="utf-8")))
+        # store's manifest rather than on every price row. Every directory excused
+        # from the row-level sweep must be excused HERE, or the exclusion above is a
+        # blind spot rather than a redirection.
+        seen = {p.parent.name for p in _parquet_files()}
+        for name in self.PRICE_STORE_DIRS:
+            if name not in seen:
+                continue
+            m = DATA / name / "manifest.json"
+            assert m.is_file(), f"price store {name}/ has no manifest to carry authority"
+            assert is_zero_authority(json.loads(m.read_text(encoding="utf-8")))
+
+    def test_no_price_store_dir_escapes_both_authority_sweeps(self):
+        # A new directory of raw parquets must not be added to PRICE_STORE_DIRS
+        # without a manifest; this pins the redirection closed.
+        for name in self.PRICE_STORE_DIRS:
+            d = DATA / name
+            if not d.is_dir() or not any(d.glob("*.parquet")):
+                continue
+            assert (d / "manifest.json").is_file(), name
 
 
 class TestBlindArmIsInvisible:
@@ -1388,8 +1409,7 @@ def test_ack_status_tail_records_the_curated_repair():
 
 
 @pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
-def test_b_source_is_exactly_the_registered_curated_plane():
-    path = ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH
+def test_b_source_is_the_frozen_registered_prefix():
     frame = amendment_builder._validate_b_source()
     assert amendment_builder._ohlcv_prefix_sha256(frame) == (
         amendment_builder.B_SOURCE_PREFIX_SHA256
@@ -1399,6 +1419,128 @@ def test_b_source_is_exactly_the_registered_curated_plane():
     assert frame.index.max() == pd.Timestamp("2026-08-13")
     assert primary_planes(ROOT)["B"] == PLANE_BASKETS
     assert not (DATA / "ohlcv/B.parquet").exists()
+    # The snapshot re-anchors the registered digest; it must never restamp it.
+    snapshot = ROOT / amendment_builder.B_SOURCE_SNAPSHOT_RELATIVE_PATH
+    assert snapshot.is_file()
+    assert amendment_builder._sha256(snapshot) == (
+        amendment_builder.B_SOURCE_SNAPSHOT_SHA256
+    )
+    assert frame.equals(amendment_builder._load_b_prefix_snapshot())
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+def test_b_live_plane_carries_no_revision_to_the_frozen_window():
+    receipt = amendment_builder._tripwire_b_live_plane(
+        amendment_builder._load_b_prefix_snapshot()
+    )
+    assert receipt["rows_compared"] == 3172
+    assert receipt["settled_volume_rows_moved"] == 0
+    assert receipt["max_price_coherence_spread"] <= (
+        amendment_builder.B_LIVE_PRICE_COHERENCE_BAND
+    )
+    assert receipt["max_nonuniform_residual"] <= (
+        amendment_builder.B_LIVE_PRICE_REVISION_BAND
+    )
+    assert receipt["asof_volume_relative_deviation"] <= (
+        amendment_builder.B_LIVE_ASOF_VOLUME_BAND
+    )
+    assert re.fullmatch(r"[0-9a-f]{64}", receipt["live_prefix_sha256"])
+
+
+PRICES = ["open", "high", "low", "close"]
+
+
+def _tripwire_live(monkeypatch, mutate):
+    """Run the tripwire against a synthetic live plane derived from the snapshot."""
+    snapshot = amendment_builder._load_b_prefix_snapshot()
+    live = mutate(snapshot.copy())
+    monkeypatch.setattr(amendment_builder, "load_symbol", lambda *a, **k: live)
+    return amendment_builder._tripwire_b_live_plane(snapshot)
+
+
+def _rescale(frame, factor):
+    return frame.assign(**{c: frame[c] * factor for c in PRICES})
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+@pytest.mark.parametrize(
+    ("label", "mutate"),
+    (
+        # Vendor re-rounding: the measured 2026-08-18 shape.
+        ("re-adjustment noise", lambda f: _rescale(f, 1.0 + 5e-7)),
+        # A routine post-asof dividend rescales the whole elapsed window and preserves
+        # every return. Banding the LEVEL instead of the uniformity would red the fleet
+        # here, which is the failure this tripwire exists to avoid.
+        ("routine quarterly dividend", lambda f: _rescale(f, 0.9976)),
+        ("deep dividend re-adjustment", lambda f: _rescale(f, 0.85)),
+    ),
+)
+def test_return_preserving_adjustment_passes_the_tripwire(monkeypatch, label, mutate):
+    receipt = _tripwire_live(monkeypatch, mutate)
+    assert receipt["settled_volume_rows_moved"] == 0
+    assert receipt["max_nonuniform_residual"] <= (
+        amendment_builder.B_LIVE_PRICE_REVISION_BAND
+    ), label
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+@pytest.mark.parametrize(
+    ("label", "mutate", "expected"),
+    (
+        (
+            # A real split rescales share counts as well as prices, so it is caught on
+            # the volume channel rather than by the price level.
+            "2:1 split",
+            lambda f: _rescale(f, 0.5).assign(volume=f["volume"] * 2.0),
+            "restated settled volume",
+        ),
+        (
+            "single-print restatement",
+            lambda f: f.assign(
+                close=f["close"].mask(f.index == f.index[10], f["close"] * 1.000001)
+            ),
+            "restated an individual price",
+        ),
+        (
+            # Relative prices move -> returns move -> A1 could change.
+            "segment restatement",
+            lambda f: pd.concat(
+                [_rescale(f.iloc[:800], 1.001), f.iloc[800:]]
+            ),
+            "NON-UNIFORMLY",
+        ),
+        (
+            "settled volume restatement",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[10], f["volume"] + 100.0)
+            ),
+            "restated settled volume",
+        ),
+        (
+            "asof volume blowout",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[-1], f["volume"] * 1.5)
+            ),
+            "ASOF-session volume",
+        ),
+        (
+            "dropped session",
+            lambda f: f.drop(index=f.index[10]),
+            "no longer spans the frozen A1 session index",
+        ),
+        (
+            "broken vendor frame",
+            lambda f: _rescale(f, 100.0),
+            "not an adjustment",
+        ),
+    ),
+)
+def test_b_live_revision_tripwire_fires_on_real_revisions(
+    monkeypatch, label, mutate, expected
+):
+    with pytest.raises(SystemExit) as excinfo:
+        _tripwire_live(monkeypatch, mutate)
+    assert expected in str(excinfo.value), label
 
 
 @pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")

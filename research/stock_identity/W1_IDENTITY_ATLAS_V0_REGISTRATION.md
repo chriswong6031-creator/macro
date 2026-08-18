@@ -300,9 +300,91 @@ collection advances the curated file. The governing input is the normalized 3,17
 OHLCV prefix from 2014-01-02 through 2026-08-13, whose versioned logical digest is
 `6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db`. The digest serializes an algorithm-version header, the fixed
 `Date/open/high/low/close/volume` schema, each ISO date, and each normalized float64
-value via Python's exact hexadecimal representation. Post-asof appends may not move it;
-any historical revision must. A program-owned B plane and the close-only Yahoo B file
-are prohibited.
+value via Python's exact hexadecimal representation. ~~Post-asof appends may not move it;
+any historical revision must.~~ (superseded 2026-08-18 — see A1.3a.) A program-owned B
+plane and the close-only Yahoo B file are prohibited.
+
+#### A1.3a Frozen prefix snapshot and the live-plane revision tripwire (2026-08-18)
+
+**The struck sentence above is architecturally false for this file, and the digest was
+enforced against the live plane on that false premise.** Post-asof appends are not the
+only nightly mutation: `scripts/fetch_basket_ohlcv.py` re-downloads the **full**
+auto-adjusted history every collection night (`yf.download(start=2014-01-01,
+auto_adjust=True)`) and lets the new vendor frame win the merge, so the already-elapsed
+2014-01-02..asof prefix is re-derived — and re-rounded — every night. Measured on
+2026-08-18, two collection commits **21 minutes apart** moved 2,214 then 2,341 of the
+3,172 prefix rows and produced two different digests (`2f4d9467…`, `a77fdc41…`). An
+exact-equality digest over the live plane therefore reds the whole fleet on every
+collection night by construction; that is what happened from 04:02Z on 2026-08-18.
+
+The registered digest is **not restamped** — restamping would only re-red the next
+night. Instead the prefix the A1 result was actually computed from is frozen as an
+immutable, program-owned snapshot, and the digest now anchors to it:
+
+| path | SHA256 | logical prefix digest |
+|---|---|---|
+| `data/stock_identity/sources/w1a1_b_ohlcv_prefix_v0.parquet` | `ba200fe4eb0b881eec4f7a2962c949dea4450d0ffbc1713ab465f440b008d878` | `6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db` (unchanged) |
+
+The snapshot is the #5632 seed container (commit `6d04e9b3`, container SHA256
+`dc126c36…`) under the `plane.load_symbol` normalization, truncated at the asof; it
+reproduces the registered digest exactly, so every sealed A1 receipt naming
+`6d8988fc…` — including `data/stock_identity/episodes/amendments/B.json` and
+`data/stock_identity/amendments/w1a1_gold_wrong_issuer.json` — remains true
+byte-for-byte and was not edited. Reproduce with:
+
+```
+git show 6d04e9b3:data/baskets/ohlcv/B.parquet
+```
+
+normalized by `engine.stock_identity.plane.load_symbol` and truncated at 2026-08-13.
+
+A1 math now reads the snapshot rather than the live plane, which also restores a
+property the drift had quietly broken: a sealed result whose inputs move nightly cannot
+reproduce its own sealed outputs.
+
+**The live curated plane is still checked — by a revision tripwire rather than by
+equality.** The distinction it draws is measured, not assumed. Seed→live over the
+3,172-row prefix:
+
+- `open/high/low/close` move by a **single per-row multiplicative factor**, coherent
+  across the four columns to `4.4e-16` (machine epsilon) — the signature of adjustment
+  arithmetic, not of a restated print.
+- normalized by the window-wide median factor, that per-row factor stays within
+  `8.63e-07` of uniform (worst row 2014; `8.8e-08` by 2026) and does **not**
+  accumulate — seed→mid and mid→live were each ~`8.5e-07`, seed→live `8.63e-07`.
+- `volume` is byte-identical on all 3,171 settled rows across three collections
+  spanning four days. Only the asof row itself moved (10,621,100 → 10,625,700,
+  `4.33e-04`): the final session's consolidated tape was still settling when the seed
+  was cut.
+
+**The band is on the UNIFORMITY of the rescale, not on its level — and that choice is
+load-bearing.** `auto_adjust=True` rescales the entire elapsed history on every future
+dividend: a routine ~$0.10 Barrick quarterly on a ~$41 tape is a `~2.4e-3` coherent
+shift, ~240× any plausible noise band. A tripwire banding the *level* would therefore
+fire on the next ordinary dividend and re-red the fleet within weeks — reproducing, on
+a slower clock, the exact defect this section repairs. It would also be measuring the
+wrong thing: a uniform rescale leaves every return, drawdown and percentage gap
+identical, so it cannot move an A1 conclusion. What can is a change in **relative**
+prices. Splits remain covered because split adjustment rescales share counts as well,
+and settled volume must match exactly.
+
+Enforced checks (`scripts/stock_identity_build_w1a1.py`):
+
+| check | band | worst observed | fires on |
+|---|---|---|---|
+| O/H/L/C per-row factor coherence | `1e-12` | `4.4e-16` | a single restated print, however small |
+| per-row factor residual vs window median | `1e-5` | `8.63e-07` | any change in relative prices |
+| gross window rescale (sanity only) | `[0.2, 5.0]` | `1.000000` | a broken vendor frame |
+| settled-session volume | exact | 0 rows | splits; any vendor volume restatement |
+| asof-session volume | `1e-2` | `4.33e-04` | more than late tape consolidation |
+
+The residual band sits ~11× above measured re-adjustment noise while remaining blind to
+return-preserving rescales of any size, which are recorded in the receipt as
+`gross_window_rescale` rather than treated as revisions. `tests/test_stock_identity_atlas.py`
+proves both directions: re-adjustment noise, a routine quarterly dividend and a deep
+0.85× re-adjustment all pass, while a 2:1 split, a single-print restatement, a segment
+restatement, a settled-volume restatement, an asof-volume blowout, a dropped session
+and a broken vendor frame each fire.
 
 Existing committed W1 artifacts are pinned before and after the run:
 
