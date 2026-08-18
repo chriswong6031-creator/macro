@@ -1,0 +1,806 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T02:41:36Z",
+  "reproduce": [
+    "python3 <scratch>/d1_build/load_sources.py",
+    "python3 <scratch>/d1_build/compute_cohorts.py",
+    "python3 <scratch>/d1_build/compute_coverage.py",
+    "python3 <scratch>/d1_build/compute_c6_gaps.py",
+    "python3 <scratch>/d1_build/compute_identity.py",
+    "python3 <scratch>/d1_build/compute_exemplars.py",
+    "python3 <scratch>/d1_build/compute_pit_and_families.py",
+    "python3 <scratch>/d1_build/compute_gap_ledger.py",
+    "python3 <scratch>/d1_build/assemble_final.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "scope_note": "D1 SEED rows only, discovered during D1's own coverage computation. D2 owns closing these gaps.",
+  "row_count": 28,
+  "rows": [
+    {
+      "gap_id": "gap:aa9cc1444aa34a92",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "gold_miners",
+        "member_tickers": [
+          "AEM",
+          "AGI",
+          "AU",
+          "B",
+          "BTG",
+          "EGO",
+          "EQX",
+          "GFI",
+          "HMY",
+          "IAG",
+          "KGC",
+          "NEM"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Globally traded gold-producer sleeve. Covered by cross-market narrative rotation, but not one of the canonical foresight themes."
+      },
+      "coverage_impact": {
+        "member_count": 12
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:f9d8e2a20409a83b",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "silver_miners",
+        "member_tickers": [
+          "AG",
+          "CDE",
+          "EXK",
+          "FSM",
+          "GATO",
+          "HL",
+          "MAG",
+          "PAAS",
+          "SSRM",
+          "SVM"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Silver-producer sleeve, split out of gold_miners so the two precious-metal cycles read separately. Same standing as gold_miners \u2014 covered by cross-market narrative rotation, not a canonical foresight theme."
+      },
+      "coverage_impact": {
+        "member_count": 10
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:304fac37d2bb6fd3",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "pgm_miners",
+        "member_tickers": [
+          "ANGPY",
+          "IMPUY",
+          "PLG",
+          "SBSW"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Platinum-group-metals producer sleeve (created 2026-08-07), the third precious-metals leg beside gold_miners and silver_miners. Same standing as both \u2014 an industrial/autocatalyst-driven metal cycle covered by cross-market narrative rotation, not a canonical foresight theme."
+      },
+      "coverage_impact": {
+        "member_count": 4
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:a6635b0947c86af7",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "mag7",
+        "member_tickers": [
+          "AAPL",
+          "AMZN",
+          "GOOGL",
+          "META",
+          "MSFT",
+          "NVDA",
+          "TSLA"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Mega-cap tech concentration basket (AAPL/MSFT/NVDA/GOOGL/META/AMZN/TSLA). Not a thematic foresight category; it is a factor/market-structure lens. Covered by the us_stocks board, not TIL themes."
+      },
+      "coverage_impact": {
+        "member_count": 7
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:7411c84f05ab4478",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "ai_software",
+        "member_tickers": [
+          "ADBE",
+          "APP",
+          "CRM",
+          "CRWD",
+          "DDOG",
+          "GOOGL",
+          "IBM",
+          "INTU",
+          "META",
+          "MSFT",
+          "NET",
+          "NOW",
+          "ORCL",
+          "PANW",
+          "PLTR",
+          "SNOW",
+          "WDAY"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "AI software applications layer. Overlaps ai_semiconductors and data_center_power themes but is a SEPARATE basket without a direct foresight theme mapping. May be added as a sub-leg when W1 thesis objects are curated."
+      },
+      "coverage_impact": {
+        "member_count": 17
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:ae4dc8a8a18a4285",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "ai_agents",
+        "member_tickers": [
+          "APP",
+          "CRM",
+          "DUOL",
+          "NOW",
+          "PATH",
+          "PLTR",
+          "SOUN",
+          "TEM"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "AI agents & applications basket. Adjacent to ai_semiconductors and ai_software but represents a distinct product/application layer without a foresight theme."
+      },
+      "coverage_impact": {
+        "member_count": 8
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:ad42f9fec8f115f6",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "regional_banks",
+        "member_tickers": [
+          "BPOP",
+          "CFG",
+          "CFR",
+          "COLB",
+          "EWBC",
+          "FCNCA",
+          "FHN",
+          "FITB",
+          "HBAN",
+          "KEY",
+          "MTB",
+          "PNC",
+          "RF",
+          "SSB",
+          "TFC",
+          "UMBF",
+          "USB",
+          "WAL",
+          "WBS",
+          "WTFC"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Macro/rates-sensitive basket, not a thematic foresight theme. Covered by the neural-web rates/credit context organs."
+      },
+      "coverage_impact": {
+        "member_count": 20
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:f24d6dc59303dc21",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "housing",
+        "member_tickers": [
+          "BLD",
+          "BLDR",
+          "CARR",
+          "DHI",
+          "FBIN",
+          "HD",
+          "IBP",
+          "KBH",
+          "LEN",
+          "LII",
+          "LOW",
+          "MAS",
+          "MHK",
+          "MTH",
+          "NVR",
+          "OC",
+          "PHM",
+          "SHW",
+          "TOL"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Housing chain basket. No foresight theme covers residential construction. Covered as a macro/rates context."
+      },
+      "coverage_impact": {
+        "member_count": 19
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:73a2e1327c6cd91f",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "energy_complex",
+        "member_tickers": [
+          "BKR",
+          "COP",
+          "CVX",
+          "DINO",
+          "DVN",
+          "EOG",
+          "EQT",
+          "FANG",
+          "HAL",
+          "KMI",
+          "LNG",
+          "MPC",
+          "OKE",
+          "OXY",
+          "PAA",
+          "PR",
+          "PSX",
+          "SLB",
+          "TRGP",
+          "VLO",
+          "WMB",
+          "XOM"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "US broad energy basket (oil & gas, services, pipelines). Overlaps with foresight themes at the margins but is not a direct TIL canonical theme. WATCH-equivalent via sector rotation only."
+      },
+      "coverage_impact": {
+        "member_count": 22
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:b4d7d565503e1f25",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "defensives",
+        "member_tickers": [
+          "CHD",
+          "CL",
+          "CLX",
+          "COST",
+          "GIS",
+          "HSY",
+          "JNJ",
+          "KDP",
+          "KMB",
+          "KO",
+          "KVUE",
+          "MDLZ",
+          "MKC",
+          "MO",
+          "PEP",
+          "PG",
+          "PM",
+          "WMT"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Cross-sector defensive rotation sleeve (staples/healthcare/utilities). Not a thematic foresight category; it is a regime/risk context construct."
+      },
+      "coverage_impact": {
+        "member_count": 18
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:f132fb61d6fad370",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "travel",
+        "member_tickers": [
+          "AAL",
+          "ABNB",
+          "ALGT",
+          "ALK",
+          "BKNG",
+          "BYD",
+          "CCL",
+          "CZR",
+          "DAL",
+          "DKNG",
+          "EXPE",
+          "H",
+          "HLT",
+          "LUV",
+          "LVS",
+          "LYV",
+          "MAR",
+          "MGM",
+          "NCLH",
+          "RCL",
+          "UAL",
+          "VIK",
+          "WH",
+          "WYNN"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Travel & experiences basket. No foresight theme covers the travel sector. Covered by consumer discretionary sector rotation."
+      },
+      "coverage_impact": {
+        "member_count": 24
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:d247cee1c34aef3f",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "retail",
+        "member_tickers": [
+          "ASO",
+          "AZO",
+          "BBY",
+          "BJ",
+          "BURL",
+          "COST",
+          "DG",
+          "DKS",
+          "DLTR",
+          "FIVE",
+          "HD",
+          "LOW",
+          "OLLI",
+          "ORLY",
+          "PSMT",
+          "ROST",
+          "TGT",
+          "TJX",
+          "TSCO",
+          "ULTA",
+          "WMT"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Retail basket. No foresight theme; covered by consumer discretionary rotation. Active radar divergence flag (hidden-opportunity, 2026-07-07) noted separately."
+      },
+      "coverage_impact": {
+        "member_count": 21
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:31554c8db57222ad",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "crypto",
+        "member_tickers": [
+          "CLSK",
+          "COIN",
+          "CORZ",
+          "CRCL",
+          "ETHA",
+          "GLXY",
+          "HOOD",
+          "HUT",
+          "IREN",
+          "MARA",
+          "MSTR",
+          "RIOT"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Crypto & digital assets basket. No foresight theme; covered by macro/sentiment rotation and the BTC vector program separately."
+      },
+      "coverage_impact": {
+        "member_count": 12
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:87409e8c3a20c107",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "crypto_rails",
+        "member_tickers": [
+          "BEN",
+          "BLK",
+          "CME",
+          "COIN",
+          "HOOD",
+          "IBIT",
+          "MSTR"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Crypto & digital rails basket. Adjacent to fintech_payments but distinct. No direct foresight theme mapping."
+      },
+      "coverage_impact": {
+        "member_count": 7
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:802e9a688a41e371",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "non_ai_software",
+        "member_tickers": [
+          "ADBE",
+          "CRM",
+          "DDOG",
+          "DOCU",
+          "GTLB",
+          "HUBS",
+          "INTU",
+          "KVYO",
+          "MDB",
+          "NOW",
+          "PCOR",
+          "SNOW",
+          "TEAM",
+          "WDAY"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Non-AI software basket. Explicitly named to track the non-AI cohort; not a foresight theme. Covered by sector rotation."
+      },
+      "coverage_impact": {
+        "member_count": 14
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:095fef243f3340ca",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "non_ai_tech",
+        "member_tickers": [
+          "ADI",
+          "APH",
+          "CSCO",
+          "DELL",
+          "GLW",
+          "HPE",
+          "HPQ",
+          "IBM",
+          "MCHP",
+          "NXPI",
+          "ON",
+          "STM",
+          "TEL",
+          "TXN"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Non-AI tech & hardware basket. No foresight theme. Covered by sector rotation."
+      },
+      "coverage_impact": {
+        "member_count": 14
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:42ff5ce4f5ad19ba",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "quantum_computing",
+        "member_tickers": [
+          "GOOGL",
+          "HON",
+          "IBM",
+          "INFQ",
+          "IONQ",
+          "MSFT",
+          "NVDA",
+          "QBTS",
+          "QNT",
+          "QUBT",
+          "RGTI"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Quantum computing basket. No foresight theme mapped; the technology is pre-commercial and does not yet have the T1/T4 data surface required for a foresight stage."
+      },
+      "coverage_impact": {
+        "member_count": 11
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:e18a2d9f02a4fcfa",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "insurance",
+        "member_tickers": [
+          "ACGL",
+          "AFL",
+          "AIG",
+          "AJG",
+          "ALL",
+          "AON",
+          "BRO",
+          "CB",
+          "CINF",
+          "EG",
+          "HIG",
+          "KNSL",
+          "MET",
+          "MMC",
+          "PGR",
+          "PRU",
+          "TRV",
+          "WRB",
+          "WTW"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Insurance & brokers basket. No foresight theme. Financial sector rotation only."
+      },
+      "coverage_impact": {
+        "member_count": 19
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:40c015fa2bf16226",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "big_pharma",
+        "member_tickers": [
+          "ABBV",
+          "BIIB",
+          "BMY",
+          "GILD",
+          "JNJ",
+          "MRK",
+          "PFE",
+          "REGN",
+          "VRTX",
+          "ZTS"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Big pharma basket. Distinct from GLP-1/obesity and diagnostics themes. No direct foresight theme coverage."
+      },
+      "coverage_impact": {
+        "member_count": 10
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:6102396dfa616677",
+      "gap_type": "proxy-basket-only",
+      "ids": {
+        "basket_id": "industrial_distribution",
+        "member_tickers": [
+          "AIT",
+          "FAST",
+          "FERG",
+          "GGG",
+          "GWW",
+          "KMT",
+          "MSM",
+          "NDSN",
+          "POOL",
+          "URI",
+          "WCC",
+          "WSO"
+        ]
+      },
+      "evidence": {
+        "source": "config/theme_crosswalk.yml unmapped_baskets",
+        "reason_given": "Industrial distribution & capital goods basket. Adjacent to reshoring/copper_steel themes but not a direct foresight theme mapping."
+      },
+      "coverage_impact": {
+        "member_count": 12
+      },
+      "suggested_D2_action": "evaluate whether this basket warrants a new canonical theme or a primary_basket_id backfill onto an existing theme",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:4a7cd8b71b7484f0",
+      "gap_type": "contradictory",
+      "ids": {
+        "tickers": [
+          "GOLD",
+          "B"
+        ],
+        "basket_id": "gold_miners"
+      },
+      "evidence": {
+        "source": "data/theme_graph edges (co:us:GOLD, co:us:B both live-member of basket:baskets:gold_miners) vs data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
+        "detail": "Stock Identity ruling: GOLD = Gold.com, Inc. (fka A-Mark Precious Metals) since 2025-12-02; B = Barrick Mining Corporation (renamed from Barrick Gold Corp, ticker change effective 2025-05-09). theme_graph's gold_miners basket still carries GOLD as a live miner member -- stale."
+      },
+      "coverage_impact": {
+        "duplicated_economic_exposure_count": 1
+      },
+      "suggested_D2_action": "backfill/correct data/baskets/membership.json gold_miners member list to drop GOLD, retain B (OUT OF SCOPE for D1 -- config edit)",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:2444436f01c41a74",
+      "gap_type": "contradictory",
+      "ids": {
+        "ticker": "IBIT",
+        "basket_id": "crypto_rails"
+      },
+      "evidence": {
+        "source": "data/theme_graph nodes.parquet: co:us:IBIT kind=company, live MEMBER_OF basket:baskets:crypto_rails; etf:IBIT (kind=etf) ALSO exists correctly for TRACKS edges.",
+        "detail": "IBIT is a spot-bitcoin ETP wrapper, not an operating company; the co:us:IBIT company node is a classification error."
+      },
+      "coverage_impact": {
+        "misclassified_entity_count": 1
+      },
+      "suggested_D2_action": "reclassify/remove co:us:IBIT company node in theme_graph build (OUT OF SCOPE for D1 -- engine edit)",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:2d48988190690e14",
+      "gap_type": "join-failure",
+      "ids": {
+        "scope": "all theme_graph company nodes (co:us:*, and co:cn/hk/ca/intl:*)"
+      },
+      "evidence": {
+        "source": "data/theme_graph/nodes.parquet",
+        "detail": "Every company node's external_ids is exactly {'symbol': <ticker>}; no CIK/company_id/security_id distinct from the ticker exists anywhere in theme_graph. All theme_graph-sourced membership claims are therefore join_method=ticker_string at LAST-RESORT confidence for their entire population, not merely a minority -- this is a structural join-failure risk (GOOG/GOOGL, dot/dash, ticker reuse all silently succeed as string matches without any independent identity check)."
+      },
+      "coverage_impact": {
+        "affected_node_count": 2806
+      },
+      "suggested_D2_action": "evaluate joining theme_graph company nodes against data/stock_identity/ canonical identity stores where coverage overlaps",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:1928c9234be3a1f4",
+      "gap_type": "rights-blocked",
+      "ids": {
+        "source_family": "finviz_themes"
+      },
+      "evidence": {
+        "source": "config/theme_sources.yml",
+        "rights_class": "unresolved",
+        "auth_class": "keyless_public",
+        "review_outcome": "escalation prepared, not concluded \u2014 see rights note \u00a71; treat as internal_only until the operator resolves the derived-display question (natural forcing point: W6)"
+      },
+      "coverage_impact": {
+        "note": "internal_only for NEW emissions -- any D2/D3 public-facing feature drawing on this family needs the W6 rights escalation resolved first"
+      },
+      "suggested_D2_action": "do not build public-facing features on this family until the operator resolves the pending rights escalation (W6)",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:8511f719c516a067",
+      "gap_type": "rights-blocked",
+      "ids": {
+        "source_family": "ths_concepts"
+      },
+      "evidence": {
+        "source": "config/theme_sources.yml",
+        "rights_class": "unresolved",
+        "auth_class": "receipted_scrape",
+        "review_outcome": "same posture as finviz_themes \u2014 internal-only for NEW GMI emissions; existing cn owner surfaces grandfathered; bundle the display decision with the W6 escalation"
+      },
+      "coverage_impact": {
+        "note": "internal_only for NEW emissions -- any D2/D3 public-facing feature drawing on this family needs the W6 rights escalation resolved first"
+      },
+      "suggested_D2_action": "do not build public-facing features on this family until the operator resolves the pending rights escalation (W6)",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:ca1aeeda7beaf350",
+      "gap_type": "no-PIT",
+      "ids": {
+        "source_family": "structural_sector_industry"
+      },
+      "evidence": {
+        "source": "data/breadth/ticker_sectors.parquet",
+        "detail": "No date column of any kind; PIT class = NO_HISTORY (see pit_freshness_matrix.json)."
+      },
+      "coverage_impact": {
+        "affected_ticker_count": 1515
+      },
+      "suggested_D2_action": "add a snapshot_date column / dated history file if structural sector membership needs to feed any PIT-sensitive ThemeState feature",
+      "manual_adjudication_required": false
+    },
+    {
+      "gap_id": "gap:a1353593be6f84aa",
+      "gap_type": "stale-source",
+      "ids": {
+        "source": "data/us_prophet_rank/candidates (tier=curated)"
+      },
+      "evidence": {
+        "source": "data/us_prophet_rank/candidates/2026-08.parquet",
+        "detail": "curated tier last populated 2026-08-07; the store's newest stamp_date (2026-08-12) carries scan tier only. newest row in the store as of pin computation; the store is STALLED (curated writer has not produced a row since 2026-08-07). This stamp is 5 calendar days behind the D1 build session (2026-08-17). Only tier='scan' rows exist at this stamp \u2014 'curated' (the board's actual graded population) has not refreshed since C0's stamp."
+      },
+      "coverage_impact": {
+        "c1_structural_coverage_rate": "see coverage_matrix.json C1.structural_sector_industry.raw_coverage_rate (near-zero -- scan tier has no sector field)"
+      },
+      "suggested_D2_action": "confirm engine.build_stock_library (curated writer) health / resume cadence before D2 builds on C1 as a live population",
+      "manual_adjudication_required": true
+    },
+    {
+      "gap_id": "gap:d924b30e010a9ed1",
+      "gap_type": "untraced-origin",
+      "ids": {
+        "field": "candidates.sector (curated-tier rows)"
+      },
+      "evidence": {
+        "source": "engine/us_context_vector.py ~line 968",
+        "detail": "\"sector\": _text(meta.get(\"sector\")) -- meta is a per-ticker board-metadata dict assembled earlier in the same build function; the ultimate upstream file that first populates meta['sector'] was not traced within this build's time budget (flagged by coordinator addendum)."
+      },
+      "coverage_impact": {
+        "note": "descriptive only -- does not change any computed count in this packet"
+      },
+      "suggested_D2_action": "trace meta['sector'] provenance in engine/us_context_vector.py before treating candidates.sector as authoritative for any D2 join",
+      "manual_adjudication_required": false
+    }
+  ]
+}

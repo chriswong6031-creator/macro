@@ -1,18 +1,249 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-18T05:10:15.185591+00:00",
+  "generated_at": "2026-08-18T08:33:11.395658+00:00",
   "base": {
-    "sha": "c6156d2c209eada1e79bc36ac63361a20dd5d781"
+    "sha": "d19b89c619ac3e0dd349ea53cd9c7ed190d56929"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs_truncated": false,
   "open_prs": [
     {
+      "number": 5886,
+      "title": "docs(agentos): record why the daily collect mutex cannot live in et_gate",
+      "head_ref": "claude/daily-collect-mutex-decision",
+      "updated_at": "2026-08-18T08:31:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5885,
+      "title": "fix(nightly): base-freshness fence \u2014 refuse to publish an append-only artifact over a base that moved",
+      "head_ref": "claude/append-only-base-fence",
+      "updated_at": "2026-08-18T08:32:12Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/backfill.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        ".github/workflows/government-revenue-live.yml",
+        "agentos/decisions/DEC-APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE.md",
+        "agentos/discoveries/DSC-CANDIDATE-ID-RACE-BETWEEN-GOVREV-LANES.md",
+        "agentos/discoveries/DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS.md",
+        "config/append_only_artifacts.json",
+        "scripts/ci/append_only_base_fence.py",
+        "scripts/ci/push_retry.sh",
+        "tests/test_append_only_base_fence.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/backfill.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        ".github/workflows/government-revenue-live.yml"
+      ]
+    },
+    {
+      "number": 5884,
+      "title": "docs(agentos): D1 recovery-generation proof \u2014 Radar 48, fence next",
+      "head_ref": "claude/defense-d1-recovery-proof",
+      "updated_at": "2026-08-18T08:21:01Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md",
+        "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5883,
+      "title": "docs(agentos): RESOLVED \u2014 a generation revert was the ci-pack-6 repair; correct the \"wedged\" conclusion",
+      "head_ref": "claude/govrev-wedge-resolved",
+      "updated_at": "2026-08-18T08:19:50Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/discoveries/DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5882,
+      "title": "govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate)",
+      "head_ref": "claude/govrev-event-identity-adjudication",
+      "updated_at": "2026-08-18T08:28:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/government-revenue-live.yml",
+        "agentos/decisions/DEC-GOVREV-CANDIDATE-LEDGER-STAYS-APPEND-ONLY.md",
+        "agentos/decisions/DEC-GOVREV-CANDIDATE-PROOF-GATE-ARMED.md",
+        "agentos/decisions/DEC-GOVREV-EVENT-IDENTITY-KEEPS-THE-KNOWN-AT-FOLD.md",
+        "agentos/discoveries/DSC-GOVREV-DOUBLE-COLLECT-PUBLISHED-NOTHING-X-THEIRS-DROPPED-IT.md",
+        "agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/government-revenue-live.yml"
+      ]
+    },
+    {
+      "number": 5879,
+      "title": "fix(ci): hydrate the base commit's blobs so the semantic replay can check it out",
+      "head_ref": "claude/base-replay-partial-clone-hydration",
+      "updated_at": "2026-08-18T08:10:38Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/discoveries/DSC-ALTERNATES-SHARE-OBJECTS-NOT-THE-PROMISOR.md",
+        "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-18-base-replay-partial-clone.md",
+        "scripts/run_ci_pack.py",
+        "tests/test_ci_pack_semantic.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5877,
+      "title": "fix(stock-identity): band the B rescale's uniformity, not its level",
+      "head_ref": "claude/b-tripwire-band-uniformity",
+      "updated_at": "2026-08-18T07:43:34Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/stock_identity_build_w1a1.py",
+        "tests/test_stock_identity_atlas.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5874,
+      "title": "fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields",
+      "head_ref": "claude/contract-drift-prophet-board-read",
+      "updated_at": "2026-08-18T08:12:40Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/export_signal_contracts.py",
+        "site/factordata/contracts/artifact_manifest.json",
+        "site/factordata/contracts/golden_signals.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5872,
+      "title": "feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief \u2014 runtime implementation (v1.2)",
+      "head_ref": "claude/ad1-intel-brief-runtime",
+      "updated_at": "2026-08-18T08:25:44Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 31,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-18.md",
+        "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md",
+        "config/dag.yml",
+        "config/mastermind_programs.yml",
+        "config/r2_delivery_plane_classification.v1.json",
+        "config/synapse.yml",
+        "contracts/options/OPTIONS_INTEL_BRIEF_V1.md",
+        "docs/MASTERMIND_SYSTEM_MAP.md",
+        "docs/SIGNAL_BUS.md",
+        "engine/options_intel_brief.py",
+        "scripts/build_options_command.py",
+        "scripts/build_options_intel_brief.py",
+        "site/assets/css/93f09686.css",
+        "site/options.html",
+        "site/options_intel_brief.json",
+        "templates/options.html.j2",
+        "tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv",
+        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
+        "tests/test_mastermind_system_map.py",
+        "tests/test_options_intel_brief.py",
+        "tests/test_options_intel_brief_ui.py",
+        "tests/test_signal_bus_doc.py",
+        "verify_shots/adib_degraded_desktop_dark_zh.png",
+        "verify_shots/adib_degraded_desktop_light.png",
+        "verify_shots/adib_ok_desktop_dark.png",
+        "verify_shots/adib_ok_desktop_light.png",
+        "verify_shots/adib_ok_desktop_zh.png",
+        "verify_shots/adib_ok_mobile_dark.png",
+        "verify_shots/adib_ok_mobile_light.png"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ]
+    },
+    {
+      "number": 5867,
+      "title": "ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class",
+      "head_ref": "claude/runner-label-registry-core",
+      "updated_at": "2026-08-18T07:48:22Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/runner-policy.yml",
+        "config/house_law_checks.yml",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+        "scripts/check_runner_policy.py",
+        "tests/test_runner_policy.py"
+      ],
+      "protected_paths_touched": [
+        "scripts/check_runner_policy.py"
+      ]
+    },
+    {
       "number": 5859,
       "title": "research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census",
       "head_ref": "claude/prophet-v4-d1-census",
-      "updated_at": "2026-08-18T04:57:58Z",
+      "updated_at": "2026-08-18T08:02:48Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -60,32 +291,10 @@
       "protected_paths_touched": []
     },
     {
-      "number": 5858,
-      "title": "fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan",
-      "head_ref": "claude/13f-atom-transient-fetch-partial",
-      "updated_at": "2026-08-18T04:50:52Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/discoveries/DSC-EDGAR-ATOM-TRANSIENT-IS-A-TIMEOUT.md",
-        "engine/institutional_census/__init__.py",
-        "engine/institutional_census/rolling.py",
-        "engine/institutional_census/sec_sources.py",
-        "scripts/run_institutional_13f_rolling.py",
-        "tests/test_institutional_13f_rolling.py",
-        "tests/test_institutional_13f_sec_sources.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 5856,
       "title": "D1.1F: PIT-safe Government Revenue agency labels",
       "head_ref": "claude/defense-d1-1-agency-semantic",
-      "updated_at": "2026-08-18T05:03:33Z",
+      "updated_at": "2026-08-18T07:40:34Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -112,7 +321,7 @@
       "number": 5853,
       "title": "fix(sector_central): withhold the Act-Now board server-side on its second host",
       "head_ref": "claude/sector-central-act-now-gate",
-      "updated_at": "2026-08-18T05:01:34Z",
+      "updated_at": "2026-08-18T07:43:38Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -131,59 +340,22 @@
       "protected_paths_touched": []
     },
     {
-      "number": 5852,
-      "title": "feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar",
-      "head_ref": "claude/prophet-per-market-freshness",
-      "updated_at": "2026-08-18T05:04:27Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 12,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        ".github/workflows/nightly-liveness.yml",
-        "agentos/discoveries/DSC-BOARD-RECOMMIT-IS-NOT-A-BOARD-ADVANCE.md",
-        "agentos/discoveries/DSC-INTL-BOARD-CARRIES-NO-ASOF.md",
-        "config/house_law_checks.yml",
-        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
-        "lib/hk_calendar.py",
-        "lib/tsx_calendar.py",
-        "scripts/check_nightly_liveness.py",
-        "tests/test_nightly_liveness.py",
-        "tests/test_tsx_calendar.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml",
-        ".github/workflows/nightly-liveness.yml",
-        "scripts/check_nightly_liveness.py"
-      ]
-    },
-    {
       "number": 5851,
-      "title": "ci(runner-policy): label-declaration registry (R11/R12) + re-measure stale mac-builder-1/2 pool models",
+      "title": "ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency",
       "head_ref": "claude/runner-label-registry",
-      "updated_at": "2026-08-18T05:08:15Z",
+      "updated_at": "2026-08-18T07:48:45Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
+      "files_count": 2,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/runner-policy.yml",
         ".github/workflows/close-pass.yml",
-        "config/house_law_checks.yml",
-        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
-        "scripts/check_runner_policy.py",
-        "tests/test_close_pass_lane.py",
-        "tests/test_runner_policy.py"
+        "tests/test_close_pass_lane.py"
       ],
       "protected_paths_touched": [
-        ".github/workflows/close-pass.yml",
-        "scripts/check_runner_policy.py"
+        ".github/workflows/close-pass.yml"
       ]
     },
     {
@@ -334,18 +506,63 @@
   ],
   "collisions": [
     {
-      "pr_a": 5852,
-      "pr_b": 5851,
+      "pr_a": 5885,
+      "pr_b": 5872,
       "shared_files": [
-        "config/house_law_checks.yml",
-        "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml"
       ],
       "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5885,
+      "pr_b": 5883,
+      "shared_files": [
+        "agentos/discoveries/DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS.md"
+      ],
+      "shared_count": 1,
       "any_protected": false
     },
     {
-      "pr_a": 5853,
-      "pr_b": 5852,
+      "pr_a": 5885,
+      "pr_b": 5882,
+      "shared_files": [
+        ".github/workflows/government-revenue-live.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5885,
+      "pr_b": 5853,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5884,
+      "pr_b": 5882,
+      "shared_files": [
+        "agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5884,
+      "pr_b": 5856,
+      "shared_files": [
+        "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5872,
+      "pr_b": 5853,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -364,6 +581,56 @@
   ],
   "recent_merged": [
     {
+      "number": 5878,
+      "title": "policy(prophet): force-majeure sessions are backfilled by DEFAULT",
+      "merged_at": "2026-08-18T08:14:38Z"
+    },
+    {
+      "number": 5876,
+      "title": "docs(agentos): the ci-pack-6 red is a candidate-id race between two govrev lanes",
+      "merged_at": "2026-08-18T08:02:33Z"
+    },
+    {
+      "number": 5875,
+      "title": "fix(stock-identity): band the B live-plane tripwire on uniformity, not level",
+      "merged_at": "2026-08-18T08:21:18Z"
+    },
+    {
+      "number": 5873,
+      "title": "docs(agentos): correct the govrev record \u2014 the projection lane does NOT clear the ci-pack-6 red",
+      "merged_at": "2026-08-18T07:40:30Z"
+    },
+    {
+      "number": 5871,
+      "title": "docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs",
+      "merged_at": "2026-08-18T07:02:59Z"
+    },
+    {
+      "number": 5870,
+      "title": "fix(govrev): restore the collection generation the candidate projection was frozen against",
+      "merged_at": "2026-08-18T07:38:11Z"
+    },
+    {
+      "number": 5866,
+      "title": "close-pass: grade the frozen launchd bootstrap against origin/main (merged is not deployed)",
+      "merged_at": "2026-08-18T08:18:58Z"
+    },
+    {
+      "number": 5865,
+      "title": "fix(stock-identity): freeze the registered B prefix off the nightly-rewritten plane",
+      "merged_at": "2026-08-18T06:45:12Z"
+    },
+    {
+      "number": 5864,
+      "title": "fix(forensics): raise FF-1 universe bind cap for live 2837-issuer parquet",
+      "merged_at": "2026-08-18T08:28:04Z"
+    },
+    {
+      "number": 5863,
+      "title": "docs(agentos): the fleet-blocking atlas red is an exact digest over a non-bit-reproducible producer",
+      "merged_at": "2026-08-18T06:09:49Z"
+    },
+    {
       "number": 5862,
       "title": "fix(close-pass): retry a stalled lane probe instead of losing the session",
       "merged_at": "2026-08-18T04:36:25Z"
@@ -379,6 +646,11 @@
       "merged_at": "2026-08-18T03:47:19Z"
     },
     {
+      "number": 5858,
+      "title": "fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan",
+      "merged_at": "2026-08-18T05:40:48Z"
+    },
+    {
       "number": 5857,
       "title": "fix(main-red-repair): a git REBASE published the paid board, not the renderer",
       "merged_at": "2026-08-18T03:26:41Z"
@@ -392,6 +664,11 @@
       "number": 5854,
       "title": "fix(13f-census): decide atom scan completeness on the raw feed page, not the filtered one",
       "merged_at": "2026-08-18T04:05:04Z"
+    },
+    {
+      "number": 5852,
+      "title": "feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar",
+      "merged_at": "2026-08-18T05:41:01Z"
     },
     {
       "number": 5850,
@@ -2802,66 +3079,6 @@
       "number": 5301,
       "title": "prophet(us): plain-word disclosure for reconstructed plans (chip + receipt + footnote, EN/ZH)",
       "merged_at": "2026-08-11T09:42:43Z"
-    },
-    {
-      "number": 5300,
-      "title": "docs(topa): primary-checkout massive_stock_day mirror is frozen \u2014 fetch_r2 before local passes",
-      "merged_at": "2026-08-11T06:07:23Z"
-    },
-    {
-      "number": 5299,
-      "title": "test: decouple breadth fixtures from nightly tip",
-      "merged_at": "2026-08-11T03:32:11Z"
-    },
-    {
-      "number": 5298,
-      "title": "feat(winner-health): W1 display surface \u2014 nightly maturation states + Winner Health page (TOPA)",
-      "merged_at": "2026-08-11T06:10:01Z"
-    },
-    {
-      "number": 5297,
-      "title": "research(top-anatomy): phase-0 results \u2014 reconciled instrument, run-3 headline + repair/cross-check arms",
-      "merged_at": "2026-08-11T06:06:08Z"
-    },
-    {
-      "number": 5296,
-      "title": "Repair W3 playback catalog store readiness",
-      "merged_at": "2026-08-11T02:09:51Z"
-    },
-    {
-      "number": 5295,
-      "title": "prophet(us): lossless candidate-pool lanes + dated pool store (CN-parity, display-tier)",
-      "merged_at": "2026-08-11T02:29:39Z"
-    },
-    {
-      "number": 5292,
-      "title": "feat(price-pressure): \u00a710.1 VIXCLS stamp-completion pass + immutable receipts",
-      "merged_at": "2026-08-11T02:19:53Z"
-    },
-    {
-      "number": 5291,
-      "title": "marketing voice v5: the read is in the selection, not a performed reaction",
-      "merged_at": "2026-08-11T02:32:52Z"
-    },
-    {
-      "number": 5289,
-      "title": "docs(prophet-us): outage backfill design of record (operator force-majeure 2026-08-11)",
-      "merged_at": "2026-08-11T01:14:08Z"
-    },
-    {
-      "number": 5288,
-      "title": "research: make the R4 prereg PIT-safe and power-honest",
-      "merged_at": "2026-08-11T01:02:03Z"
-    },
-    {
-      "number": 5287,
-      "title": "marketing: liveness tripwire \u2014 a dead publisher can no longer run green",
-      "merged_at": "2026-08-11T00:50:51Z"
-    },
-    {
-      "number": 5286,
-      "title": "Prepare exact operational playback catalog",
-      "merged_at": "2026-08-11T00:40:27Z"
     }
   ]
 }

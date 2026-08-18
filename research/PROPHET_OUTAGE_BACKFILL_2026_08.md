@@ -1,5 +1,14 @@
 # Prophet US — Outage Backfill (force-majeure, operator-ordered 2026-08-11)
 
+> **SUPERSEDED AS STANDING POLICY (2026-08-18) — `DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT`.**
+> This document remains the dated record of the 2026-08-11 backfill as executed, and
+> nothing in it is retracted. But it is NO LONGER the governing rule: a session lost to an
+> infrastructure outage is now backfilled by DEFAULT, with no fresh per-case charter, and
+> "no origination event executed" is no longer grounds to refuse. §2's refusal of
+> 2026-08-03→08-06 stands on its own separate footing — those boards' RANKINGS are wrong
+> (frozen stale alpha panel), which is a data defect to disclose, not an outage to recover.
+
+
 Operator order (2026-08-11 ~00:05Z, force-majeure override of the forward-ledger
 no-backfill law): backfill picks that would have originated during the outage /
 stale window, include them in the forward ledger, using the current state of the

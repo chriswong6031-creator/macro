@@ -2084,11 +2084,42 @@ def test_the_installed_runner_is_plumbing_and_the_lane_is_the_policy():
     """The copy under Application Support is frozen at install time — which is
     fine, and is the same contract scripts/prophet_rescue_launchd.py carries:
     the wrapper is plumbing, the POLICY it launches always comes from
-    origin/main. Both vintages land in every receipt so drift is visible."""
+    origin/main."""
     runner = HOST_RUNNER.read_text(encoding="utf-8").replace("'", '"')
     assert '"reset", "--hard", "origin/main"' in runner
-    assert "runner_sha" in runner and "code_sha" in runner
+    assert "bootstrap" in runner and "code_sha" in runner
     assert "re-run this installer" in INSTALLER.read_text(encoding="utf-8").lower()
+
+
+def test_the_freeze_is_disclosed_every_run_because_merging_deploys_nothing():
+    """THE COST OF THE FREEZE IS PAID BY THE RECEIPT, not by a self-update.
+
+    Freezing the snapshot at install time is correct — a mid-day push to main
+    must not change what the clock executes mid-session — but it means a merged
+    fix is not a deployed fix, and on 2026-08-18 that gap was invisible in every
+    instrument the estate owns: PR #5862 merged as af416e4a1066 while the host
+    kept running the Aug-15 bytes, and its receipts read perfectly because
+    `code_sha` (the lane's HEAD) is reset to origin/main every single run.
+
+    So the runner GRADES its own executing bytes against origin/main's copy and
+    says so out loud, the report fails on it, and the installer still owns the
+    only act that deploys the file.
+    """
+    runner = HOST_RUNNER.read_text(encoding="utf-8")
+    # It reads origin/main's copy of ITSELF out of the lane the reset just made.
+    assert "compare_bootstrap_to_main" in runner and "RUNNER_REPO_REL" in runner
+    # ...and the finding carries the only remedy there is.
+    assert "bash scripts/install_closepass_launchd.sh" in runner
+    assert "::error" in runner.replace("f\"", "\"")
+    # The report is the second instrument, off the launchd log entirely.
+    report = (ROOT / "scripts" / "close_pass_slo_report.py").read_text(encoding="utf-8")
+    assert "bootstrap_verdict" in report and "install_closepass_launchd.sh" in report
+
+    installer = INSTALLER.read_text(encoding="utf-8")
+    # THE FREEZE ITSELF IS UNCHANGED: exactly one copy of the runner into the
+    # support dir, at install time, by the operator. Nothing else may deploy it.
+    assert installer.count('cp "$REPO_SRC/scripts/close_pass_host_runner.py"') == 1
+    assert "shasum -a 256" in installer          # says what the install moved
 
 
 def test_the_primary_and_the_backstop_publish_the_same_artifact_the_same_way():

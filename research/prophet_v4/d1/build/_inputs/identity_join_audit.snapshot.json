@@ -1,0 +1,235 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T02:41:36Z",
+  "reproduce": [
+    "python3 <scratch>/d1_build/load_sources.py",
+    "python3 <scratch>/d1_build/compute_cohorts.py",
+    "python3 <scratch>/d1_build/compute_coverage.py",
+    "python3 <scratch>/d1_build/compute_c6_gaps.py",
+    "python3 <scratch>/d1_build/compute_identity.py",
+    "python3 <scratch>/d1_build/compute_exemplars.py",
+    "python3 <scratch>/d1_build/compute_pit_and_families.py",
+    "python3 <scratch>/d1_build/compute_gap_ledger.py",
+    "python3 <scratch>/d1_build/assemble_final.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "general_finding_join_method": {
+    "claim": "Every theme_graph company node (co:us:*, and co:cn/hk/ca/intl:*) is minted directly from a bare ticker string; external_ids is always exactly {'symbol': <ticker>} with no CIK, no company_id, no security_id distinct from the ticker.",
+    "verified_sample_all_ticker_string": true,
+    "consequence": "join_method=ticker_string for the ENTIRE theme_graph company plane; confidence=degraded for every membership claim sourced from theme_graph (canonical_theme_crosswalk, curated_baskets, finviz_ltheme, ths_ltheme all inherit this)."
+  },
+  "finviz_vintage_resolution_receipt": {
+    "source": "data/theme_graph/_meta.json local_plane.finviz.company_resolution (latest nightly delta only, not full-history)",
+    "minted_new": 529,
+    "resolved_existing": 413,
+    "refused": [],
+    "resolved_dot_dash_variant": 0,
+    "members_attempted": 942,
+    "ambiguous_or_refused": 0,
+    "ambiguous_identity_rate": 0.0,
+    "null_reason_for_other_sources": "curated_baskets (data/baskets registry) and ths_ltheme (data/baskets_china_ths) carry no equivalent per-vintage resolution receipt in their _meta blocks \u2014 only counts, no attempted/refused/dot-dash breakdown. Their ambiguous_identity_rate cannot be computed from a self-reported receipt; the theme_graph-wide join_method=ticker_string finding above stands in as the qualitative rate driver (every membership is a plain ticker match, structurally the 'last resort' method for 100% of rows, not merely some).",
+    "resolution_receipt_scope": "This receipt (minted_new/resolved_existing/refused/resolved_dot_dash_variant) covers the LATEST NIGHTLY DELTA only (the 2026-08-15 finviz vintage refresh) -- it is not a full-history resolution log and says nothing about resolution outcomes for finviz memberships minted in earlier vintages (e.g. 2026-06-27)."
+  },
+  "hostile_cases_found": [
+    {
+      "case": "H1_one_issuer_two_securities",
+      "raw_member": "GOOG",
+      "chain": {
+        "native_taxonomy_node": "co:us:GOOG",
+        "node_kind": "company",
+        "company": "Alphabet Inc.",
+        "security_id": "GOOG",
+        "join_method": "ticker_string",
+        "join_status": "resolved_ambiguous_company",
+        "memberships_live": [
+          "basket:baskets:us_sector_comm"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only (theme_graph nodes carry no valid_from on the node record itself)",
+        "canonical_probation_role": "canonical (status=canonical in nodes.parquet)"
+      },
+      "finding": "GOOG and GOOGL are two distinct co:us:* nodes for one issuer (Alphabet Inc, dual-class share structure). theme_graph treats them as two independent 'companies' \u2014 correct at the security grain, but any company-grain rollup that naively counts node_id as company_id will double-count Alphabet. No company_id field exists anywhere in theme_graph to dedupe this."
+    },
+    {
+      "case": "H1_one_issuer_two_securities",
+      "raw_member": "GOOGL",
+      "chain": {
+        "native_taxonomy_node": "co:us:GOOGL",
+        "node_kind": "company",
+        "company": "Alphabet Inc.",
+        "security_id": "GOOGL",
+        "join_method": "ticker_string",
+        "join_status": "resolved_ambiguous_company",
+        "memberships_live": [
+          "basket:baskets:ai_software",
+          "basket:baskets:mag7",
+          "basket:baskets:quantum_computing",
+          "basket:baskets:us_sector_comm",
+          "ltheme:finviz:aiadssearch",
+          "ltheme:finviz:aiagi",
+          "ltheme:finviz:aicloud",
+          "ltheme:finviz:aicompute",
+          "ltheme:finviz:aidata",
+          "ltheme:finviz:aienergy",
+          "ltheme:finviz:aienterprise",
+          "ltheme:finviz:aimodels",
+          "ltheme:finviz:autonomousavmobility",
+          "ltheme:finviz:autonomoussoftware",
+          "ltheme:finviz:bigdataaiplatforms",
+          "ltheme:finviz:bigdatainfrastructure",
+          "ltheme:finviz:biometricssoftware",
+          "ltheme:finviz:clouddatabases",
+          "ltheme:finviz:clouddevops",
+          "ltheme:finviz:cloudedge",
+          "ltheme:finviz:cloudhsaas",
+          "ltheme:finviz:cloudhybridcloud",
+          "ltheme:finviz:cloudhyperscalers",
+          "ltheme:finviz:cloudpaas",
+          "ltheme:finviz:cloudsecurity",
+          "ltheme:finviz:cloudserverless",
+          "ltheme:finviz:cybersecuritycloud",
+          "ltheme:finviz:ecommerceadsmedia",
+          "ltheme:finviz:ecommercesocial",
+          "ltheme:finviz:educationinfrastructure",
+          "ltheme:finviz:entertainmentinfrastructure",
+          "ltheme:finviz:entertainmentmusic",
+          "ltheme:finviz:entertainmentvideo",
+          "ltheme:finviz:evsselfdriving",
+          "ltheme:finviz:iotsoftware",
+          "ltheme:finviz:quantumapplications",
+          "ltheme:finviz:quantumcloud",
+          "ltheme:finviz:quantumhardware",
+          "ltheme:finviz:quantumsoftware",
+          "ltheme:finviz:roboticsavmobility",
+          "ltheme:finviz:smarthomeautomation",
+          "ltheme:finviz:smarthomedevices",
+          "ltheme:finviz:smarthomevoiceai",
+          "ltheme:finviz:socialadvertising",
+          "ltheme:finviz:socialnetworks",
+          "ltheme:finviz:socialvisualcontent",
+          "ltheme:finviz:softwarecollaboration",
+          "ltheme:finviz:softwaredataanalytics",
+          "ltheme:finviz:softwaredevops",
+          "ltheme:finviz:softwarehsaas",
+          "ltheme:finviz:softwareos",
+          "ltheme:finviz:telecomcloudedge",
+          "ltheme:finviz:transportationnextgen",
+          "ltheme:finviz:varealityinfrastructure",
+          "ltheme:finviz:varealitysoftware",
+          "ltheme:finviz:wearablesmedical",
+          "ltheme:finviz:wearablessmartwatches",
+          "ltheme:finviz:wearablessoftware",
+          "ltheme:finviz:wearablessport"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only (theme_graph nodes carry no valid_from on the node record itself)",
+        "canonical_probation_role": "canonical (status=canonical in nodes.parquet)"
+      },
+      "finding": "GOOG and GOOGL are two distinct co:us:* nodes for one issuer (Alphabet Inc, dual-class share structure). theme_graph treats them as two independent 'companies' \u2014 correct at the security grain, but any company-grain rollup that naively counts node_id as company_id will double-count Alphabet. No company_id field exists anywhere in theme_graph to dedupe this."
+    },
+    {
+      "case": "H2_dot_dash_class_ticker",
+      "raw_member": "BRK-B",
+      "chain": {
+        "native_taxonomy_node": "co:us:BRK-B",
+        "node_kind": "company",
+        "company": "Berkshire Hathaway Inc. (Class B)",
+        "security_id": "BRK-B",
+        "join_method": "ticker_string",
+        "join_status": "resolved",
+        "memberships_live": [
+          "basket:baskets:us_sector_financials",
+          "ltheme:finviz:energycleangeothermal"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only",
+        "canonical_probation_role": "canonical"
+      },
+      "finding": "The market convention 'BRK.B' is represented as 'BRK-B' (dash, not dot) in theme_graph's node namespace. finviz's own vintage receipt records resolved_dot_dash_variant=0 for the latest delta, meaning no dot-form collision needed resolving THIS run \u2014 but the node's identity is still a bare ticker string with no canonical CIK/company_id backing it, so a future dot-form vendor feed ('BRK.B') would silently mint a THIRD node for the same security unless a normalizer intercepts it."
+    },
+    {
+      "case": "H3_reused_ticker",
+      "raw_member": "GOLD",
+      "chain": {
+        "native_taxonomy_node": "co:us:GOLD",
+        "node_kind": "company",
+        "current_issuer_per_stock_identity": "Gold.com, Inc. (fka A-Mark Precious Metals)",
+        "current_issuer_edgar_cik": "1591588",
+        "effective_symbol_date": "2025-12-02",
+        "security_id": "GOLD",
+        "join_method": "ticker_string",
+        "join_status": "resolved_STALE_IN_DOWNSTREAM_ARTIFACTS_ONLY",
+        "memberships_live": [
+          "basket:baskets:gold_miners"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only (theme_graph has no valid_from tied to the 2025-12-02 symbol reassignment)",
+        "canonical_probation_role": "canonical, but data is STALE relative to Stock Identity's own W1-A1 amendment"
+      },
+      "finding": "REVISED (adversarial review H2): data/baskets/membership.json (the LIVE curated-basket source of truth) is ALREADY CORRECT -- gold_miners has 12 members, does NOT include GOLD, and its 'omitted' list explicitly documents the wrong-issuer repair (PR #5632): 'GOLD (Gold.com/A-Mark bullion dealer, EDGAR CIK 1591588 -- not a miner; its store tape was NEVER Barrick; Barrick Mining is NYSE B, EDGAR CIK 756894)'. The STALE carriers, verified directly: (1) data/baskets/membership_history.parquet's 2026-08-13 snapshot_date rows still show GOLD present (added=2023-05-09, removed=NaN) with NO 'B' row for gold_miners at all; (2) data/baskets/snapshots/2026-08-13.json's gold_miners member list also still carries GOLD (with a rationale string mislabeling it 'Barrick Mining') and omits B entirely; (3) the theme_graph builder evidently reads from one of these STALE artifacts rather than the live membership.json, since co:us:GOLD still carries a live MEMBER_OF basket:baskets:gold_miners edge and co:us:B's gold_miners edge, while present, coexists with GOLD's rather than replacing it. Root cause is the snapshot/history regeneration pipeline lagging membership.json's #5632 fix, not membership.json itself -- previously mis-stated as membership.json carrying stale data."
+    },
+    {
+      "case": "H4_renamed_issuer_corporate_action",
+      "raw_member": "B",
+      "chain": {
+        "native_taxonomy_node": "co:us:B",
+        "node_kind": "company",
+        "issuer": "Barrick Mining Corporation",
+        "edgar_cik": "756894",
+        "effective_symbol_date": "2025-05-09",
+        "security_id": "B",
+        "join_method": "ticker_string",
+        "join_status": "resolved",
+        "memberships_live": [
+          "basket:baskets:gold_miners",
+          "ltheme:finviz:commmetalsgold",
+          "ltheme:finviz:commmetalsprecious"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only",
+        "canonical_probation_role": "canonical"
+      },
+      "finding": "Barrick Gold Corporation renamed to Barrick Mining Corporation and changed its ticker from GOLD to B effective 2025-05-09 (corporate action). B correctly carries the gold_miners membership in the LIVE data/baskets/membership.json (PR #5632 already fixed this). The contradiction lives entirely in DOWNSTREAM artifacts that have not regenerated since the fix: membership_history.parquet, snapshots/2026-08-13.json, and the theme_graph build (see H2/H3 finding for the full chain) -- corrected per adversarial review H2 (previously implied membership.json itself was stale)."
+    },
+    {
+      "case": "H5_etf_classified_as_operating_company",
+      "raw_member": "IBIT",
+      "chain": {
+        "native_taxonomy_node": "co:us:IBIT",
+        "node_kind": "company",
+        "correct_wrapper_node_also_present": "etf:IBIT (kind=etf, used correctly for TRACKS edges)",
+        "issuer": "iShares Bitcoin Trust (spot bitcoin ETP wrapper, not an operating company)",
+        "security_id": "IBIT",
+        "join_method": "ticker_string",
+        "join_status": "resolved_WRONG_ENTITY_TYPE",
+        "memberships_live": [
+          "basket:baskets:crypto_rails"
+        ],
+        "rights": "n/a (identity chain only)",
+        "pit_state": "current_snapshot_only",
+        "canonical_probation_role": "canonical, but kind=company is a classification error"
+      },
+      "finding": "theme_graph carries BOTH etf:IBIT (correct, used for TRACKS edges into basket:baskets) AND co:us:IBIT (kind=company) with a live MEMBER_OF basket:baskets:crypto_rails edge. IBIT is a spot-bitcoin ETP wrapper, not an operating company \u2014 the FROZEN SPEC's hostile-case requirement 'an ETF appearing inside a theme/basket membership must NOT be classified as operating company' is violated by the co:us:IBIT node. Recorded as a finding + gap-ledger row (gap_type=contradictory); no engine/config fix taken (OUT OF SCOPE)."
+    }
+  ],
+  "hostile_case_count": 6,
+  "ambiguous_contradictory_tally": {
+    "distinct_tickers_flagged_ambiguous_or_contradictory": 3,
+    "tickers": [
+      "GOLD",
+      "B",
+      "IBIT"
+    ],
+    "note": "GOLD/B form one contradictory-mapping PAIR (both live in basket:baskets:gold_miners for the same underlying economic exposure, one of them factually wrong per Stock Identity's own ruling); IBIT is a distinct entity-type misclassification."
+  },
+  "h2_correction_note": "Adversarial review H2 (applied): the original GOLD finding mis-attributed the wrong-issuer contamination to data/baskets/membership.json. Verified directly: membership.json is ALREADY CORRECT (12 gold_miners members, GOLD in 'omitted' citing PR #5632). The stale carriers are data/baskets/membership_history.parquet, data/baskets/snapshots/2026-08-13.json, and the theme_graph builder that reads one of them. Also fixed: a path typo (data/theme_identity/ -> data/stock_identity/amendments/) and a 'gold_mimembers' typo -> 'gold_miners' that appeared in the original finding text.",
+  "curated_baskets_and_ths_receipt_scope_note": "curated_baskets (data/baskets/membership.json) and ths_ltheme (data/baskets_china_ths/) carry NO identity-resolution receipt of any kind -- no attempted/refused/dot-dash counters exist for either family in their own metadata. This means any refusal that occurred during their curation (a ticker a curator considered and rejected on identity grounds) is STRUCTURALLY INVISIBLE to this audit -- absence of a recorded refusal is not evidence that none occurred, it is evidence that neither source keeps the kind of receipt that would show one. Only finviz_ltheme has any self-reported resolution telemetry."
+}

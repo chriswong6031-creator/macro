@@ -1,10 +1,10 @@
 {
   "artifact_hashes": {
-    "event_edges": "fe92941302cb3f8c070f7dd7863f25b4087b1112b1af41a86b12f473cc5e4a0d",
-    "event_versions": "3c39e447647ff9a0a3ee10d5f0a7848d7547e2fd4d62f78e34dc272605659ca2",
-    "review_queue": "0e463126a9a01f78709af8effaa2729aaefcaeb7fb0ede9986d76e76bddf0cf7"
+    "event_edges": "687d0d8bfdafcca0a778d1d96d1d5777438f9939f40ef967f2550068ac1b98f0",
+    "event_versions": "74444fe448776a1a6accdd70229fc8914ab72591d34aed35a5f04e8a9fb58b89",
+    "review_queue": "1a6a75c26b195a3d755ac2cf90ea7c367b59c50213834af97410cdf21fdef3d8"
   },
-  "as_of": "2026-08-18T04:29:18.616417+00:00",
+  "as_of": "2026-08-18T07:58:19.531544+00:00",
   "authority": {
     "entry_authority": false,
     "is_context_only": true,
@@ -124,7 +124,7 @@
       "PRE 14C"
     ]
   },
-  "generation_id": "generation:cs:e43214ac2172fe0797f2401d",
+  "generation_id": "generation:cs:ae5f1106262fbf2b84879a86",
   "known_exclusions": [
     "424B2",
     "424B6",
@@ -172,7 +172,7 @@
   "source_ledger_receipt": {
     "form_policy_version": "capital-structure-sec-form-policy/1.2.0",
     "immutable_prefix": true,
-    "prefix_sha256": "8e4a516226aec4f0e96992aca06f348a669abdf3c61f1f5f21745321a23d6140",
+    "prefix_sha256": "f6ea3c1ab2634a0af4721b3bb07e8546fc11fae1c17663987fc59f76bcbe612a",
     "record_count": 1972,
     "schema": "capital_structure.source_ledger_receipt.v1"
   },

@@ -1,8 +1,8 @@
 {
-  "checked_at": "2026-08-14T03:32:32+00:00",
-  "expected_session": "2026-08-13",
-  "store_before": "2026-08-13",
-  "store_after": "2026-08-13",
+  "checked_at": "2026-08-18T05:11:53+00:00",
+  "expected_session": "2026-08-17",
+  "store_before": "2026-08-17",
+  "store_after": "2026-08-17",
   "status": "fresh",
   "healed": false,
   "heal_attempted": false
