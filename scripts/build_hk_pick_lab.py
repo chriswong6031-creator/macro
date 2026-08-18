@@ -1328,6 +1328,113 @@ def _build() -> None:
         )
 
 
+def _pending_replay_dir() -> Path:
+    return Path("data") / "hk_pick_lab" / "pending_replay"
+
+
+def absorb_pending_replay() -> dict:
+    """Absorb every ``<pending_replay>/<session>.json`` file staged by
+    ``scripts/prophet_pit_replay.py`` (schema ``pit_replay.pending/v1``) into
+    ``data/hk_pick_lab/fires.jsonl``, through ``engine.pick_lab.ledger.append_fires``
+    — the SAME keep-first dedupe-and-write primitive
+    ``_fire_all_hk_books``/main() already uses for a live fire, keyed
+    ``(engine_id, ticker, fire_date)`` (masterplan §0.4). Nothing to duplicate here:
+    ``append_fires`` is already a public, reusable API, so this is a thin read +
+    delete around it, never a re-implementation of its dedupe.
+
+    Absent/empty pending dir is a provably-zero-cost no-op: one ``Path.exists()``
+    check. Idempotent: ``append_fires``'s own keep-first key makes a re-run of an
+    already-absorbed file a no-op, and the pending file is deleted in the same run,
+    so a crash before deletion simply re-absorbs (harmlessly) next time. Rows enter
+    UNMARKED — the pending file's own metadata is the only replay provenance, per
+    ``DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT``. Guarded to the
+    HK/asia lane pass by its caller (``main()``), matching HKPL-R8.
+
+    F9 parity amendment (coordinator, adjudicating the gap flagged by the earlier
+    build): brought to the SAME validation shape as
+    ``engine/china_standout_track.absorb_pending_replay`` and
+    ``engine/board_ledger.absorb_pending_replay`` — a pending file whose ``schema``
+    is not ``pit_replay.pending/v1`` or whose ``market`` is not ``"hk"`` is left in
+    place with a bare GHA ``::warning`` (never a logger — ``tests/
+    test_gh_annotation_line_start.py`` guards this), and a merge-time exception gets
+    the same warning path rather than a silent nightly-forever retry.
+
+    F8-style staleness check: a pending file whose fire rows are dated STRICTLY
+    AFTER ``fires.jsonl``'s own current max ``fire_date`` (read once, before this
+    call absorbs anything, so a batch of several pending files never judges one
+    against a sibling this same run already wrote) is refused the same way — a
+    replay must not be pointed at a session the live tape has not reached yet.
+    Deliberately STRICT (``>``, not ``>=``): unlike a per-session board row, a fire
+    row's dedupe key is ``(engine_id, ticker, fire_date)`` — many independent fires
+    legitimately share one ``fire_date`` across tickers/engines, and a pending file
+    whose max ``fire_date`` merely EQUALS the live tape's current max is an ordinary
+    same-day dedupe collision that ``append_fires``'s own keep-first key already
+    resolves safely (this is exactly the shape
+    ``TestHKPickLabAbsorb.test_dedupe_key_respects_engine_ticker_fire_date``
+    exercises). A ``>=`` boundary was tried and tested first here, exactly as
+    written in ``engine/board_ledger.py``/``engine/china_standout_track.py`` before
+    THIS SAME correction was applied to those two — it silently refused that
+    same-day collision test without failing it (the assertions still held because
+    nothing had changed either way, a vacuous pass rather than a verified one).
+    """
+    from engine.pick_lab.ledger import append_fires, load_fires
+    from engine.pick_lab.profile import HK_PROFILE
+
+    pending_dir = _pending_replay_dir()
+    if not pending_dir.exists():
+        return {"absorbed_files": 0, "absorbed_rows": 0, "files": []}
+    # Read ONCE, before this call absorbs anything — see the parity comment in
+    # engine/china_standout_track.absorb_pending_replay: a run absorbing SEVERAL
+    # pending files must judge every one against what fires.jsonl held coming INTO
+    # this run, never against a sibling file this same run just wrote.
+    live_fire_dates = {
+        str(r.get("fire_date")) for r in load_fires(profile=HK_PROFILE)
+        if r.get("fire_date")
+    }
+    live_max = max(live_fire_dates) if live_fire_dates else None
+    results = []
+    for path in sorted(pending_dir.glob("*.json")):
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001 — a torn/corrupt pending file must not wedge the nightly
+            log.warning("hk_pick_lab: pending-replay file %s unreadable (%s) — left "
+                       "in place for the next run", path.name, e)
+            continue
+        if doc.get("schema") != "pit_replay.pending/v1" or \
+                str(doc.get("market") or "").lower() != "hk":
+            print(f"::warning title=pit-replay-absorb-schema::{path.name} does not "
+                 "carry schema=pit_replay.pending/v1 market=hk; leaving it in place",
+                 flush=True)
+            continue
+        rows = doc.get("rows") or []
+        if not rows:
+            path.unlink()
+            results.append({"file": path.name, "rows": 0, "written": 0})
+            continue
+        pending_dates = {str(r.get("fire_date")) for r in rows if r.get("fire_date")}
+        pending_max = max(pending_dates) if pending_dates else None
+        if pending_max is not None and live_max is not None and pending_max > live_max:
+            print(f"::warning title=pit-replay-absorb-not-older::{path.name} carries "
+                 f"fire row(s) dated up to {pending_max}, which is AFTER "
+                 f"fires.jsonl's current max fire_date ({live_max}) — a replay must "
+                 "not be pointed at a session the live tape has not reached yet; "
+                 "leaving it in place", flush=True)
+            continue
+        try:
+            written = append_fires(rows, hold_thesis=False, profile=HK_PROFILE)
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning title=pit-replay-absorb-failed::{path.name} pending-"
+                 f"replay absorb failed ({e}); leaving it in place for the next run",
+                 flush=True)
+            continue
+        path.unlink()
+        results.append({"file": path.name, "rows": len(rows), "written": written})
+        log.info("hk_pick_lab: absorbed %d/%d pending-replay fire row(s) from %s "
+                 "(session=%s)", written, len(rows), path.name, doc.get("session"))
+    return {"absorbed_files": len(results),
+            "absorbed_rows": sum(r["written"] for r in results), "files": results}
+
+
 def main() -> int:
     """HK Pick Lab asia-lane runner. Always returns 0 (HKPL-R8 never-break contract)."""
     logging.basicConfig(
@@ -1349,6 +1456,18 @@ def main() -> int:
                 traceback.format_exc(),
             )
         return 0
+
+    # Prophet PIT Replay Harness absorb (research/PROPHET_PIT_REPLAY_HARNESS_V1.md
+    # §0.4) — asia-lane only (HKPL-R8), run BEFORE the live fire pass so an absorbed
+    # historical fire is visible to this run's own refire-lockout check exactly like
+    # any other prior night's fire would be. Never fatal.
+    try:
+        absorb_pending_replay()
+    except Exception:
+        log.warning(
+            "hk_pick_lab: pending-replay absorb failed — non-fatal\n%s",
+            traceback.format_exc(),
+        )
 
     try:
         _build()

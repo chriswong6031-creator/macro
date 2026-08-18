@@ -448,29 +448,165 @@ def append_board(
     try:
         # reindex to _SCHEMA order; extra keys in rows (from **rv_stamp) already map to _SCHEMA
         new = pd.DataFrame(rows).reindex(columns=_SCHEMA)
-        p = _store_path(m)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        if p.exists():
-            prior = pd.read_parquet(p)
-            # union schema: prior frames may predate the optional stamp columns (and may
-            # carry legacy extras) — reindex both sides so concat never drops a column
-            cols = list(dict.fromkeys([*_SCHEMA, *prior.columns]))
-            combined = pd.concat(
-                [prior.reindex(columns=cols), new.reindex(columns=cols)],
-                ignore_index=True,
-            )
-            # keep-FIRST per (date, ticker) — honesty: stamp is immutable once written
-            combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
-            combined = _coerce_object_cols(combined)
-        else:
-            combined = new
-        for col in (*_PORT_STAMPS, *_GATE_STAMPS):
-            combined[col] = combined[col].astype("boolean")
-        combined.to_parquet(p, index=False)
-        return int(len(combined))
+        n = _merge_and_write(m, new)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("board_ledger (%s): append failed: %s", m, e)
         return 0
+    # Prophet PIT Replay Harness absorb (research/PROPHET_PIT_REPLAY_HARNESS_V1.md
+    # §0.4), guarded to the HK/asia lane pass ONLY — this function is shared by HK
+    # and CA, but the harness's pending dir/registry entry is HK-only, and the
+    # asia_advance_enabled() gate above already means we only reach here for HK when
+    # CN_LANE=asia. Never raises; a failure here must not break a live append.
+    if m == "HK":
+        try:
+            absorb_pending_replay()
+        except Exception as e:  # noqa: BLE001 — absorb is additive, never fatal
+            log.warning("board_ledger (HK): pending-replay absorb failed: %s", e)
+    return n
+
+
+def _merge_and_write(market: str, new: pd.DataFrame) -> int:
+    """Keep-first merge ``new`` (already reindexed to ``_SCHEMA``) into
+    ``<market>_board.parquet`` on ``(date, ticker)`` and write it back. Extracted
+    from ``append_board``'s tail so ``absorb_pending_replay`` (harness
+    stage-and-absorb) reuses the EXACT same dedupe/schema-union/write path a live
+    append uses, rather than re-implementing it.
+    """
+    m = market.upper()
+    p = _store_path(m)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    if p.exists():
+        prior = pd.read_parquet(p)
+        # union schema: prior frames may predate the optional stamp columns (and may
+        # carry legacy extras) — reindex both sides so concat never drops a column
+        cols = list(dict.fromkeys([*_SCHEMA, *prior.columns]))
+        combined = pd.concat(
+            [prior.reindex(columns=cols), new.reindex(columns=cols)],
+            ignore_index=True,
+        )
+        # keep-FIRST per (date, ticker) — honesty: stamp is immutable once written
+        combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
+        combined = _coerce_object_cols(combined)
+    else:
+        combined = new
+    for col in (*_PORT_STAMPS, *_GATE_STAMPS):
+        combined[col] = combined[col].astype("boolean")
+    # Build commission F8: STABLE-sort by date AFTER the keep-first dedupe above (the
+    # dedupe semantics are untouched). A live append is always newest-date-last
+    # already, so this is a byte-level no-op for ordinary nightly history; a REPLAY
+    # absorb's rows land in chronological position instead of at the physical tail,
+    # restoring every positional ``iloc[-1]``/``tail`` consumer of this store.
+    if "date" in combined.columns:
+        combined = combined.sort_values("date", kind="stable").reset_index(drop=True)
+    combined.to_parquet(p, index=False)
+    return int(len(combined))
+
+
+def _pending_replay_dir() -> Path:
+    return config.data_dir() / "board_ledger" / "pending_replay"
+
+
+def _store_max_date(market: str) -> str | None:
+    """The newest ``date`` value already in ``<market>_board.parquet``, or ``None``
+    when the store is absent/empty (masterplan build commission F8)."""
+    p = _store_path(market)
+    if not p.exists():
+        return None
+    try:
+        frame = pd.read_parquet(p, columns=["date"])
+    except Exception:  # noqa: BLE001 — an unreadable store is disclosed elsewhere
+        return None
+    dates = frame["date"].dropna().astype(str)
+    return str(dates.max()) if len(dates) else None
+
+
+def absorb_pending_replay() -> dict:
+    """Absorb every ``<pending_replay>/<session>.json`` file staged by
+    ``scripts/prophet_pit_replay.py`` (schema ``pit_replay.pending/v1``) into
+    ``hk_board.parquet``, through the SAME ``_merge_and_write`` dedupe path a live
+    HK append uses — never a re-implementation of it (masterplan §0.4). HK-only:
+    the harness's registry entry declares this pending dir for HK, not CA.
+
+    Absent/empty pending dir is a provably-zero-cost no-op: one ``Path.exists()``
+    check. Idempotent: each file's rows are merged via keep-first dedupe on
+    ``(date, ticker)`` (so a re-run of an already-absorbed file is a no-op on the
+    store) and the file is deleted in the same run, so a crash before deletion
+    simply re-absorbs (harmlessly) next time this runs. Rows enter UNMARKED — the
+    pending file's own metadata (schema/market/session/vintage_sha) is the only
+    replay provenance, per ``DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT``.
+
+    Build commission F9 (US absorb parity): a pending file whose ``schema`` is not
+    ``pit_replay.pending/v1`` or whose ``market`` is not ``"hk"`` is left in place
+    with a GHA ``::warning`` — mirrors
+    ``scripts/grade_us_board.absorb_pending_replays``'s own check exactly.
+
+    Build commission F8 (ordering sanity): a replay is BY DEFINITION a backfill for a
+    date that already passed, so a pending file whose rows are not strictly OLDER
+    than the store's own current tape is refused rather than absorbed. Every warning
+    here is a bare ``print(..., flush=True)`` (never a logger — GitHub only parses
+    ``::`` at column 0; ``tests/test_gh_annotation_line_start.py`` guards this).
+    """
+    import json  # noqa: PLC0415
+
+    pending_dir = _pending_replay_dir()
+    if not pending_dir.exists():
+        return {"absorbed_files": 0, "absorbed_rows": 0, "files": []}
+    # Read ONCE, before this call absorbs anything — see the parity comment in
+    # engine/china_standout_track.absorb_pending_replay: a run absorbing SEVERAL
+    # pending files must judge every one against what the store held coming INTO
+    # this run, never against a sibling file this same run just wrote.
+    store_max = _store_max_date("HK")
+    results = []
+    for path in sorted(pending_dir.glob("*.json")):
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001 — a torn/corrupt pending file must not wedge the nightly
+            log.warning("board_ledger (HK): pending-replay file %s unreadable (%s) — "
+                       "left in place for the next run", path.name, e)
+            continue
+        if doc.get("schema") != "pit_replay.pending/v1" or \
+                str(doc.get("market") or "").lower() != "hk":
+            print(f"::warning title=pit-replay-absorb-schema::{path.name} does not "
+                 "carry schema=pit_replay.pending/v1 market=hk; leaving it in place",
+                 flush=True)
+            continue
+        rows = doc.get("rows") or []
+        if not rows:
+            path.unlink()
+            results.append({"file": path.name, "rows": 0, "total_after": None})
+            continue
+        pending_dates = {str(r.get("date")) for r in rows if r.get("date")}
+        pending_max = max(pending_dates) if pending_dates else None
+        # STRICT > (not >=) — corrected after this landed on
+        # test_dedupe_key_respects_date_ticker: a pending row on the SAME date as the
+        # store's current max is a same-day dedupe collision, and keep-first dedupe
+        # already resolves it safely (the live row always wins). A >= boundary
+        # refused that harmless case and silently defeated the test (its assertions
+        # still passed because nothing had changed either way). The genuine danger
+        # this check exists for is a pending session STRICTLY AHEAD of what the live
+        # tape has reached, where dedupe has no existing row to protect a
+        # wrong-position insert against.
+        if pending_max is not None and store_max is not None and pending_max > store_max:
+            print(f"::warning title=pit-replay-absorb-not-older::{path.name} carries "
+                 f"row(s) dated up to {pending_max}, which is AFTER the store's "
+                 f"current max ({store_max}) — a replay must not be pointed at a "
+                 "session the live tape has not reached yet; leaving it in place",
+                 flush=True)
+            continue
+        try:
+            new = pd.DataFrame(rows).reindex(columns=_SCHEMA)
+            total = _merge_and_write("HK", new)
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning title=pit-replay-absorb-failed::{path.name} pending-"
+                 f"replay absorb failed ({e}); leaving it in place for the next run",
+                 flush=True)
+            continue
+        path.unlink()
+        results.append({"file": path.name, "rows": len(rows), "total_after": total})
+        log.info("board_ledger (HK): absorbed %d pending-replay row(s) from %s "
+                 "(session=%s)", len(rows), path.name, doc.get("session"))
+    return {"absorbed_files": len(results), "absorbed_rows": sum(r["rows"] for r in results),
+            "files": results}
 
 
 # ---------------------------------------------------------------------------

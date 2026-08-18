@@ -288,7 +288,20 @@ def _compute_cohort_rollup(df) -> dict:
 
 
 def _compute_board_series(snapshots_path: Path) -> dict:
-    """Board-size + lane-mix series from snapshots.jsonl."""
+    """Board-size + lane-mix series from snapshots.jsonl, ordered by ``as_of``.
+
+    The sort is explicit and load-bearing, not cosmetic. This file's append order
+    used to be a safe proxy for chronological order, but
+    ``scripts/prophet_pit_replay.py`` (research/PROPHET_PIT_REPLAY_HARNESS_V1.md) can
+    absorb a replayed session's row OUT OF ORDER — appended after a newer session has
+    already snapshotted live (``scripts/grade_us_board.py::absorb_pending_replays``
+    absorbs such a row rather than refusing it, since every consumer of this file is
+    expected to read by ``as_of`` value, not by append position). Emitting ``series``
+    in raw file order would then plot this page's time series out of chronological
+    order for exactly one point. Sorting here — once, at the one place this file's
+    rows become a published series — keeps every downstream reader of ``board_series``
+    correct without each of them having to re-derive the same discipline.
+    """
     try:
         series = []
         if not snapshots_path.exists():
@@ -312,6 +325,7 @@ def _compute_board_series(snapshots_path: Path) -> dict:
                         "by_lane": by_lane,
                     }
                 )
+        series.sort(key=lambda row: row["as_of"])
         return {"series": series, "accruing": len(series) < 3}
     except Exception as exc:  # noqa: BLE001
         log.warning("_compute_board_series failed: %s", exc)

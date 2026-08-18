@@ -144,6 +144,13 @@ KNOWN_UNMIGRATED = {
     "engine/trajectory.py":                   "BENIGN: explicitly refuses the cache fallback",
     "engine/quant_lab/specs.py":              "BENIGN: metadata dict of store paths; never reads a parquet",
     "engine/prophet_miss_audit.py":           "INHERITS: reads excess_spy from a ledger, does not compute it",
+    "scripts/prophet_pit_replay.py": (
+        "BENIGN: the PIT replay harness names BOTH families on purpose — they are its "
+        "per-market overlay/fence SURFACE (truncate, append-only overlay, no-bar-after "
+        "fence, byte assertions), never price legs in arithmetic. No expression "
+        "differences the two; all board/grading math runs inside the vintage tree's own "
+        "builders, which carry their own registry rows"
+    ),
     "scripts/fetch_basket_extras.py":         "BENIGN: writes the adjusted store; reads caches to pick symbols",
     # NB: `engine/prophet_doors.py` used to appear HERE as well as above. A dict literal
     # keeps the LAST duplicate, so #4863's longer "NO PAIRING" triage was silently dead

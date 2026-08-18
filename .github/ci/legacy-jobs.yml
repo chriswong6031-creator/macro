@@ -8339,6 +8339,30 @@ jobs:
       # that greens one while reddening the other should fail in a single job.
       - name: reconstructed-origination disclosure (chip + receipt + footnote + record split, EN/ZH)
         run: python -m pytest tests/test_prophet_origination_disclosure.py -q
+      # Prophet PIT Replay Harness — general point-in-time session replay
+      # (research/PROPHET_PIT_REPLAY_HARNESS_V1.md; authority
+      # DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT). Wired in THIS job
+      # because it generalizes the two force-majeure lanes above it — same subject
+      # (a market's session reconstructed from a pinned vintage tree and staged for
+      # the market's own nightly to absorb), same import closure (pandas + the pip
+      # line already installed here), and the same reason those two share a job: a
+      # change to the shared truncation/fence/absorb machinery should fail in ONE
+      # job, not pass one lane's suite while reddening its sibling's. All three
+      # suites are fast, no network, no real board builds — synthetic frames and tmp
+      # git fixtures only; the real-repo `--resolve-only` integration checks (US
+      # 2026-08-14, CN/HK 2026-08-17, the US disclosed-gap/session-invalid refusals)
+      # are exercised directly against this checkout, not a network call.
+      - name: prophet PIT replay harness (truncate/overlay/fence, vintage resolution, disclosed-gap guard, registry, receipt idempotence, verify-collisions ordering)
+        run: python -m pytest tests/test_prophet_pit_replay.py -q
+      # US absorb hook (scripts/grade_us_board.py::absorb_pending_replays) — same
+      # subject/job as the harness above; wired together so a change to the
+      # pending/v1 schema or the harness's session ordering fails in one place.
+      - name: prophet PIT replay absorb — US (grade_us_board pending-replay hook, out-of-order append, schema validation)
+        run: python -m pytest tests/test_pit_replay_absorb.py -q
+      # CN/HK absorb hooks (engine/china_standout_track.py, engine/board_ledger.py)
+      # + the cn/hk MARKETS registry entries the harness resolves them through.
+      - name: prophet PIT replay absorb — CN/HK (china_standout_track + board_ledger pending-replay hooks, registry resolution)
+        run: python -m pytest tests/test_pit_replay_absorb_asia.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
