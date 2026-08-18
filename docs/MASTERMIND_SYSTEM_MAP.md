@@ -822,7 +822,7 @@ Describe corporate credit, balance-sheet, issuance, and capital-structure eviden
 - `feeds_context_to` → `fundamental-forensics` (`conceptual`; authority transfer: none)
 - `feeds_context_to` → `market-regime-risk` (`conceptual`; authority transfer: none)
 
-**Canonical docs:** `macro:research/STOCK_FUNDAMENTALS_PLAN.md`
+**Canonical docs:** `macro:research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md`, `macro:docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md`, `macro:research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md`
 
 **Implementation anchors:** `macro:engine/capital_structure`
 
@@ -3587,7 +3587,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
+| `config/mastermind_programs.yml` | `f33a4c0bfebe57899caef054499f6eadaf68b3e7458ec6b0acc9d64bc1babcc1` |
 | `config/synapse.yml` | `9ace9cebbf8fdfc451516d79a73796006dcf83c955b088905dfebf1ba5173dc5` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
