@@ -2357,7 +2357,27 @@ class TestFireHistoryGradeJoin:
             "ticker": "CRWD",
             "fire_type": "onset",
         }])
-        result = _build_fire_history(fire_log_df, tmp_path)
+
+        # `_build_fire_history` ignores its `data_root` argument for grades: it calls
+        # `engine.pick_lab.ledger.load_grades()` with no arguments, which reads the
+        # module-level GRADES_PATH.  Passing tmp_path therefore isolates NOTHING, and
+        # this case must patch GRADES_PATH the same way
+        # test_grade_row_joined_on_21d_horizon does.  Without the patch this test read
+        # the live repo ledger and asserted "absent" against a file that is present:
+        # green only while no matured 21d grade happened to exist for this exact
+        # (engine_id, ticker, fire_date).  On 2026-08-18 the nightly graded that fire
+        # (f960202b, "engine: regime update 2026-08-18" -> plab_leader_onset/CRWD/
+        # 2026-07-15/h21, matured=True) and the assertion flipped to 'matured',
+        # reding ci-pack-10 fleet-wide on a test that had never exercised its own
+        # documented branch.
+        import engine.pick_lab.ledger as _ledger
+        orig_path = _ledger.GRADES_PATH
+        try:
+            _ledger.GRADES_PATH = tmp_path / "pick_lab" / "grades.jsonl"  # absent
+            result = _build_fire_history(fire_log_df, tmp_path)
+        finally:
+            _ledger.GRADES_PATH = orig_path
+
         assert len(result) == 1
         r = result[0]
         assert r["ticker"] == "CRWD"
