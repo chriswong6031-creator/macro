@@ -113,6 +113,7 @@ waves:
       the 2026-08-17 Sol 0B handoff — no sibling record edits). Evidence:
       research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
     status: done
+    pr: 5847
   - id: a1
     depends_on: [0a]
     title: "V4-A1 — owed-session settlement recovery. DO NOT SPAWN: implementation is

@@ -63,6 +63,7 @@ unresolved:
   - "Availability incident open (#5742): sibling-owned; A-lane adoption matrix all UNKNOWN_PENDING_RETURN."
   - "Radar WS record does not yet note #5834's merge (its W6 row deliberately stays not-done pending commissioning) — routed to the Radar owner, whose open #5737 already edits that record; NOT edited by 0B."
   - "Residual paid-boundary surfaces (Act-Now/.topsetups/ran/theme-tape) remain DOM-gated."
+prs: [5847]
 next_actions:
   - "Merge the 0B records PR (this session owns it to merge)."
   - "Return the §16 packet to Sol; separately route the Availability return to Sol for acceptance against the frozen A1 contract."
