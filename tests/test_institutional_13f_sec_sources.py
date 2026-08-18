@@ -12,6 +12,7 @@ import pytest
 
 from engine.institutional_census.sec_sources import (
     ATOM_EPHEMERAL_ENTRY_LIMIT,
+    ATOM_HONORED_PAGE_SIZES,
     COVER_PAGE_COLUMNS,
     HOLDING_COLUMNS,
     INCLUDED_MANAGER_COLUMNS,
@@ -453,19 +454,31 @@ def test_atom_unicode_string_ignores_stale_byte_encoding_declaration() -> None:
     assert parse_latest_filings_atom(source)[0].company_name == "Société de Gestion"
 
 
-def _atom_page(start: int, count: int) -> bytes:
+def _atom_page(start: int, count: int, *, forms: dict[int, str] | None = None) -> bytes:
+    """Render ``count`` RAW entries; ``forms`` overrides the form of an offset."""
+
+    forms = forms or {}
     rows = []
-    for sequence in range(start + 1, start + count + 1):
+    for offset, sequence in enumerate(range(start + 1, start + count + 1)):
         accession = f"0000000001-26-{sequence:06d}"
         compact = accession.replace("-", "")
+        form = forms.get(offset, "13F-HR")
+        # Only the 13F forms the parser keeps carry a parseable title; EDGAR's
+        # other 13F-family titles are shaped differently and must be skipped on
+        # the category term alone.
+        title = (
+            f"{form} - Page Fixture ({2:010d}) (Filer)"
+            if form in {"13F-HR", "13F-HR/A", "13F-NT", "13F-NT/A"}
+            else f"{form} - Page Fixture"
+        )
         rows.append(
             f"""
             <entry>
-              <title>13F-HR - Page Fixture ({2:010d}) (Filer)</title>
+              <title>{title}</title>
               <link rel="alternate" href="https://www.sec.gov/Archives/edgar/data/2/{compact}/{accession}-index.htm"/>
               <summary type="html">Filed: 2026-08-07 AccNo: {accession}</summary>
               <updated>2026-08-07T17:00:00-04:00</updated>
-              <category term="13F-HR"/><id>{accession}</id>
+              <category term="{form}"/><id>{accession}</id>
             </entry>"""
         )
     return (
@@ -476,24 +489,115 @@ def _atom_page(start: int, count: int) -> bytes:
     ).encode()
 
 
-def test_atom_scanner_has_explicit_ephemeral_boundary() -> None:
-    calls: list[tuple[int, int]] = []
+def _edgar_honored(count: int) -> int:
+    """Round ``count`` down the way the live browse-edgar surface does."""
+
+    return next(
+        (size for size in reversed(ATOM_HONORED_PAGE_SIZES) if size <= count),
+        ATOM_HONORED_PAGE_SIZES[0],
+    )
+
+
+def _deep_feed(
+    calls: list[tuple[int, int]],
+    *,
+    total: int | None = None,
+    forms: dict[int, str] | None = None,
+):
+    """A fake browse-edgar that rounds ``count`` down exactly like the real one.
+
+    ``total`` bounds the feed (``None`` means bottomless); ``forms`` overrides the
+    form of a raw offset on the first page.
+    """
 
     def fetch(url: str) -> bytes:
         query = parse_qs(urlparse(url).query)
         start = int(query["start"][0])
         count = int(query["count"][0])
         calls.append((start, count))
-        return _atom_page(start, count)
+        served = _edgar_honored(count)
+        if total is not None:
+            served = max(0, min(served, total - start))
+        return _atom_page(start, served, forms=forms if start == 0 else None)
 
-    result = scan_latest_filings_atom(fetch)
+    return fetch
+
+
+def test_atom_scanner_has_explicit_ephemeral_boundary() -> None:
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(_deep_feed(calls))
     assert len(result.entries) == ATOM_EPHEMERAL_ENTRY_LIMIT == 930
-    assert result.pages_fetched == 10
     assert not result.complete
     assert result.stop_reason == "ephemeral_limit"
-    assert calls[-1] == (900, 30)
+    # The 930 boundary is not a multiple of the 100-entry page, so the tail is
+    # paged at sizes EDGAR actually serves rather than in one unhonored ask.
+    assert calls[-1] == (920, 10)
+    assert result.pages_fetched == len(calls) == 11
     with pytest.raises(ValueError, match="entry_limit"):
-        scan_latest_filings_atom(fetch, entry_limit=931)
+        scan_latest_filings_atom(_deep_feed([]), entry_limit=931)
+
+
+def test_atom_scanner_only_requests_page_sizes_edgar_honors() -> None:
+    """EDGAR rounds an unhonored ``count`` DOWN, which reads as a short page.
+
+    Measured against the live feed 2026-08-17: ``count=50`` serves 40 entries and
+    ``count=30`` serves 20.  Production runs ``--max-accessions 750``, so the tail
+    page used to ask for 50, receive 40, and call the truncated scan complete.
+    """
+
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(_deep_feed(calls), entry_limit=750)
+    assert [count for _start, count in calls if count not in ATOM_HONORED_PAGE_SIZES] == []
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+    assert len(result.entries) == 750
+    assert calls[-1] == (740, 10)
+
+
+def test_atom_scanner_form_filter_never_shortens_a_page() -> None:
+    """A full page carrying a non-``FORM_TYPES`` 13F form is not a short page.
+
+    ``type=13F`` prefix-matches on EDGAR (verified 2026-08-17: ``type=13F-H``
+    returns both ``13F-HR`` and ``13F-HR/A``), so the feed can serve 13F-family
+    forms outside ``FORM_TYPES`` — ``13FCONP`` is a live example.  Deciding the
+    page length after the filter ended the scan and still reported it complete.
+    """
+
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, forms={5: "13FCONP"}), entry_limit=200
+    )
+    assert not result.complete, "a filtered entry must not end the scan as complete"
+    assert result.stop_reason == "ephemeral_limit"
+    assert result.pages_fetched == 2
+    # 200 raw entries walked, minus the single 13FCONP the filter drops.
+    assert len(result.entries) == 199
+    assert {entry.form for entry in result.entries} == {"13F-HR"}
+
+
+def test_atom_scanner_filtered_entry_does_not_shift_later_ordinals() -> None:
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, total=100, forms={5: "13FCONP"}), entry_limit=200
+    )
+    assert result.complete
+    assert result.stop_reason == "short_page"
+    ordinals = [entry.source_ordinal for entry in result.entries]
+    # Raw feed positions 1..100 with position 6 (offset 5) dropped by the filter.
+    assert ordinals == [value for value in range(1, 101) if value != 6]
+
+
+def test_atom_scanner_all_filtered_full_page_is_not_a_stall() -> None:
+    """A page with no 13F entries had nothing that *could* have been new."""
+
+    calls: list[tuple[int, int]] = []
+    forms = {offset: "13FCONP" for offset in range(100)}
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, total=200, forms=forms), entry_limit=200
+    )
+    assert result.stop_reason != "stalled"
+    assert result.pages_fetched == 2
+    assert len(result.entries) == 100
 
 
 def test_atom_scanner_short_page_is_complete() -> None:
