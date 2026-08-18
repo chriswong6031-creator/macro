@@ -855,13 +855,14 @@
     "n_members": 22,
     "n_members_live": 21,
     "n_members_read": 22,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
+     "HWM",
      "RKLB"
     ],
     "present_counts": {
      "buy": 1,
-     "watch": 0,
+     "watch": 1,
      "leaders": 0,
      "ran": 0
     },
@@ -1019,18 +1020,19 @@
     "n_members": 80,
     "n_members_live": 80,
     "n_members_read": 80,
-    "n_members_on_board": 6,
+    "n_members_on_board": 7,
     "members_on_board": [
      "EXPD",
      "FDX",
      "GWW",
+     "HWM",
      "JBHT",
      "ODFL",
      "PWR"
     ],
     "present_counts": {
      "buy": 2,
-     "watch": 4,
+     "watch": 5,
      "leaders": 0,
      "ran": 0
     },
