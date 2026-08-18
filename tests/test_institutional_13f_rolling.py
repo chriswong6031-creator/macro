@@ -41,6 +41,7 @@ from engine.institutional_census.sec_sources import (
     SUMMARY_PAGE_COLUMNS,
     BulkTables,
     FilingDiscovery,
+    parse_filing_package,
 )
 from engine.institutional_census.storage import (
     load_raw_evidence,
@@ -104,9 +105,22 @@ def _package(accession: str) -> dict[str, bytes]:
 
 
 class _FixtureFetch:
-    def __init__(self, accessions: list[str], *, atom_error: bool = False) -> None:
+    def __init__(
+        self,
+        accessions: list[str],
+        *,
+        atom_error: bool = False,
+        atom_accessions: list[str] | None = None,
+    ) -> None:
         self.accessions = list(accessions)
         self.atom_error = atom_error
+        # The Atom feed is decoupled from the fetchable filing packages so a
+        # test can hand Atom strictly fewer entries than --max-accessions --
+        # which is what makes the scan complete via short_page -- while still
+        # serving every accession the run actually selects.
+        self.atom_accessions = list(
+            accessions if atom_accessions is None else atom_accessions
+        )
         self.calls: list[str] = []
         self.response_bytes = 0
         self.packages = {item.replace("-", ""): _package(item) for item in accessions}
@@ -116,7 +130,7 @@ class _FixtureFetch:
         if "browse-edgar" in url:
             if self.atom_error:
                 raise RuntimeError("simulated Atom outage")
-            body = _atom(self.accessions)
+            body = _atom(self.atom_accessions)
         else:
             parsed = urlparse(url)
             parts = parsed.path.split("/")
@@ -312,6 +326,105 @@ def test_sec_response_cap_matches_config_and_streaming_runner(monkeypatch) -> No
         fetcher("https://www.sec.gov/streamed-oversize")
 
 
+class _HeaderControlledResponse:
+    """Fake ``requests`` streaming response with independently controllable
+    headers and body chunks, so a content-coded response (e.g. gzip) can be
+    modeled with a Content-Length that legitimately disagrees with the bytes
+    ``iter_content`` yields (already decompressed by requests/urllib3)."""
+
+    def __init__(self, *, headers=None, chunks=()):
+        self.headers = dict(headers or {})
+        self._chunks = chunks
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def raise_for_status(self):
+        return None
+
+    def iter_content(self, _chunk_size):
+        yield from self._chunks
+
+
+class _HeaderControlledSession:
+    def __init__(self, response):
+        self.response = response
+
+    def get(self, *_args, **_kwargs):
+        return self.response
+
+    def close(self):
+        return None
+
+
+def test_truncated_identity_encoded_response_raises() -> None:
+    fetcher = rolling_runner._RequestsSecFetch(user_agent="test example@example.com")
+    fetcher._session = _HeaderControlledSession(
+        _HeaderControlledResponse(headers={"Content-Length": "10"}, chunks=(b"12345",))
+    )
+    with pytest.raises(RuntimeError, match="SEC response truncated"):
+        fetcher("https://www.sec.gov/truncated-identity")
+
+
+def test_complete_identity_encoded_response_does_not_raise() -> None:
+    fetcher = rolling_runner._RequestsSecFetch(user_agent="test example@example.com")
+    fetcher._session = _HeaderControlledSession(
+        _HeaderControlledResponse(headers={"Content-Length": "5"}, chunks=(b"12345",))
+    )
+    assert fetcher("https://www.sec.gov/complete-identity") == b"12345"
+
+
+def test_content_length_is_not_compared_against_a_decoded_body() -> None:
+    """Regression guard for the defect that would have taken production down:
+    Content-Length describes the ENCODED body, not the decoded one. Live SEC
+    served spectrum13f2026q2.xml with ``content-encoding: gzip`` and
+    ``content-length: 3815`` (the compressed size on the wire) while
+    ``iter_content`` transparently decompresses it to 42886 bytes -- comparing
+    the two is a category error, not a truncation. A content-coded response
+    must never raise on a Content-Length/observed-bytes mismatch; the codec's
+    own framing (a truncated gzip stream fails to decode) is what detects real
+    truncation there instead.
+    """
+    fetcher = rolling_runner._RequestsSecFetch(user_agent="test example@example.com")
+    decompressed_body = b"x" * 42886
+    fetcher._session = _HeaderControlledSession(
+        _HeaderControlledResponse(
+            headers={"Content-Length": "3815", "Content-Encoding": "gzip"},
+            chunks=(decompressed_body,),
+        )
+    )
+    assert fetcher("https://www.sec.gov/gzip-encoded") == decompressed_body
+
+
+def test_index_size_mismatch_no_longer_fails_parsing_and_warns(capsys) -> None:
+    """SEC's index.json `size` is advisory (verified against live SEC: it
+    disagrees with SEC's own Content-Length and served bytes -- a
+    block-rounded metadata artifact). A body/index size mismatch must parse
+    successfully and only surface as a line-leading GitHub Actions
+    `::warning`, never a raised SecSourceError."""
+    package = _package(ACCESSION)
+    index_source = package.pop("index.json")
+    package["information_table.xml"] += b"\n"
+
+    tables = parse_filing_package(
+        index_url=_index_url(ACCESSION),
+        index_source=index_source,
+        documents=package,
+    )
+
+    assert len(tables.holdings) >= 1
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::")]
+    assert warning_lines, f"no line-leading annotation emitted; captured: {out!r}"
+    assert any(
+        "sec-index-size-mismatch" in line and "information_table.xml" in line
+        for line in warning_lines
+    )
+
+
 def test_raw_first_append_checkpoint_and_mixed_unit_contract(tmp_path: Path) -> None:
     inner = LocalStore(tmp_path / "store")
     store = _RecordingStore(inner)
@@ -459,6 +572,46 @@ def test_supplied_master_index_is_backstop_and_backlog_stays_retryable(
     assert result["failures"]["details"][0]["stage"] == "atom_discovery"
     assert not any(dummy_accession.replace("-", "") in item for item in fetch.calls)
     assert result["checkpoint"]["entries_after"] == 1
+
+
+def test_bound_saturated_backlog_is_progress_not_a_coverage_gap(
+    tmp_path: Path,
+) -> None:
+    """Saturating --max-accessions on an otherwise clean run is bounded
+    throughput control, not a coverage gap: it must not be classed
+    partial_failure/failed, and its receipt must stay zero-failure.
+
+    Atom is handed strictly fewer entries than --max-accessions so the scan
+    completes via ``short_page``. entry_limit is min(max_accessions, 930), so
+    an Atom feed as long as the bound would instead fall through to
+    ``ephemeral_limit`` -- a real, and correctly fatal, coverage gap.
+    """
+    dummy_accession = "0000000001-26-000001"
+    master = (
+        "CIK|Company Name|Form Type|Date Filed|File Name\n"
+        f"1792167|Fixture Manager|13F-HR/A|20260807|edgar/data/1792167/{ACCESSION}.txt\n"
+        f"1792167|Fixture Manager|13F-HR/A|20260807"
+        f"|edgar/data/1792167/{SECOND_ACCESSION}.txt\n"
+        f"1|Backlog Manager|13F-NT|20260807|edgar/data/1/{dummy_accession}.txt\n"
+    ).encode("latin-1")
+    fetch = _FixtureFetch([ACCESSION, SECOND_ACCESSION], atom_accessions=[ACCESSION])
+    fake_time = _FakeMonotonic()
+    result = _run(
+        LocalStore(tmp_path / "store"),
+        fetch,
+        fake_time,
+        master_index_source=master,
+        max_accessions=2,
+    )
+
+    assert result["status"] == "bounded_backlog"
+    assert result["discovery"]["atom"]["complete"] is True
+    assert result["counts"]["failures"] == 0
+    assert result["counts"]["new_filings_published"] == 2
+    assert result["backlog"]["count"] == 1
+    assert result["discovery"]["backlog_accessions"] == 1
+    assert result["backlog"]["details"][0]["accession"] == dummy_accession
+    assert not any(dummy_accession.replace("-", "") in item for item in fetch.calls)
 
 
 def test_notice_projection_never_turns_unknown_holdings_into_zero(
@@ -642,6 +795,48 @@ def test_cli_explicit_local_mode_writes_a_loud_fatal_receipt(
     assert receipt["checkpoint"]["authority"] == "operational_discovery_only"
     emitted = json.loads(capsys.readouterr().out)
     assert emitted == receipt
+
+
+def _stub_receipt(status: str) -> dict:
+    return {
+        "schema": "institutional_13f.rolling_receipt/v1",
+        "status": status,
+        "discovery": {"backlog_accessions": 0},
+        "counts": {"failures": 0},
+    }
+
+
+@pytest.mark.parametrize(
+    "status, expected_exit",
+    [
+        ("ok", 0),
+        ("no_changes", 0),
+        ("bounded_backlog", 0),
+        ("partial_failure", 1),
+        ("failed", 1),
+    ],
+)
+def test_main_exit_code_matches_receipt_status(
+    tmp_path: Path, monkeypatch, status: str, expected_exit: int
+) -> None:
+    """main() must exit 0 for every non-degraded status, including the new
+    bounded_backlog outcome, and non-zero for a genuine coverage gap."""
+    monkeypatch.setattr(
+        rolling_runner,
+        "run_rolling_ingestion",
+        lambda **_kwargs: _stub_receipt(status),
+    )
+    receipt_path = tmp_path / "receipts" / "rolling.json"
+    result = rolling_main(
+        [
+            "--local-store",
+            str(tmp_path / "store"),
+            "--receipt",
+            str(receipt_path),
+        ]
+    )
+    assert result == expected_exit
+    assert json.loads(receipt_path.read_text(encoding="utf-8"))["status"] == status
 
 
 def test_receipts_bound_and_redact_exception_details(
