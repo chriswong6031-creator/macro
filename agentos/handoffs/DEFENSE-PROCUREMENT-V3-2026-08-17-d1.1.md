@@ -35,7 +35,10 @@ changed:
       re-canonicalized so already-projected Python-repr name fields heal at
       rebuild without a collector rewrite.
   - path: scripts/build_government_revenue.py
-    what: Compact first-paint now keeps name and subagency as well as department_*.
+    what: >
+      Compact first-paint still copies only department_*/subagency_*/office_*.
+      It does not copy leftover name/subagency strings — those can still be
+      Python-reprs until the workspace rebuild writes department_name.
   - path: templates/government_revenue.html.j2
     what: >
       agencyName() presents department_name → subagency_name → office_name →
