@@ -40,7 +40,19 @@ socket — ``state.now`` is injected — so every behavioural gate below is pinn
 unit test in tests/test_prophet_rescue.py rather than by prose.
 
 SAFETY INVARIANTS (masterplan §0.4; each one mutation-pinned by a named test).
-  a. NEVER dispatch while a daily.yml run is queued / in_progress / waiting.
+  a. NEVER dispatch while a daily.yml run is queued / in_progress / waiting —
+     UNLESS that run is provably WEDGED (2026-08-17 amendment, ``wedged_run``):
+     old enough that no healthy bake explains it AND its jobs read shows zero
+     jobs in progress with every live job queued beyond any plausible runner
+     wait.  The 08-16/17 outage is why: collect_tail sat queued on a runs-on
+     label carried by NO live runner, GitHub holds such a run 'alive' ~24h until
+     its queued-job kill, and this invariant read the hostage as a live bake and
+     refused to dispatch for two days while every Prophet board froze.  The
+     wedge verdict is FAIL-CLOSED: an unreadable jobs list, an unparseable
+     created_at, a fresh run, or any single in-progress job keeps the full
+     refusal.  A wrong WEDGED call costs at worst a budgeted double-bake —
+     the failure mode daily.yml's own concurrency comment declares acceptable
+     ("a double-run, never a zero-run"); a wrong ALIVE call cost four days.
   b. NEVER exceed the auto-dispatch budget: 2 workflow_dispatch daily.yml runs since
      21:00Z today, counted across ALL actors (a human recovering by hand consumes it).
   c. NEVER cancel anything.  There is no cancel code path in this file and
@@ -162,6 +174,19 @@ STRAND_AFTER = timedelta(hours=3, minutes=40)
 STALE_AFTER = timedelta(hours=11, minutes=40)
 DISPATCH_FLOOR = timedelta(hours=15, minutes=40)
 
+#: Wedge classification floors (§0.4a amendment, 2026-08-17).  A run must be at
+#: least this old before a wedge verdict is even considered — the serial band
+#: from fire to collect's first commit is ~3h, and a busy macstudio pool can
+#: legitimately hold a queued job ~1h, so 6h clears every healthy shape seen in
+#: the timings ledger.  And every still-live job inside it must have been queued
+#: at least WEDGED_JOB_QUEUE_MIN — the 08-16/17 hostage's collect_tail was
+#: queued 17h+ (label with no runner), while ordinary contention (the 13F census
+#: backlog) resolved in ~1h.  Both floors are deliberately far above normal: the
+#: cost of a missed wedge is one more quiet wake, the cost of a false wedge is a
+#: budgeted double-bake.
+WEDGED_RUN_MIN_AGE = timedelta(hours=6)
+WEDGED_JOB_QUEUE_MIN = timedelta(hours=3)
+
 #: Auto-dispatch budget, counted over ALL actors since 21:00Z today.  Two, because
 #: one re-arm covers a dropped cron and a second covers a re-arm that itself died;
 #: a third means the failure is not a scheduling failure and a robot must stop
@@ -262,6 +287,12 @@ class WatchdogState:
     vps_error: str | None = None
     runs: list[dict] | None = None
     runs_error: str | None = None
+    #: Jobs of the newest non-completed run, fetched ONLY on the alarm path when
+    #: pass one was blocked by ``run_in_flight`` (same two-pass economy as the
+    #: issue thread) — the wedge-classification input (§0.4a amendment).
+    #: None = not fetched or unreadable — fail-closed toward the full refusal.
+    in_flight_jobs: list[dict] | None = None
+    in_flight_jobs_error: str | None = None
     dispatch_runs_today: int | None = None
     dispatch_probe_error: str | None = None
     #: Read back from the session's issue thread on the ALARM path only (see
@@ -420,6 +451,56 @@ def run_facts(runs: list[dict] | None, boundary: datetime,
                     tuple(anomalies), tuple(gate_skips))
 
 
+def wedged_run(in_flight: dict | None, jobs: list[dict] | None,
+               now: datetime) -> str | None:
+    """Evidence sentence when the in-flight run is provably WEDGED, else None.
+
+    §0.4a amendment (2026-08-17).  The 08-16/17 outage: collect_tail queued on a
+    runs-on label carried by NO live runner held run 31977372592 'alive' ~24h
+    (GitHub only kills a queued job after 24h), its per-cron concurrency group
+    pended the next night's slot behind it, and this lane's unamended §0.4a read
+    the hostage as a live bake — refusing to dispatch for two days while every
+    Prophet board froze.
+
+    FAIL-CLOSED at every input: no run, no jobs read, an unparseable run or job
+    timestamp, a run younger than WEDGED_RUN_MIN_AGE, ANY job in progress, or
+    any live job inside the WEDGED_JOB_QUEUE_MIN floor -> None (full §0.4a
+    refusal stands).  A wrong WEDGED call costs at worst a budgeted double-bake
+    — daily.yml's own declared-acceptable failure mode ("a double-run, never a
+    zero-run"); a wrong ALIVE call cost four days of frozen boards.
+    """
+    if in_flight is None or jobs is None:
+        return None
+    created = _parse_dt(in_flight.get("created_at"))
+    if created is None:
+        return None
+    age = now - created
+    if age < WEDGED_RUN_MIN_AGE:
+        return None
+    hours = age.total_seconds() / 3600
+    live = [j for j in jobs if isinstance(j, dict) and j.get("status") != "completed"]
+    if any(j.get("status") == "in_progress" for j in live):
+        return None
+    if not live:
+        # Also covers an EMPTY jobs list: total_count 0 after hours alive is the
+        # #5362 jobless-queued shape (created during a strand, will never start).
+        return (f"alive {hours:.1f}h with zero live jobs — the #5362 "
+                "jobless-queued shape, or a run stuck concluding")
+    stuck: list[str] = []
+    for job in live:
+        queued_at = _parse_dt(job.get("started_at")) or _parse_dt(job.get("created_at"))
+        if queued_at is None:
+            return None
+        wait = now - queued_at
+        if wait < WEDGED_JOB_QUEUE_MIN:
+            return None
+        stuck.append(f"{job.get('name')} queued {wait.total_seconds() / 3600:.1f}h")
+    return (f"alive {hours:.1f}h with zero jobs in progress and every live job "
+            f"past the {WEDGED_JOB_QUEUE_MIN.total_seconds() / 3600:.0f}h queue "
+            f"floor [{'; '.join(stuck)}] — the 2026-08-16/17 hostage shape "
+            "(check the job's runs-on label against the live runner pool)")
+
+
 def budget_window_start(now: datetime) -> datetime:
     """21:00Z of the night ``now`` belongs to — the auto-dispatch budget window.
 
@@ -533,7 +614,8 @@ def intake_eligible(index: dict | None) -> int | None:
 # the pure decision core
 # ─────────────────────────────────────────────────────────────────────────────
 def _dispatch_blockers(state: WatchdogState, in_flight: dict | None,
-                       dispatch_deadline: datetime) -> list[tuple[str, str]]:
+                       dispatch_deadline: datetime,
+                       wedge: str | None = None) -> list[tuple[str, str]]:
     """Every §0.4 reason a re-arm must not happen, as (code, human sentence) pairs.
 
     ALL FOUR INVARIANTS LIVE HERE AND NOWHERE ELSE.  That is deliberate: a guard
@@ -556,8 +638,11 @@ def _dispatch_blockers(state: WatchdogState, in_flight: dict | None,
 
     # (a) a live run owns the night.  The 2026-08-12 kill spree is the counterexample
     # this exists for: piling dispatches onto a lane that is already working is how a
-    # 3-hour bake gets restarted from zero.
-    if in_flight is not None:
+    # 3-hour bake gets restarted from zero.  ``wedge`` is the §0.4a amendment
+    # (2026-08-17): a PROVEN wedge (see ``wedged_run`` — fail-closed, jobs-API
+    # evidence required) is not a live bake, so it does not own the night; the
+    # 08-16/17 hostage held this blocker for two days while the boards froze.
+    if in_flight is not None and wedge is None:
         blockers.append((
             "run_in_flight",
             f"{WORKFLOW_FILE} run {in_flight.get('id')} is "
@@ -677,13 +762,23 @@ def decide(state: WatchdogState) -> list[Action]:
         )
 
     if wants is not None:
-        blockers = _dispatch_blockers(state, in_flight, dispatch_deadline)
+        wedge = wedged_run(in_flight, state.in_flight_jobs, now)
+        blockers = _dispatch_blockers(state, in_flight, dispatch_deadline,
+                                      wedge=wedge)
         if not blockers:
+            wedge_note = ""
+            if wedge is not None and in_flight is not None:
+                wedge_note = (
+                    f" Run {facts.in_flight_id} is classified WEDGED ({wedge}); "
+                    "dispatching THROUGH it per the §0.4a amendment — it is not "
+                    "stopped (never) and concludes on GitHub's own queued-job "
+                    "kill."
+                )
             actions.append(Action(
                 DISPATCH, wants,
                 f"{why} Re-arming {WORKFLOW_FILE} on main (auto-dispatch "
                 f"{(state.dispatch_runs_today or 0) + 1}/{AUTO_DISPATCH_BUDGET} "
-                "since 21:00Z).",
+                f"since 21:00Z).{wedge_note}",
             ))
         elif any(code == "run_in_flight" for code, _ in blockers):
             # A live run is DOMINANT over every other blocker — it answers the
@@ -927,6 +1022,34 @@ def vps_commit_time(state: WatchdogState) -> datetime | None:
     if not isinstance(checks, dict) or not isinstance(checks.get("site"), dict):
         return None
     return _parse_dt(checks["site"].get("commit_time"))
+
+
+def fetch_run_jobs(repo: str, token: str | None,
+                   run_id: object) -> tuple[list[dict] | None, str | None]:
+    """Jobs of ONE run — the wedge-classification read (§0.4a amendment).
+
+    Spent only on the alarm path when pass one was blocked by ``run_in_flight``,
+    so a healthy wake still costs exactly THREE GitHub reads.  per_page=100 and
+    never paginated: daily.yml has ~20 jobs.
+    """
+    url = (f"https://api.github.com/repos/{repo}/actions/runs/{run_id}"
+           f"/jobs?per_page=100")
+    payload, err = _get_json(url, _api_headers(token))
+    if err is not None:
+        return None, err
+    jobs = payload.get("jobs") if isinstance(payload, dict) else None
+    if not isinstance(jobs, list):
+        return None, "no jobs array"
+    return [
+        {
+            "name": j.get("name"),
+            "status": j.get("status"),
+            "conclusion": j.get("conclusion"),
+            "started_at": j.get("started_at"),
+            "created_at": j.get("created_at"),
+        }
+        for j in jobs if isinstance(j, dict)
+    ], None
 
 
 def fetch_issue_thread(repo: str, token: str | None, session: date, now: datetime):
@@ -1277,16 +1400,19 @@ def main(argv: list[str] | None = None) -> int:
 
     state = collect_state(args.repo, token, now, lane=args.lane,
                           disk_path=Path(args.disk_path) if args.disk_path else None)
-    session, _ = expected_fire_after(now)
+    session, boundary = expected_fire_after(now)
 
     # TWO PASSES, and the split is the point. Pass one answers "is anything wrong?"
     # from the three cheap reads every wake pays for. Only if it says yes do we spend
     # the two issue reads that carry the ATTEMPT LEDGER (a dispatch POST that created
     # no run still counted) and the last verdict set (so an unchanged alarm does not
-    # post its fourteenth identical comment). Pass two is the authoritative one — the
-    # provisional plan is discarded, never executed, because its budget input was
-    # incomplete by construction.
-    if any(a.loud for a in decide(state)):
+    # post its fourteenth identical comment) — plus, when pass one was blocked by
+    # run_in_flight, ONE jobs read for the wedge classification (§0.4a amendment):
+    # without it a queued-forever hostage run mutes this lane for days. Pass two is
+    # the authoritative one — the provisional plan is discarded, never executed,
+    # because its budget and wedge inputs were incomplete by construction.
+    provisional = decide(state)
+    if any(a.loud for a in provisional):
         number, receipts, last_verdicts, err = fetch_issue_thread(
             args.repo, token, session, now)
         state.issue_number = number
@@ -1297,6 +1423,18 @@ def main(argv: list[str] | None = None) -> int:
             print("::warning title=prophet-rescue-ledger-blind::could not read the "
                   f"issue thread ({err}) — the attempt ledger falls back to run "
                   "records only", flush=True)
+        if any(a.blocked_by and "run_in_flight" in a.blocked_by
+               for a in provisional):
+            flight = run_facts(state.runs, boundary, now=now).in_flight
+            if flight is not None and flight.get("id") is not None:
+                jobs, jerr = fetch_run_jobs(args.repo, token, flight["id"])
+                state.in_flight_jobs = jobs
+                state.in_flight_jobs_error = jerr
+                if jerr is not None:
+                    print("::warning title=prophet-rescue-jobs-blind::could not "
+                          f"read jobs for run {flight.get('id')} ({jerr}) — the "
+                          "wedge check stays fail-closed (§0.4a full refusal)",
+                          flush=True)
     actions = decide(state)
     annotate(actions)
     for line in execute(actions, state, session, args.repo, token,

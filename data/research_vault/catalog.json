@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T01:18:39.310141+00:00",
-  "count": 1303,
+  "generated_at": "2026-08-18T02:08:21.293554+00:00",
+  "count": 1306,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -605,6 +605,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-oyafm6wvodn-028bd9",
+      "title": "Synchrony Financial (SYF) July Monthly Stats Credit and loans outperform",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:35Z",
+      "summary_points": [
+        "**Credit Metrics Beat**: DQs flat at 4.20% (vs.",
+        "+6bps expected), NCOs down 30bps to 4.90% (outperforming -20bps), EOP loans +0.4% MoM ($102.6bn vs.",
+        "0.2% expected) - **Loan Growth Momentum**: Avg loans +0.6% MoM (outperforming +0.1% expectations), supporting progress toward MSD loan growth guide - **Valuation Target**: $87 12-month price target (7.4% upside from $81) based on 8.5x 2027 P/E multiple - **Key Risk**: Execution risk on late fee offset mitigation and weakening consumer health"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7jytko7zp5c-405e19",
       "title": "Sieyuan Electric (002028.SZ) 2Q26 results 35 yoy growth in advances from customers implying strong revenue visibility",
       "institution": "Goldman Sachs",
@@ -620,6 +639,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rt6imtpfwtr-63462d",
+      "title": "Sandoz Group AG (SDZ.S) Further expands best in class pipeline with collaboration with Henlius for up to 10 biosimilars",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:29Z",
+      "summary_points": [
+        "**Sandoz-Henlius Collaboration**: Strategic partnership for up to 10 biosimilars (Erbitux, Repatha, Belnysta) expands pipeline to 39 (potential 46), with $322m total consideration and near-term payments up to $100.5m in 2026, driving Buy thesis.",
+        "**Biosimilar Targeting Strategy**: Focus on drugs with peak sales < $3bn (Erbitux, Belnysta) in biosimilar void; Erbitux (HLX05-N) in Phase 1, Repatha (HLX16) preclinical, leveraging expiring patents for market entry.",
+        "**Valuation & Target**: Buy rating with CHF 80 price target (50:50 DCF/EV/EBITDA blend; 15x 2027 EBITDA valuation).",
+        "**Sandoz Target Price Premium**: Goldman Sachs' target prices for Sandoz (SDZ.S) consistently exceed closing prices (e.g., Aug-26 target 80.00 vs.",
+        "18), reflecting bullish sentiment and sustained market confidence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -679,6 +719,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7m28dwarmwy-0ce798",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:08Z",
+      "summary_points": [
+        "**<u>Valuation Discount vs US/Europe</u>**: MXAPJ trades at 0.74x forward P/E vs MEXU (US), signaling significant relative value opportunity amid large discount.",
+        "**<u>FII Outflows vs DII Inflows</u>**: FII outflows dominate EM Asia ex-China (-166.689bn USD), while DII inflows surge in India (56.83bn USD YTD) and Korea (32.305bn USD YTD), indicating institutional confidence.",
+        "**<u>Sector Earnings Divergence</u>**: China’s Health Care/Financials show negative 2026 revisions; Japan’s Info Tech/Health Care show positive, critical for sector allocation.",
+        "**<u>MXJP Overvaluation Risk</u>**: MXJP equity valuations overvalued (130bp equity/bond yield gap), signaling potential downside risk relative to bonds.",
+        "**<u>Japan Yen Strength Risk</u>**: JP Strong Yen (GSJPFXS1) at -1.9% 1-day return signals yen strength as key technical/geopolitical risk for exporters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },

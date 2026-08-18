@@ -533,6 +533,151 @@ def test_a_live_run_still_blocks_when_other_blockers_also_apply():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# §0.4a AMENDMENT (2026-08-17) — a PROVEN wedge is not a live bake
+#
+# The 08-16/17 outage: collect_tail queued on a runs-on label carried by NO live
+# runner held run 31977372592 'alive' ~24h, its per-cron concurrency group pended
+# the next night's slot, and the unamended §0.4a read the hostage as a live bake
+# — this lane refused to dispatch for two days while every Prophet board froze.
+# Every fixture below reproduces that night's shape.
+# ─────────────────────────────────────────────────────────────────────────────
+def job_row(name: str, status: str = "completed",
+            conclusion: str | None = "success", *,
+            started: datetime | None = None,
+            created: datetime | None = None) -> dict:
+    return {
+        "name": name,
+        "status": status,
+        "conclusion": conclusion,
+        "started_at": started.strftime("%Y-%m-%dT%H:%M:%SZ") if started else None,
+        "created_at": created.strftime("%Y-%m-%dT%H:%M:%SZ") if created else None,
+    }
+
+
+def hostage_state(**kw):
+    """FRI 11:40Z, store two sessions back, budget untouched — the only question
+    is whether the THU 22:52Z run that is still 'queued' owns the night."""
+    defaults = dict(
+        now=at(FRI, 11, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[run_row(status="queued", conclusion=None, created=at(THU, 22, 52),
+                      run_id=31977372592)],
+        dispatch_runs_today=0,
+    )
+    defaults.update(kw)
+    return state(**defaults)
+
+
+HOSTAGE_JOBS = [
+    job_row("et_gate"),
+    job_row("collect"),
+    job_row("engine", conclusion="failure"),
+    # The wedge itself: queued since FRI 01:00Z -> 10.7h, on a label with no runner.
+    job_row("collect_tail", status="queued", conclusion=None,
+            started=at(FRI, 1, 0)),
+]
+
+
+def test_a_proven_wedge_dispatches_through_the_hostage():
+    """THE AMENDMENT. With jobs-API proof (zero in progress, the one live job
+    queued 10.7h — the 08-16/17 signature), the run no longer owns the night:
+    the lane dispatches THROUGH it, never stops it, and says so."""
+    actions = RESCUE.decide(hostage_state(in_flight_jobs=HOSTAGE_JOBS))
+    assert dispatched(actions), "a proven wedge must not mute the rescue"
+    message = next(a.message for a in actions if a.kind == RESCUE.DISPATCH)
+    assert "WEDGED" in message
+    assert "31977372592" in message, "the receipt must name the hostage run"
+    assert "collect_tail" in message, "the receipt must name the stuck job"
+    assert RESCUE.exit_code(actions) != 0
+
+
+def test_an_unreadable_jobs_list_keeps_the_full_refusal():
+    """FAIL-CLOSED half of the amendment. No jobs read (the default) -> the
+    unamended §0.4a stands whole: blocked, loud, nothing dispatched."""
+    actions = RESCUE.decide(hostage_state())          # in_flight_jobs=None
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+
+
+def test_any_in_progress_job_defeats_the_wedge():
+    """One job actually running = a live bake, whatever the queue looks like."""
+    jobs = HOSTAGE_JOBS + [job_row("stock_briefs", status="in_progress",
+                                   conclusion=None, started=at(FRI, 11, 0))]
+    actions = RESCUE.decide(hostage_state(in_flight_jobs=jobs))
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+
+
+def test_a_job_inside_the_queue_floor_defeats_the_wedge():
+    """A job queued 1h is ordinary macstudio contention (the 13F census backlog
+    resolved in ~1h on 08-17), not proof of an unschedulable label."""
+    jobs = [
+        job_row("et_gate"), job_row("collect"),
+        job_row("collect_tail", status="queued", conclusion=None,
+                started=at(FRI, 10, 40)),
+    ]
+    actions = RESCUE.decide(hostage_state(in_flight_jobs=jobs))
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+
+
+def test_a_young_run_is_never_wedged():
+    """Age floor: a run under WEDGED_RUN_MIN_AGE keeps the refusal even with a
+    wedge-shaped jobs list — collect legitimately queues behind a busy pool."""
+    actions = RESCUE.decide(hostage_state(
+        runs=[run_row(status="queued", conclusion=None, created=at(FRI, 8, 0),
+                      run_id=31977372592)],
+        in_flight_jobs=[job_row("collect", status="queued", conclusion=None,
+                                started=at(FRI, 8, 0))],
+    ))
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+
+
+def test_a_jobless_alive_run_past_the_floor_is_wedged():
+    """The #5362 shape (and 32077948964 on 08-17): alive for hours with a
+    readable, EMPTY jobs list — created during a strand, will never start."""
+    actions = RESCUE.decide(hostage_state(in_flight_jobs=[]))
+    assert dispatched(actions)
+    message = next(a.message for a in actions if a.kind == RESCUE.DISPATCH)
+    assert "WEDGED" in message
+
+
+def test_the_budget_still_binds_through_a_wedge():
+    """The amendment bypasses exactly ONE blocker. Budget spent -> alert only."""
+    actions = RESCUE.decide(hostage_state(in_flight_jobs=HOSTAGE_JOBS,
+                                          dispatch_runs_today=2))
+    assert not dispatched(actions)
+    assert actions[0].blocked_by is not None
+    assert "budget_spent" in actions[0].blocked_by
+
+
+def test_the_floor_still_binds_through_a_wedge():
+    """Past DISPATCH_FLOOR a bake cannot help regardless of why the night died."""
+    actions = RESCUE.decide(hostage_state(now=at(FRI, 13, 40),
+                                          in_flight_jobs=HOSTAGE_JOBS))
+    assert not dispatched(actions)
+    assert actions[0].blocked_by is not None
+    assert "past_floor" in actions[0].blocked_by
+
+
+def test_wedged_run_is_fail_closed_on_unparseable_stamps():
+    """Unit rows for the classifier itself: every unprovable input -> None."""
+    now = at(FRI, 11, 40)
+    good_job = job_row("collect_tail", status="queued", conclusion=None,
+                       started=at(FRI, 1, 0))
+    flight = run_row(status="queued", conclusion=None, created=at(THU, 22, 52))
+    assert RESCUE.wedged_run(None, [good_job], now) is None
+    assert RESCUE.wedged_run(flight, None, now) is None
+    bad_created = dict(flight, created_at="not-a-stamp")
+    assert RESCUE.wedged_run(bad_created, [good_job], now) is None
+    undated_job = job_row("collect_tail", status="queued", conclusion=None)
+    assert RESCUE.wedged_run(flight, [undated_job], now) is None
+    assert RESCUE.wedged_run(flight, [good_job], now) is not None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # §0.4b — MUTATION PIN: the auto-dispatch budget
 # ─────────────────────────────────────────────────────────────────────────────
 def test_budget_spent_downgrades_to_alert_only():
@@ -672,6 +817,10 @@ def test_the_only_pipeline_write_is_a_dispatch():
         "/actions/workflows/{WORKFLOW_FILE}/runs"
         "?event=workflow_dispatch&per_page={RUNS_PER_PAGE}&created={created}",
         "/actions/workflows/{WORKFLOW_FILE}/dispatches",
+        # The wedge-classification read (§0.4a amendment, 2026-08-17): one
+        # unpaginated GET of the in-flight run's jobs, spent only on the alarm
+        # path when pass one was blocked by run_in_flight.
+        "/actions/runs/{run_id}/jobs?per_page=100",
         "/labels",
         "/issues?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50",
         "/issues",
