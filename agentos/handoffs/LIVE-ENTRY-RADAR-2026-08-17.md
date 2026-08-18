@@ -72,8 +72,9 @@ changed:
     what: "ADDENDUM W6-SOL-CORRECTION: post-Sol-review methodological note; no
       outcome-conditioned inspection."
   - path: research/live_entry_radar/W6_RP1_REAL_INPUT_RECEIPT_2026-08-17.md
-    what: "ADDENDUM W6-SOL-CORRECTION: genuine real-store pre-merge receipt via
-      live_pack.build_pack + live_eval.run_pass. Not the W4 synthetic LivePack."
+    what: "ADDENDUM W6-SOL-CORRECTION: real-store build_pack + run_pass as
+      real-substrate smoke / partial real-input proof. Honest empty board.
+      Does not discharge non-empty developing-episode proof."
   - path: agentos/workstreams/WS-LIVE-ENTRY-RADAR.md
     what: "ADDENDUM W6-SOL-CORRECTION: restore W5.1 done (#5833) without dropping
       W6 in_progress."
@@ -117,30 +118,31 @@ verified:
     result: "W5.1 status done pr 5833; W6 status in_progress"
 
 unverified:
-  - claim: "The per-episode n_cell and k distributions (beyond the uninformative share)."
-    what_would_verify: "Serialize ControlMatch.n_cell and len(controls) in _write_results / _summary_table on a future run. This run's JSON has zero n_cell keys."
+  - claim: "The per-episode n_cell and k distributions on production Panel-A/B dumps."
+    what_would_verify: "W5.1 #5833 shipped serialization. Historical confirmatory dumps predate it. First real distributions arrive on the next natural evaluation; do not rerun W5 merely to populate them."
   - claim: "§9 nc2_overlap at the 0.50 floor."
     what_would_verify: "A Q1 that clears M14, or an explicit overlap_share dump of the match_proximity=False arm. This run stored NaN on Q1/Q2/Q5."
   - claim: "ADDENDUM W6: live VPS payload will emit rankable RP1 rows once ENTRY_RADAR_LIVE_ENABLE is armed on a session that actually develops episodes."
-    what_would_verify: "Post-merge commissioning against the real live/entry_radar.json after a developing RTH pass."
-  - claim: "ADDENDUM W6-SOL-CORRECTION: a developing RTH pass on the real probe set will emit a non-empty name-snapshot RP1 board."
-    what_would_verify: "The real-input receipt uses the Radar evaluator on real daily frames plus agreeing reconstructed quotes. Full RTH commissioning remains a later gate."
+    what_would_verify: "Post-merge RTH/VPS commissioning against the real live/entry_radar.json after a developing RTH pass."
+  - claim: "ADDENDUM W6-SOL-CORRECTION: a non-empty RP1 board on real developing episodes."
+    what_would_verify: "The real-store receipt is real-substrate smoke / partial real-input proof only (honest population_n=0). Non-empty real developing-episode proof is deferred to post-merge RTH/VPS commissioning. Do not plant or cherry-pick an episode."
 
 unresolved:
-  - "ADDENDUM W6-SOL-CORRECTION: Sol has not yet re-reviewed the RP1 correction head. W6 is not done."
+  - "ADDENDUM W6-SOL-CORRECTION: Sol final-reviews the bounded #5845 follow-up (snapshot_conflict firewall, receipt wording, W5.1 memory). Ranking-law correction already PASSES. W6 is not done."
   - "ADDENDUM W6: Sol has not yet reviewed the RP1 PR against the outcome/authority firewall. W6 is not done."
-  - "n_cell/k histograms were never written by the runner schema. Empty-cell share is the available proxy."
+  - "W5.1 #5833 shipped serialization; historical confirmatory dumps predate it; first real n_cell/k/overlap_share distributions arrive on the next natural evaluation; do not rerun W5 merely to populate them."
   - "Panel A and Panel B info_cutoffs differ (2026-08-16T01:23:09Z vs 2026-08-17T01:56:44Z) because sibling minute fetches appended the shared manifest during the A reruns. B does not use those minutes (G0/C5 staged tables)."
   - "Q2 TEST remains ACCRUING (n=1/6). The matched FIT tables are exploratory, not the confirmatory contrast."
 
 next_actions:
-  - "ADDENDUM W6-SOL-CORRECTION: Sol re-reviews PR #5845 against the three ranking-law blockers plus C3 seam, pinned hashes, real-input receipt, and W5.1 Agent OS restore."
-  - "ADDENDUM W6: Do not mark W6 done at this correction merge; live-payload commissioning still follows."
+  - "ADDENDUM W6-SOL-CORRECTION: Sol final-reviews PR #5845 bounded follow-up (snapshot_conflict firewall, real-substrate-smoke receipt wording, W5.1 memory). Do not redesign the score."
+  - "ADDENDUM W6: Do not mark W6 done at this correction merge; live-payload commissioning still follows. Non-empty real developing-episode RP1 proof is deferred to post-merge RTH/VPS commissioning."
   - "Do not start W7 or W9."
-  - "Optional: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
+  - "W5.1 #5833 shipped serialization; historical confirmatory dumps predate it; first real distributions arrive on the next natural evaluation. Do not rerun W5 merely to populate them."
   - "W8 UI reference remains #5737 (still ACCRUING / Best · unranked until W6 exists in production)."
 
 do_not_redo:
+  - "Do NOT rerun W5 confirmatory merely to populate n_cell/k/overlap_share. W5.1 #5833 shipped serialization; historical dumps predate it."
   - "ADDENDUM W6-SOL-CORRECTION: Do NOT inspect W5 outcome tables to choose or retune RP1. The Sol corrections are methodological only."
   - "ADDENDUM W6: Do NOT fit RP1 weights to W5 Q5 G0 earliness or Panel-B H=10 excess."
   - "ADDENDUM W6: Do NOT put Research Priority in live_pack.py or the durable episode ledger."
@@ -190,3 +192,15 @@ submeasure before combining; (2) ordinal from canonical `priority_value`;
 hashes; (6) restore W5.1 in `WS-LIVE-ENTRY-RADAR.md` without dropping W6
 `in_progress`. Methodological only — no outcome-conditioned inspection.
 Do not start W7 or W9. Sol re-reviews the new head.
+
+## ADDENDUM W6-SOL-CORRECTION — bounded follow-up (ranking-law PASSES)
+
+Sol re-review of #5845: core RP1 ranking-law correction PASSES. Do not
+redesign the score. Bounded remaining work: (1) same-ticker whitelist
+measures must agree or the ticker fails closed (`snapshot_conflict`);
+(2) real-store receipt is real-substrate smoke / partial real-input proof,
+not the non-empty developing-episode proof (deferred to post-merge RTH/VPS;
+do not plant or cherry-pick); (3) W5.1 #5833 shipped serialization;
+historical confirmatory dumps predate it; first real distributions arrive
+on the next natural evaluation; do not rerun W5 merely to populate them.
+W6 remains in_progress.

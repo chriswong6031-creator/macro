@@ -26,6 +26,11 @@ no weight search, no formula shopping against Q5/H=10/Panel-B):
    every separate expert observation. Duplicate C2/expert variants do not
    inflate `population_n` and do not move other names. Expert identities remain
    separate rows.
+4. **Name-snapshot coherence (PR #5845 bounded follow-up).** Rankable experts of
+   one ticker must carry identical whitelist measures. Divergence fails closed
+   for that ticker (`snapshot_conflict`); other healthy names still rank.
+   `detector_id` / `variant` never pick a winner. This is a firewall, not a
+   score redesign.
 
 Architecture and firewalls below are unchanged. These are corrections to how
 RP1 is computed, not a new policy family.
@@ -152,8 +157,11 @@ These never enter a measure, a dimension, or a tie-break:
 1. Extract whitelist-only measures. Unknown keys on the input object are ignored
    (outcome-injection firewall).
 2. Among rankable expert observations, take one current snapshot per ticker
-   (first expert in stable `(detector_id, variant)` order supplies the measures;
-   live wiring already shares name-level measures).
+   iff every rankable expert of that ticker carries identical whitelist
+   measures. `detector_id` / `variant` never choose a winner. Divergence →
+   every rankable row of that ticker is unrankable (`snapshot_conflict`);
+   other healthy names still rank. Live wiring already shares name-level
+   measures; this firewall refuses a silent pick if they ever diverge.
 3. Percentile-rank **each** whitelist submeasure across those snapshots
    (higher better; ties share the mid-rank). Raw units are never averaged.
 4. Dimension value = equal mean of that dimension's available submeasure
@@ -182,6 +190,7 @@ and `ordinal`.
 |---|---|
 | missing required history for a submeasure | that submeasure omitted |
 | fewer than two dimensions | `unrankable`, `insufficient_coverage` |
+| same-ticker rankable experts with divergent whitelist measures | `unrankable`, `snapshot_conflict` (other names still rank) |
 | stale observation or stale history | `unrankable`, `stale_observation` |
 | dark name / refused tape / basis mismatch | `unrankable`, named reason |
 | whole-cycle refusal | empty board, `cycle_refused` |

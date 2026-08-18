@@ -324,24 +324,32 @@ def _priority_shell(ep: EpisodeInput, *, reason: str, computed_at: str | None,
     }
 
 
-def _name_snapshots(
-    rankable: Sequence[tuple[int, EpisodeInput, Mapping[str, float | None]]],
-) -> dict[str, Mapping[str, float | None]]:
-    """One current name snapshot per ticker.
+def _measures_equal(left: Mapping[str, float | None],
+                    right: Mapping[str, float | None]) -> bool:
+    """Whitelist identity.  ``None`` is not 0.  Detector/variant are not keys."""
+    return all(left.get(key) == right.get(key) for key in MEASURE_KEYS)
 
-    Deterministic: the first expert in stable ``(detector_id, variant)`` order
-    supplies the snapshot measures.  Live wiring already shares name-level
-    measures across experts of the same ticker; this is the calibration unit,
-    not a collapse of expert identity.
+
+def _coherent_name_snapshots(
+    rankable: Sequence[tuple[int, EpisodeInput, Mapping[str, float | None]]],
+) -> tuple[dict[str, Mapping[str, float | None]], frozenset[str]]:
+    """One current name snapshot per ticker, or fail closed on divergence.
+
+    Rankable experts of one ticker must carry identical whitelist measures.
+    ``detector_id`` / ``variant`` never choose a winner among conflicts.
     """
-    ordered = sorted(
-        rankable,
-        key=lambda row: (row[1].ticker, row[1].detector_id, row[1].variant or ""),
-    )
+    grouped: dict[str, list[Mapping[str, float | None]]] = {}
+    for _i, ep, measures in rankable:
+        grouped.setdefault(ep.ticker, []).append(measures)
     snapshots: dict[str, Mapping[str, float | None]] = {}
-    for _i, ep, measures in ordered:
-        snapshots.setdefault(ep.ticker, measures)
-    return snapshots
+    conflicted: set[str] = set()
+    for ticker, rows in grouped.items():
+        first = rows[0]
+        if all(_measures_equal(first, row) for row in rows[1:]):
+            snapshots[ticker] = first
+        else:
+            conflicted.add(ticker)
+    return snapshots, frozenset(conflicted)
 
 
 def _submeasure_cs(
@@ -390,7 +398,17 @@ def assign(
 
     rankable = [(i, ep, measures) for i, (ep, measures, reason) in enumerate(prelim)
                 if reason is None]
-    snapshots = _name_snapshots(rankable)
+    snapshots, conflicted = _coherent_name_snapshots(rankable)
+    if conflicted:
+        prelim = [
+            (ep, measures,
+             "snapshot_conflict" if reason is None and ep.ticker in conflicted
+             else reason)
+            for ep, measures, reason in prelim
+        ]
+        rankable = [(i, ep, measures)
+                    for i, (ep, measures, reason) in enumerate(prelim)
+                    if reason is None]
     tickers = sorted(snapshots)
     population_n = len(tickers)
     cs_by_ticker = _submeasure_cs(snapshots) if tickers else {}

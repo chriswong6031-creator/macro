@@ -191,6 +191,33 @@ def test_clone_variants_do_not_inflate_the_name_snapshot_population():
     assert len(_ranked(fat)) == len(_ranked(thin)) + 1
 
 
+def test_conflicting_g0_c2_snapshot_cannot_silently_pick_lexicographic_first():
+    """Same-ticker G0/C2 with divergent hist fail closed.  C2 is lex-first.
+
+    Old snapshot law sorted by (detector_id, variant) and took the first,
+    so C2_1D_TURN@1 would silently become NVDA's canonical measures.
+    """
+    g0 = _ep("NVDA", "G0_GREY_DOT@1", last=110.0, hist=0.40)
+    c2 = _ep("NVDA", "C2_1D_TURN@1", last=110.0, hist=-0.40,
+             variant="c2a_kd_cross")
+    other = _ep("OTHER", "C1_1D_LIVE_WASHOUT@1", last=80.0)
+    assert c2.detector_id < g0.detector_id
+    solo = _ranked(_board([other]))[0]
+    for order in ([g0, c2, other], [c2, g0, other], [other, c2, g0]):
+        board = _board(order)
+        nvda = [e for e in board["episodes"] if e["ticker"] == "NVDA"]
+        assert {e["detector_id"] for e in nvda} == {
+            "G0_GREY_DOT@1", "C2_1D_TURN@1"}
+        assert all(e["abstention"] == "snapshot_conflict" for e in nvda)
+        assert all(e["priority_value"] is None and e["ordinal"] is None
+                   and e["priority_index"] is None for e in nvda)
+        ranked = _ranked(board)
+        assert [e["ticker"] for e in ranked] == ["OTHER"]
+        assert board["population_n"] == 1
+        assert ranked[0]["priority_value"] == solo["priority_value"]
+        assert ranked[0]["ordinal"] == 1
+
+
 def test_outcome_injection_does_not_move_priority():
     base = _ep("AAA", "C1_1D_LIVE_WASHOUT@1", last=100)
     poisoned = _ep(

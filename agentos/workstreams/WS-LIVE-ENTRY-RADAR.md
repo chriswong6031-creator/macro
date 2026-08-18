@@ -109,7 +109,9 @@ waves:
     # review blockers required a methodological correction (unit-invariant
     # submeasure percentiles, canonical priority_value, name-snapshot
     # population, real-input receipt, C3 seam + pinned hashes). Follow-up
-    # PR #5845 is the Sol re-review head. NOT done. Do not start W7.
+    # PR #5845 is the Sol re-review head (ranking-law PASSES; bounded
+    # snapshot_conflict / receipt-wording / W5.1-memory follow-up). NOT done.
+    # Do not start W7.
   - id: W7
     title: PR-7 outcome-calibrated Opportunity model (gated on honest sample)
     status: todo
@@ -130,7 +132,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: Sol re-reviews PR #5845 (RP1 methodological correction). W5.1 merged as #5833. Do not mark W6 done. Do not start W7 or W9. W8 UI reference remains #5737.
+next_action: Sol final-reviews PR #5845 bounded follow-up (snapshot_conflict firewall, real-substrate-smoke receipt wording, W5.1 memory). Ranking-law correction PASSES; do not redesign the score. W5.1 merged as #5833. Do not mark W6 done. Do not start W7 or W9. W8 UI reference remains #5737.
 ---
 
 ## Context

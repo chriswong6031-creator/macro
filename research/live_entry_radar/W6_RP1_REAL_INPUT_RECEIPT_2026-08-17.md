@@ -1,13 +1,18 @@
-# W6 RP1 — genuine real-input pre-merge receipt
+# W6 RP1 — real-substrate smoke / partial real-input proof
 
 **Status:** ACCRUING / RESEARCH PRIORITY. Not production commissioning.
 **Policy:** `research/live_entry_radar/W6_RP1_POLICY.md` (`RP1`, post-Sol-review correction)
 **Schema:** `mastermind.research_priority.v1`
 **This is not** `W6_RP1_RECEIPT_2026-08-17.md` (that file is the W4 **synthetic**
-LivePack live-seam proof). Sol required a receipt from the real Radar evaluator
-on real store frames. This is that receipt.
-**No episodes were planted.** An empty board is the honest result of this
-snapshot, not a low score.
+LivePack live-seam proof).
+**No episodes were planted. No episode was cherry-picked.**
+
+This receipt is **real-substrate smoke / a partial real-input proof**. It
+keeps the real-store `build_pack` + `run_pass` and the honest
+`population_n=0` / `episodes=[]` result. It does **not** discharge the
+non-empty real developing-episode proof. That proof is deferred to
+post-merge RTH/VPS commissioning (`ENTRY_RADAR_LIVE_ENABLE` on a session
+that actually develops episodes).
 
 ## What was run
 
@@ -81,7 +86,8 @@ recorded on the synthetic pack (`quote-only run_pass does not arm C1`; the
 recovery-tape seam is a different proof, already in
 `W6_RP1_RECEIPT_2026-08-17.md`). Ranked/abstained RP1 rows are therefore empty
 because **no developing episode existed on this real snapshot**. Missing ≠ 0;
-empty ≠ a 17/100.
+empty ≠ a 17/100. The empty board is kept; it is not filled by planting or
+cherry-picking an episode.
 
 ## Ranked / abstained rows
 
@@ -98,12 +104,16 @@ None. Board:
 }
 ```
 
-## What this discharges
+## What this does and does not discharge
 
-The pre-merge **real-input** gate: RP1 is wired at the live projection seam and
+**Does:** real-substrate smoke. RP1 is wired at the live projection seam and
 was computed against a pack frozen from real daily store frames through
-`build_pack` + `run_pass`. It does **not** discharge VPS/RTH commissioning
-(`ENTRY_RADAR_LIVE_ENABLE`, a session that actually develops episodes).
+`build_pack` + `run_pass`. Honest `population_n=0` / `episodes=[]`.
+
+**Does not:** the non-empty real developing-episode proof. That remains
+deferred to post-merge RTH/VPS commissioning (`ENTRY_RADAR_LIVE_ENABLE` on a
+session that actually develops episodes). This file is a partial real-input
+proof, not that gate.
 
 ## Firewalls
 
