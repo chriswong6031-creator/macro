@@ -1,13 +1,13 @@
 {
   "schema": "prophet.suggestions/v1",
-  "as_of": "2026-08-18T10:38:53+00:00",
+  "as_of": "2026-08-18T14:38:38+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "suggestions": [
     {
       "code": "stale_us_audit_scoreboard_us",
       "kind": "staleness",
       "severity": "medium",
-      "detail": "us-audit-scoreboard is 251h old (SLA 48.0h) [US]",
+      "detail": "us-audit-scoreboard is 255h old (SLA 48.0h) [US]",
       "market": "us",
       "first_seen": "2026-08-10",
       "asof": "2026-08-18"

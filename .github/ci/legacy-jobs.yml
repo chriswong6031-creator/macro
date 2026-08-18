@@ -1081,6 +1081,16 @@ jobs:
         run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py tests/test_us_board_gate.py -q
+      # The SAME Act-Now board, on its second host. test_us_board_gate above pins
+      # the us_stocks split; this pins sector_central.html, which rendered the
+      # identical include ungated (45 `.actitem` rows, anonymous, 2026-08-17)
+      # until #5846's gate made those rows one click away instead of gone.
+      # Runs HERE and only here on purpose: scripts/build_sector_central.py keeps
+      # every engine import inside a function, so unlike test_us_board_gate this
+      # suite needs no pandas/plotly pairing and nothing in it can skip on this
+      # job's venv line (the suite's own test_import_stays_light pins that).
+      - name: tier-preview split contract (sector_central act-now board)
+        run: python -m pytest tests/test_sector_central_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
         # Found unwired by the 2026-08-02 adversarial review of #4331: the suite
         # pins the public/anon split for the dashboard shells (site_access.yml
@@ -7475,6 +7485,8 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
       - name: theme graph — crosswalk v3 additive integrity
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
+      - name: theme graph — V4-D2A identity-resolution bridge (hostile fixtures, two-clock law, reproducibility)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_identity_resolution.py -q
       - name: theme graph — W3A local-theme plane (hostile tests D-M, capability sidecar, rights gate)
         run: TZ=UTC python -m pytest tests/test_theme_graph_local_plane.py -q
       - name: theme graph — source-rights registry shape + F20 grandfather pin

@@ -42,7 +42,7 @@ import yaml
 from lib import config
 
 from . import capability as capability_rule
-from . import identity, local_sources, rights
+from . import identity, identity_resolution, local_sources, rights
 from .store import ENGINE_VERSION, RESERVED_EDGE_FIELDS
 
 log = logging.getLogger(__name__)
@@ -202,6 +202,11 @@ class Materialization:
     skipped_suites: dict[str, str] = field(default_factory=dict)
     #: Capability side-car rows (re-derived every build, never a node column — §9.3).
     capability: list[dict] = field(default_factory=list)
+    #: GMI -> Data OS identity resolution bridge rows (V4-D2A) — re-derived every
+    #: build, one row per company-kind node, never a node column (same reasoning as
+    #: capability: the master's coverage can only grow, and a write-once row would be
+    #: a one-way ratchet).
+    identity_resolution: list[dict] = field(default_factory=list)
     #: The local-theme plane's own report: ladder, counts, and the company-mint
     #: resolution table the receipt asserts against (§9.13).
     local_plane: dict[str, dict] = field(default_factory=dict)
@@ -908,6 +913,13 @@ class _Builder:
             self.out.nodes, self.out.edges,
             substrate=capability_rule.load_substrate(self.substrate_dir),
             computed_at=self.computed_at, engine_version=ENGINE_VERSION)
+        # V4-D2A: the GMI -> Data OS identity bridge, over the SAME generation's node
+        # list (so the etf/company entity-type-conflict check — rule 4 — sees exactly
+        # this build's topology, not a stale committed one).
+        self.out.identity_resolution = identity_resolution.derive_rows(
+            self.out.nodes, resolution_asof=self.belief_time,
+            computed_at=self.computed_at, engine_version=ENGINE_VERSION,
+            data_dir=self.data_dir)
         return self.out
 
 

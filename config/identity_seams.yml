@@ -52,7 +52,7 @@ master:
 
 surfaces:
 
-  # ---------------------------------------------------------------- ADOPT (3)
+  # ---------------------------------------------------------------- ADOPT (4)
   - path: lib/dataos/identity.py
     claims: "issuer / security / listing identity; mint-once-and-store"
     id_convention: "ISS: / SEC: / bare <CC>-<MIC>-<CODE>[.N]"
@@ -105,6 +105,30 @@ surfaces:
       the agreement gate calls canonical_identity() for representative SH / SZ / canonical
       BJ / STAR / ChiNext codes and compares its returned identity against
       lib.dataos.identity.listing_id, asserting the SEC: prefix is absent
+
+  - path: engine/theme_graph/identity_resolution.py
+    claims: >-
+      which Data OS security a GMI theme-graph company-kind node names (V4-D2A bridge
+      projection; delegates every resolution to the master via VendorAliasTable; no own
+      allocation; refusals typed)
+    id_convention: "reads the master's own ISS: / SEC: / bare <CC>-<MIC>-<CODE>[.N]; writes them verbatim into data/theme_graph/identity_resolution.parquet"
+    class: ADOPT
+    rationale: >-
+      Sol's D2A ruling makes the Data OS spine the estate's only exact issuer/security/
+      listing identity authority; the GMI graph keeps its own topology node ids
+      (co:<market>:<SYMBOL>[#epoch], a graph-topology concern, KNOWINGLY-DIFFERENT per the
+      row below) and this module is the integration seam between the two. It mints no
+      identity of its own — every RESOLVED row's issuer_id/security_id/listing_key is
+      copied verbatim from lib.dataos.identity.VendorAliasTable / security_master.parquet,
+      so a disagreement between this side-car and the master is a bug in the bridge, not a
+      second opinion.
+    consumers: "data/theme_graph/identity_resolution.parquet; scripts/check_theme_graph_contracts.py; D2B lineage work"
+    checked_by: >-
+      every RESOLVED row's ids are derived exclusively from lib.dataos.identity.VendorAliasTable
+      over the committed security_master.parquet / vendor_aliases.parquet (tests/test_theme_graph_identity_resolution.py
+      asserts the §6 hostile-case table against the real committed stores); the guard in
+      scripts/check_theme_graph_contracts.py additionally requires every company-kind node
+      to carry a current row once the side-car exists
 
   # ------------------------------------------------- ALIAS-INTO-MASTER (5)
   - path: lib/ticker_aliases.py

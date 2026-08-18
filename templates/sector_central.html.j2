@@ -1,6 +1,14 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{#- `pgate` is the Act-Now board's tier gate (docs/TIER_PREVIEW_PATTERN.md), set
+    only by scripts/build_sector_central.py. Defaulted ONCE here rather than
+    guarded at each read site, because `{{ pgate | tojson }}` on an Undefined
+    RAISES — and a template error on this page is not a missing gate, it is the
+    whole page falling back to last-good HTML (the builder's own render guard).
+    The shared board include guards `pgate is defined` on its own, so the include
+    is unaffected either way. -#}
+{%- set pgate = pgate if pgate is defined else none %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,7 +50,15 @@
 <link rel="prefetch" href="subsectors.js" as="script">
 <style>
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+{% if pgate %}  /* Tier-gate disclosure line under a withheld Act-Now lane. The `ab_more()`
+     macro that emits it rides the shared _us_act_now_board.html.j2 include, but
+     its styling lives in dashboard.html.j2 — which is the OTHER host. Same three
+     rules, copied rather than moved: editing the include would rewrite
+     us_stocks.html's bytes for a page that already styles this class. */
+  .pg-more { margin: 6px 2px 2px; font-size: 11.5px; color: var(--muted); }
+  .pg-more a { color: var(--link); text-decoration: none; font-weight: 600; }
+  .pg-more a:hover { text-decoration: underline; }
+{% endif %}  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
   a { text-decoration:none; color:inherit; }
   h1 { font-size:21px; margin:0; }
@@ -3514,6 +3530,108 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
    above are already parsed and the correct one already carries .on from the markup,
    so there is no flash before it runs. ── #}
 <script src="si_workspace.js"></script>
-<script src="theme.js"></script>
+{% if pgate %}
+{#- ── tier gate — attempt-hydrate (docs/TIER_PREVIEW_PATTERN.md) ──────────────
+   On the gated build this document holds only `pgate.preview` Act-Now rows per
+   lane; the rest live at PGATE.payload, which config/site_access.yml enforces as
+   Essential+ under premium.enforced_early's /premiumdata/ prefix regardless of
+   PAYWALL_ENABLED. So the SERVER decides who sees the board — nothing below is
+   load-bearing, we simply ask and keep the shell when the answer is 401/403/offline.
+   Idiom copied from templates/dashboard.html.j2's hydratePanels/restoreFold, which
+   hydrates the SAME include's rows-only output on us_stocks.html. -#}
+<script>
+(function(){
+  'use strict';
+  var PGATE = {{ pgate | tojson }};
+  var SRC = PGATE && PGATE.payload;
+  if (!SRC) return;
+
+  /* Session trampoline: the shared cookie carries a ~1h access token, so a
+     long-idle member can be signed in with a token the server will reject.
+     getSession() refreshes and rewrites the cookie before we ask (PR #3454).
+     No-op when signed out. */
+  function freshSession(){
+    try{
+      if (window.MDXAuth && window.MDXAuth.client && window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client().then(function(sb){ return sb.auth.getSession(); }).catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js is loaded at the foot of this page, so MDXAuth may not exist yet
+     while this inline script runs. Wait for its first auth broadcast, with a
+     timeout so a missing/broken auth layer still lets the request through (the
+     server re-decides regardless). */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if (done) return; done = true; resolve(); }
+      if (window.MDXAuth){ go(); return; }
+      window.addEventListener('mdx-auth', go, { once: true });
+      setTimeout(go, 3000);
+    });
+  }
+
+  /* Rebuild the "Show more (N)" control a gated lane shipped without. Same
+     markup and same counts the ungated template bakes, derived from the rows now
+     in the DOM so it can never promise a number the lane does not hold. theme.js
+     binds .lst-more on its own MutationObserver pass. */
+  function restoreFold(col){
+    var body = col.querySelector('.actbody');
+    if (!body || col.querySelector('.lst-more')) return;
+    var n = body.querySelectorAll('.actitem').length;
+    if (n <= 3) return;
+    var btn = document.createElement('button');
+    btn.className = body.classList.contains('lst-collapse') ? 'lst-more' : 'lst-more act-more';
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.style.cssText = 'margin:6px 10px 8px;width:calc(100% - 20px)';
+    btn.innerHTML = '<span class="lm-show"><span class="l-en">Show more</span>' +
+      '<span class="l-zh">显示更多</span> (' + (n - 3) + ') \u25BE</span>' +
+      '<span class="lm-hide"><span class="l-en">Show less</span>' +
+      '<span class="l-zh">收起</span> \u25B4</span>';
+    body.parentNode.insertBefore(btn, body.nextSibling);
+  }
+
+  function hydrate(payload){
+    if (!payload || payload.schema !== 'tier_payload.v1' || payload.page !== 'sector_central'){
+      throw new Error('invalid payload');
+    }
+    if (!payload.actnow_html) return;
+    /* The rows arrive grouped by the .actbody id they were sliced out of,
+       because five lanes share one payload block. A missing destination is a
+       no-op, never a thrown hydrate: this page reads the board one build behind
+       (basketdata/action_board.json), so a lane can legitimately be absent. */
+    var box = document.createElement('div');
+    box.innerHTML = payload.actnow_html;
+    var lanes = box.querySelectorAll('[data-ab-lane]');
+    for (var i = 0; i < lanes.length; i++){
+      var dest = document.getElementById(lanes[i].getAttribute('data-ab-lane'));
+      if (dest) dest.insertAdjacentHTML('beforeend', lanes[i].innerHTML);
+    }
+    /* The fold buttons were baked out while gated (nothing to unfold). Now that
+       the lanes are full, a lane over three rows needs its control back. */
+    var cols = document.querySelectorAll('#action-board .actcol');
+    for (var c = 0; c < cols.length; c++) restoreFold(cols[c]);
+    /* The disclosure lines described rows that have now arrived. */
+    var notes = document.querySelectorAll('#action-board .pg-more');
+    for (var j = 0; j < notes.length; j++) notes[j].remove();
+  }
+
+  whenAuthSettled()
+    .then(freshSession)
+    .then(function(){
+      return fetch(SRC, { credentials: 'same-origin', cache: 'no-store' });
+    })
+    .then(function(r){ if (!r || !r.ok) throw new Error('locked'); return r.json(); })
+    .then(hydrate)
+    .catch(function(){
+      /* Locked (or offline): the shell stays exactly as rendered, disclosure
+         lines and all. Nothing to undo — the withheld rows were never here. */
+    });
+})();
+</script>
+{% endif %}<script src="theme.js"></script>
 </body>
 </html>

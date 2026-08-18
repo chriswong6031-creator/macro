@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T13:34:11.556943+00:00",
-  "count": 1339,
+  "generated_at": "2026-08-18T15:20:15.460992+00:00",
+  "count": 1344,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,42 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-msc6awsokaq-c5663b",
+      "title": "European equity: earning(s) respect",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T14:44:59Z",
+      "summary_points": [
+        "**Earnings Resilience**: Solid 10.7% 12m forward EPS growth since Iran war, with consensus rebounding on positive data despite geopolitical shocks, indicating stronger-than-expected corporate performance.",
+        "**US-EA Surprise Divergence**: US consistently shows higher economic surprise indices than EA, with EA volatility spiking (e.g., late 2024), signaling potential capital outflows from Eurozone to US markets.",
+        "**Earnings Revision Risk**: Negative earnings revision ratios spike during crises (e.g., Aug-09, Aug-19), correlating with Eurozone PMI downturns, highlighting economic weakness as a direct earnings risk for Stoxx 600."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8pvavzjboxt-af7488",
+      "title": "GS Novak Industrials Materials 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:43:38Z",
+      "summary_points": [
+        "**Machinery Sector Sentiment Split**: Construction (most positive), Truck (negative), Agricultural (flat); CAT leads construction amid gas turbine vs backlog debate - **Geopolitical & Commodity Risks**: Strait of Hormuz attack spiking crude (WTI $85+, Brent $91), dollar flat (DXY ~100), S&P futures down 50bps on long-end Treasuries pressure"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-rddxdga6nln-fb37f8",
       "title": "GS Johnstone TMT Spec Sales 18 Aug 2026",
@@ -374,6 +410,44 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2vstkfieon6-996f33",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:14Z",
+      "summary_points": [
+        "**USD Resilience & Fed Shift**: US retail sales fell 0.6% MoM (first decline since Oct 2025), moderating inflation scaled back Fed rate hike expectations (30% Sept hike vs 55% prior); fiscal concerns (30-yr bonds yield 5.216%) and potential USD weakening as Fed holds rates.",
+        "**High-Yield Currency Carry**: GBP, NOK, AUD, NZD, and CNY offer carry potential amid USD weakness, supported by interest rate differentials and China’s subdued export growth.",
+        "**Japan Policy & Sector Alpha**: Japan Q2 GDP miss (1.1% vs 2.0% forecast) doesn’t alter gradual tightening outlook; maintain \"Attractive\" on Japanese chip/component makers (AI supply chain) amid geopolitical/energy risks driving sector catch-up gains."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fladiygcar4-249b0d",
+      "title": "Should investors worry about private credit",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:12Z",
+      "summary_points": [
+        "**Private Credit Liquidity Stress**: Lending volumes down 13% vs 2025, 56% QoQ decline amid tightening lender standards (PIK down to 13.5%) and AI-driven software disruption; over-leveraged 2021-22 borrowers face acute stress.",
+        "**Overleveraged Borrower Exposure**: Non-cyclical sector stress from 2021-22 over-leverage amplifies liquidity pressures, with 56% QoQ volume drop signaling severe borrower distress.",
+        "**Selective Allocation Strategy**: CIO mandates senior, sponsor-backed, upper-middle-market loans in non-cyclical sectors; quality focus and selectivity critical for risk-return balance amid balanced near-term outlook."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-usz9etexlrn-79a9f6",
       "title": "What does the Warsh era mean for Fed policy",
       "institution": "UBS",
@@ -387,6 +461,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x6crs9ovtym-cf706d",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:04Z",
+      "summary_points": [
+        "**Resilience Drivers**: Robust growth (US retail sales dip offset by solid activity), improving earnings expectations, and potential for less restrictive monetary policy supporting equities despite volatility.",
+        "**Earnings Surge**: Sharp rise in earnings growth expectations driven by stronger profitability and AI monetization, underpinning equity market participation.",
+        "**Japan Growth**: Above-trend growth persists despite 1.1% Q2 GDP miss; preliminary capital spending data may revise higher, supporting Japanese equities (semi-caps, AI supply chain).",
+        "**Yield Risk**: US 10-year Treasury yield up 50 bps YTD poses significant risk to growth-oriented equities and corporate debt, necessitating defensive positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
