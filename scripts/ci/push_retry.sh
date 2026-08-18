@@ -787,8 +787,15 @@ push_append_only_fence() {
   # EXIT 2 is the one exception and it fails CLOSED: the fence PROVED this tree would drop
   # evidence and then could not withhold it. Publishing anyway is the exact corruption the
   # fence exists to stop, so return non-zero and let the caller skip this push attempt.
+  #
+  # The python invocation is alarm-bounded. daily.yml's cancel-grace salvage step
+  # alarm-bounds every other git/network op; an unbounded fence (cat-file + two
+  # pandas parquet loads) sitting first in that window can eat the grace and lose
+  # an already-committed night. Timeout is an infrastructure fault: fail OPEN.
   local rc=0
-  "$py" -m scripts.ci.append_only_base_fence --onto "$onto" ${amend:+$amend} || rc=$?
+  local fence_alarm="${PUSH_FENCE_ALARM:-90}"
+  perl -e 'alarm shift @ARGV; exec @ARGV or die' -- "$fence_alarm" \
+    "$py" -m scripts.ci.append_only_base_fence --onto "$onto" ${amend:+$amend} || rc=$?
   if [ "$rc" -eq 2 ]; then
     printf '::error title=append-only-base-fence::%s\n' \
       "withhold failed against ${onto} — SKIPPING this push attempt rather than publishing a tree that drops evidence"
