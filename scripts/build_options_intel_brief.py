@@ -46,6 +46,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 from lib import nyse_calendar as nc  # noqa: E402
 from engine import options_intel_brief as brief  # noqa: E402
 from engine import gex_confirm  # noqa: E402 — read-only use per contract §2 input #3
+from engine import options_universe  # noqa: E402 — B2: the canonical current universe
 
 CHAINS_DIR = _REPO_ROOT / "data" / "polygon_gex" / "chains"
 SUMMARY_GLOB = str(_REPO_ROOT / "data" / "polygon_gex" / "summary_{sym}.parquet")
@@ -110,13 +111,21 @@ def _load_summary_spot(symbol: str, upto_session: str) -> list[float]:
     return [float(v) for v in vals.tolist()]
 
 
-def _load_gex_verdicts(symbols: list[str], as_of_session: str) -> tuple[dict[str, str | None], bool]:
+def _load_gex_verdicts(symbols: list[str], as_of_session: str) -> tuple[dict[str, str | None], bool, dict[str, str]]:
     """Read ``site/gex/{SYM}.json`` and call the EXISTING ``engine.gex_confirm.assess``
     (contract §2 input #3). A verdict is kept ONLY when the artifact's own ``meta.asof``
     binds to S — otherwise the mechanics family is ABSENT for that symbol (contract §1:
     "GEX mechanics may set M_gex only when its evidence binds to S"; never borrowed).
+
+    B1: also returns the per-file sha256 manifest (repo-relative path -> hash) of every
+    file this call actually CONSUMED — i.e. read AND bound to S. A file that exists but
+    fails the ``meta.asof`` check was opened but never consumed (its bytes never
+    influenced the payload), so it is deliberately excluded from the manifest — this is
+    what makes test 3 ("mutate an unconsumed gex payload -> receipt unchanged") true by
+    construction rather than by convention.
     """
     out: dict[str, str | None] = {}
+    manifest: dict[str, str] = {}
     any_bound = False
     for sym in symbols:
         fp = Path(GEX_JSON_GLOB.format(sym=sym))
@@ -132,13 +141,16 @@ def _load_gex_verdicts(symbols: list[str], as_of_session: str) -> tuple[dict[str
         if meta_asof != as_of_session:
             out[sym] = None
             continue
+        h = _sha256_file(fp)
+        if h is not None:
+            manifest[str(fp.relative_to(_REPO_ROOT))] = h
         try:
             verdict = gex_confirm.assess(payload, direction="up")
         except Exception:
             verdict = None
         out[sym] = (verdict.get("verdict") if isinstance(verdict, dict) else None)
         any_bound = True
-    return out, any_bound
+    return out, any_bound, manifest
 
 
 def _load_earnings(symbols: list[str]) -> tuple[dict[str, str | None], bool]:
@@ -152,20 +164,49 @@ def _load_earnings(symbols: list[str]) -> tuple[dict[str, str | None], bool]:
     return {s: nd.get(s) for s in symbols}, True
 
 
-def _load_prophet() -> tuple[dict[str, str | None], str | None]:
+def _load_prophet() -> tuple[dict[str, str | None], dict[str, str | None], dict[str, bool],
+                              dict[str, str | None], str | None]:
+    """B4 — read BOTH Prophet domains from ``site/prophet/index.json``: ``plans[]``
+    (``entry_status``/``lifecycle_state``/``closed``) and ``intake.receipts.groups``
+    (bucket ``reason``, e.g. ``ran_too_far``/``already_open``/``not_ready``). Returns
+    ``(entry_status, lifecycle_state, closed, group_reason, asof)``, all keyed by
+    symbol; the two-domain precedence resolution itself is pure and lives in the engine
+    (``prophet_plan_state``/``prophet_group_state``/``prophet_state_combined``).
+
+    A symbol with more than one ``plans[]`` entry (a resolved/invalidated history entry
+    alongside a live one) keeps its first OPEN (``closed`` False) record and ignores
+    later entries — once an open record is found, a later closed one never overwrites it.
+    """
     if not PROPHET_INDEX_PATH.exists():
-        return {}, None
+        return {}, {}, {}, {}, None
     try:
         payload = json.loads(PROPHET_INDEX_PATH.read_text())
     except Exception:
-        return {}, None
-    plans = payload.get("plans") or []
-    states = {}
-    for pl in plans:
+        return {}, {}, {}, {}, None
+
+    entry_status: dict[str, str | None] = {}
+    lifecycle_state: dict[str, str | None] = {}
+    closed: dict[str, bool] = {}
+    for pl in (payload.get("plans") or []):
         asset = pl.get("asset")
-        if asset:
-            states[asset] = pl.get("entry_status")
-    return states, payload.get("asof")
+        if not asset:
+            continue
+        if asset in closed and not closed[asset]:
+            continue  # already hold an OPEN record for this asset — never displaced
+        entry_status[asset] = pl.get("entry_status")
+        lifecycle_state[asset] = pl.get("lifecycle_state")
+        closed[asset] = bool(pl.get("closed"))
+
+    group_reason: dict[str, str | None] = {}
+    groups = (((payload.get("intake") or {}).get("receipts") or {}).get("groups")) or []
+    for g in groups:
+        reason = g.get("reason")
+        for entry in (g.get("names") or []):
+            ticker = entry.get("ticker") if isinstance(entry, dict) else entry
+            if ticker:
+                group_reason.setdefault(ticker, reason)
+
+    return entry_status, lifecycle_state, closed, group_reason, payload.get("asof")
 
 
 def _load_signing_gate() -> tuple[bool, str | None]:
@@ -292,11 +333,24 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
 
     present_names = sorted(brief.session_metrics(chains_by_session[S]).keys())
 
+    # B2 — the canonical current universe (config anchors + baskets, capped), resolved
+    # ONCE here and handed to the pure engine as an explicit list+count. Never derived
+    # from the chain store itself (that was the deleted historical-max heuristic).
+    universe = options_universe.gex_symbols()
+
     summary_spot = {sym: _load_summary_spot(sym, S) for sym in present_names}
     summaries_max_session = None
+    # B1 — per-file sha256 manifest of every summary_{SYM}.parquet actually consumed
+    # (read) for a present-session symbol; mirrors _load_summary_spot's own existence
+    # gate exactly, so "consumed" here means precisely "the file _load_summary_spot
+    # opened", never the whole data/polygon_gex/ directory.
+    summary_manifest: dict[str, str] = {}
     for sym in present_names:
         fp = Path(SUMMARY_GLOB.format(sym=sym))
         if fp.exists():
+            h = _sha256_file(fp)
+            if h is not None:
+                summary_manifest[str(fp.relative_to(_REPO_ROOT))] = h
             try:
                 df = pd.read_parquet(fp, columns=[])
                 last = str(pd.to_datetime(df.index).max().date())
@@ -305,10 +359,24 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
             except Exception:
                 continue
 
-    gex_verdict, gex_any_bound = _load_gex_verdicts(present_names, S)
+    gex_verdict, gex_any_bound, gex_confirm_manifest = _load_gex_verdicts(present_names, S)
     event_date, events_loaded = _load_earnings(present_names)
-    prophet_states, prophet_asof = _load_prophet()
+    (prophet_entry_status, prophet_lifecycle_state, prophet_plan_closed,
+     prophet_group_reason, prophet_asof) = _load_prophet()
     direction_reliable, signing_gate_asof = _load_signing_gate()
+
+    # B1 — the two merkle-style aggregate roots (sha256 over the SORTED per-file
+    # manifest), folded into input_receipts so they bind into receipt_id below exactly
+    # like every other source. A domain with zero consumed files gets a null root and
+    # state="missing" — never a fabricated non-empty hash.
+    summary_root = brief.sha256_of(sorted(summary_manifest.items())) if summary_manifest else None
+    gex_confirm_root = brief.sha256_of(sorted(gex_confirm_manifest.items())) if gex_confirm_manifest else None
+    source_manifest = {
+        "gex_summary": {"root": summary_root, "member_count": len(summary_manifest),
+                         "files": dict(sorted(summary_manifest.items()))},
+        "gex_confirm": {"root": gex_confirm_root, "member_count": len(gex_confirm_manifest),
+                         "files": dict(sorted(gex_confirm_manifest.items()))},
+    }
 
     input_receipts.append({
         "logical_source": "earnings", "path": str(EARNINGS_PATH.relative_to(_REPO_ROOT)),
@@ -325,6 +393,16 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
         "asof": signing_gate_asof, "sha256": _sha256_file(SIGNING_GATE_PATH),
         "state": "ok" if SIGNING_GATE_PATH.exists() else "missing",
     })
+    input_receipts.append({
+        "logical_source": "gex_summary_manifest", "path": "data/polygon_gex/summary_*.parquet",
+        "asof": S, "sha256": summary_root, "member_count": len(summary_manifest),
+        "state": "ok" if summary_manifest else "missing",
+    })
+    input_receipts.append({
+        "logical_source": "gex_confirm_manifest", "path": "site/gex/*.json",
+        "asof": S, "sha256": gex_confirm_root, "member_count": len(gex_confirm_manifest),
+        "state": "ok" if gex_confirm_manifest else "missing",
+    })
 
     stale = (not ignore_staleness) and _is_stale(max(sessions), now)
 
@@ -334,9 +412,11 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
         chains_by_session=chains_by_session, chain_next=chain_D, lawful_pairs=lawful_pairs,
         summary_spot=summary_spot, gex_verdict=gex_verdict, gex_bound_to_S=True,
         event_date=event_date, events_loaded=events_loaded,
-        prophet_entry_status=prophet_states, prophet_asof=prophet_asof,
+        prophet_entry_status=prophet_entry_status, prophet_lifecycle_state=prophet_lifecycle_state,
+        prophet_plan_closed=prophet_plan_closed, prophet_group_reason=prophet_group_reason,
+        prophet_asof=prophet_asof,
         signing_gate_direction_reliable=direction_reliable, signing_gate_asof=signing_gate_asof,
-        stale=stale,
+        universe=universe, stale=stale,
     )
 
     watermarks = {
@@ -349,7 +429,7 @@ def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
     payload = brief.build_intel_brief(
         panel, source_watermarks=watermarks, input_receipts=input_receipts,
         built_at_utc=now.isoformat(), sessions_apart_fn=_sessions_apart_str,
-        session_n_forward_fn=_session_n_forward_str,
+        session_n_forward_fn=_session_n_forward_str, source_manifest=source_manifest,
     )
     return payload
 
@@ -379,6 +459,10 @@ def main(argv: list[str] | None = None) -> int:
     for k in ("as_of_session", "oi_counted_date", "pending_session", "pending_reason",
               "board_state", "board_reason", "eligibility", "receipt_id", "config_hash"):
         print(f"  {k}: {payload.get(k)}")
+    sm = payload.get("source_manifest") or {}
+    for domain in ("gex_summary", "gex_confirm"):
+        d = sm.get(domain) or {}
+        print(f"  source_manifest.{domain}: member_count={d.get('member_count')} root={d.get('root')}")
     print("state counts:")
     print(f"  opportunities={len(payload.get('opportunities') or [])} "
           f"(overflow={payload.get('opportunities_overflow')}) "

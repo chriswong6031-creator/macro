@@ -79,6 +79,7 @@ CONFIG: dict[str, Any] = {
     "RISK_BOARD_N": 4,
     "NO_SIGNAL_R": 100,
     "ELIGIBILITY_GATE": 0.60,
+    "SOURCE_COVERAGE_GATE": 0.90,
     "EVENT_MIN_NAMES": 5,
     "EVENT_WINDOW_DAYS": 45,
     "HIST_EVENT_ACTIVATION": 3,
@@ -239,13 +240,35 @@ _PROPHET_KNOWN_OTHER = {
     "await_confluence", "buy_soon", "watch", "exit", "avoid", "blocked",
 }
 
+#: intake.receipts.groups bucket -> display state (contract §5, B4 ruling). Buckets are
+#: the ones the real artifact carries (`plan_not_built`, `already_open`, `not_ready`,
+#: `ran_too_far`, `stood_down`, `conviction_low`, `pointing_down`); `wait_pullback` and
+#: `buy_now` are included defensively for a differently-worded future bucket set — never
+#: observed alongside the seven above, but lawful under the same closed vocabulary.
+_PROPHET_GROUP_MAP = {
+    "ran_too_far": "EXTENDED", "extended": "EXTENDED", "topping": "EXTENDED",
+    "already_open": "ALREADY_OPEN",
+    "not_ready": "NOT_READY", "wait_pullback": "NOT_READY", "bounce_wait": "NOT_READY",
+    "buy_now": "READY",
+    "stood_down": "OTHER", "conviction_low": "OTHER", "pointing_down": "OTHER",
+    "plan_not_built": "OTHER",
+}
+
+#: Per-symbol precedence when the two Prophet domains (plans[] vs
+#: intake.receipts.groups) disagree for the same ticker (B4 ruling, real-artifact
+#: collisions e.g. BIIB: plans[].entry_status="bounce_wait" -> NOT_READY, but
+#: receipts.groups reason="ran_too_far" -> EXTENDED; EXTENDED wins).
+_PROPHET_STATE_PRECEDENCE = ("EXTENDED", "ALREADY_OPEN", "NOT_READY", "READY", "OTHER")
+
 
 def prophet_state_for(entry_status: str | None) -> str:
     """Display-only Prophet echo mapping (contract §5 Prophet mapping table).
 
     Never blank: missing -> UNAVAILABLE; unmapped-but-lawful -> OTHER. This function
     has zero effect on any score — callers must never feed its output into R/M_ad/
-    evidence_strength/evidence_confidence (test 21).
+    evidence_strength/evidence_confidence (test 21). Single-domain (plans[].entry_status
+    only) — kept for callers that only ever had that one field; the two-domain B4
+    resolution lives in :func:`prophet_state_combined`.
     """
     if entry_status is None:
         return "UNAVAILABLE"
@@ -253,6 +276,57 @@ def prophet_state_for(entry_status: str | None) -> str:
     if mapped is not None:
         return mapped
     return "OTHER"
+
+
+def prophet_plan_state(entry_status: str | None, lifecycle_state: str | None, closed: bool,
+                        *, has_plan: bool) -> str | None:
+    """plans[] domain mapping only (B4). ``None`` means "this domain has nothing lawful
+    to say" (no plan record at all) — distinct from ``"OTHER"``, which means a plan
+    record exists but maps to no more specific state. Never called for a symbol with no
+    plan record: callers pass ``has_plan = symbol in <plans-domain dict>``.
+
+    ``hold``/``partial`` only resolve to ALREADY_OPEN while the plan is still OPEN
+    (``closed`` False) — contract ruling: "open plan with entry_status hold/partial".
+    A ``None`` entry_status resolves to ALREADY_OPEN only for an open ``entered`` plan
+    ("open entered plan with entry_status None"); any other None-status plan is a lawful
+    but unmapped record -> OTHER. ``extended``/``topping``/``bounce_wait``/``buy_now``
+    resolve unconditionally (unchanged from :func:`prophet_state_for`) — the contract's
+    open-condition is stated only for the hold/partial and None-status cases.
+    """
+    if not has_plan:
+        return None
+    if entry_status is None:
+        if lifecycle_state == "entered" and not closed:
+            return "ALREADY_OPEN"
+        return "OTHER"
+    mapped = _PROPHET_MAP.get(entry_status)
+    if mapped == "ALREADY_OPEN":
+        return mapped if not closed else "OTHER"
+    if mapped is not None:
+        return mapped
+    return "OTHER"
+
+
+def prophet_group_state(reason: str | None) -> str | None:
+    """intake.receipts.groups domain mapping only (B4). ``None`` when the symbol carries
+    no group-reason record at all (never called otherwise — see ``has_group`` at the
+    call site); an unmapped-but-present reason is a lawful bucket -> OTHER."""
+    if reason is None:
+        return None
+    return _PROPHET_GROUP_MAP.get(reason, "OTHER")
+
+
+def prophet_state_combined(plan_state: str | None, group_state: str | None) -> str:
+    """B4 per-symbol precedence across the two Prophet domains: EXTENDED >
+    ALREADY_OPEN > NOT_READY > READY > OTHER > UNAVAILABLE. Absent from both domains
+    -> UNAVAILABLE (never blank, contract §5)."""
+    candidates = [s for s in (plan_state, group_state) if s is not None]
+    if not candidates:
+        return "UNAVAILABLE"
+    for rank in _PROPHET_STATE_PRECEDENCE:
+        if rank in candidates:
+            return rank
+    return "OTHER"  # unreachable under the closed vocabulary above; safe fallback
 
 
 def confidence_band(ec: float) -> str:
@@ -588,6 +662,15 @@ def crowd_family(c1: float | None, c2: int, c3: int,
     return (len(fired) > 0), (max(fired) if fired else 0.0)
 
 
+def crowd_fired_legs(c1: float | None, c2: int, c3: int,
+                      *, c1_th: float = CONFIG["C1_TH"]) -> list[str]:
+    """Which C-family legs actually fired (B3 freshness needs to know WHICH, not just
+    THAT — c1/c2/c3 carry different evidence lives). Shares the exact firing predicate
+    with :func:`crowd_family` (kept as two functions rather than widening that one's
+    return type, since ``crowd_family`` is the older, already-covered severity API)."""
+    return [k for k, v in (("c1", c1 is not None and c1 >= c1_th), ("c2", bool(c2)), ("c3", bool(c3))) if v]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Deterministic closed-vocabulary copy: why_now / trigger / invalidation.
 # Every string here is a template filled with numbers — no LLM, ever.
@@ -677,6 +760,86 @@ def signal_id_for(as_of_session: str, symbol: str) -> str:
     return f"adib:v1.2:{as_of_session}:{symbol}"
 
 
+def _crowd_leg_life(leg: str, *, lives: Mapping[str, Any]) -> int:
+    """Evidence life (NYSE sessions) of ONE fired crowd leg (B3 ruling): c1 is the
+    same-day/0DTE family (life 0, ``C_0DTE``); c2 derives from V (IV percentile) AND
+    spot-history, both life 5 -> 5; c3 derives from D_salience (life 3) AND V (life 5)
+    -> min(3, 5) = 3."""
+    if leg == "c1":
+        return int(lives["C_0DTE"])
+    if leg == "c2":
+        return int(lives["V"])
+    if leg == "c3":
+        return min(int(lives["D_salience"]), int(lives["V"]))
+    raise ValueError(f"unknown crowd leg {leg!r}")
+
+
+def fresh_until_for(*, direction: str, S: str, session_n_forward_fn,
+                     gex_active: bool = False, crowd_fired_legs: Sequence[str] = (),
+                     f_e_active: bool = False, event_date: str | None = None,
+                     d3_bonus_applied: bool = False,
+                     lives: Mapping[str, Any] = CONFIG["FRESH_LIVES_SESSIONS"]) -> str:
+    """B3 evidence-derived freshness (Fable's binding rulings, transcribed exactly):
+    ``fresh_until`` = the minimum lawful expiry over the card's ACTUAL contribution
+    set — every evidence input that entered ``state`` (direction/route classification),
+    ``evidence_strength``, ``evidence_confidence``, or ``M_ad``. Never derived from the
+    card's DIRECTION alone (the pre-B3 defect this replaces).
+
+    Session-count lives are converted to real NYSE-session dates via
+    ``session_n_forward_fn`` (injected, same pattern as the rest of this pure module —
+    see the module docstring); the E-family life is an actual calendar date (event
+    close) rather than a session count, so it is combined with everything else via a
+    plain ``min()`` over ISO date strings (lexicographic order == chronological order
+    for ``YYYY-MM-DD``).
+
+    * LONG/SHORT: Q_oi(3) + Q_skew(3) + D_salience(3) always (the direction-qualification
+      law requires all three present) ``+`` P/GEX-mechanics(1) when ``M_gex != 1.0``
+      (a qualified LONG under caution) ``+`` the fired crowd leg's own life when a crowd
+      multiplier cut this LONG's actionability (same-day c1 -> 0; c2 -> 5; c3 -> 3).
+    * VOLATILITY: event-driven (F_E contributed, i.e. ``f_e_active``) -> the event-close
+      date alone, UNLESS the confidence d3 persist-bonus also applied (D_salience(3)
+      contributed to evidence_confidence), in which case the min of the two; V-driven
+      non-event VOLATILITY (F_V used instead) -> V(5), again refined by the d3 bonus.
+    * RISK_ONLY (always crowd-fired by construction — ``fallback_route`` only routes
+      here when ``c_fire``): the fired leg's own life, refined by the d3 bonus.
+    * Anything else (NEUTRAL): life 0 -> fresh_until == S (no lawful positive claim to
+      extend past the current session).
+
+    The d3 confidence bonus is itself salience evidence (life 3, contract ruling) and
+    is folded in for every direction — for LONG/SHORT this is a no-op (D_salience(3) is
+    already unconditionally in the set), which is why the ruling only calls it out
+    explicitly for VOLATILITY/RISK_ONLY.
+    """
+    session_lives: list[int] = []
+    if direction in ("LONG", "SHORT"):
+        session_lives += [int(lives["Q_oi"]), int(lives["Q_skew"]), int(lives["D_salience"])]
+        if gex_active:
+            session_lives.append(int(lives["P"]))
+        if crowd_fired_legs:
+            session_lives.append(min(_crowd_leg_life(leg, lives=lives) for leg in crowd_fired_legs))
+    elif direction == "VOLATILITY":
+        if not f_e_active:
+            session_lives.append(int(lives["V"]))
+        if d3_bonus_applied:
+            session_lives.append(int(lives["D_salience"]))
+    elif direction == "RISK_ONLY":
+        if crowd_fired_legs:
+            session_lives.append(min(_crowd_leg_life(leg, lives=lives) for leg in crowd_fired_legs))
+        if d3_bonus_applied:
+            session_lives.append(int(lives["D_salience"]))
+    else:
+        session_lives.append(0)
+
+    candidates: list[str] = []
+    if session_lives:
+        candidates.append(session_n_forward_fn(S, min(session_lives)))
+    if direction == "VOLATILITY" and f_e_active and event_date:
+        candidates.append(event_date)
+    if not candidates:
+        candidates.append(S)
+    return min(candidates)
+
+
 def market_implied_move_pct(atm_iv: float | None, *, horizon_sessions: float | None = None,
                              event_horizon_sessions: float | None = None) -> float | None:
     if not _finite(atm_iv):
@@ -730,12 +893,20 @@ class Eligibility:
     eligible: int = 0
     insufficient_history: int = 0
     insufficient_coverage: int = 0
+    # B2 — the board-level SOURCE_COVERAGE_GATE denominator/ratio (distinct from the
+    # per-name `ratio` property below, which feeds the SEPARATE ELIGIBILITY_GATE).
+    # None when undecidable (no chain loaded yet, e.g. MIXED_VINTAGE).
+    universe_count: int | None = None
+    source_coverage_pct: float | None = None
 
-    def as_dict(self) -> dict[str, int]:
+    def as_dict(self) -> dict[str, Any]:
         return {
             "present": self.present, "eligible": self.eligible,
             "insufficient_history": self.insufficient_history,
             "insufficient_coverage": self.insufficient_coverage,
+            "universe_count": self.universe_count,
+            "source_coverage_pct": (round(self.source_coverage_pct, 4)
+                                     if self.source_coverage_pct is not None else None),
         }
 
     @property
@@ -832,11 +1003,25 @@ class SessionPanel:
     gex_bound_to_S: bool = True                          # False -> every gex_verdict treated as absent (mixed vintage)
     event_date: dict[str, str | None] = field(default_factory=dict)      # symbol -> next earnings date or None
     events_loaded: bool = True
+    # Prophet — TWO domains (B4): plans[] (entry_status/lifecycle_state/closed) and
+    # intake.receipts.groups (bucket `reason`). `prophet_entry_status`/`prophet_lifecycle_
+    # state`/`prophet_plan_closed` are keyed by symbols WITH a plans[] record (a symbol's
+    # presence as a dict KEY, even with a None entry_status, is itself meaningful — see
+    # `prophet_plan_state`'s `has_plan` parameter). `prophet_group_reason` is keyed by
+    # symbols the intake receipts placed in a bucket.
     prophet_entry_status: dict[str, str | None] = field(default_factory=dict)
+    prophet_lifecycle_state: dict[str, str | None] = field(default_factory=dict)
+    prophet_plan_closed: dict[str, bool] = field(default_factory=dict)
+    prophet_group_reason: dict[str, str | None] = field(default_factory=dict)
     prophet_asof: str | None = None
     signing_gate_direction_reliable: bool = False
     signing_gate_asof: str | None = None
-    universe_size_hint: int | None = None                # for board-level coverage check; None -> derived
+    # B2 — the CANONICAL current options universe (engine/options_universe.py::
+    # gex_symbols(), producer-resolved). None -> defaults to this session's own present
+    # names (ratio 1.0; every pre-B2 test panel that never supplies a universe keeps
+    # passing), and is itself NOT a historical-max heuristic — it depends on nothing but
+    # the CURRENT session's own chain, never on any other loaded session.
+    universe: Sequence[str] | None = None
     stale: bool = False                                  # producer's wall-clock freshness verdict
 
 
@@ -847,7 +1032,8 @@ def _session_key_for(session: str, all_sessions: Sequence[str]) -> str | None:
 
 def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, Any],
                        input_receipts: Sequence[Mapping[str, Any]], built_at_utc: str,
-                       sessions_apart_fn, session_n_forward_fn) -> dict[str, Any]:
+                       sessions_apart_fn, session_n_forward_fn,
+                       source_manifest: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Assemble the full ``options.intel_brief/v1`` payload for ``panel``.
 
     ``sessions_apart_fn(a, b) -> int|None`` and ``session_n_forward_fn(d, n) -> str``
@@ -855,6 +1041,14 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
     ``session_n_forward``) — see the module docstring for why this file never imports
     a calendar module directly (keeps it a function of its inputs alone, testable with
     a tiny hand-rolled calendar in ``tests/``).
+
+    ``source_manifest`` (B1) — the producer's already-computed {gex_summary, gex_confirm}
+    per-file sha256 manifest (path -> hash, member_count, merkle-style aggregate root).
+    This function does zero hashing of its own (no file I/O anywhere in this module);
+    it only packages the manifest into the payload verbatim. The two aggregate roots
+    are NOT re-derived here — the producer folds them into ``input_receipts`` BEFORE
+    calling this function, which is what actually binds them into ``receipt_id`` (this
+    function's ``receipt_id()`` call already hashes the full ``input_receipts`` list).
     """
     S, D = panel.as_of_session, panel.oi_counted_date
     all_sessions = sorted(panel.chains_by_session.keys())
@@ -864,26 +1058,36 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         return _degraded_payload(
             reason="MIXED_VINTAGE", panel=panel, source_watermarks=source_watermarks,
             input_receipts=input_receipts, built_at_utc=built_at_utc,
+            source_manifest=source_manifest,
         )
 
     chain_S = panel.chains_by_session[S]
 
-    # ---- board-level coverage: is chain[S] itself a plausible full snapshot? ------
+    # ---- B2: two SEPARATE gates. Source coverage (board-level: is chain[S] itself a
+    # plausible full snapshot of the CANONICAL universe?) vs eligibility (per-name data
+    # quality, checked further below) used to share one constant — collapsing two
+    # different failure modes into one number. `panel.universe` is the producer-resolved
+    # `engine/options_universe.py::gex_symbols()` list; no historical-chain-max fallback
+    # anywhere (a session with no override simply asserts 100% of ITS OWN names, never
+    # borrowing another session's count).
     present_names = sorted(session_metrics(chain_S).keys())
-    universe_hint = panel.universe_size_hint
-    if universe_hint is None:
-        universe_hint = max([len(session_metrics(f).keys()) for f in panel.chains_by_session.values()]
-                             or [len(present_names)])
-    if universe_hint > 0 and len(present_names) / universe_hint < CONFIG["ELIGIBILITY_GATE"]:
+    universe_list = list(panel.universe) if panel.universe is not None else list(present_names)
+    universe_count = len(universe_list)
+    source_coverage_pct = ((len(set(present_names) & set(universe_list)) / universe_count)
+                            if universe_count > 0 else None)
+    if source_coverage_pct is not None and source_coverage_pct < CONFIG["SOURCE_COVERAGE_GATE"]:
         return _insufficient_coverage_payload(
-            panel=panel, present=len(present_names), source_watermarks=source_watermarks,
+            panel=panel, present=len(present_names), universe_count=universe_count,
+            source_coverage_pct=source_coverage_pct, source_watermarks=source_watermarks,
             input_receipts=input_receipts, built_at_utc=built_at_utc,
+            source_manifest=source_manifest,
         )
 
     if panel.stale:
         return _stale_payload(
             panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
-            built_at_utc=built_at_utc,
+            built_at_utc=built_at_utc, universe_count=universe_count,
+            source_coverage_pct=source_coverage_pct, source_manifest=source_manifest,
         )
 
     # ---- per-session metrics for every loaded session (pure, session-local) -------
@@ -956,7 +1160,8 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
     event_family_active = panel.events_loaded and len(event_names) >= CONFIG["EVENT_MIN_NAMES"]
 
     # ---- per-symbol feature assembly -----------------------------------------------
-    eligibility = Eligibility(present=len(present_names))
+    eligibility = Eligibility(present=len(present_names), universe_count=universe_count,
+                               source_coverage_pct=source_coverage_pct)
     cards: list[dict[str, Any]] = []
     xs_today = {k: {n: metrics_by_session[S][n].get(k) for n in present_names} for k in ("term", "sd_share")}
     v1_today: dict[str, float | None] = {n: metrics_by_session[S][n].get("atm_iv") for n in present_names}
@@ -1063,9 +1268,11 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         c3 = 1 if (d1 is not None and d1 >= CONFIG["C3_D1"] and d3 is not None and d3 >= CONFIG["C3_D3"]
                    and p_v2 is not None and p_v2 >= CONFIG["C3_V2"]) else 0
         c_fire, c_sev = crowd_family(c1, c2, c3)
+        fired_legs = crowd_fired_legs(c1, c2, c3)
 
         # event / gex
         in_event = n in event_names
+        ed = panel.event_date.get(n)
         f_e = f_e_by_symbol.get(n)
         p_xs_event = p_xs_event_by_symbol.get(n)
         gex_verdict = panel.gex_verdict.get(n) if panel.gex_bound_to_S else None
@@ -1085,10 +1292,10 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
 
         event_imminent = False
         if in_event and direction in ("LONG", "SHORT"):
-            ed = panel.event_date.get(n)
             gap = sessions_apart_fn(S, ed) if ed else None
             event_imminent = gap is not None and gap <= CONFIG["EVENT_CONTAM_SESSIONS"]
 
+        m_gex_value = m_gex_multiplier(direction, gex_verdict)
         es = evidence_strength(direction, q_oi_v=q_oi_v, q_skew_v=q_skew_v, d_sal=d_sal,
                                 f_v=f_v, f_e=f_e, c_sev=c_sev)
         ec = evidence_confidence(direction, d3=d3, coverage_complete=coverage_complete)
@@ -1096,13 +1303,35 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
                               event_imminent=event_imminent, c_fire=c_fire, gex_verdict=gex_verdict)
         R = research_priority(es, ec, m_ad)
 
+        # B3 — evidence-derived freshness: the minimum lawful expiry over the card's
+        # ACTUAL contribution set (never derived from direction alone). See
+        # `fresh_until_for`'s docstring for the full rule; `d3_bonus_applied` mirrors
+        # `evidence_confidence`'s own persist-bonus condition exactly (contract ruling:
+        # "the confidence d3 bonus is salience evidence").
+        d3_bonus_applied = (d3 or 0.0) >= 0.5
+        fresh_until_date = fresh_until_for(
+            direction=direction, S=S, session_n_forward_fn=session_n_forward_fn,
+            gex_active=(m_gex_value != 1.0), crowd_fired_legs=fired_legs,
+            f_e_active=(in_event and f_e is not None), event_date=ed,
+            d3_bonus_applied=d3_bonus_applied,
+        )
+
         # "NEUTRAL cards are never ranked; an eligible name that is NEUTRAL or below
         # R < 100 reports NO_SIGNAL" (contract §5.3) — the R<100 clause applies to
         # EVERY direction, not just NEUTRAL (a low-conviction VOLATILITY/RISK_ONLY
         # name is just as much a no-signal name as a NEUTRAL one).
         symbol_state = "NO_SIGNAL" if (direction == "NEUTRAL" or R < CONFIG["NO_SIGNAL_R"]) else direction
 
-        prophet_raw = panel.prophet_entry_status.get(n)
+        # B4 — Prophet TWO-domain resolution (plans[] vs intake.receipts.groups),
+        # per-symbol precedence when they collide. Display-only; zero rank authority —
+        # nothing computed above this point (or below) ever reads these two lines.
+        plan_state = prophet_plan_state(
+            panel.prophet_entry_status.get(n), panel.prophet_lifecycle_state.get(n),
+            panel.prophet_plan_closed.get(n, False), has_plan=(n in panel.prophet_entry_status),
+        )
+        group_state = (prophet_group_state(panel.prophet_group_reason.get(n))
+                        if n in panel.prophet_group_reason else None)
+        prophet_state_value = prophet_state_combined(plan_state, group_state)
         card = {
             "signal_id": signal_id_for(S, n),
             "symbol": n,
@@ -1131,9 +1360,7 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
                 "gamma_regime": None,
                 "flip_proximity": None,
             },
-            "crowding": ({"fired": [k for k, v in (("c1", c1 is not None and c1 >= CONFIG["C1_TH"]),
-                                                     ("c2", bool(c2)), ("c3", bool(c3))) if v],
-                           "severity": round(c_sev, 4)} if c_fire else None),
+            "crowding": ({"fired": fired_legs, "severity": round(c_sev, 4)} if c_fire else None),
             "event": ({
                 "event_date": panel.event_date.get(n), "history_mode": "cross_sectional",
                 "event_premium_state": (
@@ -1147,11 +1374,9 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
                                          if direction in ("LONG", "SHORT", "VOLATILITY") and m.get("atm_iv") else None),
             "trigger_watch": trigger_watch_string(direction),
             "invalidation_watch": invalidation_watch_string(direction),
-            "fresh_until": session_n_forward_fn(S, CONFIG["FRESH_LIVES_SESSIONS"]["Q_oi"]
-                                                 if direction in ("LONG", "SHORT")
-                                                 else (CONFIG["FRESH_LIVES_SESSIONS"]["V"] if direction == "VOLATILITY" else 0)),
+            "fresh_until": fresh_until_date,
             "source_state": "ok",
-            "prophet_state": prophet_state_for(prophet_raw),
+            "prophet_state": prophet_state_value,
             "prophet_asof": panel.prophet_asof,
             "asymmetry_score": None, "asymmetry_state": "UNCALIBRATED",
             "probability_up": None, "probability_down": None,
@@ -1184,6 +1409,7 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         return _degraded_payload(
             reason="ELIGIBILITY_COLLAPSE", panel=panel, source_watermarks=source_watermarks,
             input_receipts=input_receipts, built_at_utc=built_at_utc, eligibility=eligibility,
+            source_manifest=source_manifest,
         )
 
     # §5.2 no-signal law: an empty board (opportunities AND event AND risk all empty)
@@ -1208,6 +1434,9 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         # AD0 §6.1 named exclusion stat (tests 1/2) — adjusted/nonstandard vendor
         # contract tickers on chain[S], never silently aggregated into any family.
         "contract_identity_exclusions": contract_identity_excluded_S,
+        # B1 — deterministic per-file manifest of every consumed GEX summary/confirm
+        # input (path -> sha256, member_count, merkle-style aggregate root per domain).
+        "source_manifest": (dict(source_manifest) if source_manifest is not None else _empty_source_manifest()),
     }
     header["receipt_id"] = receipt_id(
         schema=SCHEMA, model_version=MODEL_VERSION, as_of_session=S, oi_counted_date=D,
@@ -1229,8 +1458,16 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
     return payload
 
 
+def _empty_source_manifest() -> dict[str, Any]:
+    """The B1 ``source_manifest`` shape when the producer hasn't (or couldn't) resolve
+    one — e.g. MIXED_VINTAGE, where no chain[S] was ever loaded to consume anything."""
+    empty_domain = {"root": None, "member_count": 0, "files": {}}
+    return {"gex_summary": dict(empty_domain, files={}), "gex_confirm": dict(empty_domain, files={})}
+
+
 def _base_header(*, panel: SessionPanel, source_watermarks, input_receipts, built_at_utc,
-                  board_state: str, board_reason: str | None, eligibility: Eligibility | None = None) -> dict:
+                  board_state: str, board_reason: str | None, eligibility: Eligibility | None = None,
+                  source_manifest: Mapping[str, Any] | None = None) -> dict:
     S = panel.as_of_session or ""
     D = panel.oi_counted_date or ""
     header = {
@@ -1243,6 +1480,7 @@ def _base_header(*, panel: SessionPanel, source_watermarks, input_receipts, buil
         "eligibility": (eligibility.as_dict() if eligibility else Eligibility().as_dict()),
         "board_state": board_state, "board_reason": board_reason,
         "contract_identity_exclusions": 0,
+        "source_manifest": (dict(source_manifest) if source_manifest is not None else _empty_source_manifest()),
     }
     header["receipt_id"] = receipt_id(
         schema=SCHEMA, model_version=MODEL_VERSION, as_of_session=S, oi_counted_date=D,
@@ -1256,20 +1494,27 @@ def _base_header(*, panel: SessionPanel, source_watermarks, input_receipts, buil
 
 
 def _degraded_payload(*, reason: str, panel: SessionPanel, source_watermarks, input_receipts,
-                       built_at_utc, eligibility: Eligibility | None = None) -> dict:
+                       built_at_utc, eligibility: Eligibility | None = None,
+                       source_manifest: Mapping[str, Any] | None = None) -> dict:
     return _base_header(panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
                          built_at_utc=built_at_utc, board_state="DEGRADED", board_reason=reason,
-                         eligibility=eligibility)
+                         eligibility=eligibility, source_manifest=source_manifest)
 
 
-def _stale_payload(*, panel: SessionPanel, source_watermarks, input_receipts, built_at_utc) -> dict:
+def _stale_payload(*, panel: SessionPanel, source_watermarks, input_receipts, built_at_utc,
+                    universe_count: int | None = None, source_coverage_pct: float | None = None,
+                    source_manifest: Mapping[str, Any] | None = None) -> dict:
+    elig = Eligibility(universe_count=universe_count, source_coverage_pct=source_coverage_pct)
     return _base_header(panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
-                         built_at_utc=built_at_utc, board_state="STALE_SOURCE", board_reason=None)
+                         built_at_utc=built_at_utc, board_state="STALE_SOURCE", board_reason=None,
+                         eligibility=elig, source_manifest=source_manifest)
 
 
 def _insufficient_coverage_payload(*, panel: SessionPanel, present: int, source_watermarks,
-                                    input_receipts, built_at_utc) -> dict:
-    elig = Eligibility(present=present)
+                                    input_receipts, built_at_utc, universe_count: int | None = None,
+                                    source_coverage_pct: float | None = None,
+                                    source_manifest: Mapping[str, Any] | None = None) -> dict:
+    elig = Eligibility(present=present, universe_count=universe_count, source_coverage_pct=source_coverage_pct)
     return _base_header(panel=panel, source_watermarks=source_watermarks, input_receipts=input_receipts,
                          built_at_utc=built_at_utc, board_state="INSUFFICIENT_COVERAGE", board_reason=None,
-                         eligibility=elig)
+                         eligibility=elig, source_manifest=source_manifest)

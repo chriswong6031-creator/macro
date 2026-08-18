@@ -6,9 +6,11 @@ Sources of authority, in order: the program masterplan
 `DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION`,
 `DEC:AD-SIGNAL-VOCAB-RESTORES-SHORT`, and the amended AD-1 handoff §5.3 (v1.2)
 (`research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md`),
-plus the AD-1 runtime source-clock ruling (settled vs pending, 2026-08-18) transcribed
-here. Implementation is transcription: any divergence between code and this contract is
-a defect in exactly one of them and must be returned, never silently adapted.
+plus the AD-1 runtime source-clock ruling (settled vs pending, 2026-08-18) and the Sol
+review Block B1-B4 fix (2026-08-18, PR #5872 REQUEST_CHANGES — receipt closure, the
+two-gate coverage law, evidence-derived freshness, and the two-domain Prophet mapping)
+transcribed here. Implementation is transcription: any divergence between code and this
+contract is a defect in exactly one of them and must be returned, never silently adapted.
 
 Producer: `scripts/build_options_intel_brief.py` → `engine/options_intel_brief.py` (pure).
 Artifact: `site/options_intel_brief.json` (atomic write; semantic no-op on unchanged receipt).
@@ -49,6 +51,32 @@ require: chain[S] exists AND chain[D] exists AND D == next_nyse_session(S)
 - Any core mixed-vintage failure → `board_state = "DEGRADED"`, `board_reason = "MIXED_VINTAGE"`;
   an optional family simply goes absent if the core state stays coherent. Never zero-fill.
 
+## 1a. Two gates (B2 — SOURCE_COVERAGE_GATE is SEPARATE from ELIGIBILITY_GATE)
+
+Two different failure modes used to share one constant (`ELIGIBILITY_GATE`), which
+collapsed "is chain[S] itself a plausible full snapshot" and "how many present names
+individually have enough data" into a single number. They are now two independent gates,
+checked in this order:
+
+```text
+1. Source coverage (board-level):
+   source_coverage_pct = |present_names ∩ universe| / |universe|
+   universe = producer-resolved engine/options_universe.py::gex_symbols() (input #7)
+   source_coverage_pct < SOURCE_COVERAGE_GATE (0.90)
+     -> board_state = "INSUFFICIENT_COVERAGE" (cards withheld)
+   NEVER derived from any historical chain session's own name count (the deleted
+   "historical-max" heuristic) — a session with no explicit universe override defaults
+   to asserting 100% of ITS OWN present names, never borrowing another session's count.
+2. Eligibility (per-name data quality, unchanged threshold):
+   eligible/present < ELIGIBILITY_GATE (0.60)
+     -> board_state = "DEGRADED", board_reason = "ELIGIBILITY_COLLAPSE" (cards withheld)
+```
+
+The header's `eligibility` block additionally reports `universe_count` and
+`source_coverage_pct` (rounded 4dp) on EVERY payload where a chain[S] was loaded at all
+(not only on the `INSUFFICIENT_COVERAGE` branch) — `null` only when undecidable
+(`MIXED_VINTAGE`, no chain ever loaded).
+
 ## 2. Inputs (read-only; existing loaders only)
 
 | # | Input | Path | Used for | Clock |
@@ -57,11 +85,22 @@ require: chain[S] exists AND chain[D] exists AND D == next_nyse_session(S)
 | 2 | GEX summaries | `data/polygon_gex/summary_{SYM}.parquet` (spot history, gamma_flip, …) | RV for v2, spot-extension c2, flip proximity display | rows ≤ S only |
 | 3 | gex_confirm | `site/gex/{SYM}.json` via `engine.gex_confirm.assess(..., direction="up")` | mechanics context + `M_gex` | must bind to S else absent |
 | 4 | Earnings calendar | `data/earnings/earnings.parquet` (`next_date` per ticker) | E family event window (S, S+45d] | forward-known |
-| 5 | Prophet display echo | `site/prophet/index.json` (`plans[].asset`, `entry_status`, index `asof`) | display-only `prophet_state` chip | may be newer than S; `prophet_asof` disclosed |
+| 5 | Prophet display context (TWO domains, B4) | `site/prophet/index.json`: `plans[]` (`asset`, `entry_status`, `lifecycle_state`, `closed`) AND `intake.receipts.groups` (bucket `reason` + `names[].ticker`) | display-only `prophet_state` chip, resolved per §5's two-domain precedence | may be newer than S; `prophet_asof` disclosed |
 | 6 | Flow signing gate | `data/options_flow/signing_gate.json` | proves `Q_flow` must stay ABSENT while `direction_reliable == false` | current |
+| 7 | Options universe (B2) | `engine/options_universe.py::gex_symbols()` (config anchors + baskets, capped) | `SOURCE_COVERAGE_GATE` denominator; producer-resolved, passed to the pure engine as an explicit list+count | current; NEVER derived from the chain store's own historical session sizes |
 
 No collector is invoked; no network; missing optional input → family absent; missing core
 input (chains for the pair) → `STALE_SOURCE`/`DEGRADED` per §5.
+
+**B1 — receipt closure.** Every score-affecting per-symbol input the producer actually
+reads must bind the receipt: `data/polygon_gex/summary_{SYM}.parquet` (input #2) for
+every name present in chain[S], and every `site/gex/{SYM}.json` (input #3) whose own
+`meta.asof` binds to S (a file opened but rejected for a stale `asof` was never
+"consumed" — its bytes never influenced the payload, so it is deliberately excluded).
+The producer hashes exactly this consumed set (never the whole directory) into a
+deterministic `source_manifest` (§5) and folds a merkle-style aggregate root per domain
+into `input_receipts` — see §5's `receipt_id` formula, which already hashes the full
+`input_receipts` list, so the two roots are what actually binds them.
 
 ## 3. Frozen CONFIG (every constant; tests pin verbatim)
 
@@ -97,7 +136,8 @@ BOARD_N                  = 6
 EVENT_BOARD_N            = 4
 RISK_BOARD_N             = 4
 NO_SIGNAL_R              = 100         # eligible & R < 100 (or NEUTRAL) => NO_SIGNAL
-ELIGIBILITY_GATE         = 0.60        # eligible/present below => DEGRADED/ELIGIBILITY_COLLAPSE
+ELIGIBILITY_GATE         = 0.60        # eligible/present below => DEGRADED/ELIGIBILITY_COLLAPSE (per-name quality)
+SOURCE_COVERAGE_GATE     = 0.90        # (present ∩ universe)/universe below => INSUFFICIENT_COVERAGE (board-level; B2, SEPARATE from ELIGIBILITY_GATE — see §1a)
 EVENT_MIN_NAMES          = 5           # XS event family needs >= 5 event names
 EVENT_WINDOW_DAYS        = 45          # event in (S, S+45d]
 HIST_EVENT_ACTIVATION    = 3           # same-name events before history_mode may change (model_version bump)
@@ -165,6 +205,31 @@ DOI_CLAMP                = 3.0         # z clamped to [-3,3]/3
 - Trigger/invalidation: deterministic templates from Q/V/E/C state exactly per AD-1 handoff
   §5.3 (LONG/SHORT trigger = same-sign ∧ |Q| ≥ 0.50 next settled session; invalidation =
   agreement lost ∨ |Q| < 0.25 ∨ source stale/degraded). Closed vocabulary; no LLM.
+- `fresh_until` (B3 — evidence-derived freshness, binding): the MINIMUM lawful expiry
+  over the card's ACTUAL contribution set — every evidence input that entered `state`
+  (direction/route classification), `evidence_strength`, `evidence_confidence`, or
+  `M_ad`. Never derived from direction alone. Session-count lives (`FRESH_LIVES_SESSIONS`,
+  §3) convert to real NYSE-session dates; the E-family life (`event_close`) is an actual
+  calendar date, combined with everything else via `min()`.
+  - LONG/SHORT: Q_oi(3) + Q_skew(3) + D_salience(3) always (the direction law requires
+    all three present) `+` P/GEX-mechanics(1) when `M_gex ≠ 1.0` (a qualified LONG under
+    caution) `+` the fired crowd leg's own life when a crowd multiplier cut this LONG's
+    actionability. A qualified LONG with `M_gex=0.75` -> `fresh_until` = next session
+    (life 1 wins the min). A LONG cut by the crowd multiplier where the firing leg is
+    same-day `c1` -> current-session expiry (life 0).
+  - Crowd leg lives (used for RISK_ONLY too, always crowd-fired by construction — the
+    only route to RISK_ONLY): `c1` (same-day/0DTE) = 0; `c2` (V(5) + spot-history(5)) =
+    5; `c3` (min(D_salience(3), V(5))) = 3. Multiple fired legs -> the MIN across them.
+  - VOLATILITY: event-driven (F_E contributed) -> the event-close date, refined by
+    `min()` against D_salience(3) when the confidence d3 persist-bonus also applied;
+    V-driven non-event VOLATILITY (F_V used instead) -> V(5), same d3 refinement.
+  - The confidence d3 persist-bonus (`evidence_confidence`'s `[d3 ≥ 0.5]` term) is
+    ITSELF salience evidence (life 3) and folds into every direction's contribution set
+    — a no-op for LONG/SHORT (D_salience(3) is already unconditionally present there).
+  - NEUTRAL (no lawful positive claim): life 0 -> `fresh_until` = S.
+  - Display-only background (absent families, the Prophet chip) never shortens —
+    neither ever enters the contribution set; there is no parameter for either in the
+    freshness computation (structural, not merely untested).
 
 ## 5. Output schema (`site/options_intel_brief.json`)
 
@@ -180,10 +245,17 @@ pending_reason            "OI_NOT_YET_SETTLED" | null
 built_at_utc              ISO-8601 (provenance only; excluded from receipt)
 source_watermarks         {chains_session_S, chains_session_D, summaries_max_session,
                            events_loaded(bool), prophet_asof|null, signing_gate_asof}
-input_receipts[]          {logical_source, path, asof, sha256, state}
-eligibility               {present, eligible, insufficient_history, insufficient_coverage}
+input_receipts[]          {logical_source, path, asof, sha256, state} (B1: includes the
+                          gex_summary_manifest/gex_confirm_manifest aggregate-root entries)
+eligibility               {present, eligible, insufficient_history, insufficient_coverage,
+                          universe_count, source_coverage_pct}   (B2, last two)
 board_state               "OK" | "NO_SIGNAL" | "INSUFFICIENT_COVERAGE" | "STALE_SOURCE" | "DEGRADED"
 board_reason              null | "ELIGIBILITY_COLLAPSE" | "MIXED_VINTAGE" | "NO_SETTLED_OI_PAIR" | ...
+source_manifest           (B1) {gex_summary, gex_confirm} — each domain:
+                          {root: sha256|null, member_count: int, files: {path: sha256}}
+                          sorted by path; root = sha256(canonical_json(sorted(files.items())));
+                          the two roots are ALSO folded into input_receipts above (that is
+                          what actually binds them into receipt_id, not this field itself)
 receipt_id                sha256(canonical_json({schema, model_version, as_of_session,
                           oi_counted_date, source_watermarks, sorted(input_receipts)}))
 config_hash               sha256(canonical_json(CONFIG))
@@ -209,7 +281,8 @@ event                     {event_date, history_mode, event_premium_state, ...} |
 market_implied_move_pct   float | null  (+ horizon basis)
 trigger_watch             deterministic string (what would confirm)
 invalidation_watch        deterministic string (what would change the read)
-fresh_until               YYYY-MM-DD (NYSE-session arithmetic)
+fresh_until               YYYY-MM-DD — evidence-derived per the card's ACTUAL contribution
+                          set (B3, §4), never derived from direction alone
 source_state              ok | degraded-note
 prophet_state             EXTENDED | ALREADY_OPEN | NOT_READY | READY | OTHER | UNAVAILABLE
 prophet_asof              date | null
@@ -219,9 +292,32 @@ expected_edge_bps         null
 supersedes_signal_id      null            corrected_at null      (AD-2 placeholders)
 ```
 
-Prophet `entry_status` mapping (display only): hold/partial → ALREADY_OPEN; bounce_wait →
-NOT_READY; buy_now → READY; extension states (`ran_too_far`/extension flags where present) →
-EXTENDED; other lawful → OTHER; missing → UNAVAILABLE. Never blank; never affects any score.
+Prophet mapping (B4, display only — reads BOTH domains of `site/prophet/index.json`;
+never affects any score):
+
+- **plans[] domain** (`entry_status`/`lifecycle_state`/`closed`): `hold`/`partial` →
+  ALREADY_OPEN, but ONLY while the plan is still open (`closed` False) — a closed
+  hold/partial plan is a lawful-but-unmapped record → OTHER. `entry_status` `None` →
+  ALREADY_OPEN only for an open (`closed` False) `entered` plan; any other `None`-status
+  record → OTHER. `bounce_wait` → NOT_READY. `buy_now` → READY. `extended`/`topping` →
+  EXTENDED (these last three resolve unconditionally — the open-condition above is
+  stated only for the hold/partial and `None`-status cases).
+- **intake.receipts.groups domain** (bucket `reason`, `names[].ticker`): `ran_too_far`
+  (and any `extended`/`topping` bucket) → EXTENDED; `already_open` → ALREADY_OPEN;
+  `not_ready`/`wait_pullback`/`bounce_wait` → NOT_READY; `buy_now` → READY;
+  `stood_down`/`conviction_low`/`pointing_down`/`plan_not_built` and any other lawful
+  bucket → OTHER.
+- **Per-symbol precedence** when the two domains disagree for the same ticker (real
+  collisions exist — e.g. BIIB: plans[].entry_status=`bounce_wait` → NOT_READY, but
+  receipts.groups reason=`ran_too_far` → EXTENDED):
+  `EXTENDED > ALREADY_OPEN > NOT_READY > READY > OTHER > UNAVAILABLE`.
+- Absent from BOTH domains → UNAVAILABLE. Never blank.
+- OTHER's display words are `"Reviewed · no entry call"` / `"已评估 · 无入场判定"`
+  (EXTENDED/ALREADY_OPEN/NOT_READY/READY/UNAVAILABLE words unchanged) — the word table
+  itself lives in `scripts/build_options_command.py` (`_AIB_PROPHET_EN`/`_AIB_PROPHET_ZH`,
+  outside this packet's OWNED FILES; the enum-level resolution above is complete and
+  correct as of this contract, but the downstream word swap for OTHER is a NAMED FOLLOW-UP,
+  not yet applied — see the B1-B4 fix's GAPS).
 
 ## 6. Authority table
 

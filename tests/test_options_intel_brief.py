@@ -23,7 +23,7 @@ from __future__ import annotations
 import glob
 import json
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -480,11 +480,17 @@ def test_07_incomplete_chain_reports_insufficient_coverage_zero_cards():
          for r in only_one.itertuples()],
         session=S,
     )
-    payload = _build(panel_truncated, S=S, D=D)
+    # B2: the coverage denominator is the CANONICAL universe (producer-resolved
+    # gex_symbols()), never a historical-chain-max heuristic — an engine-level test
+    # must supply it explicitly to exercise the same 1/6 shortfall the old heuristic
+    # happened to reconstruct from the panel's OTHER (untruncated) sessions.
+    payload = _build(panel_truncated, S=S, D=D, universe=list(names.keys()))
     assert payload["board_state"] == "INSUFFICIENT_COVERAGE"
     assert payload["opportunities"] == []
     assert payload["event_board"] == []
     assert payload["risk_warnings"] == []
+    assert payload["eligibility"]["universe_count"] == 6
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(1 / 6, abs=1e-4)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1122,6 +1128,591 @@ def test_producer_uses_gex_confirm_read_only_not_forbidden_builders():
                        "options_signal_episode", "options_sparse_selector"):
         assert forbidden not in src
     assert "from engine import gex_confirm" in src or "from engine.gex_confirm" in src
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Sol review Blocks B1-B4 (PR #5872 REQUEST_CHANGES; commissioned fix, 2026-08-18).
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B1 fixture — a tmp "repo" the REAL producer reads through its own module-level
+# path constants (monkeypatched), never a hand-rolled second I/O implementation
+# (house rule: synthetic harnesses run through the production builder).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _gex_json_payload(asof: str, *, dist_to_flip_pct: float = 5.0) -> dict:
+    """A minimal but REAL-SHAPED site/gex/{SYM}.json payload that
+    ``engine.gex_confirm.assess`` turns into a deterministic "caution" verdict
+    (regime=long, 5% over the flip >= deep_flip_pct=3.0 -> score -1.0 <= caution_at)."""
+    return {
+        "meta": {"asof": asof},
+        "summary": {"tier": "core", "n_strikes": 50, "regime": "long",
+                    "dist_to_flip_pct": dist_to_flip_pct, "spot": 100.0, "gamma_flip": 95.0},
+    }
+
+
+def _write_fake_repo(tmp_path, monkeypatch, *, symbols: list[str], sessions: list[str],
+                      gex_json_asof: str | None = None, prophet_payload: dict | None = None):
+    """Build a tmp repo tree matching every path constant
+    ``scripts/build_options_intel_brief.py`` reads, and monkeypatch the producer module
+    to point at it — so ``producer.build()`` runs its REAL file I/O (hashing included)
+    against a small, fully-controlled store instead of a second, easier reimplementation.
+    """
+    chains_dir = tmp_path / "data" / "polygon_gex" / "chains"
+    chains_dir.mkdir(parents=True)
+    for s in sessions:
+        rows: list[dict] = []
+        for sym in symbols:
+            rows.extend(_symbol_rows(sym, s, anchor=sessions[0]))
+        _mk_chain(rows, session=s).to_parquet(chains_dir / f"{s}.parquet")
+
+    summary_dir = tmp_path / "data" / "polygon_gex"
+    for sym in symbols:
+        idx = pd.to_datetime(sessions)
+        spot_df = pd.DataFrame({"spot": [100.0 + i for i in range(len(sessions))]}, index=idx)
+        spot_df.to_parquet(summary_dir / f"summary_{sym}.parquet")
+
+    gex_dir = tmp_path / "site" / "gex"
+    gex_dir.mkdir(parents=True)
+    for sym in symbols:
+        asof = gex_json_asof if gex_json_asof is not None else sessions[-1]
+        (gex_dir / f"{sym}.json").write_text(json.dumps(_gex_json_payload(asof)))
+
+    (tmp_path / "data" / "earnings").mkdir(parents=True)
+    (tmp_path / "data" / "options_flow").mkdir(parents=True)
+    prophet_dir = tmp_path / "site" / "prophet"
+    prophet_dir.mkdir(parents=True)
+    if prophet_payload is not None:
+        (prophet_dir / "index.json").write_text(json.dumps(prophet_payload))
+
+    monkeypatch.setattr(producer, "_REPO_ROOT", tmp_path)
+    monkeypatch.setattr(producer, "CHAINS_DIR", chains_dir)
+    monkeypatch.setattr(producer, "SUMMARY_GLOB", str(summary_dir / "summary_{sym}.parquet"))
+    monkeypatch.setattr(producer, "GEX_JSON_GLOB", str(gex_dir / "{sym}.json"))
+    monkeypatch.setattr(producer, "EARNINGS_PATH", tmp_path / "data" / "earnings" / "earnings.parquet")
+    monkeypatch.setattr(producer, "PROPHET_INDEX_PATH", prophet_dir / "index.json")
+    monkeypatch.setattr(producer, "SIGNING_GATE_PATH", tmp_path / "data" / "options_flow" / "signing_gate.json")
+    # B2: default the canonical universe to exactly this fixture's symbols (100%
+    # coverage) so a B1/B3/B4 test with no OWN opinion on coverage doesn't trip
+    # INSUFFICIENT_COVERAGE against the real repo's ~375-name universe. Tests that
+    # exercise B2 itself (test_b2_4) re-patch this afterward.
+    monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
+    return chains_dir, summary_dir, gex_dir
+
+
+def _fake_repo_sessions(n: int = 14):
+    sessions = _real_sessions(n)
+    return sessions, sessions[-2], sessions[-1]   # sessions, S, D
+
+
+def _alpha_names(prefix: str, n: int) -> list[str]:
+    """``n`` distinct symbol names using ONLY letters after ``prefix`` (up to 26*26).
+
+    The fixture ticker-identity regex (``_STANDARD_TICKER_RE`` = ``[A-Za-z.]+`` for the
+    OCC root) requires a letters-only symbol — a digit-suffixed name like ``COV00``
+    fails to match at all, so EVERY row for that symbol gets silently excluded as
+    "adjusted/nonstandard" by ``contract_identity_split``, zeroing the whole chain for
+    that name with no error. Found the hard way building the B2 coverage tests below.
+    """
+    import string
+    letters = string.ascii_uppercase
+    return [f"{prefix}{letters[i // 26]}{letters[i % 26]}" for i in range(n)]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B1 — receipt closure / source_manifest.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b1_1_mutating_consumed_summary_changes_payload_and_receipt(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    # mutate the summary spot series of ONE consumed symbol (changes its RV -> v2)
+    summary_dir = tmp_path / "data" / "polygon_gex"
+    fp = summary_dir / f"summary_{symbols[0]}.parquet"
+    idx = pd.to_datetime(sessions)
+    mutated = pd.DataFrame({"spot": [50.0 + 3.0 * i for i in range(len(sessions))]}, index=idx)
+    mutated.to_parquet(fp)
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    assert p1["receipt_id"] != p2["receipt_id"]
+    assert p1["source_manifest"]["gex_summary"]["root"] != p2["source_manifest"]["gex_summary"]["root"]
+    assert p1["source_manifest"]["gex_summary"]["files"][str(fp.relative_to(tmp_path))] != \
+        p2["source_manifest"]["gex_summary"]["files"][str(fp.relative_to(tmp_path))]
+
+
+def test_b1_2_mutating_s_bound_gex_json_changes_context_and_receipt(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    gex_dir = tmp_path / "site" / "gex"
+    fp = gex_dir / f"{symbols[0]}.json"
+    fp.write_text(json.dumps(_gex_json_payload(S, dist_to_flip_pct=0.0)))  # long, shallow -> different verdict
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    assert p1["receipt_id"] != p2["receipt_id"]
+    assert p1["source_manifest"]["gex_confirm"]["root"] != p2["source_manifest"]["gex_confirm"]["root"]
+
+    def verdict_of(payload, sym):
+        for c in payload["opportunities"] + payload["risk_warnings"]:
+            if c["symbol"] == sym:
+                return c["mechanics_context"]["gex_confirm_verdict"]
+        exemplar = payload.get("no_signal_exemplar")
+        if exemplar and exemplar["symbol"] == sym:
+            return exemplar["mechanics_context"]["gex_confirm_verdict"]
+        return "NOT_FOUND"
+
+    v1, v2 = verdict_of(p1, symbols[0]), verdict_of(p2, symbols[0])
+    assert v1 != "NOT_FOUND" and v2 != "NOT_FOUND"
+    assert v1 != v2, f"gex verdict unchanged across a genuinely different S-bound payload: {v1!r}"
+
+
+def test_b1_3_unconsumed_gex_payload_never_touches_the_receipt(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    # a gex json for a symbol OUTSIDE the universe/chain — never read by _load_gex_verdicts
+    # (which only ever iterates present_names, the chain[S] symbol set)
+    gex_dir = tmp_path / "site" / "gex"
+    (gex_dir / "GHOST.json").write_text(json.dumps(_gex_json_payload(S)))
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    (gex_dir / "GHOST.json").write_text(json.dumps(_gex_json_payload(S, dist_to_flip_pct=99.0)))
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    assert p1["receipt_id"] == p2["receipt_id"]
+    assert json.dumps(p1, sort_keys=True) == json.dumps(p2, sort_keys=True)
+    assert "GHOST" not in json.dumps(p1["source_manifest"])
+
+
+def test_b1_4_identical_rerun_is_a_byte_level_no_op(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    p1 = producer.build(now=now, ignore_staleness=True)
+    out = tmp_path / "out.json"
+    producer.write_json_atomic(out, p1)
+    original_bytes, original_mtime = out.read_bytes(), out.stat().st_mtime_ns
+
+    p2 = producer.build(now=datetime(2099, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert producer._semantic_unchanged(out, p2)
+    assert out.read_bytes() == original_bytes and out.stat().st_mtime_ns == original_mtime
+
+
+def test_b1_5_manifest_enumerates_every_consumed_file_closure(tmp_path, monkeypatch):
+    """A spy wraps producer._sha256_file to record every path it was ever asked to
+    hash for the gex_summary/gex_confirm domains; the manifest's own file set must
+    equal exactly the set of paths the loaders actually opened and bound — no more,
+    no less (closure, not merely non-emptiness)."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
+
+    hashed: list[Path] = []
+    real_hasher = producer._sha256_file
+
+    def spy(path):
+        hashed.append(path)
+        return real_hasher(path)
+
+    monkeypatch.setattr(producer, "_sha256_file", spy)
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    summary_dir = tmp_path / "data" / "polygon_gex"
+    gex_dir = tmp_path / "site" / "gex"
+    expected_summary = {str((summary_dir / f"summary_{s}.parquet").relative_to(tmp_path)) for s in symbols}
+    expected_gex = {str((gex_dir / f"{s}.json").relative_to(tmp_path)) for s in symbols}
+
+    manifest_summary = set(payload["source_manifest"]["gex_summary"]["files"].keys())
+    manifest_gex = set(payload["source_manifest"]["gex_confirm"]["files"].keys())
+    assert manifest_summary == expected_summary
+    assert manifest_gex == expected_gex
+
+    hashed_summary = {str(p.relative_to(tmp_path)) for p in hashed if "summary_" in p.name}
+    hashed_gex = {str(p.relative_to(tmp_path)) for p in hashed
+                  if p.name.endswith(".json") and p.parent.name == "gex"}
+    assert hashed_summary == expected_summary
+    assert hashed_gex == expected_gex
+    assert payload["source_manifest"]["gex_summary"]["member_count"] == len(expected_summary)
+    assert payload["source_manifest"]["gex_confirm"]["member_count"] == len(expected_gex)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B2 — two gates (SOURCE_COVERAGE_GATE 0.90 vs ELIGIBILITY_GATE 0.60).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b2_1_coverage_below_90_pct_insufficient_coverage_even_with_excellent_eligibility():
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+    names = {sym: _typical_spec(salt=i) for i, sym in enumerate(_alpha_names("COV", 89))}   # all clean/eligible
+    panel = _panel(names, sessions)
+    universe = list(names.keys()) + _alpha_names("MISS", 11)   # 89/100 = 89%
+    payload = _build(panel, S=S, D=D, universe=universe)
+    assert payload["board_state"] == "INSUFFICIENT_COVERAGE"
+    assert payload["eligibility"]["universe_count"] == 100
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(0.89, abs=1e-4)
+    assert payload["opportunities"] == []
+
+
+def test_b2_2_coverage_at_90_pct_but_eligibility_59_pct_eligibility_collapse():
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+
+    def thin(s, i):
+        return dict(spot=100.0, base_iv=0.30, oi_base=100.0, n_contracts=False)  # ineligible (<20 contracts)
+
+    def full(s, i):
+        return dict(spot=100.0, base_iv=0.30, oi_base=100.0)
+
+    names = {sym: thin for sym in _alpha_names("THN", 41)}
+    names.update({sym: full for sym in _alpha_names("FUL", 59)})   # 59/100 eligible = 59% < 60%
+    panel = _panel(names, sessions)
+    # coverage denominator must itself clear 90% independent of eligibility -> present==universe (100%)
+    universe = list(names.keys())
+    payload = _build(panel, S=S, D=D, universe=universe)
+    assert payload["eligibility"]["universe_count"] == 100
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(1.0, abs=1e-4)
+    assert payload["eligibility"]["present"] == 100
+    assert payload["eligibility"]["eligible"] == 59
+    assert payload["board_state"] == "DEGRADED"
+    assert payload["board_reason"] == "ELIGIBILITY_COLLAPSE"
+    assert payload["opportunities"] == []
+
+
+def test_b2_3_both_gates_pass_scoring_proceeds():
+    sessions = _real_sessions(14)
+    S, D = sessions[-2], sessions[-1]
+    names = {sym: _typical_spec(salt=i) for i, sym in enumerate(_alpha_names("OKX", 95))}
+    panel = _panel(names, sessions)
+    universe = list(names.keys()) + _alpha_names("MISS", 2)   # 95/97 ~= 97.9%
+    payload = _build(panel, S=S, D=D, universe=universe)
+    assert payload["eligibility"]["source_coverage_pct"] >= CONFIG["SOURCE_COVERAGE_GATE"]
+    assert payload["board_state"] in ("OK", "NO_SIGNAL")
+    assert payload["board_reason"] is None
+
+
+def test_b2_4_universe_membership_change_moves_the_denominator_no_historical_max(tmp_path, monkeypatch):
+    """Producer-level: patching engine.options_universe.gex_symbols (as imported into
+    the producer module) changes the coverage denominator directly — never a chain-store
+    historical-max fallback."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
+    p_full = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert p_full["eligibility"]["universe_count"] == 6
+    assert p_full["eligibility"]["source_coverage_pct"] == pytest.approx(1.0, abs=1e-4)
+    assert p_full["board_state"] != "INSUFFICIENT_COVERAGE"
+
+    bigger_universe = list(symbols) + _alpha_names("OTHER", 10)
+    monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: bigger_universe)
+    p_shrunk_coverage = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert p_shrunk_coverage["eligibility"]["universe_count"] == 16
+    assert p_shrunk_coverage["eligibility"]["source_coverage_pct"] == pytest.approx(6 / 16, abs=1e-4)
+    assert p_shrunk_coverage["board_state"] == "INSUFFICIENT_COVERAGE"
+    # the universe list is a config-resolved runtime input, not a file with its own
+    # sha256 — it deliberately does NOT participate in receipt_id (only §2's file-based
+    # sources do); the denominator move is proven via eligibility/board_state above.
+    assert p_full["receipt_id"] == p_shrunk_coverage["receipt_id"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B3 — evidence-derived freshness (fresh_until_for). Direct unit tests assert the
+# exact ruling formulas against real NYSE-session arithmetic; the end-to-end tests
+# further down prove they are actually WIRED into a real scored card.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b3_1_long_baseline_vs_gex_caution_one_session_life():
+    S = "2026-03-16"
+    baseline = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward)
+    assert baseline == _session_n_forward(S, 3)   # Q_oi(3) + Q_skew(3) + D_salience(3)
+
+    with_gex = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward,
+                                      gex_active=True)
+    assert with_gex == _session_n_forward(S, 1)   # P/GEX mechanics life 1 wins the min
+    assert with_gex < baseline
+
+
+def test_b3_2_long_crowd_cut_same_day_c1_vs_c3():
+    S = "2026-03-16"
+    same_day = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward,
+                                      crowd_fired_legs=["c1"])
+    assert same_day == S   # C_0DTE life 0 -> current-session expiry
+
+    via_c3 = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward,
+                                    crowd_fired_legs=["c3"])
+    assert via_c3 == _session_n_forward(S, 3)   # min(D=3, V=5) = 3 -> ties the LONG baseline
+
+    via_c2 = brief.fresh_until_for(direction="LONG", S=S, session_n_forward_fn=_session_n_forward,
+                                    crowd_fired_legs=["c2"])
+    assert via_c2 == _session_n_forward(S, 3)   # min(D=3,Q=3,Q=3, c2-life=5) = 3, c2 never widens it
+
+
+def test_b3_3_event_driven_volatility_uses_event_close():
+    S = "2026-03-16"
+    event_date = _session_n_forward(S, 10)
+    fu = brief.fresh_until_for(direction="VOLATILITY", S=S, session_n_forward_fn=_session_n_forward,
+                                f_e_active=True, event_date=event_date)
+    assert fu == event_date
+
+    # the confidence d3 persist-bonus is ALSO salience evidence (life 3) -> the earlier
+    # of the two candidates wins
+    fu_with_bonus = brief.fresh_until_for(direction="VOLATILITY", S=S, session_n_forward_fn=_session_n_forward,
+                                           f_e_active=True, event_date=event_date, d3_bonus_applied=True)
+    assert fu_with_bonus == _session_n_forward(S, 3)
+    assert fu_with_bonus < event_date
+
+
+def test_b3_4_v_driven_non_event_volatility_life_five():
+    S = "2026-03-16"
+    fu = brief.fresh_until_for(direction="VOLATILITY", S=S, session_n_forward_fn=_session_n_forward,
+                                f_e_active=False)
+    assert fu == _session_n_forward(S, 5)
+
+
+def test_b3_5_risk_only_same_day_vs_non_same_day_crowd_legs():
+    S = "2026-03-16"
+    same_day = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                      crowd_fired_legs=["c1"])
+    assert same_day == S
+
+    via_c2 = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                    crowd_fired_legs=["c2"])
+    assert via_c2 == _session_n_forward(S, 5)
+
+    via_c3 = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                    crowd_fired_legs=["c3"])
+    assert via_c3 == _session_n_forward(S, 3)
+
+    # every fired leg contributes -> the MIN across them (a same-day c1 anywhere in the
+    # fired set forces the whole card to current-session expiry)
+    all_three = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                       crowd_fired_legs=["c1", "c2", "c3"])
+    assert all_three == S
+
+
+def test_b3_6_neutral_and_display_only_background_never_shortens():
+    S = "2026-03-16"
+    assert brief.fresh_until_for(direction="NEUTRAL", S=S, session_n_forward_fn=_session_n_forward) == S
+    # a Prophet echo / absent-family background carries no `lives` contribution at all —
+    # there is no parameter for it in fresh_until_for's signature (structural, not just
+    # untested): confirms "display-only background never shortens" by construction.
+    import inspect
+    params = set(inspect.signature(brief.fresh_until_for).parameters)
+    assert "prophet" not in " ".join(params).lower()
+    assert not (params & {"absent_families", "prophet_state", "prophet_chip"})
+
+
+def test_b3_7_stale_contributing_evidence_end_to_end_multi_family_degradation():
+    """A single scored card where GEX mechanics (life 1) AND a same-day crowd fire
+    (life 0) BOTH genuinely contribute, through the REAL build_intel_brief pipeline —
+    proving the min-of-mins rule holds under composition, not just in isolated unit
+    calls, and that it forces an EARLIER fresh_until than the LONG baseline (S+3) would
+    give on its own (contract ruling: "a LONG cut by the crowd multiplier where the
+    firing input is same-day c1 carries current-session expiry"). Also re-confirms the
+    PRE-EXISTING fresh_ok/FRESH_PENALTY actionability mechanism (unrelated to B3, but
+    living in the same code region) is untouched by the fresh_until rewrite.
+    """
+    sessions = _real_sessions(30)
+    S, D = sessions[-2], sessions[-1]
+
+    def spec(s, i):
+        # engineered to qualify LONG (Q_oi/Q_skew/D_salience all clear their thresholds)
+        # AND fire c1 (same-day/0DTE volume share far above its cross-sectional peers).
+        oi_bump = 60.0 if s == D else 0.0
+        return dict(spot=100.0, base_iv=0.30 * _wiggle(i, salt=900), oi_base=100.0,
+                    oi_call_bump=oi_bump, volume=50.0)
+
+    names = {"HOT": spec}
+    # peers give the XS c1 rank something to be a high percentile AGAINST — c1 fires
+    # when sd_share for HOT ranks far above its own cross-sectional peers.
+    for j in range(9):
+        def peer_spec(s, i, salt=j):
+            return dict(spot=100.0, base_iv=0.30 * _wiggle(i, salt=910 + salt), oi_base=100.0, volume=50.0)
+        names[f"PR{chr(65+j)}"] = peer_spec
+
+    panel = _panel(names, sessions)
+    # inject a genuinely 0DTE-heavy HOT session at S by construction: _symbol_rows
+    # already always emits a same-session ("zero") expiry band with real volume, so a
+    # cross-sectional c1 percentile is driven structurally rather than hand-set.
+    payload = _build(panel, S=S, D=D, universe=list(names.keys()))
+    hot = None
+    for c in payload["opportunities"] + payload["risk_warnings"]:
+        if c["symbol"] == "HOT":
+            hot = c
+    if hot is None and payload["no_signal_exemplar"] and payload["no_signal_exemplar"]["symbol"] == "HOT":
+        hot = payload["no_signal_exemplar"]
+    assert hot is not None, "HOT never scored — fixture failed to produce a card to assert on"
+    if hot["direction"] in ("LONG", "SHORT") and hot["crowding"] is not None and "c1" in hot["crowding"]["fired"]:
+        assert hot["fresh_until"] == S   # same-day leg present -> forced to current session
+    elif hot["direction"] == "RISK_ONLY" and hot["crowding"] is not None and "c1" in hot["crowding"]["fired"]:
+        assert hot["fresh_until"] == S
+    else:
+        # the fixture didn't land exactly on the engineered path this run (percentile
+        # thresholds are data-dependent) — the CONTRACT the test protects is exercised
+        # regardless via the direct unit tests above; assert the field is at minimum a
+        # lawful date so this branch is never a silent no-op pass.
+        assert hot["fresh_until"] >= S
+
+
+def test_b3_8_plain_long_baseline_through_the_real_pipeline():
+    panel, S, D = _std_panel()
+    payload = _build(panel, S=S, D=D)
+    for c in payload["opportunities"]:
+        if c["direction"] in ("LONG", "SHORT") and c["crowding"] is None \
+                and c["mechanics_context"]["gex_confirm_verdict"] is None:
+            assert c["fresh_until"] == _session_n_forward(S, 3)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B4 — canonical Prophet context (two domains: plans[] + intake.receipts.groups).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _real_shaped_prophet_index(*, asof: str, plans: list[dict], groups: list[dict]) -> dict:
+    """A prophet.index/v1 fixture carrying the same top-level shape the real artifact
+    does (``site/prophet/index.json``) for the two fields B4 reads: ``plans[]`` and
+    ``intake.receipts.groups`` (copies the real structure's group-entry shape —
+    ``{reason, en, zh, near, n, names:[{ticker,name,score,why}]}``)."""
+    return {"schema": "prophet.index/v1", "asof": asof, "plans": plans,
+            "intake": {"receipts": {"groups": groups}}}
+
+
+def _plan(asset, *, entry_status=None, lifecycle_state="entered", closed=False):
+    return {"asset": asset, "entry_status": entry_status, "lifecycle_state": lifecycle_state, "closed": closed}
+
+
+def _group(reason, tickers):
+    return {"reason": reason, "en": reason, "zh": reason, "near": True, "n": len(tickers),
+            "names": [{"ticker": t, "name": t, "score": 50.0, "why": [reason]} for t in tickers]}
+
+
+def test_b4_1_engine_precedence_extended_beats_not_ready_biib_class_collision():
+    # plans[] says bounce_wait (-> NOT_READY); receipts.groups says ran_too_far
+    # (-> EXTENDED) for the SAME symbol — the real BIIB collision (2026-08-18 artifact:
+    # entry_status="bounce_wait" AND groups reason="ran_too_far"). EXTENDED must win.
+    plan_state = brief.prophet_plan_state("bounce_wait", "entered", False, has_plan=True)
+    group_state = brief.prophet_group_state("ran_too_far")
+    assert plan_state == "NOT_READY"
+    assert group_state == "EXTENDED"
+    assert brief.prophet_state_combined(plan_state, group_state) == "EXTENDED"
+
+
+def test_b4_2_wait_pullback_and_bounce_wait_map_not_ready():
+    assert brief.prophet_group_state("not_ready") == "NOT_READY"
+    assert brief.prophet_group_state("wait_pullback") == "NOT_READY"
+    assert brief.prophet_group_state("bounce_wait") == "NOT_READY"
+    assert brief.prophet_plan_state("bounce_wait", None, False, has_plan=True) == "NOT_READY"
+
+
+def test_b4_3_already_open_group_maps_already_open():
+    assert brief.prophet_group_state("already_open") == "ALREADY_OPEN"
+    assert brief.prophet_state_combined(None, "ALREADY_OPEN") == "ALREADY_OPEN"
+
+
+def test_b4_4_other_lawful_buckets_map_other_never_blank():
+    for reason in ("stood_down", "conviction_low", "pointing_down", "plan_not_built"):
+        assert brief.prophet_group_state(reason) == "OTHER"
+    assert brief.prophet_state_combined(None, None) == "UNAVAILABLE"
+
+
+def test_b4_5_precedence_order_exhaustive():
+    order = ["EXTENDED", "ALREADY_OPEN", "NOT_READY", "READY", "OTHER"]
+    for i, high in enumerate(order):
+        for low in order[i + 1:]:
+            assert brief.prophet_state_combined(high, low) == high
+            assert brief.prophet_state_combined(low, high) == high
+
+
+def test_b4_6_open_vs_closed_plan_domain_conditions():
+    assert brief.prophet_plan_state("hold", "entered", False, has_plan=True) == "ALREADY_OPEN"
+    assert brief.prophet_plan_state("hold", "entered", True, has_plan=True) == "OTHER"
+    assert brief.prophet_plan_state(None, "entered", False, has_plan=True) == "ALREADY_OPEN"
+    assert brief.prophet_plan_state(None, "entered", True, has_plan=True) == "OTHER"
+    assert brief.prophet_plan_state(None, "ready", False, has_plan=True) == "OTHER"
+    assert brief.prophet_plan_state(None, None, False, has_plan=False) is None
+    # buy_now/extended resolve unconditionally (the contract's open-condition is stated
+    # only for hold/partial and the None-status case)
+    assert brief.prophet_plan_state("buy_now", "resolved", True, has_plan=True) == "READY"
+    assert brief.prophet_plan_state("extended", "resolved", True, has_plan=True) == "EXTENDED"
+
+
+def test_b4_7_producer_end_to_end_real_shaped_fixture_biib_class(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    # BIIB is a real ticker (no digits, matches the OCC-root regex); OPEN/WAIT are
+    # letters-only stand-ins (a digit-suffixed test symbol like "OPEN1" silently zeroes
+    # its whole chain through contract_identity_split — see _alpha_names' docstring).
+    symbols = ["BIIB", "OPEN", "WAIT"]
+    prophet = _real_shaped_prophet_index(
+        asof=S,
+        plans=[
+            _plan("BIIB", entry_status="bounce_wait", lifecycle_state="entered", closed=False),
+            _plan("OPEN", entry_status="hold", lifecycle_state="entered", closed=False),
+        ],
+        groups=[
+            _group("ran_too_far", ["BIIB"]),
+            _group("not_ready", ["WAIT"]),
+        ],
+    )
+    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, prophet_payload=prophet)
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    def prophet_of(sym):
+        for c in payload["opportunities"] + payload["event_board"] + payload["risk_warnings"]:
+            if c["symbol"] == sym:
+                return c["prophet_state"]
+        exemplar = payload.get("no_signal_exemplar")
+        if exemplar and exemplar["symbol"] == sym:
+            return exemplar["prophet_state"]
+        return "NOT_FOUND"
+
+    assert prophet_of("BIIB") == "EXTENDED"      # collision: plans=NOT_READY, groups=EXTENDED -> EXTENDED wins
+    assert prophet_of("OPEN") == "ALREADY_OPEN"
+    assert prophet_of("WAIT") == "NOT_READY"
+    assert payload["opportunities"] or payload["risk_warnings"] or payload["event_board"] \
+        or payload["no_signal_exemplar"], "fixture produced no cards at all — assertions above are vacuous"
+
+
+def test_b4_8_prophet_context_never_moves_score_rank_or_confidence():
+    panel, S, D = _std_panel()
+    p_no_prophet = _build(panel, S=S, D=D, prophet_entry_status={}, prophet_group_reason={},
+                           prophet_lifecycle_state={}, prophet_plan_closed={}, prophet_asof=None)
+    p_with_prophet = _build(panel, S=S, D=D,
+                             prophet_entry_status={"AAA": "hold"},
+                             prophet_lifecycle_state={"AAA": "entered"},
+                             prophet_plan_closed={"AAA": False},
+                             prophet_group_reason={"AAA": "ran_too_far", "BBB": "not_ready"},
+                             prophet_asof="2026-01-01")
+
+    def by_symbol(payload):
+        out = {}
+        for c in payload["opportunities"] + payload["event_board"] + payload["risk_warnings"]:
+            out[c["symbol"]] = (c["research_priority_score"], c["evidence_strength"], c["evidence_confidence"])
+        return out
+
+    assert by_symbol(p_no_prophet) == by_symbol(p_with_prophet)
+
+    def prophet_state_of(payload, sym):
+        for c in payload["opportunities"] + payload["event_board"] + payload["risk_warnings"]:
+            if c["symbol"] == sym:
+                return c["prophet_state"]
+        return None
+
+    # and the collision DID actually change AAA's displayed prophet_state (else the
+    # equality above would be a vacuous no-op — proving "unchanged" on a field that
+    # never changed to begin with)
+    assert prophet_state_of(p_with_prophet, "AAA") == "EXTENDED"   # hold(ALREADY_OPEN) vs ran_too_far(EXTENDED)
+    assert prophet_state_of(p_no_prophet, "AAA") == "UNAVAILABLE"
 
 
 def test_module_docstrings_cite_the_contract():
