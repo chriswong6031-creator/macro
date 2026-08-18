@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T08:21:28.214643+00:00",
-  "count": 1324,
+  "generated_at": "2026-08-18T10:06:55.741745+00:00",
+  "count": 1329,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -78,13 +78,101 @@
   ],
   "items": [
     {
+      "id": "marketdesk-fojdhr4a8ms-cbb065",
+      "title": "Duttenhoefer´s Daily (18.08.2026)",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:17:45Z",
+      "summary_points": [
+        "**Geopolitical & Tech Policy Shifts**: US-Iran 60-day deadline expired; Trump warns of Strait of Hormuz attack; chip restrictions on Apple from China's CXMT.",
+        "Directly impacts semiconductor stocks and global trade flows.",
+        "**Central Bank Gold Demand Surge**: GS estimates 57 tonnes June demand (vs 17 pre-2022), China-driven; BoE as preferred custodian.",
+        "Critical for gold price trajectory and reserve allocation strategies.",
+        "**Global Investor Flows**: Passive funds show steep inflows (blue line rising), active funds exhibit net outflows (gray line negative)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x8jam6uevs0-5092ba",
+      "title": "GS Basics Competing for Capital. Global Rates. PE Loans",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:15:51Z",
+      "summary_points": [
+        "**Sovereign AI Capex**: Massive sovereign deficits + debt-funded >$1tn AI capex creating supply-driven rate pressures; Fed may hike to flatten curve.",
+        "**JGB 10s/K-Shape**: JGB 10s at 2.94% (30-yr high) pricing BOJ tightening; K-shaped consumer recovery (high-end strong, low-end weak) amid AI capital shift to data centers.",
+        "**Oil/Fed Clarity**: Oil >$100 challenges risk backdrop; medium-term rates risk outweighs short-term technicals, requiring Fed clarity.",
+        "**Political Fiscal Risk**: Trump approval at 33% (term low) + Democratic control uncertainty driving reflexive policy responses and healthcare/social spending pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-12zqsaqdrmb-a446ff",
+      "title": "GS TMT SPEC SALES",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:13:14Z",
+      "summary_points": [
+        "**AI Infrastructure Capital Allocation**: Anthropic’s $65bn annual revenue run rate (18% MoM growth) and Nvidia’s $100bn+ OpenAI Ohio data center backstop signal unprecedented capital deployment in AI infrastructure, driving supply chain dynamics with TSMC/ASE/Hon Hai partners.",
+        "**French Telecom Consolidation Geopolitical Risk**: SFR acquisition by Bouygues/Orange/Free risks 5,000+ job losses (post-2029) with French government declining social intervention, creating regulatory tension between competition scrutiny and employment impacts.",
+        "**META Litigation Monetization Threat**: Multi-state US \"addiction by design\" trial threatens ad monetization model precedent, creating structural tension vs.",
+        "EU/UK proactive regulation and exposing social media revenue vulnerability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cqin0tofttl-b2c34d",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:09:51Z",
+      "summary_points": [
+        "**Hemnet: Valuation re-rating catalyst** Cheapest peer on EBITDA (11.2x 27E EV/EBITDA), upgraded target to 14x EV/EBITDA (23% upside), driven by ARPL growth (+12.4% Q2) and \"Sell first/pay later\" model resilience.",
+        "**Adyen: Fundamental earnings momentum** 3-yr/5-yr CAGR earnings growth of 19.3%/25.4% (top European company), tech stack enabling share gains from legacy PSPs (OpenAI/Toast), regaining credibility post-results.",
+        "**AFL: Critical regulatory risk** Worst-case $8bn CET1 build and trapped capital concerns elevate regulatory risk (Pillar 3 Risk), requiring immediate portfolio risk assessment.",
+        "**HelloFresh: Data anomaly alert** +1355.1% current EPS change (vs.",
+        "10.5% next) signals potential one-time event/data anomaly; demands urgent verification for sustainability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-wf3rhq8qmja-7d76c4",
       "title": "JPM International Market Intelligence | Morning Briefing",
       "institution": "J.P. Morgan",
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-18T08:07:11Z",
-      "summary_points": [],
+      "summary_points": [
+        "**China Macro Disappointment**: 3Q GDP forecast downgraded to 3.6%q/q; July data shows retail sales (-0.3%/m), FAI contraction; tech earnings (BABA) show net selling, HSTECH near historical bottom.",
+        "**US GDP Divergence**: US real GDP remains above pre-pandemic potential (positive deviation through 2Q26), while China and EM ex-China lag (negative deviations).",
+        "**30-yr Yields Multi-Decade Highs**: Global 30-year yields (US, UK, Germany, Japan) at highest levels in decades, reflecting elevated inflation and tightening policy.",
+        "**Japan Treasury Unwinding**: Japanese holdings of US securities declining, especially bills (steepest drop); foreign investors net $6.8bn long-term USTs (June), China largest net seller (-$15.8bn).",
+        "**Europe Policy-Driven Growth**: EU capital goods underinvestment vs US creates catch-up potential; 46% electrification target by 2040 requires policy support; Spain battery storage capacity to triple by 2026."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -1179,6 +1267,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4o2lbahwrvj-1f4f9a",
+      "title": "JPM China Thematic",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:39:34Z",
+      "summary_points": [
+        "**China's Humanoid Robot Growth & Localization Upside**: 150% CAGR global shipments (18,000→1.75M by 2030), China holds 50%+ market share; high-entry-barrier components (planetary roller screws: 40-50% localized; sensors: <30% localized) offer supplier upside.",
+        "**Policy-Driven Commercialization Catalysts**: 15th FYP \"Six Networks\" (Rmb7tn), MIT 80% localization checkpoint (Dec 2026), and 2026 Special Action accelerate industrial deployment into manufacturing/healthcare by 2026.",
+        "**Valuation Disparity in Supply Chain**: FTM P/S ratios (e.g., Visual: FTM ~8 vs China ~2) exceed China counterparts, signaling potential undervaluation in Chinese robotics suppliers vs global peers.",
+        "**2026 Commercialization Timeline**: Key events (EAI SHOW, World Robot Conference) and MIT localization target (Dec 2026) signal near-term investment catalysts for robotics.",
+        "**Supply Chain Concentration Risk**: Chip segment dominates profitability (highest net margin, 2027E), while bearings/materials show lower margins—exposing portfolios to segment-specific volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },
