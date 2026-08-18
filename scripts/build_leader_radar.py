@@ -2060,10 +2060,19 @@ def _build_fire_history(
 
     # Load grades.jsonl via the ledger consumer (key: engine_id, ticker, fire_date, horizon)
     # grade_lookup: (engine_id, ticker, fire_date_iso) -> best 21d grade row
+    #
+    # Resolved under the CALLER's data_root, not the ledger's module-level GRADES_PATH.
+    # `load_grades()` binds the ambient store, which made this function ignore its own
+    # data_root argument: the "grades absent" branch could never be reached while the
+    # real store held a matching row, so the branch was governed by whatever the nightly
+    # had most recently graded rather than by the caller. Production is unchanged —
+    # build() passes config.data_dir(), the same directory GRADES_PATH is derived from.
     grade_lookup: dict[tuple[str, str, str], dict] = {}
     try:
-        from engine.pick_lab.ledger import load_grades
-        grades = load_grades()
+        from engine.pick_lab.ledger import GRADE_KEY, keep_first, load_jsonl
+        grades = keep_first(
+            load_jsonl(Path(data_root) / "pick_lab" / "grades.jsonl"), GRADE_KEY
+        )
         for gr in grades:
             eid = str(gr.get("engine_id", ""))
             if eid not in ("plab_leader_precipice", "plab_leader_onset"):
