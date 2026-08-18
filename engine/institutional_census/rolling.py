@@ -1395,9 +1395,15 @@ def run_rolling_ingestion(
             failures.append(_error_detail(exc, stage="checkpoint_publication"))
 
     atom_complete = bool(atom_result and atom_result.complete)
-    has_coverage_gap = not atom_complete or bool(backlog) or bool(failures)
+    # A non-empty backlog means unknown_discoveries saturated the operator
+    # bound (--max-accessions): deliberate throughput control, not a coverage
+    # loss. The remainder is retried by the next scheduled run, so it must
+    # not be conflated with a real coverage gap (atom incomplete / failures).
+    has_coverage_gap = not atom_complete or bool(failures)
     if has_coverage_gap:
         status = "partial_failure" if published_new or existing_skipped else "failed"
+    elif backlog:
+        status = "bounded_backlog"
     elif published_new:
         status = "ok"
     else:
