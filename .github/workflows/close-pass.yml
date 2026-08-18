@@ -88,20 +88,34 @@ name: close-pass
 # 22:10 UTC — 20 minutes clear — and daily.yml's own comment plans to move to
 # 23:30 UTC at the November flip, which widens the gap rather than closing it.
 #
-# MEASURED POOL CAPACITY (2026-08-09), because the masterplan's "five hosts idle
-# through the session" is false and the minute matters:
-#   * plain `macstudio` is TWO live physical hosts (mac-builder-1/2), which also
-#     serve the `codex` and `theta-m1` labels; mac-builder-5 carries the label but
-#     is PARKED, and mac-builder-3 is the separate single-host `macstudio-light`.
-#     render.yml:225 says the same thing in its own words.
+# MEASURED POOL CAPACITY (2026-08-09, pool re-measured 2026-08-17), because the
+# masterplan's "five hosts idle through the session" is false and the minute
+# matters:
+#   * plain `macstudio` is TWO live hosts. RE-MEASURED 2026-08-17 against
+#     `gh api repos/{owner}/{repo}/actions/runners`: mac-builder-5
+#     (`macstudio,parked` — `parked` never prevented routing) and
+#     mac-builder-light (`macstudio,render-heavy`). mac-builder-3 is still the
+#     separate single-host `macstudio-light`. render.yml says the same thing in
+#     its own words above its `render` job.
+#     SUPERSEDED: this bullet used to name mac-builder-1/2 "which also serve the
+#     `codex` and `theta-m1` labels". That is the retired M1 host, deregistered
+#     ~2026-08-15. `codex` now has no live runner, and `theta-m1` was restored
+#     onto mac-builder-3 (`macstudio-light`), so neither shares capacity with
+#     this lane any more. The checked-in model is `.github/runner-policy.yml`
+#     `label_registry`; the cost of letting it rot is
+#     research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md.
 #   * closing-bell.yml holds ONE of those two slots for the WHOLE window, every
 #     weekday (64-86 min observed across three sampled runs; ~109 min per its own
 #     header). So this lane is one slot deep, not idle.
-#   * the minute was chosen against the other macstudio/codex crons in the window:
-#     codex-research fires at :20 (same two hosts), smart-money-13f-census at :10
-#     (was :07 and :37 — see below), smart-money-filings at :17,
-#     metabolism-cycle at :35 and metabolism-heartbeat at :45. :25 is the widest
-#     gap between them.
+#   * the minute was chosen against the other macstudio crons in the window:
+#     smart-money-13f-census at :10 (was :07 and :37 — see below),
+#     smart-money-filings at :17, metabolism-cycle at :35 and
+#     metabolism-heartbeat at :45. :25 is the widest gap between them.
+#     codex-research still fires at :20 but no longer contends for this pool:
+#     its `codex` label has had NO live runner since mac-builder-1/2 were
+#     deregistered, so that lane has been dark since 2026-08-13. Recorded as
+#     orphaned-with-waiver in `.github/runner-policy.yml` `label_registry`
+#     rather than left as a silent gap in this map.
 #   * observed queue waits on this pool range 2s to 71 min. Even the worst case
 #     lands 16:25 + 71 + 20 = ~17:56 ET, still inside the 18:30 SLA — which is
 #     the whole reason this fires at the window's start rather than its end.
@@ -156,7 +170,23 @@ concurrency:
   # Own group: never shares with pipeline-daily, pipeline-closingbell or
   # pipeline-render. cancel-in-progress false so a running pass always finishes —
   # a cancelled pass is a missed SLA session in the sentinel's record.
-  group: pipeline-closepass-${{ github.event_name }}
+  #
+  # PER-CRON, not per-event (2026-08-17 — the #5723 daily.yml fix applied here).
+  # Both DST lines used to share one `pipeline-closepass-schedule` group, and
+  # GitHub cancels a PENDING run in a group even when cancel-in-progress is
+  # false. Observed queue waits on this pool run 2s to 71 min, so a 20:25 run
+  # still queued at 21:25 is superseded by its own DST sibling. Under EDT that
+  # is survivable — the 21:25 survivor finds no published board and publishes at
+  # 17:25 ET. Under EST the superseding firing is the NEXT DAY's 20:25 line,
+  # which is pre-close and SKIPS: a silently lost backstop session. Only
+  # distinct groups save a queued slot; event-conditional cancel-in-progress
+  # cannot.
+  # ACCEPTED TRADE: the split allows a rare concurrent double-publish (a
+  # long-queued 20:25 still running when 21:25 starts). Benign by construction —
+  # the pass dedups on `already_published`, and two passes over the same
+  # session's closes compute the same board — whereas the lost EST session it
+  # replaces is not.
+  group: ${{ github.event_name == 'schedule' && format('pipeline-closepass-cron-{0}', github.event.schedule) || format('pipeline-closepass-{0}', github.event_name) }}
   cancel-in-progress: false
 
 jobs:
