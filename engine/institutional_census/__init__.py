@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from .sec_sources import (
         ATOM_EPHEMERAL_ENTRY_LIMIT,
+        ATOM_HONORED_PAGE_SIZES,
         ATOM_PAGE_SIZE,
         AtomScanResult,
         BulkInvariantFinding,
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ATOM_EPHEMERAL_ENTRY_LIMIT",
+    "ATOM_HONORED_PAGE_SIZES",
     "ATOM_PAGE_SIZE",
     "AtomScanResult",
     "BulkInvariantFinding",

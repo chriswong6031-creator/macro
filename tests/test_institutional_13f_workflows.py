@@ -223,3 +223,24 @@ def test_bulk_workflow_publishes_only_the_bounded_projection() -> None:
     assert "data/institutional_13f/bulk_cache" not in command
     assert "data/institutional_13f/research_bench" not in command
     assert "git add -A" not in command
+
+
+def test_assert_step_accepts_bounded_backlog_only_on_master_index_lanes() -> None:
+    """The daily/full master-index backstops legitimately saturate
+    --max-accessions and must accept a bounded_backlog receipt; the atom lane
+    must never fall behind, so it stays pinned to ok/no_changes with a
+    zero backlog."""
+    job = _load(ROLLING)["jobs"]["discover_retain_publish"]
+    assert_step_run = _step(job, "Assert complete, bounded run receipt")["run"]
+
+    assert 'expected_lane = os.environ["EXPECTED_LANE"]' in assert_step_run
+    assert 'if expected_lane == "atom":' in assert_step_run
+    atom_branch, _, backstop_branch = assert_step_run.partition('else:')
+    assert 'assert receipt["status"] in {"ok", "no_changes"}' in atom_branch
+    assert 'assert receipt["discovery"]["backlog_accessions"] == 0' in atom_branch
+    assert (
+        'assert receipt["status"] in {"ok", "no_changes", "bounded_backlog"}'
+        in backstop_branch
+    )
+    assert 'assert receipt["counts"]["failures"] == 0' in assert_step_run
+    assert 'assert receipt["discovery"]["atom"]["complete"] is True' in assert_step_run
