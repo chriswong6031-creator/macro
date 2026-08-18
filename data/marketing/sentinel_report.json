@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-18T10:51:46Z",
+  "produced_at": "2026-08-18T14:49:17Z",
   "as_of": "2026-08-18",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 12,
-    "passed": 12,
+    "items": 15,
+    "passed": 15,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -18,6 +18,14 @@
   "reasons_histogram": {},
   "quarantined": [],
   "passed": [
+    {
+      "id": "post-flagship-020",
+      "account": "flagship",
+      "slot": "D1-S20",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
     {
       "id": "post-flagship-034",
       "account": "flagship",
@@ -35,12 +43,28 @@
       "headline": "Agriculture & FoodTech selling off, -1.1% avg on Monday"
     },
     {
+      "id": "post-housepick-004",
+      "account": "flagship",
+      "slot": "D1-S23",
+      "type": "watchlist",
+      "cashtag": "$BGC",
+      "headline": ""
+    },
+    {
       "id": "post-insider-002",
       "account": "founder",
       "slot": "D1-S19",
       "type": "insider",
       "cashtag": "$CDNL",
       "headline": ""
+    },
+    {
+      "id": "post-meagan-013",
+      "account": "meagan",
+      "slot": "D1-S13",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Jobless claims are averaging 199k a week this month, 12.7% below a year ago."
     },
     {
       "id": "post-theme-004",
@@ -51,20 +75,28 @@
       "headline": "Digital Entertainment selling off, -2.2% avg on Monday"
     },
     {
+      "id": "post-insider-003",
+      "account": "meagan",
+      "slot": "D1-S6",
+      "type": "insider",
+      "cashtag": "$MLAB",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-012",
+      "account": "sophia",
+      "slot": "D1-S12",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
       "id": "post-sophia-023",
       "account": "sophia",
       "slot": "D1-S23",
       "type": "chart",
       "cashtag": "$TMUS",
       "headline": ""
-    },
-    {
-      "id": "post-sophia-042",
-      "account": "sophia",
-      "slot": "D1-S42",
-      "type": "chart",
-      "cashtag": "$WBD",
-      "headline": "$WBD third green week, and today is the tightest range of the last seven sessions."
     },
     {
       "id": "post-kelly-012",
@@ -91,33 +123,25 @@
       "headline": ""
     },
     {
-      "id": "post-cici-007",
-      "account": "cici",
-      "slot": "D1-S7",
-      "type": "chart",
-      "cashtag": "$HEI",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-055",
-      "account": "cici",
-      "slot": "D1-S55",
-      "type": "chart",
-      "cashtag": "$HLI",
-      "headline": ""
-    },
-    {
       "id": "post-theme-006",
       "account": "cici",
       "slot": "D1-S2",
       "type": "theme_list",
       "cashtag": "$AUID",
       "headline": "Biometrics selling off, -2.5% avg on Monday"
+    },
+    {
+      "id": "post-housepick-003",
+      "account": "mastermind_news",
+      "slot": "D1-S1",
+      "type": "watchlist",
+      "cashtag": "$CVX",
+      "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 57,
+      "pairs_checked": 93,
       "hits": 0,
       "shared_media_hits": 0
     },

@@ -200,20 +200,30 @@ waves:
   - id: d2
     depends_on: [d1]
     title: "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the
-      GMI lane. Spawn handoff ready:
-      research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md (identity-grain
-      repair via stock_identity, probation-only mapping breadth for 312 THS + 268
-      finviz + 20 proxy baskets, forward-only PIT vintages, defect corrections
-      through graph lineage). Commissioning = Sol adjudication with GMI."
-    status: todo
+      GMI lane. RECUT by Sol 2026-08-18 into bounded child PRs D2A-D2E (one giant PR
+      rejected); Sol AMENDED the D1-generated handoff's Gate 1: exact
+      issuer/security/listing identity = the Mastermind Data OS identity spine
+      (lib/dataos/identity.py + data/reference master/aliases), NOT stock_identity;
+      GMI keeps its co:market:symbol#epoch topology ids (KNOWINGLY-DIFFERENT per
+      config/identity_seams.yml); the bridge projection is the seam. Child D2A
+      (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader +
+      guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md)
+      is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C
+      (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
+      authorized yet — Sol reviews after each child returns."
+    status: in_progress
   - id: d3
     depends_on: [d2]
-    title: "V4-D3 — ThemeState consumption contract. D1's merge-order RECOMMENDATION
-      (research/prophet_v4/D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md, pending Sol+GMI
-      adjudication): GMI W3B builds theme_state/v1 AFTER d2; d3 becomes the
-      Prophet-side consumption/join wave; W3B's charter must reconcile the
-      pre-existing neuralweb thematic_state lineage; Finviz/THS-derived state stays
-      internal-only pending the routed rights decision."
+    title: "V4-D3 — ThemeState consumption contract. Sol ADJUDICATED 2026-08-18
+      (D2A commission §19): D1's merge-order recommendation ACCEPTED — GMI is the
+      sole ThemeState owner and builds theme_state/v1 as W3B after d2 completes; d3
+      is the Prophet-side consumption/join wave and V4 never builds a second state
+      engine; engine/neuralweb/thematic_state.py is predecessor lineage W3B must
+      explicitly reconcile/consume/supersede; Finviz/THS-derived state stays
+      internal-only pending the routed rights decision. Future hard gate from D2A:
+      a membership may contribute to security/issuer ThemeState only when its GMI
+      node resolves through the exact identity bridge, or the feature explicitly
+      operates at local-theme/node grain."
     status: todo
   - id: d4
     depends_on: [d3]
@@ -222,11 +232,13 @@ waves:
   - id: d5
     depends_on: [d1]
     title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
-      D1 ruling (research/prophet_v4/D1_D5_READINESS_RULING.md):
-      D5_CONTRACT_READY_AFTER_D1 — may run in parallel with d2/W3B on disjoint
-      paths; theme family stays ACCRUING (null_reason theme_state_not_built) until
-      d3; no ticker-string joins in the contract; SPARSE coverage band is the honest
-      scan-tier default."
+      Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling
+      ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol
+      authorizes execution, but until d3 the theme_graph family status = ACCRUING,
+      measured fields = null, contribution = none; no provisional theme score, no
+      fake zero, no rank authority. Execution NOT authorized during D2A. Original
+      ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins;
+      SPARSE coverage band is the honest scan-tier default)."
     status: todo
   - id: d6
     depends_on: [d5]

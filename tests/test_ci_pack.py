@@ -2358,6 +2358,75 @@ def test_every_workflow_test_path_exists() -> None:
     )
 
 
+# ── a MIRROR that drifts measures its own venv, not the boundary ─────────────
+#
+# ci-main-heartbeat.yml claims, in its own header, that "Job names + steps mirror
+# ci.yml exactly, so 'green here' means the same thing as 'green on the PR gate'".
+# On 2026-08-18 that claim was false for `tier-gate`. The PR lane had grown
+# `requests numpy pandas` — with a comment saying to keep the environment "closed
+# over the real production import graph", because engine/etf_pulse.py imports numpy
+# at module scope — and the heartbeat copy had not. So tests/test_etfs_gate.py
+# stopped SKIPPING there and started ERRORING with ModuleNotFoundError, and the
+# heartbeat went red about its own pip line while reporting a failure named
+# "tier-preview split contract (no paid row in the free shell)" — i.e. it read as a
+# PAYWALL LEAK. It stayed that way ~30h because the sentinel that watches this lane
+# was itself blind (see DSC:BLIND-SENTINEL-REPORTS-CLEAN).
+#
+# SCOPE — deliberately `tier-gate` only, and deliberately NOT a general
+# "heartbeat venv >= manifest venv" rule, which is FALSE BY DESIGN elsewhere:
+# heartbeat's template-site-sync omits jinja2 on purpose (its own comment routes
+# the jinja2-gated cross-module test to free-content-estate instead), and
+# engine-render-guards omits fastapi/httpx/jsonschema while its suites skip
+# cleanly. A thin venv is legitimate when the tests SKIP and illegitimate when they
+# ERROR, and only tier-gate has been shown to error. Widen this per-job, behind a
+# job that has actually demonstrated the failure — never speculatively.
+_HEARTBEAT_WORKFLOW = ROOT / ".github" / "workflows" / "ci-main-heartbeat.yml"
+_PIP_INSTALL_RE = re.compile(r"pip install\s+(.+)")
+
+
+def _job_pip_packages(job: dict) -> set[str]:
+    """Every package name any `pip install` line in this job installs."""
+    packages: set[str] = set()
+    for step in job.get("steps") or []:
+        for line in (step.get("run") or "").splitlines():
+            found = _PIP_INSTALL_RE.search(line)
+            if found:
+                packages |= {tok for tok in found.group(1).split()
+                             if not tok.startswith("-")}
+    return packages
+
+
+def _job_test_paths(job: dict) -> set[str]:
+    joined = "\n".join((step.get("run") or "") for step in job.get("steps") or [])
+    return set(_TEST_PATH_RE.findall(joined))
+
+
+def test_heartbeat_tier_gate_venv_matches_the_pr_lane() -> None:
+    """The heartbeat's tier-gate must not run a shared suite on a thinner venv."""
+    heartbeat = yaml.safe_load(_HEARTBEAT_WORKFLOW.read_text(encoding="utf-8"))
+    manifest = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
+    hb_job = heartbeat["jobs"]["tier-gate"]
+    pr_job = manifest["jobs"]["tier-gate"]
+
+    shared_suites = _job_test_paths(hb_job) & _job_test_paths(pr_job)
+    assert shared_suites, (
+        "heartbeat tier-gate and the manifest's tier-gate now share NO test file — "
+        "either the mirror was renamed or one side stopped running the boundary "
+        "suites. Re-point this guard rather than deleting it."
+    )
+
+    missing = sorted(_job_pip_packages(pr_job) - _job_pip_packages(hb_job))
+    assert not missing, (
+        f"ci-main-heartbeat.yml's tier-gate job runs {len(shared_suites)} of the PR "
+        f"lane's own boundary suites but installs neither {missing}.\n\n"
+        "The PR lane added those because the production import graph needs them at "
+        "module scope. A suite that imports one of them does not skip here — it "
+        "ERRORS, and the heartbeat then reports a red named for the serving "
+        "boundary while actually failing on its own pip line. Add the packages to "
+        "the heartbeat job; do not narrow the step to dodge them."
+    )
+
+
 # ── the converse: a suite NAMED BY NOTHING never runs ────────────────────────
 #
 # READ THIS BEFORE "FIXING" AN `if: ${{ false }}` LINE. `.github/ci/legacy-jobs.yml`
