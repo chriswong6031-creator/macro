@@ -64,3 +64,151 @@ pool_topology:
     slots: 1
     labels: [self-hosted, m1-theta]
     forbidden_labels: [macstudio, macstudio-light, theta-m1, codex, render-heavy]
+
+# ── LABEL REGISTRY (rules R11/R12, added 2026-08-17) ─────────────────────────
+# WHY THIS EXISTS. Runner labels are assigned through the runners API and live
+# ONLY in API state — nothing in the repo pinned them, so deregistering a host
+# silently orphaned every label it carried. `theta-m1` died with mac-builder-1/2
+# and daily.yml's collect_tail became unschedulable from ~2026-08-15. A job
+# queued on a label with no live runner holds its run open until GitHub's 24h
+# queued-job kill; that run holds its per-cron concurrency group; the next
+# night's real slot then pends with ZERO jobs created. That cascade froze every
+# Prophet board 2026-08-14→17 with no red anywhere
+# (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md,
+# DSC:QUEUED-JOB-HOSTAGE-HOLDS-THE-NIGHTLY-CRON-GROUP). That discovery's own
+# falsifier names this section: "a checked-in registry that fails CI when a
+# workflow references a label absent from the live pool would close the
+# orphaned-label class at PR time."
+#
+# WHAT IT IS AND IS NOT. This is the STATIC, checked-in model of the pool, not a
+# liveness probe: listing runners needs an admin-scoped token CI does not carry,
+# so `status` is operator-maintained documentation, refreshed by hand from
+# `gh api repos/{owner}/{repo}/actions/runners`. The rules are therefore about
+# DECLARATION, not observation:
+#   R11  every literal runs-on label in every workflow appears below — so an
+#        invented or renamed label is a PR-time red, not a silent queue-forever.
+#   R12  a label marked `orphaned` may not be used by a workflow carrying a
+#        `schedule:` trigger unless its entry declares a dated
+#        `scheduled_use_waiver` — so the next host deregistration reds a PR
+#        instead of freezing a nightly.
+# `offline` is deliberately NOT blocked by R12: those hosts are registered and
+# return (the PC pool is powered down between canary waves). An `offline` label
+# on a cron lane is still a queue risk worth watching, just not a merge stop.
+#
+# Verified against the live pool 2026-08-17.
+label_registry:
+  ubuntu-latest:
+    status: github-hosted
+    carried_by: []
+    note: GitHub-hosted; the Wave B/C default for every ordinary PR job.
+  self-hosted:
+    status: live
+    carried_by: [mac-builder-3, mac-builder-4, mac-builder-5, mac-builder-light]
+    note: >
+      Also carried by the offline pc-render-2/3/4. Never sufficient on its own —
+      every self-hosted job pairs it with a capability label below.
+  macOS:
+    status: live
+    carried_by: [mac-builder-3, mac-builder-4, mac-builder-5, mac-builder-light]
+    note: Implicit OS label on every Mac Studio runner.
+  ARM64:
+    status: live
+    carried_by: [mac-builder-3, mac-builder-4, mac-builder-5, mac-builder-light]
+    note: Implicit architecture label on every Mac Studio runner.
+  macstudio:
+    status: live
+    carried_by: [mac-builder-5, mac-builder-light]
+    note: >
+      The general production pool — TWO hosts, not five. This is the label the
+      nightly, closing-bell, asia-close and the close-pass backstop all share,
+      so it is one slot deep whenever closing-bell is holding the window.
+  macstudio-light:
+    status: live
+    carried_by: [mac-builder-3]
+    note: >
+      Single host, disjoint from `macstudio`: live/light lanes that must not
+      queue behind a multi-hour bake.
+  parked:
+    status: live
+    carried_by: [mac-builder-4, mac-builder-5]
+    note: >
+      Referenced by no workflow today. Registered because it is NOT an exclusion
+      — `parked` never prevented routing, and mac-builder-5 carries it alongside
+      `macstudio`, so a `parked` job would consume a production slot.
+  merge-control:
+    status: live
+    carried_by: [mac-builder-4]
+    note: The merge-on-green sweeper's own host, off the render pools.
+  render-heavy:
+    status: live
+    carried_by: [mac-builder-light]
+    note: >
+      Reserves one host for the serial renderer. Shares that host with
+      `macstudio`, so a heavy render and a production bake do contend.
+  theta-m1:
+    status: live
+    carried_by: [mac-builder-3]
+    note: >
+      INTERIM RESTORE 2026-08-17. Originally the store-bearing M1 (mac-builder-1/2)
+      that held the ThetaData Terminal and the 60GB thetadata_eod store; that host
+      was deregistered and the label went with it, which is what made daily.yml's
+      collect_tail unschedulable and froze the nightly. Restored onto
+      mac-builder-3 so the label resolves, but mac-builder-3 is NOT the
+      store-bearing host — tape lanes self-skip there by design (#3644,
+      probe-only Terminal law). Re-point at the real store host when it returns.
+  Linux:
+    status: offline
+    carried_by: [pc-render-2, pc-render-3, pc-render-4]
+    note: Implicit OS label on the PC render pool; all three hosts offline 2026-08-17.
+  X64:
+    status: offline
+    carried_by: [pc-render-2, pc-render-3, pc-render-4]
+    note: Implicit architecture label on the PC render pool.
+  render-linux:
+    status: offline
+    carried_by: [pc-render-2, pc-render-3, pc-render-4]
+    note: >
+      Operator fallback for render.yml/engine-render.yml, reachable only through
+      the dispatch `runner` input or a push default. Registered-but-offline, so a
+      job routed here queues until a host returns. Neither consumer carries a
+      `schedule:` trigger, which is what keeps this out of R12.
+  ci-linux:
+    status: orphaned
+    carried_by: []
+    note: >
+      Wave B/C PC CI pool, not yet stood up. Dispatch-only consumer
+      (selfhosted-ci-canary.yml), so a queued job cannot take a cron hostage.
+  ci-linux-canary:
+    status: orphaned
+    carried_by: []
+    note: >
+      Wave B/C single-slot PC canary, not yet stood up. Dispatch-only consumer.
+  m1-theta:
+    status: orphaned
+    carried_by: []
+    note: >
+      The M1 return canary — deliberately unschedulable until the M1 host is
+      re-registered, which is exactly what the canary exists to detect.
+      Dispatch-only (m1-runner-canary.yml). Note the label is `m1-theta`, the
+      REVERSE of the production `theta-m1`; they are different labels and only
+      this one is a canary.
+  codex:
+    status: orphaned
+    carried_by: []
+    note: >
+      Died with mac-builder-1/2. codex-research.yml has not run since
+      2026-08-13T11:11Z: run 32040094079 sat `queued` 8h+ and 32077100100
+      `pending` behind it, with every firing in between `cancelled`. NOT
+      re-routable in-repo — the codex CLI and ~/.codex/auth.json are host-local
+      (CRX-R8) and config/codex_lane.yml is operator-immutable (CRX-R7), so a
+      macstudio re-route would fail preflight while burning a production slot.
+      Restore is host-side and operator-owned.
+    scheduled_use_waiver:
+      since: '2026-08-17'
+      reason: >
+        Single-job run, so a queued firing sits `pending` and is superseded by
+        the next 2-hourly line rather than holding the group for 24h — the lane
+        is dead, not hostage-taking (contrast daily.yml collect_tail, whose
+        completed sibling jobs kept its run `in_progress` and pended the next
+        night). Waived rather than silenced: the entry above is the standing
+        record that this lane is dark pending an operator host restore.

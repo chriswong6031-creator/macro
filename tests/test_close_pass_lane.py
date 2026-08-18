@@ -1535,11 +1535,23 @@ def test_the_cron_expander_reads_every_form_in_this_repo(field, lo, hi, expected
 
 
 def test_the_minute_avoids_the_other_crons_on_the_two_host_pool():
-    """MEASURED 2026-08-09: plain `macstudio` is TWO live physical hosts
-    (mac-builder-1/2, which also serve the `codex` and `theta-m1` labels), and
-    closing-bell holds one of them for the whole window every weekday. So the
-    minute is not cosmetic — it decides whether this lane starts or queues
-    behind another job on the one remaining slot.
+    """RE-MEASURED 2026-08-17 against `gh api repos/{owner}/{repo}/actions/runners`:
+    plain `macstudio` is TWO live hosts — mac-builder-5 (`macstudio,parked`) and
+    mac-builder-light (`macstudio,render-heavy`) — and closing-bell holds one of
+    them for the whole window every weekday. So the minute is not cosmetic; it
+    decides whether this lane starts or queues behind another job on the one
+    remaining slot.
+
+    SUPERSEDED MODEL, kept as the warning it earned. This test used to say the
+    pool was mac-builder-1/2 "which also serve the `codex` and `theta-m1`
+    labels". Those are the retired M1 host's runners, deregistered ~2026-08-15.
+    `codex` now has NO live runner at all, and `theta-m1` was restored onto
+    mac-builder-3 — which carries `macstudio-light`, NOT `macstudio`, so
+    theta-m1 jobs no longer contend with this lane. A stale pool model is not
+    cosmetic either: the same orphaned-label class froze every Prophet board
+    2026-08-14→17 (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md,
+    DSC:QUEUED-JOB-HOSTAGE-HOLDS-THE-NIGHTLY-CRON-GROUP). The checked-in model
+    this comment now defers to is `.github/runner-policy.yml` `label_registry`.
 
     Derived from the live workflow files rather than a hardcoded list, so a lane
     that later moves ONTO this minute reds here instead of silently contending.
@@ -1548,10 +1560,14 @@ def test_the_minute_avoids_the_other_crons_on_the_two_host_pool():
     """
     ours = {int(c.split()[0]) for c in _crons()}
     assert ours == {25}
-    #: The labels mac-builder-1/2 actually carry. EXACT match, never substring:
-    #: `macstudio-light` is a different host, and matching it would flag lanes
-    #: that share no capacity at all.
-    POOL = {"macstudio", "codex", "theta-m1"}
+    #: Labels that route onto a runner ALSO carrying `macstudio` — i.e. whose
+    #: jobs consume a slot this lane could otherwise have. EXACT match, never
+    #: substring: `macstudio-light` is a different host (mac-builder-3) and
+    #: matching it would flag lanes that share no capacity at all.
+    #: `render-heavy` → mac-builder-light and `parked` → mac-builder-5 are both
+    #: macstudio-carrying hosts; neither is on a cron today, so both are inert
+    #: now and load-bearing the moment one is.
+    POOL = {"macstudio", "render-heavy", "parked"}
     clashes: list[str] = []
     for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
         if path.name == "close-pass.yml":
@@ -1963,8 +1979,10 @@ def test_the_header_names_the_primary_and_keeps_the_old_reasoning():
     assert "BOUNDED BACKSTOP" in head
     assert "20:52" in head and "95 minutes" in head        # the measurement
     assert "DEC-LER-LIVE-LANE-VPS-5MIN-REST" in head
-    # Unchanged, and still the only definition of the window in this file.
-    assert "MEASURED POOL CAPACITY (2026-08-09)" in WORKFLOW_SRC
+    # Still the only definition of the window in this file — re-measured
+    # 2026-08-17 (label registry: .github/runner-policy.yml label_registry),
+    # not rewritten.
+    assert "MEASURED POOL CAPACITY (2026-08-09, pool re-measured 2026-08-17)" in WORKFLOW_SRC
     assert "SCHEDULE — DST pair, one window" in WORKFLOW_SRC
 
 
