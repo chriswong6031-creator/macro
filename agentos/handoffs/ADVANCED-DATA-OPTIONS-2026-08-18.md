@@ -56,6 +56,7 @@ unverified:
   - claim: production acceptance (deployed SHA, served page, live artifact advancement)
     what_would_verify: the post-merge continuation (runtime handoff §19) after Sol PASS — merge, nightly advance, browser proof on the served production page
 unresolved:
+  - "PR CI: all AD-1-attributable reds healed on the second run (import-closure scope, delivery-plane census re-stamp, import pin, owner-disposition + system-map pin — commit 79a8aafb9dac); the remaining ci-gate red is base-inherited contract-drift (main's own baseline run 32110254994 fails the identical step) plus merge-ref transients (chat-nav/wrongway — green locally and on main's baseline). Healing main's drift is outside this PR's authorized paths (runtime handoff §17). Receipts in the PR comment on #5872."
   - risk_warnings[]/event_board[] are not rendered as separate board sections in AD-1 UI (adapter may not invent a cross-board order); Sol to rule whether a follow-up adds dedicated sections.
   - board-level INSUFFICIENT_COVERAGE reuses ELIGIBILITY_GATE=0.60 (contract had no separate constant) — flagged for review, documented in code.
   - committed store's chains end 2026-08-13 (Fri 08-14 + Mon 08-17 sessions absent from git) — upstream collection/commit lag, NOT an AD-1 defect; the artifact correctly reports STALE_SOURCE until the nightly advances the store.
