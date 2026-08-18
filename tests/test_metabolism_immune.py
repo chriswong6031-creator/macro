@@ -1504,49 +1504,49 @@ def test_sense_required_red_checks_none_when_main_head_read_fails():
     assert union is None
 
 
-def test_main_exits_nonzero_when_sensing_failed():
-    """main() exits 2 (non-zero) when run_immune_lane reports sensing_failed=True
-    — a blind sentinel must be LOUD, not silently 'successful'.
+def test_main_exit_code_contract():
+    """main()'s full exit-code contract, in one test.
+
+    Only the FIRST assertion below is a regression pin (it fails against
+    origin/main's pre-repair main(), which returned 0 unconditionally). The
+    other two assert behavior that was ALREADY true pre-repair (main()
+    already returned 0 both when reds were found and when main was clean) —
+    they are kept here as documentation of the FULL contract so a future
+    change to the exit-code logic is checked against all three cases, not
+    because they can fail against the old code. Do not mistake them for
+    coverage of THIS repair specifically.
     """
     from scripts.metabolism_immune import main
 
-    fake_result = {
+    # PIN: sensing failed -> exit 2 (non-zero).  A blind sentinel must be
+    # LOUD, not silently "successful" — this is the behavior that changed.
+    failed_result = {
         "healed": [], "unknown_reds": [], "lane_health": [],
         "errors": ["sensing failed: could not read check-runs"],
         "sensing_failed": True,
     }
-    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=failed_result):
         rc = main([])
-
     assert rc == 2, f"expected exit 2 when sensing failed; got {rc}"
 
-
-def test_main_exits_zero_when_reds_found():
-    """main() exits 0 when sensing SUCCEEDED and found reds — finding a red is
-    a successful sensing run, not a process failure.
-    """
-    from scripts.metabolism_immune import main
-
-    fake_result = {
+    # DOCUMENTATION (unchanged pre/post-repair): sensing succeeded and found
+    # reds -> exit 0.  Finding a red is a successful sensing run, not a
+    # process failure.
+    reds_found_result = {
         "healed": [{"red_class": "contract-drift", "pr_number": 123, "branch": "b"}],
         "unknown_reds": [], "lane_health": [], "errors": [],
         "sensing_failed": False,
     }
-    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=reds_found_result):
         rc = main([])
-
     assert rc == 0, f"expected exit 0 when sensing found reds (successful run); got {rc}"
 
-
-def test_main_exits_zero_when_clean():
-    """main() exits 0 when sensing succeeded and main is clean."""
-    from scripts.metabolism_immune import main
-
-    fake_result = {
+    # DOCUMENTATION (unchanged pre/post-repair): sensing succeeded and main
+    # is clean -> exit 0.
+    clean_result = {
         "healed": [], "unknown_reds": [], "lane_health": [], "errors": [],
         "sensing_failed": False,
     }
-    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=clean_result):
         rc = main([])
-
     assert rc == 0, f"expected exit 0 when main is clean; got {rc}"

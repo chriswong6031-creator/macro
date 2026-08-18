@@ -78,11 +78,12 @@ confidence: verified
 
 ## Detail
 
-Framing credit: the phrase "a guard whose green is indistinguishable from its blindness" for
-this class of bug was coined on the peer session that produced PR #5885 (see
-`agentos/handoffs/` around that PR for the append-only-evidence trap it names — a different
-instance of the same underlying shape: a mechanism whose success path and failure path
-converge on output a caller cannot tell apart).
+A related instance of the same underlying shape was surfaced by a peer session on PR #5885
+(see `agentos/handoffs/` around that PR for the append-only-evidence trap it names): a
+mechanism whose success path and failure path converge on output a caller cannot tell apart.
+This record does not quote that session's wording — only the shared principle, stated
+plainly: a detector whose "nothing to report" and "I could not check" outcomes produce the
+same observable result cannot be trusted by anything downstream of it.
 
 ### Why the `||` fallback is the sharper lesson than "the PAT expired"
 

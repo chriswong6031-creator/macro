@@ -92,7 +92,19 @@ jobs:
       - name: commit ci_status.json (R-V8-5)
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN only — this step pushes data straight to main (no PR,
+          # so METABOLISM_MERGE_PAT's no-workflows-scope purpose does not apply
+          # here) and the job already declares contents: write, and main
+          # carries no branch protection/ruleset, so GITHUB_TOKEN can push.
+          # The old METABOLISM_MERGE_PAT-first fallback meant a dead-but-present
+          # PAT (see the checkout step above) silently 403'd this push forever
+          # while the failure was swallowed into a non-fatal ::warning below —
+          # ci_status.json stayed frozen at 2026-08-09T08:13:13+00:00 even
+          # after the sentinel itself could see again.  Same "green is
+          # indistinguishable from blindness" defect this PR exists to
+          # remove, one step down: a lane that can sense but cannot publish
+          # is still silently useless to anomaly_monitor's ci_red_streak.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
