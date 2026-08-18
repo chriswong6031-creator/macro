@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "_comment": [
+    "Registry read by scripts/ci/append_only_base_fence.py. Every entry names an",
+    "artifact whose committed history is an EXTENSION of its predecessor: rows are",
+    "appended, never rewritten, and a published row is evidence that must survive.",
+    "The fence compares what a lane is about to push against origin/main and",
+    "withholds the family when the push would drop rows main already carries.",
+    "",
+    "check kinds:",
+    "  jsonl_prefix  - origin/main's bytes must be a prefix of the bytes being",
+    "                  pushed. Strongest available contract and the one the repo",
+    "                  already asserts for collection_receipts.jsonl",
+    "                  (tests/test_usaspending_awards.py) and enforces byte-exactly",
+    "                  for candidate_ledger.jsonl via its prior_sha256 state receipt.",
+    "  parquet_rows  - every identity tuple present on origin/main must still be",
+    "                  present in the frame being pushed. Order-independent, because",
+    "                  parquet re-encodes and a positional prefix is not a contract",
+    "                  the writers promise.",
+    "",
+    "withhold_paths is the COHERENCE SET: when any member fails, every path here is",
+    "restored from origin/main, because a per-file revert leaves the generation",
+    "entangled (measured: DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS,",
+    "'No file-level revert restores coherence')."
+  ],
+  "families": [
+    {
+      "key": "government-revenue",
+      "why": "Two overlapping daily.yml collect jobs each computed the USAspending append-only artifacts from the base each checked out; the later push replaced the earlier one's rows. Measured twice: 2026-08-07 (360 of 720 collection_receipts.jsonl ids swapped, 1fc6d1181e4c -> 08ad4d836d6a) and 2026-08-18 (376 receipts plus 16 award_event_snapshots rows, 59ccb9c774c8 -> 93ab221b81dd), the second orphaning a 26-row candidate_ledger.jsonl issuance batch and reddening ci-pack-6 for the whole fleet.",
+      "withhold_paths": [
+        "data/government_revenue",
+        "site/government-revenue-data",
+        "site/government_revenue.html"
+      ],
+      "members": [
+        {"path": "data/government_revenue/collection_receipts.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/subaward_collection_receipts.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/idv_collection_receipts.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/sbir_collection_receipts.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/dod_budget_collection_receipts.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/dod_budget_line_snapshots.jsonl", "check": "jsonl_prefix"},
+        {"path": "data/government_revenue/candidate_ledger.jsonl", "check": "jsonl_prefix"},
+        {
+          "path": "data/government_revenue/award_event_snapshots.parquet",
+          "check": "parquet_rows",
+          "identity": ["award_key", "known_at", "event_state_sha256"]
+        },
+        {
+          "path": "data/government_revenue/award_action_versions.parquet",
+          "check": "parquet_rows",
+          "identity": ["award_key", "action_id", "known_at", "event_state_sha256"]
+        },
+        {
+          "path": "data/government_revenue/subaward_snapshots.parquet",
+          "check": "parquet_rows",
+          "identity": ["parent_generated_award_id", "subaward_id", "known_at", "subaward_state_sha256"]
+        },
+        {
+          "path": "data/government_revenue/idv_relationship_snapshots.parquet",
+          "check": "parquet_rows",
+          "identity": [
+            "idv_generated_award_id",
+            "child_generated_award_id",
+            "known_at",
+            "idv_relationship_state_sha256"
+          ]
+        }
+      ]
+    }
+  ]
+}

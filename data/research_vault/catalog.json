@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T15:20:15.460992+00:00",
-  "count": 1344,
+  "generated_at": "2026-08-18T16:17:56.225274+00:00",
+  "count": 1347,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -485,6 +485,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-w0mgplq6a75-33c5a1",
+      "title": "UBS Equity Preference List Beyond AI The Power of Humanoids and Automation 2026 08 17",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:03Z",
+      "summary_points": [
+        "**AI-Driven Automation TAM**: $402bn total addressable market (11% CAGR), with ADAS ($88bn), robotaxi ($40bn), and agritech/robotic surgery ($134bn) as key growth verticals by 2035.",
+        "**Geopolitical Concentration Risk**: 12% China exposure (Alibaba, Baidu, Tencent) + 14% Internet Services weight creates vulnerability to US-China trade tensions, data localization policies, and regulatory outflows.",
+        "**Sector Overconcentration**: 14% Internet Services and 14% Industrial/Diversified (Emerson, Honeywell, Siemens) exposure heightens sensitivity to tech regulation, manufacturing PMI data, and FTC antitrust cases.",
+        "**ABB Electrification Tailwinds**: 5.0% weight with margin boost from EV charging spin-off and data center/renewables demand; risks include global downturn and input costs.",
+        "**BlackRock Fee Compression Risk**: $6T AUM firm faces margin pressure from fee erosion and AUM drag, compounded by private credit valuation concerns despite AI/cloud exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-0ejermzpiay-b36960",
       "title": "gaai quarterly snapshot Q3 snapshot august 2026",
       "institution": "Fidelity",
@@ -789,6 +810,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-quhg78rh6kj-0f4b56",
+      "title": "Week Ahead in Economics Fed has more time; BoJ has less",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T16:55:26Z",
+      "summary_points": [
+        "**US Fed Timing Shifted to December**: July core PCE inflation muted (0.15% m/m, 3.2% yr/yr) reduces September hike odds; August rebound risk shifts focus to December.",
+        "**Japan BoJ Rate Normalization Urgency**: Yen gains from FX intervention temporary; structural depreciation and July GDP/CPI data accelerate need for faster rate hikes.",
+        "**Eurozone Inflation & ECB Policy**: HICP headline inflation at 2.9% yoy (core 2.5%), August likely above 3.0% yoy; wage growth acceleration (2.6-2.7% yoy) supports ECB September hike.",
+        "**UK BoE Hold Confirmed**: Unemployment falls to 4.7%, services inflation eases to 3.4% yoy; aligns with 2026 hold stance amid labor market divergence risk.",
+        "**UK Fiscal Data Shift**: Public borrowing falls £1.5bn in July (vs OBR forecast), tax receipts exceed by £2.4bn; reduces debt dynamics uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rbznxja4suf-ada57c",
       "title": "Earnings Season Pulse Global earnings strength broadens beyond the US",
       "institution": "Societe Generale",
@@ -847,6 +889,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ycl1f24y3pp-f88230",
+      "title": "Japan Macro Information",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T16:22:17Z",
+      "summary_points": [
+        "**Private Consumption Contraction**: First decline in 8 quarters (-0.0% QoQ), driven by non-durables/services weakness offsetting durable goods rebound; signals domestic demand fragility amid Iran-related import fall and weak sentiment.",
+        "**Geopolitical Demand Shock**: Iran conflict caused sharp import decline (1.6% QoQ) and goods export drop (1.0% QoQ), weakening domestic demand; Strait of Hormuz shutdown directly impacted trade flows.",
+        "**Misleading GDP Growth**: 0.3% QoQ growth (1.1% annualized) driven by external demand (+0.5) and government spending (+1.6), masking private investment decline (-1.2% QoQ non-residential) and weak private consumption (-0.0% QoQ)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
