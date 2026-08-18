@@ -1380,11 +1380,22 @@ jobs:
   collect_tail:
     needs: [et_gate, collect]
     if: always() && needs.et_gate.outputs.run != 'false'
-    # theta-m1 ⊂ macstudio: custom runner label on mac-builder-1/2/3 only (added
-    # via the runners API 2026-07-26). The probe-only health-check below stays
-    # as defense in depth — if the label set or the Terminal host ever drifts,
-    # tape_flow still degrades to a warning + self-skip, never a second Terminal.
-    runs-on: [self-hosted, theta-m1]
+    # 2026-08-17 UNPIN (Prophet outage postmortem, research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md):
+    # this job was pinned `theta-m1` (mac-builder-1/2/3, the M1 host) while that
+    # host existed. The M1 runners were deregistered without the label moving, so
+    # from ~2026-08-15 this job could NEVER be scheduled — and a job queued on a
+    # label with no live runner holds the whole run open until GitHub's 24h
+    # queued-job kill, which holds this run's per-cron concurrency group, which
+    # pends the NEXT night's real slot: the nightly cascade that froze every
+    # Prophet board 08-14→08-17. macstudio always has live runners, and every
+    # store-coupled step below is probe-guarded by design: tape_flow degrades to
+    # warning + self-skip (never a second Terminal, #3644), and the W11 witness
+    # carries the keep-last-real law for store-less landings. RE-PIN RULE: when
+    # the M1 host returns (see .github/runner-policy.yml `m1-theta` canary), move
+    # this back to the store-bearing label in the same PR that graduates the
+    # canary — until then a self-skipped tape lane is the designed degraded mode,
+    # a 24h-hostage nightly is not.
+    runs-on: [self-hosted, macstudio]
     # Budget arithmetic (re-cut 2026-08-02 after the 5-night starvation cancel,
     # 07-29→08-02: shadow-importance outgrew its "~13-14m" estimate to 80-120m+
     # and the job died at the old 150m cap with every later step — earnings

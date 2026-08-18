@@ -37,14 +37,24 @@ WHAT THIS CHECKS.  Three questions, in the order a human would ask them:
                      2026-08-12 at 08:00Z, ~9.5h into the outage.
   B. RUN CONCLUDED — did one of those runs actually finish ``success``?  Catches
                      the 2026-08-12 signature: six dispatches force-cancelled by a
-                     live fleet session, one stuck queued.  An in-flight run is
+                     live fleet session, one stuck queued.  A FRESH in-flight run is
                      INDETERMINATE, never a breach — the nightly legitimately runs
-                     for hours.
+                     for hours.  But an in-flight run older than IN_FLIGHT_MAX_AGE
+                     is a POSITIVE observation of a wedge, not a long bake: on
+                     2026-08-16/17 a job queued on a runner label with no live
+                     runner held run 31977372592 open ~24h while every check read
+                     the eternal in-flight as "still baking" and the boards froze.
+                     Age turns "still baking" into "hung or hostage" — breach.
   C. DATA ADVANCED — did ``site/prophet/index.json``'s ``source_asof`` actually move?
                      Catches the case A and B cannot see: a run that concludes green
                      while the ledger silently fails to advance (the #4779 law — an
                      absence of red is not a pass).  This is also the backstop for a
                      run that hangs forever and so never leaves INDETERMINATE in B.
+                     Weekend hole (closed 2026-08-17): with a flat budget of 1, a
+                     missed FRIDAY bake reads "1 behind" all weekend and could not
+                     alarm before Tuesday.  Once the fire window is STALE_GRACE
+                     behind us and no fresh run is alive, even 1-behind is a breach
+                     — a healthy Friday bake lands hours before the grace expires.
 
 VERDICT DISCIPLINE (borrowed verbatim from freshness_sentinel).  Blindness is never
 a breach.  An unreadable API response, an empty run list, a missing index file, an
@@ -132,6 +142,22 @@ EST_CRON = "30 23 * * *"
 #: is merely running long still reads D-1 (1 behind) and must not alarm.  Two behind
 #: means a whole session produced nothing — the 2026-08-11 signature.
 MAX_SESSIONS_BEHIND = 1
+
+#: An in-flight run older than this is a WEDGE, not a long bake.  The serial
+#: worst case through daily.yml's own caps (et_gate + collect 240m + engine 300m
+#: + tails) is ~13h; 14h clears it while the 14:00Z look still pages the same
+#: day for a 22:30Z fire (15.5h > 14h; the 08:00Z look at 9.5h keeps its
+#: designed tolerance).  2026-08-16/17 calibration: the hostage run was alive
+#: 24h+ and every look before this constant existed read it as INDETERMINATE.
+IN_FLIGHT_MAX_AGE = timedelta(hours=14)
+
+#: Weekend-hole closure for check C.  Once ``now >= boundary + STALE_GRACE`` and
+#: no fresh run is alive, a store even ONE session behind is a breach: a healthy
+#: bake fires 22:30Z and lands its store hours before 08:00Z (= 22:00Z + 10h).
+#: Sized to the same 08:00Z look the workflow schedule already documents as
+#: "comfortably past a healthy bake"; an in-flight run under IN_FLIGHT_MAX_AGE
+#: still excuses it (a slow-but-alive bake must not page at 08:00Z).
+STALE_GRACE = timedelta(hours=10)
 
 #: Runs older than this are irrelevant to today's verdict; keeps the API page small.
 LOOKBACK_DAYS = 7
@@ -268,6 +294,40 @@ def evaluate(
     # our own instrument).
     baked = False
     no_success_detail: "str | None" = None
+    # In-flight age triage over the FULL fetched window, not just `recent`: a
+    # hostage run created before this session's boundary (a Thursday run still
+    # alive on Saturday) must not become invisible by falling out of `recent`.
+    wedged: list[str] = []
+    live_fresh = False
+    for row in (runs or []):
+        if row.get("status") == "completed":
+            continue
+        created_live = _parse_dt(row.get("created_at"))
+        if created_live is None:
+            # Unparseable timestamp: cannot prove a wedge — blindness, not breach.
+            live_fresh = True
+            continue
+        age = now - created_live
+        if age > IN_FLIGHT_MAX_AGE:
+            wedged.append(
+                f"run {row.get('id')} {row.get('status')} for "
+                f"{age.total_seconds() / 3600:.1f}h"
+            )
+        else:
+            live_fresh = True
+    if wedged:
+        facts["wedged_in_flight"] = wedged
+        fail.append(
+            "WEDGED IN FLIGHT: "
+            + "; ".join(wedged)
+            + f" (cap {IN_FLIGHT_MAX_AGE.total_seconds() / 3600:.0f}h — the serial "
+            "worst case through daily.yml's own job caps is ~13h). A run alive this "
+            "long is a hung bake or a hostage: on 2026-08-16/17 a job queued on a "
+            "runner label with no live runner held a run open 24h+, pended the next "
+            "night's slot behind it, and froze every Prophet board while this check "
+            "read the eternal in-flight as 'still baking'. Read the run's job list "
+            "for a queued job whose runs-on label has no online runner."
+        )
     if recent:
         conclusions = [(r.get("status"), r.get("conclusion")) for r in recent]
         facts["conclusions"] = [f"{s}/{c or '-'}" for s, c in conclusions]
@@ -280,14 +340,14 @@ def evaluate(
         real_success = any(counts_as_bake(r, recent, now=now) for r in recent)
         if real_success:
             baked = True
-        elif any(s != "completed" for s, _ in conclusions):
+        elif any(s != "completed" for s, _ in conclusions) and not wedged:
             # Still baking.  The nightly legitimately runs for hours; check C is the
             # backstop if it never lands.
             warn.append(
                 f"INDETERMINATE: {WORKFLOW_FILE} run for session {session.isoformat()} "
                 "is still in flight — no success yet, but not a breach"
             )
-        else:
+        elif all(s == "completed" for s, _ in conclusions):
             no_success_detail = ", ".join(f"{s}/{c or '-'}" for s, c in conclusions)
 
     # ── C. DATA ADVANCED ────────────────────────────────────────────────────
@@ -339,6 +399,24 @@ def evaluate(
                     f"completed sessions behind {session.isoformat()} "
                     f"(limit {max_sessions_behind}), with no successful "
                     f"{WORKFLOW_FILE} run for this session."
+                )
+            elif (not baked and behind >= 1 and runs is not None and not live_fresh
+                  and now >= boundary + STALE_GRACE):
+                # Weekend hole (closed 2026-08-17): a missed FRIDAY bake reads
+                # "1 behind" all weekend under the flat budget and could not alarm
+                # before Tuesday — Canada sat frozen from 08-11 with zero noise.
+                # Past the grace, 1-behind with a READ run list and nothing fresh
+                # alive is a positive observation: the bake window came, went, and
+                # nothing is baking. `runs is not None` keeps blindness from
+                # breaching; a fresh in-flight run still excuses (slow bake at the
+                # 08:00Z look must not page).
+                fail.append(
+                    f"STALE DATA (grace expired): Prophet source_asof "
+                    f"{src.isoformat()} is {behind} completed session(s) behind "
+                    f"{session.isoformat()}, the fire window closed "
+                    f"{(now - boundary).total_seconds() / 3600:.1f}h ago (grace "
+                    f"{STALE_GRACE.total_seconds() / 3600:.0f}h), and no fresh "
+                    f"{WORKFLOW_FILE} run is alive to excuse it."
                 )
 
     if no_success_detail is not None:
@@ -475,11 +553,34 @@ def _selftest() -> int:
     assert any("cannot be read to excuse" in f for f in r["fail_reasons"]), r
 
     # B: still in flight -> INDETERMINATE. The nightly runs for hours; alarming here
-    # would train the operator to ignore the channel.
+    # would train the operator to ignore the channel.  (9.5h old at the 08:00Z look
+    # — under IN_FLIGHT_MAX_AGE by design.)
     r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "in_progress",
                    "conclusion": None}], frozen, now)
     _check("B/in-flight-indeterminate", r["ok"], True)
     assert r["warnings"], r
+
+    # B age cap: the 2026-08-16/17 hostage signature — the same run at the 14:00Z
+    # look is 15.5h old.  "Still baking" has become "hung or hostage": breach.
+    r = evaluate([{"id": 31977372592, "created_at": "2026-08-11T22:30:00Z",
+                   "status": "queued", "conclusion": None}], frozen,
+                 datetime(2026, 8, 12, 14, 0, tzinfo=timezone.utc))
+    _check("B/in-flight-past-cap-pages", r["ok"], False)
+    assert any("WEDGED IN FLIGHT" in f for f in r["fail_reasons"]), r
+
+    # C weekend hole (closed 2026-08-17): Saturday morning, Friday bake never
+    # created, store 1 behind, nothing alive.  Under the flat budget this stayed
+    # quiet until Tuesday — Canada froze 08-11→08-17 with zero noise.
+    sat = datetime(2026, 8, 15, 8, 30, tzinfo=timezone.utc)
+    r = evaluate([], {"source_asof": "2026-08-13"}, sat)
+    _check("C/weekend-one-behind-past-grace-pages", r["ok"], False)
+    assert any("grace expired" in f for f in r["fail_reasons"]), r
+
+    # C weekend control: the same Saturday instant with a FRESH run alive is a
+    # slow bake, not a breach — the grace path must stay excused.
+    r = evaluate([{"created_at": "2026-08-15T04:00:00Z", "status": "in_progress",
+                   "conclusion": None}], {"source_asof": "2026-08-13"}, sat)
+    _check("C/weekend-fresh-run-excuses-grace", r["ok"], True)
 
     # C sharp: the run concluded SUCCESS for 08-11 and the store still reads 08-10.
     # No weekend padding, no long-bake excuse — green that did not advance.

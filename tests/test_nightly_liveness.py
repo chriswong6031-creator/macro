@@ -57,14 +57,21 @@ def _run(**kw):
 def test_strand_is_invisible_to_data_checks():
     """The load-bearing test. One night into the strand the store is only ONE
     session behind — inside the freshness_sentinel budget AND nowhere near
-    healthcheck's 96h. Check A is the only instrument that can see it."""
+    healthcheck's 96h. Check A was the only instrument that could see it when
+    this guard was written; since 2026-08-17 the grace-expired path of check C
+    ALSO sees it at this instant (08:00Z = boundary + STALE_GRACE exactly), and
+    that overlap is deliberate defense in depth — A still fires first on earlier
+    looks, names the strand mechanism, and works when the index is unreadable.
+    The flat-budget path must still be quiet here (behind == 1, not > 1)."""
     report = evaluate([LAST_GOOD_RUN], FROZEN, NOW)
     assert report["ok"] is False
     assert any("NO RUN" in f for f in report["fail_reasons"])
     # If this ever reads > 1, the fixture has drifted and the test no longer pins
-    # the "data checks are satisfied here" property that makes check A necessary.
+    # the "flat data budget is satisfied here" property that makes check A (and
+    # the grace path) necessary.
     assert report["facts"]["sessions_behind"] == MAX_SESSIONS_BEHIND
-    assert not any("STALE DATA" in f for f in report["fail_reasons"])
+    assert not any(f.startswith("STALE DATA:") for f in report["fail_reasons"])
+    assert any("grace expired" in f for f in report["fail_reasons"])
 
 
 def test_run_created_before_the_boundary_does_not_count():
@@ -99,10 +106,65 @@ def test_all_runs_cancelled_fails():
 
 def test_queued_forever_is_indeterminate_not_a_breach():
     """A stranded run sits queued with zero jobs for hours. That is not yet proof
-    of absence — check C is the backstop once the store falls far enough behind."""
+    of absence — check C is the backstop once the store falls far enough behind.
+    (9.5h old at the 08:00Z look — under IN_FLIGHT_MAX_AGE by design.)"""
     report = evaluate([_run(status="queued", conclusion=None)], FROZEN, NOW)
     assert report["ok"] is True
     assert report["warnings"]
+
+
+def test_in_flight_past_the_age_cap_is_a_wedge_breach():
+    """2026-08-16/17: collect_tail queued on a runner label with no live runner
+    held run 31977372592 open 24h+, pended the next night's cron slot behind its
+    concurrency group, and froze every Prophet board — while the unconditional
+    in-flight INDETERMINATE kept this guard quiet for two days. At the 14:00Z
+    look the 22:30Z run is 15.5h old: past IN_FLIGHT_MAX_AGE, a positive
+    observation of a wedge."""
+    fourteen = datetime(2026, 8, 12, 14, 0, tzinfo=timezone.utc)
+    report = evaluate([_run(status="queued", conclusion=None)], FROZEN, fourteen)
+    assert report["ok"] is False
+    assert any("WEDGED IN FLIGHT" in f for f in report["fail_reasons"])
+
+
+def test_a_pre_boundary_hostage_run_is_still_seen():
+    """A Thursday run still alive on Saturday has fallen out of `recent` — the
+    age triage must scan the full fetched window, or the oldest (worst) hostages
+    are exactly the ones that vanish from the verdict."""
+    sat = datetime(2026, 8, 15, 8, 30, tzinfo=timezone.utc)  # expected: 08-14
+    hostage = _run(created_at="2026-08-13T22:52:00Z", status="queued",
+                   conclusion=None)
+    report = evaluate([hostage], {"source_asof": "2026-08-13"}, sat)
+    assert report["ok"] is False
+    assert any("WEDGED IN FLIGHT" in f for f in report["fail_reasons"])
+
+
+def test_weekend_missed_friday_pages_after_grace():
+    """THE CANADA HOLE. A missed Friday bake reads '1 behind' all weekend under
+    the flat budget, so it could not alarm before Tuesday — Canada served 08-11
+    picks from 08-11 to 08-17 with zero noise. Saturday morning past the grace,
+    with a READ run list and nothing alive, 1-behind is a breach."""
+    sat = datetime(2026, 8, 15, 8, 30, tzinfo=timezone.utc)
+    report = evaluate([], {"source_asof": "2026-08-13"}, sat)
+    assert report["ok"] is False
+    assert any("grace expired" in f for f in report["fail_reasons"])
+
+
+def test_weekend_fresh_run_excuses_the_grace_path():
+    """A slow-but-alive bake at the Saturday 08:30Z look is WAIT, not a page —
+    the grace breach requires positive evidence that nothing is baking."""
+    sat = datetime(2026, 8, 15, 8, 30, tzinfo=timezone.utc)
+    fresh = _run(created_at="2026-08-15T04:00:00Z", status="in_progress",
+                 conclusion=None)
+    report = evaluate([fresh], {"source_asof": "2026-08-13"}, sat)
+    assert report["ok"] is True
+
+
+def test_grace_never_breaches_on_a_blind_run_list():
+    """Blindness discipline holds for the grace path too: an unreadable run list
+    cannot prove nothing is baking, so 1-behind stays INDETERMINATE."""
+    sat = datetime(2026, 8, 15, 8, 30, tzinfo=timezone.utc)
+    report = evaluate(None, {"source_asof": "2026-08-13"}, sat)
+    assert report["ok"] is True
 
 
 def test_one_success_among_failures_is_healthy():
