@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PRGO-BULL-20260702",
-  "asof": "2026-08-13",
+  "asof": "2026-08-17",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 78.3,
-  "raw_confidence": 79.1,
-  "delta_vs_base": 18.3,
+  "management_confidence": 77.7,
+  "raw_confidence": 77.1,
+  "delta_vs_base": 17.7,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
-    "progress": 62.9,
-    "pace": 90.9,
-    "retention": 84.3,
-    "overlay": 67.0
+    "progress": 62.8,
+    "pace": 80.9,
+    "retention": 83.9,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 2.372,
-    "dist_to_t1_r": 0.128,
-    "dist_to_t2_r": 1.628,
-    "horizon_pct_used": 51.1,
-    "p1": 0.9147,
-    "p2": 0.4574,
+    "dist_to_stop_r": 2.366,
+    "dist_to_t1_r": 0.134,
+    "dist_to_t2_r": 1.634,
+    "horizon_pct_used": 60.0,
+    "p1": 0.9109,
+    "p2": 0.4554,
     "p3": null,
-    "move_r": 1.372,
+    "move_r": 1.366,
     "mfe_r": 1.628,
     "mae_r": -0.221
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": "2026-08-06",
   "_first_t2_ts": null,
-  "days_elapsed": 23,
-  "tau": 0.5111
+  "days_elapsed": 27,
+  "tau": 0.6
 }
