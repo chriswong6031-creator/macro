@@ -34,9 +34,14 @@ so_what: >
   issuance nor a reviewed historical suppression" and hunt for 26 escaped awards or a
   review-process defect. There is none — do not open a govrev data or compliance
   investigation, and do not hand-advance `candidate_ledger.jsonl` (nightly is the sole
-  advancer of forward ledgers). The break self-heals on one more
-  `government-revenue-live` fold and needs no repo change. It is also RECURRENT by
-  construction: any future collection that restates the spine between the ledger fold and
+  advancer of forward ledgers). **CORRECTED 2026-08-18 (see "Self-heal claim retracted"
+  below): the break does NOT reliably self-heal.** An earlier revision of this record said
+  it clears on one more `government-revenue-live` fold and needs no repo change; that was
+  measured too early and is FALSE. The ledger advances only when a candidate actually
+  ISSUES, and the `projection_only: true` invocation that would issue one is currently
+  FAILING, so a fold is not scheduled to happen at all. Verify the fold before assuming
+  recovery: `git log -1 origin/main -- data/government_revenue/candidate_ledger.jsonl`.
+  It is also RECURRENT by construction: any future collection that restates the spine between the ledger fold and
   the next CI run reds the whole fleet again. Closing it structurally means scoping the
   `unaccounted` set to the generation the ledger was built from (the spine's
   `projection_generation_id` / `last_observed_at`), so a restatement NEWER than the ledger
@@ -107,6 +112,28 @@ all. Read true execution time from the jobs API (`started_at` per job), never fr
 `workflow_dispatch` of `daily.yml` at 00:29Z fired on top of a still-running scheduled run
 from 22:52Z, oversubscribing the `macstudio` pool — the same "never dispatch over a live
 run" discipline that governs `ci.yml` main baselines.
+
+### Self-heal claim retracted (2026-08-18)
+
+The first revision of this record asserted the red clears on the next
+`government-revenue-live` fold. Measured after that claim was written, it does not:
+
+- Three standalone `government-revenue-live` runs concluded **success** (06:59Z, 07:38Z,
+  07:48Z) and the ledger did **not** move — it is still at `5214d0b20a17` (04:15Z). The
+  lane polls every 30 minutes but appends only "when a candidate actually issues"
+  (`.github/workflows/government-revenue-live.yml:515-525`), so a successful run is NOT
+  evidence of a fold.
+- The invocation that would issue one is the nightly's
+  `government_revenue_projection / refresh` — `daily.yml:1344` calling
+  `government-revenue-live.yml` with `projection_only: true`. In run `32084697588` that
+  job started 07:32:52Z and concluded **FAILURE**, at step 9 "build Government Revenue
+  projection" (`government-revenue-live.yml:482-495`).
+
+So the ledger fold is itself blocked, and the ci-gate red persists until that job is
+fixed. **Lesson worth more than the fact: "a lane ran successfully" is not "the artifact
+advanced".** Grade the ARTIFACT (`git log -1 -- <path>`), never the lane's conclusion —
+the same confusion recorded in [[DSC-SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH]]'s neighbourhood,
+where a re-render gave an artifact a fresh mtime and a frozen content stamp.
 
 Related: [[DSC-SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH]] — the sibling ci-pack-3 red on the same
 night, also caused by a nightly lane rewriting an artifact another component treats as
