@@ -987,6 +987,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Append-only base freshness (2026-08-18 lost update, DSC-OVERLAPPING-DAILY-
+            # COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS). This lane's own concurrency group
+            # serializes it against itself, but it can and does overlap daily.yml's
+            # multi-hour collect job, and the rebuild below re-derives the PUBLISHED
+            # twins only — the collector spine it carries is still its own pre-rebase
+            # collection, so `-X theirs` can replace main's appended rows with it.
+            # --amend because this loop already amends its evidence commit.
+            push_append_only_fence origin/main --amend
             if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               # Rebuild AFTER every successful rebase; retry loops do the same.
               assert_award_event_bundle

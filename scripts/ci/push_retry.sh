@@ -737,3 +737,57 @@ push_lost() {
   push_summary "NOT pushed — ${PUSH_STOP}"
   return 0
 }
+
+# ---------------------------------------------------------------------------
+# Append-only base freshness (2026-08-18, DSC-OVERLAPPING-DAILY-COLLECT-JOBS-
+# LOSE-APPEND-ONLY-ROWS).
+#
+# `-X theirs` is right for the bulk market plane and CATASTROPHIC for an
+# append-only ledger: on a file both sides appended to it REPLACES the other
+# side's rows rather than unioning them. Measured twice on
+# data/government_revenue/ — 2026-08-07 (1fc6d1181e4c -> 08ad4d836d6a, 360+192+26
+# receipt ids swapped for the same byte count) and 2026-08-18 (59ccb9c774c8 ->
+# 93ab221b81dd, 376+192+26 receipts plus 16 award_event_snapshots and 18
+# award_action_versions identities re-stamped), the second orphaning a 26-row
+# candidate_ledger.jsonl issuance batch and reddening ci-pack-6 through ci-gate
+# for the whole fleet.
+#
+# Call this INSIDE the retry loop, after the fetch and BEFORE the rebase — main
+# moves between attempts, and the check has to be against the ref this iteration
+# will actually rebase onto. It withholds only the families it can prove would
+# lose rows, never fails the step, and is a no-op on an ordinary night (it looks
+# only at members THIS run's commits changed).
+#
+#   push_append_only_fence [onto-ref] [--amend]
+#
+# `--amend` folds the withhold into HEAD instead of adding a commit; use it in
+# lanes whose loop already amends (government-revenue-live).
+# ---------------------------------------------------------------------------
+push_append_only_fence() {
+  local onto="origin/main" amend=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --amend) amend="--amend" ;;
+      *) onto="$1" ;;
+    esac
+    shift
+  done
+  # `python`, not `python3`: every lane prepends the Homebrew venv to PATH and the
+  # parquet checks need that venv's pandas/pyarrow. A bare `python3` resolves to the
+  # system interpreter on these runners, which has neither.
+  local py="${PUSH_FENCE_PYTHON:-}"
+  if [ -z "$py" ]; then
+    if command -v python >/dev/null 2>&1; then py=python; else py=python3; fi
+  fi
+  # Fail OPEN, loudly: the fence is an addition, so an infrastructure fault must
+  # leave the pre-fence behaviour in place rather than becoming a new way to lose
+  # a night. Every real data verdict is decided inside the fence itself, which
+  # withholds rather than raising.
+  local rc=0
+  "$py" -m scripts.ci.append_only_base_fence --onto "$onto" ${amend:+$amend} || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    printf '::error title=append-only-base-fence::%s\n' \
+      "the append-only base fence could not run (exit ${rc}) — publishing without it; append-only artifacts on ${onto} are UNPROTECTED for this push"
+  fi
+  return 0
+}
