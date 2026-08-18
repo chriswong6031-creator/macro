@@ -101,10 +101,10 @@ def _action(**overrides):
 
 
 def _events(snapshots=(), actions=(), **kwargs):
+    kwargs.setdefault("as_of", "2026-03-31")
     return build_award_change_events(
         pd.DataFrame(list(snapshots)),
         pd.DataFrame(list(actions)),
-        as_of="2026-03-31",
         **kwargs,
     )
 
@@ -1040,3 +1040,151 @@ def test_delta_amount_semantics_name_the_quantity_not_only_the_derivation():
     # Equal magnitudes, different quantities: the labels are the only thing that
     # keeps a downstream consumer from adding them together.
     assert snapshot_amount["value"] == action_amount["value"] == 35.0
+
+
+P00032_AWARDING_AGENCY = (
+    "{'id': 1217, 'has_agency_page': True, 'toptier_agency': {'name': 'Department of Defense', "
+    "'code': '097', 'abbreviation': 'DOD', 'slug': 'department-of-defense'}, "
+    "'subtier_agency': {'name': 'Defense Information Systems Agency', 'code': '97AK', "
+    "'abbreviation': 'DISA'}, 'office_agency_name': 'TELECOMMUNICATIONS DIVISION- HC1013'}"
+)
+NASA_AWARDING_AGENCY = (
+    "{'id': 862, 'has_agency_page': True, 'toptier_agency': "
+    "{'name': 'National Aeronautics and Space Administration', 'code': '080', "
+    "'abbreviation': 'NASA', 'slug': 'national-aeronautics-and-space-administration'}, "
+    "'subtier_agency': {'name': 'National Aeronautics and Space Administration', "
+    "'code': '8000', 'abbreviation': 'NASA'}, "
+    "'office_agency_name': 'NASA MARSHALL SPACE FLIGHT CENTER'}"
+)
+P00032_FUNDING_AGENCY = (
+    "{'id': 1196, 'has_agency_page': True, 'toptier_agency': {'name': 'Department of Defense', "
+    "'code': '097', 'abbreviation': 'DOD', 'slug': 'department-of-defense'}, "
+    "'subtier_agency': {'name': 'Department of the Air Force', 'code': '5700', "
+    "'abbreviation': 'USAF'}, 'office_agency_name': 'F2TSTA SMC IS'}"
+)
+
+
+def test_structured_department_name_survives_projection():
+    from engine.government_revenue.award_events import agency_display_label
+
+    events = _events([_snapshot(awarding_agency="Department of the Navy", awarding_sub_agency=None)])
+    agency = events[0]["agency"]
+    assert agency["department_name"] == "Department of the Navy"
+    assert agency_display_label(agency) == "Department of the Navy"
+    assert agency["name"] == "Department of the Navy"
+    assert ": None" not in json.dumps(agency)
+    assert "{'id'" not in json.dumps(agency)
+
+
+def test_structured_subagency_fallback_when_department_is_absent():
+    from engine.government_revenue.award_events import agency_display_label
+
+    events = _events([
+        _snapshot(awarding_agency=None, awarding_sub_agency="Defense Logistics Agency"),
+    ])
+    agency = events[0]["agency"]
+    assert agency["department_name"] is None
+    assert agency["subagency_name"] == "Defense Logistics Agency"
+    assert agency_display_label(agency) == "Defense Logistics Agency"
+
+
+def test_legacy_serialized_usaspending_agency_becomes_canonical_object():
+    from engine.government_revenue.award_events import agency_display_label
+
+    events = _events([_snapshot(awarding_agency=P00032_AWARDING_AGENCY, awarding_sub_agency=None)])
+    agency = events[0]["agency"]
+    assert agency["department_name"] == "Department of Defense"
+    assert agency["department_id"] == "097"
+    assert agency["subagency_name"] == "Defense Information Systems Agency"
+    assert agency["subagency_id"] == "97AK"
+    assert agency["office_name"] == "TELECOMMUNICATIONS DIVISION- HC1013"
+    assert agency_display_label(agency) == "Department of Defense"
+    dumped = json.dumps(agency)
+    assert "{'id'" not in dumped
+    assert ": None" not in dumped
+    assert "None" not in dumped
+
+
+def test_genuine_null_agency_stays_unspecified():
+    from engine.government_revenue.award_events import agency_display_label
+
+    events = _events([_snapshot(awarding_agency=None, awarding_sub_agency=None)])
+    agency = events[0]["agency"]
+    assert agency_display_label(agency) is None
+    assert agency["department_name"] is None
+    assert agency["name"] is None
+
+
+def test_d11_p00032_recovers_award_snapshot_agency_without_changing_clocks_or_amount():
+    """Action P00032 omits awarding_agency; the award snapshot still has DISA/DoD."""
+
+    snapshots = [
+        _snapshot(
+            generated_unique_award_id="CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+            award_id="HC101319C0006",
+            awarding_agency=P00032_AWARDING_AGENCY,
+            awarding_sub_agency=None,
+            funding_agency=P00032_FUNDING_AGENCY,
+            recipient_name="IRIDIUM GOVERNMENT SERVICES LLC",
+            recipient_uei="S77SW52LCR57",
+            known_at="2026-08-12T23:50:04.442107+00:00",
+            effective_at="2026-05-12",
+            total_obligated_amount=720_083_333.31,
+            snapshot_content_sha256="p" * 64,
+            recipient_resolution=_resolution("IRDM", recipient_uei="S77SW52LCR57"),
+        )
+    ]
+    actions = [
+        _action(
+            generated_unique_award_id="CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-",
+            award_id="HC101319C0006",
+            action_id="CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0",
+            awarding_agency=None,
+            awarding_sub_agency=None,
+            federal_action_obligation=18_416_666.66,
+            action_date="2026-05-12",
+            known_at="2026-08-12T23:50:04.442107+00:00",
+            recipient_name="IRIDIUM GOVERNMENT SERVICES LLC",
+            recipient_uei="S77SW52LCR57",
+            modification_number="P00032",
+            action_content_sha256="q" * 64,
+            recipient_resolution=_resolution("IRDM", recipient_uei="S77SW52LCR57"),
+        )
+    ]
+    events = _events(
+        snapshots,
+        actions,
+        companies=[{"ticker": "IRDM", "company_id": "central:IRDM", "ttm_government_obligations": 1_000}],
+        as_of="2026-08-17",
+    )
+    obligation = next(
+        event
+        for event in events
+        if event["change"]["type"] == "obligation"
+        and (event.get("award_change") or {}).get("action_id")
+        == "CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0"
+    )
+    agency = obligation["agency"]
+    assert agency["department_name"] == "Department of Defense"
+    assert agency["subagency_name"] == "Defense Information Systems Agency"
+    assert agency["office_name"] == "TELECOMMUNICATIONS DIVISION- HC1013"
+    assert "Air Force" not in json.dumps(agency)
+    assert obligation["primary_ticker"] == "IRDM"
+    assert obligation["award_change"]["is_late_discovery"] is True
+    assert obligation["change"]["known_at"].startswith("2026-08-12T23:50:04")
+    assert str(obligation["change"]["effective_at"]).startswith("2026-05-12")
+    amount = next(
+        fact for fact in obligation["amounts"] if fact["id"] == "federal_action_obligation"
+    )
+    assert amount["value"] == 18_416_666.66
+    assert amount["id"] == "federal_action_obligation"
+    assert all(fact.get("id") != "total_obligated_amount" or fact.get("value") != 18_416_666.66 for fact in obligation["amounts"])
+    assert "revenue" not in json.dumps(obligation["amounts"]).lower()
+
+
+def test_d11_second_agency_is_not_hardcoded_dod():
+    events = _events([_snapshot(awarding_agency=NASA_AWARDING_AGENCY, awarding_sub_agency=None)])
+    agency = events[0]["agency"]
+    assert agency["department_name"] == "National Aeronautics and Space Administration"
+    assert agency["department_name"] != "Department of Defense"
+    assert "DISA" not in json.dumps(agency)

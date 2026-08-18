@@ -166,7 +166,7 @@ def _compact_workspace_event(event: dict) -> dict:
     ))
     compact["agency"] = _present_fields(event.get("agency"), (
         "department_id", "department_name", "subagency_id", "subagency_name",
-        "office_id", "office_name",
+        "office_id", "office_name", "name", "subagency",
     ))
     change = _present_fields(event.get("change"), (
         "type", "what_changed_en", "what_changed_zh", "summary_origin",

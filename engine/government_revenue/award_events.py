@@ -8,6 +8,7 @@ without an explicit event-eligibility flag and a source receipt fail closed.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import math
@@ -1367,11 +1368,231 @@ def _display_priority(*, event_type: str, impacts: Sequence[Mapping[str, Any]], 
     }
 
 
-def _agency(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "name": _clean(_first(row, ("awarding_agency", "agency_name", "agency"))),
-        "subagency": _clean(_first(row, ("awarding_sub_agency", "subagency_name"))),
-    }
+_CANONICAL_AGENCY_FIELDS: tuple[str, ...] = (
+    "department_id",
+    "department_name",
+    "subagency_id",
+    "subagency_name",
+    "office_id",
+    "office_name",
+    "name",
+    "subagency",
+)
+_AGENCY_LABEL_FIELDS: tuple[str, ...] = (
+    "department_name",
+    "subagency_name",
+    "office_name",
+    "name",
+    "subagency",
+)
+_BLANK_AGENCY_TOKENS = frozenset({"none", "nan", "nat", "null"})
+
+
+def _blank_agency() -> dict[str, Any]:
+    return {field: None for field in _CANONICAL_AGENCY_FIELDS}
+
+
+def _human_agency_text(value: Any) -> str | None:
+    """Return a displayable agency token, or None when the value is not a label."""
+
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+            return None
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+        text = str(value).strip()
+        return text or None
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text or text.casefold() in _BLANK_AGENCY_TOKENS:
+        return None
+    if text[:1] in "{[":
+        return None
+    return text
+
+
+def _decode_agency_blob(value: Any) -> Any:
+    """Decode a persisted agency cell without executing arbitrary Python.
+
+    Award ledgers store USAspending nested agency objects as text because the
+    event columns are typed as strings.  Historical rows therefore carry a
+    Python-literal or JSON snapshot of the official object.  Fail closed: a
+    blob that cannot be decoded as a mapping or a human label is dropped.
+    """
+
+    if isinstance(value, Mapping):
+        return dict(value)
+    if value is None or isinstance(value, bool):
+        return None
+    if not isinstance(value, str):
+        return value
+    text = value.strip()
+    if not text:
+        return None
+    if text[:1] not in "{[":
+        return text
+    if text.startswith("{") and '"' in text[:24]:
+        try:
+            decoded = json.loads(text)
+        except (TypeError, ValueError):
+            decoded = None
+        else:
+            return decoded
+    try:
+        decoded = ast.literal_eval(text)
+    except (ValueError, SyntaxError, MemoryError, RecursionError, TypeError):
+        return None
+    return decoded
+
+
+def _extract_agency_blob(value: Any) -> dict[str, Any]:
+    """Project one awarding/subagency cell onto the canonical agency object."""
+
+    agency = _blank_agency()
+    decoded = _decode_agency_blob(value)
+    if decoded is None:
+        return agency
+    if isinstance(decoded, str):
+        label = _human_agency_text(decoded)
+        if label:
+            agency["department_name"] = label
+            agency["name"] = label
+        return agency
+    if not isinstance(decoded, Mapping):
+        return agency
+
+    toptier = decoded.get("toptier_agency") if isinstance(decoded.get("toptier_agency"), Mapping) else {}
+    subtier = decoded.get("subtier_agency") if isinstance(decoded.get("subtier_agency"), Mapping) else {}
+    office = decoded.get("office_agency") if isinstance(decoded.get("office_agency"), Mapping) else {}
+
+    agency["department_id"] = _human_agency_text(
+        toptier.get("code") or decoded.get("department_id")
+    )
+    agency["department_name"] = _human_agency_text(
+        toptier.get("name") or decoded.get("department_name")
+    )
+    agency["subagency_id"] = _human_agency_text(
+        subtier.get("code") or decoded.get("subagency_id")
+    )
+    agency["subagency_name"] = _human_agency_text(
+        subtier.get("name") or decoded.get("subagency_name")
+    )
+    agency["office_id"] = _human_agency_text(
+        office.get("code") or decoded.get("office_id")
+    )
+    agency["office_name"] = _human_agency_text(
+        office.get("name")
+        or decoded.get("office_agency_name")
+        or decoded.get("office_name")
+    )
+    name = _human_agency_text(decoded.get("name"))
+    subagency = _human_agency_text(decoded.get("subagency"))
+    agency["name"] = agency["department_name"] or name
+    agency["subagency"] = agency["subagency_name"] or subagency
+    if agency["department_name"] is None and name:
+        agency["department_name"] = name
+        agency["name"] = name
+    if agency["subagency_name"] is None and subagency:
+        agency["subagency_name"] = subagency
+        agency["subagency"] = subagency
+    # Already-projected events stored the USAspending object in `name`.
+    for nested_key in ("name", "subagency", "awarding_agency", "agency"):
+        raw = decoded.get(nested_key)
+        if not (
+            (isinstance(raw, str) and raw.strip()[:1] in "{[")
+            or isinstance(raw, Mapping)
+        ):
+            continue
+        nested = _extract_agency_blob(raw)
+        for field in _CANONICAL_AGENCY_FIELDS:
+            if agency[field] is None and nested[field] is not None:
+                agency[field] = nested[field]
+    agency["name"] = (
+        agency["department_name"]
+        or agency["name"]
+        or agency["subagency_name"]
+        or agency["office_name"]
+    )
+    agency["subagency"] = agency["subagency_name"] or agency["subagency"]
+    return agency
+
+
+def canonicalize_agency(awarding: Any, subagency: Any = None) -> dict[str, Any]:
+    """Emit the contract agency object from source cells. Never invent a body."""
+
+    agency = _extract_agency_blob(awarding)
+    extra = _extract_agency_blob(subagency)
+    if agency["subagency_name"] is None:
+        agency["subagency_name"] = (
+            extra["subagency_name"]
+            or extra["department_name"]
+            or extra["name"]
+        )
+    if agency["subagency_id"] is None:
+        agency["subagency_id"] = extra["subagency_id"] or extra["department_id"]
+    if agency["office_name"] is None:
+        agency["office_name"] = extra["office_name"]
+    if agency["office_id"] is None:
+        agency["office_id"] = extra["office_id"]
+    agency["name"] = (
+        agency["department_name"]
+        or agency["name"]
+        or agency["subagency_name"]
+        or agency["office_name"]
+    )
+    agency["subagency"] = agency["subagency_name"] or agency["subagency"]
+    return agency
+
+
+def agency_display_label(agency: Mapping[str, Any] | None) -> str | None:
+    """Primary human agency label in the frozen D1.1 fallback order."""
+
+    if not isinstance(agency, Mapping):
+        return None
+    for field in _AGENCY_LABEL_FIELDS:
+        label = _human_agency_text(agency.get(field))
+        if label:
+            return label
+    return None
+
+
+def _agency(
+    row: Mapping[str, Any],
+    *,
+    fallback: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    agency = canonicalize_agency(
+        _first(row, ("awarding_agency", "agency_name", "agency")),
+        _first(row, ("awarding_sub_agency", "subagency_name", "awarding_subagency")),
+    )
+    if agency_display_label(agency) is not None:
+        return agency
+    if isinstance(fallback, Mapping) and agency_display_label(fallback) is not None:
+        return {field: fallback.get(field) for field in _CANONICAL_AGENCY_FIELDS}
+    return agency
+
+
+def _snapshot_agency_index(snapshots: pd.DataFrame) -> dict[str, dict[str, Any]]:
+    """Latest award-snapshot agency by award identity, when the snapshot has one.
+
+    Action observations often omit awarding agency (the transactions payload
+    does not assert it).  The official award snapshot for the same award_key
+    remains source evidence for that award's awarding body.  Funding agency is
+    ignored.
+    """
+
+    index: dict[str, dict[str, Any]] = {}
+    for observation in _consolidate(snapshots, mode="snapshot"):
+        agency = _agency(observation)
+        if agency_display_label(agency) is None:
+            continue
+        identity = _text(observation.get("_award_identity"))
+        if identity:
+            index[identity] = agency
+    return index
 
 
 def _title(event_type: str, row: Mapping[str, Any]) -> str:
@@ -1452,6 +1673,7 @@ def _make_event(
     company_index: Mapping[str, Mapping[str, Any]],
     is_correction: bool,
     is_late_discovery: bool,
+    award_agency_fallback: Mapping[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     receipt = _receipt(row, mode=mode)
     prior_receipt = _receipt(before, mode=mode) if before is not None else None
@@ -1549,7 +1771,7 @@ def _make_event(
         "title_original": _title(event_type, row),
         "title_zh": None,
         "translation_status": "original",
-        "agency": _agency(row),
+        "agency": _agency(row, fallback=award_agency_fallback),
         "change": {
             "type": event_type,
             "what_changed_en": _title(event_type, row),
@@ -1722,8 +1944,10 @@ def _project_actions(
     *,
     company_index: Mapping[str, Mapping[str, Any]],
     late_discovery_days: int,
+    snapshot_agencies: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
+    agencies = snapshot_agencies or {}
     by_action: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for observation in _consolidate(actions, mode="action"):
         identity = _text(observation.get("_action_identity"))
@@ -1760,6 +1984,7 @@ def _project_actions(
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
                             is_late_discovery=late,
+                            award_agency_fallback=agencies.get(str(current.get("_award_identity") or "")),
                         )
                         if event:
                             events.append(event)
@@ -1800,6 +2025,7 @@ def _project_actions(
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
                             is_late_discovery=late,
+                            award_agency_fallback=agencies.get(str(current.get("_award_identity") or "")),
                         )
                         if event:
                             events.append(event)
@@ -1891,6 +2117,7 @@ def build_award_change_events(
     snapshots_visible = _bind_source_receipts(snapshots_visible, source_receipts, mode="snapshot")
     actions_visible = _bind_source_receipts(actions_visible, source_receipts, mode="action")
     company_index = _company_rows(companies)
+    snapshot_agencies = _snapshot_agency_index(snapshots_visible)
     return _merge(
         [
             *_project_snapshots(
@@ -1902,6 +2129,7 @@ def build_award_change_events(
                 actions_visible,
                 company_index=company_index,
                 late_discovery_days=late_discovery_days,
+                snapshot_agencies=snapshot_agencies,
             ),
         ]
     )

@@ -36,15 +36,25 @@ waves:
   - id: D1
     title: Production truth and signed-in product rescue
     status: in_progress
+    pr: [5836]
     depends_on: [D0R]
     next_action: >
-      GovRev stale-write fence, then a receipt-bound re-baseline, then
-      rebase #5856 with receipt hardening. Do not start D2. Do not merge
-      #5424. Do not treat Radar 48 as new alpha.
+      D1 entitled-desk rescue merged as #5836. Remaining D1 closure is #5885
+      fence, then #5882 FATAL=1, then rebase #5856. Do not re-baseline.
+      Do not start D2. Do not merge #5424. Do not treat Radar 48 as new alpha.
+      Agency semantic loss is D1.1, not a D1 redo.
+  - id: D1.1
+    title: Agency semantic recovery
+    status: in_progress
+    depends_on: [D1]
+    next_action: >
+      Merge the D1.1 projector canonicalize PR, wait for government-revenue-live
+      to rebuild workspace.json, prove entitled agency labels, then stop.
+      Do not start D2. Do not merge #5424.
   - id: D2
     title: Defense Identity Atlas vertical slice
     status: todo
-    depends_on: [D1]
+    depends_on: [D1.1]
   - id: D3
     title: Temporal event v3 and Change Tape
     status: todo
@@ -74,22 +84,26 @@ do_not_redo:
   - "Do not grant rank, gate, size, entry, or execution authority."
   - "Do not treat SPR as a live golden ticker."
   - "Do not invent 60 VERIFIED_CASE primaries."
-  - "Do not fold #5424 into D1. Do not start D2 in the D1 session."
+  - "Do not fold #5424 into D1 or D1.1. Do not start D2 in the D1.1 session."
+  - "Do not rewrite collector awarding_agency hashes to flatten nested USAspending objects."
   - "Do not assert Candidate Radar must equal historical 22. Prove cookie = bearer = UI for the live content_id."
   - "Do not hand-advance the candidate ledger. Do not change recipient mappings to make counts nicer."
-  - "Do not merge #5856 until a healed/receipt-bound generation exists to rebase onto."
+  - "Do not merge #5856 until #5885 and #5882 are on current main. Do not re-baseline."
 decisions:
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
+  - DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT
 discoveries:
   - DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT
   - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
   - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
-  - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS
   - DSC:CANDIDATE-ID-RACE-BETWEEN-GOVREV-LANES
+  - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
+  - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Fence government-revenue-live stale writes, then receipt-bound re-baseline,
-  then rebase #5856. Do not start D2. Do not merge #5424.
+  Merge D1.1, wait for government-revenue-live to rebuild workspace.json,
+  prove entitled agency labels, then stop. Do not start Atlas/D2.
+  Do not merge #5424.
 ---
 
 ## Context
@@ -97,11 +111,15 @@ next_action: >
 V3 architecture and the D0R handoff merged in #5803 (`455284b7beae`). D0R
 closed on #5819 (`0d10acdd`) and was accepted; Gate 5 stays honest-labeled
 (6 VERIFIED_CASE + 61 RESEARCH_CANDIDATE) and is not alpha validation.
-D1 entitled-desk rescue merged as #5836. D1 is not accepted: #5856 PIT-safe
-agency is still open, and the 2026-08-18 collection/fold race left a published
-generation that live rebuild 32112383533 built but did not publish. Recovery
-generation currently served: bundle `grw2-df3a9860110d76a89dd9cc6b`, candidate
-`grcq1-d7948adf2acbf728e9e48270`, Radar/cookie/bearer 48, mapping backlog 21,
-graph `defense19-v1`. Canonical D1 contract:
+D1 entitled-desk rescue merged as #5836. D1.1 is the authorized agency
+semantic recovery: projector canonicalize plus award-snapshot inherit for
+action rows that omitted awarding_agency. Canonical D1 contract:
 `research/defense_intelligence/DEFENSE_D1_PRODUCTION_TRUTH_AND_PRODUCT_RESCUE_HANDOFF.md`.
-Latest proof: `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md`.
+D1.1 decision: `DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT`.
+D2 stays unauthorized until D1.1 is live-proven.
+D1 is not accepted until #5885, #5882, and #5856 are on main and a new
+generation is actually served. Recovery generation currently served: bundle
+`grw2-df3a9860110d76a89dd9cc6b`, candidate `grcq1-d7948adf2acbf728e9e48270`,
+Radar/cookie/bearer 48, mapping backlog 21, graph `defense19-v1`. Latest
+proof: `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md`. Do not
+re-baseline.
