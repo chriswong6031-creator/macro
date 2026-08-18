@@ -138,6 +138,26 @@ B_SOURCE_SEED_CONTAINER_SHA256 = (
     "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
 )
 B_SOURCE_PREFIX_SHA256 = "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db"
+
+# The registered prefix lives in immutable program-owned storage, NOT on the live basket
+# plane.  fetch_basket_ohlcv.py re-downloads the full history nightly with
+# yf.download(auto_adjust=True) and merges new.combine_first(prior), so the vendor's
+# recomputed cumulative adjustment factor rewrites the historical rows every collection
+# night (measured 2026-08-17: 8852-9492 of 12688 values per night, max 8.63e-07 relative,
+# all four OHLC of a row sharing ONE factor to float64 epsilon, newest bars unmoved).
+# The exact digest above is unchanged and still enforced -- against the snapshot, which
+# nothing rewrites.
+B_SNAPSHOT_RELATIVE_PATH = "data/stock_identity/source/b_registered_prefix_v1.parquet"
+B_SNAPSHOT_PATH = REPO_ROOT / B_SNAPSHOT_RELATIVE_PATH
+B_SNAPSHOT_FILE_SHA256 = "d401e21791db191a9172a79ddd674b308cfa8ca416a01b2c18332ca9af8d12a8"
+
+# Live-plane revision tripwire bands.  Vendor re-adjustment noise tops out at 8.63e-07
+# relative; the smallest economically real price revision -- one cent at the plane's
+# minimum price of 4.81 -- is 2.08e-03, a ~2400x separation.  Only the ASOF bar's volume
+# settles (+4.33e-04, consolidated tape); a split-scale volume restatement is >= 1e0.
+B_LIVE_PRICE_REL_TOL = 1e-5
+B_LIVE_VOLUME_REL_TOL = 1e-2
+
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
 
@@ -490,19 +510,73 @@ def _validate_b_membership(manifest: dict[str, Any]) -> pd.DataFrame:
     return snapshot
 
 
-def _validate_b_source() -> pd.DataFrame:
-    source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
-    if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
-        raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
-    frame = source.loc[source.index <= ASOF].copy()
-    if len(frame) != 3172 or frame.index.max() != ASOF:
-        raise SystemExit("B source prefix row/date receipt drifted")
+def _load_registered_b_prefix() -> pd.DataFrame:
+    """The registered 2014-01-02..ASOF prefix, from immutable program-owned storage."""
+    if not B_SNAPSHOT_PATH.exists():
+        raise SystemExit(f"registered B prefix snapshot is missing: {B_SNAPSHOT_RELATIVE_PATH}")
+    if _sha256(B_SNAPSHOT_PATH) != B_SNAPSHOT_FILE_SHA256:
+        raise SystemExit(f"registered B prefix snapshot bytes drifted: {B_SNAPSHOT_RELATIVE_PATH}")
+    frame = pd.read_parquet(B_SNAPSHOT_PATH)
+    frame.index = pd.DatetimeIndex(frame.index)
+    frame.index.name = "Date"
+    frame = frame.sort_index()[["open", "high", "low", "close", "volume"]]
+    if (
+        len(frame) != 3172
+        or frame.index.min() != pd.Timestamp("2014-01-02")
+        or frame.index.max() != ASOF
+    ):
+        raise SystemExit("registered B prefix snapshot row/date receipt drifted")
     actual = _ohlcv_prefix_sha256(frame)
     if actual != B_SOURCE_PREFIX_SHA256:
         raise SystemExit(
-            f"B source logical prefix differs from registration: {actual}"
+            f"registered B prefix snapshot differs from registration: {actual}"
         )
     return frame
+
+
+def _validate_live_b_plane_tracks_registration(registered: pd.DataFrame) -> None:
+    """Revision tripwire on the live, nightly-rewritten basket plane.
+
+    Tolerates the vendor's re-adjustment of adjusted history, which carries no economic
+    content (every row scales by one factor).  Fires on a real revision: a changed session
+    set, or a price/volume move far above that noise floor.
+    """
+    source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
+    if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
+        raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
+    live = source.loc[source.index <= ASOF].copy()
+    if len(live) != 3172 or live.index.max() != ASOF:
+        raise SystemExit("B source prefix row/date receipt drifted")
+    if not live.index.equals(registered.index):
+        raise SystemExit("B live plane session set diverged from the registered prefix")
+    for column, tol in (
+        ("open", B_LIVE_PRICE_REL_TOL),
+        ("high", B_LIVE_PRICE_REL_TOL),
+        ("low", B_LIVE_PRICE_REL_TOL),
+        ("close", B_LIVE_PRICE_REL_TOL),
+        ("volume", B_LIVE_VOLUME_REL_TOL),
+    ):
+        want = registered[column].to_numpy(dtype="float64")
+        got = live[column].to_numpy(dtype="float64")
+        if not bool(np.isfinite(got).all()):
+            raise SystemExit(
+                f"B live plane has non-finite {column} inside the registered prefix"
+            )
+        rel = np.abs(got - want) / np.maximum(np.abs(want), 1e-12)
+        worst = int(np.argmax(rel))
+        if rel[worst] > tol:
+            raise SystemExit(
+                f"B live plane {column} revised beyond the vendor re-adjustment band at "
+                f"{registered.index[worst].date()}: {want[worst]!r} -> {got[worst]!r} "
+                f"({rel[worst]:.3e} > {tol:.0e}); this is a real revision, not float "
+                "churn -- re-adjudicate the W1-A1 registration before rebuilding"
+            )
+
+
+def _validate_b_source() -> pd.DataFrame:
+    registered = _load_registered_b_prefix()
+    _validate_live_b_plane_tracks_registration(registered)
+    return registered
 
 
 def _validate_reference(reference_dir: Path) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:

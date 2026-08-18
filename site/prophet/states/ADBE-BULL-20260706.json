@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ADBE-BULL-20260706",
-  "asof": "2026-08-13",
+  "asof": "2026-08-17",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 65.8,
-  "raw_confidence": 68.8,
-  "delta_vs_base": 5.8,
+  "management_confidence": 62.5,
+  "raw_confidence": 58.5,
+  "delta_vs_base": 2.5,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 47.4,
-    "pace": 59.4,
+    "progress": 31.8,
+    "pace": 34.3,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.928,
-    "dist_to_t1_r": 0.572,
-    "dist_to_t2_r": 2.072,
-    "horizon_pct_used": 66.7,
-    "p1": 0.6186,
-    "p2": 0.3093,
+    "dist_to_stop_r": 1.545,
+    "dist_to_t1_r": 0.955,
+    "dist_to_t2_r": 2.455,
+    "horizon_pct_used": 75.6,
+    "p1": 0.3635,
+    "p2": 0.1817,
     "p3": null,
-    "move_r": 0.928,
+    "move_r": 0.545,
     "mfe_r": 0.985,
     "mae_r": -0.14
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 30,
-  "tau": 0.6667
+  "days_elapsed": 34,
+  "tau": 0.7556
 }
