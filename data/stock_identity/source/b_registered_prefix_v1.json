@@ -1,0 +1,37 @@
+{
+  "artifact": "data/stock_identity/source/b_registered_prefix_v1.parquet",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "authority_note": "This snapshot is raw price history and a registration INPUT, never a generated output. Its authority block rides here rather than on every price row because the registered digest B_SOURCE_PREFIX_SHA256 covers exactly [open, high, low, close, volume] -- adding authority columns would break the registration this file exists to preserve. Same precedent as data/stock_identity/ohlcv/manifest.json.",
+  "immutability": "This file and its parquet are written ONCE and never regenerated. data/stock_identity/ is program-owned and is not touched by scripts/fetch_basket_ohlcv.py. Any future change requires a fresh W1-A1 registration.",
+  "measured_vendor_churn": {
+    "method": "compared the seed commit prefix against the two 2026-08-17 collection commits 59ccb9c774c8 (21:01) and 93ab221b81dd (21:21)",
+    "price_max_relative_delta": 8.6325e-07,
+    "price_values_changed_per_night": "8852-9492 of 12688",
+    "structure": "all four of open/high/low/close in a row move by ONE shared multiplicative factor to float64 epsilon, and the newest bars do not move at all - the signature of a recomputed cumulative dividend-adjustment factor carried at ~7 significant digits, not random noise or a corporate action.",
+    "volume_changed": "1 of 3172 (the 2026-08-13 bar only: 10621100 -> 10625700, +4.33e-04 relative - consolidated-tape settlement of the final session)",
+    "within_row_ohlc_ratio_spread": 4.441e-16
+  },
+  "provenance": {
+    "extraction": "rows with index <= 2026-08-13, columns [open, high, low, close, volume], ascending unique DatetimeIndex named Date",
+    "source_commit": "6d04e9b3100af7afaf834ceb2c9c307a48808f0b",
+    "source_commit_subject": "fix(baskets): gold_miners wrong-issuer repair - GOLD out, Barrick in under B (#5632)",
+    "source_path": "data/baskets/ohlcv/B.parquet"
+  },
+  "receipts": {
+    "asof": "2026-08-13",
+    "file_sha256": "d401e21791db191a9172a79ddd674b308cfa8ca416a01b2c18332ca9af8d12a8",
+    "note": "ohlcv_prefix_sha256 is UNCHANGED from the original W1-A1 registration. This snapshot is the registered plane relocated to immutable storage, not a re-stamp: no registered constant, sealed receipt, or generated output moved.",
+    "ohlcv_prefix_digest_version": "stock_identity.w1a1.ohlcv_prefix.v1",
+    "ohlcv_prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+    "rows": 3172
+  },
+  "schema": "stock_identity.registered_prefix_manifest.v1",
+  "what": "Immutable program-owned snapshot of the W1-A1 registered B (Barrick Mining, EDGAR CIK 756894) OHLCV prefix, 2014-01-02..2026-08-13 (3172 rows).",
+  "why": "The registration pinned an exact digest over data/baskets/ohlcv/B.parquet on the premise that only post-asof appends move that file. That premise is false: scripts/fetch_basket_ohlcv.py re-downloads the FULL history nightly via yf.download(auto_adjust=True) and merges new.combine_first(prior) (new wins), so the vendor's recomputed cumulative adjustment factor rewrites the historical prefix on every collection night. The registered plane therefore cannot live on a nightly-rewritten file."
+}
