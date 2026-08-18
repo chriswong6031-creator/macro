@@ -98,16 +98,23 @@ name: close-pass
 #     weekday (64-86 min observed across three sampled runs; ~109 min per its own
 #     header). So this lane is one slot deep, not idle.
 #   * the minute was chosen against the other macstudio/codex crons in the window:
-#     codex-research fires at :20 (same two hosts), smart-money-13f-census at :07
-#     and :37, smart-money-filings at :17, metabolism-cycle at :35 and
-#     metabolism-heartbeat at :45. :25 is the widest gap between them.
+#     codex-research fires at :20 (same two hosts), smart-money-13f-census at :10
+#     (was :07 and :37 — see below), smart-money-filings at :17,
+#     metabolism-cycle at :35 and metabolism-heartbeat at :45. :25 is the widest
+#     gap between them.
 #   * observed queue waits on this pool range 2s to 71 min. Even the worst case
 #     lands 16:25 + 71 + 20 = ~17:56 ET, still inside the 18:30 SLA — which is
 #     the whole reason this fires at the window's start rather than its end.
-#   * NOT YET OBSERVABLE: smart-money-13f-census.yml and smart-money-filings.yml
-#     both merged within 48h and have never had a weekday firing, so their real
-#     duration is unknown. If either turns out to be long, the second slot is
-#     contended and this lane's queue wait is the thing to watch first.
+#   * RESOLVED 2026-08-18, and the warning below was right. smart-money-13f-census
+#     turned out to be BOTH long and dense: 7-15 min of real work per run (47.8
+#     min on the 2026-08-14 Q2 13F deadline) fired every 30 min for 12 hours
+#     under a 180m cap. It saturated the pool — queue waits reached 116 min and
+#     20 of its 86 runs were cancelled while still pending, never executing —
+#     and starved the nightly (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md).
+#     It is now hourly at :10, hours 12-20 only, capped at 60m on the fast lane,
+#     so it cannot run past 21:10Z. This lane's queue wait was indeed the right
+#     thing to watch; the two-host pool has no spare capacity for a third dense
+#     lane, and `macstudio` today is mac-builder-5 + mac-builder-light.
 # tests/test_close_pass_lane.py pins both regimes and the no-second-window rule.
 #
 # The session-day guard lives in the SCRIPT (close_pass_publish.session_date), not
