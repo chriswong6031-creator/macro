@@ -5,7 +5,7 @@ objective: >
   Convert the options/off-exchange estate from an interpret-it-yourself dashboard into a
   standalone anticipation and risk intelligence lobe with bounded Prophet confluence.
   Done = ranked, falsifiable, receipt-backed EOD signals with explicit no-signal/degraded
-  states, production-proven per slice (AD-0…AD-15 per the operator-held recovery masterplan).
+  states, production-proven per slice (AD-0…AD-15 per the committed recovery masterplan).
 status: awaiting_review
 program: options-intelligence
 repos: [macro]
@@ -16,14 +16,19 @@ ambiguity: scoped
 waves:
   - id: AD-0
     title: Recovery archaeology + production truth + AD-1 freeze
-    status: awaiting_ci
+    status: done
     pr: [5830, 5838, 5849]
-    next_action: Chairman reviews the AD-0 ledger and AD-1 handoff.
+  - id: AD-1P0
+    title: Semantic-authority freeze (v1.2) before implementation
+    status: awaiting_ci
+    pr: 5860
+    depends_on: [AD-0]
+    next_action: Sol reviews the AD-1P0 amendment PR; on PASS the next decision is AD-1 GO.
   - id: AD-1
     title: Daily EOD Options Intelligence Brief
     status: todo
-    depends_on: [AD-0]
-    next_action: Do not start until AD-0 is reviewed; then execute research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md.
+    depends_on: [AD-1P0]
+    next_action: Do not start until AD-1P0 passes Sol review (AD-1 GO); then execute the amended research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md (v1.2).
 landmines:
   - >-
     The entire host-side intraday options launchd fleet (15 units incl. the sparse-selector
@@ -41,6 +46,7 @@ landmines:
     where its runtime is retired (Sol review on #5830) — retirement never deletes evidence.
 decisions:
   - "DEC:AD-SIGNAL-VOCAB-RESTORES-SHORT"
+  - "DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION"
 do_not_redo:
   - >-
     Do not re-audit the seven sparse-selector PRs (#5747 #5694 #5696 #5708 #5711 #5790
@@ -53,7 +59,7 @@ do_not_redo:
   - >-
     Do not resurrect darkpool direction labels (v2 null walk-forward + DNR:PSS-AF1) or the
     DOI/skew-decel families (killed).
-next_action: Chairman review of the AD-0 PR; on approval, commission AD-1 per its handoff.
+next_action: Sol review of the AD-1P0 semantic-authority freeze; on PASS, commission AD-1 implementation per the amended handoff (v1.2).
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md

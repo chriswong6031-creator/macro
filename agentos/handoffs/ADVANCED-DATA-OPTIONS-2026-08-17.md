@@ -34,7 +34,17 @@ changed:
   - path: research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
     what: AMENDED (data-feasibility pass, Sol delta review) — §5.3 refrozen as intel_brief_heuristic/v1.1 (H≥10 floor, min(W,H) windows, cross-sectional tier-peer + bounded longitudinal blend, contract-matched robust-z ΔOI, cross-sectional E family with self-activating historical upgrade, non-vacuity gate ≥60%, INSUFFICIENT_HISTORY distinct from NO_SIGNAL, research-hypothesis language law); §5.4 adds the real-data census, the read-only preflight report (95.7% eligible; LONG 69 / SHORT 46 / VOLATILITY 99 / RISK_ONLY 22 / NO_SIGNAL 120; 88 cards ≥ R_MIN), and the binding data-feasibility law; tests 15–16 added.
   - path: research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
-    what: AMENDED — §8.2 amendment block authorizes deterministic heuristic ranking as display-tier research-priority authority only (never probability/alpha/forecast/Prophet/gating/sizing/trade authority; AD-6/AD-7 own promotion) and binds the data-feasibility law.
+    what: >-
+      AMENDED — §8.2 amendment block authorizes deterministic heuristic ranking as
+      display-tier research-priority authority only (never probability/alpha/forecast/
+      Prophet/gating/sizing/trade authority; AD-6/AD-7 own promotion) and binds the
+      data-feasibility law. AD-1P0 (2026-08-18) adds the semantic-authority amendment
+      (six evidence classes stay separate; the authority ladder binds; GEX/salience
+      never originate direction; Prophet has zero AD-1 rank authority).
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
+    what: "AMENDED (AD-1P0 semantic-authority freeze, Sol ruling 2026-08-18) — §5.3 refrozen as intel_brief_heuristic/v1.2: D_salience unsigned (0.65 d1 + 0.35 d3); direction requires Q_oi and Q_skew (skew-CHANGE robust z, floor 8) both at |0.50|+ same-sign plus D_salience >= 0.60; Q_flow structurally ABSENT while signing_gate direction_reliable=false; gex_confirm demoted to mechanics context (only effect M_gex=0.75 on qualified LONG under caution); evidence_strength/research_priority_score replace asymmetry (asymmetry_score null/UNCALIBRATED, probabilities/expected-edge null until AD-6); evidence-confidence ceiling 0.45 for directional cards; horizon/fresh_until (NYSE sessions)/trigger/invalidation/market-implied-move contracts frozen; event board history_mode contract (cross_sectional now, historical_conditioned at >=3 same-name events); Prophet display-only with zero rank authority (v1.1 prophet multiplier REMOVED); adversarial controls added as tests 17-22; runtime production proof amended with the 10 AD-1P0 items; primary references appended. v1.2 preflight recorded in §5.4."
+  - path: agentos/decisions/DEC-AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION.md
+    what: NEW (AD-1P0) — the semantic-authority ruling record (decided_by ceo-sol).
 verified:
   - claim: main_at_start is 7a6a6656e289 and production checkout matches it
     command: "git log -1 origin/main; curl -s https://www.mastermind-x.com/api/health"
@@ -57,6 +67,12 @@ verified:
   - claim: v1's 60/252-session prerequisites are impossible on the canonical estate; v1.1 is non-vacuous on it
     command: "read-only pandas census + preflight over data/polygon_gex/chains (28 sessions, 4.42M rows), summaries, site/gex, data/earnings at the amendment head (script methodology recorded in AD-1 handoff §5.4)"
     result: depth median 26 sessions (370/408 names >= 10); latest session 372 names, 356 eligible (95.7%) under v1.1; family availability V353/D356/P345/E56; states LONG 69 / SHORT 46 / VOL 99 / RISK 22 / NO_SIGNAL 120; 88 cards >= R_MIN; non-vacuity gate PASS
+  - claim: the v1.2 semantic-authority method remains non-vacuous on real data and the directional collapse is the intended correction
+    command: "read-only v1.2 preflight at audit head 6482f876ba7f, session 2026-08-13 (methodology = AD-1 handoff §5.3 v1.2; report in §5.4)"
+    result: eligible 356/372 (95.7%); Q funnel 351 both-present -> 19 strong -> 10 same-sign -> 10 qualified; LONG 3 / SHORT 7 / VOLATILITY 152 / RISK_ONLY 29 / NO_SIGNAL 165; 64 cards >= R_MIN; Prophet census among ranked UNAVAILABLE 52 / OTHER 8 / NOT_READY 2 / ALREADY_OPEN 1 / READY 1; v1.1->v1.2 LONG 69->3, SHORT 46->7 with no threshold tuning
+  - claim: the flow signing gate currently denies direction authority
+    command: "cat data/options_flow/signing_gate.json"
+    result: direction_reliable=false, magnitude_reliable=true, net_sign_recovery=0.4108 (asof 2026-06-21)
 unverified:
   - claim: /api/health "commit" field means last app-binary restart build
     what_would_verify: a deploy-truth doc or reading app/deploy/update.sh restart semantics
