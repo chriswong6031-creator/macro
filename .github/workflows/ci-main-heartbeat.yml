@@ -250,9 +250,23 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 fastapi httpx
+        # MIRROR OF .github/ci/legacy-jobs.yml's tier-gate job — keep the two in
+        # step. Its comment is the load-bearing one and is repeated here because
+        # this copy drifted out of parity and nobody noticed for as long as the
+        # sentinel that watches this lane was blind (2026-08-18):
+        #   app.main mounts app.market_memory, whose authenticated stock-data
+        #   reader imports requests at module scope. ETF board synthesis imports
+        #   the rotation constants from etf_pulse, which imports numpy and pandas
+        #   at module scope. Keep this environment closed over the real
+        #   production import graph.
+        # Those three packages were added to the PR lane and NOT here, so
+        # `tests/test_etfs_gate.py` stopped skipping and started ERRORING —
+        # ModuleNotFoundError: No module named 'numpy' (engine/etf_pulse.py:30) —
+        # which is a red about this workflow's venv, not about the serving
+        # boundary it claims to measure.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
-        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
+        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py tests/test_us_board_gate.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
       - name: Pro-only host gate (bot.mastermind-x.com -> /api/paywall/check_pro)
