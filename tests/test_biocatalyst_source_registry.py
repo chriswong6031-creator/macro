@@ -332,6 +332,45 @@ def test_benchmark_products_cannot_become_data_or_code_dependencies() -> None:
     ]
 
 
+def test_biopharmcatalyst_jv_snapshot_is_distinct_from_the_benchmark() -> None:
+    registry = _load_yaml(SOURCE_REGISTRY)
+    sources = registry["sources"]
+    benchmark = sources["biopharmcatalyst_benchmark"]
+    snapshot = sources["biopharmcatalyst_jv_snapshot"]
+
+    assert "finite_jv_snapshot_seed" in registry["license_classes"]
+    assert snapshot["source_id"] == "biopharmcatalyst_jv_snapshot"
+    assert snapshot["source_id"] != benchmark["source_id"]
+    assert snapshot["license_class"] == "finite_jv_snapshot_seed"
+    assert snapshot["license_class"] != benchmark["license_class"]
+    assert snapshot["production_ingest_allowed"] is False
+    assert snapshot["raw_archive"] == "operator_held_never_git"
+    assert snapshot["public_projection"] == "blocked"
+    assert snapshot["producer"] is None
+
+    assert set(benchmark["permitted_uses"]) == {
+        "behavioral_parity_review",
+        "public_feature_inventory",
+        "clean_room_acceptance_benchmark",
+    }
+    assert "proprietary_historical_row_import" in benchmark["prohibited_uses"]
+    assert set(snapshot["permitted_uses"]) == {
+        "schema_and_clock_census",
+        "reconstruction_matching",
+        "coverage_scoring",
+    }
+    assert {
+        "production_data_feed",
+        "continuous_bpc_api",
+        "proprietary_historical_row_import",
+        "proprietary_row_commit",
+        "export_time_as_pre_event_feature",
+    } <= set(snapshot["prohibited_uses"])
+    assert snapshot["seed_inventory"]["workbook_sha256"] == (
+        "946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535"
+    )
+
+
 def test_non_biocatalyst_sources_remain_disabled_or_adapter_owned() -> None:
     sources = _load_yaml(SOURCE_REGISTRY)["sources"]
 

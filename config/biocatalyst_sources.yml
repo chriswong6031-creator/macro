@@ -35,6 +35,12 @@ license_classes:
     bounded_product_api: blocked
     bulk_redistribution: blocked
     derived_model_training: blocked
+  finite_jv_snapshot_seed:
+    raw_archive: operator_held_never_git
+    source_fact_projection: blocked
+    bounded_product_api: blocked
+    bulk_redistribution: blocked
+    derived_model_training: blocked
 
 sources:
   clinicaltrials_gov_v2:
@@ -335,6 +341,43 @@ sources:
       - production_data_feed
       - authenticated_page_scraping
       - contact_database_copy
+
+  biopharmcatalyst_jv_snapshot:
+    source_id: biopharmcatalyst_jv_snapshot
+    name: BioPharmCatalyst authorized JV snapshot seeds
+    owner: external_jv_seed
+    producer: null
+    base_url: "https://www.biopharmcatalyst.com/"
+    documentation_url: "https://www.biopharmcatalyst.com/terms-of-use"
+    license_class: finite_jv_snapshot_seed
+    rights_state: operator_held_finite_seed_matching_only
+    production_ingest_allowed: false
+    raw_archive: operator_held_never_git
+    public_projection: blocked
+    default_coverage_class: none
+    launch_critical: false
+    collection_target: none
+    freshness_slo_seconds: null
+    opportunity_semantics: none
+    completeness_semantics: none
+    maximum_consecutive_misses: 0
+    seed_inventory:
+      freeze: research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
+      captured_local_date: "2026-08-17"
+      workbook_sha256: "946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535"
+      historical_fda_csv_sha256: "f3852d34aad9b65d95e31db807f9509cfb84770eb91998533cb3687cea3d9002"
+    permitted_uses:
+      - schema_and_clock_census
+      - reconstruction_matching
+      - coverage_scoring
+    prohibited_uses:
+      - production_data_feed
+      - continuous_bpc_api
+      - authenticated_page_scraping
+      - asset_or_code_copy
+      - proprietary_historical_row_import
+      - proprietary_row_commit
+      - export_time_as_pre_event_feature
 
 b0a_canary:
   source_id: clinicaltrials_gov_v2
