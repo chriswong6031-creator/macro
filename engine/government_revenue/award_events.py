@@ -1655,6 +1655,7 @@ def _select_pit_snapshot_agency(
         if timestamp(candidate.get("known_at")) is not None
         and timestamp(candidate.get("known_at")) <= action_ts
         and agency_display_label(candidate.get("agency")) is not None
+        and isinstance(candidate.get("receipt"), Mapping)
     ]
     if not eligible:
         return None
