@@ -31,6 +31,10 @@ changed:
     what: AMENDED — masterplan cited at its in-repo path; RETIRE row carries the evidence-preservation law (runtime-only retirement); intraday fleet explicitly DISARMED BY DEFAULT pending AD-9.
   - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
     what: AMENDED — operator-held-masterplan landmine removed; fleet-disarmed + evidence-preservation landmines added; DEC linked; masterplan added to artifacts.
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
+    what: AMENDED (data-feasibility pass, Sol delta review) — §5.3 refrozen as intel_brief_heuristic/v1.1 (H≥10 floor, min(W,H) windows, cross-sectional tier-peer + bounded longitudinal blend, contract-matched robust-z ΔOI, cross-sectional E family with self-activating historical upgrade, non-vacuity gate ≥60%, INSUFFICIENT_HISTORY distinct from NO_SIGNAL, research-hypothesis language law); §5.4 adds the real-data census, the read-only preflight report (95.7% eligible; LONG 69 / SHORT 46 / VOLATILITY 99 / RISK_ONLY 22 / NO_SIGNAL 120; 88 cards ≥ R_MIN), and the binding data-feasibility law; tests 15–16 added.
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
+    what: AMENDED — §8.2 amendment block authorizes deterministic heuristic ranking as display-tier research-priority authority only (never probability/alpha/forecast/Prophet/gating/sizing/trade authority; AD-6/AD-7 own promotion) and binds the data-feasibility law.
 verified:
   - claim: main_at_start is 7a6a6656e289 and production checkout matches it
     command: "git log -1 origin/main; curl -s https://www.mastermind-x.com/api/health"
@@ -50,6 +54,9 @@ verified:
   - claim: sparse-selector PR chain reconciled
     command: "gh pr view 5747|5694|5696|5708|5711|5790|5801 --json state,mergedAt,mergeCommit,files"
     result: six merged with SHAs recorded in ledger §2.3; #5711 closed unmerged duplicate of #5708; W1A modules imported only by their tests
+  - claim: v1's 60/252-session prerequisites are impossible on the canonical estate; v1.1 is non-vacuous on it
+    command: "read-only pandas census + preflight over data/polygon_gex/chains (28 sessions, 4.42M rows), summaries, site/gex, data/earnings at the amendment head (script methodology recorded in AD-1 handoff §5.4)"
+    result: depth median 26 sessions (370/408 names >= 10); latest session 372 names, 356 eligible (95.7%) under v1.1; family availability V353/D356/P345/E56; states LONG 69 / SHORT 46 / VOL 99 / RISK 22 / NO_SIGNAL 120; 88 cards >= R_MIN; non-vacuity gate PASS
 unverified:
   - claim: /api/health "commit" field means last app-binary restart build
     what_would_verify: a deploy-truth doc or reading app/deploy/update.sh restart semantics
