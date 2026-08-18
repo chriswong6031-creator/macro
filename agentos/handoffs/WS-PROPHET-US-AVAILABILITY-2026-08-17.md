@@ -17,7 +17,7 @@ state_before: >
   runner saturated by the new 13F census lane.
 changed:
   - path: "runners API (no repo file; receipted on issue #5742)"
-    what: "Interim infra: theta-m1 label → mac-builder-3 (23:47Z, KEPT). macstudio label → mac-builder-4 (23:54Z) — REVERTED-AND-HARMFUL, removed 00:44Z: mac-builder-4 is the merge-control runner and merge-on-green's non-cone sparse 3-path checkout shares _work/macro/macro, so dispatch 32081969617's engine died 2.5min at pip install (requirements.txt absent). Do NOT re-apply; see postmortem §Triage(2) + follow-up 7."
+    what: "Interim infra: theta-m1 label → mac-builder-3 (23:47Z, KEPT). macstudio label → mac-builder-4 (23:54Z) — REVERTED-AND-HARMFUL, removed 00:44Z: mac-builder-4 is the merge-control runner and merge-on-green's non-cone sparse 3-path checkout shares _work/macro/macro, so dispatch 32081969617's engine died 2.5min at pip install (requirements.txt absent). Do NOT re-apply; see postmortem §Triage(2) + follow-up 7. macstudio label → mac-builder-light (00:5xZ, KEPT) after read-only workspace verification (sparseCheckout=false, requirements.txt present, full tree) — pool back to two verified hosts."
   - path: ".github/workflows/daily.yml"
     what: "collect_tail runs-on theta-m1 → macstudio, with the re-pin rule for the m1-theta canary."
   - path: "scripts/check_nightly_liveness.py"

@@ -78,9 +78,18 @@ removed all headroom the recovery needed.
    slow bake beats a fast failure.
 3. 23:48Z peer session dispatched daily run **32081969617** (dispatch group is
    separate from the cron groups, so it bypassed the deadlock; 1 of 2 budget).
-   It FAILED per (2); the peer re-dispatched on the second budget slot after
-   the de-label and owns the new run to conclusion + first-pass US
-   verification.
+   It FAILED per (2); the peer re-dispatched **32084697588** (00:29Z, slot
+   2 of 2) after the de-label and owns the new run to conclusion + first-pass
+   US verification. Both dispatch slots are now spent — any further dispatch
+   is the operator's.
+3b. 00:5xZ `macstudio` label → **mac-builder-light** (runner 28) — KEPT, and
+   this time the workspace was verified READ-ONLY BEFORE the label (the check
+   mac-builder-4 failed): core.sparseCheckout=false, no sparse file,
+   requirements.txt present, full 40-entry tree. Restores the pool to two
+   verified-full-checkout hosts (mac-builder-5 + mac-builder-light) so the
+   ~13 serialized queued nightly jobs drain at double rate. Tradeoff: renders
+   (render-heavy shares this runner) queue behind nightly jobs while boards
+   are stale — accepted; renders coalesce by design.
 4. Operator asked (issue #5742) to cancel debris run 32077948964 once the
    dispatch is green — sessions correctly cannot cancel daily.yml runs
    (`gh_quota_guard` shape 6). With mac-builder-4 de-labeled, the debris run no
