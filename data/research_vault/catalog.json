@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T21:12:51.717483+00:00",
-  "count": 1353,
+  "generated_at": "2026-08-18T22:10:58.027920+00:00",
+  "count": 1356,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -25,6 +25,7 @@
     "Danske",
     "Deutsche Bank",
     "DoubleLine",
+    "Dragon Capital",
     "Fidelity",
     "Franklin",
     "GMO",
@@ -77,6 +78,65 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-s2u67gkhqby-6919b3",
+      "title": "DGB preview DGB28 and DGB35 Wednesday",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T21:21:06Z",
+      "summary_points": [
+        "**DGB35's Risk-Adjusted & Cross-Currency Value**: DGB35 (DK 2.25 15Nov35) offers best risk-adjusted return (3.0 bp/risk vs DGB28's -5.7 bp/risk) and cheapest bond-bond spread vs Germany (-14.5 bp), with DESTR/ESTR spread peaking at DGB35.",
+        "**Foreign flows into Danish DGB28/DGB35 accelerating**: Sequential increases in foreign holdings across tenors signal growing demand for Danish sovereign debt.",
+        "**DGB35 leveraged positions hedged via DESTR repo funding**: Enhances carry and reduces tail risk through technical strategy for managing leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tgxfmbom1o1-748818",
+      "title": "VU MR",
+      "institution": "Dragon Capital",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:20:25Z",
+      "summary_points": [
+        "**Industrial Momentum & Policy Shift**: Industrial production surged 14.5% YoY (11.4% in 7M26), FDI at $15.2bn (+11.8% YoY) with 82.6% in manufacturing; CPI MoM decline confirms May peak (4.4% 7M26 avg), freeing policy room.",
+        "**VNI Flow Catalyst**: VNI fell 6.3% MoM despite 45% Q2 earnings growth; price disconnect is flow-driven, not fundamental, with FTSE inclusion (Sept) and lighter foreign positioning post-July selloff enabling near-term flow upgrade.",
+        "**External Sector Strength**: Current Account/GDP rising to 7.1% (2026F), FDI Registered at 41.9%, External Debt (% GDP) declining to 30.0%, signaling improved trade balance, strong FDI inflows, and reduced debt risk.",
+        "**Foreign Access Risk**: Market cap rose 18.5% but restricted stocks for foreigners surged 25% (455→569), posing material risk to foreign portfolio flows despite overall market expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dyrigzibdxv-49d225",
+      "title": "JPM US Treasury Market D",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:10:38Z",
+      "summary_points": [
+        "**US Treasury Yield Dynamics**: Long-end yields hit 2007 highs amid global bear steepening (5bp rise), driven by rising JGB yields and term premium; 2s/10s steepeners held despite eroded fundamentals (50bp tightening by 2027 now 35bp).",
+        "**Foreign Demand Flows**: Net $6.8bn foreign purchase of long-term Treasuries in June (slowest since Feb), concentrated in Canada/Euro Area; China largest net seller, with officials net selling $9.8bn (short-term selling reduced T-bill ownership to 5.4%).",
+        "**30-Year Bond Technicals**: 5.30% swing objective (Sep 2024-Oct 2025) reached with no exhaustion signal; next meaningful resistance at 5.50%, bearish short-term bias persists.",
+        "**CFTC Positioning Risk**: Bearish Treasury futures positioning (1y z-score: -1.02) signals declining sentiment, critical for interest rate risk management amid macro hedge fund bearish bias (-1.15 z-score for 10Y)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zg7mb1eztmv-6be4a4",
       "title": "GS Meschoulam Carry without Confirmation 18 Aug 2026",
