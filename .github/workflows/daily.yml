@@ -76,8 +76,20 @@ jobs:
   et_gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      # Job-level override: the workflow-level permissions block above grants
+      # contents/pages/id-token but not `actions`, which the mutex step below
+      # needs (Actions API reads of run/job state for the cross-cron mutex).
+      actions: read
+      contents: read
     outputs:
-      run: ${{ steps.gate.outputs.run }}
+      # The mutex can only ever DOWNGRADE run to 'false', never upgrade past
+      # what the ET regime gate already decided. steps.mutex.outputs.run is
+      # empty whenever the mutex step is skipped (gate already said 'false',
+      # so its `if:` never runs) or when it fails open with run=true — in
+      # both non-standdown cases the expression falls through to
+      # steps.gate.outputs.run.
+      run: ${{ steps.mutex.outputs.run == 'false' && 'false' || steps.gate.outputs.run }}
     steps:
       - name: ET regime gate (DST pair disambiguator)
         id: gate
@@ -111,6 +123,164 @@ jobs:
           off_h = offset.total_seconds() / 3600
           print(f"::notice title=daily ET gate::event={event or '-'} fired={fired or '-'} "
                 f"intended={intended} ny_utc_offset={off_h:+.0f}h -> run={verdict}", flush=True)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"run={verdict}\n")
+          PY
+
+      # ── Cross-concurrency-group single-nightly mutex ──────────────────────
+      # 2026-08-18: two daily.yml runs executed `collect` CONCURRENTLY and each
+      # committed+pushed "data: daily collection 2026-08-18" 20 minutes apart —
+      # 59ccb9c774c8 at 04:01:49Z (run 32077948964, schedule/mac-builder-light)
+      # and 93ab221b81dd at 04:21:53Z (run 32084697588, workflow_dispatch/
+      # mac-builder-5). The double collection produced two independent
+      # fleet-blocking main reds (ci-pack-3 pinned-digest, ci-pack-6
+      # government-revenue projection re-mint).
+      #
+      # The concurrency: block at the top of this file deliberately puts each
+      # DST cron AND every workflow_dispatch in its OWN group (the
+      # 2026-08-14/15 pending-supersede kill — see that block's comment): a
+      # queued run in a shared group gets CANCELLED the instant a sibling
+      # group-mate starts, which is exactly what ate the EDT nightly that
+      # night. That split is correct and MUST NOT be undone — nothing in
+      # concurrency: was ever going to serialize a cron run against a manual
+      # dispatch. This step closes the resulting gap from INSIDE the workflow:
+      # before `collect` is allowed to start, ask the Actions API whether
+      # another daily.yml run is already live, across ALL groups.
+      #
+      # Fail-open, same contract as the `gate` step above it: a broken mutex
+      # must be able to double-run a night, but must NEVER silently zero-run
+      # one. Any API error, empty response, or parse failure leaves run=true
+      # (see the try/except wrapping the whole body below).
+      #
+      # The "live" test (clause d) — an in_progress job, OR job activity within
+      # the last 180 minutes — is the operator escape hatch and is
+      # load-bearing; do not simplify it to "any non-completed run blocks".
+      # Without it, a WEDGED run (every job queued or completed, nothing
+      # executing, no activity for hours — e.g. run 31977372592, which held its
+      # cron group for 26 hours on an unschedulable `theta-m1` runner label)
+      # would permanently block a manual rescue dispatch. A run that is
+      # genuinely working (a healthy 3-hour `collect` shows in_progress for its
+      # whole duration) still blocks correctly under the same test.
+      - name: Cross-cron collect mutex (single-nightly guard)
+        id: mutex
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          THIS_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timedelta, timezone
+
+          REPO = os.environ["REPO"]
+          TOKEN = os.environ["GH_TOKEN"]
+          THIS_RUN_ID = os.environ["THIS_RUN_ID"]
+          API = "https://api.github.com"
+          HEADERS = {
+              "Authorization": f"Bearer {TOKEN}",
+              "Accept": "application/vnd.github+json",
+          }
+          # This repo shares ONE 5000/hr REST quota across the whole fleet
+          # (CLAUDE.md "GitHub quota is ONE shared bucket") — a runaway loop
+          # here would be a fleet outage, not a local bug. per_page=30 on the
+          # runs list, no pagination, and at most 5 per-run jobs lookups.
+          MAX_CANDIDATE_JOB_LOOKUPS = 5
+          LIVE_WINDOW_MINUTES = 180
+
+
+          def _get(url):
+              req = urllib.request.Request(url, headers=HEADERS)
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  if resp.status != 200:
+                      raise RuntimeError(f"GET {url} -> HTTP {resp.status}")
+                  return json.loads(resp.read().decode("utf-8"))
+
+
+          def _parse_ts(value):
+              return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+          def _is_live(run_id):
+              """LIVE iff the run has started job activity AND (something is
+              currently in_progress, or the newest job timestamp is within the
+              last 180 minutes). See the step comment above for why the second
+              half of that OR exists — it is the wedged-run escape hatch."""
+              body = _get(f"{API}/repos/{REPO}/actions/runs/{run_id}/jobs?per_page=100")
+              jobs = body.get("jobs") or []
+              started = [j for j in jobs if j.get("started_at")]
+              if not started:
+                  return False
+              if any(j.get("status") == "in_progress" for j in jobs):
+                  return True
+              stamps = []
+              for j in jobs:
+                  for key in ("started_at", "completed_at"):
+                      v = j.get(key)
+                      if v:
+                          stamps.append(_parse_ts(v))
+              if not stamps:
+                  return False
+              age = datetime.now(timezone.utc) - max(stamps)
+              return age <= timedelta(minutes=LIVE_WINDOW_MINUTES)
+
+
+          verdict = "true"
+          try:
+              runs_body = _get(f"{API}/repos/{REPO}/actions/workflows/daily.yml/runs?per_page=30")
+              runs = runs_body.get("workflow_runs") or []
+              this_run = next((r for r in runs if str(r.get("id")) == str(THIS_RUN_ID)), None)
+              if this_run is None:
+                  this_run = _get(f"{API}/repos/{REPO}/actions/runs/{THIS_RUN_ID}")
+              this_created = _parse_ts(this_run["created_at"])
+              this_id = int(THIS_RUN_ID)
+
+              # Clauses (a)-(c): other, non-completed, STRICTLY earlier runs
+              # (tie-break: lower id wins), newest-created-first, capped at
+              # MAX_CANDIDATE_JOB_LOOKUPS before any per-run jobs call is spent.
+              older = []
+              for r in runs:
+                  rid = int(r["id"])
+                  if rid == this_id or r.get("status") == "completed":
+                      continue
+                  created = _parse_ts(r["created_at"])
+                  if created < this_created or (created == this_created and rid < this_id):
+                      older.append((created, rid, r))
+              older.sort(key=lambda t: t[0], reverse=True)
+              older = older[:MAX_CANDIDATE_JOB_LOOKUPS]
+
+              blocker = None
+              for _created, rid, r in older:
+                  if _is_live(rid):
+                      blocker = r
+                      break
+
+              if blocker is not None:
+                  verdict = "false"
+                  print(
+                      f"::warning title=daily collect mutex::run {THIS_RUN_ID} "
+                      f"standing down — run {blocker.get('id')} is already live "
+                      f"({blocker.get('html_url', 'no url')})",
+                      flush=True,
+                  )
+              else:
+                  verdict = "true"
+                  print(
+                      f"::notice title=daily collect mutex::examined {len(older)} "
+                      "candidate run(s), none live -> night proceeds",
+                      flush=True,
+                  )
+          except Exception as exc:  # fail-open contract — see step comment above
+              verdict = "true"
+              print(
+                  f"::warning title=daily collect mutex::mutex check failed "
+                  f"({exc!r}) — failing open, night proceeds",
+                  flush=True,
+              )
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"run={verdict}\n")
           PY

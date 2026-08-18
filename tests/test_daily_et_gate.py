@@ -34,7 +34,10 @@ Run (CI runs UTC — reproduce it exactly):
 
 from __future__ import annotations
 
+import ast
+import json
 import textwrap
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -87,6 +90,122 @@ def _gate_source() -> str:
 
 
 GATE_SRC = _gate_source()
+
+
+# ---------------------------------------------------------------------------
+# extraction — the SHIPPED mutex step (2026-08-18 double-collect fix)
+# ---------------------------------------------------------------------------
+#
+# ``gate`` disambiguates the DST cron pair; ``mutex`` closes a separate gap —
+# the concurrency: block deliberately puts each DST cron and every
+# workflow_dispatch in its OWN group (the 2026-08-14/15 pending-supersede
+# kill), so nothing there stops two of those groups from running `collect`
+# concurrently. 2026-08-18: exactly that happened (run 32077948964 and run
+# 32084697588 both committed "data: daily collection 2026-08-18" ~20 minutes
+# apart) and produced two independent fleet-blocking main reds. ``mutex`` asks
+# the Actions API whether another daily.yml run is already live before
+# `collect` is allowed to start.
+
+def _mutex_step() -> dict:
+    steps = _workflow()["jobs"]["et_gate"]["steps"]
+    mutex = [s for s in steps if s.get("id") == "mutex"]
+    assert len(mutex) == 1, f"expected exactly one et_gate step with id 'mutex', got {len(mutex)}"
+    return mutex[0]
+
+
+def _heredoc_body(step: dict) -> str:
+    """Strip a step's ``python3 - <<'PY' ... PY`` heredoc wrapper and dedent.
+
+    Shared shape with ``_gate_source``'s inline logic above — kept as a
+    separate function (rather than refactoring ``_gate_source`` to call it)
+    so a change here can never alter what the already-passing gate tests
+    extract and execute.
+    """
+    lines = step["run"].splitlines()
+    assert lines[0].strip() == HEREDOC_OPEN, (
+        f"{step.get('id')} step no longer opens with {HEREDOC_OPEN!r}: {lines[0]!r}"
+    )
+    body = lines[1:]
+    while body and not body[-1].strip():
+        body.pop()
+    assert body and body[-1].strip() == HEREDOC_CLOSE, (
+        f"{step.get('id')} heredoc no longer terminates with {HEREDOC_CLOSE!r}: {body[-1]!r}"
+    )
+    return textwrap.dedent("\n".join(body[:-1])) + "\n"
+
+
+def _mutex_source() -> str:
+    """The inline python out of daily.yml's mutex step, heredoc stripped."""
+    return _heredoc_body(_mutex_step())
+
+
+MUTEX_SRC = _mutex_source()
+
+MUTEX_ALLOWED_IMPORT_ROOTS = {"json", "os", "urllib", "datetime"}
+
+
+class _FakeHTTPResponse:
+    """Minimal stand-in for ``http.client.HTTPResponse`` as a context manager."""
+
+    def __init__(self, payload: dict, status: int = 200):
+        self._body = json.dumps(payload).encode("utf-8")
+        self.status = status
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def _urlopen_router(routes: dict[str, dict]):
+    """Fake ``urllib.request.urlopen`` matching a request's URL by substring."""
+
+    def _urlopen(req, timeout=None):  # noqa: ARG001 - must match urlopen's signature
+        url = req.full_url
+        for needle, payload in routes.items():
+            if needle in url:
+                return _FakeHTTPResponse(payload)
+        raise AssertionError(f"unexpected URL in mutex test stub: {url}")
+
+    return _urlopen
+
+
+def _urlopen_raises(exc: Exception):
+    def _urlopen(req, timeout=None):  # noqa: ARG001
+        raise exc
+
+    return _urlopen
+
+
+def _iso(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def run_mutex(tmp_path, monkeypatch, capsys, *, this_run_id: str, repo: str = "acme/example"):
+    """Execute the shipped mutex script; return (verdict, stdout).
+
+    Caller monkeypatches ``urllib.request.urlopen`` BEFORE calling this, same
+    ordering ``run_gate`` uses for ``ET_GATE_NOW_UTC``.
+    """
+    out_file = tmp_path / "github_output.txt"
+    out_file.write_text("", encoding="utf-8")
+    monkeypatch.setenv("GH_TOKEN", "test-token")
+    monkeypatch.setenv("REPO", repo)
+    monkeypatch.setenv("THIS_RUN_ID", this_run_id)
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+    exec(compile(MUTEX_SRC, "daily.yml::et_gate::mutex", "exec"), {"__name__": "__main__"})
+    stdout = capsys.readouterr().out
+    written = [
+        line.split("=", 1)[1]
+        for line in out_file.read_text(encoding="utf-8").splitlines()
+        if line.startswith("run=")
+    ]
+    assert written, f"mutex wrote no run= line to GITHUB_OUTPUT (stdout: {stdout!r})"
+    return written[-1], stdout
 
 
 def run_gate(event, fired, now_iso, tmp_path, monkeypatch, capsys):
@@ -375,3 +494,184 @@ def test_fail_open_jobs_keep_their_always():
             f"{key}: if={jobs[key].get('if')!r} lost its always() — an et_gate error "
             "would now skip it via needs-status and kill the nightly silently"
         )
+
+
+def test_gate_step_selector_still_resolves_exactly_one_step():
+    """Anti-drift: the mutex step's addition below `gate` must not create a
+    second `id: gate` match or otherwise confuse the existing selector."""
+    steps = _workflow()["jobs"]["et_gate"]["steps"]
+    gate_steps = [s for s in steps if s.get("id") == "gate"]
+    assert len(gate_steps) == 1
+
+
+# ---------------------------------------------------------------------------
+# mutex — wiring (2026-08-18 double-collect fix)
+# ---------------------------------------------------------------------------
+
+def test_et_gate_job_declares_actions_read_permission():
+    """The workflow-level permissions: block grants contents/pages/id-token but
+    not `actions`, which the mutex step's Actions API reads need."""
+    perms = _workflow()["jobs"]["et_gate"].get("permissions") or {}
+    assert perms.get("actions") == "read", (
+        f"et_gate permissions={perms} — job-level `actions: read` is required "
+        "for the mutex step's runs/jobs API reads"
+    )
+
+
+def test_mutex_step_is_gated_checkout_free_and_cleanly_named():
+    step = _mutex_step()
+    assert step.get("if") == "steps.gate.outputs.run == 'true'", (
+        "mutex must only run when the ET regime gate already said 'true' — "
+        f"got if={step.get('if')!r}"
+    )
+    assert step.get("uses") is None, "mutex must not use actions/checkout"
+    assert "timings" not in (step.get("name") or ""), (
+        "mutex step name must not contain 'timings' — "
+        "test_gate_job_stays_cheap_and_uninstrumented iterates every et_gate step"
+    )
+    env = step.get("env") or {}
+    assert env.get("GH_TOKEN") == "${{ github.token }}"
+    assert env.get("REPO") == "${{ github.repository }}"
+    assert env.get("THIS_RUN_ID") == "${{ github.run_id }}"
+
+
+def test_outputs_run_can_only_be_downgraded_by_the_mutex():
+    """The job output must reference both step outputs, and the mutex may only
+    ever force 'false' — an empty (skipped/no-standdown) mutex output must
+    fall through to whatever the ET regime gate decided."""
+    expr = _workflow()["jobs"]["et_gate"]["outputs"]["run"]
+    assert "steps.mutex.outputs.run" in expr
+    assert "steps.gate.outputs.run" in expr
+
+    def eval_expr(mutex_run: str, gate_run: str) -> str:
+        inner = expr.strip()
+        if inner.startswith("${{") and inner.endswith("}}"):
+            inner = inner[3:-2].strip()
+        inner = inner.replace("steps.mutex.outputs.run", repr(mutex_run))
+        inner = inner.replace("steps.gate.outputs.run", repr(gate_run))
+        inner = inner.replace("&&", " and ").replace("||", " or ")
+        return eval(inner, {"__builtins__": {}}, {})  # noqa: S307
+
+    assert eval_expr("false", "true") == "false", "a mutex standdown must win over a gate 'true'"
+    assert eval_expr("", "true") == "true", "a skipped mutex must fall through to the gate value"
+    assert eval_expr("", "false") == "false", "gate already said no; mutex never even ran"
+    assert eval_expr("true", "false") == "false", (
+        "mutex can never UPGRADE past a gate 'false' (mutex only runs when gate "
+        "already said 'true', so this combination cannot occur in practice, but "
+        "the expression itself must not grant mutex that power)"
+    )
+
+
+def test_mutex_script_compiles_and_imports_only_stdlib():
+    """et_gate is ubuntu-latest with no pip-install step — a non-stdlib import
+    would fail at runtime, silently defeating the fail-open contract only if
+    the import itself were wrapped in the try/except (it is NOT: imports sit
+    at module top, so a bad import would hard-crash the step instead)."""
+    compile(MUTEX_SRC, "daily.yml::et_gate::mutex", "exec")
+    tree = ast.parse(MUTEX_SRC)
+    roots = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                roots.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            roots.add(node.module.split(".")[0])
+    assert roots, "mutex script imports nothing — extraction likely broke"
+    assert roots <= MUTEX_ALLOWED_IMPORT_ROOTS, (
+        f"mutex script imports non-stdlib module(s) {roots - MUTEX_ALLOWED_IMPORT_ROOTS} — "
+        "et_gate has no pip-install step"
+    )
+
+
+# ---------------------------------------------------------------------------
+# mutex — behavior
+# ---------------------------------------------------------------------------
+
+def test_mutex_fails_open_on_api_error(tmp_path, monkeypatch, capsys):
+    """Same fail-open contract as `gate` above it: an API outage must double-run
+    a night, never silently zero-run one."""
+    monkeypatch.setattr("urllib.request.urlopen", _urlopen_raises(OSError("network is down")))
+    verdict, stdout = run_mutex(tmp_path, monkeypatch, capsys, this_run_id="500001")
+    assert verdict == "true"
+    warnings = [line for line in stdout.splitlines() if line.startswith("::warning")]
+    assert warnings, f"expected a line-start ::warning on API failure, got: {stdout!r}"
+    assert "daily collect mutex" in warnings[0]
+
+
+def test_mutex_stands_down_for_a_live_older_run(tmp_path, monkeypatch, capsys):
+    """A genuinely-running older run (in_progress job) must block — this is the
+    2026-08-18 defect vector: a second daily.yml run started `collect` while
+    an earlier run's `collect` was still in flight."""
+    this_id, other_id = 500202, 500101
+    now = datetime.now(timezone.utc)
+    routes = {
+        "actions/workflows/daily.yml/runs?per_page=30": {
+            "workflow_runs": [
+                {"id": this_id, "status": "in_progress", "created_at": _iso(now)},
+                {
+                    "id": other_id,
+                    "status": "in_progress",
+                    "created_at": _iso(now - timedelta(minutes=10)),
+                    "html_url": f"https://github.com/acme/example/actions/runs/{other_id}",
+                },
+            ]
+        },
+        f"actions/runs/{other_id}/jobs": {
+            "jobs": [
+                {
+                    "status": "in_progress",
+                    "started_at": _iso(now - timedelta(minutes=9)),
+                    "completed_at": None,
+                },
+            ]
+        },
+    }
+    monkeypatch.setattr("urllib.request.urlopen", _urlopen_router(routes))
+    verdict, stdout = run_mutex(tmp_path, monkeypatch, capsys, this_run_id=str(this_id))
+    assert verdict == "false"
+    warnings = [line for line in stdout.splitlines() if line.startswith("::warning")]
+    assert warnings, f"expected a line-start ::warning on standdown, got: {stdout!r}"
+    assert str(other_id) in warnings[0] and str(this_id) in warnings[0]
+
+
+def test_mutex_escape_hatch_lets_a_wedged_run_through(tmp_path, monkeypatch, capsys):
+    """Anti-regression pin for clause (d), the operator escape hatch: a run
+    whose jobs are all completed or queued, with no job activity in the last
+    180 minutes, must NOT block — this is exactly the shape of run
+    31977372592, which held its cron group for 26 hours on an unschedulable
+    `theta-m1` runner label with nothing ever executing. Simplifying clause
+    (d) to "any non-completed run blocks" would permanently wedge a manual
+    rescue dispatch behind a run like that."""
+    this_id, other_id = 500402, 500301
+    now = datetime.now(timezone.utc)
+    routes = {
+        "actions/workflows/daily.yml/runs?per_page=30": {
+            "workflow_runs": [
+                {"id": this_id, "status": "in_progress", "created_at": _iso(now)},
+                {
+                    "id": other_id,
+                    "status": "queued",
+                    "created_at": _iso(now - timedelta(hours=5)),
+                    "html_url": f"https://github.com/acme/example/actions/runs/{other_id}",
+                },
+            ]
+        },
+        f"actions/runs/{other_id}/jobs": {
+            "jobs": [
+                {
+                    "status": "completed",
+                    "started_at": _iso(now - timedelta(hours=5)),
+                    "completed_at": _iso(now - timedelta(hours=4, minutes=50)),
+                },
+                {"status": "queued", "started_at": None, "completed_at": None},
+            ]
+        },
+    }
+    monkeypatch.setattr("urllib.request.urlopen", _urlopen_router(routes))
+    verdict, stdout = run_mutex(tmp_path, monkeypatch, capsys, this_run_id=str(this_id))
+    assert verdict == "true", (
+        "a wedged older run (no in_progress job, no activity in 180 minutes) "
+        "must not block a rescue dispatch"
+    )
+    notices = [line for line in stdout.splitlines() if line.startswith("::notice")]
+    assert notices, f"expected a proceed ::notice, got: {stdout!r}"
