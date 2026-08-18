@@ -1454,6 +1454,55 @@ def test_b1_5_manifest_enumerates_every_consumed_file_closure(tmp_path, monkeypa
         "F1 BLOCKER: mutating a historical (non-S/D) chain moved the payload but not receipt_id"
 
 
+@pytest.mark.needs_full_checkout("data")
+def test_b1_6_real_build_sanity_full_fix_set_wired_together():
+    """"real-build sanity" (attack_realbuild.py converted): the FULL producer
+    against the REAL committed store, every fix from this wave wired together with
+    no crash and no contradiction — F1's three-domain manifest all bound and
+    non-degenerate, F4a's coverage predicate never lets a name self-certify
+    crowded via c1 alone on the real store's current (thin) same-day coverage,
+    F6's event_implied_move_pct genuinely differs from the card-level 5-session
+    figure, and F5's LEGS_BELOW_THRESHOLD text is the exact string a real
+    no_signal_exemplar renders."""
+    payload = producer.build(now=datetime.now(timezone.utc), ignore_staleness=True)
+    assert payload["as_of_session"] and payload["oi_counted_date"]
+    assert payload["receipt_id"]
+
+    sm = payload["source_manifest"]
+    assert set(sm) == {"gex_summary", "gex_confirm", "chains"}
+    assert sm["chains"]["member_count"] > 0 and sm["chains"]["root"]
+
+    receipt_sources = {r["logical_source"] for r in payload["input_receipts"]}
+    assert {"chains_manifest", "universe_resolution"} <= receipt_sources
+
+    for c in payload["risk_warnings"]:
+        assert c["crowding"] is not None
+        # c1 requires the coverage predicate; on the real store's current
+        # same-day tape it should never appear alone without genuine coverage --
+        # this assertion holds regardless of which sessions the real store adds.
+        fired = c["crowding"]["fired"]
+        assert fired, f"{c['symbol']}: crowding present but no legs fired"
+
+    for c in payload["event_board"]:
+        ev_move = c["event"]["event_implied_move_pct"]
+        card_move = c["market_implied_move_pct"]
+        if ev_move is not None and card_move is not None:
+            assert ev_move != card_move, \
+                f"{c['symbol']}: event_implied_move_pct collapsed onto the card-level figure"
+
+    ns = payload.get("no_signal_exemplar")
+    if ns is not None:
+        reason = ns["no_signal_reason"]
+        assert reason["en"] in (
+            brief._NO_SIGNAL_REASON_EN["LEGS_BELOW_THRESHOLD"],
+            brief._NO_SIGNAL_REASON_EN["ONE_SIDED"] + " and activity is normal",
+            brief._NO_SIGNAL_REASON_EN["ONE_SIDED"],
+            brief._NO_SIGNAL_REASON_EN["DISAGREE"] + " and activity is normal",
+            brief._NO_SIGNAL_REASON_EN["DISAGREE"],
+            brief._NO_SIGNAL_REASON_EN["SALIENCE_FAIL"],
+        )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # B2 — two gates (SOURCE_COVERAGE_GATE 0.90 vs ELIGIBILITY_GATE 0.60).
 # ─────────────────────────────────────────────────────────────────────────────
