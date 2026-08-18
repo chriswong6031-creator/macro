@@ -51,7 +51,7 @@ verified:
     command: >
       python -m pytest tests/test_government_revenue_award_events.py -k d11f -q
     result: 6 passed including replay identity/payload equality
-  - claim: Branch contains origin/main 448c33d86f8e and #5857 95d39c24ab17.
+  - claim: Branch contains origin/main 66e260d1610d (#5863) and #5857 95d39c24ab17.
     command: git merge-base --is-ancestor origin/main HEAD && git merge-base --is-ancestor 95d39c24ab17 HEAD
     result: both ancestors present; US board gate diff vs origin/main is empty
 
