@@ -280,6 +280,23 @@ every moved file across both trees, and why the push-path fence withholds the wh
 coherence family rather than reverting the offending file. Full reasoning:
 `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`.
 
+**Do not over-generalize that refutation.** The rule is not "`merge=union` is unsafe"; it is
+**union is correct for a standalone ledger and wrong for a hash-bound family**. The 20
+existing entries are right where they are. The test to apply before proposing a merge driver
+anywhere: *does any consumer hash this file's bytes, or bind it to a sibling artifact?* If
+no — union. If yes — a driver that rewrites the byte stream breaks the binding, and the
+remedy is a push-path fence over the whole family instead.
+
+That cuts the other way too, and is an open exposure rather than a finding: the `-X theirs`
+push sites (daily.yml:702, :751, :772, :1313) are shared by every lane, so any append-only
+artifact written by two overlapping runs is exposed to the same silent wholesale loss — and
+for the standalone ledgers that already carry `merge=union`, git resolves it correctly, while
+any append-only artifact carrying NEITHER union nor fence coverage does not. Whether that has
+actually cost rows outside `data/government_revenue/` is unmeasured here. The cheap check, for
+whoever picks it up: for each append-only artifact lacking a `.gitattributes` entry, walk its
+commits and assert each version is a byte-prefix extension of its predecessor — the same test
+that surfaced both govrev occurrences.
+
 **The source published nothing in the window.** All 376 differing rows of
 `collection_receipts.jsonl` between the two commits carry identical `request_sha256` AND
 `response_sha256`, identical `record_count` and `has_next`, across 168 award keys and 21
