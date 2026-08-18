@@ -1,12 +1,16 @@
 {
   "as_of": "2026-08-18",
   "coverage": {
-    "end": "2026-08-17",
-    "note": "daily rollup covers 10 session-date(s) from 2026-08-06 to 2026-08-17; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-08-06"
+    "end": "2026-08-18",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-07 to 2026-08-18; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-07"
   },
   "schema": "chronicle.rollup.daily/v1",
   "sessions": [
+    {
+      "date": "2026-08-18",
+      "events": []
+    },
     {
       "date": "2026-08-17",
       "events": [
@@ -196,59 +200,45 @@
     },
     {
       "date": "2026-08-07",
-      "events": []
-    },
-    {
-      "date": "2026-08-06",
       "events": [
         {
-          "date": "2026-08-06",
-          "id": "cev-research_vault-2fe6ddd4e3c8",
+          "date": "2026-08-07",
+          "id": "cev-research_vault-dc2d55b9105d",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+          "source_ref": "marketdesk-igkggbrovm4-d91fe5",
           "tickers": [],
-          "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
-          "weight_hint": 3
-        },
-        {
-          "date": "2026-08-06",
-          "id": "cev-research_vault-efec69ecb370",
-          "kind": "report",
-          "source": "research_vault",
-          "source_ref": "marketdesk-el0tukvenko-5a05f3",
-          "tickers": [],
-          "title": "Goldman Sachs: Global Markets Daily China’s Balancing Act Needs a Stronger Yuan and Stronger Demand",
+          "title": "Goldman Sachs: Fiserv Inc. (FISV) Key takeaways Another reset likely to push out the turnaround story",
           "weight_hint": 2
         },
         {
-          "date": "2026-08-06",
-          "id": "cev-research_vault-f1041c2bc8e4",
+          "date": "2026-08-07",
+          "id": "cev-research_vault-f196bee89007",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-t4jiktpq0ig-b9206a",
+          "source_ref": "marketdesk-bcjktsbzuwe-b4ec6e",
           "tickers": [],
-          "title": "GMO: Gmo the evolution and edge of gmo systematic equity 8 26",
+          "title": "Goldman Sachs: Global Markets Comment A Few Follow Up Questions on Yen Intervention",
           "weight_hint": 2
         },
         {
-          "date": "2026-08-06",
-          "id": "cev-research_vault-f32780b88054",
+          "date": "2026-08-07",
+          "id": "cev-research_vault-f35bfdbebf35",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-jefo4v6bgcr-46475e",
+          "source_ref": "marketdesk-a4azjz2hgsd-f09120",
           "tickers": [],
-          "title": "Other: Q2 2026 Earnings Review",
+          "title": "Goldman Sachs: AEJ Week Ahead China inflation and credit data, India inflation, and Singapore and Malaysia GDP",
           "weight_hint": 2
         },
         {
-          "date": "2026-08-06",
-          "id": "cev-research_vault-f363c4bfee76",
+          "date": "2026-08-07",
+          "id": "cev-research_vault-ff334e4f6f42",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-jkaisdii5gi-7e75c8",
+          "source_ref": "marketdesk-0091uhxpt4p-c93cc6",
           "tickers": [],
-          "title": "Goldman Sachs: Americas Brokers & Crypto Key takeaways post earnings CRCL & GLXY",
+          "title": "PNC: PNC Economics Research Claims 6 August 2026",
           "weight_hint": 2
         }
       ]

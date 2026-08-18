@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 67,
+          "n_events": 82,
           "source": "research_vault",
           "theme": null,
           "top_events": []
@@ -289,6 +289,12 @@
         },
         {
           "n_events": 2,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 2,
           "source": "regime_flip",
           "theme": "regime",
           "top_events": [
@@ -391,7 +397,7 @@
           "top_events": []
         },
         {
-          "n_events": 3,
+          "n_events": 4,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -420,7 +426,7 @@
     {
       "clusters": [
         {
-          "n_events": 3,
+          "n_events": 4,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -473,7 +479,7 @@
     {
       "clusters": [
         {
-          "n_events": 1,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -507,7 +513,7 @@
     {
       "clusters": [
         {
-          "n_events": 17,
+          "n_events": 20,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
