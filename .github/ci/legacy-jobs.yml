@@ -3025,6 +3025,16 @@ jobs:
       # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
       - name: sparse session-worktree profile (config ↔ fallback, husk detector, hook wiring)
         run: python -m pytest tests/test_sparse_worktree_profile.py -q
+      # Same subject (scripts/worktree_sparse.py), same job, for the same reason
+      # the step above exists: #5531 landed its suite named by no run: step and
+      # pack-1 went red on every PR the moment it merged. This suite owns the
+      # lock preflight and the truncation repair — a `sparse-checkout add`/`full`
+      # SIGKILLed by its own subprocess timeout leaves a 0-byte file over a real
+      # committed artifact plus an orphaned index.lock, and the repair must never
+      # revert a session's uncommitted work while fixing it. stdlib + pytest;
+      # synthetic git repos under tmp_path, no data/ or site/ reads.
+      - name: sparse worktree add/full lock preflight + truncation repair (never worse than it started)
+        run: python -m pytest tests/test_worktree_sparse_add_lock_safety.py -q
       # VACUOUS guards: the same lie audit_unrun_tests.py catches, one layer down.
       # A suite that never runs is caught above; a guard that RUNS, walks a tree
       # that is not checked out, finds nothing and prints its affirmative OK is
