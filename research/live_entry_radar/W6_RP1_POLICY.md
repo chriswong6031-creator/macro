@@ -8,23 +8,54 @@ for the purpose of improving this formula. W5 confirmatory results
 (`research/live_entry_radar/W5_CONFIRMATORY_RESULTS_2026-08-17.md`) were already
 known and are therefore **contaminated for weight choice**. They are not inputs.
 
+## Post-Sol-review correction (methodological only)
+
+After Sol review of PR #5834, three ranking-law defects were corrected
+**without examining outcome-conditioned results** (no W5 table re-inspection,
+no weight search, no formula shopping against Q5/H=10/Panel-B):
+
+1. **Unit invariance at the submeasure.** Percentile each whitelist submeasure
+   first across unique name snapshots, then equal-combine those normalized
+   submeasure ranks within a dimension, then equal-combine available dimensions.
+   Raw heterogeneous units are never averaged inside a dimension.
+2. **Canonical Priority.** Retain a sufficient-precision `priority_value`.
+   `ordinal` is the competition rank of that same number. `priority_index` =
+   `round(priority_value)` is presentation only and must not be the ranking key.
+3. **Name-snapshot reference population.** Calibrate the cross-section on unique
+   current ticker snapshots. Project that ticker's canonical value/ordinal onto
+   every separate expert observation. Duplicate C2/expert variants do not
+   inflate `population_n` and do not move other names. Expert identities remain
+   separate rows.
+
+Architecture and firewalls below are unchanged. These are corrections to how
+RP1 is computed, not a new policy family.
+
 ## What the number is
 
-`priority_index` is a **deterministic Research Priority index under policy RP1**:
-the equal-Borda mean of available dimension percentiles within the current
-rankable population, scaled 0–100. `ordinal` (1 = look here first) is the
-**product function**. Rank is competition-ranked (ties share an ordinal).
+`priority_value` is the **canonical** deterministic Research Priority under
+policy RP1: the equal mean of available dimension values, each dimension value
+being the equal mean of that dimension's available **submeasure** cross-sectional
+ranks (0–100) in the unique-name snapshot population. `priority_index` is
+`round(priority_value)` for display. `ordinal` (1 = look here first) is the
+**product function**: competition rank of `priority_value` (ties share an
+ordinal).
 
 It is **not** probability, confidence, conviction, expected return, expected
 upside, win rate, percentile of future performance, or edge.
 
-A value such as 91 must decompose into named dimension percentiles and the
-raw point-in-time measures those percentiles were ranked from.
+A value such as 91 must decompose into named dimension values, the submeasure
+cross-sectional ranks those values were combined from, and the raw
+point-in-time measures.
 
 ## Unit of ranking
 
-One **episode / expert observation** `(ticker, detector_id, variant)`.
-NVDA G0, NVDA C2a, NVDA C5 remain three rows. Never a ticker-wide average.
+The **emitted row** is one **episode / expert observation**
+`(ticker, detector_id, variant)`. NVDA G0, NVDA C2a, NVDA C5 remain three rows.
+Never a ticker-wide collapse of expert identity.
+
+The **reference population** for cross-sectional ranks is unique current name
+snapshots (ticker). A ticker's canonical `priority_value` is projected onto
+every rankable expert observation of that ticker.
 
 ## Rankable population
 
@@ -49,9 +80,11 @@ unrank a healthy episode. Cycle-refusal states do.
 
 ## Dimensions (equal Borda — not edge weights)
 
-No 30/20/20 hand weights. Each available dimension contributes one percentile
-in the rankable set. The composite is the mean of available dimension
-percentiles. That is an attention-ordering rule, not an estimate of edge.
+No 30/20/20 hand weights. Each available **submeasure** is percentile-ranked in
+the unique-name snapshot set, then those ranks are equal-averaged inside the
+dimension, then available dimensions are equal-averaged into `priority_value`.
+That is an attention-ordering rule, not an estimate of edge. A dimension with
+zero finite submeasures is unavailable. Missing ≠ 0.
 
 ### A. `structural_quality` (higher better)
 
@@ -118,19 +151,30 @@ These never enter a measure, a dimension, or a tie-break:
 
 1. Extract whitelist-only measures. Unknown keys on the input object are ignored
    (outcome-injection firewall).
-2. For each dimension, percentile-rank the mean of its available submeasures
-   across the rankable set (higher better). Dimension with zero submeasures →
-   unavailable.
-3. `priority_index` = round(mean of available dimension percentiles).
-4. `ordinal` = competition rank of `priority_index` (1 = highest index).
-5. Board display order: `ordinal`, then `detector_id`, then `variant`, then
-   `ticker`. Ticker is a stable sort key, **not** a feature: identical measures
-   share an ordinal regardless of ticker.
+2. Among rankable expert observations, take one current snapshot per ticker
+   (first expert in stable `(detector_id, variant)` order supplies the measures;
+   live wiring already shares name-level measures).
+3. Percentile-rank **each** whitelist submeasure across those snapshots
+   (higher better; ties share the mid-rank). Raw units are never averaged.
+4. Dimension value = equal mean of that dimension's available submeasure
+   ranks. Dimension with zero submeasures → unavailable.
+5. Canonical `priority_value` = equal mean of available dimension values
+   (full precision). At least two dimensions required or the observation is
+   unrankable (`insufficient_coverage`).
+6. `ordinal` = competition rank of `priority_value` (1 = highest value).
+7. `priority_index` = `round(priority_value)` — presentation only.
+8. Project the ticker's `priority_value` / `ordinal` / dimension values onto
+   every rankable expert row for that ticker. `population_n` = unique-name
+   snapshot count, not expert-row count.
+9. Board display order: `ordinal`, then `detector_id`, then `variant`, then
+   `ticker`. Ticker is a stable sort key, **not** a feature: identical snapshot
+   measures share an ordinal regardless of ticker.
 
 ## Tie-breaking
 
-Competition rank. No ticker-name, no detector-id bonus. Identical measures ⇒
-identical `priority_index` and `ordinal`.
+Competition rank of `priority_value`. No ticker-name, no detector-id bonus.
+Identical snapshot measures ⇒ identical `priority_value`, `priority_index`,
+and `ordinal`.
 
 ## Null / stale / degraded
 

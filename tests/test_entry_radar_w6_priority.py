@@ -25,8 +25,12 @@ NOW = datetime(2026, 8, 17, 15, 0, tzinfo=timezone.utc)
 COMPUTED = rp.iso(NOW)
 
 PINNED_SPEC_HASHES = {
-    "G0": g0_spec_hash, "C1": c1_spec_hash, "C2": c2_spec_hash,
-    "C3": c3_spec_hash, "C4": c4_spec_hash, "C5": c5_spec_hash,
+    "G0": ("9be89a8acc8b905c", g0_spec_hash),
+    "C1": ("f0bbd6cf3a6e2339", c1_spec_hash),
+    "C2": ("d8ba60a25cfa7400", c2_spec_hash),
+    "C3": ("d54dc1e55c4261c8", c3_spec_hash),
+    "C4": ("dce21ac680233ee2", c4_spec_hash),
+    "C5": ("13dec66345a0376c", c5_spec_hash),
 }
 
 
@@ -88,8 +92,8 @@ def test_input_order_does_not_change_priority_or_ordinal():
     def key(e):
         return (e["ticker"], e["detector_id"], e.get("variant") or "")
 
-    assert {key(e): (e["priority_index"], e["ordinal"]) for e in forward} == \
-        {key(e): (e["priority_index"], e["ordinal"]) for e in backward}
+    assert {key(e): (e["priority_value"], e["priority_index"], e["ordinal"]) for e in forward} == \
+        {key(e): (e["priority_value"], e["priority_index"], e["ordinal"]) for e in backward}
 
 
 def test_ticker_permutation_preserves_rank_relationships():
@@ -113,6 +117,78 @@ def test_identical_measures_share_an_ordinal_regardless_of_ticker():
     ]))
     assert ranked[0]["ordinal"] == ranked[1]["ordinal"]
     assert ranked[0]["priority_index"] == ranked[1]["priority_index"]
+    assert ranked[0]["priority_value"] == ranked[1]["priority_value"]
+
+
+def test_ordinal_is_competition_rank_of_canonical_priority_value():
+    """UI rounding is presentation.  Ordinal uses the same canonical value."""
+    eps = [
+        _ep(f"T{i:02d}", "C1_1D_LIVE_WASHOUT@1",
+            last=80.0 + i, hist=-0.50 + 0.05 * i)
+        for i in range(11)
+    ]
+    ranked = _ranked(_board(eps))
+    by_ticker = {e["ticker"]: e for e in ranked}
+    unique = sorted(by_ticker)
+    values = [by_ticker[t]["priority_value"] for t in unique]
+    expected = rp._competition_ordinals(values)
+    for ticker, ordinal in zip(unique, expected):
+        row = by_ticker[ticker]
+        assert row["ordinal"] == ordinal
+        assert row["priority_index"] == round(row["priority_value"])
+    buckets: dict[int, list[dict]] = {}
+    for ticker in unique:
+        row = by_ticker[ticker]
+        buckets.setdefault(row["priority_index"], []).append(row)
+    for rows in buckets.values():
+        for left, right in zip(rows, rows[1:]):
+            if left["priority_value"] != right["priority_value"]:
+                assert left["ordinal"] != right["ordinal"]
+
+
+def test_positive_affine_transform_of_a_submeasure_does_not_move_priority():
+    """Percentile-then-combine is unit-invariant.  No outcome table consulted."""
+    def make(xform):
+        return [
+            _ep("AAA", "C1_1D_LIVE_WASHOUT@1", last=120.0, hist=xform(-0.05)),
+            _ep("BBB", "C1_1D_LIVE_WASHOUT@1", last=90.0, hist=xform(0.20)),
+            _ep("CCC", "C1_1D_LIVE_WASHOUT@1", last=100.0, hist=xform(-0.40)),
+        ]
+
+    def payload(rows):
+        return {e["ticker"]: (e["ordinal"], e["priority_value"], e["priority_index"])
+                for e in rows}
+
+    base = payload(_ranked(_board(make(lambda h: h))))
+    scaled = payload(_ranked(_board(make(lambda h: 1000.0 * h + 3.0))))
+    assert base == scaled
+
+
+def test_clone_variants_do_not_inflate_the_name_snapshot_population():
+    """Reference population is unique tickers.  Extra C2 clones stay extra rows."""
+    wash_c1 = _ep("WASH", "C1_1D_LIVE_WASHOUT@1", last=110.0)
+    wash_c2a = _ep("WASH", "C2_1D_TURN@1", last=110.0, variant="c2a_kd_cross")
+    wash_clone = _ep("WASH", "C2_1D_TURN@1", last=110.0, variant="c2a_clone")
+    other = _ep("OTHER", "C1_1D_LIVE_WASHOUT@1", last=80.0)
+    thin = _board([wash_c1, wash_c2a, other])
+    fat = _board([wash_c1, wash_c2a, wash_clone, other])
+    assert thin["population_n"] == 2
+    assert fat["population_n"] == 2
+
+    def snapshot(board, ticker):
+        rows = [e for e in _ranked(board) if e["ticker"] == ticker]
+        values = {e["priority_value"] for e in rows}
+        ordinals = {e["ordinal"] for e in rows}
+        assert len(values) == 1 and len(ordinals) == 1
+        return next(iter(values)), next(iter(ordinals))
+
+    assert snapshot(thin, "OTHER") == snapshot(fat, "OTHER")
+    assert snapshot(thin, "WASH") == snapshot(fat, "WASH")
+    fat_keys = {(e["ticker"], e["detector_id"], e.get("variant"))
+                for e in _ranked(fat)}
+    assert ("WASH", "C2_1D_TURN@1", "c2a_kd_cross") in fat_keys
+    assert ("WASH", "C2_1D_TURN@1", "c2a_clone") in fat_keys
+    assert len(_ranked(fat)) == len(_ranked(thin)) + 1
 
 
 def test_outcome_injection_does_not_move_priority():
@@ -177,13 +253,18 @@ def test_lifecycle_fields_are_not_mutated_by_ranking():
 
 
 def test_multi_expert_same_ticker_stays_three_observations():
-    ranked = _ranked(_board([
+    board = _board([
         _ep("NVDA", "G0_GREY_DOT@1", last=110),
         _ep("NVDA", "C2_1D_TURN@1", last=110, variant="c2a_kd_cross"),
         _ep("NVDA", "C5_BOTTOM_WATCH@1", last=110),
-    ]))
+    ])
+    ranked = _ranked(board)
     keys = {(e["ticker"], e["detector_id"], e.get("variant")) for e in ranked}
     assert len(keys) == 3
+    assert board["population_n"] == 1
+    values = {e["priority_value"] for e in ranked}
+    ordinals = {e["ordinal"] for e in ranked}
+    assert len(values) == 1 and len(ordinals) == 1
 
 
 def test_stale_is_unrankable_not_a_low_score():
@@ -241,9 +322,8 @@ def test_no_llm_call_in_the_ranking_path():
 
 
 def test_existing_detector_spec_hashes_are_unchanged():
-    for name, fn in PINNED_SPEC_HASHES.items():
-        digest = fn()
-        assert isinstance(digest, str) and len(digest) >= 16, name
+    for name, (expected, fn) in PINNED_SPEC_HASHES.items():
+        assert fn() == expected, name
 
 
 def test_priority_decomposes_into_named_inputs():
@@ -357,6 +437,9 @@ def test_recovery_tape_produces_rankable_c1_and_c2_rows(pack):
     assert ch.C2_DETECTOR_ID in families
     keys = {(e["ticker"], e["detector_id"], e.get("variant")) for e in ranked}
     assert len(keys) == len(ranked)
+    assert board["population_n"] == 1
+    assert len(ranked) > board["population_n"]
+    assert len({e["priority_value"] for e in ranked}) == 1
     assert all(e["status"] == "ACCRUING" for e in ranked)
     assert all(e["policy_version"] == "RP1" for e in ranked)
     assert all(e["components"] for e in ranked)
@@ -384,6 +467,8 @@ def test_live_multi_expert_rows_are_not_collapsed(pack):
     ranked = _ranked(board)
     keys = {(e["ticker"], e["detector_id"], e.get("variant")) for e in ranked}
     assert len(keys) == len(ranked)
+    assert board["population_n"] == 2
+    assert len(ranked) > 2
     assert any(e["ticker"] == "WASH" and e["detector_id"] == ch.C1_DETECTOR_ID
                for e in ranked)
     assert any(e["ticker"] == "WASH" and e["detector_id"] == ch.C2_DETECTOR_ID
@@ -434,3 +519,26 @@ def test_research_priority_module_has_no_data_or_network_literals():
             imported.append(node.module.split(".")[0])
     for token in ("socket", "urllib", "httpx", "requests"):
         assert token not in imported
+
+
+def test_c3_live_seam_projects_priority_onto_the_c3_expert(tmp_path):
+    from engine.entry_radar.four_hour import C3_DETECTOR_ID
+    from tests.test_entry_radar_w4_c3_reader import (
+        Recorder, late_wash_pack, reader_for, run_live_pass,
+    )
+
+    pack = late_wash_pack()
+    result = run_live_pass(pack, tmp_path, reader=reader_for(Recorder(), tmp_path))
+    board = result.payload["research_priority"]
+    rows = [e for e in board["episodes"] if e.get("detector_id") == C3_DETECTOR_ID]
+    assert rows, "C3 live seam must emit a C3 research_priority row"
+    row = rows[0]
+    assert row["ticker"] == "LATEWASH"
+    assert row["policy_version"] == "RP1"
+    assert row["status"] == "ACCRUING"
+    if row["abstention"] is None:
+        assert row["priority_value"] is not None
+        assert row["ordinal"] is not None
+        assert row["priority_index"] == round(row["priority_value"])
+    assert rp.presentation_violations(board) == []
+    assert le.forward_knowledge_keys({"research_priority": board}) == []
