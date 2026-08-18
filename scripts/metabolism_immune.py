@@ -179,11 +179,17 @@ def _get_main_sha() -> str:
 
 
 def _get_heartbeat_head_sha(repo: str | None) -> str | None:
-    """Return the head_sha of the newest CONCLUDED ci-main-heartbeat.yml run.
+    """Return the head_sha of the newest CONCLUDED ci-main-heartbeat.yml run ON MAIN.
 
     Failure to resolve this is NOT a hard sensing failure — the caller falls
     back to sensing live origin/main HEAD alone and logs a warning.  Deliberately
     does NOT use --paginate (a single most-recent completed run is all we need).
+
+    Filters &branch=main: ci-main-heartbeat.yml declares workflow_dispatch, so
+    without this filter a manual `gh workflow run ci-main-heartbeat.yml --ref
+    <other-branch>` becomes the newest completed run, and that OTHER branch's
+    reds get unioned in and reported against main_sha — a false page
+    attributed to main for a red that lives on a different branch entirely.
     NEVER raises.
     """
     try:
@@ -193,7 +199,7 @@ def _get_heartbeat_head_sha(repo: str | None) -> str | None:
             [
                 "gh", "api",
                 f"/repos/{repo}/actions/workflows/{_HEARTBEAT_WORKFLOW}/runs"
-                f"?status=completed&per_page=1",
+                f"?status=completed&branch=main&per_page=1",
                 "--jq", ".workflow_runs[0].head_sha",
             ],
             capture_output=True, text=True, timeout=30,
@@ -215,7 +221,7 @@ def _get_heartbeat_head_sha(repo: str | None) -> str | None:
 def _sense_required_red_checks(
     main_sha: str,
     immune_cfg: dict[str, Any] | None = None,
-) -> list[dict[str, Any]] | None:
+) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
     """Union red required checks across TWO SHAs, de-duplicated by check name.
 
     _get_main_sha() reads live origin/main HEAD, but ci-main-heartbeat.yml runs
@@ -227,18 +233,52 @@ def _sense_required_red_checks(
          ci-main-heartbeat.yml run (via _get_heartbeat_head_sha).
     keeping the FIRST occurrence of each check name.
 
-    Returns None (BLIND) only when the origin/main HEAD read itself failed —
-    that is the read this whole sentinel exists to make.  Failure to resolve
-    the heartbeat SHA, or to read check-runs at a heartbeat SHA that WAS
-    resolved, is logged and does not blind the run: it continues on the main
-    HEAD read alone.  NEVER raises.
+    Returns (union, meta).  meta = {"heartbeat_degraded": bool, "sensed_shas":
+    list[str]} — sensed_shas is the (deduplicated, order-preserved) list of
+    SHAs that actually contributed a successful read to the union, so a
+    caller (write_ci_status) can record PROVENANCE: a downstream reader
+    cannot otherwise tell a two-SHA green (both main HEAD and the heartbeat's
+    curated checks came back clean) from a one-SHA degraded green (the
+    heartbeat leg failed, so only main HEAD was actually seen).
+
+    union is None (BLIND) only when the origin/main HEAD read itself
+    failed — that is the read this whole sentinel exists to make; meta is
+    {"heartbeat_degraded": False, "sensed_shas": []} in that case (nothing
+    was read at all).
+
+    TWO non-fatal cases are NOT the same, and this function is written to
+    keep them visibly distinct rather than let both quietly collapse to
+    "continuing on main HEAD alone":
+      * heartbeat_sha could not be RESOLVED at all (no run has ever
+        completed, or a fork) — legitimate, meta["heartbeat_degraded"] stays
+        False, an INFO log plus a `::warning` annotation records it (so a
+        silently-renamed/deleted ci-main-heartbeat.yml is still visible in
+        the Actions summary instead of permanently and quietly degrading
+        this lane to main-HEAD-only coverage forever).
+      * heartbeat_sha WAS resolved but its check-runs read FAILED — this is
+        the leg the whole union exists for (the heartbeat's curated guards,
+        e.g. contract-drift/tier-gate), so losing it after committing to
+        read it is loud: meta["heartbeat_degraded"] = True, a `::warning`
+        annotation is emitted here, and the caller (run_immune_lane) treats
+        this as SENSING FAILED (exit 2) — main-HEAD-only coverage is not an
+        acceptable substitute for a leg we know exists and could not read.
+    An exception raised anywhere in the heartbeat leg (after main_reds was
+    already obtained successfully) is treated the SAME as a failed
+    heartbeat read — degraded, not silently widened to full blindness and
+    not silently swallowed into a false-clean union.  NEVER raises.
     """
     try:
         main_reds = _get_required_red_checks(main_sha, immune_cfg=immune_cfg)
-        if main_reds is None:
-            return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._sense_required_red_checks: main-sha read raised: %s", exc)
+        return None, {"heartbeat_degraded": False, "sensed_shas": []}
 
-        union: list[dict[str, Any]] = list(main_reds)
+    if main_reds is None:
+        return None, {"heartbeat_degraded": False, "sensed_shas": []}
+
+    union: list[dict[str, Any]] = list(main_reds)
+
+    try:
         seen = {c.get("name") for c in union}
 
         repo = _resolve_repo()
@@ -248,18 +288,33 @@ def _sense_required_red_checks(
                 "immune._sense_required_red_checks: could not resolve %s head_sha — "
                 "continuing on main HEAD alone", _HEARTBEAT_WORKFLOW,
             )
-            return union
+            print(
+                "::warning title=immune-heartbeat-degraded::could not resolve "
+                f"{_HEARTBEAT_WORKFLOW} head_sha — continuing on main HEAD alone "
+                "(not sensing-failed; may be legitimate, e.g. before the heartbeat "
+                "has ever run, or the workflow file was renamed/deleted)",
+                flush=True,
+            )
+            return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha]}
 
         if heartbeat_sha == main_sha:
-            return union
+            return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha]}
 
         hb_reds = _get_required_red_checks(heartbeat_sha, immune_cfg=immune_cfg)
         if hb_reds is None:
             log.warning(
-                "immune._sense_required_red_checks: heartbeat sha=%s read failed — "
-                "continuing on main HEAD alone", heartbeat_sha[:8],
+                "immune._sense_required_red_checks: heartbeat sha=%s RESOLVED but its "
+                "check-runs read FAILED — degraded, main-HEAD-only coverage this run",
+                heartbeat_sha[:8],
             )
-            return union
+            print(
+                "::warning title=immune-heartbeat-degraded::ci-main-heartbeat.yml "
+                f"head_sha={heartbeat_sha[:8]} resolved but its check-runs read FAILED "
+                "— continuing on main HEAD alone this run; treated as sensing FAILED "
+                "(exit 2), not a clean read",
+                flush=True,
+            )
+            return union, {"heartbeat_degraded": True, "sensed_shas": [main_sha]}
 
         for c in hb_reds:
             name = c.get("name")
@@ -267,10 +322,29 @@ def _sense_required_red_checks(
                 continue
             seen.add(name)
             union.append(c)
-        return union
+        return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha, heartbeat_sha]}
     except Exception as exc:  # noqa: BLE001
-        log.warning("immune._sense_required_red_checks: %s", exc)
-        return None
+        # Defensive: nothing above is expected to raise — _resolve_repo,
+        # _get_heartbeat_head_sha, and _get_required_red_checks are each
+        # individually NEVER-RAISE, and the rest is plain list/dict/set
+        # operations on their already-validated outputs.  If something here
+        # somehow does raise anyway, do NOT silently discard the
+        # already-good main_reds result (that would be a THIRD variant,
+        # quietly widening to full blindness) and do NOT silently return a
+        # clean-looking union missing the heartbeat leg (that would be the
+        # exact silent-green defect this function exists to remove) —
+        # surface it identically to a failed heartbeat read: degraded.
+        log.warning(
+            "immune._sense_required_red_checks: heartbeat leg raised: %s — degraded, "
+            "main-HEAD-only coverage this run", exc,
+        )
+        print(
+            "::warning title=immune-heartbeat-degraded::heartbeat leg raised "
+            f"{exc!r} — continuing on main HEAD alone this run; treated as sensing "
+            "FAILED (exit 2), not a clean read",
+            flush=True,
+        )
+        return union, {"heartbeat_degraded": True, "sensed_shas": [main_sha]}
 
 
 def _get_spurious_check_names(immune_cfg: dict[str, Any]) -> set[str]:
@@ -326,17 +400,38 @@ def _get_required_red_checks(
         if checks:
             read_ok = True
         else:
-            # Fallback: plain fetch without --jq; extract check_runs array from dict.
-            # A dict response IS a successful read even when check_runs is empty
-            # (a real gh api success for this endpoint always returns a JSON
-            # object — never truly empty stdout); anything else is a failed read.
+            # Fallback: plain fetch without --jq (--paginate itself failed —
+            # e.g. discarded partial output from a mid-pagination error), so
+            # this single request gets only ONE page.  per_page=100 (the API
+            # max) minimizes truncation risk versus the default page size of
+            # 30, but is NOT sufficient by itself: a commit can carry more
+            # than 100 check-runs.  A dict response IS a successful read when
+            # it is COMPLETE — even an empty check_runs array with
+            # total_count=0 is a real "clean" read (a real gh api success for
+            # this endpoint always returns a JSON object, never truly empty
+            # stdout) — but a dict whose check_runs array is SHORTER than its
+            # own total_count is a TRUNCATED page, not a clean read: treating
+            # it as read_ok would silently report "main is clean" while
+            # reds sitting on later, unfetched pages go unseen (measured
+            # margin: a heartbeat SHA carrying 29 check-runs against a
+            # default page size of 30 — one job away from tripping this).
             raw = _gh_json([
                 "api",
-                f"/repos/{repo}/commits/{main_sha}/check-runs",
+                f"/repos/{repo}/commits/{main_sha}/check-runs?per_page=100",
             ], timeout=60)
             if isinstance(raw, dict):
                 checks = raw.get("check_runs") or []
-                read_ok = True
+                total_count = raw.get("total_count")
+                if isinstance(total_count, int) and len(checks) < total_count:
+                    log.warning(
+                        "immune._get_required_red_checks: fallback fetch TRUNCATED for "
+                        "sha=%s — got %d of %d check_runs — sensing BLIND, not a partial "
+                        "clean read", main_sha[:8], len(checks), total_count,
+                    )
+                    checks = []
+                    read_ok = False
+                else:
+                    read_ok = True
             else:
                 checks = []
                 read_ok = False
@@ -767,11 +862,28 @@ def write_ci_status(
     *,
     root: Path,
     prev_consecutive: int = 0,
+    sensed_shas: list[str] | None = None,
+    heartbeat_degraded: bool = False,
 ) -> bool:
     """Write data/metabolism/ci_status.json.
 
-    Schema matches what anomaly_monitor.py:384 reads:
+    Schema matches what anomaly_monitor.py:384 currently reads:
       { ts, main_sha, red_required, green, consecutive_failures }
+    plus PROVENANCE fields (2026-08-18, part of the two-SHA union repair):
+      { sensed_shas, heartbeat_degraded }
+
+    sensed_shas is the list of SHAs that actually contributed a successful
+    read this run (from _sense_required_red_checks' meta) — without it, a
+    reader of this artifact cannot tell a fully-sensed two-SHA green (main
+    HEAD AND the heartbeat's curated checks both read clean) from a degraded
+    one-SHA green (the heartbeat leg failed and only main HEAD was seen,
+    missing exactly the checks the union exists to catch).
+    heartbeat_degraded=True means the heartbeat SHA was resolved but its
+    check-runs read failed — the caller (run_immune_lane) also treats this
+    as SENSING FAILED (process exit 2), so a "green" artifact with
+    heartbeat_degraded=True should be read as a WARNING SIGN, not a clean
+    bill of health, by anything downstream. Defaults preserve the pre-union
+    single-SHA shape for any caller that does not pass them.
 
     consecutive_failures increments when green=False; resets to 0 when green=True.
     NEVER raises.
@@ -785,6 +897,8 @@ def write_ci_status(
             "red_required": red_required,
             "green": green,
             "consecutive_failures": consecutive,
+            "sensed_shas": sensed_shas if sensed_shas is not None else [main_sha],
+            "heartbeat_degraded": bool(heartbeat_degraded),
         }
         p = root.joinpath(*_CI_STATUS_REL)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -1099,13 +1213,14 @@ def run_immune_lane(
             summary["errors"].append("could not get main SHA")
             summary["sensing_failed"] = True
         else:
-            red_checks = _sense_required_red_checks(main_sha, immune_cfg=immune_cfg)
+            red_checks, sense_meta = _sense_required_red_checks(main_sha, immune_cfg=immune_cfg)
             if red_checks is None:
-                # SENSING FAILED — this is BLINDNESS, not "main is clean".  Do NOT
-                # write a ci_status.json here: a fabricated green/[] read would
-                # repeat the exact 2026-08-17→08-18 incident (a 404 read as
-                # red_required=0).  Leave the last real artifact in place and let
-                # main() exit non-zero so the run is loud instead of quietly green.
+                # FULL BLIND — the main HEAD read itself failed, so there is
+                # nothing real to write.  Do NOT write a ci_status.json here:
+                # a fabricated green/[] read would repeat the exact
+                # 2026-08-17→08-18 incident (a 404 read as red_required=0).
+                # Leave the last real artifact in place and let main() exit
+                # non-zero so the run is loud instead of quietly green.
                 log.warning(
                     "IMMUNE: sensing FAILED for main_sha=%s — sentinel BLIND, not clean",
                     main_sha[:8],
@@ -1118,13 +1233,75 @@ def run_immune_lane(
                 summary["errors"].append("sensing failed: could not read check-runs")
                 summary["sensing_failed"] = True
             else:
-                log.info("IMMUNE: main_sha=%s red_required=%d", main_sha[:8], len(red_checks))
+                heartbeat_degraded = bool(sense_meta.get("heartbeat_degraded"))
+                sensed_shas = sense_meta.get("sensed_shas") or [main_sha]
+                log.info(
+                    "IMMUNE: main_sha=%s red_required=%d heartbeat_degraded=%s sensed_shas=%s",
+                    main_sha[:8], len(red_checks), heartbeat_degraded, sensed_shas,
+                )
 
-                # Step 2: write CI-status artifact (R-V8-5) — always, even if no reds
+                # Step 2: write CI-status artifact (R-V8-5) — always when we
+                # have a REAL read (main HEAD succeeded, even if the
+                # heartbeat leg is degraded — that is a real, non-fabricated
+                # main_reds-only picture, not a guess).  Provenance
+                # (sensed_shas / heartbeat_degraded) travels WITH the
+                # artifact so a later reader can tell a fully-sensed two-SHA
+                # green from a degraded one-SHA green.
                 prev_consecutive = _read_prev_consecutive(r)
-                write_ci_status(main_sha, red_checks, root=r, prev_consecutive=prev_consecutive)
+                ci_write_ok = write_ci_status(
+                    main_sha, red_checks, root=r, prev_consecutive=prev_consecutive,
+                    sensed_shas=sensed_shas, heartbeat_degraded=heartbeat_degraded,
+                )
+                if not ci_write_ok:
+                    # F4: a write failure leaves the PRIOR artifact on disk
+                    # (possibly stale, possibly absent).  The "commit
+                    # ci_status.json" workflow step then finds either no file
+                    # or an unchanged one and silently skips the commit —
+                    # the frozen-artifact defect this PR removes, relocated
+                    # from the push to the write.  Surface it rather than
+                    # let the run conclude quietly green with nothing published.
+                    log.warning(
+                        "IMMUNE: write_ci_status FAILED for main_sha=%s — artifact NOT "
+                        "updated this run; the commit step may find a stale file (or "
+                        "none) and silently skip the commit", main_sha[:8],
+                    )
+                    print(
+                        "::warning title=immune-ci-status-write-failed::write_ci_status "
+                        f"failed for main_sha={main_sha[:8]} — ci_status.json was NOT "
+                        "updated this run",
+                        flush=True,
+                    )
+                    summary["errors"].append("write_ci_status failed — artifact not updated")
 
-                # Step 3: classify and act on each red
+                if heartbeat_degraded:
+                    # The heartbeat SHA WAS resolved but its check-runs read
+                    # FAILED — the curated guards the union exists to see
+                    # (contract-drift, tier-gate, ...) were not read this
+                    # run.  main-HEAD-only coverage is not an acceptable
+                    # substitute for a leg we know exists and could not
+                    # read, so this is treated as SENSING FAILED (exit 2),
+                    # not a clean read — even though red_checks itself is
+                    # real (non-fabricated) data.
+                    log.warning(
+                        "IMMUNE: sensing DEGRADED for main_sha=%s — heartbeat leg "
+                        "resolved but unreadable; treating as sensing FAILED, not clean",
+                        main_sha[:8],
+                    )
+                    print(
+                        "::error title=immune-sensing-degraded::metabolism_immune "
+                        "resolved the ci-main-heartbeat.yml head_sha but its check-runs "
+                        "read FAILED — main-HEAD-only coverage would miss the "
+                        "heartbeat's curated guards; treating as sensing FAILED, not green",
+                        flush=True,
+                    )
+                    summary["errors"].append("sensing degraded: heartbeat check-runs read failed")
+                    summary["sensing_failed"] = True
+
+                # Step 3: classify and act on each red — runs on whatever we
+                # DID get (main_reds-only in the degraded case).  A real red
+                # that WAS read is still worth healing even when the
+                # picture is narrower than optimal for one cycle; the
+                # degraded flag above already makes the run loud.
                 for check in red_checks:
                     check_name = check.get("name") or ""
                     recipe = classify_red(check_name, immune_cfg)

@@ -92,18 +92,26 @@ jobs:
       - name: commit ci_status.json (R-V8-5)
         if: always()
         env:
-          # GITHUB_TOKEN only — this step pushes data straight to main (no PR,
-          # so METABOLISM_MERGE_PAT's no-workflows-scope purpose does not apply
-          # here) and the job already declares contents: write, and main
-          # carries no branch protection/ruleset, so GITHUB_TOKEN can push.
-          # The old METABOLISM_MERGE_PAT-first fallback meant a dead-but-present
-          # PAT (see the checkout step above) silently 403'd this push forever
-          # while the failure was swallowed into a non-fatal ::warning below —
-          # ci_status.json stayed frozen at 2026-08-09T08:13:13+00:00 even
-          # after the sentinel itself could see again.  Same "green is
-          # indistinguishable from blindness" defect this PR exists to
-          # remove, one step down: a lane that can sense but cannot publish
-          # is still silently useless to anomaly_monitor's ci_red_streak.
+          # GITHUB_TOKEN only (no GH_TOKEN fallback to METABOLISM_MERGE_PAT).
+          # NOTE the fix here is the CHECKOUT step's token: above, not this
+          # GH_TOKEN — this step's `git pull --rebase` / `git push` calls
+          # (scripts/ci/push_retry.sh) authenticate via the credentials
+          # `actions/checkout` persisted (http.extraheader), and that script
+          # references neither GH_TOKEN nor GITHUB_TOKEN at all; GH_TOKEN
+          # here only matters if this step's script ever shells out to `gh`.
+          # The old METABOLISM_MERGE_PAT-first checkout token meant a
+          # dead-but-present PAT (see the checkout step above) silently
+          # 403'd every push made under those persisted credentials — this
+          # step's push included — while the failure was swallowed into a
+          # non-fatal ::warning below.  ci_status.json stayed frozen at
+          # 2026-08-09T08:13:13+00:00 even after the sentinel itself could
+          # see again.  Same "green is indistinguishable from blindness"
+          # defect this PR exists to remove, one step down: a lane that can
+          # sense but cannot publish is still silently useless to
+          # anomaly_monitor's ci_red_streak.  Fixing the checkout token
+          # alone would already have fixed this push; changing GH_TOKEN here
+          # too is consistency, not the actual mechanism — do not revert
+          # the checkout token while trusting this line to still cover it.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
