@@ -987,14 +987,8 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            # Append-only base freshness (2026-08-18 lost update, DSC-OVERLAPPING-DAILY-
-            # COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS). This lane's own concurrency group
-            # serializes it against itself, but it can and does overlap daily.yml's
-            # multi-hour collect job, and the rebuild below re-derives the PUBLISHED
-            # twins only — the collector spine it carries is still its own pre-rebase
-            # collection, so `-X theirs` can replace main's appended rows with it.
-            # --amend because this loop already amends its evidence commit.
-            # Non-zero ONLY when the fence proved a loss and then could not withhold it.
+            # Append-only base freshness (why: scripts/ci/push_retry.sh). --amend:
+            # this loop amends. Non-zero ONLY when a proven withhold failed.
             if ! push_append_only_fence origin/main --amend; then push_backoff; continue; fi
             if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               # Rebuild AFTER every successful rebase; retry loops do the same.
