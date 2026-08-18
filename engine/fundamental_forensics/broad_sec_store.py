@@ -1,8 +1,10 @@
 """Incremental broad SEC source plane for Filing Forensics (FF-1).
 
-Polls Submissions for every issuer in ``data/edgar/fundamentals.parquet``,
-admits exact SEC bytes into a private content-addressed store, and fetches
-Company Facts only when that issuer's relevant periodic filing state changes.
+Discovers relevant 10-K/10-Q (and existing 20-F/40-F) changes from the official
+EDGAR full-index master ZIP, then fetches Submissions only for affected issuers
+in ``data/edgar/fundamentals.parquet``. Admits exact SEC bytes into a private
+content-addressed store and fetches Company Facts only when that issuer's
+relevant periodic filing state actually changes.
 
 This module is source truth only.  It does not rebuild workbench state, run
 detectors, or publish findings.  A rerender cannot make the source current:
@@ -23,11 +25,13 @@ poll clock.  Callers inject every clock; this kernel does not sample wall time.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from hashlib import sha256
 import gzip
 import io
 import json
 import re
+import zipfile
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 from urllib.parse import urlparse
@@ -36,6 +40,7 @@ from collectors.edgar_forensics import (
     SecResponseTooLarge,
     _canonical_cik,
     endpoint_url,
+    full_master_index_url,
 )
 from collectors.fundamental_forensics_companyfacts import (
     CompanyFactsAcquisitionError,
@@ -66,6 +71,16 @@ MAX_SUBMISSIONS_BYTES = 8 * 1024 * 1024
 MAX_COMPANYFACTS_BYTES = 64 * 1024 * 1024
 MAX_AFFECTED_ISSUERS = 64
 MAX_COMPANYFACTS_BYTES_PER_RUN = 32 * 1024 * 1024
+# Live 2026 Q3 master.zip canary 2026-08-18: 2132920 compressed / 15184383
+# uncompressed. These bounds keep substantial growth room and fail closed
+# rather than silently rising.
+MAX_MASTER_INDEX_ZIP_BYTES = 16 * 1024 * 1024
+MAX_MASTER_INDEX_MEMBER_BYTES = 64 * 1024 * 1024
+MASTER_INDEX_MEMBER_NAME = "master.idx"
+MASTER_INDEX_HEADER = "CIK|Company Name|Form Type|Date Filed|Filename"
+INDEX_SOURCE_KIND = "sec_edgar_full_master_index"
+INDEX_SNAPSHOT_SCHEMA = "fundamental_forensics.broad_sec.index_snapshot.v1"
+PREVIOUS_QUARTER_RECONCILIATION_CADENCE = "weekly"
 RELEVANT_FORMS = frozenset(
     {
         "10-K",
@@ -92,9 +107,19 @@ REASON_CODES = frozenset(
         "issuer_manifest_invalid",
         "queue_overflow",
         "historical_submissions_required",
+        "edgar_index_unavailable",
+        "edgar_index_too_large",
+        "edgar_index_invalid",
+        "edgar_index_member_missing",
+        "edgar_index_cik_mismatch",
+        "edgar_index_gap",
+        "edgar_index_correction_requires_reconciliation",
     }
 )
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
+_INDEX_FILENAME_RE = re.compile(
+    r"^edgar/data/([0-9]+)/([0-9]{10}-[0-9]{2}-[0-9]{6})\.txt$"
+)
 _ISO_Z_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z$"
 )
@@ -134,6 +159,8 @@ class BroadSecStore(Protocol):
 
 
 FetchBytes = Callable[[str], tuple[bytes, Mapping[str, str | None]]]
+FetchIndex = Callable[[int, int], tuple[bytes, Mapping[str, str | None]]]
+ProgressFn = Callable[[str, Mapping[str, Any]], None]
 
 
 @dataclass(frozen=True)
@@ -230,6 +257,50 @@ def recovery_continuation_pointer_key() -> str:
 
 def recovery_continuation_object_key(digest: str) -> str:
     return f"{PREFIX}/recovery/objects/{digest[:2]}/{digest}.json.gz"
+
+
+def index_object_key(digest: str) -> str:
+    return f"{PREFIX}/indexes/objects/sha256/{digest[:2]}/{digest}.idx.gz"
+
+
+def index_snapshot_key(quarter_id: str, snapshot_id: str) -> str:
+    return f"{PREFIX}/indexes/quarters/{quarter_id}/snapshots/{snapshot_id}.json"
+
+
+def index_latest_key(quarter_id: str) -> str:
+    return f"{PREFIX}/indexes/quarters/{quarter_id}/latest.json"
+
+
+def calendar_quarter(iso_z: str) -> tuple[int, int]:
+    stamp = _require_iso_z(iso_z, field="quarter_clock")
+    parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(timezone.utc)
+    quarter = (parsed.month - 1) // 3 + 1
+    return parsed.year, quarter
+
+
+def quarter_id(year: int, quarter: int) -> str:
+    return f"{year}-Q{quarter}"
+
+
+def previous_quarter(year: int, quarter: int) -> tuple[int, int]:
+    if quarter == 1:
+        return year - 1, 4
+    return year, quarter - 1
+
+
+def previous_quarter_reconciliation_due(
+    *,
+    poll_started_at: str,
+    last_reconciled_at: str | None = None,
+) -> bool:
+    """Frozen seam: weekly previous-quarter reconciliation is not executed here.
+
+    Cadence is ``PREVIOUS_QUARTER_RECONCILIATION_CADENCE`` ('weekly').  This PR
+    does not scan historical quarters nightly.  Return False until Sol
+    authorizes implementing the weekly previous-quarter GET.
+    """
+    del poll_started_at, last_reconciled_at
+    return False
 
 
 def _gzip_bytes(content: bytes) -> bytes:
@@ -596,6 +667,265 @@ def admit_source_bytes(store: BroadSecStore, content: bytes) -> tuple[str, bool]
     return digest, True
 
 
+def _progress(callback: ProgressFn | None, phase: str, **counts: Any) -> None:
+    if callback is None:
+        return
+    callback(phase, dict(counts))
+
+
+def _event_tuple(row: Mapping[str, str]) -> dict[str, str]:
+    return {
+        "cik": row["cik"],
+        "accession": row["accession"],
+        "form": row["form"],
+        "filed_on": row["filed_on"],
+        "filename": row["filename"],
+    }
+
+
+def _event_key(row: Mapping[str, str]) -> tuple[str, str, str, str, str]:
+    return (row["cik"], row["accession"], row["form"], row["filed_on"], row["filename"])
+
+
+def _bind_index_url(url: str | None, *, year: int, quarter: int) -> str:
+    expected = full_master_index_url(year, quarter)
+    if not isinstance(url, str) or url != expected:
+        raise BroadSecError(
+            "source_binding_failure",
+            f"index URL {url!r} does not bind {year} Q{quarter}",
+        )
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.netloc != "www.sec.gov":
+        raise BroadSecError("source_binding_failure", f"refusing non-SEC index URL {url!r}")
+    return url
+
+
+def parse_master_index_archive(
+    archive: bytes,
+    *,
+    canonical_ciks: set[str],
+) -> dict[str, Any]:
+    """Validate an untrusted EDGAR master ZIP and return canonical relevant rows."""
+    if not isinstance(archive, (bytes, bytearray)):
+        raise BroadSecError("edgar_index_invalid", "index archive is not bytes")
+    archive_bytes = bytes(archive)
+    if len(archive_bytes) > MAX_MASTER_INDEX_ZIP_BYTES:
+        raise BroadSecError(
+            "edgar_index_too_large",
+            f"index ZIP {len(archive_bytes)} exceeds {MAX_MASTER_INDEX_ZIP_BYTES}",
+        )
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive_bytes), "r") as handle:
+            infos = list(handle.infolist())
+            names = [info.filename for info in infos]
+            if len(names) != len(set(names)):
+                raise BroadSecError("edgar_index_invalid", "duplicate ZIP member names")
+            if any(bool(info.flag_bits & 0x1) for info in infos):
+                raise BroadSecError("edgar_index_invalid", "encrypted ZIP member")
+            for name in names:
+                if name.startswith("/") or name.startswith("\\") or ":" in name.split("/")[0]:
+                    raise BroadSecError("edgar_index_invalid", f"absolute ZIP member {name!r}")
+                if ".." in Path(name).parts:
+                    raise BroadSecError("edgar_index_invalid", f"traversal ZIP member {name!r}")
+            masters = [info for info in infos if info.filename == MASTER_INDEX_MEMBER_NAME]
+            if not masters:
+                raise BroadSecError("edgar_index_member_missing", "master.idx is missing")
+            if len(masters) != 1:
+                raise BroadSecError("edgar_index_invalid", "duplicate master.idx member")
+            info = masters[0]
+            if int(info.file_size) > MAX_MASTER_INDEX_MEMBER_BYTES:
+                raise BroadSecError(
+                    "edgar_index_too_large",
+                    f"master.idx {info.file_size} exceeds {MAX_MASTER_INDEX_MEMBER_BYTES}",
+                )
+            try:
+                member = handle.read(info.filename)
+            except Exception as exc:
+                raise BroadSecError("edgar_index_invalid", "ZIP CRC/read failed") from exc
+    except BroadSecError:
+        raise
+    except zipfile.BadZipFile as exc:
+        raise BroadSecError("edgar_index_invalid", "malformed ZIP") from exc
+    except Exception as exc:
+        raise BroadSecError("edgar_index_invalid", f"ZIP open failed: {exc}") from exc
+
+    if len(member) > MAX_MASTER_INDEX_MEMBER_BYTES:
+        raise BroadSecError(
+            "edgar_index_too_large",
+            f"master.idx {len(member)} exceeds {MAX_MASTER_INDEX_MEMBER_BYTES}",
+        )
+    text = None
+    encoding = None
+    for candidate in ("utf-8", "latin-1"):
+        try:
+            text = member.decode(candidate)
+            encoding = candidate
+            break
+        except UnicodeDecodeError:
+            continue
+    if text is None or encoding is None:
+        raise BroadSecError("edgar_index_invalid", "master.idx did not decode")
+
+    lines = text.splitlines()
+    header_at = None
+    for index, line in enumerate(lines):
+        if line.strip() == MASTER_INDEX_HEADER:
+            header_at = index
+            break
+    if header_at is None:
+        raise BroadSecError("edgar_index_invalid", "master.idx header is missing")
+    data_start = header_at + 1
+    if data_start < len(lines) and set(lines[data_start].strip()) <= {"-"}:
+        data_start += 1
+
+    all_rows: list[dict[str, str]] = []
+    relevant: list[dict[str, str]] = []
+    for line in lines[data_start:]:
+        if not line.strip():
+            continue
+        parts = line.split("|")
+        if len(parts) != 5:
+            raise BroadSecError("edgar_index_invalid", "malformed master.idx line")
+        cik_raw, _name, form, filed, filename = [part.strip() for part in parts]
+        digits = "".join(ch for ch in cik_raw if ch.isdigit())
+        if not digits:
+            raise BroadSecError("edgar_index_invalid", "master.idx CIK is missing")
+        cik = f"{int(digits):010d}"
+        if not _DATE_RE.fullmatch(filed):
+            raise BroadSecError("edgar_index_invalid", f"invalid filing date {filed!r}")
+        try:
+            datetime.strptime(filed, "%Y-%m-%d")
+        except ValueError as exc:
+            raise BroadSecError("edgar_index_invalid", f"invalid filing date {filed!r}") from exc
+        path = _INDEX_FILENAME_RE.fullmatch(filename)
+        if path is None:
+            if form in RELEVANT_FORMS and cik in canonical_ciks:
+                raise BroadSecError(
+                    "edgar_index_invalid",
+                    f"malformed accession path for canonical CIK {cik}",
+                )
+            continue
+        path_cik = f"{int(path.group(1)):010d}"
+        accession = path.group(2)
+        if path_cik != cik:
+            raise BroadSecError(
+                "edgar_index_cik_mismatch",
+                f"path CIK {path_cik} does not match row CIK {cik}",
+            )
+        row = {
+            "cik": cik,
+            "form": form,
+            "filed_on": filed,
+            "filename": filename,
+            "accession": accession,
+        }
+        all_rows.append(row)
+        if cik in canonical_ciks and form in RELEVANT_FORMS:
+            relevant.append(_event_tuple(row))
+
+    if not all_rows:
+        raise BroadSecError("edgar_index_gap", "master.idx contains no filing rows")
+
+    relevant.sort(key=_event_key)
+    latest_filed = max((row["filed_on"] for row in all_rows), default=None)
+    relevant_digest = sha256(
+        canonical_json({"rows": relevant}).encode("utf-8")
+    ).hexdigest()
+    return {
+        "member_name": MASTER_INDEX_MEMBER_NAME,
+        "member": member,
+        "member_bytes": len(member),
+        "member_sha256": sha256(member).hexdigest(),
+        "member_encoding": encoding,
+        "parsed_row_count": len(all_rows),
+        "latest_filing_date": latest_filed,
+        "canonical_row_count": sum(1 for row in all_rows if row["cik"] in canonical_ciks),
+        "relevant_rows": relevant,
+        "relevant_set_sha256": relevant_digest,
+        "relevant_ciks": sorted({row["cik"] for row in relevant}),
+    }
+
+
+def diff_relevant_sets(
+    prior_rows: list[Mapping[str, str]],
+    current_rows: list[Mapping[str, str]],
+) -> dict[str, list[dict[str, str]]]:
+    prior_map = {_event_key(row): dict(row) for row in prior_rows}
+    current_map = {_event_key(row): dict(row) for row in current_rows}
+    new_rows = [current_map[key] for key in current_map if key not in prior_map]
+    removed_rows = [prior_map[key] for key in prior_map if key not in current_map]
+    unchanged_rows = [current_map[key] for key in current_map if key in prior_map]
+    new_rows.sort(key=_event_key)
+    removed_rows.sort(key=_event_key)
+    unchanged_rows.sort(key=_event_key)
+    return {"new": new_rows, "removed": removed_rows, "unchanged": unchanged_rows}
+
+
+def _index_identity_body(
+    *,
+    year: int,
+    quarter: int,
+    universe_sha: str,
+    member_sha256: str,
+    member_bytes: int,
+    archive_sha256: str,
+    relevant_rows: list[dict[str, str]],
+    relevant_set_sha256: str,
+    latest_filing_date: str | None,
+    parsed_row_count: int,
+    canonical_row_count: int,
+) -> dict[str, Any]:
+    return {
+        "schema": INDEX_SNAPSHOT_SCHEMA,
+        "year": year,
+        "quarter": quarter,
+        "quarter_id": quarter_id(year, quarter),
+        "universe_sha256": universe_sha,
+        "member_sha256": member_sha256,
+        "member_bytes": member_bytes,
+        "archive_sha256": archive_sha256,
+        "relevant_set": relevant_rows,
+        "relevant_set_sha256": relevant_set_sha256,
+        "latest_filing_date": latest_filing_date,
+        "parsed_row_count": parsed_row_count,
+        "canonical_row_count": canonical_row_count,
+        "relevant_row_count": len(relevant_rows),
+    }
+
+
+def _load_index_snapshot(store: BroadSecStore, year: int, quarter: int) -> dict[str, Any] | None:
+    pointer = _read_json(store, index_latest_key(quarter_id(year, quarter)), maximum_bytes=POINTER_MAX_BYTES)
+    if pointer is None:
+        return None
+    snapshot_key = pointer.get("snapshot_key")
+    snapshot_id = pointer.get("snapshot_id")
+    if not isinstance(snapshot_key, str) or not isinstance(snapshot_id, str):
+        raise BroadSecError("issuer_manifest_invalid", "index latest pointer is missing snapshot_key")
+    snapshot = _read_json(store, snapshot_key, maximum_bytes=MAX_MASTER_INDEX_MEMBER_BYTES)
+    if snapshot is None:
+        raise BroadSecError("issuer_manifest_invalid", "index snapshot missing")
+    identity = {key: snapshot.get(key) for key in (
+        "schema",
+        "year",
+        "quarter",
+        "quarter_id",
+        "universe_sha256",
+        "member_sha256",
+        "member_bytes",
+        "archive_sha256",
+        "relevant_set",
+        "relevant_set_sha256",
+        "latest_filing_date",
+        "parsed_row_count",
+        "canonical_row_count",
+        "relevant_row_count",
+    )}
+    computed = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
+    if computed != snapshot_id or snapshot.get("snapshot_id") != snapshot_id:
+        raise BroadSecError("store_readback_failure", "index snapshot identity mismatch")
+    return snapshot
+
+
 def count_source_objects(store: BroadSecStore) -> int:
     return len(
         [
@@ -640,6 +970,7 @@ def _empty_receipt(
     observation_key: str | None = None,
     observation_sha256: str | None = None,
     observation_row_count: int = 0,
+    index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "schema": RUN_SCHEMA,
@@ -657,6 +988,7 @@ def _empty_receipt(
         "coverage": coverage,
         "change_summary": change_summary,
         "failures": failures,
+        "index": index,
         "storage": {
             "prefix": PREFIX,
             "run_key": run_key(run_id),
@@ -710,12 +1042,18 @@ def _load_continuation(
     *,
     recovery_from: str,
     universe_sha: str,
+    index_snapshot_sha256: str | None = None,
 ) -> dict[str, Any] | None:
     pointer = _read_json(store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES)
     if pointer is None:
         return None
     if pointer.get("recovery_from") != recovery_from or pointer.get("universe_sha256") != universe_sha:
         return None
+    if index_snapshot_sha256 is not None:
+        bound = pointer.get("index_snapshot_sha256")
+        if bound is not None and bound != index_snapshot_sha256:
+            # Bound backlog stays; a newer index does not recreate 2837 work.
+            pass
     object_ref = pointer.get("object_key")
     digest = pointer.get("sha256")
     if not isinstance(object_ref, str) or not isinstance(digest, str):
@@ -738,11 +1076,13 @@ def _write_continuation(
     universe_sha: str,
     pending_ciks: list[str],
     completed_ciks: list[str],
+    index_snapshot_sha256: str | None = None,
 ) -> None:
     body = {
         "schema": CONTINUATION_SCHEMA,
         "recovery_from": recovery_from,
         "universe_sha256": universe_sha,
+        "index_snapshot_sha256": index_snapshot_sha256,
         "pending_ciks": pending_ciks,
         "completed_ciks": completed_ciks,
     }
@@ -757,6 +1097,7 @@ def _write_continuation(
             "schema": "fundamental_forensics.broad_sec.recovery_continuation_head.v1",
             "recovery_from": recovery_from,
             "universe_sha256": universe_sha,
+            "index_snapshot_sha256": index_snapshot_sha256,
             "object_key": key,
             "sha256": digest,
             "pending_count": len(pending_ciks),
@@ -783,6 +1124,8 @@ def run_broad_sec_poll(
     repo_root: Path | None = None,
     max_affected_issuers: int = MAX_AFFECTED_ISSUERS,
     max_companyfacts_bytes_per_run: int = MAX_COMPANYFACTS_BYTES_PER_RUN,
+    fetch_master_index: FetchIndex | None = None,
+    on_progress: ProgressFn | None = None,
 ) -> PollResult:
     if mode not in {"incremental", "recovery"}:
         raise ValueError("mode must be incremental or recovery")
@@ -790,6 +1133,8 @@ def run_broad_sec_poll(
         raise BroadSecError("universe_invalid", "recovery requires recovery_from")
     if mode == "incremental" and clocks.recovery_from:
         raise BroadSecError("universe_invalid", "incremental mode cannot carry a recovery window")
+    if fetch_master_index is None:
+        raise BroadSecError("edgar_index_unavailable", "fetch_master_index is required")
     _require_iso_z(clocks.poll_started_at, field="poll_started_at")
     _require_iso_z(clocks.selection_cutoff_at, field="selection_cutoff_at")
     if clocks.recovery_from:
@@ -844,10 +1189,110 @@ def run_broad_sec_poll(
         universe_sha=universe.content_sha256,
     )
     coverage["expected_issuers"] = universe.issuer_count
-    failures: list[IssuerFailure] = []
-    observations: list[dict[str, Any]] = []
-    prepared: list[dict[str, Any]] = []
-    source_accepts: list[str | None] = []
+    year, quarter = calendar_quarter(clocks.selection_cutoff_at)
+    canonical_ciks = {issuer.cik for issuer in universe.issuers}
+
+    def _fail_index(exc: BroadSecError) -> PollResult:
+        clocks.poll_completed_at = clocks.poll_completed_at or now()
+        clocks.recorded_at = clocks.recorded_at or now()
+        receipt = _empty_receipt(
+            run_id=run_id,
+            mode=mode,
+            status="failed",
+            reason_code=exc.reason_code,
+            clocks=clocks,
+            universe=universe,
+            coverage=coverage,
+            change_summary=change_summary,
+            latest_relevant_sec_accepted_at=None,
+            failures=[{"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}],
+        )
+        return PollResult(receipt=receipt, exit_code=1)
+
+    _progress(on_progress, "index_fetch", year=year, quarter=quarter)
+    try:
+        archive, index_headers = fetch_master_index(year, quarter)
+        index_headers = _stamp_after_fetch(index_headers, now=now)
+        url = _bind_index_url(index_headers.get("url"), year=year, quarter=quarter)
+        if len(archive) > MAX_MASTER_INDEX_ZIP_BYTES:
+            raise BroadSecError(
+                "edgar_index_too_large",
+                f"index ZIP {len(archive)} exceeds {MAX_MASTER_INDEX_ZIP_BYTES}",
+            )
+        parsed = parse_master_index_archive(archive, canonical_ciks=canonical_ciks)
+    except BroadSecError as exc:
+        return _fail_index(exc)
+    except SecResponseTooLarge as exc:
+        return _fail_index(BroadSecError("edgar_index_too_large", str(exc)))
+    except Exception as exc:
+        reason = classify_fetch_error(exc)
+        mapped = "edgar_index_unavailable"
+        if reason == "response_too_large":
+            mapped = "edgar_index_too_large"
+        elif reason == "source_binding_failure":
+            mapped = "source_binding_failure"
+        return _fail_index(BroadSecError(mapped, str(exc)))
+
+    _progress(
+        on_progress,
+        "index_parse",
+        rows=parsed["parsed_row_count"],
+        relevant=len(parsed["relevant_rows"]),
+        canonical=universe.issuer_count,
+    )
+    if previous_quarter_reconciliation_due(poll_started_at=clocks.poll_started_at):
+        raise BroadSecError(
+            "edgar_index_unavailable",
+            "weekly previous-quarter reconciliation is frozen; not implemented in this PR",
+        )
+    archive_sha = sha256(archive).hexdigest()
+    if index_headers.get("archive_sha256") and index_headers["archive_sha256"] != archive_sha:
+        return _fail_index(BroadSecError("edgar_index_invalid", "archive SHA-256 mismatch"))
+
+    identity = _index_identity_body(
+        year=year,
+        quarter=quarter,
+        universe_sha=universe.content_sha256,
+        member_sha256=parsed["member_sha256"],
+        member_bytes=parsed["member_bytes"],
+        archive_sha256=archive_sha,
+        relevant_rows=parsed["relevant_rows"],
+        relevant_set_sha256=parsed["relevant_set_sha256"],
+        latest_filing_date=parsed["latest_filing_date"],
+        parsed_row_count=parsed["parsed_row_count"],
+        canonical_row_count=parsed["canonical_row_count"],
+    )
+    snapshot_id = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
+
+    try:
+        prior_snapshot = _load_index_snapshot(store, year, quarter)
+    except BroadSecError as exc:
+        return _fail_index(exc)
+    baseline = prior_snapshot is None and mode == "incremental"
+    prior_rows = list(prior_snapshot.get("relevant_set") or []) if prior_snapshot else []
+    if baseline:
+        diff = {"new": [], "removed": [], "unchanged": list(parsed["relevant_rows"])}
+    else:
+        diff = diff_relevant_sets(prior_rows, parsed["relevant_rows"])
+    _progress(
+        on_progress,
+        "index_diff",
+        new=len(diff["new"]),
+        unchanged=len(diff["unchanged"]),
+        corrections=len(diff["removed"]),
+        baseline=int(baseline),
+    )
+
+    new_by_cik: dict[str, list[dict[str, str]]] = {}
+    removed_by_cik: dict[str, list[dict[str, str]]] = {}
+    relevant_by_cik: dict[str, list[dict[str, str]]] = {}
+    for row in parsed["relevant_rows"]:
+        relevant_by_cik.setdefault(row["cik"], []).append(row)
+    for row in diff["new"]:
+        new_by_cik.setdefault(row["cik"], []).append(row)
+    for row in diff["removed"]:
+        removed_by_cik.setdefault(row["cik"], []).append(row)
+
     continuation = None
     continuation_pointer = _read_json(
         store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES
@@ -859,13 +1304,42 @@ def run_broad_sec_poll(
     )
     if mode == "recovery" and clocks.recovery_from:
         continuation = _load_continuation(
-            store, recovery_from=clocks.recovery_from, universe_sha=universe.content_sha256
+            store,
+            recovery_from=clocks.recovery_from,
+            universe_sha=universe.content_sha256,
+            index_snapshot_sha256=snapshot_id,
         )
     continuation_completed = set(continuation.get("completed_ciks", []) if continuation else [])
     continuation_pending = set(continuation.get("pending_ciks", []) if continuation else [])
 
-    for issuer in universe.issuers:
-        observation: dict[str, Any] = {
+    recovery_date = None
+    if clocks.recovery_from:
+        recovery_date = clocks.recovery_from[:10]
+
+    if mode == "recovery":
+        if continuation is not None:
+            work_ciks = set(continuation_pending)
+        else:
+            work_ciks = {
+                row["cik"]
+                for row in parsed["relevant_rows"]
+                if recovery_date and row["filed_on"] >= recovery_date
+            }
+    elif baseline:
+        work_ciks = set()
+    else:
+        work_ciks = set(new_by_cik) | set(removed_by_cik)
+
+    work_ciks &= canonical_ciks
+    _progress(on_progress, "affected_submissions", affected=len(work_ciks))
+
+    failures: list[IssuerFailure] = []
+    observations: list[dict[str, Any]] = []
+    prepared: list[dict[str, Any]] = []
+    source_accepts: list[str | None] = []
+
+    def _blank_observation(issuer: Issuer) -> dict[str, Any]:
+        return {
             "ticker": issuer.ticker,
             "cik": issuer.cik,
             "outcome": "failed",
@@ -881,7 +1355,24 @@ def run_broad_sec_poll(
             "companyfacts_retrieved_at": None,
             "cumulative_manifest_id": None,
             "withheld_count": 0,
+            "discovery_source": INDEX_SOURCE_KIND,
+            "index_snapshot_sha256": snapshot_id,
+            "relevant_event_count": len(relevant_by_cik.get(issuer.cik, [])),
+            "new_event_count": len(new_by_cik.get(issuer.cik, [])),
+            "correction_event_count": len(removed_by_cik.get(issuer.cik, [])),
+            "submissions_fetched": False,
         }
+
+    for issuer in universe.issuers:
+        observation = _blank_observation(issuer)
+        if issuer.cik not in work_ciks:
+            observation["outcome"] = "observed_no_relevant_change"
+            if baseline:
+                observation["new_event_count"] = 0
+                observation["correction_event_count"] = 0
+            observations.append(observation)
+            coverage["observed_issuers"] += 1
+            continue
         try:
             body, headers = fetch_submissions(issuer.cik)
             headers = _stamp_after_fetch(headers, now=now)
@@ -922,7 +1413,15 @@ def run_broad_sec_poll(
                 for item in admitted
                 if isinstance(item.get("accession_number"), str)
             ]
-            new_accessions = [acc for acc in current_accessions if acc not in prior_ledger]
+            index_new_accessions = {row["accession"] for row in new_by_cik.get(issuer.cik, [])}
+            if mode == "recovery":
+                new_accessions = [acc for acc in current_accessions if acc not in prior_ledger]
+            else:
+                new_accessions = [
+                    acc
+                    for acc in current_accessions
+                    if acc in index_new_accessions and acc not in prior_ledger
+                ]
             recovery_delta = [
                 item
                 for item in admitted
@@ -935,7 +1434,7 @@ def run_broad_sec_poll(
                 if issuer.cik in continuation_completed and not new_accessions:
                     needs_facts = False
             else:
-                needs_facts = prior_manifest is not None and bool(new_accessions)
+                needs_facts = bool(new_accessions)
             change_summary["new_relevant_accessions"] += len(
                 recovery_delta if mode == "recovery" else new_accessions
             )
@@ -946,8 +1445,11 @@ def run_broad_sec_poll(
                     "submissions_object_key": object_key(submissions_sha),
                     "submissions_retrieved_at": headers.get("retrieved_at"),
                     "withheld_count": len(withheld),
+                    "submissions_fetched": True,
                 }
             )
+            if removed_by_cik.get(issuer.cik):
+                observation["reason_code"] = "edgar_index_correction_requires_reconciliation"
             prepared.append(
                 {
                     "issuer": issuer,
@@ -961,6 +1463,7 @@ def run_broad_sec_poll(
                     "recovery_delta": recovery_delta,
                     "needs_facts": needs_facts,
                     "observation": observation,
+                    "index_removed": removed_by_cik.get(issuer.cik, []),
                 }
             )
             del url
@@ -1022,6 +1525,7 @@ def run_broad_sec_poll(
             int(continuation_pointer.get("pending_count") or 0),
         )
 
+    _progress(on_progress, "companyfacts", candidates=len(facts_candidates), selected=len(selected))
     facts_bytes = 0
     stop_facts_network = False
     for item in prepared:
@@ -1115,6 +1619,7 @@ def run_broad_sec_poll(
                 and not item["new_accessions"]
                 and snapshot_kind == prior_manifest.get("companyfacts_snapshot_kind")
                 and facts_sha == prior_manifest.get("companyfacts_sha256")
+                and not item["index_removed"]
             )
             if submissions_unchanged:
                 observation["manifest_id"] = prior_manifest["manifest_id"]
@@ -1138,6 +1643,10 @@ def run_broad_sec_poll(
                     number = acc.get("accession_number")
                     if isinstance(number, str) and number not in cumulative:
                         cumulative.append(number)
+                for removed in item["index_removed"]:
+                    accession = removed.get("accession")
+                    if isinstance(accession, str) and accession not in cumulative:
+                        cumulative.append(accession)
             previous_id = prior_manifest["manifest_id"] if prior_manifest else None
             manifest = {
                 "schema": MANIFEST_SCHEMA,
@@ -1172,8 +1681,6 @@ def run_broad_sec_poll(
             item["cumulative"] = cumulative
             item["snapshot_kind"] = snapshot_kind
             item["facts_sha"] = facts_sha
-            prepared_ok = item
-            del prepared_ok
         except BroadSecError as exc:
             if exc.reason_code == "queue_overflow":
                 overflow = True
@@ -1193,6 +1700,37 @@ def run_broad_sec_poll(
             item["failed"] = True
 
     clocks.recorded_at = clocks.recorded_at or now()
+    _progress(on_progress, "publish", prepared=len(prepared), observed=coverage["observed_issuers"])
+    index_pointer = None
+    try:
+        _put_immutable(
+            store,
+            index_object_key(parsed["member_sha256"]),
+            _gzip_bytes(parsed["member"]),
+            content_type="application/gzip",
+        )
+        stored_snapshot = {
+            **identity,
+            "snapshot_id": snapshot_id,
+            "previous_snapshot_id": prior_snapshot.get("snapshot_id") if prior_snapshot else None,
+        }
+        _put_immutable(
+            store,
+            index_snapshot_key(identity["quarter_id"], snapshot_id),
+            canonical_json(stored_snapshot).encode("utf-8"),
+        )
+        index_pointer = {
+            "schema": "fundamental_forensics.broad_sec.index_latest.v1",
+            "quarter_id": identity["quarter_id"],
+            "snapshot_id": snapshot_id,
+            "snapshot_key": index_snapshot_key(identity["quarter_id"], snapshot_id),
+            "member_sha256": parsed["member_sha256"],
+            "relevant_set_sha256": parsed["relevant_set_sha256"],
+        }
+    except BroadSecError as exc:
+        failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
+        index_pointer = None
+
     for item in prepared:
         if item.get("failed") or "manifest" not in item:
             continue
@@ -1240,6 +1778,7 @@ def run_broad_sec_poll(
                 if item.get("needs_facts")
                 and not item["observation"].get("companyfacts_fetched")
             }
+            | (work_ciks - {item["issuer"].cik for item in prepared} - continuation_completed)
         )
         completed_ciks = sorted(
             (
@@ -1248,6 +1787,10 @@ def run_broad_sec_poll(
                     item["issuer"].cik
                     for item in prepared
                     if item["observation"].get("companyfacts_fetched")
+                    or (
+                        not item.get("needs_facts")
+                        and item["observation"].get("outcome") == "observed"
+                    )
                 }
             )
             - set(pending_ciks)
@@ -1260,6 +1803,7 @@ def run_broad_sec_poll(
                 universe_sha=universe.content_sha256,
                 pending_ciks=pending_ciks,
                 completed_ciks=completed_ciks,
+                index_snapshot_sha256=snapshot_id,
             )
         except BroadSecError as exc:
             failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
@@ -1318,6 +1862,27 @@ def run_broad_sec_poll(
     observation_raw = canonical_json(observation_payload).encode("utf-8")
     observation_sha = sha256(observation_raw).hexdigest()
     observation_key = issuer_observations_key(run_id)
+    index_receipt = {
+        "source_kind": INDEX_SOURCE_KIND,
+        "index_url": full_master_index_url(year, quarter),
+        "year": year,
+        "quarter": quarter,
+        "archive_sha256": archive_sha,
+        "archive_bytes": len(archive),
+        "archive_retrieved_at": index_headers.get("retrieved_at"),
+        "http_etag": index_headers.get("http_etag"),
+        "http_last_modified": index_headers.get("http_last_modified"),
+        "member_name": MASTER_INDEX_MEMBER_NAME,
+        "member_sha256": parsed["member_sha256"],
+        "member_bytes": parsed["member_bytes"],
+        "latest_filing_date": parsed["latest_filing_date"],
+        "snapshot_sha256": snapshot_id,
+        "relevant_set_sha256": parsed["relevant_set_sha256"],
+        "new_events": 0 if baseline else len(diff["new"]),
+        "unchanged_events": len(diff["unchanged"]),
+        "correction_events": 0 if baseline else len(diff["removed"]),
+        "baseline": baseline,
+    }
     receipt = _empty_receipt(
         run_id=run_id,
         mode=mode,
@@ -1332,9 +1897,11 @@ def run_broad_sec_poll(
         observation_key=observation_key,
         observation_sha256=observation_sha,
         observation_row_count=len(observations),
+        index=index_receipt,
     )
     encoded_receipt = canonical_json(receipt).encode("utf-8")
     census_complete = status == "complete" and universe.canonical and exit_code == 0
+    _progress(on_progress, "finalize", status=status, complete=int(census_complete))
     try:
         _put_immutable(
             store,
@@ -1350,6 +1917,12 @@ def run_broad_sec_poll(
             _put_pointer(store, latest_complete_key(), _compact_head(
                 receipt, observation_key=observation_key, observation_sha256=observation_sha
             ))
+        if index_pointer is not None and (census_complete or mode == "recovery"):
+            existing_index = _read_json(
+                store, index_latest_key(identity["quarter_id"]), maximum_bytes=POINTER_MAX_BYTES
+            )
+            if existing_index is None or existing_index.get("snapshot_id") != snapshot_id:
+                _put_pointer(store, index_latest_key(identity["quarter_id"]), index_pointer)
     except BroadSecError as exc:
         receipt["status"] = "failed"
         receipt["reason_code"] = exc.reason_code
@@ -1375,7 +1948,7 @@ def live_fetchers(
     submissions_session: Any = None,
     companyfacts_fetcher: Any = None,
     retrieved_at: str | None = None,
-) -> tuple[FetchBytes, FetchBytes]:
+) -> tuple[FetchBytes, FetchBytes, FetchIndex]:
     from collectors.edgar_forensics import SecForensicsCollector
     from collectors.fundamental_forensics_companyfacts import SecCompanyFactsCollector
 
@@ -1411,7 +1984,28 @@ def live_fetchers(
             raise BroadSecError("source_binding_failure", "Company Facts headers must not carry as_of")
         return body, meta
 
-    return fetch_submissions, fetch_companyfacts
+    def fetch_master_index(year: int, quarter: int) -> tuple[bytes, Mapping[str, str | None]]:
+        dest = Path(scratch_root) / f"master-{year}-Q{quarter}.zip"
+        try:
+            body, headers = submissions.retrieve_full_master_index(
+                year,
+                quarter,
+                dest_path=dest,
+                max_archive_bytes=MAX_MASTER_INDEX_ZIP_BYTES,
+            )
+        except SecResponseTooLarge as exc:
+            raise BroadSecError("edgar_index_too_large", str(exc)) from exc
+        except Exception as exc:
+            reason = classify_fetch_error(exc)
+            mapped = "edgar_index_unavailable"
+            if reason == "response_too_large":
+                mapped = "edgar_index_too_large"
+            elif reason == "source_binding_failure":
+                mapped = "source_binding_failure"
+            raise BroadSecError(mapped, str(exc)) from exc
+        return body, dict(headers)
+
+    return fetch_submissions, fetch_companyfacts, fetch_master_index
 
 
 def open_store(local_dir: Path | None) -> BroadSecStore:

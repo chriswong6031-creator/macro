@@ -79,6 +79,19 @@ def endpoint_url(cik: int | str, endpoint: str) -> str:
     raise ValueError(f"unsupported endpoint: {endpoint}")
 
 
+def full_master_index_url(year: int, quarter: int) -> str:
+    """Return the one canonical SEC full-index master ZIP URL.
+
+    Callers may not supply an arbitrary bulk URL.  Year/quarter are the only
+    inputs, and they must be a real EDGAR quarter.
+    """
+    if isinstance(year, bool) or not isinstance(year, int) or year < 1993 or year > 2100:
+        raise ValueError("full-index year is out of range")
+    if isinstance(quarter, bool) or not isinstance(quarter, int) or quarter not in (1, 2, 3, 4):
+        raise ValueError("full-index quarter must be 1..4")
+    return f"https://www.sec.gov/Archives/edgar/full-index/{year}/QTR{quarter}/master.zip"
+
+
 def historical_submissions_url(cik: int | str, source_name: str) -> str:
     """Return one canonical SEC historical-Submissions URL.
 
@@ -396,6 +409,91 @@ class SecForensicsCollector:
     def fetch_company(self, cik: int | str, *, retrieved_at: str | None = None) -> list[RetrievalReceipt]:
         return [self.fetch(cik, endpoint, retrieved_at=retrieved_at) for endpoint in ("companyfacts", "submissions")]
 
+    def retrieve_full_master_index(
+        self,
+        year: int,
+        quarter: int,
+        *,
+        dest_path: Path,
+        max_archive_bytes: int,
+    ) -> tuple[bytes, dict[str, str | None]]:
+        """Stream one canonical EDGAR full-index master ZIP to scratch.
+
+        The ZIP is a transport envelope, not JSON.  Exact requested URL only;
+        no caller-supplied bulk URL; no redirect following.  A partial file is
+        never promoted.
+        """
+        url = full_master_index_url(year, quarter)
+        limit = _byte_limit(max_archive_bytes, field="max_archive_bytes")
+        if limit is None:
+            raise ValueError("max_archive_bytes must be a positive integer")
+        dest_path = Path(dest_path)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        last_error: Exception | None = None
+        for attempt in range(4):
+            self._pace()
+            response: Any | None = None
+            partial = dest_path.with_name(
+                f".{dest_path.name}.{os.getpid()}.{time.time_ns()}.partial"
+            )
+            try:
+                try:
+                    response = self.session.get(
+                        url,
+                        headers={"User-Agent": self.user_agent, "Accept-Encoding": "identity"},
+                        timeout=self.timeout_seconds,
+                        stream=True,
+                        allow_redirects=False,
+                    )
+                except TypeError as exc:
+                    raise RuntimeError(
+                        "SEC session must support streamed responses with redirects disabled"
+                    ) from exc
+                try:
+                    self._last_request_at = time.monotonic()
+                    status = getattr(response, "status_code", None)
+                    if isinstance(status, bool) or not isinstance(status, int):
+                        raise RuntimeError("SEC response has no integer status_code")
+                    final_url = getattr(response, "url", None)
+                    if not isinstance(final_url, str) or final_url != url:
+                        raise RuntimeError("SEC response URL does not match the requested source")
+                    if 300 <= status < 400:
+                        raise RuntimeError("SEC redirects are refused")
+                    if status in (429, 500, 502, 503, 504):
+                        raise requests.HTTPError(f"SEC transient HTTP {status}")
+                    response.raise_for_status()
+                    _reject_declared_oversize(response.headers, limit, url=url)
+                    digest, received = _stream_response_to_path(response, partial, limit, url=url)
+                    etag = response.headers.get("ETag")
+                    last_modified = response.headers.get("Last-Modified")
+                except Exception as exc:
+                    _close_response_after_failure(response, exc)
+                    raise
+                _close_response(response)
+                os.replace(partial, dest_path)
+                _sync_parent(dest_path)
+                content = dest_path.read_bytes()
+                if len(content) != received or hashlib.sha256(content).hexdigest() != digest:
+                    raise RuntimeError("SEC full-index archive readback mismatch")
+                return content, {
+                    "url": url,
+                    "http_etag": etag if isinstance(etag, str) else None,
+                    "http_last_modified": last_modified if isinstance(last_modified, str) else None,
+                    "archive_sha256": digest,
+                    "archive_bytes": str(received),
+                }
+            except SecResponseTooLarge:
+                raise
+            except (requests.RequestException, OSError) as exc:
+                last_error = exc
+                if attempt < 3:
+                    time.sleep(min(2 ** attempt, 4))
+            except RuntimeError:
+                raise
+            finally:
+                partial.unlink(missing_ok=True)
+        raise RuntimeError(f"SEC fetch failed after retries for {url}: {last_error}")
+
 
 def _byte_limit(value: int | None, *, field: str) -> int | None:
     if value is None:
@@ -422,6 +520,44 @@ def _reject_declared_oversize(headers: Any, limit: int | None, *, url: str) -> N
         raise SecResponseTooLarge(
             f"SEC response exceeds bounded ingest limit ({declared} > {limit}) for {url}"
         )
+
+
+def _stream_response_to_path(
+    response: Any, dest: Path, limit: int, *, url: str
+) -> tuple[str, int]:
+    """Stream a SEC body to disk, hashing while enforcing ``limit`` compressed bytes."""
+    iterator = getattr(response, "iter_content", None)
+    if not callable(iterator):
+        raise RuntimeError("SEC session must provide bounded streamed responses")
+    hasher = hashlib.sha256()
+    received = 0
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with dest.open("xb") as handle:
+            for chunk in iterator(chunk_size=min(_STREAM_CHUNK_BYTES, limit + 1)):
+                if not isinstance(chunk, bytes):
+                    raise RuntimeError("SEC response stream yielded non-bytes")
+                if not chunk:
+                    continue
+                received += len(chunk)
+                if received > limit:
+                    raise SecResponseTooLarge(
+                        f"SEC response exceeds bounded ingest limit ({received} > {limit}) for {url}"
+                    )
+                hasher.update(chunk)
+                handle.write(chunk)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except SecResponseTooLarge:
+        dest.unlink(missing_ok=True)
+        raise
+    except requests.RequestException:
+        dest.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        dest.unlink(missing_ok=True)
+        raise RuntimeError("SEC response stream failed") from exc
+    return hasher.hexdigest(), received
 
 
 def _stream_response_bytes(response: Any, limit: int | None, *, url: str) -> bytes:

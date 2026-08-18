@@ -51,6 +51,7 @@ confidence: high
 reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-18
+superseded_by: DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
 ---
 
 Preserve exact source bytes, canonical issuer manifests, selective Company

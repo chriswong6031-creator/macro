@@ -6,6 +6,7 @@ import gzip
 import io
 import json
 import re
+import zipfile
 from hashlib import sha256
 from pathlib import Path
 
@@ -14,7 +15,7 @@ import pandas as pd
 import pytest
 import requests
 
-from collectors.edgar_forensics import SecForensicsCollector, endpoint_url
+from collectors.edgar_forensics import SecForensicsCollector, endpoint_url, full_master_index_url
 from engine.fundamental_forensics.broad_sec_store import (
     MAX_UNIVERSE_ISSUERS,
     UNIVERSE_RELATIVE_PATH,
@@ -45,6 +46,7 @@ AAPL = ("AAPL", "0000320193")
 MSFT = ("MSFT", "0000789019")
 POLL_1 = "2026-08-17T03:00:00Z"
 POLL_2 = "2026-08-17T04:00:00Z"
+POLL_3 = "2026-08-17T05:00:00Z"
 RECOVERY_FROM = "2026-07-12T11:23:15Z"
 ACCEPT_Q = "2026-06-15T20:11:00Z"
 ACCEPT_NEW = "2026-08-12T21:04:00Z"
@@ -149,6 +151,44 @@ def _facts_bytes(cik: str, marker: str = "v1") -> bytes:
     ).encode()
 
 
+def _index_filename(cik: str, accession: str) -> str:
+    return f"edgar/data/{int(cik)}/{accession}.txt"
+
+
+def _idx_row(cik: str, form: str, filed: str, accession: str, *, name: str = "TEST ISSUER") -> dict[str, str]:
+    return {
+        "cik": cik,
+        "name": name,
+        "form": form,
+        "filed": filed,
+        "filename": _index_filename(cik, accession),
+    }
+
+
+def _master_zip(rows: list[dict[str, str]] | None = None) -> bytes:
+    payload = list(rows or [])
+    if not payload:
+        payload.append(_idx_row("0000999999", "8-K", "2026-08-01", "0000999999-26-000001"))
+    header = (
+        "Description:           Master Index of EDGAR Dissemination Feed\n"
+        "Last Data Received:    August 17, 2026\n"
+        "Comments:              webmaster@sec.gov\n"
+        "Anonymous FTP:         ftp://ftp.sec.gov/edgar/\n"
+        "Cloud HTTP:            https://www.sec.gov/Archives/\n"
+        "\n"
+        "CIK|Company Name|Form Type|Date Filed|Filename\n"
+        "--------------------------------------------------------------------------------\n"
+    )
+    body = "\n".join(
+        f"{int(row['cik'])}|{row['name']}|{row['form']}|{row['filed']}|{row['filename']}"
+        for row in payload
+    )
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as handle:
+        handle.writestr("master.idx", header + body + "\n")
+    return buf.getvalue()
+
+
 class FakeSec:
     def __init__(self) -> None:
         self.submissions: dict[str, bytes] = {}
@@ -159,6 +199,23 @@ class FakeSec:
         self.bad_url_submissions: set[str] = set()
         self.submissions_fetches: list[str] = []
         self.facts_fetches: list[str] = []
+        self.index_zips: dict[tuple[int, int], bytes] = {}
+        self.index_fetches: list[tuple[int, int]] = []
+        self.index_headers: dict[str, str | None] = {}
+        self.set_index([])
+
+    def set_index(self, rows: list[dict[str, str]], *, year: int = 2026, quarter: int = 3) -> None:
+        self.index_zips[(year, quarter)] = _master_zip(rows)
+
+    def fetch_master_index(self, year: int, quarter: int) -> tuple[bytes, dict[str, str | None]]:
+        self.index_fetches.append((year, quarter))
+        if (year, quarter) not in self.index_zips:
+            raise BroadSecError("edgar_index_unavailable", f"no fixture for {year} Q{quarter}")
+        headers: dict[str, str | None] = {
+            "url": full_master_index_url(year, quarter),
+            **self.index_headers,
+        }
+        return self.index_zips[(year, quarter)], headers
 
     def fetch_submissions(self, cik: str) -> tuple[bytes, dict[str, str | None]]:
         self.submissions_fetches.append(cik)
@@ -183,6 +240,7 @@ def _poll(store, universe: Path, fake: FakeSec, clocks: PollClocks, *, repo_root
         universe_path=universe,
         fetch_submissions=fake.fetch_submissions,
         fetch_companyfacts=fake.fetch_companyfacts,
+        fetch_master_index=fake.fetch_master_index,
         clocks=clocks,
         now=now or SequenceClock(),
         repo_root=repo_root,
@@ -289,42 +347,54 @@ def test_two_run_idempotence_does_not_advance_source_identity(tmp_path: Path) ->
     fake.submissions[MSFT[1]] = _submissions_bytes(MSFT[1], [m])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     fake.facts[MSFT[1]] = _facts_bytes(MSFT[1])
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", q["accession"]),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", m["accession"]),
+        ]
+    )
 
     first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert first.exit_code == 0
     _validate_run(first.receipt)
     assert first.receipt["status"] == "complete"
+    assert first.receipt["index"]["baseline"] is True
+    assert first.receipt["index"]["source_kind"] == "sec_edgar_full_master_index"
     assert fake.facts_fetches == []
+    assert fake.submissions_fetches == []
+    assert len(fake.index_fetches) == 1
     objects_after_first = count_source_objects(store)
-    aapl_pointer = store.get_bytes_strict(issuer_latest_key(AAPL[1]))
-    msft_pointer = store.get_bytes_strict(issuer_latest_key(MSFT[1]))
-    source_clock = first.receipt["latest_relevant_sec_accepted_at"]
-    assert source_clock == ACCEPT_Q
-    assert source_clock != POLL_1
-    aapl_manifest = _load_json(store, json.loads(aapl_pointer)["manifest_key"])
-    jsonschema.validate(aapl_manifest, MANIFEST_SCHEMA)
-    assert aapl_manifest["companyfacts_snapshot_kind"] == "not_fetched"
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
+    assert first.receipt["latest_relevant_sec_accepted_at"] is None
+    snapshot_id = first.receipt["index"]["snapshot_sha256"]
 
     fake.facts_fetches.clear()
     fake.submissions_fetches.clear()
+    fake.index_fetches.clear()
     second = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert second.exit_code == 0
     _validate_run(second.receipt)
     assert count_source_objects(store) == objects_after_first
-    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) == aapl_pointer
-    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) == msft_pointer
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
     assert second.receipt["run_id"] != first.receipt["run_id"]
     assert second.receipt["poll_started_at"] == POLL_2
     assert first.receipt["poll_started_at"] == POLL_1
-    assert second.receipt["latest_relevant_sec_accepted_at"] == source_clock
+    assert second.receipt["index"]["baseline"] is False
+    assert second.receipt["index"]["snapshot_sha256"] == snapshot_id
+    assert second.receipt["index"]["new_events"] == 0
     assert fake.facts_fetches == []
-    assert set(fake.submissions_fetches) == {AAPL[1], MSFT[1]}
+    assert fake.submissions_fetches == []
+    assert fake.index_fetches == [(2026, 3)]
     head, complete_receipt = _receipt_from_head(store, latest_complete_key())
     assert head["run_id"] == second.receipt["run_id"]
-    assert complete_receipt["latest_relevant_sec_accepted_at"] == source_clock
     observation_head, _obs_receipt = _receipt_from_head(store, latest_observation_key())
     assert observation_head["run_id"] == second.receipt["run_id"]
     assert "failures" not in observation_head
+    assert complete_receipt["index"]["http_last_modified"] is None or complete_receipt[
+        "latest_relevant_sec_accepted_at"
+    ] != complete_receipt["index"]["http_last_modified"]
 
 
 def test_one_new_10q_fetches_companyfacts_only_for_affected_issuer(tmp_path: Path) -> None:
@@ -336,17 +406,32 @@ def test_one_new_10q_fetches_companyfacts_only_for_affected_issuer(tmp_path: Pat
     fake.submissions[MSFT[1]] = _submissions_bytes(MSFT[1], [msft_q])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v1")
     fake.facts[MSFT[1]] = _facts_bytes(MSFT[1], "v1")
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", aapl_q["accession"]),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", msft_q["accession"]),
+        ]
+    )
     _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
 
     fake.facts_fetches.clear()
+    fake.submissions_fetches.clear()
     new_q = _filing("0000320193-26-000044", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q, new_q])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v2")
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", aapl_q["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-12", new_q["accession"]),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", msft_q["accession"]),
+        ]
+    )
     result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert result.exit_code == 0
+    assert fake.submissions_fetches == [AAPL[1]]
     assert fake.facts_fetches == [AAPL[1]]
     assert result.receipt["coverage"]["companyfacts_fetched"] == 1
-    assert result.receipt["coverage"]["companyfacts_skipped_unchanged"] == 1
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
     assert result.receipt["latest_relevant_sec_accepted_at"] == ACCEPT_NEW
     pointer = _load_json(store, issuer_latest_key(AAPL[1]))
     manifest = _load_json(store, pointer["manifest_key"])
@@ -368,14 +453,23 @@ def test_amendment_keeps_prior_manifest_immutable_and_reachable(tmp_path: Path) 
     original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v1")
+    fake.set_index([])
     _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"])])
+    _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     prior_pointer = _load_json(store, issuer_latest_key(AAPL[1]))
     prior_manifest_bytes = store.get_bytes_strict(prior_pointer["manifest_key"])
 
     amendment = _filing("0000320193-26-000011", "10-Q/A", accepted=ACCEPT_AMEND, filed="2026-08-13")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original, amendment])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v2")
-    second = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"]),
+            _idx_row(AAPL[1], "10-Q/A", "2026-08-13", amendment["accession"]),
+        ]
+    )
+    second = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
     assert second.exit_code == 0
     new_pointer = _load_json(store, issuer_latest_key(AAPL[1]))
     assert new_pointer["manifest_id"] != prior_pointer["manifest_id"]
@@ -394,18 +488,27 @@ def test_accession_after_selection_cutoff_is_not_admitted(tmp_path: Path) -> Non
     original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
-    first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"])])
+    first = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     objects_before = count_source_objects(store)
     prior = _load_json(store, issuer_latest_key(AAPL[1]))
 
     late = _filing("0000320193-26-000099", "10-Q", accepted=ACCEPT_LATE, filed="2026-08-16")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original, late])
     fake.facts_fetches.clear()
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-16", late["accession"]),
+        ]
+    )
     result = _poll(
         store,
         universe,
         fake,
-        _clocks(POLL_2, cutoff="2026-08-15T00:00:00Z"),
+        _clocks(POLL_3, cutoff="2026-08-15T00:00:00Z"),
         repo_root=repo,
     )
     assert result.exit_code == 0
@@ -433,14 +536,25 @@ def test_companyfacts_is_never_labelled_historical_as_of(tmp_path: Path) -> None
     original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original])
     fake.facts[AAPL[1]] = json.dumps({"cik": 320193, "facts": {}, "as_of": POLL_1}).encode()
+    fake.set_index([])
     first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
     assert first.exit_code == 0
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"])])
+    first = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert first.exit_code == 1
+    assert any(item["reason_code"] == "source_binding_failure" for item in first.receipt["failures"])
     complete_before = store.get_bytes_strict(latest_complete_key())
     assert complete_before is not None
 
     new_q = _filing("0000320193-26-000044", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original, new_q])
-    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-12", new_q["accession"]),
+        ]
+    )
+    result = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
     assert result.exit_code == 1
     assert result.receipt["status"] in {"failed", "degraded"}
     assert any(item["reason_code"] == "source_binding_failure" for item in result.receipt["failures"])
@@ -450,34 +564,42 @@ def test_companyfacts_is_never_labelled_historical_as_of(tmp_path: Path) -> None
 def test_partial_issuer_failure_does_not_advance_complete_head(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193), (MSFT[0], 789019)])
     fake = FakeSec()
-    fake.submissions[AAPL[1]] = _submissions_bytes(
-        AAPL[1],
-        [_filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
-    )
-    fake.submissions[MSFT[1]] = _submissions_bytes(
-        MSFT[1],
-        [_filing("0000789019-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
-    )
+    aapl_q = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
+    msft_q = _filing("0000789019-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [aapl_q])
+    fake.submissions[MSFT[1]] = _submissions_bytes(MSFT[1], [msft_q])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     fake.facts[MSFT[1]] = _facts_bytes(MSFT[1])
-    fake.fail_submissions[MSFT[1]] = "sec_5xx_exhausted"
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_before = store.get_bytes_strict(latest_complete_key())
 
-    first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", aapl_q["accession"]),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", msft_q["accession"]),
+        ]
+    )
+    fake.fail_submissions[MSFT[1]] = "sec_5xx_exhausted"
+    first = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert first.exit_code == 1
     assert first.receipt["status"] == "degraded"
     assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is not None
-    assert store.get_bytes_strict(latest_complete_key()) is None
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
     observation = _load_json(store, latest_observation_key())
     assert observation["status"] == "degraded"
     assert observation["schema"] == "fundamental_forensics.broad_sec.head.v1"
 
     del fake.fail_submissions[MSFT[1]]
     fake.facts_fetches.clear()
-    second = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    fake.submissions_fetches.clear()
+    second = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
     assert second.exit_code == 0
     assert second.receipt["status"] == "complete"
     assert store.get_bytes_strict(latest_complete_key()) is not None
-    assert fake.facts_fetches == []
+    assert fake.submissions_fetches == [AAPL[1], MSFT[1]]
+    assert fake.facts_fetches == [MSFT[1]]
 
 
 def test_queue_overflow_never_truncates_silently(tmp_path: Path) -> None:
@@ -489,6 +611,7 @@ def test_queue_overflow_never_truncates_silently(tmp_path: Path) -> None:
     fake.submissions[MSFT[1]] = _submissions_bytes(MSFT[1], [msft_q])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     fake.facts[MSFT[1]] = _facts_bytes(MSFT[1])
+    fake.set_index([])
     _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
 
     fake.submissions[AAPL[1]] = _submissions_bytes(
@@ -498,6 +621,14 @@ def test_queue_overflow_never_truncates_silently(tmp_path: Path) -> None:
     fake.submissions[MSFT[1]] = _submissions_bytes(
         MSFT[1],
         [msft_q, _filing("0000789019-26-000044", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")],
+    )
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", aapl_q["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-12", "0000320193-26-000044"),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", msft_q["accession"]),
+            _idx_row(MSFT[1], "10-Q", "2026-08-12", "0000789019-26-000044"),
+        ]
     )
     fake.facts_fetches.clear()
     result = _poll(
@@ -513,24 +644,26 @@ def test_queue_overflow_never_truncates_silently(tmp_path: Path) -> None:
 def test_oversize_invalid_json_and_wrong_url_fail_before_durable_admission(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
+    original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"])])
+
     fake.submissions[AAPL[1]] = b"not-json"
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert result.exit_code == 1
     assert result.receipt["failures"][0]["reason_code"] == "invalid_sec_json"
     assert count_source_objects(store) == 0
 
-    fake.submissions[AAPL[1]] = _submissions_bytes(
-        AAPL[1],
-        [_filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
-    )
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original])
     fake.bad_url_submissions.add(AAPL[1])
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    result = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
     assert result.receipt["failures"][0]["reason_code"] == "source_binding_failure"
     assert count_source_objects(store) == 0
 
     fake.bad_url_submissions.clear()
     fake.fail_submissions[AAPL[1]] = "response_too_large"
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    result = _poll(store, universe, fake, _clocks("2026-08-17T06:00:00Z"), repo_root=repo)
     assert result.receipt["failures"][0]["reason_code"] == "response_too_large"
     assert count_source_objects(store) == 0
     assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
@@ -542,7 +675,10 @@ def test_cas_failure_does_not_move_complete_pointer(tmp_path: Path) -> None:
     original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
-    first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"])])
+    first = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert first.exit_code == 0
     complete_before = store.get_bytes_strict(latest_complete_key())
 
@@ -563,7 +699,13 @@ def test_cas_failure_does_not_move_complete_pointer(tmp_path: Path) -> None:
     amendment = _filing("0000320193-26-000011", "10-Q/A", accepted=ACCEPT_AMEND, filed="2026-08-13")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [original, amendment])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v2")
-    result = _poll(LyingStore(store), universe, fake, _clocks(POLL_2), repo_root=repo)
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", original["accession"]),
+            _idx_row(AAPL[1], "10-Q/A", "2026-08-13", amendment["accession"]),
+        ]
+    )
+    result = _poll(LyingStore(store), universe, fake, _clocks(POLL_3), repo_root=repo)
     assert result.exit_code == 1
     assert result.receipt["reason_code"] == "store_readback_failure"
     assert store.get_bytes_strict(latest_complete_key()) == complete_before
@@ -574,10 +716,11 @@ def test_recovery_window_predating_recent_submissions_is_reason_coded(tmp_path: 
     fake = FakeSec()
     fake.submissions[AAPL[1]] = _submissions_bytes(
         AAPL[1],
-        [_filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
+        [_filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-07-20")],
         files=[{"name": "CIK0000320193-submissions-001.json", "filingCount": 40}],
     )
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000010")])
     result = _poll(
         store,
         universe,
@@ -688,7 +831,7 @@ def test_five_xx_exhaustion_is_reason_coded(tmp_path: Path, monkeypatch: pytest.
 
     from engine.fundamental_forensics.broad_sec_store import classify_fetch_error, live_fetchers
 
-    fetch_submissions, _facts = live_fetchers(
+    fetch_submissions, _facts, _index = live_fetchers(
         user_agent="MastermindX research@example.com",
         scratch_root=tmp_path / "scratch",
         submissions_session=Session(),
@@ -715,6 +858,7 @@ def test_broad_sec_suite_is_named_in_engine_render_guards() -> None:
     job = match.group(0)
     assert "tests/test_fundamental_forensics_broad_sec.py" in job
     assert "tests/test_filing_forensics_broad_sec_lane.py" in job
+    assert "tests/test_fundamental_forensics_edgar_index.py" in job
 
 
 def test_empty_store_recovery_bootstraps_baseline_without_mass_companyfacts(tmp_path: Path) -> None:
@@ -733,6 +877,13 @@ def test_empty_store_recovery_bootstraps_baseline_without_mass_companyfacts(tmp_
     )
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "recovery")
     fake.facts[MSFT[1]] = _facts_bytes(MSFT[1], "should-not-fetch")
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", "0000320193-26-000010"),
+            _idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000040"),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", "0000789019-26-000010"),
+        ]
+    )
     result = _poll(
         store,
         universe,
@@ -742,20 +893,20 @@ def test_empty_store_recovery_bootstraps_baseline_without_mass_companyfacts(tmp_
         mode="recovery",
     )
     assert result.exit_code == 0
+    assert fake.submissions_fetches == [AAPL[1]]
     assert fake.facts_fetches == [AAPL[1]]
     aapl = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
-    msft = _load_json(store, _load_json(store, issuer_latest_key(MSFT[1]))["manifest_key"])
     jsonschema.validate(aapl, MANIFEST_SCHEMA)
-    jsonschema.validate(msft, MANIFEST_SCHEMA)
     assert aapl["companyfacts_snapshot_kind"] == "current_observed"
-    assert msft["companyfacts_snapshot_kind"] == "not_fetched"
-    assert msft["companyfacts_sha256"] is None
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
     assert "0000320193-26-000010" in aapl["cumulative_relevant_accessions"]
 
     fake.facts_fetches.clear()
+    fake.submissions_fetches.clear()
     incremental = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert incremental.exit_code == 0
     assert fake.facts_fetches == []
+    assert fake.submissions_fetches == []
 
 
 def test_recent_window_removal_does_not_false_refresh_companyfacts(tmp_path: Path) -> None:
@@ -765,15 +916,23 @@ def test_recent_window_removal_does_not_false_refresh_companyfacts(tmp_path: Pat
     newer = _filing("0000320193-26-000044", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [older, newer])
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v1")
+    fake.set_index([])
     _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
-    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [older, newer])
-    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v2")
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", older["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-12", newer["accession"]),
+        ]
+    )
     _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo, mode="incremental")
     fake.facts_fetches.clear()
+    fake.submissions_fetches.clear()
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [newer])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "v2")
     rolled = _poll(store, universe, fake, _clocks("2026-08-17T05:00:00Z"), repo_root=repo)
     assert rolled.exit_code == 0
     assert fake.facts_fetches == []
+    assert fake.submissions_fetches == []
     manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
     assert older["accession"] in manifest["cumulative_relevant_accessions"]
     assert newer["accession"] in manifest["cumulative_relevant_accessions"]
@@ -783,6 +942,7 @@ def test_recovery_converges_across_bounded_tranches(tmp_path: Path) -> None:
     rows = [(f"T{index:02d}", 3200000 + index) for index in range(70)]
     repo, universe, store = _layout(tmp_path, rows)
     fake = FakeSec()
+    index_rows = []
     for ticker, cik_int in rows:
         cik = f"{cik_int:010d}"
         fake.submissions[cik] = _submissions_bytes(
@@ -793,6 +953,8 @@ def test_recovery_converges_across_bounded_tranches(tmp_path: Path) -> None:
             ],
         )
         fake.facts[cik] = _facts_bytes(cik, ticker)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
+    fake.set_index(index_rows)
     first = _poll(
         store,
         universe,
@@ -835,6 +997,7 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
     repo, universe, store = _layout(tmp_path, rows)
     fake = FakeSec()
     ibm = ("IBM", "0000051143")
+    index_rows = []
     for ticker, cik in (AAPL, MSFT, ibm):
         fake.submissions[cik] = _submissions_bytes(
             cik,
@@ -844,6 +1007,8 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
             ],
         )
         fake.facts[cik] = _facts_bytes(cik, ticker)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
+    fake.set_index(index_rows)
     first_body = fake.facts[AAPL[1]]
     result = _poll(
         store,
@@ -873,8 +1038,17 @@ def test_run_level_observation_receipt_covers_every_expected_issuer(tmp_path: Pa
         MSFT[1],
         [_filing("0000789019-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
     )
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-06-15", "0000320193-26-000010"),
+            _idx_row(MSFT[1], "10-Q", "2026-06-15", "0000789019-26-000010"),
+        ]
+    )
     fake.fail_submissions[MSFT[1]] = "sec_5xx_exhausted"
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     payload = _load_gzip_json(store, result.receipt["storage"]["observation_key"])
     assert payload["row_count"] == 2
     by_cik = {row["cik"]: row for row in payload["issuers"]}
@@ -895,6 +1069,7 @@ def test_broad_failure_receipt_exceeds_pointer_limit_but_compact_observation_adv
     rows = [(f"Z{index:02d}", 4000000 + index) for index in range(40)]
     repo, universe, store = _layout(tmp_path, rows)
     fake = FakeSec()
+    index_rows = []
     for ticker, cik_int in rows:
         cik = f"{cik_int:010d}"
         fake.submissions[cik] = _submissions_bytes(
@@ -903,10 +1078,16 @@ def test_broad_failure_receipt_exceeds_pointer_limit_but_compact_observation_adv
         )
         fake.fail_submissions[cik] = "sec_5xx_exhausted"
         fake.fail_detail[cik] = ("SEC upstream exhausted " + ("x" * 400))
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-06-15", f"{cik}-26-000010"))
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    fake.set_index(index_rows)
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     encoded = json.dumps(result.receipt).encode()
     assert len(encoded) > 16 * 1024
-    assert store.get_bytes_strict(latest_complete_key()) is None
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
     head = _load_json(store, latest_observation_key())
     assert len(json.dumps(head).encode()) < 16 * 1024
     assert head["status"] == "failed"
@@ -985,7 +1166,11 @@ def test_malformed_relevant_accession_and_acceptance_are_not_silently_dropped(
     recent["isXBRL"].extend([1, 1, 0])
     recent["isInlineXBRL"].extend([1, 1, 0])
     fake.submissions[AAPL[1]] = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
-    result = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.set_index([])
+    _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", good["accession"])])
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
     assert result.exit_code == 0
     manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
     causes = {item["withheld_cause"] for item in manifest["withheld_filings"]}
@@ -1009,37 +1194,36 @@ def test_production_cli_samples_clocks_after_issuer_io(
     fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     monkeypatch.setattr(
         "scripts.run_fundamental_forensics_broad_sec.live_fetchers",
-        lambda **_kwargs: (fake.fetch_submissions, fake.fetch_companyfacts),
+        lambda **_kwargs: (fake.fetch_submissions, fake.fetch_companyfacts, fake.fetch_master_index),
     )
     monkeypatch.setattr(
         "scripts.run_fundamental_forensics_broad_sec.open_store",
         lambda _path: LocalStore(tmp_path / "store"),
     )
     clock = SequenceClock("2026-08-17T03:00:01Z")
-    code = broad_sec_main(
-        [
-            "--mode",
-            "incremental",
-            "--repo-root",
-            str(repo),
-            "--universe",
-            str(universe),
-            "--local-store",
-            str(tmp_path / "store"),
-            "--poll-started-at",
-            POLL_1,
-            "--user-agent",
-            "MastermindX research@example.com",
-        ],
-        now=clock,
-    )
+    args = [
+        "--mode",
+        "incremental",
+        "--repo-root",
+        str(repo),
+        "--universe",
+        str(universe),
+        "--local-store",
+        str(tmp_path / "store"),
+        "--user-agent",
+        "MastermindX research@example.com",
+    ]
+    assert broad_sec_main(args + ["--poll-started-at", POLL_1], now=clock) == 0
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-06-15", "0000320193-26-000010")])
+    later = SequenceClock("2026-08-17T04:00:01Z")
+    code = broad_sec_main(args + ["--poll-started-at", POLL_2], now=later)
     assert code == 0
     store = LocalStore(tmp_path / "store")
     head, receipt = _receipt_from_head(store, latest_complete_key())
     _validate_run(receipt)
     observations = _load_gzip_json(store, receipt["storage"]["observation_key"])["issuers"]
     _assert_clock_order(receipt, observations)
-    assert receipt["poll_started_at"] == POLL_1
+    assert receipt["poll_started_at"] == POLL_2
     assert receipt["recorded_at"] != POLL_1
     manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
     assert manifest["submissions_retrieved_at"] != POLL_1
@@ -1052,6 +1236,7 @@ def test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path: Path)
     rows = [(f"T{index:02d}", 3200000 + index) for index in range(70)]
     repo, universe, store = _layout(tmp_path, rows)
     fake = FakeSec()
+    index_rows = []
     for ticker, cik_int in rows:
         cik = f"{cik_int:010d}"
         fake.submissions[cik] = _submissions_bytes(
@@ -1062,6 +1247,8 @@ def test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path: Path)
             ],
         )
         fake.facts[cik] = _facts_bytes(cik, ticker)
+        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
+    fake.set_index(index_rows)
     _poll(
         store,
         universe,

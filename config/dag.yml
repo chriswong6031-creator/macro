@@ -3285,14 +3285,15 @@ lanes:
         module: scripts.run_fundamental_forensics_broad_sec
         args: [--mode, incremental]
         note: >
-          FF-1 incremental broad SEC source plane. Polls Submissions for every
-          issuer in data/edgar/fundamentals.parquet, admits exact SEC bytes into
-          the private fundamental_forensics/broad-sec/v1/ prefix, and fetches
-          Company Facts only when relevant 10-K/10-Q (and existing 20-F/40-F)
-          filing state changes. Shares concurrency group filing-forensics-sec
-          with Wave-2. Schedule is incremental only; recovery is explicit
-          workflow_dispatch. A partial poll exits non-zero and does not advance
-          latest-complete. Off the render path; no workbench rebuild.
+          FF-1 incremental broad SEC source plane. Discovers relevant
+          10-K/10-Q (and existing 20-F/40-F) changes from the official EDGAR
+          full-index master ZIP, admits exact SEC bytes for affected issuers
+          into the private fundamental_forensics/broad-sec/v1/ prefix, and
+          fetches Company Facts only when relevant filing state changes.
+          Shares concurrency group filing-forensics-sec with Wave-2. Schedule
+          is incremental only; recovery is explicit workflow_dispatch. A
+          partial poll exits non-zero and does not advance latest-complete.
+          Off the render path; no workbench rebuild.
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.

@@ -31,8 +31,8 @@ scope: [macro, fundamental-forensics]
 confidence: verified
 ---
 
-This is a transport-size fact, not a reversal of
-`DEC:FF-1-BROAD-SUBMISSIONS-USES-SEC-BULK-ARCHIVE`. The architecture
-decision still stands; the first live canary cannot freeze a compressed
-maximum underneath the commission's ~1 GiB stop line. No production R2
-write occurred. The ZIP was not opened.
+This remains useful evidence for why submissions.zip was rejected. Sol
+did not authorize a 2 GiB compressed bound and superseded
+`DEC:FF-1-BROAD-SUBMISSIONS-USES-SEC-BULK-ARCHIVE` with
+`DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES` before merge. No production
+R2 write occurred. The ZIP was not opened.

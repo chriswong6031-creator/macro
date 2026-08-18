@@ -1,10 +1,11 @@
 name: filing-forensics-broad-sec
 # Filing Forensics FF-1 — incremental broad SEC source plane.
 #
-# Polls Submissions for every issuer in data/edgar/fundamentals.parquet, admits
-# exact SEC bytes into the private fundamental_forensics/broad-sec/v1/ prefix,
-# and fetches Company Facts only when an issuer's relevant 10-K/10-Q (and
-# existing 20-F/40-F) filing state changes.
+# Discovers relevant 10-K/10-Q (and existing 20-F/40-F) changes from the
+# official EDGAR full-index master ZIP, admits exact SEC Submissions bytes
+# for affected canonical issuers into the private
+# fundamental_forensics/broad-sec/v1/ prefix, and fetches Company Facts only
+# when an issuer's relevant filing state actually changes.
 #
 # This lane is source truth only. It does not rebuild the workbench, run
 # detectors, or publish findings. A rerender cannot make the source current.

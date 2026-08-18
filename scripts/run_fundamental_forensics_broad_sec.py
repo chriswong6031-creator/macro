@@ -1,7 +1,9 @@
 """Incremental broad SEC source-plane poll for Filing Forensics (FF-1).
 
 Scheduled invocation is incremental only. Recovery is an explicit
-workflow_dispatch path. Partial polls persist successful issuer evidence but
+workflow_dispatch path. Discovery uses the official EDGAR full-index master
+ZIP; per-issuer Submissions and Company Facts run only for affected
+canonical issuers. Partial polls persist successful issuer evidence but
 exit non-zero and do not advance the latest-complete census head.
 """
 from __future__ import annotations
@@ -11,7 +13,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
@@ -31,6 +33,14 @@ from lib import config  # noqa: E402
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _emit_progress(phase: str, counts: Mapping[str, object]) -> None:
+    parts = " ".join(f"{key}={counts[key]}" for key in sorted(counts))
+    line = f"FF_BROAD_PROGRESS phase={phase}"
+    if parts:
+        line = f"{line} {parts}"
+    print(line, flush=True)
 
 
 def main(
@@ -69,7 +79,7 @@ def main(
 
     try:
         store = open_store(args.local_store)
-        fetch_submissions, fetch_companyfacts = live_fetchers(
+        fetch_submissions, fetch_companyfacts, fetch_master_index = live_fetchers(
             user_agent=args.user_agent or _user_agent(repo_root),
             scratch_root=scratch,
         )
@@ -78,6 +88,7 @@ def main(
             universe_path=universe,
             fetch_submissions=fetch_submissions,
             fetch_companyfacts=fetch_companyfacts,
+            fetch_master_index=fetch_master_index,
             clocks=PollClocks(
                 poll_started_at=poll_started_at,
                 selection_cutoff_at=selection_cutoff_at,
@@ -88,6 +99,7 @@ def main(
             now=clock,
             mode=args.mode,
             repo_root=repo_root,
+            on_progress=_emit_progress,
         )
     except BroadSecError as exc:
         print(json.dumps({"status": "failed", "reason_code": exc.reason_code, "detail": exc.detail}))

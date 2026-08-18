@@ -22,9 +22,10 @@ so_what: >
   Do not treat FF-1 as PROVEN_LIVE. Do not start FF-2. Do not start July
   recovery from the timed-out baseline. Do not raise timeout-minutes to hide
   the per-issuer architecture. Do not infer production R2 is empty and do
-  not purge fundamental_forensics/broad-sec/v1/. Repair acquisition to the
-  official SEC bulk Submissions archive and make steady-state R2 work scale
-  with changed issuers, then prove one complete census under 90 minutes.
+  not purge fundamental_forensics/broad-sec/v1/. Discovery now uses EDGAR
+  full-index master ZIPs (`DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES`);
+  do not resume the per-issuer census or submissions.zip. Prove one complete
+  discovery census under 90 minutes before July recovery.
 kind: runtime
 verified_at: 2026-08-18
 verified_by: >

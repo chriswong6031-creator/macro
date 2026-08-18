@@ -21,7 +21,8 @@
     "change_summary",
     "failures",
     "storage",
-    "companyfacts_as_of_policy"
+    "companyfacts_as_of_policy",
+    "index"
   ],
   "properties": {
     "schema": {"const": "fundamental_forensics.broad_sec.run.v1"},
@@ -43,7 +44,14 @@
         "store_readback_failure",
         "issuer_manifest_invalid",
         "queue_overflow",
-        "historical_submissions_required"
+        "historical_submissions_required",
+        "edgar_index_unavailable",
+        "edgar_index_too_large",
+        "edgar_index_invalid",
+        "edgar_index_member_missing",
+        "edgar_index_cik_mismatch",
+        "edgar_index_gap",
+        "edgar_index_correction_requires_reconciliation"
       ]
     },
     "poll_started_at": {"type": "string", "minLength": 20},
@@ -150,6 +158,57 @@
         "latest_complete_key": {"type": "string"}
       }
     },
-    "companyfacts_as_of_policy": {"const": "current_observed_snapshot"}
+    "companyfacts_as_of_policy": {"const": "current_observed_snapshot"},
+    "index": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_kind",
+            "index_url",
+            "year",
+            "quarter",
+            "archive_sha256",
+            "archive_bytes",
+            "archive_retrieved_at",
+            "http_etag",
+            "http_last_modified",
+            "member_name",
+            "member_sha256",
+            "member_bytes",
+            "latest_filing_date",
+            "snapshot_sha256",
+            "relevant_set_sha256",
+            "new_events",
+            "unchanged_events",
+            "correction_events",
+            "baseline"
+          ],
+          "properties": {
+            "source_kind": {"const": "sec_edgar_full_master_index"},
+            "index_url": {"type": "string", "minLength": 20},
+            "year": {"type": "integer", "minimum": 1993},
+            "quarter": {"type": "integer", "minimum": 1, "maximum": 4},
+            "archive_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "archive_bytes": {"type": "integer", "minimum": 0},
+            "archive_retrieved_at": {"type": ["string", "null"]},
+            "http_etag": {"type": ["string", "null"]},
+            "http_last_modified": {"type": ["string", "null"]},
+            "member_name": {"const": "master.idx"},
+            "member_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "member_bytes": {"type": "integer", "minimum": 0},
+            "latest_filing_date": {"type": ["string", "null"]},
+            "snapshot_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "relevant_set_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "new_events": {"type": "integer", "minimum": 0},
+            "unchanged_events": {"type": "integer", "minimum": 0},
+            "correction_events": {"type": "integer", "minimum": 0},
+            "baseline": {"type": "boolean"}
+          }
+        }
+      ]
+    }
   }
 }

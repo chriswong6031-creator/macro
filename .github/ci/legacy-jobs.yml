@@ -1761,8 +1761,9 @@ jobs:
       # tests/test_fundamental_forensics_financial_intelligence_packet_r3.py rides
       # the same step (FIF-1R3 semantic closure): against-input, revision
       # vocabulary, entity identity, bounded graph validation. No new job.
-      # tests/test_fundamental_forensics_broad_sec.py and
-      # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
+      # tests/test_fundamental_forensics_broad_sec.py,
+      # tests/test_filing_forensics_broad_sec_lane.py, and
+      # tests/test_fundamental_forensics_edgar_index.py ride this step (FF-1):
       # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
       # jsonschema/pyyaml/requests, already on this install line. No new job.
       # tests/test_canada_canonical_board.py (CA-TRUTH, PR #5926) rides next to
@@ -1856,6 +1857,7 @@ jobs:
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
           tests/test_filing_forensics_broad_sec_lane.py
+          tests/test_fundamental_forensics_edgar_index.py
           tests/test_context_api.py
           tests/test_finra_knowable.py
           tests/test_t0_indicator.py
