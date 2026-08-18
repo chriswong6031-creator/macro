@@ -20,15 +20,14 @@ waves:
     pr: [5830, 5838, 5849]
   - id: AD-1P0
     title: Semantic-authority freeze (v1.2) before implementation
-    status: awaiting_ci
+    status: done
     pr: 5860
     depends_on: [AD-0]
-    next_action: Sol reviews the AD-1P0 amendment PR; on PASS the next decision is AD-1 GO.
   - id: AD-1
-    title: Daily EOD Options Intelligence Brief
-    status: todo
+    title: Daily EOD Options Intelligence Brief (runtime implementation)
+    status: awaiting_ci
     depends_on: [AD-1P0]
-    next_action: Do not start until AD-1P0 passes Sol review (AD-1 GO); then execute the amended research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md (v1.2).
+    next_action: Sol adversarial review of the implementation PR (session did NOT merge it, per the AD-1 runtime handoff PR policy); on PASS run the production-acceptance continuation.
 landmines:
   - >-
     The entire host-side intraday options launchd fleet (15 units incl. the sparse-selector
@@ -59,7 +58,7 @@ do_not_redo:
   - >-
     Do not resurrect darkpool direction labels (v2 null walk-forward + DNR:PSS-AF1) or the
     DOI/skew-decel families (killed).
-next_action: Sol review of the AD-1P0 semantic-authority freeze; on PASS, commission AD-1 implementation per the amended handoff (v1.2).
+next_action: Sol adversarial review of the AD-1 implementation PR; on PASS, run the production-acceptance continuation (merge, nightly advance, served-page proof, acceptance record). AD-2 stays closed.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
