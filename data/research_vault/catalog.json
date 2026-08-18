@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T03:34:54.660534+00:00",
-  "count": 1309,
+  "generated_at": "2026-08-18T07:37:12.172119+00:00",
+  "count": 1322,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -15,6 +15,7 @@
     "BTIG",
     "Bank of America",
     "Barclays",
+    "Bertschis weekly chart",
     "Binance",
     "BlackRock",
     "Blackrock",
@@ -77,6 +78,23 @@
   ],
   "items": [
     {
+      "id": "marketdesk-qb1azmtmsen-ef0447",
+      "title": "GS Contessa US Equities Color MO vs Consumer 17 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T02:14:00Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-p45uhejkdba-f29d31",
       "title": "Earnings Blast",
       "institution": "Raymond James",
@@ -93,6 +111,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-usz9etexlrn-79a9f6",
+      "title": "What does the Warsh era mean for Fed policy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:07Z",
+      "summary_points": [
+        "**Core CPI Moderation**: US core CPI cooled to 2.5% annual (vs 2.6% June), reinforcing disflation narrative and reducing near-term Fed rate cut urgency - **Fed Policy Stance**: Rates unchanged amid \"watchful thinking,\" signaling cautious approach but data supports potential easing trajectory - **Bond Strategy**: Short/medium-duration quality bonds favored for yield appeal amid stable policy backdrop and inflation moderation - **Equity Support**: Fed policy environment remains constructive for US equities, aligning with disflation trend and reduced rate risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -139,6 +174,44 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-dwcvlikqr2c-6ba865",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:48:54Z",
+      "summary_points": [
+        "**AI Credit Market Shift**: AI infrastructure financing dominates credit markets, with hyperscalers driving $1T+ capex (2027) and $450bn in IG debt issuance (2027E-2028E), while high-yield data center debt ($46bn) exceeds 3% of market, signaling credit risk expansion beyond equity.",
+        "**Geopolitical & Data Shock**: US retail sales fell 0.6% MoM (unexpected), oil prices rose amid Iran-Israel tensions, and gold hit 2-mo high—indicating risk aversion and conflicting economic/geopolitical pressures.",
+        "**Structured Credit Expansion**: Leveraged loans and asset-backed structures are critical for AI financing, mobilizing $500bn in third-party capital to meet $900bn incremental needs, shifting financing from traditional corporate debt to asset-specific models."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pmjyvy8omxb-ab16c0",
+      "title": "Mi weekly market brief",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:48:27Z",
+      "summary_points": [
+        "**M&A Surge**: Global M&A deal value near $3T by end of Q2 2026 (surpassing 2025's $4.8T), signaling robust capital markets and investor confidence.",
+        "**Key Economic Indicators**: UK unemployment (4.9%), US industrial production (0.1%), Japan CPI (2.6%) reflecting mixed global growth signals.",
+        "**Market Flows & Spreads**: MSCI Europe +13.2 YTD, DAX +8.7 YTD; US 10Y yield (4.69) vs China 1.69 bond spreads indicating divergent capital allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rjgtoontwqm-18ffb9",
       "title": "Macro Volatility Digest 2026 0817a u1",
       "institution": "Other",
@@ -160,6 +233,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jiztrgmjrld-180183",
+      "title": "Japan Economic & Financial Weekly",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:42:09Z",
+      "summary_points": [
+        "**BoJ Hike Probability**: Market pricing 80% chance of BoJ rate hike in September (vs.",
+        "65% in August), driven by US CPI (3.4% YoY) and stabilized 10-year yield easing yen pressure, supporting JGBs.",
+        "**Yen Intervention Catalyst**: Coordinated yen-buying intervention (July 31) accelerates BoJ rate hikes, with fiscal risks (consumption tax cut funding, cabinet reshuffle) amplifying policy urgency.",
+        "**Core CPI Inflation**: Core-core CPI inflation expected to rise YoY (+1.7% vs consensus +1.8%) from crude oil prices, directly influencing BoJ policy and inflation expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-llj3pkceufu-39c0af",
       "title": "HF Highlights 2026.08.14",
       "institution": "Morgan Stanley",
@@ -177,6 +270,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mj23qq4r3rx-19d66a",
+      "title": "ROLFBERTSCHIS CHARTOUTLOOK",
+      "institution": "Bertschis weekly chart",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:34:35Z",
+      "summary_points": [
+        "**SMI Critical Support Breach**: 14,290–14,250 support (61.8% retracement) must hold; breach triggers short-term correction, risking 13,600 long-term support.",
+        "**MSCI EM Resistance Breakout**: Index near 361.30 resistance; breakout to 367/374 possible, but major move above 375 uncertain; monitor trading activity.",
+        "**MSCI ACWI Resistance Dynamics**: Near 1170-1200 resistance; breakout above 1200 to 1260-1300 uncertain; reduce/sell if support levels (1135, 1115, 1180, 1030) breached.",
+        "**SMI Technical Support Levels**: 239.80 (post-Aug 6 high) break signals short-term correction; 237.80/237/236.67 breaches indicate medium-term decline.",
+        "**Swiss Market Index Risk Triggers**: Breach of 239.80/237.80/237/236.67/233.70/227.10 triggers immediate position reduction/sell."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
       "language": "en",
       "needs_metadata": false
     },
@@ -322,6 +436,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-rbznxja4suf-ada57c",
+      "title": "Earnings Season Pulse Global earnings strength broadens beyond the US",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T16:55:25Z",
+      "summary_points": [
+        "**Global Earnings Divergence**: Europe’s banking sector sustained 23% YoY earnings growth (low credit risk, rising fees), Japan’s earnings surged 67% (weaker yen, tariff recovery), while S&P 500 EPS beats (59%) outpaced STOXX 600 (38%) and STOXX 200 Small (40%), signaling US large-cap strength vs.",
+        "European small-caps.",
+        "**EM Growth Expectation Risk**: Asia ex-JP consensus earnings growth at 80% for 2026 drops sharply to 29% in 2027, indicating overoptimism and high miss risk, contrasting with EM EMEA’s consistent outperformance across all EM regions.",
+        "**AI Infrastructure & Capex Winners**: AMD (145% earnings growth, 107% data center revenue growth) and CAT US (67% growth) exemplify AI infrastructure beneficiaries, driven by surging data center investment.",
+        "**MSCI China & Topix Revisions**: Sharp negative 2027e EPS revisions for MSCI China (Retailing, structural concerns) and Topix (downward revisions in Pulp & Paper, Iron & Steel), signaling deteriorating near-term earnings outlooks in key sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-zr3z5cw9ofj-bd6144",
       "title": "JGB Strategy",
       "institution": "Mizuho",
@@ -399,6 +534,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vwogj5ikjqz-9beec6",
+      "title": "Global Week Ahead August 17 – August 23",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T14:01:33Z",
+      "summary_points": [
+        "**Out-of-Consensus Economic Indicators**: France Manufacturing PMI (50.5 vs 50.0), UK PMI (51.9 vs 51.5), Japan Trade Balance (-282.5 JPY bn vs -649.0 JPY bn), and Argentina Economic Activity Index (3.5% vs 2.4%) show significant deviations from consensus, signaling potential market-moving surprises.",
+        "**Trade Imbalance Risk Signals**: Japan Trade Balance (GS forecast significantly stronger than consensus) and Chile Current Account Balance (GS forecast weaker than consensus) indicate actionable Yen volatility and EM risk, driving portfolio shifts in trade-sensitive assets.",
+        "**Normalized Deviation Metric**: Key data releases use a normalized score (capped ±5) comparing forecast vs consensus, adjusted for historical volatility, providing quantifiable signals for inflation, activity, and employment fundamentals.",
+        "**Critical Data Gaps Driving Moves**: US Industrial Production (0.5% vs 0.2%), UK CPI (2.6% vs 2.5%), and Eurozone Manufacturing PMI (51.8 vs 51.7) show stronger-than-consensus readings, signaling immediate upside for related asset classes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -536,6 +691,27 @@
         "**Revised Growth Outlook**: Goldman Sachs raises 2026E earnings by 2.5% (vs.",
         "GSE), revises 2026E sales/NP growth to 2%/1% (vs.",
         "prior), with 2027E growth at 8.3%/9.5%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ftittiloobs-f477e5",
+      "title": "Korea Views August MPC Preview Hawkish Hold, But a Close Call",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T14:01:17Z",
+      "summary_points": [
+        "**Korea MPC: Hawkish Hold with Tightening Risks** BOK holds August rates (65% hike probability), raising 2026 growth forecast to 3.2% (vs.",
+        "6% consensus) and nudging inflation forecast up; key risks include energy prices, Fed stance, and USD/KRW volatility.",
+        "**K-shaped Recovery Dynamics** Memory sector-driven export/capex strength contrasts with subdued retail sales due to structural headwinds (sluggish non-tech demand, aging population, regional overcapacity), limiting near-term consumption recovery.",
+        "**Housing Market Divergence & Banking Stress** Seoul housing prices firm vs.",
+        "weak elsewhere; delinquency rate at 10-year high (0.67%) driven by Middle East shocks and higher borrowing costs, signaling urgent need for monetary/financial policy coordination."
       ],
       "tags": [],
       "tickers": [],
@@ -759,6 +935,69 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uyulc5jf4sn-7c025b",
+      "title": "Angel Yeast (600298)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:21Z",
+      "summary_points": [
+        "**Yeast Protein Structural Advantage**: Yeast protein (80% protein, 78% cheaper than whey) offers land efficiency (4,000x soy), energy savings (60% less), allergen-free profile, and secure supply chain vs.",
+        "whey’s cheese dependency, driving demand shift amid whey shortages.",
+        "**Demand & Pricing Dynamics**: Whey protein (WPC/WPI) prices rebounding to $4k/tonne (mid-2026) and 5x 5-year price surge create 64-82% cost advantage for yeast protein (Rmb30k-40k/ton vs.",
+        "Rmb195k/ton EU whey), accelerating adoption.",
+        "**Growth & Financial Momentum**: 11%/15% sales/net profit CAGR (2025-28E) driven by capacity expansion (47k tons by 2025, 100k by 2030), revenue rising to Rmb23,131mn, net income to Rmb2,350mn, and EBIT margin improving to 17.0%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uejo8d4qqkt-e2fd06",
+      "title": "Americas Business & Information Services Weekly debt issuance, AUM, exchange traded derivative volumes and fund formation as...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:18Z",
+      "summary_points": [
+        "**High Yield & Leveraged Loans Surge**: Y/Y issuance growth accelerates to 70% (High Yield) and 84% (Leveraged Loans), signaling rising risk in credit segments and potential market stress.",
+        "**ETF AUM-Driven Revenue Correlation**: 91.2% correlation between SPGI/MSCI index-linked ETF AUM growth and asset-based fees revenue, confirming ETF flows as dominant revenue driver.",
+        "**Debt Issuance Revenue Link**: 89.0% correlation between global debt issuance volume growth and MCO ratings revenue, highlighting debt market activity as critical earnings factor.",
+        "**US Equity ETF Flows Surge**: 32% Y/Y inflows ($513.87M MTD), representing 14% of total AUM, indicating substantial market-moving capital allocation.",
+        "**ICE-Driven ETD Volume Surge**: ICE MTD ETD volume up 39% Y/Y (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-f9zw618ywtb-a824f9",
+      "title": "Etsy Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:09Z",
+      "summary_points": [
+        "**Depop Divestiture Catalyst**: Ex-Depop 2025 Adj EBITDA margin at 29% (aligning with 2026 guidance), with margin expansion target to 32% by 2031 driven by sale proceeds, improved take rate, and cost discipline ($100m Depop headwind removed).",
+        "**Critical Buyer Retention Risk**: 63% buyer churn (2025) and declining habitual buyer share (40% of GMV, down from 45% in 2021), with habitual buyers (40% GMV, $709/buyer) showing negative YoY growth despite reactivation efforts.",
+        "**Margin Expansion Trajectory**: Adj EBITDA margin expected to reach 29-30% in 2026 (vs.",
+        "2% in 12/26E) and 32% by 2031, supported by top-line growth, disciplined OpEx, and Depop exit.",
+        "**AI/ML Personalization Impact**: Real-time AI/ML integration (search/discovery) drove 15x traffic growth (2025 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
@@ -1048,6 +1287,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-algb2m5wsat-42889e",
+      "title": "## Marketcolour + AI Spending / Junior Investment Conf / HF Update / Global Macro / Prosegur / Adyen / Novonesis ##",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T10:12:37Z",
+      "summary_points": [
+        "**Market Dynamics & Flows**: Global equity flows net bought for 3rd consecutive week (NA led, EM sold); S&P 500 1m volatility collapsed to 12 points (lowest since Jan), signaling complacency risk.",
+        "**Macro Shift**: September FOMC rate hike unlikely due to softening US consumption/employment and improving inflation, shifting policy expectations.",
+        "**Europe Strategy**: SXXP price target raised to 695 (9% upside) with oil inventory risks if Strait of Hormuz remains closed, combining valuation and geopolitical risk.",
+        "**Flow-Performance Correlation**: Positive fund flows consistently align with positive weekly performance (e.g., dark blue bars matching blue dots), confirming sentiment-driven returns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
