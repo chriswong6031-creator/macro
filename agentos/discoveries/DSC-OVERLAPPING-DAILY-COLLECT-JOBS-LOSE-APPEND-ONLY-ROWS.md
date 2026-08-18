@@ -46,7 +46,11 @@ so_what: >
   missing check is base-freshness against origin/main at push time. Fourth: do NOT wait
   this class of red out. Measured — the projection lane returns `status: ok`,
   `append_count: 0` against the corrupted tree because it reads the committed
-  `latest.json`, not the spine the failing test rebuilds; see the detail section.
+  `latest.json`, not the spine the failing test rebuilds. The repair is to REVERT the
+  losing collector run's whole generation — and to scope that revert by what
+  `build_payload()` reads (`data/government_revenue/` AND `data/usaspending/`), not by the
+  directory the symptom names; a partial revert fails closed and looks like an
+  unrepairable wedge. Shipped as #5870; see the detail section.
 kind: landmine
 verified_at: 2026-08-18
 verified_by: >
@@ -118,7 +122,7 @@ stale, because such a run is perfectly self-consistent — it simply does not kn
 newer generation exists. Nothing in the write path, and nothing in the push retry, asks
 whether `origin/main` moved under an append-only artifact between checkout and push.
 
-### What clears the CI red — MEASURED, and it is NOT the projection lane
+### What clears the CI red — NOT the projection lane; a generation revert (RESOLVED)
 
 An earlier revision of this record said the govrev projection lane would issue the 26
 forward and green the test. That was reasoning, not measurement, and **it is wrong.**
@@ -166,20 +170,43 @@ and `issued_row_sha256` — it quarantines rows that ARE in the ledger and were 
 error. These 26 were never issued. The historical-suppression manifest is held in exact
 bijection with that same 8-identity cohort by the failing test itself.
 
-**No file-level revert restores coherence.** Measured in the sandbox against
-59ccb9c774c8 (run A's generation): restoring `award_event_snapshots.parquet` alone →
-rebuild yields **0** candidates (the state binding fails closed); + `award_event_projection_state.json`
-→ still **0** (the state binds the action-versions parquet too); + `collection_receipts.jsonl`
-→ still **0**; reverting all **25** changed `data/government_revenue/` artifacts → 56 rows,
-0 orphaned, but **26 still unaccounted**. The two generations are entangled across the
-whole artifact set.
+### RESOLVED — a generation revert IS the repair, and it shipped
 
-**Therefore ci-pack-6 is WEDGED pending an operator decision.** Do not hand-write ledger
-rows, allowlist ids, or silence the guard — the guard is correct and is reporting a real
-divergence. The live options are (a) a reviewed disposition class for corruption-artifact
-identities, which neither existing manifest currently expresses, or (b) a full
-receipt-bound govrev re-baseline that rebuilds the canonical payload and the spine into
-one coherent generation. Both are operator calls.
+An earlier revision of this section concluded "no file-level revert restores coherence,
+therefore ci-pack-6 is WEDGED pending an operator decision". **That was wrong**, and the
+error is instructive. PR #5870 (`fix(govrev): restore the collection generation the
+candidate projection was frozen against`, merged 2026-08-18T07:38:11Z) reverted run B's
+write and the red cleared. Verified at main `fc9d58195e16`:
+`python3 -m pytest tests/test_government_revenue_candidates.py -q` → **39 passed**.
+
+**Why the sandbox revert failed and the real one worked: the payload spans two data
+directories.** The experiment reverted all 25 changed `data/government_revenue/`
+artifacts and stopped there, leaving `data/usaspending/_meta.json`,
+`data/usaspending/grants_loans.parquet` and `data/usaspending/obligations.parquet` on
+run B's generation — a mixed generation, which is why the rebuild still showed 26
+unaccounted. #5870 reverted all 18 of the files that actually moved, across BOTH trees.
+So the lesson is not "reverts don't work"; it is **scope the revert by what the payload
+reads, not by the directory the symptom points at** — `build_payload()` composes
+`data/government_revenue/` AND `data/usaspending/`, and a partial revert fails closed in
+a way that looks exactly like an unrepairable wedge.
+
+The rest of this section stands and is the reason the repair had to be a generation
+revert rather than a wait or a manifest edit:
+
+- The projection lane is a **stable no-op** against a corrupted tree (measured above):
+  it reads the committed `latest.json`, not the spine. Waiting never clears this class.
+- The 26 could not have been issued forward: `known_at` `01:55:22.848864Z` sits behind
+  the frozen anti-backfill clock `04:17:31.654847Z`, so
+  `_match_historical_suppressions` (scripts/build_government_revenue_candidates.py:993-1004)
+  would have raised.
+- Neither reviewed manifest fits them:
+  `candidate_issuance_corrections.v1.json` is `policy: exact_issued_source_identity_only`
+  and every entry carries `issued_row_sha256` — it quarantines rows already in the
+  ledger. These were never issued.
+
+Do not hand-write ledger rows, allowlist ids, or silence the guard. The guard is correct
+and was reporting a real divergence. The repair for this class is: **revert the losing
+collector run's whole generation, across every tree the canonical payload reads.**
 
 ### Residue this leaves on main
 
