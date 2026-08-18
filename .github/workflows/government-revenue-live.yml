@@ -523,21 +523,35 @@ jobs:
       # moved 3 times in the measured window (2026-08-03, -09, -12) — roughly once
       # a day, only when a candidate actually issues.
       #
-      # NON-FATAL BY CONSTRUCTION, deliberately, and this ratchet is the whole
-      # sequencing argument: the suites still carry hand-typed GRAPH-VINTAGE
-      # constants (`reviewed_issuer_company_count == 19`, `mapping_needed == 21`,
-      # a literal 19-ticker list).  Those detonate on a CORRECT republish, so a
-      # fatal gate today would convert a random-PR ambush into a BLOCKED NIGHTLY —
-      # strictly worse.  Flip GOVREV_CANDIDATE_PROOF_FATAL to "1" once those
-      # constants are derived the way `canonical_frozen_at()` and
-      # `canonical_candidate_census()` already are; until then this step's job is
-      # to make the break VISIBLE at the source, minutes after it is minted and
-      # attributed to the commit that caused it, instead of days later on a
-      # stranger's pull request.
+      # ARMED 2026-08-18 (DEC:GOVREV-CANDIDATE-PROOF-GATE-ARMED).  This was born
+      # NON-FATAL deliberately, as a ratchet: the suites carried hand-typed
+      # GRAPH-VINTAGE constants (`reviewed_issuer_company_count == 19`,
+      # `mapping_needed == 21`, a literal 19-ticker list) that detonate on a
+      # CORRECT republish, so a fatal gate then would have converted a random-PR
+      # ambush into a BLOCKED NIGHTLY — strictly worse.  The precondition written
+      # here was "flip to 1 once those constants are derived the way
+      # `canonical_frozen_at()` and `canonical_candidate_census()` already are",
+      # and it is now MET: `reviewed_issuer_company_count` is asserted
+      # `== len(...)` (tests/test_government_revenue_candidates.py:295),
+      # `mapping_needed` `== len(canonical_requested_issuer_tickers())` (:265 and
+      # tests/test_government_revenue_candidate_projection.py:715), and the
+      # 19-ticker list against `list(canonical_requested_issuer_tickers())` (:271).
+      # Verified green at the time of arming: 92 passed across the three suites.
+      #
+      # SCOPE LIMIT, stated so nobody over-trusts this: the gate is sited BEFORE
+      # the publish, so it cannot see a corruption introduced AFTER it.  It would
+      # NOT have caught the 2026-08-18 incident — the fold published at 04:15:52Z
+      # against a coherent tree and the second collection pass clobbered the spine
+      # at 04:21:53Z.  That hole is the push-path rebase resolution
+      # (DEC:GOVREV-EVENT-IDENTITY-KEEPS-THE-KNOWN-AT-FOLD), not this step.
+      #
+      # If a spurious red ever blocks a nightly here: set this back to "0" in a
+      # same-day PR, record why, and fix the assertion — do not leave it disarmed
+      # silently, and do not invent a new precondition without writing it down.
       - name: prove the candidate projection before publishing it
         if: ${{ steps.gate.outputs.publish == 'yes' }}
         env:
-          GOVREV_CANDIDATE_PROOF_FATAL: "0"
+          GOVREV_CANDIDATE_PROOF_FATAL: "1"
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -uo pipefail
