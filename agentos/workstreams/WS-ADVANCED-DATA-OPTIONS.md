@@ -26,6 +26,7 @@ waves:
   - id: AD-1
     title: Daily EOD Options Intelligence Brief (runtime implementation)
     status: awaiting_ci
+    pr: 5872
     depends_on: [AD-1P0]
     next_action: Sol adversarial review of the implementation PR (session did NOT merge it, per the AD-1 runtime handoff PR policy); on PASS run the production-acceptance continuation.
 landmines:
