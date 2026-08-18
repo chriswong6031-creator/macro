@@ -43,16 +43,42 @@ does, so an evening on which the board never published prints as a full row of
 over the miss and report a five-session acceptance that never happened — the
 gate passing on the strength of its own missing data.
 
+THE BOOTSTRAP LEG — "is the code that fires the clock the code we merged?"
+The lane's launchd clock does NOT run this repository. It runs a SNAPSHOT that
+``scripts/install_closepass_launchd.sh`` froze into Application Support, and the
+freeze is deliberate (a mid-day push to main must not change what the clock
+executes). The cost of that design is that a merged fix is not a deployed fix,
+and on 2026-08-18 nothing in the estate could see the difference: PR #5862 merged
+as af416e4a1066 while the host kept executing the pre-fix bytes from Aug 15, and
+its receipts looked perfect because the only vintage they compared to anything
+was the LANE's — which is reset to origin/main every run and is therefore always
+fresh no matter how old the file computing it is.
+
+So every receipt now carries a ``bootstrap`` verdict and this report grades it:
+
+  * the column is per session — history, printed and never re-graded.
+  * the EXIT CODE follows the NEWEST session that has a receipt, because the
+    question is "will tonight's fire run origin/main", and only the newest
+    receipt answers it. Grading the whole window would hold a healed host red
+    for a week and teach everyone to ignore the column.
+  * a receipt whose ``schema`` predates this checkout's is itself DRIFT and is
+    reported as such: the bootstrap that wrote it is provably older than the
+    code being read here. That is the merged-but-not-deployed detector.
+  * no receipt is ``—`` and says so in the footer, naming the directory it read.
+    "I could not look" never renders as "nothing is wrong".
+
 Usage:
   python -m scripts.close_pass_slo_report                     # last 5 sessions
   python -m scripts.close_pass_slo_report --sessions 10
   python -m scripts.close_pass_slo_report --json              # machine-readable
   python -m scripts.close_pass_slo_report --with-r2           # + tonight's board
   python -m scripts.close_pass_slo_report --state-dir ./state --now 2026-08-15T10:00Z
+  python -m scripts.close_pass_slo_report --receipts-dir ~/Library/Application\\ Support/macro-closepass/runs
 
-Exit status: 0 when every reported session met BOTH gates, 1 when any did not,
-2 when the report could not be built at all (no calendar, unreadable record) —
-"I could not measure" must never share an exit code with "it passed".
+Exit status: 0 when every reported session met BOTH gates AND the newest host
+receipt shows no bootstrap drift, 1 when any did not, 2 when the report could not
+be built at all (no calendar, unreadable record) — "I could not measure" must
+never share an exit code with "it passed".
 """
 from __future__ import annotations
 
@@ -66,6 +92,7 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
+from scripts import close_pass_host_runner as HOST  # noqa: E402
 from scripts import freshness_sentinel as FS  # noqa: E402
 
 #: The sentinel surface this report grades. One surface on purpose: the W-L1
@@ -83,6 +110,128 @@ PRODUCT_SLO_BY_ET = "16:15"
 BOARD_R2_KEY = "/live_flow/us_board_provisional.json"
 #: What an unmeasured cell prints as.
 ABSENT = "—"
+#: The bootstrap cells. Only ``ok`` is a pass; everything else is a finding or a
+#: hole, and the two are never spelled the same way.
+BOOT_OK = "ok"
+BOOT_UNKNOWN = "?"
+BOOT_OLD_SCHEMA = "OLD-SCHEMA"
+#: The one remedy, printed wherever the finding is. There is no self-heal by
+#: design — the installer's freeze is the feature the drift is the price of.
+REINSTALL_CMD = "bash scripts/install_closepass_launchd.sh"
+
+
+# --------------------------------------------------------------------------- #
+# The bootstrap leg — read from the host clock's own run receipts
+# --------------------------------------------------------------------------- #
+def default_receipts_dir() -> Path:
+    """Where ``close_pass_host_runner`` leaves one JSON per session.
+
+    Resolved through the runner's own ``support_dir()`` rather than a second
+    literal, so a host that moves its support directory moves both halves at
+    once and this report cannot end up grading a directory nobody writes to.
+    """
+    return HOST.support_dir() / "runs"
+
+
+def read_receipts(runs: Path) -> dict[str, dict]:
+    """``{session: receipt}``. An unreadable receipt is an ABSENT one, not a crash.
+
+    This report is read-only on the lane: it grades the clock, it never writes to
+    the clock's state, and a malformed receipt must not be able to stop a
+    latency table that does not depend on it.
+    """
+    out: dict[str, dict] = {}
+    try:
+        files = sorted(runs.glob("*.json"))
+    except OSError:
+        return out
+    for path in files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(payload, dict) and isinstance(payload.get("session"), str):
+            out[payload["session"]] = payload
+    return out
+
+
+def bootstrap_state(receipt: object) -> tuple[str, str]:
+    """``(cell, detail)`` for one session's host receipt. One pass, three findings.
+
+      * no receipt              → ``—``. The host was not read; nothing is claimed.
+      * receipt predates this   → ``OLD-SCHEMA``, and that IS drift, provably: a
+        checkout's schema          bootstrap old enough to lack the block is older
+                                   than the code reading it, which is what
+                                   "behind" means. This is the detector that
+                                   catches merged-but-not-deployed.
+      * an explicit verdict     → ``ok`` / ``BEHIND n`` / ``BEHIND ?``
+      * anything else           → ``?``, recorded and never rendered as a pass.
+    """
+    if not isinstance(receipt, dict):
+        return ABSENT, "no host receipt for this session"
+    boot = receipt.get("bootstrap")
+    if not isinstance(boot, dict):
+        schema = receipt.get("schema")
+        if schema != HOST.RECEIPT_SCHEMA:
+            return BOOT_OLD_SCHEMA, (
+                f"receipt schema {schema!r} predates this checkout's "
+                f"{HOST.RECEIPT_SCHEMA!r}, so the bootstrap that wrote it is older "
+                f"than origin/main.")
+        return BOOT_UNKNOWN, "receipt carries no bootstrap block"
+    detail = str(boot.get("detail") or "")
+    verdict = boot.get("matches_main")
+    if verdict is True:
+        return BOOT_OK, detail or "byte-identical to origin/main"
+    if verdict is False:
+        behind = boot.get("commits_behind")
+        n = behind if isinstance(behind, int) and not isinstance(behind, bool) else "?"
+        return f"BEHIND {n}", detail or "the executing bootstrap is not origin/main."
+    return BOOT_UNKNOWN, detail or "the run could not grade its own bootstrap"
+
+
+def bootstrap_verdict(rows: list[dict[str, Any]], runs: Path) -> dict[str, Any]:
+    """The NEWEST session that HAS a receipt decides. History is printed, not graded.
+
+    Grading the whole window would keep a healed host red for as many sessions as
+    the window is wide — the older rows genuinely did run a stale bootstrap and
+    that stays visible in the column — but the question this leg exists to answer
+    is "will tonight's firing execute origin/main", and only the newest receipt
+    can answer it.
+    """
+    for row in rows:
+        cell = row.get("bootstrap")
+        if cell in (None, ABSENT):
+            continue
+        state = ("ok" if cell == BOOT_OK
+                 else "unknown" if cell == BOOT_UNKNOWN else "drift")
+        return {"state": state, "session": row["session"], "cell": cell,
+                "detail": row.get("bootstrap_detail") or "", "receipts_dir": str(runs)}
+    return {"state": "unmeasured", "session": None, "cell": ABSENT,
+            "detail": f"no host receipt under {runs} for any reported session",
+            "receipts_dir": str(runs)}
+
+
+def bootstrap_footer(verdict: dict[str, Any]) -> str:
+    """One line, always printed. Silence would be the same bug one layer up."""
+    state, session = verdict["state"], verdict["session"]
+    if state == "drift":
+        detail = verdict["detail"].rstrip()
+        # The remedy is printed EXACTLY once. A receipt's own detail already
+        # carries it — the runner's annotation has to stand alone in a launchd
+        # log with no footer under it — so the footer does not repeat itself.
+        remedy = ("" if "install_closepass_launchd.sh" in detail else
+                  f" Merging does not deploy scripts/{HOST.RUNNER_BASENAME} — "
+                  f"re-run: {REINSTALL_CMD}")
+        if remedy and not detail.endswith((".", "!")):
+            detail += "."
+        return f"BOOTSTRAP DRIFT on {session}: {detail}{remedy}"
+    if state == "ok":
+        return (f"bootstrap: the host snapshot matched origin/main on {session}.")
+    if state == "unknown":
+        return (f"bootstrap: UNVERIFIED on {session} — {verdict['detail']} "
+                f"(not a clean bill; a stale snapshot reads the same way).")
+    return (f"bootstrap: NOT MEASURED — {verdict['detail']}. Run this on the host "
+            f"that owns com.macro.closepass, or pass --receipts-dir.")
 
 
 # --------------------------------------------------------------------------- #
@@ -130,8 +279,16 @@ def _met_by(value: object, session: str, by_et: str) -> bool | None:
     return et.date().isoformat() == session and et.strftime("%H:%M") <= by_et
 
 
-def build_row(record: dict, session: str) -> dict[str, Any]:
-    """One session's row, from the sentinel record. Absent everywhere is legal."""
+def build_row(record: dict, session: str,
+              receipt: object = None) -> dict[str, Any]:
+    """One session's row. Absent everywhere is legal.
+
+    Two independent sources on purpose: the sentinel record answers WHEN the
+    board reached a reader, the host receipt answers WHAT CODE produced it. A
+    row can be green on the first and drifted on the second, and that
+    combination — a perfect-looking evening run by stale plumbing — is exactly
+    the state 2026-08-18 shipped undetected.
+    """
     entry = ((record.get("sessions") or {}).get(session) or {}).get(SURFACE_ID) or {}
     latency = entry.get("latency") or {}
     coverage = entry.get("coverage") or {}
@@ -142,6 +299,7 @@ def build_row(record: dict, session: str) -> dict[str, Any]:
     # name. Falling back keeps every historical session gradeable on the two
     # columns that do not need the new fields.
     visible = latency.get("first_user_visible_at") or entry.get("first_fresh_at")
+    boot_cell, boot_detail = bootstrap_state(receipt)
     return {
         "session": session,
         "stamped": bool(entry),
@@ -176,10 +334,14 @@ def build_row(record: dict, session: str) -> dict[str, Any]:
         "product_slo_met": (_met_by(visible, session, PRODUCT_SLO_BY_ET)
                             if entry else False),
         "facts_from": "sentinel_record" if entry else None,
+        # From the HOST receipt, never the sentinel record — see bootstrap_state.
+        "bootstrap": boot_cell,
+        "bootstrap_detail": boot_detail,
     }
 
 
-def build_rows(record: dict, now: datetime, sessions: int) -> list[dict[str, Any]]:
+def build_rows(record: dict, now: datetime, sessions: int,
+               receipts: dict[str, dict] | None = None) -> list[dict[str, Any]]:
     """The last ``sessions`` NYSE sessions, newest first. Raises on no calendar.
 
     Anchored on ``expected_last_session`` so today's board is not graded until
@@ -189,13 +351,15 @@ def build_rows(record: dict, now: datetime, sessions: int) -> list[dict[str, Any
     """
     from lib import nyse_calendar  # noqa: PLC0415 — see module docstring
 
+    receipts = receipts or {}
     last = nyse_calendar.expected_last_session(now)
     rows: list[dict[str, Any]] = []
     for n in range(max(sessions, 0)):
         day = last if n == 0 else nyse_calendar.session_n_back(last, n)
         if day is None:
             break
-        rows.append(build_row(record, day.isoformat()))
+        session = day.isoformat()
+        rows.append(build_row(record, session, receipts.get(session)))
     return rows
 
 
@@ -302,10 +466,14 @@ COLUMNS: tuple[tuple[str, str, Any], ...] = (
      else ("yes" if row["close_finalized"] else "no")),
     ("SLA 18:30", "sla_met", lambda row: _verdict(row["sla_met"])),
     ("SLO 16:15", "product_slo_met", lambda row: _verdict(row["product_slo_met"])),
+    # Last on purpose: it grades the PRODUCER's plumbing, not the evening, and a
+    # reader scanning for the two gate verdicts should hit them before this one.
+    ("bootstrap", "bootstrap", lambda row: row["bootstrap"]),
 )
 
 
-def render(rows: list[dict[str, Any]], resolution_sec: int | None = None) -> str:
+def render(rows: list[dict[str, Any]], resolution_sec: int | None = None,
+           boot_footer: str | None = None) -> str:
     """The acceptance table. Column widths follow the content, so the output is
     stable for a given set of rows and diffable across runs."""
     cells = [[header for header, _, _ in COLUMNS]]
@@ -327,6 +495,11 @@ def render(rows: list[dict[str, Any]], resolution_sec: int | None = None) -> str
                      "cadence, so cand→vis is known to that resolution, no better.")
     lines.append(f"{ABSENT} = not measured. Times are ET on the session's own day "
                  "(+1 = the following morning).")
+    # ALWAYS printed, including when it says nothing was measured: a leg that
+    # goes quiet when it cannot see is indistinguishable from a leg that saw
+    # nothing wrong, which is the whole defect this column was added to catch.
+    if boot_footer:
+        lines.append(boot_footer)
     return "\n".join(lines)
 
 
@@ -342,11 +515,13 @@ def _resolution(rows: list[dict[str, Any]]) -> int | None:
 # Entry point
 # --------------------------------------------------------------------------- #
 def run(*, now: datetime, state_dir: Path, sessions: int, as_json: bool,
-        with_r2: bool, r2_base: str, fetcher=None, out=None) -> int:
+        with_r2: bool, r2_base: str, fetcher=None, out=None,
+        receipts_dir: Path | None = None) -> int:
     out = sys.stdout if out is None else out
     record = FS.load_first_fresh(state_dir)
+    runs = default_receipts_dir() if receipts_dir is None else receipts_dir
     try:
-        rows = build_rows(record, now, sessions)
+        rows = build_rows(record, now, sessions, read_receipts(runs))
     except Exception as exc:  # noqa: BLE001 — no calendar ⇒ no report, and say so
         print(f"close-pass-slo: cannot walk the session calendar "
               f"({type(exc).__name__}: {exc}) — no report", file=sys.stderr)
@@ -357,22 +532,29 @@ def run(*, now: datetime, state_dir: Path, sessions: int, as_json: bool,
         if payload is not None:
             rows = merge_r2_board(rows, payload)
 
+    verdict = bootstrap_verdict(rows, runs)
     if as_json:
-        json.dump({"schema": "close_pass.slo_report/v1",
+        json.dump({"schema": "close_pass.slo_report/v2",
                    "generated_at": now.isoformat(),
                    "surface": SURFACE_ID,
                    "sla_by_et": SLA_BY_ET,
                    "product_slo_by_et": PRODUCT_SLO_BY_ET,
                    "state_dir": str(state_dir),
+                   "bootstrap_verdict": verdict,
                    "sessions": rows}, out, indent=1, sort_keys=True)
         out.write("\n")
     else:
-        out.write(render(rows, _resolution(rows)) + "\n")
+        out.write(render(rows, _resolution(rows), bootstrap_footer(verdict)) + "\n")
 
     if not rows:
         # No sessions to grade is not an acceptance. Exit 2 keeps "nothing to
         # report" out of the same bucket as "everything passed".
         return 2
+    # DRIFT FAILS THE REPORT. A board that met both gates on plumbing nobody
+    # deployed is not an accepted session — it is an unmeasured one that happened
+    # to work, and W-ACCEPT already lost a day to exactly that.
+    if verdict["state"] == "drift":
+        return 1
     return 0 if all(row["sla_met"] is True and row["product_slo_met"] is True
                     for row in rows) else 1
 
@@ -390,6 +572,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="fill the newest session's PRODUCER columns from the "
                          "published R2 board (never the reader-side ones)")
     ap.add_argument("--r2-base", default=FS.DEFAULT_R2_BASE)
+    ap.add_argument("--receipts-dir", default=None,
+                    help="the host clock's run receipts (default: the runner's own "
+                         "support dir). Off-host this reads nothing and the "
+                         "bootstrap leg says so rather than passing.")
     ap.add_argument("--now", default=None, help="ISO clock override (naive = UTC)")
     args = ap.parse_args(argv)
 
@@ -403,7 +589,8 @@ def main(argv: list[str] | None = None) -> int:
         now = datetime.now(timezone.utc)
 
     return run(now=now, state_dir=Path(args.state_dir), sessions=args.sessions,
-               as_json=args.as_json, with_r2=args.with_r2, r2_base=args.r2_base)
+               as_json=args.as_json, with_r2=args.with_r2, r2_base=args.r2_base,
+               receipts_dir=Path(args.receipts_dir) if args.receipts_dir else None)
 
 
 if __name__ == "__main__":

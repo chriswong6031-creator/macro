@@ -36,7 +36,9 @@ TWO COPIES OF THIS FILE RUN, WITH DIFFERENT JOBS — by design, not by accident:
     system ``/usr/bin/python3``. It lives OUTSIDE ``~/Documents`` because launchd
     jobs cannot exec from there (the same wall ``ops/launchd/com.macro.chainheat.plist``
     documents). It is frozen at install time; re-run the installer after editing
-    this file. Its vintage is recorded in every receipt as ``runner_sha``.
+    this file. MERGING A FIX TO THIS FILE DEPLOYS NOTHING (measured 2026-08-18,
+    PR #5862). Every receipt therefore carries a ``bootstrap`` block naming the
+    executing snapshot, and every run GRADES it against origin/main out loud.
   * ``<lane>/scripts/close_pass_host_runner.py --probe-close`` — the SAME file
     at ``origin/main`` vintage, run by the lane's venv python inside the lane
     checkout. Only this copy imports repo code, which is why the outer runner
@@ -815,7 +817,10 @@ def probe_close_main(session: str) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 # The receipt — LOCAL TELEMETRY. Never data/, never git, never a ledger.
 # ─────────────────────────────────────────────────────────────────────────────
-RECEIPT_SCHEMA = "close_pass.host_run/v1"
+#: v2 replaced the bare ``runner_sha`` hex with the namespaced ``bootstrap``
+#: block below — a rename ON PURPOSE, so a receipt that predates the drift
+#: check is distinguishable from one whose check found nothing wrong.
+RECEIPT_SCHEMA = "close_pass.host_run/v2"
 RECEIPT_KEEP = 90
 
 
@@ -854,11 +859,225 @@ def _prune_receipts(runs: Path, keep: int = RECEIPT_KEEP) -> None:
             pass
 
 
-def _self_sha() -> str:
+# ─────────────────────────────────────────────────────────────────────────────
+# The BOOTSTRAP's identity — a DIFFERENT question from ``code_sha``
+# ─────────────────────────────────────────────────────────────────────────────
+# TWO VINTAGES RUN EVERY EVENING AND ONLY ONE MOVES WHEN A PR MERGES:
+#
+#   * the LANE's ``code_sha`` — a 40-hex GIT COMMIT, hard-reset to origin/main on
+#     every run. It reports today's main even when the code computing it is weeks
+#     old, which is the direction that makes it dangerous.
+#   * this BOOTSTRAP — the snapshot launchd execs out of Application Support,
+#     whose only vintage is the BYTES ON DISK. ``install_closepass_launchd.sh``
+#     copies it at install time ON PURPOSE (a mid-day push to main must not change
+#     what the clock executes), so a merged fix to this file sits inert until an
+#     operator re-runs the installer.
+#
+# MEASURED 2026-08-18: PR #5862 fixed prepare_lane's timeout blindness and merged
+# as af416e4a1066; the installed snapshot stayed byte-identical to the PRE-fix
+# main, dated Aug 15 19:54, with ``grep -c _git_probe`` returning 0 on it. That
+# evening's receipt looked perfect — ``code_sha`` was af416e4a — and the one
+# bootstrap field it carried, ``runner_sha``, was compared to nothing at all.
+#
+# So the block is NAMESPACED and every digest key says what it hashed:
+# ``receipt["code_sha"]`` is a git commit, ``receipt["bootstrap"]["file_sha256"]``
+# is a content digest of a file. The two 12-hex prefixes they replaced were
+# indistinguishable side by side in a real receipt; these cannot be.
+RUNNER_BASENAME = "close_pass_host_runner.py"
+#: This file's path inside a checkout — the origin/main REFERENCE a run grades
+#: the executing bootstrap against. The lane is already reset to origin/main by
+#: ``prepare_lane``, so the reference costs one file read and no network.
+RUNNER_REPO_REL = f"scripts/{RUNNER_BASENAME}"
+#: Bounded and short: the vintage walk is diagnosis, never the pass. Both calls
+#: are metadata-only and are paid ONLY after a mismatch is already proven.
+BOOTSTRAP_GIT_TIMEOUT_S = 30
+#: How far back the vintage walk looks. This file has tens of commits, not
+#: thousands; past the window the honest answer is "older than N", not a number.
+BOOTSTRAP_LOG_SCAN = 50
+
+
+def _file_sha256(path: Path) -> str:
+    """Full 64 hex, never truncated. A 12-hex prefix reads exactly like the short
+    form of a git commit, which is the confusion this whole block exists to end."""
     try:
-        return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
+        return hashlib.sha256(path.read_bytes()).hexdigest()
     except OSError:
         return ""
+
+
+def _file_mtime_utc(path: Path) -> str:
+    try:
+        stamp = path.stat().st_mtime
+    except OSError:
+        return ""
+    return dt.datetime.fromtimestamp(
+        stamp, dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def bootstrap_identity() -> dict:
+    """WHO IS EXECUTING — answerable with no git, no lane and no network.
+
+    Filled in at receipt construction, before anything can fail, so a run that
+    refuses at ``lane_unprepared`` still says which plumbing refused. Not
+    hypothetical: the 2026-08-17 refusal that cost W-ACCEPT day 1 left a receipt
+    naming a lane it never prepared and a bootstrap it never identified.
+
+    ``installed_*`` is recorded even when it IS this file, because the equality
+    is the interesting fact: under launchd they are the same path, and a run
+    where they are not is a session exercising something launchd will not.
+    """
+    executing = Path(__file__).resolve()
+    installed = (support_dir() / RUNNER_BASENAME).resolve()
+    return {
+        "path": str(executing),
+        "file_sha256": _file_sha256(executing),
+        "mtime": _file_mtime_utc(executing),
+        "is_installed_copy": executing == installed,
+        "installed_path": str(installed),
+        "installed_file_sha256": _file_sha256(installed),
+        "main_file_sha256": "",
+        "matches_main": None,
+        "commits_behind": None,
+        "detail": "not compared — no origin/main checkout was prepared this run",
+    }
+
+
+def _bootstrap_commits_behind(lane: Path, path: str, *,
+                              sh: Callable[..., ShResult] = _sh) -> Optional[int]:
+    """Commits that touched THIS FILE between the executing vintage and origin/main.
+
+    Deliberately NOT "commits behind main": the wire lanes push ~24 times a night,
+    so that number would be weather. The number an operator can act on is how many
+    times the thing they are running was changed without being redeployed.
+
+    ``hash-object`` for the executing file's blob id, then ONE ``log --raw`` whose
+    every entry carries the resulting blob for the path. Anything unexpected
+    answers None — an unknown distance must never render as zero.
+    """
+    blob = sh(["git", "-C", lane, "hash-object", path],
+              timeout=BOOTSTRAP_GIT_TIMEOUT_S)
+    lines = [ln.strip() for ln in (blob.out or "").splitlines() if ln.strip()]
+    want = lines[-1] if lines else ""
+    if blob.rc != 0 or len(want) != 40:
+        return None
+    log = sh(["git", "-C", lane, "log", f"-n{BOOTSTRAP_LOG_SCAN}", "--format=%H",
+              "--raw", "--no-abbrev", "origin/main", "--", RUNNER_REPO_REL],
+             timeout=BOOTSTRAP_GIT_TIMEOUT_S)
+    if log.rc != 0:
+        return None
+    behind = 0
+    for line in (log.out or "").splitlines():
+        # :<oldmode> <newmode> <oldblob> <newblob> <status>\t<path>
+        if not line.startswith(":"):
+            continue
+        parts = line.split()
+        if len(parts) < 5:
+            continue
+        if parts[3] == want:
+            return behind
+        behind += 1
+    return None
+
+
+def compare_bootstrap_to_main(lane: Path, identity: dict, *, stale: bool,
+                              sh: Callable[..., ShResult] = _sh) -> dict:
+    """Grade the executing bootstrap against origin/main's copy. Never raises.
+
+    THE ASYMMETRY IS DELIBERATE and it is the same one ``prepare_lane`` already
+    makes about ``code_stale``:
+
+      * bytes DIFFER from the reference → ``matches_main = False``, and that is
+        certain even against a stale origin/main: a file that does not match an
+        older main cannot match a newer main descended from it.
+      * bytes MATCH a STALE reference → ``None``, never True. The fetch failed,
+        so "identical to what main was yesterday" is not "identical to main", and
+        a drift detector that certifies against a reference it could not refresh
+        is the blind kind.
+
+    A clean verdict therefore requires an AFFIRMATIVE match against a refreshed
+    reference. Absence of evidence never renders as ``ok``.
+    """
+    out = dict(identity)
+    reference = lane / "scripts" / RUNNER_BASENAME
+    out["main_file_sha256"] = _file_sha256(reference)
+    if not out["main_file_sha256"]:
+        out["detail"] = (f"not compared — origin/main's {RUNNER_REPO_REL} is not "
+                         f"readable at {reference}")
+        return out
+    if not out["file_sha256"]:
+        out["detail"] = (f"not compared — the executing bootstrap at {out['path']} "
+                         f"is not readable")
+        return out
+
+    if out["file_sha256"] != out["main_file_sha256"]:
+        out["matches_main"] = False
+        out["commits_behind"] = _bootstrap_commits_behind(lane, out["path"], sh=sh)
+        behind = out["commits_behind"]
+        out["detail"] = (
+            f"the executing bootstrap is NOT origin/main's {RUNNER_REPO_REL} — "
+            + (f"{behind} commit(s) to that file are not deployed"
+               if isinstance(behind, int) else
+               f"its vintage is not among the last {BOOTSTRAP_LOG_SCAN} commits "
+               f"that touched the file")
+            + "; re-run scripts/install_closepass_launchd.sh")
+        return out
+
+    if stale:
+        out["detail"] = (
+            "byte-identical to the lane's origin/main, but this run's fetch failed "
+            "(code_stale) so the reference may itself be behind — reported as "
+            "unverified rather than clean")
+        return out
+
+    out["matches_main"] = True
+    out["commits_behind"] = 0
+    out["detail"] = f"byte-identical to origin/main's {RUNNER_REPO_REL}"
+    return out
+
+
+def announce_bootstrap(identity: dict) -> None:
+    """Say it OUT LOUD, and never heal it.
+
+    Self-updating would defeat the freeze the installer exists to provide — a
+    mid-day push to main must not change what the clock executes — so the entire
+    remedy this lane owns is DISCLOSURE with the exact command attached. The run
+    continues on whatever snapshot started it; a drifted bootstrap that still
+    publishes a board is a reporting failure, not a reason to lose the session.
+    """
+    running = (identity.get("file_sha256") or "")[:12] or "unknown"
+    verdict = identity.get("matches_main")
+    if verdict is True:
+        _log(f"bootstrap file_sha256 {running} (mtime {identity.get('mtime') or '?'}) "
+             f"is origin/main's {RUNNER_REPO_REL} — no drift")
+    elif verdict is False:
+        behind = identity.get("commits_behind")
+        gap = (f"{behind} commit(s) behind" if isinstance(behind, int)
+               else "an unknown distance behind")
+        _error(
+            f"BOOTSTRAP DRIFT — launchd is executing {identity.get('path')}, which is "
+            f"{gap} origin/main's {RUNNER_REPO_REL} (running file_sha256 {running}, "
+            f"origin/main {(identity.get('main_file_sha256') or '')[:12]}, snapshot "
+            f"mtime {identity.get('mtime') or '?'}). MERGING DOES NOT DEPLOY THIS "
+            f"FILE — run: bash scripts/install_closepass_launchd.sh. This run "
+            f"continues on the snapshot it started with: disclosed, never self-healed")
+    else:
+        _warn(f"bootstrap vintage UNVERIFIED — {identity.get('detail')}. A snapshot "
+              f"weeks behind origin/main writes a receipt that looks exactly like "
+              f"this one, so this is a gap in the evidence, not a clean bill")
+
+    # A session running the repo copy grades ITSELF above; the file launchd will
+    # actually exec tonight is a different question and gets its own answer.
+    if not identity.get("is_installed_copy"):
+        installed = identity.get("installed_file_sha256") or ""
+        main = identity.get("main_file_sha256") or ""
+        _notice(f"this is not the installed snapshot — launchd execs "
+                f"{identity.get('installed_path')}")
+        if installed and main and installed != main:
+            _error(
+                f"BOOTSTRAP DRIFT (installed) — the snapshot launchd execs, "
+                f"{identity.get('installed_path')} (file_sha256 {installed[:12]}), is "
+                f"not origin/main's {RUNNER_REPO_REL} ({main[:12]}); this run "
+                f"exercised a different file. Run: bash scripts/install_closepass_launchd.sh")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -896,7 +1115,8 @@ def run(*, now: dt.datetime, dry_run: bool = False,
         "log_tail": str(log_dir() / "launchd.out.log"),
         "lane": str(lane),
         "dry_run": bool(dry_run),
-        "runner_sha": _self_sha(),
+        # WHO IS RUNNING, filled before anything can fail — see bootstrap_identity.
+        "bootstrap": bootstrap_identity(),
         "outcome": "started",
     }
 
@@ -925,6 +1145,14 @@ def run(*, now: dt.datetime, dry_run: bool = False,
     state = prepare_lane(primary, lane, sh=sh)
     receipt["code_sha"] = state["code_sha"]
     receipt["code_stale"] = state["code_stale"]
+    # The lane is now origin/main, which makes THIS file's own origin/main copy a
+    # free local reference. Graded before the refusal below on purpose: "which
+    # bootstrap refused" is exactly the question the 2026-08-17 receipt could not
+    # answer, and a stale snapshot is a live candidate cause of a refusal.
+    if state["ok"]:
+        receipt["bootstrap"] = compare_bootstrap_to_main(
+            lane, receipt["bootstrap"], stale=state["code_stale"], sh=sh)
+    announce_bootstrap(receipt["bootstrap"])
     if not state["ok"]:
         _error(f"lane checkout not prepared — refusing to run stale or unknown "
                f"code ({state['detail']})")
