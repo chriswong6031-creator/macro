@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T14:21:18.049229+00:00",
-  "count": 1341,
+  "generated_at": "2026-08-18T15:20:15.460992+00:00",
+  "count": 1344,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-msc6awsokaq-c5663b",
+      "title": "European equity: earning(s) respect",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T14:44:59Z",
+      "summary_points": [
+        "**Earnings Resilience**: Solid 10.7% 12m forward EPS growth since Iran war, with consensus rebounding on positive data despite geopolitical shocks, indicating stronger-than-expected corporate performance.",
+        "**US-EA Surprise Divergence**: US consistently shows higher economic surprise indices than EA, with EA volatility spiking (e.g., late 2024), signaling potential capital outflows from Eurozone to US markets.",
+        "**Earnings Revision Risk**: Negative earnings revision ratios spike during crises (e.g., Aug-09, Aug-19), correlating with Eurozone PMI downturns, highlighting economic weakness as a direct earnings risk for Stoxx 600."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-8pvavzjboxt-af7488",
       "title": "GS Novak Industrials Materials 18 Aug 2026",
@@ -410,6 +429,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-fladiygcar4-249b0d",
+      "title": "Should investors worry about private credit",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:12Z",
+      "summary_points": [
+        "**Private Credit Liquidity Stress**: Lending volumes down 13% vs 2025, 56% QoQ decline amid tightening lender standards (PIK down to 13.5%) and AI-driven software disruption; over-leveraged 2021-22 borrowers face acute stress.",
+        "**Overleveraged Borrower Exposure**: Non-cyclical sector stress from 2021-22 over-leverage amplifies liquidity pressures, with 56% QoQ volume drop signaling severe borrower distress.",
+        "**Selective Allocation Strategy**: CIO mandates senior, sponsor-backed, upper-middle-market loans in non-cyclical sectors; quality focus and selectivity critical for risk-return balance amid balanced near-term outlook."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-usz9etexlrn-79a9f6",
       "title": "What does the Warsh era mean for Fed policy",
       "institution": "UBS",
@@ -423,6 +461,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x6crs9ovtym-cf706d",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:56:04Z",
+      "summary_points": [
+        "**Resilience Drivers**: Robust growth (US retail sales dip offset by solid activity), improving earnings expectations, and potential for less restrictive monetary policy supporting equities despite volatility.",
+        "**Earnings Surge**: Sharp rise in earnings growth expectations driven by stronger profitability and AI monetization, underpinning equity market participation.",
+        "**Japan Growth**: Above-trend growth persists despite 1.1% Q2 GDP miss; preliminary capital spending data may revise higher, supporting Japanese equities (semi-caps, AI supply chain).",
+        "**Yield Risk**: US 10-year Treasury yield up 50 bps YTD poses significant risk to growth-oriented equities and corporate debt, necessitating defensive positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
