@@ -91,7 +91,7 @@ danger_areas:
   - "DSC:THEME-GRAPH-FULL-REBAKE-DIVERGES-LOCALLY — never regenerate graph planes via the full scripts.build_theme_graph in a session worktree; derive the target plane from the committed nodes.parquet."
   - "Historical asof resolutions use DATED alias rows only (post-F2 two-clock law); current-catalog rows (store/yahoo_fetch, both bounds null) are excluded as historical evidence — do not optimize that exclusion away."
   - "source_native_symbol is parse provenance, never a join key; the reader API is the only sanctioned resolution path."
-prs: []
+prs: [5894]
 ---
 
 ## Cold-stranger summary
