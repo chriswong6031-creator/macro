@@ -78,7 +78,7 @@ danger_areas:
   - "C1 is STALE (2026-08-12, scan-only) because the availability outage stalled the candidate store — any coverage claim citing C1 must carry the stamp."
   - "The 11 us_sector_* pseudo-baskets are STRUCTURAL — counting them as thematic membership zeroes the C6 gap and inflates coverage."
   - "Rights: Finviz/THS are internal-only for new emissions; a public ThemeState on them is unlawful until the routed decision resolves."
-prs: []
+prs: [5859]
 ---
 
 ## Cold-stranger summary

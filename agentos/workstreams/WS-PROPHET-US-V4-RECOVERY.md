@@ -194,8 +194,9 @@ waves:
       machine artifacts in research/prophet_v4/d1/. Headlines: C6 thematic gap =
       2,368/3,253 (73%); graph company plane is ticker-string-keyed (D2's repair);
       two live graph data defects (GOLD reused-ticker, IBIT ETF-as-company); Citrini
-      OPERATOR_HELD_ONLY; Theia DEC stands; 4 rights decisions routed."
+      OPERATOR_HELD_ONLY; Theia DEC stands; 5 rights decisions routed."
     status: done
+    pr: 5859
   - id: d2
     depends_on: [d1]
     title: "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the
