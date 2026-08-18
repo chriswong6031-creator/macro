@@ -106,6 +106,18 @@ PY312 = Path("/opt/homebrew/bin/python3.12")
 
 # ── budgets ──────────────────────────────────────────────────────────────────
 GIT_TIMEOUT_S = 180
+#: The lane-prep PROBE (`rev-parse --git-dir`) is a metadata read that answers in
+#: milliseconds on an idle box, so GIT_TIMEOUT_S was 180x more patience than it can
+#: ever need — and patience is exactly the wrong currency here. 2026-08-17 W-ACCEPT
+#: day 1: the probe blocked past 180s while the Studio ran the CN asia job plus a
+#: render, `_sh` returned rc=124 with EMPTY output, and prepare_lane rendered it as
+#: `primary checkout unreadable: ''` — indistinguishable from a corrupt repo. The
+#: run refused at rc=1/lane_unprepared after 240s and the session lost its board.
+#: A short timeout with retries survives a contention spike AND stays inside the
+#: 16:12 ET wait deadline (3 x 30s + backoff << one 180s stall).
+GIT_PROBE_TIMEOUT_S = 30
+GIT_PROBE_ATTEMPTS = 3
+GIT_PROBE_BACKOFF_S = (2.0, 5.0)
 VENV_TIMEOUT_S = 300
 PIP_TIMEOUT_S = 1800          # cold install is minutes; warm is skipped outright
 PROBE_TIMEOUT_S = 120
@@ -313,6 +325,44 @@ def lane_ready(lane: Path) -> bool:
     return (lane / ".git").exists() and (lane / "scripts").is_dir()
 
 
+def _sh_detail(res: ShResult, timeout: float) -> str:
+    """A human-actionable reason, which a bare `repr(out)` is not when out is ''.
+
+    `_sh` reports a timeout as rc=124 with empty captured output (the group is
+    killed, the pipe yields nothing), so every `f"...: {out!r}"` message
+    degrades to `''` exactly when the box is too busy to answer — the one case
+    where the operator most needs to be told what happened.
+    """
+    if res.timed_out:
+        return f"timed out after {timeout:g}s (host contention, not corruption)"
+    return repr((res.out or "").strip())
+
+
+def _git_probe(sh: Callable[..., ShResult], argv, *,
+               attempts: int = GIT_PROBE_ATTEMPTS,
+               timeout: float = GIT_PROBE_TIMEOUT_S,
+               sleep: Optional[Callable[[float], None]] = None) -> ShResult:
+    """Run a cheap git metadata command, retrying a TIMEOUT (never an error).
+
+    Only `timed_out` is retried: a real failure (corrupt repo, missing path, TCC
+    denial) is deterministic and re-running it just burns the wait window.
+    """
+    # Resolved at CALL time, not bound as a default: a default of ``time.sleep``
+    # captures the function object at import, so monkeypatching ``time.sleep``
+    # in a test silently does nothing and the suite pays real backoff seconds.
+    _sleep = sleep or time.sleep
+    res = sh(argv, timeout=timeout)
+    for i in range(attempts - 1):
+        if not res.timed_out:
+            return res
+        delay = GIT_PROBE_BACKOFF_S[min(i, len(GIT_PROBE_BACKOFF_S) - 1)]
+        _warn(f"git probe {' '.join(str(a) for a in argv[-2:])!r} timed out after "
+              f"{timeout:g}s (attempt {i + 1}/{attempts}) — retrying in {delay:g}s")
+        _sleep(delay)
+        res = sh(argv, timeout=timeout)
+    return res
+
+
 def prepare_lane(primary: Path, lane: Path, *, sh: Callable[..., ShResult] = _sh) -> dict:
     """Create-if-absent, fetch, hard-reset the lane to ``origin/main``.
 
@@ -331,10 +381,10 @@ def prepare_lane(primary: Path, lane: Path, *, sh: Callable[..., ShResult] = _sh
     """
     out = {"ok": False, "code_sha": "", "code_stale": False, "detail": ""}
 
-    probe = sh(["git", "-C", primary, "rev-parse", "--git-dir"], timeout=GIT_TIMEOUT_S)
+    probe = _git_probe(sh, ["git", "-C", primary, "rev-parse", "--git-dir"])
     if probe.rc != 0:
         detail = (probe.out or "").strip()
-        out["detail"] = f"primary checkout unreadable: {detail!r}"
+        out["detail"] = f"primary checkout unreadable: {_sh_detail(probe, GIT_PROBE_TIMEOUT_S)}"
         if "not permitted" in detail.lower():
             out["detail"] += (" — this is the macOS TCC wall: grant Full Disk Access"
                               " to /usr/bin/python3, then kickstart the job again")
@@ -353,7 +403,7 @@ def prepare_lane(primary: Path, lane: Path, *, sh: Callable[..., ShResult] = _sh
                       "--lock", "--reason", LANE_LOCK_REASON, lane, "origin/main"],
                      timeout=GIT_TIMEOUT_S)
         if add.rc != 0:
-            out["detail"] = f"worktree add failed: {(add.out or '').strip()!r}"
+            out["detail"] = f"worktree add failed: {_sh_detail(add, GIT_TIMEOUT_S)}"
             return out
         _log(f"created the lane checkout at {lane} (locked, FULL — data/ included)")
 
@@ -367,7 +417,7 @@ def prepare_lane(primary: Path, lane: Path, *, sh: Callable[..., ShResult] = _sh
     reset = sh(["git", "-C", lane, "reset", "--hard", "origin/main", "--quiet"],
                timeout=GIT_TIMEOUT_S)
     if reset.rc != 0:
-        out["detail"] = f"reset --hard origin/main failed: {(reset.out or '').strip()!r}"
+        out["detail"] = f"reset --hard origin/main failed: {_sh_detail(reset, GIT_TIMEOUT_S)}"
         return out
 
     # ``-e /data`` keeps the committed price store's untracked neighbours out of
