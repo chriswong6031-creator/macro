@@ -36,10 +36,13 @@ depends_on:
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
 landmines:
-  - "THE OUTAGE IS LIVE at 0A (2026-08-17): no Prophet checkpoint since 08-14T04:25:52Z;
-    run 31977372592 engine=failure undiagnosed; #5742 open; candidate store
-    data/us_prophet_rank/candidates/ + legacy-shadow parts stalled with it. V4-A1's
-    handoff carries the live state inline — do not trust older records."
+  - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
+    0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
+    sessions + operator own recovery (triage: push-freeze ruleset GH013, theta-m1
+    label pin, runner saturation; overlapping bakes at 23:56Z). The candidate store
+    data/us_prophet_rank/candidates/ + legacy-shadow parts remain stalled with it.
+    V4 does NOT implement — a1 is acceptance-by-adoption. Current deltas:
+    research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
   - "Prophet index top-level asof is WALL-CLOCK (DSC:PROPHET-ASOF-IS-WALL-CLOCK);
     freshness = source_asof + per-plan cohorts. Run conclusions decouple from Prophet
     delivery in both directions (DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET)."
@@ -51,8 +54,11 @@ landmines:
     writes us_standouts.json directly; prophet_bridge.select_candidates() is a
     downstream consumer that refuses buy_soon. FOUR stage derivations disagree on the
     page (CURRENT_STATE §8). One server contract is B3's job."
-  - "Tier gating is a DOM overlay — the full board ships in page source to anonymous
-    visitors (no premiumdata/us_stocks.json). Commercial leak until fixed."
+  - "PAID BOUNDARY (scoped, 0B): #5840 merged the ranked-board server-side split
+    (free shell + premium remainder; PROVEN_LIVE at the 0B pin — VPS premiumdata 401,
+    3-row anonymous shell, render receipt 5232c4c4). Per #5840's OWN scope, Act-Now,
+    .topsetups, ran, and theme-tape member names REMAIN DOM-gated — residual
+    commercial-boundary debt. Do not write 'all Prophet anonymous leakage fixed'."
   - "Vocabulary collisions: Radar G0/C1-C5 vs Fusion arena rungs C1-C5 vs
     prophet_arena C0-C7 execution policies vs audit C0-C4; two same-named 'arena'
     systems; _v2 paths are SCHEMA versions, not the v2 ranker era; two 'board history'
@@ -97,25 +103,42 @@ artifacts:
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
 waves:
   - id: 0a
-    title: "V4-0A — estate archaeology + architecture freeze (this packet)"
-    status: in_progress
+    title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
+      (squash ebce73b97288, 2026-08-17T13:18:55Z)."
+    status: done
     pr: 5832
   - id: 0b
     depends_on: [0a]
-    title: "V4-0B — AgentOS reconciliation (records only, no code)"
-    status: todo
+    title: "V4-0B — post-0A records reconciliation (records only; scope narrowed by
+      the 2026-08-17 Sol 0B handoff — no sibling record edits). Evidence:
+      research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
+    status: done
   - id: a1
     depends_on: [0a]
-    title: "V4-A1 — Aug-14 + current-session settlement recovery"
+    title: "V4-A1 — owed-session settlement recovery. DO NOT SPAWN: implementation is
+      owned by the active Availability/outage sessions (incident receipt #5742);
+      V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md is the ACCEPTANCE CONTRACT Sol reviews
+      the sibling return against — never a command to launch a competing session."
     status: todo
+    next_action: >
+      Acceptance-by-adoption only: when the Availability/outage return arrives, map it
+      to the A1 gates and route to Sol for acceptance. A fresh board or a green run
+      alone does not close this wave.
   - id: a2
     depends_on: [a1]
     title: "V4-A2 — canonical settlement manifest (prophet.settlement_manifest/v1)"
     status: todo
+    next_action: >
+      ADOPT FIRST: before any spawn, map the accepted Availability/outage return onto
+      this capability; if the sibling durable fix already satisfies it, close by
+      reference — only the unresolved delta may become a V4 wave.
   - id: a3
     depends_on: [a1]
     title: "V4-A3 — atomic publication + split-brain fence"
     status: todo
+    next_action: >
+      ADOPT FIRST: same rule as a2 — map the sibling return (and #5840's premium-plane
+      split) before spawning; only the unresolved delta becomes a V4 wave.
   - id: a4
     depends_on: [a2, a3]
     title: "V4-A4 — availability fire-drill week"
@@ -146,7 +169,10 @@ waves:
     status: todo
   - id: b7
     depends_on: [b6]
-    title: "V4-B7 — Radar production UI + Prophet integration (closes Radar W9)"
+    title: "V4-B7 — Radar production UI + Prophet integration (executes Radar W9 under
+      Radar ownership). 0B note: Radar W6 code merged (#5834, research_priority.v1 —
+      ACCRUING attention ordering, commissioning owed, zero Prophet authority); W8
+      (#5737) still open/reference-only; W9 absent. b7 inherits Radar's W9 deps."
     status: todo
   - id: c1
     depends_on: [b1]
@@ -162,7 +188,9 @@ waves:
     status: todo
   - id: d1
     depends_on: [0a]
-    title: "V4-D1 — theme-source and identity census"
+    title: "V4-D1 — theme-source and identity census. NEXT AUTHORIZED independent V4
+      session after 0B (docs/registry census; disjoint from the publication incident;
+      does not depend on a1). Starts in a FRESH session, never inside 0B."
     status: todo
   - id: d2
     depends_on: [d1]
@@ -182,7 +210,10 @@ waves:
     status: todo
   - id: d6
     depends_on: [d5]
-    title: "V4-D6 — earnings adapter (blocked externally on EIOS stable contract)"
+    title: "V4-D6 — earnings adapter. Premise updated 0B: EIOS E1P is LIVE for the
+      golden AAPL FY2026 Q3 event workspace (#5842) and E2 is unblocked — but ONE
+      golden event is not broad issuer coverage; d6 still waits on d5 and must not
+      infer coverage from it."
     status: todo
   - id: d7
     depends_on: [d5]
@@ -190,7 +221,9 @@ waves:
     status: todo
   - id: e1
     depends_on: [b4, c1, d5]
-    title: "V4-E1 — explainable deterministic V4 priority (extends Fusion registry post-3D)"
+    title: "V4-E1 — explainable deterministic V4 priority (extends Fusion registry
+      post-3D). 0B note: Fusion PR-3B AND PR-3C (#5839) are merged; PR-3D remains the
+      sibling acceptance boundary; V4 does not read/tune from the W3 forward race."
     status: todo
   - id: e2
     depends_on: [e1, b7, c2, a4]
@@ -213,10 +246,11 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  Merge the V4-0A packet PR; then spawn V4-A1 exactly per
-  research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md (one bounded session,
-  no auto-roll into A2+). V4-0B (AgentOS reconciliation) may run as its own
-  records-only session after 0A merges.
+  V4-0B complete. DO NOT SPAWN A1 — the Availability/outage sessions own the
+  implementation (#5742); await their return for Sol acceptance against the frozen
+  A1 contract. A2/A3 are adopt-first (map the sibling return before any spawn). The
+  next independently authorized V4 session is D1 (theme-source + identity census),
+  started FRESH — never inside 0B. D3 stays gated on the GMI merge-order ruling.
 ---
 
 ## Context
