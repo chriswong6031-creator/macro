@@ -1526,7 +1526,7 @@ def _cron_field(spec: str, lo: int, hi: int) -> set[int]:
 @pytest.mark.parametrize("field,lo,hi,expected", [
     ("*/2", 0, 23, {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22}),   # codex-research
     ("13-23/2", 0, 23, {13, 15, 17, 19, 21, 23}),                  # smart-money-filings
-    ("7,37", 0, 59, {7, 37}),                                      # 13f-census
+    ("5,35", 0, 59, {5, 35}),                                      # live-breadth
     ("*", 0, 23, set(range(24))),
     ("25", 0, 59, {25}),
 ])
