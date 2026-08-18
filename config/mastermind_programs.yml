@@ -3790,6 +3790,10 @@ owner_program_dispositions:
   options-flow:
     disposition: subprogram_of
     program: options-intelligence
+  options-intelligence:
+    disposition: mapped
+    program: options-intelligence
+    note: AD-1 options-intel-brief registers under the program's own key (WS:ADVANCED-DATA-OPTIONS).
   options-intelligence-program:
     disposition: mapped
     program: options-intelligence

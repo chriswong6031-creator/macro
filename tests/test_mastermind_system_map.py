@@ -74,7 +74,9 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     )
     # 98 -> 99: GMI W1b (#5343) made gmi-theme-graph a raw synapse owner
     # (theme-graph-nodes/edges/evidence); disposition row added in the same change.
-    assert len(raw_owners) == 99
+    # 99 -> 100: AD-1 (WS:ADVANCED-DATA-OPTIONS) made options-intelligence a raw
+    # synapse owner (options-intel-brief); disposition row added in the same change.
+    assert len(raw_owners) == 100
     assert raw_owners == set(registry["owner_program_dispositions"])
     assert raw_owners == {
         owner for repository, owner in model.dispositions if repository == "macro"

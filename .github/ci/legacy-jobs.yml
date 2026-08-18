@@ -7036,6 +7036,7 @@ jobs:
     scope: exclusive
     paths:
       - "config/**"
+      - "contracts/options/OPTIONS_INTEL_BRIEF_V1.md"
       - "data/**"
       - "engine/*"
       - "engine/government_revenue/**"
@@ -7062,6 +7063,7 @@ jobs:
       - "site/neuralwebdata/**"
       - "site/options.html"
       - "site/options_intel_brief.json"
+      - "site/prophet/index.json"
       - "templates/options.html.j2"
       - "tests/test_build_flow_leaders.py"
       - "tests/test_build_market_structure_page.py"

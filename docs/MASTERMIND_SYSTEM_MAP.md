@@ -1527,9 +1527,9 @@ Govern options flow, structure, exposure, dislocation, Prophet overlays, and iss
 
 **Derived operational footprint**
 
-- Synapse owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
-- Lobe owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
-- Synapse artifacts: **30**; tier mix: display=13, infrastructure=8, shadow=9
+- Synapse owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
+- Lobe owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
+- Synapse artifacts: **31**; tier mix: display=14, infrastructure=8, shadow=9
 - Lobe charters: **2**
 - Information domains: `tactical_entry`
 
@@ -3486,6 +3486,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `options-alpha` | `mapped` | `options-alpha` | 8 | 0 |
 | `macro` | `options-dislocation` | `subprogram_of` | `options-intelligence` | 1 | 0 |
 | `macro` | `options-flow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
+| `macro` | `options-intelligence` | `mapped` | `options-intelligence` | 1 | 0 |
 | `macro` | `options-intelligence-program` | `mapped` | `options-intelligence` | 19 | 0 |
 | `macro` | `options-nw-entry-intelligence` | `subprogram_of` | `options-intelligence` | 3 | 2 |
 | `macro` | `options-prophet-shadow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
@@ -3587,7 +3588,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
-| `config/synapse.yml` | `9ace9cebbf8fdfc451516d79a73796006dcf83c955b088905dfebf1ba5173dc5` |
+| `config/mastermind_programs.yml` | `6d8d5d4e515f260ff748d9ed76df1fe5601e59734161a8a21b121b7ec6601da9` |
+| `config/synapse.yml` | `da3be868d9beb2ddb53b2e74b9d4b2f125e14a2e0fc6adace3e884b8ce22ce4d` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
