@@ -129,11 +129,18 @@ The fence has three exits and they do not all point the same way.
   SUPERSET of this run's own work — does **not** withhold. Without a trustworthy changed
   set a withhold can discard a legitimate generation, and declining to act merely leaves
   the pre-fence behaviour in place. It prints `::error` and exits 0.
-* The fence never fails the step. The market plane must publish, and the annotation is the
-  signal.
+* A withhold that itself FAILS fails CLOSED — the one exception. It exits
+  `WITHHOLD_FAILED` (2), which `push_append_only_fence` turns into a non-zero return so the
+  caller SKIPS that push attempt. The fence has PROVEN the tree drops evidence and then
+  could not undo it; "the remedy broke" is not a reason to publish. Pinned in a real
+  `bash -eo pipefail` shell, in the `if !` shape the lanes use, because a bare call under
+  `-e` would abort the step instead of skipping the attempt.
+* Otherwise the fence never fails the step. The market plane must publish, and the
+  annotation is the signal.
 
-That asymmetry is the whole design: fail-closed on a DATA question the fence can answer,
-fail-open-and-loud on an INFRASTRUCTURE question it cannot.
+That asymmetry is the whole design: fail-closed on a DATA question the fence can answer —
+including "can I still act on my own verdict" — and fail-open-and-loud on an
+INFRASTRUCTURE question it cannot.
 
 ### Why the merge-base is avoided
 
