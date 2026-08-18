@@ -296,10 +296,17 @@ class _WeekdayCalendar:
 #: window the mainland pages at 2 sessions like every other market.  Measured against the
 #: 2026-08-14 freeze shape, that narrowing moves the mainland's first page from
 #: 2026-08-26 to 2026-08-19 while leaving Spring Festival and Golden Week silent.
-#: COST, NAMED: a mainland board that dies ON THE EVE of a long closure is still caught
-#: at 11+ calendar days rather than 2 sessions.  That cost is affordable only because
-#: checks A and B still cover the lane that bakes it within hours; D is the backstop for
-#: "ran green, stood still".
+#: COST, NAMED, AND IT IS BIGGER THAN IT LOOKS: a mainland board that dies ON THE EVE of
+#: a long closure is caught at 11+ calendar days rather than 2 sessions, and — unlike
+#: every other market — NOTHING ELSE IS WATCHING IT IN THE MEANTIME.  Checks A and B
+#: watch WORKFLOW_FILE (daily.yml), and daily.yml does NOT bake the mainland or HK
+#: boards: it iterates build_canada_library + build_intl_library (daily.yml:4365), while
+#: build_china_library + build_hk_library are baked by asia-close.yml:696.  So for cn and
+#: hk, check D is the ONLY instrument in this guard, and inside a closure window the
+#: floor is a real uncovered gap rather than a delay behind a faster check.  Accepted
+#: here because the alternative is a false page every Spring Festival and every Golden
+#: Week, which mutes the channel; the durable fix is to teach checks A and B about
+#: asia-close.yml, which is a wider change than this one.
 #:
 #: MEASURED, not assumed.  Sweeping a healthy board (stamped by the most recent 22:30 ET
 #: fire) across every 08:00Z and 14:00Z slot of 2026, 2027 and 2028 produces ZERO breaches
@@ -317,6 +324,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "market": "us",
         "label": "US",
         "path": "site/factordata/us_standouts.json",
+        "stamp_known_absent": False,
         "field": "as_of",
         "calendar": "nyse",
         "max_sessions_behind": 1,
@@ -326,6 +334,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "market": "cn",
         "label": "China",
         "path": "site/factordata/china_standouts.json",
+        "stamp_known_absent": False,
         "field": "as_of",
         "calendar": "cn",
         "max_sessions_behind": 1,
@@ -335,6 +344,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "market": "hk",
         "label": "Hong Kong",
         "path": "site/factordata/hk_standouts.json",
+        "stamp_known_absent": False,
         "field": "as_of",
         "calendar": "hk",
         "max_sessions_behind": 1,
@@ -344,6 +354,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "market": "ca",
         "label": "Canada",
         "path": "site/factordata/canada_standouts.json",
+        "stamp_known_absent": False,
         "field": "as_of",
         "calendar": "tsx",
         "max_sessions_behind": 1,
@@ -360,6 +371,7 @@ MARKET_BOARDS: tuple[dict, ...] = (
         # tests/test_nightly_liveness.py pins that as a KNOWN blind spot so the day
         # the builder starts stamping, the test is what tells us to expect a grade.
         "path": "site/factordata/intl_setups.json",
+        "stamp_known_absent": True,
         "field": "as_of",
         "calendar": "weekday",
         "max_sessions_behind": 3,   # 1 + the +2 weekday-approximation tolerance
@@ -528,12 +540,29 @@ def evaluate_market_boards(
         state["as_of"] = raw
         stamp = _parse_date(raw)
         if stamp is None:
-            warn.append(
-                f"INDETERMINATE [{label}]: {path} carries no usable "
-                f"{spec['field']} ({raw!r}), so this board's freshness cannot be "
-                "graded at all — a permanently unstamped board is a blind spot, not "
-                "a healthy one."
-            )
+            if spec["stamp_known_absent"]:
+                warn.append(
+                    f"INDETERMINATE [{label}]: {path} carries no usable "
+                    f"{spec['field']} ({raw!r}). This board has NEVER carried one — see "
+                    "MARKET_BOARDS — so it is a standing, named blind spot rather than "
+                    "a new fault. It is not graded and must not be read as healthy."
+                )
+            else:
+                # NOT blindness, and this distinction is the whole point. Blindness is
+                # "we cannot see"; here we CAN see the artifact and can see that it
+                # refuses to say which session it is for. A board that carried a stamp
+                # yesterday and publishes none today is a POSITIVE observation that its
+                # producer broke — and it is the failure that would otherwise switch
+                # this market off silently and permanently. build_canada_library.py:1093
+                # resolves `as_of = (alpha or {}).get("as_of")`, so a missing alpha
+                # publishes a null stamp: without this branch, check D would go quiet on
+                # the exact market it was written for and read green forever.
+                fail.append(
+                    f"BOARD PUBLISHED WITHOUT A STAMP [{label}]: {path} is readable but "
+                    f"carries no usable {spec['field']} ({raw!r}). Its producer stopped "
+                    "stating which session the board is for, which silences every "
+                    "freshness instrument for this market — a regression, not blindness."
+                )
             continue
 
         try:
@@ -1065,12 +1094,21 @@ def _selftest() -> int:
     # (the live International shape — its as_of is None on every commit in history)
     # and an unparseable stamp are all INDETERMINATE, and the other markets stay graded.
     r = evaluate(healthy_runs, d_index, d_now,
-                 boards={"us": None, "cn": {"as_of": None},
-                         "hk": {"as_of": "not-a-date"}, "ca": {"as_of": "2026-08-17"},
-                         "intl": {"as_of": None}})
+                 boards={"us": None, "cn": None, "hk": None,
+                         "ca": {"as_of": "2026-08-17"}, "intl": {"as_of": None}})
     _check("D/blind-markets-never-breach", r["ok"], True)
     assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 4, r
     assert r["facts"]["boards"]["ca"]["behind"] == 0, r
+
+    # ...but an artifact we CAN read that publishes no stamp is a producer regression,
+    # not blindness — otherwise the market switches itself off silently and forever.
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={**fresh, "ca": {"as_of": None}, "intl": {"as_of": None}})
+    _check("D/unstamped-board-is-a-breach", r["ok"], False)
+    assert any("BOARD PUBLISHED WITHOUT A STAMP [Canada]" in f
+               for f in r["fail_reasons"]), r
+    # and the one board that has NEVER carried a stamp stays a named warning
+    assert any("INDETERMINATE [International]" in w for w in r["warnings"]), r
 
     # A market absent from the payload entirely must warn, never vanish quietly —
     # that is what a forgotten sparse-checkout path looks like.

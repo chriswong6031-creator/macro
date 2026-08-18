@@ -3095,7 +3095,29 @@ checks:
         stamp and the expected session), so outside a holiday the mainland pages at 2
         sessions like every other market. Consequence to accept: a China board that dies
         ON THE EVE of a long closure is caught at 11+ calendar days rather than 2
-        sessions. Checks A and B still cover the lane that bakes it, within hours.
+        sessions, with nothing else watching in the meantime (see the next limit).
+      - >-
+        CHECKS A AND B DO NOT COVER CHINA OR HONG KONG. They watch WORKFLOW_FILE
+        (daily.yml), which bakes only build_canada_library and build_intl_library
+        (daily.yml:4365); build_china_library and build_hk_library are baked by
+        asia-close.yml:696. For cn and hk, check D is the ONLY instrument in this guard,
+        so the mainland's closure-window floor is a genuinely uncovered gap rather than a
+        delay behind a faster check. Measured: china_standouts.json held as_of=2026-07-10
+        from 2026-07-13 08:00Z through 2026-07-16 14:00Z (3 missed SSE sessions) while
+        daily.yml ran green every night and A/B stayed satisfied throughout. The durable
+        fix is to teach A and B about asia-close.yml; that is a wider change than the one
+        that introduced check D.
+      - >-
+        Expected steady-state alarm rate, measured over 2026-07-01..2026-08-18 (98 slots):
+        26 pages on 13 distinct days, every one a TRUE observation and none a false alarm
+        on a healthy estate. Seven of those pages are a DIFFERENT defect from the freeze D
+        targets: render.yml/engine-render.yml rebuild hk_standouts.json from the runner's
+        store and can commit an as_of OLDER than the one already on main (blob
+        d6a82ccacb80 carries as_of=2026-07-08 while 7a7fd2766ba0 and 451d24146a4b both
+        carry 2026-07-02), so the board oscillated for five days and each dip paged until
+        the asia lane restored it that afternoon. Real, but it is a render regression, not
+        a frozen board. This rate must be accepted deliberately: muting the channel is the
+        failure mode this guard's own docstring names.
       - >-
         Budgets are measured, not assumed. A healthy board swept across every 08:00Z and
         14:00Z slot of 2026-2028 breaches on none of the five markets; a board frozen
@@ -3118,6 +3140,25 @@ checks:
         lib/hk_calendar.ONE_OFF_CLOSURES. A missing entry over-counts the lag (a false
         "stale"), never under-counts, so two consecutive unrecorded No.8 / Black
         Rainstorm days could produce one false page until the date is appended.
+      - >-
+        lib/hk_calendar's table errs in the UNDER-count direction in two places, which
+        delays an HK page rather than manufacturing one: it encodes Lunar New Year's Eve
+        as a full-day closure (HKEX trades a half day, which still produces a daily bar)
+        and rolls a Saturday general holiday to the following Monday (HK's General
+        Holidays Ordinance does not). Observed: is_session(2026-02-16), is_session(2027-02-05)
+        and is_session(2027-05-03) all return False for days HKEX trades. Cost is one
+        session of under-count per occurrence, so an HK freeze spanning one of those days
+        is caught one slot later than the budget of 1 implies. Pre-existing and shared with
+        other consumers, so it was left alone rather than corrected under this change.
+      - >-
+        A board that is READABLE but publishes no stamp is treated as a producer
+        regression and FAILS, rather than degrading to INDETERMINATE — otherwise a market
+        switches itself off silently and permanently, which is exactly what
+        intl_setups.json has done unnoticed for its whole history.
+        build_canada_library.py:1093 resolves as_of from (alpha or {}).get("as_of"), so
+        one missing alpha would have silenced check D on the very market it was written
+        for. Only International, which has never carried a stamp, is exempt, and that
+        exemption is pinned by name in tests/test_nightly_liveness.py.
     owner_program: prophet-us-eyes-open
     notes: >
       Registered after the 2026-08-11/12 two-session outage, in which the US nightly

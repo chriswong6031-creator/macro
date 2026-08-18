@@ -579,17 +579,48 @@ def test_only_the_mainland_carries_a_calendar_day_floor():
 # ── blindness discipline, per market ───────────────────────────────────────
 @pytest.mark.parametrize("payload", [
     None,                      # artifact absent or unreadable
-    {},                        # readable, no stamp field
-    {"as_of": None},           # the live International shape
-    {"as_of": "not-a-date"},   # unparseable
-    {"as_of": ""},             # empty
     [],                        # artifact is a JSON array, not an object
     "2026-08-17",              # artifact is a bare JSON string
 ])
 def test_board_blindness_is_never_a_breach(payload):
+    """We genuinely cannot see the artifact — a sparse-checkout miss looks like this."""
     report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca=payload))
     assert report["ok"] is True
     assert any("INDETERMINATE [Canada]" in w for w in report["warnings"]), report
+
+
+@pytest.mark.parametrize("payload", [
+    {},                        # readable, stamp field gone
+    {"as_of": None},           # producer emitted a null stamp
+    {"as_of": "not-a-date"},   # unparseable
+    {"as_of": ""},             # empty
+])
+def test_a_readable_board_that_publishes_no_stamp_is_a_breach(payload):
+    """NOT blindness, and the distinction is load-bearing. Blindness is "we cannot see";
+    here we CAN see the artifact and can see it refuses to say which session it is for.
+
+    This is the hole that would otherwise switch a market off silently and permanently.
+    build_canada_library.py:1093 resolves `as_of = (alpha or {}).get("as_of")`, so one
+    missing alpha publishes a null stamp — and Canada, the market this check was written
+    for, would go quiet and read green forever. intl_setups.json proves the failure mode
+    is real: it has shipped `as_of: null` on every commit in main's history and nobody
+    noticed until this PR.
+    """
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca=payload))
+    assert report["ok"] is False
+    assert any("BOARD PUBLISHED WITHOUT A STAMP [Canada]" in f
+               for f in report["fail_reasons"]), report
+
+
+def test_only_the_known_unstamped_board_is_exempt():
+    """International has NEVER carried a stamp, so a null there is a standing named blind
+    spot rather than a new fault. Every other market must breach on the same input — an
+    exemption list that grows silently is how a guard dies."""
+    exempt = {s["market"] for s in MARKET_BOARDS if s["stamp_known_absent"]}
+    assert exempt == {"intl"}, exempt
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(intl={"as_of": None}))
+    assert report["ok"] is True
+    assert any("INDETERMINATE [International]" in w for w in report["warnings"]), report
 
 
 def test_a_market_missing_from_the_payload_warns_rather_than_vanishing():
@@ -643,6 +674,19 @@ def test_every_market_board_is_in_the_sparse_checkout():
             f"{board['path']} is graded by check D but is not in the lane's "
             "sparse-checkout — that market would be silently ungraded"
         )
+    # The paths are only half the wiring. actions/checkout defaults to CONE mode, in
+    # which a full file path is read as a directory pattern and matches NOTHING — so
+    # flipping this one line checks out none of the five artifacts, produces five
+    # INDETERMINATE warnings, exits 0, and leaves the lane green with every market
+    # silently unwatched. Exactly the failure the path list above exists to prevent,
+    # reached without touching the path list. Same exposure covers check C's
+    # site/prophet/index.json.
+    with_block = spec["jobs"]["liveness"]["steps"][0]["with"]
+    assert with_block.get("sparse-checkout-cone-mode") is False, (
+        "sparse-checkout must stay in NON-cone mode: cone mode cannot match a full "
+        "file path, so every graded artifact would be absent and every market would "
+        "read INDETERMINATE while the lane stayed green"
+    )
 
 
 def test_main_grades_every_market(tmp_path, capsys):
