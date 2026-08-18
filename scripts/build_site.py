@@ -4798,9 +4798,13 @@ def _us_board_gate_cfg() -> dict:
     try:
         cfg = config.load().get("us_board_gate") or {}
         return {"gated": bool(cfg.get("gated", False)),
-                "preview_rows": int(cfg.get("preview_rows") or 3)}
+                "preview_rows": int(cfg.get("preview_rows") or 3),
+                "panels": bool(cfg.get("panels", False)),
+                "panel_preview_rows": int(cfg.get("panel_preview_rows")
+                                          or US_PANEL_PREVIEW_DEFAULT)}
     except Exception:  # noqa: BLE001
-        return {"gated": False, "preview_rows": 3}
+        return {"gated": False, "preview_rows": 3,
+                "panels": False, "panel_preview_rows": US_PANEL_PREVIEW_DEFAULT}
 
 
 def _us_board_stage_counts(full_buy: list[dict]) -> dict:
@@ -4923,7 +4927,9 @@ def _us_board_row_flat(n: dict) -> dict:
 
 def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
                        locked_rows: list[dict], us_standouts: "dict | None",
-                       top_setups: "dict | None", built: str) -> None:
+                       top_setups: "dict | None", built: str,
+                       pgate: "dict | None" = None,
+                       panel_blocks: "dict | None" = None) -> None:
     """Render the paid remainder of the US Prophet board into
     site/premiumdata/us_stocks.json.
 
@@ -4937,7 +4943,11 @@ def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
     """
     path = site / US_PAYLOAD_DIR / US_PAYLOAD_NAME
     path.parent.mkdir(parents=True, exist_ok=True)
+    panel_blocks = panel_blocks or {}
     if gate is None:
+        # The board itself is whole (ungated, or smaller than the preview cap) but
+        # the ADJACENT panels can still be withholding rows, so the payload is not
+        # necessarily empty here — `gated` reports the BOARD, `panels` the rest.
         payload = {"schema": "tier_payload.v1", "page": "us_stocks", "gated": False,
                    "built": built, "cards_html": "", "rows": []}
     else:
@@ -4985,9 +4995,236 @@ def _write_us_payload(env: Environment, site: Path, gate: "dict | None", *,
             "cards_html": cards_html,
             "rows": [_us_board_row_flat(n) for n in locked_rows],
         }
+    if pgate:
+        payload["panels"] = {k: v for k, v in pgate.items()
+                             if k in ("setups", "leaders", "ran", "actnow", "tape",
+                                      "plv_names")}
+        payload.update(panel_blocks)
     path.write_text(json.dumps(payload), encoding="utf-8")
-    log.info("us_stocks: premium payload %s (%d locked rows)",
-              US_PAYLOAD_URL, len(locked_rows))
+    log.info("us_stocks: premium payload %s (%d locked board rows, %d locked panels)",
+              US_PAYLOAD_URL, len(locked_rows),
+              len(payload.get("panels") or {}))
+
+
+# ── us_stocks ADJACENT PANELS tier gate (docs/TIER_PREVIEW_PATTERN.md) ────────
+# PR #5840 split the `us_standouts.buy` board out of the shell but was scoped to
+# that ONE board. Four sibling panels on the same page were fed by DIFFERENT
+# artifacts, so the one-payload split never touched them and they stayed gated
+# only by templates/tier_preview.js — a DOM overlay (anon 1 / free 3, blur +
+# aria-hidden) with every row still readable in view-source. Measured on the live
+# page right after #5840 landed: 24 `tr.ts-row`, 43 `.actitem`, 12 `.pbr-r` and
+# 15 `.tt-names` member lists.
+#
+# Same mechanism as the board, extended rather than duplicated: the withheld
+# remainder rides the SAME site/premiumdata/us_stocks.json the page already
+# fetches once post-auth, as extra `*_html` blocks, so hydration stays one
+# request and one code path. Every block is rendered from the SAME template the
+# shell renders — three of them from new row partials, and the act-now board and
+# theme tape from their own files in a rows-only/names-only mode — so a markup
+# change moves both sides of the wall at once.
+#
+# What stays free is what the board's split kept free: state and totals. Every
+# lane heading keeps its true full-board count, the tape keeps every count on
+# its ladder (the panel's whole argument), the "recently fired" header keeps its
+# true N. Only the per-name rows move behind the wall.
+US_PANEL_PREVIEW_DEFAULT = 3
+
+# lane key -> (the .actbody id the rows were sliced out of, does the lane wrap
+# theme rows in the TS-R5 data-theme-id div?). Stand aside is ONE .actbody fed by
+# two arrays, so `hold` and `avoid` share a destination.
+_US_ACTNOW_LANES = [
+    ("buy_now", "ab-buy-fold", False),
+    ("buy_soon", "ab-soon-fold", False),
+    ("on_the_run", "ab-run-fold", False),
+    ("take_profits", "ab-trim-fold", False),
+    ("hold", "dash-hold-fold", True),
+    ("avoid", "dash-hold-fold", True),
+]
+
+# The in-template display caps these two tables have always had
+# (dashboard.html.j2 `_tsn.resid[:10]` and `_ldrs[:15]`). The gate splits what
+# the page SHOWS, so these are the totals — not the untrimmed artifact arrays.
+_US_SETUPS_CAP = 10
+_US_LEADERS_CAP = 15
+
+
+def _us_panel_split(rows: "list | None", preview: int) -> "tuple[list, list]":
+    """(shell_rows, locked_rows) for one panel. A list at or under the preview
+    cap ships whole — baking a wall over nothing is worse than no wall."""
+    rows = list(rows or [])
+    if len(rows) <= preview:
+        return rows, []
+    return rows[:preview], rows[preview:]
+
+
+def _us_tape_locked_count(theme_tape: "dict | None") -> int:
+    """How many member NAMES the tape withholds, counted the way
+    _theme_tape.html.j2's `tt_slot` counts them (a `+N more` chip stands for N
+    names). Used only for the honest disclosure line — the lists themselves are
+    rendered by the template, never rebuilt here."""
+    if not isinstance(theme_tape, dict):
+        return 0
+    n = 0
+    for group in ("rows", "washout_turns"):
+        for row in theme_tape.get(group) or []:
+            for members in (row.get("members") or {}).values():
+                n += len(members or [])
+            if row.get("quiet_sample"):
+                n += len(row["quiet_sample"]) + (row.get("quiet_more") or 0)
+    return n
+
+
+def _split_us_panels(vm: dict, preview: int, *, gated: bool = True):
+    """Tier-preview split for the four panels adjacent to the US board.
+
+    Pure in `vm`: returns the overrides the stocks-mode render call should be
+    given, never mutating the shared view-model (`top_setups`, `action_board`
+    and `theme_tape` are all read again by other page renders).
+
+    Returns (overrides, pgate, locked):
+      overrides — {} today. The three sliced row lists are derived INSIDE the
+                  template from `pgate`, because the shell's own empty-state
+                  branches and heading counts read the FULL lists and must keep
+                  reading them (docs/TIER_PREVIEW_PATTERN.md: "Empty-state
+                  branches read the sliced list"). Kept in the signature so a
+                  future panel that must be sliced builder-side has a home.
+      pgate     — the `pgate` dict the template reads, or None when nothing is
+                  withheld anywhere.
+      locked    — {"setups": [...], "leaders": [...], "ran": [...],
+                   "actnow": [{lane, rows, wrap}], "tape": bool} for the payload.
+    """
+    if not gated:
+        return {}, None, {}
+    preview = max(0, preview)
+    su = vm.get("us_standouts") or {}
+    ts = vm.get("top_setups") or {}
+    ab = vm.get("action_board") or {}
+    tape = vm.get("theme_tape")
+
+    pgate: dict = {"tier": "essential", "payload": US_PAYLOAD_URL, "preview": preview}
+    locked: dict = {}
+
+    # ── .topsetups — the residual fresh-trigger table. The template filters
+    # top_setups.buy against the carded board and caps at 10; that filter is
+    # display logic and stays there, so the builder only needs the CEILING to
+    # report an honest total. The exact residual set is re-derived in-template.
+    ts_buy = [r for r in (ts.get("buy") or []) if r.get("ticker")]
+    carded = {n.get("ticker") for n in (su.get("buy") or []) if n.get("ticker")}
+    eb = set(((su.get("earnings_blackout_note") or {}).get("tickers")) or [])
+    resid = [r for r in ts_buy if r["ticker"] not in eb and r["ticker"] not in carded][:_US_SETUPS_CAP]
+    shell_ts, locked_ts = _us_panel_split(resid, preview)
+    if locked_ts:
+        pgate["setups"] = {"preview": len(shell_ts), "locked": len(locked_ts), "total": len(resid)}
+        locked["setups"] = locked_ts
+
+    # ── .topsetups.leaders-strip — us_standouts.leaders, same 15-row display cap.
+    ldrs = list(su.get("leaders") or [])[:_US_LEADERS_CAP]
+    shell_ld, locked_ld = _us_panel_split(ldrs, preview)
+    if locked_ld:
+        pgate["leaders"] = {"preview": len(shell_ld), "locked": len(locked_ld), "total": len(ldrs)}
+        locked["leaders"] = locked_ld
+        # `lth_any` is a BOARD-level fact over the whole 15-row slice, so the
+        # shell's <th> and the payload's <td> agree on the column count.
+        locked["leaders_lth_any"] = any(
+            (r.get("theme") or {}).get("name") for r in ldrs)
+
+    # ── .pbr-l — the "recently fired" list. Only rendered on the priority path.
+    ran = list(su.get("ran") or []) if any(r.get("stage") for r in (su.get("buy") or [])) else []
+    shell_ran, locked_ran = _us_panel_split(ran, preview)
+    if locked_ran:
+        pgate["ran"] = {"preview": len(shell_ran), "locked": len(locked_ran), "total": len(ran)}
+        locked["ran"] = locked_ran
+
+    # ── #action-board — five lanes, each capped independently. Stand aside is one
+    # .actbody fed by hold+avoid, so its budget is spent on `hold` first exactly
+    # as the template slices it.
+    ab_locked: list[dict] = []
+    ab_total = 0
+    hold_shown = 0
+    for key, dest, wrap in _US_ACTNOW_LANES:
+        rows = list(ab.get(key) or [])
+        ab_total += len(rows)
+        if key == "avoid":
+            budget = max(0, preview - hold_shown)
+        else:
+            budget = preview
+        shell_rows, lane_locked = _us_panel_split(rows, budget)
+        if key == "hold":
+            hold_shown = len(shell_rows)
+        if lane_locked:
+            ab_locked.append({"lane": dest, "rows": lane_locked, "wrap": wrap})
+    if ab_locked:
+        n_locked = sum(len(L["rows"]) for L in ab_locked)
+        pgate["actnow"] = {"preview": preview, "locked": n_locked, "total": ab_total}
+        locked["actnow"] = ab_locked
+
+    # ── #theme-tape — the member lists. Nothing is sliced: a list is either the
+    # names or the count it already collapses to for anonymous readers today.
+    tape_n = _us_tape_locked_count(tape)
+    if tape_n:
+        pgate["tape"] = {"locked": tape_n}
+        locked["tape"] = True
+
+    # ── #plv-names — the prophet-live strip's ticker -> COMPANY NAME island. Not a
+    # panel: a label lookup. But it is built from watch u buy u leaders u laggards,
+    # so on a gated build it re-published by name every leader the strip above had
+    # just withheld (77 entries, measured anonymously on the live page 2026-08-17)
+    # and the two populations that have no panel here at all. The shell now emits
+    # only the tickers it renders; the remainder ships here and the hydration script
+    # merges it into the live lookup.
+    plv: dict = {}
+    shell_names = {r.get("ticker") for r in (su.get("leaders") or [])[:preview]}
+    for key in ("watch", "leaders", "laggards"):
+        for r in su.get(key) or []:
+            tk, nm = r.get("ticker"), r.get("name")
+            if tk and nm and tk not in shell_names:
+                plv[tk] = nm
+    if plv:
+        pgate["plv_names"] = {"locked": len(plv)}
+        locked["plv_names"] = plv
+
+    if len(pgate) <= 3:                       # tier/payload/preview only
+        return {}, None, {}
+    return {}, pgate, locked
+
+
+def _render_us_panel_payload(env: Environment, pgate: "dict | None", locked: dict,
+                             vm: dict) -> dict:
+    """Render the withheld panels into the `*_html` blocks that ride the board's
+    payload. Every block comes from the SAME template the shell renders, so the
+    hydrated page and a full server render cannot drift apart.
+
+    Never fatal: a panel whose render raises ships as an empty string and its
+    rows simply stay withheld, exactly as they are for a locked reader.
+    """
+    if not pgate:
+        return {}
+    out: dict = {}
+
+    def _render(key: str, template: str, **ctx) -> None:
+        try:
+            out[key] = env.get_template(template).render(**ctx)
+        except Exception as e:  # noqa: BLE001 — a panel must not abort the build
+            log.error("us_stocks: locked %s render failed (%s)", key, e)
+            out[key] = ""
+
+    if locked.get("setups"):
+        _render("setups_html", "_us_setups_rows.html.j2", rows=locked["setups"])
+    if locked.get("leaders"):
+        _render("leaders_html", "_us_leader_rows.html.j2", rows=locked["leaders"],
+                lth_any=locked.get("leaders_lth_any", False))
+    if locked.get("ran"):
+        _render("ran_html", "_us_ran_rows.html.j2", rows=locked["ran"])
+    if locked.get("actnow"):
+        _render("actnow_html", "_us_act_now_board.html.j2",
+                action_board=vm.get("action_board"), ab_locked=locked["actnow"],
+                shock_state=vm.get("shock_state"))
+    if locked.get("tape"):
+        _render("tape_html", "_theme_tape.html.j2",
+                theme_tape=vm.get("theme_tape"), tt_names_only=True)
+    if locked.get("plv_names"):
+        out["plv_names"] = locked["plv_names"]
+    return out
 
 
 def main() -> int:
@@ -6278,12 +6515,21 @@ def main() -> int:
     _us_gate_cfg = _us_board_gate_cfg()
     _us_shell_su, _us_gate, _us_locked = _split_us_board(
         vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+    # The four panels ADJACENT to the board (fresh triggers, market leaders,
+    # recently fired, act-now, theme tape) are fed by different artifacts, so the
+    # board's split never reached them — they ride the same payload as extra
+    # *_html blocks. Same rule: NEVER mutate the shared vm.
+    _us_pov, _us_pgate, _us_plocked = _split_us_panels(
+        vm, _us_gate_cfg["panel_preview_rows"], gated=_us_gate_cfg["panels"])
     _write_us_payload(env, site, _us_gate, locked_rows=_us_locked,
                        us_standouts=vm.get("us_standouts"),
-                       top_setups=vm.get("top_setups"), built=generated)
+                       top_setups=vm.get("top_setups"), built=generated,
+                       pgate=_us_pgate,
+                       panel_blocks=_render_us_panel_payload(env, _us_pgate, _us_plocked, vm))
     out_st = site / "us_stocks.html"
     write_page(out_st, env.get_template("dashboard.html.j2").render(
-        **{**vm, "us_standouts": _us_shell_su, "gate": _us_gate}, mode="stocks"))
+        **{**vm, **_us_pov, "us_standouts": _us_shell_su,
+           "gate": _us_gate, "pgate": _us_pgate}, mode="stocks"))
     _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
@@ -6684,13 +6930,22 @@ def main() -> int:
                 # silently reopen the leak on every one-build-lag refresh.
                 _us_shell_su2, _us_gate2, _us_locked2 = _split_us_board(
                     vm.get("us_standouts"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+                # Same for the adjacent panels: this pass replaced us_standouts,
+                # top_setups and theme_tape above, so re-split from THIS generation
+                # or the re-render bakes their full row sets back into the shell.
+                _us_pov2, _us_pgate2, _us_plocked2 = _split_us_panels(
+                    vm, _us_gate_cfg["panel_preview_rows"], gated=_us_gate_cfg["panels"])
                 _write_us_payload(env, site, _us_gate2, locked_rows=_us_locked2,
                                    us_standouts=vm.get("us_standouts"),
-                                   top_setups=vm.get("top_setups"), built=generated)
+                                   top_setups=vm.get("top_setups"), built=generated,
+                                   pgate=_us_pgate2,
+                                   panel_blocks=_render_us_panel_payload(
+                                       env, _us_pgate2, _us_plocked2, vm))
                 _dash = env.get_template("dashboard.html.j2")
                 write_page(site / "macro.html", _dash.render(**vm, mode="macro"))
                 write_page(site / "us_stocks.html", _dash.render(
-                    **{**vm, "us_standouts": _us_shell_su2, "gate": _us_gate2}, mode="stocks"))
+                    **{**vm, **_us_pov2, "us_standouts": _us_shell_su2,
+                       "gate": _us_gate2, "pgate": _us_pgate2}, mode="stocks"))
                 log.info(
                     "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
                     "(as_of %s -> %s, delayed %s -> %s)",

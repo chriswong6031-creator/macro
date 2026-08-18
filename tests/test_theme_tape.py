@@ -1391,8 +1391,22 @@ def test_the_group_reuses_the_row_idiom_rather_than_inventing_a_second_one():
     src = (TMPL / "_theme_tape.html.j2").read_text()
     group = src.split('<div class="tt-turn">')[1].split("{#- THE SHELF")[0]
     for shared in ("tt-i", "tt-s", "tt-row", "tt-det", "tt-g", "tt-gk",
-                   "tt-names", "tt-sym", "tt-quiet", "tt-c", "tt-v"):
+                   "tt-quiet", "tt-c", "tt-v"):
         assert shared in group, f"the turn row must reuse .{shared}"
+    # .tt-names / .tt-sym moved into the tt_slot/tt_mem/tt_quiet macros when the
+    # member lists gained a server-side tier gate (docs/TIER_PREVIEW_PATTERN.md),
+    # so "the SAME object" is now provable more directly than by class name: the
+    # turn row must reach its member lists through the very macros the heat row
+    # uses, and there must be no second inline copy of that markup anywhere.
+    heat = src.split("{#- THE WASHOUT-TURN GROUP")[0]
+    for macro in ("tt_slot(", "tt_mem(", "tt_quiet("):
+        assert macro in group, f"the turn row must reuse {macro})"
+        assert macro in heat, f"the heat row must reuse {macro})"
+    assert src.count('<span class="tt-names"') == 2, (
+        "tt-names must be emitted ONLY by tt_slot (its two gated/ungated arms) — "
+        "a third inline copy is the drift this test exists to catch")
+    assert src.count('class="tt-sym"') == 2, (
+        "tt-sym must be emitted ONLY by tt_mem and tt_quiet")
 
 
 def test_the_group_takes_no_state_ink():
