@@ -17,8 +17,9 @@ ambiguity: scoped
 waves:
   - id: RECON-0
     title: JV snapshot archaeology + source-system reconstruction freeze
-    status: in_progress
-    next_action: Open the research PR and wait for Sol review; on PASS, commission RECON-1 only.
+    status: awaiting_ci
+    pr: 5909
+    next_action: Sol reviews PR #5909; on PASS, commission RECON-1 only. Do not merge-on-green.
   - id: RECON-1
     title: Drugs@FDA approved-event reconstruction ledger (hermetic)
     status: todo
@@ -76,7 +77,7 @@ do_not_redo:
     Do not treat Market Memory W1A as a historical PIT price source for past catalysts.
   - >-
     Do not duplicate SEC ingest inside biocatalyst (direct_duplicate_sec_ingest).
-next_action: Sol review of the RECON-0 freeze PR; on PASS, commission RECON-1 per freeze §11.
+next_action: Sol review of PR #5909; on PASS, commission RECON-1 per freeze §11. Do not merge-on-green.
 artifacts:
   - research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
   - config/biocatalyst_sources.yml

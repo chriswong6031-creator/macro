@@ -34,6 +34,7 @@ changed:
     what: collectors.biocatalyst.openfda_regulatory does not exist on disk.
   - path: agentos/discoveries/DSC-BPC-W1A-CANNOT-BACKFILL-CATALYST-PIT.md
     what: W1A cannot supply PIT prices for past catalysts; dated OHLCV is non-W1A.
+prs: [5909]
 verified:
   - claim: "Authorized dump SHA256 values match freeze §1."
     command: "python3 hashlib.sha256 over /Users/chriswong/Downloads/New Folder With Items 26/{xlsx,four csvs}"
