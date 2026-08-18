@@ -1180,6 +1180,16 @@ def test_d11_p00032_recovers_award_snapshot_agency_without_changing_clocks_or_am
     assert amount["id"] == "federal_action_obligation"
     assert all(fact.get("id") != "total_obligated_amount" or fact.get("value") != 18_416_666.66 for fact in obligation["amounts"])
     assert "revenue" not in json.dumps(obligation["amounts"]).lower()
+    fallback = next(
+        item
+        for item in obligation["evidence"]["derivations"]
+        if item.get("method") == "award_snapshot_agency_fallback.v1"
+    )
+    assert fallback["ref_id"] == "award-receipt-001"
+    assert str(fallback["known_at"]).startswith("2026-08-12T23:50:04")
+    assert "temporal_rule:source_known_at<=action_known_at" in fallback["basis_refs"]
+    assert any(item.startswith("target_action_known_at:2026-08-12T23:50:04") for item in fallback["basis_refs"])
+    assert "snapshot is not this action's receipt" in fallback["detail"]
 
 
 def test_d11_second_agency_is_not_hardcoded_dod():
@@ -1188,3 +1198,189 @@ def test_d11_second_agency_is_not_hardcoded_dod():
     assert agency["department_name"] == "National Aeronautics and Space Administration"
     assert agency["department_name"] != "Department of Defense"
     assert "DISA" not in json.dumps(agency)
+
+
+def _action_event(events, action_id):
+    return next(
+        event
+        for event in events
+        if (event.get("award_change") or {}).get("action_id") == action_id
+    )
+
+
+def _fallback_derivation(event):
+    return next(
+        (
+            item
+            for item in event["evidence"]["derivations"]
+            if item.get("method") == "award_snapshot_agency_fallback.v1"
+        ),
+        None,
+    )
+
+
+def test_d11f_past_snapshot_is_legal_agency_fallback():
+    snapshots = [
+        _snapshot(
+            awarding_agency="Department of the Navy",
+            awarding_sub_agency="Naval Sea Systems Command",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id="snap-t0",
+            snapshot_content_sha256="1" * 64,
+        )
+    ]
+    actions = [
+        _action(
+            awarding_agency=None,
+            awarding_sub_agency=None,
+            known_at="2026-01-10T12:00:00Z",
+            action_id="ACT-PIT-PAST",
+            action_content_sha256="2" * 64,
+        )
+    ]
+    event = _action_event(_events(snapshots, actions), "ACT-PIT-PAST")
+    assert event["agency"]["department_name"] == "Department of the Navy"
+    assert event["agency"]["subagency_name"] == "Naval Sea Systems Command"
+    fallback = _fallback_derivation(event)
+    assert fallback is not None
+    assert fallback["ref_id"] == "snap-t0"
+    assert fallback["known_at"].startswith("2026-01-01T00:00:00")
+    assert "temporal_rule:source_known_at<=action_known_at" in fallback["basis_refs"]
+    assert any(item.startswith("snapshot:") for item in fallback["basis_refs"])
+
+
+def test_d11f_future_snapshot_cannot_fill_earlier_action_agency():
+    snapshots = [
+        _snapshot(
+            awarding_agency="Department of the Army",
+            known_at="2026-01-20T00:00:00Z",
+            source_receipt_id="snap-t2",
+            snapshot_content_sha256="3" * 64,
+        )
+    ]
+    actions = [
+        _action(
+            awarding_agency=None,
+            awarding_sub_agency=None,
+            known_at="2026-01-10T12:00:00Z",
+            action_id="ACT-PIT-FUTURE",
+            action_content_sha256="4" * 64,
+        )
+    ]
+    event = _action_event(_events(snapshots, actions, as_of="2026-03-31"), "ACT-PIT-FUTURE")
+    assert event["agency"]["department_name"] is None
+    assert event["agency"]["name"] is None
+    assert _fallback_derivation(event) is None
+
+
+def test_d11f_replay_keeps_t1_action_identity_and_payload_stable():
+    t0 = _snapshot(
+        awarding_agency="Department of the Navy",
+        known_at="2026-01-01T00:00:00Z",
+        source_receipt_id="snap-t0",
+        snapshot_content_sha256="5" * 64,
+    )
+    t2 = _snapshot(
+        awarding_agency="Department of the Army",
+        known_at="2026-01-20T00:00:00Z",
+        source_receipt_id="snap-t2",
+        snapshot_content_sha256="6" * 64,
+        current_award_amount=150.0,
+    )
+    action = _action(
+        awarding_agency=None,
+        awarding_sub_agency=None,
+        known_at="2026-01-10T12:00:00Z",
+        action_id="ACT-PIT-REPLAY",
+        action_content_sha256="7" * 64,
+    )
+    first = _action_event(_events([t0], [action], as_of="2026-03-31"), "ACT-PIT-REPLAY")
+    second = _action_event(_events([t0, t2], [action], as_of="2026-03-31"), "ACT-PIT-REPLAY")
+    assert first["event_id"] == second["event_id"]
+    assert first["agency"] == second["agency"]
+    assert first["agency"]["department_name"] == "Department of the Navy"
+    assert "Army" not in json.dumps(second["agency"])
+    assert first == second
+
+
+def test_d11f_unasserted_action_agency_is_not_source_truth():
+    snapshots = [
+        _snapshot(
+            awarding_agency="Department of Defense",
+            awarding_sub_agency="Defense Information Systems Agency",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id="snap-dod",
+            snapshot_content_sha256="8" * 64,
+        )
+    ]
+    actions = [
+        _action(
+            awarding_agency="Department of the Air Force",
+            awarding_sub_agency=None,
+            known_at="2026-01-10T12:00:00Z",
+            action_id="ACT-PIT-FALSE-DIRECT",
+            action_content_sha256="9" * 64,
+            source_field_presence={
+                "federal_action_obligation": True,
+                "action_id": True,
+                "action_date": True,
+            },
+        )
+    ]
+    event = _action_event(_events(snapshots, actions), "ACT-PIT-FALSE-DIRECT")
+    assert event["agency"]["department_name"] == "Department of Defense"
+    assert event["agency"]["subagency_name"] == "Defense Information Systems Agency"
+    assert "Air Force" not in json.dumps(event["agency"])
+    assert _fallback_derivation(event) is not None
+
+
+def test_d11f_same_clock_snapshots_select_deterministically_not_by_frame_order():
+    army = _snapshot(
+        awarding_agency="Department of the Army",
+        known_at="2026-01-01T00:00:00Z",
+        source_receipt_id="snap-army",
+        source_response_sha256="1" * 64,
+        snapshot_content_sha256="2" * 64,
+        event_state_sha256="a" * 64,
+    )
+    navy = _snapshot(
+        awarding_agency="Department of the Navy",
+        known_at="2026-01-01T00:00:00Z",
+        source_receipt_id="snap-navy",
+        source_response_sha256="3" * 64,
+        snapshot_content_sha256="4" * 64,
+        event_state_sha256="b" * 64,
+    )
+    action = _action(
+        awarding_agency=None,
+        awarding_sub_agency=None,
+        known_at="2026-01-10T12:00:00Z",
+        action_id="ACT-PIT-TIE",
+        action_content_sha256="5" * 64,
+    )
+    forward = _action_event(_events([army, navy], [action]), "ACT-PIT-TIE")
+    reverse = _action_event(_events([navy, army], [action]), "ACT-PIT-TIE")
+    assert forward["agency"]["department_name"] == reverse["agency"]["department_name"]
+    assert forward["agency"]["department_name"] == "Department of the Navy"
+    assert forward["event_id"] == reverse["event_id"]
+    assert _fallback_derivation(forward)["ref_id"] == "snap-navy"
+    assert _fallback_derivation(reverse)["ref_id"] == "snap-navy"
+
+
+def test_d11f_true_missing_action_agency_stays_unspecified():
+    event = _action_event(
+        _events(
+            actions=[
+                _action(
+                    awarding_agency=None,
+                    awarding_sub_agency=None,
+                    action_id="ACT-PIT-NULL",
+                    action_content_sha256="6" * 64,
+                )
+            ]
+        ),
+        "ACT-PIT-NULL",
+    )
+    assert event["agency"]["department_name"] is None
+    assert event["agency"]["name"] is None
+    assert _fallback_derivation(event) is None

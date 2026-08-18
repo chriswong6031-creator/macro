@@ -45,6 +45,7 @@ affects:
   - templates/government_revenue.html.j2
 confidence: high
 reversibility: easy
+superseded_by: DEC:D11F-PIT-SAFE-AGENCY-FALLBACK
 decided_by: session-d1-1-agency-semantic
 decided_at: 2026-08-17
 ---

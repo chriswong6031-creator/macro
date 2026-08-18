@@ -48,9 +48,9 @@ waves:
     status: in_progress
     depends_on: [D1]
     next_action: >
-      Merge the D1.1 projector canonicalize PR, wait for government-revenue-live
-      to rebuild workspace.json, prove entitled agency labels, then stop.
-      Do not start D2. Do not merge #5424.
+      Finish PR #5856 D1.1F (PIT-safe snapshot fallback) on current main,
+      merge, wait for government-revenue-live, prove entitled agency labels,
+      then stop. Do not start D2. Do not merge #5424.
   - id: D2
     title: Defense Identity Atlas vertical slice
     status: todo
@@ -92,6 +92,7 @@ do_not_redo:
 decisions:
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
   - DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT
+  - DEC:D11F-PIT-SAFE-AGENCY-FALLBACK
 discoveries:
   - DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT
   - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
@@ -101,7 +102,7 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Merge D1.1, wait for government-revenue-live to rebuild workspace.json,
+  Merge #5856 D1.1F after current-main CI, wait for government-revenue-live,
   prove entitled agency labels, then stop. Do not start Atlas/D2.
   Do not merge #5424.
 ---
@@ -111,11 +112,10 @@ next_action: >
 V3 architecture and the D0R handoff merged in #5803 (`455284b7beae`). D0R
 closed on #5819 (`0d10acdd`) and was accepted; Gate 5 stays honest-labeled
 (6 VERIFIED_CASE + 61 RESEARCH_CANDIDATE) and is not alpha validation.
-D1 entitled-desk rescue merged as #5836. D1.1 is the authorized agency
-semantic recovery: projector canonicalize plus award-snapshot inherit for
-action rows that omitted awarding_agency. Canonical D1 contract:
+D1 entitled-desk rescue merged as #5836. D1.1 recovers agency labels at the
+projector; D1.1F replaces latest-snapshot inherit with PIT-qualified
+snapshot fallback (`DEC:D11F-PIT-SAFE-AGENCY-FALLBACK`). Canonical D1 contract:
 `research/defense_intelligence/DEFENSE_D1_PRODUCTION_TRUTH_AND_PRODUCT_RESCUE_HANDOFF.md`.
-D1.1 decision: `DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT`.
 D2 stays unauthorized until D1.1 is live-proven.
 D1 is not accepted until #5885, #5882, and #5856 are on main and a new
 generation is actually served. Recovery generation currently served: bundle

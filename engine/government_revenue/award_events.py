@@ -1385,6 +1385,13 @@ _AGENCY_LABEL_FIELDS: tuple[str, ...] = (
     "name",
     "subagency",
 )
+_AWARDING_AGENCY_FIELDS: tuple[str, ...] = ("awarding_agency", "agency_name", "agency")
+_AWARDING_SUBAGENCY_FIELDS: tuple[str, ...] = (
+    "awarding_sub_agency",
+    "subagency_name",
+    "awarding_subagency",
+)
+_SNAPSHOT_AGENCY_FALLBACK_METHOD = "award_snapshot_agency_fallback.v1"
 _BLANK_AGENCY_TOKENS = frozenset({"none", "nan", "nat", "null"})
 
 
@@ -1520,6 +1527,24 @@ def _extract_agency_blob(value: Any) -> dict[str, Any]:
     return agency
 
 
+def _asserted_source_value(row: Mapping[str, Any], names: Sequence[str]) -> Any:
+    """Return the first alias the source actually asserted, not a carried cell."""
+
+    for name in names:
+        if _field_is_asserted_present(row, name, source_asserted=True):
+            return row.get(name)
+    return None
+
+
+def _direct_awarding_agency(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonicalize awarding agency only from source-asserted action/snapshot fields."""
+
+    return canonicalize_agency(
+        _asserted_source_value(row, _AWARDING_AGENCY_FIELDS),
+        _asserted_source_value(row, _AWARDING_SUBAGENCY_FIELDS),
+    )
+
+
 def canonicalize_agency(awarding: Any, subagency: Any = None) -> dict[str, Any]:
     """Emit the contract agency object from source cells. Never invent a body."""
 
@@ -1559,40 +1584,115 @@ def agency_display_label(agency: Mapping[str, Any] | None) -> str | None:
     return None
 
 
-def _agency(
-    row: Mapping[str, Any],
-    *,
-    fallback: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
-    agency = canonicalize_agency(
-        _first(row, ("awarding_agency", "agency_name", "agency")),
-        _first(row, ("awarding_sub_agency", "subagency_name", "awarding_subagency")),
-    )
-    if agency_display_label(agency) is not None:
-        return agency
-    if isinstance(fallback, Mapping) and agency_display_label(fallback) is not None:
-        return {field: fallback.get(field) for field in _CANONICAL_AGENCY_FIELDS}
-    return agency
+def _copy_agency(agency: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(agency, Mapping):
+        return _blank_agency()
+    return {field: agency.get(field) for field in _CANONICAL_AGENCY_FIELDS}
 
 
-def _snapshot_agency_index(snapshots: pd.DataFrame) -> dict[str, dict[str, Any]]:
-    """Latest award-snapshot agency by award identity, when the snapshot has one.
+def _snapshot_agency_candidates(
+    snapshots: pd.DataFrame,
+) -> dict[str, list[dict[str, Any]]]:
+    """Collect PIT-eligible awarding-agency snapshot evidence by award identity.
 
-    Action observations often omit awarding agency (the transactions payload
-    does not assert it).  The official award snapshot for the same award_key
-    remains source evidence for that award's awarding body.  Funding agency is
-    ignored.
+    Action observations often omit awarding agency.  A same-award snapshot may
+    supply the awarding body only when that snapshot was already known at the
+    action's own known_at.  Funding agency is ignored.  Candidates are not
+    chosen here; selection is per-action and must not use dataframe order.
     """
 
-    index: dict[str, dict[str, Any]] = {}
+    by_award: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for observation in _consolidate(snapshots, mode="snapshot"):
-        agency = _agency(observation)
+        agency = _direct_awarding_agency(observation)
         if agency_display_label(agency) is None:
             continue
         identity = _text(observation.get("_award_identity"))
-        if identity:
-            index[identity] = agency
-    return index
+        known_at = _known_at(observation)
+        if not identity or not known_at:
+            continue
+        receipt = _receipt(observation, mode="snapshot") or {}
+        version = _text(observation.get("_source_state_hash"))
+        content = _text(
+            _first(
+                observation,
+                (
+                    "source_response_sha256",
+                    "snapshot_content_sha256",
+                    "award_state_sha256",
+                    "content_sha256",
+                ),
+            )
+        )
+        by_award[identity].append(
+            {
+                "agency": _copy_agency(agency),
+                "known_at": known_at,
+                "version": version,
+                "source_identity": content or version or identity,
+                "receipt_ref": _text(receipt.get("ref_id")) or None,
+                "snapshot_identity": identity,
+            }
+        )
+    return by_award
+
+
+def _select_pit_snapshot_agency(
+    candidates: Sequence[Mapping[str, Any]] | None,
+    action_known_at: str | None,
+) -> dict[str, Any] | None:
+    """Latest same-award snapshot whose known_at is already visible to the action."""
+
+    action_ts = timestamp(action_known_at)
+    if action_ts is None or not candidates:
+        return None
+    eligible = [
+        dict(candidate)
+        for candidate in candidates
+        if timestamp(candidate.get("known_at")) is not None
+        and timestamp(candidate.get("known_at")) <= action_ts
+        and agency_display_label(candidate.get("agency")) is not None
+    ]
+    if not eligible:
+        return None
+    eligible.sort(key=lambda item: str(item.get("source_identity") or ""))
+    eligible.sort(
+        key=lambda item: (timestamp(item.get("known_at")), str(item.get("version") or "")),
+        reverse=True,
+    )
+    return eligible[0]
+
+
+def _snapshot_agency_fallback_derivation(
+    candidate: Mapping[str, Any],
+    *,
+    action_known_at: str | None,
+) -> dict[str, Any]:
+    """Record that the action's agency came from a PIT-qualified snapshot, not itself."""
+
+    snapshot_identity = _text(candidate.get("snapshot_identity"))
+    version = _text(candidate.get("version"))
+    receipt_ref = _text(candidate.get("receipt_ref"))
+    source_known_at = _text(candidate.get("known_at"))
+    basis_refs = [
+        f"snapshot:{snapshot_identity}:{version}" if snapshot_identity else None,
+        f"receipt:{receipt_ref}" if receipt_ref else None,
+        f"source_known_at:{source_known_at}" if source_known_at else None,
+        f"target_action_known_at:{action_known_at}" if action_known_at else None,
+        "temporal_rule:source_known_at<=action_known_at",
+    ]
+    return {
+        "method": _SNAPSHOT_AGENCY_FALLBACK_METHOD,
+        "formula_version": _SNAPSHOT_AGENCY_FALLBACK_METHOD,
+        "classification": "pit_qualified_award_snapshot",
+        "ref_id": receipt_ref or None,
+        "known_at": source_known_at or None,
+        "basis_refs": [item for item in basis_refs if item],
+        "detail": (
+            "Awarding agency inherited from a same-award snapshot observed at "
+            "or before this action's known_at. The snapshot is not this action's "
+            "receipt."
+        ),
+    }
 
 
 def _title(event_type: str, row: Mapping[str, Any]) -> str:
@@ -1761,6 +1861,35 @@ def _make_event(
     if mode == "action":
         award_change["text_annotations"] = _action_text_annotations(row)
     mapping_class = "reviewed" if impacts else "unmapped"
+    direct_agency = _direct_awarding_agency(row)
+    fallback_candidate = (
+        award_agency_fallback
+        if (
+            mode == "action"
+            and agency_display_label(direct_agency) is None
+            and isinstance(award_agency_fallback, Mapping)
+            and agency_display_label(award_agency_fallback.get("agency")) is not None
+        )
+        else None
+    )
+    agency = (
+        _copy_agency(fallback_candidate["agency"])
+        if fallback_candidate is not None
+        else direct_agency
+    )
+    derivations = [
+        {
+            "method": "strict_dual_clock_before_after.v1",
+            "detail": "Event emitted only from explicitly eligible, receipt-bound observations visible under both clocks.",
+        }
+    ]
+    if fallback_candidate is not None:
+        derivations.append(
+            _snapshot_agency_fallback_derivation(
+                fallback_candidate,
+                action_known_at=known_at,
+            )
+        )
     return {
         "contract": "government_procurement_event.v2",
         "event_id": event_id,
@@ -1771,7 +1900,7 @@ def _make_event(
         "title_original": _title(event_type, row),
         "title_zh": None,
         "translation_status": "original",
-        "agency": _agency(row, fallback=award_agency_fallback),
+        "agency": agency,
         "change": {
             "type": event_type,
             "what_changed_en": _title(event_type, row),
@@ -1798,12 +1927,7 @@ def _make_event(
             "source_class": "observed_source_revision" if is_correction else "official_fact",
             "mapping_class": mapping_class,
             "receipts": _all_receipts(receipt, prior_receipt),
-            "derivations": [
-                {
-                    "method": "strict_dual_clock_before_after.v1",
-                    "detail": "Event emitted only from explicitly eligible, receipt-bound observations visible under both clocks.",
-                }
-            ],
+            "derivations": derivations,
             "conflicts": semantic_conflicts,
             "limitations": [
                 "Display-only context; cannot rank, size, gate, originate, or escalate a signal.",
@@ -1944,7 +2068,7 @@ def _project_actions(
     *,
     company_index: Mapping[str, Mapping[str, Any]],
     late_discovery_days: int,
-    snapshot_agencies: Mapping[str, Mapping[str, Any]] | None = None,
+    snapshot_agencies: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
 ) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     agencies = snapshot_agencies or {}
@@ -1984,7 +2108,10 @@ def _project_actions(
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
                             is_late_discovery=late,
-                            award_agency_fallback=agencies.get(str(current.get("_award_identity") or "")),
+                            award_agency_fallback=_select_pit_snapshot_agency(
+                                agencies.get(str(current.get("_award_identity") or "")),
+                                _known_at(current),
+                            ),
                         )
                         if event:
                             events.append(event)
@@ -2025,7 +2152,10 @@ def _project_actions(
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
                             is_late_discovery=late,
-                            award_agency_fallback=agencies.get(str(current.get("_award_identity") or "")),
+                            award_agency_fallback=_select_pit_snapshot_agency(
+                                agencies.get(str(current.get("_award_identity") or "")),
+                                _known_at(current),
+                            ),
                         )
                         if event:
                             events.append(event)
@@ -2117,7 +2247,7 @@ def build_award_change_events(
     snapshots_visible = _bind_source_receipts(snapshots_visible, source_receipts, mode="snapshot")
     actions_visible = _bind_source_receipts(actions_visible, source_receipts, mode="action")
     company_index = _company_rows(companies)
-    snapshot_agencies = _snapshot_agency_index(snapshots_visible)
+    snapshot_agencies = _snapshot_agency_candidates(snapshots_visible)
     return _merge(
         [
             *_project_snapshots(
