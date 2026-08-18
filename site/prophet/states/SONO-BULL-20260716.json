@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "SONO-BULL-20260716",
-  "asof": "2026-08-17",
+  "asof": "2026-08-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 49.8,
-  "raw_confidence": 45.0,
-  "delta_vs_base": -10.2,
+  "management_confidence": 47.6,
+  "raw_confidence": 44.9,
+  "delta_vs_base": -12.4,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 10.3,
-    "pace": 10.4,
+    "pace": 9.8,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.122,
     "dist_to_t1_r": 1.378,
     "dist_to_t2_r": 2.878,
-    "horizon_pct_used": 68.9,
+    "horizon_pct_used": 71.1,
     "p1": 0.0812,
     "p2": 0.0406,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 31,
-  "tau": 0.6889
+  "days_elapsed": 32,
+  "tau": 0.7111
 }

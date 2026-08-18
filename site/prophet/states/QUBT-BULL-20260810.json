@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "QUBT-BULL-20260810",
-  "asof": "2026-08-17",
+  "asof": "2026-08-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 67.9,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 100.0,
     "progress": 5.5,
-    "pace": 99.5,
+    "pace": 96.7,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.052,
     "dist_to_t1_r": 1.448,
     "dist_to_t2_r": 2.948,
-    "horizon_pct_used": 11.1,
+    "horizon_pct_used": 13.3,
     "p1": 0.0349,
     "p2": 0.0175,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 5,
-  "tau": 0.1111
+  "days_elapsed": 6,
+  "tau": 0.1333
 }

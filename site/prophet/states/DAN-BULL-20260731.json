@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "DAN-BULL-20260731",
-  "asof": "2026-08-17",
+  "asof": "2026-08-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 73.0,
+  "management_confidence": 74.1,
   "raw_confidence": 75.3,
-  "delta_vs_base": 13.0,
+  "delta_vs_base": 14.1,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.68,
     "dist_to_t1_r": 0.82,
     "dist_to_t2_r": 2.32,
-    "horizon_pct_used": 22.2,
+    "horizon_pct_used": 24.4,
     "p1": 0.4533,
     "p2": 0.2266,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 10,
-  "tau": 0.2222
+  "days_elapsed": 11,
+  "tau": 0.2444
 }

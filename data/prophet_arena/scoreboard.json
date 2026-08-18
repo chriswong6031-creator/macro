@@ -1,6 +1,6 @@
 {
   "schema": "prophet_arena.scoreboard/v1",
-  "as_of": "2026-08-17",
+  "as_of": "2026-08-18",
   "tier": "display",
   "authority": {
     "tier": "display",
@@ -71,50 +71,8 @@
   "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
   "headline_min_closed": 20,
   "harness_validity": {
-    "c0_plan_ids": [
-      "ALM-BULL-20260810",
-      "CAR-BULL-20260817",
-      "CE-BULL-20260817",
-      "CIEN-BULL-20260810",
-      "CWEN-BULL-20260810",
-      "DIOD-BULL-20260813",
-      "FORM-BULL-20260813",
-      "GLXY-BULL-20260817",
-      "HAL-BULL-20260813",
-      "JBL-BULL-20260813",
-      "LBRT-BULL-20260813",
-      "LFUS-BULL-20260810",
-      "LUNR-BULL-20260813",
-      "MPWR-BULL-20260813",
-      "MTDR-BULL-20260810",
-      "MTSI-BULL-20260813",
-      "ORA-BULL-20260810",
-      "PPC-BULL-20260604",
-      "PWR-BULL-20260813",
-      "TGTX-BULL-20260611"
-    ],
-    "live_plan_ids": [
-      "ALM-BULL-20260810",
-      "CAR-BULL-20260817",
-      "CE-BULL-20260817",
-      "CIEN-BULL-20260810",
-      "CWEN-BULL-20260810",
-      "DIOD-BULL-20260813",
-      "FORM-BULL-20260813",
-      "GLXY-BULL-20260817",
-      "HAL-BULL-20260813",
-      "JBL-BULL-20260813",
-      "LBRT-BULL-20260813",
-      "LFUS-BULL-20260810",
-      "LUNR-BULL-20260813",
-      "MPWR-BULL-20260813",
-      "MTDR-BULL-20260810",
-      "MTSI-BULL-20260813",
-      "ORA-BULL-20260810",
-      "PPC-BULL-20260604",
-      "PWR-BULL-20260813",
-      "TGTX-BULL-20260611"
-    ],
+    "c0_plan_ids": [],
+    "live_plan_ids": [],
     "c0_mismatch_count": 0,
     "missing_from_mirror": [],
     "extra_in_mirror": [],
@@ -319,7 +277,7 @@
     }
   ],
   "tonight": {
-    "asof": "2026-08-17",
+    "asof": "2026-08-18",
     "standouts_as_of": "2026-08-17",
     "price_through": "2026-08-17",
     "source_delayed": false,
@@ -330,7 +288,7 @@
     "dispersion": {
       "mode": "lean_in",
       "state": "lean_in",
-      "artifact_as_of": "2026-08-17",
+      "artifact_as_of": "2026-08-18",
       "stale_sessions": 0,
       "cap": 12,
       "path": "data/dispersion/regime.json"
@@ -361,7 +319,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 20.0
+        "runtime_s": 27.3
       }
     },
     "policies": {
@@ -380,6 +338,7 @@
           "JBL",
           "NVT",
           "CAVA",
+          "HTLD",
           "PWR",
           "ALM",
           "FORM",
@@ -412,53 +371,35 @@
           "IONQ",
           "NNE"
         ],
-        "plan_ids": [
-          "ALM-BULL-20260810",
-          "CAR-BULL-20260817",
-          "CE-BULL-20260817",
-          "CIEN-BULL-20260810",
-          "CWEN-BULL-20260810",
-          "DIOD-BULL-20260813",
-          "FORM-BULL-20260813",
-          "GLXY-BULL-20260817",
-          "HAL-BULL-20260813",
-          "JBL-BULL-20260813",
-          "LBRT-BULL-20260813",
-          "LFUS-BULL-20260810",
-          "LUNR-BULL-20260813",
-          "MPWR-BULL-20260813",
-          "MTDR-BULL-20260810",
-          "MTSI-BULL-20260813",
-          "ORA-BULL-20260810",
-          "PPC-BULL-20260604",
-          "PWR-BULL-20260813",
-          "TGTX-BULL-20260611"
-        ],
-        "n_plans": 20,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "lossless live champion mirror",
           "truncated": 0
         },
         "origination": {
-          "offered": 44,
-          "skipped_duplicate_id": 20,
+          "offered": 45,
+          "skipped_duplicate_id": 40,
           "skipped_open_plan": 2,
-          "skipped_clock_provenance": 2,
+          "skipped_clock_provenance": 3,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -467,14 +408,23 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
+              ]
+            },
+            {
+              "ticker": "HTLD",
+              "id": "HTLD-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
               ]
             }
           ],
-          "originated": 20,
-          "validation_failed": 2
+          "originated": 0,
+          "validation_failed": 3
         },
-        "ledger_rows_appended": 20,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C1_buy_soon_first": {
@@ -492,13 +442,10 @@
           "JBL",
           "NVT"
         ],
-        "plan_ids": [
-          "JBL-BULL-20260813",
-          "LFUS-BULL-20260810"
-        ],
-        "n_plans": 2,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": 12,
           "cap_applied": true,
           "act_level_2": 0,
@@ -506,21 +453,24 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 9,
           "skipped_open_plan": 1,
           "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -529,14 +479,15 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             }
           ],
-          "originated": 2,
+          "originated": 0,
           "validation_failed": 2
         },
-        "ledger_rows_appended": 2,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C3_door_w_union": {
@@ -554,16 +505,10 @@
           "KGC",
           "AEM"
         ],
-        "plan_ids": [
-          "AEM-BULL-20260817",
-          "AGI-BULL-20260817",
-          "KGC-BULL-20260817",
-          "LFUS-BULL-20260810",
-          "UUUU-BULL-20260817"
-        ],
-        "n_plans": 5,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": 12,
           "cap_applied": true,
           "door_w_offered": 45,
@@ -574,21 +519,24 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 5,
+          "skipped_duplicate_id": 6,
           "skipped_open_plan": 0,
-          "skipped_clock_provenance": 2,
+          "skipped_clock_provenance": 6,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -597,14 +545,47 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
+              ]
+            },
+            {
+              "ticker": "AGI",
+              "id": "AGI-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "KGC",
+              "id": "KGC-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "AEM",
+              "id": "AEM-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
               ]
             }
           ],
-          "originated": 5,
-          "validation_failed": 2
+          "originated": 0,
+          "validation_failed": 6
         },
-        "ledger_rows_appended": 5,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C4_dispersion_cap": {
@@ -622,33 +603,33 @@
           "JBL",
           "NVT"
         ],
-        "plan_ids": [
-          "JBL-BULL-20260813",
-          "LFUS-BULL-20260810"
-        ],
-        "n_plans": 2,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": 12,
           "cap_applied": true
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 9,
           "skipped_open_plan": 1,
           "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -657,14 +638,15 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             }
           ],
-          "originated": 2,
+          "originated": 0,
           "validation_failed": 2
         },
-        "ledger_rows_appended": 2,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C5_align2_gate": {
@@ -672,35 +654,38 @@
           "BNY",
           "TMUS",
           "UCB",
-          "CVCO"
+          "CVCO",
+          "NNE"
         ],
         "plan_ids": [],
         "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": 12,
           "cap_applied": true,
           "align_gate": {
-            "admitted": 4,
+            "admitted": 5,
             "admitted_via_fallback": 2,
             "excluded_misaligned": 36,
             "excluded_unreadable": 4,
             "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
           },
-          "passed_gate": 4,
+          "passed_gate": 5,
           "excluded": 40
         },
         "origination": {
-          "offered": 4,
-          "skipped_duplicate_id": 4,
+          "offered": 5,
+          "skipped_duplicate_id": 5,
           "skipped_open_plan": 0,
           "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [],
           "originated": 0,
           "validation_failed": 0
@@ -723,6 +708,7 @@
           "JBL",
           "NVT",
           "CAVA",
+          "HTLD",
           "PWR",
           "ALM",
           "FORM",
@@ -755,53 +741,35 @@
           "IONQ",
           "NNE"
         ],
-        "plan_ids": [
-          "ALM-BULL-20260810",
-          "CAR-BULL-20260817",
-          "CE-BULL-20260817",
-          "CIEN-BULL-20260810",
-          "CWEN-BULL-20260810",
-          "DIOD-BULL-20260813",
-          "FORM-BULL-20260813",
-          "GLXY-BULL-20260817",
-          "HAL-BULL-20260813",
-          "JBL-BULL-20260813",
-          "LBRT-BULL-20260813",
-          "LFUS-BULL-20260810",
-          "LUNR-BULL-20260813",
-          "MPWR-BULL-20260813",
-          "MTDR-BULL-20260810",
-          "MTSI-BULL-20260813",
-          "ORA-BULL-20260810",
-          "PPC-BULL-20260604",
-          "PWR-BULL-20260813",
-          "TGTX-BULL-20260611"
-        ],
-        "n_plans": 20,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "identical to lossless C0 by construction",
           "truncated": 0
         },
         "origination": {
-          "offered": 44,
-          "skipped_duplicate_id": 20,
+          "offered": 45,
+          "skipped_duplicate_id": 40,
           "skipped_open_plan": 2,
-          "skipped_clock_provenance": 2,
+          "skipped_clock_provenance": 3,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -810,14 +778,23 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
+              ]
+            },
+            {
+              "ticker": "HTLD",
+              "id": "HTLD-BULL-20260817",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
               ]
             }
           ],
-          "originated": 20,
-          "validation_failed": 2
+          "originated": 0,
+          "validation_failed": 3
         },
-        "ledger_rows_appended": 20,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C7_buy_soon_admitted": {
@@ -835,17 +812,13 @@
           "TMUS",
           "CELH"
         ],
-        "plan_ids": [
-          "KMI-BULL-20260813",
-          "LFUS-BULL-20260810",
-          "OKE-BULL-20260813"
-        ],
-        "n_plans": 3,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 44,
+          "admitted": 45,
           "cap": 12,
           "cap_applied": true,
-          "admitted_with_widening": 47,
+          "admitted_with_widening": 48,
           "buy_soon_in_board": 3,
           "buy_soon_admitted_by_widening": 3,
           "buy_soon_selected": 3,
@@ -853,21 +826,32 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 0,
-          "skipped_clock_provenance": 2,
+          "skipped_clock_provenance": 4,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-17",
+          "recorded_at": "2026-08-18",
           "price_basis_date": "2026-08-17",
-          "clock_errors": [],
+          "clock_errors": [
+            "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+          ],
           "validation_failures": [
+            {
+              "ticker": "OKE",
+              "id": "OKE-BULL-20260813",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
+              ]
+            },
             {
               "ticker": "SM",
               "id": "SM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
               ]
             },
@@ -876,14 +860,23 @@
               "id": "VNOM-BULL-20260817",
               "stage": "clock_provenance",
               "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans",
                 "formation_date '2026-08-17' postdates tier_event_date '2026-08-11'"
+              ]
+            },
+            {
+              "ticker": "KMI",
+              "id": "KMI-BULL-20260813",
+              "stage": "clock_provenance",
+              "errors": [
+                "price_basis_date '2026-08-17' is not the last completed NYSE session for recorded_at '2026-08-18' (2026-08-18); stale boards cannot originate plans"
               ]
             }
           ],
-          "originated": 3,
-          "validation_failed": 2
+          "originated": 0,
+          "validation_failed": 4
         },
-        "ledger_rows_appended": 3,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       }
     }
