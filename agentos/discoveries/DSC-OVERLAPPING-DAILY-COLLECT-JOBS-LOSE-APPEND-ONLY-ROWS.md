@@ -50,7 +50,10 @@ so_what: >
   and the later run wins WHOLESALE, silently. `.gitattributes` already solves this class 24
   times (20 `merge=union` + 4 `-merge`) but carries NO entry for `data/government_revenue/` —
   and `merge=union` is DECLINED there, not merely missing: see the detail section, the
-  ledger's byte-prefix hash binding makes it actively wrong.
+  ledger's byte-prefix hash binding makes it actively wrong. That base-freshness check is
+  now SHIPPED as `scripts/ci/append_only_base_fence.py` + `config/append_only_artifacts.json`,
+  called from every publishing lane's retry loop via `push_append_only_fence`
+  (DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE, PR #5885).
   Fourth: do NOT wait
   this class of red out. Measured — the projection lane returns `status: ok`,
   `append_count: 0` against the corrupted tree because it reads the committed
@@ -315,3 +318,41 @@ stranded. Run A's 376 collection receipts are gone. `collection_receipts.jsonl` 
 is not a prefix-extension of its own predecessor. None of that is repairable by a
 session and none of it is what the failing test is reporting; the test is reporting the
 26 replacements, and issuing those forward is the correct disposition.
+
+## Update 2026-08-18 — measured again by the fence, and it is wider and older
+
+Building the base-freshness fence produced two corrections to the record above, both from
+running the fence's verdicts over real history rather than over the two artifacts the
+first pass happened to diff.
+
+**The blast radius was five artifacts, not two.** 59ccb9c774c8 -> 93ab221b81dd, per
+member:
+
+| artifact | dropped |
+|---|---|
+| `collection_receipts.jsonl` | 376 lines |
+| `subaward_collection_receipts.jsonl` | 192 lines |
+| `idv_collection_receipts.jsonl` | 26 lines |
+| `award_event_snapshots.parquet` | 16 of 210 identities |
+| `award_action_versions.parquet` | 18 of 35257 identities |
+
+`award_action_versions.parquet` had not been named anywhere. It is the second half of the
+generation the projection state binds by hash, so its 18 re-stamped rows are part of the
+same entanglement, not a separate defect.
+
+**It had happened before.** 2026-08-07, 1fc6d1181e4c -> 08ad4d836d6a: `collection_receipts.jsonl`
+720 -> 720 lines with **360 receipt ids dropped and 360 substituted** — the two halves
+swapped wholesale, identical byte count, no growth — plus 192 subaward and 26 idv receipts.
+Nothing noticed, because that night's swap did not happen to move a `candidate_id` that
+anything downstream had already issued against. The 2026-08-18 event is therefore not a
+freak: it is the first time this class of loss happened to be LOUD. Two occurrences in
+sixteen transitions of these files.
+
+Control, for the falsifier: c52b647d499f -> 59ccb9c774c8, a legitimate nightly transition,
+is clean on all eight registered members (194 -> 210 event identities, 35239 -> 35257
+action identities, receipts strictly extended). The check does not fire on ordinary
+growth.
+
+Reproduction of both, and of the fenced counterfactual, is in
+`tests/test_append_only_base_fence.py`; the verdicts above are reproducible with
+`python -m scripts.ci.append_only_base_fence --check-only --onto <base> --head <head>`.
