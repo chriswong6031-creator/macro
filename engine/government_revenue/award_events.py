@@ -1404,7 +1404,28 @@ def _event_id(
     event_type: str,
     changed_fields: Sequence[Mapping[str, Any]],
 ) -> str:
-    # known_at is deliberate: A -> B -> A emits three distinct immutable events.
+    # known_at is deliberate, but NOT for the reason this comment used to give.
+    # It said "A -> B -> A emits three distinct immutable events", which is true
+    # and ALREADY true without the fold: those three seeds differ in state_hash
+    # (h(A), h(B), h(A)) and in changed_fields direction, and the first
+    # observation passes before=None where the reversion passes before=B.
+    # Verifying that claim therefore suggests the fold is removable. It is not.
+    #
+    # The property actually protected is repeated-transition distinctness at
+    # PERIOD >= 2. For A -> B -> A -> B the two (A -> B) events share award_key,
+    # source_rail, state_hash = h(B), event_type AND changed_fields
+    # [{field, before: A, after: B}] — every non-clock seed component. Without
+    # known_at they collide into one event_id and _merge (below) folds the later
+    # occurrence into the earlier as a duplicate, DELETING a real transition.
+    #
+    # Substitutes that do not work, so nobody re-proposes them: state_hash is a
+    # pure content hash (SNAPSHOT_STATE_FIELDS / ACTION_STATE_FIELDS carry no
+    # clock); first_seen_at is constant per key; prior_source_identity (computed
+    # at the payload below) equals h(changed_fields.before), so both (A -> B)
+    # events carry h(A) and it adds zero discriminating power. The only
+    # content-derived alternative is a per-transition occurrence ordinal or an
+    # event hash chain — see DEC:GOVREV-EVENT-IDENTITY-KEEPS-THE-KNOWN-AT-FOLD
+    # for why that is more fragile until the push-path lost update is fixed.
     seed = {
         "award_key": award_key,
         "source_rail": source_rail,
