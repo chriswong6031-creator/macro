@@ -225,6 +225,34 @@ def test_candidates_store_missing_with_board_present_alarms(tmp_path, _captured_
     assert len(_captured_push) == 1
 
 
+def test_candidates_freshness_survives_a_torn_line_mid_file(tmp_path, _captured_push, capsys):
+    """Build commission F7: a torn line mid-file must not abort the max-scan. The
+    TRUE newest as_of can sit AFTER a torn line (a PIT-replay absorb can land a row
+    out of order — see scripts/prophet_pit_replay.py), so the old shared
+    try/except-around-the-whole-loop silently truncated the scan to whatever had
+    been seen before the torn line, exactly the shape this fixture reproduces."""
+    pytest.importorskip("pandas")
+    board = tmp_path / "data" / "us_board_ledger" / "snapshots.jsonl"
+    board.parent.mkdir(parents=True, exist_ok=True)
+    board.write_text(
+        json.dumps({"as_of": "2026-08-14", "buy": []}) + "\n"
+        + "{not valid json\n"
+        + json.dumps({"as_of": "2026-08-17", "buy": []}) + "\n"
+    )
+    pd = pytest.importorskip("pandas")
+    store = tmp_path / "data" / "us_prophet_rank" / "candidates"
+    store.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"stamp_date": ["2026-08-10"], "ticker": ["T"]}).to_parquet(
+        store / "2026-08.parquet", index=False)
+
+    gap = sentinel.check_candidates_freshness(tmp_path)
+    out = capsys.readouterr().out
+    assert "board as_of=2026-08-17" in out, (
+        "the true newest as_of (past the torn line) must be found, not the one "
+        f"seen before it (2026-08-14). gap={gap!r} out={out!r}"
+    )
+
+
 def test_candidates_check_skips_quietly_without_a_board(tmp_path, _captured_push, capsys):
     """Thin/sparse checkouts have no board — nothing to compare, no noise."""
     assert sentinel.check_candidates_freshness(tmp_path) is None

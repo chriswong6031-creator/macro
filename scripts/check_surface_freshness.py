@@ -142,16 +142,39 @@ def check_candidates_freshness(root: Path, now: datetime | None = None) -> int |
         return None   # thin/sparse checkout, or no board yet — nothing to compare
     board_as_of: date | None = None
     try:
-        for line in board_path.read_text(encoding="utf-8").splitlines()[::-1]:
-            line = line.strip()
-            if not line:
-                continue
-            val = json.loads(line).get("as_of")
-            if val:
-                board_as_of = date.fromisoformat(str(val))
-                break
+        raw_lines = board_path.read_text(encoding="utf-8").splitlines()
     except Exception as e:  # noqa: BLE001 — an unreadable ledger is another sentinel's subject
         log.debug("candidates freshness: board ledger unreadable (%s)", e)
+        raw_lines = []
+    # MAX over every parsed line, not the first line found scanning in reverse.
+    # scripts/prophet_pit_replay.py (research/PROPHET_PIT_REPLAY_HARNESS_V1.md) can
+    # absorb a replayed session's row OUT OF ORDER — appended after a newer session
+    # has already snapshotted live — so "last line in the file" is no longer a synonym
+    # for "newest as_of"; only the max over all rows is. This reads the whole file
+    # rather than stopping at the first parseable line, which costs one full pass
+    # instead of a partial reverse scan but is the only answer that stays correct once
+    # the file's append order is no longer monotonic.
+    #
+    # Build commission F7: each line is parsed under its OWN try/except-continue —
+    # previously the whole loop shared one try/except around the file read, so a
+    # single torn line mid-file raised OUT of the loop and silently truncated the
+    # max-scan to whatever had been seen before that line, exactly the "no longer a
+    # synonym" case this comment already warns about (a later, genuinely newer line
+    # could sit past the torn one and never get scanned).
+    for line in raw_lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            val = json.loads(line).get("as_of")
+            if not val:
+                continue
+            parsed = date.fromisoformat(str(val))
+        except Exception as e:  # noqa: BLE001 — one torn line must not abort the scan
+            log.debug("candidates freshness: skipping unreadable board-ledger line (%s)", e)
+            continue
+        if board_as_of is None or parsed > board_as_of:
+            board_as_of = parsed
     if board_as_of is None:
         return None
 
