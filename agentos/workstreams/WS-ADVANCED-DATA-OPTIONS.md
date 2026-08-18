@@ -21,6 +21,7 @@ waves:
   - id: AD-1P0
     title: Semantic-authority freeze (v1.2) before implementation
     status: awaiting_ci
+    pr: 5860
     depends_on: [AD-0]
     next_action: Sol reviews the AD-1P0 amendment PR; on PASS the next decision is AD-1 GO.
   - id: AD-1
