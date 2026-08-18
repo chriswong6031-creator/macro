@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-18T04:09:33.282383+00:00",
+  "generated_utc": "2026-08-18T05:42:25.525003+00:00",
   "as_of": "2026-08-18",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -288,7 +288,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -307,7 +307,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -326,7 +326,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -345,7 +345,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -364,7 +364,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -383,7 +383,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -402,7 +402,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -421,7 +421,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "John Boozman",
@@ -440,7 +440,7 @@
           "ExcessReturn": null,
           "PriceChange": null,
           "SPYChange": null,
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -459,7 +459,7 @@
           "ExcessReturn": "-6.12196808740699",
           "PriceChange": "-1.94472876151485",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -478,7 +478,7 @@
           "ExcessReturn": "-1.61684529884186",
           "PriceChange": "2.56039402705027",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -497,7 +497,7 @@
           "ExcessReturn": "-1.79401019753612",
           "PriceChange": "2.38322912835602",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -516,7 +516,7 @@
           "ExcessReturn": "-5.26128045240087",
           "PriceChange": "-1.08404112650873",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Michael Patrick Guest",
@@ -535,7 +535,7 @@
           "ExcessReturn": "14.0633669875014",
           "PriceChange": "17.7766430811875",
           "SPYChange": "3.71327609368611",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -554,7 +554,7 @@
           "ExcessReturn": "-5.57524217895917",
           "PriceChange": "-1.39800285306703",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -573,7 +573,7 @@
           "ExcessReturn": "0.329909618336632",
           "PriceChange": "4.50714894422877",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -592,7 +592,7 @@
           "ExcessReturn": "-2.91534295648784",
           "PriceChange": "1.26189636940429",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -611,7 +611,7 @@
           "ExcessReturn": "-5.4314787832416",
           "PriceChange": "-1.25423945734946",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -630,7 +630,7 @@
           "ExcessReturn": "1.52804593837107",
           "PriceChange": "5.70528526426321",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -649,7 +649,7 @@
           "ExcessReturn": "-2.81830727249482",
           "PriceChange": "1.35893205339732",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -668,7 +668,7 @@
           "ExcessReturn": "0.260245310432598",
           "PriceChange": "4.43748463632474",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -687,7 +687,7 @@
           "ExcessReturn": "2.30691053001564",
           "PriceChange": "6.48414985590778",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -706,7 +706,7 @@
           "ExcessReturn": "-4.76073474128531",
           "PriceChange": "-0.583495415393167",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -725,7 +725,7 @@
           "ExcessReturn": "4.8445583059701",
           "PriceChange": "9.02179763186223",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         },
         {
           "Representative": "Richard Dean Dr Mccormick",
@@ -744,7 +744,7 @@
           "ExcessReturn": "2.26179304654083",
           "PriceChange": "6.43903237243297",
           "SPYChange": "4.17723932589214",
-          "_first_seen": "2026-08-18T02:37:48.136958+00:00"
+          "_first_seen": "2026-08-18T03:00:14.620897+00:00"
         }
       ]
     },
@@ -764,7 +764,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -775,7 +775,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -786,7 +786,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -797,7 +797,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "Gary Peters",
@@ -885,7 +885,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -896,7 +896,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -907,7 +907,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -918,7 +918,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "John Boozman",
@@ -929,7 +929,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.491596+00:00"
+          "_first_seen": "2026-08-18T03:00:15.203193+00:00"
         },
         {
           "Senator": "Sheldon Whitehouse",
@@ -1213,7 +1213,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.998216+00:00"
+          "_first_seen": "2026-08-18T03:00:15.753337+00:00"
         },
         {
           "Representative": "April Mcclain Delaney",
@@ -1235,7 +1235,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.998216+00:00"
+          "_first_seen": "2026-08-18T03:00:15.753337+00:00"
         },
         {
           "Representative": "April Mcclain Delaney",
@@ -1279,7 +1279,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.998216+00:00"
+          "_first_seen": "2026-08-18T03:00:15.753337+00:00"
         },
         {
           "Representative": "April Mcclain Delaney",
@@ -1301,7 +1301,7 @@
           "Range": "$1,001 - $15,000",
           "Amount": "1001.0",
           "last_modified": "2026-08-17",
-          "_first_seen": "2026-08-18T02:37:49.998216+00:00"
+          "_first_seen": "2026-08-18T03:00:15.753337+00:00"
         },
         {
           "Representative": "April Mcclain Delaney",
@@ -1822,7 +1822,7 @@
           "OTC_Short": "1",
           "OTC_Total": "1",
           "DPI": "1.0",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "BMEA",
@@ -1830,7 +1830,7 @@
           "OTC_Short": "210143",
           "OTC_Total": "346700",
           "DPI": "0.6061232232935082",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "ANRO",
@@ -1838,7 +1838,7 @@
           "OTC_Short": "228929",
           "OTC_Total": "348252",
           "DPI": "0.6573655691143151",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "RAMP",
@@ -1846,7 +1846,7 @@
           "OTC_Short": "257594",
           "OTC_Total": "348047",
           "DPI": "0.7401116545083533",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "ANVS",
@@ -1854,7 +1854,7 @@
           "OTC_Short": "113429",
           "OTC_Total": "348023",
           "DPI": "0.32592511714455824",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "GP",
@@ -1862,7 +1862,7 @@
           "OTC_Short": "145599",
           "OTC_Total": "347666",
           "DPI": "0.41879030128381967",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "GENB",
@@ -1870,7 +1870,7 @@
           "OTC_Short": "169471",
           "OTC_Total": "347609",
           "DPI": "0.48753361696546915",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "PPSI",
@@ -1878,7 +1878,7 @@
           "OTC_Short": "161189",
           "OTC_Total": "347249",
           "DPI": "0.4641892943320969",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "HZO",
@@ -1886,7 +1886,7 @@
           "OTC_Short": "104943",
           "OTC_Total": "347051",
           "DPI": "0.3023851384399741",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "ENR",
@@ -1894,7 +1894,7 @@
           "OTC_Short": "228735",
           "OTC_Total": "347001",
           "DPI": "0.6591767531003349",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "RTO",
@@ -1902,7 +1902,7 @@
           "OTC_Short": "226475",
           "OTC_Total": "346240",
           "DPI": "0.6540991905432265",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "ROP",
@@ -1910,7 +1910,7 @@
           "OTC_Short": "248972",
           "OTC_Total": "344471",
           "DPI": "0.7227667605735038",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "VGNT",
@@ -1918,7 +1918,7 @@
           "OTC_Short": "164949",
           "OTC_Total": "346185",
           "DPI": "0.476477123783894",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "AIV",
@@ -1926,7 +1926,7 @@
           "OTC_Short": "178975",
           "OTC_Total": "345966",
           "DPI": "0.5173203523078809",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "ITOC",
@@ -1934,7 +1934,7 @@
           "OTC_Short": "122491",
           "OTC_Total": "345851",
           "DPI": "0.35417212029017153",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "CGAU",
@@ -1942,7 +1942,7 @@
           "OTC_Short": "115366",
           "OTC_Total": "345574",
           "DPI": "0.33383847974984493",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "WNC",
@@ -1950,7 +1950,7 @@
           "OTC_Short": "138412",
           "OTC_Total": "345523",
           "DPI": "0.40058699713292595",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "SCNX",
@@ -1958,7 +1958,7 @@
           "OTC_Short": "76947",
           "OTC_Total": "344754",
           "DPI": "0.22319366841184346",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "KNTK",
@@ -1966,7 +1966,7 @@
           "OTC_Short": "192599",
           "OTC_Total": "344735",
           "DPI": "0.5586871929227566",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "TXT",
@@ -1974,7 +1974,7 @@
           "OTC_Short": "262071",
           "OTC_Total": "344654",
           "DPI": "0.7603886973738069",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "TRV",
@@ -1982,7 +1982,7 @@
           "OTC_Short": "137807",
           "OTC_Total": "348563",
           "DPI": "0.3953589096278856",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "LECO",
@@ -1990,7 +1990,7 @@
           "OTC_Short": "153275",
           "OTC_Total": "348576",
           "DPI": "0.4397187816990332",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "HP",
@@ -1998,7 +1998,7 @@
           "OTC_Short": "166878",
           "OTC_Total": "349031",
           "DPI": "0.4781195520166173",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "BBNX",
@@ -2006,7 +2006,7 @@
           "OTC_Short": "231075",
           "OTC_Total": "349043",
           "DPI": "0.6620255567863165",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         },
         {
           "Ticker": "PRZO",
@@ -2014,7 +2014,7 @@
           "OTC_Short": "189337",
           "OTC_Total": "355597",
           "DPI": "0.5324489685184904",
-          "_first_seen": "2026-08-18T02:37:57.677354+00:00"
+          "_first_seen": "2026-08-18T03:00:18.892041+00:00"
         }
       ]
     },
@@ -2031,9 +2031,9 @@
           "Name": "COYNE JEFFREY B",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "F",
-          "Shares": "2187.0",
+          "Shares": "4229.0",
           "PricePerShare": "13.17",
-          "SharesOwnedFollowing": "589577.0",
+          "SharesOwnedFollowing": "577582.0",
           "fileDate": "2026-08-18T01:53:55.000",
           "officerTitle": "GENERAL COUNSEL AND SECRETARY",
           "isDirector": "False",
@@ -2042,7 +2042,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2061,7 +2061,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2080,7 +2080,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2088,9 +2088,9 @@
           "Name": "COYNE JEFFREY B",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "F",
-          "Shares": "4229.0",
+          "Shares": "2187.0",
           "PricePerShare": "13.17",
-          "SharesOwnedFollowing": "577582.0",
+          "SharesOwnedFollowing": "589577.0",
           "fileDate": "2026-08-18T01:53:55.000",
           "officerTitle": "GENERAL COUNSEL AND SECRETARY",
           "isDirector": "False",
@@ -2099,7 +2099,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2118,7 +2118,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2137,26 +2137,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
-        },
-        {
-          "Ticker": "MAX",
-          "Date": "2026-08-15T00:00:00.000",
-          "Name": "Thompson Patrick Ryan",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "F",
-          "Shares": "5258.0",
-          "PricePerShare": "13.17",
-          "SharesOwnedFollowing": "1099078.0",
-          "fileDate": "2026-08-18T01:53:49.000",
-          "officerTitle": "See Remarks",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2175,26 +2156,26 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
-          "Ticker": "MOBI",
-          "Date": "2026-08-17T00:00:00.000",
-          "Name": "Tansey Casey M",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "17166.0",
-          "PricePerShare": "11.8509",
-          "SharesOwnedFollowing": "301891.0",
-          "fileDate": "2026-08-18T01:53:45.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
+          "Ticker": "MAX",
+          "Date": "2026-08-15T00:00:00.000",
+          "Name": "Thompson Patrick Ryan",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "F",
+          "Shares": "5258.0",
+          "PricePerShare": "13.17",
+          "SharesOwnedFollowing": "1099078.0",
+          "fileDate": "2026-08-18T01:53:49.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "False",
+          "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MOBI",
@@ -2213,26 +2194,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
-        },
-        {
-          "Ticker": "MOBI",
-          "Date": "2026-08-14T00:00:00.000",
-          "Name": "Tansey Casey M",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "15721.0",
-          "PricePerShare": "11.65",
-          "SharesOwnedFollowing": "284625.0",
-          "fileDate": "2026-08-18T01:53:45.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MOBI",
@@ -2251,7 +2213,45 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
+        },
+        {
+          "Ticker": "MOBI",
+          "Date": "2026-08-17T00:00:00.000",
+          "Name": "Tansey Casey M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "17166.0",
+          "PricePerShare": "11.8509",
+          "SharesOwnedFollowing": "301891.0",
+          "fileDate": "2026-08-18T01:53:45.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-18T02:00:33.154",
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
+        },
+        {
+          "Ticker": "MOBI",
+          "Date": "2026-08-14T00:00:00.000",
+          "Name": "Tansey Casey M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "15721.0",
+          "PricePerShare": "11.65",
+          "SharesOwnedFollowing": "284625.0",
+          "fileDate": "2026-08-18T01:53:45.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-18T02:00:33.154",
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2270,7 +2270,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2289,7 +2289,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2308,7 +2308,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2327,26 +2327,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
-        },
-        {
-          "Ticker": "MAX",
-          "Date": "2026-08-14T00:00:00.000",
-          "Name": "Yeh Kuanling Amy",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "12000.0",
-          "PricePerShare": "13.5514",
-          "SharesOwnedFollowing": "541985.0",
-          "fileDate": "2026-08-18T01:53:35.000",
-          "officerTitle": "Chief Technology Officer",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "MAX",
@@ -2365,7 +2346,26 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
+        },
+        {
+          "Ticker": "MAX",
+          "Date": "2026-08-14T00:00:00.000",
+          "Name": "Yeh Kuanling Amy",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "12000.0",
+          "PricePerShare": "13.5514",
+          "SharesOwnedFollowing": "541985.0",
+          "fileDate": "2026-08-18T01:53:35.000",
+          "officerTitle": "Chief Technology Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-18T02:00:33.154",
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "GOCO",
@@ -2384,7 +2384,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "I",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "GOCO",
@@ -2403,7 +2403,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "I",
           "uploaded": "2026-08-18T02:00:33.154",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "AIRO",
@@ -2422,26 +2422,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T01:30:20.180",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
-        },
-        {
-          "Ticker": "AIRO",
-          "Date": "2026-08-14T00:00:00.000",
-          "Name": "Uczekaj John",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "15457.0",
-          "PricePerShare": "9.6135",
-          "SharesOwnedFollowing": "223002.0",
-          "fileDate": "2026-08-18T01:22:44.000",
-          "officerTitle": "President and COO",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-08-18T01:30:20.180",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "AIRO",
@@ -2460,7 +2441,26 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-08-18T01:30:20.180",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
+        },
+        {
+          "Ticker": "AIRO",
+          "Date": "2026-08-14T00:00:00.000",
+          "Name": "Uczekaj John",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "15457.0",
+          "PricePerShare": "9.6135",
+          "SharesOwnedFollowing": "223002.0",
+          "fileDate": "2026-08-18T01:22:44.000",
+          "officerTitle": "President and COO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-08-18T01:30:20.180",
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "AVY",
@@ -2479,7 +2479,7 @@
           "isOther": null,
           "directOrIndirectOwnership": "I",
           "uploaded": "2026-08-18T01:30:20.180",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         },
         {
           "Ticker": "AVY",
@@ -2498,7 +2498,7 @@
           "isOther": null,
           "directOrIndirectOwnership": "I",
           "uploaded": "2026-08-18T01:30:20.180",
-          "_first_seen": "2026-08-18T02:37:58.575256+00:00"
+          "_first_seen": "2026-08-18T03:00:20.004995+00:00"
         }
       ]
     },
@@ -2521,7 +2521,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "989701107"
         },
         {
@@ -2536,7 +2536,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "806857108"
         },
         {
@@ -2551,7 +2551,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "61744M104"
         },
         {
@@ -2566,7 +2566,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "52729N100"
         },
         {
@@ -2581,7 +2581,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "49455P101"
         },
         {
@@ -2596,7 +2596,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "806605101"
         },
         {
@@ -2611,7 +2611,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "G4776G101"
         },
         {
@@ -2626,7 +2626,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "786514208"
         },
         {
@@ -2641,7 +2641,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "786429100"
         },
         {
@@ -2656,7 +2656,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "24702R101"
         },
         {
@@ -2671,7 +2671,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "30231G102"
         },
         {
@@ -2686,7 +2686,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "959802109"
         },
         {
@@ -2701,7 +2701,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "931142103"
         },
         {
@@ -2716,7 +2716,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "949746101"
         },
         {
@@ -2731,7 +2731,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "929236107"
         },
         {
@@ -2746,7 +2746,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "92343V104"
         },
         {
@@ -2761,7 +2761,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "92220P105"
         },
         {
@@ -2776,7 +2776,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "907818108"
         },
         {
@@ -2791,7 +2791,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "882508104"
         },
         {
@@ -2806,7 +2806,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "896522109"
         },
         {
@@ -2821,7 +2821,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "871829107"
         },
         {
@@ -2836,7 +2836,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "026874107"
         },
         {
@@ -2851,7 +2851,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "428236103"
         },
         {
@@ -2866,7 +2866,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "860370105"
         },
         {
@@ -2881,7 +2881,7 @@
           "SH/PRN": "SH",
           "Put/Call": null,
           "Direction": "SOLE",
-          "_first_seen": "2026-08-18T02:38:53.957772+00:00",
+          "_first_seen": "2026-08-18T03:03:29.487817+00:00",
           "CUSIP": "95766L107"
         }
       ]
@@ -2904,7 +2904,7 @@
           "Held": "940.0",
           "Held_Normalized": "940.0",
           "Close": "377.75",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2917,7 +2917,7 @@
           "Held": "8695.0",
           "Held_Normalized": "8695.0",
           "Close": "45.1",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2930,7 +2930,7 @@
           "Held": "10293.0",
           "Held_Normalized": "10293.0",
           "Close": "98.98",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2943,7 +2943,7 @@
           "Held": "12439.0",
           "Held_Normalized": "12439.0",
           "Close": "65.61",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2956,7 +2956,7 @@
           "Held": "1541.0",
           "Held_Normalized": "1541.0",
           "Close": "238.34",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2969,7 +2969,7 @@
           "Held": "121.0",
           "Held_Normalized": "121.0",
           "Close": "1989.44",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2982,7 +2982,7 @@
           "Held": "6400.0",
           "Held_Normalized": "6400.0",
           "Close": "45.12",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -2995,7 +2995,7 @@
           "Held": "84270.0",
           "Held_Normalized": "84270.0",
           "Close": "89.2",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3008,7 +3008,7 @@
           "Held": "34703.0",
           "Held_Normalized": "34703.0",
           "Close": "103.05",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3021,7 +3021,7 @@
           "Held": "112873.0",
           "Held_Normalized": "112873.0",
           "Close": "68.53",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3034,7 +3034,7 @@
           "Held": "34103.0",
           "Held_Normalized": "34103.0",
           "Close": "29.1897",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3047,7 +3047,7 @@
           "Held": "6262.0",
           "Held_Normalized": "6262.0",
           "Close": "61.76",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3060,7 +3060,7 @@
           "Held": "381.0",
           "Held_Normalized": "381.0",
           "Close": "935.47",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3073,7 +3073,7 @@
           "Held": "5002.0",
           "Held_Normalized": "5002.0",
           "Close": "62.2",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3086,7 +3086,7 @@
           "Held": "14622.0",
           "Held_Normalized": "14622.0",
           "Close": "42.77",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3099,7 +3099,7 @@
           "Held": "3232.0",
           "Held_Normalized": "3232.0",
           "Close": "113.26",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3112,7 +3112,7 @@
           "Held": "74115.0",
           "Held_Normalized": "74115.0",
           "Close": "44.36",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3125,7 +3125,7 @@
           "Held": "3255.0",
           "Held_Normalized": "3255.0",
           "Close": "82.34",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3138,7 +3138,7 @@
           "Held": "2890.0",
           "Held_Normalized": "2890.0",
           "Close": "69.9",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3151,7 +3151,7 @@
           "Held": "196011.0",
           "Held_Normalized": "196011.0",
           "Close": "40.64",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3164,7 +3164,7 @@
           "Held": "14000.0",
           "Held_Normalized": "14000.0",
           "Close": "42.6671",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3177,7 +3177,7 @@
           "Held": "45960.0",
           "Held_Normalized": "45960.0",
           "Close": "28.97",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3190,7 +3190,7 @@
           "Held": "17203.0",
           "Held_Normalized": "17203.0",
           "Close": "53.5948",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3203,7 +3203,7 @@
           "Held": "54601.0",
           "Held_Normalized": "54601.0",
           "Close": "37.26",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         },
         {
           "Date": "2026-08-17T20:36:19.000",
@@ -3216,7 +3216,7 @@
           "Held": "10674.0",
           "Held_Normalized": "10674.0",
           "Close": "54.02",
-          "_first_seen": "2026-08-18T02:38:54.949820+00:00"
+          "_first_seen": "2026-08-18T03:03:30.428628+00:00"
         }
       ]
     },
@@ -3234,7 +3234,7 @@
           "Direction": "Final Trade",
           "Traders": "Michael Khouw",
           "Upload_Time": "2026-08-17T18:16:53.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "BJ",
@@ -3243,7 +3243,7 @@
           "Direction": "Final Trade",
           "Traders": "Bonawyn Eisen",
           "Upload_Time": "2026-08-17T18:16:15.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "ACHR",
@@ -3252,7 +3252,7 @@
           "Direction": "Final Trade",
           "Traders": "Steve Grasso",
           "Upload_Time": "2026-08-17T18:15:54.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "BA",
@@ -3261,7 +3261,7 @@
           "Direction": "Final Trade",
           "Traders": "Tim Seymour",
           "Upload_Time": "2026-08-17T18:15:16.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "SPCX",
@@ -3270,7 +3270,7 @@
           "Direction": "Bullish",
           "Traders": "Steve Grasso",
           "Upload_Time": "2026-08-17T18:14:50.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "DIS",
@@ -3279,7 +3279,7 @@
           "Direction": "Bullish",
           "Traders": "Michael Khouw",
           "Upload_Time": "2026-08-17T18:14:01.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "DIS",
@@ -3288,7 +3288,7 @@
           "Direction": "Bearish",
           "Traders": "Steve Grasso",
           "Upload_Time": "2026-08-17T18:13:37.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "DIS",
@@ -3297,7 +3297,7 @@
           "Direction": "Long",
           "Traders": "Tim Seymour",
           "Upload_Time": "2026-08-17T18:13:14.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "ACI",
@@ -3306,7 +3306,7 @@
           "Direction": "Bullish",
           "Traders": "Michael Khouw",
           "Upload_Time": "2026-08-17T18:12:53.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "AMZN",
@@ -3315,7 +3315,7 @@
           "Direction": "Bullish",
           "Traders": "Michael Khouw",
           "Upload_Time": "2026-08-17T18:12:33.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "WMT",
@@ -3324,7 +3324,7 @@
           "Direction": "Long",
           "Traders": "Tim Seymour",
           "Upload_Time": "2026-08-17T18:12:15.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "HD",
@@ -3333,7 +3333,7 @@
           "Direction": "Bearish",
           "Traders": "Michael Khouw",
           "Upload_Time": "2026-08-17T18:11:09.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "HD",
@@ -3342,7 +3342,7 @@
           "Direction": "Bearish",
           "Traders": "Steve Grasso",
           "Upload_Time": "2026-08-17T18:10:50.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "HD",
@@ -3351,7 +3351,7 @@
           "Direction": "Long",
           "Traders": "Tim Seymour",
           "Upload_Time": "2026-08-17T18:10:28.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "V",
@@ -3360,7 +3360,7 @@
           "Direction": "Final Trade",
           "Traders": "Kevin Simpson",
           "Upload_Time": "2026-08-17T15:51:28.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "UNH",
@@ -3369,7 +3369,7 @@
           "Direction": "Final Trade",
           "Traders": "Steve Weiss",
           "Upload_Time": "2026-08-17T15:49:51.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "LMT",
@@ -3378,7 +3378,7 @@
           "Direction": "Final Trade",
           "Traders": "Jim Lebenthal",
           "Upload_Time": "2026-08-17T15:49:33.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "DKS",
@@ -3387,7 +3387,7 @@
           "Direction": "Bullish",
           "Traders": "Steve Weiss",
           "Upload_Time": "2026-08-17T15:49:09.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "CLF",
@@ -3396,7 +3396,7 @@
           "Direction": "Bullish",
           "Traders": "Jim Lebenthal",
           "Upload_Time": "2026-08-17T15:48:42.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "CRH",
@@ -3405,7 +3405,7 @@
           "Direction": "Bullish",
           "Traders": "Jim Lebenthal",
           "Upload_Time": "2026-08-17T15:48:02.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "CF",
@@ -3414,7 +3414,7 @@
           "Direction": "Buy",
           "Traders": "Kevin Simpson",
           "Upload_Time": "2026-08-17T15:47:24.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "NFLX",
@@ -3423,7 +3423,7 @@
           "Direction": "Bullish",
           "Traders": "Kevin Simpson",
           "Upload_Time": "2026-08-17T15:46:36.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "DIS",
@@ -3432,7 +3432,7 @@
           "Direction": "Hold",
           "Traders": "Jim Lebenthal",
           "Upload_Time": "2026-08-17T15:46:13.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "GS",
@@ -3441,7 +3441,7 @@
           "Direction": "Buy",
           "Traders": "Kevin Simpson",
           "Upload_Time": "2026-08-17T15:45:56.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         },
         {
           "Ticker": "CSCO",
@@ -3450,7 +3450,7 @@
           "Direction": "Buy",
           "Traders": "Steve Weiss",
           "Upload_Time": "2026-08-17T15:45:27.000",
-          "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+          "_first_seen": "2026-08-18T03:03:30.965066+00:00"
         }
       ]
     },
@@ -3465,175 +3465,175 @@
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-18T02:38:43.079685+00:00",
+          "_first_seen": "2026-08-18T03:03:28.720627+00:00",
           "_collected": "2026-08-18"
         }
       ]
@@ -3670,43 +3670,13 @@
       "recent": [
         {
           "Date": "2026-08-11",
-          "IPC": "g01n033/50",
-          "Title": "methods and systems for determining metabolic poise and capacity of living cells",
-          "Claims": "22.0",
-          "Abstract": "disclosed herein are methods and systems for evaluating the bioenergetic poise and bioenergetic capacity of living cells in a single assay.",
+          "IPC": "h01s005/14",
+          "Title": "freeform collimator lens for angled facet laser devices",
+          "Claims": "11.0",
+          "Abstract": "an apparatus having a waveguide and a freeform collimating lens. the waveguide is characterized by a waveguide axis and a planar end having a normal axis that is inclined at an end angle that is greater than 0 degrees\u2026",
           "Ticker": "A",
-          "PatentNumber": "12704502",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w024/10",
-          "Title": "reporting configurations for channel and interference measurement",
-          "Claims": "33.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. a base station (e.g., next-generation nodeb ((gnb)) may transmit a report configuration to a user equipment (ue). the report configuration may i\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707307",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w064/00",
-          "Title": "sidelink-assisted positioning",
-          "Claims": "77.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may transmit, to another ue, a positioning request associated with a procedure for determini\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707414",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w056/00",
-          "Title": "reference timing for uplink signaling in a non-terrestrial network",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive, from a serving node associated with a non-terrestrial network (ntn), one or mor\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707409",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "PatentNumber": "12706442",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
@@ -3716,17 +3686,137 @@
           "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may receive a message indicating a time domain window (tdw) configuration including a start time of a tdw and a length of \u2026",
           "Ticker": "QCOM",
           "PatentNumber": "12707408",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
-          "IPC": "h04w052/32",
-          "Title": "techniques for adapting broadcast signals for network energy savings and coverage enhancement",
-          "Claims": "20.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. in some cases, a user equipment (ue) may monitor, from a network entity within a time window, for a first broadcast signal that includes first i\u2026",
+          "IPC": "h04b001/00",
+          "Title": "variable low intermediate frequency (vlif) radio architecture",
+          "Claims": "25.0",
+          "Abstract": "a variable low intermediate frequency (vlif), millimeter wave (mmw) communication system including a millimeter-wave (mmw) integrated circuit (mmw-ic) having a receive section having a receive radio frequency (rf) con\u2026",
           "Ticker": "QCOM",
-          "PatentNumber": "12707401",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "PatentNumber": "12706621",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04b001/12",
+          "Title": "techniques for frequency band distortion correction",
+          "Claims": "20.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a network entity may obtain from a user equipment (ue), a report that indicates one or more signal quality values associated with a set of commu\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12706624",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04b001/04",
+          "Title": "wireless transmitter with bias control",
+          "Claims": "30.0",
+          "Abstract": "certain aspects of the present disclosure generally relate to electronic circuits, and more particularly, to wireless transmitters. one example apparatus generally includes: an in-phase direct-current (dc) level shift\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12706623",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04b001/04",
+          "Title": "controlling receiver gain for proactive jammer protection from transmit signal of integrated transmitter",
+          "Claims": "29.0",
+          "Abstract": "an apparatus, including: a receiver including a low noise amplifier (lna) configured to amplify a received radio frequency (rf) signal based on a first protocol; a transmitter configured to generate a transmit rf sign\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12706622",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w004/00",
+          "Title": "conflict mitigation for enhanced multi-link single-radio (emlsr) links between multi-link devices",
+          "Claims": "18.0",
+          "Abstract": "this disclosure relates to multi-link communications in wireless communication networks. some aspects more specifically relate to conflict mitigation techniques for enhanced multi-link single-radio (emlsr) links betwe\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707499",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w074/0833",
+          "Title": "service groups for random access",
+          "Claims": "23.0",
+          "Abstract": "aspects relate to random access procedures. different random access channel (rach) configurations may be defined for different service groups. for example, one or more service groups (e.g., network slice groups) may b\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707503",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w074/0833",
+          "Title": "random access occasion selection for subband full duplex capable devices",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a network entity may configure a user equipment (ue) with a first set of ros and a second set of ros, and may also provide the ue with informati\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707507",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w076/10",
+          "Title": "quality of experience release when a user equipment moves out of area scope",
+          "Claims": "18.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may initiate a quality of experience (qoe) session for a qe configuration at an application \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707511",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w076/11",
+          "Title": "user equipment selection of candidate and selected cells",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may select, from a set of one or more neighbor cells, a set of one or more candidate cells f\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707513",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w076/15",
+          "Title": "considerations for multi-link aggregation",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. generally, the described techniques provide for improved handling of adjacent channel interference in multi-link aggregation scenarios. in accor\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707518",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w076/36",
+          "Title": "selective activation of intelligent transport system technologies",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may identify that the ue is within a distance threshold of an area that supports a first int\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707536",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h05k005/02",
+          "Title": "ipd adjustment for display devices",
+          "Claims": "19.0",
+          "Abstract": "aspects presented herein relate to methods, devices, and apparatuses for device adjustment. the apparatus may identify a first eye distance of a display device, where the first eye distance of the display device is a \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707575",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h10w090/00",
+          "Title": "package comprising sidewall interconnects configured for power routing",
+          "Claims": "20.0",
+          "Abstract": "a device comprising a package. the package comprises a package substrate; a first integrated device coupled to the package substrate through a first plurality of bump interconnects; an encapsulation layer at least par\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12708057",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
@@ -3736,147 +3826,7 @@
           "Abstract": "a method, apparatus, and computer-readable medium are provided that improve power management for devices communicating via bluetooth (bt) over internet protocol (btoip). the apparatus for wireless communication for a \u2026",
           "Ticker": "QCOM",
           "PatentNumber": "12707397",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w052/02",
-          "Title": "device and method for updating power schedule",
-          "Claims": "19.0",
-          "Abstract": "disclosed are systems and techniques for wireless communications. for instance, a process can include receiving an indication of one or more parameters for input to a reinforcement learning machine learning (ml) model\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707395",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w052/02",
-          "Title": "low power wake-up signaling capabilities",
-          "Claims": "26.0",
-          "Abstract": "a user equipment (ue) may transmit, to a network entity, a capability message that indicates a set of one or more wake-up signal parameters associated with one or more wake-up signal waveform types supported by the ue\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707392",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w052/02",
-          "Title": "control channel monitoring adaptation under a sequence of network operations",
-          "Claims": "30.0",
-          "Abstract": "methods, systems, and devices for wireless communication are described. in a wireless communications system, a network entity may configure a set of monitoring occasion configurations that correspond to (e.g., are lin\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707391",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w048/16",
-          "Title": "scan range modification with adaptive frequency band usage for multi-band antenna panels",
-          "Claims": "20.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may transmit a capability message indicating a capability to support a set of frequency bands for wireless communications \u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707377",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w036/32",
-          "Title": "mobility management for handovers between a terrestrial network and a non-terrestrial network",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a network node may receive navigation information associated with a user equipment (ue). the network node may tran\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707366",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w036/18",
-          "Title": "wireless local area network make-before-break handover",
-          "Claims": "12.0",
-          "Abstract": "certain aspects of the present disclosure provide a method for wireless communication at a first wireless station, generally including communicating, via a first link, with a first access point (ap) affiliated with a \u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707361",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w036/36",
-          "Title": "handover management in a synchronization system",
-          "Claims": "28.0",
-          "Abstract": "disclosed are systems, apparatuses, processes, and computer-readable media for wireless communications. for example, a process can include determining, by a network entity, a handover candidate wherein the handover ca\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707346",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w028/02",
-          "Title": "channel prioritization (cp) adaptation",
-          "Claims": "30.0",
-          "Abstract": "some wireless communications systems may support logical channel prioritization (lcp) adaptation. a user equipment (ue) may receive signaling scheduling multiple data flows associated with a set of channels in particu\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707320",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w024/02",
-          "Title": "on demand system information block 1 configurations",
-          "Claims": "20.0",
-          "Abstract": "certain aspects of the present disclosure provide techniques for on demand system information block 1 (od-sib1) transmission in non-anchor cells. a method includes receiving, in a first anchor cell of a first network \u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707292",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04l005/00",
-          "Title": "sounding reference signal repetition configuration",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive configuration information that configures a reference signal (rs) transmission w\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12706711",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04l029/06",
-          "Title": "protection of a wireless access point (ap) from repeated attacks",
-          "Claims": "22.0",
-          "Abstract": "this disclosure provides methods, components, devices and systems for performing actions to protect a wireless access point (ap) from repeated incorrect security credential input attacks. for example, a combination of\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707266",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04w012/0431",
-          "Title": "selecting a subscription for deciphering positioning system information blocks",
-          "Claims": "14.0",
-          "Abstract": "disclosed are techniques for communication. in an aspect, a network entity receives one or more capabilities of a user equipment (ue) to receive tracking area indicator (tai) lists in advance of a positioning session,\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707259",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04n023/11",
-          "Title": "systems and methods of imaging with multi-domain image sensor",
-          "Claims": "30.0",
-          "Abstract": "imaging systems and techniques are described. an imaging system determines, based on image data of a scene received from an image sensor, a first plurality of pixel values corresponding to a first electromagnetic (em)\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707133",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
-        },
-        {
-          "Date": "2026-08-11",
-          "IPC": "h04n019/86",
-          "Title": "scene-adaptive online learning for video post processing",
-          "Claims": "26.0",
-          "Abstract": "a video capture device may be encode a set of original pictures to create encoded video data, decode the encoded video data to create a set of reconstructed pictures, determine a subset of parameters to update from am\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12707099",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
@@ -3886,37 +3836,87 @@
           "Abstract": "systems and techniques are provided for caching misaligned pixel tiles. a method includes determining a first codec region including a first region of a frame; determining whether pixels of a first version of a pixel \u2026",
           "Ticker": "QCOM",
           "PatentNumber": "12707073",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
-          "IPC": "h04n019/184",
-          "Title": "configuration of a minimum frequency metric for decoding a bitstream",
-          "Claims": "20.0",
-          "Abstract": "this disclosure provides systems, devices, apparatus, and methods, including computer programs encoded on storage media, for configuring minimum frequency metrics of decoding sessions. a display processor may obtain a\u2026",
+          "IPC": "h04w052/02",
+          "Title": "device and method for updating power schedule",
+          "Claims": "19.0",
+          "Abstract": "disclosed are systems and techniques for wireless communications. for instance, a process can include receiving an indication of one or more parameters for input to a reinforcement learning machine learning (ml) model\u2026",
           "Ticker": "QCOM",
-          "PatentNumber": "12707069",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "PatentNumber": "12707395",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
-          "IPC": "h04l065/1069",
-          "Title": "signaling usage of pdu set and end of burst marking for communicating webrtc media data",
-          "Claims": "20.0",
-          "Abstract": "an example device for communicating media data includes a memory configured to store media data; and a processing system comprising one or more processors implemented in circuitry, the processing system being configur\u2026",
+          "IPC": "h04w052/02",
+          "Title": "low power wake-up signaling capabilities",
+          "Claims": "26.0",
+          "Abstract": "a user equipment (ue) may transmit, to a network entity, a capability message that indicates a set of one or more wake-up signal parameters associated with one or more wake-up signal waveform types supported by the ue\u2026",
           "Ticker": "QCOM",
-          "PatentNumber": "12706962",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "PatentNumber": "12707392",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         },
         {
           "Date": "2026-08-11",
-          "IPC": "h04l045/125",
-          "Title": "smart link aggregation and/or selection for web traffic",
-          "Claims": "20.0",
-          "Abstract": "various aspects generally relate to routing web traffic over multiple internet protocol (ip) interfaces. for example, a user equipment (ue) may receive a request to open, in parallel, multiple transmission control pro\u2026",
+          "IPC": "h04w052/02",
+          "Title": "control channel monitoring adaptation under a sequence of network operations",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communication are described. in a wireless communications system, a network entity may configure a set of monitoring occasion configurations that correspond to (e.g., are lin\u2026",
           "Ticker": "QCOM",
-          "PatentNumber": "12706835",
-          "_first_seen": "2026-08-18T02:38:42.293426+00:00"
+          "PatentNumber": "12707391",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w048/16",
+          "Title": "scan range modification with adaptive frequency band usage for multi-band antenna panels",
+          "Claims": "20.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may transmit a capability message indicating a capability to support a set of frequency bands for wireless communications \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707377",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w036/32",
+          "Title": "mobility management for handovers between a terrestrial network and a non-terrestrial network",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a network node may receive navigation information associated with a user equipment (ue). the network node may tran\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707366",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w036/18",
+          "Title": "wireless local area network make-before-break handover",
+          "Claims": "12.0",
+          "Abstract": "certain aspects of the present disclosure provide a method for wireless communication at a first wireless station, generally including communicating, via a first link, with a first access point (ap) affiliated with a \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707361",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w036/36",
+          "Title": "handover management in a synchronization system",
+          "Claims": "28.0",
+          "Abstract": "disclosed are systems, apparatuses, processes, and computer-readable media for wireless communications. for example, a process can include determining, by a network entity, a handover candidate wherein the handover ca\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707346",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
+        },
+        {
+          "Date": "2026-08-11",
+          "IPC": "h04w028/02",
+          "Title": "channel prioritization (cp) adaptation",
+          "Claims": "30.0",
+          "Abstract": "some wireless communications systems may support logical channel prioritization (lcp) adaptation. a user equipment (ue) may receive signaling scheduling multiple data flows associated with a set of channels in particu\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12707320",
+          "_first_seen": "2026-08-18T03:03:26.782031+00:00"
         }
       ]
     },
@@ -4108,120 +4108,50 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 2881,
+      "rows": 2874,
       "last_seen": "2026-08-16",
       "recent": [
         {
-          "BioGuideID": null,
-          "CandidateName": null,
+          "BioGuideID": "C000537",
+          "CandidateName": "CLYBURN, JAMES E",
           "CompanyCMTENM": "THE HOME DEPOT INC. POLITICAL ACTION COMMITTEE",
           "TransactionDate": "2026-06-29",
           "TransactionAmount": "2500",
           "Ticker": "HD",
-          "CommitteeName": "DEFENDING AMERICAN VALUES EVERYWHERE PAC",
+          "CommitteeName": "FRIENDS OF JIM CLYBURN",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00284885",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "P000613",
-          "CandidateName": "PANETTA, JIMMY",
-          "CompanyCMTENM": "DARLING INGREDIENTS INC POLITICAL ACTION COMMITTEE (DARPAC)",
-          "TransactionDate": "2026-07-08",
+          "BioGuideID": "R000599",
+          "CandidateName": "RUIZ, RAUL DR.",
+          "CompanyCMTENM": "HEALTHEQUITY, INC PURPLE POLITICAL ACTION COMMITTEE (HEALTHEQUITY PURPLE POLITICAL ACTION COMMITTEE)",
+          "TransactionDate": "2026-07-10",
           "TransactionAmount": "1000",
-          "Ticker": "DAR",
-          "CommitteeName": "JIMMY PANETTA FOR CONGRESS",
+          "Ticker": "HQY",
+          "CommitteeName": "DR. RAUL RUIZ FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00777458",
+          "CompanyCMTEID": "C00828996",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "W000805",
-          "CandidateName": "WARNER, MARK ROBERT",
-          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
-          "TransactionDate": "2026-07-08",
-          "TransactionAmount": "1000",
-          "Ticker": "AMH",
-          "CommitteeName": "FRIENDS OF MARK WARNER",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00830083",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "H001072",
-          "CandidateName": "HILL, JAMES FRENCH",
-          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
-          "TransactionDate": "2026-07-01",
-          "TransactionAmount": "2500",
-          "Ticker": "AMH",
-          "CommitteeName": "FRENCH HILL FOR ARKANSAS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00830083",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "M001237",
-          "CandidateName": "MCDONALD RIVET, KRISTEN",
-          "CompanyCMTENM": "MAXIMUS INC. POLITICAL ACTION COMMITTEE (MAXPAC)",
-          "TransactionDate": "2026-07-01",
-          "TransactionAmount": "250",
-          "Ticker": "MMS",
-          "CommitteeName": "KRISTEN FOR MICHIGAN",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00343707",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "M001244",
-          "CandidateName": "MOODY, ASHLEY",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
+          "BioGuideID": "H001085",
+          "CandidateName": "HOULAHAN, CHRISSY",
+          "CompanyCMTENM": "ROCKET LAB CORPORATION POLITICAL ACTION COMMITTEE (ROCKET LAB PAC)",
           "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2500",
-          "Ticker": "GM",
-          "CommitteeName": "MOODY FOR FLORIDA",
+          "TransactionAmount": "-1000",
+          "Ticker": "RKLB",
+          "CommitteeName": "CHRISSY HOULAHAN FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
+          "CompanyCMTEID": "C00811034",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "B001314",
-          "CandidateName": "BEAN, AARON P.",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2000",
-          "Ticker": "GM",
-          "CommitteeName": "AARON BEAN FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "A000382",
-          "CandidateName": "ALSOBROOKS, ANGELA",
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2500",
-          "Ticker": "IVZ",
-          "CommitteeName": "ALSOBROOKS FOR SENATE",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": "G000581",
@@ -4235,49 +4165,21 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00253369",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2000",
-          "Ticker": "IVZ",
-          "CommitteeName": "ALABAMA FIRST PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "S001185",
-          "CandidateName": "SEWELL, TERRI A.",
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
+          "BioGuideID": "M001244",
+          "CandidateName": "MOODY, ASHLEY",
+          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
           "TransactionDate": "2026-06-30",
           "TransactionAmount": "2500",
-          "Ticker": "IVZ",
-          "CommitteeName": "TERRI SEWELL FOR CONGRESS",
+          "Ticker": "GM",
+          "CommitteeName": "MOODY FOR FLORIDA",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
+          "CompanyCMTEID": "C00076810",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "L000590",
-          "CandidateName": "LEE, SUSIE",
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2000",
-          "Ticker": "IVZ",
-          "CommitteeName": "SUSIE LEE FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": "T000486",
@@ -4291,49 +4193,7 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00253369",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "5000",
-          "Ticker": "GM",
-          "CommitteeName": "MAKING A RESPONSIBLE STAND FOR HOUSEHOLDS IN AMERICA PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2500",
-          "Ticker": "IVZ",
-          "CommitteeName": "MODERATE DEMOCRATS PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "A000372",
-          "CandidateName": "ALLEN, RICHARD W",
-          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "1000",
-          "Ticker": "IVZ",
-          "CommitteeName": "RICK W. ALLEN FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00253369",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": null,
@@ -4347,7 +4207,91 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00076810",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
+          "TransactionDate": "2026-06-30",
+          "TransactionAmount": "5000",
+          "Ticker": "GM",
+          "CommitteeName": "MAKING A RESPONSIBLE STAND FOR HOUSEHOLDS IN AMERICA PAC",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00076810",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-06-30",
+          "TransactionAmount": "2000",
+          "Ticker": "IVZ",
+          "CommitteeName": "ALABAMA FIRST PAC",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00253369",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "UNION PACIFIC CORP. FUND FOR EFFECTIVE GOVERNMENT",
+          "TransactionDate": "2026-06-30",
+          "TransactionAmount": "-5000",
+          "Ticker": "UNP",
+          "CommitteeName": "ARKANSAS FOR LEADERSHIP POLITICAL ACTION COMMITTEE",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00010470",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "M001237",
+          "CandidateName": "MCDONALD RIVET, KRISTEN",
+          "CompanyCMTENM": "MAXIMUS INC. POLITICAL ACTION COMMITTEE (MAXPAC)",
+          "TransactionDate": "2026-07-01",
+          "TransactionAmount": "250",
+          "Ticker": "MMS",
+          "CommitteeName": "KRISTEN FOR MICHIGAN",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00343707",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "H001072",
+          "CandidateName": "HILL, JAMES FRENCH",
+          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
+          "TransactionDate": "2026-07-01",
+          "TransactionAmount": "2500",
+          "Ticker": "AMH",
+          "CommitteeName": "FRENCH HILL FOR ARKANSAS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00830083",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "W000805",
+          "CandidateName": "WARNER, MARK ROBERT",
+          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
+          "TransactionDate": "2026-07-08",
+          "TransactionAmount": "1000",
+          "Ticker": "AMH",
+          "CommitteeName": "FRIENDS OF MARK WARNER",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00830083",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": "S001221",
@@ -4361,7 +4305,21 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00668384",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "P000613",
+          "CandidateName": "PANETTA, JIMMY",
+          "CompanyCMTENM": "DARLING INGREDIENTS INC POLITICAL ACTION COMMITTEE (DARPAC)",
+          "TransactionDate": "2026-07-08",
+          "TransactionAmount": "1000",
+          "Ticker": "DAR",
+          "CommitteeName": "JIMMY PANETTA FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00777458",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": "M001198",
@@ -4375,21 +4333,49 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00777458",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "N000193",
-          "CandidateName": "NUNN, ZACH",
+          "BioGuideID": "F000470",
+          "CandidateName": "FISCHBACH, MICHELLE",
+          "CompanyCMTENM": "HEALTHEQUITY, INC PURPLE POLITICAL ACTION COMMITTEE (HEALTHEQUITY PURPLE POLITICAL ACTION COMMITTEE)",
+          "TransactionDate": "2026-07-10",
+          "TransactionAmount": "1000",
+          "Ticker": "HQY",
+          "CommitteeName": "FISCHBACH FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00828996",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "A000382",
+          "CandidateName": "ALSOBROOKS, ANGELA",
           "CompanyCMTENM": "INVESCO HOLDING COMPANY (US), INC. EMPLOYEE POLITICAL ACTION COMMITTEE",
           "TransactionDate": "2026-06-30",
           "TransactionAmount": "2500",
           "Ticker": "IVZ",
-          "CommitteeName": "IOWANS FOR ZACH NUNN",
+          "CommitteeName": "ALSOBROOKS FOR SENATE",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00253369",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "C001126",
+          "CandidateName": "CAREY, MIKE",
+          "CompanyCMTENM": "HEALTHEQUITY, INC PURPLE POLITICAL ACTION COMMITTEE (HEALTHEQUITY PURPLE POLITICAL ACTION COMMITTEE)",
+          "TransactionDate": "2026-07-10",
+          "TransactionAmount": "1000",
+          "Ticker": "HQY",
+          "CommitteeName": "CAREY FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00828996",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
           "BioGuideID": "S001201",
@@ -4403,63 +4389,77 @@
           "TransactionType": "24K",
           "CompanyCMTEID": "C00828996",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "B001282",
-          "CandidateName": "BARR, GARLAND ANDY",
-          "CompanyCMTENM": "ATMOS ENERGY CORPORATION PAC",
-          "TransactionDate": "2026-07-31",
-          "TransactionAmount": "3000",
-          "Ticker": "ATO",
-          "CommitteeName": "ANDY BARR FOR SENATE, INC.",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00381954",
-          "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
-        },
-        {
-          "BioGuideID": "C001108",
-          "CandidateName": "COMER, JAMES",
-          "CompanyCMTENM": "ATMOS ENERGY CORPORATION PAC",
-          "TransactionDate": "2026-07-31",
+          "BioGuideID": "B001314",
+          "CandidateName": "BEAN, AARON P.",
+          "CompanyCMTENM": "HEALTHEQUITY, INC PURPLE POLITICAL ACTION COMMITTEE (HEALTHEQUITY PURPLE POLITICAL ACTION COMMITTEE)",
+          "TransactionDate": "2026-07-13",
           "TransactionAmount": "2000",
-          "Ticker": "ATO",
-          "CommitteeName": "COMER FOR CONGRESS",
+          "Ticker": "HQY",
+          "CommitteeName": "AARON BEAN FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00381954",
+          "CompanyCMTEID": "C00828996",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "G000558",
-          "CandidateName": "GUTHRIE, S. BRETT BRETT HON.",
-          "CompanyCMTENM": "ATMOS ENERGY CORPORATION PAC",
-          "TransactionDate": "2026-07-31",
-          "TransactionAmount": "5000",
-          "Ticker": "ATO",
-          "CommitteeName": "GUTHRIE FOR CONGRESS",
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "MAXIMUS INC. POLITICAL ACTION COMMITTEE (MAXPAC)",
+          "TransactionDate": "2026-07-14",
+          "TransactionAmount": "2500",
+          "Ticker": "MMS",
+          "CommitteeName": "THE BERGMAN VICTORY COMMITTEE",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00381954",
+          "CompanyCMTEID": "C00343707",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         },
         {
-          "BioGuideID": "L000560",
-          "CandidateName": "LARSEN, RICK",
-          "CompanyCMTENM": "ATMOS ENERGY CORPORATION PAC",
-          "TransactionDate": "2026-07-20",
+          "BioGuideID": "R000605",
+          "CandidateName": "ROUNDS, MIKE",
+          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
+          "TransactionDate": "2026-07-14",
           "TransactionAmount": "1500",
-          "Ticker": "ATO",
-          "CommitteeName": "CITIZENS TO ELECT RICK LARSEN",
+          "Ticker": "AMH",
+          "CommitteeName": "ROUNDS FOR SENATE",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00381954",
+          "CompanyCMTEID": "C00830083",
           "Uploaded": "2026-08-16 23:34:10.995035",
-          "_first_seen": "2026-08-18T02:38:56.867385+00:00"
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "A000379",
+          "CandidateName": "ALFORD, MARK",
+          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
+          "TransactionDate": "2026-07-14",
+          "TransactionAmount": "1000",
+          "Ticker": "AMH",
+          "CommitteeName": "MARK ALFORD FOR CONGRESS, INC.",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00830083",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
+        },
+        {
+          "BioGuideID": "C001101",
+          "CandidateName": "CLARK, KATHERINE",
+          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
+          "TransactionDate": "2026-07-14",
+          "TransactionAmount": "1000",
+          "Ticker": "AMH",
+          "CommitteeName": "KATHERINE CLARK FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00830083",
+          "Uploaded": "2026-08-16 23:34:10.995035",
+          "_first_seen": "2026-08-18T03:03:38.852176+00:00"
         }
       ]
     },
@@ -4471,22 +4471,22 @@
       "last_seen": "2026-08-18",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Derek+Tran+Responds+to+Trump+Plan+to+Scale+Back+U.S.-South+Korea+Military+Exercises",
-          "time": "2026-08-18 02:20:31",
-          "headline": "Press Release: Derek Tran Responds to Trump Plan to Scale Back U.S.-South Korea Military Exercises",
-          "category": "legislation_automated",
-          "summary": "<p>Representative Derek Tran criticizes Trump\u2019s reduced South Korea drills, warning it weakens deterrence and allies\u2019 trust.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/T000491_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Steny+Hoyer+and+Maryland+Delegation+Comment+on+Court+Ruling+in+FBI+Headquarters+Case",
           "time": "2026-08-18 02:20:31",
           "headline": "Press Release: Steny Hoyer and Maryland Delegation Comment on Court Ruling in FBI Headquarters Case",
           "category": "legislation_automated",
           "summary": "<p>Maryland lawmakers praised a court ruling voiding Trump-era FBI headquarters relocation efforts and supporting Greenbelt, Maryland.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
           "image": "https://www.quiverquant.com/images/H000874_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Derek+Tran+Responds+to+Trump+Plan+to+Scale+Back+U.S.-South+Korea+Military+Exercises",
+          "time": "2026-08-18 02:20:31",
+          "headline": "Press Release: Derek Tran Responds to Trump Plan to Scale Back U.S.-South Korea Military Exercises",
+          "category": "legislation_automated",
+          "summary": "<p>Representative Derek Tran criticizes Trump\u2019s reduced South Korea drills, warning it weakens deterrence and allies\u2019 trust.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
+          "image": "https://www.quiverquant.com/images/T000491_congress.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Karman+Line+Acquisition+Corp.+Prices+%24200+Million+Initial+Public+Offering",
@@ -4495,7 +4495,7 @@
           "category": "press_release_summary",
           "summary": "<p>Karman Line Acquisition Corp. announces IPO of 20 million units, trading on Nasdaq starting August 18, 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Karman Line Acquisition Corp., a special purpose \u2026",
           "image": "https://www.quiverquant.com/images/xteru_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Financial+Officer+of+%24SNEX+Sells+96%2C490+Shares",
@@ -4504,16 +4504,7 @@
           "category": "insiders_automated",
           "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1405955/William-J-Dunaway\">William J Dunaway</a>, the Chief Financial Officer of <a href=\"https://www.quiverquant.com/stock/SNEX/\">$SNEX</a>, sold 96,490 shares of the \u2026",
           "image": "https://www.quiverquant.com/images/snex_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Frank+Mrvan+Joins+Indiana+Delegation+in+Support+of+Disaster+Declaration+Request",
-          "time": "2026-08-18 00:20:10",
-          "headline": "Press Release: Frank Mrvan Joins Indiana Delegation in Support of Disaster Declaration Request",
-          "category": "legislation_automated",
-          "summary": "<p>Indiana lawmakers urge federal disaster aid for June storms that caused tornadoes, flooding, deaths, and widespread damage.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
-          "image": "https://www.quiverquant.com/images/M001214_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Julie+Fedorchak+says+USDA+will+allow+drought-related+CRP+hay+bale+removal+extensions+in+North+Dakota",
@@ -4522,7 +4513,7 @@
           "category": "legislation_automated",
           "summary": "<p>USDA granted North Dakota producers flexibility to extend hay bale removal deadlines during severe drought.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">USDA gran\u2026",
           "image": "https://www.quiverquant.com/images/F000482_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Victoria+Spartz+Seeks+Major+Disaster+Declaration+for+Indiana+Flooding",
@@ -4531,7 +4522,16 @@
           "category": "legislation_automated",
           "summary": "<p>Spartz asked Trump for a federal disaster declaration after flooding in Indiana, citing severe damage and recovery needs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
           "image": "https://www.quiverquant.com/images/S000929_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Frank+Mrvan+Joins+Indiana+Delegation+in+Support+of+Disaster+Declaration+Request",
+          "time": "2026-08-18 00:20:10",
+          "headline": "Press Release: Frank Mrvan Joins Indiana Delegation in Support of Disaster Declaration Request",
+          "category": "legislation_automated",
+          "summary": "<p>Indiana lawmakers urge federal disaster aid for June storms that caused tornadoes, flooding, deaths, and widespread damage.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/M001214_congress.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+CEO+of+%24NTHI+Buys+12%2C000+Shares",
@@ -4540,16 +4540,7 @@
           "category": "insiders_automated",
           "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1443035/Amir-F-Heshmatpour\">Amir F Heshmatpour</a>, the CEO of <a href=\"https://www.quiverquant.com/stock/NTHI/\">$NTHI</a>, bought 12,000 shares of the company on 08-14\u2026",
           "image": "https://www.quiverquant.com/images/nthi_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Legal+Officer+of+%24EVCM+Sells+17%2C012+Shares",
-          "time": "2026-08-17 23:05:05",
-          "headline": "Insider Sale: Chief Legal Officer of $EVCM Sells 17,012 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Lisa E Storey, the Chief Legal Officer of <a href=\"https://www.quiverquant.com/stock/EVCM/\">$EVCM</a>, sold 17,012 shares of the company on 08-14-2026 for an estimated <strong>$170,363</strong>. We received data on\u2026",
-          "image": "https://www.quiverquant.com/images/evcm_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SVP+of+%24ALKS+Sells+664+Shares",
@@ -4558,7 +4549,7 @@
           "category": "insiders_automated",
           "summary": "<p>Christian Todd Nichols, the SVP of <a href=\"https://www.quiverquant.com/stock/ALKS/\">$ALKS</a>, sold 664 shares of the company on 08-17-2026 for an estimated <strong>$32,969</strong>. We received data on the trade \u2026",
           "image": "https://www.quiverquant.com/images/alks_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+of+%24PRI+Sells+1%2C800+Shares",
@@ -4567,7 +4558,16 @@
           "category": "insiders_automated",
           "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1487345/Peter-W.-Schneider\">Peter W. Schneider</a>, the President of <a href=\"https://www.quiverquant.com/stock/PRI/\">$PRI</a>, sold 1,800 shares of the company on 08-1\u2026",
           "image": "https://www.quiverquant.com/images/pri_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Legal+Officer+of+%24EVCM+Sells+17%2C012+Shares",
+          "time": "2026-08-17 23:05:05",
+          "headline": "Insider Sale: Chief Legal Officer of $EVCM Sells 17,012 Shares",
+          "category": "insiders_automated",
+          "summary": "<p>Lisa E Storey, the Chief Legal Officer of <a href=\"https://www.quiverquant.com/stock/EVCM/\">$EVCM</a>, sold 17,012 shares of the company on 08-14-2026 for an estimated <strong>$170,363</strong>. We received data on\u2026",
+          "image": "https://www.quiverquant.com/images/evcm_rect_new.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/H2O+America%E2%80%99s+Texas+Water+Company+and+TWOS+Receive+Regulatory+Approvals+for+Quadvest+Acquisition",
@@ -4576,7 +4576,7 @@
           "category": "press_release_summary",
           "summary": "<p>H2O America announces acquisition of Quadvest, enhancing Texas utility operations with regulatory approvals for asset purchase.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>H2O America has announced that\u2026",
           "image": "https://www.quiverquant.com/images/hto_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/FEDEX+CORP+%28%24FDX%29+CEO+2026+Pay+Revealed",
@@ -4585,7 +4585,7 @@
           "category": "insiders_automated",
           "summary": "<p>We estimate that the CEO of FEDEX CORP ($FDX), Rajesh Subramaniam, received a compensation of <strong>$27,554,018</strong> in 2026. This is an increase of 53.28% from an estimated <strong>$12,873,691</strong> in 20\u2026",
           "image": "https://www.quiverquant.com/images/fdx_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Julie+Fedorchak+discusses+year-round+E15+and+North+Dakota+corn+industry+impact",
@@ -4594,25 +4594,7 @@
           "category": "legislation_automated",
           "summary": "<p>North Dakota lawmaker promotes year-round E15, citing economic benefits for farmers, consumers, and energy production.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\u2026",
           "image": "https://www.quiverquant.com/images/F000482_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Jonathan+Jackson%2C+Linda+S%C3%A1nchez+and+Jared+Huffman+lead+House+Democrats+in+concerns+over+Trump+administration+critical+minerals+deals",
-          "time": "2026-08-17 22:20:55",
-          "headline": "Press Release: Jonathan Jackson, Linda S\u00e1nchez and Jared Huffman lead House Democrats in concerns over Trump administration critical minerals deals",
-          "category": "legislation_automated",
-          "summary": "<p>House Democrats question Trump-era critical minerals deals, citing transparency, oversight, labor, human rights, and environmental concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
-          "image": "https://www.quiverquant.com/images/J000309_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Steve+Cohen+Announces+%242.6+Million+in+NIH+Grants+to+St.+Jude",
-          "time": "2026-08-17 22:20:55",
-          "headline": "Press Release: Steve Cohen Announces $2.6 Million in NIH Grants to St. Jude",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Cohen announces $2.6 million in NIH grants to St. Jude for research on ALS, immunity, neuroblastoma, leukemia, and cardiovascular outcomes.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><stron\u2026",
-          "image": "https://www.quiverquant.com/images/C001068_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Laura+Friedman+Tours+Oxnard+National+Weather+Service+Forecast+Office",
@@ -4621,7 +4603,16 @@
           "category": "legislation_automated",
           "summary": "<p>Congresswoman Laura Friedman toured Oxnard\u2019s Weather Service office, emphasizing forecasting operations and opposing federal cuts.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
           "image": "https://www.quiverquant.com/images/F000483_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Jonathan+Jackson%2C+Linda+S%C3%A1nchez+and+Jared+Huffman+lead+House+Democrats+in+concerns+over+Trump+administration+critical+minerals+deals",
+          "time": "2026-08-17 22:20:55",
+          "headline": "Press Release: Jonathan Jackson, Linda S\u00e1nchez and Jared Huffman lead House Democrats in concerns over Trump administration critical minerals deals",
+          "category": "legislation_automated",
+          "summary": "<p>House Democrats question Trump-era critical minerals deals, citing transparency, oversight, labor, human rights, and environmental concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
+          "image": "https://www.quiverquant.com/images/J000309_congress.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Salud+Carbajal+Statement+on+Federal+Funding+for+Diablo+Canyon+Extended+Operations",
@@ -4630,7 +4621,16 @@
           "category": "legislation_automated",
           "summary": "<p>Carbajal praised federal funding for Diablo Canyon\u2019s extended operations, citing carbon-free power, grid reliability, jobs, and safety.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: \u2026",
           "image": "https://www.quiverquant.com/images/C001112_congress.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Steve+Cohen+Announces+%242.6+Million+in+NIH+Grants+to+St.+Jude",
+          "time": "2026-08-17 22:20:55",
+          "headline": "Press Release: Steve Cohen Announces $2.6 Million in NIH Grants to St. Jude",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Cohen announces $2.6 million in NIH grants to St. Jude for research on ALS, immunity, neuroblastoma, leukemia, and cardiovascular outcomes.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><stron\u2026",
+          "image": "https://www.quiverquant.com/images/C001068_congress.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/California+Water+Service+Group+Named+One+of+Newsweek%E2%80%99s+%E2%80%9CWorld%E2%80%99s+Greenest+Companies%E2%80%9D",
@@ -4639,7 +4639,7 @@
           "category": "press_release_summary",
           "summary": "<p>California Water Service Group recognized by Newsweek as one of the \"World\u2019s Greenest Companies\" for sustainability efforts.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>California Water Service Group ha\u2026",
           "image": "https://www.quiverquant.com/images/cwt_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Terra+Innovatum+Global+Reports+Second+Quarter+2026+Financial+Results+and+Operational+Progress",
@@ -4648,7 +4648,7 @@
           "category": "press_release_summary",
           "summary": "<p>Terra Innovatum reported Q2 2026 results, highlighting $91.1 million cash balance and progress in commercial and regulatory developments.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Terra Innovatum Glob\u2026",
           "image": "https://www.quiverquant.com/images/nklr_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/HNI+Corporation+Declares+Quarterly+Dividend+of+35+Cents+per+Share",
@@ -4657,7 +4657,7 @@
           "category": "press_release_summary",
           "summary": "<p>HNI Corporation declared a quarterly dividend of 35 cents per share, payable September 11, 2026, to eligible shareholders.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>HNI Corporation announced a quarter\u2026",
           "image": "https://www.quiverquant.com/images/hni_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Coherus+Oncology+Announces+Special+Dividend+of+Contingent+Value+Rights+Tied+to+Legacy+Biosimilar+Asset+Sales",
@@ -4666,34 +4666,34 @@
           "category": "press_release_summary",
           "summary": "<p>Coherus Oncology announces a special dividend of contingent value rights for biosimilar asset sales, transforming into a focused oncology company.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Coherus Onc\u2026",
           "image": "https://www.quiverquant.com/images/chrs_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Klarna+Group+Slides+Ahead+of+Scheduled+Q2+Earnings+Release",
+          "url": "https://www.quiverquant.com/news/GitLab+Slides+5%25+as+Investors+Reassess+Competition+and+Execution+Risks",
           "time": "2026-08-17 21:23:50",
-          "headline": "Klarna Group Slides Ahead of Scheduled Q2 Earnings Release",
+          "headline": "GitLab Slides 5% as Investors Reassess Competition and Execution Risks",
           "category": "prices_automated",
-          "summary": "<p>Klarna Group plc (KLAR) is down 5.6% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be earnings-related caution ahead \u2026",
-          "image": "https://www.quiverquant.com/images/klar_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "summary": "<p>GitLab Inc. (GTLB) is down 5.0% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely explanation is a mix of lingering competition concerns an\u2026",
+          "image": "https://www.quiverquant.com/images/gtlb_rect_new.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/SentinelOne+slides+as+valuation+concerns+and+fresh+analyst+caution+appear+to+weigh+on+shares",
+          "url": "https://www.quiverquant.com/news/Flutter+Entertainment+Slides+as+Investors+Continue+to+Weigh+Weak+Q2+Profitability+and+Lowered+2026+Outlook",
           "time": "2026-08-17 21:23:50",
-          "headline": "SentinelOne slides as valuation concerns and fresh analyst caution appear to weigh on shares",
+          "headline": "Flutter Entertainment Slides as Investors Continue to Weigh Weak Q2 Profitability and Lowered 2026 Outlook",
           "category": "prices_automated",
-          "summary": "<p>SentinelOne (S) is down 5.7% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be renewed analyst caution centered on val\u2026",
-          "image": "https://www.quiverquant.com/images/s_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "summary": "<p>Flutter Entertainment plc (FLUT) is down 5.0% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver is continued pressure from Flutter\u2019s\u2026",
+          "image": "https://www.quiverquant.com/images/flut_rect_new.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/VIAVI+shares+climb+as+investors+continue+to+digest+strong+quarterly+results+and+AI-networking+momentum",
+          "url": "https://www.quiverquant.com/news/Credo+Technology+Jumps+as+Investors+Revisit+AI+Interconnect+Growth+Story",
           "time": "2026-08-17 21:23:50",
-          "headline": "VIAVI shares climb as investors continue to digest strong quarterly results and AI-networking momentum",
+          "headline": "Credo Technology Jumps as Investors Revisit AI Interconnect Growth Story",
           "category": "prices_automated",
-          "summary": "<p>Viavi Solutions (VIAV) is up 6.4% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears tied mainly to continued optimism after the company\u2019s \u2026",
-          "image": "https://www.quiverquant.com/images/viav_rect_new.png",
-          "_first_seen": "2026-08-18T02:38:57.506930+00:00"
+          "summary": "<p>Credo Technology Group Holding Ltd (CRDO) is up 8.9% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be renewed buying \u2026",
+          "image": "https://www.quiverquant.com/images/crdo_rect_new.png",
+          "_first_seen": "2026-08-18T03:03:39.686882+00:00"
         }
       ]
     },
@@ -4708,175 +4708,175 @@
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-18T02:38:57.926278+00:00",
+          "_first_seen": "2026-08-18T03:03:40.266540+00:00",
           "_collected": "2026-08-18"
         }
       ]
@@ -5230,7 +5230,7 @@
           "Rating": "4.42553",
           "Count": "188",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GIGM",
@@ -5240,7 +5240,7 @@
           "Rating": "3.5",
           "Count": "8",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GH",
@@ -5250,7 +5250,7 @@
           "Rating": "2.8",
           "Count": "5",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5260,7 +5260,7 @@
           "Rating": "4.33333",
           "Count": "6",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5270,7 +5270,7 @@
           "Rating": "3.66667",
           "Count": "3",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5280,7 +5280,7 @@
           "Rating": "4.7",
           "Count": "10",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GE",
@@ -5290,7 +5290,7 @@
           "Rating": "4.17678",
           "Count": "577",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GE",
@@ -5300,7 +5300,7 @@
           "Rating": "4.77898",
           "Count": "7316",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5310,7 +5310,7 @@
           "Rating": "4.21145",
           "Count": "6796",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5320,7 +5320,7 @@
           "Rating": "4.72088",
           "Count": "11221",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5330,7 +5330,7 @@
           "Rating": "3.42672",
           "Count": "11940",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GDDY",
@@ -5340,7 +5340,7 @@
           "Rating": "4.82803",
           "Count": "106680",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCP",
@@ -5350,7 +5350,7 @@
           "Rating": "0.0",
           "Count": "0",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCO",
@@ -5360,7 +5360,7 @@
           "Rating": "2.25",
           "Count": "8",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5370,7 +5370,7 @@
           "Rating": "4.53842",
           "Count": "4060",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5380,7 +5380,7 @@
           "Rating": "4.54553",
           "Count": "7226",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5390,7 +5390,7 @@
           "Rating": "4.34392",
           "Count": "5763",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5400,7 +5400,7 @@
           "Rating": "4.34708",
           "Count": "6595",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5410,7 +5410,7 @@
           "Rating": "4.57237",
           "Count": "12658",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5420,7 +5420,7 @@
           "Rating": "1.66391",
           "Count": "363",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5430,7 +5430,7 @@
           "Rating": "4.83032",
           "Count": "139763",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "GABC",
@@ -5440,7 +5440,7 @@
           "Rating": "4.79178",
           "Count": "9634",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "FWRD",
@@ -5450,7 +5450,7 @@
           "Rating": "2.44444",
           "Count": "18",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "FVRR",
@@ -5460,7 +5460,7 @@
           "Rating": "4.91697",
           "Count": "570752",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         },
         {
           "Ticker": "FUNC",
@@ -5470,7 +5470,7 @@
           "Rating": "4.82367",
           "Count": "431",
           "Time": "2026-08-17",
-          "_first_seen": "2026-08-18T02:39:01.684431+00:00"
+          "_first_seen": "2026-08-18T03:03:44.995188+00:00"
         }
       ]
     },
@@ -25290,7 +25290,7 @@
       },
       {
         "ticker": "COIN",
-        "bull_ratio": 1.0,
+        "bull_ratio": 0.92,
         "messages": 30,
         "watchers": 137990,
         "hot": true
@@ -25638,7 +25638,7 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 196990,
+        "stars": 196991,
         "wow_pct": 0.03,
         "hot": false
       },
@@ -25668,7 +25668,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77805,
+        "stars": 77806,
         "wow_pct": -0.02,
         "hot": false
       }
@@ -26831,9 +26831,9 @@
       },
       {
         "ticker": "HD",
-        "total_usd": 136500.0,
-        "donations": 45,
-        "politicians": 38
+        "total_usd": 116500.0,
+        "donations": 39,
+        "politicians": 32
       },
       {
         "ticker": "EIX",
@@ -27001,7 +27001,7 @@
         "Direction": "Final Trade",
         "Traders": "Michael Khouw",
         "Upload_Time": "2026-08-17T18:16:53.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "BJ",
@@ -27010,7 +27010,7 @@
         "Direction": "Final Trade",
         "Traders": "Bonawyn Eisen",
         "Upload_Time": "2026-08-17T18:16:15.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "ACHR",
@@ -27019,7 +27019,7 @@
         "Direction": "Final Trade",
         "Traders": "Steve Grasso",
         "Upload_Time": "2026-08-17T18:15:54.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "BA",
@@ -27028,7 +27028,7 @@
         "Direction": "Final Trade",
         "Traders": "Tim Seymour",
         "Upload_Time": "2026-08-17T18:15:16.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "SPCX",
@@ -27037,7 +27037,7 @@
         "Direction": "Bullish",
         "Traders": "Steve Grasso",
         "Upload_Time": "2026-08-17T18:14:50.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "DIS",
@@ -27046,7 +27046,7 @@
         "Direction": "Bullish",
         "Traders": "Michael Khouw",
         "Upload_Time": "2026-08-17T18:14:01.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "DIS",
@@ -27055,7 +27055,7 @@
         "Direction": "Bearish",
         "Traders": "Steve Grasso",
         "Upload_Time": "2026-08-17T18:13:37.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "DIS",
@@ -27064,7 +27064,7 @@
         "Direction": "Long",
         "Traders": "Tim Seymour",
         "Upload_Time": "2026-08-17T18:13:14.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "ACI",
@@ -27073,7 +27073,7 @@
         "Direction": "Bullish",
         "Traders": "Michael Khouw",
         "Upload_Time": "2026-08-17T18:12:53.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "AMZN",
@@ -27082,7 +27082,7 @@
         "Direction": "Bullish",
         "Traders": "Michael Khouw",
         "Upload_Time": "2026-08-17T18:12:33.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "WMT",
@@ -27091,7 +27091,7 @@
         "Direction": "Long",
         "Traders": "Tim Seymour",
         "Upload_Time": "2026-08-17T18:12:15.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "HD",
@@ -27100,7 +27100,7 @@
         "Direction": "Bearish",
         "Traders": "Michael Khouw",
         "Upload_Time": "2026-08-17T18:11:09.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "HD",
@@ -27109,7 +27109,7 @@
         "Direction": "Bearish",
         "Traders": "Steve Grasso",
         "Upload_Time": "2026-08-17T18:10:50.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "HD",
@@ -27118,7 +27118,7 @@
         "Direction": "Long",
         "Traders": "Tim Seymour",
         "Upload_Time": "2026-08-17T18:10:28.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "V",
@@ -27127,7 +27127,7 @@
         "Direction": "Final Trade",
         "Traders": "Kevin Simpson",
         "Upload_Time": "2026-08-17T15:51:28.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "UNH",
@@ -27136,7 +27136,7 @@
         "Direction": "Final Trade",
         "Traders": "Steve Weiss",
         "Upload_Time": "2026-08-17T15:49:51.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "LMT",
@@ -27145,7 +27145,7 @@
         "Direction": "Final Trade",
         "Traders": "Jim Lebenthal",
         "Upload_Time": "2026-08-17T15:49:33.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "DKS",
@@ -27154,7 +27154,7 @@
         "Direction": "Bullish",
         "Traders": "Steve Weiss",
         "Upload_Time": "2026-08-17T15:49:09.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "CLF",
@@ -27163,7 +27163,7 @@
         "Direction": "Bullish",
         "Traders": "Jim Lebenthal",
         "Upload_Time": "2026-08-17T15:48:42.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "CRH",
@@ -27172,7 +27172,7 @@
         "Direction": "Bullish",
         "Traders": "Jim Lebenthal",
         "Upload_Time": "2026-08-17T15:48:02.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "CF",
@@ -27181,7 +27181,7 @@
         "Direction": "Buy",
         "Traders": "Kevin Simpson",
         "Upload_Time": "2026-08-17T15:47:24.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "NFLX",
@@ -27190,7 +27190,7 @@
         "Direction": "Bullish",
         "Traders": "Kevin Simpson",
         "Upload_Time": "2026-08-17T15:46:36.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "DIS",
@@ -27199,7 +27199,7 @@
         "Direction": "Hold",
         "Traders": "Jim Lebenthal",
         "Upload_Time": "2026-08-17T15:46:13.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "GS",
@@ -27208,7 +27208,7 @@
         "Direction": "Buy",
         "Traders": "Kevin Simpson",
         "Upload_Time": "2026-08-17T15:45:56.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       },
       {
         "Ticker": "CSCO",
@@ -27217,7 +27217,7 @@
         "Direction": "Buy",
         "Traders": "Steve Weiss",
         "Upload_Time": "2026-08-17T15:45:27.000",
-        "_first_seen": "2026-08-18T02:38:55.575516+00:00"
+        "_first_seen": "2026-08-18T03:03:30.965066+00:00"
       }
     ],
     "app_ratings": [
