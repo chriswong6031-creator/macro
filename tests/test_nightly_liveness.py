@@ -583,6 +583,8 @@ def test_only_the_mainland_carries_a_calendar_day_floor():
     {"as_of": None},           # the live International shape
     {"as_of": "not-a-date"},   # unparseable
     {"as_of": ""},             # empty
+    [],                        # artifact is a JSON array, not an object
+    "2026-08-17",              # artifact is a bare JSON string
 ])
 def test_board_blindness_is_never_a_breach(payload):
     report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca=payload))

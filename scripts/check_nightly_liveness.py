@@ -506,7 +506,11 @@ def evaluate_market_boards(
         states[market] = state
 
         payload = boards.get(market)
-        if payload is None:
+        # isinstance, not `is None`: load_index already maps a non-dict artifact to None,
+        # but this is a PURE function and its blindness contract must hold for every
+        # caller. A board that becomes a JSON array would otherwise raise here — and a
+        # traceback out of a dead-man switch is a page about the wrong thing.
+        if not isinstance(payload, dict):
             warn.append(
                 f"INDETERMINATE [{label}]: {path} is absent or unreadable — this market "
                 "is UNGRADED, not green. If the path is right, check the lane's "
