@@ -1384,3 +1384,129 @@ def test_d11f_true_missing_action_agency_stays_unspecified():
     assert event["agency"]["department_name"] is None
     assert event["agency"]["name"] is None
     assert _fallback_derivation(event) is None
+
+
+def test_d11f_receipt_backed_snapshot_agency_in_evidence_receipts():
+    """Snapshot receipt appears in evidence.receipts alongside the action's own receipt."""
+    snapshots = [
+        _snapshot(
+            awarding_agency="Department of the Navy",
+            awarding_sub_agency="Naval Sea Systems Command",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id="snap-navy-receipt",
+            snapshot_content_sha256="1" * 64,
+        )
+    ]
+    actions = [
+        _action(
+            awarding_agency=None,
+            awarding_sub_agency=None,
+            known_at="2026-01-10T12:00:00Z",
+            action_id="ACT-RECEIPT-CHECK",
+            source_receipt_id="action-receipt-check",
+            action_content_sha256="2" * 64,
+        )
+    ]
+    event = _action_event(_events(snapshots, actions), "ACT-RECEIPT-CHECK")
+    assert event["agency"]["department_name"] == "Department of the Navy"
+    fallback = _fallback_derivation(event)
+    assert fallback is not None
+    assert fallback["ref_id"] == "snap-navy-receipt"
+    receipt_ids = {r["ref_id"] for r in event["evidence"]["receipts"]}
+    # Snapshot receipt added alongside the action's own receipt.
+    assert "snap-navy-receipt" in receipt_ids
+    assert "action-receipt-check" in receipt_ids
+    assert len(event["evidence"]["receipts"]) == 2
+
+
+def test_d11f_receiptless_snapshot_cannot_supply_agency_fallback():
+    """A snapshot without a valid immutable receipt may not supply agency fallback."""
+    action = _action(
+        awarding_agency=None,
+        awarding_sub_agency=None,
+        known_at="2026-01-10T12:00:00Z",
+        action_id="ACT-NO-SNAP-RECEIPT",
+        action_content_sha256="2" * 64,
+    )
+
+    # Case 1: receipt_verified=False on the snapshot.
+    snapshots_unverified = [
+        _snapshot(
+            awarding_agency="Department of the Navy",
+            awarding_sub_agency="Naval Sea Systems Command",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id="snap-unverified",
+            snapshot_content_sha256="1" * 64,
+            receipt_verified=False,
+        )
+    ]
+    event_unverified = _action_event(
+        _events(snapshots_unverified, [action]), "ACT-NO-SNAP-RECEIPT"
+    )
+    assert event_unverified["agency"]["department_name"] is None
+    assert event_unverified["agency"]["name"] is None
+    assert _fallback_derivation(event_unverified) is None
+    assert all(
+        r["ref_id"] != "snap-unverified"
+        for r in event_unverified["evidence"]["receipts"]
+    )
+
+    # Case 2: source_receipt_id absent on the snapshot.
+    action2 = _action(
+        awarding_agency=None,
+        awarding_sub_agency=None,
+        known_at="2026-01-10T12:00:00Z",
+        action_id="ACT-NO-SNAP-RECEIPT-ID",
+        action_content_sha256="4" * 64,
+    )
+    snapshots_no_id = [
+        _snapshot(
+            awarding_agency="Department of the Navy",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id=None,
+            source_url=None,
+            source_response_sha256=None,
+            receipt_verified=False,
+            snapshot_content_sha256="3" * 64,
+        )
+    ]
+    # The snapshot itself cannot produce an event (no valid receipt), but the
+    # action still emits with unspecified agency and no fallback derivation.
+    action2_events = _events(snapshots_no_id, [action2])
+    assert any(
+        (ev.get("award_change") or {}).get("action_id") == "ACT-NO-SNAP-RECEIPT-ID"
+        for ev in action2_events
+    )
+    event_no_id = _action_event(action2_events, "ACT-NO-SNAP-RECEIPT-ID")
+    assert event_no_id["agency"]["department_name"] is None
+    assert _fallback_derivation(event_no_id) is None
+
+
+def test_d11f_direct_asserted_action_agency_wins_over_snapshot():
+    """A source-asserted action agency takes precedence over a valid snapshot fallback."""
+    snapshots = [
+        _snapshot(
+            awarding_agency="Department of the Navy",
+            known_at="2026-01-01T00:00:00Z",
+            source_receipt_id="snap-navy-direct-test",
+            snapshot_content_sha256="1" * 64,
+        )
+    ]
+    actions = [
+        _action(
+            awarding_agency="Department of the Army",
+            known_at="2026-01-10T12:00:00Z",
+            action_id="ACT-DIRECT-WINS",
+            action_content_sha256="2" * 64,
+            source_field_presence={
+                "federal_action_obligation": True,
+                "action_id": True,
+                "action_date": True,
+                "awarding_agency": True,
+            },
+        )
+    ]
+    event = _action_event(_events(snapshots, actions), "ACT-DIRECT-WINS")
+    assert event["agency"]["department_name"] == "Department of the Army"
+    assert "Navy" not in json.dumps(event["agency"])
+    assert _fallback_derivation(event) is None

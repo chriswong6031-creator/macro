@@ -1610,7 +1610,10 @@ def _snapshot_agency_candidates(
         known_at = _known_at(observation)
         if not identity or not known_at:
             continue
-        receipt = _receipt(observation, mode="snapshot") or {}
+        receipt = _receipt(observation, mode="snapshot")
+        if receipt is None:
+            # Fallback is forbidden for snapshots with no valid immutable receipt.
+            continue
         version = _text(observation.get("_source_state_hash"))
         content = _text(
             _first(
@@ -1630,6 +1633,7 @@ def _snapshot_agency_candidates(
                 "version": version,
                 "source_identity": content or version or identity,
                 "receipt_ref": _text(receipt.get("ref_id")) or None,
+                "receipt": receipt,
                 "snapshot_identity": identity,
             }
         )
@@ -1872,6 +1876,13 @@ def _make_event(
         )
         else None
     )
+    # The snapshot receipt that authorized the fallback travels into
+    # evidence.receipts alongside the action's own receipt.  When no fallback
+    # is used (or the fallback candidate carries no receipt), this is None and
+    # _all_receipts silently skips it.
+    snapshot_receipt: dict[str, Any] | None = (
+        fallback_candidate.get("receipt") if fallback_candidate is not None else None
+    )
     agency = (
         _copy_agency(fallback_candidate["agency"])
         if fallback_candidate is not None
@@ -1926,7 +1937,7 @@ def _make_event(
         "evidence": {
             "source_class": "observed_source_revision" if is_correction else "official_fact",
             "mapping_class": mapping_class,
-            "receipts": _all_receipts(receipt, prior_receipt),
+            "receipts": _all_receipts(receipt, prior_receipt, snapshot_receipt),
             "derivations": derivations,
             "conflicts": semantic_conflicts,
             "limitations": [
