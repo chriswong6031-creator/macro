@@ -85,3 +85,18 @@ not a generated output), and it sits alongside the program's other frozen inputs
 `data/stock_identity/`.
 
 Rests on [[DSC-BASKET-OHLCV-REWRITES-HISTORY-NIGHTLY]].
+
+## Amendment (2026-08-18) — the tripwire clause only
+
+The `answer` above specifies the live-plane tripwire as "price moves within 1e-5
+relative, volume within 1e-2". That clause is amended by
+`DEC:SI-LIVE-PLANE-BAND-IS-UNIFORMITY-NOT-LEVEL`: a band on the price *level* fires on
+every future ex-dividend (`auto_adjust` re-scales all elapsed history; a routine ~$0.10
+Barrick quarterly is ~2.4e-03, 240x the band), and a blanket 1e-2 volume tolerance lets a
+settled session's volume be restated by up to 1% unseen. The band is now on the
+*uniformity* of the rescale, with settled volume required exact and the 1e-2 band kept for
+the ASOF bar alone.
+
+Everything else in this record stands unchanged and was not re-litigated — the decision to
+move the prefix off the live plane, the unchanged `B_SOURCE_PREFIX_SHA256`, and the
+measurement that falsified a precision-tolerant hash.

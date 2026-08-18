@@ -50,10 +50,30 @@ mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$SUPPORT_DIR/runs"
 # time — re-run this installer after editing scripts/close_pass_host_runner.py.
 # The POLICY it launches is never this vintage: the runner resets its lane
 # checkout to origin/main every run, and the copy of this same file INSIDE that
-# lane is what answers --probe-close.  Every receipt records both `runner_sha`
-# (this copy) and `code_sha` (the lane's HEAD), so drift is visible, not guessed.
+# lane is what answers --probe-close.
+#
+# THIS cp IS THE ONLY ACT THAT DEPLOYS THIS FILE, and that is the freeze working
+# as designed -- but on 2026-08-18 it also meant PR #5862 merged as af416e4a1066
+# while the host kept executing the pre-fix bytes from Aug 15 19:54, invisibly,
+# because nothing compared the two.  Every receipt now carries a `bootstrap`
+# block (file_sha256 + mtime of the EXECUTING snapshot, graded against
+# origin/main every run) alongside `code_sha` (the lane's git HEAD), and
+# scripts/close_pass_slo_report.py fails its bootstrap leg on drift.  The names
+# are deliberately un-confusable: one says file_sha256, the other says code_sha.
+#
+# So SAY what this install moved.  "Already at this vintage" and "deployed" look
+# identical from the outside and only one of them means a merged fix went live.
+NEW_SHA="$(shasum -a 256 "$REPO_SRC/scripts/close_pass_host_runner.py" | awk '{print $1}')"
+OLD_SHA="$(shasum -a 256 "$SUPPORT_DIR/close_pass_host_runner.py" 2>/dev/null | awk '{print $1}' || true)"
 cp "$REPO_SRC/scripts/close_pass_host_runner.py" "$SUPPORT_DIR/"
 chmod 755 "$SUPPORT_DIR/close_pass_host_runner.py"
+if [ -z "${OLD_SHA:-}" ]; then
+  echo "runner: first install (file_sha256 ${NEW_SHA:0:12})"
+elif [ "$OLD_SHA" = "$NEW_SHA" ]; then
+  echo "runner: already at this vintage (file_sha256 ${NEW_SHA:0:12}) - snapshot unchanged"
+else
+  echo "runner: DEPLOYED ${OLD_SHA:0:12} -> ${NEW_SHA:0:12} (the frozen snapshot moved)"
+fi
 
 sed -e "s|__HOME__|$HOME|g" -e "s|__SUPPORT_DIR__|$SUPPORT_DIR|g" "$TEMPLATE" > "$DEST"
 plutil -lint "$DEST"
@@ -81,6 +101,10 @@ echo "receipts:  $SUPPORT_DIR/runs/<session>.json"
 echo "manual test run:   launchctl kickstart gui/$UID_NUM/com.macro.closepass"
 echo "dry probe (no publish, no launchd):"
 echo "  /usr/bin/python3 \"$SUPPORT_DIR/close_pass_host_runner.py\" --dry-run"
+echo "verify the deployed vintage IS this checkout (merging alone never deploys it):"
+echo "  shasum -a 256 \"$SUPPORT_DIR/close_pass_host_runner.py\" \"$REPO_SRC/scripts/close_pass_host_runner.py\""
+echo "drift leg (grades the newest run receipt, exits 1 on drift):"
+echo "  python3 -m scripts.close_pass_slo_report --sessions 3"
 echo "rollback:  launchctl bootout gui/$UID_NUM/com.macro.closepass"
 echo "           rm \"$DEST\""
 echo "           git -C \"$REPO_ROOT\" worktree remove --force .claude/worktrees/closepass-host-lane"

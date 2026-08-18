@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-14",
+  "as_of": "2026-08-18",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -39,7 +39,7 @@
   "family": "pss_af1_finra_absorption_witness_prospective",
   "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
   "gate_open": true,
-  "generated_utc": "2026-08-14T03:35:50.972363+00:00",
+  "generated_utc": "2026-08-18T05:15:30.600357+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,
@@ -64,8 +64,8 @@
   "scan_census": {
     "derived_events": 0,
     "eligible_future_cr1_leader_sources": 0,
-    "finra_latest_session": "2026-08-13",
-    "finra_rows_through_as_of": 77792,
+    "finra_latest_session": "2026-08-17",
+    "finra_rows_through_as_of": 80833,
     "reasons": {}
   },
   "schema": "personality_flow_absorption.state/v1",

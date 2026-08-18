@@ -31,6 +31,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import close_pass_host_runner as HOST
 from scripts import close_pass_slo_report as R
 from scripts import freshness_sentinel as FS
 
@@ -79,6 +80,59 @@ def state_dir(tmp_path: Path) -> Path:
     return tmp_path
 
 
+@pytest.fixture(autouse=True)
+def _off_host(monkeypatch, tmp_path_factory):
+    """No test may read this machine's REAL close-pass receipts.
+
+    Not hypothetical: the bootstrap leg's first run on the Mac Studio that owns
+    ``com.macro.closepass`` graded the live ``~/Library/Application Support``
+    receipts and turned four unrelated latency assertions red. A report whose
+    default source is host state must be pinned away from it, or the suite
+    passes or fails on which machine ran it.
+    """
+    monkeypatch.setenv("CLOSE_PASS_HOST_SUPPORT",
+                       str(tmp_path_factory.mktemp("no-host-receipts")))
+
+
+def _receipts(tmp_path: Path, *receipts: dict) -> Path:
+    """A receipts directory holding exactly the runs given, as the runner writes
+    them: one JSON per session, named for the session."""
+    runs = tmp_path / "runs"
+    runs.mkdir(parents=True, exist_ok=True)
+    for receipt in receipts:
+        # The runner gives a dry run its own name so it cannot overwrite the
+        # night's real receipt; the report must then prefer the real one.
+        suffix = ".dry-run" if receipt.get("dry_run") else ""
+        (runs / f"{receipt['session']}{suffix}.json").write_text(json.dumps(receipt))
+    return runs
+
+
+def _receipt(session: str, **boot) -> dict:
+    """One host run receipt at the CURRENT schema, clean unless told otherwise."""
+    identity = {"path": "/Users/x/Library/Application Support/macro-closepass/"
+                        + HOST.RUNNER_BASENAME,
+                "file_sha256": "a" * 64, "mtime": "2026-08-15T19:54:03+00:00",
+                "is_installed_copy": True, "installed_path": "/Users/x/…",
+                "installed_file_sha256": "a" * 64, "main_file_sha256": "a" * 64,
+                "matches_main": True, "commits_behind": 0,
+                "installed_matches_main": True, "installed_commits_behind": 0,
+                "detail": "byte-identical to origin/main's scripts/"
+                          + HOST.RUNNER_BASENAME}
+    identity.update(boot)
+    # UNDER LAUNCHD THE TWO VERDICTS ARE ONE FIELD: the executing file IS the
+    # installed snapshot, so a fixture that let them disagree by accident would
+    # describe a state the production clock cannot be in. Mirror unless a test
+    # is deliberately building the split (a session running the repo copy).
+    if identity["is_installed_copy"]:
+        identity.setdefault("installed_matches_main", identity["matches_main"])
+        for key, mirror in (("installed_matches_main", "matches_main"),
+                            ("installed_commits_behind", "commits_behind")):
+            if key not in boot:
+                identity[key] = identity[mirror]
+    return {"schema": HOST.RECEIPT_SCHEMA, "session": session,
+            "outcome": "published", "bootstrap": identity}
+
+
 def _run(state: Path, **kw) -> tuple[int, str]:
     out = io.StringIO()
     rc = R.run(now=kw.pop("now", NOW), state_dir=state,
@@ -92,21 +146,29 @@ def _run(state: Path, **kw) -> tuple[int, str]:
 # --------------------------------------------------------------------------- #
 # The golden table
 # --------------------------------------------------------------------------- #
+#: A path that cannot exist, so the golden's bootstrap footer is a fixed string
+#: rather than whatever tmpdir the run happened to get. The NOT-MEASURED shape is
+#: deliberately the golden one: off the host — which is where CI reads this — the
+#: leg has nothing to see, and what it prints then is exactly the line that must
+#: never be mistaken for a pass.
+GOLDEN_RUNS = Path("/nonexistent/macro-closepass/runs")
+
 GOLDEN = """\
-session     close  built  visible  close→cand  cand→vis  eval/univ  admit  source  final  SLA 18:30  SLO 16:15
-----------  -----  -----  -------  ----------  --------  ---------  -----  ------  -----  ---------  ---------
-2026-08-14  16:15  19:19  19:30    11,054s     646s      253/1763   22     store   yes    MISSED     MISSED
-2026-08-13  —      —      18:00    —           —         —          —      —       —      met        MISSED
-2026-08-12  —      —      —        —           —         —          —      —       —      MISSED     MISSED
+session     close  built  visible  close→cand  cand→vis  eval/univ  admit  source  final  SLA 18:30  SLO 16:15  bootstrap
+----------  -----  -----  -------  ----------  --------  ---------  -----  ------  -----  ---------  ---------  ---------
+2026-08-14  16:15  19:19  19:30    11,054s     646s      253/1763   22     store   yes    MISSED     MISSED     —
+2026-08-13  —      —      18:00    —           —         —          —      —       —      met        MISSED     —
+2026-08-12  —      —      —        —           —         —          —      —       —      MISSED     MISSED     —
 
 1/3 sessions met the 18:30 ET SLA; 0/3 met the 16:15 ET product SLO.
 'visible' is observed on the sentinel's 30-minute cadence, so cand→vis is known to that resolution, no better.
 — = not measured. Times are ET on the session's own day (+1 = the following morning).
+bootstrap: NOT MEASURED — no host receipt under /nonexistent/macro-closepass/runs for any reported session. Run this on the host that owns com.macro.closepass, or pass --receipts-dir.
 """
 
 
 def test_the_acceptance_table_is_the_golden_shape(state_dir):
-    rc, text = _run(state_dir)
+    rc, text = _run(state_dir, receipts_dir=GOLDEN_RUNS)
     assert text == GOLDEN
     assert rc == 1              # one MISSED session ⇒ the wave is not accepted
 
@@ -396,13 +458,18 @@ def test_the_json_mode_carries_every_column_the_table_shows(state_dir):
     acceptance recorded from --json must be re-derivable into the table."""
     _, raw = _run(state_dir, as_json=True)
     doc = json.loads(raw)
-    assert doc["schema"] == "close_pass.slo_report/v1"
+    assert doc["schema"] == "close_pass.slo_report/v2"
     assert doc["sla_by_et"] == "18:30" and doc["product_slo_by_et"] == "16:15"
     assert doc["surface"] == R.SURFACE_ID
     for _, key, _ in R.COLUMNS:
         assert key in doc["sessions"][0], key
     # Raw instants live here; the table renders them as ET clock times.
     assert doc["sessions"][0]["board_generated_at"].endswith("Z")
+    # The bootstrap leg is a first-class part of the record, not a printed
+    # afterthought: a machine-read acceptance must carry the verdict that can
+    # invalidate it, plus the per-session detail behind each cell.
+    assert doc["bootstrap_verdict"]["state"] == "unmeasured"
+    assert "bootstrap_detail" in doc["sessions"][0]
 
 
 def test_the_report_grades_the_close_pass_board_and_no_other_surface(state_dir):
@@ -416,3 +483,279 @@ def test_the_report_grades_the_close_pass_board_and_no_other_surface(state_dir):
     _, raw = _run(state_dir, as_json=True)
     row = {r["session"]: r for r in json.loads(raw)["sessions"]}["2026-08-12"]
     assert row["stamped"] is False and row["sla_met"] is False
+
+
+# --------------------------------------------------------------------------- #
+# The bootstrap leg — "is the code that fires the clock the code we merged?"
+#
+# WHY THIS IS A GRADING LEG AND NOT A LOG LINE. The launchd clock executes a
+# SNAPSHOT frozen into Application Support by the installer, never this
+# repository. On 2026-08-18 PR #5862 merged as af416e4a1066 and the host went on
+# executing the pre-fix bytes from Aug 15 — visible in nothing the estate owns,
+# because the only vintage any receipt compared to anything was the LANE's, which
+# is reset to origin/main every run and is therefore always fresh no matter how
+# old the file computing it is. A session graded green on plumbing nobody
+# deployed is an unmeasured session that happened to work.
+# --------------------------------------------------------------------------- #
+def _green(session: str) -> dict:
+    """A session that met both gates — so the bootstrap leg is the ONLY thing
+    that can fail the report, which is what makes these assertions about it."""
+    return {"first_fresh_at": f"{session}T20:10:00+00:00",
+            "first_fresh_et": "16:10", "by_et": "18:30", "met": True,
+            "latency": {"close_observed_at": f"{session}T20:00:00Z",
+                        "board_generated_at": f"{session}T20:05:00Z",
+                        "first_user_visible_at": f"{session}T20:10:00+00:00",
+                        "close_to_candidate_sec": 300.0,
+                        "candidate_to_visible_sec": 300.0,
+                        "visible_resolution_sec": 1800},
+            "coverage": FRIDAY["coverage"], "provenance": FRIDAY["provenance"]}
+
+
+def _green_state(tmp_path: Path, *sessions: str) -> Path:
+    (tmp_path / "first_fresh.json").write_text(json.dumps(
+        {"sessions": {s: {R.SURFACE_ID: _green(s)} for s in sessions}}))
+    return tmp_path
+
+
+def test_a_drifted_bootstrap_fails_the_report_even_when_both_gates_are_met(tmp_path):
+    """The whole point: two green gates and a red report.
+
+    Fri 08-14's board could hit 16:10 ET on a snapshot three commits stale and
+    every existing column would say the wave is acceptable. The exit code has to
+    disagree, or the leg is decoration.
+    """
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(tmp_path, _receipt("2026-08-14", matches_main=False,
+                                        commits_behind=3,
+                                        main_file_sha256="b" * 64,
+                                        detail="the executing bootstrap is NOT "
+                                               "origin/main's scripts/"
+                                               + HOST.RUNNER_BASENAME))
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    row = [ln for ln in text.splitlines() if ln.startswith("2026-08-14")][0]
+    assert "met" in row and "BEHIND 3" in row      # both gates met, plumbing stale
+    footer = [ln for ln in text.splitlines() if ln.startswith("BOOTSTRAP DRIFT")]
+    assert len(footer) == 1, text
+    # The remedy travels with the finding. There is no self-heal by design, so a
+    # finding without the command is a finding nobody can act on.
+    assert "bash scripts/install_closepass_launchd.sh" in footer[0]
+    assert "Merging does not deploy" in footer[0]
+
+
+def test_a_receipt_written_before_the_check_existed_is_itself_drift(tmp_path):
+    """THE MERGED-BUT-NOT-DEPLOYED DETECTOR, and it needs no cooperation from the
+    stale bootstrap it is detecting.
+
+    A snapshot old enough to predate this block writes a receipt with no
+    ``bootstrap`` key at all — which is not "unknown", it is proof: the code that
+    wrote it is older than the code reading it. That is precisely the state the
+    host sat in from 2026-08-15 to 2026-08-18 while every instrument read green.
+    """
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(tmp_path, {"schema": "close_pass.host_run/v1",
+                                "session": "2026-08-14", "outcome": "published",
+                                "runner_sha": "cde03d71de97",
+                                "code_sha": "af416e4a1066" + "0" * 28})
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    assert "OLD-SCHEMA" in text
+    assert "bash scripts/install_closepass_launchd.sh" in text
+
+
+def test_only_the_newest_receipt_grades_but_the_history_still_prints(tmp_path):
+    """A healed host goes green on the next session, not five sessions later.
+
+    Grading the whole window would hold the report red for as long as the window
+    is wide, which is how a leg gets ignored. The older evening genuinely did run
+    a stale bootstrap and that stays visible in its own row — printed, not graded.
+    """
+    state = _green_state(tmp_path, "2026-08-14", "2026-08-13")
+    runs = _receipts(tmp_path,
+                     _receipt("2026-08-13", matches_main=False, commits_behind=4),
+                     _receipt("2026-08-14"))
+    rc, text = _run(state, sessions=2, receipts_dir=runs)
+    assert rc == 0, text
+    rows = {ln.split()[0]: ln for ln in text.splitlines() if ln.startswith("2026-")}
+    assert rows["2026-08-14"].endswith("ok")
+    assert "BEHIND 4" in rows["2026-08-13"]        # history is not erased
+    assert "matched origin/main on 2026-08-14" in text
+
+
+def test_a_verdict_the_run_could_not_resolve_is_unverified_and_not_ok(tmp_path):
+    """``None`` is not a pass. A run whose fetch failed compared its bootstrap to
+    a stale reference and says so; rendering that as ``ok`` would certify exactly
+    the nights the detector could not see."""
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(tmp_path, _receipt("2026-08-14", matches_main=None,
+                                        commits_behind=None,
+                                        detail="byte-identical to the lane's "
+                                               "origin/main, but this run's fetch "
+                                               "failed (code_stale)"))
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    row = [ln for ln in text.splitlines() if ln.startswith("2026-08-14")][0]
+    assert row.endswith(R.BOOT_UNKNOWN) and "ok" not in row.split()[-1]
+    assert "UNVERIFIED" in text and "not a clean bill" in text
+    # Unknown is not drift either — it must not fail a wave on missing evidence.
+    assert rc == 0, text
+
+
+def test_no_receipt_at_all_says_where_it_looked_instead_of_passing_quietly(tmp_path):
+    """Off the host this leg can see nothing, and the line it prints then is the
+    one that must never read as a pass. It also names the directory, so the fix
+    ("run it on the Studio", "--receipts-dir") is in the output rather than in
+    somebody's memory."""
+    state = _green_state(tmp_path, "2026-08-14")
+    rc, text = _run(state, sessions=1, receipts_dir=tmp_path / "nowhere")
+    assert rc == 0                                  # missing evidence ≠ a finding
+    assert "bootstrap: NOT MEASURED" in text
+    assert str(tmp_path / "nowhere") in text
+    assert R.bootstrap_verdict([{"session": "2026-08-14", "bootstrap": R.ABSENT}],
+                               tmp_path)["state"] == "unmeasured"
+
+
+def test_an_unreadable_receipt_is_absent_rather_than_a_crash(tmp_path):
+    """This report grades the clock; it must not be stoppable BY the clock. A
+    truncated receipt (a run killed mid-write) drops to ``—`` and the latency
+    table — which does not depend on it at all — still renders."""
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    (runs / "2026-08-14.json").write_text("{not json")
+    assert R.read_receipts(runs) == {}
+    state = _green_state(tmp_path, "2026-08-14")
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 0 and "NOT MEASURED" in text
+
+
+def test_the_receipts_default_to_the_runners_own_support_dir(monkeypatch, tmp_path):
+    """One definition of where receipts live, resolved through the runner itself.
+
+    A second literal here could drift from the writer's, and the report would
+    then grade a directory nobody writes to — a detector that is green because it
+    is looking in the wrong place.
+    """
+    monkeypatch.setenv("CLOSE_PASS_HOST_SUPPORT", str(tmp_path / "support"))
+    assert R.default_receipts_dir() == tmp_path / "support" / "runs"
+    assert R.default_receipts_dir().parent == HOST.support_dir()
+
+
+def test_the_remedy_is_printed_exactly_once_however_the_finding_arrived(tmp_path):
+    """One command, one place to read it.
+
+    The runner's own annotation has to stand alone in a launchd log with no
+    footer beneath it, so its ``detail`` carries the remedy. Copying that detail
+    into a footer that also states the remedy printed the same command twice in
+    one sentence — noise that trains a reader to skim the line that matters.
+    """
+    state = _green_state(tmp_path, "2026-08-14")
+    from_runner = ("the executing bootstrap is NOT origin/main's scripts/"
+                   f"{HOST.RUNNER_BASENAME} — 2 commit(s) to that file are not "
+                   "deployed; re-run scripts/install_closepass_launchd.sh")
+    runs = _receipts(tmp_path, _receipt("2026-08-14", matches_main=False,
+                                        commits_behind=2, detail=from_runner))
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    footer = [ln for ln in text.splitlines() if ln.startswith("BOOTSTRAP DRIFT")][0]
+    assert rc == 1
+    assert footer.count("install_closepass_launchd.sh") == 1, footer
+
+    # ...and when the finding is the report's own (a pre-check receipt), the
+    # footer supplies the command the receipt could not have carried.
+    runs2 = _receipts(tmp_path / "b", {"schema": "close_pass.host_run/v1",
+                                       "session": "2026-08-14"})
+    _, text2 = _run(state, sessions=1, receipts_dir=runs2)
+    footer2 = [ln for ln in text2.splitlines() if ln.startswith("BOOTSTRAP DRIFT")][0]
+    assert footer2.count("install_closepass_launchd.sh") == 1, footer2
+
+
+def test_a_clean_executing_copy_cannot_certify_a_stale_installed_snapshot(tmp_path):
+    """THE BLOCKER. A session ran the repo copy, that copy IS origin/main, and the
+    receipt's `matches_main` is True — while `installed_matches_main` in the same
+    receipt says the file launchd will exec tonight is six commits behind.
+
+    Grading the executing copy printed `ok` and exited 0 with the footer claiming
+    "the host snapshot matched origin/main" — an affirmative claim about a file
+    nothing had graded, with the disproof two keys away.
+    """
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(tmp_path, _receipt(
+        "2026-08-14", is_installed_copy=False,
+        matches_main=True, commits_behind=0,
+        installed_matches_main=False, installed_commits_behind=6,
+        detail="the executing bootstrap is byte-identical to origin/main — but this "
+               "is NOT the copy launchd execs, and the INSTALLED snapshot is NOT "
+               "origin/main (6 commit(s) behind)"))
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    row = [ln for ln in text.splitlines() if ln.startswith("2026-08-14")][0]
+    assert row.endswith("BEHIND 6"), row
+    assert "the host snapshot matched origin/main" not in text
+    assert "BOOTSTRAP DRIFT on 2026-08-14" in text
+
+
+def test_a_receipt_from_before_the_installed_verdict_still_grades(tmp_path):
+    """Version tolerance in the one direction that matters: an older receipt
+    carrying only `matches_main` is still gradeable on it. The fallback is for
+    age, never a preference — a receipt that HAS the installed verdict is graded
+    on that."""
+    state = _green_state(tmp_path, "2026-08-14")
+    legacy = _receipt("2026-08-14", matches_main=False, commits_behind=2)
+    del legacy["bootstrap"]["installed_matches_main"]
+    del legacy["bootstrap"]["installed_commits_behind"]
+    rc, text = _run(state, sessions=1, receipts_dir=_receipts(tmp_path, legacy))
+    assert rc == 1 and "BEHIND 2" in text
+
+
+def test_an_unverifiable_night_does_not_cancel_a_proven_drift_beneath_it(tmp_path):
+    """NOTHING HEALS THIS SNAPSHOT EXCEPT AN OPERATOR RUNNING THE INSTALLER.
+
+    So a night the runner could not grade (fetch failed, lane reference gone)
+    says nothing about the drift proven the session before — that finding still
+    stands and must still fail. Taking the newest row that is merely PRESENT let
+    one unverifiable evening erase a standing finding and exit 0.
+    """
+    state = _green_state(tmp_path, "2026-08-14", "2026-08-13")
+    runs = _receipts(
+        tmp_path,
+        _receipt("2026-08-13", matches_main=False, commits_behind=5,
+                 installed_matches_main=False, installed_commits_behind=5),
+        _receipt("2026-08-14", matches_main=None, commits_behind=None,
+                 installed_matches_main=None, installed_commits_behind=None,
+                 detail="the lane reference was unreadable"))
+    rc, text = _run(state, sessions=2, receipts_dir=runs)
+    assert rc == 1, text
+    rows = {ln.split()[0]: ln for ln in text.splitlines() if ln.startswith("2026-")}
+    assert rows["2026-08-14"].endswith(R.BOOT_UNKNOWN)   # honestly unknown...
+    assert "BEHIND 5" in rows["2026-08-13"]              # ...and still failing
+    assert "BOOTSTRAP DRIFT on 2026-08-13" in text
+
+
+def test_a_proven_heal_above_an_old_drift_does_go_green(tmp_path):
+    """The other direction of the same rule: re-running the installer heals the
+    host, and the next graded session says so. The rule is "newest DEFINITIVE
+    row", not "any drift anywhere" — otherwise a heal could never show."""
+    state = _green_state(tmp_path, "2026-08-14", "2026-08-13")
+    runs = _receipts(tmp_path,
+                     _receipt("2026-08-13", matches_main=False, commits_behind=9,
+                              installed_matches_main=False,
+                              installed_commits_behind=9),
+                     _receipt("2026-08-14"))
+    rc, text = _run(state, sessions=2, receipts_dir=runs)
+    assert rc == 0, text
+    assert "matched origin/main on 2026-08-14" in text
+
+
+def test_a_real_receipt_outranks_a_dry_run_for_the_same_session(tmp_path):
+    """The dry run has its own filename, but it SORTS AFTER the production one —
+    so without an explicit preference the exercise would outrank the evening it
+    was checking, which is the same evidence loss one layer up."""
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(
+        tmp_path,
+        _receipt("2026-08-14", matches_main=False, commits_behind=3,
+                 installed_matches_main=False, installed_commits_behind=3),
+        dict(_receipt("2026-08-14"), dry_run=True))
+    assert sorted(p.name for p in runs.glob("*.json")) == [
+        "2026-08-14.dry-run.json", "2026-08-14.json"]
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    assert "BEHIND 3" in text

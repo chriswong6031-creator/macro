@@ -57,7 +57,11 @@ HEAD_SCHEMA = "fundamental_forensics.broad_sec.head.v1"
 OBSERVATION_SCHEMA = "fundamental_forensics.broad_sec.issuer_observations.v1"
 CONTINUATION_SCHEMA = "fundamental_forensics.broad_sec.recovery_continuation.v1"
 POINTER_MAX_BYTES = 16 * 1024
-MAX_UNIVERSE_ISSUERS = 2500
+# Bind fence for the canonical parquet, not a crawl target. Live
+# data/edgar/fundamentals.parquet measured 2837 unique issuers on 2026-08-18
+# (run 32097495749, universe_invalid at 2500). 4000 admits that census with
+# growth room and still fail-closes an accidental full-EDGAR dump.
+MAX_UNIVERSE_ISSUERS = 4000
 MAX_SUBMISSIONS_BYTES = 8 * 1024 * 1024
 MAX_COMPANYFACTS_BYTES = 64 * 1024 * 1024
 MAX_AFFECTED_ISSUERS = 64

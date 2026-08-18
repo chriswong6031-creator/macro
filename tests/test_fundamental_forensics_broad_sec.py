@@ -16,6 +16,7 @@ import requests
 
 from collectors.edgar_forensics import SecForensicsCollector, endpoint_url
 from engine.fundamental_forensics.broad_sec_store import (
+    MAX_UNIVERSE_ISSUERS,
     UNIVERSE_RELATIVE_PATH,
     BroadSecError,
     PollClocks,
@@ -246,6 +247,37 @@ def test_universe_binding_fails_closed_on_duplicate_ticker_and_cik(tmp_path: Pat
     with pytest.raises(BroadSecError) as err:
         load_universe(path2)
     assert err.value.reason_code == "universe_invalid"
+
+
+def test_live_canonical_census_size_binds_under_hard_max(tmp_path: Path) -> None:
+    """Reproduce production run 32097495749: 2837 issuers used to fail at 2500."""
+    rows = [(f"T{i:04d}", 1_000_000 + i) for i in range(2837)]
+    path = _write_universe(tmp_path / "census.parquet", rows)
+    bound = load_universe(path)
+    assert bound.issuer_count == 2837
+    assert bound.unique_ticker_count == 2837
+    assert bound.unique_cik_count == 2837
+    assert bound.issuer_count <= MAX_UNIVERSE_ISSUERS
+
+
+def test_universe_hard_max_still_fail_closes_above_cap(tmp_path: Path) -> None:
+    rows = [(f"T{i:04d}", 1_000_000 + i) for i in range(MAX_UNIVERSE_ISSUERS + 1)]
+    path = _write_universe(tmp_path / "oversize.parquet", rows)
+    with pytest.raises(BroadSecError) as err:
+        load_universe(path)
+    assert err.value.reason_code == "universe_invalid"
+    assert str(MAX_UNIVERSE_ISSUERS) in err.value.detail
+
+
+@pytest.mark.needs_full_checkout("data")
+def test_live_canonical_parquet_binds_under_hard_max() -> None:
+    path = ROOT / UNIVERSE_RELATIVE_PATH
+    bound = load_universe(path, repo_root=ROOT)
+    assert bound.canonical is True
+    assert bound.issuer_count > 0
+    assert bound.issuer_count <= MAX_UNIVERSE_ISSUERS
+    assert bound.unique_ticker_count == bound.issuer_count
+    assert bound.unique_cik_count == bound.issuer_count
 
 
 def test_two_run_idempotence_does_not_advance_source_identity(tmp_path: Path) -> None:

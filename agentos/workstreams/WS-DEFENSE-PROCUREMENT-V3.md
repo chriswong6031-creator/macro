@@ -38,8 +38,9 @@ waves:
     status: in_progress
     depends_on: [D0R]
     next_action: >
-      Ship the entitled desk rescue PR, merge, deploy, and prove the
-      signed-in journey. Do not start D2. Do not merge #5424.
+      GovRev stale-write fence, then a receipt-bound re-baseline, then
+      rebase #5856 with receipt hardening. Do not start D2. Do not merge
+      #5424. Do not treat Radar 48 as new alpha.
   - id: D2
     title: Defense Identity Atlas vertical slice
     status: todo
@@ -60,6 +61,8 @@ landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
   - "HEAD recipient graph is defense19-v1. #5424 defense20-v1 is still open and must not be treated as live."
+  - "government-revenue-live can build-and-prove a projection and still fail to publish; prior live projection stays authoritative (run 32112383533, 2026-08-18)."
+  - "Radar 48 is the coherent published queue, not 26 new awards. Ledger still has 56 lines with orphaned race identities."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "DNR:LAW-REVIEWED-MANIFEST-CENSUS — a reviewed recipient graph cannot re-time itself."
   - "SPR is not a live issuer (Boeing close 2025-12-08; absent from Stock Identity universe)."
@@ -72,6 +75,9 @@ do_not_redo:
   - "Do not treat SPR as a live golden ticker."
   - "Do not invent 60 VERIFIED_CASE primaries."
   - "Do not fold #5424 into D1. Do not start D2 in the D1 session."
+  - "Do not assert Candidate Radar must equal historical 22. Prove cookie = bearer = UI for the live content_id."
+  - "Do not hand-advance the candidate ledger. Do not change recipient mappings to make counts nicer."
+  - "Do not merge #5856 until a healed/receipt-bound generation exists to rebase onto."
 decisions:
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
 discoveries:
@@ -79,9 +85,11 @@ discoveries:
   - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
   - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
+  - DSC:OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS
+  - DSC:CANDIDATE-ID-RACE-BETWEEN-GOVREV-LANES
 next_action: >
-  Merge and live-prove the D1 entitled-desk rescue. Stop after that proof.
-  Do not start Atlas/D2. Do not merge #5424.
+  Fence government-revenue-live stale writes, then receipt-bound re-baseline,
+  then rebase #5856. Do not start D2. Do not merge #5424.
 ---
 
 ## Context
@@ -89,10 +97,11 @@ next_action: >
 V3 architecture and the D0R handoff merged in #5803 (`455284b7beae`). D0R
 closed on #5819 (`0d10acdd`) and was accepted; Gate 5 stays honest-labeled
 (6 VERIFIED_CASE + 61 RESEARCH_CANDIDATE) and is not alpha validation.
-D1 is the authorized production rescue of `government_revenue.html` for an
-already-entitled `site_full` user. Canonical D1 contract:
+D1 entitled-desk rescue merged as #5836. D1 is not accepted: #5856 PIT-safe
+agency is still open, and the 2026-08-18 collection/fold race left a published
+generation that live rebuild 32112383533 built but did not publish. Recovery
+generation currently served: bundle `grw2-df3a9860110d76a89dd9cc6b`, candidate
+`grcq1-d7948adf2acbf728e9e48270`, Radar/cookie/bearer 48, mapping backlog 21,
+graph `defense19-v1`. Canonical D1 contract:
 `research/defense_intelligence/DEFENSE_D1_PRODUCTION_TRUTH_AND_PRODUCT_RESCUE_HANDOFF.md`.
-Discoveries: `DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT`,
-`DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT`,
-`DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES`,
-`DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200`.
+Latest proof: `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md`.

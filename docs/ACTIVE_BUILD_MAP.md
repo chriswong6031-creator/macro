@@ -2,18 +2,26 @@
 
 # Active Build Map
 
-Generated: 2026-08-18T05:10:15.185591+00:00  |  Open PRs: 11  |  Merged (window): 500  |  base: `c6156d2c209eada1e79bc36ac63361a20dd5d781`
+Generated: 2026-08-18T08:33:11.395658+00:00  |  Open PRs: 19  |  Merged (window): 500  |  base: `d19b89c619ac3e0dd349ea53cd9c7ed190d56929`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
+| #5886 | docs(agentos): record why the daily collect mutex cannot live in et_gate | `claude/daily-collect-mutex-decision` | 2026-08-18 | — |
+| #5885 | fix(nightly): base-freshness fence — refuse to publish an append-only artifact over a base that moved | `claude/append-only-base-fence` | 2026-08-18 | ⚠ protected:4 |
+| #5884 | docs(agentos): D1 recovery-generation proof — Radar 48, fence next | `claude/defense-d1-recovery-proof` | 2026-08-18 | — |
+| #5883 | docs(agentos): RESOLVED — a generation revert was the ci-pack-6 repair; correct the "wedged" conclusion | `claude/govrev-wedge-resolved` | 2026-08-18 | — |
+| #5882 | govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate) | `claude/govrev-event-identity-adjudication` | 2026-08-18 | ⚠ protected:1 |
+| #5879 | fix(ci): hydrate the base commit's blobs so the semantic replay can check it out | `claude/base-replay-partial-clone-hydration` | 2026-08-18 | — |
+| #5877 | fix(stock-identity): band the B rescale's uniformity, not its level | `claude/b-tripwire-band-uniformity` | 2026-08-18 | ⚠ CONFLICTING |
+| #5874 | fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields | `claude/contract-drift-prophet-board-read` | 2026-08-18 | ⚠ CONFLICTING |
+| #5872 | feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief — runtime implementation (v1.2) | `claude/ad1-intel-brief-runtime` | 2026-08-18 | ⚠ protected:4 |
+| #5867 | ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class | `claude/runner-label-registry-core` | 2026-08-18 | ⚠ protected:1 |
 | #5859 | research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census | `claude/prophet-v4-d1-census` | 2026-08-18 | — |
-| #5858 | fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan | `claude/13f-atom-transient-fetch-partial` | 2026-08-18 | — |
 | #5856 | D1.1F: PIT-safe Government Revenue agency labels | `claude/defense-d1-1-agency-semantic` | 2026-08-18 | — |
 | #5853 | fix(sector_central): withhold the Act-Now board server-side on its second host | `claude/sector-central-act-now-gate` | 2026-08-18 | — |
-| #5852 | feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar | `claude/prophet-per-market-freshness` | 2026-08-18 | ⚠ protected:3 |
-| #5851 | ci(runner-policy): label-declaration registry (R11/R12) + re-measure stale mac-builder-1/2 pool models | `claude/runner-label-registry` | 2026-08-18 | ⚠ protected:2 |
+| #5851 | ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency | `claude/runner-label-registry` | 2026-08-18 | ⚠ protected:1 |
 | #5845 | radar(w6): Sol-review RP1 ranking-law corrections | `claude/w6-rp1-sol-corrections` | 2026-08-18 | — |
 | #5822 | research: China institutional intelligence alpha masterplan | `research/china-intelligence-alpha-masterplan-2026-08-17` | 2026-08-17 | DRAFT |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
@@ -26,20 +34,37 @@ Generated: 2026-08-18T05:10:15.185591+00:00  |  Open PRs: 11  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #5852 | #5851 | 2 | `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
-| #5853 | #5852 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5885 | #5872 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
+| #5885 | #5883 | 1 | `agentos/discoveries/DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS.md` |
+| #5885 | #5882 | 1 ⚠ | `.github/workflows/government-revenue-live.yml` |
+| #5885 | #5853 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5884 | #5882 | 1 | `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md` |
+| #5884 | #5856 | 1 | `agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md` |
+| #5872 | #5853 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5845 | #5737 | 1 | `agentos/workstreams/WS-LIVE-ENTRY-RADAR.md` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5878 | policy(prophet): force-majeure sessions are backfilled by DEFAULT | 2026-08-18 |
+| #5876 | docs(agentos): the ci-pack-6 red is a candidate-id race between two govrev lanes | 2026-08-18 |
+| #5875 | fix(stock-identity): band the B live-plane tripwire on uniformity, not level | 2026-08-18 |
+| #5873 | docs(agentos): correct the govrev record — the projection lane does NOT clear the ci-pack-6 red | 2026-08-18 |
+| #5871 | docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs | 2026-08-18 |
+| #5870 | fix(govrev): restore the collection generation the candidate projection was frozen against | 2026-08-18 |
+| #5866 | close-pass: grade the frozen launchd bootstrap against origin/main (merged is not deployed) | 2026-08-18 |
+| #5865 | fix(stock-identity): freeze the registered B prefix off the nightly-rewritten plane | 2026-08-18 |
+| #5864 | fix(forensics): raise FF-1 universe bind cap for live 2837-issuer parquet | 2026-08-18 |
+| #5863 | docs(agentos): the fleet-blocking atlas red is an exact digest over a non-bit-reproducible producer | 2026-08-18 |
 | #5862 | fix(close-pass): retry a stalled lane probe instead of losing the session | 2026-08-18 |
 | #5861 | docs(agentos): DSC — a git rebase can splice two renders into a paywall leak | 2026-08-18 |
 | #5860 | docs(advanced-data): AD-1P0 freeze semantic authority before implementation | 2026-08-18 |
+| #5858 | fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan | 2026-08-18 |
 | #5857 | fix(main-red-repair): a git REBASE published the paid board, not the renderer | 2026-08-18 |
 | #5855 | fix(13f-census): un-red both master-index backstop lanes | 2026-08-18 |
 | #5854 | fix(13f-census): decide atom scan completeness on the raw feed page, not the filtered one | 2026-08-18 |
+| #5852 | feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar | 2026-08-18 |
 | #5850 | ci(13f-census): hourly 12-20Z fast lane + 60m cap so it stops starving the nightly | 2026-08-18 |
 | #5849 | docs(advanced-data): AD-0 data-feasibility amendment — AD-1 scoring refrozen as v1.1 | 2026-08-18 |
 | #5848 | fix(prophet): 08-14→17 outage hardening — hostage-class kill + watchdog wedge/weekend closure | 2026-08-18 |
@@ -522,18 +547,6 @@ Generated: 2026-08-18T05:10:15.185591+00:00  |  Open PRs: 11  |  Merged (window)
 | #5305 | prophet(us): force-majeure outage backfill — receipt-exact 2026-08-09 replay (rev-1, supersedes #5294) | 2026-08-11 |
 | #5304 | docs(prophet-us): backfill design rev-1 — restore review-corrected input adjudication | 2026-08-11 |
 | #5301 | prophet(us): plain-word disclosure for reconstructed plans (chip + receipt + footnote, EN/ZH) | 2026-08-11 |
-| #5300 | docs(topa): primary-checkout massive_stock_day mirror is frozen — fetch_r2 before local passes | 2026-08-11 |
-| #5299 | test: decouple breadth fixtures from nightly tip | 2026-08-11 |
-| #5298 | feat(winner-health): W1 display surface — nightly maturation states + Winner Health page (TOPA) | 2026-08-11 |
-| #5297 | research(top-anatomy): phase-0 results — reconciled instrument, run-3 headline + repair/cross-check arms | 2026-08-11 |
-| #5296 | Repair W3 playback catalog store readiness | 2026-08-11 |
-| #5295 | prophet(us): lossless candidate-pool lanes + dated pool store (CN-parity, display-tier) | 2026-08-11 |
-| #5292 | feat(price-pressure): §10.1 VIXCLS stamp-completion pass + immutable receipts | 2026-08-11 |
-| #5291 | marketing voice v5: the read is in the selection, not a performed reaction | 2026-08-11 |
-| #5289 | docs(prophet-us): outage backfill design of record (operator force-majeure 2026-08-11) | 2026-08-11 |
-| #5288 | research: make the R4 prereg PIT-safe and power-honest | 2026-08-11 |
-| #5287 | marketing: liveness tripwire — a dead publisher can no longer run green | 2026-08-11 |
-| #5286 | Prepare exact operational playback catalog | 2026-08-11 |
 
 ---
 

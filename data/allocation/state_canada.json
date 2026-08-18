@@ -18,12 +18,12 @@
     "ca_utilities"
   ],
   "held": [
-    "ca_banks",
     "ca_gold",
     "ca_base_metals",
-    "ca_tech"
+    "ca_banks",
+    "ca_oil_gas"
   ],
-  "leader": "ca_banks",
+  "leader": "ca_gold",
   "names": {
     "ca_asset_mgrs": "Asset Managers & Alternatives",
     "ca_banks": "Big Banks",

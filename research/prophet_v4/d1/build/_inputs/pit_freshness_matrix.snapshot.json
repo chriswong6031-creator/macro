@@ -1,0 +1,119 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T02:41:36Z",
+  "reproduce": [
+    "python3 <scratch>/d1_build/load_sources.py",
+    "python3 <scratch>/d1_build/compute_cohorts.py",
+    "python3 <scratch>/d1_build/compute_coverage.py",
+    "python3 <scratch>/d1_build/compute_c6_gaps.py",
+    "python3 <scratch>/d1_build/compute_identity.py",
+    "python3 <scratch>/d1_build/compute_exemplars.py",
+    "python3 <scratch>/d1_build/compute_pit_and_families.py",
+    "python3 <scratch>/d1_build/compute_gap_ledger.py",
+    "python3 <scratch>/d1_build/assemble_final.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "generated_at_is_not_freshness_law": "Per FROZEN SPEC: generated_at is NEVER freshness. Every row below reads its as_of/observed_time/valid_time from artifact CONTENT (a belief_time, published_at, snapshot_date, or dated history file), never from filesystem mtime or a build script's own timestamp.",
+  "sources": {
+    "canonical_theme_crosswalk": {
+      "artifact": "config/theme_crosswalk.yml + data/theme_graph/edges.parquet (EXPRESSES basket->theme)",
+      "as_of": "2026-07-09",
+      "pit_class": "CURRENT_SNAPSHOT_ONLY",
+      "pit_class_basis": "Coordinator addendum + direct check: data/theme_graph/*.parquet are single current-belief frames (one _meta.json belief_time=2026-08-15, no dated parts). Edge rows DO carry valid_from/valid_to/era/evidence_time/belief_time columns (a bi-temporal SCHEMA), but the store keeps only the latest belief -- there is no historical parts directory to reconstruct 'what the crosswalk said on date X' except via the partial append-only log at data/theme_graph/probation/proposals.jsonl (234 dated proposal events, kind='mapping' among others -- NOT a full historical mirror of the frame).",
+      "observed_knowable_time": "2026-08-15",
+      "capture_time": "2026-08-15T02:32:47Z",
+      "valid_time": "per-edge valid_from field exists (e.g. 2026-07-09 for EXPRESSES edges) but is not reconstructable into a full historical crosswalk state",
+      "correction_behavior": "full-frame overwrite each nightly run; probation/proposals.jsonl append-only log records individual proposal events with 'created' timestamps but is not a substitute for dated snapshots of the whole crosswalk",
+      "generated_at_is_not_freshness_note": "computed_at (2026-08-15T02:32:47Z) is a BUILD timestamp, not a knowledge-time; belief_time (2026-08-15) is used instead per NULL LAW."
+    },
+    "curated_baskets": {
+      "artifact": "data/baskets/membership.json + data/baskets/membership_history.parquet + data/baskets/snapshots/",
+      "as_of": "2026-08-07",
+      "pit_class": "RECONSTRUCTED_PIT (DEGRADED)",
+      "pit_class_basis": "membership_history.parquet carries per-member added/removed DATE fields going back to the seed_constant 2023-05-09 (1038 rows), letting membership at any past date be reconstructed as {added <= date < removed}. Only ONE dated full snapshots/ file exists (2026-08-13.json) -- so this is reconstruction from event dates, not an observed daily series (would be FULL_PIT/OBSERVED_PIT if daily snapshots existed).",
+      "observed_knowable_time": "2026-08-07",
+      "capture_time": "2026-08-13 (snapshots/2026-08-13.json + membership_history snapshot_date)",
+      "valid_time": "per-member added/removed dates, earliest seed_constant 2023-05-09",
+      "correction_behavior": "curated by operator edits to membership.json; membership_history.parquet is append-style with a members_sha hash per snapshot for change detection",
+      "pit_class_degraded_note": "DEGRADED (adversarial review H3, verified against data/baskets/membership_history.parquet): 95% of 'added' dates across the 1038-row history are the single 2023-05-09 curator seed constant -- i.e. the reconstruction has almost no real temporal resolution before that date, and even after it, per-member add events are rarely individually dated. Removals are largely UNSTAMPED: the verified GOLD removal from basket:baskets:gold_miners (data/baskets/membership.json's live 'omitted' list correctly excludes GOLD, citing PR #5632) has NO corresponding 'removed' date anywhere in membership_history.parquet (GOLD still shows removed=NaN in the 2026-08-13 snapshot row) -- the removal is real and dated in the human-readable PR record but is NOT captured in the machine-readable PIT artifact. Treat RECONSTRUCTED_PIT here as coarse/seed-dominated, not a fine-grained daily reconstruction."
+    },
+    "finviz_ltheme": {
+      "artifact": "data/theme_graph (ltheme:finviz:* nodes/edges) + data/themes_heatmap/tree_history.jsonl",
+      "as_of": "2026-08-15",
+      "pit_class": "OBSERVED_PIT_FROM_START_DATE",
+      "pit_class_basis": "data/themes_heatmap/tree_history.jsonl carries 2 dated tree-structure snapshots (['2026-07-05', '2026-08-15']), matching theme_graph's own recorded local_plane.finviz.vintages (['2026-06-27', '2026-08-15']). This is a real but SPARSE observed series (2 points ~6 weeks apart), not daily.",
+      "observed_knowable_time": [
+        "2026-07-05",
+        "2026-08-15"
+      ],
+      "capture_time": "2026-08-15",
+      "valid_time": [
+        "2026-07-05",
+        "2026-08-15"
+      ],
+      "correction_behavior": "manual receipted refresh per config/theme_sources.yml (finviz_themes family notes 'structure, manual receipted refresh')"
+    },
+    "ths_ltheme": {
+      "artifact": "data/baskets_china_ths/concept_map.json (ltheme:ths:* nodes)",
+      "as_of": "2026-06-27",
+      "pit_class": "CURRENT_SNAPSHOT_ONLY",
+      "pit_class_basis": "Single concept_map_asof date (2026-06-27) recorded in theme_graph _meta.json; no dated history file for THS concept membership was found under data/baskets_china_ths/ (only a single concept_map.json, not a history/ pattern).",
+      "observed_knowable_time": "2026-06-27",
+      "capture_time": "2026-06-27",
+      "valid_time": "unknown beyond the single asof",
+      "correction_behavior": "weekly cadence collector per config/theme_sources.yml (ths_concepts family), from 2026-08-15 -- this run's belief_time predates that cadence start",
+      "note_for_us_cohorts": "irrelevant in practice for US cohorts: zero co:us->ltheme:ths live edges exist (confirmed); ths concepts are CN-scoped only."
+    },
+    "structural_sector_industry": {
+      "artifact": "data/breadth/ticker_sectors.parquet (+ candidates-store 'sector' column, + us_sector_* pseudo-basket membership)",
+      "as_of": null,
+      "pit_class": "NO_HISTORY",
+      "pit_class_basis": "data/breadth/ticker_sectors.parquet has exactly 3 columns (ticker, sector, source) -- no date field of any kind. scripts/build_sector_map.py's own docstring says coverage GROWS on subsequent runs via an edgar_emergence.py drip cache, but no dated log of what changed when is kept; the file is overwritten in place. The candidates-store 'sector' column is stamp_date-scoped (dated), but only exists on 'curated' tier rows, and the curated tier stalled after 2026-08-07.",
+      "observed_knowable_time": null,
+      "capture_time": null,
+      "valid_time": null,
+      "correction_behavior": "full overwrite on each run; no versioning",
+      "null_reason": "no date column present in the artifact; generated_at (mtime) explicitly excluded per NULL LAW."
+    },
+    "neuralweb_theme_state": {
+      "artifact": "data/neuralweb/theme_state.json + data/neuralweb/theme_phase_history.jsonl",
+      "as_of": "2026-08-14",
+      "pit_class": "OBSERVED_PIT_FROM_START_DATE",
+      "pit_class_basis": "theme_phase_history.jsonl carries dated per-theme phase snapshots (27 distinct as_of dates found, 2026-07-09 through 2026-08-14).",
+      "observed_knowable_time": "2026-07-09..2026-08-14 (27 points)",
+      "capture_time": "2026-08-14T05:48:48Z",
+      "valid_time": "2026-08-14",
+      "correction_behavior": "nightly regeneration; theme-level only (18 canonical theme_ids), NOT a company-membership source -- see source_family_matrix note."
+    },
+    "company_theme_exposure": {
+      "artifact": "engine/company_theme_exposure/ (code) + scripts/build_company_theme_exposure.py -- NO committed data artifact",
+      "as_of": null,
+      "pit_class": "UNKNOWN",
+      "pit_class_basis": "Code exists; per coordinator addendum the writer targets an R2-only out-dir, so no artifact is committed to this checkout at pin 5c1d82b928.",
+      "observed_knowable_time": null,
+      "capture_time": null,
+      "valid_time": null,
+      "correction_behavior": null,
+      "null_reason": "r2_only_not_committed"
+    },
+    "group_pulse": {
+      "artifact": "data/group_pulse/episodes.parquet (engine/group_pulse.py)",
+      "as_of": "2026-08-10 (max start_date observed)",
+      "pit_class": "OBSERVED_PIT_FROM_START_DATE",
+      "pit_class_basis": "2006 episode rows with start_date/end_date, earliest 2023-01-09, latest start 2026-08-10 -- a genuine dated episode log.",
+      "observed_knowable_time": "2023-01-09..2026-08-10",
+      "capture_time": null,
+      "valid_time": "start_date/end_date per episode",
+      "correction_behavior": "episodes marked closed=True/False; advanced_at timestamp per row",
+      "note": "DERIVED signal (participation episodes OVER basket membership), not an independent membership vocabulary -- excluded from the coverage-matrix union per coordinator addendum; recorded here for completeness only."
+    }
+  }
+}

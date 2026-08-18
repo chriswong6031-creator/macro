@@ -151,12 +151,42 @@ B_SNAPSHOT_RELATIVE_PATH = "data/stock_identity/source/b_registered_prefix_v1.pa
 B_SNAPSHOT_PATH = REPO_ROOT / B_SNAPSHOT_RELATIVE_PATH
 B_SNAPSHOT_FILE_SHA256 = "d401e21791db191a9172a79ddd674b308cfa8ca416a01b2c18332ca9af8d12a8"
 
-# Live-plane revision tripwire bands.  Vendor re-adjustment noise tops out at 8.63e-07
-# relative; the smallest economically real price revision -- one cent at the plane's
-# minimum price of 4.81 -- is 2.08e-03, a ~2400x separation.  Only the ASOF bar's volume
-# settles (+4.33e-04, consolidated tape); a split-scale volume restatement is >= 1e0.
-B_LIVE_PRICE_REL_TOL = 1e-5
-B_LIVE_VOLUME_REL_TOL = 1e-2
+# Live-plane revision tripwire bands.
+#
+# The band is on the UNIFORMITY of the vendor's rescale, not on its level, and that is
+# load-bearing rather than cosmetic.  A level band cannot survive an ordinary dividend:
+# auto_adjust re-scales the whole ELAPSED history on every FUTURE ex-date, so a routine
+# ~$0.10 Barrick quarterly on a ~$41 tape moves every historical row by ~2.4e-03.  A 1e-5
+# level band fires on that, and on far less -- a $0.02 dividend lands at 4.90e-04 and even
+# a $0.005 one at 1.22e-04 -- so it re-reds the fleet on the next ex-date, which is the
+# very failure the snapshot above exists to end.  It also measures the wrong quantity: a
+# uniform rescale leaves every return, drawdown and percentage gap identical, so it cannot
+# move an A1 conclusion.  Only a change in RELATIVE prices can, which is what the residual
+# against the window's median factor sees.  Corporate actions are not thereby ignored:
+# split adjustment rescales share counts too, so settled volume must match EXACTLY.
+#
+# Measured 2026-08-18 over the 3,172-row prefix: O/H/L/C move by one per-row float64
+# factor coherent across the four columns to 4.4e-16; the residual against the window
+# median stays within 8.63e-07; volume is byte-identical on all 3,171 settled rows across
+# three collections spanning four days, with only the ASOF bar moving (10,621,100 ->
+# 10,625,700, 4.33e-04) as its consolidated tape settled after the cut.
+#
+# The coherence band is deliberately NOT the observed 4.4e-16.  Coherence holds that
+# tightly only because the vendor derives O/H/L from one float64 ratio and sets
+# close=adjclose, so the common factor cancels; the underlying raw prints are
+# float32-quantized (they arrive as 40.79999923706055), a grid of ~6e-8.  A
+# machine-epsilon band would sit BELOW the noise floor of the quantity it guards, so one
+# raw print re-quantizing by a single ULP would report vendor noise as a print revision.
+# 1e-6 sits ~16x above that grid and still catches any single-column restatement worth
+# naming: 1e-6 of a $41 tape is $0.00004.  Coherence cannot be dropped -- it is the ONLY
+# detector of a one-column move, because a lone outlier among four leaves the median, and
+# therefore the residual, untouched.
+B_LIVE_PRICE_COHERENCE_TOL = 1e-6
+B_LIVE_PRICE_UNIFORMITY_TOL = 1e-5
+B_LIVE_ASOF_VOLUME_REL_TOL = 1e-2
+#: Sanity bound on the gross rescale.  Not a corporate-action test -- those are caught on
+#: the volume channel, which is why this is checked only after it.
+B_LIVE_GROSS_RESCALE_BOUNDS = (0.2, 5.0)
 
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
@@ -538,8 +568,9 @@ def _validate_live_b_plane_tracks_registration(registered: pd.DataFrame) -> None
     """Revision tripwire on the live, nightly-rewritten basket plane.
 
     Tolerates the vendor's re-adjustment of adjusted history, which carries no economic
-    content (every row scales by one factor).  Fires on a real revision: a changed session
-    set, or a price/volume move far above that noise floor.
+    content: every row scales by one factor, and a uniform rescale of the whole window
+    preserves every return, drawdown and percentage gap.  Fires on a real revision: a
+    changed session set, a change in RELATIVE prices, or a restatement of settled volume.
     """
     source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
     if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
@@ -549,28 +580,75 @@ def _validate_live_b_plane_tracks_registration(registered: pd.DataFrame) -> None
         raise SystemExit("B source prefix row/date receipt drifted")
     if not live.index.equals(registered.index):
         raise SystemExit("B live plane session set diverged from the registered prefix")
-    for column, tol in (
-        ("open", B_LIVE_PRICE_REL_TOL),
-        ("high", B_LIVE_PRICE_REL_TOL),
-        ("low", B_LIVE_PRICE_REL_TOL),
-        ("close", B_LIVE_PRICE_REL_TOL),
-        ("volume", B_LIVE_VOLUME_REL_TOL),
-    ):
-        want = registered[column].to_numpy(dtype="float64")
-        got = live[column].to_numpy(dtype="float64")
-        if not bool(np.isfinite(got).all()):
-            raise SystemExit(
-                f"B live plane has non-finite {column} inside the registered prefix"
-            )
-        rel = np.abs(got - want) / np.maximum(np.abs(want), 1e-12)
-        worst = int(np.argmax(rel))
-        if rel[worst] > tol:
-            raise SystemExit(
-                f"B live plane {column} revised beyond the vendor re-adjustment band at "
-                f"{registered.index[worst].date()}: {want[worst]!r} -> {got[worst]!r} "
-                f"({rel[worst]:.3e} > {tol:.0e}); this is a real revision, not float "
-                "churn -- re-adjudicate the W1-A1 registration before rebuilding"
-            )
+
+    prices = ["open", "high", "low", "close"]
+    want_px = registered[prices].to_numpy(dtype="float64")
+    got_px = live[prices].to_numpy(dtype="float64")
+    if not bool(np.isfinite(got_px).all()):
+        raise SystemExit("B live plane has non-finite OHLC inside the registered prefix")
+    if not bool((want_px > 0).all()):
+        raise SystemExit("registered B prefix snapshot carries a non-positive price")
+
+    ratio = got_px / want_px
+    coherence = np.abs(ratio.max(axis=1) - ratio.min(axis=1))
+    worst = int(coherence.argmax())
+    if coherence[worst] > B_LIVE_PRICE_COHERENCE_TOL:
+        raise SystemExit(
+            f"B live plane restated an individual price at "
+            f"{registered.index[worst].date()}: O/H/L/C moved by different factors "
+            f"(spread {coherence[worst]:.3e} > {B_LIVE_PRICE_COHERENCE_TOL:.0e}). "
+            "Re-adjustment rescales the four together, so this is a print revision, not "
+            "vendor churn -- re-adjudicate the W1-A1 registration before rebuilding"
+        )
+
+    row_factor = np.median(ratio, axis=1)
+    gross = float(np.median(row_factor))
+    residual = np.abs(row_factor / gross - 1.0)
+    worst = int(residual.argmax())
+    if residual[worst] > B_LIVE_PRICE_UNIFORMITY_TOL:
+        raise SystemExit(
+            f"B live plane moved NON-UNIFORMLY at {registered.index[worst].date()}: "
+            f"residual against the window rescale {gross:.9g} is {residual[worst]:.3e} > "
+            f"{B_LIVE_PRICE_UNIFORMITY_TOL:.0e}. A dividend or split rescales the whole "
+            "window and preserves every return; this changed relative prices, so it is a "
+            "restatement -- re-adjudicate the W1-A1 registration before rebuilding"
+        )
+
+    # Volume runs BEFORE the gross bound: a real corporate action rescales share counts,
+    # so it must be diagnosed as one rather than as a broken vendor frame.
+    want_vol = registered["volume"].to_numpy(dtype="float64")
+    got_vol = live["volume"].to_numpy(dtype="float64")
+    if not bool(np.isfinite(got_vol).all()):
+        raise SystemExit("B live plane has non-finite volume inside the registered prefix")
+    settled = registered.index < ASOF
+    moved = settled & (want_vol != got_vol)
+    if bool(moved.any()):
+        stamps = ", ".join(str(s.date()) for s in registered.index[moved][:5])
+        raise SystemExit(
+            f"B live plane restated settled volume on {int(moved.sum())} session(s) "
+            f"({stamps}) -- settled share counts do not move under re-adjustment, so this "
+            "is a split or a vendor restatement; re-adjudicate the W1-A1 registration "
+            "before rebuilding"
+        )
+    if want_vol[-1] <= 0:
+        raise SystemExit("registered B prefix snapshot has no ASOF-session volume")
+    asof_dev = abs(got_vol[-1] / want_vol[-1] - 1.0)
+    if asof_dev > B_LIVE_ASOF_VOLUME_REL_TOL:
+        raise SystemExit(
+            f"B live plane moved ASOF-session volume by {asof_dev:.3e} > "
+            f"{B_LIVE_ASOF_VOLUME_REL_TOL:.0e} ({want_vol[-1]:.0f} -> {got_vol[-1]:.0f}); "
+            "that exceeds late tape consolidation -- re-adjudicate the W1-A1 registration "
+            "before rebuilding"
+        )
+
+    low, high = B_LIVE_GROSS_RESCALE_BOUNDS
+    if not low <= gross <= high:
+        raise SystemExit(
+            f"B live plane rescaled the whole window by {gross:.6g}, outside "
+            f"[{low}, {high}], with settled volume unchanged -- no corporate action "
+            "rescales prices that far and leaves share counts intact, so this is a broken "
+            "vendor frame; re-adjudicate the W1-A1 registration before rebuilding"
+        )
 
 
 def _validate_b_source() -> pd.DataFrame:

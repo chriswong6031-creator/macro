@@ -1470,8 +1470,96 @@ def test_live_b_plane_tripwire_tolerates_vendor_readjustment_and_fires_on_revisi
     monkeypatch.setattr(
         amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: revised
     )
-    with pytest.raises(SystemExit, match="real revision"):
+    with pytest.raises(SystemExit, match="restated an individual price"):
         amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+_B_PRICES = ["open", "high", "low", "close"]
+
+
+def _b_live(monkeypatch, registered, mutate):
+    live = mutate(registered.copy())
+    monkeypatch.setattr(
+        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: live
+    )
+
+
+def _b_rescale(frame, factor):
+    return frame.assign(**{c: frame[c] * factor for c in _B_PRICES})
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+@pytest.mark.parametrize(
+    ("label", "factor"),
+    (
+        # auto_adjust rescales the whole elapsed window on every FUTURE ex-dividend. That
+        # is return-preserving, so it must NOT fire — banding the price LEVEL instead of
+        # the uniformity would red the fleet on Barrick's next ordinary dividend.
+        ("routine ~$0.10 quarterly dividend", 0.9976),
+        ("small $0.02 dividend", 0.99951),
+        ("tiny $0.005 dividend", 0.999878),
+        ("deep re-adjustment", 0.85),
+    ),
+)
+def test_b_tripwire_passes_return_preserving_rescales(
+    monkeypatch, label, factor
+):
+    registered = amendment_builder._load_registered_b_prefix()
+    _b_live(monkeypatch, registered, lambda f: _b_rescale(f, factor))
+    amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+@pytest.mark.parametrize(
+    ("label", "mutate", "expected"),
+    (
+        (
+            # A real split rescales share counts as well as prices, so it is caught on the
+            # volume channel rather than by the price level.
+            "2:1 split",
+            lambda f: _b_rescale(f, 0.5).assign(volume=f["volume"] * 2.0),
+            "restated settled volume",
+        ),
+        (
+            # Below the old blanket 1e-2 volume tolerance, so this used to pass silently.
+            "settled volume restated +0.5%",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[10], f["volume"] * 1.005)
+            ),
+            "restated settled volume",
+        ),
+        (
+            "one-column restatement above the float32 grid",
+            lambda f: f.assign(
+                open=f["open"].mask(f.index == f.index[500], f["open"] * (1 + 2e-6))
+            ),
+            "restated an individual price",
+        ),
+        (
+            "segment restatement changes relative prices",
+            lambda f: pd.concat([_b_rescale(f.iloc[:800], 1.001), f.iloc[800:]]),
+            "NON-UNIFORMLY",
+        ),
+        (
+            "asof volume blowout",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[-1], f["volume"] * 1.5)
+            ),
+            "ASOF-session volume",
+        ),
+        (
+            "broken vendor frame",
+            lambda f: _b_rescale(f, 100.0),
+            "broken vendor frame",
+        ),
+    ),
+)
+def test_b_tripwire_fires_on_real_revisions(monkeypatch, label, mutate, expected):
+    registered = amendment_builder._load_registered_b_prefix()
+    _b_live(monkeypatch, registered, mutate)
+    with pytest.raises(SystemExit) as excinfo:
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+    assert expected in str(excinfo.value), label
 
 
 @pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
