@@ -103,3 +103,24 @@ site/assets/css/????????.css whitespace=-trailing-space,-blank-at-eof
 # is part of the pinned byte receipt, so source-style whitespace checks do not
 # apply to these immutable archive objects.
 data/release_forecast/cpi_truth/official_table1_archive/documents/sha256/*.html whitespace=-trailing-space,-space-before-tab
+
+# The tier-gated page shells are WHOLE-FILE render output, and a 3-way TEXT
+# merge of two different renders is a PAYWALL LEAK, not a merge. Every render
+# lane pushes through `git pull --rebase --autostash -X theirs origin main`
+# (closing-bell.yml, scripts/ci/push_retry.sh). `-X theirs` only decides
+# CONFLICTING hunks — non-conflicting hunks from BOTH generations survive, so a
+# rebase can splice one render's card grid onto another render's board data.
+# Measured 2026-08-18 (main red on tests/test_us_board_gate.py): 33f7bdde0c3a
+# rebased the closing-bell render onto a concurrent render-public push and
+# produced a site/us_stocks.html whose grid carried FOUR cards against its own
+# `preview: 3` — the 4th, ONTO, being row 0 of the LOCKED payload, published
+# with full card detail plus a stale #us-stocktable-data block carrying the same
+# locked row's paid record. Neither generation ever rendered that file; git
+# assembled it. `-merge` makes these binary to the merge driver, so a rebase
+# takes ONE render wholesale (under -X theirs, the replayed local one) instead
+# of blending two. Losing the older generation is CORRECT here: the loser is a
+# superseded render, and the next lane re-bakes the page regardless.
+site/us_stocks.html               -merge
+site/etfs.html                    -merge
+site/special_situations.html      -merge
+site/china_special_situations.html -merge

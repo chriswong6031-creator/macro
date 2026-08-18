@@ -359,12 +359,17 @@ lanes:
           kept (write skipped); otherwise honest null artifact emitted. Exit 0
           either way. This step is dispatched from the launchd ops-wt lane with
           THETADATA_STORE set (same pattern as com.mastermind.optionshub, plus
-          a commit+push tail in run_theme_options_witness.sh); since the
-          2026-07-26 theta-m1 runner pin the collect_tail lane also runs
-          store-bearing (the M1 host holds the store — real path, ~4.6m
-          measured), while on any store-less runner (render path, dev worktree)
-          it stays a fast no-op that keeps or null-refreshes the artifact per
-          the keep-last-real law.
+          a commit+push tail in run_theme_options_witness.sh); the collect_tail
+          lane ran store-bearing under the 2026-07-26 theta-m1 runner pin (the
+          M1 host held the store — real path, ~4.6m measured) until 2026-08-17,
+          when the retired M1's orphaned label wedged the whole nightly (job
+          unschedulable → run held ~24h → next night's cron slot pended behind
+          it; see research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md) and the
+          lane was unpinned to macstudio — store-less there, so this step rides
+          keep-last-real until the m1-theta canary graduates and the pin
+          returns. On any store-less runner (render path, dev worktree,
+          post-unpin collect_tail) it stays a fast no-op that keeps or
+          null-refreshes the artifact per the keep-last-real law.
           Three legs (no composite — R-TIL-3 / WA-R1):
             Leg A: call-OI HHI concentration per basket (median HHI across members)
             Leg B: put/call OI ratio (PCR) per basket — EXIT-CROWD L3 accrual

@@ -458,6 +458,63 @@ def test_shipped_shell_leaks_no_locked_ticker():
     assert leaked == [], f"locked tickers reachable in the shipped shell: {leaked[:5]}"
 
 
+def _shell_board_blocks():
+    """The shell's TWO renderings of the same preview slice: the card grid
+    (`data-ticker` attrs, from _us_board_cards.html.j2) and the StockTable JSON
+    island (#us-stocktable-data). Both iterate `us_standouts.buy`, so in any real
+    render they carry the SAME tickers in the SAME order."""
+    payload = _shipped_payload()
+    if not SHELL.exists():
+        pytest.skip("site/us_stocks.html not built in this checkout")
+    shell = SHELL.read_text(encoding="utf-8")
+    cards = re.findall(r'<a class="pvcard[^"]*" href="stock\.html#[A-Z0-9.\-]+"\s*\n?\s*'
+                       r'data-ticker="([^"]+)"', shell)
+    start = shell.find('id="us-stocktable-data"')
+    table = (re.findall(r'"ticker":\s*"([^"]+)"', shell[start:shell.find("</script>", start)])
+             if start >= 0 else [])
+    return payload, cards, table
+
+
+def test_shipped_shell_stocktable_leaks_no_locked_ticker():
+    """The card grid is not the only place the board ships. #us-stocktable-data
+    serializes the SAME rows flat — ticker, conviction score, alpha, factor_z,
+    sue_z, entry status — so a locked row reaching that island is the paid record
+    itself in view-source, not merely a name. The `data-ticker=` assertion above
+    cannot see it (the island spells the key `"ticker"`), which is exactly how the
+    2026-08-18 splice shipped ONTO's full row while only the grid tripped CI."""
+    payload, _cards, table = _shell_board_blocks()
+    locked = {r["ticker"] for r in payload.get("rows", []) if r.get("ticker")}
+    assert locked, "a gated payload with no locked rows is a vacuous pass"
+    leaked = sorted(set(table) & locked)
+    assert leaked == [], f"locked tickers in the shipped #us-stocktable-data: {leaked[:5]}"
+
+
+def test_shipped_shell_board_blocks_agree_with_the_payload_split():
+    """A GIT MERGE can publish a board no render ever produced.
+
+    Every render lane pushes via `git pull --rebase --autostash -X theirs origin
+    main`. `-X theirs` only decides CONFLICTING hunks, so when two renders of this
+    page race, non-conflicting hunks from BOTH survive and git assembles a shell
+    that is neither generation. Measured 2026-08-18 (33f7bdde0c3a): the grid held
+    FOUR cards against the payload's own `preview: 3`, the 4th being locked row 0,
+    while #us-stocktable-data still held the previous generation's three.
+
+    No per-block leak check catches that shape on its own — each block can look
+    individually plausible. The invariant that does is AGREEMENT: both blocks
+    render `us_standouts.buy`, and the split guarantees its length is `preview`.
+    A shell whose two board blocks disagree has been spliced, whether or not this
+    particular splice happened to expose a paid row. `.gitattributes` marks these
+    shells `-merge` so a rebase takes one render whole; this is the assertion that
+    fails if that ever regresses."""
+    payload, cards, table = _shell_board_blocks()
+    assert cards == table, (
+        "the shell's card grid and #us-stocktable-data disagree — the page is a "
+        f"merge of two renders, not one render: grid={cards[:6]} table={table[:6]}")
+    assert len(cards) == payload["preview"], (
+        f"shell ships {len(cards)} board rows against payload preview="
+        f"{payload['preview']} (locked={payload['locked']}, total={payload['total']})")
+
+
 def test_shipped_payload_declares_the_contract():
     payload = _shipped_payload()
     assert payload["schema"] == "tier_payload.v1"
