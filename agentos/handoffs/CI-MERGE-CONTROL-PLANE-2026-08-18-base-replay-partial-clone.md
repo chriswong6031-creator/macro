@@ -80,13 +80,42 @@ unverified:
       pack to run it, and main was independently red throughout.
 unresolved:
   - >
-    Main's own reds (ci-pack-5, ci-pack-6, ci-gate) are NOT this lane's and are
-    owned elsewhere: #5874 (main-red-repair, Prophet Board-read keys), #5875 /
-    #5877 (stock-identity B rescale banded on uniformity, not level). This PR
-    touches scripts/**, so it is authority-changing and cannot lean on a
-    base-inherited red — it needs main itself green. That is the only thing
-    between it and the merge.
+    THIS PR IS COMPLETE AND BLOCKED ON MAIN, not on itself. Its own full-suite
+    run was 11/12 packs green (scripts/run_ci_pack.py is a GLOBAL_INVALIDATOR,
+    so nothing was scope-skipped); the single red, ci-pack-5, carried an
+    annotation byte-identical to main's own ci.yml run. It touches scripts/**,
+    so it is authority-changing and cannot lean on a base-inherited red.
+  - >
+    Chasing main green, this session took PR #5874 (the single main-red-repair
+    PR) manual with a marker comment, per the disarming rule, and drove three of
+    main's four reds to green on it: contract-drift (ci-pack-5, the original
+    conflict), leader-radar-unit (ci-pack-10) and signal-contract (ci-pack-6).
+    The fourth, ci-pack-8 / unrun-picks-boards, was deliberately NOT fixed —
+    see next_actions. #5874 remains armed and is the merge gate for the fleet.
+  - >
+    MAIN'S FAILING PACK SET ROTATES BETWEEN BASELINES, which is why per-pack
+    healing does not converge: 08:12Z fc9d5819 {pack-5}; 09:02Z 8227d096
+    {pack-3, pack-4, pack-5, pack-9}; 10:44Z e343b8be {pack-1, pack-4, pack-5,
+    pack-9}; concurrent PR heads {pack-6, pack-8, pack-10}. Only pack-5 was
+    common to all. Every case diagnosed was a test asserting on live
+    nightly-advanced state, and THREE OF FOUR were test defects, not data
+    defects — the nightly output was correct each time. A ~35-minute heal cycle
+    cannot outrun a set that rotates every couple of hours.
 next_actions:
+  - >
+    ci-pack-8 / legacy-job-unrun-picks-boards needs the Prophet Conditional
+    Fusion owner, not a repair session. All 9 failures in
+    tests/test_prophet_fusion_c2.py share one cause: the graded ledger accrued
+    past the 7/7/4 date-block era the tests pin, so refusals became estimates
+    ('estimated' != 'NOT_ESTIMABLE'; 2 != 0; refused_below_min_dates now empty;
+    1627 != 1474) and the live recomputation drifted off PR-1b's frozen
+    artifact. Fix = re-run PR-1b and re-freeze the doc tables (CHANGES PUBLISHED
+    RESEARCH NUMBERS — needs sign-off), or PIT-pin the C2 test frame to PR-1b's
+    era. Relaxing the assertions is NOT a third option: it deletes the parity
+    property that file exists to hold.
+  - >
+    When main is green, rebase this branch onto it and re-run; nothing in the
+    change itself is outstanding.
   - >
     After merge, read one real PR's base_replay record: `outcome` should not be
     "unavailable", and a genuine failure should now carry git's stderr in
@@ -129,6 +158,12 @@ danger_areas:
   - >
     scripts/** is authority-changing: this PR needs main ITSELF green, not
     merely a base-inherited excuse.
+  - >
+    scripts/export_signal_contracts.py reads data/ for build_golden_signals().
+    Running it in a SPARSE worktree rewrites site/factordata/contracts/
+    golden_signals.json with ZERO symbols and silently truncates the committed
+    artifact — hit and reverted during the #5874 conflict resolution.
+    build_manifest() is pure, so only the golden-signals half needs a full tree.
 ---
 
 Cold-stranger note: the surprise is not the fix, it is the detector. The natural
