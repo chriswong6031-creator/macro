@@ -60,7 +60,8 @@ jobs:
             # almost always moved under it by the time it pushes, and `-X theirs` would
             # replace the nightly's appended evidence rows with this run's.
             git fetch origin main || true
-            push_append_only_fence origin/main
+            # Non-zero ONLY when the fence proved a loss and then could not withhold it.
+            if ! push_append_only_fence origin/main; then sleep $((i * 7)); continue; fi
             if git pull --rebase -X theirs origin main && git push; then
               echo "pushed backfill on attempt $i"; exit 0
             fi

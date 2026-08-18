@@ -994,7 +994,8 @@ jobs:
             # twins only — the collector spine it carries is still its own pre-rebase
             # collection, so `-X theirs` can replace main's appended rows with it.
             # --amend because this loop already amends its evidence commit.
-            push_append_only_fence origin/main --amend
+            # Non-zero ONLY when the fence proved a loss and then could not withhold it.
+            if ! push_append_only_fence origin/main --amend; then push_backoff; continue; fi
             if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               # Rebuild AFTER every successful rebase; retry loops do the same.
               assert_award_event_bundle

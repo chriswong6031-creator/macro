@@ -76,8 +76,12 @@ FAILURE DIRECTIONS, ON PURPOSE
     does NOT withhold. Without the changed-set a withhold could destroy a legitimate
     generation, and declining to act merely leaves the pre-fence behaviour in place. It
     prints ``::error`` and exits 0, so the fault is visible in the run summary.
-  * The fence never fails the step. The market plane must publish; the annotation is the
-    signal. Exit status is 0 unless ``--check-only`` was asked for.
+  * A withhold that itself FAILS exits ``WITHHOLD_FAILED`` (2), and the shell helper turns
+    that into a non-zero return so the caller skips the push for that iteration. This is
+    the one place the fence must not fail open: the whole point of the withhold is that
+    this tree is not publishable, and "the remedy broke" is not a reason to publish it.
+  * Every other exit is 0, so the fence never fails the step. The market plane must
+    publish; the annotation is the signal. (``--check-only`` returns 1 on a violation.)
 
 The fence does NOT inherit the 2026-08-18 corruption. It compares this run's build against
 ``origin/main``; it never walks history. (For the record, PR #5870 restored run A's
@@ -105,6 +109,10 @@ INDETERMINATE = "indeterminate"
 # A publishing lane owns one or two commits. Anything past this is a truncated or
 # unexpected graph, not a lane -- see changed_paths().
 MAX_LOCAL_COMMITS = 25
+
+# Distinct from the ordinary violation exit: the shell helper fails OPEN on anything it
+# cannot classify, and must fail CLOSED on this one.
+WITHHOLD_FAILED = 2
 
 # Sample size for the annotation. A withhold that names nothing is a withhold nobody
 # can triage at 3am; a withhold that dumps 376 identities is one nobody reads.
@@ -429,8 +437,13 @@ def run(
         try:
             committed = withhold_family(repo, family, onto, amend=amend)
         except FenceError as exc:
-            _announce("error", f"{family.key}: WITHHOLD FAILED ({exc}) — refusing to push it")
-            return 1
+            _announce(
+                "error",
+                f"{family.key}: WITHHOLD FAILED ({exc}) — this tree would drop evidence "
+                f"{onto} already carries and the remedy did not land, so the push must "
+                f"NOT proceed on it",
+            )
+            return WITHHOLD_FAILED
         _announce(
             "error",
             f"{family.key}: WITHHELD this run's generation and restored "

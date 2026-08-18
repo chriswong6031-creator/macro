@@ -312,6 +312,45 @@ def test_amend_folds_the_withhold_into_head(lane):
     assert _git(repo, "rev-list", "--count", "origin/main..HEAD").strip() == before
 
 
+def test_a_failed_withhold_exits_two_so_the_lane_skips_the_push(lane, capsys, monkeypatch):
+    """The one place the fence must fail CLOSED: it proved a loss and could not undo it."""
+    def boom(*args, **kwargs):
+        raise fence.FenceError("git checkout refused")
+
+    monkeypatch.setattr(fence, "withhold_family", boom)
+    repo = lane["repo"]
+    assert _run(repo) == fence.WITHHOLD_FAILED
+    out = capsys.readouterr().out
+    assert "WITHHOLD FAILED" in out
+    assert "must" in out and "NOT proceed" in out
+    # The lane's own tree is untouched, so a later attempt can still withhold cleanly.
+    assert (repo / RECEIPTS).read_bytes() == lane["b_receipts"]
+
+
+def test_the_shell_helper_fails_closed_on_exit_two_and_open_on_anything_else(tmp_path):
+    """`push_append_only_fence` returns non-zero for exit 2 only — pinned in a real shell."""
+    helper = ROOT / "scripts" / "ci" / "push_retry.sh"
+    for exit_code, expected in ((0, 0), (2, 1), (1, 0), (3, 0)):
+        stub = tmp_path / f"py{exit_code}"
+        stub.write_text(f"#!/bin/sh\nexit {exit_code}\n")
+        stub.chmod(0o755)
+        done = subprocess.run(
+            [
+                "bash",
+                "-eo",
+                "pipefail",
+                "-c",
+                # The lanes call it in an `if !` condition, which is what keeps `-e`
+                # from aborting the step on the fail-closed return. Mirror that exactly.
+                f'. "{helper}"; PUSH_FENCE_PYTHON="{stub}"; '
+                "if ! push_append_only_fence origin/main; then echo rc=1; else echo rc=0; fi",
+            ],
+            capture_output=True,
+            check=False,
+        )
+        assert f"rc={expected}".encode() in done.stdout, (exit_code, done.stdout, done.stderr)
+
+
 def test_an_over_long_local_range_refuses_to_answer(lane, capsys, monkeypatch):
     """A truncated graph makes the changed set a SUPERSET — never withhold on that."""
     monkeypatch.setattr(fence, "MAX_LOCAL_COMMITS", 0)

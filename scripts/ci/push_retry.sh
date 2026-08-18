@@ -779,12 +779,21 @@ push_append_only_fence() {
   if [ -z "$py" ]; then
     if command -v python >/dev/null 2>&1; then py=python; else py=python3; fi
   fi
-  # Fail OPEN, loudly: the fence is an addition, so an infrastructure fault must
-  # leave the pre-fence behaviour in place rather than becoming a new way to lose
-  # a night. Every real data verdict is decided inside the fence itself, which
-  # withholds rather than raising.
+  # Fail OPEN, loudly, on anything unclassifiable: the fence is an addition, so an
+  # infrastructure fault must leave the pre-fence behaviour in place rather than becoming
+  # a new way to lose a night. Every real data verdict is decided inside the fence itself,
+  # which withholds rather than raising.
+  #
+  # EXIT 2 is the one exception and it fails CLOSED: the fence PROVED this tree would drop
+  # evidence and then could not withhold it. Publishing anyway is the exact corruption the
+  # fence exists to stop, so return non-zero and let the caller skip this push attempt.
   local rc=0
   "$py" -m scripts.ci.append_only_base_fence --onto "$onto" ${amend:+$amend} || rc=$?
+  if [ "$rc" -eq 2 ]; then
+    printf '::error title=append-only-base-fence::%s\n' \
+      "withhold failed against ${onto} — SKIPPING this push attempt rather than publishing a tree that drops evidence"
+    return 1
+  fi
   if [ "$rc" -ne 0 ]; then
     printf '::error title=append-only-base-fence::%s\n' \
       "the append-only base fence could not run (exit ${rc}) — publishing without it; append-only artifacts on ${onto} are UNPROTECTED for this push"

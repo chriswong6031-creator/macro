@@ -755,7 +755,10 @@ jobs:
             # run's instead of unioning them. Runs after the fetch and before the rebase
             # because that is the only point where origin/main's version is known and
             # this run's commit is still withholdable. No-op on an ordinary night.
-            push_append_only_fence origin/main
+            # Non-zero ONLY when the fence proved a loss and then could not withhold it;
+            # publishing that tree is the corruption the fence exists to stop, so skip the
+            # attempt rather than fail open. Every other fence outcome returns 0.
+            if ! push_append_only_fence origin/main; then push_backoff; continue; fi
             if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then
                 echo "pushed market data on attempt $PUSH_ATTEMPT"
@@ -779,7 +782,12 @@ jobs:
           perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
           # Same append-only base fence as the main push loop above; a cancel-window
           # salvage must not be the hole that publishes a stale-base ledger.
-          push_append_only_fence origin/main
+          # A failed withhold ends the salvage: this step is a best-effort grace-window
+          # publish, and publishing a tree that drops evidence is worse than not salvaging.
+          push_append_only_fence origin/main || {
+            echo "::error title=append-only-base-fence::withhold failed — abandoning the salvage push rather than publishing a tree that drops evidence"
+            exit 0
+          }
           { perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; } || true
           perl -e 'alarm 120; exec @ARGV or die' -- git push \
             && echo "salvage push landed the collections" \
