@@ -49,6 +49,14 @@ import pytest
 
 from scripts import worktree_sparse as WS
 
+# Captured once, before any test monkeypatches `WS.subprocess.Popen` — `WS.subprocess`
+# and this module's `subprocess` are the SAME singleton module object, so a helper
+# that re-reads `subprocess.Popen` fresh on every call would, in a test that installs
+# two fakes in sequence, capture the FIRST fake instead of the true original and
+# silently chain onto it. Every fake-Popen helper below must delegate to this fixed
+# reference, never to a freshly-read `subprocess.Popen`.
+_REAL_POPEN = subprocess.Popen
+
 
 def _git(repo: Path, *args: str) -> str:
     proc = subprocess.run(("git", "-C", str(repo)) + args,
@@ -92,23 +100,51 @@ def _real_git_dir(repo: Path) -> Path:
     return Path(out.stdout.strip())
 
 
+class _KilledProc:
+    """Stands in for a real `Popen` whose child fully ignores SIGTERM, so
+    `_run_git_timed`'s escalation ladder runs to the SIGKILL step — the
+    still-possible-in-principle last resort the repair path backstops.
+    `communicate()` raises `TimeoutExpired` on the first two calls (matching
+    the initial wait and the post-`terminate()` grace wait both expiring),
+    then succeeds on the third (the reap after `kill()`)."""
+
+    def __init__(self):
+        self.returncode = None
+        self._calls = 0
+
+    def communicate(self, timeout=None):
+        self._calls += 1
+        if self._calls <= 2:
+            raise subprocess.TimeoutExpired(cmd="git", timeout=timeout or 0)
+        self.returncode = -9  # killed
+        return "", ""
+
+    def terminate(self):
+        pass  # simulates a child that ignores SIGTERM
+
+    def kill(self):
+        pass  # returncode lands on the subsequent communicate() reap
+
+
 def _install_kill_mid_write(monkeypatch, repo: Path, target_rel: str, target_bytes: bytes):
-    """Patch `subprocess.run` inside the module so that ONLY the
+    """Patch `subprocess.Popen` inside the module so that ONLY the
     `sparse-checkout add -- big` invocation is intercepted: it simulates a
-    process SIGKILLed mid-materialization by (1) writing a TRUNCATED (0-byte)
-    copy of one real tracked file straight to disk — exactly what a killed
-    `git` leaves, since the file is created via open+truncate before its
-    content write lands — (2) leaving a stale `index.lock` in the real
-    git-dir, matching what git itself leaves when the rename-into-place never
-    happens, and (3) raising TimeoutExpired, matching what `subprocess.run`
-    raises to the caller after it kills the child on a real timeout. Every
-    other subprocess.run call (repair's `git show`, `git ls-tree`, fixture
-    setup) passes through to the real implementation untouched.
+    process fully SIGKILL-escalated mid-materialization by (1) writing a
+    TRUNCATED (0-byte) copy of one real tracked file straight to disk —
+    exactly what a killed `git` leaves, since the file is created via
+    open+truncate before its content write lands — (2) leaving a stale
+    `index.lock` in the real git-dir, matching what git itself leaves when
+    the rename-into-place never happens, and (3) returning a `_KilledProc`
+    whose `communicate()` raises `TimeoutExpired` twice, driving
+    `_run_git_timed`'s ladder through `terminate()` and into `kill()` —
+    matching what a fully wedged child (one that ignores SIGTERM) still
+    forces today. Every other `Popen`/`subprocess.run` call (repair's `git
+    show`, `git ls-tree`, fixture setup) passes through to the real
+    implementation untouched.
     """
-    real_run = subprocess.run
     gitdir = _real_git_dir(repo)
 
-    def fake_run(cmd, *args, **kwargs):
+    def fake_popen(cmd, *args, **kwargs):
         if (isinstance(cmd, (list, tuple))
                 and len(cmd) >= 6
                 and cmd[0] == "git" and cmd[3] == "sparse-checkout"
@@ -118,10 +154,10 @@ def _install_kill_mid_write(monkeypatch, repo: Path, target_rel: str, target_byt
             abs_path.write_bytes(b"")  # truncated mid-write, like the real incident
             gitdir.mkdir(parents=True, exist_ok=True)
             (gitdir / "index.lock").write_bytes(b"")  # stale lock left behind
-            raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 0.01))
-        return real_run(cmd, *args, **kwargs)
+            return _KilledProc()
+        return _REAL_POPEN(cmd, *args, **kwargs)
 
-    monkeypatch.setattr(WS.subprocess, "run", fake_run)
+    monkeypatch.setattr(WS.subprocess, "Popen", fake_popen)
 
 
 # ── 1. the bug: a killed `add` must not leave a truncated tracked file ──────
@@ -225,10 +261,9 @@ def test_successful_add_still_works_and_reports_nothing_wrong(repo, capsys):
 def _install_kill_mid_write_disable(monkeypatch, repo: Path, target_rel: str):
     """Same shape as `_install_kill_mid_write`, but intercepts
     `sparse-checkout disable` instead of `sparse-checkout add -- <names>`."""
-    real_run = subprocess.run
     gitdir = _real_git_dir(repo)
 
-    def fake_run(cmd, *args, **kwargs):
+    def fake_popen(cmd, *args, **kwargs):
         if (isinstance(cmd, (list, tuple))
                 and len(cmd) >= 5
                 and cmd[0] == "git" and cmd[3] == "sparse-checkout"
@@ -238,10 +273,10 @@ def _install_kill_mid_write_disable(monkeypatch, repo: Path, target_rel: str):
             abs_path.write_bytes(b"")  # truncated mid-write, like the real incident
             gitdir.mkdir(parents=True, exist_ok=True)
             (gitdir / "index.lock").write_bytes(b"")  # stale lock left behind
-            raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 0.01))
-        return real_run(cmd, *args, **kwargs)
+            return _KilledProc()
+        return _REAL_POPEN(cmd, *args, **kwargs)
 
-    monkeypatch.setattr(WS.subprocess, "run", fake_run)
+    monkeypatch.setattr(WS.subprocess, "Popen", fake_popen)
 
 
 def test_failed_full_repairs_a_truncated_tracked_file(repo, monkeypatch, capsys):
@@ -514,3 +549,158 @@ def test_preexisting_sparse_checkout_lock_alone_refuses_before_any_write(repo, m
     assert "::error" in blob and str(lock) in blob, (
         f"refusal did not name the sparse-checkout.lock path:\n{blob}")
     assert lock.exists(), "a lock this run did not create must never be auto-deleted"
+
+
+# ── 7. `_run_git_timed` escalates SIGTERM before SIGKILL on expiry ──────────
+#
+# `subprocess.run(..., timeout=...)` sends SIGKILL straight away on expiry.
+# Git installs cleanup handlers (removing `index.lock`, finishing or
+# discarding an in-flight write) that run on SIGTERM and CANNOT run on
+# SIGKILL — so the fix sends SIGTERM first via `Popen.terminate()` and only
+# escalates to `Popen.kill()` if the child ignores SIGTERM for the whole
+# `TERM_GRACE_S` grace window. These tests point `_run_git_timed` at a
+# controllable child (never a real git call) so the ladder can be exercised
+# deterministically and fast: an ordinary `sleep` that honors SIGTERM must
+# produce the clean-SIGTERM reason, while a `trap '' TERM; sleep` child that
+# IGNORES SIGTERM must be force-killed and must say so.
+
+# A single PROCESS (no shell fork) that installs SIG_IGN for SIGTERM, then
+# sleeps. Deliberately not `sh -c 'trap "" TERM; sleep 5'`: that spawns a
+# shell that forks `sleep` as a SEPARATE grandchild holding the same stdout/
+# stderr pipe fds — SIGKILLing the shell doesn't close those fds, so the
+# final reaping `communicate()` blocks for the full 5s waiting on the
+# orphaned grandchild's pipes instead of returning as soon as the killed
+# process dies. A single Python process has no such grandchild, so kill()
+# reaps promptly.
+_IGNORE_SIGTERM_CHILD = [
+    sys.executable, "-c",
+    "import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(5)",
+]
+
+
+def _install_fake_child(monkeypatch, argv: list[str], captured: list | None = None):
+    """Replace whatever argv `_run_git_timed` built with `argv`, so the
+    timeout/escalation ladder races a real, controllable child process
+    instead of real git. `captured`, if given, collects every `Popen`
+    instance created so a caller can inspect `.returncode` afterward."""
+    def fake_popen(cmd, *a, **kw):
+        proc = _REAL_POPEN(list(argv), *a, **kw)
+        if captured is not None:
+            captured.append(proc)
+        return proc
+
+    monkeypatch.setattr(WS.subprocess, "Popen", fake_popen)
+
+
+def test_run_git_timed_terminates_cleanly_when_child_honors_sigterm(repo, monkeypatch):
+    """An ordinary `sleep`, which does not trap signals, dies immediately on
+    SIGTERM — the ladder must stop there and never reach `kill()`. Fails
+    against the pre-fix `subprocess.run`-based implementation, which has no
+    escalation ladder at all and just reports a bare 'timed out ... killed'."""
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 3.0)
+    _install_fake_child(monkeypatch, ["sleep", "5"])
+
+    ok, reason = WS._run_git_timed(repo, ("status",), timeout=0.2)
+
+    assert ok is False
+    assert "terminated cleanly with SIGTERM" in reason, reason
+    assert "SIGKILL" not in reason, (
+        f"a SIGTERM-honoring child must never be escalated to SIGKILL: {reason}")
+
+
+def test_run_git_timed_escalates_to_sigkill_when_child_ignores_sigterm(repo, monkeypatch):
+    """A child that explicitly traps and ignores SIGTERM must still die —
+    the ladder escalates to `kill()` (SIGKILL) after `TERM_GRACE_S`, and the
+    reason must warn that a SIGKILLed checkout can leave a truncated file."""
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 0.3)
+    _install_fake_child(monkeypatch, _IGNORE_SIGTERM_CHILD)
+
+    ok, reason = WS._run_git_timed(repo, ("status",), timeout=0.2)
+
+    assert ok is False
+    assert "ignored SIGTERM for" in reason, reason
+    assert "killed with SIGKILL" in reason, reason
+    assert "truncated" in reason, (
+        f"escalation reason must warn a SIGKILLed checkout can leave a "
+        f"truncated file: {reason}")
+
+
+def test_sigterm_and_sigkill_reasons_are_distinguishable(repo, monkeypatch):
+    """The whole point of escalating is that a caller can tell, from the
+    returned reason alone, whether a truncating SIGKILL was even possible."""
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 3.0)
+    _install_fake_child(monkeypatch, ["sleep", "5"])
+    ok_term, reason_term = WS._run_git_timed(repo, ("status",), timeout=0.2)
+
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 0.3)
+    _install_fake_child(monkeypatch, _IGNORE_SIGTERM_CHILD)
+    ok_kill, reason_kill = WS._run_git_timed(repo, ("status",), timeout=0.2)
+
+    assert ok_term is False and ok_kill is False
+    assert reason_term != reason_kill
+    assert "SIGKILL" not in reason_term and "SIGKILL" in reason_kill, (
+        f"reasons must be distinguishable:\n  clean={reason_term!r}\n"
+        f"  escalated={reason_kill!r}")
+
+
+# ── 8. `_run_git_timed` non-timeout behavior is unchanged by the rewrite ────
+
+def test_run_git_timed_success_still_returns_true_empty_reason(repo):
+    ok, reason = WS._run_git_timed(repo, ("status", "--short"), timeout=5)
+    assert (ok, reason) == (True, ""), (
+        "a successful command must still return (True, '') exactly")
+
+
+def test_run_git_timed_nonzero_exit_still_names_code_and_stderr(repo):
+    ok, reason = WS._run_git_timed(repo, ("not-a-real-git-subcommand",), timeout=5)
+    assert ok is False
+    assert reason.startswith("exited "), (
+        f"a nonzero, non-timeout exit must still be reported as 'exited <code>: ...': {reason}")
+    assert reason != "exited 1", (
+        f"the first 300 chars of stderr must still be carried, not dropped: {reason}")
+
+
+# ── 9. no zombie process on any of the three paths ──────────────────────────
+
+def test_run_git_timed_leaves_no_zombie_on_success_or_either_kill_path(repo, monkeypatch):
+    captured: list = []
+
+    # success path — real git call, no fault injection.
+    _install_fake_child(monkeypatch, ["git", "-C", str(repo), "status", "--short"], captured)
+    ok, _ = WS._run_git_timed(repo, ("status", "--short"), timeout=5)
+    assert ok
+    assert captured[-1].returncode is not None, (
+        "a successful run left its Popen unreaped (returncode is None)")
+
+    # clean-SIGTERM path.
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 3.0)
+    _install_fake_child(monkeypatch, ["sleep", "5"], captured)
+    ok, reason = WS._run_git_timed(repo, ("status",), timeout=0.2)
+    assert not ok and "SIGKILL" not in reason
+    assert captured[-1].returncode is not None, (
+        "a SIGTERM-terminated child was left unreaped (returncode is None)")
+
+    # SIGKILL-escalation path.
+    monkeypatch.setattr(WS, "TERM_GRACE_S", 0.3)
+    _install_fake_child(monkeypatch, _IGNORE_SIGTERM_CHILD, captured)
+    ok, reason = WS._run_git_timed(repo, ("status",), timeout=0.2)
+    assert not ok and "SIGKILL" in reason
+    assert captured[-1].returncode is not None, (
+        "a SIGKILLed child was left unreaped (returncode is None)")
+
+    assert all(p.returncode is not None for p in captured), (
+        "at least one Popen across the three paths was left as a zombie")
+
+
+# ── 10. the budget is sized from the measured tail, not the median ─────────
+
+def test_add_timeout_s_clears_the_measured_worst_case_not_the_median():
+    """Measured over 12 fresh worktrees, `git sparse-checkout disable` had a
+    24.89s median but an 83.49s worst observed sample (~8% exceedance
+    against the old 60s cap). A cap sized from the median would still get
+    SIGKILLed on exactly the tail case that matters; 300s clears the worst
+    observed sample with 3.6x headroom."""
+    assert WS.ADD_TIMEOUT_S >= 300, (
+        f"ADD_TIMEOUT_S={WS.ADD_TIMEOUT_S} does not clear the measured worst "
+        "observed sample (83.49s) with adequate headroom — a timeout budget "
+        "must be sized from the tail, not the median")

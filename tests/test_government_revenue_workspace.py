@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import json
 
 import pandas as pd
 
@@ -194,6 +195,33 @@ def _award_change_event() -> dict:
     )
     assert len(events) == 1
     return events[0]
+
+
+def test_workspace_parses_legacy_serialized_agency_into_human_facet():
+    event = _award_change_event()
+    event["agency"] = {
+        "name": (
+            "{'id': 1217, 'has_agency_page': True, 'toptier_agency': "
+            "{'name': 'Department of Defense', 'code': '097'}, "
+            "'subtier_agency': {'name': 'Defense Information Systems Agency', "
+            "'code': '97AK'}, 'office_agency_name': 'TELECOMMUNICATIONS DIVISION- HC1013'}"
+        ),
+        "subagency": None,
+    }
+    workspace = build_procurement_workspace(
+        _empty_opportunity_intelligence(),
+        [],
+        as_of="2026-07-31",
+        known_at="2026-08-01T23:59:59.999999+00:00",
+        award_events=[event],
+        award_event_freshness={"status": "ok", "records_visible": 1},
+    )
+    published = workspace["events"][0]["agency"]
+    assert published["department_name"] == "Department of Defense"
+    assert published["subagency_name"] == "Defense Information Systems Agency"
+    labels = {row["label"] for row in workspace["facets"]["agencies"]}
+    assert "Department of Defense" in labels
+    assert "{'id'" not in json.dumps(published)
 
 
 def test_workspace_exposes_exact_deadline_diff_and_official_receipt(tmp_path):

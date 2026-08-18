@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T17:17:05.592886+00:00",
-  "count": 1350,
+  "generated_at": "2026-08-18T19:20:58.705768+00:00",
+  "count": 1353,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -78,17 +78,61 @@
   ],
   "items": [
     {
+      "id": "marketdesk-zg7mb1eztmv-6be4a4",
+      "title": "GS Meschoulam Carry without Confirmation 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T17:57:57Z",
+      "summary_points": [
+        "**Real Rates Threshold**: US 10Y real yields near 2.50% (restrictive post-GFC) signal conditional carry regime; rally requires yields falling to 2.00%, else risk assets reprice.",
+        "**Growth-Rate Scenarios**: Two critical paths: 1) Growth slows + real rates fall (supports equities/credit/EM carry/gold); 2) Growth slows but real rates stay high (uncomfortable for risk assets due to sticky inflation/fiscal concerns).",
+        "**Structural Real Yield Shift**: Oil >$90/bbl and persistent 2.5% real yields reflect structural factors (fiscal risk, inflation volatility, capital demand), not cyclical, complicating disinflation and easing cycles.",
+        "**Risk Asset Tension**: Market mispricing risk if real yields stay 2.4-2.6% without easing confirmation; 10Y yields to 2.0-2.25% required to validate equity/credit/EM carry positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7d3kbqswapn-84db6c",
       "title": "Global Markets Daily Europe’s Fixed Maturity Funds — A Fading Marginal Tailwind for EUR Credit",
       "institution": "Goldman Sachs",
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-18T16:25:12Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Fixed-Maturity Fund Tailwind Fading**: Retail demand for fixed-income target maturity funds (€270B AUM since 2021) slowing due to moderated EU household fixed-income allocations, preference for cash over credit, and equity returns competing for marginal savings.",
+        "**EUR IG Spread Widening Expected**: Technical backdrop weakened by fading retail tailwind and AI-related capex financing supply headwind, reinforcing modest EUR IG spread widening into year-end.",
+        "**Conservative Mandate Shift**: Avg.",
+        "target maturity fell to 4y post-2022 hiking cycle (rebounded recently), with realized returns aligning with EUR IG signaling increased conservatism in fund mandates."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1xykajtbb9w-f2c8f8",
+      "title": "China SAFE data suggest modest FX inflows in July",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:11Z",
+      "summary_points": [
+        "**FX Inflow Moderation**: Net $7bn July FX inflows (vs $34bn June); current account $41bn inflows (goods $61bn surplus, services $13bn deficit); portfolio outflows $9bn; FX conversion ratio fell to 54% (June: 65%).",
+        "**Foreign Bond Demand**: Sustained foreign investor purchases of RMB bonds (Exhibit 3), indicating persistent capital inflows into China’s financial markets despite broader FX flow slowdown.",
+        "**Reserve Volatility Signal**: Official FX reserves declined $11bn post-valuation adjustment, contrasting with rising banks’ net external assets (Exhibit 4), highlighting valuation-driven reserve management risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -131,6 +175,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7fyz8kd91hs-557124",
+      "title": "In Charts: Countdown to the October election: Campaigning begins",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T15:58:36Z",
+      "summary_points": [
+        "**Banco Master Scandal**: Largest financial fraud in Brazilian history undermines Flávio Bolsonaro’s candidacy (trailing Lula by 7pp in runoff polls), creating critical political risk and potential market instability ahead of October 2026 election.",
+        "**Fiscal Reform Imperative**: Structural reforms to reduce fiscal deficit are mandatory regardless of election outcome, directly impacting Brazil’s economic stability and investment environment.",
+        "**Election Lead Volatility**: Lula’s lead over Flávio narrows sharply (12% → 0% in 2025–2026), signaling high uncertainty and potential policy shifts affecting market flows and economic direction.",
+        "**Renan Santos’ Fiscal Policy**: Emerging as #3 candidate with debt reduction strategy (largest projected debt reduction vs.",
+        "Lula/Flávio/Cui), offering a right-wing fiscal alternative critical for Brazil’s stability amid election dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

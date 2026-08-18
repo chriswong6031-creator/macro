@@ -805,6 +805,146 @@ def test_exact_base_checkout_pins_origin_main_even_after_source_advances(
         ).resolve()
 
 
+def _blobless_partial_clone(tmp_path: Path) -> tuple[Path, str, str]:
+    """Build the runner's own checkout shape: a ``blob:none`` partial clone.
+
+    ci.yml hands every pack ``filter: blob:none`` + ``fetch-depth: 1``, so the
+    tree the replay borrows objects from is missing exactly the blobs the PR
+    changed. Reproducing that needs a server that honours the filter — a bare
+    repo without ``uploadpack.allowFilter`` answers "filtering not recognized
+    by server, ignoring" and hands back a COMPLETE clone, which is how this
+    trap hides from a test that looks correct.
+    """
+    origin = tmp_path / "origin.git"
+    _git(tmp_path, "init", "--bare", "-b", "main", str(origin))
+    _git(origin, "config", "uploadpack.allowFilter", "true")
+    _git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+
+    source = tmp_path / "source"
+    source.mkdir()
+    _git(source, "init", "-b", "main")
+    _git(source, "config", "user.email", "ci@example.test")
+    _git(source, "config", "user.name", "CI Test")
+    (source / "changed.txt").write_text("base\n", encoding="utf-8")
+    (source / "untouched.txt").write_text("shared\n", encoding="utf-8")
+    _git(source, "add", "-A")
+    _git(source, "commit", "-m", "base")
+    base = _git(source, "rev-parse", "HEAD")
+    (source / "changed.txt").write_text("head\n", encoding="utf-8")
+    _git(source, "commit", "-am", "head")
+    head = _git(source, "rev-parse", "HEAD")
+    _git(source, "remote", "add", "origin", str(origin))
+    _git(source, "push", "origin", "main")
+
+    work = tmp_path / "work"
+    _git(
+        tmp_path,
+        "clone",
+        "--filter=blob:none",
+        "--depth=1",
+        "--no-local",
+        origin.as_uri(),
+        str(work),
+    )
+    # The base commit is not in a depth-1 checkout; acquiring it is exactly what
+    # `_ensure_exact_commit` does, and it brings trees without blobs.
+    _git(work, "fetch", "--no-tags", "--depth=1", "origin", base)
+    return work, base, head
+
+
+def _locally_missing_blobs(work: Path, sha: str) -> list[str]:
+    oids = [
+        line.split()[2]
+        for line in _git(work, "ls-tree", "-r", sha).splitlines()
+        if line.split()[1] == "blob"
+    ]
+    probe = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=work,
+        input="".join(f"{oid}\n" for oid in oids),
+        capture_output=True,
+        text=True,
+        env={**os.environ, "GIT_NO_LAZY_FETCH": "1"},
+    )
+    return [
+        line.split(" ", 1)[0]
+        for line in probe.stdout.splitlines()
+        if line.endswith(" missing")
+    ]
+
+
+def test_base_replay_checks_out_a_base_sha_inside_a_partial_clone(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A classifier that degrades to ``unknown`` reads as "probably your fault".
+
+    Measured on PR #5853: `git checkout --detach --force <base>` inside the
+    replay repository exited 1 on every pack, on every base, because alternates
+    share OBJECTS but neither the partial-clone extension nor the promisor
+    remote that could fetch the omitted ones. Every main-inherited red on the
+    fleet was then reported `classification=unknown`, and `ship_loop_guard.py`
+    charged it to the PR under the INTERNAL block ladder.
+    """
+    work, base, head = _blobless_partial_clone(tmp_path)
+
+    # Guard the guard: if the fixture ever stops omitting blobs, this test is
+    # vacuous and must say so rather than pass.
+    missing = _locally_missing_blobs(work, base)
+    assert missing, (
+        "fixture is not a partial clone — no blob at the base commit is "
+        "missing locally, so this test could not observe the defect"
+    )
+
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path / "runner-temp"))
+    (tmp_path / "runner-temp").mkdir()
+    with PACK._exact_base_worktree(
+        work,
+        base,
+        deadline=PACK.time.monotonic() + 120,
+    ) as replay:
+        assert _git(replay, "rev-parse", "HEAD") == base
+        # Content, not just the ref: a checkout that skipped unreadable blobs
+        # still moves HEAD and still exits 1.
+        assert (replay / "changed.txt").read_text(encoding="utf-8") == "base\n"
+        assert (replay / "untouched.txt").read_text(encoding="utf-8") == "shared\n"
+        assert _git(replay, "status", "--porcelain") == ""
+    assert head != base
+
+
+def test_base_replay_hydration_is_a_noop_without_a_promisor_remote(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A full checkout must not pay for, or trip over, partial-clone repair."""
+    source = tmp_path / "source"
+    base, _head = _small_repository(source)
+    assert PACK._promisor_remote(source, deadline=PACK.time.monotonic() + 30) is None
+
+    def _fail(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("hydration probed a repository with no promisor remote")
+
+    monkeypatch.setattr(PACK, "_missing_tree_objects", _fail)
+    PACK._hydrate_exact_base_objects(
+        source, base, deadline=PACK.time.monotonic() + 30
+    )
+
+
+def test_a_failed_replay_command_reports_git_stderr_not_only_its_exit_status(
+) -> None:
+    """The exit status alone is why this stayed invisible for a whole fleet."""
+    failure = subprocess.CalledProcessError(
+        1,
+        ["git", "checkout", "--detach", "--force", SHA_BASE],
+        output="",
+        stderr="error: unable to read sha1 file of data/x.json (deadbeef)\n",
+    )
+    detail = PACK._bounded_detail(failure)
+    assert "returned non-zero exit status 1" in detail
+    assert "unable to read sha1 file of data/x.json" in detail
+    assert "\n" not in detail
+
+
 def test_each_job_restores_and_verifies_the_immutable_tested_tree(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
