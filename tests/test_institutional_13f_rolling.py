@@ -6,10 +6,11 @@ import json
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
 import pytest
+import requests
 import yaml
 
 import scripts.run_institutional_13f_rolling as rolling_runner
@@ -33,6 +34,7 @@ from engine.institutional_census.rolling import (
     run_rolling_ingestion,
 )
 from engine.institutional_census.sec_sources import (
+    ATOM_FETCH_ATTEMPTS,
     COVER_PAGE_COLUMNS,
     HOLDING_COLUMNS,
     INCLUDED_MANAGER_COLUMNS,
@@ -41,6 +43,7 @@ from engine.institutional_census.sec_sources import (
     SUMMARY_PAGE_COLUMNS,
     BulkTables,
     FilingDiscovery,
+    SecSourceUnavailableError,
     parse_filing_package,
 )
 from engine.institutional_census.storage import (
@@ -324,6 +327,100 @@ def test_sec_response_cap_matches_config_and_streaming_runner(monkeypatch) -> No
     fetcher._session = Session(Response(chunks=(b"123", b"45")))
     with pytest.raises(RuntimeError, match="SEC response byte ceiling"):
         fetcher("https://www.sec.gov/streamed-oversize")
+
+
+def test_transient_transport_failures_become_retryable_sec_errors() -> None:
+    """The layer that knows about HTTP decides what is transient.
+
+    ``sec_sources`` never imports requests, so unless the runner translates a
+    timeout here the scanner's retry and partial-result recovery can never see
+    the failure mode that was actually measured against the live feed.
+    """
+
+    class Session:
+        def __init__(self, error):
+            self.error = error
+            self.calls = 0
+
+        def get(self, *_args, **_kwargs):
+            self.calls += 1
+            raise self.error
+
+        def close(self):
+            return None
+
+    fetcher = rolling_runner._RequestsSecFetch(user_agent="test example@example.com")
+    for error in (
+        requests.ReadTimeout("read timed out"),
+        requests.ConnectTimeout("connect timed out"),
+        requests.ConnectionError("connection reset"),
+    ):
+        fetcher._session = Session(error)
+        with pytest.raises(SecSourceUnavailableError):
+            fetcher("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent")
+
+    # A refusal is an answer, not an outage, and must not be retried.
+    refusal = requests.HTTPError("not found")
+    refusal.response = type("R", (), {"status_code": 404})()
+    fetcher._session = Session(refusal)
+    with pytest.raises(requests.HTTPError):
+        fetcher("https://www.sec.gov/missing")
+
+    for status in sorted(rolling_runner.TRANSIENT_HTTP_STATUSES):
+        unwell = requests.HTTPError(f"http {status}")
+        unwell.response = type("R", (), {"status_code": status})()
+        fetcher._session = Session(unwell)
+        with pytest.raises(SecSourceUnavailableError):
+            fetcher("https://www.sec.gov/unwell")
+
+
+def test_unavailable_atom_page_keeps_its_discoveries_in_the_receipt(
+    tmp_path: Path,
+) -> None:
+    """A transient page must cost its own page, not the whole scan."""
+
+    unavailable = b"<!DOCTYPE html><html><title>SEC.gov | File Unavailable</title></html>"
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        if "start" not in query:  # filing package fetches are not the subject
+            return unavailable
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        if start == 0:
+            rows = "".join(
+                f"<entry><title>13F-HR - Filer ({2:010d}) (Filer)</title>"
+                f'<link rel="alternate" href="https://www.sec.gov/Archives/edgar/'
+                f'data/2/000000000126{n:06d}/0000000001-26-{n:06d}-index.htm"/>'
+                f'<summary type="html">Filed: 2026-08-07 '
+                f"AccNo: 0000000001-26-{n:06d}</summary>"
+                f"<updated>2026-08-07T17:00:00-04:00</updated>"
+                f'<category term="13F-HR"/><id>0000000001-26-{n:06d}</id></entry>'
+                for n in range(1, count + 1)
+            )
+            return (
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<feed xmlns="http://www.w3.org/2005/Atom">' + rows + "</feed>"
+            ).encode()
+        return unavailable  # the page that will not come back
+
+    receipt = _run(
+        LocalStore(tmp_path / "store"),
+        fetch,
+        _FakeMonotonic(),
+        max_accessions=30,
+    )
+    atom = receipt["discovery"]["atom"]
+    # The whole point: page one survives instead of being discarded with page two.
+    assert atom["entries"] == 20
+    assert atom["pages_fetched"] == 1
+    assert atom["stop_reason"] == "fetch_error"
+    # ...and the gap is still declared, so the run stays loud.
+    assert atom["complete"] is False
+    assert receipt["status"] in {"failed", "partial_failure"}
+    assert atom["fetch_retries"] == ATOM_FETCH_ATTEMPTS - 1
+    stages = [detail["stage"] for detail in receipt["failures"]["details"]]
+    assert "atom_discovery" in stages, "the transient failure must stay in the receipt"
 
 
 class _HeaderControlledResponse:
