@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T10:06:55.741745+00:00",
-  "count": 1329,
+  "generated_at": "2026-08-18T10:17:35.050663+00:00",
+  "count": 1330,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1288,6 +1288,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d9sefajsmrf-ddec53",
+      "title": "JPM Equity Strategy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:39:25Z",
+      "summary_points": [
+        "**EU Policy-Driven Resilience Shift**: Structural EU policy shift toward security/resiliency (energy grid, renewables, nuclear, defense) driven by Ukraine/Middle East/China risks; Germany’s €500bn infrastructure fund, CBAM, and ReArm Europe initiatives create multi-year tailwinds for defense, energy, and strategic tech sectors.",
+        "**Defense Capability Shift**: NATO spending surge and EU joint procurement (ReArm Europe) drive durable demand, but preference shifts from legacy platforms (missiles) to new capabilities (drones, cyber, space); defense stocks’ underperformance signals risk-reward turning toward capability-driven firms (e.g., BAE, Thales).",
+        "**Eurozone EPS Policy Anchor**: Targeted 18% Eurozone EPS growth by 2026 underpinned by policy-backed capital allocation (defense, energy, industrial resilience), replacing cyclical trends with structural investment; fiscal stimulus (e.g., German deficit widening) accelerates manufacturing recovery and infrastructure demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 35,
       "language": "en",
       "needs_metadata": false
     },
