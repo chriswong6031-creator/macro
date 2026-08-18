@@ -12,7 +12,9 @@ import pytest
 
 from engine.institutional_census.sec_sources import (
     ATOM_EPHEMERAL_ENTRY_LIMIT,
+    ATOM_FETCH_ATTEMPTS,
     ATOM_HONORED_PAGE_SIZES,
+    ATOM_MAX_FETCH_ATTEMPTS,
     COVER_PAGE_COLUMNS,
     HOLDING_COLUMNS,
     INCLUDED_MANAGER_COLUMNS,
@@ -21,6 +23,7 @@ from engine.institutional_census.sec_sources import (
     SUMMARY_PAGE_COLUMNS,
     FilingDiscovery,
     SecSourceError,
+    SecSourceUnavailableError,
     iter_bulk_holding_chunks,
     parse_filing_index,
     parse_filing_package,
@@ -606,6 +609,214 @@ def test_atom_scanner_short_page_is_complete() -> None:
     assert result.complete
     assert result.stop_reason == "short_page"
     assert result.pages_fetched == 1
+
+
+# SEC answers a brief outage with this, carrying an HTTP 200, so the document
+# type is the only thing separating "SEC is unwell" from "the feed is broken".
+UNAVAILABLE_HTML = (
+    b"<!DOCTYPE html>\n<html lang=\"en\"><head>"
+    b"<title>SEC.gov | File Unavailable</title></head>"
+    b"<body><h1>File Unavailable</h1></body></html>"
+)
+
+
+def _atom_fetcher(
+    unavailable_at: int, *, times: int | None = None
+) -> tuple[object, list[int]]:
+    """Serve normal pages, but fail the page at ``unavailable_at``.
+
+    ``times=None`` fails that page forever; an int fails only the first N
+    attempts so the retry can be observed recovering.
+    """
+
+    calls: list[int] = []
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        calls.append(start)
+        if start == unavailable_at and (
+            times is None or calls.count(start) <= times
+        ):
+            return UNAVAILABLE_HTML
+        return _atom_page(start, count)
+
+    return fetch, calls
+
+
+def test_atom_scanner_matches_the_live_production_page_ladder() -> None:
+    """Anchor the happy path to what the real feed served on 2026-08-17.
+
+    Observed against live EDGAR at 04:07Z with the production entry_limit of
+    750, when the feed was genuinely deeper than that: 9 pages, no unhonored
+    page size, and the tail walked 700->740->750 rather than stopping short.
+    A change that alters this ladder has changed what production discovers.
+    """
+
+    calls: list[tuple[int, int]] = []
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        calls.append((start, count))
+        return _atom_page(start, count)
+
+    result = scan_latest_filings_atom(fetch, entry_limit=750)
+
+    assert calls == [
+        (0, 100),
+        (100, 100),
+        (200, 100),
+        (300, 100),
+        (400, 100),
+        (500, 100),
+        (600, 100),
+        (700, 40),
+        (740, 10),
+    ]
+    assert [count for _start, count in calls if count not in ATOM_HONORED_PAGE_SIZES] == []
+    assert result.pages_fetched == 9
+    assert len(result.entries) == 750
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 751))
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+    assert result.fetch_retries == 0
+
+
+def test_atom_scanner_advances_by_served_not_by_requested() -> None:
+    """The cursor must follow what EDGAR SERVED, against a hypothetical over-server.
+
+    Under-serving is caught by the ``raw_entries < count`` check.  Over-serving
+    is caught only here, and the two directions together are what make the pager
+    total over EDGAR's behaviour rather than correct for the one shape measured
+    on 2026-08-17.  This matters because "EDGAR never serves more than asked" is
+    an EMPIRICAL claim about a surface that already surprised us once: the bug
+    #5854 fixed came from assuming EDGAR honours ``count``, and it rounds down.
+
+    Measured against the shipped code with an EDGAR that ignores ``count`` and
+    always serves 100.  With ``start += count`` instead, the cursor lags what
+    was consumed, so the scan re-fetches an overlapping window and runs an extra
+    page.
+
+    Read the 800 below as relative advance behaviour, NOT as boundary respect.
+    ``entry_limit`` is enforced on ``start``, which only bounds the entry count
+    while EDGAR serves what it was asked for; under a hypothetical over-server
+    NEITHER variant holds the 750 line (shipped overshoots to 800, the lagging
+    cursor to 840).  The claim under test is that the shipped cursor tracks what
+    was served and therefore overshoots less, not that the boundary survives an
+    EDGAR that breaks its own count contract.
+    """
+
+    def over_serving(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        return _atom_page(int(query["start"][0]), 100)
+
+    result = scan_latest_filings_atom(over_serving, entry_limit=750)
+
+    # 8 pages of 100 reach the 750 boundary; a cursor advancing by the REQUESTED
+    # count would lag and spend a 9th page re-reading entries it already had.
+    assert result.pages_fetched == 8
+    assert len(result.entries) == 800
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 801))
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+
+
+def test_atom_html_error_page_is_not_a_broken_contract() -> None:
+    """A transient outage page and a malformed feed must not be one error."""
+
+    with pytest.raises(SecSourceUnavailableError):
+        parse_latest_filings_atom(UNAVAILABLE_HTML)
+    # Malformed Atom stays a contract violation, so it can never be retried as
+    # though SEC were merely unwell.
+    with pytest.raises(SecSourceError) as caught:
+        parse_latest_filings_atom(
+            b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry>'
+        )
+    assert not isinstance(caught.value, SecSourceUnavailableError)
+
+
+def test_atom_scanner_retries_a_transient_page_and_keeps_scanning() -> None:
+    fetch, calls = _atom_fetcher(200, times=1)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    assert len(result.entries) == 400
+    assert result.fetch_retries == 1
+    assert calls.count(200) == 2, "the failed page must be asked for again"
+    assert result.pages_fetched == 4, "a retry is not another page"
+    assert [entry.source_ordinal for entry in result.entries[:3]] == [1, 2, 3]
+
+
+def test_atom_scanner_keeps_the_pages_it_walked_when_a_page_stays_unavailable() -> None:
+    """One transient page must not cost every discovery ahead of it."""
+
+    fetch, calls = _atom_fetcher(200)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    # The two good pages survive instead of being discarded with the third.
+    assert len(result.entries) == 200
+    assert result.pages_fetched == 2
+    assert calls.count(200) == ATOM_FETCH_ATTEMPTS
+    assert result.fetch_retries == ATOM_FETCH_ATTEMPTS - 1
+    # The gap is still declared: complete=False reds the run exactly as the
+    # discarded-everything path did.
+    assert not result.complete
+    assert result.stop_reason == "fetch_error"
+    assert isinstance(result.error, SecSourceUnavailableError)
+
+
+def test_atom_scanner_first_page_unavailable_yields_no_false_completeness() -> None:
+    fetch, _calls = _atom_fetcher(0)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    assert result.entries == ()
+    assert result.pages_fetched == 0
+    assert not result.complete
+    assert result.stop_reason == "fetch_error"
+
+
+def test_atom_scanner_never_retries_a_malformed_feed() -> None:
+    calls: list[str] = []
+
+    def fetch(url: str) -> bytes:
+        calls.append(url)
+        return b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry>'
+
+    with pytest.raises(SecSourceError) as caught:
+        scan_latest_filings_atom(fetch, entry_limit=100)
+    assert not isinstance(caught.value, SecSourceUnavailableError)
+    assert len(calls) == 1, "a broken contract must fail on the first attempt"
+
+
+def test_atom_scanner_fetch_attempts_is_bounded() -> None:
+    fetch, calls = _atom_fetcher(0)
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(fetch, fetch_attempts=0)
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(
+            fetch, fetch_attempts=ATOM_MAX_FETCH_ATTEMPTS + 1
+        )
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(fetch, fetch_attempts=True)
+    assert calls == [], "validation must precede any request"
+
+    # attempts=1 disables the retry without disabling partial recovery.
+    fetch, calls = _atom_fetcher(200)
+    result = scan_latest_filings_atom(fetch, entry_limit=400, fetch_attempts=1)
+    assert calls.count(200) == 1
+    assert result.fetch_retries == 0
+    assert len(result.entries) == 200
+    assert result.stop_reason == "fetch_error"
+
+
+def test_atom_scanner_clean_scan_reports_no_retries() -> None:
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        return _atom_page(int(query["start"][0]), int(query["count"][0]))
+
+    assert scan_latest_filings_atom(fetch, entry_limit=200).fetch_retries == 0
 
 
 def test_daily_and_full_master_index_contract() -> None:

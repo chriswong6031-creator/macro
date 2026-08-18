@@ -1175,6 +1175,12 @@ def run_rolling_ingestion(
         )
     except Exception as exc:  # noqa: BLE001 - master may still be a valid backstop.
         failures.append(_error_detail(exc, stage="atom_discovery"))
+    else:
+        # A scan that gave up on a transient page returns what it walked instead
+        # of raising, so file the identical receipt failure here; the coverage
+        # gap itself is already carried by ``complete=False``.
+        if atom_result.error is not None:
+            failures.append(_error_detail(atom_result.error, stage="atom_discovery"))
 
     master_entries: tuple[FilingDiscovery, ...] = ()
     master_body: bytes | None = None
@@ -1328,6 +1334,7 @@ def run_rolling_ingestion(
             "atom_complete": bool(atom_result and atom_result.complete),
             "atom_pages": atom_result.pages_fetched if atom_result else 0,
             "atom_stop_reason": atom_result.stop_reason if atom_result else "failed",
+            "atom_fetch_retries": atom_result.fetch_retries if atom_result else 0,
             "master_index_supplied": master_index_source is not None,
             "discovered_accessions": len(discoveries),
             "selected_accessions": len(selected),
@@ -1422,6 +1429,7 @@ def run_rolling_ingestion(
                 "entries": len(atom_entries),
                 "complete": atom_complete,
                 "stop_reason": atom_result.stop_reason if atom_result else "failed",
+                "fetch_retries": atom_result.fetch_retries if atom_result else 0,
             },
             "master_index": {
                 "supplied": master_index_source is not None,

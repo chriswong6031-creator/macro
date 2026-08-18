@@ -1,62 +1,29 @@
 {
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
-  "as_of": "2026-08-14",
-  "generated_utc": "2026-08-18T00:29:12Z",
+  "as_of": "2026-08-17",
+  "generated_utc": "2026-08-18T06:23:02Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
     "n": 2,
-    "n_eff": 1.16,
+    "n_eff": 2.0,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 2 candidates \u2248 1.16 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 2 candidates \u2248 2.0 independent bets."
   },
   "same_thesis_groups": [],
-  "earnings_coverage_frac": 0.333,
+  "earnings_coverage_frac": 0.0,
   "by_ticker": {
-    "GNW": {
-      "verdict": "duplicate",
-      "max_similarity": 0.8468,
+    "JNJ": {
+      "verdict": "new",
+      "max_similarity": 0.0,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "GNW",
+          "ticker": "ONTO",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.0,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "JNJ",
-          "combined": 0.8468,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8468,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-18",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as JNJ \u2014 shared factor profile (similarity 85%).",
-      "why_zh": "\u4e0e JNJ \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 85%\uff09\u3002"
-    },
-    "JNJ": {
-      "verdict": "duplicate",
-      "max_similarity": 0.8468,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "GNW",
-          "combined": 0.8468,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8468,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
@@ -68,29 +35,39 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as GNW \u2014 shared factor profile (similarity 85%).",
-      "why_zh": "\u4e0e GNW \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 85%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer ONTO at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ONTO\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "ONTO": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "JNJ",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.0,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer JNJ at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 JNJ\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     }
   },
   "pair_basis": {
-    "GNW__JNJ": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8468,
-      "combined": 0.8468,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "KEYS__JNJ": {
+    "JNJ__ONTO": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.0,
       "combined": 0.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "GNW__JNJ": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8468,
-      "combined": 0.8468,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
@@ -104,7 +81,7 @@
   },
   "n_eff_by_lane": {
     "entry_open": 2.0,
-    "setting_up": 1.0
+    "setting_up": null
   },
   "source_passport": {
     "factor_betas": {
@@ -115,7 +92,7 @@
     "us_standouts_v2": {
       "path": "site/factordata/us_standouts_v2.json",
       "found": true,
-      "as_of": "2026-08-14"
+      "as_of": "2026-08-17"
     },
     "membership": {
       "path": "data/baskets/membership.json",
