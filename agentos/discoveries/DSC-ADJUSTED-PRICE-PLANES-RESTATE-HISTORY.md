@@ -49,7 +49,7 @@ verified_by: >
   6d8988fc... exactly, sealed it to
   data/stock_identity/w1a1/ohlcv/b_source_prefix.parquet, verified the parquet
   round-trip preserves float64 bit-for-bit, and re-ran the whole CI step
-  (`stock-identity atlas guards`, 7 files): 249 passed. Shipped by PR #5865.
+  (`stock-identity atlas guards`, 7 files): 249 passed. Shipped by PR #5869.
 scope:
   - macro
   - scripts/stock_identity_build_w1a1.py
