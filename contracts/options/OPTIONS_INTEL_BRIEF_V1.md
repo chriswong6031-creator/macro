@@ -187,6 +187,24 @@ DOI_CLAMP                = 3.0         # z clamped to [-3,3]/3
 - C family: c1 = XS rank of 0DTE volume share (≥0.90 fires); c2 = v1 ≥ 0.95 AND spot ≥ 0.98×
   max spot over min(20,H) (floor 10); c3 = d1 ≥ 0.95 ∧ d3 ≥ 0.5 ∧ v2 ≥ 0.90. Severity =
   max(fired inputs).
+  - Cross-sectional percentile convention (`percentile_xs`, crowding-defect ruling,
+    2026-08-18, `MODEL_VERSION` unchanged at v1.2 — this is a primitive-correctness fix,
+    not a semantic model revision): MIDRANK ties — `p = (count_strictly_less + 0.5·count_equal) / n`. A
+    member of a tied block ranks at the block's MIDPOINT, never the top of the block.
+    Applies to every `percentile_xs` caller (c1, v2, v3-XS-half, event F_E); does NOT
+    apply to `percentile_long` (its histories are proven non-degenerate — changing it
+    would perturb frozen v1/d1 longitudinal semantics, out of scope this wave).
+  - `sd_share` (c1's input) requires a nonzero same-day (≤`SD_DTE`) volume sum: an empty
+    ≤1.5-DTE slice OR a zero-volume slice both resolve `sd_share = None`, not `0.0` — a
+    literal same-day share of exactly zero is definitionally "no same-day tape", not
+    same-day crowding. `c1` is then the midrank percentile over the remaining FINITE
+    `sd_share` members only (peers with `sd_share = None` are excluded from the
+    cross-section entirely, same as any other missing peer value); with fewer than
+    `MIN_HISTORY` (10) finite members, `c1 = None` universe-wide — honest family
+    absence, not a fired leg. Ruling note: a member of a tied block ranks at the
+    block's midpoint, so a degenerate-mass block (e.g. a session where most names
+    carry `sd_share = 0.0`, formerly ranked at the block's top under plain `<=`
+    comparison) can no longer self-certify as extreme.
 - `evidence_strength`: directional = clamp01(0.70·mean(|Q_oi|,|Q_skew|) + 0.30·D_salience);
   VOLATILITY = |F_E| if E present else |F_V| (evidence EXTREMITY); RISK_ONLY = C severity.
 - `evidence_confidence = min(ceil, 0.30 + 0.10·[d3 ≥ 0.5] + 0.05·[coverage complete])`;
@@ -405,3 +423,12 @@ correction chain is claimed (`supersedes_signal_id`/`corrected_at` stay null pla
 Every history-dependent CONFIG constant must be satisfiable by ≥60% of names present in the
 latest committed session of the real store at test time (`needs_full_checkout`-marked test).
 A spec change demanding more depth than the canonical producer supplies must fail CI.
+
+## 9. Known limits (recorded; out of scope this wave)
+
+- `d1`'s max-over-~12-discrete-bucket-ranks construction (§4) inflates: under exchangeability
+  `P(max over ~12 roughly-independent percentile ranks ≥ 0.95) ≈ 0.60` (debugger-verified,
+  2026-08-18), i.e. `d1 ≥ 0.95` fires far more often than a single-percentile 5% base rate
+  would suggest. Recorded as a v1.3 candidate (tighten the bucket-rank aggregation or the
+  `D1_PERSIST_TH`/`C3_D1` thresholds against the inflated distribution); NOT touched by the
+  crowding-defect fix above — `d1`/`d3` aggregation is explicitly out of scope for that ruling.

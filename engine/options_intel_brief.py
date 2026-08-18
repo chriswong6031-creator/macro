@@ -159,12 +159,25 @@ def percentile_long(history: Sequence[float | None], value: float | None,
 
 def percentile_xs(peer_values: Mapping[str, float | None], symbol: str,
                    *, floor: int = CONFIG["MIN_HISTORY"]) -> float | None:
-    """``p_xs`` — symbol's percentile among its (already tier-matched) peers."""
+    """``p_xs`` — symbol's percentile among its (already tier-matched) peers.
+
+    Midrank tie handling (crowding-defect ruling, 2026-08-18, contract §4): a
+    member of a tied block ranks at the block's MIDPOINT, ``p = (count_strictly_less +
+    0.5*count_equal) / n`` — never top-of-block. Plain ``(arr <= v).mean()``
+    assigns every member of a degenerate-mass tied block (e.g. all-zero
+    ``sd_share``) the maximal percentile in that block, letting a mass-tie
+    self-certify as extreme; midrank instead pins a fully-tied population at
+    ``0.5`` for everyone, which cannot exceed a fixed threshold like ``C1_TH``.
+    """
     vals = {k: float(v) for k, v in peer_values.items() if _finite(v)}
     if symbol not in vals or len(vals) < floor:
         return None
     arr = np.array(list(vals.values()))
-    return float((arr <= vals[symbol]).mean())
+    v = vals[symbol]
+    n = float(len(arr))
+    less = float((arr < v).sum())
+    equal = float((arr == v).sum())
+    return (less + 0.5 * equal) / n
 
 
 def blend(p_xs: float | None, p_long: float | None,
@@ -441,7 +454,13 @@ def session_metrics_and_exclusions(day: pd.DataFrame) -> tuple[dict[str, dict[st
         vb = grp.groupby([money, dtb], observed=True)["volume"].sum(min_count=1)
         vol_tot = float(grp["volume"].fillna(0).sum())
         sd = grp[dte <= CONFIG["SD_DTE"]]
-        sd_share = float(sd["volume"].fillna(0).sum() / vol_tot) if vol_tot > 0 else None
+        sd_vol = float(sd["volume"].fillna(0).sum())
+        # Crowding-defect ruling (2026-08-18, contract §4): an empty <=SD_DTE slice OR a
+        # zero-volume slice both mean "no same-day tape" -- definitionally not
+        # same-day crowding, not a same-day share of exactly 0. Leaving this at
+        # 0.0 let a mass-tie at the floor self-certify as maximally crowded once
+        # percentile_xs ranked ties at the top of the block.
+        sd_share = (sd_vol / vol_tot) if (vol_tot > 0 and sd_vol > 0) else None
         out[str(name)] = {
             "spot": spot,
             "n_quot": int(len(quot)),

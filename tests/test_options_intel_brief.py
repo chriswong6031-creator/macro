@@ -1925,3 +1925,203 @@ def test_b5_11_end_to_end_artifact_carries_the_nine_fields_with_correct_types():
     # opportunities board_rank stays contiguous 1..N regardless of how many
     # qualified this particular fixture (never re-derived from loop.index downstream)
     assert [c["board_rank"] for c in payload["opportunities"]] == list(range(1, len(payload["opportunities"]) + 1))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Crowding-defect ruling (AD-1, 2026-08-18; Fable-adjudicated, debugger-proven).
+#
+# Plain `(arr <= v).mean()` in `percentile_xs` assigned every member of a tied
+# block the TOP-of-block rank. On the real store, sd_share mass-ties at 0.0 on
+# most sessions (14/18 sampled; 369/372 names on S=2026-08-12), so that block's
+# every member scored ~0.99 and c1 fired for the whole eligible universe
+# (356/356 on 2026-08-12; true crowded set: 3). Fix has two parts: (1)
+# `percentile_xs` adopts MIDRANK tie handling (a tied block ranks at its
+# MIDPOINT, never the top); (2) `sd_share` becomes None — not 0.0 — when a
+# name's own same-day (<=SD_DTE) volume sum is exactly zero, since a literal
+# same-day share of 0 is "no same-day tape", not same-day crowding.
+# `percentile_long` and d1/d3 aggregation are explicitly UNTOUCHED (out of
+# scope for this ruling; d1's own inflation is recorded as a known limit,
+# contract §9).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_cd_1_midrank_mass_tie_ranks_at_block_midpoint():
+    """The exact defect fixture: 369 zeros + 3 nonzero (S=2026-08-12 real-store
+    shape). A zero member now ranks at the tied block's MIDPOINT (~0.5·369/372
+    ~= 0.496), never the top (~0.99 under the old plain `<=` comparison) — and
+    so no longer clears C1_TH on its own."""
+    peers = {f"P{i}": 0.0 for i in range(369)}
+    peers["A"], peers["B"], peers["C"] = 0.5, 0.8, 1.0
+    p = brief.percentile_xs(peers, "P0")
+    assert p == pytest.approx(0.5 * 369 / 372, abs=1e-9)
+    assert p < CONFIG["C1_TH"]
+    # every member of the tied block gets the SAME rank (block-uniform, not
+    # insertion-order- or identity-dependent)
+    assert brief.percentile_xs(peers, "P200") == pytest.approx(p, abs=1e-9)
+    # the genuinely-extreme nonzero members still rank correctly (unaffected by
+    # the tie-handling rewrite when they carry no ties of their own)
+    assert brief.percentile_xs(peers, "C") == pytest.approx(371.5 / 372, abs=1e-9)
+
+
+def test_cd_2_midrank_never_exceeds_old_top_of_block_ceiling():
+    """Strict property: no member of a tied block may rank above
+    `(count_strictly_less + block_size) / n` — the OLD plain-`<=` value is the
+    CEILING a midrank member may never reach (it lands at the block's own
+    midpoint, strictly below whenever the block has more than one member)."""
+    peers = {f"P{i}": 0.0 for i in range(20)}
+    peers.update({f"Q{i}": 1.0 for i in range(5)})
+    n = len(peers)
+    block_size = 20
+    ceiling = (0 + block_size) / n
+    p = brief.percentile_xs(peers, "P0")
+    assert p < ceiling
+    assert p == pytest.approx(0.5 * block_size / n, abs=1e-9)
+
+
+def test_cd_3_continuous_input_regression_matches_old_within_one_over_n():
+    """On a fully-distinct (no-tie) 350-name cross-section, midrank and the old
+    plain-`<=` percentile differ by at most 1/n per name — the rewrite changes
+    tie handling only; it is a no-op (up to the trivial 0.5-vs-1.0 count-equal
+    term) whenever nothing is actually tied."""
+    rng = np.random.default_rng(42)
+    vals = rng.choice(np.linspace(0.0, 1.0, 10_000), size=350, replace=False)
+    peers = {f"N{i}": float(v) for i, v in enumerate(vals)}
+    arr = np.array(list(peers.values()))
+    n = len(arr)
+    for name, v in peers.items():
+        new_p = brief.percentile_xs(peers, name)
+        old_p = float((arr <= v).mean())
+        assert abs(new_p - old_p) <= 1.0 / n + 1e-9
+
+
+def test_cd_4_zero_same_day_volume_gives_none_sd_share_never_fires_c1():
+    """A name with genuinely zero <=SD_DTE volume gets `sd_share = None`, not
+    `0.0` — and c1 is None for it regardless of how extreme its peers are
+    (an empty/zero-volume same-day slice is definitionally not same-day
+    crowding)."""
+    session = "2026-03-02"
+    band_size = 21 * 2   # moneyness_grid(21) x call/put -- _symbol_rows' "zero" band
+    rows = _symbol_rows("ZEROVOL", session, volume=80.0)
+    for r in rows[:band_size]:            # zero out ONLY the <=SD_DTE band
+        r["volume"] = 0.0
+    hot_rows = _symbol_rows("HOT", session, volume=10.0)
+    for r in hot_rows[:band_size]:        # concentrate volume in the same-day band
+        r["volume"] = 500.0
+    peer_rows: list[dict] = []
+    for i in range(12):   # letters only -- _STANDARD_TICKER_RE root is [A-Za-z.]+
+        peer_rows.extend(_symbol_rows(f"PEER{chr(65 + i)}", session, volume=50.0))
+    df = _mk_chain(rows + hot_rows + peer_rows, session=session)
+    m = brief.session_metrics(df)
+    assert m["ZEROVOL"]["sd_share"] is None
+    assert m["HOT"]["sd_share"] is not None and m["HOT"]["sd_share"] > 0.9
+    xs = {n: m[n]["sd_share"] for n in m}
+    assert sum(1 for v in xs.values() if v is not None) >= CONFIG["MIN_HISTORY"]
+    assert brief.percentile_xs(xs, "ZEROVOL") is None
+    # HOT's own extreme peer value fires normally -- proves ZEROVOL's None is
+    # not an artifact of a starved cross-section
+    assert brief.percentile_xs(xs, "HOT") >= CONFIG["C1_TH"]
+
+
+def test_cd_5_below_floor_finite_members_c1_none_for_everyone():
+    """Fewer than MIN_HISTORY (10) finite `sd_share` members -> c1 is None
+    universe-wide, even though every member's own value is a genuine
+    (non-degenerate) same-day share -- honest family absence, not a fired
+    leg."""
+    session = "2026-03-02"
+    rows: list[dict] = []
+    for i in range(5):   # < MIN_HISTORY(10); letters only, see _STANDARD_TICKER_RE
+        rows.extend(_symbol_rows(f"NM{chr(65 + i)}", session, volume=50.0))
+    df = _mk_chain(rows, session=session)
+    m = brief.session_metrics(df)
+    xs = {n: m[n]["sd_share"] for n in m}
+    assert 0 < sum(1 for v in xs.values() if v is not None) < CONFIG["MIN_HISTORY"]
+    for n in m:
+        assert brief.percentile_xs(xs, n) is None
+
+
+def test_cd_6_fresh_until_reverts_to_family_life_when_c1_leg_vanishes():
+    """B3 knock-on (fresh_until_for, direct unit level -- same style as the b3_*
+    suite): a RISK_ONLY card jointly fired by c1 (same-day, life 0) AND c2 (V
+    family, life 5) was forced to the CURRENT session by the min-of-mins rule.
+    Once the spurious c1 leg vanishes (this ruling), the SAME card -- now only
+    c2-fired -- reverts to c2's own V-family life (S+5 sessions), not S."""
+    S = "2026-03-16"
+    before = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                    crowd_fired_legs=["c1", "c2"])
+    assert before == S   # c1's life-0 wins the min -- crowd-shortened to today
+    after = brief.fresh_until_for(direction="RISK_ONLY", S=S, session_n_forward_fn=_session_n_forward,
+                                   crowd_fired_legs=["c2"])
+    assert after == _session_n_forward(S, CONFIG["FRESH_LIVES_SESSIONS"]["V"])
+    assert after > S     # returned to its family life, no longer crowd-shortened
+
+
+@pytest.mark.needs_full_checkout("data")
+def test_cd_7_real_store_recurrence_guard_2026_08_12(tmp_path, monkeypatch):
+    """Real-store recurrence guard, pinned to the debugger's exact exemplar
+    session (S=2026-08-12, D=2026-08-13) via a filtered CHAINS_DIR snapshot --
+    so this stays anchored to the known-defect session regardless of how much
+    the committed store grows later (``producer.build`` otherwise always picks
+    the NEWEST lawful pair). Asserts (a) the fired-crowding count the real
+    pipeline now produces is <=40 (post-fix expectation ~27: c2/c3 only -- this
+    session structurally has too few finite sd_share peers for c1 to fire at
+    all, an honest absence) and (b) that bound is corroborated by an
+    INDEPENDENT recomputation straight from `session_metrics`/`percentile_xs`
+    on the real chain (not a re-read of the artifact's own counters)."""
+    S, D = "2026-08-12", "2026-08-13"
+    real_chains = REPO_ROOT / "data" / "polygon_gex" / "chains"
+    s_file, d_file = real_chains / f"{S}.parquet", real_chains / f"{D}.parquet"
+    if not (s_file.exists() and d_file.exists()):
+        pytest.skip(f"real store no longer carries the {S}/{D} exemplar snapshots")
+
+    # producer.build() computes input-receipt paths via `fp.relative_to(_REPO_ROOT)`,
+    # so the pinned snapshot dir must live UNDER the repo root, not the system tmp
+    # dir pytest's own `tmp_path` fixture uses.
+    import shutil
+    import tempfile
+    scratch = Path(tempfile.mkdtemp(dir=REPO_ROOT, prefix=".cd7_scratch_"))
+    try:
+        pinned_dir = scratch / "chains"
+        pinned_dir.mkdir()
+        for f in sorted(real_chains.glob("*.parquet")):
+            if f.stem <= D:
+                (pinned_dir / f.name).symlink_to(f)
+        monkeypatch.setattr(producer, "CHAINS_DIR", pinned_dir)
+
+        payload = producer.build(now=datetime.now(timezone.utc), out_path=tmp_path / "artifact.json",
+                                  ignore_staleness=True)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    assert payload["as_of_session"] == S
+    assert payload["oi_counted_date"] == D
+
+    total_fired = len(payload["risk_warnings"]) + payload["risk_board_overflow"]
+
+    # Independent recomputation: straight from the engine primitives on the
+    # real S-day chain, not from re-reading the artifact.
+    day_S = pd.read_parquet(s_file)
+    metrics_S, _ = brief.session_metrics_and_exclusions(day_S)
+    sd_xs = {n: metrics_S[n]["sd_share"] for n in metrics_S}
+    finite_sd = [v for v in sd_xs.values() if v is not None]
+    c1_fired_recomputed = {
+        n for n in metrics_S
+        if (c1 := brief.percentile_xs(sd_xs, n)) is not None and c1 >= CONFIG["C1_TH"]
+    }
+    # the debugger's own exemplar (369/372 zero sd_share) -- fewer than
+    # MIN_HISTORY finite same-day-volume names this session, so c1 is an
+    # honest universe-wide absence, never a fired leg.
+    assert len(finite_sd) < CONFIG["MIN_HISTORY"]
+    assert c1_fired_recomputed == set()
+
+    # every card the real pipeline actually exposes must agree: none of them
+    # carry a fired c1 leg this session.
+    for grp in ("opportunities", "directional_watch", "event_board", "risk_warnings"):
+        for c in payload[grp]:
+            cw = c.get("crowding")
+            if cw is not None:
+                assert "c1" not in cw["fired"]
+
+    assert total_fired <= 40, (
+        f"post-fix crowding fire count {total_fired} exceeds the debugger's bound "
+        f"(expected ~27: c2/c3 only -- c1 is an honest absence this session, "
+        f"recomputed independently above)"
+    )
