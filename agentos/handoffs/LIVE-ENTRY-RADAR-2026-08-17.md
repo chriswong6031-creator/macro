@@ -134,7 +134,7 @@ unresolved:
   - "Q2 TEST remains ACCRUING (n=1/6). The matched FIT tables are exploratory, not the confirmatory contrast."
 
 next_actions:
-  - "ADDENDUM W6-SOL-CORRECTION: Sol re-reviews the follow-up PR against the three ranking-law blockers plus C3 seam, pinned hashes, real-input receipt, and W5.1 Agent OS restore."
+  - "ADDENDUM W6-SOL-CORRECTION: Sol re-reviews PR #5845 against the three ranking-law blockers plus C3 seam, pinned hashes, real-input receipt, and W5.1 Agent OS restore."
   - "ADDENDUM W6: Do not mark W6 done at this correction merge; live-payload commissioning still follows."
   - "Do not start W7 or W9."
   - "Optional: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
@@ -159,7 +159,7 @@ danger_areas:
   - "Do not git-add the 278MB per-row A census. Counts live in refusal_census_summary."
 
 discoveries: ["DSC:REFUSAL-BRANCH-HIDES-A-DEAD-LOOKUP"]
-prs: [5825, 5827, 5833, 5834]
+prs: [5825, 5827, 5833, 5834, 5845]
 ---
 
 ## Continuation
