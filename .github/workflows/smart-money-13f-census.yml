@@ -183,19 +183,27 @@ jobs:
           assert len(raw) <= 256 * 1024, "rolling receipt exceeded its operator bound"
           receipt = json.loads(raw)
           assert receipt["schema"] == "institutional_13f.rolling_receipt/v1"
-          assert receipt["status"] in {"ok", "no_changes"}
-          assert receipt["counts"]["failures"] == 0
-          assert receipt["discovery"]["atom"]["complete"] is True
-          assert receipt["discovery"]["backlog_accessions"] == 0
-          if os.environ["EXPECTED_LANE"] != "atom":
+          expected_lane = os.environ["EXPECTED_LANE"]
+          if expected_lane == "atom":
+              # The fast lane must never fall behind: a backlog here means the
+              # hourly cadence is no longer keeping up with EDGAR.
+              assert receipt["status"] in {"ok", "no_changes"}
+              assert receipt["discovery"]["backlog_accessions"] == 0
+          else:
+              # Master-index backstops legitimately saturate --max-accessions
+              # during the filing crush; the next scheduled run drains the rest.
+              assert receipt["status"] in {"ok", "no_changes", "bounded_backlog"}
               master = receipt["discovery"]["master_index"]
               assert master["supplied"] is True
               assert master["entries"] > 0
               assert master["sha256"]
+          assert receipt["counts"]["failures"] == 0
+          assert receipt["discovery"]["atom"]["complete"] is True
           print(
               f"status={receipt['status']} "
               f"published={receipt['counts']['new_filings_published']} "
-              f"requests={receipt['counts']['requests']}"
+              f"requests={receipt['counts']['requests']} "
+              f"backlog={receipt['discovery']['backlog_accessions']}"
           )
           PY
 

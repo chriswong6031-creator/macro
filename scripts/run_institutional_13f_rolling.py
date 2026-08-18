@@ -69,6 +69,7 @@ class _RequestsSecFetch:
             raise ValueError("rolling fetch is restricted to HTTPS SEC URLs")
         chunks: list[bytes] = []
         observed = 0
+        announced_size: int | None = None
         with self._session.get(
             url,
             headers=self._headers,
@@ -99,6 +100,21 @@ class _RequestsSecFetch:
                         "SEC response exceeds the SEC response byte ceiling"
                     )
                 chunks.append(chunk)
+            # Content-Length describes the ENCODED (on-the-wire) body, so
+            # comparing it to `observed` (the bytes iter_content yields,
+            # already transparently decompressed by urllib3/requests) is only
+            # valid for identity-encoded responses. A content-coded response
+            # (e.g. gzip) is instead covered by the codec's own framing: a
+            # truncated gzip stream fails to decode and iter_content raises.
+            if (
+                announced_size is not None
+                and not response.headers.get("Content-Encoding")
+                and observed != announced_size
+            ):
+                raise RuntimeError(
+                    "SEC response truncated: "
+                    f"Content-Length={announced_size}, received={observed}"
+                )
         return b"".join(chunks)
 
     def close(self) -> None:
@@ -261,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"rolling receipt write failed: {safe['error']}\n")
         return 1
     sys.stdout.buffer.write(canonical_json_bytes(receipt))
-    return 0 if receipt.get("status") in {"ok", "no_changes"} else 1
+    return 0 if receipt.get("status") in {"ok", "no_changes", "bounded_backlog"} else 1
 
 
 if __name__ == "__main__":

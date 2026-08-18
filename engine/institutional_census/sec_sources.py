@@ -1573,9 +1573,15 @@ def parse_filing_package(
     for name, body in body_by_name.items():
         expected_size = descriptor_by_name[name].size
         if expected_size is not None and len(body) != expected_size:
-            raise SecSourceError(
-                f"filing document size mismatch for {name}: "
-                f"index={expected_size}, body={len(body)}"
+            # SEC's index.json `size` is advisory: it provably disagrees with
+            # SEC's own Content-Length and served bytes (block-rounded values
+            # observed in production). Transport truncation is gated
+            # authoritatively at fetch time against Content-Length.
+            print(
+                "::warning title=sec-index-size-mismatch::"
+                f"{index_url} {name}: index={expected_size}, "
+                f"body={len(body)}",
+                flush=True,
             )
 
     header_name = next(

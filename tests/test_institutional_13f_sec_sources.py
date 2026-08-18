@@ -656,14 +656,32 @@ def test_filing_package_rejects_identity_and_completeness_drift() -> None:
             documents=incomplete,
         )
 
+
+def test_filing_package_tolerates_index_size_mismatch_and_warns(capsys) -> None:
+    """SEC's index.json ``size`` is advisory (it provably disagrees with SEC's
+    own Content-Length and served bytes for some documents, block-rounded to
+    4096B in production). A body/index size mismatch must not fail parsing --
+    transport truncation is gated authoritatively at fetch time -- but it must
+    still surface as a GitHub Actions ``::warning`` annotation."""
+    index = (FIXTURES / "filing_index.json").read_bytes()
+    documents = _filing_documents()
     wrong_size = dict(documents)
     wrong_size["information_table.xml"] += b"\n"
-    with pytest.raises(SecSourceError, match="size mismatch"):
-        parse_filing_package(
-            index_url=INDEX_URL,
-            index_source=index,
-            documents=wrong_size,
-        )
+
+    tables = parse_filing_package(
+        index_url=INDEX_URL,
+        index_source=index,
+        documents=wrong_size,
+    )
+
+    assert len(tables.holdings) == 2
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::")]
+    assert warning_lines, f"no line-leading annotation emitted; captured: {out!r}"
+    assert any(
+        "sec-index-size-mismatch" in line and "information_table.xml" in line
+        for line in warning_lines
+    )
 
 
 def test_filing_index_rejects_unsafe_member_name() -> None:
