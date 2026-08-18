@@ -5,7 +5,7 @@ date: 2026-08-18
 session: claude/prophet-fusion-pr3d-liveness
 model: local
 ended_because: blocked
-prs: []
+prs: ["#5890"]
 repo: mastermindx-market-intelligence/macro
 main_at_start: 4b77e9afd24c15127b7206d4aed855d2a1b36234
 mission: >
