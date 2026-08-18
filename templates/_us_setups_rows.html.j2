@@ -1,0 +1,34 @@
+{#- ── US fresh-trigger rows (.topsetups tbody) (docs/TIER_PREVIEW_PATTERN.md) ─────────────────────────
+   Extracted VERBATIM from the `_tsn.resid[:10]` loop that used to live inline in
+   dashboard.html.j2 (:16364-16376). ONE source for both consumers so the free
+   shell and the paid payload can never drift apart:
+     · the shell {% with %}-binds `rows` to the PREVIEW slice and
+       {% include %}s this file at the loop's original location;
+     · scripts/build_site.py._write_us_payload renders it directly via
+       env.get_template("_us_setups_rows.html.j2").render(...) for the LOCKED remainder
+       that ships in site/premiumdata/us_stocks.json.
+   Carries NO tier logic — the split happens before this partial is called.
+
+   Params:
+     rows — the top_setups residual rows to render, already sliced by the caller.
+-#}
+{#- Local copy of dashboard.html.j2's `t` display macro (:7). Extracted partials
+   are self-contained by house convention (_us_board_cards.html.j2 header) — a
+   macro from the includer's scope is NOT visible when build_site renders this
+   file directly for the paid payload. -#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% for r in rows %}
+  <tr class="ts-row" data-tkr="{{ r.ticker }}">
+    <td class="c-stock"><a class="ts-tk-a" href="stock.html#{{ r.ticker }}"><span class="ts-tk">{{ r.ticker }}</span></a> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} insider{{ '' if r.insider_buyers == 1 else 's' }} bought more shares than they sold in the last six months{% if r.insider_net_mn %}, worth about ${{ '%.1f'|format(r.insider_net_mn) }}M net{% endif %}. Supporting evidence, not a buy signal." data-tip-zh="过去六个月有 {{ r.insider_buyers }} 名内部人净买入{% if r.insider_net_mn %}，净额约 ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}。可作辅助参考，并非买入信号。">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="The latest earnings beat the stock's usual year-ago pattern. This clue has not held up over a long history, so treat it as supporting context only." data-tip-zh="最新盈利好于该股往年同期的常见表现。这个线索在长期历史中并不稳定，因此仅作辅助参考。">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
+    <td class="muted c-sector">{{ td(r.sector) }}</td>
+    <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
+    <td class="r muted c-rank">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
+    <td class="c-buy">{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade == 'T1' %}<span class="ts-buy ok" data-tip-en="Confirmed: fired within the last few days and still building" data-tip-zh="已确认：最近几天刚触发，还在往上走">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T2' %}<span class="ts-buy ok" data-tip-en="An earlier trigger fired. It often catches the turn closer to the low, but it also has more false starts." data-tip-zh="较早的信号已经触发。它往往更靠近低点，但也更容易出现假启动。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Expected to fire within the next day or two{% if sg.provisional %}. This is based on an unfinished price bar; about 1 in 10 disappear when it closes{% endif %}" data-tip-zh="预计未来一两天内触发{% if sg.provisional %}。这是根据尚未走完的K线判断；约十分之一会在收盘后消失{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Early reading — it may change when the current price bar closes. About 1 in 10 disappear." data-tip-zh="提前读数——当前K线收盘后可能改变，约十分之一会消失。"><span class="l-en">early</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td class="c-cycle">{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td class="c-trend">{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
+    <td class="r c-factor {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
+    <td class="r c-setup"><b>{{ '%+.2f'|format(r.setup) }}</b></td>
+  </tr>
+{% endfor %}

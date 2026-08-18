@@ -23,6 +23,13 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{#- Tier-gate disclosure for a lane whose rows were withheld. Same plain line and
+    the same .pg-more class the host page uses, so the hydration script's sweep
+    clears these too. The lane HEADING already carries the true full count; this
+    only says where the missing rows went. -#}
+{% macro ab_more(n) -%}
+<p class="pg-more" style="padding:4px 12px 8px;margin:0"><span class="l-en">{{ n }} more here — <a href="plans.html">sign in to see the full lane</a></span><span class="l-zh">此处还有 {{ n }} 个 — <a href="plans.html">登录后查看完整分组</a></span></p>
+{%- endmacro %}
 {% macro dispshort(name) -%}
 {%- set _n = name | string -%}
 {%- set _abbr = {
@@ -34,6 +41,29 @@
 {%- if _base in _abbr -%}{{ _abbr[_base] }}{{ _ew }}{%- else -%}{{ _base }}{{ _ew }}{%- endif -%}
 {%- endmacro %}
 {% if action_board %}
+{#- ── TIER GATE (docs/TIER_PREVIEW_PATTERN.md) ──────────────────────────────────
+   This board's rows are what templates/tier_preview.js has always treated as paid
+   (`#action-board .actbody`, anon 1 / free 3), but the capping was a DOM overlay:
+   every row stayed in the shipped bytes. The split is the gate, so this file now
+   renders in three shapes from ONE set of row macros:
+
+     · ab_locked  — rows only. scripts/build_site.py._write_us_payload renders THIS
+                    FILE with the WITHHELD rows to fill the paid payload. No CSS,
+                    no panel chrome, no headings: none of that is withheld content.
+     · pgate      — the free shell. Each lane bakes only `pgate.actnow.preview`
+                    rows; the lane COUNTS stay the true full-board figures ("state
+                    and totals are free, names are paid"), and the fold button is
+                    suppressed while gated because with nothing behind it it is a
+                    control over nothing.
+     · neither    — every other host (sector_central.html) and every ungated
+                    build: unchanged, byte-for-byte.
+
+   The row macros below are shared by all three, so the free preview, the paid
+   remainder and the ungated board can never drift apart. -#}
+{%- set _ab_rows_only = (ab_locked is defined and ab_locked) -%}
+{%- set _ab_gate = (pgate.actnow if (pgate is defined and pgate and pgate.get('actnow')) else none) -%}
+{%- set _ab_pv = (_ab_gate.preview if _ab_gate else 0) -%}
+{%- if not _ab_rows_only -%}
   {#- Decision-card component stylesheet (hover cards). dashboard.html.j2 emits this
      once at the page head for its other cards; on the SI Overview the board is the
      only dc.dc_card() consumer, so the include emits it. Duplicate emission is a
@@ -280,6 +310,7 @@
     {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
        V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
     {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
+{%- endif -%}
     {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="The slower cycle view says {{ _abtr.cycle_label_en }}, while the near-term setup says {{ _abtr.setup_label_en }}. They cover different time frames, so neither cancels the other." data-tip-zh="较慢的周期判断为 {{ _abtr.cycle_label_en }}，近期形态判断为 {{ _abtr.setup_label_en }}。两者观察的时间不同，因此互不覆盖。"><span class="tr-sep">⇔</span><span class="l-en">longer view <b>{{ _abtr.cycle_label_en }}</b> · near term <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">较长周期 <b>{{ _abtr.cycle_label_en }}</b> · 近期 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
     {# FIX 2: EW-vs-cycle disclosure chip for sector rows — fires when EW and cycle disagree (buy vs reduce) and gate_override did NOT fire. #}
     {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="The headline index says {{ _ewtr.cycle_label_en }}, while the average stock inside it says {{ _ewtr.ew_label_en }}. The difference shows whether a few large names are masking the broader sector." data-tip-zh="龙头指数判断为 {{ _ewtr.cycle_label_zh }}，板块内平均股票判断为 {{ _ewtr.ew_label_zh }}。两者的差异可看出少数大公司是否掩盖了板块整体。"><span class="tr-sep">⇔</span><span class="l-en">headline <b>{{ _ewtr.cycle_label_en }}</b> · broad sector <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">龙头指数 <b>{{ _ewtr.cycle_label_zh }}</b> · 板块整体 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
@@ -475,12 +506,39 @@
       {{ ab_theme_pop(x) }}
     </a>
     {%- endmacro -%}
+    {#- ROWS-ONLY OUTPUT — the withheld remainder for site/premiumdata/us_stocks.json.
+        One <div> per lane, keyed by the lane's fold id, so the hydration script can
+        append each lane's rows to the .actbody they were sliced out of. `wrap` mirrors
+        the Stand-aside lane's data-theme-id wrapper (TS-R5 client-side auto-expand),
+        which is part of the row's contract and not decoration. -#}
+    {%- if _ab_rows_only -%}
+    {%- for _L in ab_locked %}<div class="ab-locked" data-ab-lane="{{ _L.lane }}">
+      {%- for x in _L.rows %}
+        {%- if _L.get('wrap') and x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>
+        {%- elif x.kind == 'theme' %}{{ ab_theme_row(x) }}
+        {%- else %}{{ ab_sector_row(x) }}{% endif %}
+      {%- endfor %}</div>
+    {%- endfor -%}
+    {%- else -%}
     {#- Lane count helpers -#}
     {%- set _bn_cnt = action_board.buy_now | length -%}
     {%- set _bs_cnt = action_board.buy_soon | length -%}
     {%- set _run_cnt = action_board.get('on_the_run', []) | length -%}
     {%- set _tp_cnt = action_board.take_profits | length -%}
     {%- set _hold_cnt = (action_board.hold | length) + (action_board.avoid | length) -%}
+    {#- GATED SHELL SLICES. The `_*_cnt` figures above are counted off the FULL
+        board and stay that way — the lane headings, and the "+N more" links, are
+        honest totals a Free reader keeps. Only the ROW LISTS below are cut down.
+        Stand aside is one .actbody fed by two arrays, so the preview budget is
+        spent on `hold` first and `avoid` takes whatever is left; that keeps the
+        combined visible count equal to the same `preview` every other lane gets. -#}
+    {%- set _bn_rows  = action_board.buy_now[:_ab_pv] if _ab_gate else action_board.buy_now -%}
+    {%- set _bs_rows  = action_board.buy_soon[:_ab_pv] if _ab_gate else action_board.buy_soon -%}
+    {%- set _run_rows = action_board.get('on_the_run', [])[:_ab_pv] if _ab_gate else action_board.get('on_the_run', []) -%}
+    {%- set _tp_rows  = action_board.take_profits[:_ab_pv] if _ab_gate else action_board.take_profits -%}
+    {%- set _hold_rows = action_board.hold[:_ab_pv] if _ab_gate else action_board.hold -%}
+    {%- set _av_pv = _ab_pv - (_hold_rows | length) -%}
+    {%- set _avoid_rows = (action_board.avoid[:_av_pv] if _av_pv > 0 else []) if _ab_gate else action_board.avoid -%}
     {#- FIX 3: more-count helpers from basket_items; default 0 when absent -#}
     {%- set _ab_more = action_board.get('more') or {} -%}
     {%- set _more_bn = _ab_more.get('buy_now') or 0 -%}
@@ -500,12 +558,13 @@
           <div class="acth-sub"><span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span></div>
         </div>
         <div class="actbody act-fold is-collapsed" id="ab-buy-fold">
-          {% for x in action_board.buy_now %}
+          {% for x in _bn_rows %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
+          {% if _ab_gate and (action_board.get('buy_now') or [])|length > (_bn_rows|length) %}{{ ab_more((action_board.get('buy_now') or [])|length - (_bn_rows|length)) }}{% endif %}
           {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
-        {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _bn_cnt > 3 and not _ab_gate %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 2: ALMOST READY (buy_soon) ---- -#}
       <div class="actcol act-soon">
@@ -518,12 +577,13 @@
           <div class="acth-sub"><span class="l-en">Setting up — wait for the trigger, not a buy yet</span><span class="l-zh">构筑中 — 等待触发，尚不可买</span></div>
         </div>
         <div class="actbody act-fold is-collapsed" id="ab-soon-fold">
-          {% for x in action_board.buy_soon %}
+          {% for x in _bs_rows %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
+          {% if _ab_gate and (action_board.get('buy_soon') or [])|length > (_bs_rows|length) %}{{ ab_more((action_board.get('buy_soon') or [])|length - (_bs_rows|length)) }}{% endif %}
           {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
-        {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _bs_cnt > 3 and not _ab_gate %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 3: IN FAVOUR — DON'T CHASE (on_the_run) ---- -#}
       <div class="actcol act-run">
@@ -536,12 +596,13 @@
           <div class="acth-sub"><span class="l-en">Uptrend intact but extended · wait for a pullback</span><span class="l-zh">趋势完好但已延伸 · 等待回调</span></div>
         </div>
         <div class="actbody act-fold is-collapsed" id="ab-run-fold">
-          {% for x in action_board.get('on_the_run', []) %}
+          {% for x in _run_rows %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
+          {% if _ab_gate and (action_board.get('on_the_run') or [])|length > (_run_rows|length) %}{{ ab_more((action_board.get('on_the_run') or [])|length - (_run_rows|length)) }}{% endif %}
           {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
-        {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _run_cnt > 3 and not _ab_gate %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 4: TAKE PROFITS ---- -#}
       <div class="actcol act-trim">
@@ -554,12 +615,13 @@
           <div class="acth-sub"><span class="l-en">Late in the cycle / topping — protect gains</span><span class="l-zh">周期晚期／做顶 — 保护利润</span></div>
         </div>
         <div class="actbody ab-trim-fold is-collapsed" id="ab-trim-fold">
-          {% for x in action_board.take_profits %}
+          {% for x in _tp_rows %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
+          {% if _ab_gate and (action_board.get('take_profits') or [])|length > (_tp_rows|length) %}{{ ab_more((action_board.get('take_profits') or [])|length - (_tp_rows|length)) }}{% endif %}
           {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
-        {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _tp_cnt > 3 and not _ab_gate %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 5: STAND ASIDE (hold + avoid; top 3 visible) ---- -#}
       {#- TS-R5: id="dash-hold-fold" PRESERVED — JS auto-expand on turn-watch match -#}
@@ -573,16 +635,17 @@
           <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
         </div>
         <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
-          {% for x in action_board.hold %}
+          {% for x in _hold_rows %}
             {#- TS-R5: data-theme-id wrapper enables client-side auto-expand -#}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% endfor %}
-          {% for x in action_board.avoid %}
+          {% for x in _avoid_rows %}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% endfor %}
+          {% if _ab_gate and _hold_cnt > ((_hold_rows|length) + (_avoid_rows|length)) %}{{ ab_more(_hold_cnt - (_hold_rows|length) - (_avoid_rows|length)) }}{% endif %}
           {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
-        {% if _hold_cnt > 3 %}
+        {% if _hold_cnt > 3 and not _ab_gate %}
         <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
         {% endif %}
       </div>
@@ -593,4 +656,5 @@
       {% include "_us_bottoming_watch.html.j2" %}
     </div>
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
+{%- endif -%}
 {% endif %}

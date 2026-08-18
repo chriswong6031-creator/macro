@@ -1,4 +1,11 @@
-# V4-A1 — AUG-14 AND CURRENT-SESSION SETTLEMENT RECOVERY (SPAWN HANDOFF)
+# V4-A1 — AUG-14 AND CURRENT-SESSION SETTLEMENT RECOVERY (ACCEPTANCE CONTRACT)
+
+> **SUPERSEDED AS A SPAWN COMMAND (V4-0B, 2026-08-18): DO NOT LAUNCH A V4-A1 SESSION.**
+> Active Availability/outage sessions own the implementation (incident receipt #5742).
+> This document is now the ACCEPTANCE CONTRACT Sol reviews the sibling return against —
+> its gates (§0) define "settled"; its spawn/sequencing language below is retained as
+> historical contract detail only. See `WAVE_GRAPH_AND_MERGE_ORDER.md` §4.11 and the
+> WS `a1` row.
 
 **Program:** `WS:PROPHET-US-V4-RECOVERY` wave `a1` · **Written:** 2026-08-17 by V4-0A (Fable) at pin `fc0557bb0873`
 **Session model routing:** sonnet `builder` executes; opus `reviewer` red-teams the recovery claim before merge; the commissioning main loop (or the session's own loop) adjudicates. Every spawn carries explicit routing per repo law.

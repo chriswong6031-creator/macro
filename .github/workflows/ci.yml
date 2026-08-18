@@ -2779,6 +2779,12 @@ on:
       # job's own `run:` steps, so a PR editing only this suite still runs it.
       - "tests/test_etfs_gate.py"
       - "tests/test_public_dashboard_preview.py"
+      # us_stocks.html joined the tier-gate job with the board split (#5840) and
+      # its four adjacent panels. Same half as the two lines above: templates/**
+      # and scripts/build_site.py already trigger this job, so this line exists so
+      # a PR editing ONLY the suite still runs it — a guard the guarded change
+      # cannot trigger is not a guard.
+      - "tests/test_us_board_gate.py"
       # test_etf_board joined the unrun-scoring-engine job 2026-08-03 (it ran in
       # zero jobs before that; its subjects engine/** + templates/** already
       # trigger above — this line covers a PR editing only the suite itself).

@@ -79,6 +79,44 @@
 {{ _o.get(n, (n|string) ~ 'th') }}
 {%- endmacro -%}
 
+{#- ── TIER GATE (docs/TIER_PREVIEW_PATTERN.md) ──────────────────────────────────
+    The tape's COUNTS are aggregate and stay free — they are the panel's whole
+    argument ("6 of Software's 60 names are on this board") and a count names
+    nobody. The member LISTS are the product: ticker plus the board state it sits
+    in, which is exactly what the gated cards below sell. templates/tier_preview.js
+    already collapsed them to "N names" in the DOM, but the names stayed in the
+    shipped bytes one view-source away — a marketing wall, not a gate.
+
+    `tt_slot` is the ONE place that decides which of the three forms a member list
+    takes, so the free shell, the paid payload and the ungated build can never
+    render different markup for the same list:
+      · tape_names_only  — build_site rendering the WITHHELD lists for the payload
+      · pgate.tape       — the free shell: the collapsed count, names absent
+      · neither          — the ungated build: unchanged, byte-for-byte
+    `id` is derived from the list's position in the tape (row index + column key),
+    never a running counter, so the payload key and the shell anchor are computed
+    the same way on both sides and cannot drift out of step. -#}
+{%- macro tt_mem(mem, shared) -%}
+{% for _m in mem %}<span class="tt-n"><span class="tt-sym">{{ _m.t }}</span>{% if _m.get('why_en') %}<span class="tt-why">{{ tt_t(_m.why_en, _m.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if shared %}<span class="tt-why">{{ tt_t(shared[0], shared[1]) }}</span>{% endif %}
+{%- endmacro -%}
+
+{%- macro tt_quiet(row) -%}
+{% for _q in row.quiet_sample %}<span class="tt-n"><span class="tt-sym">{{ _q }}</span></span>{% endfor %}{% if row.get('quiet_more') %}<span class="tt-n tt-more">+{{ row.quiet_more }}</span>{% endif %}<span class="tt-why">{{ tt_t('no fresh entry trigger today', '今日无新入场触发') }}</span>
+{%- endmacro -%}
+
+{#- n is the member COUNT the collapsed form prints. It is counted the same way
+    tier_preview.js counted the .tt-n spans it was replacing (a `+N more` chip
+    stands for N names), so the free reader sees the number they see today. -#}
+{%- macro tt_slot(id, inner, n) -%}
+{%- if tt_names_only is defined and tt_names_only -%}
+<div class="tt-locked" data-ttl="{{ id }}">{{ inner }}</div>
+{%- elif pgate is defined and pgate and pgate.get('tape') -%}
+<span class="tt-names" data-ttl="{{ id }}"><span class="l-en">{{ n }} name{{ '' if n == 1 else 's' }}</span><span class="l-zh">{{ n }} 只股票</span></span>
+{%- else -%}
+<span class="tt-names" data-ttl="{{ id }}">{{ inner }}</span>
+{%- endif -%}
+{%- endmacro -%}
+
 {%- set _tt = theme_tape if (theme_tape is defined and theme_tape is mapping) else none -%}
 {%- set _tt_rows = (_tt.get('rows') or []) if _tt else [] -%}
 
@@ -94,6 +132,33 @@
       ('leading',    'leading',    '领跑'),
       ('watching',   'watching',   '观察中')
     ] -%}
+{%- if tt_names_only is defined and tt_names_only -%}
+{#- ── NAMES-ONLY RENDER (docs/TIER_PREVIEW_PATTERN.md) ─────────────────────────
+    scripts/build_site.py._write_us_payload renders THIS SAME FILE a second time
+    with `tt_names_only`, to produce the member lists the free shell withheld.
+    It walks the same two collections in the same order and builds the same slot
+    ids, and the MARKUP comes from the same tt_mem/tt_quiet macros the panel uses
+    — so a change to a member list changes both sides of the wall at once. Only
+    the loop scaffolding is restated here; the panel chrome, CSS and copy are not
+    emitted at all, because none of it is withheld. -#}
+{%- for _r in _tt_rows %}{%- set _ri = loop.index0 %}
+{%- for _k, _en, _zh in _tt_cols %}
+{%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
+{%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
+{%- if _mem %}{{ tt_slot('r' ~ _ri ~ '-' ~ _k, tt_mem(_mem, _shared), _mem|length) }}{%- endif %}
+{%- endfor %}
+{%- if _r.get('quiet_sample') %}{{ tt_slot('r' ~ _ri ~ '-quiet', tt_quiet(_r), (_r.quiet_sample|length) + (_r.get('quiet_more') or 0)) }}{%- endif %}
+{%- endfor %}
+{%- set _tt_turns = _tt.get('washout_turns') or [] %}
+{%- for _r in _tt_turns %}{%- set _wi = loop.index0 %}
+{%- for _k, _en, _zh in _tt_cols %}
+{%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
+{%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
+{%- if _mem %}{{ tt_slot('w' ~ _wi ~ '-' ~ _k, tt_mem(_mem, _shared), _mem|length) }}{%- endif %}
+{%- endfor %}
+{%- if _r.get('quiet_sample') %}{{ tt_slot('w' ~ _wi ~ '-quiet', tt_quiet(_r), (_r.quiet_sample|length) + (_r.get('quiet_more') or 0)) }}{%- endif %}
+{%- endfor %}
+{%- else -%}
   <style id="theme-tape-css">
   /* ── THEME TAPE (W2) ───────────────────────────────────────────────────────
      Every value resolves from an existing theme.css token. No new hex, theme.css
@@ -505,6 +570,7 @@
     </div>
 
     {%- for _r in _tt_rows %}
+    {%- set _ri = loop.index0 %}
     {%- set _c = _r.get('counts') or {} %}
     <details class="tt-i">
       <summary class="tt-s">
@@ -549,7 +615,7 @@
         {%- if _mem %}
         <div class="tt-g">
           <span class="tt-gk">{{ tt_t(_en, _zh) }}</span>
-          <span class="tt-names">{% for _m in _mem %}<span class="tt-n"><span class="tt-sym">{{ _m.t }}</span>{% if _m.get('why_en') %}<span class="tt-why">{{ tt_t(_m.why_en, _m.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if _shared %}<span class="tt-why">{{ tt_t(_shared[0], _shared[1]) }}</span>{% endif %}</span>
+          {{ tt_slot('r' ~ _ri ~ '-' ~ _k, tt_mem(_mem, _shared), _mem|length) }}
         </div>
         {%- endif %}
         {%- endfor %}
@@ -559,7 +625,7 @@
         {%- if _r.get('quiet_sample') %}
         <div class="tt-g">
           <span class="tt-gk">{{ tt_t('quiet', '未触发') }}</span>
-          <span class="tt-names">{% for _q in _r.quiet_sample %}<span class="tt-n"><span class="tt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="tt-n tt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="tt-why">{{ tt_t('no fresh entry trigger today', '今日无新入场触发') }}</span></span>
+          {{ tt_slot('r' ~ _ri ~ '-quiet', tt_quiet(_r), (_r.quiet_sample|length) + (_r.get('quiet_more') or 0)) }}
         </div>
         {%- endif %}
       </div>
@@ -583,6 +649,7 @@
     <div class="tt-turn">
       <p class="tt-turn-hd">{{ tt_t('Turning from washout — early, unconfirmed', '洗盘转折——早期，未确认') }}</p>
       {%- for _r in _tt_turns %}
+      {%- set _wi = loop.index0 %}
       {%- set _c = _r.get('counts') or {} %}
       {%- set _w = '%+.1f'|format(_r.turn_1w|float)|replace('-', '−') %}
       {%- set _m = '%+.1f'|format(_r.turn_1m|float)|replace('-', '−') %}
@@ -608,14 +675,14 @@
           {%- if _mem %}
           <div class="tt-g">
             <span class="tt-gk">{{ tt_t(_en, _zh) }}</span>
-            <span class="tt-names">{% for _m2 in _mem %}<span class="tt-n"><span class="tt-sym">{{ _m2.t }}</span>{% if _m2.get('why_en') %}<span class="tt-why">{{ tt_t(_m2.why_en, _m2.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if _shared %}<span class="tt-why">{{ tt_t(_shared[0], _shared[1]) }}</span>{% endif %}</span>
+            {{ tt_slot('w' ~ _wi ~ '-' ~ _k, tt_mem(_mem, _shared), _mem|length) }}
           </div>
           {%- endif %}
           {%- endfor %}
           {%- if _r.get('quiet_sample') %}
           <div class="tt-g">
             <span class="tt-gk">{{ tt_t('quiet', '未触发') }}</span>
-            <span class="tt-names">{% for _q in _r.quiet_sample %}<span class="tt-n"><span class="tt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="tt-n tt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="tt-why">{{ tt_t('no fresh entry trigger today', '今日无新入场触发') }}</span></span>
+            {{ tt_slot('w' ~ _wi ~ '-quiet', tt_quiet(_r), (_r.quiet_sample|length) + (_r.get('quiet_more') or 0)) }}
           </div>
           {%- endif %}
         </div>
@@ -679,4 +746,5 @@
       </div>
     </details>
   </div>
+{%- endif -%}
 {%- endif -%}
