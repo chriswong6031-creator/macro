@@ -3046,10 +3046,11 @@ checks:
       it shipped, and was structurally blind to that.
   - law_id: ops.nightly_liveness
     summary: >
-      The authoritative US nightly (daily.yml / Build B) must produce a run for every
-      completed NYSE session, that run must conclude success, and the Prophet store
-      must actually advance to that session. All three are separate failures and each
-      is observable on its own.
+      The authoritative nightly (daily.yml / Build B) must produce a run for every
+      completed NYSE session, that run must conclude success, the Prophet store must
+      actually advance to that session, and each of the five market boards (US, China,
+      Hong Kong, Canada, International) must advance on its OWN exchange calendar. All
+      four are separate failures and each is observable on its own.
     source_ref:
       - scripts/check_nightly_liveness.py
       - tests/test_workflow_file_size.py
@@ -3084,6 +3085,39 @@ checks:
         Watches Build B only. Build A (closing-bell.yml) ran green through the entire
         2026-08-11/12 outage while the board it re-rendered still read
         price_through=2026-08-10, so its health proves nothing about the ledger.
+      - >-
+        Check D grades each market board on its own exchange calendar. The mainland
+        budget additionally requires the board to be older than
+        lib/cn_calendar.MAX_LEGIT_CLOSURE_DAYS (11 calendar days), because that holiday
+        table is deliberately minimal and the State Council routinely extends Spring
+        Festival and Golden Week past the statutory core it encodes. That floor applies
+        only INSIDE a closure window (a scheduled weekday closure between the board's
+        stamp and the expected session), so outside a holiday the mainland pages at 2
+        sessions like every other market. Consequence to accept: a China board that dies
+        ON THE EVE of a long closure is caught at 11+ calendar days rather than 2
+        sessions. Checks A and B still cover the lane that bakes it, within hours.
+      - >-
+        Budgets are measured, not assumed. A healthy board swept across every 08:00Z and
+        14:00Z slot of 2026-2028 breaches on none of the five markets; a board frozen
+        after the 2026-08-14 bake first pages at hk/cn 08-18 14:00Z, us/ca 08-19 08:00Z,
+        intl 08-21 08:00Z. Re-run that sweep before changing any budget.
+      - >-
+        Canada is graded on lib/tsx_calendar.py, written for this check. International
+        has NO single exchange calendar — the board unions Tokyo, London, Seoul,
+        Sydney, Mumbai, Milan, Taipei and Madrid — and degrades to a Mon-Fri
+        approximation carrying a documented +2-session tolerance.
+      - >-
+        International is a KNOWN blind spot today: site/factordata/intl_setups.json has
+        carried as_of=null on every commit in main's history, because compute_intl_alpha
+        stamps no as_of on any return path (scripts/build_intl_library.py, adversarial
+        review D1, PR #5674). The check reports it INDETERMINATE every run and says why
+        rather than inventing a verdict; tests/test_nightly_liveness.py pins that state
+        so a future stamp is noticed.
+      - >-
+        Hong Kong's typhoon closures cannot be rule-computed and live in
+        lib/hk_calendar.ONE_OFF_CLOSURES. A missing entry over-counts the lag (a false
+        "stale"), never under-counts, so two consecutive unrecorded No.8 / Black
+        Rainstorm days could produce one false page until the date is appended.
     owner_program: prophet-us-eyes-open
     notes: >
       Registered after the 2026-08-11/12 two-session outage, in which the US nightly
@@ -3096,6 +3130,16 @@ checks:
       ~512,000-byte processing cap. This guard asks GitHub whether a run was created
       at all, which is the only question that sees a stranded workflow file in hours.
       Fixture dates in --selftest are constants with no relation to the wall clock.
+      Check D (per-market board freshness) was added 2026-08-17 after the Canada board
+      froze: site/factordata/canada_standouts.json held as_of=2026-08-13 from 2026-08-14
+      onward while daily.yml ran green, the render lane re-committed the file nightly (so
+      its git mtime was always minutes old), and its US, HK and mainland siblings
+      advanced. Checks A-C were all satisfied — A and B watch the lane, C watches ONE
+      artifact, and that artifact belongs to a different market. A re-render is not an
+      advance, and a green lane is not a green board. The workflow's sparse-checkout list
+      is load-bearing for D: a missing path degrades that market to INDETERMINATE (exit
+      0) rather than turning the lane red, so tests/test_nightly_liveness.py pins the two
+      lists together.
 
   - law_id: governance.intelligence_registry_integrity
     summary: >

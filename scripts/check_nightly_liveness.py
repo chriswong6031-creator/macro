@@ -28,7 +28,7 @@ with zero jobs (see ``tests/test_workflow_file_size.py`` for that postmortem).  
 data-staleness instrument can only infer that hours-to-days later, through its
 weekend padding.  Asking GitHub "did a run get created?" sees it immediately.
 
-WHAT THIS CHECKS.  Three questions, in the order a human would ask them:
+WHAT THIS CHECKS.  Four questions, in the order a human would ask them:
 
   A. RUN CREATED   — did daily.yml produce a run at all since the last completed
                      NYSE session's fire window?  Catches: the workflow-file strand,
@@ -55,6 +55,22 @@ WHAT THIS CHECKS.  Three questions, in the order a human would ask them:
                      alarm before Tuesday.  Once the fire window is STALE_GRACE
                      behind us and no fresh run is alive, even 1-behind is a breach
                      — a healthy Friday bake lands hours before the grace expires.
+  D. EVERY BOARD   — did each of the FIVE market boards (US, China, Hong Kong,
+                     Canada, International) advance, each measured on its OWN
+                     exchange calendar?  Catches the 2026-08-14 Canada freeze: the
+                     Canadian board sat at ``as_of=2026-08-13`` for five days while
+                     daily.yml ran green, the render lane re-committed the file
+                     nightly, and its four siblings advanced.  C could not see it —
+                     C grades one artifact, and it belongs to a different market.
+
+WHY D IS A SEPARATE CHECK RATHER THAN A WIDER C.  A re-render is not an advance and
+a green lane is not a green board, but the deeper reason is the calendar: HK and the
+mainland close hours BEFORE the ET nightly fires, so their boards routinely carry a
+session the US board has not reached yet (measured 2026-08-04: hk/cn read 08-04 while
+us read 07-31).  One shared NYSE anchor would call that healthy state stale and, in
+the other direction, paper over a real freeze.  See MARKET_BOARDS for the per-market
+budgets, the mainland's table-independent holiday floor, and the one market
+(International) that no single exchange calendar can govern.
 
 VERDICT DISCIPLINE (borrowed verbatim from freshness_sentinel).  Blindness is never
 a breach.  An unreadable API response, an empty run list, a missing index file, an
@@ -78,10 +94,12 @@ Usage:
     python3 scripts/check_nightly_liveness.py                 # live: fetch + evaluate
     python3 scripts/check_nightly_liveness.py --selftest      # synthetic assertions
     python3 scripts/check_nightly_liveness.py --runs-json F --index-json G   # offline
+    python3 scripts/check_nightly_liveness.py --site-root DIR # offline check D
 
 Exit codes:
     0  healthy, or INDETERMINATE (blind — see above)
-    1  a positive observation of absence: no run, no success, or stale data
+    1  a positive observation of absence: no run, no success, stale data, or a market
+       board that did not advance
 """
 
 from __future__ import annotations
@@ -164,6 +182,187 @@ LOOKBACK_DAYS = 7
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# check D — per-market board freshness
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# WHY D EXISTS.  Checks A/B/C above watch the LANE (daily.yml) and ONE artifact
+# (site/prophet/index.json, the US Prophet board).  All five market boards are baked
+# by that same lane, so A and B already cover "did the nightly run" for every market
+# — but C's dual-read covers only US.  On 2026-08-14 that gap opened for real:
+# site/factordata/canada_standouts.json froze at ``as_of=2026-08-13`` and was still
+# frozen five days later, while daily.yml ran green, the render lane re-committed the
+# file every day, and its US/HK/mainland siblings all advanced to 2026-08-14.  Every
+# instrument we owned was satisfied: the lane was green, the file's git mtime was
+# minutes old, and the ONE stamp anyone graded belonged to a different market.  A
+# re-render is not an advance, and a green lane is not a green board.
+#
+# EACH MARKET IS GRADED ON ITS OWN EXCHANGE CALENDAR, never on NYSE and never on the
+# wall clock.  This is not pedantry: HK and the mainland close hours BEFORE the ET
+# nightly fires, so their boards routinely carry a session date the US board has not
+# reached yet (measured 2026-08-04: hk/cn read 2026-08-04 while us read 2026-07-31).
+# Grading those against expected_last_session(NYSE) would read the healthy state as
+# stale in one direction and paper over a real freeze in the other.
+#
+# THE COARSE FORM ONLY.  Check C has two branches: a SHARP one ("a run concluded
+# success for session D and the store is still on D-1") and a COARSE one ("the store
+# is more than N sessions behind").  D uses only the coarse one, on purpose.  The
+# sharp branch compares the store against the session THE BAKE WAS FOR, and that
+# session is a NYSE date; at the 14:00Z slot the HK and mainland calendars have
+# already rolled forward to a session whose bake has not fired yet, so a sharp
+# comparison would page every weekday afternoon on a healthy estate.  The per-market
+# budgets below absorb exactly that one session, which is what makes the coarse form
+# safe across five different session clocks.
+
+#: How the guard reaches each market's session calendar.  ``"weekday"`` is the
+#: documented degradation for a market no single exchange calendar can govern.
+_CALENDAR_MODULES = {
+    "nyse": "lib.nyse_calendar",
+    "cn": "lib.cn_calendar",
+    "hk": "lib.hk_calendar",
+    "tsx": "lib.tsx_calendar",
+}
+
+
+class _WeekdayCalendar:
+    """Mon-Fri approximation for a board no single exchange calendar can govern.
+
+    ``intl`` is a union of eight-plus venues (Tokyo, London, Seoul, Sydney, Mumbai,
+    Milan, Taipei, Madrid — read straight off the board's own tickers: 4004.T, EMG.L,
+    066570.KS, SIG.AX, PHOENIXLTD.NS, TIT.MI, 1303.TW, ACS.MC).  Their holiday
+    schedules are disjoint, so there is no session calendar to write: on almost every
+    weekday SOME covered venue trades, and the board's stamp advances when any of them
+    does.  Weekday arithmetic is the honest approximation of that union.
+
+    DIRECTION OF ERROR: a day on which every covered venue happened to be closed
+    (realistically only Jan 1, and Dec 25 for the western half) is still counted as a
+    session here, so this over-counts how far behind a board is — a false "stale",
+    never a silently-wrong "fresh".  The market's budget carries a documented +2
+    tolerance for exactly that, which is why intl's budget is 3 where the
+    calendar-backed markets run at 1.
+
+    Settle at 22:00 UTC: after every covered venue's close (Tokyo 06:00Z, London
+    16:30Z), so "yesterday was completed" is true for all of them at once.
+    """
+
+    _SETTLE_UTC = time(22, 0)
+
+    @classmethod
+    def expected_last_session(cls, now: datetime) -> date:
+        instant = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+        instant = instant.astimezone(timezone.utc)
+        today = instant.date()
+        if today.weekday() < 5 and instant.time() >= cls._SETTLE_UTC:
+            return today
+        day = today - timedelta(days=1)
+        while day.weekday() >= 5:
+            day -= timedelta(days=1)
+        return day
+
+    @classmethod
+    def sessions_behind(cls, latest: date, now: datetime) -> int:
+        end = cls.expected_last_session(now)
+        count, day = 0, latest
+        while day < end:
+            day += timedelta(days=1)
+            if day.weekday() < 5:
+                count += 1
+        return count
+
+
+#: The five Prophet market boards, each with the artifact that carries its own
+#: "as of what session are these picks" stamp and the calendar that stamp lives on.
+#:
+#: ``max_sessions_behind`` is 1 for every calendar-backed market, for the reason
+#: PROPHET_MAX_SESSIONS_BEHIND is 1: the guard's own slots (08:00Z / 14:00Z) straddle
+#: the bake, so exactly one session of lag is the healthy state at some hour of the
+#: day and the SECOND missed session is the breach.  Measured, not assumed — at
+#: 14:00Z the HK calendar has rolled to today while today's bake fires at 22:30Z, so
+#: a healthy HK board reads 1 behind every weekday afternoon.
+#:
+#: ``min_calendar_days`` is a table-INDEPENDENT floor that must ALSO be exceeded
+#: before a breach is declared, and it is set for the mainland alone.  lib/cn_calendar
+#: is deliberately minimal (its own docstring: a missing holiday reads as a false
+#: "stale", never a silently-wrong "fresh"), and the State Council routinely extends
+#: Spring Festival and Golden Week past the statutory core the table encodes — 2026
+#: encodes Feb 16-20, the real closure runs longer.  Those un-encoded days are phantom
+#: sessions, so a bare 1-session budget would page every February and every October on
+#: a board behaving exactly as it should.  MAX_LEGIT_CLOSURE_DAYS (11) is the constant
+#: lib/cn_calendar publishes for precisely this pairing, and it is what
+#: build_china_library.compute_board_staleness already pairs with.
+#:
+#: The floor is NOT always on.  Phantom sessions can only accrue while the exchange is
+#: shut, so it applies only when the calendar places a scheduled weekday closure between
+#: the board's stamp and the session we expect (``_holiday_in_gap``).  Outside a holiday
+#: window the mainland pages at 2 sessions like every other market.  Measured against the
+#: 2026-08-14 freeze shape, that narrowing moves the mainland's first page from
+#: 2026-08-26 to 2026-08-19 while leaving Spring Festival and Golden Week silent.
+#: COST, NAMED: a mainland board that dies ON THE EVE of a long closure is still caught
+#: at 11+ calendar days rather than 2 sessions.  That cost is affordable only because
+#: checks A and B still cover the lane that bakes it within hours; D is the backstop for
+#: "ran green, stood still".
+#:
+#: MEASURED, not assumed.  Sweeping a healthy board (stamped by the most recent 22:30 ET
+#: fire) across every 08:00Z and 14:00Z slot of 2026, 2027 and 2028 produces ZERO breaches
+#: on all five markets.  On a board frozen after the Fri 2026-08-14 bake, the first page
+#: lands: hk/cn 08-18 14:00Z, us/ca 08-19 08:00Z, intl 08-21 08:00Z.  Re-run that sweep
+#: before changing any budget here — the numbers are the argument.
+MARKET_BOARDS: tuple[dict, ...] = (
+    {
+        "market": "us",
+        "label": "US",
+        "path": "site/factordata/us_standouts.json",
+        "field": "as_of",
+        "calendar": "nyse",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,
+    },
+    {
+        "market": "cn",
+        "label": "China",
+        "path": "site/factordata/china_standouts.json",
+        "field": "as_of",
+        "calendar": "cn",
+        "max_sessions_behind": 1,
+        "min_calendar_days": 11,   # lib.cn_calendar.MAX_LEGIT_CLOSURE_DAYS
+    },
+    {
+        "market": "hk",
+        "label": "Hong Kong",
+        "path": "site/factordata/hk_standouts.json",
+        "field": "as_of",
+        "calendar": "hk",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,
+    },
+    {
+        "market": "ca",
+        "label": "Canada",
+        "path": "site/factordata/canada_standouts.json",
+        "field": "as_of",
+        "calendar": "tsx",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,
+    },
+    {
+        "market": "intl",
+        "label": "International",
+        # NOTE: this board's ``as_of`` is None on every commit in main's history —
+        # compute_intl_alpha carries no as_of on any return path (documented at
+        # scripts/build_intl_library.py, adversarial review D1, PR #5674), so the
+        # stamp never reaches the artifact.  D therefore reports International as
+        # INDETERMINATE every run and says why, rather than inventing a verdict.
+        # tests/test_nightly_liveness.py pins that as a KNOWN blind spot so the day
+        # the builder starts stamping, the test is what tells us to expect a grade.
+        "path": "site/factordata/intl_setups.json",
+        "field": "as_of",
+        "calendar": "weekday",
+        "max_sessions_behind": 3,   # 1 + the +2 weekday-approximation tolerance
+        "min_calendar_days": None,
+    },
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # pure evaluation core — every input injected, so tests pin behaviour not plumbing
 # ─────────────────────────────────────────────────────────────────────────────
 def _parse_dt(value: object) -> "datetime | None":
@@ -243,14 +442,144 @@ def expected_fire_after(now: datetime) -> "tuple[date, datetime]":
     return session, boundary
 
 
+def _market_calendar(name: str):
+    """The session calendar a market named.  Raises so the caller maps it to INDETERMINATE.
+
+    Lazy and unguarded HERE on purpose: the one caller wraps it, so an unimportable or
+    renamed calendar module degrades that ONE market to a named blind spot instead of
+    crashing the pass or silently greening all five.
+    """
+    if name == "weekday":
+        return _WeekdayCalendar
+    module = _CALENDAR_MODULES[name]
+    return __import__(module, fromlist=["sessions_behind"])
+
+
+def _holiday_in_gap(cal, stamp: date, now: datetime) -> bool:
+    """Does the market's calendar place a scheduled weekday closure between ``stamp`` and
+    the session we expect?
+
+    This is what narrows the mainland's calendar-day floor from "always on" to "only
+    inside a closure window".  The floor exists to absorb PHANTOM sessions — weekdays
+    lib/cn_calendar counts as sessions because the State Council extended a holiday past
+    the statutory core the table encodes — and phantom sessions can only accrue while the
+    exchange is shut.  Outside a holiday window there is nothing for the floor to excuse,
+    so the mainland pages at the same 2 sessions as everyone else instead of waiting 12
+    calendar days.  Measured against the 2026-08-14 freeze shape: 2026-08-26 -> 2026-08-19.
+    """
+    end = cal.expected_last_session(now)
+    day = stamp
+    while day < end:
+        day += timedelta(days=1)
+        if day.weekday() < 5 and day in cal.holidays(day.year):
+            return True
+    return False
+
+
+def evaluate_market_boards(
+    boards: "dict[str, dict | None] | None",
+    now: datetime,
+) -> "tuple[list[str], list[str], dict]":
+    """Check D: per-market board staleness, each on its own exchange calendar.
+
+    ``boards`` maps a MARKET_BOARDS ``market`` id to that artifact's parsed JSON, or to
+    None when it could not be read.  ``None`` for the whole argument means check D was
+    not requested (offline callers, and every pre-D test) and produces nothing.
+
+    Blindness is never a breach, per market and independently: an absent artifact, an
+    absent or unparseable stamp, or a calendar that will not import degrades THAT market
+    to a named ``::warning`` and leaves the other four graded.  Only a positive
+    observation of absence — a readable stamp, on a working calendar, past its budget —
+    fails, and every message names its market.
+    """
+    fail: list[str] = []
+    warn: list[str] = []
+    facts: dict[str, Any] = {}
+    if boards is None:
+        return fail, warn, facts
+
+    states: dict[str, Any] = {}
+    facts["boards"] = states
+    for spec in MARKET_BOARDS:
+        market, label, path = spec["market"], spec["label"], spec["path"]
+        state: dict[str, Any] = {"as_of": None, "behind": None}
+        states[market] = state
+
+        payload = boards.get(market)
+        if payload is None:
+            warn.append(
+                f"INDETERMINATE [{label}]: {path} is absent or unreadable — this market "
+                "is UNGRADED, not green. If the path is right, check the lane's "
+                "sparse-checkout list."
+            )
+            continue
+
+        raw = payload.get(spec["field"])
+        state["as_of"] = raw
+        stamp = _parse_date(raw)
+        if stamp is None:
+            warn.append(
+                f"INDETERMINATE [{label}]: {path} carries no usable "
+                f"{spec['field']} ({raw!r}), so this board's freshness cannot be "
+                "graded at all — a permanently unstamped board is a blind spot, not "
+                "a healthy one."
+            )
+            continue
+
+        try:
+            behind = _market_calendar(spec["calendar"]).sessions_behind(stamp, now)
+        except Exception as exc:  # noqa: BLE001 — a broken calendar blinds ONE market
+            warn.append(
+                f"INDETERMINATE [{label}]: {spec['calendar']} calendar unusable "
+                f"({exc!r}); this market is ungraded"
+            )
+            continue
+        state["behind"] = behind
+
+        budget = spec["max_sessions_behind"]
+        if behind <= budget:
+            continue
+
+        floor = spec["min_calendar_days"]
+        if floor is not None and (now.date() - stamp).days <= floor:
+            # The table-independent holiday floor. See MARKET_BOARDS for why the
+            # mainland alone carries one and what it costs. It applies only INSIDE a
+            # closure window: a broken holiday probe falls back to applying it, because
+            # blindness must never manufacture a page.
+            try:
+                in_closure = _holiday_in_gap(
+                    _market_calendar(spec["calendar"]), stamp, now)
+            except Exception:  # noqa: BLE001 — a broken probe suppresses, never pages
+                in_closure = True
+            if in_closure:
+                warn.append(
+                    f"INDETERMINATE [{label}]: board is {behind} sessions behind "
+                    f"({stamp.isoformat()}), only {(now.date() - stamp).days} calendar "
+                    f"days old, and a scheduled exchange closure falls in that gap — "
+                    f"inside the {floor}-day longest-legitimate-closure floor, so this "
+                    "is a holiday shape rather than a proven freeze."
+                )
+                continue
+
+        fail.append(
+            f"STALE BOARD [{label}]: {path} still reads {spec['field']}="
+            f"{stamp.isoformat()}, {behind} completed {spec['calendar'].upper()} "
+            f"sessions behind (limit {budget}). The board was re-rendered but did not "
+            "advance — a green lane and a fresh git mtime both look exactly like this."
+        )
+
+    return fail, warn, facts
+
+
 def evaluate(
     runs: "list[dict] | None",
     index: "dict | None",
     now: datetime,
     *,
     max_sessions_behind: int = MAX_SESSIONS_BEHIND,
+    boards: "dict[str, dict | None] | None" = None,
 ) -> dict:
-    """Pure verdict over the three checks.  See module docstring for the contract."""
+    """Pure verdict over the four checks.  See module docstring for the contract."""
     fail: list[str] = []
     warn: list[str] = []
     facts: dict[str, Any] = {}
@@ -435,6 +764,12 @@ def evaluate(
             "2026-08-12."
         )
 
+    # ── D. PER-MARKET BOARDS ────────────────────────────────────────────────
+    d_fail, d_warn, d_facts = evaluate_market_boards(boards, now)
+    fail.extend(d_fail)
+    warn.extend(d_warn)
+    facts.update(d_facts)
+
     return {
         "ok": not fail,
         "fail_reasons": fail,
@@ -477,6 +812,13 @@ def load_index(path: Path) -> "dict | None":
     except (OSError, ValueError):
         return None
     return loaded if isinstance(loaded, dict) else None
+
+
+def load_market_boards(root: Path) -> "dict[str, dict | None]":
+    """Every MARKET_BOARDS artifact, parsed.  Unreadable -> None (that market goes
+    INDETERMINATE); the key is ALWAYS present so a market can never be silently dropped
+    from the registry by a read failure."""
+    return {spec["market"]: load_index(root / spec["path"]) for spec in MARKET_BOARDS}
 
 
 def _notify(report: dict) -> None:
@@ -649,6 +991,88 @@ def _selftest() -> int:
                    "conclusion": "success"}], {"source_asof": "2026-08-14"}, sat)
     _check("weekend-no-false-alarm", r["ok"], True)
 
+    # ── D: per-market boards ────────────────────────────────────────────────
+    # 2026-08-18T08:00Z. Owed sessions: NYSE/TSX 08-17, HKEX/mainland 08-17.
+    # The real 2026-08-14 Canada freeze: ca stuck at 08-13, siblings at 08-17.
+    d_now = datetime(2026, 8, 18, 8, 0, tzinfo=timezone.utc)
+    healthy_runs = [{"created_at": "2026-08-17T22:30:00Z", "status": "completed",
+                     "conclusion": "success"}]
+    d_index = {"source_asof": "2026-08-17"}
+    fresh = {m: {"as_of": "2026-08-17"} for m in ("us", "cn", "hk", "ca")}
+
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={**fresh, "intl": {"as_of": "2026-08-17"}})
+    _check("D/all-five-fresh", r["ok"], True)
+
+    # The Canada freeze. 08-13 is 2 completed TSX sessions behind 08-17 (08-14, 08-17)
+    # — past the budget of 1 — and the message must NAME the market.
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={**fresh, "ca": {"as_of": "2026-08-13"},
+                         "intl": {"as_of": "2026-08-17"}})
+    _check("D/canada-freeze-pages", r["ok"], False)
+    assert any("STALE BOARD [Canada]" in f for f in r["fail_reasons"]), r
+    assert r["facts"]["boards"]["ca"]["behind"] == 2, r
+    # and it must not smear onto the four healthy markets
+    assert len([f for f in r["fail_reasons"] if "STALE BOARD" in f]) == 1, r
+
+    # One session behind is the HEALTHY afternoon shape for HK/mainland (their
+    # calendars roll forward hours before the ET bake fires). Budget 1 absorbs it.
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={**fresh, "hk": {"as_of": "2026-08-14"},
+                         "intl": {"as_of": "2026-08-17"}})
+    _check("D/one-behind-is-not-a-breach", r["ok"], True)
+
+    # Mainland holiday floor, INSIDE a closure window. 2026-10-09: a board stamped
+    # 2026-09-28 reads 3 sessions behind because Golden Week (Oct 1-7) sits in the gap
+    # and the State Council routinely runs it longer than the table encodes. 11 calendar
+    # days old, so the floor holds and this is a holiday shape, not a proven freeze.
+    gw_now = datetime(2026, 10, 9, 8, 0, tzinfo=timezone.utc)
+    gw_fresh = {m: {"as_of": "2026-10-08"} for m in ("us", "hk", "ca", "intl")}
+    gw_runs = [{"created_at": "2026-10-08T22:30:00Z", "status": "completed",
+                "conclusion": "success"}]
+    r = evaluate(gw_runs, {"source_asof": "2026-10-08"}, gw_now,
+                 boards={**gw_fresh, "cn": {"as_of": "2026-09-28"}})
+    _check("D/mainland-holiday-floor-suppresses", r["ok"], True)
+    assert any("longest-legitimate-closure floor" in w for w in r["warnings"]), r
+
+    # ...and it EXPIRES. Past the floor the same stamp is a proven freeze.
+    r = evaluate(gw_runs, {"source_asof": "2026-10-08"},
+                 datetime(2026, 10, 13, 8, 0, tzinfo=timezone.utc),
+                 boards={**gw_fresh, "cn": {"as_of": "2026-09-28"}})
+    _check("D/mainland-floor-expires", r["ok"], False)
+    assert any("STALE BOARD [China]" in f for f in r["fail_reasons"]), r
+
+    # OUTSIDE a closure window the floor does not apply at all: there are no phantom
+    # sessions to excuse in August, so the mainland pages at 2 like every other market.
+    # This is the narrowing — without it the mainland waited until 2026-08-26.
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={**fresh, "cn": {"as_of": "2026-08-13"},
+                         "intl": {"as_of": "2026-08-17"}})
+    _check("D/mainland-floor-is-not-always-on", r["ok"], False)
+    assert any("STALE BOARD [China]" in f for f in r["fail_reasons"]), r
+
+    # Blindness, per market and independently: a missing artifact, an absent stamp
+    # (the live International shape — its as_of is None on every commit in history)
+    # and an unparseable stamp are all INDETERMINATE, and the other markets stay graded.
+    r = evaluate(healthy_runs, d_index, d_now,
+                 boards={"us": None, "cn": {"as_of": None},
+                         "hk": {"as_of": "not-a-date"}, "ca": {"as_of": "2026-08-17"},
+                         "intl": {"as_of": None}})
+    _check("D/blind-markets-never-breach", r["ok"], True)
+    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 4, r
+    assert r["facts"]["boards"]["ca"]["behind"] == 0, r
+
+    # A market absent from the payload entirely must warn, never vanish quietly —
+    # that is what a forgotten sparse-checkout path looks like.
+    r = evaluate(healthy_runs, d_index, d_now, boards={})
+    _check("D/empty-payload-is-blind-not-green", r["ok"], True)
+    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == len(MARKET_BOARDS), r
+
+    # Not supplied at all -> check D produces nothing (offline callers).
+    r = evaluate(healthy_runs, d_index, d_now)
+    _check("D/not-requested-is-silent", r["ok"], True)
+    assert "boards" not in r["facts"], r
+
     print("nightly-liveness selftest: " + ("PASS" if ok else "FAIL"), flush=True)
     return 0 if ok else 1
 
@@ -663,6 +1087,9 @@ def main(argv: "list[str] | None" = None) -> int:
     parser.add_argument("--index-json", type=Path,
                         default=REPO_ROOT / "site" / "prophet" / "index.json")
     parser.add_argument("--max-sessions-behind", type=int, default=MAX_SESSIONS_BEHIND)
+    parser.add_argument(
+        "--site-root", type=Path, default=REPO_ROOT,
+        help="offline: repo root the MARKET_BOARDS paths resolve against (check D)")
     args = parser.parse_args(argv)
 
     if args.selftest:
@@ -685,7 +1112,8 @@ def main(argv: "list[str] | None" = None) -> int:
         runs = fetch_runs(args.repo, os.environ.get("GITHUB_TOKEN"))
 
     report = evaluate(runs, load_index(args.index_json), now,
-                      max_sessions_behind=args.max_sessions_behind)
+                      max_sessions_behind=args.max_sessions_behind,
+                      boards=load_market_boards(args.site_root))
 
     for line in report["warnings"]:
         print(f"::warning title=nightly-liveness::{line}", flush=True)
@@ -699,6 +1127,17 @@ def main(argv: "list[str] | None" = None) -> int:
             facts.get("runs_since_boundary", "?"),
             facts.get("source_asof", "?"),
             facts.get("sessions_behind", "?"),
+        ),
+        flush=True,
+    )
+    print(
+        "market boards | " + " ".join(
+            "{}={}({})".format(
+                m,
+                st.get("as_of") if st.get("as_of") is not None else "-",
+                "?" if st.get("behind") is None else st["behind"],
+            )
+            for m, st in (facts.get("boards") or {}).items()
         ),
         flush=True,
     )

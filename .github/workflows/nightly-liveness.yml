@@ -54,8 +54,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Only what the check imports plus the artifact it reads. site/ is large and
-          # this lane must stay cheap enough to run twice a day forever.
+          # Only what the check imports plus the artifacts it reads. site/ is large and
+          # this lane must stay cheap enough to run twice a day forever, so the five
+          # market boards are listed FILE BY FILE rather than by directory: naming
+          # site/factordata would pull ~90 artifacts for the five we grade.
+          #
+          # THIS LIST IS LOAD-BEARING. A MARKET_BOARDS path that is missing here does
+          # not turn the lane red — it degrades that market to INDETERMINATE, which
+          # exits 0. A forgotten line is therefore a SILENTLY unwatched market, which
+          # is the exact failure this check was written for.
+          # tests/test_nightly_liveness.py::test_every_market_board_is_in_the_sparse_checkout
+          # pins the two lists together so the omission cannot ship.
           filter: blob:none
           sparse-checkout: |
             scripts
@@ -63,6 +72,11 @@ jobs:
             engine
             config
             site/prophet/index.json
+            site/factordata/us_standouts.json
+            site/factordata/china_standouts.json
+            site/factordata/hk_standouts.json
+            site/factordata/canada_standouts.json
+            site/factordata/intl_setups.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:

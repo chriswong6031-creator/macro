@@ -27,10 +27,12 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.check_nightly_liveness import (  # noqa: E402
     DEFAULT_REPO,
     FIRE_BOUNDARY_UTC,
+    MARKET_BOARDS,
     MAX_SESSIONS_BEHIND,
     WORKFLOW_FILE,
     evaluate,
     expected_fire_after,
+    main,
 )
 
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "nightly-liveness.yml"
@@ -401,3 +403,289 @@ def test_cancelled_run_with_unreadable_store_still_pages():
     report = evaluate([_run(conclusion="cancelled")], None, NOW)
     assert report["ok"] is False
     assert any("cannot be read to excuse" in f for f in report["fail_reasons"])
+
+
+# ── check D: the 2026-08-14 Canada freeze — five boards, five calendars ─────
+#
+# The board that broke was not the one anyone graded. site/factordata/canada_standouts.json
+# held ``as_of=2026-08-13`` from 2026-08-14 through at least 08-18 while daily.yml ran
+# green, the render lane re-committed the file nightly (so its git mtime was always
+# minutes old), and its US, HK and mainland siblings advanced to 08-14. Checks A-C were
+# all satisfied: A and B watch the lane, C watches ONE artifact, and that artifact
+# belongs to a different market.
+#
+# Fixture dates are CONSTANTS. 2026-08-18T08:00Z is the first liveness slot at which the
+# real freeze is provably a freeze rather than a lag: 08-13 is two completed TSX sessions
+# behind (08-14 and 08-17), one past the budget.
+
+D_NOW = datetime(2026, 8, 18, 8, 0, tzinfo=timezone.utc)
+D_RUNS = [_run(created_at="2026-08-17T22:30:00Z")]        # the lane is GREEN throughout
+D_INDEX = {"source_asof": "2026-08-17"}                   # and so is check C
+FRESH_BOARDS = {spec["market"]: {"as_of": "2026-08-17"} for spec in MARKET_BOARDS}
+
+
+def _boards(**overrides):
+    return {**FRESH_BOARDS, **overrides}
+
+
+def test_all_five_boards_fresh_is_healthy():
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards())
+    assert report["ok"] is True
+    assert not report["fail_reasons"], report
+
+
+def test_canada_freeze_pages_and_names_its_market():
+    """The load-bearing test. Everything else about this night is green — the lane ran,
+    the Prophet store advanced, four boards are current — and the only observable is the
+    Canadian stamp. If check D is deleted, this is the test that reds."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca={"as_of": "2026-08-13"}))
+    assert report["ok"] is False
+    stale = [f for f in report["fail_reasons"] if "STALE BOARD" in f]
+    assert len(stale) == 1, report["fail_reasons"]
+    assert "[Canada]" in stale[0]
+    assert "canada_standouts.json" in stale[0]
+    assert report["facts"]["boards"]["ca"]["behind"] == 2
+    # A green lane and a green check C must not be able to excuse it.
+    assert not any("NO RUN" in f or "STALE DATA" in f for f in report["fail_reasons"])
+
+
+def test_a_stale_board_does_not_smear_onto_its_siblings():
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca={"as_of": "2026-08-13"}))
+    for market in ("us", "cn", "hk"):
+        assert report["facts"]["boards"][market]["behind"] == 0, market
+
+
+def test_every_breach_message_names_a_market():
+    """Five boards bake in one lane; an unlabelled 'STALE BOARD' would send the operator
+    to whichever market they happened to think of first."""
+    labels = {spec["label"] for spec in MARKET_BOARDS}
+    report = evaluate(D_RUNS, D_INDEX, D_NOW,
+                      boards=_boards(ca={"as_of": "2026-08-01"},
+                                     us={"as_of": "2026-08-01"}))
+    stale = [f for f in report["fail_reasons"] if "STALE BOARD" in f]
+    assert len(stale) == 2, stale
+    for line in stale:
+        assert any(f"[{label}]" in line for label in labels), line
+
+
+# ── each market is graded on its OWN exchange calendar ─────────────────────
+def test_asia_boards_ahead_of_the_us_board_are_healthy():
+    """HKEX and the mainland close hours BEFORE the ET nightly fires, so on 2026-08-04
+    hk/cn read 2026-08-04 while us read 2026-07-31. Graded against one shared NYSE
+    anchor, that healthy state reads as an anomaly in one direction and hides a real
+    freeze in the other."""
+    now = datetime(2026, 8, 5, 8, 0, tzinfo=timezone.utc)
+    report = evaluate([_run(created_at="2026-08-04T22:30:00Z")],
+                      {"source_asof": "2026-08-04"}, now,
+                      boards={"us": {"as_of": "2026-08-04"},
+                              "cn": {"as_of": "2026-08-04"},
+                              "hk": {"as_of": "2026-08-04"},
+                              "ca": {"as_of": "2026-08-04"},
+                              "intl": {"as_of": "2026-08-04"}})
+    assert report["ok"] is True
+    for market in ("us", "cn", "hk", "ca"):
+        assert report["facts"]["boards"][market]["behind"] == 0, market
+
+
+def test_one_session_behind_is_the_healthy_afternoon_shape():
+    """At the 14:00Z slot the HK and mainland calendars have already rolled to today
+    while today's bake does not fire until 22:30Z, so a healthy Asian board reads exactly
+    one session behind every weekday afternoon. A budget of 0 would page five times a
+    week — the false-positive factory this guard's own discipline forbids."""
+    afternoon = datetime(2026, 8, 17, 14, 0, tzinfo=timezone.utc)
+    report = evaluate([_run(created_at="2026-08-14T22:30:00Z")],
+                      {"source_asof": "2026-08-14"}, afternoon,
+                      boards={"us": {"as_of": "2026-08-14"},
+                              "cn": {"as_of": "2026-08-14"},
+                              "hk": {"as_of": "2026-08-14"},
+                              "ca": {"as_of": "2026-08-14"},
+                              "intl": {"as_of": "2026-08-14"}})
+    assert report["facts"]["boards"]["hk"]["behind"] == 1
+    assert report["ok"] is True
+
+
+def test_a_market_holiday_cannot_manufacture_a_board_breach():
+    """Victoria Day 2026-05-18 is a TSX closure and an ordinary NYSE session. A Canadian
+    board holding Friday 05-15 is current, not stale, and the calendar is the only thing
+    that knows that."""
+    holiday_monday = datetime(2026, 5, 18, 13, 0, tzinfo=timezone.utc)
+    report = evaluate([_run(created_at="2026-05-15T22:30:00Z")],
+                      {"source_asof": "2026-05-15"}, holiday_monday,
+                      boards={"us": {"as_of": "2026-05-15"},
+                              "cn": {"as_of": "2026-05-15"},
+                              "hk": {"as_of": "2026-05-15"},
+                              "ca": {"as_of": "2026-05-15"},
+                              "intl": {"as_of": "2026-05-15"}})
+    assert report["ok"] is True
+    assert report["facts"]["boards"]["ca"]["behind"] == 0
+
+
+# Golden Week 2026 is Oct 1-7. A mainland board stamped 2026-09-28 reads 3 sessions
+# behind on 10-09 purely because lib/cn_calendar's table is deliberately minimal and the
+# State Council routinely runs the closure longer than the statutory core it encodes.
+GW_NOW = datetime(2026, 10, 9, 8, 0, tzinfo=timezone.utc)
+GW_RUNS = [_run(created_at="2026-10-08T22:30:00Z")]
+GW_INDEX = {"source_asof": "2026-10-08"}
+
+
+def _gw_boards(**overrides):
+    base = {m: {"as_of": "2026-10-08"} for m in ("us", "cn", "hk", "ca", "intl")}
+    return {**base, **overrides}
+
+
+def test_mainland_holiday_floor_suppresses_inside_a_closure_window():
+    """Those un-encoded days are phantom sessions, so the mainland alone carries a
+    calendar-day floor. 11 days old with Golden Week in the gap is a holiday shape."""
+    report = evaluate(GW_RUNS, GW_INDEX, GW_NOW,
+                      boards=_gw_boards(cn={"as_of": "2026-09-28"}))
+    assert report["facts"]["boards"]["cn"]["behind"] == 3
+    assert report["ok"] is True
+    assert any("longest-legitimate-closure floor" in w and "[China]" in w
+               for w in report["warnings"]), report["warnings"]
+
+
+def test_the_mainland_floor_expires_rather_than_blinding_forever():
+    """A board past the floor is a proven freeze, not a holiday. The floor delays the
+    page; it must never cancel it."""
+    report = evaluate(GW_RUNS, GW_INDEX,
+                      datetime(2026, 10, 13, 8, 0, tzinfo=timezone.utc),
+                      boards=_gw_boards(cn={"as_of": "2026-09-28"}))
+    assert report["ok"] is False
+    assert any("STALE BOARD [China]" in f for f in report["fail_reasons"]), report
+
+
+def test_the_mainland_floor_does_not_apply_outside_a_closure_window():
+    """The narrowing. Phantom sessions can only accrue while the exchange is shut, so in
+    August there is nothing for the floor to excuse and the mainland pages at 2 sessions
+    like every other market. An always-on floor pushed this to 2026-08-26."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW,
+                      boards=_boards(cn={"as_of": "2026-08-13"},
+                                     ca={"as_of": "2026-08-13"}))
+    assert report["ok"] is False
+    stale = [f for f in report["fail_reasons"] if "STALE BOARD" in f]
+    assert {"[China]", "[Canada]"} == {t for t in ("[China]", "[Canada]")
+                                       if any(t in f for f in stale)}, stale
+    assert not any("longest-legitimate-closure floor" in w for w in report["warnings"])
+
+
+def test_only_the_mainland_carries_a_calendar_day_floor():
+    """Every other market's table is complete (or, for International, is an explicit
+    approximation whose tolerance is priced into its budget instead). A floor elsewhere
+    would be pure detection delay with no false-alarm to prevent."""
+    floors = {s["market"]: s["min_calendar_days"] for s in MARKET_BOARDS}
+    assert floors == {"us": None, "cn": 11, "hk": None, "ca": None, "intl": None}
+
+
+# ── blindness discipline, per market ───────────────────────────────────────
+@pytest.mark.parametrize("payload", [
+    None,                      # artifact absent or unreadable
+    {},                        # readable, no stamp field
+    {"as_of": None},           # the live International shape
+    {"as_of": "not-a-date"},   # unparseable
+    {"as_of": ""},             # empty
+])
+def test_board_blindness_is_never_a_breach(payload):
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(ca=payload))
+    assert report["ok"] is True
+    assert any("INDETERMINATE [Canada]" in w for w in report["warnings"]), report
+
+
+def test_a_market_missing_from_the_payload_warns_rather_than_vanishing():
+    """A forgotten sparse-checkout path looks exactly like this. It must not read green:
+    an unwatched market is the failure this whole check exists for."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards={})
+    assert report["ok"] is True
+    blind = [w for w in report["warnings"] if "INDETERMINATE [" in w]
+    assert len(blind) == len(MARKET_BOARDS), blind
+
+
+def test_one_blind_market_leaves_the_others_graded():
+    report = evaluate(D_RUNS, D_INDEX, D_NOW,
+                      boards=_boards(us=None, ca={"as_of": "2026-08-13"}))
+    assert report["ok"] is False
+    assert any("STALE BOARD [Canada]" in f for f in report["fail_reasons"])
+    assert any("INDETERMINATE [US]" in w for w in report["warnings"])
+
+
+def test_check_d_is_silent_when_not_requested():
+    """Every pre-D caller passes three positional arguments. They must keep working, and
+    must not acquire a phantom five-market verdict from a default."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW)
+    assert report["ok"] is True
+    assert "boards" not in report["facts"]
+
+
+# ── registry + wiring: the ways this check can ship dead ───────────────────
+def test_registry_covers_the_five_markets():
+    assert [spec["market"] for spec in MARKET_BOARDS] == ["us", "cn", "hk", "ca", "intl"]
+    paths = [spec["path"] for spec in MARKET_BOARDS]
+    assert len(set(paths)) == len(paths), paths
+    for spec in MARKET_BOARDS:
+        assert spec["path"].startswith("site/"), spec
+        assert spec["label"] and spec["field"], spec
+        assert spec["max_sessions_behind"] >= 1, spec
+
+
+def test_every_market_board_is_in_the_sparse_checkout():
+    """THE wiring pin. A MARKET_BOARDS path missing from the workflow's sparse-checkout
+    does not turn the lane red — the artifact is simply absent, that market degrades to
+    INDETERMINATE, and the check exits 0. A forgotten line therefore ships a SILENTLY
+    unwatched market, which is precisely the 2026-08-14 Canada failure re-created by the
+    instrument built to catch it."""
+    import yaml
+    spec = yaml.safe_load(WORKFLOW.read_text())
+    checkout = spec["jobs"]["liveness"]["steps"][0]["with"]["sparse-checkout"]
+    listed = {line.strip() for line in checkout.splitlines() if line.strip()}
+    for board in MARKET_BOARDS:
+        assert board["path"] in listed, (
+            f"{board['path']} is graded by check D but is not in the lane's "
+            "sparse-checkout — that market would be silently ungraded"
+        )
+
+
+def test_main_grades_every_market(tmp_path, capsys):
+    """Pins that main() actually LOADS the boards. evaluate() defaults ``boards=None``
+    and is silent then, so a main() that forgot to pass them would leave check D fully
+    dead while every unit test above still passed."""
+    for board in MARKET_BOARDS:
+        target = tmp_path / board["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps({board["field"]: "2026-08-10"}))
+    idx = tmp_path / "index.json"
+    idx.write_text(json.dumps(FROZEN))
+    runs = tmp_path / "runs.json"
+    runs.write_text(json.dumps([]))
+
+    rc = main(["--index-json", str(idx), "--runs-json", str(runs),
+               "--site-root", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "market boards |" in out
+    for board in MARKET_BOARDS:
+        assert f"{board['market']}=2026-08-10" in out, out
+    # Two of these fixtures are far enough behind to page; the point is only that main
+    # reached them at all, and every annotation still starts the line.
+    for line in out.splitlines():
+        if "::error" in line or "::warning" in line:
+            assert line.startswith("::"), line
+
+
+def test_intl_board_is_a_known_blind_spot_today():
+    """site/factordata/intl_setups.json has carried ``as_of: null`` on every commit in
+    main's history — compute_intl_alpha stamps no as_of on any return path
+    (scripts/build_intl_library.py, adversarial review D1, PR #5674). The guard reports
+    that honestly rather than inventing a verdict.
+
+    This test pins the CURRENT state deliberately: the day the builder starts stamping,
+    this is what tells us International has become gradeable and the registry entry
+    should be re-derived against a real calendar rather than the weekday approximation.
+    """
+    intl = next(s for s in MARKET_BOARDS if s["market"] == "intl")
+    assert intl["calendar"] == "weekday"
+    assert intl["max_sessions_behind"] == 3, (
+        "the weekday approximation buys its +2 tolerance here; changing it needs the "
+        "over-count argument in MARKET_BOARDS re-derived"
+    )
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(intl={"as_of": None}))
+    assert report["ok"] is True
+    assert any("INDETERMINATE [International]" in w for w in report["warnings"])

@@ -280,3 +280,40 @@ def expected_last_session(now: datetime | None = None) -> date:
     if is_session(today) and now_hkt.time() >= _CLOSE_PLUS_SETTLE:
         return today
     return last_session_on_or_before(today - timedelta(days=1))
+
+
+def sessions_between(start: date, end: date) -> int:
+    """Count sessions strictly after `start`, up to and including `end`. 0 when end <= start."""
+    n = 0
+    d = start
+    while d < end:
+        d += timedelta(days=1)
+        if is_session(d):
+            n += 1
+    return n
+
+
+def sessions_behind(latest: date, now: datetime | None = None) -> int:
+    """How many completed HKEX sessions a store/artifact holding `latest` is missing.
+
+    Added 2026-08-17 for scripts/check_nightly_liveness.py's per-market board freshness
+    check: HK was the one market with a session calendar in ``lib/`` that could not state
+    a lag in SESSIONS, so a HK board could only have been graded on the wall clock — the
+    exact blindness every stale-store incident here has turned on. Mirrors
+    lib/cn_calendar.sessions_behind, which is the reader every staleness surface in the
+    estate already reasons about.
+
+    Counts sessions strictly after `latest` up to and including ``expected_last_session(now)``
+    — NOT up to today. On a session morning today's bar does not exist yet, so counting to
+    today would report every store as one session staler than it is and trip a budget a day
+    early. The 17:30 HKT settle buffer in ``expected_last_session`` is what makes that true
+    through the whole Hong Kong session.
+
+    0 = current. Negative is impossible: a store ahead of the calendar returns 0, since no
+    completed session is missing.
+
+    NOTE the return-type difference from lib/nyse_calendar: ``sessions_between`` here already
+    RETURNS A COUNT (the NYSE one returns the list of dates), so there is no ``len()`` in
+    this expression and adding one would be a TypeError, not a style choice.
+    """
+    return sessions_between(latest, expected_last_session(now))
