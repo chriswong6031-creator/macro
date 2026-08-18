@@ -156,8 +156,21 @@ def host(monkeypatch, tmp_path):
     support = tmp_path / "support"
     venv = tmp_path / "venv"
     (lane / "scripts").mkdir(parents=True)
+    # origin/main's OWN copy of the runner, which is what prepare_lane's reset
+    # leaves behind and therefore the reference every run grades its executing
+    # bootstrap against. Byte-identical here, so the default lane is a lane with
+    # NO drift and every drift test has to create the condition explicitly.
+    (lane / "scripts" / R.RUNNER_BASENAME).write_bytes(
+        (ROOT / "scripts" / R.RUNNER_BASENAME).read_bytes())
     (lane / ".git").write_text("gitdir: /elsewhere\n", encoding="utf-8")
     (lane / "requirements.txt").write_text("pandas==2.2.2\n", encoding="utf-8")
+    # The snapshot launchd would exec, byte-identical to origin/main by default.
+    # Without one, `installed_matches_main` is None in every test and the branch
+    # that catches "the session ran the repo copy while the host is stale" has no
+    # coverage at all — which is exactly how that hole reached review.
+    (support / "runs").mkdir(parents=True)
+    (support / R.RUNNER_BASENAME).write_bytes(
+        (ROOT / "scripts" / R.RUNNER_BASENAME).read_bytes())
     (venv / "bin").mkdir(parents=True)
     (venv / "bin" / "python").write_text("#!/bin/sh\n", encoding="utf-8")
     (primary / ".env").write_text(
@@ -193,9 +206,20 @@ def host(monkeypatch, tmp_path):
                          sleep_fn=self.clock.sleep, clock=self.monotonic,
                          now_fn=now_fn or self.clock.now_fn)
 
-        def receipt(self, session=SESSION) -> dict:
-            path = support / "runs" / f"{session}.json"
-            return json.loads(path.read_text(encoding="utf-8"))
+        def receipt(self, session=SESSION, *, dry_run=None) -> dict:
+            """The run's receipt. A dry run writes ``<session>.dry-run.json`` so it
+            cannot overwrite the night's real one; ``dry_run=None`` takes whichever
+            of the two exists, preferring the dry name because the fixture's
+            default ``run()`` is a dry run."""
+            names = ([f"{session}.dry-run.json", f"{session}.json"] if dry_run is None
+                     else [f"{session}{'.dry-run' if dry_run else ''}.json"])
+            for name in names:
+                path = support / "runs" / name
+                if path.is_file():
+                    return json.loads(path.read_text(encoding="utf-8"))
+            raise AssertionError(
+                f"no receipt among {names}; have "
+                f"{sorted(p.name for p in (support / 'runs').glob('*'))}")
 
     return Host()
 
@@ -224,7 +248,7 @@ def test_a_second_invocation_exits_clean_instead_of_racing_the_first(host, capsy
     assert "holds the lock" in notices[-1]
     # And the pass itself never started: no receipt, so nothing can later read
     # this as a session the primary covered.
-    assert not (host.support / "runs").exists()
+    assert not list((host.support / "runs").glob("*.json"))
 
     # The lock is genuinely released, not merely dropped on the floor.
     again = R.acquire_lock(lock_path)
@@ -661,17 +685,291 @@ def test_the_receipt_is_the_runs_only_durable_trace_and_carries_the_lot(host):
     assert set(receipt) == {
         "schema", "session", "fired_at", "close_wait_outcome", "close_wait_polls",
         "publish_rc", "heal_rc", "code_sha", "code_stale", "duration_sec",
-        "log_tail", "lane", "dry_run", "runner_sha", "outcome"}
+        "log_tail", "lane", "dry_run", "bootstrap", "outcome"}
     assert receipt["session"] == SESSION
     assert receipt["fired_at"].startswith("2026-08-14T20:00:05")
     assert receipt["publish_rc"] == 0 and receipt["outcome"] == "published"
     assert receipt["code_stale"] is False and len(receipt["code_sha"]) == 40
     assert receipt["log_tail"].endswith("launchd.out.log")
     assert receipt["lane"] == str(host.lane)
-    # runner_sha is THIS file's vintage, code_sha is the lane's HEAD. They are
-    # different questions — the installer freezes one and origin/main moves the
-    # other — so a receipt that carried only one could not show drift at all.
-    assert receipt["runner_sha"] and receipt["runner_sha"] != receipt["code_sha"]
+    # The bootstrap block is THIS file's vintage, code_sha is the lane's HEAD.
+    # Different questions — the installer freezes one and origin/main moves the
+    # other — so a receipt carrying only one cannot show drift at all.
+    assert receipt["bootstrap"]["file_sha256"] != receipt["code_sha"]
+
+
+def test_the_bootstrap_and_the_lane_vintage_can_never_be_read_as_the_same_thing(host):
+    """THE NAMES ARE THE FIX, not a cosmetic.
+
+    The receipt this replaces carried ``runner_sha: "cde03d71de97"`` beside
+    ``code_sha: "af416e4a1066..."`` — a sha256 PREFIX and a git COMMIT, rendered
+    as two indistinguishable hex strings, which is how a snapshot three days
+    stale produced a receipt that read as perfect (2026-08-18, PR #5862). So:
+    every content digest inside the block says ``file_sha256`` and carries its
+    full 64 hex; the git commit stays a 40-hex ``code_sha`` outside it; and the
+    two never share a namespace.
+    """
+    assert host.run() == 0
+    receipt = host.receipt()
+    boot = receipt["bootstrap"]
+    assert len(receipt["code_sha"]) == 40
+    for key in ("file_sha256", "installed_file_sha256", "main_file_sha256"):
+        assert key in boot, key
+        assert boot[key] == "" or len(boot[key]) == 64, (key, boot[key])
+    # No bare ``*_sha`` key may exist inside the block, and code_sha may not leak
+    # into it: either would restore the exact ambiguity this replaced.
+    assert not [k for k in boot if k.endswith("_sha")]
+    assert "code_sha" not in boot
+    # ...and the identity is answerable without git: the executing file's own
+    # bytes and mtime, which is what a stale snapshot has and a fresh one does not.
+    assert boot["path"].endswith(R.RUNNER_BASENAME)
+    assert dt.datetime.fromisoformat(boot["mtime"]).tzinfo is not None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bootstrap drift — "merged" is not "deployed", and the receipt must know it
+#
+# THE WIRING IS WHAT IS PINNED HERE, not a helper. Every assertion below runs the
+# real ``R.run`` and reads the real receipt or the real stdout, because the defect
+# this closes was a CALL SITE defect: ``prepare_lane`` rendered a timeout as
+# ``repr('')`` while every helper it used behaved correctly, and a helper-only
+# test would have stayed green through it.
+# ─────────────────────────────────────────────────────────────────────────────
+def _drift_the_lane(host, *, behind: int = 2) -> None:
+    """origin/main has moved past the executing bootstrap. Scripts the two git
+    metadata answers the vintage walk asks for, and nothing else."""
+    (host.lane / "scripts" / R.RUNNER_BASENAME).write_bytes(
+        b"# origin/main has moved on since this snapshot was installed\n")
+    mine = "b" * 40
+    newer = [f"{i:040d}" for i in range(1, behind + 1)]
+    host.sh.on("hash-object", R.ShResult(0, mine + "\n", False))
+    lines = []
+    for i, blob in enumerate(newer + [mine]):
+        lines.append(f"{i:040d}")
+        lines.append(f":100755 100755 {'0' * 40} {blob} M\tscripts/{R.RUNNER_BASENAME}")
+    host.sh.on("--raw", R.ShResult(0, "\n".join(lines) + "\n", False))
+
+
+def test_a_bootstrap_that_matches_origin_main_costs_no_git_at_all(host, capsys):
+    """The healthy path is the common path and must be free.
+
+    The reference is a file the lane's own ``reset --hard origin/main`` already
+    put on disk, so agreement is one read and a digest compare — no subprocess.
+    The vintage walk is diagnosis and is paid ONLY once a mismatch is proven,
+    which is what keeps this affordable inside a 16:00 ET wait window.
+    """
+    assert host.run() == 0
+    boot = host.receipt()["bootstrap"]
+    assert boot["matches_main"] is True and boot["commits_behind"] == 0
+    assert boot["file_sha256"] == boot["main_file_sha256"]
+    assert not host.sh.ran("hash-object")
+    assert not host.sh.ran("--raw")
+    out = capsys.readouterr().out
+    assert "no drift" in out
+    assert "BOOTSTRAP DRIFT" not in out
+
+
+def test_a_drifted_bootstrap_fails_loudly_names_the_remedy_and_still_publishes(
+        host, capsys):
+    """DISCLOSED, NEVER HEALED — and never at the cost of the session.
+
+    Self-updating would defeat the freeze the installer exists to provide, so the
+    entire remedy this lane owns is an annotation carrying the exact command. A
+    drifted snapshot that can still publish a board must still publish it: losing
+    the evening would be a worse outcome than the stale plumbing that caused it.
+    """
+    _drift_the_lane(host, behind=2)
+    assert host.run() == 0                       # the board is NOT sacrificed
+    receipt = host.receipt()
+    assert receipt["outcome"] == "published" and receipt["publish_rc"] == 0
+    boot = receipt["bootstrap"]
+    assert boot["matches_main"] is False and boot["commits_behind"] == 2
+    assert boot["file_sha256"] != boot["main_file_sha256"]
+
+    errors = [ln for ln in capsys.readouterr().out.splitlines()
+              if ln.startswith("::error")]
+    # origin/main moved past BOTH files, and both are named: the one that ran and
+    # the one launchd will exec tonight. Reporting only the first would leave the
+    # host's own state unstated in the very run that noticed the problem.
+    drift = [ln for ln in errors if "BOOTSTRAP DRIFT —" in ln]
+    installed = [ln for ln in errors if "BOOTSTRAP DRIFT (installed)" in ln]
+    assert len(drift) == 1 and len(installed) == 1, errors
+    assert boot["installed_matches_main"] is False
+    line = drift[0]
+    # The annotation must start the line, or GitHub drops it (house guard
+    # tests/test_gh_annotation_line_start.py) and launchd's log reads as prose.
+    assert line.startswith("::error title=close-pass-host::")
+    # THE WIRING: the emitted line quotes the receipt's own numbers. A message
+    # built from anything else can drift from the record it is explaining.
+    assert boot["file_sha256"][:12] in line
+    assert boot["main_file_sha256"][:12] in line
+    assert "2 commit(s) behind" in line
+    assert "bash scripts/install_closepass_launchd.sh" in line
+    assert "MERGING DOES NOT DEPLOY THIS FILE" in line
+
+
+def test_an_unknown_distance_is_reported_as_unknown_and_never_as_zero(host, capsys):
+    """A vintage the walk cannot place is ``None``, not 0.
+
+    ``commits_behind: 0`` is the same value a CLEAN bootstrap carries. A failed
+    walk that answered 0 would render as "up to date" in every consumer of this
+    receipt while the digests beside it disagreed.
+    """
+    (host.lane / "scripts" / R.RUNNER_BASENAME).write_bytes(b"# moved on\n")
+    host.sh.on("hash-object", R.ShResult(1, "", False))
+    assert host.run() == 0
+    boot = host.receipt()["bootstrap"]
+    assert boot["matches_main"] is False and boot["commits_behind"] is None
+    assert "an unknown distance behind" in capsys.readouterr().out
+
+
+def test_a_matching_bootstrap_is_not_certified_against_a_STALE_reference(host, capsys):
+    """Fail-closed on the CLAIM, exactly as ``code_stale`` already is.
+
+    When the fetch fails the lane holds YESTERDAY's origin/main, so
+    "byte-identical to the reference" is not "byte-identical to main". A detector
+    that certified here would go quiet precisely on the nights it cannot see —
+    the blind kind. It reports UNVERIFIED, which is not a pass and not a failure.
+    """
+    host.sh.on("fetch origin main", R.ShResult(1, "network down", False))
+    assert host.run() == 0
+    boot = host.receipt()["bootstrap"]
+    assert host.receipt()["code_stale"] is True
+    assert boot["matches_main"] is None          # NOT True
+    assert boot["file_sha256"] == boot["main_file_sha256"]
+    out = capsys.readouterr().out
+    assert "::warning" in out and "UNVERIFIED" in out
+    assert "BOOTSTRAP DRIFT" not in out
+
+
+def test_an_unprepared_lane_still_records_which_bootstrap_refused(
+        host, capsys, no_backoff):
+    """The 2026-08-17 receipt could not answer this, and the answer mattered.
+
+    That evening refused at ``lane_unprepared`` and its receipt named a lane it
+    never prepared and a bootstrap it never identified — while a stale snapshot
+    was a live candidate cause of the refusal. Identity is therefore filled at
+    receipt construction, before anything can fail, and the fail-closed refusal
+    itself is unchanged: rc 1, outcome ``lane_unprepared``, nothing published.
+    """
+    host.sh.on("rev-parse --git-dir", R.ShResult(124, "", True))
+    assert host.run() == 1
+    receipt = host.receipt(session="no-session")
+    assert receipt["outcome"] == "lane_unprepared"
+    assert not host.sh.ran("close_pass_publish")
+    boot = receipt["bootstrap"]
+    assert len(boot["file_sha256"]) == 64 and boot["mtime"]
+    assert boot["path"].endswith(R.RUNNER_BASENAME)
+    # The refusal path GRADES TOO — a previous run's reset left origin/main's
+    # copy on disk — but it grades with the reference marked unrefreshed, so it
+    # can produce a FINDING and never a false all-clear. Here the bytes agree, so
+    # the honest answer is None: not a pass, not a failure.
+    assert boot["main_file_sha256"] != ""
+    assert boot["matches_main"] is None and boot["installed_matches_main"] is None
+    out = capsys.readouterr().out
+    assert "UNVERIFIED" in out
+    # ...and #5862's timeout-aware detail is still there, unweakened.
+    assert "timed out after 30s" in out
+
+
+def test_a_clean_run_from_a_CHECKOUT_still_grades_the_snapshot_launchd_execs(
+        host, capsys):
+    """THE BLOCKER THIS TEST EXISTS FOR: a session runs the repo copy, that copy
+    is origin/main, and the receipt reads clean — while the file launchd will
+    actually exec tonight is weeks stale, two keys away in the same receipt.
+
+    "Which bootstrap ran" and "what will fire tonight" are different questions
+    and both get answered. Grading only the executing file certifies something
+    launchd never touches, and the graded instrument downstream would print
+    `ok` with the disproof sitting unread beside it.
+    """
+    (host.support / R.RUNNER_BASENAME).write_bytes(b"# a snapshot from three weeks ago\n")
+    host.sh.on("hash-object", R.ShResult(0, "b" * 40 + "\n", False))
+    host.sh.on("--raw", R.ShResult(
+        0, f"{0:040d}\n:100755 100755 {'0' * 40} {'b' * 40} M\tscripts/{R.RUNNER_BASENAME}\n",
+        False))
+    assert host.run() == 0
+    boot = host.receipt()["bootstrap"]
+    assert boot["is_installed_copy"] is False
+    assert boot["matches_main"] is True            # the file that RAN is main...
+    assert boot["installed_matches_main"] is False  # ...the one that FIRES is not
+    assert boot["installed_commits_behind"] == 0
+
+    out = capsys.readouterr().out
+    installed = [ln for ln in out.splitlines()
+                 if ln.startswith("::error") and "BOOTSTRAP DRIFT (installed)" in ln]
+    assert len(installed) == 1, out
+    assert "says nothing about tonight" in installed[0]
+    assert "bash scripts/install_closepass_launchd.sh" in installed[0]
+
+
+def test_an_ungradeable_installed_copy_is_unverified_not_absent(host, capsys):
+    """No snapshot on disk is not evidence of a good snapshot. It renders as a
+    gap, loudly, rather than inheriting the executing copy's clean verdict."""
+    (host.support / R.RUNNER_BASENAME).unlink()
+    assert host.run() == 0
+    boot = host.receipt()["bootstrap"]
+    assert boot["matches_main"] is True
+    assert boot["installed_matches_main"] is None
+    assert boot["installed_file_sha256"] == ""
+    out = capsys.readouterr().out
+    assert "::warning" in out and "could not be graded" in out
+
+
+def test_a_dry_run_cannot_overwrite_the_nights_real_receipt(host):
+    """EVIDENCE MUST SURVIVE THE ACT OF CHECKING IT.
+
+    Both copies write into one directory keyed by session, so a `--dry-run` from
+    a checkout used to replace the launchd receipt that recorded the night's
+    drift with a clean claim about a file launchd will never exec — the only
+    durable record of the problem, destroyed by looking for it.
+    """
+    assert host.run(dry_run=False, now_fn=lambda: FIRED) == 0
+    real = host.receipt(dry_run=False)
+    assert real["dry_run"] is False and real["outcome"] == "published"
+
+    assert host.run(dry_run=True) == 0
+    assert host.receipt(dry_run=False) == real          # untouched, byte for byte
+    assert host.receipt(dry_run=True)["dry_run"] is True
+    names = sorted(p.name for p in (host.support / "runs").glob("*.json"))
+    assert names == [f"{SESSION}.dry-run.json", f"{SESSION}.json"]
+
+
+def test_the_vintage_walk_counts_a_merge_that_carried_the_file(host, capsys):
+    """`--raw` prints NO diff line for a merge commit, so counting raw lines
+    undercounts by exactly the number of merges that touched the file (measured
+    against real git: 1 reported where 2 was true, 3 where 4 was true). The unit
+    is the COMMIT HEADER, which a merge does print."""
+    (host.lane / "scripts" / R.RUNNER_BASENAME).write_bytes(b"# main moved on\n")
+    want = "b" * 40
+    host.sh.on("hash-object", R.ShResult(0, want + "\n", False))
+    raw = f":100755 100755 {'0' * 40} %s M\tscripts/{R.RUNNER_BASENAME}"
+    host.sh.on("--raw", R.ShResult(0, "\n".join([
+        f"{0:040d}", raw % ("c" * 40),      # newest ordinary commit
+        f"{1:040d}",                        # a MERGE: header, no raw line
+        f"{2:040d}", raw % want,            # the vintage we are running
+    ]) + "\n", False))
+    assert host.run() == 0
+    assert host.receipt()["bootstrap"]["commits_behind"] == 2
+    assert "2 commit(s) behind" in capsys.readouterr().out
+
+
+def test_the_runner_never_deploys_itself(host):
+    """The freeze is the feature; a self-updating bootstrap would delete it.
+
+    ``install_closepass_launchd.sh`` copies this file ON PURPOSE so a mid-day
+    push to main cannot change what the clock executes mid-session. The drift
+    check exists to DISCLOSE the cost of that choice, never to quietly undo it.
+    """
+    assert "shutil" not in ast.unparse(ast.parse(RUNNER_SRC))
+    # It may READ the installed snapshot to identify it; it may not write there.
+    # Every write site in the file, by line — the receipt and the requirements
+    # stamp — and neither may name this file or the installed path.
+    writes = [ln for ln in RUNNER_SRC.splitlines()
+              if "write_text(" in ln or "write_bytes(" in ln]
+    assert writes, "the receipt writer vanished — this guard would pass vacuously"
+    for line in writes:
+        assert R.RUNNER_BASENAME not in line and "installed" not in line, line
 
 
 def test_the_receipt_is_local_telemetry_and_never_touches_data_or_git(host):
@@ -679,8 +977,13 @@ def test_the_receipt_is_local_telemetry_and_never_touches_data_or_git(host):
     receipt lives under Application Support precisely so it can never be
     mistaken for one."""
     assert host.run() == 0
-    written = host.support / "runs" / f"{SESSION}.json"
+    # A DRY RUN GETS ITS OWN NAME so it cannot overwrite the night's real
+    # receipt: same session, same directory, and a `--dry-run` from a checkout
+    # would otherwise replace a launchd receipt recording drift with a clean
+    # claim about a file launchd never execs — evidence destroyed by checking.
+    written = host.support / "runs" / f"{SESSION}.dry-run.json"
     assert written.is_file()
+    assert not (host.support / "runs" / f"{SESSION}.json").exists()
     assert "Application Support" in str(R.SUPPORT_DEFAULT)
     assert not (host.lane / "data").exists()
     code = ast.unparse(ast.parse(RUNNER_SRC))
@@ -697,7 +1000,7 @@ def test_the_receipt_is_local_telemetry_and_never_touches_data_or_git(host):
 
 def test_receipts_do_not_accumulate_forever(host, tmp_path):
     runs = host.support / "runs"
-    runs.mkdir(parents=True)
+    runs.mkdir(parents=True, exist_ok=True)
     for i in range(R.RECEIPT_KEEP + 20):
         (runs / f"2020-01-{i:03d}.json").write_text("{}", encoding="utf-8")
     R.write_receipt(host.support, {"session": SESSION})

@@ -1,0 +1,706 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T02:41:36Z",
+  "reproduce": [
+    "python3 <scratch>/d1_build/load_sources.py",
+    "python3 <scratch>/d1_build/compute_cohorts.py",
+    "python3 <scratch>/d1_build/compute_coverage.py",
+    "python3 <scratch>/d1_build/compute_c6_gaps.py",
+    "python3 <scratch>/d1_build/compute_identity.py",
+    "python3 <scratch>/d1_build/compute_exemplars.py",
+    "python3 <scratch>/d1_build/compute_pit_and_families.py",
+    "python3 <scratch>/d1_build/compute_gap_ledger.py",
+    "python3 <scratch>/d1_build/assemble_final.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "cohorts": {
+    "C0": {
+      "definition": "broadest closed US-universe artifact discoverable",
+      "closed_count": 3227,
+      "session_stamp": "2026-08-07",
+      "chosen_source": "data/us_prophet_rank/candidates/2026-08.parquet (tier curated + scan union at store's own newest joint-tier stamp_date)"
+    },
+    "C1": {
+      "definition": "latest lawful candidate-store population",
+      "closed_count": 1508,
+      "session_stamp": "2026-08-12",
+      "chosen_source": "data/us_prophet_rank/candidates/2026-08.parquet, newest stamp_date rows"
+    },
+    "C2": {
+      "definition": "served Prophet population",
+      "closed_count": 192,
+      "session_stamp": "2026-08-13",
+      "chosen_source": "site/prophet/index.json 'plans' array"
+    },
+    "C3": {
+      "definition": "TURN WATCH complete trigger population (triggered = deck + beyond_cap, NOT the 40-card deck alone)",
+      "closed_count": 831,
+      "session_stamp": "2026-08-13",
+      "chosen_source": "site/turn_watch/turn_watch.json 'deck' + 'beyond_cap'"
+    },
+    "C4": {
+      "definition": "Radar probe/candidate universe",
+      "closed_count": null,
+      "session_stamp": "UNKNOWN",
+      "chosen_source": null,
+      "null_reason": "closed_count and chosen_source are null because C4 (Radar probe/candidate universe) is UNKNOWN -- no materialized artifact exists at this pin. Full reason in top-level 'cohort_C4_null_reason'."
+    },
+    "C5": {
+      "definition": "featured/top current Prophet population",
+      "closed_count": 71,
+      "session_stamp": "2026-08-14",
+      "chosen_source": "site/factordata/us_standouts.json 'buy' list"
+    }
+  },
+  "cohort_C0_alternatives": [
+    {
+      "artifact": "candidates store, latest single stamp_date (scan-only, engine outage)",
+      "stamp": "2026-08-12",
+      "count": 1508,
+      "rejected_because": "curated tier did not run this night (STALLED engine writer); narrower than the 2026-08-07 joint roster and not 'full analyzed roster'."
+    },
+    {
+      "artifact": "data/stock_identity/partition/universe_snapshot_v1.parquet (pilot price-plane universe, survivor-only)",
+      "stamp": "2026-08-13",
+      "count": 2781,
+      "rejected_because": "narrower (2781 < 3227); explicitly survivor-only (no ceased tapes) and excludes a 229-name blind-eval arm + 1 hygiene exclusion per its own census doc, so it under-counts the true analyzed roster."
+    },
+    {
+      "artifact": "data/universe/membership.parquet (sp500/400/600 + Russell 2000 index-membership registry), active=True",
+      "stamp": "2026-08-14",
+      "count": 2839,
+      "rejected_because": "narrower (2839 < 3227); index-defined only, excludes the scan tier's off-index liquidity-floored names (the FNV/FSM/EXK/AG/SBSW class the scan tier exists to see per the store's own README)."
+    }
+  ],
+  "cohort_C0_choice_rationale": "FROZEN SPEC prefers 'the candidate store's full analyzed roster at its newest stamp_date'. The store's engine (curated) writer stalled after 2026-08-07 (last night engine.build_stock_library produced a curated-tier population); the scan writer (liquidity-floored, disjoint by construction from curated) continued through 2026-08-12. 2026-08-07 is therefore the newest stamp_date carrying BOTH writer outputs, i.e. the fullest analyzed roster the store has ever recorded in one night (curated 1717 + scan 1510, disjoint by dedupe-key construction per data/us_prophet_rank/README.md 'Two coverage tiers, one store'). This union (3227) is also empirically the largest closed US-name roster found among all alternatives inspected below.",
+  "cohort_C1_stale_note": "newest row in the store as of pin computation; the store is STALLED (curated writer has not produced a row since 2026-08-07). This stamp is 5 calendar days behind the D1 build session (2026-08-17). Only tier='scan' rows exist at this stamp \u2014 'curated' (the board's actual graded population) has not refreshed since C0's stamp.",
+  "cohort_C2_note": "closed_count is DISTINCT tickers among the 206 plan rows actually present in the array (=active_count); plan_count=228 in the header includes 22 non-active plans not carried in the array (retired/archived before this asof) and are therefore NOT enumerable as tickers from this artifact \u2014 recorded, not fabricated.",
+  "cohort_C3_note": "coverage.triggered=831 in the artifact's own summary equals deck(40)+beyond_cap(791) exactly, confirming the two lists are disjoint by construction.",
+  "cohort_C4_null_reason": "No materialized probe-set artifact exists under data/ or site/ at pin 5c1d82b928 \u2014 searched data/*entry_radar*, data/breadth/, site/*radar* and found no persisted output of engine/entry_radar/universe.py::assemble_probe_set(). The Probe Set (Layers A-D funnel: A=broad eligibility lens, B=index membership/liquid names/watchlist, C=dynamic-hot attention admission, D=lobe nominations auto-admit) is DEFINED in code (engine/entry_radar/universe.py, 1027 lines) with a soft target envelope of 500-1,500 names, but is computed at runtime from data/breadth/constituents.parquet + midcap/smallcap/russell siblings and is never written to a stamped store this repo snapshot can read. Per the build packet's explicit instruction, this is recorded as UNKNOWN-with-reason rather than fabricated by running the funnel (out of scope: no engine edits, no new computation of scored/gated artifacts).",
+  "cohort_C5_field_rationale": "The candidates store carries its own 'featured' column, but it is null on every row at C1's stamp (2026-08-12) \u2014 checked directly: all-null=True. site/factordata/us_standouts.json's 'buy' list (board_definition us_prophet_v3) is the only materialized 'currently featured/top' population at this pin: eligible=true, signal.tier='take' names selected for the board's buy lane. 'watch' (48 names) is a separate, lower-conviction lane and is NOT counted as featured.",
+  "union_order": [
+    "canonical_theme_crosswalk",
+    "curated_baskets",
+    "finviz_ltheme",
+    "ths_ltheme",
+    "structural_sector_industry"
+  ],
+  "union_order_note": "Incremental coverage is computed walking this fixed order; each source's 'incremental_new_names' counts names NOT already covered by an earlier source in the order. 'structural_sector_industry' is last by design -- it is deliberately the floor/fallback, not a thematic source (coordinator addendum: GICS sector/industry and the 11 us_sector_* pseudo-baskets are STRUCTURAL, never counted as thematic membership).",
+  "canonical_theme_crosswalk_method_note": "canonical_theme_crosswalk coverage uses ONLY the reverse-safe primary_basket_id path (company -> the ONE basket that IS a theme -> theme), per config/theme_crosswalk.yml's own documented rule that primary_basket_id is 'the only mapping that is sound in the REVERSE direction'. 13/18 canonical themes have a primary_basket_id set (5 honest nulls). A broader PROXY count exists (company -> ANY of a theme's basket_ids, including supply-chain/proxy baskets) but is NOT used for coverage math because reading it backwards would misattribute economic exposure (crosswalk's own documented caveat, e.g. a managed_care holder is not a medical-devices theme holder).",
+  "per_cohort_matrix": {
+    "C0": {
+      "canonical_theme_crosswalk": {
+        "eligible": 3227,
+        "covered_securities": 157,
+        "raw_coverage_rate": 0.0487,
+        "multi_membership_density": {
+          "mean": 1.108,
+          "median": 1,
+          "p90": 2,
+          "max": 3
+        },
+        "incremental_new_names": 157
+      },
+      "curated_baskets": {
+        "eligible": 3227,
+        "covered_securities": 427,
+        "raw_coverage_rate": 0.1323,
+        "multi_membership_density": {
+          "mean": 1.194,
+          "median": 1,
+          "p90": 2,
+          "max": 4
+        },
+        "incremental_new_names": 270
+      },
+      "finviz_ltheme": {
+        "eligible": 3227,
+        "covered_securities": 717,
+        "raw_coverage_rate": 0.2222,
+        "multi_membership_density": {
+          "mean": 2.834,
+          "median": 2,
+          "p90": 5,
+          "max": 66
+        },
+        "incremental_new_names": 457
+      },
+      "ths_ltheme": {
+        "eligible": 3227,
+        "covered_securities": 0,
+        "raw_coverage_rate": 0.0,
+        "multi_membership_density": {},
+        "incremental_new_names": 0
+      },
+      "structural_sector_industry": {
+        "eligible": 3227,
+        "covered_securities": 1718,
+        "raw_coverage_rate": 0.5324,
+        "multi_membership_density": {
+          "mean": 2.141,
+          "median": 2.0,
+          "p90": 3,
+          "max": 3
+        },
+        "incremental_new_names": 924
+      },
+      "_union_total_covered": 1808,
+      "_union_coverage_rate": 0.5603
+    },
+    "C1": {
+      "canonical_theme_crosswalk": {
+        "eligible": 1508,
+        "covered_securities": 2,
+        "raw_coverage_rate": 0.0013,
+        "multi_membership_density": {
+          "mean": 1,
+          "median": 1.0,
+          "p90": 1,
+          "max": 1
+        },
+        "incremental_new_names": 2
+      },
+      "curated_baskets": {
+        "eligible": 1508,
+        "covered_securities": 6,
+        "raw_coverage_rate": 0.004,
+        "multi_membership_density": {
+          "mean": 1,
+          "median": 1.0,
+          "p90": 1,
+          "max": 1
+        },
+        "incremental_new_names": 4
+      },
+      "finviz_ltheme": {
+        "eligible": 1508,
+        "covered_securities": 89,
+        "raw_coverage_rate": 0.059,
+        "multi_membership_density": {
+          "mean": 1.843,
+          "median": 1,
+          "p90": 5,
+          "max": 8
+        },
+        "incremental_new_names": 85
+      },
+      "ths_ltheme": {
+        "eligible": 1508,
+        "covered_securities": 0,
+        "raw_coverage_rate": 0.0,
+        "multi_membership_density": {},
+        "incremental_new_names": 0
+      },
+      "structural_sector_industry": {
+        "eligible": 1508,
+        "covered_securities": 1,
+        "raw_coverage_rate": 0.0007,
+        "multi_membership_density": {
+          "mean": 1,
+          "median": 1,
+          "p90": 1,
+          "max": 1
+        },
+        "incremental_new_names": 1
+      },
+      "_union_total_covered": 92,
+      "_union_coverage_rate": 0.061
+    },
+    "C2": {
+      "canonical_theme_crosswalk": {
+        "eligible": 192,
+        "covered_securities": 22,
+        "raw_coverage_rate": 0.1146,
+        "multi_membership_density": {
+          "mean": 1.182,
+          "median": 1.0,
+          "p90": 2,
+          "max": 2
+        },
+        "incremental_new_names": 22
+      },
+      "curated_baskets": {
+        "eligible": 192,
+        "covered_securities": 58,
+        "raw_coverage_rate": 0.3021,
+        "multi_membership_density": {
+          "mean": 1.345,
+          "median": 1.0,
+          "p90": 2,
+          "max": 4
+        },
+        "incremental_new_names": 36
+      },
+      "finviz_ltheme": {
+        "eligible": 192,
+        "covered_securities": 100,
+        "raw_coverage_rate": 0.5208,
+        "multi_membership_density": {
+          "mean": 4.81,
+          "median": 2.0,
+          "p90": 11,
+          "max": 66
+        },
+        "incremental_new_names": 50
+      },
+      "ths_ltheme": {
+        "eligible": 192,
+        "covered_securities": 0,
+        "raw_coverage_rate": 0.0,
+        "multi_membership_density": {},
+        "incremental_new_names": 0
+      },
+      "structural_sector_industry": {
+        "eligible": 192,
+        "covered_securities": 192,
+        "raw_coverage_rate": 1.0,
+        "multi_membership_density": {
+          "mean": 2.151,
+          "median": 2.0,
+          "p90": 3,
+          "max": 3
+        },
+        "incremental_new_names": 84
+      },
+      "_union_total_covered": 192,
+      "_union_coverage_rate": 1.0
+    },
+    "C3": {
+      "canonical_theme_crosswalk": {
+        "eligible": 831,
+        "covered_securities": 77,
+        "raw_coverage_rate": 0.0927,
+        "multi_membership_density": {
+          "mean": 1.169,
+          "median": 1,
+          "p90": 2,
+          "max": 3
+        },
+        "incremental_new_names": 77
+      },
+      "curated_baskets": {
+        "eligible": 831,
+        "covered_securities": 158,
+        "raw_coverage_rate": 0.1901,
+        "multi_membership_density": {
+          "mean": 1.272,
+          "median": 1.0,
+          "p90": 2,
+          "max": 3
+        },
+        "incremental_new_names": 81
+      },
+      "finviz_ltheme": {
+        "eligible": 831,
+        "covered_securities": 231,
+        "raw_coverage_rate": 0.278,
+        "multi_membership_density": {
+          "mean": 3.134,
+          "median": 2,
+          "p90": 6,
+          "max": 55
+        },
+        "incremental_new_names": 117
+      },
+      "ths_ltheme": {
+        "eligible": 831,
+        "covered_securities": 0,
+        "raw_coverage_rate": 0.0,
+        "multi_membership_density": {},
+        "incremental_new_names": 0
+      },
+      "structural_sector_industry": {
+        "eligible": 831,
+        "covered_securities": 368,
+        "raw_coverage_rate": 0.4428,
+        "multi_membership_density": {
+          "mean": 2.057,
+          "median": 2.0,
+          "p90": 3,
+          "max": 3
+        },
+        "incremental_new_names": 134
+      },
+      "_union_total_covered": 409,
+      "_union_coverage_rate": 0.4922
+    },
+    "C4": {
+      "status": "UNKNOWN",
+      "null_reason": "No materialized probe-set artifact exists under data/ or site/ at pin 5c1d82b928 \u2014 searched data/*entry_radar*, data/breadth/, site/*radar* and found no persisted output of engine/entry_radar/universe.py::assemble_probe_set(). The Probe Set (Layers A-D funnel: A=broad eligibility lens, B=index membership/liquid names/watchlist, C=dynamic-hot attention admission, D=lobe nominations auto-admit) is DEFINED in code (engine/entry_radar/universe.py, 1027 lines) with a soft target envelope of 500-1,500 names, but is computed at runtime from data/breadth/constituents.parquet + midcap/smallcap/russell siblings and is never written to a stamped store this repo snapshot can read. Per the build packet's explicit instruction, this is recorded as UNKNOWN-with-reason rather than fabricated by running the funnel (out of scope: no engine edits, no new computation of scored/gated artifacts)."
+    },
+    "C5": {
+      "canonical_theme_crosswalk": {
+        "eligible": 71,
+        "covered_securities": 13,
+        "raw_coverage_rate": 0.1831,
+        "multi_membership_density": {
+          "mean": 1.154,
+          "median": 1,
+          "p90": 2,
+          "max": 2
+        },
+        "incremental_new_names": 13
+      },
+      "curated_baskets": {
+        "eligible": 71,
+        "covered_securities": 26,
+        "raw_coverage_rate": 0.3662,
+        "multi_membership_density": {
+          "mean": 1.192,
+          "median": 1.0,
+          "p90": 2,
+          "max": 2
+        },
+        "incremental_new_names": 13
+      },
+      "finviz_ltheme": {
+        "eligible": 71,
+        "covered_securities": 39,
+        "raw_coverage_rate": 0.5493,
+        "multi_membership_density": {
+          "mean": 2.538,
+          "median": 2,
+          "p90": 5,
+          "max": 14
+        },
+        "incremental_new_names": 19
+      },
+      "ths_ltheme": {
+        "eligible": 71,
+        "covered_securities": 0,
+        "raw_coverage_rate": 0.0,
+        "multi_membership_density": {},
+        "incremental_new_names": 0
+      },
+      "structural_sector_industry": {
+        "eligible": 71,
+        "covered_securities": 71,
+        "raw_coverage_rate": 1.0,
+        "multi_membership_density": {
+          "mean": 2.056,
+          "median": 2,
+          "p90": 3,
+          "max": 3
+        },
+        "incremental_new_names": 26
+      },
+      "_union_total_covered": 71,
+      "_union_coverage_rate": 1.0
+    }
+  },
+  "cohort_C6": {
+    "cohort_id": "C6",
+    "definition": "all C0/C1 names with NO valid thematic membership beyond structural sector/industry",
+    "base_population": "C0 tickers UNION C1 tickers",
+    "base_population_count": 3253,
+    "closed_count": 2368,
+    "coverage_impact": {
+      "gap_names_with_structural_sector_only": 924,
+      "gap_names_with_no_classification_at_all": 1444
+    },
+    "store_full_list_or_aggregate": "aggregate_plus_top100",
+    "top_100_by_ascending_ticker": [
+      "AAAU",
+      "AAMI",
+      "AAOI",
+      "AAON",
+      "AAP",
+      "AAPD",
+      "AAPU",
+      "AAT",
+      "AAUC",
+      "AB",
+      "ABCB",
+      "ABCL",
+      "ABEV",
+      "ABG",
+      "ABM",
+      "ABR",
+      "ABTC",
+      "ABVX",
+      "ACAD",
+      "ACHC",
+      "ACIO",
+      "ACM",
+      "ACMR",
+      "ACT",
+      "ACWI",
+      "ACWV",
+      "ACWX",
+      "ADAM",
+      "ADBG",
+      "ADEA",
+      "ADMA",
+      "ADNT",
+      "ADP",
+      "ADUR",
+      "ADUS",
+      "ADX",
+      "AEE",
+      "AEG",
+      "AEO",
+      "AER",
+      "AESI",
+      "AFG",
+      "AGG",
+      "AGIX",
+      "AGNC",
+      "AGNT",
+      "AGO",
+      "AGQ",
+      "AGX",
+      "AGYS",
+      "AHCO",
+      "AHR",
+      "AIA",
+      "AIN",
+      "AIPI",
+      "AIPO",
+      "AIQ",
+      "AIR",
+      "AIRR",
+      "AIS",
+      "AIZ",
+      "AKR",
+      "AKRE",
+      "ALBpA",
+      "ALC",
+      "ALG",
+      "ALGM",
+      "ALGN",
+      "ALIT",
+      "ALKS",
+      "ALLW",
+      "ALV",
+      "AM",
+      "AMCR",
+      "AMDD",
+      "AMDG",
+      "AMDL",
+      "AMDW",
+      "AMDY",
+      "AMG",
+      "AMLP",
+      "AMN",
+      "AMP",
+      "AMPG",
+      "AMPH",
+      "AMRX",
+      "AMRZ",
+      "AMSF",
+      "AMTM",
+      "AMUU",
+      "AMX",
+      "AMZD",
+      "AMZU",
+      "AN",
+      "ANDG",
+      "ANGL",
+      "ANGX",
+      "ANIP",
+      "AOA",
+      "AOM"
+    ],
+    "note": "no liquidity/rank ordering used (would flirt with outcome-conditioning); top-100 taken by ascending ticker per spec. Full 2368-ticker list withheld from the committed artifact per the >=2000-row aggregate rule (no large per-row frames in git); reproducible from data/us_prophet_rank/candidates via the pinned reproduce commands."
+  },
+  "rights_usable_split_note": "Rights-usable split (internal_usable / public_display_usable / rights_blocked) is reported per source in source_family_matrix.json (this pin's D1 rows) rather than duplicated per cohort here -- rights are a property of the SOURCE, not the cohort. See config/theme_sources.yml-derived rows: mastermind_curated=direct_display_ok (100% public_display_usable); finviz_themes=unresolved (internal_usable only for new emissions, two grandfathered public paths exempted BY PATH); ths_concepts=unresolved/receipted_scrape (internal_usable only, CN-scoped, 0% relevant to US cohorts anyway); structural_sector_industry=house-derived, no restriction found.",
+  "rights_usable_split_numeric": {
+    "method": "rights_class is a per-SOURCE property (config/theme_sources.yml), not per-name in this repo; each source's raw_coverage count for a cohort is therefore bucketed wholesale into exactly one of {internal_usable, public_display_usable, rights_blocked} per its registry posture. Verified: internal_usable + public_display_usable + rights_blocked == raw_coverage for every source x cohort cell (assertion passed at build time).",
+    "grandfathering_note": "The two finviz grandfathered surfaces (themes_heatmap.json, subsector_rotation.json) are PATH-scoped presentation exemptions on PRE-EXISTING owner surfaces -- they do not convert finviz_ltheme's underlying company-membership data to public_display_usable for a NEW emission (per config/theme_sources.yml's own scoping note: 'a surface is exempt iff its path is here with a review row... GMI emitters never cite this list').",
+    "per_cohort": {
+      "C0": {
+        "canonical_theme_crosswalk": {
+          "internal_usable": 0,
+          "public_display_usable": 157,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "mastermind_curated row (direct_display_ok) -- the crosswalk's reverse-safe path resolves through a curated basket, which carries direct_display_ok."
+        },
+        "curated_baskets": {
+          "internal_usable": 0,
+          "public_display_usable": 427,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.mastermind_curated.rights_class = direct_display_ok"
+        },
+        "finviz_ltheme": {
+          "internal_usable": 717,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.finviz_themes.rights_class = unresolved; review outcome states 'treat as internal_only until the operator resolves the derived-display question' -- bucketed internal_usable for a NEW emission. The two grandfathered surfaces (site/marketdata/themes_heatmap.json, subsector_rotation.json) are PATH-scoped and do not apply to a new company-membership projection."
+        },
+        "ths_ltheme": {
+          "internal_usable": 0,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.ths_concepts.rights_class = unresolved, same posture as finviz_themes. Numerically moot for US cohorts: 0 raw US coverage (CN-scoped source)."
+        },
+        "structural_sector_industry": {
+          "internal_usable": 0,
+          "public_display_usable": 1718,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "NOT ENUMERATED in config/theme_sources.yml -- no rights registry row exists for this house-derived GICS/SIC map. Defaulted to public_display_usable per house-data convention (SEC/index-provider derived, no vendor restriction identified), but the missing registry row is itself recorded as a finding (see mapping_gap_ledger.json 'no-PIT' row's sibling note) worth a D2 registry-completeness pass."
+        }
+      },
+      "C1": {
+        "canonical_theme_crosswalk": {
+          "internal_usable": 0,
+          "public_display_usable": 2,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "mastermind_curated row (direct_display_ok) -- the crosswalk's reverse-safe path resolves through a curated basket, which carries direct_display_ok."
+        },
+        "curated_baskets": {
+          "internal_usable": 0,
+          "public_display_usable": 6,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.mastermind_curated.rights_class = direct_display_ok"
+        },
+        "finviz_ltheme": {
+          "internal_usable": 89,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.finviz_themes.rights_class = unresolved; review outcome states 'treat as internal_only until the operator resolves the derived-display question' -- bucketed internal_usable for a NEW emission. The two grandfathered surfaces (site/marketdata/themes_heatmap.json, subsector_rotation.json) are PATH-scoped and do not apply to a new company-membership projection."
+        },
+        "ths_ltheme": {
+          "internal_usable": 0,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.ths_concepts.rights_class = unresolved, same posture as finviz_themes. Numerically moot for US cohorts: 0 raw US coverage (CN-scoped source)."
+        },
+        "structural_sector_industry": {
+          "internal_usable": 0,
+          "public_display_usable": 1,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "NOT ENUMERATED in config/theme_sources.yml -- no rights registry row exists for this house-derived GICS/SIC map. Defaulted to public_display_usable per house-data convention (SEC/index-provider derived, no vendor restriction identified), but the missing registry row is itself recorded as a finding (see mapping_gap_ledger.json 'no-PIT' row's sibling note) worth a D2 registry-completeness pass."
+        }
+      },
+      "C2": {
+        "canonical_theme_crosswalk": {
+          "internal_usable": 0,
+          "public_display_usable": 22,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "mastermind_curated row (direct_display_ok) -- the crosswalk's reverse-safe path resolves through a curated basket, which carries direct_display_ok."
+        },
+        "curated_baskets": {
+          "internal_usable": 0,
+          "public_display_usable": 58,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.mastermind_curated.rights_class = direct_display_ok"
+        },
+        "finviz_ltheme": {
+          "internal_usable": 100,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.finviz_themes.rights_class = unresolved; review outcome states 'treat as internal_only until the operator resolves the derived-display question' -- bucketed internal_usable for a NEW emission. The two grandfathered surfaces (site/marketdata/themes_heatmap.json, subsector_rotation.json) are PATH-scoped and do not apply to a new company-membership projection."
+        },
+        "ths_ltheme": {
+          "internal_usable": 0,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.ths_concepts.rights_class = unresolved, same posture as finviz_themes. Numerically moot for US cohorts: 0 raw US coverage (CN-scoped source)."
+        },
+        "structural_sector_industry": {
+          "internal_usable": 0,
+          "public_display_usable": 192,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "NOT ENUMERATED in config/theme_sources.yml -- no rights registry row exists for this house-derived GICS/SIC map. Defaulted to public_display_usable per house-data convention (SEC/index-provider derived, no vendor restriction identified), but the missing registry row is itself recorded as a finding (see mapping_gap_ledger.json 'no-PIT' row's sibling note) worth a D2 registry-completeness pass."
+        }
+      },
+      "C3": {
+        "canonical_theme_crosswalk": {
+          "internal_usable": 0,
+          "public_display_usable": 77,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "mastermind_curated row (direct_display_ok) -- the crosswalk's reverse-safe path resolves through a curated basket, which carries direct_display_ok."
+        },
+        "curated_baskets": {
+          "internal_usable": 0,
+          "public_display_usable": 158,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.mastermind_curated.rights_class = direct_display_ok"
+        },
+        "finviz_ltheme": {
+          "internal_usable": 231,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.finviz_themes.rights_class = unresolved; review outcome states 'treat as internal_only until the operator resolves the derived-display question' -- bucketed internal_usable for a NEW emission. The two grandfathered surfaces (site/marketdata/themes_heatmap.json, subsector_rotation.json) are PATH-scoped and do not apply to a new company-membership projection."
+        },
+        "ths_ltheme": {
+          "internal_usable": 0,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.ths_concepts.rights_class = unresolved, same posture as finviz_themes. Numerically moot for US cohorts: 0 raw US coverage (CN-scoped source)."
+        },
+        "structural_sector_industry": {
+          "internal_usable": 0,
+          "public_display_usable": 368,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "NOT ENUMERATED in config/theme_sources.yml -- no rights registry row exists for this house-derived GICS/SIC map. Defaulted to public_display_usable per house-data convention (SEC/index-provider derived, no vendor restriction identified), but the missing registry row is itself recorded as a finding (see mapping_gap_ledger.json 'no-PIT' row's sibling note) worth a D2 registry-completeness pass."
+        }
+      },
+      "C5": {
+        "canonical_theme_crosswalk": {
+          "internal_usable": 0,
+          "public_display_usable": 13,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "mastermind_curated row (direct_display_ok) -- the crosswalk's reverse-safe path resolves through a curated basket, which carries direct_display_ok."
+        },
+        "curated_baskets": {
+          "internal_usable": 0,
+          "public_display_usable": 26,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.mastermind_curated.rights_class = direct_display_ok"
+        },
+        "finviz_ltheme": {
+          "internal_usable": 39,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.finviz_themes.rights_class = unresolved; review outcome states 'treat as internal_only until the operator resolves the derived-display question' -- bucketed internal_usable for a NEW emission. The two grandfathered surfaces (site/marketdata/themes_heatmap.json, subsector_rotation.json) are PATH-scoped and do not apply to a new company-membership projection."
+        },
+        "ths_ltheme": {
+          "internal_usable": 0,
+          "public_display_usable": 0,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "config/theme_sources.yml families.ths_concepts.rights_class = unresolved, same posture as finviz_themes. Numerically moot for US cohorts: 0 raw US coverage (CN-scoped source)."
+        },
+        "structural_sector_industry": {
+          "internal_usable": 0,
+          "public_display_usable": 71,
+          "rights_blocked": 0,
+          "raw_coverage_matches_sum": true,
+          "posture_basis": "NOT ENUMERATED in config/theme_sources.yml -- no rights registry row exists for this house-derived GICS/SIC map. Defaulted to public_display_usable per house-data convention (SEC/index-provider derived, no vendor restriction identified), but the missing registry row is itself recorded as a finding (see mapping_gap_ledger.json 'no-PIT' row's sibling note) worth a D2 registry-completeness pass."
+        }
+      }
+    }
+  }
+}

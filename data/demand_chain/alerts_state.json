@@ -1,7 +1,5 @@
 {
   "A": "ahead_of_consensus",
-  "ACLS": "ahead_of_consensus",
-  "AEP": "ahead_of_consensus",
   "ATI": "consensus_at_risk",
   "AVAV": "ahead_of_consensus",
   "BA": "ahead_of_consensus",

@@ -149,3 +149,12 @@
 {"asof": "2026-08-13", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "1355416acc84f615"}
 {"asof": "2026-08-13", "domain": "canada", "field": "canada_cycle_tag", "from_value": "late", "to_value": "mid", "macro_context_id": "1355416acc84f615"}
 {"asof": "2026-08-14", "domain": "canada", "field": "canada_cycle_tag", "from_value": "mid", "to_value": "late", "macro_context_id": "52488ba0df26951f"}
+{"asof": "2026-08-18", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "fx", "field": "fed_path_lean", "from_value": "steady", "to_value": "dovish_repricing", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "fx", "field": "fx_usdbrl_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "commodity", "field": "commodity_mtf_grade", "from_value": "BUY-THE-DIP", "to_value": "TREND-FOLLOW", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "commodity", "field": "commodity_ladder", "from_value": "TOP WATCH", "to_value": "RALLY ON", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "commodity", "field": "gold_action", "from_value": "HOLD", "to_value": "BUY", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "china", "field": "china_fe_band", "from_value": "Neutral", "to_value": "Greed", "macro_context_id": "07f68bb54cdd07ec"}
+{"asof": "2026-08-18", "domain": "canada", "field": "canada_quad", "from_value": "Q2", "to_value": "Q1", "macro_context_id": "07f68bb54cdd07ec"}

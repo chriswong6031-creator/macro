@@ -2,21 +2,39 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-14T05:14:21.913555+00:00",
+  "generated_at": "2026-08-18T07:33:17.309198+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-13",
-  "tldr": [],
-  "summary": null,
-  "regime_read": null,
-  "conflicts": [],
-  "rotation_check": null,
-  "transmission": [],
-  "watch_items": [],
+  "state_asof": "2026-08-17",
+  "tldr": [
+    "China drag: Hong Kong, mainland shares and copper lead markets down.",
+    "US map: Reflation is weakly held and drifting toward weak-growth, warm-inflation.",
+    "Bonds calm: credit is tight and bond health is strong, but the hedge is broken.",
+    "Dollar split: soft today, but crowded long and still favoring the dollar.",
+    "What to do: Watch \u2014 don't chase."
+  ],
+  "summary": "China risk-off drags Hong Kong shares, mainland stocks and copper while the US map drifts toward weak growth and warm inflation.",
+  "regime_read": "The US map still carries the Reflation label, but confidence in it is very low. Growth has cooled from a month ago and inflation has cooled as well; the map is now drifting toward the weak-growth, warm-inflation corner, one session into a seven-session confirmation count. Today's named driver is China risk-off: Hong Kong, mainland shares and copper are leading lower, though the read is mixed and low-confidence.\n\nBonds and credit are calm rather than scared: bond health is strong, credit spreads are tight, and stress gauges are quiet. But the stock-bond hedge is broken, and the dollar setup is crowded, so the calm is not an all-clear.",
+  "conflicts": [
+    "Bond/stock split: Stocks read risk-on, but bonds sit late-cycle healthy with a broken hedge \u2014 treat the US map as fragile, not confirmed.",
+    "Dollar split: Today's dollar is soft and leaning on stocks, but position tracking shows an unusually crowded long \u2014 a crowded unwind risk, not a clean trend.",
+    "China mix: Hong Kong's map reads Goldilocks while mainland China sits in a growth scare \u2014 the China drag is uneven, not one clean signal."
+  ],
+  "rotation_check": "The late legs are showing stress: China, Hong Kong and crypto are soft while liquidity contracts. That fits the unwind path, but the move is still low-confidence.",
+  "transmission": [
+    "If China risk-off keeps up \u2192 Hong Kong, mainland shares and copper stay heavy and global risk appetite softens.",
+    "If the long-term yield squeeze keeps up \u2192 tech and long-duration stocks stay pressured while banks and energy stay favored."
+  ],
+  "watch_items": [
+    "US map confirms weak-growth/warm-inflation for seven sessions: risk regime shifts.",
+    "China shares reverse and copper steadies: today's drag would fade.",
+    "Dollar's crowded long unwinds: pressure on stocks and gold may ease."
+  ],
   "confidence": "low",
   "theses": [],
-  "raw_text": null,
-  "degraded_reason": "empty_reply",
+  "raw_text": "{\n  \"tldr\": [\n    \"China drag: Hong Kong, mainland shares and copper lead markets down.\",\n    \"US map: Reflation is weakly held and drifting toward weak-growth, warm-inflation.\",\n    \"Bonds calm: credit is tight and bond health is strong, but the hedge is broken.\",\n    \"Dollar split: soft today, but crowded long and still favoring the dollar.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"China risk-off drags Hong Kong shares, mainland stocks and copper while the US map drifts toward weak growth and warm inflation.\",\n  \"regime_read\": \"The US map still carries the Reflation label, but confidence in it is very low. Growth has cooled from a month ago and inflation has cooled as well; the map is now drifting toward the weak-growth, warm-inflation corner, one session into a seven-session confirmation count. Today's named driver is China risk-off: Hong Kong, mainland shares and copper are leading lower, though the read is mixed and low-confidence.\\n\\nBonds and credit are calm rather than scared: bond health is strong, credit spreads are tight, and stress gauges are quiet. But the stock-bond hedge is broken, and the dollar setup is crowded, so the calm is not an all-clear.\",\n  \"conflicts\": [\n    \"Bond/stock split: Stocks read risk-on, but bonds sit late-cycle healthy with a broken hedge \u2014 treat the US map as fragile, not confirmed.\",\n    \"Dollar split: Today's dollar is soft and leaning on stocks, but position tracking shows an unusually crowded long \u2014 a crowded unwind risk, not a clean trend.\",\n    \"China mix: Hong Kong's map reads Goldilocks while mainland China sits in a growth scare \u2014 the China drag is uneven, not one clean signal.\"\n  ],\n  \"transmission\": [\n    \"If China risk-off keeps up \u2192 Hong Kong, mainland shares and copper stay heavy and global risk appetite softens.\",\n    \"If the long-term yield squeeze keeps up \u2192 tech and long-duration stocks stay pressured while banks and energy stay favored.\"\n  ],\n  \"rotation_check\": \"The late legs are showing stress: China, Hong Kong and crypto are soft while liquidity contracts. That fits the unwind path, but the move is still low-confidence.\",\n  \"watch_items\": [\n    \"US map confirms weak-growth/warm-inflation for seven sessions: risk regime shifts.\",\n    \"China shares reverse and copper steadies: today's drag would fade.\",\n    \"Dollar's crowded long unwinds: pressure on stocks and gold may ease.\",\n",
+  "degraded_reason": "truncated",
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
+  "style_flags": [],
   "nw_context_used": true,
   "cortex_status": "absent",
   "refresh_days": 1,
@@ -65,9 +83,35 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "Real-rate shock",
-      "value_zh": "Real-rate shock",
+      "value_en": "China stimulus",
+      "value_zh": "China stimulus",
       "tone": "info"
     }
-  ]
+  ],
+  "zh": {
+    "summary": "\u4e2d\u56fd\u907f\u9669\u60c5\u7eea\u62d6\u7d2f\u9999\u6e2f\u80a1\u5e02\u3001\u5185\u5730\u80a1\u5e02\u548c\u94dc\u4ef7\uff0c\u800c\u7f8e\u56fd\u56fe\u8c31\u6b63\u6ed1\u5411\u589e\u957f\u75b2\u8f6f\u548c\u901a\u80c0\u5347\u6e29\u3002",
+    "regime_read": "\u7f8e\u56fd\u56fe\u8c31\u4ecd\u5e26\u7740\u201c\u518d\u901a\u80c0\u201d\u6807\u7b7e\uff0c\u4f46\u5e02\u573a\u5bf9\u5176\u4fe1\u5fc3\u975e\u5e38\u4f4e\u3002\u589e\u957f\u8f83\u4e00\u4e2a\u6708\u524d\u964d\u6e29\uff0c\u901a\u80c0\u4e5f\u540c\u6b65\u964d\u6e29\uff1b\u56fe\u8c31\u5f53\u524d\u6b63\u6f02\u5411\u589e\u957f\u75b2\u8f6f\u3001\u901a\u80c0\u5347\u6e29\u7684\u89d2\u843d\uff0c\u76ee\u524d\u5904\u4e8e\u4e3a\u671f\u4e03\u4e2a\u4ea4\u6613\u65e5\u7684\u786e\u8ba4\u8fdb\u7a0b\u4e2d\u7684\u7b2c\u4e00\u5929\u3002\u4eca\u65e5\u88ab\u70b9\u540d\u7684\u9a71\u52a8\u56e0\u7d20\u662f\u4e2d\u56fd\u907f\u9669\u60c5\u7eea\uff1a\u9999\u6e2f\u80a1\u5e02\u3001\u5185\u5730\u80a1\u5e02\u548c\u94dc\u4ef7\u9886\u8dcc\uff0c\u4f46\u4fe1\u53f7\u6df7\u6742\u3001\u4fe1\u5fc3\u4e0d\u8db3\u3002\n\n\u503a\u5e02\u548c\u4fe1\u7528\u5e02\u573a\u5e73\u9759\u800c\u975e\u6050\u614c\uff1a\u503a\u5238\u5065\u5eb7\u5ea6\u5f3a\u52b2\u3001\u4fe1\u7528\u5229\u5dee\u6536\u7d27\u3001\u538b\u529b\u6307\u6807\u5e73\u7a33\u3002\u4f46\u80a1\u503a\u5bf9\u51b2\u5931\u6548\uff0c\u7f8e\u5143\u5934\u5bf8\u62e5\u6324\uff0c\u56e0\u6b64\u8fd9\u79cd\u5e73\u9759\u5e76\u975e\u8b66\u62a5\u89e3\u9664\u3002",
+    "rotation_check": "\u884c\u60c5\u540e\u6bb5\u6b63\u663e\u73b0\u538b\u529b\uff1a\u4e2d\u56fd\u3001\u9999\u6e2f\u548c\u52a0\u5bc6\u8d27\u5e01\u8d70\u8f6f\uff0c\u6d41\u52a8\u6027\u6536\u7f29\u3002\u8fd9\u7b26\u5408\u5e73\u4ed3\u8def\u5f84\uff0c\u4f46\u8d70\u52bf\u4ecd\u5c5e\u4f4e\u4fe1\u5fc3\u3002",
+    "tldr": [
+      "\u4e2d\u56fd\u62d6\u7d2f\uff1a\u9999\u6e2f\u53ca\u5185\u5730\u80a1\u5e02\u548c\u94dc\u4ef7\u9886\u8dcc\u5e02\u573a\u3002",
+      "\u7f8e\u56fd\u56fe\u666f\uff1a\u518d\u901a\u80c0\u4ea4\u6613\u652f\u6491\u75b2\u5f31\uff0c\u6b63\u6ed1\u5411\u4f4e\u589e\u957f\u3001\u6e29\u548c\u901a\u80c0\u3002",
+      "\u503a\u5238\u5e73\u9759\uff1a\u4fe1\u7528\u8d8b\u7d27\u800c\u503a\u5238\u57fa\u672c\u9762\u5f3a\u52b2\uff0c\u4f46\u5bf9\u51b2\u5df2\u5931\u6548\u3002",
+      "\u7f8e\u5143\u5206\u5316\uff1a\u4eca\u65e5\u75b2\u8f6f\uff0c\u4f46\u591a\u5934\u5934\u5bf8\u62e5\u6324\uff0c\u4ecd\u770b\u591a\u7f8e\u5143\u3002",
+      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\uff0c\u5207\u52ff\u8ffd\u9ad8\u3002"
+    ],
+    "conflicts": [
+      "\u503a\u80a1\u5206\u5316\uff1a\u80a1\u5e02\u5448\u73b0\u98ce\u9669\u504f\u597d\uff0c\u4f46\u503a\u5e02\u5904\u4e8e\u5468\u671f\u540e\u6bb5\u4e14\u5065\u5eb7\uff0c\u5bf9\u51b2\u5df2\u5931\u6548\u2014\u2014\u5e94\u5c06\u7f8e\u56fd\u56fe\u8c31\u89c6\u4e3a\u8106\u5f31\uff0c\u800c\u975e\u5df2\u786e\u8ba4\u3002",
+      "\u7f8e\u5143\u5206\u5316\uff1a\u4eca\u65e5\u7f8e\u5143\u75b2\u8f6f\uff0c\u504f\u5411\u652f\u6491\u80a1\u5e02\uff0c\u4f46\u5934\u5bf8\u8ffd\u8e2a\u663e\u793a\u591a\u5934\u5f02\u5e38\u62e5\u6324\u2014\u2014\u8fd9\u662f\u62e5\u6324\u5e73\u4ed3\u98ce\u9669\uff0c\u800c\u975e\u6e05\u6670\u8d8b\u52bf\u3002",
+      "\u4e2d\u56fd\u6df7\u5408\u4fe1\u53f7\uff1a\u9999\u6e2f\u56fe\u8c31\u5904\u4e8e\u201c\u91d1\u53d1\u5973\u90ce\u201d\u72b6\u6001\uff0c\u800c\u5185\u5730\u4e2d\u56fd\u5904\u4e8e\u589e\u957f\u6050\u614c\u2014\u2014\u4e2d\u56fd\u7684\u62d6\u7d2f\u5e76\u4e0d\u5747\u5300\uff0c\u4e0d\u662f\u5355\u4e00\u6e05\u6670\u4fe1\u53f7\u3002"
+    ],
+    "transmission": [
+      "\u5982\u679c\u4e2d\u56fd\u907f\u9669\u60c5\u7eea\u6301\u7eed \u2192 \u9999\u6e2f\u53ca\u5185\u5730\u80a1\u5e02\u548c\u94dc\u4ef7\u4fdd\u6301\u627f\u538b\uff0c\u5168\u7403\u98ce\u9669\u504f\u597d\u51cf\u5f31\u3002",
+      "\u5982\u679c\u957f\u7aef\u6536\u76ca\u7387\u6324\u538b\u6301\u7eed \u2192 \u79d1\u6280\u80a1\u548c\u957f\u4e45\u671f\u80a1\u7968\u6301\u7eed\u627f\u538b\uff0c\u94f6\u884c\u548c\u80fd\u6e90\u80a1\u4ecd\u53d7\u9752\u7750\u3002"
+    ],
+    "watch_items": [
+      "\u7f8e\u56fd\u6570\u636e\u56fe\u786e\u8ba4\u8fde\u7eed\u4e03\u4e2a\u4ea4\u6613\u65e5\u5448\u589e\u957f\u504f\u5f31/\u901a\u80c0\u504f\u6696\u683c\u5c40\uff1a\u98ce\u9669\u673a\u5236\u8f6c\u53d8\u3002",
+      "\u4e2d\u56fd\u80a1\u5e02\u53cd\u8f6c\uff0c\u94dc\u4ef7\u4f01\u7a33\uff1a\u4eca\u65e5\u62d6\u7d2f\u5c06\u6d88\u9000\u3002",
+      "\u7f8e\u5143\u62e5\u6324\u591a\u5934\u4ed3\u4f4d\u89e3\u9664\uff1a\u80a1\u7968\u548c\u9ec4\u91d1\u7684\u538b\u529b\u53ef\u80fd\u7f13\u89e3\u3002"
+    ]
+  }
 }

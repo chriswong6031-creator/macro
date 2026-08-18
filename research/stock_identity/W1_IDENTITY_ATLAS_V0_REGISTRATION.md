@@ -300,9 +300,86 @@ collection advances the curated file. The governing input is the normalized 3,17
 OHLCV prefix from 2014-01-02 through 2026-08-13, whose versioned logical digest is
 `6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db`. The digest serializes an algorithm-version header, the fixed
 `Date/open/high/low/close/volume` schema, each ISO date, and each normalized float64
-value via Python's exact hexadecimal representation. Post-asof appends may not move it;
-any historical revision must. A program-owned B plane and the close-only Yahoo B file
-are prohibited.
+value via Python's exact hexadecimal representation. ~~Post-asof appends may not move it;
+any historical revision must.~~ (superseded 2026-08-18 — see A1.3a.) A program-owned B
+plane and the close-only Yahoo B file are prohibited.
+
+#### A1.3a Frozen prefix snapshot and the live-plane revision tripwire (2026-08-18)
+
+**The struck sentence is architecturally false for this file.** Post-asof appends are not
+the only nightly mutation: `scripts/fetch_basket_ohlcv.py` re-downloads the **full**
+auto-adjusted history every collection night (`yf.download(start=2014-01-01,
+auto_adjust=True)`) and lets the new vendor frame win the merge, so the already-elapsed
+2014-01-02..asof prefix is re-derived — and re-rounded — every night. Measured
+2026-08-18, two collection commits **21 minutes apart** moved 2,214 then 2,341 of the
+3,172 prefix rows and produced two different digests (`2f4d9467…`, `a77fdc41…`) after the
+registered `6d8988fc…`. Enforcing an exact digest against the live plane therefore reds
+the whole fleet on every collection night by construction, which is what happened from
+04:02Z on 2026-08-18.
+
+PR #5865 repaired the storage half: the registered prefix now lives in immutable
+program-owned storage at `data/stock_identity/source/b_registered_prefix_v1.parquet`,
+pinned by `B_SNAPSHOT_FILE_SHA256`, and `B_SOURCE_PREFIX_SHA256` is **unchanged** and
+still enforced — against the snapshot, which nothing rewrites. The digest was
+re-anchored, never re-stamped, so every sealed receipt naming it remains true
+byte-for-byte.
+
+**This section registers the second half: what the live-plane check may assert.** The
+band is on the **uniformity** of the vendor's rescale, not on its level, and the
+distinction is load-bearing rather than stylistic. `auto_adjust=True` re-scales the whole
+elapsed history on every **future** ex-dividend, so a routine ~$0.10 Barrick quarterly on
+a ~$41 tape moves every historical row by ~`2.4e-3`. A level band at `1e-5` fires on
+that — and on far less; simulated against the frozen snapshot, a $0.02 dividend lands at
+`4.90e-04` and even a $0.005 dividend at `1.22e-04`, all red — so it would re-red the
+fleet on the next ex-date, reproducing this same defect on a quarterly clock. It also
+measures the wrong quantity: a uniform rescale leaves every return, drawdown and
+percentage gap identical, so it cannot move an A1 conclusion. What can is a change in
+**relative** prices.
+
+Measured seed→live over the 3,172-row prefix:
+
+- `open/high/low/close` move by a **single per-row float64 factor**, coherent across the
+  four columns to `4.4e-16` — adjustment arithmetic, not a restated print.
+- normalized by the window-wide median factor, that factor stays within `8.63e-07` of
+  uniform (worst row 2014; `8.8e-08` by 2026). The three collections span four days and
+  contain **no dividend**, so this bounds *re-derivation jitter* and is not evidence about
+  accumulation across a lengthening adjustment chain.
+- `volume` is byte-identical on all 3,171 **settled** rows across three collections.
+  Only the asof bar moved (10,621,100 → 10,625,700, `4.33e-04`): its consolidated tape was
+  still settling when the snapshot was cut. A blanket volume tolerance is therefore
+  wrong — it would let a settled-session restatement below the band pass unseen.
+
+Enforced checks (`scripts/stock_identity_build_w1a1.py`), in evaluation order:
+
+| check | band | worst observed | fires on |
+|---|---|---|---|
+| O/H/L/C per-row factor coherence | `1e-6` | `4.4e-16` | a single restated print ≥ `1e-6` |
+| per-row factor residual vs window median | `1e-5` | `8.63e-07` | any change in relative prices |
+| settled-session volume | exact | 0 rows | splits; any vendor volume restatement |
+| asof-session volume | `1e-2` | `4.33e-04` | more than late tape consolidation |
+| gross window rescale (sanity only) | `[0.2, 5.0]` | `1.000000` | a broken vendor frame |
+
+Splits stay covered on the **volume** channel, since split adjustment rescales share
+counts as well as prices. A frame that rescaled prices but left share counts untouched
+passes deliberately — with volume unmoved it is return-preserving.
+
+The coherence band is deliberately **not** the observed `4.4e-16`. Coherence holds that
+tightly only because the vendor derives O/H/L from one float64 ratio and sets
+`close = adjclose`, so the common factor cancels; the underlying raw prints are
+float32-quantized (they arrive as `40.79999923706055`), a grid of ~`6e-8`. A
+machine-epsilon band would sit *below the noise floor of the quantity it guards*, so one
+raw print re-quantizing by a single ULP would re-red the fleet and misreport vendor noise
+as a print revision. `1e-6` sits ~16× above that grid while still catching any
+single-column restatement large enough to mean anything — `1e-6` of a $41 tape is
+$0.00004. Coherence cannot be dropped: it is the **only** detector of a one-column move,
+because a lone outlier among four leaves the median, and therefore the residual,
+untouched. Volume is checked **before** the gross bound so a real corporate action is
+diagnosed as one rather than as a broken vendor frame.
+
+`tests/test_stock_identity_atlas.py` proves both directions: re-adjustment noise, three
+dividend scales and a deep `0.85×` re-adjustment all pass, while a 2:1 split, a
+settled-volume restatement of +0.5%, a one-column move just above the float32 grid, a
+segment restatement, an asof-volume blowout and a broken vendor frame each fire.
 
 Existing committed W1 artifacts are pinned before and after the run:
 
