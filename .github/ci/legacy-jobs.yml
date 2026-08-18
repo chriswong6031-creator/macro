@@ -3113,8 +3113,14 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyyaml
-      - name: nyse calendar rules + first-party imported-name resolution
-        run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
+      # tsx_calendar joins its NYSE sibling here (2026-08-17): same subject — an
+      # exchange calendar sitting under a freshness SLA — same stdlib-only, hermetic
+      # shape, and the same reason. It is the session reference
+      # scripts/check_nightly_liveness.py check D grades the Canadian board against,
+      # so its rule arithmetic must not be UNRUN the way test_nyse_calendar.py was
+      # until 2026-07-27.
+      - name: nyse + tsx calendar rules, first-party imported-name resolution
+        run: python -m pytest tests/test_nyse_calendar.py tests/test_tsx_calendar.py tests/test_first_party_import_names.py -q
       # SP1-B: restrict_to_nyse_sessions must refuse a weekend-contaminated
       # price index. Belongs HERE — the filter is session_rows + is_session,
       # which this job already owns. Hermetic (synthetic dates, no data/).
