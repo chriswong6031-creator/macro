@@ -696,9 +696,17 @@ def test_atom_scanner_advances_by_served_not_by_requested() -> None:
     #5854 fixed came from assuming EDGAR honours ``count``, and it rounds down.
 
     Measured against the shipped code with an EDGAR that ignores ``count`` and
-    always serves 100: the walk stays clean and terminates at the boundary.
-    With ``start += count`` instead, the cursor lags what was consumed, so the
-    scan re-fetches an overlapping window and runs an extra page.
+    always serves 100.  With ``start += count`` instead, the cursor lags what
+    was consumed, so the scan re-fetches an overlapping window and runs an extra
+    page.
+
+    Read the 800 below as relative advance behaviour, NOT as boundary respect.
+    ``entry_limit`` is enforced on ``start``, which only bounds the entry count
+    while EDGAR serves what it was asked for; under a hypothetical over-server
+    NEITHER variant holds the 750 line (shipped overshoots to 800, the lagging
+    cursor to 840).  The claim under test is that the shipped cursor tracks what
+    was served and therefore overshoots less, not that the boundary survives an
+    EDGAR that breaks its own count contract.
     """
 
     def over_serving(url: str) -> bytes:
