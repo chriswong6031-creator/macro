@@ -599,37 +599,39 @@ def why_now_strings(direction: str, *, q_oi_v: float | None = None, q_skew_v: fl
                      c_sev: float | None = None) -> list[dict[str, str]]:
     out: list[dict[str, str]] = []
     if direction in ("LONG", "SHORT"):
-        tilt_en = "call-side" if (q_oi_v or 0) >= 0 else "put-side"
-        tilt_zh = "看涨方向" if (q_oi_v or 0) >= 0 else "看跌方向"
+        tilt_en = "call" if (q_oi_v or 0) >= 0 else "put"
+        tilt_zh = "看涨" if (q_oi_v or 0) >= 0 else "看跌"
         out.append({
-            "en": f"Contract-matched open-interest lean is {tilt_en} ({q_oi_v:.2f} unsigned positioning hypothesis)",
-            "zh": f"合约匹配的未平仓量倾向{tilt_zh}（{q_oi_v:.2f}，未签名的持仓假设）",
+            "en": f"Open interest grew mostly on the {tilt_en} side",
+            "zh": f"未平仓量增长主要集中在{tilt_zh}一侧",
         })
         skew_word_en = "flattened" if (q_skew_v or 0) >= 0 else "steepened"
         skew_word_zh = "走平" if (q_skew_v or 0) >= 0 else "走陡"
         out.append({
-            "en": f"25-delta skew change {skew_word_en} unusually ({q_skew_v:.2f})",
-            "zh": f"25-delta偏度变化异常{skew_word_zh}（{q_skew_v:.2f}）",
+            "en": f"Downside skew {skew_word_en} unusually",
+            "zh": f"下行偏度异常{skew_word_zh}",
         })
         out.append({
-            "en": f"Research-priority salience {d_sal:.2f} of 1.00",
-            "zh": f"研究优先度显著性 {d_sal:.2f}（满分1.00）",
+            "en": "Activity far above its normal range",
+            "zh": "活跃度远高于正常区间",
         })
     elif direction == "VOLATILITY":
         if f_e is not None:
+            ep_word_en = "high" if f_e >= 0 else "low"
+            ep_word_zh = "偏高" if f_e >= 0 else "偏低"
             out.append({
-                "en": f"Event-premium extremity {f_e:+.2f} vs event peers",
-                "zh": f"事件溢价极端度 {f_e:+.2f}（相对事件同类）",
+                "en": f"Event premium {ep_word_en} versus current event peers",
+                "zh": f"事件溢价相对当前事件同类{ep_word_zh}",
             })
         if f_v is not None:
             out.append({
-                "en": f"Volatility-family extremity {f_v:+.2f}",
-                "zh": f"波动率家族极端度 {f_v:+.2f}",
+                "en": "Volatility evidence far outside its normal range",
+                "zh": "波动率证据远超正常区间",
             })
     elif direction == "RISK_ONLY":
         out.append({
-            "en": f"Crowding/extension severity {c_sev:.2f}",
-            "zh": f"拥挤/延伸严重度 {c_sev:.2f}",
+            "en": "Crowding or mechanical risk is active",
+            "zh": "拥挤或机制性风险处于活跃状态",
         })
     return out
 
