@@ -130,6 +130,36 @@ def real_census(real_report):
     return real_report["estimability_census"]
 
 
+@pytest.fixture(scope="module")
+def registered_report():
+    """The COMMITTED PR-2 artifact — the REGISTERED read, never a re-run.
+
+    `retro_grades.parquet` carries ONE ROW PER (board date, ticker, horizon) and appends
+    each horizon as it matures, so a board date keeps growing for 21 sessions after it is
+    published.  Every number PR-2 registered was therefore measured on a frame that was
+    still maturing, and a re-run can never land on it again: on 2026-08-18 the nightly
+    (`f960202b`, "engine: regime update") matured 07-15's H=21 and 07-30/07-31's H=10 and
+    added the 08-07 board, moving the frame 4,077 -> 4,566 rows and 24 -> 25 dates.  An
+    as-of cutoff does NOT recover the vintage either — the maturation lands INSIDE the
+    registered window (cut at 2026-07-31 gives 4,409 rows, not 4,077).
+
+    So a claim about what PR-2 REGISTERED is a claim about this file.  Asserting it
+    against a rebuild is a standing race that reds the fleet on data alone, and the only
+    other way to green such an assertion is to re-stamp registered evidence — which the
+    §9.4 parity test could not survive anyway, since it compares two committed artifacts.
+    Structural claims that hold at ANY vintage keep using `real_report` and still exercise
+    the harness end-to-end on the live frame.
+    """
+    if not REPORT_PATH.exists():
+        pytest.skip("PR-2 report not committed yet")
+    return json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def registered_census(registered_report):
+    return registered_report["estimability_census"]
+
+
 def _all_keys(node) -> set[str]:
     """Every mapping KEY in a nested document.
 
@@ -532,10 +562,9 @@ class TestCMI:
         assert cell["status"] == "NOT_ESTIMABLE"
         assert "Z-bin(s) [2] empty" in cell["reason"]
 
-    @NEEDS_REAL_FRAME
-    def test_h21_refuses_on_real_frame(self, real_report):
+    def test_h21_refuses_on_real_frame(self, registered_report):
         """7 graded dates at H=21 cannot support the estimator; print it, do not fit it."""
-        cells = [c for c in real_report["cmi"]["cells"] if c["horizon"] == 21]
+        cells = [c for c in registered_report["cmi"]["cells"] if c["horizon"] == 21]
         assert cells
         for cell in cells:
             assert cell["status"] == "NOT_ESTIMABLE"
@@ -777,9 +806,8 @@ class TestWhatDoesXAddTable:
         assert rows["F8_ATTENTION_CROWDING"]["verdict"] == "not_estimable"
         assert "vote_inert" in rows["F8_ATTENTION_CROWDING"]["sub_reasons"]
 
-    @NEEDS_REAL_FRAME
     @pytest.mark.skipif(not PR1B_REPORT.exists(), reason="PR-1b artifact not committed")
-    def test_the_descriptive_tier_reproduces_pr1b_section_9_4(self, real_report):
+    def test_the_descriptive_tier_reproduces_pr1b_section_9_4(self, registered_report):
         """Parity is asserted against the PR-1b ARTIFACT, never against typed literals.
 
         A hand-copied number pins the transcription, not the construction: if PR-1b is
@@ -790,7 +818,7 @@ class TestWhatDoesXAddTable:
         theirs = {row["family"]: row for row in
                   pr1b["c1_analysis"]["incremental_over_champion"]}
         ours = {cell["family"]: cell for cell in
-                real_report["incremental"]["descriptive"]["score_membership"]["cells"]
+                registered_report["incremental"]["descriptive"]["score_membership"]["cells"]
                 if cell["horizon"] == c2.PRIMARY_HORIZON}
         shared = sorted(set(theirs) & set(ours))
         assert shared, "no family is present in both artifacts — parity is unasserted"
@@ -802,10 +830,9 @@ class TestWhatDoesXAddTable:
                     f"score-membership construction is supposed to BE PR-1b §9.4's")
                 assert ours[family][block]["n_dates"] == theirs[family][block]["n_dates"]
 
-    @NEEDS_REAL_FRAME
-    def test_the_verdict_keys_on_t_and_both_references_are_printed(self, real_report):
+    def test_the_verdict_keys_on_t_and_both_references_are_printed(self, registered_report):
         """F-1: the normal reference decided the draft's only rejection. Pin the fix."""
-        table = real_report["what_does_x_add"]
+        table = registered_report["what_does_x_add"]
         assert table["verdict_keys_on"] == "p_t"
         assert "t" in table["p_method"] and "not immaterial" in table["p_method"].lower()
         measured = [row for row in table["rows"] if row["p_t"] is not None]
@@ -825,10 +852,9 @@ class TestWhatDoesXAddTable:
             "F5 rejects again — the table is reading the normal reference")
         assert table["n_rejections"] == 0
 
-    @NEEDS_REAL_FRAME
-    def test_design_membership_rides_beside_every_verdict(self, real_report):
+    def test_design_membership_rides_beside_every_verdict(self, registered_report):
         """F-2: F5's registered score includes the serving-dead insider_cluster."""
-        rows = {row["family"]: row for row in real_report["what_does_x_add"]["rows"]}
+        rows = {row["family"]: row for row in registered_report["what_does_x_add"]["rows"]}
         f5 = rows["F5_FLOW_POSITIONING"]
         design = f5["design_membership_effect"]
         assert design["status"] == "estimated"
@@ -862,10 +888,9 @@ class TestWhatDoesXAddTable:
         assert sorted(block["score_membership"]["members_per_family"][
             "F5_FLOW_POSITIONING"]) == ["insider_cluster", "smartmoney_add"]
 
-    @NEEDS_REAL_FRAME
-    def test_multiplicity_sensitivity_is_reported(self, real_report):
+    def test_multiplicity_sensitivity_is_reported(self, registered_report):
         """F-3: a floor that lowers the test count must answer with the other table."""
-        block = real_report["what_does_x_add"]["sensitivity"]
+        block = registered_report["what_does_x_add"]["sensitivity"]
         assert block["variant"] == "vote_inert_members_retained"
         assert block["requested_n_tests"] == 4
         assert "F8_ATTENTION_CROWDING" in block["families_retained"]
@@ -1058,10 +1083,9 @@ class TestDescriptiveMinDates:
         assert reference["p_t"] > reference["p_normal"], (
             "the t must be the more conservative reference at these block counts")
 
-    @NEEDS_REAL_FRAME
-    def test_h21_secondary_table_is_empty_because_every_cell_refuses(self, real_report):
+    def test_h21_secondary_table_is_empty_because_every_cell_refuses(self, registered_report):
         """7/7/4 date-blocks cannot support a two-sided p of either shape."""
-        table = real_report["what_does_x_add_secondary_horizons"]["21"]
+        table = registered_report["what_does_x_add_secondary_horizons"]["21"]
         assert table["n_tests"] == 0
         assert table["rows"] == []
         refused = {row["family"]: row for row in table["refused_below_min_dates"]}
@@ -1163,16 +1187,61 @@ class TestNullSemanticsOnTheVarianceAxis:
         assert axis["null_counts_as_a_measured_value"] is False
         assert inert["vote_inert"] is True
 
-    @NEEDS_REAL_FRAME
-    def test_news_burst_is_unchanged_by_the_null_semantics_fix(self, real_census):
+    def test_news_burst_is_unchanged_by_the_null_semantics_fix(self, registered_census):
         """news_burst stores 1,474 explicit False, so its 0.333 / inert read must hold."""
-        member = next(m for m in real_census["families"]["F8_ATTENTION_CROWDING"]["members"]
+        member = next(m for m in registered_census["families"]["F8_ATTENTION_CROWDING"]["members"]
                       if m["vote_column"] == "news_burst")
         axis = member["variance_axis"]["news_burst"]
         assert member["coverage"]["n_explicit_negative_values"] == 1474
         assert axis["null_counts_as_a_measured_value"] is False
         assert axis["variation_share"] == pytest.approx(0.3333, abs=1e-3)
         assert member["vote_inert"] is True
+
+
+class TestTheLedgerAccruesRatherThanRewrites:
+    """The registered artifact is frozen; its INPUT is not — and that is lawful.
+
+    This is the guard that replaces the literal-vs-rebuild assertions the vintage-bound
+    tests used to carry.  Those could not survive maturation; this one is written in the
+    only terms that hold at every vintage: the graded ledger may only ACCRUE over the
+    frame PR-2 registered.  A board date may gain horizons, and new board dates may
+    arrive.  What may NOT happen is a rewrite of settled history — and if one does, this
+    reds by name instead of the study silently reporting different numbers under the
+    registered numbers' heading.
+
+    Measured 2026-08-18: 4,077 -> 4,566 rows and 24 -> 25 dates, entirely from H=21
+    maturing on 07-15, H=10 on 07-30/07-31, and the 08-07 board arriving.  Unique tickers
+    per affected date did not move (64/147/142 before and after), which is what separates
+    maturation from a double-collected board.
+    """
+
+    @NEEDS_REAL_FRAME
+    def test_the_live_frame_only_grows_over_the_registered_one(self, registered_report):
+        registered = registered_report["frames"]["frame2_graded_board"]["labels_receipt"]
+        live = c2.build_c2_frame().labels.receipt
+
+        assert live["rows_in"] >= registered["rows_in"], (
+            "the graded ledger LOST rows against the registered frame — accrual only")
+        assert live["n_dates"] >= registered["n_dates"]
+        assert live["date_range"][0] == registered["date_range"][0], (
+            "the registered window's first board date moved — that is a rewrite of "
+            "settled history, not maturation")
+        assert live["date_range"][1] >= registered["date_range"][1]
+
+    @NEEDS_REAL_FRAME
+    def test_the_frozen_pre_era_price_basis_population_never_moves(self,
+                                                                  registered_report):
+        """`unverified_pre_20260806` is closed by date, so its count is a rewrite alarm.
+
+        Rows stamped before the 08-06 price-basis era can never be re-graded into a
+        different basis; every re-adjustment lands on `adjusted`/`unadjusted`.  So this
+        one count is invariant while the other three legitimately grow, which makes it a
+        falsifier that a moving frame cannot trip on its own.
+        """
+        registered = registered_report["frames"]["frame2_graded_board"]["labels_receipt"]
+        frozen = registered["strata"]["counts"]["price_basis"]["unverified_pre_20260806"]
+        live = c2.build_c2_frame().labels.receipt
+        assert live["strata"]["counts"]["price_basis"]["unverified_pre_20260806"] == frozen
 
 
 class TestTrainServeRatio:
@@ -1277,12 +1346,12 @@ class TestDocTablesMatchTheArtifact:
     def _doc(self):
         return DOC_PATH.read_text(encoding="utf-8")
 
-    def test_the_cmi_table_cells_match_report_json(self, real_report):
+    def test_the_cmi_table_cells_match_report_json(self, registered_report):
         """§5's table prints `excess (p)` per family x horizon; every printed pair
         must equal the artifact's cell rounded to the doc's own precision."""
         doc = self._doc()
         cells = {(c["family"], int(c["horizon"])): c
-                 for c in real_report["cmi"]["cells"]}
+                 for c in registered_report["cmi"]["cells"]}
         import re
         row_re = re.compile(
             r"^\|\s*(F\d)\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$", re.M)
@@ -1307,12 +1376,12 @@ class TestDocTablesMatchTheArtifact:
             found += 1
         assert found == 3, f"expected 3 CMI doc rows, matched {found}"
 
-    def test_the_what_does_x_add_table_matches_report_json(self, real_report):
+    def test_the_what_does_x_add_table_matches_report_json(self, registered_report):
         """§7's measured rows print `p_t / p_normal / p_adj`; each must equal the
         artifact's row at the doc's 3-decimal precision, and the doc's verdict
         word must be the artifact's verdict."""
         doc = self._doc()
-        rows = {r["family"]: r for r in real_report["what_does_x_add"]["rows"]}
+        rows = {r["family"]: r for r in registered_report["what_does_x_add"]["rows"]}
         import re
         fam_map = {"F2": "F2_MOMENTUM_EXTENSION", "F4": "F4_CATALYST_EVENT",
                    "F5": "F5_FLOW_POSITIONING"}
@@ -1333,4 +1402,4 @@ class TestDocTablesMatchTheArtifact:
             found += 1
         assert found == 3, f"expected 3 measured what_does_x_add doc rows, matched {found}"
         assert "**Zero rejections.**" in doc
-        assert real_report["what_does_x_add"]["n_rejections"] == 0
+        assert registered_report["what_does_x_add"]["n_rejections"] == 0
