@@ -43,7 +43,10 @@ so_what: >
   collectors/usaspending_awards.py (torn-generation refusal :3956-3972, staged-replay
   binding :4030-4044) compares the run's state to the ledgers on the run's OWN disk, so a
   run whose entire base is stale is internally consistent and passes all of them; the
-  missing check is base-freshness against origin/main at push time.
+  missing check is base-freshness against origin/main at push time. Fourth: do NOT wait
+  this class of red out. Measured — the projection lane returns `status: ok`,
+  `append_count: 0` against the corrupted tree because it reads the committed
+  `latest.json`, not the spine the failing test rebuilds; see the detail section.
 kind: landmine
 verified_at: 2026-08-18
 verified_by: >
@@ -115,24 +118,68 @@ stale, because such a run is perfectly self-consistent — it simply does not kn
 newer generation exists. Nothing in the write path, and nothing in the push retry, asks
 whether `origin/main` moved under an append-only artifact between checkout and push.
 
-### What clears the CI red
+### What clears the CI red — MEASURED, and it is NOT the projection lane
 
-`test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_review` goes
-green when the govrev projection lane issues the 26 re-identified candidates forward,
-which is the disposition it already takes for any first-seen candidate. That lane —
-`government-revenue-live.yml`, "the sole SAM ledger and canonical Government Revenue
-projection owner" — is invoked by `daily.yml` at :1341-1346 and its
-`government_revenue_projection / refresh` job was queued behind the runner pool from
-2026-08-18T04:28:58Z. The scheduled 30-minute ticks of the same workflow cannot overtake
-it: they share `concurrency: group: government-revenue-live` with `cancel-in-progress: false`
-(:109-113), so run 32103699468 sat `pending` with zero jobs.
+An earlier revision of this record said the govrev projection lane would issue the 26
+forward and green the test. That was reasoning, not measurement, and **it is wrong.**
 
-Do NOT hand-write the missing ledger rows, allowlist the ids, or repair the parquet by
-hand. The ledger's sole legitimate advancer is the nightly. Restoring run A's
-`award_event_snapshots.parquet` alone does not work and correctly fails closed: the
-committed `award_event_projection_state.json` binds the *current* pair's semantic
-digests, so a rebuild against the restored file yields `status != ready` and ZERO
-candidates rather than the old 26 (measured).
+Run the projection against the committed tree in a sandbox root:
+
+```
+cp -R data/government_revenue $SB/data/ ; cp -R config/government_revenue $SB/config/ ; cp -R contracts $SB/
+python3 -m scripts.build_government_revenue_candidates --root $SB --generated-at 2026-08-18T08:00:00+00:00
+```
+
+It returns `"status":"ok"`, `"append_count":0`, `"candidate_count":48`, ledger unchanged at
+56 lines and the SAME `queue_content_id` `grcq1-d7948adf2acbf728e9e48270`. The lane is a
+stable no-op. Waiting for it — whether the queued
+`government_revenue_projection / refresh` job or a 30-minute scheduled tick — does not
+clear this red and never will.
+
+**Why: the projection and the failing test read different sources.**
+`validate_candidate_projection_inputs`
+(scripts/build_government_revenue_candidates.py:319-372) loads the committed canonical
+`data/government_revenue/latest.json` + `workspace.json`, which were published at 04:15Z
+off run A's spine and therefore still carry run A's identities. The failing test calls
+`build_payload(root=ROOT)` (tests/test_government_revenue_candidates.py:23), which
+rebuilds the payload live from the parquet spine that run B clobbered. Measured:
+committed `latest.json` `known_at` = `2026-08-18T02:42:13.240485+00:00`; a rebuild from
+the current spine yields `2026-08-18T01:55:22.848864+00:00`. **The published govrev
+surface and the spine it is supposed to derive from have diverged, and this test is the
+only reader that sees it.**
+
+**And the 26 cannot be issued forward even once `latest.json` is rebuilt.** All 26 carry
+`known_at` `2026-08-18T01:55:22.848864+00:00`; the frozen anti-backfill clock
+`prior_frozen_at` is the prior state's `generated_at` =
+`2026-08-18T04:17:31.654847+00:00`. Since `known_at <= prior_frozen_at` for all 26, and
+0 of their 26 stable keys are in the ledger's `issued_source_keys` and none match the
+8-entry suppression manifest, `_match_historical_suppressions`
+(scripts/build_government_revenue_candidates.py:993-1004) routes every one of them to
+`unknown_historical_ids` and raises `"new candidate observation is not forward of the
+prior frozen generated_at clock"`. So the next rebuild of `latest.json` converts this
+silent red into a hard projection-lane failure.
+
+**Neither reviewed manifest fits them.** `candidate_issuance_corrections.v1.json` is
+`policy: exact_issued_source_identity_only` / `decision:
+quarantine_erroneous_historical_issuance` and every entry carries `issued_generated_at`
+and `issued_row_sha256` — it quarantines rows that ARE in the ledger and were issued in
+error. These 26 were never issued. The historical-suppression manifest is held in exact
+bijection with that same 8-identity cohort by the failing test itself.
+
+**No file-level revert restores coherence.** Measured in the sandbox against
+59ccb9c774c8 (run A's generation): restoring `award_event_snapshots.parquet` alone →
+rebuild yields **0** candidates (the state binding fails closed); + `award_event_projection_state.json`
+→ still **0** (the state binds the action-versions parquet too); + `collection_receipts.jsonl`
+→ still **0**; reverting all **25** changed `data/government_revenue/` artifacts → 56 rows,
+0 orphaned, but **26 still unaccounted**. The two generations are entangled across the
+whole artifact set.
+
+**Therefore ci-pack-6 is WEDGED pending an operator decision.** Do not hand-write ledger
+rows, allowlist ids, or silence the guard — the guard is correct and is reporting a real
+divergence. The live options are (a) a reviewed disposition class for corruption-artifact
+identities, which neither existing manifest currently expresses, or (b) a full
+receipt-bound govrev re-baseline that rebuilds the canonical payload and the spine into
+one coherent generation. Both are operator calls.
 
 ### Residue this leaves on main
 
