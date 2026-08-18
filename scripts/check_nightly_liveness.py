@@ -308,6 +308,12 @@ class _WeekdayCalendar:
 #: before changing any budget here — the numbers are the argument.
 MARKET_BOARDS: tuple[dict, ...] = (
     {
+        # NOT redundant with check C, and do not "deduplicate" them. C reads
+        # site/prophet/index.json's ``source_asof``, which build_prophet derives from the
+        # PRICE watermark (_source_staleness["price_through"], build_prophet.py:1845);
+        # this reads the board's own selection date. They freeze independently and on
+        # origin/main @789e6e10 they already disagree — source_asof=2026-08-13 while
+        # us_standouts as_of=2026-08-14.
         "market": "us",
         "label": "US",
         "path": "site/factordata/us_standouts.json",
