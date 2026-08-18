@@ -1119,6 +1119,36 @@ def test_d1_complete_workspace_hides_compact_loading_banner(tmp_path: Path) -> N
     assert "Members only" not in out["filmstripHtml"]
 
 
+def _d11_agency_event(event_id: str, agency: dict | str | None, **overrides) -> dict:
+    row = {
+        "contract": "government_procurement_event.v2",
+        "event_id": event_id,
+        "record_id": f"award:{event_id}",
+        "kind": "award_change",
+        "title_original": event_id,
+        "agency": agency,
+        "change": {
+            "type": "obligation",
+            "known_at": "2026-08-01T01:00:00Z",
+            "what_changed_en": event_id,
+            "changed_fields": [],
+        },
+        "award_change": {
+            "award_key": event_id,
+            "piid": overrides.pop("piid", "PIID"),
+            "action_id": overrides.pop("action_id", "action"),
+            "recipient_name": "Acme",
+            "event_type": "obligation",
+            "source_rail": "usaspending_award_action",
+            "is_late_discovery": overrides.pop("is_late_discovery", False),
+        },
+        "evidence": {"source_class": "official_award_action", "receipts": []},
+        "listed_company_impacts": overrides.pop("listed_company_impacts", []),
+    }
+    row.update(overrides)
+    return row
+
+
 @needs_node
 def test_d1_agency_filters_are_human_names_not_python_dicts(tmp_path: Path) -> None:
     workspace = {
@@ -1127,56 +1157,17 @@ def test_d1_agency_filters_are_human_names_not_python_dicts(tmp_path: Path) -> N
         "total": 2,
         "next_cursor": None,
         "events": [
-            {
-                "contract": "government_procurement_event.v2",
-                "event_id": "govws-agency-object",
-                "record_id": "award:CONT_OBJ",
-                "kind": "award_change",
-                "title_original": "Object agency",
-                "agency": {"name": None, "department_name": "Department of the Navy"},
-                "change": {
-                    "type": "obligation",
-                    "known_at": "2026-08-01T01:00:00Z",
-                    "what_changed_en": "Object agency",
-                    "changed_fields": [],
-                },
-                "award_change": {
-                    "award_key": "CONT_OBJ",
-                    "piid": "N00024",
-                    "action_id": "action-obj",
-                    "recipient_name": "Acme",
-                    "event_type": "obligation",
-                    "source_rail": "usaspending_award_action",
-                    "is_late_discovery": True,
-                },
-                "evidence": {"source_class": "official_award_action", "receipts": []},
-                "listed_company_impacts": [],
-            },
-            {
-                "contract": "government_procurement_event.v2",
-                "event_id": "govws-agency-repr",
-                "record_id": "award:CONT_REPR",
-                "kind": "award_change",
-                "title_original": "Repr agency",
-                "agency": "{'name': None, 'department_name': None}",
-                "change": {
-                    "type": "obligation",
-                    "known_at": "2026-08-01T01:00:00Z",
-                    "what_changed_en": "Repr agency",
-                    "changed_fields": [],
-                },
-                "award_change": {
-                    "award_key": "CONT_REPR",
-                    "piid": "FA0001",
-                    "action_id": "action-repr",
-                    "recipient_name": "Acme",
-                    "event_type": "obligation",
-                    "source_rail": "usaspending_award_action",
-                    "is_late_discovery": False,
-                },
-                "evidence": {"source_class": "official_award_action", "receipts": []},
-                "listed_company_impacts": [],
-            },
+            _d11_agency_event(
+                "govws-agency-object",
+                {"name": None, "department_name": "Department of the Navy"},
+                piid="N00024",
+                is_late_discovery=True,
+            ),
+            _d11_agency_event(
+                "govws-agency-repr",
+                "{'name': None, 'department_name': None}",
+                piid="FA0001",
+            ),
         ],
         "coverage": {"events_visible": 2},
         "freshness": {"status": "ok"},
@@ -1199,6 +1190,86 @@ def test_d1_agency_filters_are_human_names_not_python_dicts(tmp_path: Path) -> N
     agencies = set(out["agencyNames"])
     assert "Department of the Navy" in agencies
     assert "Unspecified agency" in agencies
+
+
+@needs_node
+def test_d11_agency_labels_preserve_source_semantics(tmp_path: Path) -> None:
+    """Semantic preservation, not merely sanitization of `{` / `: None`."""
+
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "d" * 24,
+        "total": 4,
+        "next_cursor": None,
+        "events": [
+            _d11_agency_event(
+                "govws-p00032",
+                {
+                    "department_name": "Department of Defense",
+                    "subagency_name": "Defense Information Systems Agency",
+                    "office_name": "TELECOMMUNICATIONS DIVISION- HC1013",
+                    "name": "Department of Defense",
+                    "subagency": "Defense Information Systems Agency",
+                },
+                piid="HC101319C0006",
+                action_id="CONT_TX_9700_-NONE-_HC101319C0006_P00032_-NONE-_0",
+                is_late_discovery=True,
+                listed_company_impacts=[{"ticker": "IRDM"}],
+            ),
+            _d11_agency_event(
+                "govws-nasa",
+                {
+                    "department_name": "National Aeronautics and Space Administration",
+                    "subagency_name": "National Aeronautics and Space Administration",
+                    "name": "National Aeronautics and Space Administration",
+                },
+                piid="NAS8-001",
+            ),
+            _d11_agency_event(
+                "govws-subagency-only",
+                {"department_name": None, "subagency_name": "Defense Logistics Agency", "name": None},
+                piid="SPM-001",
+            ),
+            _d11_agency_event(
+                "govws-missing",
+                {"department_name": None, "name": None, "subagency": None},
+                piid="UNK-001",
+            ),
+        ],
+        "coverage": {"events_visible": 4},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "IRDM", "name": "Iridium Communications"}],
+        "market": {},
+        "freshness": {"status": "ok", "opportunities": {"status": "unavailable"}},
+        "opportunity_intelligence": {
+            "market": {},
+            "opportunities": [],
+            "events": [],
+            "freshness": {"status": "unavailable", "records_visible": 0, "observed_at": None},
+        },
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(tmp_path, payload, workspace, 1_785_548_460_000)
+    html = out["agencyFilterHtml"]
+    names = out["agencyNames"]
+    assert "Department of Defense" in html
+    assert "National Aeronautics and Space Administration" in html
+    assert "Defense Logistics Agency" in html
+    assert "Unspecified agency" in html
+    assert names.count("Department of Defense") == 1
+    assert names.count("National Aeronautics and Space Administration") == 1
+    assert names.count("Defense Logistics Agency") == 1
+    assert names.count("Unspecified agency") == 1
+    assert "{'id'" not in html
+    assert ": None" not in html
+    assert "[object Object]" not in html
+    assert "{" not in html
+    assert "PROJECTION_MISSING" in TEMPLATE
+    assert "SOURCE_UNAVAILABLE" in TEMPLATE
+    assert out["workspaceComplete"] is True
 
 
 @needs_node
