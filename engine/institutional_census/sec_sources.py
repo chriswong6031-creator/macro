@@ -1248,6 +1248,11 @@ def scan_latest_filings_atom(
         boundary = datetime.fromisoformat(overlap_before.replace("Z", "+00:00"))
         if boundary.tzinfo is None:
             boundary = boundary.replace(tzinfo=timezone.utc)
+    # INVARIANT for any stop reason added below: return complete=True ONLY when
+    # the feed is genuinely exhausted.  `complete` is the single thing standing
+    # between a truncated scan and `status: "ok"` — rolling.py computes
+    # `has_coverage_gap = not atom_complete or backlog or failures` — so a stop
+    # reason that guesses True turns a coverage gap into a silent green receipt.
     collected: list[FilingDiscovery] = []
     seen: set[str] = set()
     pages = 0

@@ -2,14 +2,20 @@
 key: EDGAR-ATOM-TRANSIENT-IS-A-TIMEOUT
 claim: >
   The browse-edgar Atom surface fails ~1.6% of valid requests transiently, and
-  in the measured window every one of those failures was a transport-level READ
-  TIMEOUT, not the HTML "SEC.gov | File Unavailable" body that the failure is
-  usually reported as. Measured read-only on 2026-08-17 over 500 requests spread
-  across the production page offsets (start=0..700): 8 failures (1.6%), all
-  requests.exceptions.ReadTimeout, zero HTML bodies. All 5 failures that were
-  retried recovered on the FIRST retry. Successful-request latency was p50 1.6s,
-  p95 11.7s, max 25.7s against the probe's 30s read timeout — the failures are
-  the tail of a heavy-tailed latency distribution, not an unavailable surface.
+  transport-level READ TIMEOUTS dominate that population — NOT the HTML
+  "SEC.gov | File Unavailable" body the failure is usually reported as. Measured
+  read-only on 2026-08-17 over 500 requests spread across the production page
+  offsets (start=0..700): 8 failures (1.6%), all requests.exceptions.ReadTimeout,
+  zero HTML bodies in that window. All 5 failures that were retried recovered on
+  the FIRST retry. Successful-request latency was p50 1.6s, p95 11.7s, max 25.7s
+  against the probe's 30s read timeout — the failures are the tail of a
+  heavy-tailed latency distribution, not an unavailable surface. BOTH MODES ARE
+  REAL: the same day, an independent ~25-request probe (the #5854 session) caught
+  the HTML mode twice — start=0&count=30 and count=39 each returned
+  `<!DOCTYPE html>` and each succeeded on retry seconds later with an identical
+  URL. The two windows disagree because the HTML mode CLUSTERS, not because
+  either mismeasured. The durable point is therefore not "the transient is a
+  timeout" but "timeouts dominate, and a body-only check cannot see them".
 falsifier: >
   Re-run the paced read-only probe and observe either a transient rate
   materially above ~2%, HTML error bodies outnumbering timeouts, or retried
@@ -31,7 +37,11 @@ so_what: >
   failures are a latency tail rather than an outage, an immediate retry through
   the existing pacing is sufficient and no extra backoff is needed. Note the
   probe used a 30s read timeout while production allows 180s, so 1.6% is an
-  upper bound for the production lane.
+  upper bound for the production lane. DO NOT PRUNE the HTML-body branch
+  (`_is_html_error_body`) on the grounds that a probe window saw no HTML: that
+  mode is bursty and was observed twice in ~25 requests on the same day it was
+  absent from 500. A zero count in one window is not evidence the branch is dead
+  code, and removing it re-opens the failure this record exists to close.
 kind: landmine
 verified_at: 2026-08-17
 verified_by: >
@@ -40,7 +50,13 @@ verified_by: >
   at 5 req/s (production caps at 8, SEC allows 10), cycling start=0,100,...,700
   with production page sizes. Probe 1: 200 requests, 3 ReadTimeout, 0 HTML.
   Probe 2: 300 requests, 5 ReadTimeout, 0 HTML, each retried twice — 5/5
-  recovered on the first retry. Encoded as ATOM_FETCH_ATTEMPTS and
+  recovered on the first retry. The HTML-mode sighting is the #5854 session's
+  independent ~25-request probe the same day (start=0&count=30 and count=39).
+  Live-feed happy-path anchor at 04:07Z post-merge, entry_limit=750: the ladder
+  (0,100)(100,100)(200,100)(300,100)(400,100)(500,100)(600,100)(700,40)(740,10)
+  = 9 pages / 750 entries / complete=False / stop_reason=ephemeral_limit, pinned
+  by test_atom_scanner_matches_the_live_production_page_ladder. Encoded as
+  ATOM_FETCH_ATTEMPTS and
   SecSourceUnavailableError in engine/institutional_census/sec_sources.py, with
   the transport translation in scripts/run_institutional_13f_rolling.py, by
   PR #5858.

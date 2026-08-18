@@ -645,6 +645,46 @@ def _atom_fetcher(
     return fetch, calls
 
 
+def test_atom_scanner_matches_the_live_production_page_ladder() -> None:
+    """Anchor the happy path to what the real feed served on 2026-08-17.
+
+    Observed against live EDGAR at 04:07Z with the production entry_limit of
+    750, when the feed was genuinely deeper than that: 9 pages, no unhonored
+    page size, and the tail walked 700->740->750 rather than stopping short.
+    A change that alters this ladder has changed what production discovers.
+    """
+
+    calls: list[tuple[int, int]] = []
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        calls.append((start, count))
+        return _atom_page(start, count)
+
+    result = scan_latest_filings_atom(fetch, entry_limit=750)
+
+    assert calls == [
+        (0, 100),
+        (100, 100),
+        (200, 100),
+        (300, 100),
+        (400, 100),
+        (500, 100),
+        (600, 100),
+        (700, 40),
+        (740, 10),
+    ]
+    assert [count for _start, count in calls if count not in ATOM_HONORED_PAGE_SIZES] == []
+    assert result.pages_fetched == 9
+    assert len(result.entries) == 750
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 751))
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+    assert result.fetch_retries == 0
+
+
 def test_atom_html_error_page_is_not_a_broken_contract() -> None:
     """A transient outage page and a malformed feed must not be one error."""
 
