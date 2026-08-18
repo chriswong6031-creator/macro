@@ -1021,7 +1021,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-08-18T08:21:55.181251+00:00",
+  "generated_utc": "2026-08-18T11:44:17.251649+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -3260,7 +3260,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 76,
+      "n": 77,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {

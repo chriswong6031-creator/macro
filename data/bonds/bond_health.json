@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-08-17",
-    "built": "2026-08-18T06:44:18.375518+00:00",
+    "built": "2026-08-18T10:14:57.155738+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -709,18 +709,18 @@
       "synchronized": false
     },
     "swap_lines_bn": 0.1,
-    "em_stress_state": "strained",
+    "em_stress_state": "calm",
     "display_only": true
   },
   "corporate_credit": {
-    "as_of": "2026-08-13",
+    "as_of": "2026-08-18",
     "authority": {
       "rank": false,
       "size": false,
       "gate": false,
       "escalate": false
     },
-    "market_state": "Credit stress: rising",
+    "market_state": "Credit stress: low",
     "themes": {
       "hyperscaler_credit": {
         "stance_en": "Watch",
@@ -759,13 +759,13 @@
       }
     },
     "breadth": {
-      "finra_advance_share": 0.5984132643965057,
-      "finra_lows_share": 0.012,
+      "finra_advance_share": 0.24715831590433754,
+      "finra_lows_share": 0.132,
       "source": "FINRA trade data"
     },
     "watch": {
-      "orcl_g_spread_bp": 159.0,
-      "orcl_premium_vs_ig_bp": 80.0
+      "orcl_g_spread_bp": 158.0,
+      "orcl_premium_vs_ig_bp": 78.0
     },
     "divergence_accruing": true,
     "display_only": true

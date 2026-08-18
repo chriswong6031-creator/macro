@@ -2,7 +2,7 @@
   "schema": "price_pressure.v1",
   "engine_version": "price_pressure.v1",
   "asof": "2026-08-14",
-  "generated_utc": "2026-08-18T08:11:04+00:00",
+  "generated_utc": "2026-08-18T11:35:03+00:00",
   "display_only": true,
   "authority": {
     "can_rank": false,

@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-08-18T08:21:53Z",
+  "generated_at": "2026-08-18T11:44:15Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -42125,23 +42125,6 @@
         }
       },
       {
-        "ticker": "NMRA",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": -3.41,
-        "excess_42d_pp": 71.84,
-        "new_high_63d": false,
-        "dollar_vol_z21": 1.61,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "RXT",
         "sector": "",
         "benchmark": "SPY",
@@ -42151,6 +42134,23 @@
         "new_high_63d": false,
         "dollar_vol_z21": -0.87,
         "days_in_state": 40,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "NMRA",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": -3.41,
+        "excess_42d_pp": 71.84,
+        "new_high_63d": false,
+        "dollar_vol_z21": 1.61,
+        "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
         "context": {

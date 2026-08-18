@@ -41,6 +41,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "QBTS",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 20.9,
+   "last_price": 16.21,
+   "pct_since": -22.4,
+   "days_on_board": 2,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "ASTS",
    "sector": "Communication Services",
    "first_surfaced": "2026-07-30",
@@ -99,7 +112,7 @@
    "surfaced_price": 1.31,
    "last_price": 1.13,
    "pct_since": -13.7,
-   "days_on_board": 4,
+   "days_on_board": 3,
    "exit_date": "2026-08-17",
    "mark_date": "2026-08-17",
    "status": "stopped",
@@ -145,19 +158,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "REZI",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-01",
-   "surfaced_price": 21.34,
-   "last_price": 23.62,
-   "pct_since": 10.7,
-   "days_on_board": 4,
-   "exit_date": "2026-07-10",
-   "mark_date": "2026-07-10",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "T",
    "sector": "Communication Services",
    "first_surfaced": "2026-07-17",
@@ -194,6 +194,19 @@
    "exit_date": "2026-07-17",
    "mark_date": "2026-07-17",
    "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "REZI",
+   "sector": "Industrials",
+   "first_surfaced": "2026-06-30",
+   "surfaced_price": 21.66,
+   "last_price": 23.62,
+   "pct_since": 9.1,
+   "days_on_board": 5,
+   "exit_date": "2026-07-10",
+   "mark_date": "2026-07-10",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -297,19 +310,6 @@
    "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "USAR",
-   "sector": "Materials",
-   "first_surfaced": "2026-08-12",
-   "surfaced_price": 18.61,
-   "last_price": 20.0,
-   "pct_since": 7.5,
-   "days_on_board": 2,
-   "exit_date": "2026-08-14",
-   "mark_date": "2026-08-14",
    "status": "running",
    "lane": "buy"
   },
@@ -613,19 +613,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "KMT",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-15",
-   "surfaced_price": 35.31,
-   "last_price": 33.53,
-   "pct_since": -5.0,
-   "days_on_board": 3,
-   "exit_date": "2026-07-17",
-   "mark_date": "2026-07-17",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "ASO",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-07-24",
@@ -730,19 +717,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "ZWS",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-27",
-   "surfaced_price": 49.31,
-   "last_price": 51.42,
-   "pct_since": 4.3,
-   "days_on_board": 5,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "NUE",
    "sector": "Materials",
    "first_surfaced": "2026-07-31",
@@ -780,13 +754,39 @@
    "mark_date": "2026-08-07",
    "status": "running",
    "lane": "buy"
+  },
+  {
+   "ticker": "SMPL",
+   "sector": "Consumer Staples",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 11.31,
+   "last_price": 10.84,
+   "pct_since": -4.2,
+   "days_on_board": 1,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "FMC",
+   "sector": "Materials",
+   "first_surfaced": "2026-07-21",
+   "surfaced_price": 11.78,
+   "last_price": 11.3,
+   "pct_since": -4.1,
+   "days_on_board": 1,
+   "exit_date": "2026-07-24",
+   "mark_date": "2026-07-24",
+   "status": "stopped",
+   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 70,
-  "n_stopped": 76,
-  "n_flat": 312,
-  "n_total": 458,
+  "n_running": 69,
+  "n_stopped": 75,
+  "n_flat": 318,
+  "n_total": 462,
   "n_shown": 60,
   "median_pct": 0.0,
   "n_skipped_no_price": 4,
@@ -796,8 +796,8 @@
    "SITM",
    "U"
   ],
-  "win_rate": 0.153,
-  "avg_pct": 0.0,
+  "win_rate": 0.149,
+  "avg_pct": -0.0,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
    "mark": "close on the date the name left the buy board, not today's",

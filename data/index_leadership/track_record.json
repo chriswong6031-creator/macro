@@ -1,18 +1,18 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-13",
-  "generated_at": "2026-08-18T06:24:40.012985+00:00",
+  "as_of": "2026-08-17",
+  "generated_at": "2026-08-18T09:47:40.576516+00:00",
   "is_context_only": true,
-  "n_snapshots": 270,
-  "n_days": 8,
+  "n_snapshots": 291,
+  "n_days": 9,
   "horizons": {
     "5": {
-      "n_matured": 189,
+      "n_matured": 209,
       "by_stage": {
         "running": {
-          "n": 176,
-          "mean_fwd_rel": -0.0009,
-          "hit_rate": 0.483
+          "n": 194,
+          "mean_fwd_rel": -0.0,
+          "hit_rate": 0.495
         },
         "coiling": {
           "n": 7,
@@ -20,23 +20,23 @@
           "hit_rate": 0.429
         },
         "coiling_primed": {
-          "n": 6,
-          "mean_fwd_rel": 0.0233,
-          "hit_rate": 0.833
+          "n": 8,
+          "mean_fwd_rel": 0.0212,
+          "hit_rate": 0.875
         }
       },
-      "running_ic": 0.1591,
+      "running_ic": 0.1643,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 87,
+      "n_matured": 188,
       "by_stage": {
         "running": {
-          "n": 79,
-          "mean_fwd_rel": -0.0126,
-          "hit_rate": 0.468
+          "n": 175,
+          "mean_fwd_rel": 0.0003,
+          "hit_rate": 0.531
         },
         "coiling": {
           "n": 7,
@@ -44,12 +44,12 @@
           "hit_rate": 0.143
         },
         "coiling_primed": {
-          "n": 1,
-          "mean_fwd_rel": -0.0047,
-          "hit_rate": 0.0
+          "n": 6,
+          "mean_fwd_rel": 0.0295,
+          "hit_rate": 0.667
         }
       },
-      "running_ic": null,
+      "running_ic": 0.1945,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null

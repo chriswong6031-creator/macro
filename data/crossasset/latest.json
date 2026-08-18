@@ -300,15 +300,15 @@
       "flags_top": [
         {
           "key": "usd_positioning",
-          "en": "USD spec positioning crowded long (90.0th pctile) \u2014 a contrarian fragility/crowding gauge, not a timing signal (lagged, unmeasured).",
-          "zh": "\u7f8e\u5143\u6295\u673a\u6301\u4ed3\u62e5\u6324\u505a\u591a\uff08\u7b2c90.0\u767e\u5206\u4f4d\uff09\u2014 \u9006\u5411\u8106\u5f31\u6027/\u62e5\u6324\u5ea6\u8ba1\u91cf\uff0c\u975e\u62e9\u65f6\u4fe1\u53f7\uff08\u6ede\u540e\u3001\u672a\u6d4b\uff09\u3002",
+          "en": "USD spec positioning crowded long (91.0th pctile) \u2014 a contrarian fragility/crowding gauge, not a timing signal (lagged, unmeasured).",
+          "zh": "\u7f8e\u5143\u6295\u673a\u6301\u4ed3\u62e5\u6324\u505a\u591a\uff08\u7b2c91.0\u767e\u5206\u4f4d\uff09\u2014 \u9006\u5411\u8106\u5f31\u6027/\u62e5\u6324\u5ea6\u8ba1\u91cf\uff0c\u975e\u62e9\u65f6\u4fe1\u53f7\uff08\u6ede\u540e\u3001\u672a\u6d4b\uff09\u3002",
           "severity": "info",
           "owner": "fx",
           "lead": "context",
           "equity_blind": true
         }
       ],
-      "asof": "2026-08-13"
+      "asof": "2026-08-17"
     },
     "dollar": {
       "usd_dir": "flat",

@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
   "as_of": "2026-08-18",
-  "generated_at": "2026-08-18T08:21:56Z",
+  "generated_at": "2026-08-18T11:44:18Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -780,7 +780,7 @@
       "foresight": {
         "stage": "BROADENING (fingerprint)",
         "tier": "P",
-        "score": 41.7,
+        "score": 41.1,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1203,7 +1203,7 @@
       "foresight": {
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "score": 52.2,
+        "score": 60.0,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1269,7 +1269,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 40.6,
+        "score": 36.7,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1379,7 +1379,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-18T08:21:56Z",
-  "inputs_hash": "sha256:52d9784418ef2daf194b7fca88a45eebecee505961aef07d8969d6e31685dae1",
+  "produced_at": "2026-08-18T11:44:18Z",
+  "inputs_hash": "sha256:ca90be10c6afd9229d0f25f8c94bfa44e8900f0cb0052dd54544c7f4d6079a5d",
   "tier": "display"
 }

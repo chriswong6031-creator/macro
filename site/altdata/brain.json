@@ -7,37 +7,81 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-18",
-    "evaluated_at": "2026-08-18T07:58:39+00:00"
+    "evaluated_at": "2026-08-18T11:20:17+00:00"
   },
-  "generated_at": "2026-08-18T07:58:39.428345+00:00",
+  "generated_at": "2026-08-18T11:20:17.208984+00:00",
   "state_asof": "2026-08-18",
   "model": "claude-opus-4-8",
-  "regime_read": "The pack shows broad affiliation-based clustering across megacap tech (MSFT, NVDA, GOOGL, META) with unusually heavy congressional and insider footprint, but few clusters cohere into multi-channel, non-extended actionable reads. The strongest alignment is in MSFT (lobbying, GitHub, HF-model, app-demand, patents, plus Altman/Ackman affiliations), with MU showing the highest momentum but near extension territory.",
-  "regime_read_zh": "\u8bc1\u636e\u5305\u663e\u793a\u5927\u578b\u79d1\u6280\u80a1\uff08MSFT\u3001NVDA\u3001GOOGL\u3001META\uff09\u5b58\u5728\u5e7f\u6cdb\u7684\u5173\u8054\u6027\u805a\u7c7b\uff0c\u4e14\u56fd\u4f1a\u4e0e\u5185\u90e8\u4eba\u6301\u4ed3\u75d5\u8ff9\u5f02\u5e38\u96c6\u4e2d\uff0c\u4f46\u771f\u6b63\u5f62\u6210\u591a\u6e20\u9053\u3001\u975e\u8d85\u4e70\u53ef\u64cd\u4f5c\u5224\u8bfb\u7684\u805a\u7c7b\u5f88\u5c11\u3002\u6700\u5f3a\u5bf9\u9f50\u51fa\u73b0\u5728 MSFT\uff08\u6e38\u8bf4\u3001GitHub\u3001HF \u6a21\u578b\u3001\u5e94\u7528\u9700\u6c42\u3001\u4e13\u5229\uff0c\u53e0\u52a0 Altman/Ackman \u5173\u8054\uff09\uff0cMU \u52a8\u80fd\u6700\u5f3a\u4f46\u5df2\u63a5\u8fd1\u8d85\u4e70\u533a\u3002",
+  "regime_read": "The pack is dominated by mega-cap tech AI/infrastructure names, but convergence is mostly reputational and affiliation-driven rather than unusual proprietary activity; the only sharp non-mega signals are MU's clean insider/upgrade momentum cluster, and MSFT's six-channel breadth held back by a moderate relative move. Congressional flows are parked in NVDA, AAPL, GOOGL, AMZN \u2014 a crowded consensual field, not a differentiated edge.",
+  "regime_read_zh": "\u8bc1\u636e\u5305\u7531\u8d85\u5927\u578b\u79d1\u6280AI/\u57fa\u7840\u8bbe\u65bd\u80a1\u4e3b\u5bfc\uff0c\u4f46\u805a\u5408\u5927\u591a\u662f\u58f0\u671b\u4e0e\u5173\u8054\u6027\u9a71\u52a8\uff0c\u800c\u975e\u5f02\u5e38\u4e13\u6709\u6d3b\u52a8\uff1b\u552f\u4e00\u9510\u5229\u7684\u975e\u8d85\u5927\u578b\u4fe1\u53f7\u662fMU\u5e72\u51c0\u7684\u5185\u90e8\u4eba/\u8bc4\u7ea7\u5347\u7ea7\u52a8\u91cf\u4e1b\uff0c\u4ee5\u53caMSFT\u7684\u516d\u901a\u9053\u5bbd\u5ea6\uff08\u53d7\u5236\u4e8e\u4e2d\u7b49\u76f8\u5bf9\u5f3a\u5ea6\uff09\u3002\u56fd\u4f1a\u8d44\u91d1\u6d41\u5411\u505c\u5728NVDA\u3001AAPL\u3001GOOGL\u3001AMZN\u2014\u2014\u62e5\u6324\u7684\u5171\u8bc6\uff0c\u800c\u975e\u5dee\u5f02\u5316\u4f18\u52bf\u3002",
   "theses": [
     {
-      "ticker": "MSFT",
+      "ticker": "MU",
       "lean": "overweight",
       "conviction": "medium",
       "action": "ACCUMULATE",
-      "horizon_d": 60,
-      "thesis": "Six independent channels align on MSFT \u2014 lobbying at $3.65M, app demand (4.77 rating, 20M reviews), GitHub momentum, HF-model downloads at 33.7M/30d, patent cluster of 318, plus affiliation with Sam Altman [actor:Sam Altman, PARTNERS_WITH] and Bill Ackman [actor:Bill Ackman, AFFILIATES_WITH]. The convergence score of 6 with 2.25 weighted score and rs_vs_spy_60d of only +9.8pp means the name is not chased, unlike nearly every peer in the pack.",
-      "thesis_zh": "\u516d\u4e2a\u72ec\u7acb\u6e20\u9053\u5728 MSFT \u4e0a\u5bf9\u9f50 \u2014 \u6e38\u8bf4\u652f\u51fa $3.65M\u3001\u5e94\u7528\u9700\u6c42\uff084.77 \u5206\u30012000 \u4e07\u8bc4\u8bba\uff09\u3001GitHub \u52a8\u80fd\u3001HF \u6a21\u578b 30 \u5929\u4e0b\u8f7d\u91cf 3370 \u4e07\u3001318 \u9879\u4e13\u5229\u96c6\u7fa4\uff0c\u4ee5\u53ca\u4e0e Sam Altman [actor:Sam Altman, PARTNERS_WITH] \u548c Bill Ackman [actor:Bill Ackman, AFFILIATES_WITH] \u7684\u5173\u8054\u3002\u6536\u655b\u5206 6\u3001\u52a0\u6743\u5206 2.25\uff0c\u4e14 60 \u65e5\u76f8\u5bf9 SPY \u8d85\u989d\u4ec5 +9.8pp\uff0c\u610f\u5473\u7740\u8be5\u6807\u7684\u4e0d\u50cf\u7ec4\u5408\u4e2d\u51e0\u4e4e\u6240\u6709\u540c\u884c\u90a3\u6837\u5df2\u88ab\u8ffd\u9010\u3002",
+      "horizon_d": 45,
+      "thesis": "MU carries a rare alignment: insider_mspr of 100 and a unanimous analyst upgrade cluster, backed by a government grant acceleration of 3.81 and 288 patents, with the highest weighted score among non-mega chips. RS at +33.7 is warm but below the +35 extension threshold, so the entry is not yet spent.",
+      "thesis_zh": "MU\u5448\u73b0\u96be\u5f97\u7684\u5bf9\u9f50\uff1a\u5185\u90e8\u4eba\u786e\u8ba4\u8d2d\u4e70\u6ee1\u5206\u4e0e\u4e00\u81f4\u7684\u8bc4\u7ea7\u4e0a\u8c03\u96c6\u7fa4\uff0c\u53e0\u52a0\u653f\u5e9c\u62e8\u6b3e\u52a0\u901f3.81\u53ca288\u9879\u4e13\u5229\uff0c\u975e\u8d85\u5927\u82af\u7247\u4e2d\u52a0\u6743\u5f97\u5206\u6700\u9ad8\u3002\u76f8\u5bf9\u5f3a\u5ea6+33.7\u504f\u70ed\u4f46\u4f4e\u4e8e+35\u8fc7\u70ed\u9608\u503c\uff0c\u5165\u573a\u5c1a\u672a\u544a\u7f44\u3002",
       "second_order": [
-        "GitHub ecosystem names benefiting from MSFT developer-platform traffic",
-        "OpenAI-adjacent infrastructure via Altman partnership channel",
-        "Enterprise software peers that co-sell with MSFT cloud stack"
+        "SNDK \u2014 memory-sector read-through if MU's pricing power turns",
+        "WDC \u2014 HDD/SSD peer with shared DRAM/NAND demand cycle",
+        "SMH \u2014 broad semis exposure if the insider/upgrade signal is sector-wide"
       ],
       "evidence": [
-        "lobbying $3.65M",
-        "app_demand 4.77 rating",
-        "github_momentum 188,834 stars",
-        "hf_model_momentum 33.7M/30d",
-        "patent_cluster 318",
-        "actor:Sam Altman PARTNERS_WITH",
-        "actor:Bill Ackman AFFILIATES_WITH"
+        "insider_mspr",
+        "analyst_upgrade_cluster",
+        "gov_grant_accel",
+        "patent_cluster",
+        "affiliation:R.Khanna"
       ],
-      "dissent": "Lobbying and app demand are slow-moving and could reflect legacy franchise strength rather than new catalyst; the Altman and Ackman ties are qualitative affiliations, not confirmed transactions.",
+      "dissent": "Memory is aggressively cyclical; a 100 insider_mspr could reflect a short-term pricing bottom rather than sustained earnings, and the +33.7 relative move means much of the repricing has already occurred.",
+      "weighted_score": 1.95,
+      "channels": [
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "insider_mspr",
+        "patent_cluster",
+        "stocktwits_bull"
+      ],
+      "rs_vs_spy_60d": 33.7,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "DRAM/NAND spot pricing rolls over for two consecutive months, or MU's insider_mspr reverts to selling in the next filing window.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MU",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 45
+        }
+      },
+      "check_by": "2026-10-20"
+    },
+    {
+      "ticker": "MSFT",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "WATCH",
+      "horizon_d": 60,
+      "thesis": "MSFT's six-channel breadth (app demand, GitHub/hf momentum, lobbying, patents, affiliation) plus a $3.65M quarterly lobbying spend and a $1.0B congressional position shows structural accumulation, but the +9.8 relative move is consensus-moderate and nothing here is a sharp proprietary trigger; treat as an under-the-radar grind rather than a fresh entry.",
+      "thesis_zh": "MSFT\u7684\u516d\u901a\u9053\u5bbd\u5ea6\uff08\u5e94\u7528\u9700\u6c42\u3001GitHub/\u6a21\u578b\u4e0b\u8f7d\u52a8\u91cf\u3001\u6e38\u8bf4\u3001\u4e13\u5229\u3001\u5173\u8054\uff09\u52a0\u4e0a\u5355\u5b63\u6e38\u8bf4\u652f\u51fa365\u4e07\u7f8e\u5143\u548c10\u4ebf\u7f8e\u5143\u56fd\u4f1a\u6301\u4ed3\uff0c\u663e\u793a\u673a\u6784\u6027\u79ef\u7d2f\uff0c\u4f46+9.8\u7684\u76f8\u5bf9\u6da8\u5e45\u662f\u5171\u8bc6\u6027\u7684\u6e29\u548c\uff0c\u7f3a\u4e4f\u4e13\u5c5e\u89e6\u53d1\uff0c\u5e94\u89c6\u4e3a\u6f5c\u5728\u7684\u6162\u725b\u800c\u975e\u65b0\u5165\u573a\u70b9\u3002",
+      "second_order": [
+        "ORCL \u2014 cloud-database partner for AI workloads tied to Microsoft ecosystem",
+        "ANET \u2014 networking vendor on Azure/AI compute buildouts",
+        "OpenAI-private \u2014 Sam Altman partnership channel implies compute/capex tailwinds"
+      ],
+      "evidence": [
+        "app_demand",
+        "github_momentum",
+        "hf_model_momentum",
+        "lobbying",
+        "patent_cluster",
+        "affiliation:Sam.Altman"
+      ],
+      "dissent": "Six channels of positive-grind activity without a catalyst bill or a spike in any single metric reads as slow institutional rotation, not a margin-expansion event; the $1B congressional position may simply reflect index heft.",
       "weighted_score": 2.25,
       "channels": [
         "affiliation",
@@ -51,7 +95,7 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "MSFT 60-day relative return vs SPY rises above +35pp without a corresponding step-up in HF-model momentum or patent activity.",
+        "text": "GitHub stars or hf_downloads_30d decline sequentially for two months while lobbying stays flat.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MSFT",
@@ -64,246 +108,56 @@
       "check_by": "2026-11-10"
     },
     {
-      "ticker": "NVDA",
+      "ticker": "AMZN",
       "lean": "underweight",
       "conviction": "low",
       "action": "AVOID",
-      "horizon_d": 30,
-      "thesis": "NVDA clusters on six channels (affiliation, analyst upgrades at 0.98 bull ratio, GitHub momentum, patents, retail buzz, special situation with earnings Aug 26) and carries the single most explicit political-influence footprint in the pack \u2014 Pelosi [actor:Nancy Pelosi, HOLDS_STAKE], MTG [actor:Marjorie Taylor Greene, HOLDS_STAKE], McCaul [actor:Michael McCaul, HOLDS_STAKE], plus Cramer TALKS_ABOUT. But the earnings event in 8 days is a binary catalyst, and the whole AI complex is already consensus; rs_vs_spy_60d of -3.7pp means no chase risk but also no independent edge beyond the political overlay.",
-      "thesis_zh": "NVDA \u5728\u516d\u4e2a\u6e20\u9053\u4e0a\u805a\u7c7b\uff08\u5173\u8054\u3001\u5206\u6790\u5e08\u4e0a\u8c03\u770b\u591a\u6bd4 0.98\u3001GitHub \u52a8\u80fd\u3001\u4e13\u5229\u3001\u96f6\u552e\u70ed\u5ea6\u30018 \u6708 26 \u65e5\u8d22\u62a5\u7279\u6b8a\u4e8b\u4ef6\uff09\uff0c\u4e14\u5e26\u6709\u672c\u5305\u4e2d\u6700\u660e\u786e\u7684\u653f\u6cbb\u5f71\u54cd\u529b\u8db3\u8ff9 \u2014 Pelosi [actor:Nancy Pelosi, HOLDS_STAKE]\u3001MTG [actor:Marjorie Taylor Greene, HOLDS_STAKE]\u3001McCaul [actor:Michael McCaul, HOLDS_STAKE]\uff0c\u4ee5\u53ca Cramer \u7684 TALKS_ABOUT\u3002\u4f46 8 \u5929\u540e\u7684\u8d22\u62a5\u662f\u4e8c\u5143\u50ac\u5316\u5242\uff0c\u6574\u4e2a AI \u677f\u5757\u5df2\u662f\u5171\u8bc6\uff1b60 \u65e5\u76f8\u5bf9 SPY -3.7pp \u8868\u660e\u65e0\u8ffd\u9ad8\u98ce\u9669\uff0c\u4f46\u9664\u4e86\u653f\u6cbb\u53e0\u52a0\u5916\u4e5f\u6ca1\u6709\u72ec\u7acb\u4f18\u52bf\u3002",
+      "horizon_d": 90,
+      "thesis": "AMZN has the largest disclosed congressional Stake ($466M nearly all Pelosi-linked) plus an 89% analyst bull ratio and $5.0M lobbying, anchored in an affiliated network (Pelosi, Crenshaw, Ackman). The signal is real but fully disclosed and priced-by-definition; the actionable read is directional confirmation for AMZN's chronic outperformance, not a fresh catalyst.",
+      "thesis_zh": "AMZN\u62e5\u6709\u6700\u5927\u7684\u5df2\u62ab\u9732\u56fd\u4f1a\u6301\u4ed3\uff084.66\u4ebf\u7f8e\u5143\uff0c\u57fa\u672c\u4e0e\u4f69\u6d1b\u897f\u5173\u8054\uff09\uff0c89%\u7684\u8bc4\u7ea7\u770b\u591a\u6bd4\u4f8b\uff0c500\u4e07\u7f8e\u5143\u6e38\u8bf4\uff0c\u951a\u5b9a\u4e8e\u5173\u8054\u7f51\u7edc\uff08\u4f69\u6d1b\u897f\u3001\u514b\u4f26\u8096\u3001\u963f\u514b\u66fc\uff09\u3002\u4fe1\u53f7\u771f\u5b9e\u4f46\u5df2\u5b8c\u5168\u62ab\u9732\uff0c\u5929\u7136\u5df2\u88ab\u5b9a\u4ef7\uff0c\u53ef\u64cd\u4f5c\u7684\u542b\u4e49\u662f\u5bf9AMZN\u957f\u671f\u8dd1\u8d62\u65b9\u5411\u7684\u786e\u8ba4\uff0c\u800c\u975e\u65b0\u50ac\u5316\u5242\u3002",
       "second_order": [
-        "Chip-equipment and HBM suppliers keyed to NVDA's earnings call trajectory",
-        "AI-datacenter power names if NVDA guide confirms capex continuation",
-        "TSM, AMD, MU as correlated-basket reads on the AI supply-chain"
+        "PLD \u2014 industrial/logistics REIT relies on Amazon-driven warehouse demand",
+        "UPS \u2014 shipping volumes correlate with Amazon package growth",
+        "XYZ \u2014 if Amazon fulfillment accelerates, freight/warehouse automation beneficiaries follow"
       ],
       "evidence": [
-        "analyst_bull_ratio 0.98",
-        "github_momentum 18,157 stars",
-        "patents 159",
-        "retail_buzz wsb_mentions 207",
-        "special_situation earnings Aug 26",
-        "actor:Nancy Pelosi HOLDS_STAKE",
-        "actor:Marjorie Taylor Greene HOLDS_STAKE",
-        "actor:Michael McCaul HOLDS_STAKE"
+        "congress_position_usd",
+        "analyst_upgrade_cluster",
+        "lobbying",
+        "hf_model_momentum",
+        "special_situation",
+        "affiliation:Nancy.Pelosi"
       ],
-      "dissent": "A single disappointment on the Aug 26 earnings call can unwind the political-positioning premium immediately; the congressional holdings may be long-standing rather than fresh accumulations.",
-      "weighted_score": 1.9,
+      "dissent": "Pelosi's disclosed AMZN position is the single largest congress-politician channel in the pack, which means the market has had full visibility; a medium-term horizon thesis needs an untracked catalyst the pack does not provide.",
+      "weighted_score": 1.7,
       "channels": [
         "affiliation",
         "analyst_upgrade_cluster",
-        "github_momentum",
-        "patent_cluster",
-        "retail_buzz",
+        "hf_model_momentum",
+        "lobbying",
         "special_situation"
       ],
-      "rs_vs_spy_60d": -3.7,
+      "rs_vs_spy_60d": -5.9,
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "NVDA earnings on 2026-08-26 fails to print a 10% surprise, and analyst bull ratio drops below 0.7 within two weeks.",
+        "text": "AMZN's next earnings misses expectation, or Pelosi's stake decreases in the next filing.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "NVDA",
+          "subject_ticker": "AMZN",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 90
         }
       },
-      "check_by": "2026-09-29",
+      "check_by": "2026-12-22",
       "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)",
       "det_baseline": {
         "action": "AVOID",
         "conviction": "low",
         "lean": "underweight"
       }
-    },
-    {
-      "ticker": "MU",
-      "lean": "overweight",
-      "conviction": "low",
-      "action": "WATCH",
-      "horizon_d": 20,
-      "thesis": "MU shows the highest relative strength in the pack (rs_vs_spy_60d +33.7pp) with five channels firing: analyst upgrades (1.0 bull ratio), insider mspr at 100, patents at 288, StockTwits bull ratio 1.0 across 213K watchers, plus a Ro Khanna affiliation [actor:Ro Khanna, AFFILIATES_WITH, DISCLOSED]. Gov grant acceleration of 3.81 compounds the read. But the +33.7pp print is within 2pp of the extended threshold \u2014 a chase has already begun, so this is a watch-first name.",
-      "thesis_zh": "MU \u5728\u672c\u5305\u4e2d\u76f8\u5bf9\u5f3a\u5ea6\u6700\u9ad8\uff0860 \u65e5\u76f8\u5bf9 SPY +33.7pp\uff09\uff0c\u4e94\u4e2a\u6e20\u9053\u53d1\u529b\uff1a\u5206\u6790\u5e08\u4e0a\u8c03\uff08\u770b\u591a\u6bd4 1.0\uff09\u3001\u5185\u90e8\u4eba mspr 100\u3001288 \u9879\u4e13\u5229\u3001StockTwits \u770b\u591a\u6bd4 1.0 \u4e14 21.3 \u4e07\u5173\u6ce8\u8005\uff0c\u52a0\u4e0a Ro Khanna \u5173\u8054 [actor:Ro Khanna, AFFILIATES_WITH, DISCLOSED]\u3002\u653f\u5e9c\u62e8\u6b3e\u52a0\u901f 3.81 \u8fdb\u4e00\u6b65\u5f3a\u5316\u5224\u8bfb\u3002\u4f46 +33.7pp \u8ddd\u8d85\u4e70\u9608\u503c\u4ec5 2pp \u2014 \u8ffd\u9010\u5df2\u7ecf\u5f00\u59cb\uff0c\u56e0\u6b64\u8be5\u540d\u4e3a\u89c2\u5bdf\u4f18\u5148\u3002",
-      "second_order": [
-        "Memory-controller and HBM test/assembly names that lag MU's move",
-        "Storage and server OEMs with MU exposure on the bill-of-materials"
-      ],
-      "evidence": [
-        "analyst_bull_ratio 1.0",
-        "insider_mspr 100.0",
-        "patents 288",
-        "stocktwits_bull_ratio 1.0, 213K watchers",
-        "gov_grant_accel 3.81",
-        "actor:Ro Khanna AFFILIATES_WITH DISCLOSED"
-      ],
-      "dissent": "The near-extension print means the informational edge may already be in the price; insider mspr at 100 could be small-sample or stale filings rather than fresh accumulation.",
-      "weighted_score": 1.95,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "insider_mspr",
-        "patent_cluster",
-        "stocktwits_bull"
-      ],
-      "rs_vs_spy_60d": 33.7,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "MU 60-day relative return vs SPY crosses +35pp, or the gov grant acceleration falls below 1.0 in the next filing check.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MU",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-09-15"
-    },
-    {
-      "ticker": "GOOGL",
-      "lean": "underweight",
-      "conviction": "low",
-      "action": "AVOID",
-      "horizon_d": 45,
-      "thesis": "GOOGL aligns four channels \u2014 affiliation (Pelosi and Paul Pelosi [actor:Nancy Pelosi, HOLDS_STAKE], [actor:Paul Pelosi, AFFILIATES_WITH]), lobbying at $4.81M, analyst upgrades (0.73 bull ratio), and app demand (4.71 rating, 26M reviews) \u2014 but the name trades at rs_vs_spy_60d of -16pp, a relative-laggard hangover. The congressional footprint ($248.5M position across the cluster) plus the $4.81M lobbying spend suggest a policy-linked re-rating candidate, but the pack gives no catalyst date to pin this to.",
-      "thesis_zh": "GOOGL \u5bf9\u9f50\u56db\u4e2a\u6e20\u9053 \u2014 \u5173\u8054\uff08Pelosi \u4e0e Paul Pelosi [actor:Nancy Pelosi, HOLDS_STAKE], [actor:Paul Pelosi, AFFILIATES_WITH]\uff09\u3001\u6e38\u8bf4\u652f\u51fa $4.81M\u3001\u5206\u6790\u5e08\u4e0a\u8c03\uff08\u770b\u591a\u6bd4 0.73\uff09\u3001\u5e94\u7528\u9700\u6c42\uff084.71 \u5206\u30012600 \u4e07\u8bc4\u8bba\uff09\u2014 \u4f46\u8be5\u80a1 60 \u65e5\u76f8\u5bf9 SPY \u4e3a -16pp\uff0c\u5904\u4e8e\u76f8\u5bf9\u843d\u540e\u72b6\u6001\u3002\u56fd\u4f1a\u6301\u4ed3\u8db3\u8ff9\uff08\u96c6\u7fa4\u5185 $2.485 \u4ebf\uff09\u53e0\u52a0 $4.81M \u6e38\u8bf4\u652f\u51fa\uff0c\u6697\u793a\u5b58\u5728\u653f\u7b56\u9a71\u52a8\u7684\u91cd\u4f30\u5019\u9009\uff0c\u4f46\u672c\u5305\u672a\u7ed9\u51fa\u53ef\u951a\u5b9a\u7684\u50ac\u5316\u5242\u65e5\u671f\u3002",
-      "second_order": [
-        "Cloud-competitor MSFT benefits if GOOGL's app-demand softness stems from AI-share shifts",
-        "Digital-ad names exposed to the same app-store demand channel"
-      ],
-      "evidence": [
-        "lobbying $4.81M",
-        "app_demand 4.71 rating",
-        "analyst_bull_ratio 0.73",
-        "actor:Nancy Pelosi HOLDS_STAKE",
-        "actor:Paul Pelosi AFFILIATES_WITH",
-        "congress_position_usd $248.5M"
-      ],
-      "dissent": "The -16pp relative lag may reflect a genuine competitive or regulatory discount, not just a buying opportunity; the Pelosi holdings are not fresh filings in this pack.",
-      "weighted_score": 1.55,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "app_demand",
-        "lobbying"
-      ],
-      "rs_vs_spy_60d": -16.0,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "GOOGL analyst bull ratio falls below 0.6 and app reviews momentum turns negative over a 30-day window.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "GOOGL",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 45
-        }
-      },
-      "check_by": "2026-10-20",
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)",
-      "det_baseline": {
-        "action": "AVOID",
-        "conviction": "low",
-        "lean": "underweight"
-      }
-    },
-    {
-      "ticker": "META",
-      "lean": "underweight",
-      "conviction": "low",
-      "action": "AVOID",
-      "horizon_d": 45,
-      "thesis": "META fires five channels \u2014 affiliation (Zuckerberg CONTROLS twice-over [actor:Mark Zuckerberg, CONTROLS, FACT], Crenshaw HOLDS_STAKE [actor:Dan Crenshaw, HOLDS_STAKE, DISCLOSED], Ackman AFFILIATES_WITH [actor:Bill Ackman, AFFILIATES_WITH, DISCLOSED]), GitHub momentum at 247,340 stars, lobbying at $7.0M (the highest dollar print in the pack), HF-downloads at 95M/30d, and StockTwits bull ratio 0.67 with 601K watchers. But rs_vs_spy_60d is -10.4pp and there is no earnings or legislative catalyst in the pack to trigger convergence into price action.",
-      "thesis_zh": "META \u4e94\u4e2a\u6e20\u9053\u53d1\u529b \u2014 \u5173\u8054\uff08Zuckerberg \u53cc\u91cd CONTROLS [actor:Mark Zuckerberg, CONTROLS, FACT]\u3001Crenshaw \u6301\u80a1 [actor:Dan Crenshaw, HOLDS_STAKE, DISCLOSED]\u3001Ackman AFFILIATES_WITH [actor:Bill Ackman, AFFILIATES_WITH, DISCLOSED]\uff09\u3001GitHub \u52a8\u80fd 24.7 \u4e07\u661f\u3001\u6e38\u8bf4\u652f\u51fa $7.0M\uff08\u672c\u5305\u6700\u9ad8\u7f8e\u5143\u989d\uff09\u3001HF \u6a21\u578b 30 \u5929\u4e0b\u8f7d 9500 \u4e07\u3001StockTwits \u770b\u591a\u6bd4 0.67 \u4e14 60.1 \u4e07\u5173\u6ce8\u8005\u3002\u4f46 60 \u65e5\u76f8\u5bf9 SPY -10.4pp\uff0c\u4e14\u672c\u5305\u4e2d\u6ca1\u6709\u8d22\u62a5\u6216\u7acb\u6cd5\u50ac\u5316\u5242\u80fd\u89e6\u53d1\u6536\u655b\u8f6c\u5316\u4e3a\u4ef7\u683c\u52a8\u80fd\u3002",
-      "second_order": [
-        "AI-infrastructure names that benefit from META's open-source LLM tooling (GitHub channel)",
-        "Online-ad peers keyed to META's app-store demand trends"
-      ],
-      "evidence": [
-        "github_momentum 247,340 stars",
-        "lobbying $7.0M",
-        "hf_downloads 95M/30d",
-        "stocktwits_bull_ratio 0.67, 601K watchers",
-        "actor:Mark Zuckerberg CONTROLS FACT",
-        "actor:Dan Crenshaw HOLDS_STAKE DISCLOSED",
-        "actor:Bill Ackman AFFILIATES_WITH DISCLOSED"
-      ],
-      "dissent": "The strongest lobbying print in the pack also correlates with the heaviest regulatory risk; the GitHub and HF-model signals may reflect open-source presence rather than monetizable demand.",
-      "weighted_score": 1.45,
-      "channels": [
-        "affiliation",
-        "github_momentum",
-        "lobbying",
-        "special_situation",
-        "stocktwits_bull"
-      ],
-      "rs_vs_spy_60d": -10.4,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "META rs_vs_spy_60d stays below -15pp for another 30 days without an upturn in StockTwits watcher count.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "META",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 45
-        }
-      },
-      "check_by": "2026-10-20",
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)",
-      "det_baseline": {
-        "action": "AVOID",
-        "conviction": "low",
-        "lean": "underweight"
-      }
-    },
-    {
-      "ticker": "INTC",
-      "lean": "underweight",
-      "conviction": "low",
-      "action": "AVOID",
-      "horizon_d": 45,
-      "thesis": "INTC clusters on four channels \u2014 analyst upgrades (1.0 bull ratio), gov grant acceleration (0.14), patents at 357 \u2014 but is the pack's worst 60-day laggard at -17.5pp vs SPY, with no affiliation channel, no insider cluster, and no retail buzz beyond 40 WSB mentions. The analyst-bull ratio of 1.0 looks like a crowded-contra indicator on a name the broader family of signals is not confirming.",
-      "thesis_zh": "INTC \u5728\u56db\u4e2a\u6e20\u9053\u4e0a\u805a\u7c7b \u2014 \u5206\u6790\u5e08\u4e0a\u8c03\uff08\u770b\u591a\u6bd4 1.0\uff09\u3001\u653f\u5e9c\u62e8\u6b3e\u52a0\u901f\uff080.14\uff09\u3001357 \u9879\u4e13\u5229 \u2014 \u4f46\u5b83\u662f\u672c\u5305\u4e2d 60 \u65e5\u6700\u5927\u843d\u540e\u80a1\uff08\u76f8\u5bf9 SPY -17.5pp\uff09\uff0c\u6ca1\u6709\u5173\u8054\u6e20\u9053\u3001\u6ca1\u6709\u5185\u90e8\u4eba\u96c6\u7fa4\u3001\u9664 40 \u6761 WSB \u63d0\u53ca\u5916\u6ca1\u6709\u96f6\u552e\u70ed\u5ea6\u30021.0 \u7684\u5206\u6790\u5e08\u770b\u591a\u6bd4\u66f4\u50cf\u662f\u62e5\u6324\u7684\u53cd\u5411\u6307\u6807\uff0c\u800c\u66f4\u5e7f\u6cdb\u7684\u4fe1\u53f7\u65cf\u5e76\u672a\u786e\u8ba4\u3002",
-      "second_order": [],
-      "evidence": [
-        "analyst_bull_ratio 1.0",
-        "gov_grant_accel 0.14",
-        "patents 357",
-        "wsb_mentions 40",
-        "rs_vs_spy_60d -17.5"
-      ],
-      "dissent": "The gov grant channel (0.14 accel) is a clean contrarian cue if the analyst upgrade cluster turns out to be prescient; INTC could be a multi-quarter laggard-to-leader repricing.",
-      "weighted_score": 1.4,
-      "channels": [
-        "analyst_upgrade_cluster",
-        "gov_grant",
-        "patent_cluster",
-        "stocktwits_bull"
-      ],
-      "rs_vs_spy_60d": -17.5,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "INTC gov grant acceleration rises above 1.0 and analyst bull ratio holds at 1.0 for two consecutive check cycles.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "INTC",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 45
-        }
-      },
-      "check_by": "2026-10-20"
     },
     {
       "ticker": "RSG",
@@ -311,16 +165,14 @@
       "conviction": "low",
       "action": "AVOID",
       "horizon_d": 45,
-      "thesis": "RSG has a large insider cluster (14 buyers, $186.1M net) but the trump-linked channel prints SELL [trump_side: sell], and convergence score is only 2 with no affiliation, no political-actor footprint, and no scorable rs_vs_spy_60d. The insider buying and the trump-sell signal are pointing opposite directions, so the read does not cohere.",
-      "thesis_zh": "RSG \u6709\u5927\u578b\u5185\u90e8\u4eba\u96c6\u7fa4\uff0814 \u4f4d\u4e70\u5bb6\u3001\u51c0\u989d $1.861 \u4ebf\uff09\uff0c\u4f46\u7279\u6717\u666e\u5173\u8054\u6e20\u9053\u5370\u51fa\u5356\u51fa [trump_side: sell]\uff0c\u4e14\u6536\u655b\u5206\u4ec5 2\uff0c\u65e0\u5173\u8054\u3001\u65e0\u653f\u6cbb\u4eba\u7269\u8db3\u8ff9\u3001\u65e0\u53ef\u8bc4\u5206\u7684 60 \u65e5\u76f8\u5bf9 SPY\u3002\u5185\u90e8\u4eba\u4e70\u5165\u4e0e\u7279\u6717\u666e\u5356\u51fa\u4fe1\u53f7\u6307\u5411\u76f8\u53cd\uff0c\u5224\u8bfb\u65e0\u6cd5\u81ea\u6d3d\u3002",
+      "thesis": "RSG shows $186M of insider net selling with 14 buyers reported, and a trump_side of sell, while the stock is affiliated=false (unlinked). The insider cluster is large but directionally negative, and trump-side sell adds downside pressure. No convergence of buying signals exists to support an entry.",
+      "thesis_zh": "RSG\u663e\u793a1.86\u4ebf\u7f8e\u5143\u7684\u5185\u90e8\u4eba\u51c0\u5356\u51fa\uff0c14\u4f4d\u4e70\u5bb6\u53e3\u5f84\uff0c\u540c\u65f6trump\u4fa7\u4e3a\u5356\u51fa\uff0c\u4e14\u8be5\u80a1\u672a\u88ab\u5173\u8054\u8986\u76d6\u3002\u5185\u90e8\u4eba\u96c6\u7fa4\u89c4\u6a21\u5927\u4f46\u65b9\u5411\u504f\u7a7a\uff0ctrump\u4fa7\u5356\u51fa\u66f4\u589e\u4e0b\u884c\u538b\u529b\u3002\u4e0d\u5b58\u5728\u4e70\u5165\u4fe1\u53f7\u7684\u805a\u5408\u652f\u6301\u5165\u573a\u3002",
       "second_order": [],
       "evidence": [
-        "insider_buyers 14",
-        "insider_net_usd $186.1M",
-        "trump_side sell",
-        "convergence_score 2"
+        "insider_cluster",
+        "trump:side=sell"
       ],
-      "dissent": "The 14-buyer insider cluster at $186M is a large and unusually broad internal-conviction print; if the trump-sell flag is noise rather than signal, RSG could be a hidden accumulation read.",
+      "dissent": "Trash and recycling businesses are defensively resilient in a downturn, and insider selling could be preplanned diversification rather than forward information; a low-conviction underweight may be too aggressive.",
       "weighted_score": 1.5,
       "channels": [
         "insider_cluster",
@@ -330,7 +182,7 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "RSG insider net usd drops below $50M on a 90-day rolling basis, or trump_side flips to buy on the next check.",
+        "text": "RSG's insider cluster flips to net buying in the next two quarterly filings.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "RSG",
@@ -341,13 +193,93 @@
         }
       },
       "check_by": "2026-10-20"
+    },
+    {
+      "ticker": "LUV",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "WATCH",
+      "horizon_d": 60,
+      "thesis": "LUV shows a rare trump_side of buy with an activist 13D (Paul Singer affiliated) and unusually strong app demand (4.84 rating, 7.16M reviews). The airline bull case is credible via app engagement, but the +5.2 relative move suggests part of the activist premium is already in the stock.",
+      "thesis_zh": "LUV\u5448\u73b0\u7f55\u89c1\u7684trump\u4fa7\u4e70\u5165\u3001\u79ef\u6781\u4e3b\u4e49\u8005\u768413D\uff08\u4e0ePaul Singer\u5173\u8054\uff09\u4ee5\u53ca\u5f02\u5e38\u5f3a\u52b2\u7684\u5e94\u7528\u9700\u6c42\uff084.84\u8bc4\u5206\uff0c716\u4e07\u8bc4\u4ef7\uff09\u3002\u822a\u7a7a\u4e1a\u770b\u591a\u8bba\u636e\u7ecf\u7531\u5e94\u7528\u53c2\u4e0e\u5ea6\u6210\u7acb\uff0c\u4f46+5.2\u7684\u76f8\u5bf9\u6da8\u5e45\u663e\u793a\u90e8\u5206\u79ef\u6781\u4e3b\u4e49\u8005\u6ea2\u4ef7\u5df2\u5728\u80a1\u4ef7\u4e2d\u3002",
+      "second_order": [
+        "AAL \u2014 airline peers benefit from industry pricing discipline if LUV margins rise",
+        "DAL \u2014 converging domestic/international leisure demand operator",
+        "UAL \u2014 if capacity rationalization follows activist pressure, peers re-rate"
+      ],
+      "evidence": [
+        "activist_13d",
+        "trump:side=buy",
+        "app_demand",
+        "affiliation:Paul.Singer"
+      ],
+      "dissent": "Airlines are fuel-price hostage and the activist signal may be a one-off stake-build by Singer, not a durable margin story; app demand alone is a weak fundamental catalyst.",
+      "weighted_score": 1.6,
+      "channels": [
+        "activist_13d",
+        "affiliation",
+        "app_demand",
+        "trump"
+      ],
+      "rs_vs_spy_60d": 5.2,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "LUV's next quarterly fuel-cost guidance rises materially, or the activist filing shows a decrease in stake.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "LUV",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-11-10"
+    },
+    {
+      "ticker": "BRK.B",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "WATCH",
+      "horizon_d": 90,
+      "thesis": "BRK.B is unambiguously scorable=false: it has a 13F add and a congress cluster (4 members, $59M), but no proprietary signal. The congressional accumulation is defensive and directionally positive; treat as a slow treasury-like compounder with no alpha catalyst.",
+      "thesis_zh": "BRK.B\u4e3a\u660e\u786e\u4e0d\u53ef\u8bc4\u5206\uff1a\u6709\u4e00\u4e2a13F\u589e\u6301\u548c\u4e00\u4e2a\u56fd\u4f1a\u96c6\u7fa4\uff084\u540d\u6210\u5458\uff0c5900\u4e07\u7f8e\u5143\uff09\uff0c\u4f46\u6ca1\u6709\u4e13\u6709\u4fe1\u53f7\u3002\u56fd\u4f1a\u7684\u79ef\u7d2f\u662f\u9632\u5fa1\u6027\u7684\u3001\u65b9\u5411\u504f\u591a\uff0c\u5e94\u89c6\u4e3a\u65e0\u963f\u5c14\u6cd5\u50ac\u5316\u5242\u7684\u7c7b\u56fd\u503a\u578b\u590d\u5229\u54c1\u79cd\u3002",
+      "second_order": [],
+      "evidence": [
+        "13f_add",
+        "congress_cluster",
+        "affiliation:Warren.Buffett"
+      ],
+      "dissent": "Defensive rotation into Berkshire reflects risk-off rather than idiosyncratic upside; history shows Berkshire can lag growth regimes for years.",
+      "weighted_score": 1.7,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "congress_cluster"
+      ],
+      "rs_vs_spy_60d": 3.1,
+      "extended": false,
+      "scorable": false,
+      "falsifier": {
+        "text": "The next 13F shows Berkshire reducing, or the congress cluster count drops below 3 members.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "BRK.B",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 90
+        }
+      },
+      "check_by": "2026-12-22"
     }
   ],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-08-17",
+    "as_of": "2026-08-18",
     "scored_total": 0,
-    "open": 8,
+    "open": 10,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {

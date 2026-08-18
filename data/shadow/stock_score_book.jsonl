@@ -3389,3 +3389,5 @@
 {"date": "2026-08-17", "ticker": "TEAM", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-17", "ticker": "PAYC", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-17", "ticker": "LGIH", "score": 22.0, "percentile": 22.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-17", "ticker": "HWM", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-17", "ticker": "VRRM", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}

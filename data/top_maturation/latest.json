@@ -18,7 +18,7 @@
     "breaking": []
   },
   "_vintage": {
-    "generated_utc": "2026-08-18T06:44:59Z",
+    "generated_utc": "2026-08-18T10:15:55Z",
     "source": "scripts/build_top_maturation.py",
     "store_vintage": {
       "store": "massive_stock_day",

@@ -56,10 +56,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-21",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1552,10 +1552,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-10",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2190,10 +2190,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-14",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2362,6 +2362,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "SNDK",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "URG",
       "direction": -1,
       "horizon": "5.0",
@@ -2417,6 +2428,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "VRSK",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "WDC",
       "direction": -1,
       "horizon": "5.0",
@@ -2447,6 +2469,17 @@
       "state": "gone",
       "last_as_of": "2026-07-31",
       "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "WYNN",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2931,7 +2964,7 @@
       "state": "gone",
       "last_as_of": "2026-08-07",
       "n_sessions_in_tape": 7,
-      "n_independent_confirming_latest": 2.0
+      "n_independent_confirming_latest": 3.0
     },
     {
       "subject": "MSFT",
@@ -3347,8 +3380,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-31",
-      "n_sessions_in_tape": 6,
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 7,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4309,6 +4342,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "APH",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "BA",
       "direction": -1,
       "horizon": "5.0",
@@ -4430,6 +4474,61 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "TGT",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-12",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "BLK",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CF",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "EOG",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "L",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "LYV",
       "direction": 1,
       "horizon": "21.0",
@@ -4453,6 +4552,39 @@
     },
     {
       "subject": "TMUS",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TMUS",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TRV",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TTWO",
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
@@ -4505,9 +4637,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 962,
+  "n_tape_rows": 978,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-18T07:58:38Z",
+  "produced_at": "2026-08-18T11:20:15Z",
   "authority_check": []
 }

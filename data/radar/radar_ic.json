@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v2",
   "as_of": "2026-08-18",
-  "generated_at": "2026-08-18T08:00:04.440089+00:00",
+  "generated_at": "2026-08-18T11:21:37.839913+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
@@ -9,7 +9,7 @@
     91
   ],
   "seed_horizon_cal_d": 91,
-  "n_snapshots": 10300,
+  "n_snapshots": 10302,
   "n_matured": 6657,
   "ic_all": -0.2001,
   "ic_all_signed": -0.0882,

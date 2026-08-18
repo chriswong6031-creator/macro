@@ -176536,3 +176536,14 @@
 {"date":"2026-08-18","t":"ZVRA","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1889,"regime":"Q2"}
 {"date":"2026-08-18","t":"TXT","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1890,"regime":"Q2"}
 {"date":"2026-08-18","t":"SRE","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1891,"regime":"Q2"}
+{"date":"2026-08-18","t":"CASIF","opp":0.0,"edge":0.585,"stage":"faltering","lean":0,"engine_version":"hub-v3-trajectory","rank":684,"regime":"Q2"}
+{"date":"2026-08-18","t":"FULC","opp":0.0,"edge":0.992,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1011,"cohorts":["catalyst_shown"],"regime":"Q2"}
+{"date":"2026-08-18","t":"GHI","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1035,"regime":"Q2"}
+{"date":"2026-08-18","t":"MAIR","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1303,"regime":"Q2"}
+{"date":"2026-08-18","t":"MSI","opp":0.0,"edge":0.631,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1364,"regime":"Q2"}
+{"date":"2026-08-18","t":"NTB","opp":0.0,"edge":0.911,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1424,"regime":"Q2"}
+{"date":"2026-08-18","t":"PLUR","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1515,"regime":"Q2"}
+{"date":"2026-08-18","t":"QNCX","opp":0.0,"edge":0.578,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1544,"regime":"Q2"}
+{"date":"2026-08-18","t":"SHPH","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1652,"regime":"Q2"}
+{"date":"2026-08-18","t":"UFI","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1786,"regime":"Q2"}
+{"date":"2026-08-18","t":"WYFI","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","rank":1863,"regime":"Q2"}

@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-08-17",
-  "built": "2026-08-18 06:44 UTC",
+  "built": "2026-08-18 10:15 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -699,15 +699,15 @@
         "en": "Oil slide → disinflation → yields fall → long-duration re-rate",
         "zh": "油价下滑 → 通胀降温 → 收益率回落 → 长久期估值修复"
       },
-      "state": "failed",
+      "state": "dormant",
       "state_label": {
-        "en": "Halted",
-        "zh": "已中止"
+        "en": "Dormant",
+        "zh": "休眠"
       },
       "hop": 0,
       "n_hops": 3,
       "armable": true,
-      "episode_id": "oil_slide_disinflation_duration_rerate@r0:2026-08-04",
+      "episode_id": null,
       "hops": [
         {
           "id": "oil_slide->breakeven_fall",
@@ -897,21 +897,7 @@
           ]
         }
       ],
-      "falsifier_fired": {
-        "index": 0,
-        "note": "oil slide with breakevens flat-to-up over ~30d — disinflation passthrough absent",
-        "receipts": [
-          {
-            "series": "T10YIE",
-            "metric": "ret_bp",
-            "window": 22,
-            "value": 6.0,
-            "op": "gt",
-            "threshold": 5,
-            "passed": true
-          }
-        ]
-      },
+      "falsifier_fired": null,
       "base_rates": {
         "asof": null,
         "n_floor": 8,
@@ -1030,15 +1016,15 @@
         "en": "Real-rate peak → crypto re-rates",
         "zh": "实际利率见顶 → 加密资产修复"
       },
-      "state": "failed",
+      "state": "dormant",
       "state_label": {
-        "en": "Halted",
-        "zh": "已中止"
+        "en": "Dormant",
+        "zh": "休眠"
       },
       "hop": 0,
       "n_hops": 2,
       "armable": true,
-      "episode_id": "real_rate_peak_crypto_rerate@r1:2026-08-12",
+      "episode_id": null,
       "hops": [
         {
           "id": "real_rate_extreme->real_rate_rolldown",
@@ -1174,30 +1160,7 @@
           ]
         }
       ],
-      "falsifier_fired": {
-        "index": 0,
-        "note": "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building",
-        "receipts": [
-          {
-            "series": "DFII10",
-            "metric": "ret_bp",
-            "window": 63,
-            "value": 41.0,
-            "op": "gt",
-            "threshold": 15,
-            "passed": true
-          },
-          {
-            "series": "DFII10",
-            "metric": "off_high_bp",
-            "window": 10,
-            "value": 2.0,
-            "op": "lt",
-            "threshold": 4,
-            "passed": true
-          }
-        ]
-      },
+      "falsifier_fired": null,
       "base_rates": {
         "asof": null,
         "n_floor": 8,
@@ -1289,7 +1252,31 @@
         }
       },
       "blast": {},
-      "display_only": true
+      "display_only": true,
+      "arm_veto": {
+        "index": 0,
+        "note": "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building",
+        "receipts": [
+          {
+            "series": "DFII10",
+            "metric": "ret_bp",
+            "window": 63,
+            "value": 41.0,
+            "op": "gt",
+            "threshold": 15,
+            "passed": true
+          },
+          {
+            "series": "DFII10",
+            "metric": "off_high_bp",
+            "window": 10,
+            "value": 2.0,
+            "op": "lt",
+            "threshold": 4,
+            "passed": true
+          }
+        ]
+      }
     },
     {
       "chain": "real_rate_peak_gold_rerate",
@@ -1299,15 +1286,15 @@
         "en": "Real-rate peak → gold re-rates",
         "zh": "实际利率见顶 → 黄金估值修复"
       },
-      "state": "failed",
+      "state": "dormant",
       "state_label": {
-        "en": "Halted",
-        "zh": "已中止"
+        "en": "Dormant",
+        "zh": "休眠"
       },
       "hop": 0,
       "n_hops": 2,
       "armable": true,
-      "episode_id": "real_rate_peak_gold_rerate@r1:2026-08-12",
+      "episode_id": null,
       "hops": [
         {
           "id": "real_rate_extreme->real_rate_rolldown",
@@ -1439,30 +1426,7 @@
           ]
         }
       ],
-      "falsifier_fired": {
-        "index": 0,
-        "note": "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building",
-        "receipts": [
-          {
-            "series": "DFII10",
-            "metric": "ret_bp",
-            "window": 63,
-            "value": 41.0,
-            "op": "gt",
-            "threshold": 15,
-            "passed": true
-          },
-          {
-            "series": "DFII10",
-            "metric": "off_high_bp",
-            "window": 10,
-            "value": 2.0,
-            "op": "lt",
-            "threshold": 4,
-            "passed": true
-          }
-        ]
-      },
+      "falsifier_fired": null,
       "base_rates": {
         "asof": null,
         "n_floor": 8,
@@ -1550,7 +1514,31 @@
         }
       },
       "blast": {},
-      "display_only": true
+      "display_only": true,
+      "arm_veto": {
+        "index": 0,
+        "note": "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building",
+        "receipts": [
+          {
+            "series": "DFII10",
+            "metric": "ret_bp",
+            "window": 63,
+            "value": 41.0,
+            "op": "gt",
+            "threshold": 15,
+            "passed": true
+          },
+          {
+            "series": "DFII10",
+            "metric": "off_high_bp",
+            "window": 10,
+            "value": 2.0,
+            "op": "lt",
+            "threshold": 4,
+            "passed": true
+          }
+        ]
+      }
     },
     {
       "chain": "vol_regime_deleveraging",

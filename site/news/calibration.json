@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-17",
-  "n_events_logged": 366,
+  "asof": "2026-08-18",
+  "n_events_logged": 367,
   "n_events_graded": 249,
   "classes": [
     {
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 82,
+      "n": 83,
       "n_graded": 54,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 723,
+    "n_sampled": 725,
     "n_graded": 0,
     "classes": []
   }

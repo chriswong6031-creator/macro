@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-08-18",
-  "generated_utc": "2026-08-18T08:22:52Z",
+  "generated_utc": "2026-08-18T11:45:27Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 309,
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2422,
+        "n_open": 2592,
         "n_past_check_by": 1892
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2422,
+        "n_open": 2592,
         "n_past_check_by": 1892
       },
       "allowed_actions": [
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 13528,
-        "n_past_check_by": 10477
+        "n_open": 15472,
+        "n_past_check_by": 11363
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 13528,
-        "n_past_check_by": 10477
+        "n_open": 15472,
+        "n_past_check_by": 11363
       },
       "allowed_actions": [
         "inspect",
@@ -737,7 +737,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1066,
+        "n_open": 1120,
         "n_past_check_by": 273
       },
       "allowed_actions": [
@@ -1369,8 +1369,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 46861,
-        "n_with_falsifier": 536,
+        "n_claims": 51682,
+        "n_with_falsifier": 554,
         "falsifier_coverage": "1.1%",
         "blocking_reason": "falsifier coverage 1.1%; not a promotion-grade substrate"
       },
@@ -9462,7 +9462,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 9482,
+        "n_open": 10021,
         "n_past_check_by": 0
       },
       "allowed_actions": [

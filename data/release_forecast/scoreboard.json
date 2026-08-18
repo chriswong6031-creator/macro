@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-08-18T08:15:34Z",
+  "asof": "2026-08-18T11:38:35Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8). Primary metrics use evaluation-eligible rows only; all_forward preserves the immutable raw record.",
   "evaluation_basis": "clean_structured_defect_epochs_v1",

@@ -10298,3 +10298,5 @@
 {"date":"2026-08-17","kind":"ticker","subject":"AES","ticker":"AES","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-08-17","kind":"ticker","subject":"AWK","ticker":"AWK","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-08-17","kind":"ticker","subject":"PPL","ticker":"PPL","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-08-17","kind":"ticker","subject":"GOOG","ticker":"GOOG","edge_score":6,"state":"CONFIRMED_DOWN","era":2,"source":"signal"}
+{"date":"2026-08-17","kind":"ticker","subject":"INTC","ticker":"INTC","edge_score":3,"state":"CONFIRMED_DOWN","era":2,"source":"signal"}

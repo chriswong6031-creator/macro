@@ -2247,3 +2247,6 @@
 {"date":"2026-08-18","ticker":"INTC","departed":true,"left_desk":"2026-08-18","last_rank":18,"last_score":39}
 {"date":"2026-08-18","ticker":"RSG","departed":true,"left_desk":"2026-08-18","last_rank":6,"last_score":48}
 {"date":"2026-08-18","ticker":"RTX","departed":true,"left_desk":"2026-08-18","last_rank":17,"last_score":40}
+{"date":"2026-08-18","ticker":"GOOGL","rank":7,"score":48,"lean":1,"broken":false}
+{"date":"2026-08-18","ticker":"INTC","rank":17,"score":39,"lean":1,"broken":false}
+{"date":"2026-08-18","ticker":"KO","rank":22,"score":37,"lean":1,"broken":false}
