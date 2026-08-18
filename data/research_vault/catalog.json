@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T10:17:35.050663+00:00",
-  "count": 1330,
+  "generated_at": "2026-08-18T11:14:25.735550+00:00",
+  "count": 1332,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -177,6 +177,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qmatqnxz9ov-7bf7a5",
+      "title": "DB Research Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T08:02:29Z",
+      "summary_points": [
+        "**Geopolitical Oil Shock**: Strait of Hormuz closure fears drove Brent crude to $91.52/bbl (+2.65%), triggering S&P 500 decline (-0.52%) and 30yr Treasury yield surge to 5.31% (post-2007 high), signaling acute risk-off pressure.",
+        "**Global Bond Yield Surge**: Sovereign yields hit multi-year highs globally (US 30yr 5.31%, Germany 30yr 3.74%, Japan 10yr 2.92% post-1996), fueled by hawkish data (Empire State manufacturing, Canada CPI) and fiscal stress.",
+        "**Canada Policy Shift**: December rate hike probability jumped to 68% (from 58%) after headline CPI beat (+3.0% vs +2.9%), with core measures exceeding consensus, accelerating tightening expectations.",
+        "**Fragile Market Equilibrium**: Geopolitical risks and oil-driven stagflation fears disrupted the \"Goldilocks\" balance, pressuring long-end yields and equities amid limited rate hike tolerance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -1307,6 +1327,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 35,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zate5tsk85g-d9dd21",
+      "title": "JPM European Capital Goods",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:38:48Z",
+      "summary_points": [
+        "**European Capex Cycle Shift**: Policy-driven capex in defense, energy grids, and critical supply chains creates underinvestment-driven upside; PMI/Q2 acceleration unreflected in valuations, with physical infrastructure (steel, utilities) as core beneficiaries (Siemens AG/Siemens Energy as multi-theme leaders).",
+        "**Euro Manufacturing PMI Recovery & Cap Goods Discount**: Euro area manufacturing PMI shows recovery after longest contraction since EU formation, yet Cap Goods trade at unprecedented relative discount despite improving data, signaling potential mispricing.",
+        "**Electrical Equipment Q2 Beat**: All tracked companies (Eaton, Schneider, Siemens) exceeded consensus in Q2 organic sales growth, confirming robust sector demand strength and regional industrial momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
