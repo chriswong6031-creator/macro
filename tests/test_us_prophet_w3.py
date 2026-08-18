@@ -494,7 +494,7 @@ class TestWorkflowWiring:
         # suite. This file must not name that module: it is ops telemetry with
         # zero authority and no new callers.
         assert grade_i < w3_i < commit_i
-        assert "--require-board-as-of" in runs[w3_i]
+        assert runs[w3_i].strip() == "python -m scripts.accrue_us_prophet_w3 --nightly"
         commit = str(job["steps"][commit_i]["run"])
         assert "data/us_prophet_rank/w3" in commit
         assert (job.get("env") or {}).get("COLLECT_LANE") == "nightly"

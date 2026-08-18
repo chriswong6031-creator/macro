@@ -6307,20 +6307,16 @@ jobs:
         if: always()
         run: python -m scripts.grade_us_prophet_candidates --nightly
       - name: Prophet W3 paired-race ledger (measurement plumbing, ZERO authority)
-        # WS:PROPHET-CONDITIONAL-FUSION PR-3D. Accrues the already-produced C1 +
+        # WS:PROPHET-CONDITIONAL-FUSION PR-3C. Accrues the already-produced C1 +
         # v2-shadow paired observations, the one shared grader, and the PR-3B
-        # outcome-blind structural receipt into data/us_prophet_rank/w3/. Required
-        # stamp is the committed board as_of, never wall-clock / run id / Pages.
-        # session_missing / degraded_or_unpaired are terminal W3 race dispositions
-        # and cannot be resurrected by a later generic product backfill (#5878).
-        # Gap receipts persist before fail-closed so the always-run commit still
-        # lands them. Runs AFTER grade_us_prophet_candidates so tonight's H=10
-        # marks are present, and BEFORE the ledger commit. No rank/gate/featured/
-        # plan authority. No comparative statistic. No second scorer or grader.
+        # outcome-blind structural receipt into data/us_prophet_rank/w3/. Runs AFTER
+        # grade_us_prophet_candidates so tonight's H=10 marks are present, and BEFORE
+        # the ledger commit. No rank/gate/featured/plan authority. No comparative
+        # statistic. No second scorer or grader. No Pages backfill.
         # Nightly-only (COLLECT_LANE=nightly). Idempotent keep-first; conflicting
         # rewrite of a frozen key fails closed.
         if: always()
-        run: python -m scripts.accrue_us_prophet_w3 --nightly --require-board-as-of
+        run: python -m scripts.accrue_us_prophet_w3 --nightly
       - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
         # Prophet US trend-intelligence W0 (masterplan
         # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
