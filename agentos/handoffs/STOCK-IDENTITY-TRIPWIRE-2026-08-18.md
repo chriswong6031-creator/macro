@@ -126,7 +126,7 @@ danger_areas:
       (a one-column outlier must not be absorbed), and volume before the gross-rescale
       bound (a real split must be diagnosed as a corporate action, not as a broken vendor
       frame). Reordering them silently degrades the diagnosis.
-prs: [5869]
+prs: [5875]
 decisions:
   - DEC:SI-LIVE-PLANE-BAND-IS-UNIFORMITY-NOT-LEVEL
 discoveries:
