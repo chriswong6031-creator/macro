@@ -835,7 +835,14 @@ def write_receipt(support: Path, receipt: dict) -> Optional[Path]:
     runs = support / "runs"
     try:
         runs.mkdir(parents=True, exist_ok=True)
-        path = runs / f"{receipt.get('session') or 'no-session'}.json"
+        # A DRY RUN GETS ITS OWN FILE. Same session, same directory: a `--dry-run`
+        # from a checkout would otherwise REPLACE the launchd receipt that
+        # recorded the night's drift with a clean claim about a file launchd will
+        # never exec — evidence destroyed by the act of checking for it. The
+        # production name is untouched, so nothing that reads `<session>.json`
+        # changes.
+        suffix = ".dry-run" if receipt.get("dry_run") else ""
+        path = runs / f"{receipt.get('session') or 'no-session'}{suffix}.json"
         tmp = runs / f".{path.name}.tmp"
         tmp.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                        encoding="utf-8")
@@ -938,6 +945,14 @@ def bootstrap_identity() -> dict:
         "main_file_sha256": "",
         "matches_main": None,
         "commits_behind": None,
+        # THE HOST'S OWN ANSWER, and a DIFFERENT question whenever the executing
+        # file is not the installed one: "what will launchd exec tonight", not
+        # "what ran just now". A session running the repo copy grades a file
+        # launchd never touches, so a report that read `matches_main` would
+        # certify the host from evidence about something else — with the
+        # disproof sitting unread two keys away.
+        "installed_matches_main": None,
+        "installed_commits_behind": None,
         "detail": "not compared — no origin/main checkout was prepared this run",
     }
 
@@ -950,9 +965,15 @@ def _bootstrap_commits_behind(lane: Path, path: str, *,
     so that number would be weather. The number an operator can act on is how many
     times the thing they are running was changed without being redeployed.
 
-    ``hash-object`` for the executing file's blob id, then ONE ``log --raw`` whose
-    every entry carries the resulting blob for the path. Anything unexpected
-    answers None — an unknown distance must never render as zero.
+    ``hash-object`` for the file's blob id, then ONE ``log --raw`` whose entries
+    carry each commit's resulting blob for the path. The count is per COMMIT
+    HEADER, not per raw line: ``--raw`` prints no diff line for a merge commit,
+    so counting raw lines silently UNDERCOUNTS by the number of merges that
+    touched the file (measured: 1 reported where 2 was true, 3 where 4 was true).
+
+    A vintage that exists only as a merge RESOLUTION is therefore unplaceable and
+    answers None, as does anything else unexpected — an unknown distance must
+    never render as zero, because zero is what a CLEAN bootstrap carries.
     """
     blob = sh(["git", "-C", lane, "hash-object", path],
               timeout=BOOTSTRAP_GIT_TIMEOUT_S)
@@ -965,8 +986,12 @@ def _bootstrap_commits_behind(lane: Path, path: str, *,
              timeout=BOOTSTRAP_GIT_TIMEOUT_S)
     if log.rc != 0:
         return None
-    behind = 0
+    behind = -1
     for line in (log.out or "").splitlines():
+        stripped = line.strip()
+        if len(stripped) == 40 and all(c in "0123456789abcdef" for c in stripped):
+            behind += 1          # a commit header — INCLUDING a merge, which
+            continue             # prints no raw line of its own
         # :<oldmode> <newmode> <oldblob> <newblob> <status>\t<path>
         if not line.startswith(":"):
             continue
@@ -974,9 +999,53 @@ def _bootstrap_commits_behind(lane: Path, path: str, *,
         if len(parts) < 5:
             continue
         if parts[3] == want:
-            return behind
-        behind += 1
+            return max(behind, 0)
     return None
+
+
+def _grade_against_main(digest: str, main_digest: str, *,
+                        stale: bool) -> tuple[Optional[bool], str]:
+    """One file's digest vs origin/main's. The asymmetry lives HERE, once.
+
+      * unreadable            → None, and say which file could not be read.
+      * differs               → False, CERTAIN even against a stale origin/main:
+                                a file that does not match an older main cannot
+                                match a newer main descended from it.
+      * matches a STALE ref   → None, never True. The fetch failed, so
+                                "identical to what main was yesterday" is not
+                                "identical to main"; a detector that certifies
+                                against a reference it could not refresh is the
+                                blind kind.
+      * matches a fresh ref   → True. The only affirmative pass there is.
+    """
+    if not digest:
+        return None, "is not readable"
+    if digest != main_digest:
+        return False, f"is NOT origin/main's {RUNNER_REPO_REL}"
+    if stale:
+        return None, ("is byte-identical to the lane's origin/main, but this run "
+                      "could not refresh that reference (code_stale), so it may "
+                      "itself be behind")
+    return True, f"is byte-identical to origin/main's {RUNNER_REPO_REL}"
+
+
+def _bootstrap_detail(ident: dict, why_exec: str, why_inst: str) -> str:
+    """The human sentence, naming BOTH files whenever they are not the same one."""
+    exec_part = f"the executing bootstrap {why_exec}"
+    if ident["matches_main"] is False and isinstance(ident["commits_behind"], int):
+        exec_part += f" ({ident['commits_behind']} commit(s) to that file are not deployed)"
+    if ident["is_installed_copy"]:
+        body = exec_part + ", and it IS the copy launchd execs"
+    else:
+        inst_part = f"the INSTALLED snapshot {why_inst}"
+        if (ident["installed_matches_main"] is False
+                and isinstance(ident["installed_commits_behind"], int)):
+            inst_part += f" ({ident['installed_commits_behind']} commit(s) behind)"
+        body = (f"{exec_part} — but this is NOT the copy launchd execs, and "
+                f"{inst_part}")
+    if False in (ident["matches_main"], ident["installed_matches_main"]):
+        body += "; re-run scripts/install_closepass_launchd.sh"
+    return body
 
 
 def compare_bootstrap_to_main(lane: Path, identity: dict, *, stale: bool,
@@ -1004,34 +1073,30 @@ def compare_bootstrap_to_main(lane: Path, identity: dict, *, stale: bool,
         out["detail"] = (f"not compared — origin/main's {RUNNER_REPO_REL} is not "
                          f"readable at {reference}")
         return out
-    if not out["file_sha256"]:
-        out["detail"] = (f"not compared — the executing bootstrap at {out['path']} "
-                         f"is not readable")
-        return out
+    main = out["main_file_sha256"]
 
-    if out["file_sha256"] != out["main_file_sha256"]:
-        out["matches_main"] = False
+    out["matches_main"], why_exec = _grade_against_main(
+        out["file_sha256"], main, stale=stale)
+    if out["matches_main"] is False:
         out["commits_behind"] = _bootstrap_commits_behind(lane, out["path"], sh=sh)
-        behind = out["commits_behind"]
-        out["detail"] = (
-            f"the executing bootstrap is NOT origin/main's {RUNNER_REPO_REL} — "
-            + (f"{behind} commit(s) to that file are not deployed"
-               if isinstance(behind, int) else
-               f"its vintage is not among the last {BOOTSTRAP_LOG_SCAN} commits "
-               f"that touched the file")
-            + "; re-run scripts/install_closepass_launchd.sh")
-        return out
+    elif out["matches_main"] is True:
+        out["commits_behind"] = 0
 
-    if stale:
-        out["detail"] = (
-            "byte-identical to the lane's origin/main, but this run's fetch failed "
-            "(code_stale) so the reference may itself be behind — reported as "
-            "unverified rather than clean")
-        return out
+    if out["is_installed_copy"]:
+        # Same file, same answer — and no second walk. This is the launchd case.
+        out["installed_matches_main"] = out["matches_main"]
+        out["installed_commits_behind"] = out["commits_behind"]
+        why_inst = why_exec
+    else:
+        out["installed_matches_main"], why_inst = _grade_against_main(
+            out["installed_file_sha256"], main, stale=stale)
+        if out["installed_matches_main"] is False:
+            out["installed_commits_behind"] = _bootstrap_commits_behind(
+                lane, out["installed_path"], sh=sh)
+        elif out["installed_matches_main"] is True:
+            out["installed_commits_behind"] = 0
 
-    out["matches_main"] = True
-    out["commits_behind"] = 0
-    out["detail"] = f"byte-identical to origin/main's {RUNNER_REPO_REL}"
+    out["detail"] = _bootstrap_detail(out, why_exec, why_inst)
     return out
 
 
@@ -1068,16 +1133,25 @@ def announce_bootstrap(identity: dict) -> None:
     # A session running the repo copy grades ITSELF above; the file launchd will
     # actually exec tonight is a different question and gets its own answer.
     if not identity.get("is_installed_copy"):
-        installed = identity.get("installed_file_sha256") or ""
-        main = identity.get("main_file_sha256") or ""
+        installed = (identity.get("installed_file_sha256") or "")[:12] or "unreadable"
         _notice(f"this is not the installed snapshot — launchd execs "
                 f"{identity.get('installed_path')}")
-        if installed and main and installed != main:
+        inst = identity.get("installed_matches_main")
+        if inst is False:
+            behind = identity.get("installed_commits_behind")
+            gap = (f"{behind} commit(s) behind" if isinstance(behind, int)
+                   else "an unknown distance behind")
             _error(
                 f"BOOTSTRAP DRIFT (installed) — the snapshot launchd execs, "
-                f"{identity.get('installed_path')} (file_sha256 {installed[:12]}), is "
-                f"not origin/main's {RUNNER_REPO_REL} ({main[:12]}); this run "
-                f"exercised a different file. Run: bash scripts/install_closepass_launchd.sh")
+                f"{identity.get('installed_path')} (file_sha256 {installed}), is {gap} "
+                f"origin/main's {RUNNER_REPO_REL} "
+                f"({(identity.get('main_file_sha256') or '')[:12]}); this run exercised "
+                f"a DIFFERENT file, so its own clean verdict says nothing about tonight. "
+                f"Run: bash scripts/install_closepass_launchd.sh")
+        elif inst is None:
+            _warn(f"the INSTALLED snapshot at {identity.get('installed_path')} could not "
+                  f"be graded (digest {installed}) — this run exercised a different "
+                  f"file, so nothing here speaks for what launchd will exec")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1146,12 +1220,16 @@ def run(*, now: dt.datetime, dry_run: bool = False,
     receipt["code_sha"] = state["code_sha"]
     receipt["code_stale"] = state["code_stale"]
     # The lane is now origin/main, which makes THIS file's own origin/main copy a
-    # free local reference. Graded before the refusal below on purpose: "which
-    # bootstrap refused" is exactly the question the 2026-08-17 receipt could not
-    # answer, and a stale snapshot is a live candidate cause of a refusal.
-    if state["ok"]:
-        receipt["bootstrap"] = compare_bootstrap_to_main(
-            lane, receipt["bootstrap"], stale=state["code_stale"], sh=sh)
+    # free local reference. Graded BEFORE the refusal below and ALSO ON IT: a
+    # previous run's reset usually left that copy on disk, and a MISMATCH against
+    # even a stale reference is still certain. Only the CLEAN answer needs a
+    # fresh reference, which is exactly what `stale` withholds — so grading a
+    # refused run can produce a finding but never a false all-clear. "Which
+    # bootstrap refused" is the question the 2026-08-17 receipt could not answer,
+    # and a stale snapshot is a live candidate cause of a refusal.
+    receipt["bootstrap"] = compare_bootstrap_to_main(
+        lane, receipt["bootstrap"],
+        stale=state["code_stale"] or not state["ok"], sh=sh)
     announce_bootstrap(receipt["bootstrap"])
     if not state["ok"]:
         _error(f"lane checkout not prepared — refusing to run stale or unknown "

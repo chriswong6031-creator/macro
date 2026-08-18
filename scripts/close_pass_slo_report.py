@@ -137,8 +137,13 @@ def read_receipts(runs: Path) -> dict[str, dict]:
     """``{session: receipt}``. An unreadable receipt is an ABSENT one, not a crash.
 
     This report is read-only on the lane: it grades the clock, it never writes to
-    the clock's state, and a malformed receipt must not be able to stop a
-    latency table that does not depend on it.
+    the clock's state, and a malformed receipt must not be able to stop a latency
+    table that does not depend on it.
+
+    A REAL receipt outranks a dry run for the same session. The runner already
+    writes dry runs to their own ``<session>.dry-run.json``, but that file sorts
+    after the production one, so without this the exercise would outrank the
+    evening it was checking.
     """
     out: dict[str, dict] = {}
     try:
@@ -150,8 +155,14 @@ def read_receipts(runs: Path) -> dict[str, dict]:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if isinstance(payload, dict) and isinstance(payload.get("session"), str):
-            out[payload["session"]] = payload
+        if not isinstance(payload, dict):
+            continue
+        session = payload.get("session")
+        if not isinstance(session, str):
+            continue
+        prior = out.get(session)
+        if prior is None or (bool(prior.get("dry_run")) and not payload.get("dry_run")):
+            out[session] = payload
     return out
 
 
@@ -173,20 +184,33 @@ def bootstrap_state(receipt: object) -> tuple[str, str]:
     if not isinstance(boot, dict):
         schema = receipt.get("schema")
         if schema != HOST.RECEIPT_SCHEMA:
+            # "differs", not "predates": a FUTURE schema that dropped the block
+            # would land here too, and the honest claim is the one that holds
+            # either way — the code that wrote this is not the code being read.
             return BOOT_OLD_SCHEMA, (
-                f"receipt schema {schema!r} predates this checkout's "
-                f"{HOST.RECEIPT_SCHEMA!r}, so the bootstrap that wrote it is older "
-                f"than origin/main.")
+                f"receipt schema {schema!r} is not this checkout's "
+                f"{HOST.RECEIPT_SCHEMA!r} and carries no bootstrap verdict, so the "
+                f"snapshot that wrote it is not the code in this checkout.")
         return BOOT_UNKNOWN, "receipt carries no bootstrap block"
     detail = str(boot.get("detail") or "")
-    verdict = boot.get("matches_main")
+    # THE QUESTION IS ALWAYS "will tonight's firing execute origin/main", and
+    # that is about the INSTALLED snapshot. Under launchd the two verdicts are
+    # the same field; when a SESSION ran the repo copy they are not, and grading
+    # the executing one would certify a file launchd never runs — while the
+    # disproof sat unread two keys away in the same receipt. `matches_main` is
+    # the fallback only for a receipt written before the installed verdict
+    # existed, never a preference.
+    if "installed_matches_main" in boot:
+        verdict, behind = (boot.get("installed_matches_main"),
+                           boot.get("installed_commits_behind"))
+    else:
+        verdict, behind = boot.get("matches_main"), boot.get("commits_behind")
     if verdict is True:
         return BOOT_OK, detail or "byte-identical to origin/main"
     if verdict is False:
-        behind = boot.get("commits_behind")
         n = behind if isinstance(behind, int) and not isinstance(behind, bool) else "?"
-        return f"BEHIND {n}", detail or "the executing bootstrap is not origin/main."
-    return BOOT_UNKNOWN, detail or "the run could not grade its own bootstrap"
+        return f"BEHIND {n}", detail or "the installed snapshot is not origin/main."
+    return BOOT_UNKNOWN, detail or "the run could not grade the installed snapshot"
 
 
 def bootstrap_verdict(rows: list[dict[str, Any]], runs: Path) -> dict[str, Any]:
@@ -195,17 +219,31 @@ def bootstrap_verdict(rows: list[dict[str, Any]], runs: Path) -> dict[str, Any]:
     Grading the whole window would keep a healed host red for as many sessions as
     the window is wide — the older rows genuinely did run a stale bootstrap and
     that stays visible in the column — but the question this leg exists to answer
-    is "will tonight's firing execute origin/main", and only the newest receipt
-    can answer it.
+    is "will tonight's firing execute origin/main".
+
+    THE NEWEST *DEFINITIVE* ROW, NOT THE NEWEST ROW. An unverifiable night does
+    not cancel a proven one beneath it: NOTHING heals this snapshot except an
+    operator running the installer, so a `BEHIND n` below a `?` still stands and
+    must still fail. Walking newest-first also means a proven `ok` above an old
+    drift wins for free — that IS the installer having been re-run.
     """
+    unknown = None
     for row in rows:
         cell = row.get("bootstrap")
         if cell in (None, ABSENT):
             continue
-        state = ("ok" if cell == BOOT_OK
-                 else "unknown" if cell == BOOT_UNKNOWN else "drift")
-        return {"state": state, "session": row["session"], "cell": cell,
+        if cell == BOOT_UNKNOWN:
+            if unknown is None:
+                unknown = row
+            continue
+        return {"state": "ok" if cell == BOOT_OK else "drift",
+                "session": row["session"], "cell": cell,
                 "detail": row.get("bootstrap_detail") or "", "receipts_dir": str(runs)}
+    if unknown is not None:
+        return {"state": "unknown", "session": unknown["session"],
+                "cell": BOOT_UNKNOWN,
+                "detail": unknown.get("bootstrap_detail") or "",
+                "receipts_dir": str(runs)}
     return {"state": "unmeasured", "session": None, "cell": ABSENT,
             "detail": f"no host receipt under {runs} for any reported session",
             "receipts_dir": str(runs)}

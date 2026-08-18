@@ -100,7 +100,10 @@ def _receipts(tmp_path: Path, *receipts: dict) -> Path:
     runs = tmp_path / "runs"
     runs.mkdir(parents=True, exist_ok=True)
     for receipt in receipts:
-        (runs / f"{receipt['session']}.json").write_text(json.dumps(receipt))
+        # The runner gives a dry run its own name so it cannot overwrite the
+        # night's real receipt; the report must then prefer the real one.
+        suffix = ".dry-run" if receipt.get("dry_run") else ""
+        (runs / f"{receipt['session']}{suffix}.json").write_text(json.dumps(receipt))
     return runs
 
 
@@ -112,9 +115,20 @@ def _receipt(session: str, **boot) -> dict:
                 "is_installed_copy": True, "installed_path": "/Users/x/…",
                 "installed_file_sha256": "a" * 64, "main_file_sha256": "a" * 64,
                 "matches_main": True, "commits_behind": 0,
+                "installed_matches_main": True, "installed_commits_behind": 0,
                 "detail": "byte-identical to origin/main's scripts/"
                           + HOST.RUNNER_BASENAME}
     identity.update(boot)
+    # UNDER LAUNCHD THE TWO VERDICTS ARE ONE FIELD: the executing file IS the
+    # installed snapshot, so a fixture that let them disagree by accident would
+    # describe a state the production clock cannot be in. Mirror unless a test
+    # is deliberately building the split (a session running the repo copy).
+    if identity["is_installed_copy"]:
+        identity.setdefault("installed_matches_main", identity["matches_main"])
+        for key, mirror in (("installed_matches_main", "matches_main"),
+                            ("installed_commits_behind", "commits_behind")):
+            if key not in boot:
+                identity[key] = identity[mirror]
     return {"schema": HOST.RECEIPT_SCHEMA, "session": session,
             "outcome": "published", "bootstrap": identity}
 
@@ -651,3 +665,97 @@ def test_the_remedy_is_printed_exactly_once_however_the_finding_arrived(tmp_path
     _, text2 = _run(state, sessions=1, receipts_dir=runs2)
     footer2 = [ln for ln in text2.splitlines() if ln.startswith("BOOTSTRAP DRIFT")][0]
     assert footer2.count("install_closepass_launchd.sh") == 1, footer2
+
+
+def test_a_clean_executing_copy_cannot_certify_a_stale_installed_snapshot(tmp_path):
+    """THE BLOCKER. A session ran the repo copy, that copy IS origin/main, and the
+    receipt's `matches_main` is True — while `installed_matches_main` in the same
+    receipt says the file launchd will exec tonight is six commits behind.
+
+    Grading the executing copy printed `ok` and exited 0 with the footer claiming
+    "the host snapshot matched origin/main" — an affirmative claim about a file
+    nothing had graded, with the disproof two keys away.
+    """
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(tmp_path, _receipt(
+        "2026-08-14", is_installed_copy=False,
+        matches_main=True, commits_behind=0,
+        installed_matches_main=False, installed_commits_behind=6,
+        detail="the executing bootstrap is byte-identical to origin/main — but this "
+               "is NOT the copy launchd execs, and the INSTALLED snapshot is NOT "
+               "origin/main (6 commit(s) behind)"))
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    row = [ln for ln in text.splitlines() if ln.startswith("2026-08-14")][0]
+    assert row.endswith("BEHIND 6"), row
+    assert "the host snapshot matched origin/main" not in text
+    assert "BOOTSTRAP DRIFT on 2026-08-14" in text
+
+
+def test_a_receipt_from_before_the_installed_verdict_still_grades(tmp_path):
+    """Version tolerance in the one direction that matters: an older receipt
+    carrying only `matches_main` is still gradeable on it. The fallback is for
+    age, never a preference — a receipt that HAS the installed verdict is graded
+    on that."""
+    state = _green_state(tmp_path, "2026-08-14")
+    legacy = _receipt("2026-08-14", matches_main=False, commits_behind=2)
+    del legacy["bootstrap"]["installed_matches_main"]
+    del legacy["bootstrap"]["installed_commits_behind"]
+    rc, text = _run(state, sessions=1, receipts_dir=_receipts(tmp_path, legacy))
+    assert rc == 1 and "BEHIND 2" in text
+
+
+def test_an_unverifiable_night_does_not_cancel_a_proven_drift_beneath_it(tmp_path):
+    """NOTHING HEALS THIS SNAPSHOT EXCEPT AN OPERATOR RUNNING THE INSTALLER.
+
+    So a night the runner could not grade (fetch failed, lane reference gone)
+    says nothing about the drift proven the session before — that finding still
+    stands and must still fail. Taking the newest row that is merely PRESENT let
+    one unverifiable evening erase a standing finding and exit 0.
+    """
+    state = _green_state(tmp_path, "2026-08-14", "2026-08-13")
+    runs = _receipts(
+        tmp_path,
+        _receipt("2026-08-13", matches_main=False, commits_behind=5,
+                 installed_matches_main=False, installed_commits_behind=5),
+        _receipt("2026-08-14", matches_main=None, commits_behind=None,
+                 installed_matches_main=None, installed_commits_behind=None,
+                 detail="the lane reference was unreadable"))
+    rc, text = _run(state, sessions=2, receipts_dir=runs)
+    assert rc == 1, text
+    rows = {ln.split()[0]: ln for ln in text.splitlines() if ln.startswith("2026-")}
+    assert rows["2026-08-14"].endswith(R.BOOT_UNKNOWN)   # honestly unknown...
+    assert "BEHIND 5" in rows["2026-08-13"]              # ...and still failing
+    assert "BOOTSTRAP DRIFT on 2026-08-13" in text
+
+
+def test_a_proven_heal_above_an_old_drift_does_go_green(tmp_path):
+    """The other direction of the same rule: re-running the installer heals the
+    host, and the next graded session says so. The rule is "newest DEFINITIVE
+    row", not "any drift anywhere" — otherwise a heal could never show."""
+    state = _green_state(tmp_path, "2026-08-14", "2026-08-13")
+    runs = _receipts(tmp_path,
+                     _receipt("2026-08-13", matches_main=False, commits_behind=9,
+                              installed_matches_main=False,
+                              installed_commits_behind=9),
+                     _receipt("2026-08-14"))
+    rc, text = _run(state, sessions=2, receipts_dir=runs)
+    assert rc == 0, text
+    assert "matched origin/main on 2026-08-14" in text
+
+
+def test_a_real_receipt_outranks_a_dry_run_for_the_same_session(tmp_path):
+    """The dry run has its own filename, but it SORTS AFTER the production one —
+    so without an explicit preference the exercise would outrank the evening it
+    was checking, which is the same evidence loss one layer up."""
+    state = _green_state(tmp_path, "2026-08-14")
+    runs = _receipts(
+        tmp_path,
+        _receipt("2026-08-14", matches_main=False, commits_behind=3,
+                 installed_matches_main=False, installed_commits_behind=3),
+        dict(_receipt("2026-08-14"), dry_run=True))
+    assert sorted(p.name for p in runs.glob("*.json")) == [
+        "2026-08-14.dry-run.json", "2026-08-14.json"]
+    rc, text = _run(state, sessions=1, receipts_dir=runs)
+    assert rc == 1, text
+    assert "BEHIND 3" in text
