@@ -69,6 +69,8 @@ from scripts.prophet_fusion_labels import LabelFrame               # noqa: E402
 LEDGER = ROOT / "data" / "us_board_ledger" / "retro_grades.parquet"
 SNAPSHOTS = ROOT / "data" / "us_board_ledger" / "snapshots.jsonl"
 REPORT_PATH = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "report.json"
+ERA_KEYS = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "era_frame_keys.parquet"
+ERA_PIN = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "era_frame_pin.json"
 PR1B_REPORT = (ROOT / "research" / "prophet_fusion" / "pr1b_baseline_race"
                / "report.json")
 
@@ -132,23 +134,13 @@ def real_census(real_report):
 
 @pytest.fixture(scope="module")
 def registered_report():
-    """The COMMITTED PR-2 artifact — the REGISTERED read, never a re-run.
+    """The COMMITTED PR-2 artifact — what was REGISTERED, never a live re-run.
 
-    `retro_grades.parquet` carries ONE ROW PER (board date, ticker, horizon) and appends
-    each horizon as it matures, so a board date keeps growing for 21 sessions after it is
-    published.  Every number PR-2 registered was therefore measured on a frame that was
-    still maturing, and a re-run can never land on it again: on 2026-08-18 the nightly
-    (`f960202b`, "engine: regime update") matured 07-15's H=21 and 07-30/07-31's H=10 and
-    added the 08-07 board, moving the frame 4,077 -> 4,566 rows and 24 -> 25 dates.  An
-    as-of cutoff does NOT recover the vintage either — the maturation lands INSIDE the
-    registered window (cut at 2026-07-31 gives 4,409 rows, not 4,077).
-
-    So a claim about what PR-2 REGISTERED is a claim about this file.  Asserting it
-    against a rebuild is a standing race that reds the fleet on data alone, and the only
-    other way to green such an assertion is to re-stamp registered evidence — which the
-    §9.4 parity test could not survive anyway, since it compares two committed artifacts.
-    Structural claims that hold at ANY vintage keep using `real_report` and still exercise
-    the harness end-to-end on the live frame.
+    Construction of those same numbers is `era_report`: a rebuild from the LIVE ledger
+    inner-joined to the committed (date, ticker, horizon) pin.  An as-of cutoff does
+    not recover the vintage (maturation lands inside the window; DSC:GRADED-BOARD-
+    LEDGER-ACCRUES-BY-HORIZON).  Structural claims that hold at ANY vintage keep using
+    `real_report`.
     """
     if not REPORT_PATH.exists():
         pytest.skip("PR-2 report not committed yet")
@@ -158,6 +150,66 @@ def registered_report():
 @pytest.fixture(scope="module")
 def registered_census(registered_report):
     return registered_report["estimability_census"]
+
+
+def _pin_ledger_to_registered_era(raw: pd.DataFrame, keys: pd.DataFrame) -> pd.DataFrame:
+    """Keep live rows whose (date, ticker, horizon) was in the PR-2 frame.
+
+    Unique tickers per date are unchanged by maturation; only later horizons accrue.
+    Inner-joining on that grain recovers the registered 4,077 rows from the grown
+    ledger without rewriting ``data/`` and without an as-of cutoff.
+    """
+    work = raw.copy()
+    work["_pin_date"] = work["as_of"].astype(str).str.slice(0, 10)
+    work["_pin_ticker"] = work["ticker"].astype(str)
+    work["_pin_h"] = work["horizon"].astype(int)
+    pin = keys.rename(columns={"date": "_pin_date", "ticker": "_pin_ticker",
+                               "horizon": "_pin_h"})
+    pinned = work.merge(pin, on=["_pin_date", "_pin_ticker", "_pin_h"], how="inner")
+    return pinned.drop(columns=["_pin_date", "_pin_ticker", "_pin_h"])
+
+
+def _snapshots_for_dates(src: Path, dates: set[str], dest: Path) -> Path:
+    """Keep snapshot payloads for the pinned era's board dates only."""
+    with src.open(encoding="utf-8") as handle, dest.open("w", encoding="utf-8") as out:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            doc = json.loads(line)
+            as_of = str(doc.get("as_of") or "")[:10]
+            if as_of in dates:
+                out.write(line)
+                out.write("\n")
+    return dest
+
+
+@pytest.fixture(scope="module")
+def era_report(tmp_path_factory):
+    """Rebuild C2 on the PR-1b / PR-2 registered-era frame, not the grown live ledger.
+
+    DEC:FUSION-C2-TEST-ERA-IS-REGISTERED-VINTAGE — Option B.  Published research
+    numbers stay frozen; the harness is re-run against the row-identity pin.
+    """
+    if not (LEDGER.exists() and SNAPSHOTS.exists() and ERA_KEYS.exists()
+            and ERA_PIN.exists()):
+        pytest.skip("real frame or era pin absent (sparse worktree omits data/); "
+                    "opt in with `python3 scripts/worktree_sparse.py add data`")
+    pin = json.loads(ERA_PIN.read_text(encoding="utf-8"))
+    keys = pd.read_parquet(ERA_KEYS)
+    raw = _pin_ledger_to_registered_era(pd.read_parquet(LEDGER), keys)
+    assert len(raw) == pin["n_rows_expected"], (
+        f"era pin recovered {len(raw)} rows, registered {pin['n_rows_expected']} — "
+        "a rewrite of settled grade keys, not lawful accrual")
+    dest = tmp_path_factory.mktemp("c2_era") / "snapshots.jsonl"
+    dates = set(keys["date"].astype(str))
+    _snapshots_for_dates(SNAPSHOTS, dates, dest)
+    return c2.run_c2(raw=raw, snapshots_path=dest)
+
+
+@pytest.fixture(scope="module")
+def era_census(era_report):
+    return era_report["estimability_census"]
 
 
 def _all_keys(node) -> set[str]:
@@ -562,9 +614,10 @@ class TestCMI:
         assert cell["status"] == "NOT_ESTIMABLE"
         assert "Z-bin(s) [2] empty" in cell["reason"]
 
-    def test_h21_refuses_on_real_frame(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_h21_refuses_on_real_frame(self, era_report):
         """7 graded dates at H=21 cannot support the estimator; print it, do not fit it."""
-        cells = [c for c in registered_report["cmi"]["cells"] if c["horizon"] == 21]
+        cells = [c for c in era_report["cmi"]["cells"] if c["horizon"] == 21]
         assert cells
         for cell in cells:
             assert cell["status"] == "NOT_ESTIMABLE"
@@ -806,19 +859,20 @@ class TestWhatDoesXAddTable:
         assert rows["F8_ATTENTION_CROWDING"]["verdict"] == "not_estimable"
         assert "vote_inert" in rows["F8_ATTENTION_CROWDING"]["sub_reasons"]
 
-    @pytest.mark.skipif(not PR1B_REPORT.exists(), reason="PR-1b artifact not committed")
-    def test_the_descriptive_tier_reproduces_pr1b_section_9_4(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_the_descriptive_tier_reproduces_pr1b_section_9_4(self, era_report):
         """Parity is asserted against the PR-1b ARTIFACT, never against typed literals.
 
         A hand-copied number pins the transcription, not the construction: if PR-1b is
         ever re-run and its own cells move, a literal keeps passing while the two
         artifacts silently disagree. Both reports are on disk — compare them.
+        Construction here is the era-pinned rebuild, not the grown live ledger.
         """
         pr1b = json.loads(PR1B_REPORT.read_text(encoding="utf-8"))
         theirs = {row["family"]: row for row in
                   pr1b["c1_analysis"]["incremental_over_champion"]}
         ours = {cell["family"]: cell for cell in
-                registered_report["incremental"]["descriptive"]["score_membership"]["cells"]
+                era_report["incremental"]["descriptive"]["score_membership"]["cells"]
                 if cell["horizon"] == c2.PRIMARY_HORIZON}
         shared = sorted(set(theirs) & set(ours))
         assert shared, "no family is present in both artifacts — parity is unasserted"
@@ -830,9 +884,10 @@ class TestWhatDoesXAddTable:
                     f"score-membership construction is supposed to BE PR-1b §9.4's")
                 assert ours[family][block]["n_dates"] == theirs[family][block]["n_dates"]
 
-    def test_the_verdict_keys_on_t_and_both_references_are_printed(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_the_verdict_keys_on_t_and_both_references_are_printed(self, era_report):
         """F-1: the normal reference decided the draft's only rejection. Pin the fix."""
-        table = registered_report["what_does_x_add"]
+        table = era_report["what_does_x_add"]
         assert table["verdict_keys_on"] == "p_t"
         assert "t" in table["p_method"] and "not immaterial" in table["p_method"].lower()
         measured = [row for row in table["rows"] if row["p_t"] is not None]
@@ -852,9 +907,10 @@ class TestWhatDoesXAddTable:
             "F5 rejects again — the table is reading the normal reference")
         assert table["n_rejections"] == 0
 
-    def test_design_membership_rides_beside_every_verdict(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_design_membership_rides_beside_every_verdict(self, era_report):
         """F-2: F5's registered score includes the serving-dead insider_cluster."""
-        rows = {row["family"]: row for row in registered_report["what_does_x_add"]["rows"]}
+        rows = {row["family"]: row for row in era_report["what_does_x_add"]["rows"]}
         f5 = rows["F5_FLOW_POSITIONING"]
         design = f5["design_membership_effect"]
         assert design["status"] == "estimated"
@@ -888,9 +944,10 @@ class TestWhatDoesXAddTable:
         assert sorted(block["score_membership"]["members_per_family"][
             "F5_FLOW_POSITIONING"]) == ["insider_cluster", "smartmoney_add"]
 
-    def test_multiplicity_sensitivity_is_reported(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_multiplicity_sensitivity_is_reported(self, era_report):
         """F-3: a floor that lowers the test count must answer with the other table."""
-        block = registered_report["what_does_x_add"]["sensitivity"]
+        block = era_report["what_does_x_add"]["sensitivity"]
         assert block["variant"] == "vote_inert_members_retained"
         assert block["requested_n_tests"] == 4
         assert "F8_ATTENTION_CROWDING" in block["families_retained"]
@@ -1083,9 +1140,10 @@ class TestDescriptiveMinDates:
         assert reference["p_t"] > reference["p_normal"], (
             "the t must be the more conservative reference at these block counts")
 
-    def test_h21_secondary_table_is_empty_because_every_cell_refuses(self, registered_report):
+    @NEEDS_REAL_FRAME
+    def test_h21_secondary_table_is_empty_because_every_cell_refuses(self, era_report):
         """7/7/4 date-blocks cannot support a two-sided p of either shape."""
-        table = registered_report["what_does_x_add_secondary_horizons"]["21"]
+        table = era_report["what_does_x_add_secondary_horizons"]["21"]
         assert table["n_tests"] == 0
         assert table["rows"] == []
         refused = {row["family"]: row for row in table["refused_below_min_dates"]}
@@ -1187,15 +1245,48 @@ class TestNullSemanticsOnTheVarianceAxis:
         assert axis["null_counts_as_a_measured_value"] is False
         assert inert["vote_inert"] is True
 
-    def test_news_burst_is_unchanged_by_the_null_semantics_fix(self, registered_census):
+    @NEEDS_REAL_FRAME
+    def test_news_burst_is_unchanged_by_the_null_semantics_fix(self, era_census):
         """news_burst stores 1,474 explicit False, so its 0.333 / inert read must hold."""
-        member = next(m for m in registered_census["families"]["F8_ATTENTION_CROWDING"]["members"]
+        member = next(m for m in era_census["families"]["F8_ATTENTION_CROWDING"]["members"]
                       if m["vote_column"] == "news_burst")
         axis = member["variance_axis"]["news_burst"]
         assert member["coverage"]["n_explicit_negative_values"] == 1474
         assert axis["null_counts_as_a_measured_value"] is False
         assert axis["variation_share"] == pytest.approx(0.3333, abs=1e-3)
         assert member["vote_inert"] is True
+
+
+class TestRegisteredEraPin:
+    """Option B: reconstruct the PR-2 frame from the grown ledger by row identity.
+
+    An as-of cutoff is the wrong pin (DSC:GRADED-BOARD-LEDGER-ACCRUES-BY-HORIZON).
+    The live frame is still checked by TestTheLedgerAccruesRatherThanRewrites.
+    """
+
+    @NEEDS_REAL_FRAME
+    def test_the_key_pin_recovers_the_registered_row_count_from_the_grown_ledger(self):
+        pin = json.loads(ERA_PIN.read_text(encoding="utf-8"))
+        keys = pd.read_parquet(ERA_KEYS)
+        raw = _pin_ledger_to_registered_era(pd.read_parquet(LEDGER), keys)
+        assert len(keys) == pin["n_keys"]
+        assert len(raw) == pin["n_rows_expected"] == 4077
+        dates = raw["as_of"].astype(str).str.slice(0, 10)
+        assert dates.nunique() == pin["n_dates"] == 24
+        assert [str(dates.min()), str(dates.max())] == pin["date_range"]
+        by_h = {int(h): int(n) for h, n in
+                pd.DataFrame({"d": dates, "h": raw["horizon"].astype(int)})
+                .drop_duplicates().groupby("h")["d"].nunique().items()}
+        assert by_h == {int(k): int(v) for k, v in pin["horizon_n_dates"].items()}
+
+    @NEEDS_REAL_FRAME
+    def test_an_as_of_cutoff_does_not_recover_the_registered_vintage(self):
+        pin = json.loads(ERA_PIN.read_text(encoding="utf-8"))
+        live = pd.read_parquet(LEDGER)
+        cut = live[live["as_of"].astype(str).str.slice(0, 10) <= pin["date_range"][1]]
+        assert len(cut) > pin["n_rows_expected"], (
+            "as-of cutoff recovered the vintage — the pin would be a date cut, "
+            "which DSC:GRADED-BOARD-LEDGER-ACCRUES-BY-HORIZON measured as wrong")
 
 
 class TestTheLedgerAccruesRatherThanRewrites:
@@ -1357,12 +1448,12 @@ class TestDocTablesMatchTheArtifact:
     def _doc(self):
         return DOC_PATH.read_text(encoding="utf-8")
 
-    def test_the_cmi_table_cells_match_report_json(self, registered_report):
+    def test_the_cmi_table_cells_match_report_json(self, era_report):
         """§5's table prints `excess (p)` per family x horizon; every printed pair
         must equal the artifact's cell rounded to the doc's own precision."""
         doc = self._doc()
         cells = {(c["family"], int(c["horizon"])): c
-                 for c in registered_report["cmi"]["cells"]}
+                 for c in era_report["cmi"]["cells"]}
         import re
         row_re = re.compile(
             r"^\|\s*(F\d)\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$", re.M)
@@ -1387,12 +1478,12 @@ class TestDocTablesMatchTheArtifact:
             found += 1
         assert found == 3, f"expected 3 CMI doc rows, matched {found}"
 
-    def test_the_what_does_x_add_table_matches_report_json(self, registered_report):
+    def test_the_what_does_x_add_table_matches_report_json(self, era_report):
         """§7's measured rows print `p_t / p_normal / p_adj`; each must equal the
         artifact's row at the doc's 3-decimal precision, and the doc's verdict
         word must be the artifact's verdict."""
         doc = self._doc()
-        rows = {r["family"]: r for r in registered_report["what_does_x_add"]["rows"]}
+        rows = {r["family"]: r for r in era_report["what_does_x_add"]["rows"]}
         import re
         fam_map = {"F2": "F2_MOMENTUM_EXTENSION", "F4": "F4_CATALYST_EVENT",
                    "F5": "F5_FLOW_POSITIONING"}
@@ -1413,4 +1504,4 @@ class TestDocTablesMatchTheArtifact:
             found += 1
         assert found == 3, f"expected 3 measured what_does_x_add doc rows, matched {found}"
         assert "**Zero rejections.**" in doc
-        assert registered_report["what_does_x_add"]["n_rejections"] == 0
+        assert era_report["what_does_x_add"]["n_rejections"] == 0
