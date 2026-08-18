@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T11:14:25.735550+00:00",
-  "count": 1332,
+  "generated_at": "2026-08-18T12:21:16.060348+00:00",
+  "count": 1336,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -77,6 +77,85 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-rddxdga6nln-fb37f8",
+      "title": "GS Johnstone TMT Spec Sales 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:39:13Z",
+      "summary_points": [
+        "**AI Revenue Scaling**: Anthropic’s $65bn annual revenue run rate (July) shows 18% MoM growth; Nvidia’s $100bn OpenAI data center backstop (Ohio) and DSY’s industrial AI agent exposure (Devin) signal accelerating AI infrastructure demand without direct CATIA/SIMULIA threat.",
+        "**Nvidia Supply Chain Criticality**: Nvidia’s SpectrumX switch entering mass production with TSMC (2330), ASE (3711), Hon Hai (2317), and Browave (3163) is pivotal for AI infrastructure supply chain resilience.",
+        "**Semiconductor Pricing Inflation**: Taiwan PMIC suppliers plan 10–15% price hikes from Oct 2026 due to wafer costs, positively impacting Pan Jit (2481), Taiwan Semi (5425), Eris Tech (3675) amid semiconductor cost inflation risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-auzc8nhgoqf-8c4a09",
+      "title": "GS Privorotsky GS Basics 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:39:12Z",
+      "summary_points": [
+        "**Global Rate Supply Stress**: Sovereign deficits and $1tn+ AI capex drive supply-side rate pressures; Japan JGB 10s at 2.94% (3-decade high) and France election risks amplify global rate stress.",
+        "**Private Sector Crowding Out**: Real rates + public/AI capital demands force private sector adjustment, compressing equity multiples (P/E) and driving K-shaped consumer spending divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1iiktbfbkcy-2da106",
+      "title": "JPM Delta One Flows",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:06:44Z",
+      "summary_points": [
+        "**Tech Outflows**: Semis and Tech ETFs saw $3.4Bn outflows (-1.4z), with Technology sector showing severe negative net flows (-$4.2Bn 4w), signaling capital withdrawal risk.",
+        "**S&P 500 Divergence**: Asset Managers net long (11.48) vs.",
+        "Leveraged Funds net short (-29.04), indicating institutional bullishness offset by speculative bearishness.",
+        "**Oil-Equity Correlation**: S&P 500 oil correlation at 1% and S&P TSX 60 at 7% highlight energy volatility as critical geopolitical risk factor (Middle East/Russia-Ukraine).",
+        "**Fixed Income Inflows**: Government Bonds (+$3.6Bn 4w) and Money Market/Ultrashort (+$8.8Bn 4w) drove strong ETF inflows, contrasting with Medium-term (-$3.7Bn) and HY outflows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4bsngk2htsd-550f52",
+      "title": "JPM US Market Intelligence Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:05:53Z",
+      "summary_points": [
+        "**Energy-Driven Yield Surge**: 30Y yield at 2007 high due to energy prices, US fiscal deterioration, credit issuance, and BOJ/JPY dynamics; crude prices directly driving 10Y/30Y yields.",
+        "**Critical Data Thresholds**: FOMC Minutes (Aug 19) and PMI (Aug 21) as top catalysts; Bull/Bear Fed Minutes thresholds (Bull >54.0, Bear <52.5) for positioning.",
+        "**Sector Flow Rotation**: Semis outflows ($3.9Bn), Discretionary/Financials, fiat ETFs; inflows to long-dated USTs ($13.1Bn) and Brent longs (Managed Money +1.3z).",
+        "**Regional Banks Risk**: L/S ratio at 74% (multi-year high), signaling heightened defensiveness amid sector pressure.",
+        "**Geopolitical Energy Impact**: SPR at 1982 lows, diesel/gasoline prices rising, Iran offensive posture, US military actions; Energy sector leads SPX (+39% YTD)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-fojdhr4a8ms-cbb065",
       "title": "Duttenhoefer´s Daily (18.08.2026)",
