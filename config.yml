@@ -7156,6 +7156,16 @@ china_special_situations:
 us_board_gate:
   gated: true
   preview_rows: 3
+  # The four panels ADJACENT to the board on the same page — "More fresh
+  # triggers" (.topsetups), "Market leaders" (.topsetups.leaders-strip),
+  # "Recently fired" (.pbr-l), the Act-Now board (#action-board) and the theme
+  # tape's member lists (#theme-tape .tt-names). Each is fed by a DIFFERENT
+  # artifact than us_standouts.buy, so the board's split above never covered
+  # them and they stayed gated only by templates/tier_preview.js — a DOM overlay
+  # readable in view-source. Same split, same payload; separate switch so the
+  # board's gate and the panels' can be flipped independently.
+  panels: true
+  panel_preview_rows: 3
 
 # ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies
