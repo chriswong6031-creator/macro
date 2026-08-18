@@ -48,7 +48,9 @@ so_what: >
   (.github/workflows/daily.yml:702, :751, :772, :1313): during a rebase the replayed commit
   is "theirs", so two runs appending different tails to an append-only file always conflict
   and the later run wins WHOLESALE, silently. `.gitattributes` already solves this class 24
-  times (20 `merge=union` + 4 `-merge`) but carries NO entry for `data/government_revenue/`.
+  times (20 `merge=union` + 4 `-merge`) but carries NO entry for `data/government_revenue/` —
+  and `merge=union` is DECLINED there, not merely missing: see the detail section, the
+  ledger's byte-prefix hash binding makes it actively wrong.
   Fourth: do NOT wait
   this class of red out. Measured — the projection lane returns `status: ok`,
   `append_count: 0` against the corrupted tree because it reads the committed
@@ -244,15 +246,39 @@ and the later run wins **wholesale, with no conflict reported**. Base-freshness 
 time (this record's original framing) is the right refusal, but `-X theirs` is what
 actually performs the discard on every retry that proceeds.
 
-**And the repo already solved this class 24 times.** `.gitattributes` carries 20
-`merge=union` entries and 4 `-merge` entries, and **no entry at all for
-`data/government_revenue/`** (`git check-attr merge -- <path>` returns `unspecified` for
-`collection_receipts.jsonl`, `candidate_ledger.jsonl` and `award_event_snapshots.parquet`).
-The two artifact shapes need opposite attributes: JSONL ledgers want `merge=union` (both
-tails survive; check interleaving against the prefix-extension assertion at
-tests/test_usaspending_awards.py:1817 before relying on it), while the parquets would be
-CORRUPTED by union and need `-merge` plus a recompute — for those the base fence is the
-load-bearing part.
+**`merge=union` looks like the cheap fix here. It is not — it is DECLINED.**
+`.gitattributes` does solve this class 24 times elsewhere (20 `merge=union` + 4 `-merge`)
+and carries **no entry for `data/government_revenue/`** (`git check-attr merge -- <path>`
+returns `unspecified` for `collection_receipts.jsonl`, `candidate_ledger.jsonl` and
+`award_event_snapshots.parquet`), so the instinct to add it is natural and wrong. Three
+blockers, increasing in severity — recorded so the next session with the same good
+instinct finds the answer instead of shipping it:
+
+1. **It cannot cover the parquet spine at all.** A union merge of two binary frames is
+   garbage. `award_event_snapshots.parquet` and `award_action_versions.parquet` are exactly
+   what moved `candidate_id` in this incident (16 of 210 and 18 of 35,257 identities), so
+   the exposure that caused the red survives untouched.
+2. **It is actively WRONG for `candidate_ledger.jsonl`.** `candidate_projection_state.json`
+   binds that ledger by `prior_sha256` over an exact byte prefix —
+   scripts/build_government_revenue_candidates.py:540-542 hashes
+   `ledger.raw[:prior_byte_count]` and raises `"candidate ledger prior prefix does not match
+   projection state"` on mismatch (verified by reading it here). A union-merged tail no
+   longer reproduces that hash, so union would convert a silent lost update into a hard
+   projection-lane failure.
+3. **Partial application is the worst of the three.** Even where union WOULD work — the
+   three receipt ledgers — applying it there while the parquets stay unmerged yields
+   receipts from both runs against a spine from one: precisely the mixed generation the
+   collector's own torn-generation refusal (collectors/usaspending_awards.py:3956-3972)
+   exists to prevent.
+
+The distinction from the 20 existing entries is the durable lesson. Every one of those
+(`data/qledger/claims.jsonl`, `data/trial_ledger.jsonl`, `data/neuralweb/causal_*.jsonl`,
+`data/marketing/outbox/*.jsonl`) is a **standalone ledger with no cross-artifact hash
+binding**. `data/government_revenue/` is **ONE hash-bound generation**, so the unit of
+correctness is the FAMILY, not the file — which is why the repair (#5870) had to revert
+every moved file across both trees, and why the push-path fence withholds the whole
+coherence family rather than reverting the offending file. Full reasoning:
+`DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`.
 
 **The source published nothing in the window.** All 376 differing rows of
 `collection_receipts.jsonl` between the two commits carry identical `request_sha256` AND
