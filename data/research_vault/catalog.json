@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T12:21:16.060348+00:00",
-  "count": 1336,
+  "generated_at": "2026-08-18T13:34:11.556943+00:00",
+  "count": 1339,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -97,6 +97,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-m0xizgmezim-35912d",
+      "title": "GS Duttenhoefer Daily 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:39:13Z",
+      "summary_points": [
+        "**Geopolitical Oil Supply Risk**: Strait of Hormuz attack threat (Trump warning) post-60-day deadline expiry, escalating US-Iran tensions with direct impact on global oil flows and market volatility.",
+        "**Tech Supply Chain Disruption**: Trump administration likely blocking Apple from China's CXMT (confirmed by Howard Lutnick), heightening near-term tech sector supply chain risks and regulatory uncertainty.",
+        "**Central Bank Gold Demand Surge**: GS forecasts 57 tonnes June central bank buying (100 tonnes/month seasonal), driven by China, anchoring $4,900/oz gold price forecast and shifting precious metals fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-auzc8nhgoqf-8c4a09",
       "title": "GS Privorotsky GS Basics 18 Aug 2026",
       "institution": "S&T",
@@ -111,6 +130,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cgjdw7jzza0-64f5de",
+      "title": "GS Blekos Marketcolour 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:39:12Z",
+      "summary_points": [
+        "**Geopolitical Risk Impact**: US-Iran escalation drove SPX down 52bps, VIX up 15.19%, with Energy outperforming (up 87bps) amid sector divergence - **Record Buyback Momentum**: $1T+ S&P 500 buyback authorizations (96% in open window), 1.5x 2025 YTD ADTV, skewed toward Tech/Financials/Health Care - **Global Yield Surge**: US 30-yr yield hits 5.3% (2007 high), Japan 30-yr exceeds 4% (27-yr high), UK gilts at 1998 peak—decade-high rate environment - **Positioning Shifts**: GS Trading Desk ADTV spikes above S&P 500 volatility, signaling rate-driven flow repositioning amid elevated market stress"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1f6swdbtrtr-ea000f",
+      "title": "GS Crook GS Morning 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T11:38:45Z",
+      "summary_points": [
+        "**AI-Driven Debt Supply & Fiscal Deficits**: $489B AI-related debt financing (vs $322B 2025 est) and $1.5T USD IG issuance fuel upward real rate pressure, with sovereign deficits and $1tn+ AI capex driving structural yield trends.",
+        "**Long-Term Yield Risk to Equities**: US 10y yields >50 bp (2 std dev) in 1 month trigger material equity stress; historical thresholds (yields >5% or real yields >2.25%) correlate with negative equity/bond returns.",
+        "**Fiscal Sustainability Risk**: 9% real rates + rising debt/GDP create unsustainable equilibrium; fiscal consolidation lacks credibility without anchor, amplifying risk premium and inflation expectations.",
+        "**Fed Policy Uncertainty**: July FOMC muddied reaction function, causing fragmented rates positioning (short/long front end, belly), necessitating fixed income duration adjustments.",
+        "**UK Labor Market Data**: Unemployment at 4.9% (above forecast), payroll decline of 13k, and decelerating wage growth (2.8%) signal weakening dynamics, impacting GBP policy outlook."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
