@@ -283,6 +283,28 @@ def test_withhold_removes_files_the_base_does_not_carry(lane, capsys):
     assert RECEIPTS in tracked
 
 
+def test_withhold_never_sweeps_unrelated_dirty_files(lane, capsys):
+    """The collect job pushes with capital-structure paths DIRTY, parked by --autostash.
+
+    The withhold commits the index, so a tracked file dirty at that moment must stay
+    dirty and OUT of the commit — sweeping it would publish a tree no compiler accepted
+    (the #4600 carve-out this lane exists to preserve).
+    """
+    repo = lane["repo"]
+    _write(repo, "data/capital_structure/source_manifest.jsonl", b'{"row":"unaccepted"}\n')
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "--amend", "--no-edit")
+    (repo / "data/capital_structure/source_manifest.jsonl").write_bytes(b'{"row":"tonight"}\n')
+
+    assert _run(repo) == 0
+    assert "WITHHELD" in capsys.readouterr().out
+    committed = _git(repo, "show", "HEAD:data/capital_structure/source_manifest.jsonl")
+    assert committed == '{"row":"unaccepted"}\n', "the dirty edit must not have been swept in"
+    assert "data/capital_structure/source_manifest.jsonl" in _git(
+        repo, "diff", "--name-only"
+    ), "the dirty edit must still be dirty, for --autostash to park"
+
+
 def test_amend_folds_the_withhold_into_head(lane):
     repo = lane["repo"]
     before = _git(repo, "rev-list", "--count", "origin/main..HEAD").strip()
