@@ -2364,8 +2364,6 @@ class TestFireHistoryGradeJoin:
         # added that exact key on 2026-08-18 and the assertion flipped to
         # 'matured'. Pin the absent-grades condition the same way the
         # matured-row test above pins the present one.
-        import engine.pick_lab.ledger as _ledger
-        monkeypatch.setattr(_ledger, "GRADES_PATH", tmp_path / "pick_lab" / "grades.jsonl")
         result = _build_fire_history(fire_log_df, tmp_path)
         assert len(result) == 1
         r = result[0]
@@ -2413,7 +2411,52 @@ class TestFireHistoryGradeJoin:
         assert r["status"] == "matured"
         assert abs(r["ret_excess_spy"] - 0.045) < 1e-9
 
-    def test_no_grade_column_in_output(self, tmp_path, monkeypatch):
+    def test_data_root_selects_the_grades_store_without_patching_constants(self, tmp_path):
+        """data_root must select the pick-lab store — the parameter, not a patch.
+
+        This is the regression the rest of this class cannot express.  Every other case
+        here either patches ``engine.pick_lab.ledger.GRADES_PATH`` or is insensitive to
+        the ledger's contents, so all of them stay green even if ``_build_fire_history``
+        ignores ``data_root`` entirely — which it did until 2026-08-18, reading the live
+        production store instead and reddening ci-pack-10 fleet-wide the night the
+        nightly graded the fire that test hardcodes.
+
+        Deliberately does NOT touch GRADES_PATH.  The ticker is one no live grade row
+        carries, so if the parameter is ever ignored again the join finds nothing, status
+        falls back to "accruing", and this fails.
+        """
+        import json as _json
+        from scripts.build_leader_radar import _build_fire_history
+
+        grades_path = tmp_path / "pick_lab" / "grades.jsonl"
+        grades_path.parent.mkdir(parents=True, exist_ok=True)
+        grades_path.write_text(_json.dumps({
+            "engine_id": "plab_leader_onset",
+            "ticker": "ZZTESTONLY",
+            "fire_date": "2026-07-15",
+            "horizon": "21",
+            "authority": "display_only",
+            "ret_excess_spy": 0.1234,
+            "ret_abs": 0.15,
+            "matured": True,
+        }) + "\n")
+
+        fire_log_df = pd.DataFrame([{
+            "date": pd.Timestamp("2026-07-15"),
+            "ticker": "ZZTESTONLY",
+            "fire_type": "onset",
+        }])
+
+        result = _build_fire_history(fire_log_df, tmp_path)
+
+        assert len(result) == 1
+        r = result[0]
+        assert r["status"] == "matured", (
+            "data_root was ignored: the grade written under it was not joined"
+        )
+        assert abs(r["ret_excess_spy"] - 0.1234) < 1e-9
+
+    def test_no_grade_column_in_output(self, tmp_path):
         """Output dict must not have 'grade' key (old schema)."""
         from scripts.build_leader_radar import _build_fire_history
 
