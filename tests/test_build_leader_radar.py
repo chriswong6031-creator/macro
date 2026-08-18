@@ -2348,7 +2348,7 @@ class TestHysteresisContiguityToday:
 class TestFireHistoryGradeJoin:
     """Blocker 2: _build_fire_history uses grades.jsonl not grades.parquet."""
 
-    def test_absent_grades_yields_accruing(self, tmp_path):
+    def test_absent_grades_yields_accruing(self, tmp_path, monkeypatch):
         """When grades.jsonl is absent all rows carry status='accruing', ret=None."""
         from scripts.build_leader_radar import _build_fire_history
 
@@ -2357,6 +2357,15 @@ class TestFireHistoryGradeJoin:
             "ticker": "CRWD",
             "fire_type": "onset",
         }])
+        # `_build_fire_history` accepts data_root but reads the ledger through
+        # `load_grades()`, which resolves the LIVE store — so tmp_path isolates
+        # nothing here. This test passed only while the real grades.jsonl
+        # happened to lack (plab_leader_onset, CRWD, 2026-07-15); the nightly
+        # added that exact key on 2026-08-18 and the assertion flipped to
+        # 'matured'. Pin the absent-grades condition the same way the
+        # matured-row test above pins the present one.
+        import engine.pick_lab.ledger as _ledger
+        monkeypatch.setattr(_ledger, "GRADES_PATH", tmp_path / "pick_lab" / "grades.jsonl")
         result = _build_fire_history(fire_log_df, tmp_path)
         assert len(result) == 1
         r = result[0]
@@ -2404,7 +2413,7 @@ class TestFireHistoryGradeJoin:
         assert r["status"] == "matured"
         assert abs(r["ret_excess_spy"] - 0.045) < 1e-9
 
-    def test_no_grade_column_in_output(self, tmp_path):
+    def test_no_grade_column_in_output(self, tmp_path, monkeypatch):
         """Output dict must not have 'grade' key (old schema)."""
         from scripts.build_leader_radar import _build_fire_history
 
@@ -2413,6 +2422,11 @@ class TestFireHistoryGradeJoin:
             "ticker": "DDOG",
             "fire_type": "precipice",
         }])
+        # Same live-store leak as above. This one asserts only key shape, so it
+        # cannot flip on ledger content — isolate it anyway rather than leave a
+        # second test reading production data by accident.
+        import engine.pick_lab.ledger as _ledger
+        monkeypatch.setattr(_ledger, "GRADES_PATH", tmp_path / "pick_lab" / "grades.jsonl")
         result = _build_fire_history(fire_log_df, tmp_path)
         assert len(result) == 1
         assert "grade" not in result[0], "Old 'grade' field must not appear in output"
