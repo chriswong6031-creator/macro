@@ -24,11 +24,17 @@ on:
     # 08:00Z is ~8.5-9.5h after the fire — comfortably past a healthy bake, so an
     # in-flight run at this hour is unusual but still only INDETERMINATE, never an
     # alarm. 14:00Z is the second look: it catches a bake that was still running at
-    # 08:00Z and then died. Both fire 7 days a week; the NYSE calendar anchor inside
-    # the check is what makes weekends and market holidays incapable of manufacturing
-    # a breach, so there is no weekday filter to keep in sync here.
+    # 08:00Z and then died — and it is the look where IN_FLIGHT_MAX_AGE (14h) turns
+    # an eternal in-flight run into a page (the 2026-08-16/17 hostage class).
+    # 20:00Z is the third look, added 2026-08-17: with only two looks, a run that
+    # crossed the age cap after 14:00Z waited ~18h for the next page; this bounds
+    # wedge-detection latency to ~6h and still costs three cheap ubuntu minutes a
+    # day. All fire 7 days a week; the NYSE calendar anchor inside the check is
+    # what makes weekends and market holidays incapable of manufacturing a breach,
+    # so there is no weekday filter to keep in sync here.
     - cron: "0 8 * * *"
     - cron: "0 14 * * *"
+    - cron: "0 20 * * *"
   workflow_dispatch:
 
 permissions:

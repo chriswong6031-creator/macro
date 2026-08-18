@@ -16,9 +16,11 @@ class: build
 blast_radius: reversible
 ambiguity: specified
 next_action: >
-  Land the availability-hardening PR (W0), then hand W1 to the operator: run the
-  launchd installer once on the Mac Studio, and close the outstanding arbitration of
-  the cancelling codex session.
+  W3 (2026-08-17 outage hardening) is the live wave: land its PR, verify all five
+  boards fresh, then fold the wedge/hostage classes into the W2 fire-drill list.
+  W1 operator items stand: launchd installer; plus the new W3 operator asks on
+  issue #5742 (cancel debris run 32077948964 post-recovery; census-lane cadence
+  ruling; M1 host revival owns the collect_tail re-pin).
 owns_paths:
   - scripts/prophet_rescue.py
   - .github/workflows/prophet-rescue.yml
@@ -47,9 +49,22 @@ waves:
     depends_on: [W0]
     next_action: >
       Inject each failure class in staging form (stale fixture, mock cancelled run) and
-      verify catch+heal+receipt paths; then declare the workstream's done-bar met or
-      iterate.
+      verify catch+heal+receipt paths — now including W3's wedge/hostage class (a run
+      held alive by an unschedulable queued job) and the ruleset push-freeze class;
+      then declare the workstream's done-bar met or iterate.
+  - id: W3
+    title: 2026-08-17 outage response — hostage-class + freeze-class hardening
+    status: in_progress
+    depends_on: [W0]
+    next_action: >
+      Merge the hardening PR (collect_tail unpin, liveness age-cap + weekend grace +
+      20:00Z look, rescue §0.4a wedge amendment, law annotations, postmortem), verify
+      all five Prophet boards fresh live, and hand the debris-run cancel + census
+      cadence + M1 re-pin asks to the operator (issue #5742).
 landmines:
+  - "A queued job on a runner label with no live runner holds its RUN alive ~24h and the run holds its per-cron concurrency group — the next night pends with zero jobs (DSC:QUEUED-JOB-HOSTAGE-HOLDS-THE-NIGHTLY-CRON-GROUP). Check job runs-on labels against the live pool before any other diagnosis."
+  - "A push-blocking ruleset kills publishes while builds stay green; `gh api repos/{o}/{r}/rulesets` is the FIRST check on mysterious GH013s (DSC:RULESET-FREEZE-BLINDS-EVERY-BUILD-INSTRUMENT)."
+  - "Rescue §0.4a is amended (DEC:PROPHET-NIGHTLY-WEDGE-HARDENING): a PROVEN wedge dispatches through; everything unproven still refuses. Do not 'simplify' the fail-closed inputs."
   - "Top-level index.json asof is wall-clock — sentinels must read source_asof + cohorts (DSC:PROPHET-ASOF-IS-WALL-CLOCK)."
   - "Run conclusions decouple from Prophet delivery in both directions (DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET)."
   - "Never dispatch over a queued/in_progress daily run; never exceed the 2/night auto-budget — livelock and dispatch-storm classes are both measured, not hypothetical."

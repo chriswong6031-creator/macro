@@ -394,7 +394,15 @@ but the discipline stands: wait for the packs to conclude (green, or spurious-on
 red) before squash-merging. Do NOT arm `gh pr merge --auto --squash` as the wait:
 main carries no branch protection, so auto-merge has no required checks to gate on
 and merges IMMEDIATELY (verified PR #3889, 2026-07-28 — merged ~1 min after arming
-with packs still pending).
+with packs still pending). That "no protection" is the NORMAL state, not a law of
+nature: a repository ruleset can appear at any time and reject even the nightly's
+bot pushes with GH013 — `ci-recovery-bootstrap-freeze-2026-08-15` did exactly
+that 08-15→08-17 (bypass = org admin only, minted with no DEC record), froze
+every Prophet board for three days, and no instrument saw it because the engine
+kept BUILDING green and only the push died. When pushes to main mysteriously
+fail, `gh api repos/{owner}/{repo}/rulesets` is the FIRST diagnostic, and any
+deliberate freeze must ship a DEC record plus an expiry plan
+(research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md).
 
 **ARM `merge-on-green`, THEN STAY.** After opening the pull request, run
 `gh pr edit <n> --add-label merge-on-green`.
