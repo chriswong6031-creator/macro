@@ -70,6 +70,24 @@ alternatives:
       `cancel-in-progress: false`, which killed the queued EDT run on 2026-08-14/15 and
       left a survivor that skipped every real job. The overlap is by design; the fix
       belongs at the artifact layer.
+  - option: Add `data/government_revenue/*.jsonl merge=union` to `.gitattributes`, the
+      idiom the repo already uses for 20 other append-only ledgers
+    why_not: >
+      The right instinct, and it CANNOT be applied to this directory. Three blockers, in
+      increasing severity. (1) It cannot cover the parquet spine at all — a union merge of
+      two binary frames produces garbage — so the exposure that moved `candidate_id` and
+      caused this incident survives untouched. (2) It is actively WRONG for
+      `candidate_ledger.jsonl`, whose `candidate_projection_state.json` binds the ledger by
+      `prior_sha256` over an exact byte prefix (scripts/build_government_revenue_candidates.py
+      :540-542): a union-merged tail no longer reproduces that hash, converting a silent
+      lost update into a hard projection-lane failure. (3) Even where union WOULD work —
+      the three receipt ledgers — applying it there while the parquets stay unmerged is the
+      worst outcome available: receipts from both runs against a spine from one, i.e. the
+      mixed generation the collector's own torn-generation refusal exists to prevent. The
+      twenty existing `merge=union` entries are all standalone ledgers with no
+      cross-artifact hash binding; this directory is one hash-bound generation, and the
+      unit of correctness is the family, not the file. Raised by the #5882 lane and
+      declined here for those reasons, not for scope.
   - option: Re-merge the two generations at push time instead of withholding one
     why_not: >
       A union is well-defined for the receipt ledgers (dedup by `receipt_id`) and NOT for
