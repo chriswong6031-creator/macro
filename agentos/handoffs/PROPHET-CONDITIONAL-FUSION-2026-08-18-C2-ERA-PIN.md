@@ -22,6 +22,8 @@ changed:
     what: "Pin metadata: 24 dates, 2026-06-15..2026-07-31, horizon date-blocks 24/17/7."
   - path: tests/test_prophet_fusion_c2.py
     what: "era_report rebuilds C2 from the pinned live rows + date-filtered snapshots. The nine vintage-bound tests (H=21 CMI/secondary, multiplicity, news_burst 1474, PR-1b §9.4, p_t literals, design membership, both doc tables) now consume era_report. TestRegisteredEraPin proves the key pin recovers 4,077 rows and that an as-of cutoff does not. TestTheLedgerAccruesRatherThanRewrites still watches the grown live frame. Runtime C2 untouched."
+  - path: .github/ci/legacy-jobs.yml
+    what: "Name era_frame_keys.parquet and era_frame_pin.json in unrun-picks-boards exclusive paths. Path literals in the C2 suite made them part of the job's import closure; leaving them unnamed redded pack-1's curated-closure ratchet (hosted-runner packing contract)."
   - path: agentos/decisions/DEC-FUSION-C2-TEST-ERA-IS-REGISTERED-VINTAGE.md
     what: "Program decision: Option B. Rejects A (re-stamp), C (relax/skip), and as-of cutoff."
   - path: agentos/workstreams/WS-PROPHET-CONDITIONAL-FUSION.md
@@ -39,6 +41,9 @@ verified:
   - claim: "unrun-picks-boards fusion step green (families + arena + labels + race + C2)."
     command: "python3 -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py tests/test_prophet_fusion_c2.py -q"
     result: "267 passed in 144.35s."
+  - claim: "unrun-picks-boards exclusive paths cover the era-pin files the C2 suite now reads."
+    command: "python3 -m pytest tests/test_ci_pack.py::test_curated_exclusive_scopes_cover_their_own_import_closure -q"
+    result: "1 passed in 160.15s after naming the two era-pin files. Pre-fix miss was exactly those two files."
   - claim: "Agent OS records validate."
     command: "python3 scripts/agentos.py validate"
     result: "0 errors (8 pre-existing phantom-owns-path / active-but-complete warnings in other records)."
@@ -65,6 +70,7 @@ do_not_redo:
   - "Do not relax tolerances or skip when the live frame grows (Option C)."
 danger_areas:
   - "A new vintage-bound literal asserted against real_report is the same standing race. Registered construction belongs on era_report; live growth belongs on TestTheLedgerAccruesRatherThanRewrites."
+  - "A new path literal under research/prophet_fusion/ in tests/test_prophet_fusion_c2.py must be named in unrun-picks-boards exclusive paths or pack-1's curated-closure ratchet reds."
   - "If a nightly REWRITES settled (date, ticker, horizon) keys rather than accruing, the pin's inner-join will drop below 4,077 and fail closed — that is the rewrite alarm, not a reason to refresh the pin."
 decisions:
   - DEC:FUSION-C2-TEST-ERA-IS-REGISTERED-VINTAGE

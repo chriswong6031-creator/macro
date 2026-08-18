@@ -9358,6 +9358,8 @@ jobs:
       - "research/prophet_fusion/families.yml"
       - "research/prophet_fusion/pr1b_baseline_race/report.json"
       - "research/prophet_fusion/pr2_c2/report.json"
+      - "research/prophet_fusion/pr2_c2/era_frame_keys.parquet"
+      - "research/prophet_fusion/pr2_c2/era_frame_pin.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
