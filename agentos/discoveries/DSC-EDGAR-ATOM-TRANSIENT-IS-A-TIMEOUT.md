@@ -42,7 +42,8 @@ verified_by: >
   Probe 2: 300 requests, 5 ReadTimeout, 0 HTML, each retried twice — 5/5
   recovered on the first retry. Encoded as ATOM_FETCH_ATTEMPTS and
   SecSourceUnavailableError in engine/institutional_census/sec_sources.py, with
-  the transport translation in scripts/run_institutional_13f_rolling.py.
+  the transport translation in scripts/run_institutional_13f_rolling.py, by
+  PR #5858.
 scope:
   - macro
   - engine/institutional_census/sec_sources.py
