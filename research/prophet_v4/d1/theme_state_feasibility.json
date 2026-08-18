@@ -1,0 +1,347 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T03:25:00Z",
+  "reproduce": [
+    "python3 research/prophet_v4/d1/build/07_build_theme_state_feasibility.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "masterplan_reference": "research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md Sec12.5 'Deterministic ThemeState v1'",
+  "proposed_verdict_law": "Every verdict below carries proposed: true. Per FROZEN SPEC, these are this build's recommendation from the facts gathered -- the orchestrator adjudicates final verdicts. Verdict enum used: READY_NOW | READY_AFTER_D2 | READY_AFTER_RADAR | READY_AFTER_EIOS | RIGHTS_BLOCKED | INSUFFICIENT_PIT | INSUFFICIENT_COVERAGE | NO_SOURCE | UNKNOWN.",
+  "primary_basket_id_coverage_note": "13/18 canonical themes have a primary_basket_id (reverse-safe company->theme path); 5 are honest nulls (config/theme_crosswalk.yml). Every ThemeState feature family below that depends on theme membership inherits this 13/18 (72%) ceiling until D2 closes the 5 nulls or the orchestrator accepts a proxy-basket fallback for them (a policy call, not a D1 finding).",
+  "verdict_tally": {
+    "READY_AFTER_D2": 3,
+    "NO_SOURCE": 1,
+    "READY_AFTER_EIOS": 1,
+    "READY_NOW": 1
+  },
+  "families": {
+    "performance": {
+      "spec_features": [
+        "1D/5D/10D/20D/63D total return",
+        "excess vs SPY",
+        "excess vs sector",
+        "vol-normalized return",
+        "drawdown / distance from high"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "canonical_theme_crosswalk (primary_basket_id path)",
+          "role": "theme->basket resolution",
+          "coverage_band": "13/18 themes (72%)"
+        },
+        {
+          "source": "curated_baskets (data/baskets/membership.json + membership_history.parquet)",
+          "role": "point-in-time member roster",
+          "coverage_band": "38 real thematic baskets; 435 distinct US companies with >=1 live real-curated-basket membership"
+        },
+        {
+          "source": "data/baskets/ohlcv/*.parquet",
+          "role": "daily price series per member",
+          "coverage_band": "not directly audited in D1 (out of core-source list); referenced by stock_identity partition manifest as baskets_ohlcv_v1, 2781+ symbols"
+        },
+        {
+          "source": "SPY + sector benchmark series",
+          "role": "excess-return denominator",
+          "coverage_band": "presumed available (standard index tape); not audited in D1"
+        }
+      ],
+      "pit_class_of_each": {
+        "canonical_theme_crosswalk": "CURRENT_SNAPSHOT_ONLY (see pit_freshness_matrix.json)",
+        "curated_baskets": "RECONSTRUCTED_PIT (membership_history.parquet added/removed dates from 2023-05-09)",
+        "ohlcv_price_series": "presumed FULL_PIT (daily bars) -- not independently verified in D1, flagged for D2 confirmation"
+      },
+      "coverage_band": "13/18 themes reverse-safe; PRIMARY_COVERAGE_NOTE applies",
+      "rights_class": "direct_display_ok (mastermind_curated house data)",
+      "blockers": [
+        "5/18 canonical themes have no primary_basket_id -- no reverse-safe membership path exists for them yet.",
+        "OHLCV PIT class not independently verified in D1 (out of the core-source list this packet owns).",
+        "DEGRADED PIT caveat (adversarial review H3): curated_baskets is RECONSTRUCTED_PIT but DEGRADED -- 95% of membership_history.parquet 'added' dates are the single 2023-05-09 seed constant, and removals are largely unstamped (the verified GOLD removal from gold_miners has no 'removed' date in the history artifact at all). Any feature computed 'as of a past date' via this reconstruction should be treated as coarse, not a fine-grained daily-accurate membership state."
+      ],
+      "proposed_verdict": "READY_AFTER_D2",
+      "proposed": true,
+      "verdict_rationale": "The mechanism (basket membership -> price series -> return math) is sound and RECONSTRUCTED_PIT-capable for baskets that HAVE a primary_basket_id, but 28% of the canonical theme roster has no reverse-safe path at all -- shipping v1 now would silently omit 5 themes rather than degrade gracefully."
+    },
+    "velocity_acceleration": {
+      "spec_features": [
+        "change in RS slope",
+        "change in normalized return velocity",
+        "2nd-difference/acceleration",
+        "acceleration persistence",
+        "inflection/changepoint probability (research context)"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "derived from the performance family's own time series",
+          "role": "1st/2nd-order stats on top of theme-level returns",
+          "coverage_band": "inherits performance family's 13/18"
+        }
+      ],
+      "pit_class_of_each": {
+        "derived_series": "inherits performance family's PIT classes"
+      },
+      "coverage_band": "inherits performance family (13/18 themes)",
+      "rights_class": "inherits performance family",
+      "blockers": [
+        "Hard dependency on the performance family landing first -- no independent source.",
+        "DEGRADED PIT caveat (adversarial review H3): curated_baskets is RECONSTRUCTED_PIT but DEGRADED -- 95% of membership_history.parquet 'added' dates are the single 2023-05-09 seed constant, and removals are largely unstamped (the verified GOLD removal from gold_miners has no 'removed' date in the history artifact at all). Any feature computed 'as of a past date' via this reconstruction should be treated as coarse, not a fine-grained daily-accurate membership state."
+      ],
+      "proposed_verdict": "READY_AFTER_D2",
+      "proposed": true,
+      "verdict_rationale": "Pure derivative of performance; verdict mirrors performance's blocker exactly, no new gap of its own."
+    },
+    "breadth": {
+      "spec_features": [
+        "share positive per horizon",
+        "share above 20/50/200d MA",
+        "share with rising RS",
+        "share with early expert events",
+        "share with entry-open episodes",
+        "new highs/lows",
+        "member coverage and stale share"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "curated_baskets + price series",
+          "role": "positive-share / MA-participation / rising-RS / new-highs-lows",
+          "coverage_band": "13/18 themes"
+        },
+        {
+          "source": "data/stock_identity/expert_events/ (pilot_events_v0.parquet)",
+          "role": "share with early expert events",
+          "coverage_band": "PILOT-SCALE ONLY -- data/stock_identity/census/coverage_census_v0.md states plainly: 'No expert data exists in W1 by law (masterplan Sec16.9)'"
+        },
+        {
+          "source": "site/turn_watch/turn_watch.json (C3) or engine/entry_radar (C4)",
+          "role": "share with entry-open episodes",
+          "coverage_band": "C3 materialized (831 triggered names); C4 UNKNOWN (no materialized probe-set artifact, see coverage_matrix.json cohort_C4_null_reason)"
+        }
+      ],
+      "pit_class_of_each": {
+        "curated_baskets_price": "RECONSTRUCTED_PIT / presumed FULL_PIT (see performance family)",
+        "expert_events": "NO_HISTORY -- does not exist by law in W1",
+        "turn_watch_C3": "CURRENT_SNAPSHOT_ONLY at this pin (single as_of=2026-08-13 artifact read; no dated history file for turn_watch itself audited in D1)"
+      },
+      "coverage_band": "mixed -- majority sub-features 13/18-theme-limited; 'early expert events' sub-feature is 0% (no source exists); 'entry-open episodes' sub-feature depends on unmaterialized Radar C4",
+      "rights_class": "direct_display_ok (curated_baskets, turn_watch); n/a (expert_events absent)",
+      "blockers": [
+        "share-with-early-expert-events: NO SOURCE EXISTS -- expert_events is explicitly forbidden/absent at universe scale in W1 by masterplan law (Sec16.9), pilot-only.",
+        "share-with-entry-open-episodes: depends on C4 (Radar probe universe), which is UNKNOWN/unmaterialized at this pin.",
+        "inherits the 13/18 primary_basket_id ceiling for its price-derived sub-features.",
+        "DEGRADED PIT caveat (adversarial review H3): curated_baskets is RECONSTRUCTED_PIT but DEGRADED -- 95% of membership_history.parquet 'added' dates are the single 2023-05-09 seed constant, and removals are largely unstamped (the verified GOLD removal from gold_miners has no 'removed' date in the history artifact at all). Any feature computed 'as of a past date' via this reconstruction should be treated as coarse, not a fine-grained daily-accurate membership state."
+      ],
+      "proposed_verdict": "NO_SOURCE",
+      "proposed": true,
+      "verdict_rationale": "The family as FULLY specified in Sec12.5 cannot ship complete: one required sub-feature (early expert events) has zero universe-scale source by explicit law, and another (entry-open episodes) is blocked on an unmaterialized Radar artifact. A PARTIAL breadth v1 (drop those two sub-features) would be READY_AFTER_D2 -- but that is a scope-narrowing decision for the orchestrator, not a D1 call."
+    },
+    "diffusion_leadership": {
+      "spec_features": [
+        "participant count",
+        "participating-subtheme count",
+        "concentration/entropy",
+        "leader/median spread",
+        "laggard catch-up",
+        "small/large-cap diffusion",
+        "cross-region confirmation"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "curated_baskets + price series",
+          "role": "participant-count / concentration / leader-median / cap-diffusion / laggard catch-up",
+          "coverage_band": "13/18 themes"
+        },
+        {
+          "source": "theme_graph EXPRESSES edges (ltheme:* -> theme:*)",
+          "role": "participating-subtheme count",
+          "coverage_band": "ZERO -- confirmed no ltheme:finviz -> theme:* EXPRESSES edges exist anywhere in data/theme_graph/edges.parquet (only basket:*/ltheme:ths sources EXPRESS into theme:*); finviz's 268 US local themes have NO rollup path into the 18 canonical themes today"
+        },
+        {
+          "source": "config/theme_crosswalk.yml cn_basket_ids",
+          "role": "cross-region confirmation",
+          "coverage_band": "7/18 themes carry a populated cn_basket_ids list"
+        }
+      ],
+      "pit_class_of_each": {
+        "curated_baskets_price": "RECONSTRUCTED_PIT / presumed FULL_PIT",
+        "expresses_edges": "CURRENT_SNAPSHOT_ONLY"
+      },
+      "coverage_band": "13/18 for most sub-features; 0/18 for participating-subtheme count (US finviz side); 7/18 for cross-region",
+      "rights_class": "direct_display_ok (curated_baskets); n/a (crosswalk is house config)",
+      "blockers": [
+        "participating-subtheme count: NO source edge exists linking US finviz local themes to canonical themes -- would require a new EXPRESSES-type mapping (D2/engine work, out of D1 scope).",
+        "cross-region confirmation: only 7/18 themes have any cn_basket_ids populated.",
+        "inherits the 13/18 primary_basket_id ceiling.",
+        "DEGRADED PIT caveat (adversarial review H3): curated_baskets is RECONSTRUCTED_PIT but DEGRADED -- 95% of membership_history.parquet 'added' dates are the single 2023-05-09 seed constant, and removals are largely unstamped (the verified GOLD removal from gold_miners has no 'removed' date in the history artifact at all). Any feature computed 'as of a past date' via this reconstruction should be treated as coarse, not a fine-grained daily-accurate membership state."
+      ],
+      "proposed_verdict": "READY_AFTER_D2",
+      "proposed": true,
+      "verdict_rationale": "Most sub-features are D2-closable (basket-primary gap). Participating-subtheme count needs a genuinely NEW mapping edge that does not exist today; cross-region confirmation is coverage-limited (7/18). Both are D2-scale gap-closing work, not a structural NO_SOURCE block."
+    },
+    "propagation_flow": {
+      "spec_features": [
+        "volume/turnover acceleration",
+        "news/event density",
+        "earnings-surprise diffusion",
+        "alternative-data corroboration",
+        "options/positioning context"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "data/us_prophet_rank/candidates (turnover_pctile_20d/60d, mdv20_usd)",
+          "role": "volume/turnover acceleration",
+          "coverage_band": "curated tier STALLED since 2026-08-07 (see coverage_matrix.json cohort_C1_stale_note)"
+        },
+        {
+          "source": "data/us_prophet_rank/candidates (eightk_recent_days, forensics__*)",
+          "role": "news/event density",
+          "coverage_band": "same stalled curated tier"
+        },
+        {
+          "source": "data/us_prophet_rank/candidates (post_earnings_move_pct, days_to_report, reports_within_7)",
+          "role": "earnings-surprise diffusion",
+          "coverage_band": "same stalled curated tier"
+        },
+        {
+          "source": "engine/company_theme_exposure/ + scripts/build_company_theme_exposure.py",
+          "role": "alternative-data corroboration",
+          "coverage_band": "0 -- code exists, NO committed artifact (R2-only out-dir) at this pin"
+        },
+        {
+          "source": "data/us_prophet_rank/candidates (options__gex, options__skew)",
+          "role": "options/positioning context",
+          "coverage_band": "same stalled curated tier"
+        }
+      ],
+      "pit_class_of_each": {
+        "candidates_curated_tier": "dated (stamp_date-scoped) but STALLED at 2026-08-07",
+        "company_theme_exposure": "UNKNOWN -- artifact_absent_at_pin, null_reason=r2_only_not_committed"
+      },
+      "coverage_band": "0% for alternative-data corroboration (no artifact); remainder gated on curated-tier resumption",
+      "rights_class": "direct_display_ok (candidates store, house); unresolved (company_theme_exposure -- no rights row exists in config/theme_sources.yml either, since the family has never emitted)",
+      "blockers": [
+        "alternative-data corroboration: NO committed artifact exists (R2-only, code-only at this pin).",
+        "every other sub-feature depends on the candidates store's 'curated' tier, which has not produced a row since 2026-08-07 (engine writer stalled)."
+      ],
+      "proposed_verdict": "READY_AFTER_EIOS",
+      "proposed": true,
+      "verdict_rationale": "Alternative-data corroboration is the family's most distinctive sub-feature and it structurally does not exist yet (R2-only). Given the Intelligence Evaluation OS program (active, per company memory) is the natural home for validating/landing new alt-data signal families before they feed a display surface, this family is proposed READY_AFTER_EIOS rather than a narrower READY_AFTER_D2 -- the orchestrator may downgrade to READY_AFTER_D2 if it judges company_theme_exposure a pure plumbing gap rather than a signal-validation one."
+    },
+    "quality_stability": {
+      "spec_features": [
+        "membership vintage",
+        "small-N shrinkage",
+        "outlier-robust median/trimmed measures",
+        "source corroboration",
+        "rights and coverage state",
+        "theme half-life/decay"
+      ],
+      "candidate_input_sources": [
+        {
+          "source": "THIS D1 packet's own outputs",
+          "role": "membership vintage <- pit_freshness_matrix.json; source corroboration <- real_data_exemplars.json planes_hit counts; rights and coverage state <- coverage_matrix.json + source_family_matrix.json",
+          "coverage_band": "100% of what D1 itself produces"
+        },
+        {
+          "source": "curated_baskets member counts",
+          "role": "small-N shrinkage threshold input",
+          "coverage_band": "38 real thematic baskets, member counts range from single digits to dozens"
+        }
+      ],
+      "pit_class_of_each": {
+        "d1_outputs": "as documented per-source in pit_freshness_matrix.json"
+      },
+      "coverage_band": "READY as a META layer -- this family does not need a NEW source, it consumes D1's own deliverables",
+      "rights_class": "n/a (meta-layer over already-classified sources)",
+      "blockers": [
+        "theme half-life/decay has no direct D1 input -- would need a longitudinal ThemeState history that does not exist yet (chicken-and-egg with the other families it is meant to describe)."
+      ],
+      "proposed_verdict": "READY_NOW",
+      "proposed": true,
+      "verdict_rationale": "membership vintage, source corroboration, and rights/coverage state are literally what D1 was commissioned to produce -- they are consumable today. Small-N shrinkage and outlier-robust measures are standard stats needing only the basket member-count facts D1 already reports. Only theme half-life/decay is genuinely blocked (needs ThemeState's own history to exist first), which is a bootstrapping order issue, not a coverage/rights/PIT gap."
+    }
+  },
+  "adjudication": {
+    "superseded_by": "D1_THEME_SOURCE_AND_IDENTITY_CENSUS_2026-08-18.md section 8",
+    "note": "census splits breadth 3 ways; NO_SOURCE re-assigned to peer/supply-chain"
+  },
+  "adjudicated_rows": [
+    {
+      "row_id": "performance",
+      "feature_family": "Performance (1D/5D/10D/20D/63D, excess vs SPY/sector, vol-norm, drawdown)",
+      "verdict_final": "READY_AFTER_D2",
+      "grounding": "needs PIT membership joins at issuer grain (D2) + OHLCV PIT verification (flagged: data/baskets/ohlcv/ unverified in D1). H3 rider: curated-basket history is RECONSTRUCTED_PIT-DEGRADED (seed-constant added dates, unstamped removals) -- training-grade PIT membership begins only after D2 institutes real vintage/removal stamping; anything computed on today's history is display-context, not trainable.",
+      "proposed": false
+    },
+    {
+      "row_id": "velocity_acceleration",
+      "feature_family": "Velocity/acceleration/persistence",
+      "verdict_final": "READY_AFTER_D2",
+      "grounding": "same inputs as performance; owner-surface z-formulas are prior art, PIT replay absent.",
+      "proposed": false
+    },
+    {
+      "row_id": "breadth_price_participation",
+      "feature_family": "Breadth -- price-participation (positive share, MA participation, rising RS, new highs/lows)",
+      "verdict_final": "READY_AFTER_D2",
+      "grounding": "member-level OHLCV + PIT membership -- same substrate as performance. SPLIT out of the builder's single composite NO_SOURCE breadth verdict.",
+      "proposed": false
+    },
+    {
+      "row_id": "breadth_expert_event",
+      "feature_family": "Breadth -- expert-event participation share",
+      "verdict_final": "READY_AFTER_RADAR",
+      "grounding": "no materialized event artifact (W4 unarmed); LER wall forbids desk reuse pre-promotion.",
+      "proposed": false
+    },
+    {
+      "row_id": "breadth_entry_open",
+      "feature_family": "Breadth -- entry-open participation share",
+      "verdict_final": "READY_AFTER_RADAR",
+      "grounding": "requires B4's availability engine also; ENTRY_OPEN does not exist as a computed fact yet.",
+      "proposed": false
+    },
+    {
+      "row_id": "diffusion_leadership",
+      "feature_family": "Diffusion/leadership (participants, subthemes, concentration, entropy, leader/median, cap diffusion)",
+      "verdict_final": "READY_AFTER_D2",
+      "grounding": "member-level returns + membership; cross-region confirmation additionally needs regional-suite alignment (later).",
+      "proposed": false
+    },
+    {
+      "row_id": "propagation_earnings_diffusion",
+      "feature_family": "Propagation -- earnings diffusion",
+      "verdict_final": "READY_AFTER_EIOS",
+      "grounding": "one golden event is not coverage.",
+      "proposed": false
+    },
+    {
+      "row_id": "propagation_peer_supply_chain",
+      "feature_family": "Propagation -- peer/supply-chain",
+      "verdict_final": "NO_SOURCE",
+      "grounding": "no supply-chain plane exists anywhere in the estate (confirmed absence). This is the re-assigned NO_SOURCE -- the builder's proposed NO_SOURCE on the whole 'breadth' family is superseded by this narrower, correctly-scoped one.",
+      "proposed": false
+    },
+    {
+      "row_id": "propagation_altdata_corroboration",
+      "feature_family": "Propagation -- altdata corroboration",
+      "verdict_final": "PER_FAMILY (see 0A registry states)",
+      "grounding": "insider PRODUCER_DEGRADED etc. -- verdict varies by underlying altdata family rather than one blanket call.",
+      "proposed": false
+    },
+    {
+      "row_id": "quality_stability",
+      "feature_family": "Quality/stability (membership vintage, small-N shrinkage, coverage/stale shares)",
+      "verdict_final": "READY_NOW",
+      "grounding": "computable from existing stores today.",
+      "proposed": false
+    }
+  ],
+  "adjudicated_rows_note": "10 rows, proposed:false -- these are the FINAL adjudicated verdicts per D1_THEME_SOURCE_AND_IDENTITY_CENSUS_2026-08-18.md section 8, superseding the 6 proposed:true family verdicts in 'families' above where they overlap. Key refinement: the builder's single composite 'breadth'=NO_SOURCE verdict is SPLIT 3 ways here (price-participation=READY_AFTER_D2, expert-event=READY_AFTER_RADAR, entry-open=READY_AFTER_RADAR); NO_SOURCE itself is RE-ASSIGNED to a narrower, correctly-scoped row: propagation/peer-supply-chain (no supply-chain plane exists anywhere in the estate), not to breadth."
+}

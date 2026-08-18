@@ -1,0 +1,359 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T03:25:00Z",
+  "reproduce": [
+    "python3 research/prophet_v4/d1/build/04_build_real_data_exemplars.py"
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  },
+  "selection_method": "deterministic, ascending-ticker-order, no hand-picking -- see per-group 'definition' field",
+  "no_scores_no_recommendations_law": "Every exemplar chain below carries identity/membership/PIT/rights facts only -- no Prophet score, rank, or recommendation field is included anywhere in this file.",
+  "groups": {
+    "group_A": {
+      "definition": "first 5 by ascending ticker among C1 names covered by >=3 independent classification planes",
+      "candidate_pool_size": 1,
+      "selected": [
+        {
+          "raw_member": "SYM",
+          "native_taxonomy": {
+            "node_id": "co:us:SYM",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:SYM (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "SYM",
+          "memberships_live": [
+            "basket:baskets:robotics_automation",
+            "ltheme:finviz:airobotics",
+            "ltheme:finviz:automationlogistics",
+            "ltheme:finviz:automationrobotics",
+            "ltheme:finviz:autonomousindustrial",
+            "ltheme:finviz:ecommercelogistics",
+            "ltheme:finviz:roboticsautomation",
+            "ltheme:finviz:roboticslogistics"
+          ],
+          "planes_hit": [
+            "canonical_theme_crosswalk",
+            "curated_baskets",
+            "finviz_ltheme"
+          ],
+          "n_planes_hit": 3,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        }
+      ]
+    },
+    "group_B": {
+      "definition": "first 5 by ascending ticker among C1 names with structural-only classification",
+      "candidate_pool_size": 1,
+      "selected": [
+        {
+          "raw_member": "TWO",
+          "native_taxonomy": {
+            "node_id": "co:us:TWO",
+            "found": false
+          },
+          "company": "co:us:TWO (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "TWO",
+          "memberships_live": [],
+          "planes_hit": [
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 1,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": null,
+          "canonical_probation_role_null_reason": "No co:us:TWO node exists in data/theme_graph/nodes.parquet at all (native_taxonomy.found=false) -- TWO's only classification plane is structural_sector_industry (from data/breadth/ticker_sectors.parquet and/or the candidates-store sector column), which does not require a theme_graph node to exist. There is therefore no canonical/probation status to report for this ticker."
+        }
+      ]
+    },
+    "group_C": {
+      "definition": "first 5 by ascending ticker among C1(or global theme_graph) names with contradictory/ambiguous mappings or identity uncertainty",
+      "candidate_pool_size": 3,
+      "pool_note": "Exhaustive audited pool at this pin is 3 tickers (GOLD, B, IBIT) -- see identity_join_audit.json ambiguous_contradictory_tally. Fewer than 5 exist that were FOUND and verified within this build's scope; reporting the exhaustive found set rather than padding with unverified guesses.",
+      "selected": [
+        {
+          "raw_member": "B",
+          "native_taxonomy": {
+            "node_id": "co:us:B",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:B (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "B",
+          "memberships_live": [
+            "basket:baskets:gold_miners",
+            "ltheme:finviz:commmetalsgold",
+            "ltheme:finviz:commmetalsprecious"
+          ],
+          "planes_hit": [
+            "curated_baskets",
+            "finviz_ltheme"
+          ],
+          "n_planes_hit": 2,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "GOLD",
+          "native_taxonomy": {
+            "node_id": "co:us:GOLD",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:GOLD (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "GOLD",
+          "memberships_live": [
+            "basket:baskets:gold_miners"
+          ],
+          "planes_hit": [
+            "curated_baskets",
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 2,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "IBIT",
+          "native_taxonomy": {
+            "node_id": "co:us:IBIT",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:IBIT (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "IBIT",
+          "memberships_live": [
+            "basket:baskets:crypto_rails"
+          ],
+          "planes_hit": [
+            "curated_baskets"
+          ],
+          "n_planes_hit": 1,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        }
+      ]
+    },
+    "group_D": {
+      "definition": ">=5 hostile identities from the FROZEN SPEC's mandatory list",
+      "selected": [
+        {
+          "raw_member": "GOOG",
+          "native_taxonomy": {
+            "node_id": "co:us:GOOG",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:GOOG (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "GOOG",
+          "memberships_live": [
+            "basket:baskets:us_sector_comm"
+          ],
+          "planes_hit": [
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 1,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "GOOGL",
+          "native_taxonomy": {
+            "node_id": "co:us:GOOGL",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:GOOGL (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "GOOGL",
+          "memberships_live": [
+            "basket:baskets:ai_software",
+            "basket:baskets:mag7",
+            "basket:baskets:quantum_computing",
+            "basket:baskets:us_sector_comm",
+            "ltheme:finviz:aiadssearch",
+            "ltheme:finviz:aiagi",
+            "ltheme:finviz:aicloud",
+            "ltheme:finviz:aicompute",
+            "ltheme:finviz:aidata",
+            "ltheme:finviz:aienergy",
+            "ltheme:finviz:aienterprise",
+            "ltheme:finviz:aimodels",
+            "ltheme:finviz:autonomousavmobility",
+            "ltheme:finviz:autonomoussoftware",
+            "ltheme:finviz:bigdataaiplatforms",
+            "ltheme:finviz:bigdatainfrastructure",
+            "ltheme:finviz:biometricssoftware",
+            "ltheme:finviz:clouddatabases",
+            "ltheme:finviz:clouddevops",
+            "ltheme:finviz:cloudedge",
+            "ltheme:finviz:cloudhsaas",
+            "ltheme:finviz:cloudhybridcloud",
+            "ltheme:finviz:cloudhyperscalers",
+            "ltheme:finviz:cloudpaas",
+            "ltheme:finviz:cloudsecurity",
+            "ltheme:finviz:cloudserverless",
+            "ltheme:finviz:cybersecuritycloud",
+            "ltheme:finviz:ecommerceadsmedia",
+            "ltheme:finviz:ecommercesocial",
+            "ltheme:finviz:educationinfrastructure",
+            "ltheme:finviz:entertainmentinfrastructure",
+            "ltheme:finviz:entertainmentmusic",
+            "ltheme:finviz:entertainmentvideo",
+            "ltheme:finviz:evsselfdriving",
+            "ltheme:finviz:iotsoftware",
+            "ltheme:finviz:quantumapplications",
+            "ltheme:finviz:quantumcloud",
+            "ltheme:finviz:quantumhardware",
+            "ltheme:finviz:quantumsoftware",
+            "ltheme:finviz:roboticsavmobility",
+            "ltheme:finviz:smarthomeautomation",
+            "ltheme:finviz:smarthomedevices",
+            "ltheme:finviz:smarthomevoiceai",
+            "ltheme:finviz:socialadvertising",
+            "ltheme:finviz:socialnetworks",
+            "ltheme:finviz:socialvisualcontent",
+            "ltheme:finviz:softwarecollaboration",
+            "ltheme:finviz:softwaredataanalytics",
+            "ltheme:finviz:softwaredevops",
+            "ltheme:finviz:softwarehsaas",
+            "ltheme:finviz:softwareos",
+            "ltheme:finviz:telecomcloudedge",
+            "ltheme:finviz:transportationnextgen",
+            "ltheme:finviz:varealityinfrastructure",
+            "ltheme:finviz:varealitysoftware",
+            "ltheme:finviz:wearablesmedical",
+            "ltheme:finviz:wearablessmartwatches",
+            "ltheme:finviz:wearablessoftware",
+            "ltheme:finviz:wearablessport"
+          ],
+          "planes_hit": [
+            "curated_baskets",
+            "finviz_ltheme",
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 3,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "BRK-B",
+          "native_taxonomy": {
+            "node_id": "co:us:BRK-B",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:BRK-B (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "BRK-B",
+          "memberships_live": [
+            "basket:baskets:us_sector_financials",
+            "ltheme:finviz:energycleangeothermal"
+          ],
+          "planes_hit": [
+            "finviz_ltheme",
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 2,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "GOLD",
+          "native_taxonomy": {
+            "node_id": "co:us:GOLD",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:GOLD (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "GOLD",
+          "memberships_live": [
+            "basket:baskets:gold_miners"
+          ],
+          "planes_hit": [
+            "curated_baskets",
+            "structural_sector_industry"
+          ],
+          "n_planes_hit": 2,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "B",
+          "native_taxonomy": {
+            "node_id": "co:us:B",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:B (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "B",
+          "memberships_live": [
+            "basket:baskets:gold_miners",
+            "ltheme:finviz:commmetalsgold",
+            "ltheme:finviz:commmetalsprecious"
+          ],
+          "planes_hit": [
+            "curated_baskets",
+            "finviz_ltheme"
+          ],
+          "n_planes_hit": 2,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        },
+        {
+          "raw_member": "IBIT",
+          "native_taxonomy": {
+            "node_id": "co:us:IBIT",
+            "kind": "company",
+            "status": "canonical",
+            "found": true
+          },
+          "company": "co:us:IBIT (ticker-string identity; no distinct company_id in theme_graph)",
+          "security": "IBIT",
+          "memberships_live": [
+            "basket:baskets:crypto_rails"
+          ],
+          "planes_hit": [
+            "curated_baskets"
+          ],
+          "n_planes_hit": 1,
+          "rights": "see identity_join_audit.json / source_family_matrix for per-source rights_class",
+          "pit_state": "current_snapshot_only (theme_graph edges carry valid_from/valid_to but the nodes.parquet record itself is a current snapshot; see pit_freshness_matrix.json)",
+          "canonical_probation_role": "canonical"
+        }
+      ],
+      "hostile_case_labels": [
+        "H1_one_issuer_two_securities",
+        "H1_one_issuer_two_securities",
+        "H2_dot_dash_class_ticker",
+        "H3_reused_ticker",
+        "H4_renamed_issuer_corporate_action",
+        "H5_etf_classified_as_operating_company"
+      ]
+    }
+  }
+}

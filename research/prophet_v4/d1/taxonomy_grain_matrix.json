@@ -1,0 +1,277 @@
+{
+  "pin": "5c1d82b928",
+  "computed_at_utc": "2026-08-18T03:25:00Z",
+  "reproduce": [
+    "python3 research/prophet_v4/d1/build/08_build_taxonomy_grain_matrix.py"
+  ],
+  "schema_note": "D1 draft, ROUTE: draft. One entry per taxonomy plus a cross_taxonomy_links inventory. Facts only from scout inventory + repo config reads; every unknown is null with a specific null_reason.",
+  "taxonomies": [
+    {
+      "taxonomy_id": "finviz_theme_subtheme",
+      "taxonomy_name": "Finviz local theme/subsector taxonomy",
+      "levels": [
+        "theme",
+        "subtheme/subsector"
+      ],
+      "hierarchy_depth": 2,
+      "node_count_by_level": {
+        "theme": null,
+        "theme_null_reason": "top-level theme count not separately given in scout pass \u2014 only the leaf-level 'subthemes' count is published in data/theme_graph/_meta.json",
+        "subtheme_or_subsector": 268
+      },
+      "native_id_type": "finviz 'theme'/'subsector' string label (vendor webpack data chunk); minted into theme_graph as ltheme:finviz:* node ids",
+      "native_id_example": null,
+      "native_id_example_null_reason": "no example label captured verbatim in scout pass",
+      "member_identity_grain": "ticker",
+      "membership_semantics": {
+        "multi_label": null,
+        "multi_label_null_reason": "whether a single ticker can carry multiple finviz subthemes not confirmed in scout pass",
+        "weights_available": false
+      },
+      "source_receipts": [
+        "03_finviz.md",
+        "data/theme_graph/_meta.json:local_plane.finviz"
+      ]
+    },
+    {
+      "taxonomy_id": "crosswalk_theme",
+      "taxonomy_name": "Canonical TIL Theme Crosswalk (config/theme_crosswalk.yml)",
+      "levels": [
+        "theme"
+      ],
+      "hierarchy_depth": 1,
+      "hierarchy_note": "single flat theme level; themes carry OUTBOUND link fields into other taxonomies rather than owning internal sub-levels (see cross_taxonomy_links)",
+      "node_count_by_level": {
+        "theme": 18
+      },
+      "native_id_type": "crosswalk theme id (yaml `id` field)",
+      "native_id_example": null,
+      "native_id_example_null_reason": "no example id captured verbatim in scout pass",
+      "member_identity_grain": "basket_id (via basket_ids/primary_basket_id/cn_basket_ids)",
+      "membership_semantics": {
+        "multi_label": true,
+        "multi_label_note": "basket_ids is a list field per theme row (02_theme_crosswalk.md)",
+        "weights_available": false
+      },
+      "per_theme_link_fields": [
+        "primary_basket_id (v2; null|basket_id \u2014 13 set / 5 honest null of 18)",
+        "basket_ids (list)",
+        "subsector_keys (list -> site/marketdata/subsector_rotation.json themes[].theme strings)",
+        "citrini_basket_ids (list; always [] on every row v1-v3, reserved not populated)",
+        "theme_node_id ('theme:<slug>', v3 join key into data/theme_graph/nodes.parquet)",
+        "ths_concept_ids (list of THS numeric board codes, v3)",
+        "cn_basket_ids (list, v3, CN half of crosswalk)",
+        "note (prose)"
+      ],
+      "unmapped_baskets_section": "separate top-level list (10 rows sampled: gold_miners, silver_miners, pgm_miners, mag7, ai_software, ai_agents, regional_banks, housing, energy_complex, defensives, ...), each with id/reason",
+      "source_receipts": [
+        "02_theme_crosswalk.md",
+        "config/theme_crosswalk.yml",
+        "data/theme_graph/_meta.json:per_suite.crosswalk"
+      ]
+    },
+    {
+      "taxonomy_id": "basket_member",
+      "taxonomy_name": "Curated basket registries (US + 5 regional suites)",
+      "levels": [
+        "basket",
+        "member (ticker)"
+      ],
+      "hierarchy_depth": 2,
+      "node_count_by_level": {
+        "us": {
+          "baskets": 49,
+          "companies": 708,
+          "member_edges": 1038,
+          "note": "includes the 11 structural us_sector_* pseudo-baskets"
+        },
+        "canada": {
+          "baskets": 16,
+          "companies": 167,
+          "member_edges": 167
+        },
+        "china": {
+          "baskets": 22,
+          "companies": 280,
+          "member_edges": 285,
+          "note": "STALE, unchanged since 2021-06-15 seed"
+        },
+        "china_ths": {
+          "baskets": 237,
+          "companies": 919,
+          "member_edges": 3532
+        },
+        "hk": {
+          "baskets": 17,
+          "companies": 147,
+          "member_edges": 176
+        },
+        "intl": {
+          "baskets": 17,
+          "companies": 233,
+          "member_edges": 279
+        }
+      },
+      "native_id_type": "basket_id string (per-suite namespace)",
+      "member_identity_grain": "ticker",
+      "membership_semantics": {
+        "multi_label": null,
+        "multi_label_null_reason": "cross-basket ticker multiplicity not enumerated in scout pass",
+        "weights_available": null,
+        "weights_available_null_reason": "membership.json weighting scheme (equal vs weighted) not read in scout pass"
+      },
+      "source_receipts": [
+        "05_baskets.md",
+        "data/theme_graph/_meta.json:per_suite"
+      ]
+    },
+    {
+      "taxonomy_id": "theme_graph_node_edge",
+      "taxonomy_name": "GMI Theme Graph nodes/edges (data/theme_graph/{nodes,edges}.parquet)",
+      "levels": null,
+      "levels_null_reason": "node/edge KIND enum (e.g. company node vs theme node vs local-theme node; membership edge vs expresses edge) not captured verbatim in scout pass \u2014 _meta.json gives aggregate counts only, no kind-level breakdown was read from nodes.parquet/edges.parquet themselves",
+      "hierarchy_depth": null,
+      "hierarchy_depth_null_reason": "graph is a node/edge join hub, not a strict level hierarchy; not characterized as such in scout pass",
+      "node_count_by_level": {
+        "nodes": 3878,
+        "edges": 8292,
+        "edges_latest_belief": 8292,
+        "capability": 641,
+        "evidence": 11,
+        "capability_measurement_candidate": 499,
+        "capability_semantic_only": 142
+      },
+      "native_id_type": "theme_node_id 'theme:<slug>' join key (theme nodes); company nodes presumably ticker-keyed via engine/theme_graph/identity.py \u2014 not independently confirmed in scout pass",
+      "native_id_example": "theme:<slug> (literal placeholder syntax as documented; no concrete example slug captured in scout pass)",
+      "member_identity_grain": null,
+      "member_identity_grain_null_reason": "not characterized at node-kind level in scout pass",
+      "membership_semantics": {
+        "multi_label": true,
+        "multi_label_note": "edges are many-to-many node relations (01_theme_graph.md)",
+        "weights_available": null,
+        "weights_available_null_reason": "not addressed in scout pass"
+      },
+      "clocks": {
+        "belief_time": "2026-08-15",
+        "computed_at": "2026-08-15T02:32:47Z",
+        "note": "two distinct clocks: belief_time = observed-era PIT belief date; computed_at = build clock"
+      },
+      "source_receipts": [
+        "01_theme_graph.md",
+        "data/theme_graph/_meta.json"
+      ]
+    },
+    {
+      "taxonomy_id": "sector_structural",
+      "taxonomy_name": "Structural sector/industry classification (us_sector_* pseudo-baskets + config/sector_legs.json + board-row 'sector' field)",
+      "levels": [
+        "sector"
+      ],
+      "hierarchy_depth": null,
+      "hierarchy_depth_null_reason": "no per-ticker GICS/SIC/NAICS code table found by name anywhere in the repo at this pin (07_gics_sector.md); true GICS sector->industry->sub-industry depth not confirmed as implemented here",
+      "node_count_by_level": {
+        "us_sector_pseudo_baskets": 11
+      },
+      "native_id_type": "us_sector_* basket id",
+      "native_id_example": "us_sector_tech",
+      "member_identity_grain": "ticker",
+      "membership_semantics": {
+        "multi_label": false,
+        "multi_label_note": "sector_legs.json registers each ticker to ONE leg even where it structurally spans GICS sectors (header note: mag7 spans XLC/XLY but registered as XLK leg)",
+        "weights_available": false
+      },
+      "additional_surfaces": [
+        "config/sector_legs.json (version 1.0, registered 2026-07-12) \u2014 hand-declared primary/secondary tier sector-leg mapping, explicitly a rotation-command convenience mapping, documents its own departure from strict GICS",
+        "engine/us_context_vector.py:968/1154/1258 \u2014 individual company 'sector' string field rides on board-row metadata, sourced from upstream `meta`, not traced further (likely a market-data vendor field, out of scope this pass)"
+      ],
+      "source_receipts": [
+        "07_gics_sector.md",
+        "05_baskets.md",
+        "config/sector_legs.json"
+      ]
+    }
+  ],
+  "cross_taxonomy_links": [
+    {
+      "link_id": "local_theme_to_canonical_expresses",
+      "description": "local provider theme (finviz + ths combined) EXPRESSES edges into the 18 canonical crosswalk themes",
+      "count": 61,
+      "from_taxonomy": "ths (local_provider_theme_ths family) -- NOT finviz, see correction_note",
+      "to_taxonomy": "crosswalk_theme",
+      "count_split_by_source": {
+        "ltheme_ths_to_theme": 61,
+        "ltheme_finviz_to_theme": 0
+      },
+      "count_split_by_source_null_reason": null,
+      "source_receipts": [
+        "02_theme_crosswalk.md",
+        "data/theme_graph/_meta.json:per_suite.crosswalk"
+      ],
+      "correction_note": "CORRECTED (adversarial review M4, verified directly against data/theme_graph/edges.parquet EXPRESSES-type rows filtered by src prefix and dst top-level segment): ALL 61 local-theme EXPRESSES-into-canonical-theme edges originate from ltheme:ths (373 CN concept nodes); ltheme:finviz -> theme:* is EXACTLY ZERO of 268 US local themes -- Finviz's local-theme layer is 100% canonically unmapped at the EXPRESSES-edge level (it only reaches canonical themes indirectly via the basket:baskets primary_basket_id path used elsewhere in this census, never directly). The prior draft description ('finviz + ths combined') implied a mixed contribution; it is entirely CN/ths."
+    },
+    {
+      "link_id": "ths_basket_to_ltheme_expresses",
+      "description": "THS concept/board EXPRESSES edges within the local plane",
+      "count": 237,
+      "from_taxonomy": "curated_basket_china_ths / basket-level THS product",
+      "to_taxonomy": "finviz_theme_subtheme (ltheme:ths:* local plane)",
+      "count_null_reason": null,
+      "note": "data/theme_graph/_meta.json local_plane.ths.expresses_edges=237, out of ths.concepts=373 total; unresolved_concept_names=0",
+      "source_receipts": [
+        "04_ths.md",
+        "data/theme_graph/_meta.json:local_plane.ths"
+      ]
+    },
+    {
+      "link_id": "ths_unmapped",
+      "description": "THS concepts with no expressed edge into any canonical crosswalk theme",
+      "count": 312,
+      "from_taxonomy": "finviz_theme_subtheme (ltheme:ths:* local plane, 373 total concepts)",
+      "to_taxonomy": "crosswalk_theme (no target \u2014 these are the unmapped remainder)",
+      "note": "data/theme_graph/_meta.json top-level ths_unmapped_concept_count=312 = 373 total concepts minus mapped ones; ths_codes_mapped=61/ths_codes_unknown=0 per per_suite.crosswalk is the SEPARATE crosswalk-side accounting of the same join",
+      "source_receipts": [
+        "04_ths.md",
+        "data/theme_graph/_meta.json"
+      ]
+    },
+    {
+      "link_id": "probation_plane",
+      "description": "candidate/pre-canonical mapping proposals awaiting promotion into config/theme_crosswalk.yml or theme_graph edges",
+      "count": null,
+      "count_null_reason": "proposal record schema not read in this scout pass (data/theme_graph/probation/proposals.jsonl only sized, 205,671B, not opened); row count not derivable from _meta.json's rows_appended counters alone without opening the file",
+      "from_taxonomy": "any local/provider taxonomy (producer: engine/theme_graph/probation.py)",
+      "to_taxonomy": "crosswalk_theme / theme_graph_node_edge (candidate promotion target)",
+      "pit_history_kind": "append-only log; PIT-capable via _meta.json rows_appended counters",
+      "source_receipts": [
+        "01_theme_graph.md",
+        "engine/theme_graph/probation.py"
+      ]
+    },
+    {
+      "link_id": "crosswalk_join_fields",
+      "description": "the field set on each crosswalk_theme row that performs the cross-taxonomy joins",
+      "fields": [
+        "primary_basket_id -> basket_member (US suite)",
+        "basket_ids -> basket_member (US suite, list)",
+        "cn_basket_ids -> basket_member (CN regional suites, v3)",
+        "subsector_keys -> owner_surface_subsector_rotation themes[].theme strings",
+        "theme_node_id -> theme_graph_node_edge nodes.parquet (v3 join key)",
+        "ths_concept_ids -> finviz_theme_subtheme (ltheme:ths:* local plane, v3)",
+        "citrini_basket_ids -> unverified_reference_citrini (reserved, always empty)"
+      ],
+      "source_receipts": [
+        "02_theme_crosswalk.md",
+        "config/theme_crosswalk.yml"
+      ]
+    }
+  ],
+  "cohort_stamps": {
+    "C0": "2026-08-07",
+    "C1": "2026-08-12",
+    "C2": "2026-08-13",
+    "C3": "2026-08-13",
+    "C4": "UNKNOWN",
+    "C5": "2026-08-14",
+    "C6": "derived (C0 union C1)"
+  }
+}

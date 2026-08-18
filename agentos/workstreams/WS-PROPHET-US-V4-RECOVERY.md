@@ -189,17 +189,30 @@ waves:
     status: todo
   - id: d1
     depends_on: [0a]
-    title: "V4-D1 — theme-source and identity census. NEXT AUTHORIZED independent V4
-      session after 0B (docs/registry census; disjoint from the publication incident;
-      does not depend on a1). Starts in a FRESH session, never inside 0B."
-    status: todo
+    title: "V4-D1 — theme-source and identity census. DONE 2026-08-18: master census
+      research/prophet_v4/D1_THEME_SOURCE_AND_IDENTITY_CENSUS_2026-08-18.md + 9
+      machine artifacts in research/prophet_v4/d1/. Headlines: C6 thematic gap =
+      2,368/3,253 (73%); graph company plane is ticker-string-keyed (D2's repair);
+      two live graph data defects (GOLD reused-ticker, IBIT ETF-as-company); Citrini
+      OPERATOR_HELD_ONLY; Theia DEC stands; 4 rights decisions routed."
+    status: done
   - id: d2
     depends_on: [d1]
-    title: "V4-D2 — canonical ontology + probation mapping (with GMI lane)"
+    title: "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the
+      GMI lane. Spawn handoff ready:
+      research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md (identity-grain
+      repair via stock_identity, probation-only mapping breadth for 312 THS + 268
+      finviz + 20 proxy baskets, forward-only PIT vintages, defect corrections
+      through graph lineage). Commissioning = Sol adjudication with GMI."
     status: todo
   - id: d3
     depends_on: [d2]
-    title: "V4-D3 — ThemeState v1 (theme_state/v1; merge-order ruling with GMI W3B first)"
+    title: "V4-D3 — ThemeState consumption contract. D1's merge-order RECOMMENDATION
+      (research/prophet_v4/D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md, pending Sol+GMI
+      adjudication): GMI W3B builds theme_state/v1 AFTER d2; d3 becomes the
+      Prophet-side consumption/join wave; W3B's charter must reconcile the
+      pre-existing neuralweb thematic_state lineage; Finviz/THS-derived state stays
+      internal-only pending the routed rights decision."
     status: todo
   - id: d4
     depends_on: [d3]
@@ -207,7 +220,12 @@ waves:
     status: todo
   - id: d5
     depends_on: [d1]
-    title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1)"
+    title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
+      D1 ruling (research/prophet_v4/D1_D5_READINESS_RULING.md):
+      D5_CONTRACT_READY_AFTER_D1 — may run in parallel with d2/W3B on disjoint
+      paths; theme family stays ACCRUING (null_reason theme_state_not_built) until
+      d3; no ticker-string joins in the contract; SPARSE coverage band is the honest
+      scan-tier default."
     status: todo
   - id: d6
     depends_on: [d5]
@@ -247,11 +265,12 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  V4-0B complete. DO NOT SPAWN A1 — the Availability/outage sessions own the
-  implementation (#5742); await their return for Sol acceptance against the frozen
-  A1 contract. A2/A3 are adopt-first (map the sibling return before any spawn). The
-  next independently authorized V4 session is D1 (theme-source + identity census),
-  started FRESH — never inside 0B. D3 stays gated on the GMI merge-order ruling.
+  V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI
+  per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the
+  D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
+  contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
+  routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
+  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first.
 ---
 
 ## Context
