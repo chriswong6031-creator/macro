@@ -270,3 +270,95 @@ def test_every_annotation_starts_its_own_line(tmp_path, breaks, capsys):
 def test_main_wires_both_flags(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(guard, "selftest", lambda *a, **k: 0)
     assert guard.main(["--selftest"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# 5. V4-D2A — the identity resolution side-car (independently built fixtures)
+# ---------------------------------------------------------------------------
+
+def _idres_row(**over) -> dict:
+    row = {
+        "schema": "gmi.identity_resolution/v1", "node_id": "co:us:AAA",
+        "graph_kind": "company", "market_scope": "us", "graph_identity_epoch": 1,
+        "source_native_symbol": "AAA", "resolution_asof": "2024-01-01",
+        "resolution_state": "NOT_IN_MASTER", "issuer_id": None, "security_id": None,
+        "listing_key": None, "join_method": "refused", "master_generated_at": None,
+        "master_symbol_directory_snapshot": None, "master_code_version": None,
+        "refusal_reason": "fixture: no master row", "source_receipts": "{}",
+        "computed_at": STAMP, "engine_version": store.ENGINE_VERSION,
+    }
+    row.update(over)
+    return row
+
+
+def _write_idres(root: Path, rows: list[dict]) -> None:
+    pd.DataFrame(rows).reindex(columns=list(store.IDENTITY_RESOLUTION_COLUMNS)).to_parquet(
+        root / "identity_resolution.parquet", index=False)
+
+
+def test_identity_resolution_absent_is_a_notice_when_company_nodes_exist(tmp_path, breaks):
+    root = _write_store(tmp_path / "idres_absent")
+    b, n = guard.audit(root, breaks)
+    assert not b
+    assert any("half-finished build" in x for x in n)
+
+
+def test_identity_resolution_clean_passes_and_prints_a_census(tmp_path, breaks, capsys):
+    root = _write_store(tmp_path / "idres_clean")
+    _write_idres(root, [_idres_row()])
+    assert guard.run(strict=True, store_dir=root, breaks_file=breaks) == 0
+    out = capsys.readouterr().out
+    assert "identity resolution census" in out
+
+
+def test_identity_resolution_missing_company_coverage_breaches(tmp_path, breaks):
+    root = _write_store(tmp_path / "idres_missing")
+    _write_idres(root, [])  # sidecar present, empty — the company node AAA is uncovered
+    assert any("no current identity_resolution row" in x for x in _breaches(root, breaks))
+
+
+def test_identity_resolution_orphan_row_breaches(tmp_path, breaks):
+    root = _write_store(tmp_path / "idres_orphan")
+    _write_idres(root, [_idres_row(),
+                        _idres_row(node_id="co:us:GHOST", source_native_symbol="GHOST")])
+    assert any("resolution of nothing" in x for x in _breaches(root, breaks))
+
+
+def test_identity_resolution_not_in_master_is_never_a_breach(tmp_path, breaks):
+    """NOT_IN_MASTER is a required honest refusal state, never a guard failure (§7)."""
+    root = _write_store(tmp_path / "idres_notinmaster")
+    _write_idres(root, [_idres_row(resolution_state="NOT_IN_MASTER")])
+    assert _breaches(root, breaks) == []
+
+
+def test_identity_resolution_out_of_enum_state_breaches(tmp_path, breaks):
+    root = _write_store(tmp_path / "idres_badenum")
+    _write_idres(root, [_idres_row(resolution_state="MOSTLY_RESOLVED")])
+    assert any("identity_resolution.resolution_state" in x for x in _breaches(root, breaks))
+
+
+def test_identity_resolution_same_security_duplicates_appear_in_the_census(
+    tmp_path, breaks, capsys,
+):
+    """The SATS/ECHO / FI/FISV machine-visible duplicate report (§7e)."""
+    root = _write_store(
+        tmp_path / "idres_dupes",
+        nodes=[_node_row(), _node_row(node_id="co:us:BBB", external_ids='{"symbol":"BBB"}'),
+               _node_row(node_id="basket:baskets:demo", kind="basket")],
+    )
+    rows = [
+        _idres_row(node_id="co:us:AAA", resolution_state="RESOLVED",
+                   join_method="master_inception_exact", security_id="SEC:US-XNYS-DUP",
+                   issuer_id="ISS:US-XNYS-DUP", listing_key="US-XNYS-DUP",
+                   refusal_reason=None, source_receipts='{"security_id":"SEC:US-XNYS-DUP"}'),
+        _idres_row(node_id="co:us:BBB", source_native_symbol="BBB",
+                  resolution_state="RESOLVED", join_method="vendor_alias",
+                  security_id="SEC:US-XNYS-DUP", issuer_id="ISS:US-XNYS-DUP",
+                  listing_key="US-XNYS-DUP", refusal_reason=None,
+                  source_receipts='{"security_id":"SEC:US-XNYS-DUP"}'),
+    ]
+    _write_idres(root, rows)
+    assert guard.run(strict=True, store_dir=root, breaks_file=breaks) == 0
+    out = capsys.readouterr().out
+    assert "SEC:US-XNYS-DUP" in out
+    assert "co:us:AAA" in out and "co:us:BBB" in out

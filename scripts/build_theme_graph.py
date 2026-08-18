@@ -78,6 +78,14 @@ def _capability_counts(rows: list[dict]) -> dict[str, int]:
     return dict(sorted(out.items()))
 
 
+def _identity_resolution_state_counts(rows: list[dict]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for r in rows:
+        key = str(r.get("resolution_state"))
+        out[key] = out.get(key, 0) + 1
+    return dict(sorted(out.items()))
+
+
 def run(*, backfill: bool, force_backfill: bool,
         allow_source_shrink: tuple[str, ...] = ()) -> int:
     lane = store.collect_lane()
@@ -107,9 +115,11 @@ def run(*, backfill: bool, force_backfill: bool,
         return 1
 
     log.info("theme graph computed: %d nodes, %d edges (%d to append), %d evidence rows, "
-             "%d capability rows %s; era=%s lane=%r",
+             "%d capability rows %s, %d identity resolution rows %s; era=%s lane=%r",
              len(view.nodes), len(view.edges), len(edges), len(view.evidence),
-             len(view.capability), _capability_counts(view.capability), era, lane)
+             len(view.capability), _capability_counts(view.capability),
+             len(view.identity_resolution),
+             _identity_resolution_state_counts(view.identity_resolution), era, lane)
     for family, report in sorted(view.local_plane.items()):
         log.info("  local plane %s: %s", family, json.dumps(report, ensure_ascii=False,
                                                             sort_keys=True)[:600])
@@ -130,6 +140,10 @@ def run(*, backfill: bool, force_backfill: bool,
     # is re-classified UP tonight, which is the whole reason capability is a side-car and
     # not a write-once node column.
     added_cap = store.write_capability(view.capability, lane=lane, allow_backfill=allow)
+    # V4-D2A: same re-derivation discipline — a node NOT_IN_MASTER tonight may resolve
+    # tomorrow as the Data OS master's coverage grows.
+    added_idres = store.write_identity_resolution(view.identity_resolution, lane=lane,
+                                                   allow_backfill=allow)
 
     meta = {
         "computed_at": materialize.utc_now_stamp(),
@@ -144,9 +158,13 @@ def run(*, backfill: bool, force_backfill: bool,
             "edges_latest_belief": int(len(store.read_edges())),
             "evidence": int(len(store.read_evidence())),
             "capability": int(len(store.read_capability())),
+            "identity_resolution": int(len(store.read_identity_resolution())),
         },
         "rows_appended": {"nodes": added_nodes, "edges": added_edges,
-                          "evidence": added_ev, "capability": added_cap},
+                          "evidence": added_ev, "capability": added_cap,
+                          "identity_resolution": added_idres},
+        "identity_resolution_state_counts":
+            _identity_resolution_state_counts(view.identity_resolution),
         "per_suite": view.per_suite,
         "skipped_suites": view.skipped_suites,
         "ths_unmapped_concept_count": view.ths_unmapped_concept_count,

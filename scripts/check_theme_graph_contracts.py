@@ -119,6 +119,16 @@ CAPABILITY_DTYPES: dict[str, str] = {
     "node_id": "str", "capability": "str", "capability_basis": "str",
     "computed_at": "str", "engine_version": "str",
 }
+#: V4-D2A — the GMI -> Data OS identity resolution bridge side-car.
+IDENTITY_RESOLUTION_DTYPES: dict[str, str] = {
+    "schema": "str", "node_id": "str", "graph_kind": "str", "market_scope": "str",
+    "graph_identity_epoch": "int", "source_native_symbol": "str", "resolution_asof": "str",
+    "resolution_state": "str", "issuer_id": "str", "security_id": "str",
+    "listing_key": "str", "join_method": "str", "master_generated_at": "str",
+    "master_symbol_directory_snapshot": "str", "master_code_version": "str",
+    "refusal_reason": "str", "source_receipts": "str", "computed_at": "str",
+    "engine_version": "str",
+}
 
 #: Enum columns scanned in FULL (the sample proves shape, the scan proves values).
 NODE_ENUMS: dict[str, set[str]] = {
@@ -150,6 +160,13 @@ CAPABILITY_ENUMS: dict[str, set[str]] = {
     # column has to be able to hold W3B's verdict, and the "nothing minted it yet" check
     # below is what keeps this wave from minting it early.
     "capability": {"semantic_only", "measurement_candidate", "measurable"},
+}
+IDENTITY_RESOLUTION_ENUMS: dict[str, set[str]] = {
+    "market_scope": {"us", "cn", "hk", "ca", "intl"},
+    "resolution_state": {"RESOLVED", "INVALID_SOURCE_ID", "UNSUPPORTED_MARKET",
+                         "DEFERRED_IDENTITY_EXCEPTION", "ENTITY_TYPE_CONFLICT",
+                         "AMBIGUOUS", "NOT_IN_MASTER"},
+    "join_method": {"master_inception_exact", "vendor_alias", "refused"},
 }
 
 #: Which node kinds each edge type may connect. The pairing table is the structural
@@ -595,6 +612,144 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
             "re-derived by every build (python -m scripts.build_theme_graph); its "
             "absence means nothing has classified them yet")
 
+    # --- V4-D2A: identity resolution side-car (optional; absent is pre-first-run) ---
+    idres_path = store_dir / "identity_resolution.parquet"
+    if idres_path.exists():
+        try:
+            idres = pd.read_parquet(idres_path)
+        except Exception as exc:  # noqa: BLE001
+            breaches.append(f"identity_resolution.parquet unreadable: {exc}")
+            idres = None
+        if idres is not None:
+            idr_breaches, idr_notices = _check_columns(
+                idres, store.IDENTITY_RESOLUTION_COLUMNS, "identity_resolution")
+            breaches += idr_breaches
+            notices += idr_notices
+            breaches += _check_dtypes(idres, IDENTITY_RESOLUTION_DTYPES, "identity_resolution")
+            breaches += _check_enums(idres, IDENTITY_RESOLUTION_ENUMS, "identity_resolution")
+            breaches += _check_schema(idres, "identity_resolution", "identity_resolution")
+
+            # Current view: max computed_at per node_id — same collapse as
+            # store.read_identity_resolution(latest=True).
+            if {"node_id", "computed_at"} <= set(idres.columns):
+                ordered = idres.sort_values(["node_id", "computed_at"], kind="stable")
+                latest_idr = ordered.drop_duplicates(subset=["node_id"], keep="last")
+            else:
+                latest_idr = idres
+
+            company_ids = {n for n, k in kinds.items() if k == "company"} if kinds else set()
+
+            # (b) orphan rows — a resolution of a node the store has no row for.
+            if "node_id" in latest_idr.columns and kinds:
+                orphan = sorted({str(n) for n in latest_idr["node_id"]} - set(kinds))
+                if orphan:
+                    breaches.append(
+                        f"{len(orphan)} identity_resolution row(s) classify a node that "
+                        f"has no node row (first: {orphan[0]!r}) — a resolution of nothing")
+
+            # (c) sidecar present + a company-kind node with no CURRENT row = breach
+            # (Sol attack 17). NOT_IN_MASTER is the honest refusal state; an ABSENT row
+            # is not.
+            if company_ids and "node_id" in latest_idr.columns:
+                covered = {str(n) for n in latest_idr["node_id"]}
+                missing = sorted(company_ids - covered)
+                if missing:
+                    breaches.append(
+                        f"{len(missing)} company node(s) have no current "
+                        f"identity_resolution row (first: {missing[0]!r}) — the side-car "
+                        f"is present, so every company node must have been resolved (even "
+                        f"to a refusal)")
+
+            # (f) F3a — state<->ids biconditional: RESOLVED must carry ALL THREE ids and
+            # no refusal_reason; every other state must carry NONE of the ids and a
+            # refusal_reason. The derivation code cannot produce a violation, but a
+            # hand-edited or truncated artifact could — this catches artifact corruption
+            # the earlier checks are blind to.
+            if {"resolution_state", "issuer_id", "security_id", "listing_key",
+                "refusal_reason", "node_id"} <= set(latest_idr.columns):
+                bad_biconditional: list[str] = []
+                for nid, st, iss, sec, lk, reason in zip(
+                        latest_idr["node_id"], latest_idr["resolution_state"],
+                        latest_idr["issuer_id"], latest_idr["security_id"],
+                        latest_idr["listing_key"], latest_idr["refusal_reason"]):
+                    ids_present = (not _is_null(iss) and not _is_null(sec)
+                                   and not _is_null(lk))
+                    reason_present = not _is_null(reason)
+                    ok = (ids_present and not reason_present) if str(st) == "RESOLVED" \
+                        else (not ids_present and reason_present)
+                    if not ok:
+                        bad_biconditional.append(str(nid))
+                if bad_biconditional:
+                    breaches.append(
+                        f"{len(bad_biconditional)} identity_resolution row(s) violate the "
+                        f"state<->ids biconditional (first: {bad_biconditional[0]!r}) — "
+                        "RESOLVED must carry issuer_id+security_id+listing_key and no "
+                        "refusal_reason; every other state must carry none of the ids and "
+                        "a refusal_reason (F3a, artifact-corruption guard)")
+
+            # (g) F3a — master membership: every RESOLVED security_id must exist in the
+            # committed data/reference/security_master.parquet, loaded read-only here.
+            # Absent master = skipped, never a breach (sparse checkout / pre-DOS-1.1
+            # fixtures carry no data/reference/ at all).
+            master_path = store_dir.parent / "reference" / "security_master.parquet"
+            if master_path.exists() and {"resolution_state", "security_id", "node_id"} \
+                    <= set(latest_idr.columns):
+                try:
+                    known_security_ids: set[str] | None = set(
+                        pd.read_parquet(master_path, columns=["security_id"])
+                          ["security_id"].astype(str))
+                except Exception as exc:  # noqa: BLE001 — unreadable master is a breach
+                    breaches.append(
+                        "security_master.parquet unreadable for the identity_resolution "
+                        f"master-membership check: {exc}")
+                    known_security_ids = None
+                if known_security_ids is not None:
+                    orphan_security: list[str] = []
+                    for nid, st, sec in zip(latest_idr["node_id"],
+                                            latest_idr["resolution_state"],
+                                            latest_idr["security_id"]):
+                        if str(st) == "RESOLVED" and not _is_null(sec) \
+                                and str(sec) not in known_security_ids:
+                            orphan_security.append(str(nid))
+                    if orphan_security:
+                        breaches.append(
+                            f"{len(orphan_security)} RESOLVED identity_resolution row(s) "
+                            "reference a security_id absent from the committed security "
+                            f"master (first: {orphan_security[0]!r}) — artifact corruption "
+                            "(F3a, master-membership guard)")
+
+            # (e) census — printed every run, never a breach. Node-sets resolving to the
+            # same security_id are the machine-visible duplicates the bridge exists to
+            # expose (SATS/ECHO, FI/FISV).
+            state_counts: dict[str, int] = {}
+            if "resolution_state" in latest_idr.columns:
+                for v in latest_idr["resolution_state"].tolist():
+                    key = str(v)
+                    state_counts[key] = state_counts.get(key, 0) + 1
+            entity_conflicts = state_counts.get("ENTITY_TYPE_CONFLICT", 0)
+            dup_groups: dict[str, list[str]] = {}
+            if {"security_id", "node_id"} <= set(latest_idr.columns):
+                by_sec: dict[str, list[str]] = {}
+                for nid, sec in zip(latest_idr["node_id"], latest_idr["security_id"]):
+                    if _is_null(sec):
+                        continue
+                    by_sec.setdefault(str(sec), []).append(str(nid))
+                dup_groups = {sec: sorted(ns) for sec, ns in by_sec.items() if len(ns) > 1}
+            notices.append(
+                "[identity resolution census] "
+                f"company nodes={len(company_ids)}, projection rows={len(latest_idr)}, "
+                f"by state={json.dumps(state_counts, sort_keys=True)}, "
+                f"entity_type_conflicts={entity_conflicts}, "
+                f"same-security node-sets={json.dumps(dup_groups, sort_keys=True)}")
+    elif kinds and "company" in set(kinds.values()):
+        # (d) absent sidecar with company nodes present: a build that stopped half way,
+        # not a store that predates the side-car — same posture as the capability block.
+        notices.append(
+            "[identity resolution side-car MISSING — half-finished build] company nodes "
+            "exist but identity_resolution.parquet does not — the side-car is re-derived "
+            "by every build (python -m scripts.build_theme_graph); its absence means "
+            "nothing has resolved them yet")
+
     # --- closed-edge survivorship -------------------------------------------
     if {"edge_id", "valid_to", "belief_time"} <= set(edges.columns):
         closed = {str(e) for e, v in zip(edges["edge_id"], edges["valid_to"])
@@ -651,6 +806,27 @@ def run(*, strict: bool, store_dir: Path | None = None,
 # ---------------------------------------------------------------------------
 # Selftest — each incident rebuilt as a fixture
 # ---------------------------------------------------------------------------
+
+def _write_idres(tmp: Path, rows: list[dict]) -> None:
+    """Write ``identity_resolution.parquet`` beside an existing fixture store dir."""
+    pd.DataFrame(rows).reindex(columns=list(store.IDENTITY_RESOLUTION_COLUMNS)).to_parquet(
+        tmp / "identity_resolution.parquet", index=False)
+
+
+def _clean_idres_row(*, node_id: str = "co:us:AAA", market_scope: str = "us",
+                     symbol: str = "AAA", state: str = "NOT_IN_MASTER") -> dict:
+    stamp = "2024-01-02T00:00:00Z"
+    return {
+        "schema": "gmi.identity_resolution/v1", "node_id": node_id, "graph_kind": "company",
+        "market_scope": market_scope, "graph_identity_epoch": 1,
+        "source_native_symbol": symbol, "resolution_asof": "2024-01-01",
+        "resolution_state": state, "issuer_id": None, "security_id": None,
+        "listing_key": None, "join_method": "refused", "master_generated_at": None,
+        "master_symbol_directory_snapshot": None, "master_code_version": None,
+        "refusal_reason": "fixture: no master row", "source_receipts": "{}",
+        "computed_at": stamp, "engine_version": store.ENGINE_VERSION,
+    }
+
 
 def _fixture(tmp: Path, *, nodes: list[dict], edges: list[dict],
              evidence: list[dict]) -> Path:
@@ -710,8 +886,14 @@ def selftest(tmp_root: Path | None = None) -> int:
 
     nodes, edges, ev = _clean_rows()
     clean = _fixture(tmp_root / "clean", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(clean, [_clean_idres_row()])  # keeps the fully-clean store fully clean
     b, n = audit(clean, empty_breaks)
-    checks.append((not b and not n, f"a contract-clean store must pass cleanly: {b or n}"))
+    # The identity-resolution CENSUS is a designed, always-on notice (§7e — printed
+    # every run, never an incident), so it is the one notice a "fully clean" store may
+    # still carry.
+    n_incidents = [x for x in n if "identity resolution census" not in x]
+    checks.append((not b and not n_incidents,
+                   f"a contract-clean store must pass cleanly: {b or n_incidents}"))
 
     b, n = audit(tmp_root / "absent", empty_breaks)
     checks.append((not b and bool(n),
@@ -803,6 +985,82 @@ def selftest(tmp_root: Path | None = None) -> int:
     b, n = audit(d, empty_breaks)
     checks.append((not b and any("predates the W3A additive column" in x for x in n),
                    f"a pre-migration store is INDETERMINATE, never a breach: {b}"))
+
+    # --- V4-D2A: identity resolution side-car ---------------------------------
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_clean", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(d, [_clean_idres_row()])
+    b, n = audit(d, empty_breaks)
+    checks.append((not b, f"a company node with a current identity_resolution row must "
+                          f"pass cleanly: {b}"))
+    checks.append((any("identity resolution census" in x for x in n),
+                   "the identity-resolution census must be printed every run"))
+
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_absent", nodes=nodes, edges=edges, evidence=ev)
+    b, n = audit(d, empty_breaks)
+    checks.append((not b and any("half-finished build" in x for x in n),
+                   "company nodes with no identity_resolution.parquet must be a NOTICE, "
+                   "never a breach"))
+
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_missing_row", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(d, [])
+    b, n = audit(d, empty_breaks)
+    checks.append((any("no current identity_resolution row" in x for x in b),
+                   "a sidecar present with a company node uncovered must breach (Sol "
+                   "attack 17)"))
+
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_orphan", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(d, [_clean_idres_row(),
+                     _clean_idres_row(node_id="co:us:GHOST", symbol="GHOST")])
+    b, n = audit(d, empty_breaks)
+    checks.append((any("resolution of nothing" in x for x in b),
+                   "an identity_resolution row for a node with no node row must breach"))
+
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_notinmaster_ok", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(d, [_clean_idres_row(state="NOT_IN_MASTER")])
+    b, n = audit(d, empty_breaks)
+    checks.append((not b, f"NOT_IN_MASTER is a required honest state, never a guard "
+                          f"failure: {b}"))
+
+    # --- F3a (post-adversarial-review): artifact-corruption breach classes ---------
+    # A RESOLVED row corrupted to carry no ids (and a stray refusal_reason) breaches
+    # the state<->ids biconditional — the derivation code cannot produce this, but a
+    # hand-edited or truncated parquet could.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_biconditional", nodes=nodes, edges=edges, evidence=ev)
+    _write_idres(d, [_clean_idres_row(state="RESOLVED")])
+    b, n = audit(d, empty_breaks)
+    checks.append((any("state<->ids biconditional" in x for x in b),
+                   f"a RESOLVED row missing its ids (or carrying a refusal_reason) must "
+                   f"breach the state<->ids biconditional (F3a): {b}"))
+
+    # A RESOLVED row whose security_id has no row in the committed security master —
+    # the master-membership guard, loaded read-only from data/reference/.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_master_membership", nodes=nodes, edges=edges, evidence=ev)
+    corrupt = _clean_idres_row(state="RESOLVED")
+    corrupt.update({
+        "issuer_id": "ISS:US-XNYS-GHOST", "security_id": "SEC:US-XNYS-GHOST",
+        "listing_key": "US-XNYS-GHOST", "join_method": "master_inception_exact",
+        "refusal_reason": None,
+        "source_receipts": '{"security_id":"SEC:US-XNYS-GHOST"}',
+    })
+    _write_idres(d, [corrupt])
+    ref = tmp_root / "reference"
+    ref.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "security_id": "SEC:US-XNYS-REAL", "issuer_id": "ISS:US-XNYS-REAL",
+        "listing_key": "US-XNYS-REAL", "country": "US", "mic": "XNYS",
+        "inception_code": "REAL",
+    }]).to_parquet(ref / "security_master.parquet", index=False)
+    b, n = audit(d, empty_breaks)
+    checks.append((any("absent from the committed security master" in x for x in b),
+                   f"a RESOLVED security_id absent from the committed security master "
+                   f"must breach (F3a, master-membership): {b}"))
 
     bad = [m for ok, m in checks if not ok]
     for m in bad:
