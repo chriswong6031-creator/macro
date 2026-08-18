@@ -572,7 +572,7 @@ ARTIFACT_MANIFEST = [
     # freezes, so a freshness read against it can score green on stale data.
     {"artifact": "site/prophet/index.json",
      "kind": "plan_book",
-     "schema_version": "1.0.0",
+     "schema_version": "1.1.0",
      "schema_fields": [
          "active_count", "active_count_by_age", "asof", "authority_tier", "cadence",
          "gate_go", "intake", "ledger_corrections", "ledger_quarantine", "note",
@@ -582,6 +582,13 @@ ARTIFACT_MANIFEST = [
          "source_unknown",
      ],
      "optional_fields": [
+         # G-D Board read (engine/prophet_board_read.py). CONDITIONAL, not required:
+         # build_prophet stamps both inside a try/except (scripts/build_prophet.py
+         # :2671-2678), so a night whose library/standouts read degrades ships the
+         # index WITHOUT them. Registering them under schema_fields would turn that
+         # degraded night into a drift red in the opposite direction — the
+         # red-flips-with-the-data shape optional_fields exists to prevent.
+         "board_read_coverage", "board_read_lineage",
          "lifecycle_counts", "lifecycle_grand_total", "lifecycle_live_total",
          "origination_disclosure",
      ],

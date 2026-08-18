@@ -582,7 +582,7 @@
   {
    "artifact": "site/prophet/index.json",
    "kind": "plan_book",
-   "schema_version": "1.0.0",
+   "schema_version": "1.1.0",
    "schema_fields": [
     "active_count",
     "active_count_by_age",
@@ -611,6 +611,8 @@
     "source_unknown"
    ],
    "optional_fields": [
+    "board_read_coverage",
+    "board_read_lineage",
     "lifecycle_counts",
     "lifecycle_grand_total",
     "lifecycle_live_total",
