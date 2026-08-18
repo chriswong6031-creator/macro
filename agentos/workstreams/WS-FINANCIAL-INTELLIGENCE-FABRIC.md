@@ -38,10 +38,10 @@ decisions:
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
   - DEC:FIF-ENTITY-ID-IS-NOT-CIK
   - DEC:FIF-REVISION-ROOT-PRIOR-REVISED
+  - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
 next_action: >
-  Sol reviews the FIF-1R3 semantic-closure PR. Do not merge until that review
-  accepts. Do not start FIF-2. Do not mix a CI-control-plane redesign into this
-  packet PR.
+  Sol freeze-reviews amended PR #5889. Do not merge. Do not create FIF-1R4.
+  Do not start FIF-2. FIF-1 stays BUILT_NOT_ACCEPTED until that review.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -75,6 +75,8 @@ do_not_redo:
   - Do not treat removal of merge-on-green as a merge hold; disable GitHub native auto-merge too.
   - Do not treat PR-body "do not merge" prose as a fail-closed Sol-review gate.
   - Do not mix a CI-control-plane / sol-review-required queue into a FIF packet PR.
+  - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
+  - Do not use the live full-registry digest as historical packet identity.
 waves:
   - id: FIF-0
     title: Program reset — land masterplan, naming, and collision map
@@ -85,15 +87,16 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Sol reviews FIF-1R3 semantic closure. Against-input must prove numbers
-      against the query kernel; revision rows separate root/prior/revised;
-      entity_id is not CIK; graph validation is O(V+E). v1 freeze waits on
-      that review. Do not start FIF-2.
+      Sol freeze-reviews amended #5889. Canonical issuer binds to source CIK
+      without rewriting raw identity; packet governance is the cutoff-visible
+      GovernanceBundle; revision rows require lineage-wide clocks and cutoff
+      mapping; the whole deterministic body is reconstructed against inputs.
+      v1 freeze waits on that review. Do not start FIF-2.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
     depends_on: [FIF-1]
-    next_action: Wait for FIF-1 acceptance. Do not start FIF-2.
+    next_action: STOPPED. Wait for FIF-1 Sol freeze acceptance. Do not start FIF-2.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -154,5 +157,7 @@ contract closure. #5837 merged those R2 foundations prematurely on
 2026-08-17. Sol's source review accepted the R2 architecture but rejected
 v1 freeze over against-input numeric proof, mixed multi-hop revision
 semantics, accidental entity_id==CIK law, and unbounded reconvergent graph
-validation. FIF-1R3 closes those defects. FIF-1 stays in progress until Sol
-accepts. FIF-2 is still stopped.
+validation. FIF-1R3 amends PR #5889 to close Sol's remaining identity, cutoff-governance,
+lineage-revision, and whole-packet verification defects. FIF-1 stays in
+progress / BUILT_NOT_ACCEPTED until Sol freeze-accepts. FIF-2 is still stopped.
+Do not create FIF-1R4.

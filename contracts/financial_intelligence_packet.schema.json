@@ -85,13 +85,21 @@
     "entity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["entity_id", "cik", "ticker", "name", "identity_basis"],
+      "required": [
+        "entity_id",
+        "cik",
+        "ticker",
+        "name",
+        "identity_basis",
+        "source_entity_id"
+      ],
       "properties": {
         "entity_id": {"type": "string", "minLength": 1, "maxLength": 256},
         "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
         "ticker": {"type": "string", "minLength": 1, "maxLength": 16},
         "name": {"type": "string", "minLength": 1, "maxLength": 1024},
-        "identity_basis": {"type": "string", "minLength": 1, "maxLength": 256}
+        "identity_basis": {"type": "string", "minLength": 1, "maxLength": 256},
+        "source_entity_id": {"type": "string", "pattern": "^[0-9]{10}$"}
       }
     },
     "query": {
@@ -129,15 +137,15 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "metric_registry_version",
-        "metric_registry_digest",
+        "governance_bundle_id",
+        "governance_recorded_at",
         "query_engine_version",
         "packet_builder_version",
         "packet_builder_digest"
       ],
       "properties": {
-        "metric_registry_version": {"type": "string", "minLength": 1},
-        "metric_registry_digest": {"$ref": "#/$defs/sha256"},
+        "governance_bundle_id": {"$ref": "#/$defs/sha256"},
+        "governance_recorded_at": {"$ref": "#/$defs/timestamp"},
         "query_engine_version": {"type": "string", "minLength": 1},
         "packet_builder_version": {"const": "financial_intelligence_packet.builder/v1"},
         "packet_builder_digest": {"$ref": "#/$defs/sha256"}
@@ -511,7 +519,7 @@
         "filing_package_fixture_sha256",
         "companyfacts_witness_sha256",
         "submissions_witness_sha256",
-        "metric_registry_digest",
+        "governance_bundle_id",
         "packet_builder_digest",
         "query_request_digest",
         "source_receipt_count",
@@ -521,7 +529,7 @@
         "filing_package_fixture_sha256": {"$ref": "#/$defs/nullableSha256"},
         "companyfacts_witness_sha256": {"$ref": "#/$defs/nullableSha256"},
         "submissions_witness_sha256": {"$ref": "#/$defs/nullableSha256"},
-        "metric_registry_digest": {"$ref": "#/$defs/sha256"},
+        "governance_bundle_id": {"$ref": "#/$defs/sha256"},
         "packet_builder_digest": {"$ref": "#/$defs/sha256"},
         "query_request_digest": {"$ref": "#/$defs/sha256"},
         "source_receipt_count": {"type": "integer", "minimum": 0},

@@ -1935,6 +1935,26 @@ class RawFactLedger:
             chain.append(current)
         return tuple(reversed(chain))
 
+    def lineage_ready_clocks(
+        self, occurrence_id: str
+    ) -> tuple[datetime | None, datetime]:
+        """Return lineage-wide ``(source_ready_at, system_ready_at)``.
+
+        A revision is knowable only when every ancestor in ``revision_of`` is
+        visible on both clocks. The walk follows the parent chain, so a
+        child retained before its root cannot become eligible early merely
+        because the child's own clocks have passed.
+        """
+        chain = self.revision_chain(occurrence_id)
+        if not chain:
+            raise ValueError("revision lineage does not resolve")
+        source_times = [item.accepted_at for item in chain]
+        source_ready = (
+            None if any(value is None for value in source_times) else max(source_times)
+        )
+        system_ready = max(item.clocks.system_ready_at for item in chain)
+        return source_ready, system_ready
+
     def select(
         self,
         logical_key: str,

@@ -29,7 +29,7 @@ from typing import Any, Mapping, Sequence
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from .metric_registry import MetricRegistry, load_core_metric_registry
+from .metric_registry import GovernanceBundle, MetricRegistry, load_core_metric_registry
 from .query import (
     BitemporalMetricQueryEngine,
     BitemporalPolicy,
@@ -132,11 +132,21 @@ _TICKER_RE = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,15}$")
 
 @dataclass(frozen=True)
 class EntityInput:
+    """Canonical issuer identity bound to a source-native filing identity.
+
+    ``entity_id`` is Mastermind's issuer ID. ``cik`` is the SEC CIK claimed
+    for that issuer. ``source_entity_id`` is the identifier the raw ledger
+    and XBRL context use; for SEC facts it is the filer CIK. The adapter
+    binds canonical issuer → source filer explicitly. It does not rewrite
+    source-native occurrence identity.
+    """
+
     entity_id: str
     cik: str
     ticker: str
     name: str
     identity_basis: str
+    source_entity_id: str | None = None
 
     def __post_init__(self) -> None:
         entity_id = _bounded_identifier(self.entity_id, field_name="entity.entity_id")
@@ -148,14 +158,18 @@ class EntityInput:
             raise ValueError("entity.ticker is not a bounded ticker")
         name = _bounded_identifier(self.name, field_name="entity.name", maximum=PACKET_MAX_REASON_CHARS)
         identity_basis = _bounded_identifier(self.identity_basis, field_name="entity.identity_basis")
-        # entity_id is Mastermind's canonical issuer identity. cik is the SEC
-        # identifier. They may be equal in synthetic fixtures; they are not
-        # the same identity dimension and must not be contractually identical.
+        source_raw = self.source_entity_id if self.source_entity_id is not None else cik
+        source_entity_id = _bounded_identifier(
+            source_raw, field_name="entity.source_entity_id"
+        )
+        if not _CIK_RE.fullmatch(source_entity_id):
+            raise ValueError("entity.source_entity_id must be a 10-digit CIK")
         object.__setattr__(self, "entity_id", entity_id)
         object.__setattr__(self, "cik", cik)
         object.__setattr__(self, "ticker", ticker)
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "identity_basis", identity_basis)
+        object.__setattr__(self, "source_entity_id", source_entity_id)
 
 
 @dataclass(frozen=True)
@@ -300,7 +314,12 @@ class PacketEvidenceDigests:
 
 @dataclass(frozen=True)
 class FormulaGraphWalk:
-    """O(V+E) formula-graph walk cost. Visits count first encounters only."""
+    """Semantic formula-graph walk cost.
+
+    ``node_visits`` / ``edge_visits`` count first encounters only. Validation
+    stores bounded per-node state (color, leaf-closure boolean) and does not
+    union transitive leaf sets.
+    """
 
     node_count: int
     edge_count: int
@@ -458,79 +477,32 @@ def validate_packet_against_build_input(
 ) -> None:
     """Validate a packet against the exact inputs used to assemble it. Pure."""
     validate_packet_semantics(packet)
-    if packet["entity"]["entity_id"] != entity.entity_id or packet["entity"]["cik"] != entity.cik:
-        raise ValueError("packet entity does not match build entity")
-    if packet["entity"]["ticker"] != entity.ticker:
-        raise ValueError("packet ticker does not match build entity")
-    if packet["governance"]["packet_builder_digest"] != context.packet_builder_digest:
-        raise ValueError("packet builder digest does not match build context")
-    if packet["governance"]["metric_registry_digest"] != metric_registry.catalog_content_sha256:
-        raise ValueError("packet registry digest does not match supplied registry")
-    expected_query = visible_query_from_request(query_request)
-    if packet.get("query") != expected_query:
-        raise ValueError("packet query does not match supplied request")
-    query_payload = _query_request_payload(query_request)
-    expected_query_digest = sha256(canonical_json(query_payload).encode("utf-8")).hexdigest()
-    if packet["receipts"]["query_request_digest"] != expected_query_digest:
-        raise ValueError("query_request_digest does not match supplied request")
+    _assert_entity_isolation(entity, ledger, filing_metadata)
     digests = PacketEvidenceDigests.from_mapping(input_digests)
-    for name, value in digests.to_dict().items():
-        if packet["receipts"].get(name) != value:
-            raise ValueError(f"witness digest mismatch: {name}")
-    expected_cells, expected_evidence, _kernel_cells = _query_adapted_cells(
+    expected_body, _bundle = _governed_packet_components(
         entity=entity,
         ledger=ledger,
         filing_metadata=filing_metadata,
         query_request=query_request,
         metric_registry=metric_registry,
-    )
-    if canonical_json(packet["cells"]) != canonical_json(expected_cells):
-        raise ValueError("requested cells do not match query-kernel result")
-    if canonical_json(packet["evidence_cells"]) != canonical_json(expected_evidence):
-        raise ValueError("evidence cells do not match query-kernel result")
-    expected_revisions = _revision_records(
-        ledger=ledger,
-        registry=metric_registry,
-        query_request=query_request,
-        cells=expected_cells,
-        evidence_cells=expected_evidence,
-    )
-    if canonical_json(packet.get("revisions") or []) != canonical_json(expected_revisions):
-        raise ValueError("revisions do not match ledger lineage")
-    expected_extensions = _extension_evidence(
-        ledger=ledger,
-        query_request=query_request,
-        cells=expected_cells,
-        evidence_cells=expected_evidence,
-    )
-    expected_coverage = _coverage(
-        query_request.metrics,
-        len(query_request.periods),
-        expected_cells,
-        expected_evidence,
-        expected_revisions,
-        expected_extensions,
-    )
-    if packet.get("coverage") != expected_coverage:
-        raise ValueError("coverage does not recompute from build inputs")
-    expected_receipts = _receipts(
-        metric_registry=metric_registry,
-        query_request=query_request,
-        cells=expected_cells,
-        evidence_cells=expected_evidence,
-        builder_digest=context.packet_builder_digest,
+        context=context,
         input_digests=digests,
     )
-    if packet.get("receipts") != expected_receipts:
-        raise ValueError("receipts do not recompute from build inputs")
+    actual_body = {
+        key: value
+        for key, value in packet.items()
+        if key not in IDENTITY_EXCLUDED_FIELDS
+    }
+    if canonical_json(actual_body) != canonical_json(expected_body):
+        raise ValueError("packet body does not match reconstructed build inputs")
     _assert_cells_match_registry_and_ledger(
         packet,
         entity=entity,
         ledger=ledger,
         filing_metadata=filing_metadata,
         metric_registry=metric_registry,
+        governance_bundle=_bundle,
     )
-    _assert_entity_isolation(entity, ledger, filing_metadata)
 
 
 def all_packet_cells(packet: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -549,10 +521,42 @@ def packet_cell_index(packet: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def formula_leaves(packet: Mapping[str, Any], cell: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+    """Return unique direct leaves for one cell. Output is proportional to those leaves."""
     index = packet_cell_index(packet)
-    memo: dict[str, dict[str, dict[str, Any]]] = {}
-    color: dict[str, str] = {}
-    leaves = _formula_leaf_closure(index, cell["cell_id"], memo=memo, color=color, depth=0)
+    leaves: dict[str, dict[str, Any]] = {}
+    visited: set[str] = set()
+    walking: set[str] = set()
+
+    def walk(cell_id: str, depth: int) -> None:
+        if cell_id in walking:
+            raise ValueError(f"formula dependency cycle at {cell_id}")
+        if cell_id in visited:
+            return
+        node = index.get(cell_id)
+        if node is None:
+            raise ValueError(f"unresolved dependency {cell_id}")
+        if depth > PACKET_MAX_FORMULA_DEPTH:
+            raise ValueError(
+                f"formula graph depth exceeds PACKET_MAX_FORMULA_DEPTH {PACKET_MAX_FORMULA_DEPTH}"
+            )
+        walking.add(cell_id)
+        kind = node["provenance_kind"]
+        if kind == "direct":
+            leaves[cell_id] = dict(node)
+        elif kind != "formula":
+            walking.remove(cell_id)
+            raise ValueError(f"formula evidence is not a direct fact: {cell_id} kind={kind}")
+        else:
+            deps = list(node.get("dependency_cell_ids") or [])
+            if not deps:
+                walking.remove(cell_id)
+                raise ValueError(f"formula cell {cell_id} has no dependency_cell_ids")
+            for dep_id in deps:
+                walk(dep_id, depth + 1)
+        walking.remove(cell_id)
+        visited.add(cell_id)
+
+    walk(cell["cell_id"], 1)
     return tuple(leaves[key] for key in sorted(leaves))
 
 
@@ -560,7 +564,12 @@ def walk_formula_graph(
     cells: Sequence[Mapping[str, Any]],
     evidence_cells: Sequence[Mapping[str, Any]],
 ) -> FormulaGraphWalk:
-    """Validate the formula DAG in O(V+E) with completed-node memoization."""
+    """Validate the formula DAG with one visit per node and edge.
+
+    Closure is a boolean: a valued formula terminates iff every dependency
+    terminates in a valued direct fact. Transitive leaf dictionaries are not
+    constructed here; callers that need leaves use ``formula_leaves``.
+    """
     packet = {"cells": list(cells), "evidence_cells": list(evidence_cells)}
     requested_ids = {cell["cell_id"] for cell in cells}
     evidence_ids = {cell["cell_id"] for cell in evidence_cells}
@@ -571,8 +580,8 @@ def walk_formula_graph(
         raise ValueError("duplicate cell_id in packet cells")
     index = packet_cell_index(packet)
     _assert_evidence_graph_bounds(cells, evidence_cells)
-    memo: dict[str, dict[str, dict[str, Any]]] = {}
     color: dict[str, str] = {}
+    valid_leaf_closure: dict[str, bool] = {}
     node_visits = 0
     edge_visits = 0
     reachable: set[str] = set()
@@ -615,23 +624,24 @@ def walk_formula_graph(
             )
         color[cell_id] = "gray"
         kind = node["provenance_kind"]
+        deps = list(node.get("dependency_cell_ids") or [])
         if kind == "direct":
-            memo[cell_id] = {cell_id: dict(node)}
+            valid_leaf_closure[cell_id] = node.get("value") is not None
         elif kind == "formula":
-            deps = list(node.get("dependency_cell_ids") or [])
             if not deps and node.get("value") is not None:
                 raise ValueError(f"formula cell {cell_id} has no dependency_cell_ids")
-            result: dict[str, dict[str, Any]] = {}
+            ok = True
             for dep_id in deps:
                 edge_visits += 1
                 if dep_id in evidence_ids:
                     reachable.add(dep_id)
                 dfs(dep_id, depth + 1)
-                result.update(memo[dep_id])
-            memo[cell_id] = result
+                if not valid_leaf_closure.get(dep_id, False):
+                    ok = False
+            valid_leaf_closure[cell_id] = bool(deps) and ok
         else:
-            memo[cell_id] = {}
-            for dep_id in node.get("dependency_cell_ids") or []:
+            valid_leaf_closure[cell_id] = False
+            for dep_id in deps:
                 edge_visits += 1
                 if dep_id in evidence_ids:
                     reachable.add(dep_id)
@@ -649,62 +659,16 @@ def walk_formula_graph(
     for cell in all_packet_cells(packet):
         if cell["value"] is None or cell["provenance_kind"] != "formula":
             continue
-        leaves = memo.get(cell["cell_id"]) or {}
-        if not leaves:
-            raise ValueError(f"valued formula {cell['cell_id']} has no direct leaves")
-        for leaf in leaves.values():
-            if leaf["value"] is None or leaf["provenance_kind"] != "direct":
-                raise ValueError(
-                    f"valued formula {cell['cell_id']} does not terminate in valued direct facts"
-                )
+        if not valid_leaf_closure.get(cell["cell_id"]):
+            raise ValueError(
+                f"valued formula {cell['cell_id']} does not terminate in valued direct facts"
+            )
     return FormulaGraphWalk(
         node_count=len(index),
         edge_count=edges,
         node_visits=node_visits,
         edge_visits=edge_visits,
     )
-
-
-def _formula_leaf_closure(
-    index: Mapping[str, Mapping[str, Any]],
-    cell_id: str,
-    *,
-    memo: dict[str, dict[str, dict[str, Any]]],
-    color: dict[str, str],
-    depth: int,
-) -> dict[str, dict[str, Any]]:
-    state = color.get(cell_id, "white")
-    if state == "gray":
-        raise ValueError(f"formula dependency cycle at {cell_id}")
-    cached = memo.get(cell_id)
-    if cached is not None:
-        return cached
-    node = index.get(cell_id)
-    if node is None:
-        raise ValueError(f"unresolved dependency {cell_id}")
-    if depth > PACKET_MAX_FORMULA_DEPTH:
-        raise ValueError(
-            f"formula graph depth exceeds PACKET_MAX_FORMULA_DEPTH {PACKET_MAX_FORMULA_DEPTH}"
-        )
-    kind = node["provenance_kind"]
-    if kind == "direct":
-        result = {cell_id: dict(node)}
-        memo[cell_id] = result
-        return result
-    if kind != "formula":
-        raise ValueError(f"formula evidence is not a direct fact: {cell_id} kind={kind}")
-    deps = list(node.get("dependency_cell_ids") or [])
-    if not deps:
-        raise ValueError(f"formula cell {cell_id} has no dependency_cell_ids")
-    color[cell_id] = "gray"
-    result = {}
-    for dep_id in deps:
-        result.update(
-            _formula_leaf_closure(index, dep_id, memo=memo, color=color, depth=depth + 1)
-        )
-    color[cell_id] = "black"
-    memo[cell_id] = result
-    return result
 
 
 def assert_formula_evidence_closed(
@@ -887,7 +851,7 @@ def _query_adapted_cells(
     engine = BitemporalMetricQueryEngine(
         ledger,
         metric_registry,
-        entities={entity.ticker: entity.entity_id},
+        entities={entity.ticker: entity.source_entity_id},
         filing_metadata=filing_metadata,
     )
     cells: list[dict[str, Any]] = []
@@ -930,6 +894,117 @@ def _query_adapted_cells(
     return cells, evidence_cells, kernel_cells
 
 
+def expected_packet_body(
+    *,
+    entity: EntityInput,
+    query_request: PacketQueryRequest,
+    context: PacketBuildContext,
+    governance_bundle: GovernanceBundle,
+    cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
+    revisions: Sequence[Mapping[str, Any]],
+    coverage: Mapping[str, Any],
+    limitations: Sequence[str],
+    receipts: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Canonical deterministic packet body. Identity hashes are applied later."""
+    return {
+        "schema": PACKET_SCHEMA,
+        "entity": {
+            "entity_id": entity.entity_id,
+            "cik": entity.cik,
+            "ticker": entity.ticker,
+            "name": entity.name,
+            "identity_basis": entity.identity_basis,
+            "source_entity_id": entity.source_entity_id,
+        },
+        "query": visible_query_from_request(query_request),
+        "governance": {
+            "governance_bundle_id": governance_bundle.content_id,
+            "governance_recorded_at": utc_text(governance_bundle.recorded_at),
+            "query_engine_version": context.query_engine_version,
+            "packet_builder_version": context.packet_builder_version,
+            "packet_builder_digest": context.packet_builder_digest,
+        },
+        "periods": [_period_record(period) for period in query_request.periods],
+        "cells": list(cells),
+        "evidence_cells": list(evidence_cells),
+        "revisions": list(revisions),
+        "disclosure_changes": [],
+        "coverage": dict(coverage),
+        "limitations": list(limitations),
+        "receipts": dict(receipts),
+        "authority": {
+            "class": "context_only",
+            "display_only": True,
+        },
+    }
+
+
+def _governed_packet_components(
+    *,
+    entity: EntityInput,
+    ledger: RawFactLedger,
+    filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
+    query_request: PacketQueryRequest,
+    metric_registry: MetricRegistry,
+    context: PacketBuildContext,
+    input_digests: PacketEvidenceDigests,
+) -> tuple[dict[str, Any], GovernanceBundle]:
+    governance_bundle = metric_registry.governance_bundle_at(query_request.policy.recorded_at)
+    cells, evidence_cells, _kernel_cells = _query_adapted_cells(
+        entity=entity,
+        ledger=ledger,
+        filing_metadata=filing_metadata,
+        query_request=query_request,
+        metric_registry=metric_registry,
+    )
+    assert_formula_evidence_closed(cells, evidence_cells)
+    revisions = _revision_records(
+        ledger=ledger,
+        governance_bundle=governance_bundle,
+        query_request=query_request,
+        cells=cells,
+        evidence_cells=evidence_cells,
+    )
+    extension_evidence = _extension_evidence(
+        ledger=ledger,
+        query_request=query_request,
+        cells=cells,
+        evidence_cells=evidence_cells,
+    )
+    coverage = _coverage(
+        query_request.metrics,
+        len(query_request.periods),
+        cells,
+        evidence_cells,
+        revisions,
+        extension_evidence,
+    )
+    limitations = _limitations(entity)
+    receipts = _receipts(
+        governance_bundle=governance_bundle,
+        query_request=query_request,
+        cells=cells,
+        evidence_cells=evidence_cells,
+        builder_digest=context.packet_builder_digest,
+        input_digests=input_digests,
+    )
+    body = expected_packet_body(
+        entity=entity,
+        query_request=query_request,
+        context=context,
+        governance_bundle=governance_bundle,
+        cells=cells,
+        evidence_cells=evidence_cells,
+        revisions=revisions,
+        coverage=coverage,
+        limitations=limitations,
+        receipts=receipts,
+    )
+    return body, governance_bundle
+
+
 def assemble_financial_intelligence_packet(
     *,
     entity: EntityInput,
@@ -954,84 +1029,15 @@ def assemble_financial_intelligence_packet(
     if built_at is not None:
         built_at_text = utc_text(parse_utc(built_at, field_name="built_at"))
 
-    cells, evidence_cells, _kernel_cells = _query_adapted_cells(
+    body, _bundle = _governed_packet_components(
         entity=entity,
         ledger=ledger,
         filing_metadata=filing_metadata,
         query_request=query_request,
         metric_registry=metric_registry,
-    )
-    assert_formula_evidence_closed(cells, evidence_cells)
-    revisions = _revision_records(
-        ledger=ledger,
-        registry=metric_registry,
-        query_request=query_request,
-        cells=cells,
-        evidence_cells=evidence_cells,
-    )
-    if len(revisions) > PACKET_MAX_REVISIONS:
-        raise ValueError(
-            f"packet revisions exceed PACKET_MAX_REVISIONS {PACKET_MAX_REVISIONS}"
-        )
-    extension_evidence = _extension_evidence(
-        ledger=ledger,
-        query_request=query_request,
-        cells=cells,
-        evidence_cells=evidence_cells,
-    )
-    if len(extension_evidence) > PACKET_MAX_UNMAPPED_EXTENSIONS:
-        raise ValueError(
-            "packet unmapped extensions exceed "
-            f"PACKET_MAX_UNMAPPED_EXTENSIONS {PACKET_MAX_UNMAPPED_EXTENSIONS}"
-        )
-    coverage = _coverage(
-        query_request.metrics,
-        len(query_request.periods),
-        cells,
-        evidence_cells,
-        revisions,
-        extension_evidence,
-    )
-    limitations = _limitations(entity)
-    receipts = _receipts(
-        metric_registry=metric_registry,
-        query_request=query_request,
-        cells=cells,
-        evidence_cells=evidence_cells,
-        builder_digest=context.packet_builder_digest,
+        context=context,
         input_digests=digests,
     )
-    periods = [_period_record(period) for period in query_request.periods]
-    body: dict[str, Any] = {
-        "schema": PACKET_SCHEMA,
-        "entity": {
-            "entity_id": entity.entity_id,
-            "cik": entity.cik,
-            "ticker": entity.ticker,
-            "name": entity.name,
-            "identity_basis": entity.identity_basis,
-        },
-        "query": visible_query_from_request(query_request),
-        "governance": {
-            "metric_registry_version": metric_registry.catalog_version,
-            "metric_registry_digest": metric_registry.catalog_content_sha256,
-            "query_engine_version": context.query_engine_version,
-            "packet_builder_version": context.packet_builder_version,
-            "packet_builder_digest": context.packet_builder_digest,
-        },
-        "periods": periods,
-        "cells": cells,
-        "evidence_cells": evidence_cells,
-        "revisions": revisions,
-        "disclosure_changes": [],
-        "coverage": coverage,
-        "limitations": limitations,
-        "receipts": receipts,
-        "authority": {
-            "class": "context_only",
-            "display_only": True,
-        },
-    }
     digest = packet_digest(body)
     packet = {
         **body,
@@ -1228,14 +1234,13 @@ def _evidence_cells(
     )
 
 
-def _concept_to_metrics(registry: MetricRegistry) -> dict[str, tuple[str, ...]]:
+def _concept_to_metrics(governance_bundle: GovernanceBundle) -> dict[str, tuple[str, ...]]:
     mapping: dict[str, list[str]] = {}
-    for metric_id in registry.metric_ids:
-        contract = registry.metric(metric_id)
+    for contract in governance_bundle.contracts:
         for rule in contract.mappings:
             for alias in rule.taxonomy_concept_aliases:
                 qname = f"{alias.taxonomy}:{alias.concept}"
-                mapping.setdefault(qname, []).append(metric_id)
+                mapping.setdefault(qname, []).append(contract.metric_id)
     return {key: tuple(values) for key, values in mapping.items()}
 
 
@@ -1249,12 +1254,12 @@ def _period_matches_event(period: PeriodRequest, event: RawFactOccurrence) -> bo
 def _revision_records(
     *,
     ledger: RawFactLedger,
-    registry: MetricRegistry,
+    governance_bundle: GovernanceBundle,
     query_request: PacketQueryRequest,
     cells: Sequence[Mapping[str, Any]],
     evidence_cells: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    concept_map = _concept_to_metrics(registry)
+    concept_map = _concept_to_metrics(governance_bundle)
     packet_cells = [*cells, *evidence_cells]
     relevant_metrics = {cell["metric_id"] for cell in packet_cells}
     cited_occurrences = {
@@ -1268,9 +1273,11 @@ def _revision_records(
     for event in ledger.events:
         if event.event_type not in REPORTED_REVISION_EVENT_TYPES or not event.revision_of:
             continue
+        source_ready, system_ready = ledger.lineage_ready_clocks(event.occurrence_id)
         knowable = (
-            event.clocks.accepted_at <= source_cutoff
-            and event.clocks.recorded_at <= recorded_cutoff
+            source_ready is not None
+            and source_ready <= source_cutoff
+            and system_ready <= recorded_cutoff
         )
         if not knowable:
             continue
@@ -1315,7 +1322,8 @@ def _revision_records(
                     None,
                 )
                 selected = bool(cell and cell.get("accession") == event.source.accession)
-                records.append(
+                _append_bounded(
+                    records,
                     {
                         "metric_id": metric_id,
                         "period": period.to_dict(),
@@ -1343,7 +1351,11 @@ def _revision_records(
                         "parent_occurrence_id": parent.occurrence_id,
                         "revised_occurrence_id": event.occurrence_id,
                         "lineage_occurrence_ids": lineage_ids,
-                    }
+                    },
+                    maximum=PACKET_MAX_REVISIONS,
+                    message=(
+                        f"packet revisions exceed PACKET_MAX_REVISIONS {PACKET_MAX_REVISIONS}"
+                    ),
                 )
     records.sort(
         key=lambda item: (
@@ -1410,14 +1422,20 @@ def _extension_evidence(
             continue
         if not any(_period_matches_event(period, event) for period in query_request.periods):
             continue
-        rows.append(
+        _append_bounded(
+            rows,
             {
                 "concept_qname": event.concept_qname,
                 "occurrence_id": event.occurrence_id,
                 "accession": event.source.accession,
                 "value": decimal_text(event.parsed_value) if event.parsed_value is not None else None,
                 "mapped": False,
-            }
+            },
+            maximum=PACKET_MAX_UNMAPPED_EXTENSIONS,
+            message=(
+                "packet unmapped extensions exceed "
+                f"PACKET_MAX_UNMAPPED_EXTENSIONS {PACKET_MAX_UNMAPPED_EXTENSIONS}"
+            ),
         )
     rows.sort(key=lambda item: (item["concept_qname"], item["occurrence_id"]))
     return rows
@@ -1530,7 +1548,7 @@ def _query_request_payload(query_request: PacketQueryRequest) -> dict[str, Any]:
 
 def _receipts(
     *,
-    metric_registry: MetricRegistry,
+    governance_bundle: GovernanceBundle,
     query_request: PacketQueryRequest,
     cells: Sequence[Mapping[str, Any]],
     evidence_cells: Sequence[Mapping[str, Any]],
@@ -1549,7 +1567,7 @@ def _receipts(
     )
     return {
         **input_digests.to_dict(),
-        "metric_registry_digest": metric_registry.catalog_content_sha256,
+        "governance_bundle_id": governance_bundle.content_id,
         "packet_builder_digest": builder_digest,
         "query_request_digest": sha256(canonical_json(query_payload).encode("utf-8")).hexdigest(),
         "source_receipt_count": source_receipts,
@@ -1641,6 +1659,18 @@ def _collection_bound_message(field_name: str, maximum: int) -> str:
     return f"{field_name} exceeds the item safety limit {maximum}"
 
 
+def _append_bounded(
+    rows: list[Any],
+    item: Any,
+    *,
+    maximum: int,
+    message: str,
+) -> None:
+    if len(rows) >= maximum:
+        raise ValueError(message)
+    rows.append(item)
+
+
 def _packet_decimal_context() -> Context:
     context = Context(
         prec=FORMULA_DECIMAL_PRECISION,
@@ -1687,10 +1717,10 @@ def _assert_entity_isolation(
     filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
 ) -> None:
     for event in ledger.events:
-        if event.source.entity_id != entity.entity_id:
-            raise ValueError("ledger occurrence entity does not match packet entity")
-        if event.context.entity_identifier != entity.entity_id:
-            raise ValueError("ledger context entity does not match packet entity")
+        if event.source.entity_id != entity.source_entity_id:
+            raise ValueError("ledger occurrence entity does not match packet source binding")
+        if event.context.entity_identifier != entity.source_entity_id:
+            raise ValueError("ledger context entity does not match packet source binding")
         meta = filing_metadata.get(event.occurrence_id)
         if meta is None:
             raise ValueError("ledger occurrence is missing filing metadata")
@@ -1711,8 +1741,8 @@ def _assert_occurrence_matches_cell(
     cell: Mapping[str, Any],
     entity: EntityInput,
 ) -> None:
-    if event.source.entity_id != entity.entity_id:
-        raise ValueError("source occurrence entity does not match packet entity")
+    if event.source.entity_id != entity.source_entity_id:
+        raise ValueError("source occurrence entity does not match packet source binding")
     if cell.get("accession") and event.source.accession != cell["accession"]:
         raise ValueError("source occurrence accession does not match cell")
     if cell.get("concept") and event.concept_qname != cell["concept"]:
@@ -1821,10 +1851,14 @@ def _assert_cells_match_registry_and_ledger(
     ledger: RawFactLedger,
     filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
     metric_registry: MetricRegistry,
+    governance_bundle: GovernanceBundle,
 ) -> None:
     index = {event.occurrence_id: event for event in ledger.events}
     packet_index = packet_cell_index(packet)
-    registry_ids = set(metric_registry.metric_ids)
+    visible_ids = {contract.metric_id for contract in governance_bundle.contracts}
+    unknown_visible = visible_ids - set(metric_registry.metric_ids)
+    if unknown_visible:
+        raise ValueError("cutoff-visible governance contains unknown live metrics")
     for cell in all_packet_cells(packet):
         if cell["value"] is None:
             continue
@@ -1834,10 +1868,10 @@ def _assert_cells_match_registry_and_ledger(
                 event = index.get(occurrence_id)
                 if event is None:
                     raise ValueError("source_occurrence_id is not in the supplied ledger")
-                if event.source.entity_id != entity.entity_id:
-                    raise ValueError("source occurrence entity does not match packet entity")
-                if event.context.entity_identifier != entity.entity_id:
-                    raise ValueError("source occurrence context entity does not match packet entity")
+                if event.source.entity_id != entity.source_entity_id:
+                    raise ValueError("source occurrence entity does not match packet source binding")
+                if event.context.entity_identifier != entity.source_entity_id:
+                    raise ValueError("source occurrence context entity does not match packet source binding")
                 meta_raw = filing_metadata.get(occurrence_id)
                 if meta_raw is None:
                     raise ValueError("source_occurrence_id has no filing metadata")
@@ -1864,22 +1898,22 @@ def _assert_cells_match_registry_and_ledger(
             period = cell.get("period") or {}
             if not any(_cell_period_matches_event(period, event) for event in selected):
                 raise ValueError("direct cell period does not match selected source occurrence")
-            if cell["metric_id"] in registry_ids:
-                contract = metric_registry.metric(cell["metric_id"])
+            if cell["metric_id"] in visible_ids:
+                contract = governance_bundle.metric(cell["metric_id"])
                 mapping_id = cell.get("mapping_rule_id")
                 mapping_ids = {rule.rule.rule_id for rule in contract.mappings}
                 if mapping_id not in mapping_ids:
-                    raise ValueError("mapping_rule_id is not in the supplied registry")
+                    raise ValueError("mapping_rule_id is not in the cutoff-visible governance")
                 if not cell.get("mapping_rule_digest"):
                     raise ValueError("mapping_rule_digest is missing for a valued direct cell")
         elif cell["provenance_kind"] == "formula":
-            if cell["metric_id"] not in registry_ids:
-                raise ValueError("formula metric is not in the supplied registry")
-            contract = metric_registry.metric(cell["metric_id"])
+            if cell["metric_id"] not in visible_ids:
+                raise ValueError("formula metric is not in the cutoff-visible governance")
+            contract = governance_bundle.metric(cell["metric_id"])
             if contract.formula is None:
-                raise ValueError("formula_rule_id is not in the supplied registry")
+                raise ValueError("formula_rule_id is not in the cutoff-visible governance")
             if cell.get("formula_rule_id") != contract.formula.rule.rule_id:
-                raise ValueError("formula_rule_id is not in the supplied registry")
+                raise ValueError("formula_rule_id is not in the cutoff-visible governance")
             if not cell.get("formula_rule_digest"):
                 raise ValueError("formula_rule_digest is missing for a valued formula cell")
             dep_metrics = tuple(
