@@ -140,4 +140,11 @@ removed all headroom the recovery needed.
    a check), give merge-on-green its own work directory, or make its checkout
    restore a full tree on exit. Also: its non-cone sparse pattern block
    appends (~7 copies observed) instead of replacing — the workspace is
-   cumulative, not reset per run.
+   cumulative, not reset per run. **Verification recipe (peer-measured):**
+   judge a runner workspace by CONFIG, never by `ls` — `git config --get
+   core.sparseCheckout` + the pattern file are stable host properties (they
+   even survive actions/checkout's `sparse-checkout disable`, measured), while
+   file presence is racy: mac-builder-light's tree was observed re-cloning
+   mid-read (requirements.txt present → absent seconds apart, HEAD flipping
+   main → unborn master) — a file check samples a moving target and misleads
+   in BOTH directions.
