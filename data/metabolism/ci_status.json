@@ -1,7 +1,13 @@
 {
-  "ts": "2026-08-18T20:54:08+00:00",
-  "main_sha": "fda2cfee4cb894a5dc22a27f941ba64b1ce5271c",
+  "ts": "2026-08-18T22:56:35+00:00",
+  "main_sha": "f5833d1656e60796dcc09c8abb4adfe1fc749239",
   "red_required": [
+    {
+      "name": "enrich",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32194739734/job/95896318274"
+    },
     {
       "name": "engine-render-guards",
       "conclusion": "cancelled",
@@ -40,9 +46,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 3,
+  "consecutive_failures": 4,
   "sensed_shas": [
-    "fda2cfee4cb894a5dc22a27f941ba64b1ce5271c",
+    "f5833d1656e60796dcc09c8abb4adfe1fc749239",
     "dba6069b427913c5befdcef6e8414e16df095833"
   ],
   "heartbeat_degraded": false
