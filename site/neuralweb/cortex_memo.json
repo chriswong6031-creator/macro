@@ -1,32 +1,14 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-14T06:11:20+00:00",
-  "summary": "Context-only committee read: the measured tape remains RISK_ON (77) with healthy breadth and normalizing volatility, but the confirmed US Q2/Reflation label is weakly supported (confidence 0.06) and internally transitioning toward Q3: current axes read growth -0.13 and inflation +0.08, with Q3 pending 4 of 7 sessions. Liquidity is contracting through an orderly drain, real yields are restrictive and near a five-year extreme, while credit remains healthy. The risk radar's caution state is an early extension watch, not a measured downside edge: its 21-session pullback rate is 16.0% versus a 17.8% base rate. No signal, trade, ranking, or escalation is originated here.",
-  "what_fired": [
-    "Three shadow attention records: weak Q2 label versus pending raw Q3; bonds/FX cross-asset divergence from Q2; and governance cleanup for overdue or internally inconsistent master-brain theses.",
-    "Factor Pair G did not fire: the contradiction ledger is dormant because the panel has only 11 dates, below its 60-date activation floor.",
-    "One inert CHF mechanism card was submitted to metabolism as a falsifiable, budgeted hypothesis concerning net-liquidity acceleration and later breadth deterioration in low-volatility regimes."
-  ],
-  "contradictions_review": "The confluence graph shows five display-only tensions. The principal macro tension is that rates-credit and FX oppose the confirmed Q2 equity regime, with cross-asset agreement only 50%. A separate briefing-versus-ticker-demand tension contains 33 directional divergences. Four older buy-lane/options-skew contradictions are dated 2026-07-31 and should not be treated as current without refresh. Factor contradictions are unavailable, not absent in an evidentiary sense: Pair G remains dormant pending sufficient panel history. Open master-brain theses also require reconciliation: the China-overweight thesis conflicts with China's current Q4 growth-scare state, contracting liquidity and weak-side HK peg; several theses are past check_by yet remain open; and mb-2026-07-01-1 is duplicated across different subjects.",
-  "decaying_families": [
-    "Risk radar caution/watch: 15 graded states, zero realized pullback hits, no alerts, and current measured 21-day pullback incidence below base; retain only as early display context.",
-    "US board: Q2 signed excess is negative at 5 and 10 days, and the engine remains unarmed after losing out of sample.",
-    "Radar family: negative shrunken IC at 5 and 21 days despite large samples; unarmed and unsuitable for directional inference.",
-    "Thematic, stock and AI desks: negative 63-day signed excess across Q1/Q2 samples; all remain unarmed.",
-    "Policy and White House families: negative signed excess with small samples and low Wilson lower bounds; context only.",
-    "Factor composite: non-tradeable, with investment, low-volatility, low-beta and composite legs carrying negative historical IC; panel history floor not met."
-  ],
-  "deserves_operator": [
-    "US regime-label integrity: clear attention if raw axes revert to Q2 before day 7, or after Q3 confirms and remains internally supported for two sessions.",
-    "Cross-asset confirmation: clear if agreement exceeds 70% for three sessions while the equity regime is unchanged; retain while agreement is at or below 50% or the regime changes.",
-    "Master-brain ledger governance: score or retire all theses past check_by and resolve duplicate IDs. Clear only after the next nightly run shows neither condition.",
-    "Review the open China-overweight thesis against current China Q4, contracting liquidity and weak-side HK peg; this is a contradiction-attention item, not a directional call.",
-    "Treat the options-skew contradiction set as stale until refreshed from its 2026-07-31 observation date.",
-    "Data coverage deserves operational attention: factor Pair G cannot adjudicate borrowed strength until at least 60 distinct panel dates; options-flow history is immature and missing 12 live-snapshot sessions; volatility scare composition is partial at 50% coverage."
-  ],
+  "as_of": "2026-08-18T11:20:21+00:00",
+  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
+  "what_fired": [],
+  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
+  "decaying_families": [],
+  "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-13",
+    "as_of": "2026-08-14",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -41,79 +23,115 @@
     },
     "is_context_only": true
   },
-  "tool_call_census": {
-    "read_world_state": 1,
-    "read_factor_state": 1,
-    "query_spine": 1,
-    "read_contradictions": 1,
-    "list_factor_contradictions": 1,
-    "read_kernel": 1,
-    "read_master_brain_theses": 1,
-    "read_causal_candidates": 1,
-    "flag_attention": 1,
-    "stake_hypothesis": 1,
-    "write_memo": 1
-  },
+  "tool_call_census": {},
   "is_context_only": true,
   "run_status": {
-    "status": "ok",
-    "degraded": false,
-    "degradation_reason": null,
-    "model_used": "claude-opus-4-8",
+    "status": "degraded",
+    "degraded": true,
+    "degradation_reason": "model_unavailable",
+    "model_used": "claude-sonnet-4-6",
     "provider_attempts": [
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8XYmHuFsNdTHYXVt6w'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8Yr6rSJK4eGbmQJS2r'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8bG6oFGBoLqsUvKz4w'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8bTD2ktrwUiULxh3e9'}"
       },
       {
         "provider": "codex",
-        "model": "gpt-5.6-sol",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
-        "model": "gpt-5.6-sol",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       }
     ],
-    "tool_call_batches": 5,
-    "individual_tool_calls": 11,
+    "tool_call_batches": 0,
+    "individual_tool_calls": 0,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-14T05:46:20Z"
+    "context_as_of": "2026-08-18T08:17:33Z"
   }
 }

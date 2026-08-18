@@ -1,6 +1,6 @@
 {
   "schema": "reflex.factor_attention_probation.v1",
-  "as_of": "2026-08-14",
+  "as_of": "2026-08-18",
   "granted": false,
   "tier": "A0/A1 shadow",
   "reason": "insufficient-n: n=0 < min_n=25",
@@ -11,7 +11,8 @@
   "attention_track_record": {
     "n": 0,
     "hits": 0,
-    "base_rate": 0.5
+    "ungradeable": 0,
+    "base_rate": null
   },
   "is_context_only": true
 }
