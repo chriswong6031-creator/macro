@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-18",
-  "generated_utc": "2026-08-18T07:59:43.095189+00:00",
-  "n_tickers": 2577,
+  "generated_utc": "2026-08-18T07:22:20.780694+00:00",
+  "n_tickers": 2582,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -210,8 +210,8 @@
       "weighted_score": 0.9,
       "gov_contract_usd_30d": 96369731.0,
       "gov_contract_accel": 151.76,
-      "days_to_earnings": 16,
-      "next_earnings": "2026-09-03",
+      "days_to_earnings": 13,
+      "next_earnings": "2026-08-31",
       "earnings_surprise_pct": 42.9,
       "donor_usd": 89500.0,
       "convergence_score": 1,
@@ -3293,20 +3293,6 @@
       "next_earnings": "2026-09-02",
       "earnings_surprise_pct": 7.4,
       "congress_position_usd": 24228500.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CRDO": {
-      "ticker": "CRDO",
-      "channels": [
-        "news_sentiment"
-      ],
-      "weighted_score": 0.2,
-      "days_to_earnings": 15,
-      "next_earnings": "2026-09-02",
-      "earnings_surprise_pct": 19.5,
-      "news_bull_ratio": 0.9,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false

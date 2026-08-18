@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-18T07:59:31.946702+00:00",
+  "generated_utc": "2026-08-18T07:22:10.871114+00:00",
   "as_of": "2026-08-18",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -28627,7 +28627,7 @@
         "ticker": "JKHY",
         "next_date": "2026-08-18",
         "days_to": 0,
-        "eps_forecast": 1.43,
+        "eps_forecast": 1.44,
         "last_surprise_pct": 19.6
       },
       {
@@ -28655,7 +28655,7 @@
         "ticker": "LOW",
         "next_date": "2026-08-19",
         "days_to": 1,
-        "eps_forecast": 4.25,
+        "eps_forecast": 4.22,
         "last_surprise_pct": 2.4
       },
       {
@@ -28671,6 +28671,13 @@
         "days_to": 2,
         "eps_forecast": 1.77,
         "last_surprise_pct": -106.9
+      },
+      {
+        "ticker": "ROST",
+        "next_date": "2026-08-20",
+        "days_to": 2,
+        "eps_forecast": 1.93,
+        "last_surprise_pct": 18.8
       },
       {
         "ticker": "WMT",
@@ -28771,23 +28778,9 @@
         "last_surprise_pct": -3.6
       },
       {
-        "ticker": "MDB",
+        "ticker": "CRDO",
         "next_date": "2026-09-01",
         "days_to": 14,
-        "eps_forecast": 0.08,
-        "last_surprise_pct": -50.0
-      },
-      {
-        "ticker": "AVGO",
-        "next_date": "2026-09-02",
-        "days_to": 15,
-        "eps_forecast": 2.83,
-        "last_surprise_pct": 7.4
-      },
-      {
-        "ticker": "CRDO",
-        "next_date": "2026-09-02",
-        "days_to": 15,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
@@ -28809,7 +28802,7 @@
         "ticker": "HPE",
         "next_date": "2026-09-02",
         "days_to": 15,
-        "eps_forecast": 0.8,
+        "eps_forecast": 0.81,
         "last_surprise_pct": 52.3
       },
       {
@@ -28837,7 +28830,7 @@
         "ticker": "DELL",
         "next_date": "2026-09-03",
         "days_to": 16,
-        "eps_forecast": 4.65,
+        "eps_forecast": 4.63,
         "last_surprise_pct": 66.0
       },
       {
@@ -28860,13 +28853,6 @@
         "days_to": 16,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
-      },
-      {
-        "ticker": "SAIC",
-        "next_date": "2026-09-03",
-        "days_to": 16,
-        "eps_forecast": 2.25,
-        "last_surprise_pct": 42.9
       },
       {
         "ticker": "ORCL",

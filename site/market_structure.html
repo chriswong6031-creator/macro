@@ -65,7 +65,40 @@
 <link rel="stylesheet" href="assets/css/f37251df.css?v=f37251df">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
-<link rel="stylesheet" href="assets/css/080bfc12.css?v=080bfc12">
+<style>
+:root {
+  --ink-mix-up: 100%; --ink-mix-down: 100%; --ink-mix-warn: 100%; --ink-mix-ok: 100%;
+  --ink-mix-act: 100%; --ink-mix-orange: 100%; --ink-mix-link: 100%; --ink-mix-info: 100%;
+}
+html[data-theme="light"] {
+  --ink-mix-up: 62%; --ink-mix-down: 84%; --ink-mix-warn: 62%; --ink-mix-ok: 70%;
+  --ink-mix-act: 88%; --ink-mix-orange: 58%; --ink-mix-link: 88%; --ink-mix-info: 88%;
+}
+html[data-theme="light"][data-lang="zh"] {
+  --ink-mix-up: 84%;   /* red under 红涨绿跌 */
+  --ink-mix-down: 62%; /* green */
+}
+/* ── the family's own fill hues, split by theme ────────────────────────────────
+   These templates are LIGHT-FIRST: their :root IS the light palette and only a
+   `html[data-theme="dark"]` block overrides it. --green and --amber were never in
+   that block, so ONE value served both planes — bright enough for dark (5.3–9.9:1)
+   and far too bright for light (--green #1FA971 measured 2.52:1 and --amber
+   #F5AD42 1.61:1 as text on the light canvas; both are printed as text on every
+   strategy card, velocity state and flag on these pages).
+   The override is scoped to LIGHT only, so dark keeps whatever the host page
+   declares (bonds ships its own dark #45b873) and this repaints nothing there. */
+html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
+:root {
+  --ink-up:     color-mix(in srgb, var(--up, var(--green))                     var(--ink-mix-up),     var(--text));
+  --ink-down:   color-mix(in srgb, var(--down, var(--dn, var(--red)))          var(--ink-mix-down),   var(--text));
+  --ink-warn:   color-mix(in srgb, var(--warn, var(--amb, var(--amber)))       var(--ink-mix-warn),   var(--text));
+  --ink-ok:     color-mix(in srgb, var(--ok, var(--up, var(--green)))          var(--ink-mix-ok),     var(--text));
+  --ink-act:    color-mix(in srgb, var(--act, var(--red))                      var(--ink-mix-act),    var(--text));
+  --ink-orange: color-mix(in srgb, var(--orange, var(--amb, var(--amber)))     var(--ink-mix-orange), var(--text));
+  --ink-link:   color-mix(in srgb, var(--link, var(--blue))                    var(--ink-mix-link),   var(--text));
+  --ink-info:   color-mix(in srgb, var(--info, var(--blue))                    var(--ink-mix-info),   var(--text));
+}
+</style>
 </head>
 <body class="page-msp">
 
