@@ -80,3 +80,22 @@ producer, contract, adapter, board, wiring, and 71 new tests (223 green with the
 neighbouring suites), with real-data and browser proof captured in verify_shots/.
 The implementation PR is open and deliberately NOT merged — Sol owns the adversarial
 review; production acceptance is a separate continuation after PASS.
+
+## Sol correction round (same day, same PR)
+
+Sol REQUEST_CHANGES (B1-B5) executed as a commissioned orchestration: census (scout) →
+core build B1-B4 (builder, `f6c4c01a`) → design packet (designer, accepted with Fable
+rulings) → consumer build B5 (builder, `d5869b31`) → debugger root-cause of a crowding
+percentile defect (tie-block top-rank × 0DTE mass-zeros; 14/18 sessions fired c1
+universe-wide) → Fable ruling (midrank + zero-guard, `9f7ef5ca`) → Opus adversarial
+review E1 (1 blocker + 6 major + 8 minor, ALL surviving green suites) → adjudicated
+repair packet (`1fbf6af5` + `bf8a8d33`): receipt closes over ALL consumed chains +
+resolved universe; fail-closed UNIVERSE_RESOLUTION_FAILED; evidence-derived freshness
+on both attack paths; c1 cross-section coverage predicate (0.50, structural); truthful
+4-entry no-signal vocabulary; event-horizon implied move on the event rail; four
+theater tests rewritten to bite; Prophet group precedence by ruled order; §9 known-limit
+disclosures (universe/earnings as-of-now vintage, c3-dominated risk rail pending v1.3
+d1 revisit, forward-compat projection fields, FRESH_PENALTY unreachability,
+verify_shots provenance). Final suites 297 green ×3 runs (one unreproduced transient
+failure observed once, disclosed). Frozen v1.2 thresholds/authority untouched
+throughout. PR still NOT merged; AD-2 not started.
