@@ -221,6 +221,13 @@ class TestLedgerLaneGate:
         assert gpd.append_grades([grade], root=tmp_path) == 0
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 0
         assert w3.append_paired([w3_row], tmp_path)["written"] == 0
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 0
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is False
         assert not list((tmp_path / "data").rglob("*")), (
             "an off-lane run left bytes in data/ — the gate is not the sole writer path")
 
@@ -232,6 +239,13 @@ class TestLedgerLaneGate:
         assert gpd.append_grades([grade], root=tmp_path) == 1
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 1
         assert w3.append_paired([w3_row], tmp_path)["written"] == 1
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 1
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is True
 
     def test_the_stores_the_commit_stages_are_the_stores_the_modules_write(self, job):
         """The add list is derived from the modules, not copied from the workflow."""
@@ -281,9 +295,21 @@ class TestFailureIsolation:
                     if f"python -m {module} --nightly" in _runs(s))
         body = [ln.strip() for ln in _runs(step).splitlines()
                 if ln.strip() and not ln.strip().startswith("#")]
-        assert body == [f"python -m {module} --nightly"], (
-            f"{module} is masked again ({body}) — inside the deploy lane the `|| true` "
-            "was necessary; here it turns the isolated job into a permanently green one")
+        assert len(body) == 1, (
+            f"{module} is a multi-line shell step ({body}) — extra lines can hide a "
+            "`|| true` the way the engine-job move was supposed to end")
+        line = body[0]
+        prefix = f"python -m {module} --nightly"
+        assert line.startswith(prefix), (
+            f"{module} lost --nightly ({line!r}) — that flag is the sole-advancer")
+        assert "|| true" not in line, (
+            f"{module} is masked again ({line!r}) — inside the deploy lane the "
+            "`|| true` was necessary; here it turns the isolated job into a "
+            "permanently green one")
+        extra = line[len(prefix):].strip().split()
+        for tok in extra:
+            assert tok.startswith("--"), (
+                f"{module} extra argv {tok!r} is not a flag — refuse masking")
 
     def test_a_crashed_module_does_not_silently_stop_an_independent_ledger(self, job):
         """`if: always()` on the later steps is per-module accrual, not error masking."""
@@ -341,8 +367,13 @@ class TestDagDeclaration:
         assert lane is not None, f"config/dag.yml declares no lane for {JOB}"
         assert [s.get("module") for s in lane["steps"]] == [m for m, _ in MOVED]
         for step in lane["steps"]:
-            assert step.get("args") == ["--nightly"], (
+            args = step.get("args") or []
+            assert "--nightly" in args, (
                 f"{step.get('id')}: the declared args lost --nightly, the sole-advancer flag")
+            extra = [a for a in args if a != "--nightly"]
+            for tok in extra:
+                assert tok.startswith("--"), (
+                    f"{step.get('id')}: extra argv {tok!r} is not a flag")
 
     def test_the_engine_lane_no_longer_declares_them(self):
         dag = yaml.safe_load(DAG.read_text(encoding="utf-8"))
