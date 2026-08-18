@@ -392,9 +392,33 @@ class JobExecution:
         }
 
 
+def _describe_failure(value: object) -> str:
+    """Render a failure WITH the child's own stderr, never the exit status alone.
+
+    ``CalledProcessError`` stringifies to "returned non-zero exit status 1" and
+    drops everything the command actually said. That is how a fleet-wide
+    base-replay checkout failure stayed undiagnosable: every consumer saw the
+    command line and an exit code, while git's one explanatory line
+    ("unable to read sha1 file of ...") existed only in the raw runner log.
+    A classifier that degrades to ``unknown`` must at least say why.
+    """
+    if not isinstance(value, subprocess.CalledProcessError):
+        return str(value)
+    parts = [str(value)]
+    for label, stream in (("stderr", value.stderr), ("stdout", value.stdout)):
+        if isinstance(stream, (bytes, bytearray)):
+            text = bytes(stream).decode("utf-8", "replace")
+        else:
+            text = stream or ""
+        text = text.strip()
+        if text:
+            parts.append(f"{label}: {text}")
+    return " | ".join(parts)
+
+
 def _bounded_detail(value: object, *, limit: int = SEMANTIC_DETAIL_MAX_BYTES) -> str:
     """Return a deterministic one-line diagnostic with a strict UTF-8 bound."""
-    text = _one_line(str(value))
+    text = _one_line(_describe_failure(value))
     encoded = text.encode("utf-8", "replace")
     if len(encoded) <= limit:
         return text
@@ -3086,6 +3110,8 @@ def _git_run_bounded(
     deadline: float,
     check: bool = True,
     capture_output: bool = True,
+    env: Mapping[str, str] | None = None,
+    stdin_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     remaining = _remaining_seconds(deadline)
     if remaining <= 0:
@@ -3097,7 +3123,141 @@ def _git_run_bounded(
         capture_output=capture_output,
         text=True,
         timeout=remaining,
+        env=None if env is None else dict(env),
+        input=stdin_text,
     )
+
+
+def _promisor_remote(root: Path, *, deadline: float) -> str | None:
+    """Name the remote that backs this repository's omitted objects, if any."""
+    probe = _git_run_bounded(
+        ["git", "config", "--get-regexp", r"^remote\..*\.promisor$"],
+        cwd=root,
+        deadline=deadline,
+        check=False,
+    )
+    if probe.returncode:
+        return None
+    for line in probe.stdout.splitlines():
+        key, _, value = line.partition(" ")
+        if value.strip().lower() != "true":
+            continue
+        name = key[len("remote.") : -len(".promisor")]
+        if name:
+            return name
+    return None
+
+
+def _missing_tree_objects(root: Path, sha: str, *, deadline: float) -> list[str]:
+    """Blob OIDs at ``sha`` that are absent from the local object store.
+
+    ``git rev-list --missing=print`` cannot answer this. A blob a partial clone
+    omitted is an EXPECTED absence, so it is never printed — measured against a
+    real ``blob:none`` clone, a tree with three genuinely absent blobs reported
+    zero missing objects. ``GIT_NO_LAZY_FETCH`` makes ``cat-file`` report those
+    same objects as ``missing`` instead of silently fetching them back one
+    network round trip at a time, which is both the accurate detector and the
+    cheap one.
+    """
+    listing = _git_run_bounded(
+        ["git", "ls-tree", "-r", "-z", sha],
+        cwd=root,
+        deadline=deadline,
+    ).stdout
+    oids: list[str] = []
+    seen: set[str] = set()
+    for entry in listing.split("\0"):
+        meta, _, _path = entry.partition("\t")
+        fields = meta.split()
+        if len(fields) < 3 or fields[1] != "blob":
+            continue
+        oid = fields[2]
+        if oid not in seen:
+            seen.add(oid)
+            oids.append(oid)
+    if not oids:
+        return []
+    probe = _git_run_bounded(
+        ["git", "cat-file", "--batch-check"],
+        cwd=root,
+        deadline=deadline,
+        check=False,
+        env={**os.environ, "GIT_NO_LAZY_FETCH": "1"},
+        stdin_text="".join(f"{oid}\n" for oid in oids),
+    )
+    return [
+        line.split(" ", 1)[0]
+        for line in probe.stdout.splitlines()
+        if line.endswith(" missing")
+    ]
+
+
+def _hydrate_exact_base_objects(root: Path, sha: str, *, deadline: float) -> None:
+    """Materialise every blob at ``sha`` before the replay borrows this odb.
+
+    The replay checkout runs in a private repository that borrows only this
+    one's object database through ``objects/info/alternates``. Alternates share
+    OBJECTS, never the partial-clone extension or the promisor remote that can
+    go and get the omitted ones — so on a ``blob:none`` runner checkout
+    (ci.yml gives every pack ``filter: blob:none``) the borrowing repository
+    cannot lazily fetch, and ``git checkout`` dies with "unable to read sha1
+    file" on precisely the blobs the PR changed. Hydrating here, in the
+    checkout that DOES hold the promisor remote and its credentials, is what
+    keeps the replay repository's isolation free of network configuration.
+    """
+    remote = _promisor_remote(root, deadline=deadline)
+    if remote is None:
+        return
+    missing = _missing_tree_objects(root, sha, deadline=deadline)
+    if not missing:
+        return
+    # git's own lazy-fetch path issues ONE fetch PER OBJECT (measured: three
+    # missing blobs, three `git fetch` invocations), so the bulk `--stdin`
+    # form it uses internally is the first move and the per-object path is
+    # only the fallback for a git that does not accept it.
+    bulk = _git_run_bounded(
+        [
+            "git",
+            "fetch",
+            remote,
+            "--no-tags",
+            "--no-write-fetch-head",
+            "--recurse-submodules=no",
+            "--filter=blob:none",
+            "--stdin",
+        ],
+        cwd=root,
+        deadline=deadline,
+        check=False,
+        stdin_text="".join(f"{oid}\n" for oid in missing),
+    )
+    residual = _missing_tree_objects(root, sha, deadline=deadline)
+    fallback: subprocess.CompletedProcess[str] | None = None
+    if residual:
+        fallback = _git_run_bounded(
+            ["git", "cat-file", "--batch-check"],
+            cwd=root,
+            deadline=deadline,
+            check=False,
+            stdin_text="".join(f"{oid}\n" for oid in residual),
+        )
+        residual = _missing_tree_objects(root, sha, deadline=deadline)
+    if residual:
+        sample = ", ".join(residual[:5])
+        if len(residual) > 5:
+            sample += f", …(+{len(residual) - 5})"
+        detail = (
+            f"exact-base hydration left {len(residual)} object(s) of "
+            f"{len(missing)} unresolved for {sha} via promisor remote "
+            f"{remote!r}: {sample}; bulk rc={bulk.returncode} "
+            f"stderr={_one_line(bulk.stderr or '')}"
+        )
+        if fallback is not None:
+            detail += (
+                f"; per-object rc={fallback.returncode} "
+                f"stderr={_one_line(fallback.stderr or '')}"
+            )
+        raise RuntimeError(detail)
 
 
 def _ensure_exact_commit(root: Path, sha: str, *, deadline: float) -> str:
@@ -3125,7 +3285,9 @@ def _ensure_exact_commit(root: Path, sha: str, *, deadline: float) -> str:
         raise RuntimeError(
             f"exact-base acquisition resolved {resolved!r}, expected {sha!r}"
         )
-    return resolved.lower()
+    exact = resolved.lower()
+    _hydrate_exact_base_objects(root, exact, deadline=deadline)
+    return exact
 
 
 def _bounded_rmtree(path: Path, *, deadline: float) -> None:
@@ -3262,7 +3424,6 @@ def _exact_base_worktree(
             ],
             cwd=root,
             deadline=deadline,
-            capture_output=False,
         )
         (worktree / ".git").write_text(
             f"gitdir: {repository}\n",
