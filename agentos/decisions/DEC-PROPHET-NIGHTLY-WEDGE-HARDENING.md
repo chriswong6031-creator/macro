@@ -19,8 +19,12 @@ answer: >
   bind, nothing is ever stopped; (4) CLAUDE.md/AGENTS.md annotate the
   "no branch protection" law as externally violable with rulesets as the first
   push-failure diagnostic. Interim infra (runners API, receipted on issue
-  #5742): theta-m1 restored onto mac-builder-3, macstudio added to
-  mac-builder-4.
+  #5742): theta-m1 restored onto mac-builder-3 (kept). A companion macstudio
+  add to mac-builder-4 was REVERTED-AND-HARMFUL within the hour — mac-builder-4
+  is the merge-control runner and merge-on-green's non-cone sparse checkout
+  shares its work dir, so the first recovery dispatch's engine died at pip
+  install in the thin tree (job 95550650855, 2.5 min); build labels and
+  merge-control must not mix (postmortem follow-up 7).
 rationale: >
   The hostage class must die at the root (an unschedulable job should be
   impossible, hence the unpin), the detectors must convert "eternally alive" and

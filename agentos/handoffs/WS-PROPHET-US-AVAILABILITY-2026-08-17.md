@@ -17,7 +17,7 @@ state_before: >
   runner saturated by the new 13F census lane.
 changed:
   - path: "runners API (no repo file; receipted on issue #5742)"
-    what: "Interim infra: theta-m1 label → mac-builder-3 (23:47Z); macstudio label → mac-builder-4 (23:54Z)."
+    what: "Interim infra: theta-m1 label → mac-builder-3 (23:47Z, KEPT). macstudio label → mac-builder-4 (23:54Z) — REVERTED-AND-HARMFUL, removed 00:44Z: mac-builder-4 is the merge-control runner and merge-on-green's non-cone sparse 3-path checkout shares _work/macro/macro, so dispatch 32081969617's engine died 2.5min at pip install (requirements.txt absent). Do NOT re-apply; see postmortem §Triage(2) + follow-up 7."
   - path: ".github/workflows/daily.yml"
     what: "collect_tail runs-on theta-m1 → macstudio, with the re-pin rule for the m1-theta canary."
   - path: "scripts/check_nightly_liveness.py"
@@ -50,14 +50,14 @@ verified:
   - claim: "The daily.yml DAG and timings instrumentation pins hold through the collect_tail unpin."
     command: "TZ=UTC python3 -m pytest tests/test_dag_conformance.py tests/test_nightly_timings.py -q"
     result: "90 passed."
-  - claim: "The label restores took and the hostage began draining."
+  - claim: "The theta-m1 restore took and the hostage began draining; the mac-builder-4 macstudio add was later reverted as harmful."
     command: "gh api repos/{owner}/{repo}/actions/runners --jq '.runners[]|[.name,(.labels|map(.name)|join(\"/\"))]'; gh run view 31977372592 --json jobs"
-    result: "mac-builder-3 carries theta-m1, mac-builder-4 carries macstudio; collect_tail in_progress on mac-builder-3 at ~23:54Z after 17.7h queued."
+    result: "mac-builder-3 carries theta-m1 (kept); collect_tail in_progress on mac-builder-3 at ~23:54Z after 17.7h queued. mac-builder-4 read back self-hosted/macOS/ARM64/parked/merge-control after the 00:44Z DELETE (revert receipt: engine job 95550650855 failed 2.5min in the sparse workspace)."
   - claim: "The push freeze is gone."
     command: "gh api repos/{owner}/{repo}/rulesets"
     result: "[] — verified independently by both sessions."
 unverified:
-  - "Recovery dispatch 32081969617 conclusion + five-board live freshness (in flight at write time; owned to completion before this session stops)"
+  - "Second-slot recovery dispatch conclusion + five-board live freshness (first dispatch 32081969617 FAILED in mac-builder-4's sparse workspace — the reverted label regression; peer re-dispatched after the 00:44Z de-label; owned to completion before this session stops)"
   - "Whether debris run 32077948964 fully re-bakes session 08-17 and double-appends forward-ledger rows (audit chipped)"
 unresolved:
   - "Operator asks on #5742: cancel debris run 32077948964 once recovery is green; rule on 13F census cadence (30-min crons × 180m cap on the nightly's runner); M1 host revival owns the collect_tail re-pin."
@@ -75,7 +75,7 @@ do_not_redo:
 danger_areas:
   - "If 32077948964 fully re-bakes session 08-17, forward ledgers may carry duplicate rows — audit before trusting 08-17 cohort counts."
   - "13F census lane (30-min crons, 180m cap, macstudio) remains a standing starvation source until its owners re-cut cadence or runner budget."
-  - "mac-builder-4 also carries parked/merge-control — the macstudio label add is one API call to revert if a merge-control lane ever needs exclusivity."
+  - "NEVER give mac-builder-4 (merge-control) a build label while lanes share _work/macro/macro: merge-on-green's non-cone sparse 3-path checkout persists in the workspace and a build job landing there dies at pip install in minutes (engine 95550650855, 00:20Z). Postmortem follow-up 7 owns the isolation fix."
 ---
 
 ## Narrative

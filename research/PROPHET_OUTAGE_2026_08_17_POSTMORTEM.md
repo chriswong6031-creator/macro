@@ -56,20 +56,35 @@ superseded each other all afternoon without ever executing, and closing-bell /
 codex-research / the daily dispatch queued behind. Not a root cause, but it
 removed all headroom the recovery needed.
 
-## Triage actions taken (08-17 23:35Z → 00:10Z, receipts on issue #5742)
+## Triage actions taken (08-17 23:35Z → 00:45Z, receipts on issue #5742)
 
 1. 23:47Z `theta-m1` label → mac-builder-3 (runner 35, runners API). collect_tail
    assigned within minutes; the hostage run began draining. Safe by the job's own
    design: tape_flow probes and self-skips (#3644), W11 witness rides
-   keep-last-real.
-2. 23:54Z `macstudio` label → mac-builder-4 (runner 29). Second drain slot; the
-   recovery dispatch's collect started immediately on it.
+   keep-last-real. KEPT.
+2. 23:54Z `macstudio` label → mac-builder-4 (runner 29) — **REVERTED-AND-HARMFUL
+   (removed 00:44Z; do not re-apply).** mac-builder-4 is the merge-control
+   runner: merge-on-green.yml checks out a NON-CONE SPARSE 3-path tree
+   (scripts/merge_on_green.py, scripts/gh_path_filter.py, .github/workflows)
+   into the SHARED workspace `actions-runner/_work/macro/macro`, and whichever
+   lane touched the workspace last wins. Recovery dispatch 32081969617's engine
+   (job 95550650855) landed there and died in 2.5 min at
+   `pip install -r requirements.txt` — file absent in the thin tree — with
+   every later `if: always()` step cascading. Diagnosed on-host by the peer
+   session (sparse-checkout list read directly; the 3-path pattern block
+   appears ~7×, evidence the workspace state is CUMULATIVE across runs, which
+   is the property that makes the collision possible). Lesson: build labels and
+   the merge-control runner must never mix while lanes share a work dir — a
+   slow bake beats a fast failure.
 3. 23:48Z peer session dispatched daily run **32081969617** (dispatch group is
-   separate from the cron groups, so it bypassed the deadlock; 1 of 2 budget)
-   and owns it to conclusion + first-pass US verification.
+   separate from the cron groups, so it bypassed the deadlock; 1 of 2 budget).
+   It FAILED per (2); the peer re-dispatched on the second budget slot after
+   the de-label and owns the new run to conclusion + first-pass US
+   verification.
 4. Operator asked (issue #5742) to cancel debris run 32077948964 once the
    dispatch is green — sessions correctly cannot cancel daily.yml runs
-   (`gh_quota_guard` shape 6).
+   (`gh_quota_guard` shape 6). With mac-builder-4 de-labeled, the debris run no
+   longer carries the sparse-workspace exposure either.
 
 ## Hardening shipped in this PR
 
@@ -110,3 +125,10 @@ removed all headroom the recovery needed.
 4. close-pass.yml POOL model still names mac-builder-1/2 (tests/test_close_pass_lane.py).
 5. M1/theta host revival re-pins collect_tail (runner-policy `m1-theta` canary).
 6. Ledger audit for 08-17 double-advance if debris run 32077948964 fully re-baked.
+7. **Workspace isolation for merge-control (from the 00:20Z regression):** the
+   merge-on-green runner must never be eligible for build labels while lanes
+   share `_work/macro/macro` — either pin that invariant (runner-policy +
+   a check), give merge-on-green its own work directory, or make its checkout
+   restore a full tree on exit. Also: its non-cone sparse pattern block
+   appends (~7 copies observed) instead of replacing — the workspace is
+   cumulative, not reset per run.
