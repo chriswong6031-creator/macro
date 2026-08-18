@@ -701,6 +701,24 @@
       "at": "2026-08-14T23:46:37.083351+00:00",
       "activated": true,
       "importance": 74
+    },
+    "https://www.whitehouse.gov/?p=48452": {
+      "id": "wh-2026-08-17-icymi-uss-lincoln-performance-for-the-ages",
+      "at": "2026-08-18T01:51:06.589749+00:00",
+      "activated": false,
+      "importance": 5
+    },
+    "https://www.whitehouse.gov/?p=48443": {
+      "id": "wh-2026-08-17-president-trump-delivers-largest-prescription-drug-price-drop-in-over-60-years",
+      "at": "2026-08-18T01:51:28.874638+00:00",
+      "activated": true,
+      "importance": 88
+    },
+    "https://www.whitehouse.gov/?p=48437": {
+      "id": "wh-2026-08-17-first-lady-melania-trumps-efforts-prove-successful-in-ukraine-russia",
+      "at": "2026-08-18T01:51:34.616130+00:00",
+      "activated": false,
+      "importance": 5
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

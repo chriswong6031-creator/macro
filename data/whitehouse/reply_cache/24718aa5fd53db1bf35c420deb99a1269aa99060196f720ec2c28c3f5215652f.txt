@@ -1,0 +1,81 @@
+{
+  "activate": true,
+  "importance": 88,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "Trump confirms 60-year record Rx price drop — pharma margins compressed, PBMs squeezed",
+  "banner_title_zh": "特朗普确认处方药价格创60年最大跌幅——药企利润承压，PBM受挤压",
+  "summary": "The White House confirms the largest annual prescription drug price decline since 1963, driven by Most Favored Nation pricing covering ~86% of the branded drug market. Structural margin compression for branded pharma is now a confirmed macro reality, while drug-cost-sensitive payers and consumers benefit.",
+  "summary_zh": "白宫确认处方药价格录得1963年以来最大年度跌幅，源于覆盖约86%品牌药市场的最惠国定价政策。品牌药企面临结构性利润压缩，而对药品成本敏感的支付方与消费者受益。",
+  "analysis": "The announcement moves MFN drug pricing from campaign rhetoric to a confirmed, data-backed reality: 17 of the world's largest drugmakers covering ~86% of the branded market have agreed to align U.S. prices with the lowest paid by comparable developed nations. Prescription prices are down 3.9% YoY and have fallen every month of 2026 — a structural, not cyclical, shift.\n\nThe transmission mechanism is direct margin compression for branded pharmaceutical manufacturers. U.S. prices have historically run 2-4x peer-nation levels, and that arbitrage is being eliminated. Companies with concentrated exposure to U.S. branded pricing — especially GLP-1 franchises, insulin, inhalers, and specialty drugs — face revenue per script declines of 50-90% on affected molecules. The $700M in initial TrumpRx savings and $10B in VA savings are early signals of the scale.\n\nWinners include pharmacy benefit managers and insurers IF they retain negotiated spreads, self-insured employers, and the federal government's healthcare budget. But PBMs themselves face uncertainty if TrumpRx's direct-to-consumer model disintermediates their rebate-driven economics. Hospitals and providers with 340B-like economics could see spread compression too.\n\nThe key uncertainty is whether the 17 drugmakers' agreements are durable or subject to legal challenge, and whether volume offsets — potentially higher U.S. utilization at lower prices — partially compensate for price cuts. International reference pricing historically triggers innovation pullback in molecules with thin ex-U.S. markets.",
+  "sectors": [
+    {
+      "name": "Branded pharmaceuticals / biotech",
+      "impact": "headwind",
+      "rationale": "Direct margin compression on U.S. sales, historically the industry's highest-margin market."
+    },
+    {
+      "name": "Pharmacy benefit managers (PBMs)",
+      "impact": "mixed",
+      "rationale": "Lower list prices shrink rebate pools, but TrumpRx direct model could disintermediate or reset economics."
+    },
+    {
+      "name": "Managed care / health insurers",
+      "impact": "tailwind",
+      "rationale": "Lower drug costs reduce medical loss ratios and improve underwriting margins if pricing spreads hold."
+    },
+    {
+      "name": "Retail pharmacies",
+      "impact": "headwind",
+      "rationale": "Lower branded drug prices compress dispensing margins and shrink front-end basket economics."
+    },
+    {
+      "name": "Employers / self-insured corporates",
+      "impact": "tailwind",
+      "rationale": "Structural reduction in healthcare benefit costs broadly supports corporate margins."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "LLY",
+      "direction": "hurt",
+      "rationale": "GLP-1 franchise (Mounjaro/Zepbound) directly named in the price cuts; U.S. premium pricing being eliminated."
+    },
+    {
+      "symbol": "NVO",
+      "direction": "hurt",
+      "rationale": "Ozempic/Wegovy U.S. pricing is core to global earnings; MFN alignment erodes its highest-margin market."
+    },
+    {
+      "symbol": "MRK",
+      "direction": "hurt",
+      "rationale": "Keytruda's U.S. pricing is a major profit driver; international reference pricing directly compresses oncology margins."
+    },
+    {
+      "symbol": "BMY",
+      "direction": "hurt",
+      "rationale": "Eliquis and oncology franchise face U.S. price realignment under MFN framework."
+    },
+    {
+      "symbol": "PFE",
+      "direction": "hurt",
+      "rationale": "Broad branded portfolio with heavy U.S. price reliance; structural reset lowers forward revenue per script."
+    },
+    {
+      "symbol": "UNH",
+      "direction": "benefit",
+      "rationale": "OptumRx PBM and insurance book benefit from lower drug costs, though PBM spread uncertainty tempers upside."
+    },
+    {
+      "symbol": "CI",
+      "direction": "benefit",
+      "rationale": "Evernorth PBM and health plan see lower pharmacy cost trend, supporting margins."
+    },
+    {
+      "symbol": "CVS",
+      "direction": "mixed",
+      "rationale": "Caremark PBM benefits from lower costs but retail pharmacy dispensing margins compress on cheaper branded drugs."
+    }
+  ],
+  "confidence": "high"
+}

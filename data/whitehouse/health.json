@@ -1,10 +1,29 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-14T23:47:55.955625+00:00",
-  "posts_seen": 12,
-  "seen_total": 117,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-08-18T01:51:34.618525+00:00",
+  "posts_seen": 5,
+  "seen_total": 120,
+  "evaluated": 3,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-08-17-icymi-uss-lincoln-performance-for-the-ages",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-08-17-president-trump-delivers-largest-prescription-drug-price-drop-in-over-60-years",
+      "importance": 88,
+      "activated": true,
+      "degraded_reason": null
+    },
+    {
+      "id": "wh-2026-08-17-first-lady-melania-trumps-efforts-prove-successful-in-ukraine-russia",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": null
+    }
+  ]
 }
