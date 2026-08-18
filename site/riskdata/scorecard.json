@@ -1,6 +1,6 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-08-18T16:43:30+00:00",
+  "generated_at": "2026-08-18T16:32:06+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-08-17",

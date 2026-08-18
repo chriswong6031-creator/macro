@@ -1,5 +1,13 @@
 
   * { box-sizing:border-box; }
+  /* Tier-gate disclosure line under a withheld Act-Now lane. The `ab_more()`
+     macro that emits it rides the shared _us_act_now_board.html.j2 include, but
+     its styling lives in dashboard.html.j2 — which is the OTHER host. Same three
+     rules, copied rather than moved: editing the include would rewrite
+     us_stocks.html's bytes for a page that already styles this class. */
+  .pg-more { margin: 6px 2px 2px; font-size: 11.5px; color: var(--muted); }
+  .pg-more a { color: var(--link); text-decoration: none; font-weight: 600; }
+  .pg-more a:hover { text-decoration: underline; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
   a { text-decoration:none; color:inherit; }
