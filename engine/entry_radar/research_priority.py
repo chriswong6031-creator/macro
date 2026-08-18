@@ -8,8 +8,12 @@ Policy (frozen before this module existed as ranking code):
 
 This module is PURE.  No clock, no network, no ``data/`` path, no LLM, no
 ledger write.  Given identical frozen inputs it returns identical JSON-safe
-dicts.  Input-order of episodes does not change ``priority_index`` / ``ordinal``.
+dicts.  Input-order of episodes does not change ``priority_value`` / ``ordinal``.
 Ticker identity is an address, never a measure.
+
+Cross-section calibration is on unique current name snapshots (ticker).
+Each rankable expert observation still receives its own row; the snapshot's
+canonical ``priority_value`` is projected onto every such row.
 
 Live Priority is ephemeral: the durable episode ledger keeps
 ``research_priority`` null.  This module only produces payload objects.
@@ -191,9 +195,17 @@ def _whitelisted(measures: Mapping[str, Any]) -> dict[str, float | None]:
     return {key: _finite(measures.get(key)) for key in MEASURE_KEYS}
 
 
-def _dimension_raw(measures: Mapping[str, float | None], keys: Sequence[str]
-                   ) -> float | None:
-    vals = [measures[k] for k in keys if measures.get(k) is not None]
+def _dimension_available(measures: Mapping[str, float | None], keys: Sequence[str]
+                         ) -> bool:
+    """A dimension is available iff at least one of its submeasures is finite.
+
+    Coverage only.  Ranking never averages the raw submeasure units.
+    """
+    return any(measures.get(k) is not None for k in keys)
+
+
+def _mean_available(values: Sequence[float | None]) -> float | None:
+    vals = [v for v in values if v is not None]
     if not vals:
         return None
     return sum(vals) / float(len(vals))
@@ -273,7 +285,9 @@ def _empty_component(key: str, *, unavailable: Sequence[str],
     return {
         "key": key,
         "index": None,
+        "value": None,
         "inputs": {},
+        "cs": {},
         "unavailable": list(unavailable),
         "reason": reason,
     }
@@ -287,6 +301,7 @@ def _priority_shell(ep: EpisodeInput, *, reason: str, computed_at: str | None,
         "status": STATUS,
         "meaning": MEANING,
         "does_not_claim": list(DOES_NOT_CLAIM),
+        "priority_value": None,
         "priority_index": None,
         "ordinal": None,
         "population_n": population_n,
@@ -309,6 +324,47 @@ def _priority_shell(ep: EpisodeInput, *, reason: str, computed_at: str | None,
     }
 
 
+def _measures_equal(left: Mapping[str, float | None],
+                    right: Mapping[str, float | None]) -> bool:
+    """Whitelist identity.  ``None`` is not 0.  Detector/variant are not keys."""
+    return all(left.get(key) == right.get(key) for key in MEASURE_KEYS)
+
+
+def _coherent_name_snapshots(
+    rankable: Sequence[tuple[int, EpisodeInput, Mapping[str, float | None]]],
+) -> tuple[dict[str, Mapping[str, float | None]], frozenset[str]]:
+    """One current name snapshot per ticker, or fail closed on divergence.
+
+    Rankable experts of one ticker must carry identical whitelist measures.
+    ``detector_id`` / ``variant`` never choose a winner among conflicts.
+    """
+    grouped: dict[str, list[Mapping[str, float | None]]] = {}
+    for _i, ep, measures in rankable:
+        grouped.setdefault(ep.ticker, []).append(measures)
+    snapshots: dict[str, Mapping[str, float | None]] = {}
+    conflicted: set[str] = set()
+    for ticker, rows in grouped.items():
+        first = rows[0]
+        if all(_measures_equal(first, row) for row in rows[1:]):
+            snapshots[ticker] = first
+        else:
+            conflicted.add(ticker)
+    return snapshots, frozenset(conflicted)
+
+
+def _submeasure_cs(
+    snapshots: Mapping[str, Mapping[str, float | None]],
+) -> dict[str, dict[str, float | None]]:
+    """Percentile each whitelist submeasure across unique name snapshots."""
+    tickers = sorted(snapshots)
+    cs: dict[str, dict[str, float | None]] = {ticker: {} for ticker in tickers}
+    for key in MEASURE_KEYS:
+        raws = [snapshots[ticker].get(key) for ticker in tickers]
+        for ticker, pct in zip(tickers, _percentiles(raws)):
+            cs[ticker][key] = pct
+    return cs
+
+
 def assign(
     episodes: Sequence[EpisodeInput],
     *,
@@ -317,7 +373,9 @@ def assign(
 ) -> dict[str, Any]:
     """Rank ``episodes`` under RP1.  Order of ``episodes`` is irrelevant.
 
-    Returns a board dict plus per-episode objects keyed by expert_key.
+    Calibration population = unique current name snapshots.  Each rankable
+    expert observation remains its own row and receives the snapshot's
+    canonical ``priority_value``.
     """
     items = list(episodes)
     if cycle_state in CYCLE_REFUSALS:
@@ -333,34 +391,42 @@ def assign(
         if reason is None:
             available_dims = sum(
                 1 for _, keys in DIMENSIONS
-                if _dimension_raw(measures, keys) is not None)
+                if _dimension_available(measures, keys))
             if available_dims < MIN_DIMENSIONS:
                 reason = "insufficient_coverage"
         prelim.append((ep, measures, reason))
 
-    rankable_idx = [i for i, row in enumerate(prelim) if row[2] is None]
-    population_n = len(rankable_idx)
-    dim_pcts: dict[str, list[float | None]] = {
-        name: [None] * len(prelim) for name, _ in DIMENSIONS}
+    rankable = [(i, ep, measures) for i, (ep, measures, reason) in enumerate(prelim)
+                if reason is None]
+    snapshots, conflicted = _coherent_name_snapshots(rankable)
+    if conflicted:
+        prelim = [
+            (ep, measures,
+             "snapshot_conflict" if reason is None and ep.ticker in conflicted
+             else reason)
+            for ep, measures, reason in prelim
+        ]
+        rankable = [(i, ep, measures)
+                    for i, (ep, measures, reason) in enumerate(prelim)
+                    if reason is None]
+    tickers = sorted(snapshots)
+    population_n = len(tickers)
+    cs_by_ticker = _submeasure_cs(snapshots) if tickers else {}
 
-    if rankable_idx:
+    dim_by_ticker: dict[str, dict[str, float | None]] = {
+        ticker: {} for ticker in tickers}
+    canonical: dict[str, float | None] = {}
+    for ticker in tickers:
         for name, keys in DIMENSIONS:
-            raws: list[float | None] = [None] * len(rankable_idx)
-            for j, i in enumerate(rankable_idx):
-                raws[j] = _dimension_raw(prelim[i][1], keys)
-            pcts = _percentiles(raws)
-            for j, i in enumerate(rankable_idx):
-                dim_pcts[name][i] = pcts[j]
-
-    composites: list[float | None] = [None] * len(prelim)
-    for i in rankable_idx:
-        vals = [dim_pcts[name][i] for name, _ in DIMENSIONS
-                if dim_pcts[name][i] is not None]
-        composites[i] = sum(vals) / float(len(vals)) if vals else None
-    ordinals = _competition_ordinals(composites)
+            dim_by_ticker[ticker][name] = _mean_available(
+                [cs_by_ticker[ticker].get(k) for k in keys])
+        canonical[ticker] = _mean_available(
+            [dim_by_ticker[ticker][name] for name, _ in DIMENSIONS])
+    ordinal_by_ticker = dict(zip(
+        tickers, _competition_ordinals([canonical[t] for t in tickers])))
 
     board: list[dict[str, Any]] = []
-    for i, (ep, measures, reason) in enumerate(prelim):
+    for _i, (ep, measures, reason) in enumerate(prelim):
         if reason is not None:
             row = _priority_shell(ep, reason=reason, computed_at=computed_at,
                                   population_n=population_n)
@@ -372,28 +438,36 @@ def assign(
                                             if measures.get(k) is None]
             board.append(row)
             continue
+        ticker_cs = cs_by_ticker[ep.ticker]
+        ticker_dims = dim_by_ticker[ep.ticker]
+        priority_value = canonical[ep.ticker]
         components = []
         unavailable_all = []
         for name, keys in DIMENSIONS:
             present = {k: measures.get(k) for k in keys if measures.get(k) is not None}
             missing = [k for k in keys if measures.get(k) is None]
             unavailable_all.extend(missing)
+            dim_value = ticker_dims[name]
             components.append({
                 "key": name,
-                "index": None if dim_pcts[name][i] is None else round(dim_pcts[name][i]),
+                "index": None if dim_value is None else round(dim_value),
+                "value": dim_value,
                 "inputs": present,
+                "cs": {k: ticker_cs.get(k) for k in keys
+                       if ticker_cs.get(k) is not None},
                 "unavailable": missing,
                 "reason": None if present else "dimension_unavailable",
             })
-        index = None if composites[i] is None else int(round(composites[i]))
         board.append({
             "schema": SCHEMA,
             "policy_version": POLICY_VERSION,
             "status": STATUS,
             "meaning": MEANING,
             "does_not_claim": list(DOES_NOT_CLAIM),
-            "priority_index": index,
-            "ordinal": ordinals[i],
+            "priority_value": priority_value,
+            "priority_index": (None if priority_value is None
+                               else int(round(priority_value))),
+            "ordinal": ordinal_by_ticker[ep.ticker],
             "population_n": population_n,
             "computed_at": computed_at,
             "known_at": ep.known_at,
@@ -432,6 +506,12 @@ def _board(rows: Sequence[Mapping[str, Any]], *, computed_at: str | None,
                        str(r.get("variant") or ""),
                        str(r.get("ticker") or "")),
     )
+    population_n = 0
+    for row in ranked:
+        n = row.get("population_n")
+        if isinstance(n, int):
+            population_n = n
+            break
     return {
         "schema": SCHEMA,
         "policy_version": POLICY_VERSION,
@@ -440,7 +520,7 @@ def _board(rows: Sequence[Mapping[str, Any]], *, computed_at: str | None,
         "does_not_claim": list(DOES_NOT_CLAIM),
         "computed_at": computed_at,
         "cycle_state": cycle_state,
-        "population_n": len(ranked),
+        "population_n": population_n,
         "episodes": list(ranked_sorted) + list(unranked_sorted),
     }
 
