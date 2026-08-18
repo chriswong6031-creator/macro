@@ -5,14 +5,20 @@ objective: >
   Keep Filing Forensics honest about source clocks (FF-0, closed live) and give
   Mastermind a production-grade incremental broad SEC source plane (FF-1) so
   later waves can see which issuers have new SEC information without a rerender
-  minting freshness. FF-2 must not start until Sol reviews and merges FF-1.
-status: awaiting_review
+  minting freshness. FF-2 must not start until FF-1 is production-proven live.
+status: blocked
 program: fundamental-forensics
 repos: [macro]
 owner: coo-fable
 class: build
 blast_radius: user_facing
 ambiguity: specified
+blocked_by:
+  - "Live canonical parquet has 2837 issuers; merged MAX_UNIVERSE_ISSUERS=2500 fail-closed the first scheduled incremental (run 32097495749, universe_invalid). Repair raises the bind cap to 4000. Do not resume July recovery until that repair is on main."
+discoveries:
+  - DSC:FF-1-LIVE-UNIVERSE-EXCEEDS-2500
+decisions:
+  - DEC:FF-1-UNIVERSE-BIND-CAP-4000
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -34,8 +40,9 @@ waves:
     pr: 5794
   - id: FF-1
     title: Incremental Broad SEC Source Plane
-    status: awaiting_ci
+    status: in_progress
     depends_on: [FF-0]
+    pr: [5820]
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -51,6 +58,7 @@ landmines:
   - "Empty-store recovery establishes a Submissions baseline for every observed issuer. Company Facts is only for a genuine recovery_delta / new accession versus the cumulative ledger. filings.recent removal is not a new filing."
   - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial. latest-complete is a compact pointer and commits last."
   - "FF-1 shares concurrency group filing-forensics-sec with Wave-2. Do not give it a second group."
+  - "Live data/edgar/fundamentals.parquet can exceed an outdated MAX_UNIVERSE_ISSUERS. Measure unique issuer count against the cap before dispatching recovery. Do not shrink the parquet to fit the cap."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -60,8 +68,10 @@ do_not_redo:
   - "Do not treat prior_manifest is None as equivalent to every issuer needing Company Facts."
   - "Do not write the full run receipt into latest-observation.json or latest-complete.json; those pointers are 16KiB."
   - "Do not relabel generated_at or public_summary generated_at as a build, composition, or publication clock."
-  - "Do not merge the FF-1 PR from the worker session; return it to Sol for review."
-next_action: Sol reviews the FF-1 PR. Do not merge from the worker session. Do not start FF-2.
+  - "Do not treat PR #5820 merge as production proof. The first scheduled incremental failed universe_invalid."
+  - "Do not dispatch July recovery while the live parquet exceeds the bind cap on main."
+  - "Do not raise MAX_AFFECTED_ISSUERS or the Company Facts byte budget to finish recovery in one run."
+next_action: Sol reviews the MAX_UNIVERSE_ISSUERS=4000 repair PR. Do not merge from the worker session. Do not resume July recovery until that head is on main. Do not start FF-2.
 ---
 
 ## Context
@@ -71,3 +81,8 @@ PR #5794). FF-1 is the incremental broad SEC source plane: poll Submissions for
 every issuer in `data/edgar/fundamentals.parquet`, admit exact bytes into
 `fundamental_forensics/broad-sec/v1/`, and fetch Company Facts only when
 relevant periodic filing state changes. It does not rebuild broad FF state.
+
+PR #5820 merged (`cd064848298063faac82059f71daf24bdd4112a2`). The first
+scheduled incremental (run 32097495749) failed `universe_invalid` because the
+live parquet has 2837 issuers and the merged cap was 2500. FF-1 is not
+PROVEN_LIVE. July recovery has not started.
