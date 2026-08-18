@@ -987,6 +987,9 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Append-only base freshness (why: scripts/ci/push_retry.sh). --amend:
+            # this loop amends. Non-zero ONLY when a proven withhold failed.
+            if ! push_append_only_fence origin/main --amend; then push_backoff; continue; fi
             if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               # Rebuild AFTER every successful rebase; retry loops do the same.
               assert_award_event_bundle

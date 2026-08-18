@@ -52,7 +52,16 @@ jobs:
           # best-effort push: daily now runs in its own lane and may push concurrently,
           # so retry rebase+push instead of a single fragile push that would error out
           # the moment it lost a race. Prefer our freshly-collected data on conflict.
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           for i in 1 2 3 4 5; do
+            # Append-only base freshness (2026-08-18 lost update, DSC-OVERLAPPING-DAILY-
+            # COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS): a --full-history backfill is the
+            # longest-running writer of data/government_revenue/, so origin/main has
+            # almost always moved under it by the time it pushes, and `-X theirs` would
+            # replace the nightly's appended evidence rows with this run's.
+            git fetch origin main || true
+            # Non-zero ONLY when the fence proved a loss and then could not withhold it.
+            if ! push_append_only_fence origin/main; then sleep $((i * 7)); continue; fi
             if git pull --rebase -X theirs origin main && git push; then
               echo "pushed backfill on attempt $i"; exit 0
             fi

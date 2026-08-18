@@ -1,31 +1,37 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-10",
-  "generated_at": "2026-08-13T05:48:18.024436+00:00",
+  "as_of": "2026-08-17",
+  "generated_at": "2026-08-18T14:37:08.217141+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-08-10-GPCR-20260813054818-1",
-      "ticker": "GPCR",
+      "id": "2026-08-17-EQIX-20260818143708-1",
+      "ticker": "EQIX",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 21,
-      "thesis": null,
-      "evidence": [],
-      "dissent": null,
+      "horizon_d": 20,
+      "thesis": "The engine is constructive on EQIX building a base, with a clean entry (not blocked) and positive SUE/momentum selection legs; I lean constructive relative to the S&P, but the deteriorating Real Estate Equal-Weight basket keeps conviction low.",
+      "evidence": [
+        "verdict: Constructive \u2014 building a base",
+        "SUE z 1.7, fresh 19d",
+        "entry z 0.35, blocked false",
+        "quality accounting clean",
+        "caution: Real Estate Equal-Weight basket deteriorating"
+      ],
+      "dissent": "The strongest contrary case is that the deteriorating Real Estate basket causes the base to fail despite the positive earnings/momentum legs.",
       "falsifier": {
-        "text": null,
+        "text": "If EQIX falls through the lower edge of its base and prints a lower low while the Real Estate Equal-Weight basket keeps deteriorating.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "GPCR",
+          "subject_ticker": "EQIX",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 21
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-09-08",
+      "check_by": "2026-09-14",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],

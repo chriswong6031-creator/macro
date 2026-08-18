@@ -42,6 +42,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,7 +56,10 @@ sys.path.insert(0, str(_ROOT))
 log = logging.getLogger(__name__)
 
 _CI_STATUS_REL = ("data", "metabolism", "ci_status.json")
-_REPO_OWNER_REPO: str | None = None  # lazy-resolved via gh
+_REPO_OWNER_REPO: str | None = None  # lazy-resolved; NEVER memoize None (a transient
+                                      # failure must be retried on the next call)
+_OWNER_REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
+_HEARTBEAT_WORKFLOW = "ci-main-heartbeat.yml"
 
 
 # ── Pause guard ────────────────────────────────────────────────────────────────
@@ -174,6 +178,175 @@ def _get_main_sha() -> str:
     return ""
 
 
+def _get_heartbeat_head_sha(repo: str | None) -> str | None:
+    """Return the head_sha of the newest CONCLUDED ci-main-heartbeat.yml run ON MAIN.
+
+    Failure to resolve this is NOT a hard sensing failure — the caller falls
+    back to sensing live origin/main HEAD alone and logs a warning.  Deliberately
+    does NOT use --paginate (a single most-recent completed run is all we need).
+
+    Filters &branch=main: ci-main-heartbeat.yml declares workflow_dispatch, so
+    without this filter a manual `gh workflow run ci-main-heartbeat.yml --ref
+    <other-branch>` becomes the newest completed run, and that OTHER branch's
+    reds get unioned in and reported against main_sha — a false page
+    attributed to main for a red that lives on a different branch entirely.
+    NEVER raises.
+    """
+    try:
+        if not repo:
+            return None
+        result = subprocess.run(
+            [
+                "gh", "api",
+                f"/repos/{repo}/actions/workflows/{_HEARTBEAT_WORKFLOW}/runs"
+                f"?status=completed&branch=main&per_page=1",
+                "--jq", ".workflow_runs[0].head_sha",
+            ],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            log.warning(
+                "immune._get_heartbeat_head_sha: gh api failed: %s", result.stderr[:200],
+            )
+            return None
+        sha = (result.stdout or "").strip()
+        if not sha or sha == "null":
+            return None
+        return sha
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._get_heartbeat_head_sha: %s", exc)
+        return None
+
+
+def _sense_required_red_checks(
+    main_sha: str,
+    immune_cfg: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
+    """Union red required checks across TWO SHAs, de-duplicated by check name.
+
+    _get_main_sha() reads live origin/main HEAD, but ci-main-heartbeat.yml runs
+    on a 6-hourly cron while main advances ~17 commits/hour — so sensing HEAD
+    alone structurally reads a commit that never carried the heartbeat's own
+    check-runs, and reports a false-clean read.  This unions:
+      1. red required checks on live origin/main HEAD, and
+      2. red required checks on the head_sha of the newest CONCLUDED
+         ci-main-heartbeat.yml run (via _get_heartbeat_head_sha).
+    keeping the FIRST occurrence of each check name.
+
+    Returns (union, meta).  meta = {"heartbeat_degraded": bool, "sensed_shas":
+    list[str]} — sensed_shas is the (deduplicated, order-preserved) list of
+    SHAs that actually contributed a successful read to the union, so a
+    caller (write_ci_status) can record PROVENANCE: a downstream reader
+    cannot otherwise tell a two-SHA green (both main HEAD and the heartbeat's
+    curated checks came back clean) from a one-SHA degraded green (the
+    heartbeat leg failed, so only main HEAD was actually seen).
+
+    union is None (BLIND) only when the origin/main HEAD read itself
+    failed — that is the read this whole sentinel exists to make; meta is
+    {"heartbeat_degraded": False, "sensed_shas": []} in that case (nothing
+    was read at all).
+
+    TWO non-fatal cases are NOT the same, and this function is written to
+    keep them visibly distinct rather than let both quietly collapse to
+    "continuing on main HEAD alone":
+      * heartbeat_sha could not be RESOLVED at all (no run has ever
+        completed, or a fork) — legitimate, meta["heartbeat_degraded"] stays
+        False, an INFO log plus a `::warning` annotation records it (so a
+        silently-renamed/deleted ci-main-heartbeat.yml is still visible in
+        the Actions summary instead of permanently and quietly degrading
+        this lane to main-HEAD-only coverage forever).
+      * heartbeat_sha WAS resolved but its check-runs read FAILED — this is
+        the leg the whole union exists for (the heartbeat's curated guards,
+        e.g. contract-drift/tier-gate), so losing it after committing to
+        read it is loud: meta["heartbeat_degraded"] = True, a `::warning`
+        annotation is emitted here, and the caller (run_immune_lane) treats
+        this as SENSING FAILED (exit 2) — main-HEAD-only coverage is not an
+        acceptable substitute for a leg we know exists and could not read.
+    An exception raised anywhere in the heartbeat leg (after main_reds was
+    already obtained successfully) is treated the SAME as a failed
+    heartbeat read — degraded, not silently widened to full blindness and
+    not silently swallowed into a false-clean union.  NEVER raises.
+    """
+    try:
+        main_reds = _get_required_red_checks(main_sha, immune_cfg=immune_cfg)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._sense_required_red_checks: main-sha read raised: %s", exc)
+        return None, {"heartbeat_degraded": False, "sensed_shas": []}
+
+    if main_reds is None:
+        return None, {"heartbeat_degraded": False, "sensed_shas": []}
+
+    union: list[dict[str, Any]] = list(main_reds)
+
+    try:
+        seen = {c.get("name") for c in union}
+
+        repo = _resolve_repo()
+        heartbeat_sha = _get_heartbeat_head_sha(repo)
+        if not heartbeat_sha:
+            log.info(
+                "immune._sense_required_red_checks: could not resolve %s head_sha — "
+                "continuing on main HEAD alone", _HEARTBEAT_WORKFLOW,
+            )
+            print(
+                "::warning title=immune-heartbeat-degraded::could not resolve "
+                f"{_HEARTBEAT_WORKFLOW} head_sha — continuing on main HEAD alone "
+                "(not sensing-failed; may be legitimate, e.g. before the heartbeat "
+                "has ever run, or the workflow file was renamed/deleted)",
+                flush=True,
+            )
+            return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha]}
+
+        if heartbeat_sha == main_sha:
+            return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha]}
+
+        hb_reds = _get_required_red_checks(heartbeat_sha, immune_cfg=immune_cfg)
+        if hb_reds is None:
+            log.warning(
+                "immune._sense_required_red_checks: heartbeat sha=%s RESOLVED but its "
+                "check-runs read FAILED — degraded, main-HEAD-only coverage this run",
+                heartbeat_sha[:8],
+            )
+            print(
+                "::warning title=immune-heartbeat-degraded::ci-main-heartbeat.yml "
+                f"head_sha={heartbeat_sha[:8]} resolved but its check-runs read FAILED "
+                "— continuing on main HEAD alone this run; treated as sensing FAILED "
+                "(exit 2), not a clean read",
+                flush=True,
+            )
+            return union, {"heartbeat_degraded": True, "sensed_shas": [main_sha]}
+
+        for c in hb_reds:
+            name = c.get("name")
+            if name in seen:
+                continue
+            seen.add(name)
+            union.append(c)
+        return union, {"heartbeat_degraded": False, "sensed_shas": [main_sha, heartbeat_sha]}
+    except Exception as exc:  # noqa: BLE001
+        # Defensive: nothing above is expected to raise — _resolve_repo,
+        # _get_heartbeat_head_sha, and _get_required_red_checks are each
+        # individually NEVER-RAISE, and the rest is plain list/dict/set
+        # operations on their already-validated outputs.  If something here
+        # somehow does raise anyway, do NOT silently discard the
+        # already-good main_reds result (that would be a THIRD variant,
+        # quietly widening to full blindness) and do NOT silently return a
+        # clean-looking union missing the heartbeat leg (that would be the
+        # exact silent-green defect this function exists to remove) —
+        # surface it identically to a failed heartbeat read: degraded.
+        log.warning(
+            "immune._sense_required_red_checks: heartbeat leg raised: %s — degraded, "
+            "main-HEAD-only coverage this run", exc,
+        )
+        print(
+            "::warning title=immune-heartbeat-degraded::heartbeat leg raised "
+            f"{exc!r} — continuing on main HEAD alone this run; treated as sensing "
+            "FAILED (exit 2), not a clean read",
+            flush=True,
+        )
+        return union, {"heartbeat_degraded": True, "sensed_shas": [main_sha]}
+
+
 def _get_spurious_check_names(immune_cfg: dict[str, Any]) -> set[str]:
     """Return the set of known-spurious check names from config.  NEVER raises."""
     try:
@@ -186,8 +359,19 @@ def _get_spurious_check_names(immune_cfg: dict[str, Any]) -> set[str]:
 def _get_required_red_checks(
     main_sha: str,
     immune_cfg: dict[str, Any] | None = None,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | None:
     """Return red REQUIRED check-runs on main at main_sha.
+
+    Return contract (2026-08-18 repair — the whole point of this function):
+      * ``None``  → SENSING FAILED.  Could not determine whether main is red
+        or clean: repo unresolved, or both the paginated NDJSON read and the
+        plain-fetch fallback failed to produce a usable payload (non-2xx,
+        unparseable, or not a dict).  Callers MUST treat this as BLIND, never
+        as "no reds" — a 404 (repo unresolved) and a genuinely clean main used
+        to collapse to the same value here, which is exactly how nine days of
+        two red required checks on main went unnoticed while every scheduled
+        run logged "success".
+      * ``[]``    → the read SUCCEEDED and there are simply no red checks.
 
     Known-spurious check names (from config spurious_checks) are excluded so
     the immune lane never opens a heal PR or emits a page for a known false red.
@@ -196,9 +380,16 @@ def _get_required_red_checks(
     """
     try:
         if not main_sha:
-            return []
+            return None
         spurious = _get_spurious_check_names(immune_cfg or {})
         repo = _resolve_repo()
+        if repo is None:
+            log.warning(
+                "immune._get_required_red_checks: repo unresolved — sensing BLIND for sha=%s",
+                main_sha[:8],
+            )
+            return None
+
         # .check_runs[] emits one dict per line (NDJSON); _gh_json_list flattens correctly.
         checks = _gh_json_list([
             "api",
@@ -206,16 +397,51 @@ def _get_required_red_checks(
             "--paginate",
             "--jq", ".check_runs[]",
         ], timeout=60)
-        if not checks:
-            # Fallback: plain fetch without --jq; extract check_runs array from dict.
+        if checks:
+            read_ok = True
+        else:
+            # Fallback: plain fetch without --jq (--paginate itself failed —
+            # e.g. discarded partial output from a mid-pagination error), so
+            # this single request gets only ONE page.  per_page=100 (the API
+            # max) minimizes truncation risk versus the default page size of
+            # 30, but is NOT sufficient by itself: a commit can carry more
+            # than 100 check-runs.  A dict response IS a successful read when
+            # it is COMPLETE — even an empty check_runs array with
+            # total_count=0 is a real "clean" read (a real gh api success for
+            # this endpoint always returns a JSON object, never truly empty
+            # stdout) — but a dict whose check_runs array is SHORTER than its
+            # own total_count is a TRUNCATED page, not a clean read: treating
+            # it as read_ok would silently report "main is clean" while
+            # reds sitting on later, unfetched pages go unseen (measured
+            # margin: a heartbeat SHA carrying 29 check-runs against a
+            # default page size of 30 — one job away from tripping this).
             raw = _gh_json([
                 "api",
-                f"/repos/{repo}/commits/{main_sha}/check-runs",
+                f"/repos/{repo}/commits/{main_sha}/check-runs?per_page=100",
             ], timeout=60)
             if isinstance(raw, dict):
                 checks = raw.get("check_runs") or []
+                total_count = raw.get("total_count")
+                if isinstance(total_count, int) and len(checks) < total_count:
+                    log.warning(
+                        "immune._get_required_red_checks: fallback fetch TRUNCATED for "
+                        "sha=%s — got %d of %d check_runs — sensing BLIND, not a partial "
+                        "clean read", main_sha[:8], len(checks), total_count,
+                    )
+                    checks = []
+                    read_ok = False
+                else:
+                    read_ok = True
             else:
                 checks = []
+                read_ok = False
+
+        if not read_ok:
+            log.warning(
+                "immune._get_required_red_checks: both reads failed for sha=%s — sensing BLIND",
+                main_sha[:8],
+            )
+            return None
 
         red = []
         for c in checks:
@@ -239,25 +465,105 @@ def _get_required_red_checks(
         return red
     except Exception as exc:  # noqa: BLE001
         log.warning("immune._get_required_red_checks: %s", exc)
-        return []
+        return None
 
 
-def _resolve_repo() -> str:
-    """Return 'owner/repo' string from gh.  NEVER raises."""
+def _parse_owner_repo_from_remote(url: str) -> str | None:
+    """Parse an 'owner/repo' string out of a git remote URL.  NEVER raises.
+
+    Handles both forms, with or without a trailing '.git':
+      https://github.com/owner/repo(.git)
+      git@github.com:owner/repo(.git)
+    """
+    try:
+        u = (url or "").strip()
+        if not u:
+            return None
+        if u.endswith(".git"):
+            u = u[: -len(".git")]
+        if "://" in u:
+            # https://host/owner/repo
+            tail = u.split("://", 1)[1]
+            parts = tail.split("/", 1)
+            tail = parts[1] if len(parts) > 1 else ""
+        elif "@" in u and ":" in u:
+            # git@host:owner/repo
+            tail = u.split(":", 1)[1]
+        else:
+            tail = u
+        tail = tail.strip("/")
+        if _OWNER_REPO_RE.match(tail):
+            return tail
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._parse_owner_repo_from_remote: %s", exc)
+    return None
+
+
+def _resolve_repo() -> str | None:
+    """Return 'owner/repo', or None if it cannot be determined.  NEVER raises.
+
+    Resolution order:
+      1. ``GITHUB_REPOSITORY`` env var (Actions-native; no subprocess needed).
+      2. ``gh repo view --json nameWithOwner``.
+      3. Parse 'owner/repo' out of ``git remote get-url origin``.
+      4. Emit a GitHub error annotation and return None.
+
+    MUST NEVER return the literal placeholder string ``"owner/repo"`` — that
+    fallback (present until 2026-08-18) silently turned every downstream read
+    into a 404 against the literal repo path ``/repos/owner/repo/...``, and
+    because _get_required_red_checks could not distinguish "read failed" from
+    "main is clean", the sentinel logged red_required=0 and exited 0 on every
+    run for nine days while two required checks were actually red on main.
+    A resolution failure (None) is deliberately NOT memoized, so a transient
+    hiccup (e.g. a momentary gh/network failure) can resolve on a later call
+    within the same process; a successful resolution IS memoized, since the
+    repo identity cannot change mid-run.
+    """
     global _REPO_OWNER_REPO
     if _REPO_OWNER_REPO:
         return _REPO_OWNER_REPO
+
+    try:
+        env_repo = (os.environ.get("GITHUB_REPOSITORY") or "").strip()
+        if _OWNER_REPO_RE.match(env_repo):
+            _REPO_OWNER_REPO = env_repo
+            return _REPO_OWNER_REPO
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._resolve_repo: GITHUB_REPOSITORY check failed: %s", exc)
+
     try:
         result = subprocess.run(
             ["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
             capture_output=True, text=True, timeout=30,
         )
-        if result.returncode == 0 and result.stdout.strip():
-            _REPO_OWNER_REPO = result.stdout.strip()
-            return _REPO_OWNER_REPO
+        if result.returncode == 0:
+            candidate = result.stdout.strip()
+            if _OWNER_REPO_RE.match(candidate):
+                _REPO_OWNER_REPO = candidate
+                return _REPO_OWNER_REPO
     except Exception as exc:  # noqa: BLE001
-        log.warning("immune._resolve_repo: %s", exc)
-    return "owner/repo"
+        log.warning("immune._resolve_repo: gh repo view failed: %s", exc)
+
+    try:
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True, text=True, timeout=15,
+        )
+        if result.returncode == 0:
+            candidate = _parse_owner_repo_from_remote(result.stdout)
+            if candidate:
+                _REPO_OWNER_REPO = candidate
+                return _REPO_OWNER_REPO
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._resolve_repo: git remote get-url failed: %s", exc)
+
+    print(
+        "::error title=immune-repo-unresolved::metabolism_immune could not determine "
+        "owner/repo via GITHUB_REPOSITORY, gh repo view, or git remote get-url origin — "
+        "the main-red sentinel is BLIND until this resolves",
+        flush=True,
+    )
+    return None
 
 
 def _gh_pr_state(pr_number: int) -> str:
@@ -310,6 +616,37 @@ def _pr_ci_green_at_sha(pr_number: int) -> tuple[bool, str]:
 
 
 # ── Heal worktree ──────────────────────────────────────────────────────────────
+
+def _heal_pr_create_env() -> dict[str, str]:
+    """Environment for the single 'gh pr create' call that opens the DRAFT heal PR.
+
+    A PR opened under the workflow's own GITHUB_TOKEN identity does not
+    trigger pull_request CI (GitHub's anti-recursion rule for Actions-authored
+    events are exempt from required-check triggers), so a draft heal PR
+    opened with the ambient token would sit with zero required checks ever
+    run.  METABOLISM_MERGE_PAT is a separate, no-workflows-scope PAT whose
+    PRs DO trigger pull_request CI — that is its entire documented purpose
+    (see metabolism-immune.yml's checkout step comment).
+
+    This override is scoped to ONLY this one gh invocation.  Sensing
+    (_resolve_repo, _get_required_red_checks, _sense_required_red_checks) and
+    every other subprocess call in this module run on the workflow's ambient
+    GITHUB_TOKEN via GH_TOKEN — sensing must never depend on the PAT being
+    alive.  Falls back to the ambient environment untouched when
+    METABOLISM_MERGE_PAT is absent/empty (e.g. local dev, or the PAT being
+    dead/unprovisioned) — the PR still opens, it just won't self-trigger CI.
+    NEVER raises.
+    """
+    try:
+        env = dict(os.environ)
+        pat = os.environ.get("METABOLISM_MERGE_PAT") or ""
+        if pat:
+            env["GH_TOKEN"] = pat
+        return env
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._heal_pr_create_env: %s", exc)
+        return dict(os.environ)
+
 
 def _run_heal_in_worktree(
     recipe: dict[str, Any],
@@ -471,6 +808,7 @@ def _run_heal_in_worktree(
                 "--base", "main",
             ],
             capture_output=True, text=True, timeout=60,
+            env=_heal_pr_create_env(),
         )
         if pr_r.returncode != 0:
             result["error"] = f"gh pr create failed: {pr_r.stderr[:300]}"
@@ -524,11 +862,28 @@ def write_ci_status(
     *,
     root: Path,
     prev_consecutive: int = 0,
+    sensed_shas: list[str] | None = None,
+    heartbeat_degraded: bool = False,
 ) -> bool:
     """Write data/metabolism/ci_status.json.
 
-    Schema matches what anomaly_monitor.py:384 reads:
+    Schema matches what anomaly_monitor.py:384 currently reads:
       { ts, main_sha, red_required, green, consecutive_failures }
+    plus PROVENANCE fields (2026-08-18, part of the two-SHA union repair):
+      { sensed_shas, heartbeat_degraded }
+
+    sensed_shas is the list of SHAs that actually contributed a successful
+    read this run (from _sense_required_red_checks' meta) — without it, a
+    reader of this artifact cannot tell a fully-sensed two-SHA green (main
+    HEAD AND the heartbeat's curated checks both read clean) from a degraded
+    one-SHA green (the heartbeat leg failed and only main HEAD was seen,
+    missing exactly the checks the union exists to catch).
+    heartbeat_degraded=True means the heartbeat SHA was resolved but its
+    check-runs read failed — the caller (run_immune_lane) also treats this
+    as SENSING FAILED (process exit 2), so a "green" artifact with
+    heartbeat_degraded=True should be read as a WARNING SIGN, not a clean
+    bill of health, by anything downstream. Defaults preserve the pre-union
+    single-SHA shape for any caller that does not pass them.
 
     consecutive_failures increments when green=False; resets to 0 when green=True.
     NEVER raises.
@@ -542,6 +897,8 @@ def write_ci_status(
             "red_required": red_required,
             "green": green,
             "consecutive_failures": consecutive,
+            "sensed_shas": sensed_shas if sensed_shas is not None else [main_sha],
+            "heartbeat_degraded": bool(heartbeat_degraded),
         }
         p = root.joinpath(*_CI_STATUS_REL)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -832,12 +1189,15 @@ def run_immune_lane(
         "unknown_reds": [],
         "lane_health": [],
         "errors": [],
+        "sensing_failed": False,
     }
 
     try:
         immune_cfg = load_immune_config(root=r)
 
-        # Step 1: fetch main SHA and red required checks
+        # Step 1: fetch main SHA and red required checks (union of live main
+        # HEAD + the newest concluded ci-main-heartbeat.yml run's head_sha —
+        # see _sense_required_red_checks).
         subprocess.run(
             ["git", "fetch", "origin", "main"],
             cwd=str(r), capture_output=True, timeout=60,
@@ -845,89 +1205,176 @@ def run_immune_lane(
         main_sha = _get_main_sha()
         if not main_sha:
             log.warning("IMMUNE: could not get main SHA — aborting sentinel")
+            print(
+                "::error title=immune-sensing-blind::metabolism_immune could not resolve "
+                "origin/main HEAD sha — sentinel is BLIND, not green",
+                flush=True,
+            )
             summary["errors"].append("could not get main SHA")
+            summary["sensing_failed"] = True
         else:
-            red_checks = _get_required_red_checks(main_sha, immune_cfg=immune_cfg)
-            log.info("IMMUNE: main_sha=%s red_required=%d", main_sha[:8], len(red_checks))
+            red_checks, sense_meta = _sense_required_red_checks(main_sha, immune_cfg=immune_cfg)
+            if red_checks is None:
+                # FULL BLIND — the main HEAD read itself failed, so there is
+                # nothing real to write.  Do NOT write a ci_status.json here:
+                # a fabricated green/[] read would repeat the exact
+                # 2026-08-17→08-18 incident (a 404 read as red_required=0).
+                # Leave the last real artifact in place and let main() exit
+                # non-zero so the run is loud instead of quietly green.
+                log.warning(
+                    "IMMUNE: sensing FAILED for main_sha=%s — sentinel BLIND, not clean",
+                    main_sha[:8],
+                )
+                print(
+                    "::error title=immune-sensing-blind::metabolism_immune could not read "
+                    f"check-runs for main_sha={main_sha[:8]} — sentinel is BLIND, not green",
+                    flush=True,
+                )
+                summary["errors"].append("sensing failed: could not read check-runs")
+                summary["sensing_failed"] = True
+            else:
+                heartbeat_degraded = bool(sense_meta.get("heartbeat_degraded"))
+                sensed_shas = sense_meta.get("sensed_shas") or [main_sha]
+                log.info(
+                    "IMMUNE: main_sha=%s red_required=%d heartbeat_degraded=%s sensed_shas=%s",
+                    main_sha[:8], len(red_checks), heartbeat_degraded, sensed_shas,
+                )
 
-            # Step 2: write CI-status artifact (R-V8-5) — always, even if no reds
-            prev_consecutive = _read_prev_consecutive(r)
-            write_ci_status(main_sha, red_checks, root=r, prev_consecutive=prev_consecutive)
+                # Step 2: write CI-status artifact (R-V8-5) — always when we
+                # have a REAL read (main HEAD succeeded, even if the
+                # heartbeat leg is degraded — that is a real, non-fabricated
+                # main_reds-only picture, not a guess).  Provenance
+                # (sensed_shas / heartbeat_degraded) travels WITH the
+                # artifact so a later reader can tell a fully-sensed two-SHA
+                # green from a degraded one-SHA green.
+                prev_consecutive = _read_prev_consecutive(r)
+                ci_write_ok = write_ci_status(
+                    main_sha, red_checks, root=r, prev_consecutive=prev_consecutive,
+                    sensed_shas=sensed_shas, heartbeat_degraded=heartbeat_degraded,
+                )
+                if not ci_write_ok:
+                    # F4: a write failure leaves the PRIOR artifact on disk
+                    # (possibly stale, possibly absent).  The "commit
+                    # ci_status.json" workflow step then finds either no file
+                    # or an unchanged one and silently skips the commit —
+                    # the frozen-artifact defect this PR removes, relocated
+                    # from the push to the write.  Surface it rather than
+                    # let the run conclude quietly green with nothing published.
+                    log.warning(
+                        "IMMUNE: write_ci_status FAILED for main_sha=%s — artifact NOT "
+                        "updated this run; the commit step may find a stale file (or "
+                        "none) and silently skip the commit", main_sha[:8],
+                    )
+                    print(
+                        "::warning title=immune-ci-status-write-failed::write_ci_status "
+                        f"failed for main_sha={main_sha[:8]} — ci_status.json was NOT "
+                        "updated this run",
+                        flush=True,
+                    )
+                    summary["errors"].append("write_ci_status failed — artifact not updated")
 
-            # Step 3: classify and act on each red
-            for check in red_checks:
-                check_name = check.get("name") or ""
-                recipe = classify_red(check_name, immune_cfg)
+                if heartbeat_degraded:
+                    # The heartbeat SHA WAS resolved but its check-runs read
+                    # FAILED — the curated guards the union exists to see
+                    # (contract-drift, tier-gate, ...) were not read this
+                    # run.  main-HEAD-only coverage is not an acceptable
+                    # substitute for a leg we know exists and could not
+                    # read, so this is treated as SENSING FAILED (exit 2),
+                    # not a clean read — even though red_checks itself is
+                    # real (non-fabricated) data.
+                    log.warning(
+                        "IMMUNE: sensing DEGRADED for main_sha=%s — heartbeat leg "
+                        "resolved but unreadable; treating as sensing FAILED, not clean",
+                        main_sha[:8],
+                    )
+                    print(
+                        "::error title=immune-sensing-degraded::metabolism_immune "
+                        "resolved the ci-main-heartbeat.yml head_sha but its check-runs "
+                        "read FAILED — main-HEAD-only coverage would miss the "
+                        "heartbeat's curated guards; treating as sensing FAILED, not green",
+                        flush=True,
+                    )
+                    summary["errors"].append("sensing degraded: heartbeat check-runs read failed")
+                    summary["sensing_failed"] = True
 
-                if recipe is None:
-                    # Unknown red → insight + Telegram, deduped ONCE PER DAY per red-class
-                    # (FIX-5: 2h cron must not page the operator on every run for the same red)
-                    cooldown = immune_cfg.get("cooldown") or {}
-                    unknown_prefix = cooldown.get("unknown_red_journal_prefix") or "immune.unknown_red"
-                    # Sanitise check_name for use as a journal-key component
-                    safe_name = (check_name or "unknown").replace("/", "_").replace(" ", "_")[:64]
-                    journal_key = f"{unknown_prefix}.{safe_name}"
-                    if has_fired_today(journal_key, root=r):
-                        log.info("IMMUNE: unknown-red page for %r already fired today — dedup", check_name)
+                # Step 3: classify and act on each red — runs on whatever we
+                # DID get (main_reds-only in the degraded case).  A real red
+                # that WAS read is still worth healing even when the
+                # picture is narrower than optimal for one cycle; the
+                # degraded flag above already makes the run loud.
+                for check in red_checks:
+                    check_name = check.get("name") or ""
+                    recipe = classify_red(check_name, immune_cfg)
+
+                    if recipe is None:
+                        # Unknown red → insight + Telegram, deduped ONCE PER DAY per red-class
+                        # (FIX-5: 2h cron must not page the operator on every run for the same red)
+                        cooldown = immune_cfg.get("cooldown") or {}
+                        unknown_prefix = cooldown.get("unknown_red_journal_prefix") or "immune.unknown_red"
+                        # Sanitise check_name for use as a journal-key component
+                        safe_name = (check_name or "unknown").replace("/", "_").replace(" ", "_")[:64]
+                        journal_key = f"{unknown_prefix}.{safe_name}"
+                        if has_fired_today(journal_key, root=r):
+                            log.info("IMMUNE: unknown-red page for %r already fired today — dedup", check_name)
+                            summary["unknown_reds"].append(check_name)
+                            continue
+                        row = build_row(
+                            emitter="metabolism_immune.sentinel",
+                            kind="ci_red_unknown",
+                            severity="high",
+                            entities=["ci", "main"],
+                            summary=f"Unknown CI red on main: {check_name!r} ({check.get('conclusion')})",
+                            evidence_ref=check.get("url"),
+                        )
+                        if not dry_run:
+                            append_row(row, root=r)
+                            mark_fired_today(journal_key, root=r)
+                            _notify(
+                                f"[Metabolism/Immune] Unknown CI red on main: {check_name!r} "
+                                f"({check.get('conclusion')}) — operator action required"
+                            )
                         summary["unknown_reds"].append(check_name)
                         continue
-                    row = build_row(
-                        emitter="metabolism_immune.sentinel",
-                        kind="ci_red_unknown",
-                        severity="high",
-                        entities=["ci", "main"],
-                        summary=f"Unknown CI red on main: {check_name!r} ({check.get('conclusion')})",
-                        evidence_ref=check.get("url"),
+
+                    red_class = recipe.get("red_class") or recipe.get("check_name_pattern") or "unknown"
+
+                    # Check for live claim (dedup — the three-agents lesson)
+                    if has_live_claim_for_class(red_class, root=r, gh_pr_state_fn=_gh_pr_state):
+                        log.info("IMMUNE: live claim exists for %s — skipping", red_class)
+                        continue
+
+                    # Run heal in fresh worktree
+                    heal_result = _run_heal_in_worktree(
+                        recipe, main_sha, root=r, dry_run=dry_run,
                     )
-                    if not dry_run:
-                        append_row(row, root=r)
-                        mark_fired_today(journal_key, root=r)
-                        _notify(
-                            f"[Metabolism/Immune] Unknown CI red on main: {check_name!r} "
-                            f"({check.get('conclusion')}) — operator action required"
-                        )
-                    summary["unknown_reds"].append(check_name)
-                    continue
+                    log.info("IMMUNE: heal result for %s: %s", red_class, heal_result)
 
-                red_class = recipe.get("red_class") or recipe.get("check_name_pattern") or "unknown"
+                    if not heal_result.get("success"):
+                        err = heal_result.get("error") or "unknown error"
+                        if err != "no_changes_after_heal":
+                            summary["errors"].append(f"{red_class}: {err}")
+                            _notify(f"[Metabolism/Immune] Heal failed for {red_class}: {err}")
+                        continue
 
-                # Check for live claim (dedup — the three-agents lesson)
-                if has_live_claim_for_class(red_class, root=r, gh_pr_state_fn=_gh_pr_state):
-                    log.info("IMMUNE: live claim exists for %s — skipping", red_class)
-                    continue
+                    pr_number = heal_result.get("pr_number")
+                    if pr_number and not dry_run:
+                        # Append claim row (R-V8-2)
+                        append_claim({
+                            "red_class": red_class,
+                            "check_name": check_name,
+                            "main_sha": main_sha,
+                            "pr_number": pr_number,
+                        }, root=r)
+                        # Auto-merge is DEFERRED (R-V8-3 amended 2026-07-12).
+                        # The lane opens the claimed DRAFT heal PR and stops here.
+                        # Auto-merge returns as R-V8-3b (future wave).
+                        log.info("IMMUNE: heal PR #%s claimed for %s — operator review required", pr_number, red_class)
 
-                # Run heal in fresh worktree
-                heal_result = _run_heal_in_worktree(
-                    recipe, main_sha, root=r, dry_run=dry_run,
-                )
-                log.info("IMMUNE: heal result for %s: %s", red_class, heal_result)
-
-                if not heal_result.get("success"):
-                    err = heal_result.get("error") or "unknown error"
-                    if err != "no_changes_after_heal":
-                        summary["errors"].append(f"{red_class}: {err}")
-                        _notify(f"[Metabolism/Immune] Heal failed for {red_class}: {err}")
-                    continue
-
-                pr_number = heal_result.get("pr_number")
-                if pr_number and not dry_run:
-                    # Append claim row (R-V8-2)
-                    append_claim({
+                    summary["healed"].append({
                         "red_class": red_class,
-                        "check_name": check_name,
-                        "main_sha": main_sha,
                         "pr_number": pr_number,
-                    }, root=r)
-                    # Auto-merge is DEFERRED (R-V8-3 amended 2026-07-12).
-                    # The lane opens the claimed DRAFT heal PR and stops here.
-                    # Auto-merge returns as R-V8-3b (future wave).
-                    log.info("IMMUNE: heal PR #%s claimed for %s — operator review required", pr_number, red_class)
-
-                summary["healed"].append({
-                    "red_class": red_class,
-                    "pr_number": pr_number,
-                    "branch": heal_result.get("branch"),
-                })
+                        "branch": heal_result.get("branch"),
+                    })
 
         # Step 4: lane-health sensors (R-V8-4)
         lh_rows = run_lane_health_checks(immune_cfg, root=r, dry_run=dry_run)
@@ -960,15 +1407,30 @@ def main(argv: list[str] | None = None) -> int:
     unknown = result.get("unknown_reds") or []
     errors = result.get("errors") or []
     lh = result.get("lane_health") or []
+    sensing_failed = bool(result.get("sensing_failed"))
 
     log.info(
-        "IMMUNE: complete — healed=%d unknown_reds=%d lane_health=%d errors=%d",
-        len(healed), len(unknown), len(lh), len(errors),
+        "IMMUNE: complete — healed=%d unknown_reds=%d lane_health=%d errors=%d sensing_failed=%s",
+        len(healed), len(unknown), len(lh), len(errors), sensing_failed,
     )
     for e in errors:
         log.warning("IMMUNE error: %s", e)
 
-    # Exit 0 always (NEVER-RAISE contract — errors logged, not raised)
+    # Exit contract (repaired 2026-08-18 — replaces the old unconditional
+    # "Exit 0 always / NEVER-RAISE" comment): NEVER-RAISE still holds for every
+    # internal function (all catch and return safe fallbacks, nothing here
+    # raises), but the PROCESS exit code is no longer unconditionally 0.
+    # Finding a red required check is a SUCCESSFUL sensing run — that is the
+    # sentinel doing its job — and still exits 0.  Only SENSING ITSELF failing
+    # (repo unresolved, or the check-runs read failed at every SHA probed)
+    # exits 2.  A blind sentinel that reports "success" is indistinguishable
+    # from a healthy one from the outside — that gap is exactly how a dead
+    # METABOLISM_MERGE_PAT + a literal "owner/repo" _resolve_repo() fallback
+    # let two red required checks (contract-drift, tier-gate) on main run
+    # unnoticed for nine days while every 2-hourly scheduled run here logged
+    # "success" and metabolism-immune.yml showed green.
+    if sensing_failed:
+        return 2
     return 0
 
 

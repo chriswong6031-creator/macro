@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/identity_resolution.v1.schema.json",
+  "title": "GMI theme-graph identity resolution row v1",
+  "description": "One ROW of data/theme_graph/identity_resolution.parquet, as a JSON object. The V4-D2A bridge between the GMI theme graph's own topology node ids and the Data OS identity spine (data/reference/security_master.parquet + vendor_aliases.parquet, read through lib.dataos.identity). A re-derived SIDE-CAR, never a node column, for the same reason as capability.v1: node rows are keep-first write-once, and a resolution stored there would be a one-way ratchet the master's own coverage growth could never repair. One row per company-kind node per materialized graph generation, including refusals — every company node MUST have a row. See research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "node_id", "graph_kind", "market_scope", "graph_identity_epoch",
+    "source_native_symbol", "resolution_asof", "resolution_state",
+    "issuer_id", "security_id", "listing_key", "join_method",
+    "master_generated_at", "master_symbol_directory_snapshot", "master_code_version",
+    "refusal_reason", "source_receipts", "computed_at", "engine_version"
+  ],
+  "properties": {
+    "schema": {
+      "const": "gmi.identity_resolution/v1",
+      "description": "Contract id, verbatim."
+    },
+    "node_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The GMI topology id, verbatim — NEVER rewritten. Must resolve to a company-kind row in nodes.parquet (guard-enforced)."
+    },
+    "graph_kind": {
+      "const": "company",
+      "description": "The row grain — company-kind nodes only in v1."
+    },
+    "market_scope": {
+      "enum": ["us", "cn", "hk", "ca", "intl", null],
+      "description": "Parsed from the node id (identity.COMPANY_ID_RE). Null only for a node id that failed the grammar entirely (resolution_state=INVALID_SOURCE_ID) and could not even be best-effort split."
+    },
+    "graph_identity_epoch": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "From the node id's #<epoch> suffix (epoch 1 implicit). READ-ONLY — epochs come solely from config/theme_graph_identity_breaks.yml. Null only for INVALID_SOURCE_ID."
+    },
+    "source_native_symbol": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "The symbol segment of the node id, epoch suffix stripped, upper-cased. Null only for INVALID_SOURCE_ID when even a best-effort split fails. PARSE PROVENANCE ONLY, NEVER A JOIN KEY: this column is not a sanctioned resolution path — the only sanctioned resolution paths are read_identity_resolution() and resolve_graph_node_identity(), never a re-match on this string."
+    },
+    "resolution_asof": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "The date used for alias resolution — the generation's belief_time, or the caller's explicit historical asof for a pure re-run."
+    },
+    "resolution_state": {
+      "enum": [
+        "RESOLVED", "INVALID_SOURCE_ID", "UNSUPPORTED_MARKET",
+        "DEFERRED_IDENTITY_EXCEPTION", "ENTITY_TYPE_CONFLICT", "AMBIGUOUS", "NOT_IN_MASTER"
+      ],
+      "description": "Closed enum, contract §4. NOT_IN_MASTER is a first-class honest refusal state, never a guard failure."
+    },
+    "issuer_id": {
+      "type": ["string", "null"],
+      "description": "ISS:<CC>-<MIC>-<CODE>[.N] from the master. Null unless resolution_state=RESOLVED."
+    },
+    "security_id": {
+      "type": ["string", "null"],
+      "description": "SEC:<CC>-<MIC>-<CODE>[.N] from the master. Null unless resolution_state=RESOLVED."
+    },
+    "listing_key": {
+      "type": ["string", "null"],
+      "description": "Bare <CC>-<MIC>-<CODE>[.N] from the master. Null unless resolution_state=RESOLVED."
+    },
+    "join_method": {
+      "enum": ["master_inception_exact", "vendor_alias", "refused"],
+      "description": "How RESOLVED was reached, or 'refused' for every non-RESOLVED state."
+    },
+    "master_generated_at": {
+      "type": ["string", "null"],
+      "description": "Copied verbatim from data/reference/_receipt.json. Null when the master was absent at resolution time."
+    },
+    "master_symbol_directory_snapshot": {
+      "type": ["string", "null"],
+      "description": "Copied verbatim from data/reference/_receipt.json."
+    },
+    "master_code_version": {
+      "type": ["string", "null"],
+      "description": "Copied verbatim from data/reference/_receipt.json."
+    },
+    "refusal_reason": {
+      "type": ["string", "null"],
+      "description": "Text explaining a non-RESOLVED state; for identity exceptions quotes the receipt status+reason. NULL iff resolution_state=RESOLVED."
+    },
+    "source_receipts": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Compact JSON string: the matched master/alias rows, or the conflict/absence evidence. Always present, including for RESOLVED rows."
+    },
+    "computed_at": {"$ref": "#/$defs/clock"},
+    "engine_version": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+  }
+}

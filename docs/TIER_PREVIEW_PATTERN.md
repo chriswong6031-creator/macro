@@ -127,6 +127,31 @@ refresh and rewrite the cookie — the same fix as the onboarding wall (PR #3454
 `theme.js` is deferred, so `MDXAuth` does not exist while an inline page script
 runs: wait for its `mdx-auth` event with a timeout fallback.
 
+### A shared partial has more than one host (a trap worth remembering)
+
+Gating *a page* is not gating *the content*. `templates/_us_act_now_board.html.j2`
+is rendered on us_stocks.html by `scripts/build_site.py` **and** on
+sector_central.html by `scripts/build_sector_central.py`. PR #5846 gated the
+us_stocks host; the second host passed no `pgate`, so it kept rendering all five
+lanes in full and the gate moved the paid rows one click away instead of out of
+the bytes. Measured anonymously the same day: 45 `.actitem` rows still served,
+on a page that does not even load `tier_preview.js`.
+
+So, before calling a desk gated:
+
+    grep -rln "<partial>" scripts/ templates/
+
+Every host in that list needs its own split, and each needs its **own payload**
+when the hosts are built by different scripts at different times — two builders
+writing one `/premiumdata/<page>.json` means whichever ran last silently
+overwrites the other's rows. The row macros stay shared (one source, three
+shapes: full / gated shell / rows-only), which is what keeps the two gated hosts
+from drifting; only the split and the payload are per host.
+
+The same question applies to the artifact behind the page: if the rows also ship
+as JSON (`site/basketdata/action_board.json` here), confirm that URL's own class
+— a gated page beside an anonymously readable payload is theatre.
+
 ## What each preview tier actually sees today
 
 | Surface | Anonymous | Free | Insider | Pro |
