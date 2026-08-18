@@ -63,10 +63,23 @@ import json
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
+
+# `git sparse-checkout add` on a heavy tree materializes it file-by-file; a
+# process that dies mid-loop (our own wrapper timing out and SIGKILLing it, an
+# OOM kill, a session getting torn down) leaves whatever file it was writing
+# truncated on disk AND a stale `index.lock` that git created but never got to
+# rename into place (measured 2026-08-18: a 0-byte tracked JSON file plus a
+# ~49-minute-old `.git/worktrees/<name>/index.lock`; reproduced deterministically
+# here by racing a short subprocess timeout against a real `sparse-checkout add`
+# — see tests/test_worktree_sparse_add_lock_safety.py). ADD_TIMEOUT_S is the
+# same 60s budget `_git()` uses elsewhere, exposed here so a test can shrink it
+# instead of waiting on real timing.
+ADD_TIMEOUT_S = 60
 
 # Fallback when config/sparse_worktree.json is unreadable. Kept in step with that
 # file by tests/test_sparse_worktree_profile.py so the two can never drift.
@@ -107,6 +120,130 @@ def _git(root: Path, *args: str) -> str | None:
     except Exception:  # noqa: BLE001 — git missing, or a hung filesystem
         return None
     return out.stdout.strip() if out.returncode == 0 else None
+
+
+def _git_bytes(root: Path, *args: str, timeout: float = 60) -> bytes | None:
+    """Like ``_git`` but returns raw bytes — a byte-exact restore must never go
+    through text decoding, which can silently mangle a binary blob."""
+    try:
+        out = subprocess.run(
+            ("git", "-C", str(root)) + args,
+            capture_output=True, timeout=timeout, check=False,
+        )
+    except Exception:  # noqa: BLE001
+        return None
+    return out.stdout if out.returncode == 0 else None
+
+
+def index_lock_path(root: Path = ROOT) -> Path | None:
+    """The ``index.lock`` this checkout's git-dir would use — worktree-aware.
+
+    ``git rev-parse --git-dir`` already resolves to ``.git/worktrees/<name>``
+    for a linked worktree and to ``.git`` for the primary checkout, so a single
+    lookup covers both cases the frozen spec names. None when git itself is
+    unreadable (matches ``_git``'s failure contract).
+    """
+    git_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-dir")
+    if not git_dir:
+        return None
+    return Path(git_dir) / "index.lock"
+
+
+def _lock_age_desc(lock: Path) -> str:
+    try:
+        age_s = max(0.0, time.time() - lock.stat().st_mtime)
+    except OSError:
+        return "unknown age"
+    if age_s < 60:
+        return f"{age_s:.0f}s old"
+    return f"{age_s / 60:.0f}m old"
+
+
+def refuse_if_locked(root: Path = ROOT) -> bool:
+    """Print a loud, actionable refusal and return True when a stale/live
+    ``index.lock`` already sits in this checkout's git-dir.
+
+    Never deletes the lock: another process may legitimately hold it. This is
+    the up-front half of the fix — it stops a NEW ``add`` from running into a
+    lock a previous failed attempt (or a genuinely concurrent git process)
+    left behind, instead of proceeding into the same partial-write corruption.
+    """
+    lock = index_lock_path(root)
+    if lock is None or not lock.exists():
+        return False
+    age = _lock_age_desc(lock)
+    print(
+        f"::error title=worktree-sparse-locked::{lock} exists ({age}) — refusing "
+        f"to run `git sparse-checkout add`. Check for a live git process using "
+        f"this worktree (e.g. `ps aux | grep '[g]it.*{root.name}'`); if none is "
+        f"running, a previous `worktree_sparse.py add` was likely killed (a slow "
+        f"or timed-out materialization) and left this lock stale. Only remove it "
+        f"once you've confirmed nothing else holds it: rm '{lock}'",
+        flush=True,
+    )
+    return True
+
+
+def _committed_sizes(root: Path, name: str) -> dict[str, int]:
+    """``{relative_path: committed byte size}`` for every file HEAD tracks under
+    ``name`` — read straight from the tree object, independent of whatever
+    inconsistent state a killed checkout left the index/sparse patterns in."""
+    out = _git(root, "ls-tree", "-r", "-l", "HEAD", "--", name)
+    sizes: dict[str, int] = {}
+    if not out:
+        return sizes
+    for line in out.splitlines():
+        try:
+            meta, path = line.split("\t", 1)
+        except ValueError:
+            continue
+        fields = meta.split()
+        if len(fields) < 4 or fields[3] == "-":  # "-" = submodule; no blob size
+            continue
+        try:
+            sizes[path] = int(fields[3])
+        except ValueError:
+            continue
+    return sizes
+
+
+def verify_and_repair(root: Path, names: list[str]) -> list[str]:
+    """Restore, byte-for-byte from HEAD, any on-disk tracked file under ``names``
+    whose size no longer matches what HEAD committed — the exact signature a
+    process killed mid-``sparse-checkout add`` leaves (materialized via
+    open+truncate, killed before the content write landed).
+
+    Deliberately never uses ``git checkout --`` — the stale ``index.lock`` this
+    same failure typically leaves behind makes that refuse (measured: `fatal:
+    Unable to create '.../index.lock': File exists`). ``git show HEAD:<path>``
+    reads straight from the object database and writing it out bypasses the
+    index entirely, so it works even while that lock is still sitting there.
+
+    Returns the list of relative paths actually rewritten, for the caller to
+    report.
+    """
+    repaired: list[str] = []
+    for name in names:
+        committed = _committed_sizes(root, name)
+        for rel_path, expected_size in committed.items():
+            abs_path = root / rel_path
+            try:
+                if not abs_path.is_file():
+                    continue  # never materialized at all — not corruption
+                if abs_path.stat().st_size == expected_size:
+                    continue  # matches HEAD — nothing to repair
+            except OSError:
+                continue
+            content = _git_bytes(root, "show", f"HEAD:{rel_path}")
+            if content is None:
+                continue
+            try:
+                abs_path.parent.mkdir(parents=True, exist_ok=True)
+                abs_path.write_bytes(content)
+            except OSError:
+                continue
+            repaired.append(rel_path)
+    return repaired
 
 
 def sparse_enabled(root: Path = ROOT) -> bool:
@@ -306,7 +443,33 @@ def disable_profile(root: Path = ROOT) -> int:
     return 0
 
 
-def add_dirs(names: list[str], root: Path = ROOT) -> int:
+def _run_sparse_checkout_add(
+    root: Path, names: list[str], timeout: float = ADD_TIMEOUT_S,
+) -> tuple[bool, str]:
+    """Run ``git sparse-checkout add -- <names>``.
+
+    Returns ``(True, "")`` on success, else ``(False, reason)`` — distinguishing
+    a timeout-triggered kill from an ordinary nonzero exit so the failure
+    annotation can say which. ``timeout`` is a parameter rather than a hard-coded
+    constant so a test can shrink it to deterministically race a real
+    ``sparse-checkout add`` instead of waiting out the production 60s budget.
+    """
+    try:
+        out = subprocess.run(
+            ("git", "-C", str(root), "sparse-checkout", "add", "--", *names),
+            capture_output=True, text=True, timeout=timeout, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"timed out after {timeout}s and was killed"
+    except Exception as exc:  # noqa: BLE001 — git missing, or a hung filesystem
+        return False, str(exc)
+    if out.returncode != 0:
+        stderr = out.stderr.strip()
+        return False, f"exited {out.returncode}" + (f": {stderr[:300]}" if stderr else "")
+    return True, ""
+
+
+def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S) -> int:
     """Materialize specific excluded directories, keeping the rest sparse."""
     tracked = set(tracked_top_level_dirs(root))
     unknown = [n for n in names if n not in tracked]
@@ -316,9 +479,29 @@ def add_dirs(names: list[str], root: Path = ROOT) -> int:
     if not sparse_enabled(root):
         print("worktree-sparse: already a full checkout — nothing to add")
         return 0
+    if refuse_if_locked(root):
+        return 1
     _drop_husks(root, names)
-    if _git(root, "sparse-checkout", "add", "--", *names) is None:
-        print("worktree-sparse: `git sparse-checkout add` failed", file=sys.stderr)
+    ok, reason = _run_sparse_checkout_add(root, names, timeout=timeout)
+    if not ok:
+        print(
+            f"::error title=worktree-sparse-add-failed::`git sparse-checkout add "
+            f"-- {' '.join(names)}` {reason} in {root} — the working tree may hold "
+            f"partially materialized or truncated tracked files; verifying and "
+            f"repairing from HEAD now",
+            flush=True,
+        )
+        repaired = verify_and_repair(root, names)
+        if repaired:
+            print(
+                f"worktree-sparse: restored {len(repaired)} truncated tracked "
+                f"file(s) from HEAD: {', '.join(repaired[:10])}"
+                f"{' …' if len(repaired) > 10 else ''}",
+                file=sys.stderr,
+            )
+        else:
+            print("worktree-sparse: no truncated tracked file found to repair",
+                  file=sys.stderr)
         return 1
     print(f"worktree-sparse: materialized {', '.join(names)}")
     return 0
