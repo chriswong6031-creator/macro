@@ -79,6 +79,7 @@ danger_areas:
     duplicate-truth hazard this program forbids."
   - "Any lane text proposing a composite/master score — DNR:KILL-FUSED-COMPOSITE
     territory; the only lawful fusion arena is Prophet US conditional fusion."
+prs: [5910]
 ---
 
 # PASS-0 session handoff
