@@ -1233,8 +1233,320 @@ def test_gh_json_list_empty_output_returns_empty():
         runs = _fetch_runs_list()
     assert runs == [], f"_fetch_runs_list must return [] on empty gh response; got {runs}"
 
-    # Case 5: _get_required_red_checks returns [] on empty gh response
-    with patch("subprocess.run", return_value=mock_both_empty):
+    # Case 5a: _get_required_red_checks returns [] (not None) on a GENUINELY
+    # SUCCESSFUL read of a clean SHA — the paginated NDJSON call yields no
+    # lines (zero check-runs matched the jq filter), and the plain-fetch
+    # fallback returns a real API response shape: a dict with an empty
+    # check_runs array.  This is the "main is clean" case (2026-08-18 repair:
+    # None/[] contract) — see test_get_required_red_checks_returns_none_on_read_failure
+    # below for the DISTINCT "sensing failed" case.
+    call_count = [0]
+
+    def fake_run_clean(cmd, **kwargs):
+        mock = MagicMock()
+        mock.stderr = ""
+        call_count[0] += 1
+        if call_count[0] == 1:
+            mock.returncode = 0
+            mock.stdout = ""  # paginate+jq: zero NDJSON lines
+        else:
+            mock.returncode = 0
+            mock.stdout = json.dumps({"total_count": 0, "check_runs": []})
+        return mock
+
+    with patch("subprocess.run", side_effect=fake_run_clean):
         with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
             reds = _get_required_red_checks("abc000", immune_cfg={"spurious_checks": []})
-    assert reds == [], f"_get_required_red_checks must return [] on empty response; got {reds}"
+    assert reds == [], (
+        f"_get_required_red_checks must return [] (not None) on a successful "
+        f"read of a clean SHA; got {reds}"
+    )
+
+
+# ── 2026-08-18 repair: main-red sentinel blindness fix ────────────────────────
+#
+# Root cause chain (see scripts/metabolism_immune.py module docstring history
+# and .github/workflows/metabolism-immune.yml comments):
+#   1. _resolve_repo() fell back to the LITERAL string "owner/repo" when gh
+#      repo view failed, so every check-run read 404'd.
+#   2. _get_required_red_checks collapsed "read failed" and "main is clean"
+#      into the same [] return, so a 404 and a healthy main were
+#      indistinguishable from the caller's side.
+#   3. _get_main_sha() read LIVE origin/main HEAD, but ci-main-heartbeat.yml's
+#      check-runs live on the SHA the heartbeat itself ran at — main moves
+#      ~17 commits/hour against a 6-hourly heartbeat cron, so sensing HEAD
+#      alone structurally reads a commit that never carried the heartbeat's
+#      check-runs.
+#   4. main() returned 0 unconditionally, so a fully blind run still reported
+#      process-level "success".
+#
+# Coverage:
+#   22. _resolve_repo prefers a valid GITHUB_REPOSITORY env var; NEVER returns
+#       the literal placeholder "owner/repo".
+#   23. _resolve_repo returns None when every resolution route fails, and does
+#       NOT memoize the None (a later call can still succeed).
+#   24. _get_required_red_checks returns None on a genuine read failure and
+#       returns None immediately when the repo is unresolved — distinct from
+#       the [] "successful read of a clean SHA" case pinned above.
+#   25. _sense_required_red_checks unions red checks from two SHAs, de-duped
+#       by check name (first occurrence wins); a failed heartbeat-sha read
+#       falls back to main-alone (not a hard failure); a failed main-HEAD read
+#       IS a hard failure (returns None).
+#   26. main() exits 2 when sensing failed, 0 when it found reds, 0 when clean
+#       — finding a red is a SUCCESSFUL sensing run, not a process failure.
+
+
+def _reset_repo_memo():
+    """Reset the module-level repo memoization so tests don't leak state."""
+    import scripts.metabolism_immune as immune_mod
+    immune_mod._REPO_OWNER_REPO = None
+
+
+def test_resolve_repo_prefers_github_repository_env(monkeypatch):
+    """_resolve_repo() prefers a valid GITHUB_REPOSITORY env var over any gh/git
+    subprocess call, and the result must NEVER be the literal placeholder
+    'owner/repo' — that fallback caused every check-run read to 404 for nine
+    days (2026-08-17 -> 2026-08-18 incident).
+    """
+    from scripts.metabolism_immune import _resolve_repo
+    _reset_repo_memo()
+
+    monkeypatch.setenv("GITHUB_REPOSITORY", "mastermindx-market-intelligence/macro")
+
+    def fail_run(*a, **kw):
+        raise AssertionError("subprocess.run must not be called when GITHUB_REPOSITORY is valid")
+
+    try:
+        with patch("subprocess.run", side_effect=fail_run):
+            repo = _resolve_repo()
+        assert repo == "mastermindx-market-intelligence/macro"
+        assert repo != "owner/repo"
+    finally:
+        _reset_repo_memo()
+
+
+def test_resolve_repo_never_returns_owner_repo_literal(monkeypatch):
+    """Regression pin, named explicitly: _resolve_repo() must never return the
+    literal string 'owner/repo'.  Simulate every resolution route failing
+    (no env var, gh repo view fails, git remote get-url fails) and assert the
+    result is NOT that string — it must be None instead.
+    """
+    from scripts.metabolism_immune import _resolve_repo
+    _reset_repo_memo()
+
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+
+    mock_fail = MagicMock()
+    mock_fail.returncode = 1
+    mock_fail.stdout = ""
+    mock_fail.stderr = "gh: not found"
+
+    try:
+        with patch("subprocess.run", return_value=mock_fail):
+            repo = _resolve_repo()
+        assert repo != "owner/repo", (
+            "_resolve_repo must NEVER return the literal placeholder 'owner/repo' "
+            f"— got {repo!r}"
+        )
+        assert repo is None
+    finally:
+        _reset_repo_memo()
+
+
+def test_resolve_repo_returns_none_when_all_routes_fail_and_does_not_memoize(monkeypatch):
+    """_resolve_repo() returns None when GITHUB_REPOSITORY is absent, gh repo
+    view fails, and git remote get-url origin fails — and does NOT memoize
+    that None, so a later call (after a transient failure clears) can still
+    resolve successfully within the same process.
+    """
+    from scripts.metabolism_immune import _resolve_repo
+    import scripts.metabolism_immune as immune_mod
+    _reset_repo_memo()
+
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+
+    mock_fail = MagicMock()
+    mock_fail.returncode = 1
+    mock_fail.stdout = ""
+    mock_fail.stderr = "fail"
+
+    try:
+        with patch("subprocess.run", return_value=mock_fail):
+            repo1 = _resolve_repo()
+        assert repo1 is None
+        assert immune_mod._REPO_OWNER_REPO is None, "a failed resolution must NOT be memoized"
+
+        # Simulate the transient failure clearing: gh repo view now succeeds.
+        mock_ok = MagicMock()
+        mock_ok.returncode = 0
+        mock_ok.stdout = "mastermindx-market-intelligence/macro\n"
+        mock_ok.stderr = ""
+
+        with patch("subprocess.run", return_value=mock_ok):
+            repo2 = _resolve_repo()
+        assert repo2 == "mastermindx-market-intelligence/macro"
+    finally:
+        _reset_repo_memo()
+
+
+def test_get_required_red_checks_returns_none_on_read_failure():
+    """_get_required_red_checks returns None (SENSING FAILED) — distinct from
+    [] (a successful read of a clean SHA, pinned above) — when both the
+    paginated NDJSON read and the plain-fetch fallback fail to produce a
+    usable payload.  Models the exact incident shape: every gh call fails
+    with a 404-style error.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+
+    mock_fail = MagicMock()
+    mock_fail.returncode = 1
+    mock_fail.stdout = ""
+    mock_fail.stderr = "gh: Not Found (HTTP 404)"
+
+    with patch("subprocess.run", return_value=mock_fail):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("a49e448d", immune_cfg={"spurious_checks": []})
+
+    assert reds is None, f"expected None (SENSING FAILED) on read failure; got {reds}"
+
+
+def test_get_required_red_checks_returns_none_when_repo_unresolved():
+    """_get_required_red_checks returns None immediately when _resolve_repo()
+    is None — and never attempts a doomed request against a placeholder path.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+
+    with patch("scripts.metabolism_immune._resolve_repo", return_value=None):
+        with patch("subprocess.run") as mock_run:
+            reds = _get_required_red_checks("abc123", immune_cfg={"spurious_checks": []})
+
+    assert reds is None
+    mock_run.assert_not_called()
+
+
+def test_sense_required_red_checks_unions_two_shas_deduped_by_name():
+    """_sense_required_red_checks unions red checks from main HEAD and the
+    ci-main-heartbeat.yml run's head_sha, de-duplicated by check name with
+    the FIRST occurrence (main's) winning.
+    """
+    from scripts.metabolism_immune import _sense_required_red_checks
+
+    main_reds = [
+        {"name": "contract-drift", "conclusion": "failure", "status": "completed", "url": "u1"},
+        {"name": "shared-check", "conclusion": "failure", "status": "completed", "url": "u-main"},
+    ]
+    heartbeat_reds = [
+        {"name": "tier-gate", "conclusion": "failure", "status": "completed", "url": "u2"},
+        # duplicate name — first occurrence (main's) must win; this one dropped
+        {"name": "shared-check", "conclusion": "failure", "status": "completed", "url": "u-heartbeat"},
+    ]
+
+    def fake_get_required(sha, immune_cfg=None):
+        if sha == "mainsha123":
+            return main_reds
+        if sha == "heartbeatsha456":
+            return heartbeat_reds
+        raise AssertionError(f"unexpected sha probed: {sha}")
+
+    with patch("scripts.metabolism_immune._get_required_red_checks", side_effect=fake_get_required):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            with patch("scripts.metabolism_immune._get_heartbeat_head_sha", return_value="heartbeatsha456"):
+                union = _sense_required_red_checks("mainsha123", immune_cfg={"spurious_checks": []})
+
+    assert union is not None
+    names = [c["name"] for c in union]
+    assert names.count("shared-check") == 1, f"duplicate check name must be de-duped; got {names}"
+    assert set(names) == {"contract-drift", "shared-check", "tier-gate"}
+    shared = next(c for c in union if c["name"] == "shared-check")
+    assert shared["url"] == "u-main", "first occurrence (main's) must win over the heartbeat's duplicate"
+
+
+def test_sense_required_red_checks_falls_back_to_main_alone_on_heartbeat_failure():
+    """A failed heartbeat-sha resolution or heartbeat check-runs read is NOT a
+    hard sensing failure — the run continues on main HEAD's reds alone.
+    """
+    from scripts.metabolism_immune import _sense_required_red_checks
+
+    main_reds = [{"name": "contract-drift", "conclusion": "failure", "status": "completed", "url": "u1"}]
+
+    def fake_get_required(sha, immune_cfg=None):
+        if sha == "mainsha123":
+            return main_reds
+        return None  # heartbeat-sha check-runs read fails
+
+    with patch("scripts.metabolism_immune._get_required_red_checks", side_effect=fake_get_required):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            with patch("scripts.metabolism_immune._get_heartbeat_head_sha", return_value="heartbeatsha456"):
+                union = _sense_required_red_checks("mainsha123", immune_cfg={"spurious_checks": []})
+
+    assert union == main_reds
+
+    # Also: heartbeat SHA simply unresolved (None) — same fallback behavior.
+    with patch("scripts.metabolism_immune._get_required_red_checks", side_effect=fake_get_required):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            with patch("scripts.metabolism_immune._get_heartbeat_head_sha", return_value=None):
+                union2 = _sense_required_red_checks("mainsha123", immune_cfg={"spurious_checks": []})
+
+    assert union2 == main_reds
+
+
+def test_sense_required_red_checks_none_when_main_head_read_fails():
+    """A failed MAIN HEAD read IS a hard sensing failure — _sense_required_red_checks
+    returns None regardless of whether the heartbeat sha/read would have succeeded.
+    """
+    from scripts.metabolism_immune import _sense_required_red_checks
+
+    with patch("scripts.metabolism_immune._get_required_red_checks", return_value=None):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            with patch("scripts.metabolism_immune._get_heartbeat_head_sha", return_value="heartbeatsha456"):
+                union = _sense_required_red_checks("mainsha123", immune_cfg={"spurious_checks": []})
+
+    assert union is None
+
+
+def test_main_exits_nonzero_when_sensing_failed():
+    """main() exits 2 (non-zero) when run_immune_lane reports sensing_failed=True
+    — a blind sentinel must be LOUD, not silently 'successful'.
+    """
+    from scripts.metabolism_immune import main
+
+    fake_result = {
+        "healed": [], "unknown_reds": [], "lane_health": [],
+        "errors": ["sensing failed: could not read check-runs"],
+        "sensing_failed": True,
+    }
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+        rc = main([])
+
+    assert rc == 2, f"expected exit 2 when sensing failed; got {rc}"
+
+
+def test_main_exits_zero_when_reds_found():
+    """main() exits 0 when sensing SUCCEEDED and found reds — finding a red is
+    a successful sensing run, not a process failure.
+    """
+    from scripts.metabolism_immune import main
+
+    fake_result = {
+        "healed": [{"red_class": "contract-drift", "pr_number": 123, "branch": "b"}],
+        "unknown_reds": [], "lane_health": [], "errors": [],
+        "sensing_failed": False,
+    }
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+        rc = main([])
+
+    assert rc == 0, f"expected exit 0 when sensing found reds (successful run); got {rc}"
+
+
+def test_main_exits_zero_when_clean():
+    """main() exits 0 when sensing succeeded and main is clean."""
+    from scripts.metabolism_immune import main
+
+    fake_result = {
+        "healed": [], "unknown_reds": [], "lane_health": [], "errors": [],
+        "sensing_failed": False,
+    }
+    with patch("scripts.metabolism_immune.run_immune_lane", return_value=fake_result):
+        rc = main([])
+
+    assert rc == 0, f"expected exit 0 when main is clean; got {rc}"

@@ -31,6 +31,8 @@ on:
 permissions:
   contents: write       # push heal branches + commit claim rows
   pull-requests: write  # open DRAFT heal PRs + auto-merge
+  checks: read          # read check-runs for the main-red sentinel (_get_required_red_checks)
+  actions: read         # read workflow runs for the ci-main-heartbeat.yml SHA + lane-health sensors
 
 concurrency:
   group: metabolism-immune
@@ -45,9 +47,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # METABOLISM_MERGE_PAT: PAT with no-workflows scope so DRAFT PRs opened by this
-          # lane trigger pull_request CI (GITHUB_TOKEN PRs are exempt from required checks).
-          token: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+          # Checkout always uses the ambient GITHUB_TOKEN — sensing (the main-red
+          # sentinel) must not depend on METABOLISM_MERGE_PAT being alive, and the
+          # checkout token has no bearing on whether a later PR self-triggers CI
+          # (that is purely a function of the actor that OPENS the PR via gh pr
+          # create, scoped separately below).
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -59,7 +64,16 @@ jobs:
       - name: run immune lane
         env:
           AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
-          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+          # Sensing (the main-red sentinel) runs entirely on the ambient
+          # GITHUB_TOKEN — it must never depend on METABOLISM_MERGE_PAT being
+          # alive.  METABOLISM_MERGE_PAT is passed through SEPARATELY below and
+          # is used by scripts/metabolism_immune.py in exactly ONE place: the
+          # 'gh pr create' call that opens the DRAFT heal PR (see
+          # _heal_pr_create_env), because a PR opened by GITHUB_TOKEN does not
+          # trigger pull_request CI (GitHub's anti-recursion rule) while a PR
+          # opened by a separate no-workflows-scope PAT does.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          METABOLISM_MERGE_PAT: ${{ secrets.METABOLISM_MERGE_PAT }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RUNNER_TEMP: ${{ runner.temp }}
