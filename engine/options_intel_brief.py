@@ -856,21 +856,95 @@ def market_implied_move_pct(atm_iv: float | None, *, horizon_sessions: float | N
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def compose_opportunities(cards: Sequence[Mapping[str, Any]],
-                           *, r_min: int = CONFIG["R_MIN"], cap: int = CONFIG["BOARD_N"]) -> tuple[list[dict], int]:
+def _ranked_eligible(cards: Sequence[Mapping[str, Any]],
+                      *, r_min: int = CONFIG["R_MIN"]) -> list[dict]:
+    """AD-1 B5 §4.1 — the FULL R>=r_min eligible list, sorted per the board law, each
+    row carrying its 1-based ``board_rank`` (position in THIS sorted list). Single
+    source of truth for the ranked board (:func:`compose_opportunities`), the
+    directional watch strip (:func:`compose_directional_watch`), and the
+    cap-independent qualified count (:func:`directional_qualified_count`) — every
+    consumer sees the SAME ordinal for the same name, gaps and all."""
     elig = [c for c in cards if c["direction"] in ("LONG", "SHORT", "VOLATILITY") and c["research_priority_score"] >= r_min]
     elig.sort(key=lambda c: (-c["research_priority_score"], -c["evidence_confidence"], -c.get("tier_metric", 0.0), c["symbol"]))
-    return list(elig[:cap]), max(0, len(elig) - cap)
+    ranked = []
+    for i, c in enumerate(elig, start=1):
+        rc = dict(c)
+        rc["board_rank"] = i
+        ranked.append(rc)
+    return ranked
 
 
-def compose_event_board(event_cards: Sequence[Mapping[str, Any]], *, cap: int = CONFIG["EVENT_BOARD_N"]) -> list[dict]:
+def compose_opportunities(cards: Sequence[Mapping[str, Any]],
+                           *, r_min: int = CONFIG["R_MIN"], cap: int = CONFIG["BOARD_N"]) -> tuple[list[dict], int]:
+    ranked = _ranked_eligible(cards, r_min=r_min)
+    return list(ranked[:cap]), max(0, len(ranked) - cap)
+
+
+def compose_directional_watch(cards: Sequence[Mapping[str, Any]],
+                               *, r_min: int = CONFIG["R_MIN"], cap: int = CONFIG["BOARD_N"]) -> tuple[list[dict], int]:
+    """AD-1 B5 §4.2 — members of the SAME ranked eligible list at positions > ``cap``
+    whose direction is LONG/SHORT, in that list's order (real ordinals, gaps expected
+    and never renumbered). Emission itself is capped at ``cap`` (the existing
+    ``CONFIG["BOARD_N"]`` — no new constant minted); the remainder is counted, never
+    dropped silently."""
+    ranked = _ranked_eligible(cards, r_min=r_min)
+    below = [c for c in ranked[cap:] if c["direction"] in ("LONG", "SHORT")]
+    return list(below[:cap]), max(0, len(below) - cap)
+
+
+def directional_qualified_count(cards: Sequence[Mapping[str, Any]],
+                                 *, r_min: int = CONFIG["R_MIN"]) -> int:
+    """AD-1 B5 §4.5 — total LONG/SHORT members of the WHOLE R>=r_min eligible set,
+    cap-independent (unlike :func:`compose_directional_watch`, which only covers the
+    below-cut remainder). Sole input to the "no directional hypothesis qualified
+    today" line — the UI performs no counting of its own."""
+    return sum(1 for c in _ranked_eligible(cards, r_min=r_min) if c["direction"] in ("LONG", "SHORT"))
+
+
+def compose_event_board(event_cards: Sequence[Mapping[str, Any]], *, cap: int = CONFIG["EVENT_BOARD_N"]) -> tuple[list[dict], int]:
     ordered = sorted(event_cards, key=lambda c: (-abs(c.get("f_e") or 0.0), c["symbol"]))
-    return list(ordered[:cap])
+    return list(ordered[:cap]), max(0, len(ordered) - cap)
 
 
-def compose_risk_board(risk_cards: Sequence[Mapping[str, Any]], *, cap: int = CONFIG["RISK_BOARD_N"]) -> list[dict]:
+def compose_risk_board(risk_cards: Sequence[Mapping[str, Any]], *, cap: int = CONFIG["RISK_BOARD_N"]) -> tuple[list[dict], int]:
     ordered = sorted(risk_cards, key=lambda c: (-c.get("evidence_strength", 0.0), c["symbol"]))
-    return list(ordered[:cap])
+    return list(ordered[:cap]), max(0, len(ordered) - cap)
+
+
+# AD-1 B5 §4.9 — the no-signal exemplar's own closed-vocabulary reason, keyed purely
+# on the exemplar's own Q_oi/Q_skew leg state (never a new gate; display-only, no
+# score/order authority). Three entries, deterministic.
+_NO_SIGNAL_REASON_EN = {
+    "DISAGREE": "the two readings disagree and activity is normal",
+    "ONE_SIDED": "only one reading moved and activity is normal",
+    "WEAK": "both readings are inside their normal range",
+}
+_NO_SIGNAL_REASON_ZH = {
+    "DISAGREE": "两项读数不一致，活跃度正常",
+    "ONE_SIDED": "仅一项读数变动，活跃度正常",
+    "WEAK": "两项读数均在正常区间内",
+}
+
+
+def _evidence_value(card: Mapping[str, Any], name: str) -> float | None:
+    for e in card.get("evidence") or []:
+        if isinstance(e, dict) and e.get("name") == name:
+            return e.get("value")
+    return None
+
+
+def no_signal_reason_state(q_oi_v: float | None, q_skew_v: float | None,
+                            *, q_th: float = CONFIG["Q_TH"]) -> str:
+    """Pure leg-state classifier feeding :data:`_NO_SIGNAL_REASON_EN`/``_ZH`` — the
+    same two readings (Q_oi, Q_skew) and the same ``Q_TH`` gate the direction law
+    itself uses (contract §4), never a new threshold."""
+    oi_active = q_oi_v is not None and abs(q_oi_v) >= q_th
+    sk_active = q_skew_v is not None and abs(q_skew_v) >= q_th
+    if oi_active and sk_active:
+        return "DISAGREE" if (q_oi_v > 0) != (q_skew_v > 0) else "WEAK"
+    if oi_active or sk_active:
+        return "ONE_SIDED"
+    return "WEAK"
 
 
 def no_signal_exemplar(cards: Sequence[Mapping[str, Any]]) -> dict | None:
@@ -879,7 +953,10 @@ def no_signal_exemplar(cards: Sequence[Mapping[str, Any]]) -> dict | None:
     if not cands:
         return None
     cands.sort(key=lambda c: (-c.get("tier_metric", 0.0), c["symbol"]))
-    return cands[0]
+    exemplar = dict(cands[0])
+    state = no_signal_reason_state(_evidence_value(exemplar, "Q_oi"), _evidence_value(exemplar, "Q_skew"))
+    exemplar["no_signal_reason"] = {"en": _NO_SIGNAL_REASON_EN[state], "zh": _NO_SIGNAL_REASON_ZH[state]}
+    return exemplar
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1398,10 +1475,12 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
         cards.append(card)
 
     opportunities, overflow = compose_opportunities(cards)
+    watch, watch_overflow = compose_directional_watch(cards)
+    watch_qualified = directional_qualified_count(cards)
     event_cards = [c for c in cards if c["event"] is not None and c.get("f_e") is not None]
-    event_board = compose_event_board(event_cards)
+    event_board, event_overflow = compose_event_board(event_cards)
     risk_cards = [c for c in cards if c["crowding"] is not None]
-    risk_board = compose_risk_board(risk_cards)
+    risk_board, risk_overflow = compose_risk_board(risk_cards)
     no_sig = no_signal_exemplar(cards)
 
     eligible_ratio = eligibility.ratio
@@ -1447,12 +1526,28 @@ def build_intel_brief(panel: SessionPanel, *, source_watermarks: Mapping[str, An
     def strip(c: dict) -> dict:
         return {k: v for k, v in c.items() if k not in ("tier_metric", "tier", "coverage_complete", "board_state_symbol", "f_e")}
 
+    # AD-1 B5 §4.6/§4.7 — event/risk rows carry the row's rank on the RANKED board
+    # (Band 1's visible top-`BOARD_N` grid, i.e. the emitted `opportunities`) when the
+    # same symbol also sits there, else null. A symbol only on the below-cut watch
+    # strip (rank > BOARD_N) is NOT "on" the ranked board, so it stays null here too.
+    opp_rank_by_symbol = {c["symbol"]: c["board_rank"] for c in opportunities}
+
+    def strip_with_board_ref(c: dict) -> dict:
+        d = strip(c)
+        d["board_rank"] = opp_rank_by_symbol.get(c["symbol"])
+        return d
+
     payload = {
         **header,
         "opportunities": [strip(c) for c in opportunities],
         "opportunities_overflow": overflow,
-        "event_board": [strip(c) for c in event_board],
-        "risk_warnings": [strip(c) for c in risk_board],
+        "directional_watch": [strip(c) for c in watch],
+        "directional_watch_overflow": watch_overflow,
+        "directional_qualified_count": watch_qualified,
+        "event_board": [strip_with_board_ref(c) for c in event_board],
+        "event_board_overflow": event_overflow,
+        "risk_warnings": [strip_with_board_ref(c) for c in risk_board],
+        "risk_board_overflow": risk_overflow,
         "no_signal_exemplar": (strip(no_sig) if no_sig else None),
     }
     return payload
@@ -1489,7 +1584,10 @@ def _base_header(*, panel: SessionPanel, source_watermarks, input_receipts, buil
     header["config_hash"] = config_hash()
     return {
         **header, "opportunities": [], "opportunities_overflow": 0,
-        "event_board": [], "risk_warnings": [], "no_signal_exemplar": None,
+        "directional_watch": [], "directional_watch_overflow": 0, "directional_qualified_count": 0,
+        "event_board": [], "event_board_overflow": 0,
+        "risk_warnings": [], "risk_board_overflow": 0,
+        "no_signal_exemplar": None,
     }
 
 

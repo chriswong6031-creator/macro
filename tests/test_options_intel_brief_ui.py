@@ -16,6 +16,12 @@ artifact and checks the rendered HTML reproduces its values/order VERBATIM, or
 (b) proves an absent/corrupt artifact degrades to an honest empty state without
 touching the rest of the page.
 
+AD-1 B5 (product exposure, Sol REQUEST_CHANGES on #5872) extends this file below
+tests 34-40 with the three added bands inside #aib — directional watch, evidence
+rail, control (contract §5a) — using a separate ``_b5_*`` fixture family (the
+pre-B5 ``_card()``/``_brief()`` above never set ``board_rank`` or populate the
+new top-level arrays). Same house rule: pass-through only, verbatim order.
+
 Run: python3 -m pytest tests/test_options_intel_brief_ui.py -q
 """
 from __future__ import annotations
@@ -166,7 +172,10 @@ def test_35_adapter_passes_cards_through_unmodified():
     assert "Downside evidence" in ws and "下行证据" in ws
 
     # overflow count is verbatim
-    assert re.search(r'class="oew-aib-more">\s*2\b', ws), "opportunities_overflow=2 not rendered verbatim"
+    # AD-1 B5 footer amendment (contract §5a/§3c) added a data-tip-en/zh pair to
+    # this same span (disambiguates the two overflow counts) — match the class
+    # regardless of what other attributes now sit between it and the `>`.
+    assert re.search(r'class="oew-aib-more"[^>]*>\s*2\b', ws), "opportunities_overflow=2 not rendered verbatim"
 
 
 def test_35_glyph_signs_are_read_not_recomputed():
@@ -342,3 +351,359 @@ def test_40_null_move_pct_renders_no_implied_move_chip():
     facts = ws[ws.index('oew-aib-facts'):ws.index('oew-aib-chips')]
     assert "±" not in facts
     assert "implied" not in facts
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AD-1 B5 (product exposure) — the accepted design packet's three added bands
+# inside #aib: directional watch (2), evidence rail (3), control (4).
+# contracts/options/OPTIONS_INTEL_BRIEF_V1.md §5a.
+#
+# Reuses this file's own `_card()`/`_brief()`/`EMPTY_STORES`/`render` — a
+# SEPARATE `_b5_*` fixture family only where the B5 bands need fields `_card()`
+# doesn't carry (board_rank, event, crowding shaped for the rail, the
+# directional_watch/event_board/risk_warnings/no_signal_exemplar top-level
+# arrays `_brief()` always leaves empty).
+# ═════════════════════════════════════════════════════════════════════════════
+
+_B5_DISPLAY_STATE = {
+    "LONG": ("Upside evidence", "上行证据"), "SHORT": ("Downside evidence", "下行证据"),
+    "VOLATILITY": ("Volatility", "波动率"), "RISK_ONLY": ("Risk / crowding", "风险/拥挤"),
+}
+
+
+def _b5_opp_card(symbol: str, rank: int, *, direction: str = "VOLATILITY",
+                  crowding: dict | None = None, event: dict | None = None) -> dict:
+    """A Band-1 grid card carrying `board_rank` (contract §5a) — `_card()` above
+    predates B5 and never sets it; the B5 bands need it wired through."""
+    c = _card(symbol, direction=direction, r=900 - rank * 10, crowding=crowding)
+    c["board_rank"] = rank
+    c["event"] = event
+    en, zh = _B5_DISPLAY_STATE[direction]
+    c["display_state_en"], c["display_state_zh"] = en, zh
+    return c
+
+
+def _b5_brief(*, opportunities=None, watch=None, watch_overflow=0, qualified_count=None,
+              events=None, events_overflow=0, risks=None, risks_overflow=0,
+              control_exemplar=None, board_state="OK", **kwargs) -> dict:
+    opportunities = opportunities or []
+    brief = _brief(opportunities=opportunities, board_state=board_state, **kwargs)
+    brief["directional_watch"] = watch or []
+    brief["directional_watch_overflow"] = watch_overflow
+    brief["directional_qualified_count"] = (
+        qualified_count if qualified_count is not None else len(brief["directional_watch"])
+    )
+    brief["event_board"] = events or []
+    brief["event_board_overflow"] = events_overflow
+    brief["risk_warnings"] = risks or []
+    brief["risk_board_overflow"] = risks_overflow
+    brief["no_signal_exemplar"] = control_exemplar
+    return brief
+
+
+def _b5_healthy_with_cards_brief() -> dict:
+    """Scene A — grid + watch + populated rails + control (design packet §2A)."""
+    cards = [_b5_opp_card(sym, i + 1) for i, sym in enumerate(["COST", "CSCO", "SPY", "QQQ", "TSLA", "IBM"])]
+    cards[3]["event"] = {"event_date": "2026-08-21", "event_premium_state": "HIGH"}       # QQQ, rank 4
+    cards[4]["crowding"] = {"fired": ["c1", "c2"], "severity": 0.9}                        # TSLA, rank 5
+    watch = [   # deliberately NOT ascending — proves array order is preserved, never re-sorted
+        {"board_rank": 12, "symbol": "MU", "direction": "LONG"},
+        {"board_rank": 7, "symbol": "AMD", "direction": "LONG"},
+        {"board_rank": 9, "symbol": "XOM", "direction": "SHORT"},
+    ]
+    events = [
+        {"symbol": "QQQ", "event": {"event_date": "2026-08-21", "event_premium_state": "HIGH"},
+         "market_implied_move_pct": 0.08, "board_rank": 4, "null_reason": None},
+        {"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL"},
+         "market_implied_move_pct": 0.05, "board_rank": None, "null_reason": None},
+        {"symbol": "ORCL", "event": {"event_date": "2026-09-02", "event_premium_state": "LOW"},
+         "market_implied_move_pct": 0.04, "board_rank": None, "null_reason": None},
+    ]
+    risks = [
+        {"symbol": "TSLA", "crowding": {"fired": ["c1", "c2"], "severity": 0.9}, "board_rank": 5, "null_reason": None},
+        {"symbol": "NFLX", "crowding": {"fired": ["c2"], "severity": 0.6}, "board_rank": None, "null_reason": None},
+        {"symbol": "SMCI", "crowding": {"fired": ["c3"], "severity": 0.5}, "board_rank": None, "null_reason": None},
+        {"symbol": "COIN", "crowding": {"fired": ["c1"], "severity": 0.7}, "board_rank": None, "null_reason": None},
+    ]
+    return _b5_brief(
+        opportunities=cards, overflow=5,
+        watch=watch, watch_overflow=2, qualified_count=5,
+        events=events, events_overflow=1,
+        risks=risks, risks_overflow=0,
+        control_exemplar={"symbol": "NVDA", "no_signal_reason": {
+            "en": "both readings are inside their normal range", "zh": "两项读数均在正常区间内"}},
+    )
+
+
+def _b5_healthy_quiet_brief(*, events: list | None = None, unknown_calendar: bool = False) -> dict:
+    """Scene B — no cards, no directional watch, but the rails may still speak."""
+    exemplar = {
+        "symbol": "NVDA",
+        "no_signal_reason": {"en": "both readings are inside their normal range", "zh": "两项读数均在正常区间内"},
+        "null_reason": ("EVENT_STATE_UNKNOWN" if unknown_calendar else None),
+    }
+    return _b5_brief(
+        opportunities=[], watch=[], watch_overflow=0, qualified_count=0,
+        events=(events or []), events_overflow=0, risks=[], risks_overflow=0,
+        control_exemplar=exemplar, board_state="NO_SIGNAL", eligible=368, present=372,
+    )
+
+
+def _b5_degraded_brief() -> dict:
+    """Scene C — STALE_SOURCE; byte-silhouette must match the pre-B5 shape."""
+    return _b5_brief(opportunities=[], watch=[], qualified_count=0, board_state="STALE_SOURCE",
+                      eligible=0, present=0)
+
+
+def _aib_section(page: str) -> str:
+    """Slice out just the `#aib` panel's markup (up to the next sibling panel
+    start) — narrower than this file's own `_workspace()`, which returns the
+    whole `.oew` shell — so band-order/vocabulary assertions can't accidentally
+    match unrelated page furniture."""
+    start = page.index('id="aib"')
+    end = page.index('oew-panel', start + 20)
+    return page[start:end]
+
+
+def _order_ok(haystack: str, *needles: str) -> bool:
+    positions = [haystack.index(n) for n in needles]
+    return positions == sorted(positions)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Band ordering.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_band_order_healthy_with_cards():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert _order_ok(sec, "oew-aib-grid", "oew-aib-watch", "oew-aib-rail", "oew-aib-control", "oew-pfoot")
+
+
+def test_b5_band_order_healthy_quiet_with_rails_speaking():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief())
+    sec = _aib_section(page)
+    # Band 1 empty -> .oew-aib-empty; Band 2 empty+qualified==0 -> null line;
+    # Band 3/4 still speak; order must still hold.
+    assert _order_ok(sec, "oew-aib-empty", "oew-aib-wnull", "oew-aib-rail", "oew-aib-control", "oew-pfoot")
+
+
+def test_b5_degraded_scene_never_shows_bands_2_3_4():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_degraded_brief())
+    sec = _aib_section(page)
+    assert "oew-aib-degraded" in sec
+    for marker in ("oew-aib-grid", "oew-aib-watch", "oew-aib-wnull", "oew-aib-rail", "oew-aib-control"):
+        assert marker not in sec, f"{marker} must never render on a degraded scene"
+    assert _order_ok(sec, "oew-aib-stamps", "oew-aib-degraded", "oew-pfoot")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Band 1 — machine board_rank, never loop.index.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_band1_grid_uses_machine_board_rank_not_loop_index():
+    """Feed opportunities in the array's natural order but with board_rank
+    values that DISAGREE with loop position — the strongest proof the template
+    reads `c.board_rank`, never `loop.index` (the exact hole this closes)."""
+    brief = _b5_healthy_with_cards_brief()
+    for i, c in enumerate(brief["opportunities"]):
+        c["board_rank"] = 100 + i   # loop.index would print 1..6; assert it does NOT
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief)
+    sec = _aib_section(page)
+    for i in range(6):
+        assert f"№{100 + i}" in sec
+    assert "№1<" not in sec and "№2<" not in sec
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Band 2 — directional watch: real gapped ordinals, array order preserved.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_band2_watch_prints_real_gapped_ordinals_in_array_order():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "№12" in sec and "№7" in sec and "№9" in sec
+    assert "Qualified below the cut" in sec
+    assert _order_ok(sec, "MU", "AMD", "XOM")   # array order [12,7,9] — not sorted ascending
+    assert "Upside" in sec and "Downside" in sec
+    assert "+2" in sec   # directional_watch_overflow
+
+
+def test_b5_band2_omitted_when_watch_empty_but_qualified_positive():
+    """§6: empty strip AND directional_qualified_count>0 -> band OMITTED
+    entirely (not even the null line) — the six cards above already contain
+    directional names."""
+    brief = _b5_healthy_with_cards_brief()
+    brief["directional_watch"] = []
+    brief["directional_watch_overflow"] = 0
+    brief["directional_qualified_count"] = 3   # positive, but nothing below the cut
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief)
+    sec = _aib_section(page)
+    assert "oew-aib-watch" not in sec
+    assert "Qualified below the cut" not in sec
+    assert "No upside or downside hypothesis qualified today." not in sec
+
+
+def test_b5_band2_null_line_when_qualified_count_is_zero():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief())
+    sec = _aib_section(page)
+    assert "oew-aib-wnull" in sec
+    assert "No upside or downside hypothesis qualified today." in sec
+    assert "oew-aib-watch\"" not in sec   # the populated-strip container itself is absent
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Band 3 — evidence rail (event + risk groups).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_band3_event_rail_populated_with_backref_and_without():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "Ahead of an event" in sec
+    assert "Priced above event peers" in sec    # QQQ, HIGH
+    assert "In line with event peers" in sec    # LLY, NORMAL
+    assert "Priced below event peers" in sec    # ORCL, LOW
+    assert "№4" in sec and "above" in sec       # QQQ's back-ref to Band 1
+    assert "+1" in sec                          # events_overflow
+
+
+def test_b5_band3_event_rail_empty_causes_never_collapse():
+    none_page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief())
+    none_sec = _aib_section(none_page)
+    assert "No name has an event inside the window." in none_sec
+
+    unknown_page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief(unknown_calendar=True))
+    unknown_sec = _aib_section(unknown_page)
+    assert "Event calendar not loaded" in unknown_sec
+    assert "No name has an event inside the window." not in unknown_sec
+
+
+def test_b5_band3_event_rail_shows_populated_rows_on_the_quiet_scene():
+    """Design packet §2 Scene B / §6: the rails may still speak even though
+    Band 1's grid and Band 2's strip are both empty."""
+    events = [{"symbol": "LLY", "event": {"event_date": "2026-08-25", "event_premium_state": "NORMAL"},
+               "market_implied_move_pct": 0.05, "board_rank": None, "null_reason": None}]
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief(events=events))
+    sec = _aib_section(page)
+    assert "oew-aib-empty" in sec
+    assert "oew-aib-wnull" in sec
+    assert "LLY" in sec and "In line with event peers" in sec
+
+
+def test_b5_band3_risk_rail_populated_and_empty():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "Crowded tape" in sec
+    assert "Same-day bets crowded" in sec
+    assert "Expensive options at a high" in sec
+    assert "Busy and expensive for days" in sec
+    assert "№5" in sec   # TSLA back-ref
+
+    quiet_page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_quiet_brief())
+    quiet_sec = _aib_section(quiet_page)
+    assert "Nothing looks crowded today." in quiet_sec
+
+
+def test_b5_band3_rail_slot_stability_both_groups_render_even_when_both_empty():
+    brief = _b5_healthy_quiet_brief(unknown_calendar=True)
+    brief["risk_warnings"] = []
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief)
+    sec = _aib_section(page)
+    assert "oew-aib-rail" in sec
+    assert "Ahead of an event" in sec and "Crowded tape" in sec
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Band 4 — control.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_band4_control_populated_and_empty():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "oew-aib-control" in sec
+    assert "NVDA" in sec
+    assert "both readings are inside their normal range" in sec
+
+    brief = _b5_healthy_quiet_brief()
+    brief["no_signal_exemplar"] = None
+    page2 = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief)
+    sec2 = _aib_section(page2)
+    assert "no fully covered quiet name today." in sec2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Panel-level amendments (§3c): subtitle, chip order, footer disambiguation tip.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_b5_panel_subtitle_describes_the_new_composition():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    assert "ranked priorities, event and crowding reads, and one quiet control" in page
+    assert "优先级排序、事件与拥挤读数，以及一个平静对照" in page
+
+
+def test_b5_prophet_chip_sits_after_crowding_chip_in_the_card():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    # TSLA (rank 5) is the only card carrying crowding=True — locate ITS OWN
+    # chips row (nearest preceding "oew-aib-chips" opener) rather than the
+    # first card's, which has no crowding chip at all.
+    crowd_pos = sec.index("oew-aib-crowd")
+    chips_start = sec.rfind("oew-aib-chips", 0, crowd_pos)
+    assert chips_start != -1
+    prophet_pos = sec.index("oew-aib-prophet", chips_start)
+    assert chips_start < crowd_pos < prophet_pos
+
+
+def test_b5_footer_overflow_disambiguation_tip_present():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    assert "Counts every direction above the threshold, including volatility names." in sec
+    assert "统计门槛之上的全部方向，含波动率名称。" in sec
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Vocabulary / a11y hygiene on the NEW copy specifically (contract §5 banned list).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_B5_BANNED_GLANCE_TOKENS = [
+    "probability", "alpha", "edge", "asymmetry", "target", "buy-now", "sell-now",
+    "validated", "NO_SIGNAL", "EVENT_STATE_UNKNOWN", "Q_oi", "Q_skew", "F_E",
+]
+
+
+def _b5_strip_tags(html_fragment: str) -> str:
+    """Inner text only — attributes (incl. data-tip-*, the sanctioned Tier-2
+    home for more technical language) are stripped along with their tags."""
+    return re.sub(r"<[^>]+>", " ", html_fragment)
+
+
+def test_b5_new_copy_carries_no_banned_glance_vocabulary():
+    """Scoped to `oew-pbody` onward — the panel HEAD carries pre-existing,
+    already-reviewed honesty copy ("not a probability or trade signal") that
+    legitimately contains a banned token in a negation; that copy is outside
+    this packet's scope. Bands 1-4 + the footer are the new/amended surface."""
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    body_start = sec.index("oew-pbody")
+    glance_text = _b5_strip_tags(sec[body_start:])
+    hits = {tok: glance_text.count(tok) for tok in _B5_BANNED_GLANCE_TOKENS if tok in glance_text}
+    assert not hits, f"banned vocabulary leaked into glance-tier text: {hits}"
+    for raw in ("c1", "c2", "c3"):
+        assert raw not in glance_text
+
+
+def test_b5_no_translated_text_in_a_title_attribute():
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=_b5_healthy_with_cards_brief())
+    sec = _aib_section(page)
+    for m in re.finditer(r'title="([^"]*)"', sec):
+        assert not re.search(r"[一-鿿]", m.group(1)), f"zh text in title=: {m.group(1)!r}"
+
+
+# Zero horizontal overflow is verified visually (verify_shots/, scripted check
+# in the shoot script) — not re-derived here; this suite is markup/copy-level.

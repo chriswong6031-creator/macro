@@ -1720,3 +1720,208 @@ def test_module_docstrings_cite_the_contract():
     producer_doc = (REPO_ROOT / "scripts" / "build_options_intel_brief.py").read_text()[:2000]
     assert "contracts/options/OPTIONS_INTEL_BRIEF_V1.md" in engine_doc
     assert "contracts/options/OPTIONS_INTEL_BRIEF_V1.md" in producer_doc
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1 B5 (product exposure) — the nine projection fields (contract §5a).
+# Composition-function-level fixtures (hand-built card dicts), same precedented
+# style as test_33's compose_opportunities order-stability check: these are pure
+# functions operating on `cards: Sequence[Mapping]`, so a synthetic list with
+# controlled research_priority_score/direction is a faithful, deterministic way
+# to pin the board-position law without re-deriving Q_oi/Q_skew through the full
+# chain pipeline for every rank.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _b5_card(symbol: str, *, direction: str, score: int, ec: float = 0.40, tier_metric: float = 1.0) -> dict:
+    return {"symbol": symbol, "direction": direction, "research_priority_score": score,
+            "evidence_confidence": ec, "tier_metric": tier_metric}
+
+
+def _b5_ranked_fixture() -> list[dict]:
+    """14 eligible cards, strictly decreasing R so board position is unambiguous.
+    Directional (LONG/SHORT) names sit at ranks 7, 9 and 12 — everything else is
+    VOLATILITY — mirroring the design packet's own worked example (AMD/XOM/MU)."""
+    directions = {7: "LONG", 9: "SHORT", 12: "LONG"}
+    cards = []
+    for i in range(1, 15):
+        d = directions.get(i, "VOLATILITY")
+        cards.append(_b5_card(f"P{i:02d}", direction=d, score=2000 - 100 * i))
+    return cards
+
+
+def test_b5_1_board_rank_contiguous_on_opportunities():
+    cards = _b5_ranked_fixture()
+    opportunities, overflow = brief.compose_opportunities(cards)
+    assert [c["board_rank"] for c in opportunities] == [1, 2, 3, 4, 5, 6]
+    assert [c["symbol"] for c in opportunities] == ["P01", "P02", "P03", "P04", "P05", "P06"]
+    assert overflow == len(cards) - 6
+
+
+def test_b5_2_directional_watch_carries_real_gapped_ordinals_never_renumbered():
+    cards = _b5_ranked_fixture()
+    watch, watch_overflow = brief.compose_directional_watch(cards)
+    # ranks 7, 9, 12 qualify (LONG/SHORT below the BOARD_N=6 cut); the gaps (8, 10,
+    # 11 are VOLATILITY, never shown here) are the point — never renumbered 1,2,3.
+    assert [c["board_rank"] for c in watch] == [7, 9, 12]
+    assert [c["symbol"] for c in watch] == ["P07", "P09", "P12"]
+    assert [c["direction"] for c in watch] == ["LONG", "SHORT", "LONG"]
+    assert watch_overflow == 0
+
+
+def test_b5_3_directional_watch_emission_capped_at_board_n_with_overflow():
+    # 9 directional names below the cut (ranks 7-15) — cap reuses the existing
+    # CONFIG["BOARD_N"] (6), no new constant; the 10th is emitted count 6 + overflow 3.
+    # Six VOLATILITY fillers occupy the entire top-6 grid so all 9 D-cards land
+    # strictly below the cut (rank > 6).
+    cards = [_b5_card(f"V{i:02d}", direction="VOLATILITY", score=3000 - i) for i in range(1, 7)]
+    for i in range(1, 10):
+        cards.append(_b5_card(f"D{i:02d}", direction=("LONG" if i % 2 else "SHORT"), score=1800 - i))
+    watch, overflow = brief.compose_directional_watch(cards)
+    assert len(watch) == CONFIG["BOARD_N"] == 6
+    assert overflow == 9 - 6
+    # order-preserved: emitted watch rows are the highest-R-ranked 6 of the 9
+    assert [c["symbol"] for c in watch] == [f"D{i:02d}" for i in range(1, 7)]
+
+
+def test_b5_4_directional_qualified_count_is_cap_independent():
+    # 2 directional names inside the top 6 AND 3 more below the cut: the
+    # cap-independent count is the FULL eligible-set total (5), never just the
+    # below-cut remainder compose_directional_watch reports (3).
+    cards = [
+        _b5_card("A", direction="LONG", score=2000),
+        _b5_card("B", direction="SHORT", score=1900),
+        _b5_card("C", direction="VOLATILITY", score=1800),
+        _b5_card("D", direction="VOLATILITY", score=1700),
+        _b5_card("E", direction="VOLATILITY", score=1600),
+        _b5_card("F", direction="VOLATILITY", score=1500),  # rank 6 — cut line
+        _b5_card("G", direction="LONG", score=1400),
+        _b5_card("H", direction="VOLATILITY", score=1300),
+        _b5_card("I", direction="SHORT", score=1200),
+        _b5_card("J", direction="LONG", score=1100),
+    ]
+    watch, watch_overflow = brief.compose_directional_watch(cards)
+    assert len(watch) + watch_overflow == 3          # below-cut-only count
+    assert brief.directional_qualified_count(cards) == 5   # whole eligible set
+
+
+def test_b5_5_event_and_risk_board_overflow_counts():
+    events = [{"symbol": f"E{i}", "f_e": 1.0 - 0.01 * i} for i in range(7)]
+    board, overflow = brief.compose_event_board(events)
+    assert len(board) == CONFIG["EVENT_BOARD_N"] == 4
+    assert overflow == 7 - 4
+
+    risks = [{"symbol": f"R{i}", "evidence_strength": 1.0 - 0.01 * i} for i in range(6)]
+    rboard, roverflow = brief.compose_risk_board(risks)
+    assert len(rboard) == CONFIG["RISK_BOARD_N"] == 4
+    assert roverflow == 6 - 4
+
+
+def test_b5_6_no_boards_beyond_cap_silently_drop_members_overflow_is_exact():
+    events = [{"symbol": f"E{i}", "f_e": 0.9} for i in range(4)]   # exactly at cap
+    board, overflow = brief.compose_event_board(events)
+    assert len(board) == 4 and overflow == 0
+
+
+def test_b5_7_ordering_law_watch_and_boards_are_order_stable_not_insertion_order():
+    """Mutate insertion order of the input fixture; the composed order (a pure
+    function of R / |F_E| / evidence_strength, never dict/list insertion order)
+    must be identical either way — the parity a downstream renderer depends on."""
+    cards = _b5_ranked_fixture()
+    watch_a, _ = brief.compose_directional_watch(cards)
+    watch_b, _ = brief.compose_directional_watch(list(reversed(cards)))
+    assert [c["symbol"] for c in watch_a] == [c["symbol"] for c in watch_b] == ["P07", "P09", "P12"]
+
+    events = [{"symbol": "AMD", "f_e": 0.9}, {"symbol": "LLY", "f_e": 0.5}, {"symbol": "ORCL", "f_e": 0.2}]
+    board_a, _ = brief.compose_event_board(events)
+    board_b, _ = brief.compose_event_board(list(reversed(events)))
+    assert [c["symbol"] for c in board_a] == [c["symbol"] for c in board_b] == ["AMD", "LLY", "ORCL"]
+
+    risks = [{"symbol": "TSLA", "evidence_strength": 0.9}, {"symbol": "NFLX", "evidence_strength": 0.5}]
+    risk_a, _ = brief.compose_risk_board(risks)
+    risk_b, _ = brief.compose_risk_board(list(reversed(risks)))
+    assert [c["symbol"] for c in risk_a] == [c["symbol"] for c in risk_b] == ["TSLA", "NFLX"]
+
+
+def test_b5_8_no_signal_reason_state_closed_vocabulary():
+    # both legs active (>= Q_TH), opposite sign -> disagree
+    assert brief.no_signal_reason_state(0.6, -0.6) == "DISAGREE"
+    assert brief.no_signal_reason_state(-0.7, 0.55) == "DISAGREE"
+    # exactly one leg active -> one-sided
+    assert brief.no_signal_reason_state(0.6, 0.1) == "ONE_SIDED"
+    assert brief.no_signal_reason_state(None, 0.6) == "ONE_SIDED"
+    # neither active, or both active with the same sign -> weak/aligned (default)
+    assert brief.no_signal_reason_state(0.1, -0.2) == "WEAK"
+    assert brief.no_signal_reason_state(None, None) == "WEAK"
+    assert brief.no_signal_reason_state(0.6, 0.6) == "WEAK"
+
+
+def test_b5_9_no_signal_exemplar_attaches_reason_from_its_own_evidence():
+    def card(symbol, q_oi, q_skew, *, tier_metric=1.0):
+        return {
+            "symbol": symbol, "board_state_symbol": "NO_SIGNAL", "coverage_complete": True,
+            "tier_metric": tier_metric,
+            "evidence": [{"name": "Q_oi", "value": q_oi}, {"name": "Q_skew", "value": q_skew}],
+        }
+
+    disagree = brief.no_signal_exemplar([card("DIS", 0.6, -0.6, tier_metric=3.0)])
+    assert disagree["no_signal_reason"]["en"] == "the two readings disagree and activity is normal"
+    assert disagree["no_signal_reason"]["zh"] == "两项读数不一致，活跃度正常"
+
+    one_sided = brief.no_signal_exemplar([card("ONE", 0.6, 0.1, tier_metric=3.0)])
+    assert one_sided["no_signal_reason"]["en"] == "only one reading moved and activity is normal"
+    assert one_sided["no_signal_reason"]["zh"] == "仅一项读数变动，活跃度正常"
+
+    weak = brief.no_signal_exemplar([card("WEK", 0.1, -0.1, tier_metric=3.0)])
+    assert weak["no_signal_reason"]["en"] == "both readings are inside their normal range"
+    assert weak["no_signal_reason"]["zh"] == "两项读数均在正常区间内"
+
+    # highest-tier-metric selection law is unaffected — reason is computed on
+    # whichever card the pre-existing selection rule already picked
+    best = brief.no_signal_exemplar([card("LOW", 0.1, 0.1, tier_metric=1.0), card("HIGH", 0.6, -0.6, tier_metric=9.0)])
+    assert best["symbol"] == "HIGH"
+    assert best["no_signal_reason"]["en"] == "the two readings disagree and activity is normal"
+
+
+def test_b5_10_empty_header_builders_carry_the_nine_fields_at_empty_defaults():
+    """Every degraded/insufficient/stale payload must ship the nine B5 fields at
+    their empty defaults — never absent-by-branch (contract §5a closing note)."""
+    panel = brief.SessionPanel(as_of_session=None, oi_counted_date=None, pending_session=None,
+                                pending_reason=None, chains_by_session={}, chain_next=None, lawful_pairs={})
+    payload = brief._degraded_payload(reason="MIXED_VINTAGE", panel=panel, source_watermarks={},
+                                       input_receipts=[], built_at_utc="2026-01-01T00:00:00+00:00")
+    assert payload["directional_watch"] == [] and payload["directional_watch_overflow"] == 0
+    assert payload["directional_qualified_count"] == 0
+    assert payload["event_board_overflow"] == 0 and payload["risk_board_overflow"] == 0
+    assert payload["no_signal_exemplar"] is None
+
+
+def test_b5_11_end_to_end_artifact_carries_the_nine_fields_with_correct_types():
+    """Full-pipeline smoke test (contract §5a wiring): a real `_build()` payload
+    exposes every new top-level/nested key with the right shape, whatever the
+    session happened to qualify."""
+    panel, S, D = _std_panel()
+    payload = _build(panel, S=S, D=D)
+    assert isinstance(payload["directional_watch"], list)
+    assert isinstance(payload["directional_watch_overflow"], int)
+    assert isinstance(payload["directional_qualified_count"], int)
+    assert isinstance(payload["event_board_overflow"], int)
+    assert isinstance(payload["risk_board_overflow"], int)
+    for c in payload["opportunities"]:
+        assert isinstance(c["board_rank"], int) and c["board_rank"] >= 1
+    for c in payload["directional_watch"]:
+        assert isinstance(c["board_rank"], int) and c["board_rank"] > CONFIG["BOARD_N"]
+        assert c["direction"] in ("LONG", "SHORT")
+    opp_ranks_by_symbol = {c["symbol"]: c["board_rank"] for c in payload["opportunities"]}
+    for c in payload["event_board"] + payload["risk_warnings"]:
+        assert "board_rank" in c
+        if c["symbol"] in opp_ranks_by_symbol:
+            assert c["board_rank"] == opp_ranks_by_symbol[c["symbol"]]
+        else:
+            assert c["board_rank"] is None
+    if payload["no_signal_exemplar"]:
+        reason = payload["no_signal_exemplar"]["no_signal_reason"]
+        assert set(reason) == {"en", "zh"}
+    # opportunities board_rank stays contiguous 1..N regardless of how many
+    # qualified this particular fixture (never re-derived from loop.index downstream)
+    assert [c["board_rank"] for c in payload["opportunities"]] == list(range(1, len(payload["opportunities"]) + 1))

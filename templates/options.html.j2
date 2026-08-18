@@ -293,6 +293,49 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-aib-empty-sub{margin:0;color:var(--muted);font-size:11px}
 .oew-aib-more{margin-left:auto;font-size:10.5px;color:var(--muted)}
 
+/* ── AD-1 B5 band 2 · directional watch: a CONTINUATION of the ranked grid, so it
+      reuses .oew-tkchip verbatim (incl. its data-goto jump) and adds only the
+      machine-supplied rank + direction word.  The keyline, not a box, is what
+      says "same list, below the cut". */
+.oew-aib-watch{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  margin-top:var(--s3);padding-left:var(--s3);border-left:2px solid var(--hair)}
+.oew-aib-wlbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);flex:none;cursor:help}
+.oew-aib-wchip{display:inline-flex;align-items:baseline;gap:5px}
+.oew-aib-wchip .rk{font-size:9.5px;font-weight:600;color:var(--muted)}
+.oew-aib-wchip .dir{font-size:10.5px;font-weight:700}
+.oew-aib-wchip.is-up .dir{color:var(--ink-up, var(--up))}
+.oew-aib-wchip.is-down .dir{color:var(--ink-down, var(--down))}
+.oew-aib-wnull{font-size:11.5px;color:var(--ink-2);margin-top:var(--s3)}
+
+/* ── AD-1 B5 band 3 · evidence rail.  Two lanes, .oew-rg surface reused; the 860px
+      breakpoint is the page's existing .oew-rail value, not a new one. */
+.oew-aib-rail{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);margin-top:var(--s4)}
+@media (max-width:860px){.oew-aib-rail{grid-template-columns:1fr}}
+.oew-aib-rgbody{display:flex;flex-direction:column;gap:7px}
+.oew-aib-rghead{display:flex;align-items:baseline;gap:6px;margin-bottom:7px}
+.oew-aib-rrow{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-size:11.5px;min-width:0}
+.oew-aib-rsym{font-family:var(--font-mono);font-size:11.5px;font-weight:700;flex:none}
+.oew-aib-rline{color:var(--ink-2);min-width:0;overflow-wrap:anywhere;line-height:1.4}
+.oew-aib-rmeta{margin-left:auto;flex:none;font-family:var(--font-mono);font-size:10px;color:var(--muted)}
+.oew-aib-rref{font-size:9.5px;color:var(--muted);flex:none}
+.oew-aib-rempty{font-size:11.5px;color:var(--muted);line-height:1.45}
+.oew-aib-rmore{font-size:10px;color:var(--muted)}
+
+/* ── AD-1 B5 band 4 · the control line.  Deliberately NOT a card, NOT a chip and
+      NOT clickable — it must never read as a seventh opportunity. */
+.oew-aib-control{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  margin-top:var(--s4);padding-top:10px;border-top:1px solid var(--hair);
+  font-size:11.5px;color:var(--muted);line-height:1.45}
+.oew-aib-ctlk{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-2);cursor:help}
+.oew-aib-ctlsym{flex:none;font-family:var(--font-mono);font-weight:700;color:var(--ink-2)}
+
+/* ── AD-1 B5 Prophet separation: AD evidence chips sit left, the external echo sits
+      far right with a dashed edge.  Dashed = "context, not our evidence" with no
+      new token and no extra word.  (Amends .oew-aib-prophet above.) */
+.oew-aib-chips .oew-aib-prophet{margin-left:auto;border-style:dashed}
+
 /* ── BRIEF: what-changed chips ── */
 .oew-chips{display:flex;gap:var(--s2);flex-wrap:wrap}
 .oew-chg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;
@@ -952,7 +995,7 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
   <div class="oew-panel oew-aib" id="aib">
     <div class="oew-phead">
       <h2 class="oew-ph-title">{{ t('Options Intelligence Brief', '期权情报简报') }}</h2>
-      <span class="oew-ph-sub">{{ t('ranked research priorities from the settled close', '来自已结算收盘的研究优先级排序') }}</span>
+      <span class="oew-ph-sub">{{ t('ranked priorities, event and crowding reads, and one quiet control', '优先级排序、事件与拥挤读数，以及一个平静对照') }}</span>
       <div class="oew-ph-right">
         <span class="oew-aib-honesty">{{ t('Research priority · not a probability or trade signal', '研究优先级 · 非概率或交易信号') }}</span>
         <span class="oew-help" tabindex="0" role="button"
@@ -971,12 +1014,16 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
     </div>
     {% endif %}
     <div class="oew-pbody">
-      {% if aib.available and aib.cards %}
+      {% if aib.available and aib.healthy %}
+
+      {# ── BAND 1 · canon: the ranked top six, exactly as ranked ── #}
+      {% if aib.cards %}
       <div class="oew-aib-grid">
         {% for c in aib.cards %}
         <article class="oew-aib-card is-{{ c.state_slug }}">
           <header class="oew-aib-top">
-            <span class="oew-aib-rank mono">№{{ loop.index }}</span>
+            <span class="oew-aib-rank mono">№{{ c.board_rank }}</span>
+            {# board_rank is machine-supplied (contract §5a); the template no longer derives rank from loop.index #}
             <span class="oew-aib-sym mono">{{ c.symbol }}</span>
             <span class="oew-aib-state">{{ t(c.display_state_en, c.display_state_zh) }}</span>
           </header>
@@ -1003,10 +1050,10 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
             <span>{{ t('Fresh until', '有效至') }} {{ c.fresh_until }}</span>
           </div>
           <div class="oew-aib-chips">
+            {% if c.crowding %}<span class="oew-aib-crowd">{{ t('Crowded tape', '拥挤交易') }}</span>{% endif %}
             <span class="oew-aib-prophet"
               data-tip-en="Prophet context only — it does not change this board's ranking.{% if c.prophet_asof %} As of {{ c.prophet_asof }}.{% endif %}"
               data-tip-zh="仅为 Prophet 参考——不影响本板块排序。{% if c.prophet_asof %}截至 {{ c.prophet_asof }}。{% endif %}">Prophet · {{ t(c.prophet_en, c.prophet_zh) }}</span>
-            {% if c.crowding %}<span class="oew-aib-crowd">{{ t('Crowded tape', '拥挤交易') }}</span>{% endif %}
           </div>
           <details class="oew-aib-detail">
             <summary>{{ t('Why & what would change it', '依据与变化条件') }}</summary>
@@ -1052,11 +1099,101 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
         </article>
         {% endfor %}
       </div>
-      {% elif aib.available and aib.empty_kind == 'quiet' %}
+      {% else %}
       <div class="oew-aib-empty">
-        <p class="oew-aib-empty-lead">{{ t("No options research state clears today's threshold.", '今日没有期权研究状态达到门槛。') }}</p>
+        <p class="oew-aib-empty-lead">{{ t('No name clears the research-priority threshold today.', '今日没有名称达到研究优先级门槛。') }}</p>
         <p class="oew-aib-empty-sub">{{ aib.eligible }} {{ t('names fully eligible · source healthy', '个名称完全符合条件 · 数据源正常') }}</p>
       </div>
+      {% endif %}
+
+      {# ── BAND 2 · directional watch — same ranked list, below the cut ── #}
+      {% if aib.watch %}
+      <div class="oew-aib-watch">
+        <span class="oew-aib-wlbl" tabindex="0" role="button"
+          data-tip-en="Names that met the same evidence bar as the six above but ranked below the cut. The numbers are their place in the full ranking, so a gap means a higher-ranked volatility name sits between them. Order comes from the board's own ranking and is never re-sorted here."
+          data-tip-zh="与上方六个达到同一证据标准、但排名未进前六的名称。编号为其在完整排序中的位次，因此编号跳跃表示中间有排名更高的波动率名称。顺序沿用板块自身排序，此处不重新排序。"
+        >{{ t('Qualified below the cut', '达标但未入前六') }}</span>
+        {% for w in aib.watch %}
+        <button class="oew-tkchip oew-aib-wchip is-{{ w.dir_slug }}" type="button" data-goto="{{ w.symbol }}">
+          <span class="rk">№{{ w.board_rank }}</span>
+          <span>{{ w.symbol }}</span>
+          <span class="dir">{{ t(w.dir_en, w.dir_zh) }}</span>
+        </button>
+        {% endfor %}
+        {% if aib.watch_overflow > 0 %}
+        <span class="oew-aib-rmore">+{{ aib.watch_overflow }} {{ t('more', '个') }}</span>
+        {% endif %}
+      </div>
+      {% elif aib.no_directional %}
+      <p class="oew-aib-wnull">{{ t('No upside or downside hypothesis qualified today.', '今日没有上行或下行假设达标。') }}</p>
+      {% endif %}
+
+      {# ── BAND 3 · evidence rail — event premium | crowded tape ── #}
+      <div class="oew-aib-rail">
+
+        <div class="oew-rg oew-aib-rgbody">
+          <div class="oew-aib-rghead">
+            <span class="oew-rg-h">{{ t('Ahead of an event', '事件前') }}</span>
+            <span class="oew-help" tabindex="0" role="button"
+              data-tip-en="Names with a known event inside the next 45 days, ordered by how far their event pricing sits from other event names today. Cross-sectional comparison only — it never says a move is cheap or expensive."
+              data-tip-zh="未来 45 天内有已知事件的名称，按其事件定价与当前其他事件名称的偏离程度排序。仅为横截面比较——绝不表示价格便宜或昂贵。">?</span>
+          </div>
+          {% if aib.events %}
+            {% for e in aib.events %}
+            <div class="oew-aib-rrow">
+              <span class="oew-aib-rsym">{{ e.symbol }}</span>
+              <span class="oew-aib-rline">{{ t(e.state_en, e.state_zh) }}</span>
+              {% if e.board_rank %}<span class="oew-aib-rref">№{{ e.board_rank }} {{ t('above', '见上') }}</span>{% endif %}
+              <span class="oew-aib-rmeta">{{ t('Event', '事件') }} {{ e.event_date }}{% if e.move_pct %} · ±{{ e.move_pct }}%{% endif %}</span>
+            </div>
+            {% endfor %}
+            {% if aib.events_overflow > 0 %}
+            <div class="oew-aib-rmore">+{{ aib.events_overflow }} {{ t('more', '个') }}</div>
+            {% endif %}
+          {% else %}
+          <p class="oew-aib-rempty">{{ t(aib.events_empty_en, aib.events_empty_zh) }}</p>
+          {% endif %}
+        </div>
+
+        <div class="oew-rg oew-aib-rgbody">
+          <div class="oew-aib-rghead">
+            <span class="oew-rg-h">{{ t('Crowded tape', '拥挤交易') }}</span>
+            <span class="oew-help" tabindex="0" role="button"
+              data-tip-en="Names where activity looks crowded: same-day expiries dominating the tape, options costly while price sits at a high, or both running for days. Crowding cuts how tradeable an idea is; it never gives a direction."
+              data-tip-zh="活跃度显示拥挤的名称：当日到期主导盘面、价格高位时期权偏贵，或两者持续数日。拥挤会削弱想法的可执行性；它从不给出方向。">?</span>
+          </div>
+          {% if aib.risks %}
+            {% for r in aib.risks %}
+            <div class="oew-aib-rrow">
+              <span class="oew-aib-rsym">{{ r.symbol }}</span>
+              <span class="oew-aib-rline">{{ t(r.cause_en, r.cause_zh) }}</span>
+              {% if r.board_rank %}<span class="oew-aib-rref">№{{ r.board_rank }} {{ t('above', '见上') }}</span>{% endif %}
+            </div>
+            {% endfor %}
+            {% if aib.risks_overflow > 0 %}
+            <div class="oew-aib-rmore">+{{ aib.risks_overflow }} {{ t('more', '个') }}</div>
+            {% endif %}
+          {% else %}
+          <p class="oew-aib-rempty">{{ t('Nothing looks crowded today.', '今日无拥挤迹象。') }}</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      {# ── BAND 4 · the control — never a card, never clickable ── #}
+      <div class="oew-aib-control">
+        <span class="oew-aib-ctlk" tabindex="0" role="button"
+          data-tip-en="A healthy, fully covered name that cleared nothing today — shown so you can tell 'nothing here' apart from 'no data'. It is not a research priority and is never ranked."
+          data-tip-zh="一个数据完整、今日无任何状态达标的健康名称——用以区分「无信号」与「无数据」。它不是研究优先级，也从不参与排序。"
+        >{{ t('Control', '对照') }}</span>
+        {% if aib.control %}
+        <span class="oew-aib-ctlsym">{{ aib.control.symbol }}</span>
+        <span>— {{ t(aib.control.reason_en, aib.control.reason_zh) }}</span>
+        {% else %}
+        <span>— {{ t('no fully covered quiet name today.', '今日无数据完整的平静名称。') }}</span>
+        {% endif %}
+      </div>
+
       {% else %}
       <div class="oew-aib-degraded">
         <p>{{ t(aib.degraded_en, aib.degraded_zh) }}</p>
@@ -1066,7 +1203,9 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
     <div class="oew-pfoot">
       <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
       <span>{{ t('Hypotheses to research, ranked by evidence — none is a trade on its own.', '按证据排序的研究假设——均非独立交易信号。') }}</span>
-      {% if aib.overflow > 0 %}<span class="oew-aib-more">{{ aib.overflow }} {{ t('more above threshold', '个更多超过门槛') }}</span>{% endif %}
+      {% if aib.overflow > 0 %}<span class="oew-aib-more"
+        data-tip-en="Counts every direction above the threshold, including volatility names. The strip above names only the upside and downside ones."
+        data-tip-zh="统计门槛之上的全部方向，含波动率名称。上方条带仅列出上行与下行名称。">{{ aib.overflow }} {{ t('more above threshold', '个更多超过门槛') }}</span>{% endif %}
       {% if aib.as_of_session %}
       <span class="oew-asof mono" data-tip-en="Receipt {{ aib.receipt_id[:12] }}" data-tip-zh="回执 {{ aib.receipt_id[:12] }}">{{ aib.as_of_session }}</span>
       {% endif %}

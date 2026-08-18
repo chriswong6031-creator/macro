@@ -290,7 +290,67 @@ asymmetry_score           null            asymmetry_state "UNCALIBRATED"
 probability_up            null            probability_down null
 expected_edge_bps         null
 supersedes_signal_id      null            corrected_at null      (AD-2 placeholders)
+board_rank                 (B5) int >=1 — 1-based position in the full R>=R_MIN sorted
+                          eligible list (BEFORE the board's own cap slice). Present on
+                          opportunities[] (1..BOARD_N, contiguous) AND directional_watch[]
+                          (>BOARD_N, real ordinals, gaps expected — never renumbered).
+                          On event_board[]/risk_warnings[] rows this is instead a
+                          CROSS-REFERENCE: the row's rank on the emitted (top-BOARD_N)
+                          opportunities board if the same symbol is also on it, else null
+                          — never the row's own (possibly >BOARD_N) eligible-list rank.
 ```
+
+## 5a. B5 — directional watch, event/risk overflow counts, no-signal reason (additive)
+
+Nine fields, every one a projection of state the engine already computes — no new
+score, threshold, cap, sort, or Prophet effect. The UI performs no sorting, filtering,
+or re-ranking of any array below; each is emitted in its authoritative order and
+consumed as-is.
+
+```text
+opportunities[].board_rank            see §5 card schema above (1..BOARD_N, contiguous)
+directional_watch[]                   list[card] — members of the SAME sorted eligible
+                                       list used by opportunities, at positions >
+                                       BOARD_N, whose direction in {LONG, SHORT}, in
+                                       that list's order. Same card shape + strip() as
+                                       the other boards. Emission capped at the
+                                       EXISTING CONFIG["BOARD_N"] (6) — no new
+                                       constant. board_rank on these rows is >6 and
+                                       non-contiguous by construction (the point).
+directional_watch_overflow            int >=0 — qualifying below-cap LONG/SHORT
+                                       members beyond the <=BOARD_N emitted above.
+directional_qualified_count           int >=0 — total LONG/SHORT members of the WHOLE
+                                       R>=R_MIN eligible set, cap-independent (i.e. not
+                                       limited to the below-cut remainder). Sole input
+                                       to a "no directional hypothesis qualified today"
+                                       reading — the UI performs no counting.
+event_board[].board_rank              see §5 card schema above (cross-reference; null
+                                       unless the symbol is also on the emitted
+                                       opportunities board)
+risk_warnings[].board_rank            as event_board[].board_rank
+event_board_overflow                  int >=0 — event-eligible members beyond the
+                                       existing EVENT_BOARD_N (4) cap.
+risk_board_overflow                   int >=0 — risk-eligible members beyond the
+                                       existing RISK_BOARD_N (4) cap.
+no_signal_exemplar.no_signal_reason   {en, zh} — deterministic 3-entry closed
+                                       vocabulary keyed purely on the exemplar's own
+                                       Q_oi/Q_skew leg state (same two readings + the
+                                       same Q_TH gate the direction law itself uses,
+                                       never a new threshold):
+                                         both active, opposite sign -> "the two
+                                           readings disagree and activity is normal"
+                                         exactly one active                -> "only one
+                                           reading moved and activity is normal"
+                                         neither active (or both active, same sign)
+                                           -> "both readings are inside their normal
+                                           range" (default)
+                                       Producer-side so the UI stays dumb; null only
+                                       when no_signal_exemplar itself is null.
+```
+
+All four empty-header builders (`_degraded_payload`/`_stale_payload`/
+`_insufficient_coverage_payload`/MIXED_VINTAGE) emit these nine fields at their empty
+defaults (`[]`/`0`/`0`) — the fields are always present, never absent-by-branch.
 
 Prophet mapping (B4, display only — reads BOTH domains of `site/prophet/index.json`;
 never affects any score):

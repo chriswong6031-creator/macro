@@ -207,7 +207,11 @@ _AIB_PROPHET_EN = {
     "ALREADY_OPEN": "Plan already running",
     "NOT_READY": "Entry not ready yet",
     "READY": "Entry window open",
-    "OTHER": "On the board",
+    # B1-B4 fix follow-up (contract §5 Prophet mapping note): OTHER covers a
+    # lawful-but-unmapped record (e.g. a closed hold/partial plan) — "On the
+    # board" implied active coverage that isn't there; the corrected words name
+    # the state honestly instead.
+    "OTHER": "Reviewed · no entry call",
     "UNAVAILABLE": "No read",
 }
 _AIB_PROPHET_ZH = {
@@ -215,7 +219,7 @@ _AIB_PROPHET_ZH = {
     "ALREADY_OPEN": "计划已在运行",
     "NOT_READY": "入场尚未就绪",
     "READY": "入场窗口开放",
-    "OTHER": "在板上",
+    "OTHER": "已评估 · 无入场判定",
     "UNAVAILABLE": "暂无读数",
 }
 
@@ -257,6 +261,53 @@ _AIB_LEG_VERDICT_ZH = {"aligned": "一致", "one_sided": "单边", "not_aligned"
 # never a second direction gate. Direction authority stays 100% with the
 # producer (contract §6): this never feeds back into state/order/score.
 _AIB_Q_STRENGTH_TH = 0.50
+
+# ── AD-1 B5 (product exposure) closed vocabularies — every one a lookup on a
+# verbatim producer field (contracts/options/OPTIONS_INTEL_BRIEF_V1.md §5a).
+# No logic, no thresholds, no sorting: same pass-through law as the tables above.
+
+# Band 2 · directional watch — `direction` (LONG/SHORT only; VOLATILITY/RISK_ONLY
+# never reach the watch strip per the producer's own composition rule).
+_AIB_WATCH_DIR_EN = {"LONG": "Upside", "SHORT": "Downside"}
+_AIB_WATCH_DIR_ZH = {"LONG": "上行", "SHORT": "下行"}
+_AIB_WATCH_DIR_SLUG = {"LONG": "up", "SHORT": "down"}
+
+# Band 3 · event group — keyed on `event.event_premium_state` (strictly
+# cross-sectional; never "underpriced/overpriced", never "historical move says").
+_AIB_EVENT_STATE_EN = {
+    "HIGH": "Priced above event peers",
+    "NORMAL": "In line with event peers",
+    "LOW": "Priced below event peers",
+    None: "No event reading",
+}
+_AIB_EVENT_STATE_ZH = {
+    "HIGH": "高于同期事件同类",
+    "NORMAL": "与同期事件同类持平",
+    "LOW": "低于同期事件同类",
+    None: "暂无事件读数",
+}
+# Event rail empty-state: two distinct causes never collapse into one sentence.
+_AIB_EVENT_EMPTY_EN = {
+    "NONE": "No name has an event inside the window.",
+    "UNKNOWN": "Event calendar not loaded — no event reading today.",
+}
+_AIB_EVENT_EMPTY_ZH = {
+    "NONE": "窗口内没有名称有事件。",
+    "UNKNOWN": "事件日历未加载——今日无事件读数。",
+}
+
+# Band 3 · risk group — keyed on `crowding.fired[]` leg codes (c1/c2/c3); multiple
+# fires join with " · ".
+_AIB_CROWD_EN = {
+    "c1": "Same-day bets crowded",
+    "c2": "Expensive options at a high",
+    "c3": "Busy and expensive for days",
+}
+_AIB_CROWD_ZH = {
+    "c1": "当日到期押注拥挤",
+    "c2": "高位时期权偏贵",
+    "c3": "连日活跃且偏贵",
+}
 
 
 def _aib_leg(evidence: list, name: str) -> tuple[str, str, float | None, int | None]:
@@ -346,6 +397,7 @@ def _aib_card(card: dict) -> dict:
     return {
         "signal_id": card.get("signal_id") or "—",
         "research_priority_score": card.get("research_priority_score"),
+        "board_rank": card.get("board_rank"),
         "symbol": card.get("symbol") or "—",
         "direction": direction,
         "state_slug": _AIB_STATE_SLUG.get(direction, "vol"),
@@ -378,6 +430,56 @@ def _aib_card(card: dict) -> dict:
     }
 
 
+def _aib_watch_row(card: dict) -> dict:
+    """Band 2 row — verbatim board_rank/symbol + a closed-vocab direction word.
+    LONG/SHORT only (the producer's own composition rule; `.get` with no
+    default would KeyError on an unexpected enum, so this falls back to the
+    slug/word for LONG rather than raise on a display-only path)."""
+    direction = card.get("direction")
+    return {
+        "board_rank": card.get("board_rank"),
+        "symbol": card.get("symbol") or "—",
+        "dir_slug": _AIB_WATCH_DIR_SLUG.get(direction, "up"),
+        "dir_en": _AIB_WATCH_DIR_EN.get(direction, _AIB_WATCH_DIR_EN["LONG"]),
+        "dir_zh": _AIB_WATCH_DIR_ZH.get(direction, _AIB_WATCH_DIR_ZH["LONG"]),
+    }
+
+
+def _aib_event_row(card: dict) -> dict:
+    """Band 3 · event group row — verbatim fields + a closed-vocab state lookup
+    on `event.event_premium_state`. `move_pct` reuses the card's own
+    `market_implied_move_pct` (the only move-percent field the contract ships;
+    there is no separate figure inside the `event` sub-object) through the
+    same formatting convention `_aib_card` already uses."""
+    event = card.get("event") if isinstance(card.get("event"), dict) else {}
+    state = event.get("event_premium_state")
+    move = _num(card.get("market_implied_move_pct"))
+    return {
+        "symbol": card.get("symbol") or "—",
+        "state_en": _AIB_EVENT_STATE_EN.get(state, _AIB_EVENT_STATE_EN[None]),
+        "state_zh": _AIB_EVENT_STATE_ZH.get(state, _AIB_EVENT_STATE_ZH[None]),
+        "event_date": event.get("event_date") or "—",
+        "move_pct": (f"{move * 100:.1f}" if move is not None else None),
+        "board_rank": card.get("board_rank"),
+    }
+
+
+def _aib_risk_row(card: dict) -> dict:
+    """Band 3 · risk group row — `cause` joins every fired crowd leg's closed-vocab
+    word with ' · ' (contract §5a); `crowding.fired[]` is always non-empty on a
+    risk_warnings row by construction (the producer only routes a card here when
+    `crowding is not None`, which itself requires >=1 fired leg)."""
+    crowding = card.get("crowding") if isinstance(card.get("crowding"), dict) else {}
+    fired = crowding.get("fired") if isinstance(crowding.get("fired"), list) else []
+    cause_en = " · ".join(_AIB_CROWD_EN[f] for f in fired if f in _AIB_CROWD_EN)
+    cause_zh = " · ".join(_AIB_CROWD_ZH[f] for f in fired if f in _AIB_CROWD_ZH)
+    return {
+        "symbol": card.get("symbol") or "—",
+        "cause_en": cause_en or "—", "cause_zh": cause_zh or "—",
+        "board_rank": card.get("board_rank"),
+    }
+
+
 def build_aib(intel_brief: dict | None) -> dict:
     """The AD-1 board's whole template context.
 
@@ -386,7 +488,7 @@ def build_aib(intel_brief: dict | None) -> dict:
     """
     if not isinstance(intel_brief, dict):
         return {
-            "available": False,
+            "available": False, "healthy": False,
             "as_of_session": None, "oi_counted_date": None, "pending_session": None,
             "eligible": 0, "present": 0, "overflow": 0,
             "board_state": None, "board_reason": None, "receipt_id": None,
@@ -394,6 +496,11 @@ def build_aib(intel_brief: dict | None) -> dict:
             "empty_kind": "degraded",
             "degraded_en": "No options intelligence brief is available for this close.",
             "degraded_zh": "本次收盘暂无期权情报简报。",
+            "watch": [], "watch_overflow": 0, "no_directional": False,
+            "events": [], "events_overflow": 0,
+            "events_empty_en": _AIB_EVENT_EMPTY_EN["NONE"], "events_empty_zh": _AIB_EVENT_EMPTY_ZH["NONE"],
+            "risks": [], "risks_overflow": 0,
+            "control": None,
         }
 
     board_state = intel_brief.get("board_state")
@@ -421,8 +528,41 @@ def build_aib(intel_brief: dict | None) -> dict:
             else:
                 degraded_en, degraded_zh = _AIB_DEGRADED_FALLBACK_EN, _AIB_DEGRADED_FALLBACK_ZH
 
+    # ── AD-1 B5 · Band 2 — directional watch (verbatim array order; contract §5a) ──
+    watch_raw = intel_brief.get("directional_watch") if isinstance(intel_brief.get("directional_watch"), list) else []
+    watch = [_aib_watch_row(c) for c in watch_raw if isinstance(c, dict)]
+    no_directional = (intel_brief.get("directional_qualified_count") or 0) == 0
+
+    # ── Band 3 · event group ──
+    event_raw = intel_brief.get("event_board") if isinstance(intel_brief.get("event_board"), list) else []
+    events = [_aib_event_row(c) for c in event_raw if isinstance(c, dict)]
+    # "any card" carrying EVENT_STATE_UNKNOWN — the producer stamps this
+    # null_reason on EVERY card uniformly when the calendar never loaded, so any
+    # exposed array (opportunities/watch/risk/no_signal_exemplar) tells the truth.
+    unknown_probe = list(opportunities) + list(watch_raw)
+    risk_raw = intel_brief.get("risk_warnings") if isinstance(intel_brief.get("risk_warnings"), list) else []
+    unknown_probe += risk_raw
+    no_sig_raw = intel_brief.get("no_signal_exemplar")
+    if isinstance(no_sig_raw, dict):
+        unknown_probe.append(no_sig_raw)
+    events_unknown = any(isinstance(c, dict) and c.get("null_reason") == "EVENT_STATE_UNKNOWN" for c in unknown_probe)
+    events_empty_key = "UNKNOWN" if events_unknown else "NONE"
+
+    # ── Band 3 · risk group ──
+    risks = [_aib_risk_row(c) for c in risk_raw if isinstance(c, dict)]
+
+    # ── Band 4 · control ──
+    control = None
+    if isinstance(no_sig_raw, dict):
+        reason = no_sig_raw.get("no_signal_reason") if isinstance(no_sig_raw.get("no_signal_reason"), dict) else {}
+        control = {
+            "symbol": no_sig_raw.get("symbol") or "—",
+            "reason_en": reason.get("en") or "—",
+            "reason_zh": reason.get("zh") or reason.get("en") or "—",
+        }
+
     return {
-        "available": True,
+        "available": True, "healthy": healthy,
         "as_of_session": intel_brief.get("as_of_session"),
         "oi_counted_date": intel_brief.get("oi_counted_date"),
         "pending_session": intel_brief.get("pending_session"),
@@ -434,6 +574,12 @@ def build_aib(intel_brief: dict | None) -> dict:
         "cards": cards,
         "empty_kind": empty_kind,
         "degraded_en": degraded_en, "degraded_zh": degraded_zh,
+        "watch": watch, "watch_overflow": intel_brief.get("directional_watch_overflow") or 0,
+        "no_directional": no_directional,
+        "events": events, "events_overflow": intel_brief.get("event_board_overflow") or 0,
+        "events_empty_en": _AIB_EVENT_EMPTY_EN[events_empty_key], "events_empty_zh": _AIB_EVENT_EMPTY_ZH[events_empty_key],
+        "risks": risks, "risks_overflow": intel_brief.get("risk_board_overflow") or 0,
+        "control": control,
     }
 
 
