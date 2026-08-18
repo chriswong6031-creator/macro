@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-18T11:20:21+00:00",
+  "as_of": "2026-08-18T14:50:39+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -8,7 +8,7 @@
   "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-14",
+    "as_of": "2026-08-18",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -19,7 +19,9 @@
     "attention_track_record": {
       "n": 8,
       "hits": 0,
-      "base_rate": 0.5
+      "base_rate": 0.5,
+      "ungradeable": 1,
+      "total_rows": 9
     },
     "is_context_only": true
   },
@@ -32,6 +34,38 @@
     "model_used": "claude-sonnet-4-6",
     "provider_attempts": [
       {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQDQzpxf9F1PneYGGBP'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQEj8GY8K4VzWgZSJyv'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQKLRfNDYmczqzHzD2n'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQYp6v9Mfs8iTf61xKY'}"
+      },
+      {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
@@ -65,73 +99,41 @@
       },
       {
         "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8XYmHuFsNdTHYXVt6w'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdWhnykvUcL9rvGY67'}"
       },
       {
         "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8Yr6rSJK4eGbmQJS2r'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdg2dXzGDr3vQV5ANg'}"
       },
       {
         "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8bG6oFGBoLqsUvKz4w'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdryhM2gMhb2JdXBsX'}"
       },
       {
         "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeA8bTD2ktrwUiULxh3e9'}"
-      },
-      {
-        "provider": "codex",
         "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQe2QjAuNKZ95EQg9pk'}"
       }
     ],
     "tool_call_batches": 0,
     "individual_tool_calls": 0,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-18T08:17:33Z"
+    "context_as_of": "2026-08-18T11:39:40Z"
   }
 }
