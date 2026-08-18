@@ -47,6 +47,15 @@ ATOM_PAGE_SIZE = 100
 # EDGAR's current-filings listing is an ephemeral discovery surface.  The
 # scanner must hand completeness off to daily/full indexes after this boundary.
 ATOM_EPHEMERAL_ENTRY_LIMIT = 930
+# ``browse-edgar`` serves only these page sizes.  Any other ``count`` is rounded
+# DOWN to the largest of these that fits, so an unhonored request comes back
+# shorter than asked for even when the feed has plenty more to give.  Measured
+# against the live feed 2026-08-17: count=50 -> 40 entries, count=30 -> 20,
+# count=15 -> 10, count=101 -> 100.  The scanner must therefore only ever ask
+# for a size EDGAR honours; otherwise "shorter than requested" stops meaning
+# "the feed ran out".  EDGAR's floor page is 10, so an ``entry_limit`` that is
+# not a multiple of 10 scans up to nine raw entries past its boundary.
+ATOM_HONORED_PAGE_SIZES = (10, 20, 40, 80, 100)
 
 
 class SecSourceError(ValueError):
@@ -970,13 +979,29 @@ def parse_latest_filings_atom(source: bytes | str) -> tuple[FilingDiscovery, ...
     the accession prefix is never treated as filer identity.
     """
 
+    entries, _raw_entries = _parse_atom_page(source)
+    return entries
+
+
+def _parse_atom_page(source: bytes | str) -> tuple[tuple[FilingDiscovery, ...], int]:
+    """Parse one Atom page into 13F entries *and* the raw entry count.
+
+    The two numbers are not interchangeable.  ``type=13F`` prefix-matches on
+    EDGAR, so the feed can serve 13F-family forms outside :data:`FORM_TYPES`
+    (``13FCONP`` is a live example), and those are dropped below.  Paging
+    decisions must be made on the raw count: a page filtered down to 99 of 100
+    raw entries has *not* run out of feed, and treating it as short would end
+    the scan while reporting it complete.
+    """
+
     try:
         root = ET.fromstring(_xml_source(source))
     except ET.ParseError as exc:
         raise SecSourceError(f"invalid Latest Filings Atom: {exc}") from exc
     namespace = {"atom": ATOM_NAMESPACE}
+    raw_page = root.findall("atom:entry", namespace)
     entries: list[FilingDiscovery] = []
-    for ordinal, entry in enumerate(root.findall("atom:entry", namespace), start=1):
+    for ordinal, entry in enumerate(raw_page, start=1):
         category = entry.find("atom:category", namespace)
         form = (
             _text(category.get("term") if category is not None else None) or ""
@@ -1049,7 +1074,7 @@ def parse_latest_filings_atom(source: bytes | str) -> tuple[FilingDiscovery, ...
                 source_ordinal=ordinal,
             )
         )
-    return tuple(entries)
+    return tuple(entries), len(raw_page)
 
 
 def _fetch_bytes(fetch: Callable[[str], Any], url: str) -> bytes:
@@ -1067,6 +1092,15 @@ def _fetch_bytes(fetch: Callable[[str], Any], url: str) -> bytes:
     if isinstance(text, str):
         return text.encode("utf-8")
     raise TypeError("fetch must return bytes, str, mapping, or response-like object")
+
+
+def _atom_honored_count(count: int) -> int:
+    """Return the page size EDGAR will actually serve for ``count``."""
+
+    return next(
+        (size for size in reversed(ATOM_HONORED_PAGE_SIZES) if size <= count),
+        ATOM_HONORED_PAGE_SIZES[0],
+    )
 
 
 def _atom_page_url(base_url: str, *, start: int, count: int) -> str:
@@ -1093,7 +1127,13 @@ def scan_latest_filings_atom(
     known_accessions: Iterable[str] = (),
     overlap_before: str | None = None,
 ) -> AtomScanResult:
-    """Page the ephemeral Atom surface with a hard 930-entry safety boundary."""
+    """Page the ephemeral Atom surface with a hard 930-entry safety boundary.
+
+    ``page_size`` is rounded down to a size EDGAR honours
+    (:data:`ATOM_HONORED_PAGE_SIZES`), with 10 as the floor, so that a page
+    shorter than requested means the feed ran out rather than that EDGAR
+    trimmed the request.
+    """
 
     if page_size <= 0 or page_size > ATOM_PAGE_SIZE:
         raise ValueError(f"page_size must be between 1 and {ATOM_PAGE_SIZE}")
@@ -1112,21 +1152,31 @@ def scan_latest_filings_atom(
     pages = 0
     start = 0
     while start < entry_limit:
-        count = min(page_size, entry_limit - start)
+        # Ask only for a page size EDGAR honours: it rounds an unhonored
+        # ``count`` down, and a page shorter than requested is the scanner's
+        # only signal that the feed ran out.
+        count = _atom_honored_count(min(page_size, entry_limit - start))
         url = _atom_page_url(base_url, start=start, count=count)
-        page = parse_latest_filings_atom(_fetch_bytes(fetch, url))
+        page, raw_entries = _parse_atom_page(_fetch_bytes(fetch, url))
         pages += 1
-        if not page:
+        if raw_entries == 0:
             return AtomScanResult(tuple(collected), pages, True, "short_page")
         page_accessions = {entry.accession for entry in page}
         new_count = 0
-        for offset, entry in enumerate(page, start=start + 1):
+        for entry in page:
             if entry.accession in seen:
                 continue
             seen.add(entry.accession)
-            collected.append(replace(entry, source_ordinal=offset))
+            # ``entry.source_ordinal`` is the raw position within this page, so
+            # a dropped non-13F form never shifts the entries behind it.
+            collected.append(
+                replace(entry, source_ordinal=start + entry.source_ordinal)
+            )
             new_count += 1
-        if len(page) < count:
+        # Completeness is a statement about the FEED, so it is decided on the
+        # raw entry count.  The form filter drops 13F-family forms outside
+        # FORM_TYPES and must never be able to end the scan.
+        if raw_entries < count:
             return AtomScanResult(tuple(collected), pages, True, "short_page")
         if boundary and page_accessions and page_accessions.issubset(known):
             stamps = []
@@ -1139,9 +1189,11 @@ def scan_latest_filings_atom(
                 stamps.append(stamp)
             if stamps and min(stamps) < boundary:
                 return AtomScanResult(tuple(collected), pages, True, "known_overlap")
-        if new_count == 0:
+        # A page whose every entry was filtered out is not a stall: there was
+        # nothing on it that could have been new.
+        if page and new_count == 0:
             return AtomScanResult(tuple(collected), pages, False, "stalled")
-        start += count
+        start += raw_entries
     return AtomScanResult(tuple(collected), pages, False, "ephemeral_limit")
 
 
@@ -1756,6 +1808,7 @@ def read_filing_package(
 
 __all__ = [
     "ATOM_EPHEMERAL_ENTRY_LIMIT",
+    "ATOM_HONORED_PAGE_SIZES",
     "ATOM_PAGE_SIZE",
     "BulkInvariantFinding",
     "BulkTables",
