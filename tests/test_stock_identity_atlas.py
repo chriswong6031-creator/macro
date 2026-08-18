@@ -24,6 +24,7 @@ import ast
 import copy
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import tempfile
@@ -42,7 +43,7 @@ from engine.stock_identity.authority import (
     is_zero_authority,
 )
 from engine.stock_identity.hygiene import COMPUTE_BLOCKLIST, check_symbol
-from engine.stock_identity.plane import PLANE_BASKETS, primary_planes
+from engine.stock_identity.plane import PLANE_BASKETS, load_symbol, primary_planes
 from scripts import audit_reused_tickers as reused_audit
 from scripts import stock_identity_build_atlas as sealed_builder
 from scripts import stock_identity_build_w1a1 as amendment_builder
@@ -213,14 +214,19 @@ class TestZeroAuthority:
             assert is_zero_authority(payload), f"{p.name} lacks a complete all-false block"
 
     #: Price-parquet stores: raw OHLCV rows, so the authority block rides on the
-    #: store manifest instead of on every price row. Each is covered by
+    #: store manifest instead of on every price row. Matched on the FULL path
+    #: relative to DATA, never on the bare directory name — a name-only match would
+    #: excuse any nested `.../sources/` a later program happened to create, which is a
+    #: blind spot rather than a redirection. Each is covered by
     #: ``test_the_price_stores_declare_authority_in_their_manifests``.
     PRICE_STORE_DIRS = ("ohlcv", "sources")
 
+    @classmethod
+    def _is_price_store(cls, path: Path) -> bool:
+        return path.parent.relative_to(DATA).as_posix() in cls.PRICE_STORE_DIRS
+
     def test_every_parquet_artifact_carries_authority_columns(self):
-        files = [
-            p for p in _parquet_files() if p.parent.name not in self.PRICE_STORE_DIRS
-        ]
+        files = [p for p in _parquet_files() if not self._is_price_store(p)]
         if not files:
             pytest.skip("no artifacts in this checkout")
         for p in files:
@@ -235,22 +241,20 @@ class TestZeroAuthority:
         # store's manifest rather than on every price row. Every directory excused
         # from the row-level sweep must be excused HERE, or the exclusion above is a
         # blind spot rather than a redirection.
-        seen = {p.parent.name for p in _parquet_files()}
-        for name in self.PRICE_STORE_DIRS:
-            if name not in seen:
-                continue
-            m = DATA / name / "manifest.json"
-            assert m.is_file(), f"price store {name}/ has no manifest to carry authority"
+        excused = {p.parent for p in _parquet_files() if self._is_price_store(p)}
+        for d in sorted(excused):
+            m = d / "manifest.json"
+            assert m.is_file(), f"price store {d} has no manifest to carry authority"
             assert is_zero_authority(json.loads(m.read_text(encoding="utf-8")))
 
-    def test_no_price_store_dir_escapes_both_authority_sweeps(self):
-        # A new directory of raw parquets must not be added to PRICE_STORE_DIRS
-        # without a manifest; this pins the redirection closed.
+    def test_a_nested_price_store_name_is_not_excused(self, tmp_path, monkeypatch):
+        # The exclusion must key on the path, not the name: a parquet in a NESTED
+        # directory that merely happens to be called `sources` is not a declared price
+        # store and must still face the row-level sweep.
+        nested = DATA / "episodes" / "sources" / "sneaky.parquet"
+        assert not self._is_price_store(nested)
         for name in self.PRICE_STORE_DIRS:
-            d = DATA / name
-            if not d.is_dir() or not any(d.glob("*.parquet")):
-                continue
-            assert (d / "manifest.json").is_file(), name
+            assert self._is_price_store(DATA / name / "x.parquet"), name
 
 
 class TestBlindArmIsInvisible:
@@ -1430,21 +1434,28 @@ def test_b_source_is_the_frozen_registered_prefix():
 
 @pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
 def test_b_live_plane_carries_no_revision_to_the_frozen_window():
-    receipt = amendment_builder._tripwire_b_live_plane(
-        amendment_builder._load_b_prefix_snapshot()
-    )
+    snapshot = amendment_builder._load_b_prefix_snapshot()
+    receipt = amendment_builder._tripwire_b_live_plane(snapshot)
+    # The band comparisons are NOT asserted here: the function raises before it can
+    # return a value above any of its bands, so asserting them proves nothing. What is
+    # worth pinning is that the receipt reports a real reading of the live plane.
     assert receipt["rows_compared"] == 3172
     assert receipt["settled_volume_rows_moved"] == 0
-    assert receipt["max_price_coherence_spread"] <= (
-        amendment_builder.B_LIVE_PRICE_COHERENCE_BAND
-    )
-    assert receipt["max_nonuniform_residual"] <= (
-        amendment_builder.B_LIVE_PRICE_REVISION_BAND
-    )
-    assert receipt["asof_volume_relative_deviation"] <= (
-        amendment_builder.B_LIVE_ASOF_VOLUME_BAND
-    )
+    assert receipt["checked_path"] == amendment_builder.B_SOURCE_RELATIVE_PATH
+    for key in (
+        "max_price_coherence_spread",
+        "max_nonuniform_residual",
+        "gross_window_rescale",
+        "asof_volume_relative_deviation",
+    ):
+        assert isinstance(receipt[key], float) and math.isfinite(receipt[key]), key
     assert re.fullmatch(r"[0-9a-f]{64}", receipt["live_prefix_sha256"])
+    # The live plane really is a DIFFERENT frame from the frozen snapshot — otherwise
+    # this whole test would be comparing the snapshot with itself and could not fail.
+    live = load_symbol("B", PLANE_BASKETS, ROOT)
+    live = live.loc[live.index <= pd.Timestamp("2026-08-13")]
+    assert live.index.equals(snapshot.index)
+    assert receipt["live_prefix_sha256"] == amendment_builder._ohlcv_prefix_sha256(live)
 
 
 PRICES = ["open", "high", "low", "close"]
@@ -1497,7 +1508,7 @@ def test_return_preserving_adjustment_passes_the_tripwire(monkeypatch, label, mu
         (
             "single-print restatement",
             lambda f: f.assign(
-                close=f["close"].mask(f.index == f.index[10], f["close"] * 1.000001)
+                close=f["close"].mask(f.index == f.index[10], f["close"] * 1.00001)
             ),
             "restated an individual price",
         ),
@@ -1531,7 +1542,16 @@ def test_return_preserving_adjustment_passes_the_tripwire(monkeypatch, label, mu
         (
             "broken vendor frame",
             lambda f: _rescale(f, 100.0),
-            "not an adjustment",
+            "broken vendor frame",
+        ),
+        (
+            # A single float32-ULP wobble in ONE raw print must still be caught, even
+            # though the coherence band was loosened to sit above that grid.
+            "one-column restatement above the float32 grid",
+            lambda f: f.assign(
+                open=f["open"].mask(f.index == f.index[500], f["open"] * (1 + 2e-6))
+            ),
+            "restated an individual price",
         ),
     ),
 )

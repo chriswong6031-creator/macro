@@ -184,11 +184,23 @@ B_SOURCE_SNAPSHOT_PROVENANCE_COMMIT = "6d04e9b3100af7afaf834ceb2c9c307a48808f0b"
 # RELATIVE prices, which is what the residual-vs-median test sees. Splits stay covered
 # through the volume channel: split adjustment rescales share counts too, and settled
 # volume must match exactly.
-B_LIVE_PRICE_COHERENCE_BAND = 1e-12
+#
+# The coherence band is NOT set at the observed 4.4e-16. Coherence holds that tightly
+# only because the vendor derives O/H/L from one float64 ratio per row and sets
+# close=adjclose, so the common factor cancels — but the underlying raw prints are
+# float32-quantized (values arrive as 40.79999923706055), a grid of ~6e-8 relative. A
+# single raw print re-quantizing by one ULP, or a yfinance bump that re-derives O/H/L
+# differently (requirements.txt pins no upper bound), would then blow a machine-epsilon
+# band and be reported as a "print revision" — re-reding the fleet on vendor noise,
+# which is the defect this heal exists to end. 1e-6 sits ~16x above that grid and still
+# catches any single-column restatement large enough to mean anything: 1e-6 of a $41
+# tape is $0.00004. Coherence is the ONLY detector of a one-column move, because a
+# lone outlier among four leaves the median — and therefore the residual — untouched.
+B_LIVE_PRICE_COHERENCE_BAND = 1e-6
 B_LIVE_PRICE_REVISION_BAND = 1e-5
 B_LIVE_ASOF_VOLUME_BAND = 1e-2
-#: Sanity bound on the gross rescale. Not a corporate-action test — it only catches a
-#: vendor catastrophe that somehow left volume intact.
+#: Sanity bound on the gross rescale. Not a corporate-action test — corporate actions
+#: are caught on the volume channel, which is why this is checked only after it.
 B_LIVE_GROSS_RESCALE_BOUNDS = (0.2, 5.0)
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
@@ -611,13 +623,6 @@ def _tripwire_b_live_plane(snapshot: pd.DataFrame) -> dict[str, Any]:
 
     row_factor = np.median(ratio, axis=1)
     gross = float(np.median(row_factor))
-    low, high = B_LIVE_GROSS_RESCALE_BOUNDS
-    if not low <= gross <= high:
-        raise SystemExit(
-            f"B live prefix rescaled the whole window by {gross:.6g}, outside "
-            f"[{low}, {high}] with settled volume intact — that is not an adjustment, "
-            "it is a broken vendor frame; adjudicate before rebuilding"
-        )
     residual = np.abs(row_factor / gross - 1.0)
     worst_price = float(residual.max())
     if worst_price > B_LIVE_PRICE_REVISION_BAND:
@@ -631,26 +636,42 @@ def _tripwire_b_live_plane(snapshot: pd.DataFrame) -> dict[str, Any]:
             "A1 result before rebuilding"
         )
 
+    # Volume runs BEFORE the gross-rescale bound: a real corporate action rescales share
+    # counts, so it must be diagnosed as one rather than as a broken vendor frame.
     settled = snapshot.index < ASOF
     base_volume = snapshot["volume"].to_numpy(dtype="float64")
     live_volume = prefix["volume"].to_numpy(dtype="float64")
+    if not bool(np.isfinite(live_volume).all()):
+        raise SystemExit("B live prefix carries non-finite volume")
     moved = settled & (base_volume != live_volume)
-    if bool(moved.any()):
+    settled_moved = int(moved.sum())
+    if settled_moved:
         stamps = [str(s.date()) for s in snapshot.index[moved][:5]]
         raise SystemExit(
-            f"B live prefix restated settled volume on {int(moved.sum())} session(s) "
+            f"B live prefix restated settled volume on {settled_moved} session(s) "
             f"({', '.join(stamps)}) — settled share counts are stable under "
-            "re-adjustment, so this is a vendor restatement; adjudicate against the "
-            "sealed A1 result before rebuilding"
+            "re-adjustment, so this is a split or a vendor restatement; adjudicate "
+            "against the sealed A1 result before rebuilding"
         )
     asof_base = float(base_volume[-1])
     asof_live = float(live_volume[-1])
-    asof_dev = abs(asof_live / asof_base - 1.0) if asof_base else 0.0
+    if asof_base <= 0:
+        raise SystemExit("frozen A1 B prefix snapshot has no ASOF-session volume")
+    asof_dev = abs(asof_live / asof_base - 1.0)
     if asof_dev > B_LIVE_ASOF_VOLUME_BAND:
         raise SystemExit(
             f"B live prefix moved ASOF-session volume by {asof_dev:.3e} > "
             f"{B_LIVE_ASOF_VOLUME_BAND:.0e} ({asof_base:.0f} -> {asof_live:.0f}); that "
             "exceeds late tape consolidation — adjudicate before rebuilding"
+        )
+
+    low, high = B_LIVE_GROSS_RESCALE_BOUNDS
+    if not low <= gross <= high:
+        raise SystemExit(
+            f"B live prefix rescaled the whole window by {gross:.6g}, outside "
+            f"[{low}, {high}], with settled volume unchanged — no corporate action "
+            "rescales prices that far and leaves share counts intact, so this is a "
+            "broken vendor frame; adjudicate before rebuilding"
         )
 
     return {
@@ -662,7 +683,7 @@ def _tripwire_b_live_plane(snapshot: pd.DataFrame) -> dict[str, Any]:
         "max_nonuniform_residual": worst_price,
         "price_coherence_band": B_LIVE_PRICE_COHERENCE_BAND,
         "price_revision_band": B_LIVE_PRICE_REVISION_BAND,
-        "settled_volume_rows_moved": 0,
+        "settled_volume_rows_moved": settled_moved,
         "asof_volume_relative_deviation": asof_dev,
         "asof_volume_band": B_LIVE_ASOF_VOLUME_BAND,
         "gross_rescale_note": (
@@ -673,6 +694,12 @@ def _tripwire_b_live_plane(snapshot: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+#: Set by ``_validate_b_source`` so the receipt records the SAME live-plane reading the
+#: run validated. Recomputing it during staging would re-read a file the nightly may
+#: have rewritten in between, turning a receipt line into a mid-publish SystemExit.
+_LIVE_REVISION_RECEIPT: dict[str, Any] | None = None
+
+
 def _validate_b_source() -> pd.DataFrame:
     """Return the frozen A1 prefix, having tripwired the live curated plane.
 
@@ -680,8 +707,9 @@ def _validate_b_source() -> pd.DataFrame:
     the live plane can no longer reproduce the sealed A1 outputs, and a result whose
     inputs move every night is not a sealed result.
     """
+    global _LIVE_REVISION_RECEIPT
     snapshot = _load_b_prefix_snapshot()
-    _tripwire_b_live_plane(snapshot)
+    _LIVE_REVISION_RECEIPT = _tripwire_b_live_plane(snapshot)
     return snapshot
 
 
@@ -1159,7 +1187,7 @@ def _build_and_stage(
                 "A1 math reads the frozen snapshot; `path` names the curated plane it "
                 "was cut from and is re-checked by the live revision tripwire"
             ),
-            "live_plane_revision": _tripwire_b_live_plane(frame),
+            "live_plane_revision": _LIVE_REVISION_RECEIPT,
             "file_sha256_at_run": _sha256(B_SOURCE_PATH),
             "file_rows_at_run": int(len(source_at_run)),
             "file_last_date_at_run": str(source_at_run.index.max().date()),

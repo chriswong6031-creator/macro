@@ -342,6 +342,17 @@ A1 math now reads the snapshot rather than the live plane, which also restores a
 property the drift had quietly broken: a sealed result whose inputs move nightly cannot
 reproduce its own sealed outputs.
 
+**Relation to the standing prohibition in A1.3.** That section forbids "a program-owned
+B plane"; this snapshot is a program-owned B OHLCV file, so the distinction is stated
+rather than left to the fact that it sits in `sources/` instead of `ohlcv/`. The
+prohibition exists so that B is never *read as a price plane* from a program-owned
+store — which would let the program silently prefer its own history over the curated
+one. The snapshot is not a plane: it is not in `PLANE_DIRS`
+(`engine/stock_identity/plane.py`), `primary_planes()` cannot select it, no collection
+lane writes to it, it carries no authority, and it is immutable evidence of one sealed
+run rather than an advancing history. `data/stock_identity/ohlcv/B.parquet` remains
+prohibited and is still asserted absent. The prohibition stands unamended.
+
 **The live curated plane is still checked — by a revision tripwire rather than by
 equality.** The distinction it draws is measured, not assumed. Seed→live over the
 3,172-row prefix:
@@ -350,8 +361,16 @@ equality.** The distinction it draws is measured, not assumed. Seed→live over 
   across the four columns to `4.4e-16` (machine epsilon) — the signature of adjustment
   arithmetic, not of a restated print.
 - normalized by the window-wide median factor, that per-row factor stays within
-  `8.63e-07` of uniform (worst row 2014; `8.8e-08` by 2026) and does **not**
-  accumulate — seed→mid and mid→live were each ~`8.5e-07`, seed→live `8.63e-07`.
+  `8.63e-07` of uniform (worst row 2014; `8.8e-08` by 2026). The three collections span
+  four days and contain **no dividend**, so seed→mid ~`8.5e-07`, mid→live ~`8.5e-07`,
+  seed→live `8.63e-07` bounds *re-derivation jitter* and is **not** evidence about
+  accumulation across a lengthening adjustment chain. The residual gradient tracks how
+  far back a row sits, not its price level (2015 is the cheapest year yet carries a
+  *lower* residual than 2014), which is consistent with the cumulative back-adjustment
+  factor rather than with per-print rounding. Headroom is nonetheless large — the
+  observed residual is ~`1.6e-8` per dividend against a `1e-5` band — but nothing
+  re-measures it: the tripwire has no telemetry, so drift toward the band surfaces as a
+  red rather than as a warning.
 - `volume` is byte-identical on all 3,171 settled rows across three collections
   spanning four days. Only the asof row itself moved (10,621,100 → 10,625,700,
   `4.33e-04`): the final session's consolidated tape was still settling when the seed
@@ -365,18 +384,36 @@ fire on the next ordinary dividend and re-red the fleet within weeks — reprodu
 a slower clock, the exact defect this section repairs. It would also be measuring the
 wrong thing: a uniform rescale leaves every return, drawdown and percentage gap
 identical, so it cannot move an A1 conclusion. What can is a change in **relative**
-prices. Splits remain covered because split adjustment rescales share counts as well,
-and settled volume must match exactly.
+prices. Splits are caught on the **volume** channel — split adjustment rescales share
+counts as well as prices, and settled volume must match exactly. Note the precise
+scope of that claim: a hypothetical vendor frame that rescaled prices but left share
+counts untouched would *pass*, and deliberately so — with volume unmoved it is
+return-preserving and therefore cannot move an A1 conclusion. It is disclosed in the
+receipt as `gross_window_rescale` rather than silently ignored.
 
-Enforced checks (`scripts/stock_identity_build_w1a1.py`):
+Enforced checks (`scripts/stock_identity_build_w1a1.py`), in evaluation order:
 
 | check | band | worst observed | fires on |
 |---|---|---|---|
-| O/H/L/C per-row factor coherence | `1e-12` | `4.4e-16` | a single restated print, however small |
+| O/H/L/C per-row factor coherence | `1e-6` | `4.4e-16` | a single restated print ≥ `1e-6` |
 | per-row factor residual vs window median | `1e-5` | `8.63e-07` | any change in relative prices |
-| gross window rescale (sanity only) | `[0.2, 5.0]` | `1.000000` | a broken vendor frame |
 | settled-session volume | exact | 0 rows | splits; any vendor volume restatement |
 | asof-session volume | `1e-2` | `4.33e-04` | more than late tape consolidation |
+| gross window rescale (sanity only) | `[0.2, 5.0]` | `1.000000` | a broken vendor frame |
+
+The coherence band is deliberately **not** set at the observed `4.4e-16`. Coherence
+holds that tightly only because the vendor derives O/H/L from one float64 ratio per row
+and sets `close = adjclose`, so the common factor cancels; the underlying raw prints are
+float32-quantized (they arrive as `40.79999923706055`), a grid of ~`6e-8` relative. A
+machine-epsilon band would therefore be *below the noise floor of the quantity it
+guards*: one raw print re-quantizing by a single ULP, or a `yfinance` bump that derives
+O/H/L differently, would re-red the fleet and misreport vendor noise as a print
+revision. `1e-6` sits ~16× above that grid while still catching any single-column
+restatement large enough to mean anything — `1e-6` of a $41 tape is $0.00004. Coherence
+cannot simply be dropped: it is the **only** detector of a one-column move, because a
+lone outlier among four leaves the median, and therefore the residual, untouched.
+Volume is checked **before** the gross bound so that a real corporate action is
+diagnosed as one rather than as a broken vendor frame.
 
 The residual band sits ~11× above measured re-adjustment noise while remaining blind to
 return-preserving rescales of any size, which are recorded in the receipt as
