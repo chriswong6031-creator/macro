@@ -1,0 +1,70 @@
+{
+  "as_of_session": "2026-08-12",
+  "board_reason": null,
+  "board_state": "STALE_SOURCE",
+  "built_at_utc": "2026-08-18T06:17:58.278235+00:00",
+  "config_hash": "dfdf2dfe278d1da61ca6515ce2f719ceffcbf980272612f1713512e2e42f84c3",
+  "contract_identity_exclusions": 0,
+  "eligibility": {
+    "eligible": 0,
+    "insufficient_coverage": 0,
+    "insufficient_history": 0,
+    "present": 0
+  },
+  "event_board": [],
+  "input_receipts": [
+    {
+      "asof": "2026-08-12",
+      "logical_source": "chains_S",
+      "path": "data/polygon_gex/chains/2026-08-12.parquet",
+      "sha256": "68782399b571feafa34bdeb5171c4da03f71fa72b57f17e608d63c6d2390153f",
+      "state": "ok"
+    },
+    {
+      "asof": "2026-08-13",
+      "logical_source": "chains_D",
+      "path": "data/polygon_gex/chains/2026-08-13.parquet",
+      "sha256": "846a8f144a3b6315cebabdec7c7eb85d81ea70a2d2a6b064b3beacb0dc84cc28",
+      "state": "ok"
+    },
+    {
+      "asof": "2026-08-12",
+      "logical_source": "earnings",
+      "path": "data/earnings/earnings.parquet",
+      "sha256": "d8e40d690f6c9c525001109edd1d8f09de228306e98912c446cec37ccfba59e7",
+      "state": "ok"
+    },
+    {
+      "asof": "2026-08-13",
+      "logical_source": "prophet_index",
+      "path": "site/prophet/index.json",
+      "sha256": "33280999e44dc1eeb78b62573d7abca0c66adc42fe713335bf40729eebd8fbae",
+      "state": "ok"
+    },
+    {
+      "asof": "2026-06-21",
+      "logical_source": "signing_gate",
+      "path": "data/options_flow/signing_gate.json",
+      "sha256": "13bf08a8983a099e6b662e060745e259f7a414b9f53990ec2d7be7fcb3b302af",
+      "state": "ok"
+    }
+  ],
+  "model_version": "intel_brief_heuristic/v1.2",
+  "no_signal_exemplar": null,
+  "oi_counted_date": "2026-08-13",
+  "opportunities": [],
+  "opportunities_overflow": 0,
+  "pending_reason": "OI_NOT_YET_SETTLED",
+  "pending_session": "2026-08-13",
+  "receipt_id": "e5bd3f474eabff7904574b8c8abccd1d45f1bb57210eac2d4073e61915ad5153",
+  "risk_warnings": [],
+  "schema": "options.intel_brief/v1",
+  "source_watermarks": {
+    "chains_session_D": "2026-08-13",
+    "chains_session_S": "2026-08-12",
+    "events_loaded": true,
+    "prophet_asof": "2026-08-13",
+    "signing_gate_asof": "2026-06-21",
+    "summaries_max_session": "2026-08-13"
+  }
+}

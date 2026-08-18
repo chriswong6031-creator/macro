@@ -238,6 +238,61 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-banner .ico{color:var(--ink-warn, var(--warn));font-weight:900;flex:none}
 .oew-empty{font-size:12.5px;color:var(--ink-2);line-height:1.5}
 
+/* ── BRIEF: AD-1 · OPTIONS INTELLIGENCE BRIEF ─────────────────────────────
+   contracts/options/OPTIONS_INTEL_BRIEF_V1.md.  scripts/build_options_command.py
+   is a PASS-THROUGH adapter (zero scoring here); state hues bind to the
+   EXISTING --up/--down/--info/--warn ink tokens only — no new palette. */
+.oew-aib-stamps{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center;
+  padding:8px var(--s4);border-bottom:1px solid var(--hair);font-size:10.5px;color:var(--muted)}
+.oew-aib-pending{color:var(--oew-stamp)}
+.oew-aib-elig{margin-left:auto}
+.oew-aib-honesty{font-size:10px;color:var(--ink-2);font-weight:600;white-space:nowrap}
+.oew-aib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--s3)}
+@media (max-width:700px){.oew-aib-grid{grid-template-columns:1fr}}
+.oew-aib-card{border:1px solid var(--hair);border-left:3px solid var(--hair);border-radius:var(--r-ctl);
+  background:var(--tile);padding:var(--s3);display:flex;flex-direction:column;gap:7px;min-width:0}
+.oew-aib-card.is-up{border-left-color:var(--ink-up, var(--up))}
+.oew-aib-card.is-down{border-left-color:var(--ink-down, var(--down))}
+.oew-aib-card.is-vol{border-left-color:var(--ink-info, var(--info))}
+.oew-aib-card.is-risk{border-left-color:var(--ink-warn, var(--warn))}
+.oew-aib-top{display:flex;align-items:baseline;gap:7px}
+.oew-aib-rank{font-size:10px;color:var(--muted)}
+.oew-aib-sym{font-size:14px;font-weight:700}
+.oew-aib-state{margin-left:auto;font-size:11.5px;font-weight:650;text-align:right}
+.oew-aib-card.is-up .oew-aib-state{color:var(--ink-up, var(--up))}
+.oew-aib-card.is-down .oew-aib-state{color:var(--ink-down, var(--down))}
+.oew-aib-card.is-vol .oew-aib-state{color:var(--ink-info, var(--info))}
+.oew-aib-card.is-risk .oew-aib-state{color:var(--ink-warn, var(--warn))}
+.oew-aib-legs{display:flex;align-items:center;gap:8px;font-size:11px;cursor:help;flex-wrap:wrap}
+.oew-aib-legs .leg{display:inline-flex;align-items:center;gap:3px;font-weight:700}
+.oew-aib-legs .leg.up{color:var(--ink-up, var(--up))}
+.oew-aib-legs .leg.down{color:var(--ink-down, var(--down))}
+.oew-aib-legs .leg.flat{color:var(--muted)}
+.oew-aib-legverdict{margin-left:auto;font-size:10px;color:var(--ink-2)}
+.oew-aib-meter{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-2)}
+.oew-aib-meter .lbl{color:var(--muted)}
+.oew-aib-band{margin-left:auto;font-size:10px;font-weight:700}
+.oew-aib-band.band-tentative{color:var(--muted)}
+.oew-aib-band.band-moderate{color:var(--ink-2)}
+.oew-aib-band.band-firm{color:var(--text)}
+.oew-aib-why{font-size:12px;color:var(--ink-2);line-height:1.4;margin:0}
+.oew-aib-facts{display:flex;gap:var(--s3);flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+.oew-aib-chips{display:flex;gap:6px;flex-wrap:wrap}
+.oew-aib-prophet,.oew-aib-crowd{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);
+  border:1px solid var(--hair);background:var(--panel);color:var(--ink-2);cursor:help}
+.oew-aib-crowd{border-color:color-mix(in srgb,var(--warn) 45%,var(--hair));color:var(--ink-warn, var(--warn))}
+.oew-aib-detail{border-top:1px solid var(--hair);margin-top:2px;padding-top:6px}
+.oew-aib-detail summary{font-size:10.5px;color:var(--ink-2);cursor:pointer;font-weight:600}
+.oew-aib-detail summary:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+.oew-aib-detailbody{margin-top:6px;display:flex;flex-direction:column;gap:7px}
+.oew-aib-dline{display:flex;flex-direction:column;gap:2px;font-size:11px}
+.oew-aib-dline .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.oew-aib-dline .v{color:var(--ink-2);line-height:1.4}
+.oew-aib-empty,.oew-aib-degraded{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.oew-aib-empty-lead{margin:0 0 4px}
+.oew-aib-empty-sub{margin:0;color:var(--muted);font-size:11px}
+.oew-aib-more{margin-left:auto;font-size:10.5px;color:var(--muted)}
+
 /* ── BRIEF: what-changed chips ── */
 .oew-chips{display:flex;gap:var(--s2);flex-wrap:wrap}
 .oew-chg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;
@@ -888,6 +943,135 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
 
 <!-- ══════════════════ MODE 1 · DAILY BRIEF (baked inline) ══════════════════ -->
 <section class="oew-mode active" id="mode-brief" role="tabpanel" aria-labelledby="tab-brief">
+
+  <!-- ══ AD-1 · OPTIONS INTELLIGENCE BRIEF (contracts/options/OPTIONS_INTEL_BRIEF_V1.md) ══
+       PASS-THROUGH ONLY: every score/order/state/text below is copied verbatim from
+       site/options_intel_brief.json via scripts/build_options_command.py's `aib`
+       context (build_aib()/`_aib_card()`).  No ranking, ordering or scoring happens
+       in this template. -->
+  <div class="oew-panel oew-aib" id="aib">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title">{{ t('Options Intelligence Brief', '期权情报简报') }}</h2>
+      <span class="oew-ph-sub">{{ t('ranked research priorities from the settled close', '来自已结算收盘的研究优先级排序') }}</span>
+      <div class="oew-ph-right">
+        <span class="oew-aib-honesty">{{ t('Research priority · not a probability or trade signal', '研究优先级 · 非概率或交易信号') }}</span>
+        <span class="oew-help" tabindex="0" role="button"
+          data-tip-en="Ranked by evidence strength and confidence — never a probability, an edge, or a buy/sell signal. Two independent facts (open-interest positioning and skew change) must agree before a card gets a direction; Prophet context is display-only and never changes this ranking."
+          data-tip-zh="按证据强度与置信度排序——绝非概率、优势或买卖信号。未平仓合约仓位与偏度变化两个独立事实须一致，卡片才会给出方向；Prophet 参考仅供展示，不影响本排序。">?</span>
+      </div>
+    </div>
+    {% if aib.available %}
+    <div class="oew-aib-stamps">
+      {% if aib.as_of_session %}<span class="mono">{{ t('Settled', '已结算') }} {{ aib.as_of_session }}</span>{% endif %}
+      {% if aib.oi_counted_date %}<span class="mono">{{ t('Positions counted', '持仓统计于') }} {{ aib.oi_counted_date }}</span>{% endif %}
+      {% if aib.pending_session %}
+      <span class="oew-aib-pending mono">{{ t('Newer session', '更新交易日') }} {{ aib.pending_session }} {{ t('awaiting position counts', '等待持仓统计') }}</span>
+      {% endif %}
+      <span class="oew-aib-elig mono">{{ aib.eligible }}/{{ aib.present }} {{ t('names eligible', '名称符合条件') }}</span>
+    </div>
+    {% endif %}
+    <div class="oew-pbody">
+      {% if aib.available and aib.cards %}
+      <div class="oew-aib-grid">
+        {% for c in aib.cards %}
+        <article class="oew-aib-card is-{{ c.state_slug }}">
+          <header class="oew-aib-top">
+            <span class="oew-aib-rank mono">№{{ loop.index }}</span>
+            <span class="oew-aib-sym mono">{{ c.symbol }}</span>
+            <span class="oew-aib-state">{{ t(c.display_state_en, c.display_state_zh) }}</span>
+          </header>
+          <div class="oew-aib-legs" role="img"
+            data-tip-en="Two independent facts must agree before we call a direction: how open interest grew (calls vs puts) and how the skew moved. One arrow per fact."
+            data-tip-zh="必须两个独立事实一致才判定方向：未平仓合约的增长结构（看涨与看跌）与偏度的变化。每个事实一个箭头。">
+            <span class="leg leg-oi {{ c.oi_cls }}">{{ c.oi_glyph }} OI</span>
+            <span class="leg leg-skew {{ c.skew_cls }}">{{ c.skew_glyph }} {{ t('Skew', '偏度') }}</span>
+            <span class="oew-aib-legverdict">{{ t(c.leg_verdict_en, c.leg_verdict_zh) }}</span>
+          </div>
+          <div class="oew-aib-meter">
+            <span class="lbl">{{ t('Evidence', '证据') }}</span>
+            <span class="oew-pips" role="img"
+              data-tip-en="Evidence strength, {{ c.pips }} of {{ c.pips_total }}."
+              data-tip-zh="证据强度，{{ c.pips_total }} 格中第 {{ c.pips }} 格。">
+              {% for i in range(c.pips_total) %}<i class="oew-pip{% if i < c.pips %} on{% endif %}"></i>{% endfor %}
+            </span>
+            <span class="oew-aib-band band-{{ c.band_slug }}">{{ t(c.band_en, c.band_zh) }}</span>
+          </div>
+          <p class="oew-aib-why">{{ t(c.why_lead_en, c.why_lead_zh) }}</p>
+          <div class="oew-aib-facts mono">
+            <span>{{ t('Horizon', '周期') }} {{ t(c.horizon_en, c.horizon_zh) }}</span>
+            {% if c.move_pct %}<span>±{{ c.move_pct }}% {{ t('implied', '隐含') }}</span>{% endif %}
+            <span>{{ t('Fresh until', '有效至') }} {{ c.fresh_until }}</span>
+          </div>
+          <div class="oew-aib-chips">
+            <span class="oew-aib-prophet"
+              data-tip-en="Prophet context only — it does not change this board's ranking.{% if c.prophet_asof %} As of {{ c.prophet_asof }}.{% endif %}"
+              data-tip-zh="仅为 Prophet 参考——不影响本板块排序。{% if c.prophet_asof %}截至 {{ c.prophet_asof }}。{% endif %}">Prophet · {{ t(c.prophet_en, c.prophet_zh) }}</span>
+            {% if c.crowding %}<span class="oew-aib-crowd">{{ t('Crowded tape', '拥挤交易') }}</span>{% endif %}
+          </div>
+          <details class="oew-aib-detail">
+            <summary>{{ t('Why & what would change it', '依据与变化条件') }}</summary>
+            <div class="oew-aib-detailbody">
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('OI evidence', '未平仓量证据') }}</span>
+                <span class="v">{{ t(c.detail.oi_line_en, c.detail.oi_line_zh) }}</span>
+              </div>
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Skew evidence', '偏度证据') }}</span>
+                <span class="v">{{ t(c.detail.skew_line_en, c.detail.skew_line_zh) }}</span>
+              </div>
+              {% if c.detail.mechanics_en %}
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Mechanics', '机制背景') }}</span>
+                <span class="v">{{ t(c.detail.mechanics_en, c.detail.mechanics_zh) }}</span>
+              </div>
+              {% endif %}
+              {% for w in c.detail.why_now %}
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Evidence', '证据') }}</span>
+                <span class="v">{{ t(w.en, w.zh) }}</span>
+              </div>
+              {% endfor %}
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Would confirm', '确认条件') }}</span>
+                <span class="v">{{ t(c.detail.trigger_en, c.detail.trigger_zh) }}</span>
+              </div>
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Would change it', '变化条件') }}</span>
+                <span class="v">{{ t(c.detail.invalidation_en, c.detail.invalidation_zh) }}</span>
+              </div>
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Priority score', '优先级分数') }}</span>
+                <span class="v mono">{{ c.research_priority_score }}</span>
+              </div>
+              <div class="oew-aib-dline">
+                <span class="k">{{ t('Receipt', '回执') }}</span>
+                <span class="v mono">{{ c.signal_id }}</span>
+              </div>
+            </div>
+          </details>
+        </article>
+        {% endfor %}
+      </div>
+      {% elif aib.available and aib.empty_kind == 'quiet' %}
+      <div class="oew-aib-empty">
+        <p class="oew-aib-empty-lead">{{ t("No options research state clears today's threshold.", '今日没有期权研究状态达到门槛。') }}</p>
+        <p class="oew-aib-empty-sub">{{ aib.eligible }} {{ t('names fully eligible · source healthy', '个名称完全符合条件 · 数据源正常') }}</p>
+      </div>
+      {% else %}
+      <div class="oew-aib-degraded">
+        <p>{{ t(aib.degraded_en, aib.degraded_zh) }}</p>
+      </div>
+      {% endif %}
+    </div>
+    <div class="oew-pfoot">
+      <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
+      <span>{{ t('Hypotheses to research, ranked by evidence — none is a trade on its own.', '按证据排序的研究假设——均非独立交易信号。') }}</span>
+      {% if aib.overflow > 0 %}<span class="oew-aib-more">{{ aib.overflow }} {{ t('more above threshold', '个更多超过门槛') }}</span>{% endif %}
+      {% if aib.as_of_session %}
+      <span class="oew-asof mono" data-tip-en="Receipt {{ aib.receipt_id[:12] }}" data-tip-zh="回执 {{ aib.receipt_id[:12] }}">{{ aib.as_of_session }}</span>
+      {% endif %}
+    </div>
+  </div>
 
   <div class="oew-panel">
     <div class="oew-phead">

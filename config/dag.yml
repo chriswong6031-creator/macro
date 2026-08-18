@@ -953,6 +953,25 @@ lanes:
       # serial-spine steps; build_flow_desk + build_options_screener live in the
       # cl_gex band), so it must sit AFTER the band barrier — the same reasoning
       # that puts build_sector_central here.
+      - id: build_options_intel_brief
+        module: scripts.build_options_intel_brief
+        note: >
+          AD-1 Daily EOD Options Intelligence Brief (WS:ADVANCED-DATA-OPTIONS;
+          contracts/options/OPTIONS_INTEL_BRIEF_V1.md; intel_brief_heuristic/v1.2).
+          Deterministic display-tier research-priority board over the newest lawful
+          settled S->next-session chain pair (source-clock law: OI is next-print;
+          same-day OI unlawful; pending sessions disclosed, never scored). Reads
+          data/polygon_gex/chains + summaries, site/gex/*.json (gex_confirm display
+          context), data/earnings/earnings.parquet, site/prophet/index.json (display
+          echo, zero rank authority), data/options_flow/signing_gate.json (Q_flow
+          absence proof). Writes ONLY site/options_intel_brief.json (atomic, semantic
+          no-op on unchanged receipt). Serial post-band immediately BEFORE
+          build_options_command (its only consumer) for the same cross-phase
+          reasoning; never wired into closing-bell (the directional OI leg cannot
+          lawfully settle at 16:05 ET). Additive, absent-safe, exits 0 on failure so
+          the last committed artifact stands. DISPLAY-ONLY; no Prophet/NW/Sector
+          consumers in AD-1.
+          outputs: [site/options_intel_brief.json]
       - id: build_options_command
         module: scripts.build_options_command
         note: >

@@ -158,6 +158,286 @@ def load_stores(root: Path) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AD-1 · Options Intelligence Brief — pass-through adapter
+# (contracts/options/OPTIONS_INTEL_BRIEF_V1.md; design: frozen AD-1 board spec).
+# This adapter computes NOTHING: every score/order/state/text on the board is
+# copied verbatim from site/options_intel_brief.json.  Everything below is
+# PRESENTATION ONLY — sign-based glyph lookups, pip counts (the house's own
+# _pips() linear encoding) and closed-vocabulary word maps — never a new
+# threshold, never a re-ranking, never a re-ordering.
+#
+# load_intel_brief() is a DELIBERATELY SEPARATE loader, not a load_stores()
+# member: tests/test_render_options_workspace_scope.py pins load_stores()'s
+# literal source AND a runtime probe of what it reads 1:1 against that test
+# file's own WORKSPACE_STORES map — a file this packet's scope excludes
+# touching.  Loading the brief through its own function keeps that pinned
+# store set exactly as it was.
+# ─────────────────────────────────────────────────────────────────────────────
+def load_intel_brief(root: Path) -> dict | None:
+    """Fail-soft loader for the AD-1 board artifact.  Missing/corrupt -> None;
+    the board then renders its own honest 'unavailable' state — the contract
+    has no board_state for a missing file, so absence is a consumer-side
+    concern, same _load() convention as every other store this builder reads."""
+    return _load(root / "site" / "options_intel_brief.json")
+
+
+_AIB_STATE_SLUG = {"LONG": "up", "SHORT": "down", "VOLATILITY": "vol", "RISK_ONLY": "risk"}
+
+_AIB_BAND_EN = {"tentative": "Tentative", "moderate": "Moderate", "firm": "Firm"}
+_AIB_BAND_ZH = {"tentative": "初步", "moderate": "中等", "firm": "稳健"}
+
+# contract §5 `horizon` enum -> plain words.  Closed vocabulary lookup, the
+# same pattern as this file's _INTENSITY_EN / _GAMMA_STATE_EN maps above.
+_AIB_HORIZON_EN = {
+    "next_5_sessions": "next 5 sessions",
+    "through_event_close": "through the event close",
+    "next_session": "next session",
+}
+_AIB_HORIZON_ZH = {
+    "next_5_sessions": "未来5个交易日",
+    "through_event_close": "至事件收盘前",
+    "next_session": "下一交易日",
+}
+
+# The frozen AD-1 board design spec's Prophet closed vocabulary, transcribed
+# verbatim (contract §5 prophet_state enum -> plain words; display-only, zero
+# rank authority per the contract's own authority table §6).
+_AIB_PROPHET_EN = {
+    "EXTENDED": "Already extended — not a fresh entry",
+    "ALREADY_OPEN": "Plan already running",
+    "NOT_READY": "Entry not ready yet",
+    "READY": "Entry window open",
+    "OTHER": "On the board",
+    "UNAVAILABLE": "No read",
+}
+_AIB_PROPHET_ZH = {
+    "EXTENDED": "已过度延伸——非新入场点",
+    "ALREADY_OPEN": "计划已在运行",
+    "NOT_READY": "入场尚未就绪",
+    "READY": "入场窗口开放",
+    "OTHER": "在板上",
+    "UNAVAILABLE": "暂无读数",
+}
+
+# The frozen design spec's degraded closed vocabulary.  STALE_SOURCE keys off
+# board_state (contract: it carries no board_reason); the other three key off
+# board_reason under board_state DEGRADED.
+_AIB_DEGRADED_EN = {
+    "STALE_SOURCE": "Source data is stale — holding the last good session.",
+    "ELIGIBILITY_COLLAPSE": "Too few names have complete data today — cards withheld.",
+    "MIXED_VINTAGE": "Evidence dates disagree — cards withheld until they settle.",
+    "NO_SETTLED_OI_PAIR": "Waiting for the next position count to settle this session.",
+}
+_AIB_DEGRADED_ZH = {
+    "STALE_SOURCE": "数据源过期——保留最近有效交易日。",
+    "ELIGIBILITY_COLLAPSE": "今日完整数据的名称过少——暂不展示卡片。",
+    "MIXED_VINTAGE": "证据日期不一致——待结算后展示。",
+    "NO_SETTLED_OI_PAIR": "等待下一次持仓统计以结算本交易日。",
+}
+# Fallback for a board_state/board_reason pair the design spec's table does
+# not name (e.g. INSUFFICIENT_COVERAGE) — never blank, never a machine slug.
+_AIB_DEGRADED_FALLBACK_EN = "This board is unavailable for this close."
+_AIB_DEGRADED_FALLBACK_ZH = "本次收盘该板块暂不可用。"
+
+# gex_confirm's OWN verdict vocabulary (engine/gex_confirm.py:49-53), reused
+# verbatim per the design spec's "mechanics: verdict words only ... reuse
+# existing gex vocab" instruction.  Transcribed rather than imported:
+# engine.gex_confirm pulls in numpy/pandas, and this module must stay
+# importable in the thin-pack CI env that stubs only jinja2
+# (tests/test_render_options_workspace_scope.py's _import_builder, #3977).
+_AIB_GEX_VERDICT_EN = {"confirm": "Options confirm", "neutral": "Options neutral", "caution": "Options caution"}
+_AIB_GEX_VERDICT_ZH = {"confirm": "期权确认", "neutral": "期权中性", "caution": "期权警示"}
+
+_AIB_LEG_VERDICT_EN = {"aligned": "aligned", "one_sided": "one-sided", "not_aligned": "not aligned"}
+_AIB_LEG_VERDICT_ZH = {"aligned": "一致", "one_sided": "单边", "not_aligned": "不一致"}
+
+# Display-only strength cut for the tier-2 Q_oi/Q_skew plain-word lines.
+# Reuses the contract's OWN frozen Q_TH (OPTIONS_INTEL_BRIEF_V1.md §3) as the
+# bucket boundary instead of inventing a new one — a word choice for display,
+# never a second direction gate. Direction authority stays 100% with the
+# producer (contract §6): this never feeds back into state/order/score.
+_AIB_Q_STRENGTH_TH = 0.50
+
+
+def _aib_leg(evidence: list, name: str) -> tuple[str, str, float | None, int | None]:
+    """(glyph, css class, raw signed value, history_n) for one Q leg.
+
+    A verbatim SIGN read of a number the producer already computed and shipped
+    in `evidence[]`.  No new threshold: positive/negative/zero-or-absent is the
+    entire rule, mirroring this file's other pure sign->class lookups (e.g.
+    build_bets' net-premium tone)."""
+    for e in (evidence or []):
+        if isinstance(e, dict) and e.get("name") == name:
+            val = _num(e.get("value"))
+            hist = e.get("history_n")
+            hist = hist if isinstance(hist, int) else None
+            if val is None or val == 0:
+                return "▬", "flat", val, hist
+            return ("▲", "up", val, hist) if val > 0 else ("▼", "down", val, hist)
+    return "▬", "flat", None, None
+
+
+def _aib_leg_verdict(oi_val: float | None, skew_val: float | None) -> str:
+    """'aligned' both legs agree in sign; 'one_sided' only one leg moved;
+    'not_aligned' otherwise (disagree, or neither moved).  Sign comparison
+    only — never a magnitude threshold, never the direction gate itself."""
+    oi_sign = None if not oi_val else (1 if oi_val > 0 else -1)
+    sk_sign = None if not skew_val else (1 if skew_val > 0 else -1)
+    if oi_sign is not None and sk_sign is not None:
+        return "aligned" if oi_sign == sk_sign else "not_aligned"
+    if oi_sign is not None or sk_sign is not None:
+        return "one_sided"
+    return "not_aligned"
+
+
+def _aib_strength_word(value: float | None) -> tuple[str, str]:
+    v = abs(value) if value is not None else 0.0
+    return ("sharply", "显著") if v >= _AIB_Q_STRENGTH_TH else ("modestly", "温和")
+
+
+def _aib_q_oi_line(val: float | None, n: int | None) -> tuple[str, str]:
+    """Detail (tier 2) plain-word law: 'Open interest grew on the call/put
+    side' + strength word; never 'buying/selling' (design spec)."""
+    if val is None:
+        return "No open-interest read available.", "暂无未平仓量读数。"
+    word_en, word_zh = _aib_strength_word(val)
+    side_en, side_zh = ("call", "看涨") if val >= 0 else ("put", "看跌")
+    hist_en = f" ({n} sessions of history)" if n else ""
+    hist_zh = f"（{n} 个历史交易日）" if n else ""
+    return (f"Open interest grew on the {side_en} side, {word_en}{hist_en}.",
+            f"未平仓量在{side_zh}方向增长，{word_zh}{hist_zh}。")
+
+
+def _aib_q_skew_line(val: float | None, n: int | None) -> tuple[str, str]:
+    """Detail (tier 2) plain-word law: 'Downside skew flattened/steepened
+    unusually' + strength word (design spec)."""
+    if val is None:
+        return "No skew-change read available.", "暂无偏度变化读数。"
+    word_en, word_zh = _aib_strength_word(val)
+    move_en, move_zh = ("flattened", "走平") if val >= 0 else ("steepened", "走陡")
+    hist_en = f" ({n} sessions of history)" if n else ""
+    hist_zh = f"（{n} 个历史交易日）" if n else ""
+    return (f"Downside skew {move_en} unusually, {word_en}{hist_en}.",
+            f"下行偏度{move_zh}异常，{word_zh}{hist_zh}。")
+
+
+def _aib_card(card: dict) -> dict:
+    """One card's whole presentation context.  Every field is either copied
+    verbatim from `card` or a closed-vocabulary / sign-only lookup on a
+    verbatim field — no score, order, or state is computed here."""
+    direction = card.get("direction")
+    evidence = card.get("evidence") if isinstance(card.get("evidence"), list) else []
+    oi_glyph, oi_cls, oi_val, oi_n = _aib_leg(evidence, "Q_oi")
+    sk_glyph, sk_cls, sk_val, sk_n = _aib_leg(evidence, "Q_skew")
+    verdict = _aib_leg_verdict(oi_val, sk_val)
+    horizon = card.get("horizon")
+    band = card.get("evidence_confidence_band")
+    prophet = card.get("prophet_state")
+    why_now = card.get("why_now") if isinstance(card.get("why_now"), list) else []
+    move = _num(card.get("market_implied_move_pct"))
+    mech = card.get("mechanics_context") if isinstance(card.get("mechanics_context"), dict) else {}
+    gex_verdict = mech.get("gex_confirm_verdict")
+    trigger = card.get("trigger_watch") if isinstance(card.get("trigger_watch"), dict) else {}
+    invalidation = card.get("invalidation_watch") if isinstance(card.get("invalidation_watch"), dict) else {}
+    oi_line_en, oi_line_zh = _aib_q_oi_line(oi_val, oi_n)
+    skew_line_en, skew_line_zh = _aib_q_skew_line(sk_val, sk_n)
+    why_lead = why_now[0] if why_now and isinstance(why_now[0], dict) else {}
+
+    return {
+        "signal_id": card.get("signal_id") or "—",
+        "research_priority_score": card.get("research_priority_score"),
+        "symbol": card.get("symbol") or "—",
+        "direction": direction,
+        "state_slug": _AIB_STATE_SLUG.get(direction, "vol"),
+        "display_state_en": card.get("display_state_en") or "—",
+        "display_state_zh": card.get("display_state_zh") or card.get("display_state_en") or "—",
+        "oi_glyph": oi_glyph, "oi_cls": oi_cls,
+        "skew_glyph": sk_glyph, "skew_cls": sk_cls,
+        "leg_verdict_en": _AIB_LEG_VERDICT_EN[verdict], "leg_verdict_zh": _AIB_LEG_VERDICT_ZH[verdict],
+        "pips": _pips(_num(card.get("evidence_strength"))), "pips_total": 5,
+        "band_slug": band if band in _AIB_BAND_EN else "",
+        "band_en": _AIB_BAND_EN.get(band, "—"), "band_zh": _AIB_BAND_ZH.get(band, "—"),
+        "why_lead_en": why_lead.get("en") or "Evidence detail is in the receipt below.",
+        "why_lead_zh": why_lead.get("zh") or "证据详情见下方回执。",
+        "horizon_en": _AIB_HORIZON_EN.get(horizon, "—"), "horizon_zh": _AIB_HORIZON_ZH.get(horizon, "—"),
+        "move_pct": (f"{move * 100:.1f}" if move is not None else None),
+        "fresh_until": card.get("fresh_until") or "—",
+        "prophet_en": _AIB_PROPHET_EN.get(prophet, _AIB_PROPHET_EN["UNAVAILABLE"]),
+        "prophet_zh": _AIB_PROPHET_ZH.get(prophet, _AIB_PROPHET_ZH["UNAVAILABLE"]),
+        "prophet_asof": card.get("prophet_asof"),
+        "crowding": bool(card.get("crowding")),
+        "detail": {
+            "oi_line_en": oi_line_en, "oi_line_zh": oi_line_zh,
+            "skew_line_en": skew_line_en, "skew_line_zh": skew_line_zh,
+            "mechanics_en": _AIB_GEX_VERDICT_EN.get(gex_verdict),
+            "mechanics_zh": _AIB_GEX_VERDICT_ZH.get(gex_verdict),
+            "why_now": [w for w in why_now if isinstance(w, dict) and w.get("en")],
+            "trigger_en": trigger.get("en") or "—", "trigger_zh": trigger.get("zh") or "—",
+            "invalidation_en": invalidation.get("en") or "—", "invalidation_zh": invalidation.get("zh") or "—",
+        },
+    }
+
+
+def build_aib(intel_brief: dict | None) -> dict:
+    """The AD-1 board's whole template context.
+
+    `intel_brief` is the parsed site/options_intel_brief.json artifact, or
+    None when load_intel_brief() could not read it (its fail-soft contract).
+    """
+    if not isinstance(intel_brief, dict):
+        return {
+            "available": False,
+            "as_of_session": None, "oi_counted_date": None, "pending_session": None,
+            "eligible": 0, "present": 0, "overflow": 0,
+            "board_state": None, "board_reason": None, "receipt_id": None,
+            "cards": [],
+            "empty_kind": "degraded",
+            "degraded_en": "No options intelligence brief is available for this close.",
+            "degraded_zh": "本次收盘暂无期权情报简报。",
+        }
+
+    board_state = intel_brief.get("board_state")
+    board_reason = intel_brief.get("board_reason")
+    eligibility = intel_brief.get("eligibility") if isinstance(intel_brief.get("eligibility"), dict) else {}
+    opportunities = intel_brief.get("opportunities") if isinstance(intel_brief.get("opportunities"), list) else []
+    cards = [_aib_card(c) for c in opportunities if isinstance(c, dict)]
+
+    # §5.2 no-signal law: OK and NO_SIGNAL are BOTH healthy outcomes — the
+    # producer sets NO_SIGNAL exactly when a healthy session had nothing to
+    # say ("a first-class OK-shaped outcome"), so an empty board under either
+    # state is the healthy-quiet scene, never the degraded one.  Everything
+    # else (STALE_SOURCE / DEGRADED / INSUFFICIENT_COVERAGE) is degraded.
+    healthy = board_state in ("OK", "NO_SIGNAL")
+    empty_kind = degraded_en = degraded_zh = None
+    if not cards:
+        if healthy:
+            empty_kind = "quiet"
+        else:
+            empty_kind = "degraded"
+            if board_state == "STALE_SOURCE":
+                degraded_en, degraded_zh = _AIB_DEGRADED_EN["STALE_SOURCE"], _AIB_DEGRADED_ZH["STALE_SOURCE"]
+            elif board_reason in _AIB_DEGRADED_EN:
+                degraded_en, degraded_zh = _AIB_DEGRADED_EN[board_reason], _AIB_DEGRADED_ZH[board_reason]
+            else:
+                degraded_en, degraded_zh = _AIB_DEGRADED_FALLBACK_EN, _AIB_DEGRADED_FALLBACK_ZH
+
+    return {
+        "available": True,
+        "as_of_session": intel_brief.get("as_of_session"),
+        "oi_counted_date": intel_brief.get("oi_counted_date"),
+        "pending_session": intel_brief.get("pending_session"),
+        "eligible": eligibility.get("eligible") or 0,
+        "present": eligibility.get("present") or 0,
+        "overflow": intel_brief.get("opportunities_overflow") or 0,
+        "board_state": board_state, "board_reason": board_reason,
+        "receipt_id": intel_brief.get("receipt_id") or "",
+        "cards": cards,
+        "empty_kind": empty_kind,
+        "degraded_en": degraded_en, "degraded_zh": degraded_zh,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Small formatting helpers (display only)
 # ─────────────────────────────────────────────────────────────────────────────
 def _num(value) -> float | None:
@@ -279,8 +559,15 @@ def _source_n(payload, key: str) -> int | None:
     return int(v)
 
 
-def build_session(stores: dict, missing: list[str]) -> dict:
+def build_session(stores: dict, missing: list[str], intel_brief: dict | None = None) -> dict:
     """The session stamp: date, OI vintage, coverage share, quality word.
+
+    `intel_brief` is OPTIONAL and additive — the AD-1 board (built separately,
+    see build_aib()) is not one of this function's six existing stores.  When
+    its own as_of_session disagrees with the page date, that mismatch joins
+    the SAME stale-notes census below (cheap reuse of an existing pattern);
+    a caller that never passes it (every pre-existing call site) sees no
+    behaviour change at all.
 
     ONE SESSION DATE, CROSS-CHECKED (#F2-03/#F2-04).  The page date is the flow
     desk's own `asof` — the settled close the Brief is written against.  The
@@ -350,6 +637,12 @@ def build_session(stores: dict, missing: list[str]) -> dict:
             stale_notes_en.append(
                 f"the index levels were last measured {oi_vintage}, not {session_date}")
             stale_notes_zh.append(f"指数水位的最近测算日期为 {oi_vintage}，而非 {session_date}")
+        if isinstance(intel_brief, dict):
+            ib_asof = _day(intel_brief.get("as_of_session"))
+            if ib_asof and ib_asof != session_date:
+                stale_notes_en.append(
+                    f"the options intelligence brief is dated {ib_asof}, not {session_date}")
+                stale_notes_zh.append(f"期权情报简报日期为 {ib_asof}，而非 {session_date}")
 
     if missing:
         stale_notes_en.append("some sections could not be built for this close")
@@ -836,13 +1129,19 @@ def _missing_stores(stores: dict) -> list[str]:
     return missing
 
 
-def build_context(root: Path, stores: dict | None = None) -> dict:
-    """Assemble the whole workspace context from the committed stores."""
+def build_context(root: Path, stores: dict | None = None, intel_brief: dict | None = None) -> dict:
+    """Assemble the whole workspace context from the committed stores.
+
+    `intel_brief` is the AD-1 board's OWN artifact (site/options_intel_brief.json),
+    kept OUT of `stores`/load_stores() on purpose — see the AD-1 section above.
+    Default None: every pre-existing caller that never passes it renders the
+    board in its honest "unavailable" state, with zero other behaviour change.
+    """
     stores = load_stores(root) if stores is None else stores
 
     missing = _missing_stores(stores)
 
-    session = build_session(stores, missing)
+    session = build_session(stores, missing, intel_brief)
     changed = build_changed(stores)
     indexes = build_indexes(stores)
     sectors = build_sectors(stores)
@@ -861,6 +1160,7 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
         "sectors": sectors,
         "bets": bets,
         "rail": rail,
+        "aib": build_aib(intel_brief),
         "counts": {
             "scanner": session.get("universe"),
             "ticker": "SPY" if "SPY" in (stores.get("gex") or {}) else (INDEX_KEYS[0]),
@@ -931,9 +1231,9 @@ def _sector_zh_json(stores: dict) -> str:
     return json.dumps({n: tr(n) for n in sorted(names)}, ensure_ascii=False)
 
 
-def render(root: Path, stores: dict | None = None) -> str:
+def render(root: Path, stores: dict | None = None, intel_brief: dict | None = None) -> str:
     """Render options.html.j2 and return the HTML string."""
-    ctx = build_context(root, stores)
+    ctx = build_context(root, stores, intel_brief)
     env = Environment(
         loader=FileSystemLoader(str(root / "templates")),
         autoescape=True,
@@ -966,7 +1266,8 @@ def main(argv: list[str] | None = None) -> int:
     # (#F2-08).  One store load, one context build, one fence.
     try:
         stores = load_stores(root)
-        html = render(root, stores=stores)
+        intel_brief = load_intel_brief(root)
+        html = render(root, stores=stores, intel_brief=intel_brief)
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
         # write_page is the ONLY write path. The fail-soft law above covers a
@@ -977,12 +1278,13 @@ def main(argv: list[str] | None = None) -> int:
         from lib.pages import write_page  # noqa: PLC0415
         write_page(out_path, html)
 
-        ctx = build_context(root, stores)
+        ctx = build_context(root, stores, intel_brief)
         sess = ctx["session"]
         log.info(
-            "options workspace -> %s | session=%s coverage=%s/%s (%s%%) quality=%s missing=%s",
+            "options workspace -> %s | session=%s coverage=%s/%s (%s%%) quality=%s missing=%s aib=%s",
             out_path, sess.get("date"), sess.get("covered"), sess.get("universe"),
             sess.get("coverage_pct"), sess.get("quality_en"), ctx["missing"] or "none",
+            ctx["aib"].get("board_state") if ctx["aib"].get("available") else "unavailable",
         )
         if ctx["missing"]:
             print("::warning title=build_options_command::degraded sections — missing stores: "

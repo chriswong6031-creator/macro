@@ -5651,6 +5651,38 @@ artifacts:
       Session-filter note: the rebuild carries one non-session row per root
       (2019-02-02, a Saturday); deep_history_context filters before it quantiles.
 
+  # --- AD-1: Daily EOD Options Intelligence Brief (WS:ADVANCED-DATA-OPTIONS) ---
+  options-intel-brief:
+    path: site/options_intel_brief.json
+    format: json
+    producer: scripts/build_options_intel_brief.py
+    known_extra_writers: []
+    owner_program: options-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of_session
+    freshness_sla_hours: 54
+    schema: options.intel_brief/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_command.py
+      - templates/options.html.j2
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      AD-1 (contracts/options/OPTIONS_INTEL_BRIEF_V1.md, intel_brief_heuristic/v1.2,
+      DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION):
+      deterministic display-tier research-priority board over the settled S->next
+      session chain pair. Direction requires Q_oi AND Q_skew agreement plus salience;
+      gex_confirm is mechanics context only; Prophet state is a display echo with
+      zero rank authority; asymmetry/probability fields are null UNCALIBRATED until
+      AD-6. Zero Prophet/Neural-Web/Sector consumers by design in AD-1 (first
+      score-level confluence is AD-5). freshness_sla_hours=54 covers the weekend
+      settle gap of the settled-pair clock (Friday board stands until Monday night).
+
   # --- W2 SURFACE: whole-market dealer-surface history (RIC program) ---
   # Three entries — one per root_class (small committed aggregates, ~single-digit MB each)
   options-surface-index-etf:
