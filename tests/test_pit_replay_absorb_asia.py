@@ -830,7 +830,32 @@ class TestUnmarkedRows:
 # only, no board build — see scripts/prophet_pit_replay.py _cmd_resolve_only)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _origin_main_history_reachable() -> bool:
+    """True when `git rev-list origin/main` can actually walk in THIS checkout.
+
+    CI runners check out a SHALLOW tree (actions/checkout default), where
+    `rev-list --first-parent --before=... origin/main` exits 128 — the same
+    shallow-clone class the harness's own `assert_ancestor_of_main` refuses
+    with the `--deepen` remediation. The two resolve tests below are real-repo
+    integration conveniences, not the pin on resolver logic (that pin is the
+    synthetic first-parent repo in tests/test_prophet_pit_replay.py), so on a
+    history-less checkout they SKIP by name instead of failing the pack.
+    """
+    probe = subprocess.run(
+        ["git", "rev-list", "-1", "origin/main"],
+        cwd=_REPO, capture_output=True, text=True,
+    )
+    return probe.returncode == 0
+
+
+_needs_main_history = pytest.mark.skipif(
+    not _origin_main_history_reachable(),
+    reason="origin/main history not walkable in this checkout (shallow CI clone)",
+)
+
+
 class TestResolveOnlyRealRepo:
+    @_needs_main_history
     def test_cn_resolve_only_resolves(self):
         proc = subprocess.run(
             [sys.executable, "-m", "scripts.prophet_pit_replay",
@@ -841,6 +866,7 @@ class TestResolveOnlyRealRepo:
         assert "registry: OK" in proc.stdout
         assert "vintage_sha=" in proc.stdout
 
+    @_needs_main_history
     def test_hk_resolve_only_resolves(self):
         proc = subprocess.run(
             [sys.executable, "-m", "scripts.prophet_pit_replay",
