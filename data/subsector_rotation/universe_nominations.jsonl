@@ -16,3 +16,5 @@
 {"date":"2026-08-07","theme":"Crypto & Blockchain","donor":"blockchainpayments","receiver":"blockchainenterprise","confidence":0.216,"both_confirmed":false}
 {"date":"2026-08-13","theme":"Nanotechnology","donor":"nanotechmaterials","receiver":"nanotechenergy","confidence":0.328,"both_confirmed":false}
 {"date":"2026-08-13","theme":"Wearables","donor":"wearablessmartwatches","receiver":"wearablesimmersive","confidence":0.302,"both_confirmed":false}
+{"date":"2026-08-18","theme":"Crypto & Blockchain","donor":"blockchainenterprise","receiver":"blockchainmining","confidence":0.319,"both_confirmed":false}
+{"date":"2026-08-18","theme":"Commodities Metals","donor":"commmetalsindustrial","receiver":"commmetalsbattery","confidence":0.222,"both_confirmed":false}

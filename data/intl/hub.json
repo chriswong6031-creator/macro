@@ -1,7 +1,7 @@
 {
-  "date": "2026-08-14",
+  "date": "2026-08-18",
   "label": "7 economies \u00b7 Stagflation",
-  "recession_watch": 1,
-  "em_stress_state": "strained",
-  "contagion_state": "contained"
+  "recession_watch": 0,
+  "em_stress_state": "calm",
+  "contagion_state": "quiet"
 }
