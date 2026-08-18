@@ -111,3 +111,53 @@ run" discipline that governs `ci.yml` main baselines.
 Related: [[DSC-SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH]] — the sibling ci-pack-3 red on the same
 night, also caused by a nightly lane rewriting an artifact another component treats as
 stable.
+
+## Correction 2026-08-18 — `event_id` does not fold `projection_generation_id`
+
+Everything above about WHAT happened holds: 26 ids swapped one-for-one, no new awards, the
+rollback experiment flips the outcome, and the prescription (do not hunt escaped awards,
+do not hand-advance the ledger) is right. One mechanism claim and one conclusion are not.
+
+**`event_id` folds per-row `known_at`, not the spine's generation id.**
+`engine/government_revenue/award_events.py:1407-1419` seeds the digest with
+`{award_key, source_rail, state_hash, known_at, event_type, changed_fields}` — and
+`projection_generation_id` does not appear anywhere in that module. The generation id
+moving is a CONSEQUENCE of the rows changing (it is a hash over the merged pair), not the
+cause of the id swap.
+
+That distinction decides the recurrence claim, because the generation id moves on **every**
+collection, legitimate or not:
+
+```
+c52b647d499f  08-14 base        award-event-13eb126cb03bd0db510291e9
+59ccb9c774c8  run A  04:01Z     award-event-36437ac025d26210ea4b5b89   <- legitimate append
+93ab221b81dd  run B  04:21Z     award-event-9f19640ea565ca3387dd95bf   <- the lost update
+```
+
+If a generation-id restatement re-digested candidate ids, this test would have redded on
+every nightly since the ledger's first fold. It did not, because a legitimate collection
+APPENDS: measured over the 08-14 -> run A transition, `award_event_snapshots.parquet` went
+194 -> 210 identities with **all 194 preserved**, so no prior `known_at` moved, so no prior
+`event_id` moved, so no issued `candidate_id` could move. Over the previous eight
+transitions of that file (08-07 through 08-14), zero rows were rewritten.
+
+What actually moved the 26 was run B REPLACING 16 of run A's rows — same
+`event_state_sha256`, run B's `known_at` — because two overlapping `daily.yml` collect jobs
+each built the artifact from the base each checked out and `-X theirs` resolved the
+conflict in favour of the later push. Full measurement, including the four other artifacts
+that lost rows the same night and a previously unrecorded occurrence on 2026-08-07, is in
+[[DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS]].
+
+**So the exposure is narrower than "any future collection that restates the spine", and it
+does need a repo change.** It is not recurrent under normal operation; it recurs only when
+an append-only artifact is published over a base that has moved. That is now fenced at the
+push path — `scripts/ci/append_only_base_fence.py`, wired into `daily.yml`,
+`government-revenue-live.yml` and `backfill.yml`
+(DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE).
+
+The generalization in `so_what` survives intact and is worth keeping: an assertion that
+compares a live rebuild against an artifact advanced by a different lane is a standing
+race. Scoping `unaccounted` to the ledger's generation remains a reasonable Government
+Revenue program decision on its own merits — it is simply not what closes THIS red, and it
+would have converted a real evidence loss into a silent one.
+

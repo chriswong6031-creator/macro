@@ -151,3 +151,23 @@ transitions. (For the record: PR #5870 restored run A's generation, so `origin/m
 `collection_receipts.jsonl` is byte-identical to 59ccb9c774c8 again — but nothing in the
 fence depends on that being true.) The 26 orphaned `candidate_ledger.jsonl` rows remain an
 operator disposition, exactly as the DSC states.
+
+### Relationship to DSC:CANDIDATE-ID-RACE-BETWEEN-GOVREV-LANES (#5876)
+
+That record, filed while this was being built, diagnoses the same ci-pack-6 red and gets
+the observations right — 26 ids swapped one-for-one, no new awards, the rollback
+experiment, and the correct prescription not to hand-advance the ledger. Its mechanism
+claim that `event_id` derives from the spine's `projection_generation_id` is not right:
+`engine/government_revenue/award_events.py:1407-1419` seeds the digest with per-row
+`known_at`, and `projection_generation_id` appears nowhere in that module. The generation
+id moved because the rows moved, not the other way round.
+
+It matters because it flips the conclusion. The generation id changes on EVERY collection
+(`13eb126c` -> `36437ac0` on the legitimate 08-14 -> run A append, `36437ac0` -> `9f19640e`
+on the lost update), so if that were the cause the test would red every night. It does not,
+because an append preserves every prior row: 194 -> 210 identities with all 194 intact over
+the legitimate transition, and zero rewritten rows across the previous eight. The red
+therefore is NOT "recurrent by construction" under normal operation and does NOT self-heal
+on the next fold — it recurs exactly when an append-only artifact is published over a moved
+base, which is what this fence prevents. A correction is appended to that record.
+
