@@ -5,7 +5,7 @@ objective: >
   Convert the options/off-exchange estate from an interpret-it-yourself dashboard into a
   standalone anticipation and risk intelligence lobe with bounded Prophet confluence.
   Done = ranked, falsifiable, receipt-backed EOD signals with explicit no-signal/degraded
-  states, production-proven per slice (AD-0…AD-15 per the operator-held recovery masterplan).
+  states, production-proven per slice (AD-0…AD-15 per the committed recovery masterplan).
 status: awaiting_review
 program: options-intelligence
 repos: [macro]
@@ -27,8 +27,8 @@ waves:
   - id: AD-1
     title: Daily EOD Options Intelligence Brief
     status: todo
-    depends_on: [AD-0]
-    next_action: Do not start until AD-0 is reviewed; then execute research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md.
+    depends_on: [AD-1P0]
+    next_action: Do not start until AD-1P0 passes Sol review (AD-1 GO); then execute the amended research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md (v1.2).
 landmines:
   - >-
     The entire host-side intraday options launchd fleet (15 units incl. the sparse-selector
