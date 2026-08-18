@@ -685,6 +685,37 @@ def test_atom_scanner_matches_the_live_production_page_ladder() -> None:
     assert result.fetch_retries == 0
 
 
+def test_atom_scanner_advances_by_served_not_by_requested() -> None:
+    """The cursor must follow what EDGAR SERVED, against a hypothetical over-server.
+
+    Under-serving is caught by the ``raw_entries < count`` check.  Over-serving
+    is caught only here, and the two directions together are what make the pager
+    total over EDGAR's behaviour rather than correct for the one shape measured
+    on 2026-08-17.  This matters because "EDGAR never serves more than asked" is
+    an EMPIRICAL claim about a surface that already surprised us once: the bug
+    #5854 fixed came from assuming EDGAR honours ``count``, and it rounds down.
+
+    Measured against the shipped code with an EDGAR that ignores ``count`` and
+    always serves 100: the walk stays clean and terminates at the boundary.
+    With ``start += count`` instead, the cursor lags what was consumed, so the
+    scan re-fetches an overlapping window and runs an extra page.
+    """
+
+    def over_serving(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        return _atom_page(int(query["start"][0]), 100)
+
+    result = scan_latest_filings_atom(over_serving, entry_limit=750)
+
+    # 8 pages of 100 reach the 750 boundary; a cursor advancing by the REQUESTED
+    # count would lag and spend a 9th page re-reading entries it already had.
+    assert result.pages_fetched == 8
+    assert len(result.entries) == 800
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 801))
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+
+
 def test_atom_html_error_page_is_not_a_broken_contract() -> None:
     """A transient outage page and a malformed feed must not be one error."""
 
@@ -932,14 +963,32 @@ def test_filing_package_rejects_identity_and_completeness_drift() -> None:
             documents=incomplete,
         )
 
+
+def test_filing_package_tolerates_index_size_mismatch_and_warns(capsys) -> None:
+    """SEC's index.json ``size`` is advisory (it provably disagrees with SEC's
+    own Content-Length and served bytes for some documents, block-rounded to
+    4096B in production). A body/index size mismatch must not fail parsing --
+    transport truncation is gated authoritatively at fetch time -- but it must
+    still surface as a GitHub Actions ``::warning`` annotation."""
+    index = (FIXTURES / "filing_index.json").read_bytes()
+    documents = _filing_documents()
     wrong_size = dict(documents)
     wrong_size["information_table.xml"] += b"\n"
-    with pytest.raises(SecSourceError, match="size mismatch"):
-        parse_filing_package(
-            index_url=INDEX_URL,
-            index_source=index,
-            documents=wrong_size,
-        )
+
+    tables = parse_filing_package(
+        index_url=INDEX_URL,
+        index_source=index,
+        documents=wrong_size,
+    )
+
+    assert len(tables.holdings) == 2
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::")]
+    assert warning_lines, f"no line-leading annotation emitted; captured: {out!r}"
+    assert any(
+        "sec-index-size-mismatch" in line and "information_table.xml" in line
+        for line in warning_lines
+    )
 
 
 def test_filing_index_rejects_unsafe_member_name() -> None:

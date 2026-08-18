@@ -786,3 +786,103 @@ def test_the_runner_never_dispatches_or_cancels_anything():
     for banned in ("gh workflow run", "workflow_dispatch", "run cancel",
                    "force-cancel", "actions/runs"):
         assert banned not in code, banned
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Probe hardening — 2026-08-17 W-ACCEPT day 1
+#
+# The launchd clock fired dead on time (20:00:06Z = 16:00 ET) and the session
+# still lost its board: `git rev-parse --git-dir` blocked past GIT_TIMEOUT_S
+# while the Studio ran the CN asia job plus a render, `_sh` returned rc=124 with
+# EMPTY captured output, and prepare_lane rendered that as
+#   primary checkout unreadable: ''
+# — a message indistinguishable from a corrupt repository, for what was only a
+# busy disk. Probing the same command by hand afterwards answered in 0.018s.
+# ─────────────────────────────────────────────────────────────────────────────
+class FlakySh(Sh):
+    """Answers a needle differently on each successive call.
+
+    The base double is needle->one-result, which cannot express "times out, then
+    succeeds" — the exact shape a retry has to be tested against.
+    """
+
+    def __init__(self, needle: str, results: list) -> None:
+        super().__init__()
+        self._needle = needle
+        self._queue = list(results)
+        self.probe_calls = 0
+
+    def __call__(self, argv, **kw) -> R.ShResult:
+        argv = [str(a) for a in argv]
+        joined = " ".join(argv)
+        if self._needle in joined:
+            self.probe_calls += 1
+            self.calls.append(argv)
+            if self._queue:
+                return self._queue.pop(0)
+            return R.ShResult(0, "", False)
+        return super().__call__(argv, **kw)
+
+
+@pytest.fixture()
+def no_backoff(monkeypatch):
+    """Backoff is real seconds in production and dead weight in a test."""
+    monkeypatch.setattr(R.time, "sleep", lambda _s: None)
+
+
+def test_a_timed_out_probe_is_retried_instead_of_costing_the_session(host, no_backoff):
+    """A contention spike must not cost an acceptance day.
+
+    One stalled metadata read is not evidence about the repository, so the run
+    asks again rather than refusing on it.
+    """
+    sh = FlakySh("rev-parse --git-dir", [
+        R.ShResult(124, "", True),          # the 2026-08-17 stall
+        R.ShResult(0, ".git\n", False),     # the box frees up
+    ])
+    sh.on("rev-parse HEAD", R.ShResult(0, "d" * 40 + "\n", False))
+    state = R.prepare_lane(host.primary, host.lane, sh=sh)
+    assert state["ok"], state["detail"]
+    assert sh.probe_calls == 2
+
+
+def test_a_deterministic_probe_failure_is_not_retried(host):
+    """Retrying a real fault burns the wait window for nothing.
+
+    A corrupt repo, a missing path and a TCC denial all answer identically on
+    every attempt, so only `timed_out` earns a second look.
+    """
+    sh = FlakySh("rev-parse --git-dir", [
+        R.ShResult(1, "fatal: not a git repository", False),
+        R.ShResult(0, ".git\n", False),     # never reached
+    ])
+    state = R.prepare_lane(host.primary, host.lane, sh=sh)
+    assert not state["ok"]
+    assert sh.probe_calls == 1
+    assert "not a git repository" in state["detail"]
+
+
+def test_an_exhausted_probe_names_the_timeout_rather_than_an_empty_string(host, no_backoff):
+    """The regression this hardening exists for, pinned at the WIRING.
+
+    Testing the retry helper alone would still pass while prepare_lane kept
+    formatting `repr('')` — which is precisely what shipped. So assert on the
+    message prepare_lane actually emits.
+    """
+    sh = FlakySh("rev-parse --git-dir",
+                 [R.ShResult(124, "", True)] * R.GIT_PROBE_ATTEMPTS)
+    state = R.prepare_lane(host.primary, host.lane, sh=sh)
+    assert not state["ok"]
+    assert sh.probe_calls == R.GIT_PROBE_ATTEMPTS
+    assert "timed out" in state["detail"]
+    assert "host contention" in state["detail"]
+    assert "unreadable: ''" not in state["detail"]
+
+
+def test_the_probe_timeout_is_short_enough_to_retry_inside_the_wait_window(host):
+    """Budget, not taste: prepare_lane runs AFTER the 16:00 ET fire and must be
+    done before WAIT_DEADLINE_ET (16:12). Three attempts at GIT_TIMEOUT_S would
+    be 9 minutes and blow the deadline the retry is meant to protect."""
+    worst = R.GIT_PROBE_TIMEOUT_S * R.GIT_PROBE_ATTEMPTS + sum(R.GIT_PROBE_BACKOFF_S)
+    assert worst < 3 * 60
+    assert R.GIT_PROBE_TIMEOUT_S < R.GIT_TIMEOUT_S

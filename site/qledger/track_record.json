@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T03:39:54.963485+00:00",
+  "generated_at": "2026-08-18T03:59:23.231245+00:00",
   "grade_horizons": [
     5,
     21,
@@ -31,18 +31,18 @@
     },
     "radar": {
       "5": {
-        "n_obs": 8874,
+        "n_obs": 8876,
         "n_dates": 39,
-        "hit_rate": 0.50707,
+        "hit_rate": 0.507068,
         "excess_mean": null,
-        "mean_abs_excess": 0.040965,
+        "mean_abs_excess": 0.040961,
         "excess_basis": "magnitude_only",
         "wilson_ci_low": 0.361991,
         "state": "GRADED",
         "excess_mean_by_direction": {
-          "-1": -0.003479,
+          "-1": -0.003486,
           "0": 0.016334,
-          "1": -0.002225
+          "1": -0.002227
         },
         "excess_directions": [
           -1,
@@ -51,18 +51,18 @@
         ]
       },
       "21": {
-        "n_obs": 6465,
+        "n_obs": 6467,
         "n_dates": 29,
-        "hit_rate": 0.46248,
+        "hit_rate": 0.462649,
         "excess_mean": null,
-        "mean_abs_excess": 0.085847,
+        "mean_abs_excess": 0.085829,
         "excess_basis": "magnitude_only",
         "wilson_ci_low": 0.284129,
         "state": "GRADED",
         "excess_mean_by_direction": {
-          "-1": 0.003081,
+          "-1": 0.003085,
           "0": 0.00395,
-          "1": -0.023985
+          "1": -0.02394
         },
         "excess_directions": [
           -1,
@@ -150,8 +150,8 @@
         "n_obs": 4395,
         "n_dates": 29,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "wilson_ci_low": null,
         "state": "GRADED"
@@ -194,8 +194,8 @@
         "n_obs": 4395,
         "n_dates": 29,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "wilson_ci_low": null,
         "state": "GRADED"
@@ -355,18 +355,18 @@
     },
     "radar": {
       "5": {
-        "n_obs": 8874,
+        "n_obs": 8876,
         "n_dates": 39,
-        "hit_rate": 0.50707,
+        "hit_rate": 0.507068,
         "excess_mean": null,
-        "mean_abs_excess": 0.040965,
+        "mean_abs_excess": 0.040961,
         "excess_basis": "magnitude_only",
         "wilson_ci_low": 0.361991,
         "state": "GRADED",
         "excess_mean_by_direction": {
-          "-1": -0.003479,
+          "-1": -0.003486,
           "0": 0.016334,
-          "1": -0.002225
+          "1": -0.002227
         },
         "excess_directions": [
           -1,
@@ -375,18 +375,18 @@
         ]
       },
       "21": {
-        "n_obs": 6465,
+        "n_obs": 6467,
         "n_dates": 29,
-        "hit_rate": 0.46248,
+        "hit_rate": 0.462649,
         "excess_mean": null,
-        "mean_abs_excess": 0.085847,
+        "mean_abs_excess": 0.085829,
         "excess_basis": "magnitude_only",
         "wilson_ci_low": 0.284129,
         "state": "GRADED",
         "excess_mean_by_direction": {
-          "-1": 0.003081,
+          "-1": 0.003085,
           "0": 0.00395,
-          "1": -0.023985
+          "1": -0.02394
         },
         "excess_directions": [
           -1,
@@ -474,8 +474,8 @@
         "n_obs": 4395,
         "n_dates": 29,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "wilson_ci_low": null,
         "state": "GRADED"
@@ -518,8 +518,8 @@
         "n_obs": 4395,
         "n_dates": 29,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "wilson_ci_low": null,
         "state": "GRADED"
@@ -769,18 +769,18 @@
         },
         "radar": {
           "5": {
-            "n_obs": 8874,
+            "n_obs": 8876,
             "n_dates": 39,
-            "hit_rate": 0.50707,
+            "hit_rate": 0.507068,
             "excess_mean": null,
-            "mean_abs_excess": 0.040965,
+            "mean_abs_excess": 0.040961,
             "excess_basis": "magnitude_only",
             "wilson_ci_low": 0.361991,
             "state": "GRADED",
             "excess_mean_by_direction": {
-              "-1": -0.003479,
+              "-1": -0.003486,
               "0": 0.016334,
-              "1": -0.002225
+              "1": -0.002227
             },
             "excess_directions": [
               -1,
@@ -789,18 +789,18 @@
             ]
           },
           "21": {
-            "n_obs": 6465,
+            "n_obs": 6467,
             "n_dates": 29,
-            "hit_rate": 0.46248,
+            "hit_rate": 0.462649,
             "excess_mean": null,
-            "mean_abs_excess": 0.085847,
+            "mean_abs_excess": 0.085829,
             "excess_basis": "magnitude_only",
             "wilson_ci_low": 0.284129,
             "state": "GRADED",
             "excess_mean_by_direction": {
-              "-1": 0.003081,
+              "-1": 0.003085,
               "0": 0.00395,
-              "1": -0.023985
+              "1": -0.02394
             },
             "excess_directions": [
               -1,
@@ -888,8 +888,8 @@
             "n_obs": 4395,
             "n_dates": 29,
             "hit_rate": null,
-            "excess_mean": -0.012323,
-            "mean_abs_excess": 0.080558,
+            "excess_mean": -0.012318,
+            "mean_abs_excess": 0.080556,
             "excess_basis": "pooled_signed",
             "wilson_ci_low": null,
             "state": "GRADED"
@@ -932,8 +932,8 @@
             "n_obs": 4395,
             "n_dates": 29,
             "hit_rate": null,
-            "excess_mean": -0.012323,
-            "mean_abs_excess": 0.080558,
+            "excess_mean": -0.012318,
+            "mean_abs_excess": 0.080556,
             "excess_basis": "pooled_signed",
             "wilson_ci_low": null,
             "state": "GRADED"
@@ -1093,18 +1093,18 @@
         },
         "radar": {
           "5": {
-            "n_obs": 8874,
+            "n_obs": 8876,
             "n_dates": 39,
-            "hit_rate": 0.50707,
+            "hit_rate": 0.507068,
             "excess_mean": null,
-            "mean_abs_excess": 0.040965,
+            "mean_abs_excess": 0.040961,
             "excess_basis": "magnitude_only",
             "wilson_ci_low": 0.361991,
             "state": "GRADED",
             "excess_mean_by_direction": {
-              "-1": -0.003479,
+              "-1": -0.003486,
               "0": 0.016334,
-              "1": -0.002225
+              "1": -0.002227
             },
             "excess_directions": [
               -1,
@@ -1113,18 +1113,18 @@
             ]
           },
           "21": {
-            "n_obs": 6465,
+            "n_obs": 6467,
             "n_dates": 29,
-            "hit_rate": 0.46248,
+            "hit_rate": 0.462649,
             "excess_mean": null,
-            "mean_abs_excess": 0.085847,
+            "mean_abs_excess": 0.085829,
             "excess_basis": "magnitude_only",
             "wilson_ci_low": 0.284129,
             "state": "GRADED",
             "excess_mean_by_direction": {
-              "-1": 0.003081,
+              "-1": 0.003085,
               "0": 0.00395,
-              "1": -0.023985
+              "1": -0.02394
             },
             "excess_directions": [
               -1,
@@ -1212,8 +1212,8 @@
             "n_obs": 4395,
             "n_dates": 29,
             "hit_rate": null,
-            "excess_mean": -0.012323,
-            "mean_abs_excess": 0.080558,
+            "excess_mean": -0.012318,
+            "mean_abs_excess": 0.080556,
             "excess_basis": "pooled_signed",
             "wilson_ci_low": null,
             "state": "GRADED"
@@ -1256,8 +1256,8 @@
             "n_obs": 4395,
             "n_dates": 29,
             "hit_rate": null,
-            "excess_mean": -0.012323,
-            "mean_abs_excess": 0.080558,
+            "excess_mean": -0.012318,
+            "mean_abs_excess": 0.080556,
             "excess_basis": "pooled_signed",
             "wilson_ci_low": null,
             "state": "GRADED"
@@ -1542,15 +1542,15 @@
   },
   "counts": {
     "n_claims": 46792,
-    "n_grades": 63718,
+    "n_grades": 63722,
     "n_placebo": 940,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 60938
+      "next_bar": 60942
     },
     "grades_by_clock_basis": {
-      "legacy_calendar_unstamped": 63718
+      "legacy_calendar_unstamped": 63722
     },
     "n_claims_horizon_unit_declared": 162,
     "n_claims_unstamped_regime": 5941
@@ -3037,7 +3037,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-18T03:40:28.789553+00:00",
+  "ladder_states_at": "2026-08-18T03:59:56.907935+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -4812,14 +4812,14 @@
         "n_dates": 39,
         "needed": 25,
         "wilson_ci_low": 0.361991,
-        "hit_rate": 0.50707,
+        "hit_rate": 0.507068,
         "excess_mean": null,
-        "mean_abs_excess": 0.040965,
+        "mean_abs_excess": 0.040961,
         "excess_basis": "magnitude_only",
         "excess_mean_by_direction": {
-          "-1": -0.003479,
+          "-1": -0.003486,
           "0": 0.016334,
-          "1": -0.002225
+          "1": -0.002227
         },
         "benchmark_baseline_hit_rate": null,
         "benchmark_baseline_excess_mean": null,
@@ -4850,14 +4850,14 @@
         "n_dates": 29,
         "needed": 25,
         "wilson_ci_low": 0.284129,
-        "hit_rate": 0.46248,
+        "hit_rate": 0.462649,
         "excess_mean": null,
-        "mean_abs_excess": 0.085847,
+        "mean_abs_excess": 0.085829,
         "excess_basis": "magnitude_only",
         "excess_mean_by_direction": {
-          "-1": 0.003081,
+          "-1": 0.003085,
           "0": 0.00395,
-          "1": -0.023985
+          "1": -0.02394
         },
         "benchmark_baseline_hit_rate": null,
         "benchmark_baseline_excess_mean": null,
@@ -5271,8 +5271,8 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "excess_mean_by_direction": null,
         "benchmark_baseline_hit_rate": null,
@@ -5375,8 +5375,8 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.012323,
-        "mean_abs_excess": 0.080558,
+        "excess_mean": -0.012318,
+        "mean_abs_excess": 0.080556,
         "excess_basis": "pooled_signed",
         "excess_mean_by_direction": null,
         "benchmark_baseline_hit_rate": null,
@@ -5753,7 +5753,7 @@
       },
       "radar": {
         "challenger_excess_mean_5d": null,
-        "challenger_abs_excess_5d": 0.040965,
+        "challenger_abs_excess_5d": 0.040961,
         "challenger_excess_basis_5d": "magnitude_only",
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 39,
@@ -5837,5 +5837,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-18T03:41:13.550205+00:00"
+  "promotion_readiness_at": "2026-08-18T04:00:44.056072+00:00"
 }
