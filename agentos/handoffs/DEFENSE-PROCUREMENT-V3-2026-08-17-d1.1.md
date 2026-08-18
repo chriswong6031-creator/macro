@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/defense-d1-1-agency-semantic
 model: local
 ended_because: ci_handoff
-prs: []
+prs: [5856]
 decisions:
   - DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT
 discoveries:
