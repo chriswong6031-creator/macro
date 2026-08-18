@@ -84,12 +84,27 @@ CAPABILITY_COLUMNS: tuple[str, ...] = (
     "node_id", "capability", "capability_basis", "computed_at", "engine_version",
 )
 
+#: GMI -> Data OS identity resolution bridge (V4-D2A) — a re-derived SIDE-CAR, never a
+#: node column, for exactly the same reason as CAPABILITY_COLUMNS above: node rows are
+#: keep-first write-once, and a resolution written once would be a one-way ratchet the
+#: master's own coverage growth could never repair. One row per company-kind node, per
+#: materialized graph generation. See ``engine/theme_graph/identity_resolution.py`` and
+#: ``research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md``.
+IDENTITY_RESOLUTION_COLUMNS: tuple[str, ...] = (
+    "schema", "node_id", "graph_kind", "market_scope", "graph_identity_epoch",
+    "source_native_symbol", "resolution_asof", "resolution_state",
+    "issuer_id", "security_id", "listing_key", "join_method",
+    "master_generated_at", "master_symbol_directory_snapshot", "master_code_version",
+    "refusal_reason", "source_receipts", "computed_at", "engine_version",
+)
+
 #: Keep-first keys. Edges key on (edge_id, belief_time): a NEW belief about the same
 #: edge is a new row, a same-day re-run is a no-op.
 NODE_KEY: tuple[str, ...] = ("node_id",)
 EDGE_KEY: tuple[str, ...] = ("edge_id", "belief_time")
 EVIDENCE_KEY: tuple[str, ...] = ("evidence_id",)
 CAPABILITY_KEY: tuple[str, ...] = ("node_id", "computed_at")
+IDENTITY_RESOLUTION_KEY: tuple[str, ...] = ("node_id", "computed_at")
 
 #: The three exposure axes are measured in W2; W1b writes them as declared nulls so the
 #: columns exist (and the contract can pin them) without anyone mistaking a null for a
@@ -123,6 +138,10 @@ def evidence_path() -> Path:
 
 def capability_path() -> Path:
     return store_dir() / "capability.parquet"
+
+
+def identity_resolution_path() -> Path:
+    return store_dir() / "identity_resolution.parquet"
 
 
 def probation_path() -> Path:
@@ -218,6 +237,22 @@ def read_capability(*, latest: bool = True) -> pd.DataFrame:
                    .sort_values("node_id", kind="stable").reset_index(drop=True))
 
 
+def read_identity_resolution(*, latest: bool = True) -> pd.DataFrame:
+    """GMI -> Data OS identity resolution rows (V4-D2A). ``latest`` collapses to the
+    current view (max ``computed_at`` per node_id).
+
+    Ties break on ``node_id`` — deterministic, never on the resolved id or state, which
+    would quietly turn a tie into a ratchet in whichever direction sorted higher (same
+    discipline as :func:`read_capability`, G0.11).
+    """
+    df = _read(identity_resolution_path(), IDENTITY_RESOLUTION_COLUMNS)
+    if df.empty or not latest:
+        return df
+    ordered = df.sort_values(["node_id", "computed_at"], kind="stable")
+    return (ordered.drop_duplicates(subset=["node_id"], keep="last")
+                   .sort_values("node_id", kind="stable").reset_index(drop=True))
+
+
 def read_meta() -> dict:
     p = meta_path()
     if not p.exists():
@@ -292,6 +327,16 @@ def write_capability(rows: list[dict], *, lane: str | None = None,
     if not lane_ok(lane, "capability append", allow_backfill=allow_backfill):
         return 0
     return append_rows(capability_path(), rows, CAPABILITY_COLUMNS, CAPABILITY_KEY)
+
+
+def write_identity_resolution(rows: list[dict], *, lane: str | None = None,
+                              allow_backfill: bool = False) -> int:
+    """Append tonight's GMI -> Data OS identity resolution derivation. Same lane gate
+    as the ledgers and the capability side-car."""
+    if not lane_ok(lane, "identity_resolution append", allow_backfill=allow_backfill):
+        return 0
+    return append_rows(identity_resolution_path(), rows, IDENTITY_RESOLUTION_COLUMNS,
+                       IDENTITY_RESOLUTION_KEY)
 
 
 def write_meta(meta: dict, *, lane: str | None = None,
