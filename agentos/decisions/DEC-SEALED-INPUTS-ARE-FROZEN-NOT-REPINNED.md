@@ -3,7 +3,10 @@ key: SEALED-INPUTS-ARE-FROZEN-NOT-REPINNED
 question: >
   When a sealed result pins an exact digest over an input file that a nightly lane
   rewrites, what replaces the broken pin — a re-stamped digest, a quantized hash, or
-  something else? And what may the live-file check then assert?
+  something else? And what may the live-file check then assert? This is the adjudication
+  DSC:SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH referred to Stock Identity, which named three
+  candidate routes: a tolerance-aware pin, snapshotting into a namespace the nightly
+  cannot write, or making the producer bit-reproducible.
 answer: >
   Freeze the input. Recover the exact prefix the sealed run consumed from the SEED
   COMMIT (`git show <seed>:<path>`), commit it as an immutable program-owned snapshot,
@@ -35,6 +38,8 @@ alternatives:
     why_not: Fires on the next routine Barrick dividend (~2.4e-3, ~240x the band) and measures a quantity no A1 conclusion depends on. Superseded in favour of the uniformity band before merge.
   - option: Delete or skip the check
     why_not: Forfeits the only detector of a genuine historical revision to the sealed evidence window.
+  - option: Make the producer bit-reproducible (DSC route 3)
+    why_not: Not ours to make deterministic — the non-determinism is the vendor's re-adjustment arithmetic, reached through `yf.download`. Pinning a vendor response bit-for-bit is the same trap one layer out.
 evidence: >
   PR #5868 (this decision's implementing change); fleet red on origin/main from
   2026-08-18T04:02Z, run 32100795267 job 95601375518 ci-pack-3 ->
@@ -52,6 +57,8 @@ evidence: >
   construct a return-changing revision that passes; it did find that a machine-epsilon
   coherence band sits BELOW the vendor's float32 print grid (~6e-8), so the band ships
   at 1e-6.
+discoveries:
+  - DSC:SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH
 affects:
   - WS:STOCK-IDENTITY
   - scripts/stock_identity_build_w1a1.py

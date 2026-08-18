@@ -130,6 +130,8 @@ danger_areas:
 prs: [5868]
 decisions:
   - DEC:SEALED-INPUTS-ARE-FROZEN-NOT-REPINNED
+discoveries:
+  - DSC:SEALED-PIN-ON-A-NIGHTLY-OWNED-PATH
 ---
 
 ## Why this took an architecture change rather than a new digest
