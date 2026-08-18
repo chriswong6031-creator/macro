@@ -87,11 +87,10 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Sol freeze-reviews amended #5889. Canonical issuer binds to source CIK
-      without rewriting raw identity; packet governance is the cutoff-visible
-      GovernanceBundle; revision rows require lineage-wide clocks and cutoff
-      mapping; the whole deterministic body is reconstructed against inputs.
-      v1 freeze waits on that review. Do not start FIF-2.
+      Sol freeze-reviews amended #5889 after the two remaining freeze
+      corrections: cutoff-visible GovernanceBundle owns packet adaptation,
+      and revision-lineage lookup is O(N) once plus bounded parent walks.
+      v1 freeze waits on that review. Do not start FIF-2. Do not create FIF-1R4.
   - id: FIF-2
     title: Read-only financial query API
     status: todo

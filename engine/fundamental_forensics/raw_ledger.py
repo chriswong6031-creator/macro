@@ -1830,6 +1830,26 @@ class RawFactLedger:
         repr=False,
         compare=False,
     )
+    _events_by_id: Mapping[str, RawFactOccurrence] = field(
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _lineage_depth_by_id: Mapping[str, int] = field(
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _lineage_source_ready_by_id: Mapping[str, datetime | None] = field(
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _lineage_system_ready_by_id: Mapping[str, datetime] = field(
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     def __post_init__(self) -> None:
         if self.schema != RAW_LEDGER_SCHEMA:
@@ -1846,6 +1866,9 @@ class RawFactLedger:
         seen: set[str] = set()
         by_id: dict[str, RawFactOccurrence] = {}
         lineage_max_accepted: dict[str, datetime | None] = {}
+        lineage_depth: dict[str, int] = {}
+        lineage_source_ready: dict[str, datetime | None] = {}
+        lineage_system_ready: dict[str, datetime] = {}
         events_by_logical_key: dict[str, list[RawFactOccurrence]] = {}
         for event in events:
             if not isinstance(event, RawFactOccurrence):
@@ -1880,13 +1903,34 @@ class RawFactLedger:
                     lineage_accepted is None or ancestor_max > lineage_accepted
                 ):
                     lineage_accepted = ancestor_max
+                parent_source = lineage_source_ready[parent_id]
+                own_source = event.accepted_at
+                source_ready = (
+                    None
+                    if parent_source is None or own_source is None
+                    else max(parent_source, own_source)
+                )
+                system_ready = max(
+                    lineage_system_ready[parent_id],
+                    event.clocks.system_ready_at,
+                )
+                depth = lineage_depth[parent_id] + 1
+            else:
+                source_ready = event.accepted_at
+                system_ready = event.clocks.system_ready_at
+                depth = 0
             seen.add(event.occurrence_id)
             by_id[event.occurrence_id] = event
             events_by_logical_key.setdefault(event_logical_key, []).append(event)
             lineage_max_accepted[event.occurrence_id] = lineage_accepted
+            lineage_depth[event.occurrence_id] = depth
+            lineage_source_ready[event.occurrence_id] = source_ready
+            lineage_system_ready[event.occurrence_id] = system_ready
         # ``events`` is already an immutable tuple in append order.  Freeze a
         # logical-key index at the same boundary so select_all does not turn a
-        # ledger with many concepts into a repeated full-ledger scan.
+        # ledger with many concepts into a repeated full-ledger scan. Retain
+        # the occurrence index and lineage clocks from this same pass so
+        # packet revision evaluation does not rebuild them per event.
         object.__setattr__(
             self,
             "_events_by_logical_key",
@@ -1897,10 +1941,22 @@ class RawFactLedger:
                 }
             ),
         )
+        object.__setattr__(self, "_events_by_id", MappingProxyType(by_id))
+        object.__setattr__(self, "_lineage_depth_by_id", MappingProxyType(lineage_depth))
+        object.__setattr__(
+            self,
+            "_lineage_source_ready_by_id",
+            MappingProxyType(lineage_source_ready),
+        )
+        object.__setattr__(
+            self,
+            "_lineage_system_ready_by_id",
+            MappingProxyType(lineage_system_ready),
+        )
 
     def append(self, event: RawFactOccurrence) -> "RawFactLedger":
         """Return a new ledger; existing events are never changed or replaced."""
-        if event.occurrence_id in {item.occurrence_id for item in self.events}:
+        if event.occurrence_id in self._events_by_id:
             raise ValueError(f"occurrence_id already exists; immutable ledger cannot overwrite it: {event.occurrence_id}")
         return RawFactLedger(events=self.events + (event,), schema=self.schema)
 
@@ -1918,20 +1974,41 @@ class RawFactLedger:
         return RawFactLedger(events=self.events + incoming, schema=self.schema)
 
     def by_id(self, occurrence_id: str) -> RawFactOccurrence | None:
-        return next((item for item in self.events if item.occurrence_id == occurrence_id), None)
+        return self._events_by_id.get(occurrence_id)
 
     def events_for(self, logical_key: str) -> tuple[RawFactOccurrence, ...]:
         return self._events_by_logical_key.get(logical_key, ())
 
-    def revision_chain(self, occurrence_id: str) -> tuple[RawFactOccurrence, ...]:
-        """Return parent-to-child immutable lineage for one event."""
-        index = {item.occurrence_id: item for item in self.events}
-        current = index.get(occurrence_id)
+    def lineage_depth(self, occurrence_id: str) -> int:
+        """Return parent-hop depth for one event. Roots are depth 0."""
+        try:
+            return self._lineage_depth_by_id[occurrence_id]
+        except KeyError as exc:
+            raise ValueError("revision lineage does not resolve") from exc
+
+    def revision_chain(
+        self,
+        occurrence_id: str,
+        *,
+        max_depth: int | None = None,
+    ) -> tuple[RawFactOccurrence, ...]:
+        """Return parent-to-child immutable lineage for one event.
+
+        Uses the construction-time occurrence index. ``max_depth`` refuses a
+        chain before walking it when the retained depth exceeds the caller's
+        bound; packet assembly supplies the v1 lineage ceiling.
+        """
+        current = self._events_by_id.get(occurrence_id)
         if current is None:
             return ()
+        depth = self._lineage_depth_by_id[occurrence_id]
+        if max_depth is not None and depth > max_depth:
+            raise ValueError(
+                f"revision lineage depth {depth} exceeds max_depth {max_depth}"
+            )
         chain: list[RawFactOccurrence] = [current]
         while current.revision_of:
-            current = index[current.revision_of]
+            current = self._events_by_id[current.revision_of]
             chain.append(current)
         return tuple(reversed(chain))
 
@@ -1941,19 +2018,18 @@ class RawFactLedger:
         """Return lineage-wide ``(source_ready_at, system_ready_at)``.
 
         A revision is knowable only when every ancestor in ``revision_of`` is
-        visible on both clocks. The walk follows the parent chain, so a
-        child retained before its root cannot become eligible early merely
-        because the child's own clocks have passed.
+        visible on both clocks. Clocks are retained from the single
+        construction-time parent pass so a child retained before its root
+        cannot become eligible early, and packet evaluation does not rebuild
+        the chain to answer the same question.
         """
-        chain = self.revision_chain(occurrence_id)
-        if not chain:
-            raise ValueError("revision lineage does not resolve")
-        source_times = [item.accepted_at for item in chain]
-        source_ready = (
-            None if any(value is None for value in source_times) else max(source_times)
-        )
-        system_ready = max(item.clocks.system_ready_at for item in chain)
-        return source_ready, system_ready
+        try:
+            return (
+                self._lineage_source_ready_by_id[occurrence_id],
+                self._lineage_system_ready_by_id[occurrence_id],
+            )
+        except KeyError as exc:
+            raise ValueError("revision lineage does not resolve") from exc
 
     def select(
         self,

@@ -11,6 +11,8 @@ from engine.fundamental_forensics.financial_intelligence_packet import (
     DEFAULT_REQUESTED_METRICS,
     PACKET_MAX_METRICS,
     PACKET_MAX_PERIODS,
+    PACKET_MAX_REVISIONS,
+    PACKET_MAX_REVISION_LINEAGE_DEPTH,
     EntityInput,
     FilingPackageFixture,
     PacketEvidenceDigests,
@@ -34,7 +36,12 @@ from engine.fundamental_forensics.metric_registry import (
     MappingRule,
 )
 from engine.fundamental_forensics.query import PeriodRequest, QueryPolicy
-from engine.fundamental_forensics.raw_ledger import FactContext, FactEventType, RawFactLedger
+from engine.fundamental_forensics.raw_ledger import (
+    FactContext,
+    FactEventType,
+    RawFactLedger,
+    utc_text,
+)
 from engine.fundamental_forensics.synthetic_filing_package import (
     SYNTHETIC_ENTITY_ID,
     build_multihop_revenue_fixture,
@@ -60,6 +67,8 @@ from tests.test_fundamental_forensics_financial_intelligence_packet_r2 import (
 CANONICAL_ISSUER_ID = "mmx.issuer.fip1"
 FUTURE_CONCEPT = "RevenueFromContractWithCustomerIncludingAssessedTax"
 FUTURE_CONCEPT_QNAME = f"us-gaap:{FUTURE_CONCEPT}"
+FUTURE_METRIC_ID = "future_metric"
+FUTURE_METRIC_LABEL = "FUTURE LEAK LABEL"
 
 
 def _register_future_concept(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -100,6 +109,40 @@ def _registry_with_future_revenue_mapping(available_at: datetime):
             for contract in registry.contracts
         ),
     )
+
+
+def _registry_with_future_metric_contract(available_at: datetime):
+    registry = load_core_registry(ROOT)
+    assert FUTURE_METRIC_ID not in registry.metric_ids
+    base = registry.metric("revenue")
+    mapping = base.mappings[0]
+    future = replace(
+        base,
+        metric_id=FUTURE_METRIC_ID,
+        label=FUTURE_METRIC_LABEL,
+        rule=replace(
+            base.rule,
+            rule_id="metric.future_metric/v1",
+            available_at=available_at,
+        ),
+        mappings=(
+            replace(
+                mapping,
+                metric_id=FUTURE_METRIC_ID,
+                rule=replace(
+                    mapping.rule,
+                    rule_id="mapping.future_metric/v1",
+                    available_at=available_at,
+                ),
+                taxonomy_concept_aliases=(
+                    ConceptAlias("us-gaap", FUTURE_CONCEPT, 10, 2009, 2026),
+                ),
+            ),
+        ),
+        formula=None,
+        declared_formula_dependencies=(),
+    )
+    return replace(registry, contracts=registry.contracts + (future,))
 
 
 def _against(packet, *, fixture=None, **build_kwargs) -> None:
@@ -519,6 +562,94 @@ def test_future_rule_does_not_rewrite_historical_packet_identity(
     assert later["governance"]["governance_bundle_id"] != r1_packet["governance"]["governance_bundle_id"]
 
 
+def test_future_metric_contract_does_not_rewrite_historical_packet(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _register_future_concept(monkeypatch)
+    r1 = load_core_registry(ROOT)
+    assert FUTURE_METRIC_ID not in r1.metric_ids
+    cutoff = T3_RECORDED
+    fixture = load_filing_package_fixture(LEDGER_PATH)
+    request = PacketQueryRequest(
+        policy=QueryPolicy(
+            source_snapshot_at=T3_SOURCE,
+            recorded_at=cutoff,
+            selection="latest_known_as_of",
+        ),
+        metrics=DEFAULT_REQUESTED_METRICS + (FUTURE_METRIC_ID,),
+        periods=default_packet_periods(),
+    )
+    r1_packet = assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=request,
+        metric_registry=r1,
+        context=_context(),
+        input_digests=_input_digests(),
+    )
+    r2 = _registry_with_future_metric_contract(
+        datetime(2026, 8, 7, tzinfo=timezone.utc)
+    )
+    assert FUTURE_METRIC_ID in r2.metric_ids
+    r2_at_t = assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=request,
+        metric_registry=r2,
+        context=_context(),
+        input_digests=_input_digests(),
+    )
+    future_cells = [
+        cell for cell in r1_packet["cells"] if cell["metric_id"] == FUTURE_METRIC_ID
+    ]
+    assert future_cells
+    assert all(cell["label"] == FUTURE_METRIC_ID for cell in future_cells)
+    assert all(cell["statement_family"] == "unmapped" for cell in future_cells)
+    assert all(cell["non_value_state"] == "unsupported" for cell in future_cells)
+    assert r1_packet["cells"] == r2_at_t["cells"]
+    assert r1_packet["evidence_cells"] == r2_at_t["evidence_cells"]
+    assert r1_packet["revisions"] == r2_at_t["revisions"]
+    assert r1_packet["governance"]["governance_bundle_id"] == r2_at_t["governance"]["governance_bundle_id"]
+    assert canonical_packet_bytes(r1_packet) == canonical_packet_bytes(r2_at_t)
+    assert r1_packet["content_sha256"] == r2_at_t["content_sha256"]
+    assert r1_packet["packet_id"] == r2_at_t["packet_id"]
+    historical_blob = canonical_packet_bytes(r1_packet).decode("utf-8")
+    assert FUTURE_METRIC_LABEL not in historical_blob
+    expected_statement = r2.metric(FUTURE_METRIC_ID).presentation_constraints.statement
+    assert expected_statement != "unmapped"
+    monkeypatch.setattr(registry_module, "MAX_GOVERNANCE_BUNDLE_METRICS", 51)
+    later_request = PacketQueryRequest(
+        policy=QueryPolicy(
+            source_snapshot_at=T3_SOURCE,
+            recorded_at="2026-08-08T00:00:00Z",
+            selection="latest_known_as_of",
+        ),
+        metrics=DEFAULT_REQUESTED_METRICS + (FUTURE_METRIC_ID,),
+        periods=default_packet_periods(),
+    )
+    later = assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=later_request,
+        metric_registry=r2,
+        context=_context(),
+        input_digests=_input_digests(),
+    )
+    later_future = [
+        cell for cell in later["cells"] if cell["metric_id"] == FUTURE_METRIC_ID
+    ]
+    assert later_future
+    assert all(cell["label"] == FUTURE_METRIC_LABEL for cell in later_future)
+    assert all(cell["statement_family"] == expected_statement for cell in later_future)
+    assert all(cell["non_value_state"] != "unsupported" for cell in later_future)
+    assert later["governance"]["governance_bundle_id"] != r1_packet["governance"]["governance_bundle_id"]
+    assert later["content_sha256"] != r1_packet["content_sha256"]
+    assert later["packet_id"] != r1_packet["packet_id"]
+
+
 def _mini_revision_fixture(
     *,
     child_recorded: str,
@@ -590,6 +721,27 @@ def _mini_revision_fixture(
         )
         events.append(third)
         filings["25-000011"] = third_filing
+    if hops >= 3:
+        fourth_filing = synthetic_filing(
+            accession="0000999999-25-000012",
+            document_id="fip1-2023-amend-d.htm",
+            accepted_at="2025-12-15T16:00:00Z",
+            recorded_at="2026-08-04T19:00:00Z",
+            filed_at="2025-12-15",
+        )
+        fourth = usd_fact(
+            fourth_filing,
+            concept,
+            fy2023,
+            "1080",
+            source_span=(0, 4),
+            source_occurrence_key="fy2023-revenue-amendment-d",
+            event_type=FactEventType.AMENDMENT,
+            revision_of=events[-1].occurrence_id,
+            recorded_at="2026-08-04T19:00:00Z",
+        )
+        events.append(fourth)
+        filings["25-000012"] = fourth_filing
     events_t = tuple(events)
     entity = EntityInput(
         entity_id=SYNTHETIC_ENTITY_ID,
@@ -801,6 +953,151 @@ def test_revision_ceiling_fails_during_accumulation(monkeypatch: pytest.MonkeyPa
             context=_context(),
             input_digests=PacketEvidenceDigests(),
         )
+
+
+def test_packet_refuses_revision_lineage_deeper_than_v1_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(packet_module, "PACKET_MAX_REVISION_LINEAGE_DEPTH", 2)
+    within = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        hops=2,
+    )
+    assemble_financial_intelligence_packet(
+        entity=within.entity,
+        ledger=within.ledger,
+        filing_metadata=within.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=T3_SOURCE,
+                recorded_at=T3_RECORDED,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=load_core_registry(ROOT),
+        context=_context(),
+        input_digests=PacketEvidenceDigests(),
+    )
+    too_deep = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        hops=3,
+    )
+    assert too_deep.ledger.lineage_depth(too_deep.ledger.events[-1].occurrence_id) == 3
+    with pytest.raises(ValueError, match="PACKET_MAX_REVISION_LINEAGE_DEPTH"):
+        assemble_financial_intelligence_packet(
+            entity=too_deep.entity,
+            ledger=too_deep.ledger,
+            filing_metadata=too_deep.filing_metadata,
+            query_request=PacketQueryRequest(
+                policy=QueryPolicy(
+                    source_snapshot_at=T3_SOURCE,
+                    recorded_at=T3_RECORDED,
+                    selection="latest_known_as_of",
+                ),
+                metrics=("revenue",),
+                periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+            ),
+            metric_registry=load_core_registry(ROOT),
+            context=_context(),
+            input_digests=PacketEvidenceDigests(),
+        )
+
+
+def test_packet_revision_lookup_is_bounded_independently_of_row_ceiling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    emitting = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        hops=1,
+    )
+    noise_filing = synthetic_filing(
+        accession="0000999999-99-000099",
+        document_id="fip1-noise.htm",
+        accepted_at="2024-02-15T16:00:00Z",
+        recorded_at="2024-02-15T16:05:00Z",
+        filed_at="2024-02-15",
+    )
+    non_emitting_revisions = 2048
+    noise_events: list = []
+    for index in range(non_emitting_revisions):
+        ctx = FactContext(
+            context_id=f"c-noise-{index}",
+            entity_scheme="http://www.sec.gov/CIK",
+            entity_identifier=SYNTHETIC_ENTITY_ID,
+            start="1999-01-01",
+            end="1999-12-31",
+        )
+        root = usd_fact(
+            noise_filing,
+            "custom:AdversarialRevisionNoise",
+            ctx,
+            "1",
+            source_span=(index * 2, index * 2 + 1),
+            source_occurrence_key=f"noise-{index}-root",
+        )
+        child = usd_fact(
+            noise_filing,
+            "custom:AdversarialRevisionNoise",
+            ctx,
+            "2",
+            source_span=(index * 2 + 1, index * 2 + 2),
+            source_occurrence_key=f"noise-{index}-child",
+            event_type=FactEventType.RESTATEMENT,
+            revision_of=root.occurrence_id,
+        )
+        noise_events.extend((root, child))
+    events = emitting.ledger.events + tuple(noise_events)
+    ledger = RawFactLedger(events)
+    metadata = dict(emitting.filing_metadata)
+    for event in noise_events:
+        metadata[event.occurrence_id] = {
+            "accession": event.source.accession,
+            "document_id": event.source.document_id,
+            "source_body_sha256": event.source.body_sha256,
+            "available_at": utc_text(event.clocks.recorded_at),
+            "form": "10-K",
+            "filed_at": "2024-02-15",
+        }
+    chain_calls: list[str] = []
+    original_chain = RawFactLedger.revision_chain
+
+    def counted_chain(self, occurrence_id, *args, **kwargs):
+        chain_calls.append(occurrence_id)
+        return original_chain(self, occurrence_id, *args, **kwargs)
+
+    monkeypatch.setattr(RawFactLedger, "revision_chain", counted_chain)
+    index = ledger._events_by_id
+    packet = assemble_financial_intelligence_packet(
+        entity=emitting.entity,
+        ledger=ledger,
+        filing_metadata=metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=T3_SOURCE,
+                recorded_at=T3_RECORDED,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=load_core_registry(ROOT),
+        context=_context(),
+        input_digests=PacketEvidenceDigests(),
+    )
+    emitting_child = emitting.ledger.events[1].occurrence_id
+    assert ledger._events_by_id is index
+    assert len(index) == len(events)
+    assert set(chain_calls) == {emitting_child}
+    assert 1 <= len(chain_calls) <= 2
+    assert len(packet["revisions"]) == 1
+    assert len(packet["revisions"]) < PACKET_MAX_REVISIONS
+    assert non_emitting_revisions > PACKET_MAX_REVISIONS
+    assert PACKET_MAX_REVISION_LINEAGE_DEPTH >= 1
 
 
 def test_extension_ceiling_fails_during_accumulation(monkeypatch: pytest.MonkeyPatch) -> None:

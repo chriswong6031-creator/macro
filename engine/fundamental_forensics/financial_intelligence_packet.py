@@ -105,6 +105,10 @@ PACKET_MAX_FORMULA_DEPTH = 16
 PACKET_MAX_FORMULA_FANOUT = 16
 PACKET_MAX_REVISIONS = 2_000
 PACKET_MAX_UNMAPPED_EXTENSIONS = 256
+# Parent-hop ceiling for one revision_of chain. Compatible with the v1
+# packet's revision-row budget: a pathological million-event ledger may
+# exist, but a single lineage cannot be materialized past this depth.
+PACKET_MAX_REVISION_LINEAGE_DEPTH = 256
 PACKET_MAX_TOTAL_CELLS = PACKET_MAX_REQUEST_CELLS + PACKET_MAX_EVIDENCE_NODES
 PACKET_MAX_SERIALIZED_BYTES = 2 * 1024 * 1024
 PACKET_MAX_IDENTIFIER_CHARS = 256
@@ -847,6 +851,7 @@ def _query_adapted_cells(
     filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
     query_request: PacketQueryRequest,
     metric_registry: MetricRegistry,
+    governance_bundle: GovernanceBundle,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[MetricCell]]:
     engine = BitemporalMetricQueryEngine(
         ledger,
@@ -856,10 +861,10 @@ def _query_adapted_cells(
     )
     cells: list[dict[str, Any]] = []
     kernel_cells: list[MetricCell] = []
-    registry_ids = set(metric_registry.metric_ids)
+    visible_ids = {contract.metric_id for contract in governance_bundle.contracts}
     for metric_id in query_request.metrics:
         for period in query_request.periods:
-            if metric_id not in registry_ids:
+            if metric_id not in visible_ids:
                 cells.append(
                     _unsupported_cell(
                         entity=entity,
@@ -887,10 +892,10 @@ def _query_adapted_cells(
                 )
                 continue
             kernel_cells.append(kernel_cell)
-            cells.append(_adapt_kernel_cell(kernel_cell, metric_registry.metric(metric_id)))
+            cells.append(_adapt_kernel_cell(kernel_cell, governance_bundle.metric(metric_id)))
     cells.sort(key=lambda item: (item["metric_id"], canonical_json(item["period"]), item["cell_id"]))
     _assert_requested_cell_cross_product(query_request, cells)
-    evidence_cells = _evidence_cells(kernel_cells, cells, metric_registry)
+    evidence_cells = _evidence_cells(kernel_cells, cells, governance_bundle)
     return cells, evidence_cells, kernel_cells
 
 
@@ -958,6 +963,7 @@ def _governed_packet_components(
         filing_metadata=filing_metadata,
         query_request=query_request,
         metric_registry=metric_registry,
+        governance_bundle=governance_bundle,
     )
     assert_formula_evidence_closed(cells, evidence_cells)
     revisions = _revision_records(
@@ -1215,7 +1221,7 @@ def _cell_states(cell: MetricCell | CellNode) -> tuple[str | None, str, str]:
 def _evidence_cells(
     kernel_cells: Sequence[MetricCell],
     cells: Sequence[Mapping[str, Any]],
-    registry: MetricRegistry,
+    governance_bundle: GovernanceBundle,
 ) -> list[dict[str, Any]]:
     requested_ids = {cell["cell_id"] for cell in cells}
     evidence_by_id: dict[str, dict[str, Any]] = {}
@@ -1223,7 +1229,7 @@ def _evidence_cells(
         for node in kernel_cell.dependency_nodes:
             if node.cell_id in requested_ids:
                 continue
-            adapted = _adapt_kernel_cell(node, registry.metric(node.metric_id))
+            adapted = _adapt_kernel_cell(node, governance_bundle.metric(node.metric_id))
             existing = evidence_by_id.get(node.cell_id)
             if existing is not None and existing != adapted:
                 raise ValueError(f"conflicting evidence cell {node.cell_id}")
@@ -1281,13 +1287,6 @@ def _revision_records(
         )
         if not knowable:
             continue
-        chain = ledger.revision_chain(event.occurrence_id)
-        if not chain:
-            raise ValueError("revision lineage does not resolve")
-        parent = chain[-2] if len(chain) >= 2 else None
-        if parent is None:
-            raise ValueError("revision event has no parent")
-        root = chain[0]
         metric_ids = [
             metric_id
             for metric_id in concept_map.get(event.concept_qname, ())
@@ -1296,11 +1295,30 @@ def _revision_records(
         matching_periods = [
             period for period in query_request.periods if _period_matches_event(period, event)
         ]
-        cited = event.occurrence_id in cited_occurrences or parent.occurrence_id in cited_occurrences
+        cited = (
+            event.occurrence_id in cited_occurrences
+            or event.revision_of in cited_occurrences
+        )
         if not metric_ids or (not matching_periods and not cited):
             continue
         if not matching_periods:
             continue
+        depth = ledger.lineage_depth(event.occurrence_id)
+        if depth > PACKET_MAX_REVISION_LINEAGE_DEPTH:
+            raise ValueError(
+                "revision lineage depth exceeds PACKET_MAX_REVISION_LINEAGE_DEPTH "
+                f"{PACKET_MAX_REVISION_LINEAGE_DEPTH}"
+            )
+        chain = ledger.revision_chain(
+            event.occurrence_id,
+            max_depth=PACKET_MAX_REVISION_LINEAGE_DEPTH,
+        )
+        if not chain:
+            raise ValueError("revision lineage does not resolve")
+        parent = chain[-2] if len(chain) >= 2 else None
+        if parent is None:
+            raise ValueError("revision event has no parent")
+        root = chain[0]
         prior_value = decimal_text(parent.parsed_value) if parent.parsed_value is not None else None
         root_value = decimal_text(root.parsed_value) if root.parsed_value is not None else None
         revised_value = decimal_text(event.parsed_value) if event.parsed_value is not None else None
