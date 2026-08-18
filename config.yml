@@ -7168,6 +7168,31 @@ us_board_gate:
   panel_preview_rows: 3
 
 # ---------------------------------------------------------------------------
+# sector_central_gate — the SAME Act-Now board, on its second host.
+# templates/_us_act_now_board.html.j2 is a shared include: build_site renders it
+# on us_stocks.html (gated by us_board_gate.panels above) and
+# scripts/build_sector_central.py renders it on sector_central.html from
+# site/basketdata/action_board.json (reader pattern). The us_stocks gate removed
+# those rows from THAT page's bytes and did nothing to this one, so the whole
+# board stayed one click away in full — 45 `.actitem` rows, anonymous, measured
+# on the live page 2026-08-17. Worse than the us_stocks pre-gate state, in fact:
+# templates/tier_preview.js is never loaded on sector_central.html, so this page
+# had no wall at all, not even the client-side overlay.
+#
+# Same mechanism as every other desk (docs/TIER_PREVIEW_PATTERN.md): the shell
+# bakes `preview_rows` rows per lane with honest full-board lane counts, and the
+# withheld remainder ships as site/premiumdata/sector_central.json — its OWN
+# payload, never us_stocks.json, because the two pages are built by different
+# scripts at different times from different generations of the artifact.
+#
+# Separate switch from us_board_gate on purpose: this page's board is fed by a
+# committed artifact one build behind, so it must be closeable (or re-openable)
+# without touching the us_stocks board's gate.
+sector_central_gate:
+  gated: true
+  preview_rows: 3
+
+# ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies
 # (engine/qual_extraction.py, W5 §2.4 / Appendix P5).
 # Wired to the 8-K lane in collectors/special_situations.py.

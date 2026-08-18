@@ -117,7 +117,24 @@ class TestBasketsW3Markers:
         # keep this guard on the canonical owner instead of requiring a page-local copy.
         theme = _src("theme.css")
         assert ".dtp-colmore[hidden], .dtp-more[hidden] { display:none; }" in theme
-        assert ".lst-more" not in src
+        # SCOPED TO THE TAPE BAND (2026-08-18). This assertion is about THIS
+        # band's expander — it must continue each column with .dtp-colmore
+        # rather than regress to the generic list-collapse control — and it was
+        # written as a whole-file ban only because nothing else in this template
+        # named the class. That stopped being true: the page also hosts the
+        # shared Act-Now board, whose fold control legitimately IS .lst-more
+        # (theme.css owns the class, theme.js binds it), and the board's
+        # tier-gate hydration has to name it to rebuild the control the gated
+        # shell ships without. A whole-file ban would have forced that script to
+        # spell the class indirectly — a guard that shapes unrelated code around
+        # itself is measuring the wrong thing.
+        tape = src[src.index('id="ftr-tape-strip"'):]
+        tape = tape[:tape.index("</script>", tape.index('id="ftr-dtp-body"'))]
+        # ...and the slice must still COVER the expander, or the ban below passes
+        # by looking at nothing (a narrowed guard that went blind reads exactly
+        # like a guard that holds).
+        assert "dtp-colmore" in tape and "ftr-dtp-more" in tape
+        assert ".lst-more" not in tape
 
     def test_no_raw_rank_idiom(self):
         """The vetoed '#'-prefixed raw tape_rank idiom must not render (v3 per-column

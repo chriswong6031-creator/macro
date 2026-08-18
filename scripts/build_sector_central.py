@@ -34,6 +34,139 @@ log = logging.getLogger("build_sector_central")
 _REDUCE_SIDE_LANES = ("take_profits", "avoid", "hold")
 
 
+# ── ACT-NOW BOARD TIER GATE (docs/TIER_PREVIEW_PATTERN.md) ───────────────────
+# templates/_us_act_now_board.html.j2 is SHARED with us_stocks.html, where PR
+# #5846 gave it the three-shape split (full / gated shell / rows-only). That gate
+# is driven by build_site and reached only that page: this host passed no `pgate`,
+# so sector_central.html kept server-rendering all five lanes in full to anonymous
+# readers — 45 `.actitem` rows, measured live 2026-08-17 — and the us_stocks gate
+# merely moved the same rows one click away. This page never loads
+# tier_preview.js either, so there was no client-side overlay here to soften it.
+#
+# Same mechanism, its OWN payload. The board arrives here through the reader
+# pattern (site/basketdata/action_board.json, written by an earlier build_site
+# run), so this page is rendered by a different script at a different time from a
+# possibly older generation of the artifact. Sharing site/premiumdata/us_stocks.json
+# would make whichever builder ran last silently overwrite the other's rows, so
+# the withheld remainder ships as site/premiumdata/sector_central.json. Both are
+# under the /premiumdata/ prefix that config/site_access.yml already enforces at
+# premium.enforced_early, so no policy change is needed for a NEW file there.
+_SC_PAYLOAD_DIR = "premiumdata"
+_SC_PAYLOAD_NAME = "sector_central.json"
+#: Page-relative, because sector_central.html sits at the site root.
+_SC_PAYLOAD_URL = "premiumdata/sector_central.json"
+
+#: lane key -> (the .actbody id its rows were sliced out of, does the lane wrap
+#: theme rows in the TS-R5 data-theme-id div?). Deliberately a COPY of
+#: scripts/build_site.py::_US_ACTNOW_LANES rather than an import: build_site pulls
+#: plotly at module scope, and importing it here would drag the whole page stack
+#: into this fail-soft builder and out of the import-light CI lane. The two tables
+#: and the template's own fold ids are pinned together by
+#: tests/test_sector_central_gate.py::test_lane_table_matches_build_site (and
+#: ::test_lane_ids_exist_in_template), so a drift is a red, not a silent leak.
+_ACTNOW_LANES = [
+    ("buy_now", "ab-buy-fold", False),
+    ("buy_soon", "ab-soon-fold", False),
+    ("on_the_run", "ab-run-fold", False),
+    ("take_profits", "ab-trim-fold", False),
+    ("hold", "dash-hold-fold", True),
+    ("avoid", "dash-hold-fold", True),
+]
+
+
+def _gate_cfg() -> dict:
+    """The `sector_central_gate` switch. Never raises: a missing or malformed
+    block leaves the board UNGATED, which is the pre-gate behaviour — this
+    builder is additive-and-never-fatal by contract, and a crash here would cost
+    the whole page."""
+    try:
+        cfg = config.load().get("sector_central_gate") or {}
+        return {"gated": bool(cfg.get("gated", False)),
+                "preview_rows": int(cfg.get("preview_rows") or 3)}
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_central: gate config unreadable (%s) — board ungated", e)
+        return {"gated": False, "preview_rows": 3}
+
+
+def split_actnow(action_board: dict | None, preview: int, *, gated: bool = True):
+    """Tier-preview split for the Act-Now board. Returns (pgate, locked).
+
+    Pure in `action_board` — the caller hands the SAME dict to the page render,
+    which re-derives its own preview slices in-template from `pgate` so the lane
+    headings and empty-state branches keep reading the FULL lists (the counts and
+    the state are what stays free; only the names are paid).
+
+    `locked` is the [{lane, rows, wrap}] list the include consumes in its
+    rows-only shape, keyed by the `.actbody` id each row was sliced out of.
+
+    Returns (None, []) when nothing is withheld anywhere — a board at or under
+    the preview cap ships whole, because a wall over nothing is worse than no
+    wall, and an ungated page must stay byte-identical to the pre-gate one.
+    """
+    if not gated or not isinstance(action_board, dict):
+        return None, []
+    preview = max(0, int(preview))
+    locked: list[dict] = []
+    total = 0
+    hold_shown = 0
+    for key, dest, wrap in _ACTNOW_LANES:
+        rows = list(action_board.get(key) or [])
+        total += len(rows)
+        # Stand aside is ONE .actbody fed by hold+avoid, so the lane's budget is
+        # spent on `hold` first and `avoid` takes the remainder — exactly how the
+        # template slices it, or the two halves would disagree about what shipped.
+        budget = max(0, preview - hold_shown) if key == "avoid" else preview
+        shown = rows[:budget]
+        if key == "hold":
+            hold_shown = len(shown)
+        if len(rows) > len(shown):
+            locked.append({"lane": dest, "rows": rows[len(shown):], "wrap": wrap})
+    if not locked:
+        return None, []
+    n_locked = sum(len(L["rows"]) for L in locked)
+    pgate = {
+        "tier": "essential",
+        "payload": _SC_PAYLOAD_URL,
+        "preview": preview,
+        "actnow": {"preview": preview, "locked": n_locked, "total": total},
+    }
+    return pgate, locked
+
+
+def write_payload(env, site: Path, pgate: dict | None, locked: list[dict],
+                  action_board: dict | None, *, built: str = "") -> None:
+    """Write the withheld Act-Now rows to site/premiumdata/sector_central.json.
+
+    ALWAYS written, including the ungated / nothing-withheld case: a night whose
+    board shrank below the cap would otherwise leave YESTERDAY's payload in place
+    for a paying reader to hydrate rows that are no longer on tonight's board.
+
+    The rows are rendered from the SAME include the shell renders, in its
+    rows-only (`ab_locked`) shape, so the hydrated page and a full server render
+    cannot drift apart. Never fatal: a render that raises ships an empty block and
+    the rows simply stay withheld, which is what a locked reader sees anyway.
+    """
+    path = site / _SC_PAYLOAD_DIR / _SC_PAYLOAD_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload: dict = {"schema": "tier_payload.v1", "page": "sector_central",
+                     "gated": bool(pgate), "required_tier": "essential",
+                     "built": built}
+    if pgate:
+        payload["panels"] = {"actnow": pgate["actnow"]}
+        try:
+            payload["actnow_html"] = env.get_template(
+                "_us_act_now_board.html.j2").render(
+                    action_board=action_board, ab_locked=locked)
+        except Exception as e:  # noqa: BLE001 — a payload must not abort the build
+            log.error("sector_central: locked act-now render failed (%s)", e)
+            payload["actnow_html"] = ""
+    path.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
+                    encoding="utf-8")
+    log.info("sector_central: premium payload %s (%d withheld row(s))",
+             _SC_PAYLOAD_URL,
+             sum(len(L["rows"]) for L in locked))
+
+
 def build_bottoming_context(act_now: dict | None, action_board: dict | None) -> dict | None:
     """Slice the bottoming-watch payload for the page and stamp the recovering chip.
 
@@ -284,9 +417,33 @@ def main() -> int:
                 )
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_central: bottoming lane read failed (%s)", e)
+    # ── TIER GATE (docs/TIER_PREVIEW_PATTERN.md). Split the board BEFORE the
+    # render and write the withheld remainder to this page's own payload. The
+    # split is the gate: the shell below bakes only the preview slice per lane,
+    # so the paid rows are not in the shipped bytes at all.
+    #
+    # Ordered before the render, and the payload written unconditionally, so the
+    # published pair can never disagree in the leaky direction — a payload that
+    # failed to write leaves last night's rows behind a 401, while a shell that
+    # failed to render keeps the last-good HTML (below) whose rows the payload
+    # already matches.
+    _sc_gate_cfg = _gate_cfg()
+    _sc_pgate, _sc_locked = split_actnow(
+        _action_board, _sc_gate_cfg["preview_rows"], gated=_sc_gate_cfg["gated"])
+    _sc_built = ctx.get("generated_utc") or data.get("as_of") or ""
+    try:
+        write_payload(env, site, _sc_pgate, _sc_locked, _action_board,
+                      built=_sc_built)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        # A payload we could not write must NOT be paired with a gated shell that
+        # promises it: fall back to the ungated board rather than publish a page
+        # whose withheld rows are unreachable for everyone, paying or not.
+        log.error("sector_central: payload write failed (%s) — board ungated", e)
+        _sc_pgate = None
     try:
         html = env.get_template("sector_central.html.j2").render(
             flows_html=flows_html,
+            pgate=_sc_pgate,
             bottoming=_bottoming,
             theme_context=ctx.get("theme_context"),
             factor_season=ctx.get("factor_season"),
