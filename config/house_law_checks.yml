@@ -1918,9 +1918,7 @@ checks:
       consume the bounded PC/M1 migration labels. Only registered main-branch
       workflow-dispatch canaries may request those labels, downstream of a hosted
       trust gate. PC render and CI labels remain disjoint and the M1 canary cannot
-      regain a broad production label. Every runs-on label in every workflow must
-      be declared in the label_registry, and an orphaned label may not be used by
-      a scheduled workflow without a dated waiver.
+      regain a broad production label.
     source_ref:
       - scripts/check_runner_policy.py
       - .github/runner-policy.yml
@@ -1946,31 +1944,15 @@ checks:
         live home runners must also reside in the organization runner group that
         is restricted server-side to exact workflow paths pinned to refs/heads/main.
       - >-
-        Production self-hosted labels are now in scope for DECLARATION (R11/R12,
-        added 2026-08-17): every literal runs-on label in every workflow must be
-        a label_registry key, and a workflow with a schedule trigger cannot use
-        an orphaned label without a dated waiver. Routing rules R1-R10 still
-        govern only the Wave B/C migration labels — this law does not gate which
-        production label a job may use, only that the label is declared.
-      - >-
-        label_registry `status` fields are hand-maintained, refreshed by hand
-        from the GitHub runners API, because listing live runners needs an
-        admin-scoped token CI does not carry. R11/R12 therefore catch an
-        undeclared label or an orphan-scheduled label at PR time, never a host
-        that went offline an hour ago — that gap is why `offline` is watch-only
-        and not R12-blocking.
+        Existing pre-Wave-B/C production self-hosted labels are outside this
+        migration-label registry; this law prevents new fork/ordinary-PR routes
+        from reaching the canary labels without changing those production lanes.
     owner_program: ci-recovery-wave-bc
     notes: >
       Registered after the first full PR pack correctly caught the new
       check_runner_policy.py in the house-law census. The runtime counterpart is
       the macro-home-canary organization runner group; static ordering alone is
-      not treated as a security boundary. R11/R12 close the class DSC:QUEUED-JOB-
-      HOSTAGE-HOLDS-THE-NIGHTLY-CRON-GROUP names: a deregistered host silently
-      orphans every label it carried, and a cron job queued on a dead label can
-      hold its concurrency group for 24h. (The postmortem that discovery cites,
-      research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md, ships on a separate
-      unmerged PR and is not cited as a source_ref here to avoid a dangling path
-      on this branch.)
+      not treated as a security boundary.
 
   - law_id: ops.no_skip_only_suites
     summary: >

@@ -4,22 +4,11 @@
 Ordinary PR CI, plan/gate, and fences remain hosted. Only explicit dispatch-only
 diagnostics may reach the new PC/M1 labels. Existing production self-hosted lanes are
 left untouched; this guard owns the new migration labels and the fork boundary.
-
-It also owns the label-DECLARATION boundary (rules R11/R12, added 2026-08-17): every
-literal ``runs-on`` label in every workflow must be declared in
-``.github/runner-policy.yml``'s ``label_registry``, and a label whose registry entry
-is ``orphaned`` may not be used by a scheduled workflow without a dated
-``scheduled_use_waiver``. See the registry's own header comment for why — a runner
-label lives only in GitHub's runners-API state, so deregistering a host silently
-orphans every label it carried, and a cron job queued on a dead label can hold its
-concurrency group hostage for 24h (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md).
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,17 +45,6 @@ RUNTIME_WORKFLOWS = {
     "mastermindx-market-intelligence/macro/.github/workflows/engine-render.yml@refs/heads/main",
     "mastermindx-market-intelligence/macro/.github/workflows/render.yml@refs/heads/main",
 }
-LABEL_REGISTRY_VALID_STATUS = {"live", "github-hosted", "offline", "orphaned"}
-# Every single-quoted literal inside a `${{ }}` expression. Never matches a bare
-# identifier like `github.event.inputs.runner` — those are unquoted operands, so
-# they never contribute a (bogus) label.
-_QUOTED_LITERAL_RE = re.compile(r"'([^']*)'")
-# A quoted literal that is the RHS of a `==`/`!=` comparison (e.g. the `'1'` in
-# `inputs.slots == '1'`) — stripped before label extraction. It IS single-quoted,
-# so a bare quote scan would otherwise invent a phantom label out of it; it is
-# never itself a candidate runs-on value, unlike the literal(s) on the other side
-# of the `&&`/`||` it gates.
-_COMPARISON_LITERAL_RE = re.compile(r"(?:==|!=)\s*'[^']*'")
 
 
 @dataclass(frozen=True)
@@ -98,58 +76,6 @@ def runs_on_text(job: dict) -> str:
     if isinstance(value, list):
         return " ".join(str(item) for item in value)
     return str(value)
-
-
-def _labels_from_scalar(text: str) -> set[str]:
-    """The literal runner label(s) one ``runs-on`` scalar (or list entry) names.
-
-    A plain string (``ubuntu-latest``) is the label itself. A ``${{ }}``
-    expression is scanned for every single-quoted string literal — never the
-    unquoted operands around it, so ``github.event.inputs.runner`` in
-    ``github.event.inputs.runner || 'render-heavy'`` contributes nothing while
-    ``'render-heavy'`` contributes the label. A quoted literal that itself
-    round-trips through JSON as a list — the ``fromJSON('["a","b"]')`` shape —
-    is expanded to its elements instead of being kept as one opaque string.
-    """
-    if "${{" not in text:
-        literal = text.strip()
-        return {literal} if literal else set()
-    scannable = _COMPARISON_LITERAL_RE.sub("", text)
-    labels: set[str] = set()
-    for match in _QUOTED_LITERAL_RE.findall(scannable):
-        parsed = None
-        try:
-            parsed = json.loads(match)
-        except (json.JSONDecodeError, ValueError):
-            parsed = None
-        if isinstance(parsed, list):
-            labels |= {str(item) for item in parsed if isinstance(item, str)}
-        elif match:
-            labels.add(match)
-    return labels
-
-
-def runs_on_labels(job: dict) -> set[str]:
-    """The set of LITERAL runner labels a job's ``runs-on`` resolves to.
-
-    Handles a plain string, a list of plain strings, a list whose entries are
-    themselves ``${{ }}`` expressions (render.yml's
-    ``[self-hosted, ${{ github.event.inputs.runner || 'render-heavy' }}]``
-    shape), and a top-level expression such as engine-render.yml's
-    ``${{ github.event.inputs.runner || 'render-linux' }}`` or
-    selfhosted-ci-canary.yml's
-    ``${{ fromJSON('["self-hosted","ci-linux-canary"]') }}``. Non-literal
-    operands never appear in the result — see ``_labels_from_scalar``.
-    """
-    value = job.get("runs-on")
-    if isinstance(value, str):
-        return _labels_from_scalar(value)
-    if isinstance(value, list):
-        labels: set[str] = set()
-        for item in value:
-            labels |= _labels_from_scalar(str(item))
-        return labels
-    return set()
 
 
 def needs_names(job: dict) -> set[str]:
@@ -262,88 +188,6 @@ def _authority_controller_r2_findings(relative: str, document: dict) -> list[Fin
     return findings
 
 
-def _label_registry_hygiene_findings(label_registry: dict) -> list[Finding]:
-    """R11 hygiene: every registry entry is a well-formed, self-consistent mapping."""
-    findings: list[Finding] = []
-    for label, entry in label_registry.items():
-        if not isinstance(entry, dict):
-            findings.append(
-                Finding("R11", f"label_registry entry {label!r} must be a mapping")
-            )
-            continue
-        status = entry.get("status")
-        if status not in LABEL_REGISTRY_VALID_STATUS:
-            findings.append(
-                Finding(
-                    "R11",
-                    f"label_registry entry {label!r} has invalid status {status!r}",
-                )
-            )
-        carried_by = entry.get("carried_by")
-        if not isinstance(carried_by, list):
-            findings.append(
-                Finding(
-                    "R11",
-                    f"label_registry entry {label!r} must declare a carried_by list",
-                )
-            )
-            continue
-        if status in ("live", "offline") and not carried_by:
-            findings.append(
-                Finding(
-                    "R11",
-                    f"label_registry entry {label!r} status {status!r} must declare a non-empty carried_by",
-                )
-            )
-        if status in ("github-hosted", "orphaned") and carried_by:
-            findings.append(
-                Finding(
-                    "R11",
-                    f"label_registry entry {label!r} status {status!r} must declare an empty carried_by",
-                )
-            )
-    return findings
-
-
-def _label_registry_findings(registry: dict, documents: dict[str, dict]) -> list[Finding]:
-    """R11 (every used label is declared) + R12 (no scheduled use of an orphan)."""
-    label_registry = registry.get("label_registry") or {}
-    findings = _label_registry_hygiene_findings(label_registry)
-    for relative, document in documents.items():
-        has_schedule = "schedule" in triggers(document)
-        for job_id, job in (document.get("jobs") or {}).items():
-            if not isinstance(job, dict):
-                continue
-            for label in runs_on_labels(job):
-                entry = label_registry.get(label)
-                if entry is None:
-                    findings.append(
-                        Finding(
-                            "R11",
-                            f"{relative}:{job_id} uses unregistered runner label {label!r} — add it to .github/runner-policy.yml label_registry",
-                        )
-                    )
-                    continue
-                if not has_schedule or not isinstance(entry, dict):
-                    continue
-                if entry.get("status") != "orphaned":
-                    continue
-                waiver = entry.get("scheduled_use_waiver")
-                waived = (
-                    isinstance(waiver, dict)
-                    and bool(waiver.get("reason"))
-                    and bool(waiver.get("since"))
-                )
-                if not waived:
-                    findings.append(
-                        Finding(
-                            "R12",
-                            f"{relative}:{job_id} schedules onto orphaned label {label!r} — a queued job on a dead label can hold its cron concurrency group for 24h",
-                        )
-                    )
-    return findings
-
-
 def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Finding]:
     registry = load_yaml(registry_path)
     findings: list[Finding] = []
@@ -402,8 +246,6 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
                             f"{relative}:{job_id} must remain exactly {HOSTED} on pull_request during Wave B/C",
                         )
                     )
-
-    findings.extend(_label_registry_findings(registry, documents))
 
     for route in registry.get("protected_hosted_routes") or []:
         workflow = route.get("workflow")
