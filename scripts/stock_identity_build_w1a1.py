@@ -138,6 +138,26 @@ B_SOURCE_SEED_CONTAINER_SHA256 = (
     "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
 )
 B_SOURCE_PREFIX_SHA256 = "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db"
+# ...and the frame that receipt describes is SEALED HERE, not re-read from the
+# live curated plane.  The comment above assumed the nightly only APPENDS, so a
+# prefix through ASOF would be durable.  It is not: the baskets plane is
+# total-return adjusted (`auto_adjust=True`, per the program manifest), so every
+# dividend RESTATES the whole history.  Measured 2026-08-18 against the first
+# nightly after registration: 2373/3172 rows moved on all four price columns by
+# up to 8.6e-07 relative -- economically identical, byte-different, and enough to
+# break an exact digest.  A tolerance cannot rescue a hash (quantizing just moves
+# the rounding cliff; even 4 significant figures still differed here), and a real
+# dividend would restate by percent, not by ppm.  So the A1 input is committed as
+# an immutable artifact under the program's own namespace, which no scheduled
+# lane writes.  This file reproduces B_SOURCE_PREFIX_SHA256 byte-for-byte, so the
+# registration below is unchanged and nothing the nightly wrote is blessed.
+# The ``ohlcv`` leaf is load-bearing, not decorative: the zero-authority sweep
+# exempts OHLCV directories because raw price bars carry no authority columns,
+# and this artifact is exactly such a frame.  It is NOT a registered plane --
+# ``PLANE_DIRS`` is an explicit map and does not contain it -- so it neither
+# competes in the §1 precedence order nor trips the prohibition on a
+# program-owned ``data/stock_identity/ohlcv/B.parquet`` duplicate.
+B_SOURCE_SEALED_RELATIVE_PATH = "data/stock_identity/w1a1/ohlcv/b_source_prefix.parquet"
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
 
@@ -491,10 +511,23 @@ def _validate_b_membership(manifest: dict[str, Any]) -> pd.DataFrame:
 
 
 def _validate_b_source() -> pd.DataFrame:
+    """Return the sealed A1 input prefix, and check the live plane still spans it.
+
+    The live curated plane is checked for SHAPE only.  Its adjusted values are
+    restated by every dividend (see B_SOURCE_SEALED_RELATIVE_PATH), so they are
+    not receipt material; hashing them pinned this program to whatever the last
+    nightly happened to write.  The receipt is taken on the sealed artifact,
+    which is what the W1-A1 dossier was actually built from -- so the build is
+    now reproducible rather than silently tracking restated history.
+    """
+
     source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
     if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
         raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
-    frame = source.loc[source.index <= ASOF].copy()
+    sealed = REPO_ROOT / B_SOURCE_SEALED_RELATIVE_PATH
+    if not sealed.exists():
+        raise SystemExit(f"sealed B source prefix is missing: {B_SOURCE_SEALED_RELATIVE_PATH}")
+    frame = pd.read_parquet(sealed)
     if len(frame) != 3172 or frame.index.max() != ASOF:
         raise SystemExit("B source prefix row/date receipt drifted")
     actual = _ohlcv_prefix_sha256(frame)
