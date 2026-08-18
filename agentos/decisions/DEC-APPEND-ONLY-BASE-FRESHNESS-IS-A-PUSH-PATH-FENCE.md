@@ -109,7 +109,7 @@ reversibility_detail: >
 supersedes: []
 scope: [macro]
 confidence: high
-pr: "#PR"
+pr: "#5885"
 decided_at: 2026-08-18
 decided_by: fable main loop
 workstream: ""
