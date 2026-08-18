@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T02:08:21.293554+00:00",
-  "count": 1306,
+  "generated_at": "2026-08-18T03:34:54.660534+00:00",
+  "count": 1309,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -76,6 +76,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-p45uhejkdba-f29d31",
+      "title": "Earnings Blast",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:59:37Z",
+      "summary_points": [
+        "**Earnings Momentum**: 85% of S&P 500 firms beat 2Q26 EPS estimates by 29% aggregate, with 49% organic EPS growth (ex-one-time), confirming robust fundamental strength.",
+        "**Sector Performance Disparity**: Energy’s 145.4% EPS growth vs.",
+        "Health Care’s -6.0% (S&P 500: 49.4%) signals structural profitability shifts, demanding sector allocation reassessment.",
+        "**Tariff Volatility Risk**: Tapestry’s warning of tariff-induced H1 benefit turning H2 headwind highlights near-term profitability risk for trade-sensitive firms."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-0ejermzpiay-b36960",
       "title": "gaai quarterly snapshot Q3 snapshot august 2026",
@@ -278,6 +298,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mokb9ytbejl-603235",
+      "title": "On Our Minds July CPI Case for pre emptive tightening is strengthening",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T16:55:56Z",
+      "summary_points": [
+        "**India's July CPI: Persistent inflation above RBI target with food-driven pressure**: July CPI at 4.45% yoy (19-mo high), food inflation at 5.52%, and 320 CPI items showing monthly price hikes (vs 236 in Feb), signaling broad-based, persistent inflationary pressures beyond temporary factors.",
+        "**RBI policy shift to pre-emptive tightening**: RBI’s neutral stance (5.25% repo rate) now faces \"why not pre-empt?\" due to core inflation momentum (3-mo annualized at ~4.3%), mirroring 2022 supply shocks, with conditional 25bp hike expected in December.",
+        "**Food inflation driving second-round risks**: Elevated food prices (5.52%) risk fueling household inflation expectations, wage demands, and corporate pricing behavior, creating second-round inflation effects amid festival season pressures.",
+        "**Key triggers for rate hikes**: Conditional 25bp Dec hike hinges on 2+ signals: food inflation >5% through festivals, core inflation momentum >4% (3-mo annualized), or corporate pass-through to output prices."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -843,6 +883,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ocfkz9qvblu-66a5dd",
+      "title": "JPM China AI",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:39:41Z",
+      "summary_points": [
+        "**Competitive Frontier Shift**: AI model competition now prioritizes capability-cost Pareto tradeoffs; models outside the frontier face commercial pressure as users choose stronger/cheaper alternatives (JPMorgan’s China LLM curve analysis).",
+        "**DeepSeek’s Structural Cost Leadership**: DeepSeek’s API repricing (Aug 17) signals monetization headroom via architecture (MoE, KV-cache) and system efficiency, enabling sustainable cost advantage beyond headline pricing.",
+        "**M3.1 & H3 Catalysts**: MiniMax’s M3.1 model is critical for cost/capability positioning; Hailuo H3 adds multimodal optionality, with success determining competitive edge amid narrowed cost disadvantage from DeepSeek’s repricing.",
+        "**Zhipu Valuation Upgrade**: J.P.",
+        "Morgan raises Zhipu PT to HK$1,800 (+6.9%) due to GLM-5.3’s capability gains (post-training improvements), lifting 2026-30 revenue forecasts by 6-10%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
       "language": "en",
       "needs_metadata": false
     },
