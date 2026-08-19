@@ -660,11 +660,33 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                         f"is present, so every company node must have been resolved (even "
                         f"to a refusal)")
 
-            # (f) F3a — state<->ids biconditional: RESOLVED must carry ALL THREE ids and
-            # no refusal_reason; every other state must carry NONE of the ids and a
-            # refusal_reason. The derivation code cannot produce a violation, but a
-            # hand-edited or truncated artifact could — this catches artifact corruption
-            # the earlier checks are blind to.
+            # V4-D2B1: issuer_id is now nullable on a RESOLVED row too (the master's
+            # own issuer_state can be NO_ISSUER_EVIDENCE with no legacy value). Load
+            # security_master's issuer_state ONCE, read-only, so the biconditional
+            # (f) and the master-membership check (g) can both consult it. Absent /
+            # unreadable master degrades gracefully for (f) (falls back to requiring
+            # issuer_id present, the pre-D2B1 law) and is a breach for (g) exactly as
+            # before it was, unchanged.
+            master_path = store_dir.parent / "reference" / "security_master.parquet"
+            issuer_state_by_security: dict[str, str] | None = None
+            if master_path.exists():
+                try:
+                    master_ids_states = pd.read_parquet(
+                        master_path, columns=["security_id", "issuer_state"])
+                    issuer_state_by_security = dict(
+                        zip(master_ids_states["security_id"].astype(str),
+                            master_ids_states["issuer_state"].astype(str)))
+                except Exception:  # noqa: BLE001 — degrade to strict-issuer_id below
+                    issuer_state_by_security = None
+
+            # (f) F3a — state<->ids biconditional, amended for the D2B1 issuer axis:
+            # RESOLVED must carry security_id+listing_key ALWAYS and no refusal_reason;
+            # issuer_id is required UNLESS the master's own issuer_state for that
+            # security is NO_ISSUER_EVIDENCE (an unevidenced legacy/new row — the master
+            # itself says so, this is not a bridge defect). Every non-RESOLVED state
+            # must carry NONE of the ids and a refusal_reason. The derivation code
+            # cannot produce a violation, but a hand-edited or truncated artifact could
+            # — this catches artifact corruption the earlier checks are blind to.
             if {"resolution_state", "issuer_id", "security_id", "listing_key",
                 "refusal_reason", "node_id"} <= set(latest_idr.columns):
                 bad_biconditional: list[str] = []
@@ -672,26 +694,36 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                         latest_idr["node_id"], latest_idr["resolution_state"],
                         latest_idr["issuer_id"], latest_idr["security_id"],
                         latest_idr["listing_key"], latest_idr["refusal_reason"]):
-                    ids_present = (not _is_null(iss) and not _is_null(sec)
-                                   and not _is_null(lk))
                     reason_present = not _is_null(reason)
-                    ok = (ids_present and not reason_present) if str(st) == "RESOLVED" \
-                        else (not ids_present and reason_present)
+                    if str(st) == "RESOLVED":
+                        sec_lk_present = not _is_null(sec) and not _is_null(lk)
+                        issuer_ok = not _is_null(iss)
+                        if not issuer_ok and issuer_state_by_security is not None:
+                            issuer_ok = (
+                                issuer_state_by_security.get(str(sec))
+                                == "NO_ISSUER_EVIDENCE"
+                            )
+                        ok = sec_lk_present and issuer_ok and not reason_present
+                    else:
+                        ids_present = (not _is_null(iss) and not _is_null(sec)
+                                       and not _is_null(lk))
+                        ok = not ids_present and reason_present
                     if not ok:
                         bad_biconditional.append(str(nid))
                 if bad_biconditional:
                     breaches.append(
                         f"{len(bad_biconditional)} identity_resolution row(s) violate the "
                         f"state<->ids biconditional (first: {bad_biconditional[0]!r}) — "
-                        "RESOLVED must carry issuer_id+security_id+listing_key and no "
-                        "refusal_reason; every other state must carry none of the ids and "
-                        "a refusal_reason (F3a, artifact-corruption guard)")
+                        "RESOLVED must carry security_id+listing_key and no refusal_reason "
+                        "(issuer_id required UNLESS the master's issuer_state for that "
+                        "security is NO_ISSUER_EVIDENCE); every other state must carry "
+                        "none of the ids and a refusal_reason (F3a, artifact-corruption "
+                        "guard, D2B1-amended)")
 
             # (g) F3a — master membership: every RESOLVED security_id must exist in the
             # committed data/reference/security_master.parquet, loaded read-only here.
             # Absent master = skipped, never a breach (sparse checkout / pre-DOS-1.1
             # fixtures carry no data/reference/ at all).
-            master_path = store_dir.parent / "reference" / "security_master.parquet"
             if master_path.exists() and {"resolution_state", "security_id", "node_id"} \
                     <= set(latest_idr.columns):
                 try:

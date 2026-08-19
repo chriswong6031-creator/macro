@@ -4,7 +4,7 @@
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-18T10:40:36Z",
+  "computed_at": "2026-08-19T09:45:09Z",
   "counts": {
     "capability": 641,
     "edges": 8292,
@@ -18,8 +18,8 @@
   "identity_resolution_state_counts": {
     "DEFERRED_IDENTITY_EXCEPTION": 2,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 1869,
-    "RESOLVED": 701,
+    "NOT_IN_MASTER": 1868,
+    "RESOLVED": 702,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",

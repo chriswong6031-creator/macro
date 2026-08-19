@@ -125,15 +125,24 @@ def test_every_company_node_gets_a_row(nodes, company_nodes, master_inputs, etf_
 
 class TestSection6HostileCases:
     def test_goog_and_googl_resolve_distinctly(self, master_inputs, etf_symbols):
+        """V4-D2B1 FLIP (2026-08-19): the master's issuer axis now groups securities
+        by identical SEC registrant CIK evidence, and GOOG/GOOGL share one — CIK
+        1652044, Alphabet Inc. — so they now share ONE issuer_id
+        (ISS:US-XNAS-GOOG, spec §2 tie-break rule 4) while remaining two DISTINCT
+        securities. This is the regression D2B1 exists to make possible: pre-D2B1,
+        this test asserted the two issuer_ids differed — the "no cross-share-class
+        issuer axis" limitation the frozen contract's own §6 documented at the time.
+        config/share_class_equiv.yml is still NEVER consulted (see the sibling test
+        below) — this is the Data OS master's own CIK evidence, not a 13F collapse.
+        """
         goog = _resolve("co:us:GOOG", master_inputs, etf_symbols)
         googl = _resolve("co:us:GOOGL", master_inputs, etf_symbols)
         assert goog["resolution_state"] == googl["resolution_state"] == "RESOLVED"
         assert goog["security_id"] == "SEC:US-XNAS-GOOG"
         assert googl["security_id"] == "SEC:US-XNAS-GOOGL"
         assert goog["security_id"] != googl["security_id"]
-        # No cross-share-class issuer axis — the master's own limitation, disclosed
-        # rather than manufactured. config/share_class_equiv.yml is NEVER consulted.
-        assert goog["issuer_id"] != googl["issuer_id"]
+        # SAME issuer now (V4-D2B1) — still distinct security_id (mint-once/§D2).
+        assert goog["issuer_id"] == googl["issuer_id"] == "ISS:US-XNAS-GOOG"
 
     def test_share_class_equiv_is_never_consulted(self):
         """Structural proof: the resolver's only inputs are the master + alias table +

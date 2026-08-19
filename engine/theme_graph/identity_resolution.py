@@ -49,6 +49,21 @@ never allowed to answer a historical-naming question, because it was never given
 Rule 5 (exact inception-code match) is asof-invariant in BOTH modes: the master's
 ``inception_code`` is the security's own canonical symbol, minted once and stored, so
 it never depends on the query date.
+
+ISSUER AXIS (V4-D2B1, 2026-08-19).  ``issuer_id`` is copied VERBATIM from the
+master's own issuer axis — this module allocates nothing and repoints nothing.  A
+RESOLVED row's ``issuer_id`` may now be SHARED by more than one company node's
+security (``co:us:GOOG`` and ``co:us:GOOGL`` both resolve to the same
+``ISS:US-XNAS-GOOG``, per the master's CIK-evidenced grouping), while
+``security_id``/``listing_key`` stay per-node distinct.  A RESOLVED row's
+``issuer_id`` may ALSO be null: the master's issuer_state for that security can be
+``NO_ISSUER_EVIDENCE`` with no legacy value (a brand-new master row with no CIK
+evidence yet) — ``security_id``/``listing_key`` are non-null regardless of the issuer
+axis, because exact security/listing identity is unaffected by whether an economic
+issuer has been evidenced.  ``scripts/check_theme_graph_contracts.py``'s state<->ids
+biconditional (F3a) is amended accordingly: RESOLVED requires
+``security_id``/``listing_key`` ALWAYS, and requires ``issuer_id`` only when the
+master's issuer_state is not ``NO_ISSUER_EVIDENCE``.
 """
 from __future__ import annotations
 
@@ -176,9 +191,14 @@ def load_master_inputs(data_dir: Path | None = None) -> MasterInputs | None:
     master_by_code: dict[str, dict] = {}
     master_by_security: dict[str, dict] = {}
     for r in master.to_dict("records"):
+        # V4-D2B1: issuer_id is nullable now (NO_ISSUER_EVIDENCE + no legacy value).
+        # A bare str(...) would turn a missing cell into the LITERAL STRING "None" /
+        # "nan" (measured: pandas can hand back either shape for a null cell in a
+        # column that also carries real strings) — pd.isna catches both uniformly.
+        raw_issuer = r.get("issuer_id")
         row = {
             "security_id": str(r["security_id"]),
-            "issuer_id": str(r["issuer_id"]),
+            "issuer_id": None if (raw_issuer is None or pd.isna(raw_issuer)) else str(raw_issuer),
             "listing_key": str(r["listing_key"]),
         }
         code = str(r.get("inception_code") or "").strip().upper()
