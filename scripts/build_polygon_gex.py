@@ -37,7 +37,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
+import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -46,7 +48,7 @@ import pandas as pd
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from collectors.polygon_options import PolygonOptions  # noqa: E402
+from collectors.polygon_options import PolygonOptions, REASON_CODES  # noqa: E402
 from engine.gex_engine import compute_gex  # noqa: E402
 from lib import config, store, nyse_calendar  # noqa: E402
 
@@ -63,6 +65,22 @@ SUMMARY_KEYS = ("spot", "net_gex_bn", "net_vex", "net_cex", "gamma_flip",
 # (but with rows captured) it is PARTIAL; zero rows captured is FAILED. See the
 # FIRST-WRITER QUALITY RULE in accrue() for what each verdict is allowed to do.
 SOURCE_HEALTH_FLOOR = 0.90
+
+# Decisions that ANCHOR the stored chain's CURRENT authoritative state: either a
+# decision that actually WROTE the parquet (wrote/replaced_partial/forced), or
+# one that re-established the receipt's ground truth after corruption
+# (receipt_recovered — touches no chain bytes, but B3 requires the corruption
+# event itself to become the new anchor so a later run never falls back to a
+# 'healthy' default). Every other decision (skipped_*, nothing_captured) is a
+# SKIP: it describes an attempt, not a change to what's on disk, and must be
+# invisible to _stored_state_entry.
+_STATE_ANCHOR_DECISIONS = ("wrote", "replaced_partial", "forced", "receipt_recovered")
+
+
+class _CorruptReceipt(Exception):
+    """A health-receipt file EXISTS but cannot be parsed as {"attempts": [...]}
+    — raised by _read_receipt so the caller can never confuse "corrupt" with
+    "absent" (the B3 defect: corruption used to fail OPEN to healthy)."""
 
 
 def _resolve_session(as_of) -> date:
@@ -115,27 +133,100 @@ def _receipt_path(session: date) -> Path:
 
 
 def _read_receipt(session: date) -> list[dict] | None:
-    """The stored ``attempts`` list for `session`, or None when no receipt exists
-    yet — either a brand-new session, or a LEGACY chains file predating this
-    sidecar (rule 4 of the first-writer quality rule treats that as healthy)."""
+    """The stored ``attempts`` list for `session`, or None when NO receipt file
+    exists at all — either a brand-new session, or a LEGACY chains file
+    predating this sidecar (rule 4 of the first-writer quality rule treats that
+    as healthy).
+
+    RAISES _CorruptReceipt when a receipt file EXISTS but cannot be parsed as
+    {"attempts": [...]} (B3, AD-1C0 review). The pre-fix version caught this
+    and returned None — indistinguishable from "no receipt", which made
+    corruption fail OPEN: `_stored_health` treated it as a legacy healthy
+    session and happily let a later run overwrite/replace it. The caller
+    (accrue()) must always handle this distinctly via _recover_corrupt_receipt.
+    """
     path = _receipt_path(session)
     if not path.exists():
         return None
     try:
         data = json.loads(path.read_text())
-    except (OSError, ValueError):
-        return None
-    attempts = data.get("attempts") if isinstance(data, dict) else None
-    return attempts if isinstance(attempts, list) else None
+        attempts = data.get("attempts") if isinstance(data, dict) else None
+        if not isinstance(attempts, list):
+            raise ValueError("receipt is not a {'attempts': [...]} document")
+        return attempts
+    except (OSError, ValueError) as e:
+        raise _CorruptReceipt(str(e)) from e
 
 
-def _last_write_entry(attempts: list[dict] | None) -> dict | None:
-    """The most recent attempt whose decision actually changed the stored
-    parquet — i.e. the entry that describes what is CURRENTLY on disk."""
+def _write_receipt_attempts(session: date, attempts: list[dict]) -> None:
+    """Atomic whole-list write: tmp file (PID + UUID suffix — m11, so two
+    concurrent writers for the SAME session can never collide on one tmp name)
+    then rename. NEVER mutates the chain parquet; this is a sidecar only."""
+    path = _receipt_path(session)
+    payload = {"session": session.isoformat(), "attempts": attempts}
+    tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}.{uuid.uuid4().hex}")
+    tmp.write_text(json.dumps(payload, indent=2) + "\n")
+    tmp.replace(path)
+
+
+def _recover_corrupt_receipt(session: date, exc: _CorruptReceipt,
+                             now: datetime) -> list[dict]:
+    """B3 ruling (AD-1C0 review): a receipt exists but cannot be parsed. Fail
+    toward IMMUTABILITY, never destroy evidence, never mislabel:
+      1. preserve the corrupt file by renaming it aside to
+         <session>.json.corrupt-<capture-instant-compact> — NEVER overwritten
+         again, so the raw evidence survives for a human to inspect.
+      2. the stored CHAIN is now treated as immutable (PIT protection wins over
+         recoverability — corruption must never look like license to
+         overwrite/replace a real capture).
+      3. a FRESH attempts list starts with one entry: decision
+         "receipt_recovered", health "unknown_receipt_corrupt" (never
+         "healthy" — that was the original defect), prior_receipt_corrupt=True.
+      4. a bare line-start ::warning (never a logger — see
+         tests/test_gh_annotation_line_start).
+    Returns the fresh attempts list so the caller can proceed as if it had just
+    read a normal (if minimal) receipt.
+    """
+    path = _receipt_path(session)
+    compact_ts = now.strftime("%Y%m%dT%H%M%S%fZ")
+    corrupt_aside = path.with_name(f"{path.name}.corrupt-{compact_ts}")
+    try:
+        path.replace(corrupt_aside)
+    except OSError as move_exc:  # noqa: BLE001 — losing the evidence copy must
+        # never crash the run; recovery still proceeds without it.
+        log.warning("polygon: could not preserve corrupt receipt %s aside: %s",
+                    path.name, move_exc)
+        corrupt_aside = None
+    print(
+        f"::warning title=polygon-health-receipt::session {session} health receipt "
+        f"was corrupt ({exc}) — preserved aside as "
+        f"{corrupt_aside.name if corrupt_aside else '(preserve FAILED)'}; the stored "
+        f"chain is now treated as IMMUTABLE with UNKNOWN health (never re-labelled "
+        f"healthy, never retro-replaced)", flush=True)
+    attempts = [{
+        "capture_instant": now.isoformat(),
+        "requested_underlyings": None, "attempted_underlyings": None,
+        "successful_underlyings": None, "coverage_pct": None,
+        "failure_reasons": {}, "failure_examples": {}, "aborted_early": False,
+        "decision": "receipt_recovered", "health": "unknown_receipt_corrupt",
+        "prior_receipt_corrupt": True,
+    }]
+    _write_receipt_attempts(session, attempts)
+    return attempts
+
+
+def _stored_state_entry(attempts: list[dict] | None) -> dict | None:
+    """The entry describing the CURRENT authoritative state of the stored
+    parquet: the most recent attempt whose decision is a _STATE_ANCHOR_DECISION
+    (wrote/replaced_partial/forced/receipt_recovered). Every SKIP-shaped
+    decision (skipped_*, nothing_captured) is invisible here by design — it
+    describes a rejected/no-op ATTEMPT, not a change to what is on disk, so it
+    must never be mistaken for the store's ground truth (M12, audit + accrue()
+    both read through this one function so they can never disagree)."""
     if not attempts:
         return None
     for entry in reversed(attempts):
-        if entry.get("decision") in ("wrote", "replaced_partial", "forced"):
+        if entry.get("decision") in _STATE_ANCHOR_DECISIONS:
             return entry
     return None
 
@@ -143,16 +234,17 @@ def _last_write_entry(attempts: list[dict] | None) -> dict | None:
 def _stored_health(attempts: list[dict] | None) -> str:
     """Health of whatever is CURRENTLY stored, given its receipt's attempts (or
     None for a session with no receipt at all). A legacy chain file — or a
-    receipt carrying no write-decision entry — is treated as healthy: immutable,
-    never retro-replaced (rule 4)."""
-    last = _last_write_entry(attempts)
-    return (last or {}).get("health") or "healthy"
+    receipt carrying no anchor entry — is treated as healthy: immutable, never
+    retro-replaced (rule 4)."""
+    anchor = _stored_state_entry(attempts)
+    return (anchor or {}).get("health") or "healthy"
 
 
 def _carry_forward(entry: dict | None) -> dict | None:
     """Reuse a prior write's census numbers for a SKIP attempt's receipt row, so a
     reader scanning the attempts list sees a continuous picture of the store
-    instead of a gap on every no-op run."""
+    instead of a gap on every no-op run. m10: aborted_early/failure_examples
+    ride along too, not just failure_reasons."""
     if entry is None:
         return None
     return {
@@ -161,6 +253,8 @@ def _carry_forward(entry: dict | None) -> dict | None:
         "successful_underlyings": entry.get("successful_underlyings"),
         "coverage_pct": entry.get("coverage_pct"),
         "failure_reasons": entry.get("failure_reasons") or {},
+        "failure_examples": entry.get("failure_examples") or {},
+        "aborted_early": entry.get("aborted_early", False),
     }
 
 
@@ -173,32 +267,101 @@ def _health_verdict(coverage_pct: float, captured_rows: int) -> str:
     return "healthy" if coverage_pct >= SOURCE_HEALTH_FLOOR else "partial"
 
 
+def _coerce_unknown_reasons(census: dict) -> dict:
+    """m14: any failure_reasons/failure_examples key OUTSIDE the frozen
+    REASON_CODES set (collectors.polygon_options) is folded into other_failure
+    rather than propagated verbatim, so a future typo'd or novel reason string
+    can never silently bypass the closed reason taxonomy this whole system is
+    built on. Logged, not silent — an unknown code is itself worth knowing about."""
+    reasons = dict(census.get("failure_reasons") or {})
+    examples = {k: list(v) for k, v in (census.get("failure_examples") or {}).items()}
+    unknown = sorted(k for k in reasons if k not in REASON_CODES)
+    if unknown:
+        log.warning("polygon: unknown failure reason code(s) %s coerced to "
+                    "other_failure", unknown)
+        for k in unknown:
+            reasons["other_failure"] = reasons.get("other_failure", 0) + reasons.pop(k)
+        for k in [k for k in examples if k not in REASON_CODES]:
+            bucket = examples.setdefault("other_failure", [])
+            for sym in examples.pop(k):
+                if len(bucket) < 3:
+                    bucket.append(sym)
+    out = dict(census)
+    out["failure_reasons"] = reasons
+    out["failure_examples"] = examples
+    return out
+
+
 def _append_health_attempt(session: date, *, decision: str, health: str,
-                           census: dict | None) -> None:
+                           census: dict | None, now: datetime,
+                           extra: dict | None = None) -> None:
     """Append one attempt entry to the session's health-receipt sidecar
     (data/polygon_gex_health/<session>.json — see _health_dir()'s docstring for
     why this is not the nested data/polygon_gex/health/ path). Called on EVERY
-    accrual that
-    reaches a real trading session — including no-op skips — so a session's
-    health history is never reasonless. NEVER mutates the chain parquet; this is
-    a sidecar only. Atomic (tmp file + rename) so a crash mid-write cannot leave
-    a torn receipt."""
-    path = _receipt_path(session)
-    attempts = list(_read_receipt(session) or [])
+    accrual that reaches a real trading session — including no-op skips — so a
+    session's health history is never reasonless. NEVER mutates the chain
+    parquet; this is a sidecar only. Reads through _read_receipt/
+    _recover_corrupt_receipt so an append can never itself be the write that
+    silently papers over a corrupt file."""
+    try:
+        attempts = list(_read_receipt(session) or [])
+    except _CorruptReceipt as e:
+        attempts = _recover_corrupt_receipt(session, e, now)
     attempts.append({
-        "capture_instant": datetime.now(timezone.utc).isoformat(),
+        "capture_instant": now.isoformat(),
         "requested_underlyings": (census or {}).get("requested_underlyings"),
         "attempted_underlyings": (census or {}).get("attempted_underlyings"),
         "successful_underlyings": (census or {}).get("successful_underlyings"),
         "coverage_pct": (census or {}).get("coverage_pct"),
         "failure_reasons": (census or {}).get("failure_reasons") or {},
+        # m10: persisted alongside failure_reasons, not just carried in the
+        # in-memory census.
+        "failure_examples": (census or {}).get("failure_examples") or {},
+        "aborted_early": (census or {}).get("aborted_early", False),
         "decision": decision,
         "health": health,
+        **(extra or {}),
     })
-    payload = {"session": session.isoformat(), "attempts": attempts}
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2) + "\n")
-    tmp.replace(path)
+    _write_receipt_attempts(session, attempts)
+
+
+def _et_calendar_date(instant: datetime) -> date:
+    """The RAW ET calendar date of `instant` — deliberately NO weekend/holiday
+    rollback (unlike nyse_calendar.session_date()). M7's same-day vintage guard
+    needs the literal calendar date: a Saturday capture must NOT count as "the
+    same day" as the Friday session it resolves to, or every weekend catch-up
+    run would look like a legitimate same-day recapture window."""
+    if instant.tzinfo is None:
+        instant = instant.replace(tzinfo=timezone.utc)
+    return instant.astimezone(nyse_calendar.ET).date()
+
+
+def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
+    """M8 (AD-1C0 review): when a REPLACED capture (replaced_partial, or a
+    --force over an existing file) drops symbols the OLD vintage had, their
+    summary_<SYM>.parquet must not keep a stale row at this session — that row
+    would silently go on describing a chain snapshot the just-overwritten,
+    single-vintage data/polygon_gex/chains/<session>.parquet no longer
+    contains. Read-modify-write per symbol; a symbol with no summary file, or
+    none with this session's row, is a no-op. Uses store._path — the SAME
+    sanitized path store.upsert() writes to, so a symbol with special
+    characters in its ticker never desyncs the read/write path."""
+    if not symbols:
+        return
+    ts = pd.Timestamp(session)
+    for sym in sorted(symbols):
+        name = f"summary_{sym}"
+        df = store.read(GROUP, name)
+        if df is None or df.empty or ts not in df.index:
+            continue
+        out = df.drop(index=ts)
+        p = store._path(GROUP, name)  # noqa: SLF001 — same path upsert() itself uses
+        if out.empty:
+            p.unlink(missing_ok=True)
+        else:
+            out.to_parquet(p)
+        log.info("polygon: dropped orphaned summary row %s @ %s (discarded "
+                 "vintage — symbol absent from the replacement capture)", sym, session)
 
 
 def _compact(raw: pd.DataFrame) -> pd.DataFrame:
@@ -230,8 +393,14 @@ def _summarize(raw: pd.DataFrame, sym: str, cfg: dict) -> pd.DataFrame | None:
     return pd.DataFrame({k: [summ.get(k)] for k in SUMMARY_KEYS}, index=[asof])
 
 
-def accrue(as_of=None, *, force: bool = False) -> dict:
-    """Snapshot + persist one SESSION. Returns a small status dict (logging/tests)."""
+def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> dict:
+    """Snapshot + persist one SESSION. Returns a small status dict (logging/tests).
+
+    `_now` is a private testing hook (the accrual INSTANT used for the health
+    receipt's capture_instant and M7's same-day vintage check) — defaults to the
+    real clock; production callers never pass it.
+    """
+    now = _now or datetime.now(timezone.utc)
     cfg = config.load().get("polygon")
     if not cfg:
         log.info("polygon: no config section — skip")
@@ -242,12 +411,12 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
         return {"status": "no_key"}
 
     asof = _resolve_session(as_of)
-    from engine.options_universe import gex_symbols
-    symbols = gex_symbols(cfg.get("gex"))
+    from engine.options_universe import baskets_universe, gex_symbols
+    gx_cfg = cfg.get("gex") or {}
+    symbols = gex_symbols(gx_cfg)
     log.info("polygon: snapshotting %d underlyings for session %s "
              "(%d anchors + baskets=%s)", len(symbols), asof,
-             len(cfg["gex"].get("symbols") or []),
-             cfg["gex"].get("include_baskets", False))
+             len(gx_cfg.get("symbols") or []), gx_cfg.get("include_baskets", False))
     # WRITE-SIDE SESSION GATE (M7 2026-07-29; re-scoped 2026-08-06). `asof` is now the
     # SESSION the snapshot describes (see _resolve_session), not the UTC run date, so on
     # the datetime path — every scheduled run — this gate is ALWAYS TRUE and never fires.
@@ -274,14 +443,20 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
     # decision block below), so control falls through instead of returning here. A
     # LEGACY chain file with no receipt at all is treated as healthy (immutable) —
     # it predates this sidecar and must never be retro-replaced. `--force` keeps
-    # full override semantics regardless of any of the above.
+    # full override semantics regardless of any of the above. A CORRUPT receipt
+    # (B3) is recovered — preserved aside, never destroyed — and its recovery
+    # entry is itself immutable/unknown, never a silent fallback to "healthy".
     path = _chains_dir() / f"{asof.isoformat()}.parquet"
+    existed_before = path.exists()
     stored_attempts: list[dict] | None = None
     stored_last: dict | None = None
     stored_health: str | None = None
     if path.exists() and not force:
-        stored_attempts = _read_receipt(asof)
-        stored_last = _last_write_entry(stored_attempts)
+        try:
+            stored_attempts = _read_receipt(asof)
+        except _CorruptReceipt as e:
+            stored_attempts = _recover_corrupt_receipt(asof, e, now)
+        stored_last = _stored_state_entry(stored_attempts)
         stored_health = _stored_health(stored_attempts)
         if stored_health != "partial":
             print(f"::notice title=polygon-session-present::session {asof} already stored - "
@@ -289,12 +464,50 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
                   f"(pass --force to overwrite)", flush=True)
             log.info("polygon: session %s already stored — no-op (first writer wins)", asof)
             _append_health_attempt(asof, decision="skipped_already_healthy",
-                                   health=stored_health, census=_carry_forward(stored_last))
+                                   health=stored_health, census=_carry_forward(stored_last),
+                                   now=now)
             return {"status": "already_present", "date": asof.isoformat(),
                     "session": asof.isoformat(), "path": str(path)}
         log.info("polygon: session %s stored capture is PARTIAL (below the %.0f%% floor) "
                  "— re-fetching to check for a strictly-better replacement",
                  asof, SOURCE_HEALTH_FLOOR * 100)
+
+    # B2 ruling (AD-1C0 review): fail CLOSED on a degraded universe. When config
+    # expects baskets (`include_baskets: true`) but the membership file resolves
+    # to ZERO members, the universe silently collapses from ~300+ names down to
+    # just the config anchors. Without this gate that shrunken capture reports
+    # 100% COVERAGE against its own (wrong) denominator, is graded "healthy",
+    # and becomes IMMUTABLE forever under rule 1 — freezing the store at a
+    # handful of ETFs even after the membership file comes back. Refuse to
+    # fetch or write at all.
+    #
+    # Scoped to membership_path.exists(): the file EXISTS but resolved to zero
+    # members (corrupted/truncated content, or every member marked removed) —
+    # not merely ABSENT. In production the file is a committed, nightly-
+    # maintained artifact, so "exists but empty" is the realistic incident
+    # shape (a bad write), while "absent" is the ordinary state of any
+    # environment (dev, CI, a fresh worktree) that has simply never run the
+    # basket-membership builder — engine.options_universe's own contract calls
+    # a missing file a graceful degradation, not an incident, and gating on it
+    # unconditionally would refuse to accrue in every such environment.
+    membership_path = config.data_dir() / "baskets" / "membership.json"
+    if (gx_cfg.get("include_baskets", False) and membership_path.exists()
+            and not baskets_universe()):
+        census = _coerce_unknown_reasons({
+            "requested_underlyings": len(symbols), "attempted_underlyings": 0,
+            "successful_underlyings": 0, "coverage_pct": 0.0,
+            "failure_reasons": {"universe_resolution_failed": 1},
+            "failure_examples": {}, "aborted_early": True,
+        })
+        print(f"::warning title=polygon-universe-degraded::session {asof}: "
+              f"include_baskets is true but the basket membership universe "
+              f"resolved to ZERO members — refusing to fetch/write against a "
+              f"collapsed universe ({len(symbols)} anchors only)", flush=True)
+        log.warning("polygon: universe resolution failed for %s (%s)", asof, census)
+        _append_health_attempt(asof, decision="nothing_captured", health="failed",
+                               census=census, now=now)
+        return {"status": "failed", "date": asof.isoformat(), "session": asof.isoformat(),
+                "health": "failed", "census": census}
 
     result = client.snapshot(symbols, asof)
     # New contract: snapshot() returns (raw_df, census), and requested_underlyings
@@ -304,12 +517,13 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
     # rather than inventing a bogus PARTIAL verdict against symbols it never even
     # tried, treat whatever it returned as complete — this is exactly the old
     # first-writer-wins semantics, preserved for any caller not yet upgraded to
-    # the (raw, census) contract.
+    # the (raw, census) contract. m17: anything else (None, a list, a string...)
+    # is a hard programming error, not a shape to silently paper over.
     if isinstance(result, tuple):
         raw, census = result
         census = dict(census)
         census["requested_underlyings"] = len(symbols)
-    else:
+    elif isinstance(result, pd.DataFrame):
         raw = result
         successful = (int(raw["underlying"].nunique())
                      if not raw.empty and "underlying" in raw.columns else 0)
@@ -318,6 +532,11 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
             "requested_underlyings": successful,
             "failure_reasons": {}, "failure_examples": {}, "aborted_early": False,
         }
+    else:
+        raise TypeError(
+            f"PolygonOptions.snapshot() returned {type(result).__name__!r}; expected "
+            f"(DataFrame, census) or a bare DataFrame (legacy)")
+    census = _coerce_unknown_reasons(census)
     census["coverage_pct"] = (round(census["successful_underlyings"]
                                     / census["requested_underlyings"], 4)
                               if census["requested_underlyings"] else 0.0)
@@ -326,10 +545,13 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
         # Zero-capture runs keep status "empty" for consumer compat, but now carry
         # health "failed" plus the full census — an all-symbol failure can never
         # again be reasonless. Nothing is written; a stored partial (if any) is
-        # untouched, so this is recorded as "not better" than what is already there.
+        # untouched. m13: the receipt decision is "nothing_captured" (never
+        # "skipped_not_better", which is reserved for a real comparison against a
+        # stored capture that this attempt failed to beat).
         health = _health_verdict(census["coverage_pct"], 0)
         log.warning("polygon: snapshot empty — nothing accrued (%s)", census)
-        _append_health_attempt(asof, decision="skipped_not_better", health=health, census=census)
+        _append_health_attempt(asof, decision="nothing_captured", health=health,
+                               census=census, now=now)
         return {"status": "empty", "date": asof.isoformat(), "session": asof.isoformat(),
                 "health": health, "census": census}
 
@@ -343,19 +565,46 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
     else:
         stored_successful = (stored_last or {}).get("successful_underlyings") or 0
         stored_coverage = (stored_last or {}).get("coverage_pct") or 0.0
-        if (census["successful_underlyings"] > stored_successful
-                and (health == "healthy" or census["coverage_pct"] - stored_coverage >= 0.10)):
-            decision = "replaced_partial"
-        else:
+        strictly_better = (census["successful_underlyings"] > stored_successful
+                           and (health == "healthy"
+                                or census["coverage_pct"] - stored_coverage >= 0.10))
+        if not strictly_better:
             decision = "skipped_not_better"
+        elif _et_calendar_date(now) != asof:
+            # M7 ruling: a partial may be replaced ONLY inside the SAME-DAY
+            # capture window — the new capture_instant's ET calendar date must
+            # equal the session it is replacing. Saturday/Sunday/Monday-preopen
+            # runs all resolve to Friday's session but are NOT Friday; without
+            # this, a stale weekend re-run could keep "improving" a session days
+            # after its real capture window closed. The attempt is still
+            # recorded (skipped_wrong_day), never silently dropped.
+            decision = "skipped_wrong_day"
+        else:
+            decision = "replaced_partial"
 
-    if decision == "skipped_not_better":
-        log.info("polygon: session %s new capture (%d ok, %.1f%% coverage) is not strictly "
-                 "better than the stored partial — keeping the existing file",
-                 asof, census["successful_underlyings"], census["coverage_pct"] * 100)
-        _append_health_attempt(asof, decision=decision, health=stored_health, census=census)
+    if decision in ("skipped_not_better", "skipped_wrong_day"):
+        log.info("polygon: session %s new capture (%d ok, %.1f%% coverage) was not "
+                 "applied (%s) — keeping the existing file",
+                 asof, census["successful_underlyings"], census["coverage_pct"] * 100,
+                 decision)
+        _append_health_attempt(asof, decision=decision, health=stored_health,
+                               census=census, now=now)
         return {"status": "already_present", "date": asof.isoformat(), "session": asof.isoformat(),
                 "path": str(path), "health": stored_health, "census": census}
+
+    # M8 (AD-1C0 review): capture the OLD vintage's symbol set BEFORE the
+    # overwrite below, so a replacement (replaced_partial, or --force over an
+    # existing file) can clean up any summary_<SYM>.parquet rows whose symbol is
+    # not in the NEW capture — otherwise those rows silently keep describing a
+    # chain snapshot the single-vintage overwrite below just erased.
+    old_symbols: set[str] = set()
+    if existed_before and decision in ("replaced_partial", "forced"):
+        try:
+            old_chain = pd.read_parquet(path)
+            old_symbols = set(map(str, old_chain["underlying"].unique()))
+        except Exception as e:  # noqa: BLE001 — cleanup must never block the write
+            log.warning("polygon: could not read prior chain %s for orphan-summary "
+                        "cleanup: %s", path.name, e)
 
     # 1. raw per-strike chain, session-partitioned (append-only, git-friendly).
     # `decision` is one of wrote/replaced_partial/forced here — a single-vintage
@@ -363,6 +612,10 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
     _compact(raw).to_parquet(path)
     log.info("polygon: wrote raw chain %s (%d rows, %d underlyings) decision=%s health=%s",
              path.name, len(raw), raw["underlying"].nunique(), decision, health)
+
+    if old_symbols:
+        new_symbols = set(map(str, raw["underlying"].unique()))
+        _drop_orphan_summary_rows(asof, old_symbols - new_symbols)
 
     # 2. per-underlying compute_gex summary (reuse the engine — no new math)
     n_summ = 0
@@ -375,7 +628,7 @@ def accrue(as_of=None, *, force: bool = False) -> dict:
         except Exception as e:  # noqa: BLE001 — one symbol must not abort the rest
             log.warning("polygon summary %s failed: %s", sym, e)
 
-    _append_health_attempt(asof, decision=decision, health=health, census=census)
+    _append_health_attempt(asof, decision=decision, health=health, census=census, now=now)
     return {"status": "ok", "rows": int(len(raw)),
             "underlyings": int(raw["underlying"].nunique()),
             "summaries": n_summ, "date": asof.isoformat(),
