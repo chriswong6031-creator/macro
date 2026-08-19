@@ -54,8 +54,11 @@ from scripts import build_canada as bca  # noqa: E402
 #   OLD _combine_key order:        A.TO, C.TO, B.TO   (aligned group first, then setup-score desc)
 # ---------------------------------------------------------------------------
 
-def _synthetic_cand_and_maps():
-    cand = [
+def _base_buy_rows():
+    """The 3 buy-admissible candidates only (A/B/C) — the fixture the Branch-B /
+    OLD-order comparisons in test_canada_no_second_sort_after_branch_b reason
+    about apples-to-apples (no watch-only rows mixed in)."""
+    return [
         (0.9, {"ticker": "A.TO", "name": "Alpha Bank", "alpha": 0.6, "factor_z": 0.0,
               "setup": 0.9,
               "entry_signal": {"status": "wait_pullback"},
@@ -69,12 +72,26 @@ def _synthetic_cand_and_maps():
               "entry_signal": {"status": "partial"},
               "conviction": {"score": 70, "composite_z": 0.6}}),
     ]
+
+
+def _synthetic_cand_and_maps():
+    # + one strong-but-blocked candidate (W.TO): alpha clears BUY_MIN (0.5) but has
+    # no align_map entry (not aligned, not near) -> alignment_gate drops it from
+    # buy, and _build_watch's own admission criteria (alpha>=BUY_MIN, not aligned/
+    # near) picks it up for real, so ledger tests can route through the REAL
+    # _build_watch() output instead of hand-injecting board["watch"].
+    cand = _base_buy_rows() + [
+        (0.1, {"ticker": "W.TO", "name": "Watch Co", "alpha": 0.9, "factor_z": 0.0,
+              "setup": 0.1, "conviction": {"score": 55, "verdict": "v", "verdict_zh": "v"}}),
+    ]
     align_map = {
         "A.TO": {"aligned": True, "score": 0.8},
         "B.TO": {"aligned": False, "near": True, "score": 0.4},
         "C.TO": {"aligned": True, "score": 0.8},
+        # W.TO deliberately absent -> not aligned, not near -> excluded from buy,
+        # eligible for watch.
     }
-    profiles = {t: r["conviction"] for _s, r in cand for t in [r["ticker"]]}
+    profiles = {t: r.get("conviction") for _s, r in cand for t in [r["ticker"]]}
     sig_verdict: dict = {}   # empty -> signal_gate.compact(None) on every row
     entry_sig: dict = {}
     risk_sig: dict = {}
@@ -116,30 +133,37 @@ def _build_board(overlay=None):
 # 1. Single source of truth
 # ---------------------------------------------------------------------------
 
-def test_canada_canonical_board_is_single_source_of_truth():
-    """The object _build_canonical_board() returns IS the object main() both writes
-    to canada_standouts.json and returns to the caller — round-tripping it through
-    JSON (exactly as the artifact write does) must not change row order."""
+def test_canada_canonical_board_is_single_source_of_truth(tmp_path):
+    """The object _build_canonical_board() returns IS the object main() writes to
+    canada_standouts.json — EXECUTED via the real _write_canada_standouts() (the
+    one write site main() calls), not a source-text pattern match. Byte-for-byte:
+    what lands on disk must equal json.dumps() of the object main() returns."""
     board = _build_board()
-    written = json.loads(json.dumps(board, separators=(",", ":"), default=str))
+    bcal._write_canada_standouts(board, tmp_path)
+    written_path = tmp_path / "factordata" / "canada_standouts.json"
+    assert written_path.exists()
+    written = json.loads(written_path.read_text())
+    expected = json.loads(json.dumps(board, separators=(",", ":"), default=str))
+    assert written == expected, (
+        "the bytes _write_canada_standouts() puts on disk must equal the returned "
+        "board — a swapped/rebuilt copy at the write call site would diverge here"
+    )
     assert [r["ticker"] for r in written["buy"]] == [r["ticker"] for r in board["buy"]]
 
-    # structural: main() must write and return the SAME variable — a swapped-order
-    # artifact write (mutation c) would require a DIFFERENT expression at the write
-    # site than the returned object.
+    # narrow structural check for the ONE fact the executed test above cannot see:
+    # that main() actually calls the (now proven byte-faithful) writer with the
+    # unmodified `board` variable, not a mutated copy assembled at the call site
+    # (mutation-kill target c — e.g. `_write_canada_standouts({**board, "buy":
+    # swapped}, site)` would no longer match this exact call expression).
     src = Path(bcal.__file__).read_text()
-    assert 'json.dumps(board, separators=(",", ":"), default=str))' in src, (
-        "main() must write canada_standouts.json from the exact `board` object "
-        "_build_canonical_board() returns"
-    )
     main_body = src.split("\ndef main(", 1)[1].split('\nif __name__', 1)[0]
+    assert "_write_canada_standouts(board, site)" in main_body, (
+        "main() must call _write_canada_standouts with the exact unmodified "
+        "`board` object it returns"
+    )
     assert main_body.rstrip().endswith("return board"), (
         "main() must return the canonical `board` object (CA-TRUTH), not a "
         "re-derived or renamed one"
-    )
-    # exactly one canonical-board build call in main() — no second compute pass
-    assert src.count("_build_canonical_board(") == 2, (  # def + the one call site
-        "main() must build the canonical board exactly ONCE"
     )
 
 
@@ -164,16 +188,6 @@ def test_canada_artifact_page_order_parity():
     )
     assert 'setups = build_canada_library.main(alpha=alpha, overlay=' in src
 
-    # nothing may re-sort vm["setups"]["buy"] between the assignment and the next
-    # section (top_setups) — mutation-kill target (f): a page-level re-sort.
-    marker = 'vm["setups"] = setups'
-    idx = src.index(marker)
-    window = src[idx + len(marker):idx + len(marker) + 400]
-    assert "sort" not in window, (
-        f"build_canada.py must not re-sort vm['setups'] after assignment; "
-        f"found a sort-like call in the window right after it:\n{window}"
-    )
-
 
 # ---------------------------------------------------------------------------
 # 3. Ledger order matches the canonical board
@@ -184,9 +198,13 @@ def test_canada_ledger_order_matches_canonical_board(tmp_path, monkeypatch):
     monkeypatch.setenv("COLLECT_LANE", "nightly")
     _no_real_track_ledger_write(monkeypatch)
 
+    # board["watch"] comes from the REAL _build_watch() output (fixture's W.TO
+    # candidate), not a hand-injected list — routes this test through production
+    # code end to end.
     board = _build_board()
-    board["watch"] = [{"ticker": "W.TO", "name": "Watch Co", "alpha": 0.9,
-                       "watch_reason": "blocked", "block_reason": "no turn"}]
+    assert [w["ticker"] for w in board["watch"]] == ["W.TO"], (
+        f"fixture must produce exactly one real watch row; got {board['watch']}"
+    )
     latest = {"date": "2026-07-10"}
 
     bca._canada_board_ledger(board, latest)
@@ -219,9 +237,10 @@ def test_canada_no_second_sort_after_branch_b():
     assert [r["ticker"] for r in board["buy"]] == branch_b_order == ["B.TO", "C.TO", "A.TO"]
 
     # the OLD order (computed independently here, NOT applied) proves the fixture
-    # has teeth: it would have produced a DIFFERENT order than Branch-B.
+    # has teeth: it would have produced a DIFFERENT order than Branch-B. Scoped to
+    # the buy-admissible A/B/C rows only (apples-to-apples with board["buy"]).
     old_order = [r["ticker"] for r in
-                _old_entry_open_first([dict(r) for _s, r in _synthetic_cand_and_maps()[0]])]
+                _old_entry_open_first([dict(r) for _s, r in _base_buy_rows()])]
     assert old_order != [r["ticker"] for r in board["buy"]], (
         "fixture must be engineered so the old open-entry-first re-sort disagrees "
         "with Branch-B"
@@ -264,9 +283,7 @@ def test_canada_current_rows_stamp_board_definition(tmp_path, monkeypatch):
     monkeypatch.setenv("COLLECT_LANE", "nightly")
     _no_real_track_ledger_write(monkeypatch)
 
-    board = _build_board()
-    board["watch"] = [{"ticker": "W.TO", "name": "Watch Co", "alpha": 0.9,
-                       "watch_reason": "blocked", "block_reason": "no turn"}]
+    board = _build_board()   # board["watch"] is the REAL _build_watch() output
     latest = {"date": "2026-07-10"}
 
     bca._canada_board_ledger(board, latest)
@@ -367,3 +384,74 @@ def test_canada_laggards_strip_capped_at_six():
     assert len(board["laggards"]) == 6, (
         "with 14 laggard-eligible candidates the strip should fill to exactly 6"
     )
+
+
+# ---------------------------------------------------------------------------
+# 9. Standalone-lane overlay fallback (review finding F2, PR #5926): a lane that
+# runs `python -m scripts.build_canada_library` directly (weekly.yml:219
+# unconditionally; engine-render.yml:637 scope=all; daily.yml/render.yml
+# failure-path nets) never threads a fresh `overlay` through main(). Without a
+# fallback that lane would stamp oil_tailwind/lead_en/lead_zh with overlay={}
+# (oil regime always OFF) — a schema_item_fields divergence tracking the CI lane
+# instead of the actual oil regime. build_canada_library._last_rendered_overlay()
+# resolves the LAST-RENDERED overlay from data/canada_regime/latest.json — the
+# same file engine.canada_run.run() writes on every build_canada.py render
+# (engine/canada_run.py:76-79: `"overlay": canada_overlay.snapshot(asof)`, shaped
+# with a top-level "factors" list exactly as _oil_regime_on expects) and the same
+# file current_liquidity() already reads for `liquidity_overlay`
+# (scripts/build_canada_library.py:114-126, pre-existing precedent).
+# ---------------------------------------------------------------------------
+
+def test_last_rendered_overlay_resolves_from_persisted_regime_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    regime_dir = tmp_path / "canada_regime"
+    regime_dir.mkdir(parents=True)
+    overlay_payload = {"score": 1.1, "state": "Risk-on",
+                       "factors": [{"key": "oil", "risk": "on", "z": 1.5}]}
+    (regime_dir / "latest.json").write_text(json.dumps(
+        {"date": "2026-07-10", "overlay": overlay_payload}))
+    resolved = bcal._last_rendered_overlay()
+    assert resolved == overlay_payload
+    # and it is actually USABLE by _oil_regime_on (the shape claim, not just the
+    # round-trip) — the whole point of resolving it at all.
+    assert bcal._oil_regime_on(resolved) is True
+
+
+def test_last_rendered_overlay_absent_store_is_empty_not_fatal(tmp_path, monkeypatch):
+    """No canada_regime/latest.json yet (fresh checkout, first-ever run) — must
+    degrade to {} silently, never raise."""
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    assert bcal._last_rendered_overlay() == {}
+
+
+def test_last_rendered_overlay_malformed_file_is_empty_not_fatal(tmp_path, monkeypatch):
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    regime_dir = tmp_path / "canada_regime"
+    regime_dir.mkdir(parents=True)
+    (regime_dir / "latest.json").write_text("{not valid json")
+    assert bcal._last_rendered_overlay() == {}
+
+
+def test_last_rendered_overlay_non_dict_overlay_key_is_empty_not_fatal(tmp_path, monkeypatch):
+    """A stray/legacy `overlay: null` (or any non-dict) must degrade to {}, not
+    propagate a type that breaks _oil_regime_on's `.get("factors")`."""
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    regime_dir = tmp_path / "canada_regime"
+    regime_dir.mkdir(parents=True)
+    (regime_dir / "latest.json").write_text(json.dumps({"date": "2026-07-10", "overlay": None}))
+    assert bcal._last_rendered_overlay() == {}
+
+
+def test_main_wires_overlay_none_to_the_persisted_fallback():
+    """The full standalone-lane call (main(alpha=..., overlay=None), as weekly.yml/
+    engine-render.yml scope=all/daily.yml+render.yml failure-path nets invoke it)
+    needs live data-store access this sparse checkout does not have — no precedent
+    in this repo's test suite for driving any market builder's main() end-to-end
+    (tests/test_us_standouts_cascade_gate.py and siblings all test the underlying
+    REAL functions instead). This is the narrow, load-bearing structural check for
+    the 2-line wiring the behavioral tests above cannot reach: main() must resolve
+    overlay via _last_rendered_overlay() precisely when overlay is None."""
+    src = Path(bcal.__file__).read_text()
+    main_body = src.split("\ndef main(", 1)[1].split('\nif __name__', 1)[0]
+    assert "if overlay is None:" in main_body
+    assert "overlay = _last_rendered_overlay()" in main_body

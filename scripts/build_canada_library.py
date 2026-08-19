@@ -126,6 +126,27 @@ def current_liquidity() -> str | None:
     return liq if liq in ("expanding", "contracting", "neutral") else None
 
 
+def _last_rendered_overlay() -> dict:
+    """The commodity/FX overlay the engine last classified (canada_regime/latest.json
+    `overlay`, written by engine.canada_run.run() — same file current_liquidity()
+    reads). Fallback for a standalone `python -m scripts.build_canada_library` run
+    (weekly.yml, engine-render.yml scope=all, daily.yml/render.yml failure-path
+    nets) that never threads a fresh `overlay` through main(): without this, those
+    lanes would stamp oil_tailwind/lead_en/lead_zh with overlay={} (oil regime
+    always OFF) instead of the last-rendered page's overlay, flipping those
+    registered schema_item_fields with the CI lane rather than the oil regime.
+    Best-effort — {} on any absence/failure, never raises; canada_overlay.snapshot()
+    already shapes `overlay["factors"]` the way _oil_regime_on expects."""
+    p = config.data_dir() / "canada_regime" / "latest.json"
+    if not p.exists():
+        return {}
+    try:
+        ov = json.loads(p.read_text()).get("overlay")
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {}
+    return ov if isinstance(ov, dict) else {}
+
+
 def _basket_tailwind_map() -> dict[str, dict]:
     """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis (the
     sector/theme leg): the strongest Canada theme a name belongs to, scored by that
@@ -776,6 +797,17 @@ def _setup_score(rec: dict) -> tuple[float, dict] | None:
     return setup_score(rec, alpha_weight=CA_ALPHA_WEIGHT)
 
 
+def _write_canada_standouts(board: dict, site: Path) -> None:
+    """The ONE write site for canada_standouts.json — CA-TRUTH: main() writes and
+    returns the exact same `board` object (no re-derive, no re-sort, no partial
+    copy). Extracted so a test can execute the real write and assert byte-for-byte
+    parity against the returned object, rather than pattern-matching main()'s
+    source text."""
+    (site / "factordata").mkdir(parents=True, exist_ok=True)
+    (site / "factordata" / "canada_standouts.json").write_text(
+        json.dumps(board, separators=(",", ":"), default=str))
+
+
 def _build_canonical_board(cand: list, as_of, align_map: dict, sig_verdict: dict,
                            profiles: dict, entry_sig: dict, risk_sig: dict,
                            eligible: int, disp_regime: dict | None,
@@ -837,6 +869,11 @@ def main(alpha: dict | None = None, overlay: dict | None = None) -> dict | None:
 
     if alpha is None:
         alpha = compute_canada_alpha()
+    if overlay is None:
+        # standalone-lane fallback (F2): a caller that never threads a fresh overlay
+        # through (weekly.yml / engine-render.yml scope=all / daily.yml+render.yml
+        # failure-path nets) stamps from the LAST-RENDERED overlay instead of {}.
+        overlay = _last_rendered_overlay()
     alpha_pt = (alpha or {}).get("per_ticker", {})
     if alpha:
         fdir = site / "factordata"
@@ -1187,8 +1224,7 @@ def main(alpha: dict | None = None, overlay: dict | None = None) -> dict | None:
         board = _build_canonical_board(cand, as_of, align_map, sig_verdict, profiles,
                                        entry_sig, risk_sig, eligible, disp_regime,
                                        overlay)
-        (site / "factordata" / "canada_standouts.json").write_text(
-            json.dumps(board, separators=(",", ":"), default=str))
+        _write_canada_standouts(board, site)
         log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",
                  len(board["buy"]), eligible, len(cand))
     log.info("canada library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d setups",
