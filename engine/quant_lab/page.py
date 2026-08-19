@@ -88,7 +88,16 @@ def _read_study() -> dict:
 
 
 def _fmt(v, nd=4):
-    return None if v is None or not isinstance(v, (int, float)) else round(float(v), nd)
+    """Round a numeric to `nd` places; None for missing/non-numeric AND for NaN or
+    +-inf. `isinstance(float("nan"), float)` is True, so the previous guard let a
+    non-finite float straight through to the template (bare `nan` on the model
+    board). A legitimate 0 is preserved, never treated as missing."""
+    if v is None or isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    f = float(v)
+    if f != f or f in (float("inf"), float("-inf")):
+        return None
+    return round(f, nd)
 
 
 def _live_board(model_key: str, L: pd.DataFrame, mktcap: pd.Series | None) -> dict | None:

@@ -588,3 +588,158 @@ def test_the_shelf_states_why_these_methods_are_not_ranked_like_models():
     seg = _method_section(_render())
     assert "not scored like the models above" in seg
     assert "no per-name score" in seg
+
+
+# =======================================================================================
+# Null contract — non-finite sentinels must never reach the model board
+# (Wave-2 bug: site/quant_lab.html rendered bare "nan" — 46 occurrences — because
+# `_fmt()`'s `isinstance(v, (int, float))` guard is True for float("nan") too, so a
+# leg's per-name percentile (NaN when that name lacks the raw leg — the normal shape
+# of `score_mod.composite()`'s leg_pct, see _weighted_blend's docstring on renormalised
+# scoring) sailed straight through into the template. `_fmt()` is the producing-boundary
+# fix; the num()/pct0()/pctfine() macros are the second-layer guard. These tests drive
+# the REAL build_payload() -> _live_board() -> _fmt() -> template path with a synthetic
+# panel carrying every non-finite shape, and assert none of them leak into the board.
+# =======================================================================================
+import re
+
+
+def test_fmt_normalizes_every_non_finite_shape_and_preserves_zero():
+    from engine.quant_lab import page as page_mod
+    for bad in (float("nan"), pd.NA, pd.NaT, float("inf"), float("-inf"),
+                "not-a-number", None, True, False):
+        assert page_mod._fmt(bad, 2) is None, f"_fmt({bad!r}) leaked a sentinel"
+    assert page_mod._fmt(0, 4) == 0
+    assert page_mod._fmt(0.0, 4) == 0.0
+    assert page_mod._fmt(42.567, 2) == 42.57
+
+
+def _leg_keys():
+    from engine.quant_lab import specs as specs_mod
+    return [x["key"] for x in specs_mod.MODELS["fintel_qv"]["legs"]]
+
+
+def _synthetic_legs_and_mktcap():
+    """A 44-name synthetic panel for the fintel_qv board: 40 background names with a
+    clean linear spread (so percentile ranks are deterministic) plus 4 planted names
+    that dominate every leg (guaranteeing top-15 inclusion) and each carry ONE
+    deliberately non-finite cell — TOPNAN's last leg is NaN (the realistic "name is
+    missing this one raw leg" shape), NANCAP's/ZEROCAP's market caps are NaN/0."""
+    keys = _leg_keys()
+    bg = [f"BG{i:02d}" for i in range(40)]
+    L = pd.DataFrame({k: [float(i) for i in range(40)] for k in keys}, index=bg)
+    special = {
+        "TOPNAN": {k: 500.0 for k in keys},
+        "NANCAP": {k: 490.0 for k in keys},
+        "ZEROCAP": {k: 480.0 for k in keys},
+        "REALTOP": {k: 470.0 for k in keys},
+    }
+    special["TOPNAN"][keys[-1]] = float("nan")   # name missing its raw last leg
+    for tkr, row in special.items():
+        L.loc[tkr] = row
+    mktcap = pd.Series({
+        **{t: 1e9 for t in bg},
+        "TOPNAN": 2e9, "REALTOP": 3e9,
+        "NANCAP": float("nan"), "ZEROCAP": 0.0,
+    })
+    return L, mktcap
+
+
+def _stub_compute_legs():
+    L, mktcap = _synthetic_legs_and_mktcap()
+    return {"legs": L, "mktcap": mktcap, "asof": "2026-08-19",
+            "n_universe": len(L), "coverage": {}, "years": 3, "tax_rate": 0.21}
+
+
+def test_live_board_replaces_nan_leg_with_none_not_a_float(monkeypatch):
+    """Direct check on the payload (pre-template): a name's missing raw leg must come
+    through _live_board() as None, never as a NaN float object."""
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.legs_mod, "compute_legs", _stub_compute_legs)
+    payload = page_mod.build_payload()
+    board = next(m["board"] for m in payload["models"] if m["key"] == "fintel_qv")
+    assert board is not None
+    row = next(r for r in board["rows"] if r["ticker"] == "TOPNAN")
+    missing_key = _leg_keys()[-1]
+    assert row["legs"][missing_key] is None
+    cap_row = next(r for r in board["rows"] if r["ticker"] == "NANCAP")
+    assert cap_row["mktcap_bn"] is None
+    zero_row = next(r for r in board["rows"] if r["ticker"] == "ZEROCAP")
+    assert zero_row["mktcap_bn"] == 0.0          # a real 0 market cap, not null
+
+
+def test_quant_lab_full_render_board_has_no_non_finite_sentinel(monkeypatch):
+    """Render the FULL quant_lab.html.j2 page against the synthetic panel and scan just
+    the fintel_qv model-board <tr> rows (not the whole page — the page's disclosure
+    prose legitimately contains "infrastructure"-shaped words) for a leaked sentinel."""
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.legs_mod, "compute_legs", _stub_compute_legs)
+    html = _render()
+
+    sentinel_re = re.compile(r"(?<![a-zA-Z])(nan|-?inf)(?![a-zA-Z])", re.IGNORECASE)
+    for tkr in ("TOPNAN", "NANCAP", "ZEROCAP", "REALTOP"):
+        m = re.search(rf"<td[^>]*>{tkr}</td>.*?</tr>", html, re.DOTALL)
+        assert m, f"board row for {tkr} not found in rendered page"
+        row_html = m.group(0)
+        leaked = sentinel_re.search(row_html)
+        assert leaked is None, (
+            f"non-finite sentinel {leaked.group(0)!r} leaked into {tkr}'s board row: "
+            f"{row_html!r}")
+
+    # the missing leg cell degrades to the muted null glyph, not a blank/garbage cell
+    m = re.search(r"<td[^>]*>TOPNAN</td>.*?</tr>", html, re.DOTALL)
+    assert '<span class="muted">—</span>' in m.group(0)
+
+
+def test_quant_lab_zero_mktcap_survives_as_real_value(monkeypatch):
+    """A legitimate 0 market cap must render as a real "0.0", never promoted to the
+    missing-data em-dash (the same cell that renders '—' for a genuinely missing cap)."""
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.legs_mod, "compute_legs", _stub_compute_legs)
+    html = _render()
+
+    zero_row = re.search(r"<td[^>]*>ZEROCAP</td>.*?</tr>", html, re.DOTALL).group(0)
+    nan_row = re.search(r"<td[^>]*>NANCAP</td>.*?</tr>", html, re.DOTALL).group(0)
+    assert '<span class="muted">—</span>' not in zero_row.split("</tr>")[0], zero_row
+    assert "0.0" in zero_row
+    assert '<span class="muted">—</span>' in nan_row   # the genuinely-missing cap IS null
+
+
+def test_num_macro_is_non_finite_safe_even_if_fmt_is_bypassed(monkeypatch):
+    """Second-layer defensive check on the macros themselves, INDEPENDENT of _fmt: plant
+    raw non-finite floats straight into a real board row (as if a future producer
+    regressed and skipped `_fmt` entirely) and render the full page — num()/pct0()/
+    pctfine() must still degrade to the null glyph rather than trust the input.
+
+    (A template-snippet render via `{% import ... as q %}` was tried first, but Jinja
+    executes the WHOLE imported template body on import — not just the macro defs — so
+    it immediately hit `live.asof` from the page's top-level markup and failed with an
+    unrelated UndefinedError. Mutating a real payload and rendering the full page avoids
+    that entirely while still exercising the macros exactly as production does.)"""
+    from jinja2 import Environment, FileSystemLoader
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.legs_mod, "compute_legs", _stub_compute_legs)
+    p = page_mod.build_payload()
+    m = next(mm for mm in p["models"] if mm["key"] == "fintel_qv")
+    assert m["board"] is not None and m["board"]["rows"]
+
+    row = dict(m["board"]["rows"][0])
+    leg0 = next(iter(row["legs"]))
+    row["ticker"] = "BYPASSCHK"
+    row["score"] = float("nan")
+    row["mktcap_bn"] = float("inf")
+    row["legs"] = {**row["legs"], leg0: float("-inf")}
+    board = dict(m["board"])
+    board["rows"] = [row] + list(m["board"]["rows"][1:])
+    models = [dict(mm, board=board) if mm["key"] == "fintel_qv" else mm for mm in p["models"]]
+
+    env = Environment(loader=FileSystemLoader("templates"))
+    html = env.get_template("quant_lab.html.j2").render(
+        **{**p, "models": models}, generated_utc="2026-01-01T00:00Z")
+
+    row_html = re.search(r"<td[^>]*>BYPASSCHK</td>.*?</tr>", html, re.DOTALL).group(0)
+    assert "nan" not in row_html.lower() and "inf" not in row_html.lower(), row_html
+    # score/mktcap/leg0 were forcibly set to NaN/+inf/-inf above (bypassing _fmt); the
+    # macros alone must still null all three (>= not == : the underlying synthetic
+    # TOPNAN-shaped row may already carry its own legitimately-null leg, which is fine)
+    assert row_html.count('<span class="muted">—</span>') >= 3
