@@ -83,9 +83,24 @@ waves:
   - id: W4.1
     title: PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool
       envelope contract)
-    status: in_progress
-    pr: 5929
+    status: done
+    pr: [5929, 5995]
     depends_on: [W4, W5]
+    # DONE at ACTUAL merge: #5929 MERGED 2026-08-19T17:27:25Z (squash 9ef200f);
+    # commissioning-prep companion #5995 MERGED 2026-08-19T19:51:58Z (squash
+    # 85d651bc5bbb) — R2-first spool resolution ladder for the Lab API
+    # (resolve_radar_spool), scripts/prophet_lab_baseline.py provisioning
+    # (baseline strictly after the latest REAL spooled pass; --remint /
+    # --allow-stale-source / rehearsal flag; skew<=0 hard refusal), e2e contract
+    # test first-spooled-pass -> baseline marker -> later event live_forward,
+    # gate:code `prophet-lab` job in .github/ci/legacy-jobs.yml (the Lab suites
+    # were previously dark in merge gates), and app/deploy/update.sh restart
+    # regex for engine/entry_radar/(__init__|contracts|spool).py.
+    # LIVE-VERIFIED 2026-08-19: https://www.mastermind-x.com/api/health reports
+    # commit 85d651bc5bb (the #5995 squash) and /api/prophet/lab/v1 answers 401
+    # fail-closed. W4 ARMING REMAINS AN OPERATOR ACT — runbook
+    # research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md; backend gates (the
+    # day-2 directive's "#5929 + transport/provisioning merged") are now clear.
     # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
     # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
     # LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.2A). Executes under THIS
