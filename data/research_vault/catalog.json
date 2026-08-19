@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T11:15:11.237716+00:00",
-  "count": 1402,
+  "generated_at": "2026-08-19T12:20:57.488138+00:00",
+  "count": 1406,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -80,6 +80,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-1dhpuvkzmk9-cd3352",
+      "title": "GS Duttenhoefer Daily 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T11:27:28Z",
+      "summary_points": [
+        "**Fed Dovish Stance & Macro Policy Shift**: No September rate hike signals potential easing, critical for rate expectations and equity valuations.",
+        "**Central Bank Gold Diversification Anchor**: $4,900/oz gold forecast drives institutional allocation, a key macro policy trend.",
+        "**AT&T Open Model Cost Savings**: 80-90% operational cost reduction via open models represents a fundamental sector efficiency shift.",
+        "**GS AI Software Pair Trade**: Tactical allocation (long AI-resistant vs short AI-automatable workflows) captures sector-specific risk/reward."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8nzpchgsirm-9e2e46",
+      "title": "GS Johnstone TMT Spec Sales 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T11:27:27Z",
+      "summary_points": [
+        "**Hynix Buyback & TSMC Supply Chain Shift**: $30B Hynix buyback (major capital return flow); TSMC outsourcing CoWoS to Intel Malaysia (critical AI supply-chain bottleneck shift).",
+        "**Nokia's China Exit**: Major geopolitical retreat (40+ years in China, workforce cut, site closures), stock down 4% amid domestic rival share gains.",
+        "**TSMC-Intel CoWoS Outsourcing**: First industry break in supply chain structure, directly impacting semiconductor manufacturing flows and sector technicals.",
+        "**Broadcom Q2 Earnings Catalysts**: 10GW datacenter guidance and XPU defense against AMD/MediaTek critical for tech fundamentals; TPU v10 partnership deemed minimal impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-neqfjnbkdxm-f1e0a5",
       "title": "JPM US Market Intelligence | Morning Briefing",
@@ -162,6 +202,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bufvw25ethz-747874",
+      "title": "GS TMT SPEC SALES: MOMO reversal; Sunrise inline; TSMC CoWOS; Broadcom preview; Travel eSim comptition for operators ; Hynix Buyback",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:04:54Z",
+      "summary_points": [
+        "**SK Hynix Buyback**: 40t won (30bn USD) capital return over 3 months, major valuation/flow impact; TSMC outsourcing CoWoS to Intel signals advanced packaging as AI supply chain bottleneck.",
+        "**AI Infrastructure Capital**: Nine tech firms hold ~$3T off-balance-sheet AI commitments (5x annual capex), critical structural data on sector capital intensity and growth drivers.",
+        "**China Tech Policy**: Policy-driven 10k+ humanoid robot deployment by 2026 (vs.",
+        "Baidu revenue miss), highlighting state support vs.",
+        "execution risks in AI sector."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3ct49xr4ozh-03d032",
       "title": "Duttenhoefer´s Daily (19.08.2026)",
       "institution": "S&T",
@@ -172,6 +233,26 @@
         "**Fed Dovish Stance**: S&P 500 momentum reversal (+12% ytd) amid High Beta Basket decline (-6%), Fed unlikely to hike in Sept barring dramatic data.",
         "**AI Robotics Policy Catalyst**: Unitree Robotics surge (600% IPO) and China's 10k humanoid robot mandate; AT&T shifts to open AI models, saving 80-90% in app costs.",
         "**AI Infrastructure Constraints**: AI token costs down 49% (Chinese models vs US peers), BloombergNEF data center power capacity risk for AI server chips."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-f1ei1kwohib-a867a8",
+      "title": "## Marketcolour + Momentum Colour / Geberit / BHP / TGS ##",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:00:34Z",
+      "summary_points": [
+        "**US Momentum & Yield Pressures**: SPX down 69bps, US 30yr yields at 5.3% (June '07 high), with 12m/3m momentum divergence; software largest weight in 3m long leg.",
+        "**Token Costs & Derivatives Shift**: SDLLMTK Index down 49% from May, ETF/index options Put/Call Ratio at 112% (YTD high), delta increasing since March.",
+        "**Momentum Factor Concentration**: Exposure elevated at 50–60% of fund equity (retreated from peaks but persistent), signaling heightened volatility risk for momentum-driven portfolios.",
+        "**BHP FY26 Performance**: EBITDA ~US$33bn (above consensus), copper division EBITDA ~US$18.2bn (beat), Pilbara costs beat at ~US$20/t."
       ],
       "tags": [],
       "tickers": [],
