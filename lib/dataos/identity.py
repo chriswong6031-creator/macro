@@ -742,6 +742,20 @@ class VendorAliasTable:
 
 
 # ── Issuer master reader (§D2B1) — the economic-entity axis over the security master ──
+def _null_to_none(value: object) -> object | None:
+    """``None`` for ``None`` OR a ``float('nan')`` cell; the value unchanged otherwise.
+
+    STDLIB-ONLY NaN check (no ``pandas`` import in this module): ``float('nan') !=
+    float('nan')`` is the one universal, dependency-free way to detect it — every
+    other float compares equal to itself.  See :meth:`IssuerMaster.from_records`.
+    """
+    if value is None:
+        return None
+    if isinstance(value, float) and value != value:  # noqa: PLR0124 — the NaN test itself
+        return None
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class SecurityIssuerRow:
     """One ``security_master.parquet`` row's issuer axis, as read by :class:`IssuerMaster`.
@@ -796,7 +810,19 @@ class IssuerMaster:
     @classmethod
     def from_records(cls, records) -> "IssuerMaster":
         """Build from a list of dicts — a ``security_master.parquet`` read the caller
-        already did (``to_dict("records")`` or equivalent)."""
+        already did (``to_dict("records")`` or equivalent).
+
+        NaN-SAFE WITHOUT PANDAS (V4-D2B1 FIX 3 / M1).  This module is stdlib-only
+        (module docstring), so it cannot reach for ``pd.isna``.  A ``pandas``
+        ``to_dict("records")`` round-trip can hand back a genuine ``float('nan')`` —
+        never Python ``None`` — for a null cell in a nullable string column that also
+        carries real strings (the same trap ``scripts/build_security_master.py``
+        documents at its own ``_read_existing``/``_write_parquet``).  ``value is None``
+        alone misses it, and NaN is TRUTHY, so the old ``rec.get(...) or ""`` fallback
+        used for ``issuer_state``/``listing_key`` would also stringify a NaN cell into
+        the literal string ``"nan"`` rather than treating it as absent.  A NaN
+        ``issuer_id`` must index as NO issuer, never the string ``'nan'``.
+        """
         rows: list[SecurityIssuerRow] = []
         for i, rec in enumerate(records or ()):
             try:
@@ -805,13 +831,15 @@ class IssuerMaster:
                 raise IdentityError(
                     f"security master record {i} is missing {exc.args[0]!r}"
                 ) from exc
-            issuer = rec.get("issuer_id")
+            issuer = _null_to_none(rec.get("issuer_id"))
+            state = _null_to_none(rec.get("issuer_state"))
+            listing_key = _null_to_none(rec.get("listing_key"))
             rows.append(
                 SecurityIssuerRow(
                     security_id=sec,
                     issuer_id=None if issuer is None else str(issuer),
-                    issuer_state=str(rec.get("issuer_state") or ""),
-                    listing_key=str(rec.get("listing_key") or ""),
+                    issuer_state=str(state) if state is not None else "",
+                    listing_key=str(listing_key) if listing_key is not None else "",
                 )
             )
         return cls(rows)

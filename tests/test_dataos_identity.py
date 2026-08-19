@@ -450,6 +450,27 @@ def test_issuer_master_answers_none_never_a_guess() -> None:
     assert im.securities_of_issuer(None) == ()  # type: ignore[arg-type]
 
 
+def test_issuer_master_from_records_is_nan_safe_without_pandas() -> None:
+    """V4-D2B1 FIX 3 (M1): a ``pandas`` ``to_dict("records")`` round-trip can hand
+    back a genuine ``float('nan')`` — never ``None`` — for a null cell in a nullable
+    string column that also carries real strings.  ``lib/dataos/identity.py`` is
+    stdlib-only (module docstring) and must catch this WITHOUT importing pandas; a
+    NaN ``issuer_id`` must index as NO issuer, never the literal string ``'nan'``.
+    """
+    nan = float("nan")
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-AEP", "issuer_id": nan,
+         "issuer_state": nan, "listing_key": nan},
+        {"security_id": "SEC:US-XNAS-GOOG", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNAS-GOOG"},
+    ])
+    assert im.issuer_of_security("SEC:US-XNAS-AEP") is None
+    # The literal string 'nan' must never appear as a key or a matchable issuer id.
+    assert im.securities_of_issuer("nan") == ()
+    assert "nan" not in im._by_issuer  # noqa: SLF001 — pinning the index directly
+    assert im.issuer_of_security("SEC:US-XNAS-GOOG") == "ISS:US-XNAS-GOOG"
+
+
 def test_issuer_master_from_records_requires_security_id() -> None:
     with pytest.raises(IdentityError, match="security_id"):
         IssuerMaster.from_records([{"issuer_id": "ISS:US-XNYS-MMC"}])
