@@ -1799,6 +1799,7 @@ jobs:
           tests/test_prophet_options_context.py
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
+          tests/test_prophet_lab_timeparse.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
