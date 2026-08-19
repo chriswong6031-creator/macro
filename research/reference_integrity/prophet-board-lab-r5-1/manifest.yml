@@ -23,7 +23,7 @@ author:
 # artifact set rather than an edit to prophet-board-lab-r5.
 reference_files:
   - path: mockups/refs/prophet_lab
-    frozen_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+    frozen_sha: ffc0df3eeb604b099dd75b9737f9cd8cd8d57761
 
 # SHA lineage within this reference id. A fix round re-freezes the artifact, so
 # receipts taken against an earlier SHA are stale by construction (RIG §3) — the
@@ -44,6 +44,26 @@ sha_lineage:
       `fix_rounds[R5.2]`, design record in DESIGN_NOTES.md §0b and §0b.1. verify.py 125/125,
       mutation_test.py 26/26 caught with no shared sole catcher, capture.py 46 views / 63 files.
       No composition redesign; R51-M1, R51-M2 and R51-M3 are all still closed and still guarded.
+      BOTH C12 SEATS RAN AGAINST THIS SHA and both returned PASS_WITH_CONDITIONS
+      (reviews/product_regression.yml: 4 majors + 3 minors + 3 nits, two withdrawals and one
+      downgrade on revealed evidence; reviews/visual_taste.yml: 5 majors + 3 minors + 1 nit, a
+      disclosed two-run continuation whose amendment pass is deferred). The authority issued
+      REVISE over six blocking rulings (verdict.yml). Their receipts are STALE against the current
+      SHA by construction (RIG §3) — which is why R53-SCOPE requires a scoped delta re-check
+      rather than treating R5.3's own claims as closure.
+  - sha: ffc0df3eeb604b099dd75b9737f9cd8cd8d57761
+    round: R5.3
+    note: >
+      Final composition-touching round, scoped by verdict.yml condition R53-SCOPE. Closes all six
+      blocking rulings (PR52-1, VTL52-601, VTL52-602, VTL52-603+PR52-4, PR52-2, PR52-3) and every
+      takeable minor (PR52-6/7/8, VTL52-606/607/608, PR52-10); PR52-9 recorded NOT_ACTIONED and
+      VTL52-609 NOT_IN_SCOPE, both with reasons. Ledger in continuity.yml `fix_rounds[R5.3]`,
+      design record in DESIGN_NOTES.md §0c, and the R5.2 rows this round found FALSE are re-booked
+      in place with `r53_correction` blocks rather than edited over. verify.py 162/162,
+      mutation_test.py 34/34 caught with no shared sole catcher, capture.py 49 views / 66 files
+      including the two evidence crops the verdict named (55 = the chrome=1 seam; 56/57 = the LENS
+      open at 390 in EN and ZH). R51-M1, R51-M2, R51-M3 and the R5.2-verified pin all still hold.
+      NOT approved and no approval.yml: this answers a verdict, it does not close a cycle.
 
 # Ordered OLDEST -> NEAREST. Every non-approved set governing this route must be
 # named or `undeclared-predecessor` fires (RIG §13.2). The nearest is R5, whose
