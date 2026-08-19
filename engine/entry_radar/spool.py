@@ -58,6 +58,18 @@ package writes no ``data/`` path) and recovers ticker mentions from posts
 already emitted.  It is strictly weaker than the tap (the outbox carries what
 was *published*, not what was *detected*) and is labelled ``data_quality =
 degraded`` for exactly that reason.
+
+READ-SIDE SEAM (LAB-0 §6, added for the Prophet Operator Lab's commissioning
+prep — never a second R2 client)
+------------------------------------------------------------------------------
+``r2_credentials_present``/``r2_client_for_read``/``r2_bucket_name``/
+``list_r2_keys``/``get_r2_object_bytes``, just above :class:`NominationSpool`,
+are a public wrapper onto the exact credential/client logic ``_put`` already
+builds, plus a minimal list/get pair — extracted so
+``engine.prophet_lab.sources`` (an injectable-root READER of this module's
+own event-spool output) can resolve the identical R2-first-else-local ladder
+without duplicating credential handling or building a second client. The
+WRITE path (``NominationSpool``/``EventSpool``) is unchanged by this addition.
 """
 from __future__ import annotations
 
@@ -150,6 +162,85 @@ def local_spool_dir() -> Path | None:
     """``$ENTRY_RADAR_SPOOL_DIR`` when set.  Never a ``data/`` path."""
     raw = os.environ.get(_SPOOL_DIR_ENV, "").strip()
     return Path(raw) if raw else None
+
+
+# ---------------------------------------------------------------------------
+# READ-side seam — reused by engine.prophet_lab.sources, never a second R2
+# client (LAB-0 §6 R-LAB-1 sibling scope: "the same backend ladder the Radar
+# spool WRITER uses").  These four functions are the entire extraction: a
+# public wrapper onto the exact credential/client logic ``_put`` already
+# builds for writes, plus a list/get pair with the identical "raise, never
+# swallow" discipline a READER needs (a caller that silently ate a
+# ListBucket/GetObject permission error would show an empty-and-clean board
+# instead of the visible health state LAB-0 requires). Nothing about the
+# WRITE path (``NominationSpool``/``EventSpool``) changes.
+# ---------------------------------------------------------------------------
+def r2_credentials_present() -> bool:
+    """Cheap presence check for the three R2 env vars, no client build.
+
+    Lets a caller distinguish "no R2 credentials configured at all" (the
+    ordinary local-dev/CI case) from "credentials present but the client/list
+    call itself failed" without paying for a client build just to answer the
+    first question.
+    """
+    return bool(
+        os.environ.get("R2_ENDPOINT")
+        and os.environ.get("R2_ACCESS_KEY_ID")
+        and os.environ.get("R2_SECRET_ACCESS_KEY")
+    )
+
+
+def r2_client_for_read() -> Any:
+    """Public seam onto :func:`_r2_client` — the identical client every spool
+    write already builds (same endpoint/keys/checksum-workaround config).  A
+    reader must resolve the SAME backend, not a second, divergently
+    configured one.  Returns ``None`` when credentials are absent; never
+    raises (matches ``_r2_client``'s own contract).
+    """
+    return _r2_client()
+
+
+def r2_bucket_name() -> str:
+    """Public seam onto :func:`_bucket` — the bucket every spool write/read
+    resolves to (``$R2_BUCKET``, default ``mastermindx``)."""
+    return _bucket()
+
+
+def list_r2_keys(s3: Any, prefix: str, *, bucket: str | None = None) -> list[str]:
+    """Every object key under ``prefix``, paginated via ``list_objects_v2``.
+
+    Deliberately RAISES on a genuine R2 error rather than swallowing it —
+    the one property a reader needs that a writer does not: a
+    credential/permission/network failure must reach the caller as a named
+    fact, never as a silently-empty (and therefore falsely "clean") list.
+    Manual ``ContinuationToken`` pagination (not ``get_paginator``) so a test
+    double only needs to implement ``list_objects_v2`` itself, matching the
+    plain-method fakes already used against this module's write side
+    (``tests/test_entry_radar_w4_lane.py``'s ``ExplodingR2``).
+    """
+    keys: list[str] = []
+    token: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"Bucket": bucket or _bucket(), "Prefix": prefix}
+        if token:
+            kwargs["ContinuationToken"] = token
+        resp = s3.list_objects_v2(**kwargs)
+        for obj in resp.get("Contents") or ():
+            key = obj.get("Key")
+            if key:
+                keys.append(key)
+        if resp.get("IsTruncated") and resp.get("NextContinuationToken"):
+            token = resp["NextContinuationToken"]
+            continue
+        break
+    return keys
+
+
+def get_r2_object_bytes(s3: Any, key: str, *, bucket: str | None = None) -> bytes:
+    """One object's body.  Same never-swallow discipline as :func:`list_r2_keys`."""
+    resp = s3.get_object(Bucket=bucket or _bucket(), Key=key)
+    body = resp["Body"]
+    return body.read() if hasattr(body, "read") else bytes(body)
 
 
 class NominationSpool:

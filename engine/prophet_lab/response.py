@@ -34,12 +34,21 @@ class LabRoots:
 
     A ``None`` field degrades gracefully to an empty/absent source (see each
     ``sources.py`` reader's own docstring) rather than raising — a missing
-    root is a health-note fact, never a 500. ``radar_spool_source_label``
-    (review S2, cheap half) is not a filesystem root at all: it is a short
-    label naming WHICH env var/path the caller (``app/prophet_lab.py``)
-    resolved ``radar_spool_dir`` from, so the health block can say
-    "unconfigured" vs "PROPHET_LAB_RADAR_SPOOL_DIR" vs "ENTRY_RADAR_SPOOL_DIR"
-    rather than just a boolean.
+    root is a health-note fact, never a 500. ``radar_spool_dir`` is now only
+    the LOCAL FALLBACK half of the read ladder (day-2 commissioning prep,
+    LAB-0 §6): ``sources.resolve_radar_spool`` tries R2 first (when
+    credentials exist) and only reads this directory when R2 is not
+    configured or fails with no fallback available.
+
+    ``radar_spool_source_label`` (review S2, cheap half) is not a filesystem
+    root at all: it is a short label naming WHICH env var/path the caller
+    (``app/prophet_lab.py``) resolved ``radar_spool_dir`` from — kept purely
+    as an operator diagnostic (``health.radar_spool_local_dir_env``, below).
+    It no longer drives ``health.radar_spool_source`` — that field now names
+    the actual BACKEND that served the read (``"r2"``/``"local"``/
+    ``"unconfigured"``, from ``SpoolReadResult.backend``), per LAB-0 §6's
+    explicit requirement that the health block say which transport resolved,
+    not which local-dir env var would apply if the local dir were used.
     """
 
     radar_spool_dir: Path | str | None = None
@@ -56,7 +65,7 @@ def _generated_at() -> str:
 
 def build_lab_response(roots: LabRoots) -> dict[str, Any]:
     """The full ``GET /api/prophet/lab/v1`` payload."""
-    spool_result = sources.read_radar_envelopes(roots.radar_spool_dir)
+    spool_result = sources.resolve_radar_spool(roots.radar_spool_dir)
     envelopes = spool_result.envelopes
     events, first_observed_at = sources.extract_events(envelopes)
     episode_result = sources.read_live_episodes(roots.radar_state_dir)
@@ -119,8 +128,9 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
     # Review S4/S7: read OUTCOMES, not is_dir() alone — a schema-drifted spool
     # that silently parses to zero envelopes is now visible as
     # `radar_envelopes_skipped > 0` rather than indistinguishable from "empty
-    # and clean". `radar_spool_source` (review S2, cheap half) names which
-    # env var/path resolved the root, or "unconfigured".
+    # and clean". `radar_spool_source` (day-2 commissioning prep, LAB-0 §6)
+    # now names the actual BACKEND that served the read ("r2"/"local"/
+    # "unconfigured"), not which local-dir env var would apply.
     newest_envelope = sources.latest_envelope(envelopes)
     pack = newest_envelope.get("pack") if isinstance(newest_envelope, dict) else None
     pack = pack if isinstance(pack, dict) else {}
@@ -136,7 +146,12 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
     health = {
         "radar_spool_configured": spool_result.configured,
         "radar_spool_readable": spool_result.readable,
-        "radar_spool_source": roots.radar_spool_source_label,
+        "radar_spool_source": spool_result.backend,
+        # Operator diagnostic only (review S2's original cheap-half meaning):
+        # which env var/path WOULD supply the local-fallback directory,
+        # independent of whether the backend that actually served this read
+        # was "r2" or "local".
+        "radar_spool_local_dir_env": roots.radar_spool_source_label,
         "radar_envelopes_read": len(envelopes),
         "radar_envelopes_skipped": spool_result.envelopes_skipped,
         "radar_events_seen": len(events),
@@ -147,6 +162,13 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
         "observation_baseline_present": raw_baseline is not None,
         "observation_baseline_coverage_verified": coverage_verified,
     }
+    # Fail-closed and VISIBLE (LAB-0 §6): an R2 credential/permission/network
+    # failure must never look like an empty-and-clean spool. Set even when a
+    # local fallback salvaged the read (`backend=="local"` with `.error`
+    # still present) so the underlying R2 problem is never silently hidden
+    # by a fallback that happened to work.
+    if spool_result.error:
+        health["radar_spool_error"] = spool_result.error
     # Review round 2, S4: a malformed marker (e.g. a naive/unparseable
     # baseline_started_at) is distinguishable by NAME from a spool-coverage
     # gap or a simply-unconfigured baseline -- both of which otherwise read

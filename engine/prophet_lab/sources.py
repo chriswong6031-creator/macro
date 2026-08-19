@@ -15,15 +15,26 @@ worktree may not touch).  :func:`read_radar_envelopes` reads the real
 ``entry_radar.events/v1`` ENVELOPE shape (``schema``/``pass_ts``/``events[]``)
 that :func:`engine.entry_radar.live_ledger.build_event_payload` actually
 writes, so the Lab does not inherit the bug and does not wait on its fix.
+
+COMMISSIONING PREP (day-2, LAB-0 §6): :func:`resolve_radar_spool` teaches
+this reader the SAME R2-first-else-local backend ladder the Radar spool
+WRITER uses, via the one Radar import this package makes at all —
+``engine.entry_radar.spool`` (a stdlib/``contracts.py``-only leaf, never the
+detector/scoring stack ``live_ledger``/``challengers``/``detectors`` pull in
+— see ``RADAR_EVENT_SPOOL_PREFIX`` below for why that constant is restated
+rather than imported from ``live_ledger``). This module still runs no
+detector formula, reads no forward outcome, and writes no store — the R2
+calls are reads only, same as everything else here.
 """
 from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from engine.entry_radar import spool as radar_spool
 from engine.prophet_lab.timeparse import earliest_instant_string, parse_instant
 
 log = logging.getLogger("macro.prophet_lab")
@@ -31,20 +42,47 @@ log = logging.getLogger("macro.prophet_lab")
 ENVELOPE_SCHEMA = "entry_radar.events/v1"
 BASELINE_SCHEMA = "prophet_lab.observation_baseline/v1"
 
+#: Radar's own event-spool key PREFIX (``engine.entry_radar.live_ledger.EVENT_SPOOL_PREFIX``),
+#: restated as a literal string for the same reason ``_TERMINAL_STATES``/
+#: ``_LEDGER_FILE`` below are restated rather than imported: ``live_ledger.py``
+#: pulls Radar's challengers/detectors fan-out (~150 unrelated engine files,
+#: CI ci-pack-10 finding, 2026-08-19) into the closure of every consumer that
+#: reaches it, which this leaf reader must not inherit. ``engine.entry_radar.spool``
+#: (imported below, for the R2-first read seam only) is the one Radar module
+#: this reader DOES import — it is a stdlib/``contracts.py``-only leaf with
+#: none of that fan-out — but ``live_ledger`` itself stays off limits.
+#: ``tests/test_prophet_lab.py::test_reader_honors_the_real_event_spool_prefix_shape``
+#: cross-checks this literal against the real constant.
+RADAR_EVENT_SPOOL_PREFIX = "live_flow/entry_radar_events"
+
 
 @dataclass(frozen=True)
 class SpoolReadResult:
     """Read OUTCOME, not just directory presence (review S4/S7).
 
     ``configured`` — a root was given at all. ``dir_exists`` — that root is a
-    real directory. ``envelopes`` — the successfully parsed
-    ``entry_radar.events/v1`` objects. ``files_seen``/``envelopes_skipped`` —
-    how many candidate files were found vs. how many of those (or the
-    envelopes inside a list-shaped file) were torn/off-schema and dropped.  A
-    schema drift that silently empties every envelope (S7's failure mode)
-    shows up here as ``envelopes_skipped > 0`` with ``envelopes == []``,
-    rather than as an indistinguishable "nothing to read" — the health block
-    surfaces this directly instead of collapsing it into ``is_dir()``.
+    real directory (or, for the R2 backend, that the LIST call itself
+    succeeded — see ``backend`` below). ``envelopes`` — the successfully
+    parsed ``entry_radar.events/v1`` objects. ``files_seen``/
+    ``envelopes_skipped`` — how many candidate files/objects were found vs.
+    how many of those (or the envelopes inside a list-shaped file) were
+    torn/off-schema and dropped.  A schema drift that silently empties every
+    envelope (S7's failure mode) shows up here as ``envelopes_skipped > 0``
+    with ``envelopes == []``, rather than as an indistinguishable "nothing to
+    read" — the health block surfaces this directly instead of collapsing it
+    into ``is_dir()``.
+
+    ``backend`` (day-2 commissioning-prep addition, LAB-0 §6) — which
+    transport actually resolved: ``"r2"``, ``"local"``, or ``"unconfigured"``.
+    Mirrors the exact ladder the Radar spool WRITER uses
+    (``engine.entry_radar.spool.NominationSpool._put``: R2 when credentials
+    exist, else a local dir). ``error`` — set when R2 was attempted and the
+    LIST call itself failed (a credential/permission/network problem): fail
+    CLOSED and VISIBLE, never an empty-board-as-if-clean, per LAB-0 §6's
+    explicit requirement. ``error`` can be set even when ``backend=="local"``
+    — that is the R2-failed-but-a-local-fallback-succeeded case; the failure
+    stays visible in the health block even though a board could still be
+    built from the fallback data.
     """
 
     configured: bool
@@ -52,6 +90,8 @@ class SpoolReadResult:
     envelopes: list[dict[str, Any]] = field(default_factory=list)
     files_seen: int = 0
     envelopes_skipped: int = 0
+    backend: str = "unconfigured"
+    error: str | None = None
 
     @property
     def readable(self) -> bool:
@@ -62,21 +102,47 @@ class SpoolReadResult:
 # ---------------------------------------------------------------------------
 # Radar live output — event spool envelopes
 # ---------------------------------------------------------------------------
+def _parse_envelope_blob(raw_bytes: bytes) -> tuple[list[dict[str, Any]], int]:
+    """Parse one spool object's raw bytes to ``(envelopes, skipped-count)``.
+
+    Shared by the local-dir and R2 readers so the schema/skip discipline
+    (S4/S7 — a torn or off-schema object is skipped and counted, never
+    repaired or guessed at) is defined exactly once.  Tolerant of a file/
+    object holding a JSON array of envelopes, matching the local reader's
+    long-standing fixture-friendliness.
+    """
+    try:
+        raw = json.loads(raw_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return [], 1
+    candidates = raw if isinstance(raw, list) else [raw]
+    out: list[dict[str, Any]] = []
+    bad = 0
+    for env in candidates:
+        if not isinstance(env, dict) or env.get("schema") != ENVELOPE_SCHEMA:
+            bad += 1
+            continue
+        out.append(env)
+    return out, bad
+
+
 def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
     """Every ``entry_radar.events/v1`` envelope under ``spool_dir``, plus outcome.
 
-    Mirrors the production local-spool layout (one JSON object per file,
-    ``EventSpool``/``NominationSpool`` — ``engine/entry_radar/spool.py``), but
-    is tolerant of a fixture file holding a JSON array of envelopes too.  A
-    torn or off-schema file (or list entry) is skipped and counted, never
-    repaired or guessed at (house discipline,
-    ``reconcile_entry_radar.read_spool_events``).
+    LOCAL-DIR ONLY — always reports ``backend in ("local", "unconfigured")``,
+    never ``"r2"``. Mirrors the production local-spool layout (one JSON
+    object per file, ``EventSpool``/``NominationSpool`` —
+    ``engine/entry_radar/spool.py``), but is tolerant of a fixture file
+    holding a JSON array of envelopes too. Use :func:`resolve_radar_spool`
+    for the full R2-first-else-local backend ladder; this function stays the
+    pure, dependency-free local reader it always was (every existing
+    fixture/unit test targets it directly).
     """
     if spool_dir is None:
-        return SpoolReadResult(configured=False, dir_exists=False)
+        return SpoolReadResult(configured=False, dir_exists=False, backend="unconfigured")
     root = Path(spool_dir)
     if not root.is_dir():
-        return SpoolReadResult(configured=True, dir_exists=False)
+        return SpoolReadResult(configured=True, dir_exists=False, backend="local")
     out: list[dict[str, Any]] = []
     bad = 0
     files_seen = 0
@@ -85,16 +151,13 @@ def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
             continue
         files_seen += 1
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+            raw_bytes = path.read_bytes()
+        except OSError:
             bad += 1
             continue
-        candidates = raw if isinstance(raw, list) else [raw]
-        for env in candidates:
-            if not isinstance(env, dict) or env.get("schema") != ENVELOPE_SCHEMA:
-                bad += 1
-                continue
-            out.append(env)
+        envs, skipped = _parse_envelope_blob(raw_bytes)
+        out.extend(envs)
+        bad += skipped
     if bad:
         log.warning(
             "prophet_lab: %d spool object(s) under %s unreadable or off-schema (skipped)",
@@ -102,8 +165,105 @@ def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
         )
     return SpoolReadResult(
         configured=True, dir_exists=True, envelopes=out,
-        files_seen=files_seen, envelopes_skipped=bad,
+        files_seen=files_seen, envelopes_skipped=bad, backend="local",
     )
+
+
+def _read_radar_envelopes_from_r2(
+    s3: Any, prefix: str, *, bucket: str | None = None,
+) -> SpoolReadResult:
+    """R2 backend read: list every object under ``prefix``, parse each.
+
+    Fail-CLOSED and VISIBLE (LAB-0 §6): a LIST failure (credential,
+    permission, or network) is never swallowed into an empty-and-clean
+    result — it comes back as ``dir_exists=False`` with a named ``.error``,
+    the same visible-not-silent discipline ``read_observation_baseline``
+    already uses (``BaselineReadResult.error``). A per-OBJECT GET failure is
+    a smaller, more ordinary event (matches a torn local file) and is simply
+    counted in ``envelopes_skipped`` — if EVERY object fails to GET, that
+    already surfaces as ``envelopes_skipped > 0`` with ``envelopes == []``
+    (S7's existing visibility guarantee), so a second special case is not
+    needed for that path.
+    """
+    try:
+        keys = radar_spool.list_r2_keys(s3, prefix, bucket=bucket)
+    except Exception as exc:  # noqa: BLE001 — must surface, never raise into the API's 500 path
+        log.warning(
+            "prophet_lab: R2 spool list under %s failed (%s: %s)",
+            prefix, type(exc).__name__, exc,
+        )
+        return SpoolReadResult(
+            configured=True, dir_exists=False, backend="r2",
+            error=f"r2_list_failed: {type(exc).__name__}: {exc}",
+        )
+    out: list[dict[str, Any]] = []
+    bad = 0
+    files_seen = 0
+    for key in sorted(keys):
+        files_seen += 1
+        try:
+            blob = radar_spool.get_r2_object_bytes(s3, key, bucket=bucket)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "prophet_lab: R2 spool object %s unreadable (%s: %s)",
+                key, type(exc).__name__, exc,
+            )
+            bad += 1
+            continue
+        envs, skipped = _parse_envelope_blob(blob)
+        out.extend(envs)
+        bad += skipped
+    if bad:
+        log.warning(
+            "prophet_lab: %d R2 spool object(s) under %s unreadable or off-schema (skipped)",
+            bad, prefix,
+        )
+    return SpoolReadResult(
+        configured=True, dir_exists=True, envelopes=out,
+        files_seen=files_seen, envelopes_skipped=bad, backend="r2",
+    )
+
+
+def resolve_radar_spool(
+    local_dir: Path | str | None,
+    *,
+    s3: Any = None,
+    prefix: str = RADAR_EVENT_SPOOL_PREFIX,
+) -> SpoolReadResult:
+    """R2-first backend resolution — the SAME ladder the Radar spool WRITER
+    uses (``engine.entry_radar.spool.NominationSpool._put``: R2 when
+    credentials exist, else a local directory), never a second, divergent
+    one (LAB-0 §6, day-2 commissioning prep).
+
+    ``s3`` is injectable (tests supply a fake client, same convention as
+    ``NominationSpool(s3=...)`` in ``tests/test_entry_radar_w4_lane.py``);
+    production leaves it ``None`` and this function resolves the real R2
+    client itself via :func:`engine.entry_radar.spool.r2_client_for_read`
+    ONLY when :func:`engine.entry_radar.spool.r2_credentials_present`
+    (never builds a client just to find out credentials are absent).
+
+    Ladder:
+
+    1. R2 credentials present (or an ``s3`` object is injected) -> read R2.
+       On success, ``backend="r2"``. On a LIST failure, fail closed: if a
+       local dir is ALSO configured, fall back to it (mirroring the
+       writer's own R2-then-local behavior) but keep the R2 failure VISIBLE
+       via ``.error`` even though the fallback succeeded; with no local dir
+       configured, return the R2 failure directly (``backend="r2"``,
+       ``dir_exists=False``, ``.error`` set) — never silently empty.
+    2. No R2 (no credentials, no injected client) -> :func:`read_radar_envelopes`
+       against ``local_dir`` (``backend in ("local", "unconfigured")``).
+    """
+    client = s3
+    if client is None and radar_spool.r2_credentials_present():
+        client = radar_spool.r2_client_for_read()
+    if client is not None:
+        result = _read_radar_envelopes_from_r2(client, prefix)
+        if result.error and local_dir is not None:
+            fallback = read_radar_envelopes(local_dir)
+            return replace(fallback, backend="local", error=result.error)
+        return result
+    return read_radar_envelopes(local_dir)
 
 
 def extract_events(
@@ -478,11 +638,13 @@ def read_observation_baseline(baseline_path: Path | str | None) -> BaselineReadR
 __all__ = [
     "ENVELOPE_SCHEMA",
     "BASELINE_SCHEMA",
+    "RADAR_EVENT_SPOOL_PREFIX",
     "SpoolReadResult",
     "EpisodeReadResult",
     "EpisodeSummary",
     "BaselineReadResult",
     "read_radar_envelopes",
+    "resolve_radar_spool",
     "extract_events",
     "earliest_pass_ts",
     "latest_envelope",

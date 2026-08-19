@@ -1332,6 +1332,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -1814,6 +1824,7 @@ jobs:
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
           tests/test_prophet_lab_timeparse.py
+          tests/test_prophet_lab_commissioning.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -6012,6 +6023,16 @@ jobs:
       - "engine/earnings_narrative/**"
       - "engine/fundamental_forensics/**"
       - "engine/government_revenue/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/marketing/**"
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
@@ -6297,6 +6318,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -10732,6 +10763,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
