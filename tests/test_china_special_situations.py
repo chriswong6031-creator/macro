@@ -116,7 +116,15 @@ def test_scan_happy_path_pledge(tmp_path, monkeypatch):
 
 
 def test_scan_happy_path_inquiry(tmp_path, monkeypatch):
-    """Small inquiry fixture → letters block populated."""
+    """Small inquiry fixture → letters block populated.
+
+    Titles must genuinely NAME the same inquiry thread (either 《》-quoted or a
+    well-formed inline span ending at 问询函/关注函/监管函/质询函) for the reply to
+    resolve — reply identity is scoped to (issuer, inquiry thread), not issuer
+    alone. A title like "关于问询函的回复" names no inquiry and would resolve as
+    'undetermined', not 'replied' (see tests/test_china_special_situations_truth_
+    wave1.py for the full reply-identity regression suite).
+    """
     data_dir = tmp_path / "data"
     monkeypatch.setattr("lib.config.data_dir", lambda: data_dir)
     monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
@@ -125,11 +133,13 @@ def test_scan_happy_path_inquiry(tmp_path, monkeypatch):
     p = data_dir / "china_inquiry" / "inquiry.parquet"
     _make_parquet(p, [
         {"secCode": "000001", "secName": "平安银行",
-         "announcementTitle": "关于问询函的回复", "announcementTime": today,
+         "announcementTitle": "关于收到深圳证券交易所《关于平安银行2025年年报的问询函》的公告",
+         "announcementTime": today,
          "adjunctUrl": "/x/PDF.pdf", "announcementTypeName": "问询函",
          "kind": "letter", "asof": today},
         {"secCode": "000001", "secName": "平安银行",
-         "announcementTitle": "回复的公告", "announcementTime": today,
+         "announcementTitle": "平安银行关于深圳证券交易所《关于平安银行2025年年报的问询函》的回复公告",
+         "announcementTime": today,
          "adjunctUrl": "/x/reply.pdf", "announcementTypeName": "回复",
          "kind": "reply", "asof": today},
     ])
@@ -139,7 +149,7 @@ def test_scan_happy_path_inquiry(tmp_path, monkeypatch):
     inq = snap.get("inquiry") or {}
     assert inq.get("n_letters") == 1
     assert inq.get("n_replies") == 1
-    # letter should have has_reply=True because the same secCode has a reply
+    # letter should have has_reply=True because the reply names the SAME inquiry
     assert inq["letters"][0]["has_reply"] is True
     # letter dict must NOT have a 'kind' key (register_claims must not filter on it)
     assert "kind" not in inq["letters"][0]
