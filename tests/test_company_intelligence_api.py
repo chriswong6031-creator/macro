@@ -376,3 +376,231 @@ def test_company_intelligence_maps_unexpected_reader_exception_to_503(client, mo
     assert response.status_code == 503
     assert response.headers.get("cache-control") == NO_STORE
     assert response.json() == {"detail": "Company Intelligence is temporarily unavailable."}
+
+
+# ---------------------------------------------------------------------------
+# E2-D: GET /api/event-workspace/{ticker}  (H)
+# ---------------------------------------------------------------------------
+
+import gzip  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from engine.company_intelligence.event_workspace import (  # noqa: E402
+    FLAGSHIP_EVENT_ID,
+    LIVE_NARRATIVE_ALIAS,
+    write_workspace_generation,
+)
+from engine.company_intelligence.event_workspace_build import build_event_workspace  # noqa: E402
+from engine.company_intelligence.identity import IssuerRegistry  # noqa: E402
+from engine.company_intelligence.event_workspace import apple_registry, flagship_fiscal_period  # noqa: E402
+from engine.company_intelligence.event_workspace import AAPL_CALL_DATE  # noqa: E402
+
+_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "company_intelligence"
+_EXHIBIT = _FIXTURES / "aapl_fy2026_q3_ex99_1.htm"
+_TRANSCRIPT_GZ = _FIXTURES / "aapl_fy2026_q3.json.gz"
+_FILING_JSON = _FIXTURES / "aapl_fy2026_q3_filing.json"
+
+WORKSPACE_PRIVATE_CACHE = "private, no-store"
+NOT_COVERED_WORKSPACE_NOTE = "Event workspace does not cover this ticker"
+
+
+def _workspace_success_reader_result(tmp_path: Path) -> dict:
+    """Build a fully-stamped reader result from the flagship workspace."""
+    from hashlib import sha256
+    transcript_gz = gzip.decompress(_TRANSCRIPT_GZ.read_bytes())
+    tx = json.loads(transcript_gz.decode())
+    tx_sha = sha256(transcript_gz).hexdigest()
+    filing = json.loads(_FILING_JSON.read_text())
+    exhibit = _EXHIBIT.read_text()
+    from engine.company_intelligence.resolution import claim_citations_pending
+    from tests.test_company_intelligence_event_workspace import (
+        _build_flagship,
+        BASE,
+    )
+    flagship = _build_flagship()
+    out = tmp_path / "ci"
+    gen_dir = write_workspace_generation(out, {flagship["event_id"]: flagship})
+    workspace = json.loads(
+        (gen_dir / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_bytes()
+    )
+    return {
+        "available": True,
+        "ticker": "AAPL",
+        "event_id": FLAGSHIP_EVENT_ID,
+        "event_alias": LIVE_NARRATIVE_ALIAS,
+        "workspace": workspace,
+        "is_context_only": True,
+        "display_only": True,
+        "authority": "context_only",
+        "untrusted_source_data": True,
+        "receipt": {"generation_id": gen_dir.name},
+        "note": "context only",
+    }
+
+
+def test_event_workspace_glance_200_and_leak_denylist(client, monkeypatch, tmp_path) -> None:
+    """(H) 200 returns glance; v1 reader must not be called; no leaks."""
+    success = _workspace_success_reader_result(tmp_path)
+    v1_called: list[bool] = []
+
+    monkeypatch.setattr(
+        company_intelligence_api, "_read_current_event_workspace", lambda _p: success
+    )
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_company_intelligence",
+        lambda *a, **kw: v1_called.append(True) or {},
+    )
+
+    response = client.get("/api/event-workspace/AAPL")
+
+    assert response.status_code == 200, response.text
+    assert response.headers.get("cache-control") == WORKSPACE_PRIVATE_CACHE
+    assert v1_called == [], "v1 reader must not be called by event-workspace endpoint"
+
+    payload = response.json()
+    # Use ensure_ascii=False so Unicode characters (en-dash, middle-dot) are
+    # not escaped and can be found by simple string membership tests.
+    dumped = json.dumps(payload, sort_keys=True, ensure_ascii=False)
+
+    # Required content
+    assert FLAGSHIP_EVENT_ID in dumped
+    assert LIVE_NARRATIVE_ALIAS in dumped
+    assert "$109.4B" in dumped
+    assert "9\u201311%" in dumped
+    assert "unlicensed" in dumped
+    assert "not_joined" in dumped
+
+    # Forbidden
+    for forbidden in (
+        "r2.dev",
+        "workspace_url",
+        "marker_url",
+        "source_sha256",
+        "text_sha256",
+        "segment_sha256",
+        "span_start_byte",
+        "locator",
+        "warnings",
+        "score_overlay",
+        "prophet",
+        "http://",
+        "https://",
+        "beat",
+        "miss",
+        "bullish",
+        '"summary"',
+    ):
+        assert forbidden not in dumped, f"leak: {forbidden!r} found in 200 glance"
+
+    qs = next((s for s in payload["coverage_states"] if s.get("id") == "questions_count"), None)
+    assert qs is None or qs["state"] == "unstructured"
+    assert '"questions_count": 14' not in dumped
+
+
+def test_event_workspace_glance_404_uncovered_ticker(client, monkeypatch) -> None:
+    """(H) 404 when reader returns not-covered note; v1 reader not called."""
+    v1_called: list[bool] = []
+
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_current_event_workspace",
+        lambda _p: {
+            "available": False,
+            "ticker": "TSLA",
+            "note": NOT_COVERED_WORKSPACE_NOTE,
+        },
+    )
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_company_intelligence",
+        lambda *a, **kw: v1_called.append(True) or {},
+    )
+
+    response = client.get("/api/event-workspace/TSLA")
+
+    assert response.status_code == 404, response.text
+    assert response.headers.get("cache-control") == NO_STORE
+    assert response.json() == {"detail": "Event workspace is not available for TSLA."}
+    assert v1_called == []
+
+
+def test_event_workspace_glance_503_verification_failure_does_not_leak_note(client, monkeypatch) -> None:
+    """(H) 503 for verification failure; internal note must not appear in body."""
+    internal_note = "event workspace failed immutable receipt verification"
+    v1_called: list[bool] = []
+
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_current_event_workspace",
+        lambda _p: {"available": False, "ticker": "AAPL", "note": internal_note},
+    )
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_company_intelligence",
+        lambda *a, **kw: v1_called.append(True) or {},
+    )
+
+    response = client.get("/api/event-workspace/AAPL")
+
+    assert response.status_code == 503, response.text
+    assert response.headers.get("cache-control") == NO_STORE
+    body = json.dumps(response.json())
+    assert internal_note not in body
+    assert response.json() == {"detail": "Verified event temporarily unavailable."}
+    assert v1_called == []
+
+
+def test_event_workspace_glance_422_invalid_ticker(client, monkeypatch) -> None:
+    """(H) 422 for invalid ticker before reader is touched."""
+    called: list[bool] = []
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_current_event_workspace",
+        lambda _p: called.append(True) or {},
+    )
+
+    response = client.get("/api/event-workspace/AAPL..")
+
+    assert response.status_code == 422, response.text
+    assert response.headers.get("cache-control") == NO_STORE
+    assert "ticker must be" in response.json()["detail"]
+    assert called == []
+
+
+def test_event_workspace_glance_429_after_bursting(client, monkeypatch) -> None:
+    """(H) 429 after exhausting client rate limit."""
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_current_event_workspace",
+        lambda _p: {
+            "available": False,
+            "ticker": "AAPL",
+            "note": NOT_COVERED_WORKSPACE_NOTE,
+        },
+    )
+    headers = {"EO-Connecting-IP": "203.0.113.42"}
+    for _ in range(company_intelligence_api._RATE_LIMIT_REQUESTS):
+        r = client.get("/api/event-workspace/AAPL", headers=headers)
+        assert r.status_code == 404  # uncovered but not rate-limited yet
+
+    limited = client.get("/api/event-workspace/AAPL", headers=headers)
+    assert limited.status_code == 429
+    assert limited.headers.get("cache-control") == NO_STORE
+    assert limited.headers.get("retry-after") == "60"
+
+
+def test_event_workspace_glance_503_on_reader_exception(client, monkeypatch) -> None:
+    """(H) Unexpected reader exception maps to 503 without internal details."""
+    def _raise(_p: dict) -> dict:
+        raise RuntimeError("upstream explosion with internal url https://r2.dev/secret")
+
+    monkeypatch.setattr(company_intelligence_api, "_read_current_event_workspace", _raise)
+
+    response = client.get("/api/event-workspace/AAPL")
+
+    assert response.status_code == 503
+    body = json.dumps(response.json())
+    assert "r2.dev" not in body
+    assert "internal url" not in body
+    assert response.json() == {"detail": "Verified event temporarily unavailable."}

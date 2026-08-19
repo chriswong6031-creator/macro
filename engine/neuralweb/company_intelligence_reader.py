@@ -29,6 +29,7 @@ from engine.company_intelligence.contracts import (
     validate_context,
     validate_manifest,
 )
+# Duplicate constant removed — _DEFAULT_BASE_URL was defined twice in the original.
 
 
 _DEFAULT_BASE_URL = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence"
@@ -652,6 +653,115 @@ def read_company_intelligence(params: Mapping[str, Any] | None = None) -> dict[s
             "Verified company event context only. It may explain dated earnings, transcript, "
             "and topic history; it cannot create a signal, rank, size, gate, or escalation. "
             "Document presence is not a line-level citation."
+        ),
+    }
+
+
+_NOT_COVERED_NOTE = "Event workspace does not cover this ticker"
+
+
+def read_current_event_workspace(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Return the current ``event_workspace.v1`` for *ticker* selected by alias.
+
+    Reads the ``event_workspaces/`` manifest, finds the T/YYYYQn alias for the
+    requested ticker via ``select_current_event_from_aliases``, then fetches and
+    hash-verifies the workspace object.  It does NOT read or consult the closed
+    v1 ``company_intelligence_context.v1`` at any point.
+
+    Return envelope
+    ---------------
+    Success: ``available True`` with ``workspace``, ``event_alias`` (the T/YYYYQn
+    key), ``is_context_only True``, ``display_only True``, ``authority
+    context_only``, ``untrusted_source_data True``, and a ``receipt``.
+
+    Coverage absence: ``available False``, ``ticker`` set, ``note`` exactly
+    ``"Event workspace does not cover this ticker"``.
+
+    All other failures: ``available False``, ``ticker`` set, ``note`` is the
+    internal error string.  The HTTP layer maps these to 503.
+    """
+    raw = dict(params) if isinstance(params, Mapping) else {}
+    ws = _workspace_contracts()
+
+    # Validate ticker; return available False (no ticker set) on invalid input.
+    try:
+        ticker = safe_ticker(raw.get("ticker"))
+    except ContractError:
+        return {
+            "available": False,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": "A valid ticker is required for Event Workspace context.",
+        }
+
+    # Load the workspace manifest snapshot.
+    try:
+        base_url = _public_base_url()
+        manifest, receipt = _load_workspace_snapshot(base_url)
+    except CompanyIntelligenceReadError as exc:
+        return {
+            "available": False,
+            "ticker": ticker,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": str(exc),
+        }
+
+    # Select the most-recent T/YYYYQn alias for this ticker.
+    try:
+        selected = ws.select_current_event_from_aliases(
+            ticker, manifest.get("aliases") or {}
+        )
+    except ws.WorkspaceError as exc:
+        note_text = str(exc)
+        if "does not cover" in note_text:
+            return {
+                "available": False,
+                "ticker": ticker,
+                "is_context_only": True,
+                "display_only": True,
+                "authority": "context_only",
+                "note": _NOT_COVERED_NOTE,
+            }
+        return {
+            "available": False,
+            "ticker": ticker,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": note_text,
+        }
+
+    # Fetch and hash-verify the selected workspace object.
+    try:
+        workspace, workspace_receipt = _load_event_workspace(base_url, selected.event_id)
+    except CompanyIntelligenceReadError as exc:
+        return {
+            "available": False,
+            "ticker": ticker,
+            "is_context_only": True,
+            "display_only": True,
+            "authority": "context_only",
+            "note": str(exc),
+        }
+
+    merged_receipt = {**receipt, **workspace_receipt}
+    return {
+        "available": True,
+        "ticker": ticker,
+        "event_id": workspace.get("event_id"),
+        "event_alias": selected.alias,
+        "workspace": workspace,
+        "is_context_only": True,
+        "display_only": True,
+        "authority": "context_only",
+        "untrusted_source_data": True,
+        "receipt": merged_receipt,
+        "note": (
+            "Verified event workspace context only. It cannot create a signal, "
+            "rank, size, gate, or escalation."
         ),
     }
 

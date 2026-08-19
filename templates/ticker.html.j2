@@ -40,7 +40,7 @@
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <script defer src="../theme.js"></script>
-<script defer src="../assets/js/company-intelligence-dossier.js?v=20260804a"></script>
+<script defer src="../assets/js/company-intelligence-dossier.js?v=20260819b"></script>
 <style>
 /* ══ dossier v6 ═══════════════════════════════════════════════════════════
    One voice: Inter (--font-ui) everywhere; numbers are tabular Inter, never
@@ -267,6 +267,29 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
   .fcard .fb[data-v]::after,.fcard .fb[data-v]:hover::after{transition:none;transform:translateX(-50%);}}
 @media(max-width:900px){.ci-grid{grid-template-columns:1fr}.ci-story{border-right:0;border-bottom:1px solid var(--hair)}.ci-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.65fr);gap:18px}.ci-actions{grid-column:1/-1;padding-top:0}.ci-next{margin-top:0;padding-top:0;border-top:0;border-left:1px solid var(--hair);padding-left:18px}}
 @media(max-width:640px){.ci-top{padding:18px 16px 15px;gap:12px}.ci-top p{font-size:12px}.ci-state{max-width:152px;padding:5px 8px}.ci-loading{grid-template-columns:1fr;min-height:560px;padding:19px 16px}.ci-story{padding:19px 16px 17px}.ci-lenses{grid-template-columns:1fr}.ci-side{display:flex;padding:17px 16px}.ci-next{margin-top:14px;padding:13px 0 0;border-left:0;border-top:1px solid var(--hair)}.ci-actions{padding-top:15px}.ci-actions .ci-upgrade{width:100%;order:-1}.ci-history{align-items:flex-start;flex-wrap:wrap;padding:12px 16px}.ci-history-tabs{order:3;flex-basis:100%;padding-right:18px}.ci-receipt{margin-left:auto}.ci-foot{padding:10px 16px}.ci-foot .ci-note{margin-left:0;text-align:left}.ci-summary{font-size:18px}}
+/* v2 glance row styles — Reported/Guidance/Watch/Coverage */
+.ci-v2-rows{margin-top:12px;}
+.ci-v2-section{font-size:10px;font-weight:780;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--hair);}
+.ci-v2-section:first-child{margin-top:0;}
+.ci-v2-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr);gap:4px 12px;padding:5px 0;border-bottom:1px solid var(--hair);font-size:12.5px;align-items:baseline;}
+.ci-v2-key{color:var(--muted);min-width:0;}
+.ci-v2-val{font-weight:650;text-align:right;min-width:0;overflow-wrap:anywhere;}
+/* In v2 mode: hide v1-specific composition areas via root data attribute */
+#company-update[data-ci-mode="v2"] .ci-summary,
+#company-update[data-ci-mode="v2"] .ci-lenses,
+#company-update[data-ci-mode="v2"] .ci-next,
+#company-update[data-ci-mode="v2"] #ci-history,
+#company-update[data-ci-mode="v2"] #ci-tags,
+#company-update[data-ci-mode="v2"] #ci-title,
+#company-update[data-ci-mode="v2"] .ci-top > div > p,
+#company-update[data-ci-mode="v2"] #ci-metrics-label,
+#company-update[data-ci-mode="v2"] #ci-metrics{display:none!important;}
+#company-update[data-ci-mode="v2"] #ci-v2-host{display:block;}
+#company-update:not([data-ci-mode="v2"]) #ci-v2-host{display:none!important;}
+#company-update[data-ci-mode="unavailable"] #ci-title,
+#company-update[data-ci-mode="unavailable"] .ci-top > div > p{display:none!important;}
+@media(max-width:390px){.ci-v2-row{grid-template-columns:minmax(0,1fr);}
+  .ci-v2-val{text-align:left;font-weight:600;}}
 
 /* chart module */
 .chart-mod{margin-top:20px;padding:0;overflow:hidden;}
@@ -740,6 +763,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="ci-grid">
       <div class="ci-story">
         <div class="ci-period" id="ci-period"></div>
+        <div id="ci-v2-host" hidden></div>
         <h3 class="ci-summary" id="ci-summary"></h3>
         <div class="ci-lenses">
           <article class="ci-lens strength">

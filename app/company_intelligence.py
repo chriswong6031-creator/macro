@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections import deque
 import logging
 import math
+import re
 from threading import Lock
 import time
 from typing import Any, Mapping
@@ -72,10 +73,34 @@ _FIELD_LINEAGE_LIST_KEYS = (
     ("highlights", 6),
 )
 _NOT_COVERED_NOTE = "Company Intelligence does not cover this ticker"
+_NOT_COVERED_WORKSPACE_NOTE = "Event workspace does not cover this ticker"
 
 # A teaser page can be CDN-cached safely because it contains no per-user data.
 # Errors deliberately remain under app.main's default ``private, no-store``.
 _PUBLIC_CACHE_CONTROL = "public, max-age=300, stale-while-revalidate=900"
+
+# The glance endpoint carries no per-user data but also must never be shared
+# across sessions via a CDN cache due to the authority: context_only bound.
+_WORKSPACE_GLANCE_CACHE_CONTROL = "private, no-store"
+
+_GLANCE_SCHEMA = "event_workspace_public_glance.v1"
+
+# Closed label map for watch items keyed on metric or claim_id.
+_WATCH_LABEL_MAP: dict[str, str] = {
+    "demand_vs_supply": "Supply constraint",
+    "claim_demand_vs_supply": "Supply constraint",
+    "memory": "Memory cost/flood",
+    "claim_memory_flood": "Memory cost/flood",
+    "fx_yoy_headwind": "FX headwind",
+    "claim_fx_headwind": "FX headwind",
+}
+_WATCH_RE = re.compile(r"memory|flood|fx|headwind|supply|constraint", re.IGNORECASE)
+# Match "up 16%" or "up 16.5%" in lede text for YoY extraction.
+_YOY_UP_RE = re.compile(r"up\s+(\d+(?:\.\d+)?)\s*%", re.IGNORECASE)
+# Fallback: first bare percent figure.
+_PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+# Extract Qn from a horizon string like "FY2026 Q4" or "Q4".
+_HORIZON_QN_RE = re.compile(r"Q([1-4])")
 
 # Keep the inexpensive unauthenticated endpoint from becoming an R2 fetch
 # amplifier.  Client-IP headers are attacker-suppliable by the time a request
@@ -182,6 +207,283 @@ def _event_projection(value: Any) -> dict[str, Any]:
             if isinstance(source, Mapping)
         ]
     return projected
+
+
+def _format_usd_millions(value: float) -> str:
+    """Deterministic USD formatter — mirrors Terminal presentEventWorkspace."""
+    billions = value / 1000.0
+    if abs(billions) >= 1:
+        if billions == int(billions):
+            return f"${int(billions)}B"
+        return f"${billions:.1f}B"
+    return f"${int(round(value))}M"
+
+
+def _format_percent_range(low: float, high: float) -> str:
+    """Format guidance range with an en-dash, e.g. "9\u201311%"."""
+    def _fmt(v: float) -> str:
+        return str(int(v)) if v == int(v) else f"{v:.1f}"
+    return f"{_fmt(low)}\u2013{_fmt(high)}%"
+
+
+def _extract_yoy_pct(text: str) -> str | None:
+    """Return e.g. "+16%" from "up 16%" in lede text, or None."""
+    m = _YOY_UP_RE.search(text)
+    if m:
+        raw = m.group(1)
+        return f"+{raw.rstrip('0').rstrip('.') if '.' in raw else raw}%"
+    m = _PCT_RE.search(text)
+    if m:
+        raw = m.group(1)
+        return f"+{raw.rstrip('0').rstrip('.') if '.' in raw else raw}%"
+    return None
+
+
+def _glance_reported(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Build the ``reported[]`` list — Revenue only in this wave."""
+    facts = workspace.get("facts") or []
+    claims = workspace.get("claims") or []
+
+    revenue_fact = next(
+        (f for f in facts
+         if isinstance(f, Mapping)
+         and f.get("metric") == "revenue"
+         and isinstance(f.get("value"), (int, float))
+         and isinstance(f.get("source_span"), Mapping)),
+        None,
+    )
+    if revenue_fact is None:
+        return []
+
+    value_raw = float(revenue_fact["value"])
+    formatted = _format_usd_millions(value_raw)
+    sp = revenue_fact["source_span"]
+
+    # YoY from claim_revenue_lede, then from any revenue metric claim.
+    yoy: str | None = None
+    lede_text: str | None = None
+    for claim in claims:
+        if not isinstance(claim, Mapping):
+            continue
+        if claim.get("claim_id") == "claim_revenue_lede":
+            lede_text = claim.get("text") or None
+            yoy = _extract_yoy_pct(lede_text or "")
+            break
+    if yoy is None:
+        for claim in claims:
+            if not isinstance(claim, Mapping):
+                continue
+            if claim.get("metric") == "revenue":
+                yoy = _extract_yoy_pct(claim.get("text") or "")
+                if yoy:
+                    break
+
+    display_value = f"{formatted} \u00b7 {yoy}" if yoy else formatted
+    item: dict[str, Any] = {
+        "id": revenue_fact.get("fact_id") or "fact_revenue_gaap",
+        "metric": "revenue",
+        "label": "Revenue",
+        "value": display_value,
+        "receipt_state": sp.get("receipt_state"),
+    }
+    unit = revenue_fact.get("unit")
+    if unit is not None:
+        item["unit"] = unit
+    if lede_text is not None:
+        item["claim_text"] = lede_text
+    return [item]
+
+
+def _glance_guidance(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Build the ``guidance[]`` list."""
+    guidance = workspace.get("guidance") or []
+    fiscal_period = workspace.get("fiscal_period") or {}
+    fiscal_quarter = fiscal_period.get("quarter")
+    next_q = (int(fiscal_quarter) % 4) + 1 if fiscal_quarter is not None else None
+
+    items: list[dict[str, Any]] = []
+    for g in guidance:
+        if not isinstance(g, Mapping):
+            continue
+        sp = g.get("source_span")
+        if not isinstance(sp, Mapping):
+            continue
+        low = g.get("low")
+        high = g.get("high")
+        if low is None or high is None:
+            continue
+
+        horizon = g.get("horizon") or ""
+        m = _HORIZON_QN_RE.search(horizon)
+        horizon_qn = int(m.group(1)) if m else None
+
+        if horizon_qn is not None and next_q is not None and horizon_qn == next_q:
+            label: str = f"Q{horizon_qn} revenue growth"
+        elif horizon:
+            label = horizon
+        else:
+            label = "Guidance"
+
+        item: dict[str, Any] = {
+            "id": f"guidance:{g.get('metric') or 'guidance'}:{len(items)}",
+            "metric": g.get("metric") or "guidance",
+            "label": label,
+            "value": _format_percent_range(float(low), float(high)),
+            "receipt_state": sp.get("receipt_state"),
+        }
+        if horizon:
+            item["horizon"] = horizon
+        items.append(item)
+    return items
+
+
+def _glance_watch(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Build the ``watch[]`` list — quoted/flagged claims only."""
+    claims = workspace.get("claims") or []
+    items: list[dict[str, Any]] = []
+
+    for claim in claims:
+        if not isinstance(claim, Mapping):
+            continue
+        claim_id = claim.get("claim_id") or ""
+        metric = claim.get("metric") or ""
+        text = claim.get("text") or ""
+        kind = claim.get("kind") or ""
+
+        if claim_id == "claim_revenue_lede":
+            continue
+
+        sp = claim.get("source_span")
+        if not isinstance(sp, Mapping):
+            continue
+        if sp.get("receipt_state") != "byte_replayed":
+            continue
+        rights = sp.get("rights_profile") or ""
+        if rights not in {"rp_public_primary_v1", "public_primary"}:
+            continue
+
+        is_quote = kind == "quote"
+        search_text = f"{claim_id} {metric} {text}"
+        is_pattern = bool(_WATCH_RE.search(search_text))
+        if not (is_quote or is_pattern):
+            continue
+
+        label = (
+            _WATCH_LABEL_MAP.get(claim_id)
+            or _WATCH_LABEL_MAP.get(metric)
+        )
+        if label is None:
+            continue  # No closed-map entry → omit per spec.
+
+        items.append({
+            "id": claim_id,
+            "metric": metric,
+            "label": label,
+            "value": text,
+            "receipt_state": sp.get("receipt_state"),
+        })
+    return items
+
+
+def _glance_coverage_states(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Build ``coverage_states[]`` from completeness block only.
+
+    Market reaction is NEVER borrowed from the ``public_wire`` source state.
+    questions_count typed_absence → ``unstructured``; NEVER emit the numeric 14.
+    """
+    completeness = workspace.get("completeness") or {}
+    facts = workspace.get("facts") or []
+
+    # Consensus
+    consensus_status = (completeness.get("consensus") or {}).get("status") or "unlicensed"
+
+    # Market reaction — completeness.reaction.status only
+    reaction_status = (completeness.get("reaction") or {}).get("status") or "not_joined"
+
+    # Analyst questions — typed_absence on questions_count → unstructured
+    questions_fact = next(
+        (f for f in facts
+         if isinstance(f, Mapping) and f.get("metric") == "questions_count"),
+        None,
+    )
+    states = [
+        {"id": "consensus", "label": "Consensus", "state": consensus_status},
+        {"id": "reaction", "label": "Market reaction", "state": reaction_status},
+    ]
+    if questions_fact is not None and isinstance(questions_fact.get("typed_absence"), Mapping):
+        states.append({
+            "id": "questions_count",
+            "label": "Analyst questions",
+            "state": "unstructured",
+        })
+    return states
+
+
+def _glance_source_states(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Build ``source_states[]`` — kind + semantic status; no URLs/hashes."""
+    sources = workspace.get("sources") or []
+    items: list[dict[str, Any]] = []
+    for source in sources:
+        if not isinstance(source, Mapping):
+            continue
+        kind = source.get("kind") or ""
+        receipt_state = source.get("receipt_state") or ""
+
+        if receipt_state in ("byte_replayed", "address_only"):
+            status = "present"
+        elif kind == "edgar_collector":
+            status = "not_joined"
+        else:
+            status = "absent"
+
+        items.append({"kind": kind, "status": status})
+    return items
+
+
+def _public_workspace_glance(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Build the ``event_workspace_public_glance.v1`` projection.
+
+    All formatting is deterministic (no LLM involvement).  The projection
+    strips every receipt, URL, hash, and internal workspace field; it never
+    emits beat/miss, the numeric 14 as questions_count, or score overlay data.
+    """
+    workspace = result.get("workspace") or {}
+    fiscal_period = workspace.get("fiscal_period") or {}
+    lifecycle = workspace.get("lifecycle") or {}
+
+    # event_date: prefer source_available_at, fall back to observed_at / generated_at.
+    event_date: str | None = None
+    for key in ("source_available_at", "observed_at"):
+        val = lifecycle.get(key)
+        if val:
+            event_date = str(val)[:10]
+            break
+    if not event_date:
+        val = workspace.get("generated_at")
+        if val:
+            event_date = str(val)[:10]
+
+    return {
+        "schema": _GLANCE_SCHEMA,
+        "available": True,
+        "ticker": result.get("ticker"),
+        "plane": "event_workspace.v1",
+        "event_id": workspace.get("event_id"),
+        "event_alias": result.get("event_alias"),
+        "generation_id": workspace.get("generation_id"),
+        "fiscal_period": {
+            "year": fiscal_period.get("year"),
+            "quarter": fiscal_period.get("quarter"),
+        },
+        "event_date": event_date,
+        "lifecycle_state": lifecycle.get("state"),
+        "authority": "context_only",
+        "reported": _glance_reported(workspace),
+        "guidance": _glance_guidance(workspace),
+        "watch": _glance_watch(workspace),
+        "coverage_states": _glance_coverage_states(workspace),
+        "source_states": _glance_source_states(workspace),
+    }
 
 
 def _public_projection(result: Mapping[str, Any]) -> dict[str, Any]:
@@ -301,6 +603,13 @@ def _read_company_intelligence(params: Mapping[str, Any]) -> Mapping[str, Any]:
     return company_intelligence_reader.read_company_intelligence(dict(params))
 
 
+def _read_current_event_workspace(params: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Lazy loader for the event-workspace ticker-keyed reader."""
+    from engine.neuralweb import company_intelligence_reader
+
+    return company_intelligence_reader.read_current_event_workspace(dict(params))
+
+
 @router.get("/api/company-intelligence/{ticker}")
 def company_intelligence(
     ticker: str,
@@ -357,4 +666,61 @@ def company_intelligence(
     raise HTTPException(
         status_code=503,
         detail="Company Intelligence is temporarily unavailable.",
+    )
+
+
+@router.get("/api/event-workspace/{ticker}")
+def event_workspace_glance(
+    ticker: str,
+    request: Request,
+    response: Response,
+) -> dict[str, Any]:
+    """Return a public ``event_workspace_public_glance.v1`` for one ticker.
+
+    Finds the most-recent ``T/YYYYQn`` alias for *ticker* in the event-workspace
+    manifest and returns a stripped, deterministic projection.  All receipts,
+    URLs, hashes, and raw workspace internals are omitted.
+
+    *   **200** — glance projection; ``Cache-Control: private, no-store``.
+    *   **404** — ticker not covered by the event-workspace generation.
+    *   **422** — ticker fails the safe-ticker contract.
+    *   **429** — rate-limited.
+    *   **503** — ambiguous selector, verification failure, or upstream error;
+        the internal note is never leaked in the response body.
+    """
+    if not _allow_request(request):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many Company Intelligence requests. Please retry shortly.",
+            headers={"Retry-After": str(int(_RATE_LIMIT_WINDOW_SECONDS))},
+        )
+    normalized = _normalized_ticker_or_422(ticker)
+    try:
+        result = _read_current_event_workspace({"ticker": normalized})
+    except Exception:  # noqa: BLE001 — API boundary must fail closed
+        log.exception("event workspace reader raised for %s", normalized)
+        raise HTTPException(
+            status_code=503,
+            detail="Verified event temporarily unavailable.",
+        ) from None
+
+    if result.get("available") is True:
+        # Never use the public CDN cache policy — the workspace carries
+        # context_only authority and must not be served from a shared cache.
+        response.headers["Cache-Control"] = _WORKSPACE_GLANCE_CACHE_CONTROL
+        return _public_workspace_glance(result)
+
+    note = str(result.get("note") or "")
+    if note == _NOT_COVERED_WORKSPACE_NOTE:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Event workspace is not available for {normalized}.",
+        )
+
+    # Ambiguous selector, verification failure, or snapshot error — never
+    # leak the internal note or any URL/hash in the 503 body.
+    log.warning("event workspace unavailable for %s: %s", normalized, note)
+    raise HTTPException(
+        status_code=503,
+        detail="Verified event temporarily unavailable.",
     )

@@ -6,7 +6,7 @@ objective: >
   provenance substrate. Done for this workstream's first arc means E0 artifacts
   are merged, E1 binds AAPL FY2026 Q3 into event_workspace.v1, and E2 renders
   that payload in the existing Terminal workspace and dossier glance.
-status: active
+status: awaiting_review
 program: earnings-intelligence
 repos: [macro, terminal]
 owner: coo-fable
@@ -14,11 +14,8 @@ class: research
 blast_radius: user_facing
 ambiguity: specified
 next_action: >
-  Implement E2-D only: render the live AAPL FY2026 Q3 event_workspace.v1
-  (generation f709a0a6ec514282d5769e7d, event_id evt_cik0000320193_2026q3_results)
-  in the existing Macro dossier Company Intelligence glance with the same
-  stance and event id as Terminal Brief. Do not reopen E2-T1. Do not re-read
-  the v1 score overlay. Do not start E3+.
+  Sol review of the draft E2-D Macro dossier PR (hold + do-not-merge).
+  Do not merge or deploy until review. Do not start E3+. Do not reopen E2-T1.
 owns_paths:
   - research/earnings_intelligence/**
   - research/EARNINGS_INTELLIGENCE_E0_FREEZE_ARCHAEOLOGY_AND_EXPERIENCE_HANDOFF_2026-08-16.md
@@ -75,12 +72,11 @@ waves:
     next_action: E2-T1 is live on Terminal #418 / abf87195c7ea; remaining slice is E2-D dossier glance.
   - id: E2-D
     title: Macro dossier glance from the live AAPL FY2026 Q3 workspace
-    status: todo
+    status: in_progress
     depends_on: [E2]
     next_action: >
-      Render event_workspace.v1 generation f709a0a6ec514282d5769e7d on the
-      existing Macro dossier Company Intelligence block. Same event_id as
-      Terminal Brief. Do not re-read v1 overlay. Do not reopen E2-T1.
+      Sol review of the draft E2-D PR. Stop at review; do not merge, deploy,
+      or start E3+. Do not reopen E2-T1.
 ---
 
 E0 is research/design only. E1/E2 are the first vertical slice. Later waves E3–E15 live in the V2 masterplan and are out of this workstream's immediate next_action.

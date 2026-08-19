@@ -286,3 +286,366 @@ def test_v1_teaser_reader_is_not_the_workspace_consumer(tmp_path, monkeypatch) -
     dumped = json.dumps(teaser)
     assert "event_workspace.v1" not in dumped
     assert "evt_cik0000320193_2026q3_results" not in dumped
+
+
+# ---------------------------------------------------------------------------
+# E2-D: Selector, ticker-keyed reader, public glance projection
+# ---------------------------------------------------------------------------
+
+from engine.company_intelligence.event_workspace import (  # noqa: E402
+    SelectedEvent,
+    WorkspaceError,
+    select_current_event_from_aliases,
+)
+
+
+Q2_EVENT_ID = "evt_cik0000320193_2026q2_results"
+Q2_NARRATIVE_ALIAS = "AAPL/2026Q2"
+
+
+def _clone_as_q2(flagship: dict) -> dict:
+    """Produce a minimal valid Q2 workspace derived from the flagship."""
+    import copy
+    q2 = copy.deepcopy(flagship)
+    q2["event_id"] = Q2_EVENT_ID
+    q2["fiscal_period"] = {**q2["fiscal_period"], "quarter": 2}
+    q2["aliases"] = [Q2_NARRATIVE_ALIAS]
+    # Lower revenue so Q2 is clearly distinct.
+    for fact in q2.get("facts") or []:
+        if fact.get("metric") == "revenue":
+            fact["value"] = 90000.0
+    q2["generation_id"] = ""
+    q2.pop("_source_sha256", None)
+    q2.pop("_aliases", None)
+    return q2
+
+
+# ── A: Q2 + Q3 published → Q3 selected; revenue 109417 ──────────────────────
+
+
+def test_select_picks_q3_when_q2_and_q3_both_published(tmp_path, monkeypatch) -> None:
+    """Two events in one generation — Q3 must win; revenue must come from Q3."""
+    flagship = _build_flagship()
+    q2 = _clone_as_q2(flagship)
+    files = _published_workspaces(tmp_path, flagship, q2)
+    _wire_remote(monkeypatch, files)
+
+    result = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result["available"] is True
+    assert result["event_id"] == FLAGSHIP_EVENT_ID
+    assert result["event_alias"] == LIVE_NARRATIVE_ALIAS
+    workspace = result["workspace"]
+    revenue = next(f for f in workspace["facts"] if f["metric"] == "revenue")
+    assert revenue["value"] == 109417.0
+
+
+def test_select_current_event_picks_greatest_period() -> None:
+    """Unit test: alias list with Q2 and Q3 → Q3 selected."""
+    aliases = {
+        Q2_NARRATIVE_ALIAS: Q2_EVENT_ID,
+        LIVE_NARRATIVE_ALIAS: FLAGSHIP_EVENT_ID,
+    }
+    selected = select_current_event_from_aliases("AAPL", aliases)
+    assert isinstance(selected, SelectedEvent)
+    assert selected.event_id == FLAGSHIP_EVENT_ID
+    assert selected.ticker == "AAPL"
+    assert selected.year == 2026
+    assert selected.quarter == 3
+    assert selected.alias == LIVE_NARRATIVE_ALIAS
+
+
+# ── B: same-period multiple canonical owners → ambiguous ──────────────────
+
+
+def test_select_raises_ambiguous_for_duplicate_period_canonical_ids() -> None:
+    """A period with two distinct canonical ids must raise WorkspaceError."""
+    aliases_seq = [
+        (LIVE_NARRATIVE_ALIAS, FLAGSHIP_EVENT_ID),
+        (LIVE_NARRATIVE_ALIAS, "evt_cik0000320193_2026q3_v2"),  # different id
+    ]
+    with pytest.raises(WorkspaceError, match="ambiguous"):
+        select_current_event_from_aliases("AAPL", aliases_seq)
+
+
+def test_select_accepts_same_period_same_canonical_id_twice() -> None:
+    """Dual-class aliases both resolving to ONE id must NOT be ambiguous."""
+    aliases_seq = [
+        (LIVE_NARRATIVE_ALIAS, FLAGSHIP_EVENT_ID),
+        (LIVE_NARRATIVE_ALIAS, FLAGSHIP_EVENT_ID),  # same id → no conflict
+    ]
+    selected = select_current_event_from_aliases("AAPL", aliases_seq)
+    assert selected.event_id == FLAGSHIP_EVENT_ID
+
+
+def test_select_ignores_non_canonical_event_ids() -> None:
+    """Narrative aliases that do not resolve to evt_cik… ids are skipped."""
+    aliases = {
+        "AAPL/2026Q2": "not-a-canonical-id",
+        LIVE_NARRATIVE_ALIAS: FLAGSHIP_EVENT_ID,
+    }
+    selected = select_current_event_from_aliases("AAPL", aliases)
+    assert selected.event_id == FLAGSHIP_EVENT_ID
+    assert selected.quarter == 3
+    """No alias for the ticker → WorkspaceError containing 'does not cover'."""
+    with pytest.raises(WorkspaceError, match="does not cover"):
+        select_current_event_from_aliases("AAPL", {})
+
+
+def test_select_ignores_other_ticker_aliases() -> None:
+    """GOOG/2026Q3 must not be admitted when selecting AAPL."""
+    aliases = {"GOOG/2026Q3": "evt_cik0001652044_2026q3_results"}
+    with pytest.raises(WorkspaceError, match="does not cover"):
+        select_current_event_from_aliases("AAPL", aliases)
+
+
+def test_select_raises_workspace_error_on_invalid_ticker() -> None:
+    """Invalid ticker (with ..) → WorkspaceError via safe_ticker."""
+    with pytest.raises(WorkspaceError):
+        select_current_event_from_aliases("AAPL..", {})
+
+
+def test_select_accepts_mapping_and_sequence_forms() -> None:
+    """Both Mapping[str,str] and list-of-pairs must work."""
+    good_mapping = {LIVE_NARRATIVE_ALIAS: FLAGSHIP_EVENT_ID}
+    good_seq = [(LIVE_NARRATIVE_ALIAS, FLAGSHIP_EVENT_ID)]
+    from_map = select_current_event_from_aliases("AAPL", good_mapping)
+    from_seq = select_current_event_from_aliases("AAPL", good_seq)
+    assert from_map.event_id == from_seq.event_id == FLAGSHIP_EVENT_ID
+
+
+# ── G: same event correction — generation changes, event_id stays ─────────
+
+
+def test_read_current_event_workspace_reflects_corrected_generation(tmp_path, monkeypatch) -> None:
+    original = _build_flagship()
+    files_a = _published_workspaces(tmp_path, original)
+    _wire_remote(monkeypatch, files_a)
+
+    result_a = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result_a["available"] is True
+    gen_a = result_a["workspace"]["generation_id"]
+
+    original_sha = original["_source_sha256"]
+    amended_body = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- restatement -->\n"
+    corrected = _build_flagship(exhibit_body=amended_body, prior_sha=original_sha)
+    assert corrected["event_id"] == FLAGSHIP_EVENT_ID
+    assert corrected["_source_sha256"] != original_sha
+
+    files_b = _published_workspaces(tmp_path, corrected)
+    reader.clear_company_intelligence_cache()
+    _wire_remote(monkeypatch, files_b)
+
+    result_b = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result_b["available"] is True
+    assert result_b["event_id"] == FLAGSHIP_EVENT_ID
+    assert result_b["event_alias"] == LIVE_NARRATIVE_ALIAS
+    assert result_b["workspace"]["generation_id"] != gen_a
+    assert result_b["workspace"]["lifecycle"]["state"] == "corrected"
+
+
+# ── I: reader does not call read_company_intelligence ────────────────────────
+
+
+def test_read_current_event_workspace_does_not_call_v1_reader(tmp_path, monkeypatch) -> None:
+    flagship = _build_flagship()
+    files = _published_workspaces(tmp_path, flagship)
+    _wire_remote(monkeypatch, files)
+
+    called: list[bool] = []
+    monkeypatch.setattr(reader, "read_company_intelligence", lambda *a, **kw: called.append(True) or {})
+
+    result = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result["available"] is True
+    assert called == [], "read_current_event_workspace must not call read_company_intelligence"
+
+
+def test_read_current_event_workspace_not_covered_returns_exact_note(tmp_path, monkeypatch) -> None:
+    flagship = _build_flagship()
+    files = _published_workspaces(tmp_path, flagship)
+    _wire_remote(monkeypatch, files)
+
+    result = reader.read_current_event_workspace({"ticker": "TSLA"})
+    assert result["available"] is False
+    assert result["ticker"] == "TSLA"
+    assert result["note"] == "Event workspace does not cover this ticker"
+
+
+# ── C-F: public glance projection unit tests ──────────────────────────────
+
+
+def _build_workspace_reader_result(tmp_path: Path) -> dict:
+    """Build a fully-stamped workspace reader result from the flagship."""
+    flagship = _build_flagship()
+    out = tmp_path / "company_intelligence"
+    gen_dir = write_workspace_generation(out, {flagship["event_id"]: flagship})
+    workspace = json.loads(
+        (gen_dir / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_bytes()
+    )
+    return {
+        "available": True,
+        "ticker": "AAPL",
+        "event_id": FLAGSHIP_EVENT_ID,
+        "event_alias": LIVE_NARRATIVE_ALIAS,
+        "workspace": workspace,
+        "is_context_only": True,
+        "display_only": True,
+        "authority": "context_only",
+        "untrusted_source_data": True,
+        "receipt": {"generation_id": gen_dir.name},
+        "note": "context only",
+    }
+
+
+from app.company_intelligence import _public_workspace_glance  # noqa: E402
+
+
+def test_public_glance_leak_denylist_and_required_content(tmp_path) -> None:
+    """(C) Projection must contain required tokens and omit forbidden ones."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+    # Use ensure_ascii=False so Unicode characters (en-dash, middle-dot) are
+    # not escaped and can be found by simple string membership tests.
+    dumped = json.dumps(glance, sort_keys=True, ensure_ascii=False)
+
+    # Required content
+    assert FLAGSHIP_EVENT_ID in dumped
+    assert result["receipt"]["generation_id"] in dumped
+    assert "$109.4B" in dumped
+    assert "9\u201311%" in dumped  # en-dash in range
+    assert "unlicensed" in dumped
+    assert "not_joined" in dumped
+    assert LIVE_NARRATIVE_ALIAS in dumped  # event_alias
+
+    # Forbidden: URLs and internal/private fields
+    for forbidden in (
+        "r2.dev",
+        "workspace_url",
+        "marker_url",
+        "source_sha256",
+        "text_sha256",
+        "segment_sha256",
+        "span_start_byte",
+        "locator",
+        "score_overlay",
+        "prophet",
+        "http://",
+        "https://",
+    ):
+        assert forbidden not in dumped, f"forbidden token {forbidden!r} found in glance"
+
+    # warnings object must not appear in output
+    assert '"warnings"' not in dumped
+
+    # beat / miss / bullish / v1 summary must not appear
+    for bad in ("beat", "miss", "bullish", '"summary"'):
+        assert bad not in dumped, f"forbidden token {bad!r} found in glance"
+
+
+def test_public_glance_revenue_formatted_correctly(tmp_path) -> None:
+    """Revenue $109.4B with +16% YoY must appear in reported."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+
+    reported = glance["reported"]
+    assert len(reported) == 1
+    item = reported[0]
+    assert item["metric"] == "revenue"
+    assert item["label"] == "Revenue"
+    assert item["value"] == "$109.4B \u00b7 +16%"
+    assert item["receipt_state"] == "byte_replayed"
+
+
+def test_public_glance_guidance_formatted_correctly(tmp_path) -> None:
+    """Guidance 9–11% with Q4 label must appear."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+
+    assert len(glance["guidance"]) == 1
+    g = glance["guidance"][0]
+    assert g["value"] == "9\u201311%"
+    assert g["label"] == "Q4 revenue growth"
+    assert g["receipt_state"] == "byte_replayed"
+
+
+def test_public_glance_watch_items_have_closed_map_labels(tmp_path) -> None:
+    """Watch items carry Supply constraint / Memory cost/flood / FX headwind."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+
+    watch_labels = {w["label"] for w in glance["watch"]}
+    assert "Supply constraint" in watch_labels
+    assert "Memory cost/flood" in watch_labels
+    assert "FX headwind" in watch_labels
+    # claim_revenue_lede must NOT appear
+    watch_ids = {w["id"] for w in glance["watch"]}
+    assert "claim_revenue_lede" not in watch_ids
+
+
+def test_public_glance_coverage_states(tmp_path) -> None:
+    """(D+E) Market reaction must be not_joined; consensus must be unlicensed."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+
+    by_id = {s["id"]: s for s in glance["coverage_states"]}
+    assert by_id["consensus"]["state"] == "unlicensed"
+    assert by_id["reaction"]["state"] == "not_joined"
+    # Neither beat nor miss should appear anywhere in the output
+    dumped = json.dumps(glance)
+    assert "beat" not in dumped
+    assert "miss" not in dumped
+
+
+def test_public_glance_reaction_does_not_borrow_public_wire(tmp_path) -> None:
+    """(D) Market reaction state derives from completeness.reaction, not public_wire."""
+    result = _build_workspace_reader_result(tmp_path)
+    # Even if the workspace had public_wire as present, reaction stays not_joined.
+    workspace = result["workspace"]
+    for source in workspace.get("sources") or []:
+        if source.get("kind") == "public_wire":
+            source["receipt_state"] = "byte_replayed"  # simulate wire present
+    glance = _public_workspace_glance(result)
+    by_id = {s["id"]: s for s in glance["coverage_states"]}
+    assert by_id["reaction"]["state"] == "not_joined"
+
+
+def test_public_glance_questions_count_typed_absence_is_unstructured(tmp_path) -> None:
+    """(F) questions_count typed_absence must map to 'unstructured', never 14."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+    by_id = {s["id"]: s for s in glance["coverage_states"]}
+    qs = next((s for s in glance["coverage_states"] if s["id"] == "questions_count"), None)
+    assert qs is not None
+    assert qs["state"] == "unstructured"
+    assert qs.get("value") != 14
+    dumped = json.dumps(glance)
+    assert ": 14" not in dumped
+    assert '"questions_count": 14' not in dumped
+
+
+def test_public_glance_same_event_correction_updates_value_not_id(tmp_path) -> None:
+    """Same event_id, corrected lifecycle, new revenue — no second event."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance_a = _public_workspace_glance(result)
+    assert glance_a["event_id"] == FLAGSHIP_EVENT_ID
+    result["workspace"]["lifecycle"]["state"] = "corrected"
+    for fact in result["workspace"].get("facts") or []:
+        if fact.get("metric") == "revenue":
+            fact["value"] = 120000.0
+    glance_b = _public_workspace_glance(result)
+    assert glance_b["event_id"] == FLAGSHIP_EVENT_ID
+    assert glance_b["lifecycle_state"] == "corrected"
+    assert glance_b["reported"][0]["value"].startswith("$120B")
+    assert glance_a["reported"][0]["value"] != glance_b["reported"][0]["value"]
+
+
+def test_public_glance_source_states_omit_private_fields(tmp_path) -> None:
+    """source_states carry only kind and status; no URLs, hashes, or accession."""
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+    for s in glance["source_states"]:
+        assert set(s.keys()) == {"kind", "status"}
+    statuses = {s["kind"]: s["status"] for s in glance["source_states"]}
+    assert statuses.get("issuer_release") == "present"
+    assert statuses.get("transcript") == "present"
+    assert statuses.get("public_wire") == "absent"
+    assert statuses.get("edgar_collector") == "not_joined"

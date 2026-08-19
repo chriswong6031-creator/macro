@@ -3,6 +3,13 @@
  * Browser-visible data is a bounded projection from the source-backed public
  * Company Intelligence plane. It is context only: this module never computes
  * a score, recommendation, target, rank, or trading action.
+ *
+ * Fetch order (frozen law):
+ *   1. GET /api/event-workspace/{ticker}  — current-event authority (v2)
+ *      200 + valid schema                 → renderV2; v1 never requested
+ *      404                                → fetchV1 (genuine no-coverage)
+ *      503 / 429 / error / invalid schema → showV2Unavailable; v1 NEVER fallback
+ *   2. GET /api/company-intelligence/{ticker}  — legacy v1 teaser (404 fallback only)
  */
 (function () {
   'use strict';
@@ -20,6 +27,7 @@
   var emptyCopy = document.getElementById('ci-empty-copy');
   var content = document.getElementById('ci-content');
   var period = document.getElementById('ci-period');
+  var v2Host = document.getElementById('ci-v2-host');
   var summary = document.getElementById('ci-summary');
   var strength = document.getElementById('ci-strength');
   var pressure = document.getElementById('ci-pressure');
@@ -33,6 +41,8 @@
   var receipt = document.getElementById('ci-receipt');
   var footNote = document.getElementById('ci-foot-note');
   var announcer = document.getElementById('ci-announcer');
+  var terminalUpgrade = document.getElementById('ci-terminal-upgrade');
+  var terminalUpgradeEmpty = document.getElementById('ci-terminal-upgrade-empty');
   var events = [];
   var payload = null;
   var routeCatalog = null;
@@ -49,6 +59,33 @@
     streaming_services: '流媒体服务', digital_payments: '数字支付', international_growth: '海外增长',
     china_growth: '中国市场增长', india_expansion: '印度市场扩张', guidance_raise: '上调指引',
     guidance_cut: '下调指引', regulatory_risk: '监管风险', product_launch: '产品发布'
+  };
+
+  /* v2 closed map — no LLM, no dynamic lookup */
+  var V2_ZH = {
+    'Reported': '已公布',
+    'Guidance': '指引',
+    'Watch': '关注',
+    'Coverage': '覆盖',
+    'Verified event': '已核实事件',
+    'Revenue': '营收',
+    'Q4 revenue growth': '第四季度营收增长',
+    'Supply constraint': '供应受限',
+    'Memory cost/flood': '存储成本',
+    'FX headwind': '汇率压力',
+    'Consensus': '共识',
+    'Unlicensed': '未授权',
+    'unlicensed': '未授权',
+    'Market reaction': '市场反应',
+    'Not joined': '未接入',
+    'not_joined': '未接入',
+    'not joined': '未接入',
+    'Analyst questions': '分析师提问',
+    'Unavailable / unstructured': '暂无结构化计数',
+    'unstructured': '暂无结构化计数',
+    'Open full event in Terminal': '在终端打开完整事件',
+    'Retry': '重试',
+    'Verified event temporarily unavailable': '已核实事件暂时不可用'
   };
 
   function clear(node) {
@@ -321,7 +358,7 @@
         'Verify the source wording for the pressure point above, then compare it with the next call.',
         '先在原文中核对上方压力因素的准确措辞，再与下次电话会比较。');
     } else {
-      setPair(nextCopy, 'Compare the next call with this baseline and verify any narrative change in the transcript.', '以下次电话会与本期基准对比，并在原文中核对表述变化。');
+      setPair(nextCopy, 'Compare the next call with this baseline and verify any narrative change in the transcript.', '以下次电话会与本期基准对比，并在电话会原文中核对表述变化。');
     }
 
     renderTags(event);
@@ -403,12 +440,6 @@
 
     var latest = events[0];
     var incomplete = data.status !== 'ready' || latest.claim_citations_pending === true;
-    // The chip answers one question for the reader: how far can I trust what is
-    // written below? "Source record available · transcript check needed" named
-    // an internal pipeline state and left that question unanswered — a reader
-    // cannot tell whether "transcript check needed" is their job or ours. It is
-    // ours, and until it is done the numbers are from the record but the wording
-    // around them is not yet line-cited. Say exactly that.
     setState(incomplete ? 'partial' : 'ready',
       incomplete ? 'Wording not yet checked' : 'Checked against the source',
       incomplete ? '措辞尚未核对' : '已核对来源记录');
@@ -450,34 +481,308 @@
     } catch (ignore) {}
   }
 
+  /* ── v2 helpers ── */
+
+  function v2SectionHead(enLabel) {
+    var head = document.createElement('div');
+    head.className = 'ci-v2-section';
+    pair(head, enLabel, V2_ZH[enLabel] || enLabel);
+    return head;
+  }
+
+  function v2Row(labelEn, valueText, valueZh) {
+    var row = document.createElement('div');
+    row.className = 'ci-v2-row';
+    var k = document.createElement('span');
+    k.className = 'ci-v2-key';
+    pair(k, labelEn, V2_ZH[labelEn] || labelEn);
+    var v = document.createElement('span');
+    v.className = 'ci-v2-val';
+    if (valueZh) {
+      pair(v, String(valueText || ''), valueZh);
+    } else {
+      v.setAttribute('lang', 'en');
+      v.textContent = String(valueText || '');
+    }
+    row.appendChild(k);
+    row.appendChild(v);
+    return row;
+  }
+
+  function coverageStatePair(state) {
+    if (state === 'unlicensed') return {en: 'Unlicensed', zh: '未授权'};
+    if (state === 'not_joined') return {en: 'Not joined', zh: '未接入'};
+    if (state === 'unstructured') return {en: 'Unavailable / unstructured', zh: '暂无结构化计数'};
+    var display = String(state || '').replace(/_/g, ' ');
+    return {en: display, zh: V2_ZH[state] || display};
+  }
+
+  function v2PeriodPair(data) {
+    var fp = data.fiscal_period || {};
+    var q = Number(fp.quarter);
+    var y = Number(fp.year);
+    var dateEn = displayDate(data.event_date, 'en-US');
+    var dateZh = displayDate(data.event_date, 'zh-CN');
+    var enParts = [ticker];
+    var zhParts = [ticker];
+    if (q && y) {
+      enParts.push('Q' + q + ' FY' + y);
+      zhParts.push('Q' + q + ' 财年' + y);
+    }
+    if (dateEn) enParts.push(dateEn);
+    if (dateZh) zhParts.push(dateZh);
+    return {en: enParts.join(' · '), zh: zhParts.join(' · ')};
+  }
+
+  function analysisUrl() {
+    return 'https://app.mastermind-x.com/analysis?symbol=' + encodeURIComponent(ticker) + '&page=intelligence';
+  }
+
+  /* Render the frozen v2 glance hierarchy.
+   * v1 fetch is never requested on this path. */
+  function renderV2(data) {
+    root.setAttribute('data-ci-plane', 'event_workspace.v1');
+    root.setAttribute('data-ci-event-id', String(data.event_id || ''));
+    root.setAttribute('data-ci-generation-id', String(data.generation_id || ''));
+    root.setAttribute('data-ci-mode', 'v2');
+
+    /* Period: TICKER · Q3 FY2026 · Jul 30 / TICKER · Q3 财年2026 · 30 7月 */
+    var pPair = v2PeriodPair(data);
+    clear(period);
+    pair(period, pPair.en, pPair.zh);
+
+    /* State chip */
+    setState('ready', 'Verified event', '已核实事件');
+
+    /* Clear v1 narrative areas — CSS also hides them in v2 mode */
+    if (summary) clear(summary);
+    if (tags) { clear(tags); tags.hidden = true; }
+
+    /* History is hidden in v2 mode */
+    if (history) history.hidden = true;
+
+    /* Build v2 rows into #ci-v2-host in the story column so the first
+     * viewport is REPORTED / GUIDANCE / WATCH / COVERAGE. */
+    var rows = document.createElement('div');
+    rows.className = 'ci-v2-rows';
+
+    /* REPORTED */
+    var reported = Array.isArray(data.reported) ? data.reported : [];
+    if (reported.length) {
+      rows.appendChild(v2SectionHead('Reported'));
+      reported.forEach(function (item) {
+        rows.appendChild(v2Row(String(item.label || item.metric || ''), String(item.value || '')));
+      });
+    }
+
+    /* GUIDANCE */
+    var guidance = Array.isArray(data.guidance) ? data.guidance : [];
+    if (guidance.length) {
+      rows.appendChild(v2SectionHead('Guidance'));
+      guidance.forEach(function (item) {
+        rows.appendChild(v2Row(String(item.label || item.metric || ''), String(item.value || '')));
+      });
+    }
+
+    /* WATCH — omit section entirely if empty; label + source-backed claim text */
+    var watch = Array.isArray(data.watch) ? data.watch : [];
+    if (watch.length) {
+      rows.appendChild(v2SectionHead('Watch'));
+      watch.forEach(function (item) {
+        rows.appendChild(v2Row(String(item.label || ''), String(item.value || '')));
+      });
+    }
+
+    /* COVERAGE — frozen as an array of {id, label, state} */
+    var covStates = Array.isArray(data.coverage_states) ? data.coverage_states : [];
+    if (covStates.length) {
+      rows.appendChild(v2SectionHead('Coverage'));
+      covStates.forEach(function (item) {
+        if (!item || typeof item !== 'object') return;
+        var statePair = coverageStatePair(String(item.state || ''));
+        rows.appendChild(v2Row(String(item.label || item.id || ''), statePair.en, statePair.zh));
+      });
+    }
+
+    if (v2Host) {
+      v2Host.hidden = false;
+      clear(v2Host);
+      v2Host.appendChild(rows);
+    } else if (metrics) {
+      clear(metrics);
+      metrics.appendChild(rows);
+    }
+    if (v2Host && metrics) clear(metrics);
+
+    /* Primary CTA: analysis intelligence URL */
+    var aUrl = analysisUrl();
+    if (terminalUpgrade) {
+      terminalUpgrade.href = aUrl;
+      terminalUpgrade.rel = 'noopener noreferrer';
+      terminalUpgrade.target = '_blank';
+      setPair(terminalUpgrade, 'Open full event in Terminal', '在终端打开完整事件');
+    }
+
+    /* Secondary transcript — keep if event_alias resolves to a period key (AAPL/2026Q3 → tx=2026Q3) */
+    if (transcript) {
+      var alias = String(data.event_alias || '');
+      var slashIdx = alias.indexOf('/');
+      var periodKey = slashIdx >= 0 ? alias.slice(slashIdx + 1) : '';
+      if (periodKey) {
+        var txUrl = new URL('https://app.mastermind-x.com/terminal');
+        txUrl.searchParams.set('sym', ticker);
+        txUrl.searchParams.set('pane', 'transcripts');
+        txUrl.searchParams.set('tx', periodKey);
+        txUrl.searchParams.set('from', 'company-intelligence');
+        transcript.href = txUrl.toString();
+      }
+    }
+
+    loading.hidden = true;
+    empty.hidden = true;
+    content.hidden = false;
+    root.removeAttribute('aria-busy');
+
+    clear(receipt);
+    var gen = generatedLabel(data.event_date);
+    pair(receipt, gen ? 'Event date ' + gen : 'Current event', gen ? '事件日期 ' + gen : '当前事件');
+
+    clear(footNote);
+    pair(footNote, 'Source-backed current event', '来源核实的当期事件');
+
+    if (announcer) setPair(announcer, pPair.en, pPair.zh);
+
+    try {
+      window.dispatchEvent(new CustomEvent('mmx:company-intelligence-ready', {
+        detail: {ticker: ticker, status: 'v2', generation_id: data.generation_id, mode: 'v2'}
+      }));
+    } catch (ignore) {}
+  }
+
+  /* Show unavailable state for 503 / 429 / network error / invalid schema.
+   * NEVER requests v1 — fallback law is frozen. */
+  function showV2Unavailable() {
+    var aUrl = analysisUrl();
+
+    root.setAttribute('data-ci-mode', 'unavailable');
+    loading.hidden = true;
+    content.hidden = true;
+    empty.hidden = false;
+    root.removeAttribute('aria-busy');
+
+    setState('unavailable', 'Verified event temporarily unavailable', '已核实事件暂时不可用');
+    setPair(emptyTitle, 'Verified event temporarily unavailable', '已核实事件暂时不可用');
+    setPair(emptyCopy, 'Verified event temporarily unavailable', '已核实事件暂时不可用');
+
+    /* Open Terminal CTA → analysis URL */
+    if (terminalUpgradeEmpty) {
+      terminalUpgradeEmpty.href = aUrl;
+      terminalUpgradeEmpty.rel = 'noopener noreferrer';
+      terminalUpgradeEmpty.target = '_blank';
+      setPair(terminalUpgradeEmpty, 'Open full event in Terminal', '在终端打开完整事件');
+    }
+
+    /* Retry button — re-runs only the v2 fetch; never duplicate */
+    var existingRetry = document.getElementById('ci-retry');
+    if (existingRetry && existingRetry.parentNode) existingRetry.parentNode.removeChild(existingRetry);
+    var retryBtn = document.createElement('button');
+    retryBtn.id = 'ci-retry';
+    retryBtn.type = 'button';
+    retryBtn.className = 'gbtn';
+    pair(retryBtn, 'Retry', '重试');
+    retryBtn.addEventListener('click', function () {
+      var existing = document.getElementById('ci-retry');
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      empty.hidden = true;
+      loading.hidden = false;
+      root.setAttribute('aria-busy', 'true');
+      doV2Fetch();
+    });
+    empty.appendChild(retryBtn);
+  }
+
+  /* Primary fetch — /api/event-workspace/{ticker} is the current-event authority. */
+  function doV2Fetch() {
+    var v2Handled = false;
+    var v2Controller = typeof AbortController === 'function' ? new AbortController() : null;
+    var v2Timeout = window.setTimeout(function () { if (v2Controller) v2Controller.abort(); }, 10000);
+
+    fetch('/api/event-workspace/' + encodeURIComponent(ticker), {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {'Accept': 'application/json'},
+      signal: v2Controller ? v2Controller.signal : undefined
+    }).then(function (response) {
+      if (response.status === 404) {
+        /* Genuine no-coverage: fall through to the v1 teaser. */
+        v2Handled = true;
+        window.clearTimeout(v2Timeout);
+        fetchV1();
+        return null;
+      }
+      if (!response.ok) {
+        /* 503 / 429 / any other non-200 non-404: unavailable, never v1. */
+        v2Handled = true;
+        window.clearTimeout(v2Timeout);
+        showV2Unavailable();
+        return null;
+      }
+      return response.json();
+    }).then(function (data) {
+      if (v2Handled) return;
+      window.clearTimeout(v2Timeout);
+      /* Validate schema; an invalid payload is treated as unavailable, not as a v1 cue. */
+      if (!data ||
+          data.schema !== 'event_workspace_public_glance.v1' ||
+          data.available !== true ||
+          !data.event_id) {
+        showV2Unavailable();
+        return;
+      }
+      renderV2(data);
+    }).catch(function () {
+      window.clearTimeout(v2Timeout);
+      if (!v2Handled) showV2Unavailable();
+    });
+  }
+
+  /* Legacy v1 path — only reached via genuine 404 from /api/event-workspace/. */
+  function fetchV1() {
+    root.setAttribute('data-ci-mode', 'v1');
+    root.setAttribute('data-ci-plane', 'company_intelligence.v1');
+
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timeout = window.setTimeout(function () { if (ctrl) ctrl.abort(); }, 10000);
+    fetch('/api/company-intelligence/' + encodeURIComponent(ticker), {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {'Accept': 'application/json'},
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (response) {
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error('company intelligence unavailable');
+      return response.json();
+    }).then(function (data) {
+      window.clearTimeout(timeout);
+      if (!data || data.available !== true) {
+        showEmpty('unavailable', 'No company record yet', '暂无公司记录',
+          'This ticker is not covered by the Company Intelligence source plane yet.',
+          '该股票暂未纳入公司情报的来源记录覆盖范围。');
+        return;
+      }
+      showPayload(data);
+    }).catch(function () {
+      window.clearTimeout(timeout);
+      showEmpty('unavailable', 'Live record unavailable', '实时记录暂不可用',
+        'The company source record could not be loaded. The rest of this dossier is unaffected; try again later or open Terminal.',
+        '公司来源记录暂时无法加载。其余档案不受影响；请稍后重试或打开终端。');
+    });
+  }
+
+  /* ── Init ── */
   empty.hidden = true;
   loading.hidden = false;
   root.setAttribute('aria-busy', 'true');
   loadRouteCatalog();
-  var controller = typeof AbortController === 'function' ? new AbortController() : null;
-  var timeout = window.setTimeout(function () { if (controller) controller.abort(); }, 10000);
-  fetch('/api/company-intelligence/' + encodeURIComponent(ticker), {
-    method: 'GET',
-    credentials: 'same-origin',
-    headers: {'Accept': 'application/json'},
-    signal: controller ? controller.signal : undefined
-  }).then(function (response) {
-    if (response.status === 404) return null;
-    if (!response.ok) throw new Error('company intelligence unavailable');
-    return response.json();
-  }).then(function (data) {
-    window.clearTimeout(timeout);
-    if (!data || data.available !== true) {
-      showEmpty('unavailable', 'No company record yet', '暂无公司记录',
-        'This ticker is not covered by the Company Intelligence source plane yet.',
-        '该股票暂未纳入公司情报的来源记录覆盖范围。');
-      return;
-    }
-    showPayload(data);
-  }).catch(function () {
-    window.clearTimeout(timeout);
-    showEmpty('unavailable', 'Live record unavailable', '实时记录暂不可用',
-      'The company source record could not be loaded. The rest of this dossier is unaffected; try again later or open Terminal.',
-      '公司来源记录暂时无法加载。其余档案不受影响；请稍后重试或打开终端。');
-  });
+  doV2Fetch();
 })();
