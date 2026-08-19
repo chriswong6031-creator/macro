@@ -1,6 +1,7 @@
-# G0 — Source and correction matrix (China)
+# CN-G0 — Source and correction matrix (China)
 
-**Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `e9800a01fd63`
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/`).
+**Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
 
 ---
 

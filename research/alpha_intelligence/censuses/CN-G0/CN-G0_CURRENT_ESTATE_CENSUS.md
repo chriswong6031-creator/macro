@@ -1,12 +1,13 @@
-# G0 — Current-estate census (China post-event reinterpretation)
+# CN-G0 — Current-estate census (China post-event reinterpretation)
 
-**Lane:** GROK-CN-G0 (Post-Event Reinterpretation)
+**Lane id:** `CN-G0`. This is **not** the US Alpha Intelligence GROK-G0. The US packet lives at `research/alpha_intelligence/censuses/G0/` (PR #5953: academic review, US event-clock census, frontier spec draft, US casebook, reaction-geometry matrix). This packet must not occupy that directory.
+**Lane:** GROK-CN-G0 (China post-event reinterpretation)
 **Date:** 2026-08-19
-**Reconciliation pin:** `origin/main` @ `e9800a01fd63`
+**Reconciliation pin:** `origin/main` @ `6353b77f5aaa`
 **Authority of this document:** NONE. Research census only. No production scoring, no Prophet change, no new store, no E2 change.
-**Parent snapshot:** PASS-0 PR #5910 (`research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md`) §1-G. C0 adjudication (PR #5933, open) recorded G0 outstanding.
-**China program under census:** China Intelligence Institutional Alpha (`research/CHINA_INTELLIGENCE_INSTITUTIONAL_ALPHA_MASTERPLAN_2026-08-17.md` on open PR #5822). Not the July `china_alpha/` pick-board program. Not CN-limit-alpha (`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`).
-**Addressee:** `WS:EARNINGS-INTELLIGENCE-OS`. There is never an independent G build lane.
+**Parent snapshot:** PASS-0 PR #5910 §1-G names the *US* G responsibility. C0 (#5933) recorded US G0 outstanding; PR #5953 returns that US G0. **This file is the China-program sibling, not a second copy of that return.**
+**China program under census:** China Alpha Intelligence (open PR #5953 / closed draft #5822). Not the July `china_alpha/` pick-board program. Not CN-limit-alpha (`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`).
+**Addressee:** `WS:EARNINGS-INTELLIGENCE-OS` for event/document/claim contract. China source planes stay in `china-system`. There is never an independent G or CN-G build lane.
 
 Claim tags: **CODE VERIFIED** · **PRIMARY SOURCE VERIFIED** · **INFERRED** · **UNKNOWN**.
 
@@ -68,7 +69,7 @@ One Earnings-OS-owned **China listing-identity adapter** onto the already-frozen
 3. **references** `china_earnings`, `china_preannounce` (both parquets), `china_filings`, `china_irm`, `china_einteraction` — does not copy them into a warehouse;
 4. leaves LHB, Connect, QVIX, Special Situations UI, and #5822 vertical lobes in `china-system`.
 
-That is the whole G delta. Everything else is either collected or forbidden (new store, score, independent G lane, E2 scope change).
+That is the whole CN-G0 delta. Everything else is either collected or forbidden (new store, score, independent G / CN-G lane, E2 scope change, occupying `censuses/G0/`).
 
 ---
 

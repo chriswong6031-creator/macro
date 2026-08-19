@@ -1,7 +1,8 @@
-# G0 — Adoption and collision map (China)
+# CN-G0 — Adoption and collision map (China)
 
-**Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `e9800a01fd63`
-**Parent:** PASS-0 §3 / §4 / §6 G0 rider; C0 PR #5933 (G0 outstanding → wave `c0g`).
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/` on PR #5953).
+**Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
+**Parent:** China Alpha Intelligence program. US c0g / GROK-G0 is a sibling wave and a **path collision** if this packet stays under `censuses/G0/`.
 
 ---
 
@@ -30,6 +31,7 @@
 
 | Collision | State at pin | Rule for G |
 |---|---|---|
+| **US GROK-G0 directory** | PR #5953 owns `research/alpha_intelligence/censuses/G0/` (US estate + c0g adjudication). | **This packet lives only in `censuses/CN-G0/`.** Do not merge the two directories. |
 | **E2 frozen scope** | `WS:EARNINGS-INTELLIGENCE-OS` next_action is AAPL FY2026 Q3 Terminal + dossier glance. Do not broaden into E3+. | **Untouchable.** Any China adapter is a later E-wave. |
 | **`company_id = cik:`** | `identity.py` / `events.py` / E0 freeze § issuer rule | A China adapter is a **contract amendment**, not a silent ticker pad. Dual-class law still applies (one issuer, many listings). |
 | **#5822 China institutional alpha masterplan** | OPEN research PR. Proposes `china_corporate_event.v1` and a full announcement corpus. | Reconcile *fields* into Earnings OS. Refuse a second store. Same standing as PASS-0 collision #4 for lane B. |
@@ -39,7 +41,7 @@
 | **Q&A shard coverage** | ≤40 names/night per exchange platform | Workspace must print typed absence, not imply full-universe Q&A. |
 | **Northbound net retirement** | Permanent after 2024-08-16 | Do not "repair" into a reaction slot. |
 | **`DNR:KILL-CN-SUPPLY-ABSORPTION`** | Closed construction | No post-event price-absorption score. |
-| **`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`** | STOP-SHIP | G0 does not touch limit-alpha artifacts. |
+| **`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`** | STOP-SHIP | CN-G0 does not touch limit-alpha artifacts. |
 | **CN-limit-alpha / china_alpha pick board** | Separate programs | Out of G scope. |
 | **Prophet / `china_board_rank` / Hub circularity** | #5822 architecture ruling: preserve DataOS, GMI, board-independent `china_intel_interest`; do not feed Hub/Board terms into Prophet | G produces no rank family. |
 | **Theme-graph / #5894** | PASS-0 wait for D; may have landed since pin — do not touch | G does not edit `engine/theme_graph/*`. |
@@ -49,7 +51,7 @@
 
 ## 3. Capability-adoption vs #5822 P0 families
 
-| #5822 family | G0 disposition |
+| #5822 / #5953 family | CN-G0 disposition |
 |---|---|
 | 7.1 Institutional visits (`stk_surv`) | **Not G.** No in-tree collector found this session (UNKNOWN if a stub exists under another name). B-lane / China P0. |
 | 7.2 Expectations Intelligence | **Partial G.** Reports tape + analyst snapshot + Tushare exist; not joined to an event. |

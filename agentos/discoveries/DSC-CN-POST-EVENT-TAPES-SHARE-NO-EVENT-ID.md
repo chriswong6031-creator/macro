@@ -38,8 +38,8 @@ scope:
   - earnings-intelligence
   - china-system
   - WS:EARNINGS-INTELLIGENCE-OS
-  - research/alpha_intelligence/censuses/G0/**
+  - research/alpha_intelligence/censuses/CN-G0/**
 confidence: verified
 ---
 
-G0 census finding. The missing object is a join, not a scrape.
+CN-G0 census finding (China program). Not the US GROK-G0 packet in `censuses/G0/`. The missing object is a join, not a scrape.
