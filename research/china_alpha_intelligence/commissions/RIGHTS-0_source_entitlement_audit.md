@@ -19,23 +19,27 @@ inherits the same registry. The estate's B0 census already established the
 FF-1P2 STOP discipline: capture without a rights verdict is forbidden.
 
 SCOPE:
-1. **Tushare families** (client `collectors/tushare_client.py`, token env
-   `TUSHARE_TOKEN` — name only, NEVER read or print its value). Consumed
-   today (verified 2026-08-19): `stk_auction*`, `stk_mins`, `stk_premarket`,
-   `cyq_perf`, `moneyflow_dc`, `daily_basic`, `margin_detail`, `forecast_vip`,
-   `report_rc`, `broker_recommend`, chips-distribution. NOT consumed and
-   P0-priority per the masterplan: `stk_surv` (机构调研 institutional
-   visits/surveys — P1-critical), `fund_portfolio` (public-fund holdings),
-   `anns_d` / full announcements, `hm_list` + `hm_detail` (named actors /
-   游资), top-holder & holder-trade endpoints (`top10_holders`,
-   `top10_floatholders`, `stk_holdertrade` — note repo already collects
-   holder counts + holder-sale calendars from non-Tushare sources). For EACH:
-   documented point/plan requirement (tushare.pro public docs), rate limits,
-   history depth, PIT class (does the API expose announcement/publish date
-   distinct from effective date?), and persistence/derived-use rights per the
-   Tushare terms. Account-specific entitlement (our current point tier) is
-   OPERATOR-ONLY knowledge — mark those cells UNKNOWN(operator) rather than
-   probing the API with the token.
+0. **CONSUME PRIOR ART FIRST — do not re-derive the Tushare half.** The
+   GROK-CN-A return (PR #5945,
+   `research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`, plus
+   `WS:TUSHARE-ENTITLEMENT` and
+   `DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`) already delivers the
+   per-family Tushare entitlement/cost matrix (headline verdicts: `stk_surv`
+   and `fund_portfolio` UNKNOWN_RIGHTS pending vendor letter; `anns_d` and
+   互动/e互动 NOT_NEEDED — native/CNInfo coverage exists; `report_rc` OWNED).
+   Read it in full, adopt its cells, and record deltas only where your own
+   verification disagrees or where it left UNKNOWN.
+1. **Tushare families — residual only** (client `collectors/tushare_client.py`,
+   token env `TUSHARE_TOKEN` — name only, NEVER read or print its value):
+   verify #5945's matrix against the repo state (consumed today, verified
+   2026-08-19: `stk_auction*`, `stk_mins`, `stk_premarket`, `cyq_perf`,
+   `moneyflow_dc`, `daily_basic`, `margin_detail`, `forecast_vip`,
+   `report_rc`, `broker_recommend`, chips-distribution), fill any family the
+   matrix omits (named actors `hm_list`/`hm_detail`, top-holder/holder-trade
+   endpoints), and add the PIT-class column (does the API expose
+   announcement/publish date distinct from effective date?) where #5945 did
+   not answer it. Account-specific entitlement stays UNKNOWN(operator) —
+   never probe the API with the token.
 2. **Non-Tushare live sources already in production** — `collectors/china_irm.py`
    (SZSE 互动易), `collectors/china_einteraction.py` (SSE e互动),
    `collectors/china_lhb.py` + block trades (akshare/Eastmoney),

@@ -79,8 +79,37 @@ events under the owner's own E-wave anyway — the casebook's architectural job
 
 **Routing unchanged:** any G build is an Earnings-OS wave adjudicated by that
 owner, queued behind E2 (PASS-0 §1-G; c0 lane table). The eight owner
-questions (G0_OPEN_QUESTIONS.md Q1–Q8) transfer to `WS:EARNINGS-INTELLIGENCE-OS`
+questions (G0_OPEN_QUESTIONS_US_ESTATE.md Q1–Q8) transfer to `WS:EARNINGS-INTELLIGENCE-OS`
 at whatever wave boundary the owner next opens; nothing dispatches now.
+
+## 2-bis. Dual G0 returns — adjudicated as COMPLEMENTARY, both accepted
+
+While this packet was being assembled, a second, independent G0 return
+appeared: **PR #5943** ("G0 China post-event reinterpretation census"),
+China-scoped, also addressed to `WS:EARNINGS-INTELLIGENCE-OS`, landing seven
+files in the same `research/alpha_intelligence/censuses/G0/` directory. The
+G0 commission slot therefore received TWO executions with different readings
+of scope: this PR's return audits the US/estate earnings machinery the
+commission's AUDIT list names (event_workspace, FIF, releases, transcripts,
+analyst revisions, reaction); #5943 censuses the China program's post-event
+tapes (业绩预告/业绩快报 vintages, CNInfo inquiry/reply, 互动易 keep-LAST Q&A,
+sell-side tape) and finds the missing piece is a `canonical_event_id` join —
+`event_workspace.v1` cannot admit A-share issuers because `company_id` is
+CIK-only.
+
+**Ruling:** both returns are ACCEPTED; neither supersedes the other — they
+cover disjoint halves of the same owner's territory and BOTH route inside
+`WS:EARNINGS-INTELLIGENCE-OS` behind E2. To keep the shared directory
+conflict-free this PR's return-packet file is named
+`G0_OPEN_QUESTIONS_US_ESTATE.md` (renamed from the commissioned
+`G0_OPEN_QUESTIONS.md`, which #5943 also emits — filename yielded to the
+China-scoped return; the commissioned content is unchanged). #5943's central
+identity finding (CIK-only `company_id`; 快报 collected-and-unused) is adopted
+as China-program context feeding PR-0D (exact identity extension) and the F3
+family design in `research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md`. #5943's
+own AgentOS edits (Earnings WS/handoff) are that PR's cargo, adjudicated by
+the Earnings owner — not re-ruled here. Wave-0 remains **6/6**; the slot is
+simply double-covered.
 
 ## 3. Estate state after c0g
 
@@ -94,7 +123,7 @@ at whatever wave boundary the owner next opens; nothing dispatches now.
 
 ## 4. Evidence trail
 
-- G0 return packet: `research/alpha_intelligence/censuses/G0/G0_OPEN_QUESTIONS.md`
+- G0 return packet: `research/alpha_intelligence/censuses/G0/G0_OPEN_QUESTIONS_US_ESTATE.md`
   (closing RETURN sections) + six files, line counts 244/235/95/73/184/229.
 - Strongest receipts re-read at adjudication: `event_workspace.py:272-278`,
   `promotion.py:52`, `digest.py:397-400`, `events.py:44-69`;

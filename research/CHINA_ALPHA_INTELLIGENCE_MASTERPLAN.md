@@ -191,14 +191,28 @@ Merged:
 - GROK-D0 Economic propagation census — PR #5913 (`research/economic_propagation/`)
 - GROK-E0 Opportunity evidence census — PR #5914 (`research/opportunity_evidence/`)
 - GROK-F0 Path survival census — PR #5915 (`research/path_survival/`)
-- GROK-G0 Post-event reinterpretation census — THIS PR
-  (`research/alpha_intelligence/censuses/G0/`; executed by a macro-fleet
-  researcher on FABLE-00 commission — the Grok lane was undispatched)
+- GROK-G0 Post-event reinterpretation census — TWO independent returns,
+  adjudicated complementary (c0g §2-bis): this PR's US/estate-scoped bundle
+  (`research/alpha_intelligence/censuses/G0/`, executed by a macro-fleet
+  researcher on FABLE-00 commission) + PR #5943's China-scoped bundle (same
+  directory; key finding: A-share issuers cannot enter `event_workspace.v1`
+  because `company_id` is CIK-only — adopted as PR-0D + F3 input).
 
 Adjudications: A0/B0/D0/E0/F0 in the c0 packet
 (`research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md`, #5933,
-with binding conditions on the K-waves); G0 in the c0g packet
+with binding conditions on the K-waves); G0 (both returns) in the c0g packet
 (`research/alpha_intelligence/C0G_G0_ADJUDICATION_2026-08-19.md`, this PR).
+
+**Incoming GROK-CN wave (open PRs at reconciliation time, routed not
+re-adjudicated here):** CN-A #5945 Tushare P0 entitlement/rights matrix →
+consumed by RIGHTS-0; CN-B #5947 PRC entity-resolver bake-off (no-buy) → §8.2
+input; CN-C #5944 Government/SOE demand first-party source map → R2 input;
+CN-D #5946 project/EIA source map + lithium pilot → R3 input; CN-E #5951
+commercial supply-chain diligence (no seat purchase; terminal license forbids
+Mastermind display) → §8.3 input; CN-F #5950 sector-clock census (only Bio
+and EV pin unique clocks) → Track S lobe gate; CN-G #5949 empirical prior
+table for twelve China evidence families → L1 input. Each is adjudicated at
+its consuming wave boundary; none carries authority until then.
 
 ### 1.9 PR #5822 — supersession executed
 The 2026-08-17 draft predated the merged PASS-0 integration, the census
@@ -997,9 +1011,13 @@ GROK-G0 and FABLE-00 are **complete** (this PR — §0-bis, §1.8). The program 
 in execution:
 
 1. **NOW, parallel:** spawn PR-0B (builder) and RIGHTS-0 (researcher) from
-   `research/china_alpha_intelligence/commissions/`. PR-0D (China exact
-   identity extension) may also run in parallel, coordinated with
-   `WS:STOCK-IDENTITY`.
+   `research/china_alpha_intelligence/commissions/`. RIGHTS-0 CONSUMES the
+   GROK-CN-A matrix (#5945, `research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`)
+   rather than re-deriving the Tushare half — its residual scope is the
+   non-Tushare ToS posture, resolver persistence rights, and the P1 source
+   verdict synthesis. PR-0D (China exact identity extension) may also run in
+   parallel, coordinated with `WS:STOCK-IDENTITY`; it inherits #5943's
+   CIK-only `company_id` finding.
 2. **After the RIGHTS-0 verdict on the visit source:** spawn P1 Institutional
    Discovery (`P1_institutional_visit_tape.md`).
 3. **After P1 accrues + L0 lands:** P1B discovery state, then the L-track

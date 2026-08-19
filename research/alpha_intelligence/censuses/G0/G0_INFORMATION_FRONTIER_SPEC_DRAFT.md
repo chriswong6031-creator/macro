@@ -92,4 +92,4 @@ the query anchor and only reads events within a trailing window, `expectation_st
   read budget did not cover exhaustively.
 - It does not propose where this object would be published, under what authority, or which consumer
   would read it — those are `WS:EARNINGS-INTELLIGENCE-OS` decisions, not research-lane decisions (see
-  `G0_OPEN_QUESTIONS.md` Q1-Q3).
+  `G0_OPEN_QUESTIONS_US_ESTATE.md` Q1-Q3).

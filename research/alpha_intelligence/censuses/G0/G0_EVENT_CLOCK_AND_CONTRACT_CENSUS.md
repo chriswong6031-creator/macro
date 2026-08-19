@@ -177,7 +177,7 @@ verify in this worktree/session; not guessed).
   this commission's read budget allows). **Tagged UNKNOWN, not NOT_BUILT** — a targeted grep for the
   obvious names found nothing, but a deeper module-by-module read could still surface an implied-move or
   IV-crush computation that is earnings-adjacent without using those literal names. This is named as an
-  explicit open question (§ G0_OPEN_QUESTIONS.md).
+  explicit open question (§ G0_OPEN_QUESTIONS_US_ESTATE.md).
 
 ### 1.7 Q&A structure
 
@@ -208,7 +208,7 @@ superseded, derived_ready, distributed, cancelled}` with an explicit transition 
 that would have to either (a) be built as a derived read atop `company_event.v1` lifecycle +
 `event_workspace.v1` timestamps without touching the closed `EVENT_STATES` enum, or (b) require an
 authority-changing edit to `events.py` (which would trip `authority_changed=true` and the associated
-fleet-law constraints — see `G0_OPEN_QUESTIONS.md`). This census does not resolve which; it names the
+fleet-law constraints — see `G0_OPEN_QUESTIONS_US_ESTATE.md`). This census does not resolve which; it names the
 choice as the first thing the Earnings owner must adjudicate.
 
 | Frontier state (commissioned vocabulary) | Native source(s) | `source_available_at` | `system_recorded_at` | AH/premarket/open timing available? | Historically PIT? | Verification |
@@ -236,7 +236,7 @@ directly.
 
 - No claim is made about whether any of these sources are legally licensed for redistribution beyond
   their current `context_only` authority — that is a RIGHTS question, not addressed here except to flag
-  it (see `G0_OPEN_QUESTIONS.md`).
+  it (see `G0_OPEN_QUESTIONS_US_ESTATE.md`).
 - No claim is made about production freshness of any `data/` parquet named above — this worktree is
   sparse (`data/`, `site/`, `mockups/`, `verify_shots/` omitted from disk per
   `config/sparse_worktree.json`), and per the commission's OUT OF SCOPE instruction this census did not

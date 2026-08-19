@@ -150,7 +150,7 @@ Representative sample (full receipts distributed across all six output files):
 - `research/alpha_intelligence/censuses/G0/G0_INFORMATION_FRONTIER_SPEC_DRAFT.md` (95 lines)
 - `research/alpha_intelligence/censuses/G0/G0_REACTION_GEOMETRY_INPUT_MATRIX.md` (73 lines)
 - `research/alpha_intelligence/censuses/G0/G0_ACADEMIC_RESEARCH_REVIEW.md` (184 lines)
-- `research/alpha_intelligence/censuses/G0/G0_OPEN_QUESTIONS.md` (this file)
+- `research/alpha_intelligence/censuses/G0/G0_OPEN_QUESTIONS_US_ESTATE.md` (this file)
 
 ## ASSUMPTIONS
 - That the E0 Capability Ledger (2026-08-16, code base `3b16672fcfee`) remains substantially accurate on

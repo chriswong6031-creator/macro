@@ -41,12 +41,17 @@ changed:
     what: builder commission — visit collector (asia lane) + PIT store + actor resolution + dossier block + failure states, NO score; gated on RIGHTS-0.
   - path: research/alpha_intelligence/censuses/G0/
     what: >
-      six GROK-G0 census files (event clock + contract census, casebook,
-      frontier spec draft, reaction geometry input matrix, academic review,
-      open questions) — executed by a macro-fleet sonnet researcher on
-      FABLE-00 commission; Grok lane was undispatched. Wave-0 now 6/6.
+      six GROK-G0 census files, US/estate-scoped (event clock + contract
+      census, casebook, frontier spec draft, reaction geometry input matrix,
+      academic review, open questions — return packet renamed
+      G0_OPEN_QUESTIONS_US_ESTATE.md to avoid the add/add collision with
+      PR #5943's China-scoped G0 bundle in the same directory). Wave-0 now
+      6/6, the G0 slot double-covered by two complementary returns.
   - path: research/alpha_intelligence/C0G_G0_ADJUDICATION_2026-08-19.md
-    what: c0g adjudication — G0 accepted with declared shortfalls; frontier view ruling; estate wave c0g closed.
+    what: >
+      c0g adjudication — both G0 returns accepted (this PR's US/estate bundle
+      + #5943's China-scoped bundle, ruled complementary in §2-bis); frontier
+      view ruling; estate wave c0g closed.
   - path: agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md
     what: new China execution workstream (program china-system) with wave graph g0→pr0a→{pr0b,rights0}→p1→… and landmines/do_not_redo.
   - path: agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md
@@ -86,7 +91,9 @@ next_actions:
   - "After RIGHTS-0's P1 verdict: spawn P1 from research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md."
   - "PR-0D (China identity extension) may run in parallel, coordinated with WS:STOCK-IDENTITY."
 do_not_redo:
-  - "Do not re-run any Wave-0 census — all six are returned and adjudicated (c0 #5933 + c0g this PR)."
+  - "Do not re-run any Wave-0 census — all six are returned and adjudicated (c0 #5933 + c0g this PR; the G0 slot has TWO complementary returns)."
+  - "Do not re-derive the Tushare entitlement matrix — GROK-CN-A (#5945) delivered it; RIGHTS-0 consumes it and covers only the residual (non-Tushare ToS, resolver rights, P1 verdict)."
+  - "Do not re-census the GROK-CN wave surfaces (#5943-#5951: China G0, Tushare rights, resolver bake-off, SOE demand map, EIA map, supply-chain diligence, sector clocks, priors table) — route each to its consuming wave boundary per masterplan §1.8."
   - "Do not mint a second China masterplan, candidate store, grader, or identity plane — masterplan §15 + WS do_not_redo."
   - "Do not build a Mesh runtime for P1 — boring-baseline ruling stands."
   - "Do not cite CN limit-alpha W1–W3 results (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT stop-ship)."
