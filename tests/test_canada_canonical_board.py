@@ -327,3 +327,43 @@ def test_canada_legacy_rows_remain_unstamped(tmp_path, monkeypatch):
         "keep-FIRST must not let a later re-append stamp board_definition onto an "
         "already-written legacy row"
     )
+
+
+# ---------------------------------------------------------------------------
+# 8. Laggards strip keeps the PAGE's historical count (n_lag=6, not the
+#    canada_setups.json artifact's n_lag=12) — templates/canada.html.j2 renders
+#    setups.laggards UNSLICED, so an n_lag drift back to 12 silently doubles the
+#    user-visible "Weakest screen (laggards)" strip (review finding, PR #5926).
+# ---------------------------------------------------------------------------
+
+def _cand_with_many_laggards():
+    """14 distinct laggard candidates (alpha well under LAG_MAX=-0.3) — more than
+    both the fixed n_lag=6 ceiling AND the old n_lag=12 one, so a regression back
+    to 12 is caught (14 candidates -> 12 laggards under the old value, still >6)."""
+    cand, align_map, profiles, sig_verdict, entry_sig, risk_sig = _synthetic_cand_and_maps()
+    for i in range(14):
+        t = f"L{i:02d}.TO"
+        cand.append((0.0, {"ticker": t, "name": f"Laggard {i} Corp",
+                           "alpha": -1.0 - i * 0.1, "factor_z": 0.0,
+                           "setup": 0.0}))
+    return cand, align_map, profiles, sig_verdict, entry_sig, risk_sig
+
+
+def test_canada_laggards_strip_capped_at_six():
+    """The canonical board's laggards strip must stay at the page's historical
+    n_lag=6 ceiling, even when far more than 6 (or 12) laggard candidates exist —
+    a regression to n_lag=12 (or any drift) is caught here."""
+    cand, align_map, profiles, sig_verdict, entry_sig, risk_sig = _cand_with_many_laggards()
+    eligible = sum(1 for _s, r in cand
+                   if (align_map.get(r.get("ticker")) or {}).get("aligned"))
+    board = bcal._build_canonical_board(
+        cand, as_of="2026-07-10", align_map=align_map, sig_verdict=sig_verdict,
+        profiles=profiles, entry_sig=entry_sig, risk_sig=risk_sig,
+        eligible=eligible, disp_regime=None, overlay=None)
+    assert len(board["laggards"]) <= 6, (
+        f"laggards strip must stay <= 6 (page's historical n_lag); got "
+        f"{len(board['laggards'])} from 14 candidates — n_lag drifted"
+    )
+    assert len(board["laggards"]) == 6, (
+        "with 14 laggard-eligible candidates the strip should fill to exactly 6"
+    )

@@ -790,8 +790,15 @@ def _build_canonical_board(cand: list, as_of, align_map: dict, sig_verdict: dict
     object it returns is both written to canada_standouts.json and returned to the
     caller (build_canada.py), so the artifact, the page, and the forward ledger can
     never structurally disagree."""
+    # n_lag=6 (NOT 12): the canonical board keeps the PAGE's historical laggards
+    # count. templates/canada.html.j2 renders setups.laggards UNSLICED, and the
+    # page object this replaced was built with rank_setups' default n_lag=6 — using
+    # n_lag=12 here would silently double the user-visible "Weakest screen
+    # (laggards)" strip from 6 to 12 names (review finding, PR #5926). The
+    # artifact's own laggards count going 12->6 is declared-safe: the consumer
+    # census found zero live consumers of canada_standouts.json laggards.
     board = compute_canada_standouts(
-        rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
+        rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=6,
                     align_map=align_map),
         overlay=overlay)
     for r in board["buy"] + board.get("laggards", []):
