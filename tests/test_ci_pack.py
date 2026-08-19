@@ -58,6 +58,69 @@ def test_all_legacy_jobs_are_disabled_and_packable() -> None:
     assert all(job.definition["if"] == PACK.DISABLED_IF for job in jobs)
 
 
+def test_every_real_legacy_job_declares_its_gate() -> None:
+    """Every job in the real manifest says which tree moves its verdict.
+
+    The loader defaults an ABSENT `gate:` to "code" so synthetic fixtures keep
+    working (and so nothing can leave the merge gate silently), but the real
+    manifest must declare the field on every job: the code/data split is the
+    W1 deliverable of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md
+    and an undeclared job is an unclassified one, not a classified-by-default
+    one.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    undeclared = sorted(job.job_id for job in jobs if "gate" not in job.definition)
+    assert not undeclared, (
+        "legacy jobs without an explicit gate declaration: "
+        + ", ".join(undeclared)
+    )
+    assert all(job.gate in PACK.GATE_VALUES for job in jobs)
+
+
+def test_invalid_gate_value_fails_closed(tmp_path: Path) -> None:
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  typo:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: dtaa
+    steps:
+      - run: echo typo
+"""
+    )
+    with pytest.raises(PACK.ManifestError, match="gate must be one of code/data"):
+        PACK.load_legacy_jobs(workflow)
+
+
+def test_absent_gate_defaults_to_code_never_data(tmp_path: Path) -> None:
+    """An undeclared job stays a merge precondition — fail-closed direction."""
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  bare:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: bare step
+        proof_id: bare-step
+        run: echo bare
+"""
+    )
+    (job,) = PACK.load_legacy_jobs(workflow)
+    assert job.gate == "code"
+
+
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
     jobs = PACK.load_legacy_jobs(MANIFEST)
     packs = PACK.partition_jobs(jobs, 2)
