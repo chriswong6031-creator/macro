@@ -72,7 +72,26 @@ from scripts.ci_authority_paths import (  # noqa: E402
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {
+    "gate",
+    "if",
+    "paths",
+    "runs-on",
+    "scope",
+    "steps",
+    "timeout-minutes",
+}
+
+#: Every job must declare which tree moves its verdict. `code`: the verdict is
+#: a function of the pull request's tree only (pure logic, tmp_path fixtures,
+#: committed goldens, config/contracts). `data`: a nightly/wire data commit
+#: alone — no code change — can change the verdict (assertions over live
+#: `data/**`, rendered `site/**`, or any ledger the nightly advances). The
+#: merge gate packs only `gate: code` jobs once the data-health lane exists
+#: (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md);
+#: `gate: data` jobs still run and still red something a human reads — the
+#: field never deletes a receipt.
+GATE_VALUES = ("code", "data")
 ALLOWED_STEP_KEYS = {"name", "proof_id", "run", "uses", "with"}
 
 # Changing any item in this string changes the job execution contract digest.
@@ -320,6 +339,10 @@ class LegacyJob:
     # `paths:` then REPLACE inference instead of being unioned under it, and
     # the declaration is coverage-audited fatally at load time.
     exclusive: bool = False
+    # Which tree moves this job's verdict: "code" (the PR's tree only) or
+    # "data" (a nightly/wire data commit alone can flip it). Mandatory in the
+    # manifest; see GATE_VALUES.
+    gate: str = "code"
 
     @property
     def is_scoped(self) -> bool:
@@ -1305,6 +1328,19 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 "any pull request"
             )
 
+        # Absent defaults to "code": an undeclared job STAYS a merge
+        # precondition — nothing can leave the merge gate silently. An invalid
+        # value is fatal. The real manifest is additionally required to declare
+        # the field on every job (tests/test_ci_pack.py), so the default only
+        # serves synthetic fixtures.
+        raw_gate = raw_definition.get("gate", "code")
+        if raw_gate not in GATE_VALUES:
+            findings.append(
+                f"{prefix} gate must be one of {'/'.join(GATE_VALUES)} when "
+                f"present, got {raw_gate!r}"
+            )
+            raw_gate = "code"
+
         job = LegacyJob(
             job_id=str(job_id),
             definition=raw_definition,
@@ -1312,6 +1348,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
             weight=_job_weight(str(job_id), raw_definition),
             paths=scope,
             exclusive=exclusive,
+            gate=str(raw_gate),
         )
         try:
             semantic_step_specs(job)
