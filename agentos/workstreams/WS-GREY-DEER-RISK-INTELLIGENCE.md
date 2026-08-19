@@ -25,6 +25,9 @@ owns_paths:
   - templates/risk_envelope/
   - tests/test_risk_envelope
   - agentos/handoffs/GREY-DEER-
+discoveries:
+  - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
+  - DSC:GD1-EWY-IS-NOT-KOSPI-CASH
 decisions:
   - DEC:RISK-STATE-HAZARD-POLICY-SEPARATION
   - DEC:RISK-ENVELOPE-IS-CANONICAL-DERIVED-PROJECTION
@@ -53,17 +56,29 @@ do_not_redo:
 waves:
   - id: GD-0A
     title: Durable program landing — freeze, workstream, 8 decisions, handoff, registry, system map
-    status: awaiting_ci
+    status: done
     pr: 5963
+    # MERGED 2026-08-19T12:24:34Z, squash 705a0ceaa157; proof run 32250586821
+    # 14/14 green on the refreshed head after the fleet-wide qledger T9 heal
+    # (#5970, 2e13b9a51761). Discoverability verified from origin/main
+    # (files + registry key + compile-context bundle).
   - id: GD-1A
     title: PIT prereg + source-clock census (Grok; hash-pinned before outcomes)
-    status: in_progress
-    # Commissioned to the Grok research operator 2026-08-19 (operator relay); research
-    # may run parallel to GD-0A merge per the wave matrix. No repo receipt yet.
+    status: awaiting_ci
+    pr: 5961
+    # Prereg-first commit-verified: 663fb02b500c ("freeze ... prereg before
+    # outcomes") precedes every outcome-bearing dossier commit on the branch.
+    # NOTE: the prereg predates the landed Sol freeze (#5963) — it remains the
+    # operative GD-H freeze for GD-1; changes under the landed freeze need a
+    # new prereg version.
   - id: GD-1B
     title: Existing-organ replay + Prophet counterfactual (Grok)
-    status: todo
+    status: awaiting_ci
+    pr: 5961
     depends_on: [GD-1A]
+    # Artifacts land with #5961; the wave is NOT done at merge — the packet's
+    # adversarial acceptance review (independent reviewer + Fable final, Sol on
+    # architecture implications) is still owed on the dossier's conclusions.
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
     status: todo
@@ -129,9 +144,11 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  Merge the GD-0A records PR; then run GD-1A (Grok, commissioned) and bounded
-  read-only GD-2/GD-4A archaeology in parallel; GD-2 build starts only after
-  Fable reconciles archaeology findings against the freeze.
+  Merge #5961 (GD-1 artifacts + canonical-identity reconciliation); then run
+  the GD-1B adversarial acceptance review (independent reviewer + Fable final,
+  Sol on architecture implications); author the GD-2 build packet from the
+  2026-08-19 archaeology (settled-envelope seam, live seam, CN/HK ledger root
+  cause) reconciled against the freeze.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
