@@ -66,6 +66,15 @@ SUMMARY_KEYS = ("spot", "net_gex_bn", "net_vex", "net_cex", "gamma_flip",
 # FIRST-WRITER QUALITY RULE in accrue() for what each verdict is allowed to do.
 SOURCE_HEALTH_FLOOR = 0.90
 
+# B2 addendum (coordinator ruling, 2026-08-19) — the store-referenced shrink
+# tripwire in accrue() fires when the most recent PRIOR session's stored chain
+# has at least this many times as many underlyings as the CURRENTLY resolved
+# universe. 3x never fires on a legitimate trim (e.g. 12 -> 10) but always
+# fires on a 375 -> ~10 anchors-only collapse. See accrue()'s comment for why
+# this closes the attack path the exists()-scoped membership check cannot see
+# (an ABSENT membership file in a degraded/sparse/husk checkout).
+STORE_SHRINK_FACTOR = 3
+
 # Decisions that ANCHOR the stored chain's CURRENT authoritative state: either a
 # decision that actually WROTE the parquet (wrote/replaced_partial/forced), or
 # one that re-established the receipt's ground truth after corruption
@@ -364,6 +373,27 @@ def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
                  "vintage — symbol absent from the replacement capture)", sym, session)
 
 
+def _store_shrink_reference(chains_dir: Path, asof: date) -> int | None:
+    """The most recent PRIOR session's stored underlying count, or None when no
+    such file exists — a fresh environment (no stored chains yet) has no
+    reference, so the shrink tripwire in accrue() stays silent for it. 'Prior'
+    is strictly-before `asof` (a lexical compare on the ISO stem is exact for
+    YYYY-MM-DD filenames): this must never compare the session accrue() is
+    CURRENTLY processing against itself."""
+    asof_iso = asof.isoformat()
+    prior = sorted(p for p in chains_dir.glob("*.parquet") if p.stem < asof_iso)
+    if not prior:
+        return None
+    latest = prior[-1]
+    try:
+        df = pd.read_parquet(latest, columns=["underlying"])
+        return int(df["underlying"].nunique())
+    except Exception as e:  # noqa: BLE001 — a reference read must never crash the run
+        log.warning("polygon: could not read %s for the store-shrink tripwire "
+                    "reference: %s", latest.name, e)
+        return None
+
+
 def _compact(raw: pd.DataFrame) -> pd.DataFrame:
     """Shrink the daily raw file (it commits every run): float32 numerics + a
     categorical underlying ~halve it with no analytical cost (float32's ~16M-int
@@ -491,8 +521,37 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     # a missing file a graceful degradation, not an incident, and gating on it
     # unconditionally would refuse to accrue in every such environment.
     membership_path = config.data_dir() / "baskets" / "membership.json"
-    if (gx_cfg.get("include_baskets", False) and membership_path.exists()
-            and not baskets_universe()):
+    membership_degraded = (gx_cfg.get("include_baskets", False) and membership_path.exists()
+                           and not baskets_universe())
+
+    # B2 ADDENDUM (coordinator ruling, 2026-08-19): the membership-file check
+    # above is deliberately blind to the file being simply ABSENT — that is
+    # the ordinary state of a fresh/dev/CI environment (see the comment
+    # above), so gating on absence would fight the pinned graceful-degradation
+    # contract. But that same exemption is exactly the reviewer's real attack
+    # path: a degraded/sparse/husk checkout with NO membership file at all
+    # would sail through the check above and silently accrue an anchors-only
+    # capture graded "healthy" at 100% of its own shrunken denominator. The
+    # STORE ITSELF is the only self-contained witness available here that the
+    # universe used to be materially bigger: if the most recent PRIOR
+    # session's stored chain has >= STORE_SHRINK_FACTOR times as many
+    # underlyings as the CURRENTLY resolved universe, treat it exactly like
+    # the membership-file check — refuse to fetch or write. A fresh
+    # environment with no stored chains has no reference (_store_shrink_reference
+    # returns None) and proceeds normally, which is what keeps every pinned
+    # unowned fixture (whose stored chains carry a single underlying —
+    # reference 1, never >= 3xN) untouched.
+    store_shrink_ref = _store_shrink_reference(_chains_dir(), asof)
+    store_shrunk = (store_shrink_ref is not None
+                    and store_shrink_ref >= STORE_SHRINK_FACTOR * len(symbols))
+
+    if membership_degraded or store_shrunk:
+        reason_detail = (
+            "include_baskets is true but the basket membership universe "
+            "resolved to ZERO members" if membership_degraded else
+            f"the most recent prior session's stored chain had "
+            f"{store_shrink_ref} underlyings — >= {STORE_SHRINK_FACTOR}x the "
+            f"{len(symbols)} currently resolved — the universe likely collapsed")
         census = _coerce_unknown_reasons({
             "requested_underlyings": len(symbols), "attempted_underlyings": 0,
             "successful_underlyings": 0, "coverage_pct": 0.0,
@@ -500,9 +559,8 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
             "failure_examples": {}, "aborted_early": True,
         })
         print(f"::warning title=polygon-universe-degraded::session {asof}: "
-              f"include_baskets is true but the basket membership universe "
-              f"resolved to ZERO members — refusing to fetch/write against a "
-              f"collapsed universe ({len(symbols)} anchors only)", flush=True)
+              f"{reason_detail} — refusing to fetch/write against a collapsed "
+              f"universe ({len(symbols)} names)", flush=True)
         log.warning("polygon: universe resolution failed for %s (%s)", asof, census)
         _append_health_attempt(asof, decision="nothing_captured", health="failed",
                                census=census, now=now)

@@ -1259,6 +1259,70 @@ class TestB2UniverseResolutionDegradation:
         assert back["underlying"].nunique() == 300
 
 
+class TestB2StoreShrinkTripwire:
+    """B2 addendum ruling (coordinator, 2026-08-19): the membership-file check
+    is deliberately blind to the file being simply ABSENT (the ordinary state
+    of a fresh/dev/CI/sparse checkout). That exemption is the reviewer's real
+    attack path: an absent membership file in a degraded/sparse/husk checkout
+    would sail through unchecked. The store itself — the most recent PRIOR
+    session's stamped underlying count — is the self-contained witness that
+    closes it."""
+
+    def test_a_large_prior_stored_chain_vs_a_shrunk_universe_refuses(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        # A PRIOR session (the Friday before) stored 300 underlyings.
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(300)))
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(10)])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "failed"
+        assert res["census"]["failure_reasons"] == {"universe_resolution_failed": 1}
+        assert not (tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet").exists()
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "nothing_captured"
+        assert receipt["attempts"][-1]["failure_reasons"] == {"universe_resolution_failed": 1}
+
+    def test_a_mild_prior_shrink_proceeds_normally(self, tmp_path, monkeypatch):
+        """12 -> 10 is a legitimate trim (factor 1.2x), well under the 3x
+        tripwire threshold — must proceed and write normally, not refuse."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(12)))
+        universe10 = [f"U{i}" for i in range(10)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe10)
+        raw = _raw(tuple(universe10))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, universe10)))
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok"
+        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
+        assert back["underlying"].nunique() == 10
+
+    def test_a_fresh_environment_with_no_stored_chains_proceeds(self, tmp_path, monkeypatch):
+        """No prior stored chain at all -> no reference -> the tripwire stays
+        silent. This is what keeps every pinned unowned fixture (a fresh
+        tmp_path, no stored chains before the first accrue()) untouched."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        universe10 = [f"U{i}" for i in range(10)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe10)
+        raw = _raw(tuple(universe10))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, universe10)))
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok"
+        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
+        assert back["underlying"].nunique() == 10
+
+
 class TestB3CorruptReceiptRecovery:
     """B3 ruling (AD-1C0 review): fail toward IMMUTABILITY but never destroy
     evidence or mislabel a corrupt receipt as healthy."""
