@@ -87,10 +87,10 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Sol freeze-reviews amended #5889 after the two remaining freeze
-      corrections: cutoff-visible GovernanceBundle owns packet adaptation,
-      and revision-lineage lookup is O(N) once plus bounded parent walks.
-      v1 freeze waits on that review. Do not start FIF-2. Do not create FIF-1R4.
+      Sol freeze-reviews amended #5889 after the 63/64 wire-bound correction:
+      PACKET_MAX_REVISION_LINEAGE_DEPTH = 63, revision_hop.maximum = 63,
+      lineage_occurrence_ids.maxItems = 64. v1 freeze waits on that review.
+      Do not start FIF-2. Do not create FIF-1R4.
   - id: FIF-2
     title: Read-only financial query API
     status: todo

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from dataclasses import replace
 
 import pytest
@@ -22,7 +22,9 @@ from engine.fundamental_forensics.financial_intelligence_packet import (
     default_packet_periods,
     load_core_registry,
     load_filing_package_fixture,
+    load_packet_schema,
     readdress_packet,
+    validate_packet,
     validate_packet_against_build_input,
     validate_packet_semantics,
     walk_formula_graph,
@@ -52,6 +54,7 @@ from engine.fundamental_forensics.synthetic_filing_package import (
 )
 from tests.test_fundamental_forensics_financial_intelligence_packet import (
     ROOT,
+    SCHEMA_PATH,
     _build,
     _cell,
     _context,
@@ -742,6 +745,33 @@ def _mini_revision_fixture(
         )
         events.append(fourth)
         filings["25-000012"] = fourth_filing
+    if hops > 3:
+        base_accepted = datetime(2025, 12, 15, 16, 0, tzinfo=timezone.utc)
+        base_recorded = datetime(2026, 8, 4, 19, 0, tzinfo=timezone.utc)
+        for hop in range(4, hops + 1):
+            accepted = utc_text(base_accepted + timedelta(minutes=hop))
+            recorded = utc_text(base_recorded + timedelta(minutes=hop))
+            accession = f"0000999999-25-{hop + 10:06d}"
+            extra_filing = synthetic_filing(
+                accession=accession,
+                document_id=f"fip1-2023-amend-{hop:03d}.htm",
+                accepted_at=accepted,
+                recorded_at=recorded,
+                filed_at="2025-12-15",
+            )
+            extra = usd_fact(
+                extra_filing,
+                concept,
+                fy2023,
+                str(1080 + hop),
+                source_span=(0, hop + 1),
+                source_occurrence_key=f"fy2023-revenue-amendment-{hop}",
+                event_type=FactEventType.AMENDMENT,
+                revision_of=events[-1].occurrence_id,
+                recorded_at=recorded,
+            )
+            events.append(extra)
+            filings[accession.split("-", 1)[-1]] = extra_filing
     events_t = tuple(events)
     entity = EntityInput(
         entity_id=SYNTHETIC_ENTITY_ID,
@@ -1005,6 +1035,82 @@ def test_packet_refuses_revision_lineage_deeper_than_v1_cap(
             context=_context(),
             input_digests=PacketEvidenceDigests(),
         )
+
+
+def _assemble_revision_packet(fixture) -> dict:
+    return assemble_financial_intelligence_packet(
+        entity=fixture.entity,
+        ledger=fixture.ledger,
+        filing_metadata=fixture.filing_metadata,
+        query_request=PacketQueryRequest(
+            policy=QueryPolicy(
+                source_snapshot_at=T3_SOURCE,
+                recorded_at=T3_RECORDED,
+                selection="latest_known_as_of",
+            ),
+            metrics=("revenue",),
+            periods=(PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),),
+        ),
+        metric_registry=load_core_registry(ROOT),
+        context=_context(),
+        input_digests=PacketEvidenceDigests(),
+    )
+
+
+def test_packet_accepts_real_v1_revision_lineage_depth_63() -> None:
+    schema = load_packet_schema(SCHEMA_PATH)
+    revision_schema = schema["$defs"]["revision"]["properties"]
+    assert PACKET_MAX_REVISION_LINEAGE_DEPTH == 63
+    assert revision_schema["revision_hop"]["maximum"] == 63
+    assert revision_schema["lineage_occurrence_ids"]["maxItems"] == 64
+    fixture = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        hops=63,
+    )
+    tip = fixture.ledger.events[-1]
+    assert fixture.ledger.lineage_depth(tip.occurrence_id) == 63
+    packet = _assemble_revision_packet(fixture)
+    validate_packet(packet, schema)
+    hops = packet["revisions"]
+    deepest = max(hops, key=lambda row: row["revision_hop"])
+    assert deepest["revision_hop"] == 63
+    assert len(deepest["lineage_occurrence_ids"]) == 64
+    assert deepest["revised_occurrence_id"] == tip.occurrence_id
+    assert hops[-1]["revision_hop"] == 63
+
+
+def test_packet_refuses_real_v1_revision_lineage_depth_64(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    schema = load_packet_schema(SCHEMA_PATH)
+    assert PACKET_MAX_REVISION_LINEAGE_DEPTH == 63
+    assert schema["$defs"]["revision"]["properties"]["revision_hop"]["maximum"] == 63
+    fixture = _mini_revision_fixture(
+        child_recorded="2026-08-04T12:00:00Z",
+        parent_recorded="2024-02-15T16:05:00Z",
+        hops=64,
+    )
+    tip = fixture.ledger.events[-1]
+    assert fixture.ledger.lineage_depth(tip.occurrence_id) == 64
+    emitted_hops: list[int] = []
+    original_append = packet_module._append_bounded
+
+    def _record_append(records, item, *, maximum, message):
+        hop = item.get("revision_hop") if isinstance(item, dict) else None
+        if hop is not None:
+            emitted_hops.append(hop)
+        return original_append(records, item, maximum=maximum, message=message)
+
+    monkeypatch.setattr(packet_module, "_append_bounded", _record_append)
+    with pytest.raises(
+        ValueError,
+        match=r"revision lineage depth exceeds PACKET_MAX_REVISION_LINEAGE_DEPTH 63",
+    ):
+        _assemble_revision_packet(fixture)
+    assert 64 not in emitted_hops
+    assert emitted_hops
+    assert max(emitted_hops) == 63
 
 
 def test_packet_revision_lookup_is_bounded_independently_of_row_ceiling(

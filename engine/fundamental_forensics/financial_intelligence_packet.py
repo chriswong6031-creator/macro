@@ -105,10 +105,10 @@ PACKET_MAX_FORMULA_DEPTH = 16
 PACKET_MAX_FORMULA_FANOUT = 16
 PACKET_MAX_REVISIONS = 2_000
 PACKET_MAX_UNMAPPED_EXTENSIONS = 256
-# Parent-hop ceiling for one revision_of chain. Compatible with the v1
-# packet's revision-row budget: a pathological million-event ledger may
-# exist, but a single lineage cannot be materialized past this depth.
-PACKET_MAX_REVISION_LINEAGE_DEPTH = 256
+# Parent-hop ceiling for one revision_of chain. Coherent with the v1 wire
+# schema: revision_hop.maximum == 63 and lineage_occurrence_ids.maxItems == 64
+# because revision_hop == len(lineage_occurrence_ids) - 1. Roots are depth 0.
+PACKET_MAX_REVISION_LINEAGE_DEPTH = 63
 PACKET_MAX_TOTAL_CELLS = PACKET_MAX_REQUEST_CELLS + PACKET_MAX_EVIDENCE_NODES
 PACKET_MAX_SERIALIZED_BYTES = 2 * 1024 * 1024
 PACKET_MAX_IDENTIFIER_CHARS = 256

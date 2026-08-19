@@ -389,7 +389,7 @@
             "withdrawn"
           ]
         },
-        "revision_hop": {"type": "integer", "minimum": 1, "maximum": 64},
+        "revision_hop": {"type": "integer", "minimum": 1, "maximum": 63},
         "root_value": {"$ref": "#/$defs/nullableDecimal"},
         "prior_value": {"$ref": "#/$defs/nullableDecimal"},
         "revised_value": {"$ref": "#/$defs/nullableDecimal"},
