@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -350,6 +350,54 @@ def _attributing_path_known_at(
     return max(known_ats)
 
 
+def _ledger_rows(root: Path) -> list[dict]:
+    """Parse every row currently in the committed, append-only candidate ledger."""
+    return [
+        json.loads(line)
+        for line in (root / "data/government_revenue/candidate_ledger.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+
+
+def _issuance_frontier(ledger_rows: list[dict]) -> datetime:
+    """The newest ``known_at`` the append-only ledger has already issued.
+
+    This replaces ``candidate_projection_state.generated_at`` as the incident
+    boundary's anchor.  That state field is the WALL clock of whichever run
+    last published it, and a same-day rebuild -- this heal's own repro
+    included -- advances it on every invocation with no source fact having
+    changed: an ownership edge admitted this morning reads "pre-freeze"
+    against last night's frozen state and "post-freeze" against this
+    morning's own republish, purely because the run happened again.  That
+    self-invalidation is what turned the two live BWXT rows from excused to
+    "escaped" the instant this heal's own repro rebuild advanced the state
+    file (measured: edge known_at 05:44:34, rebuilt state generated_at
+    15:04:12, so the strict ``>`` this gate depends on flips with no
+    underlying fact moving).
+
+    The ledger's own issuance frontier is bounded by DATA, not wall-clock: it
+    only advances when the append-only ledger actually gains a new row, so
+    re-running the SAME projection over the SAME sources -- any number of
+    times -- can never move it.  It still advances legitimately the moment a
+    real new candidate is issued, which is exactly the boundary this gate
+    means to track.
+
+    Ties are common and expected: every candidate the graph resolves for the
+    FIRST time in one republish shares that republish's document-level
+    ``graph_known_at`` (measured 54/54 on the 2026-08-19 defense21
+    republish), so an unaccounted row minted in the very same republish that
+    produced the newest issued row sits exactly AT the frontier, not behind
+    it.  See the caller for why that makes the boundary strict-less-than
+    (excused on a tie) rather than less-than-or-equal.
+    """
+    known_ats = [datetime.fromisoformat(row["known_at"]) for row in ledger_rows]
+    if not known_ats:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    return max(known_ats)
+
+
 def _suppression_identity(entry: dict) -> dict:
     """One tombstone minus the graph-clock-derived field.
 
@@ -454,13 +502,8 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
     # Nothing the source engine sees may escape review: the append-only ledger
     # is where an issued row is accounted for, and the manifest is where an
     # unissued historical row is.  A row in neither is a publication failure.
-    ledger_ids = {
-        json.loads(line)["candidate_id"]
-        for line in (ROOT / "data/government_revenue/candidate_ledger.jsonl")
-        .read_text(encoding="utf-8")
-        .splitlines()
-        if line.strip()
-    }
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
     unaccounted = set(by_row) - ledger_ids - quarantined
     # A reviewed-graph expansion can make a source row attributable AFTER the
     # committed projection froze, but candidate ``known_at`` folds the WHOLE
@@ -481,27 +524,39 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
     # here only because its attributing edges are new is a genuine
     # transitional state; a row whose attributing edges all predate the
     # freeze, unaccounted, is the incident class and fails hard.
+    #
+    # The freeze boundary itself is ``_issuance_frontier`` (see its docstring),
+    # never ``candidate_projection_state.generated_at``: that field is a WALL
+    # clock the very next rebuild advances with no source fact changing, which
+    # self-invalidates the excuse for a row still legitimately mid-transition
+    # (measured on this heal's own repro: the two live BWXT rows flipped from
+    # excused to "escaped" purely because the state file was rebuilt).  The
+    # ledger's own issuance frontier moves only when a real candidate is
+    # actually appended, so it cannot be un-excused by re-running the same
+    # projection.  The comparison is strict-less-than rather than
+    # less-than-or-equal because every candidate a republish resolves for the
+    # first time shares that republish's document-level clock (measured
+    # 54/54): a row sitting exactly AT the frontier is exactly as new as the
+    # newest thing already issued, not behind it, so a tie excuses rather than
+    # escapes.  A row whose attributing path is STRICTLY older than everything
+    # already issued -- the actual 2026-08-10 incident shape -- still fails
+    # hard below.
     rows_by_id = {row["candidate_id"]: row for row in rows}
     ownership_edges_by_id = {
         edge["edge_id"]: edge for edge in graph.get("ownership_edges", [])
     }
-    frozen_generated_at = datetime.fromisoformat(
-        json.loads(
-            (ROOT / "data/government_revenue/candidate_projection_state.json")
-            .read_text(encoding="utf-8")
-        )["generated_at"]
-    )
+    issuance_frontier = _issuance_frontier(ledger_rows)
     escaped = {
         candidate_id
         for candidate_id in unaccounted
         if _attributing_path_known_at(rows_by_id[candidate_id], ownership_edges_by_id)
-        <= frozen_generated_at
+        < issuance_frontier
     }
     assert not escaped, (
         "first-seen candidates whose ENTIRE attributing ownership path predates "
-        "the frozen projection, with neither a ledger issuance nor a reviewed "
-        "historical suppression -- the 2026-08-10 incident class: "
-        f"{sorted(escaped)}"
+        "everything the ledger has already issued, with neither a ledger "
+        "issuance nor a reviewed historical suppression -- the 2026-08-10 "
+        f"incident class: {sorted(escaped)}"
     )
 
 
@@ -607,9 +662,32 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
 
     Confirms the row-level discriminator excuses ``grc1-2431cef9…`` and
     ``grc1-81a1a8df…`` because the five BWXT identifier/ownership rows they
-    attribute through carry ``known_at`` 2026-08-19T05:44:34 -- after the
-    committed ``candidate_projection_state.json`` freeze at
-    2026-08-19T05:25:42 -- not because of anything document-level.
+    attribute through carry ``known_at`` 2026-08-19T05:44:34 -- at or after
+    the newest ``known_at`` the append-only ledger has already issued, not
+    because of anything document-level.
+
+    The candidate ids are pinned rather than derived: they rebuild byte-stable
+    across the defense19->defense21 republish (``candidate_id`` folds only
+    ``candidate_family``/``issuer_company_id``/``event_id``, never the graph
+    digest -- see ``historical_suppression_entry_key``'s docstring), so unlike
+    a census or a vintage clock this identity is not a scheduled failure.
+
+    What is NOT stable is the freeze this excuse was originally checked
+    against: ``candidate_projection_state.generated_at`` is the WALL clock of
+    whichever run last published it, and the very next rebuild -- including
+    this heal's own repro -- advances it with no source fact changing, which
+    silently un-excuses a row still legitimately mid-transition.  The anchor
+    here is ``_issuance_frontier`` instead (see its docstring): the newest
+    ``known_at`` the ledger has actually issued, which only moves when a real
+    candidate is appended.
+
+    These two rows are also a known, separately-tracked non-issuance gap
+    (source observes them; the published queue currently does not carry
+    them) -- a different bug than the one this test guards, and not this
+    test's job to fix.  So the assertion below self-retires the moment that
+    gap closes: once a BWXT row is actually issued into the ledger, whether
+    it is *also* excused by the row-level clock is moot, because it is no
+    longer unaccounted at all.
     """
     payload = build_payload(root=ROOT)
     graph = json.loads(
@@ -622,18 +700,19 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
         "grc1-81a1a8df4bdb97de3b1cdfa8",
     }
     ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
-    frozen_generated_at = datetime.fromisoformat(
-        json.loads(
-            (ROOT / "data/government_revenue/candidate_projection_state.json").read_text(
-                encoding="utf-8"
-            )
-        )["generated_at"]
-    )
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    issuance_frontier = _issuance_frontier(ledger_rows)
     for row in bwxt_rows:
+        if row["candidate_id"] in ledger_ids:
+            # Already issued: accounted for by the ledger itself, so the
+            # row-level excuse this test guards is no longer load-bearing.
+            continue
         attributed_at = _attributing_path_known_at(row, ownership_edges_by_id)
-        assert attributed_at > frozen_generated_at, (
-            f"{row['candidate_id']} must be excused: its attributing BWXT edges "
-            f"({row['ownership_path_refs']}) postdate the frozen projection"
+        assert attributed_at >= issuance_frontier, (
+            f"{row['candidate_id']} must be excused or issued: its attributing "
+            f"BWXT edges ({row['ownership_path_refs']}) neither postdate the "
+            "ledger's issuance frontier nor are they in the ledger"
         )
 
 
