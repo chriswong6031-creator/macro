@@ -231,14 +231,34 @@ class TestAppendOnlyLaws:
         assert len(w3.load_family(tmp_path)) == 3  # 2 lofo + 1 abstaining
         assert len(w3.load_coverage(tmp_path)) == 2
 
-    def test_conflicting_duplicate_payload_fails_closed(self, tmp_path, monkeypatch):
+    def test_conflicting_duplicate_payload_is_same_stamp_revision_refused(
+            self, tmp_path, monkeypatch):
+        """Complete frozen stamp: identity mismatch is a refused revision, not a crash."""
         _accrue(tmp_path, monkeypatch, [_cand()], [_grade()], _receipt())
+        doc = _accrue(tmp_path, monkeypatch,
+                      [_cand(prophet_score=99.0, score_rank=7)],
+                      [_grade()], _receipt())
+        paired = w3.load_paired(tmp_path)
+        assert len(paired) == 1
+        assert paired.iloc[0]["score_rank"] == 1
+        assert paired.iloc[0]["prophet_score"] == pytest.approx(41.2)
+        refused = doc.get("same_stamp_revisions_refused") or []
+        assert refused
+        assert any(r.get("grain") == "paired" for r in refused)
+        assert len(w3.sessions_by_stamp(tmp_path)) == 1
+
+    def test_incomplete_stamp_identity_conflict_fails_closed(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        rows, _ = w3.build_paired_rows(pd.DataFrame([_cand()]), pd.DataFrame([_grade()]))
+        w3.append_paired(rows, tmp_path)
+        assert w3.load_family(tmp_path).empty
         with pytest.raises(w3.W3ConflictError) as exc:
             _accrue(tmp_path, monkeypatch,
                     [_cand(prophet_score=99.0, score_rank=7)],
                     [_grade()], _receipt())
         assert exc.value.existing_fp != exc.value.incoming_fp
-        assert len(w3.load_paired(tmp_path)) == 1
+        assert w3.load_family(tmp_path).empty
+        assert w3.load_coverage(tmp_path).empty
         assert w3.load_paired(tmp_path).iloc[0]["score_rank"] == 1
 
     def test_maturation_fills_pending_outcome_without_new_observation(
@@ -700,9 +720,8 @@ class TestStructuralFailClosed:
         assert "structural receipt absent" in str(exc.value)
         assert w3.load_family(tmp_path).empty
         assert w3.load_coverage(tmp_path).empty
-        # Paired race rows may persist; family/coverage must not be fabricated.
-        paired = w3.load_paired(tmp_path)
-        assert len(paired) == 1
+        # A brand-new observation is all-or-nothing: do not land paired-only.
+        assert w3.load_paired(tmp_path).empty
 
     def test_board_as_of_mismatch_with_required_stamp_fails_closed(
             self, tmp_path, monkeypatch):
@@ -794,3 +813,195 @@ class TestLawfulStatusSurface:
         report_src = (REPO / "scripts/report_us_prophet_w3.py").read_text(encoding="utf-8")
         assert "def main" in report_src
         assert "build_status_surface" in report_src
+
+
+# --------------------------------------------------------------------------- #
+# PR-3D-R1: same-stamp revision, atomic persist, bootstrap from frozen parts
+# --------------------------------------------------------------------------- #
+
+def _f1_receipt(mean_abs_rank_delta: float) -> dict:
+    receipt = _receipt()
+    receipt["families_present"] = [
+        "F1_TECHNICAL_CONFLUENCE", "F8_ATTENTION_CROWDING"]
+    receipt["lofo"][0]["family"] = "F1_TECHNICAL_CONFLUENCE"
+    receipt["lofo"][0]["mean_abs_rank_displacement"] = mean_abs_rank_delta
+    receipt["census"][0]["family"] = "F1_TECHNICAL_CONFLUENCE"
+    return receipt
+
+
+def _pending_cands(n: int, stamp: str = "2026-08-17") -> list[dict]:
+    return [
+        _cand(stamp_date=stamp, ticker=f"T{i:02d}",
+              score_rank=i, prophet_shadow_score_rank=i)
+        for i in range(1, n + 1)
+    ]
+
+
+class TestSameStampRevisionR1:
+
+    def test_complete_stamp_identical_retry_is_noop(self, tmp_path, monkeypatch):
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date="2026-08-17")],
+                [], _f1_receipt(3.696969697))
+        n_paired = len(w3.load_paired(tmp_path))
+        n_family = len(w3.load_family(tmp_path))
+        n_sess = len(w3.sessions_by_stamp(tmp_path))
+        doc = _accrue(tmp_path, monkeypatch, [_cand(stamp_date="2026-08-17")],
+                      [], _f1_receipt(3.696969697))
+        assert len(w3.load_paired(tmp_path)) == n_paired == 1
+        assert len(w3.load_family(tmp_path)) == n_family
+        assert len(w3.sessions_by_stamp(tmp_path)) == n_sess == 1
+        assert not (doc.get("same_stamp_revisions_refused") or [])
+        assert doc["sessions_written"]["written"] == 0
+        assert w3.build_status_surface(tmp_path)["paired_sessions_accrued"] == 1
+
+    def test_f1_production_witness_revision_refused(self, tmp_path, monkeypatch):
+        stamp = "2026-08-17"
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                [], _f1_receipt(3.696969697))
+        family_path = w3._part_path("family", stamp, tmp_path)
+        frozen = family_path.read_bytes()
+        family = w3.load_family(tmp_path).set_index("family")
+        assert family.loc["F1_TECHNICAL_CONFLUENCE"]["mean_abs_rank_delta"] == (
+            pytest.approx(3.696969697))
+        doc = _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                      [], _f1_receipt(3.8484848485))
+        assert family_path.read_bytes() == frozen
+        family = w3.load_family(tmp_path).set_index("family")
+        assert family.loc["F1_TECHNICAL_CONFLUENCE"]["mean_abs_rank_delta"] == (
+            pytest.approx(3.696969697))
+        refused = doc["same_stamp_revisions_refused"]
+        assert refused
+        assert any(r.get("grain") == "family" for r in refused)
+        assert w3.sessions_path(tmp_path).exists()
+        assert len(w3.sessions_by_stamp(tmp_path)) == 1
+        assert w3.sessions_by_stamp(tmp_path)[stamp]["liveness"] == w3.LIVENESS_UNMATURED
+        status = w3.build_status_surface(tmp_path)
+        assert status["same_stamp_revisions_refused"]
+        assert status["paired_sessions_accrued"] == 1
+
+    def test_tiny_and_large_float_revisions_are_both_refused(self, tmp_path, monkeypatch):
+        stamp = "2026-08-17"
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                [], _f1_receipt(3.696969697))
+        frozen = w3._part_path("family", stamp, tmp_path).read_bytes()
+        tiny = _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                       [], _f1_receipt(3.696969698))
+        large = _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                        [], _f1_receipt(9.0))
+        assert w3._part_path("family", stamp, tmp_path).read_bytes() == frozen
+        assert tiny["same_stamp_revisions_refused"]
+        assert large["same_stamp_revisions_refused"]
+        assert len(w3.sessions_by_stamp(tmp_path)) == 1
+
+    def test_later_paired_identity_revision_keeps_frozen_row(self, tmp_path, monkeypatch):
+        stamp = "2026-08-17"
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)],
+                [], _f1_receipt(3.696969697))
+        frozen = w3._part_path("paired", stamp, tmp_path).read_bytes()
+        doc = _accrue(tmp_path, monkeypatch,
+                      [_cand(stamp_date=stamp, prophet_score=12.0, score_rank=9)],
+                      [], _f1_receipt(3.696969697))
+        assert w3._part_path("paired", stamp, tmp_path).read_bytes() == frozen
+        assert w3.load_paired(tmp_path).iloc[0]["score_rank"] == 1
+        assert any(r.get("grain") == "paired" for r in doc["same_stamp_revisions_refused"])
+
+    def test_later_coverage_revision_keeps_frozen_row(self, tmp_path, monkeypatch):
+        stamp = "2026-08-17"
+        first = _f1_receipt(3.696969697)
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)], [], first)
+        frozen = w3._part_path("coverage", stamp, tmp_path).read_bytes()
+        revised = _f1_receipt(3.696969697)
+        revised["census"][0]["status"] = "vote_inert"
+        doc = _accrue(tmp_path, monkeypatch, [_cand(stamp_date=stamp)], [], revised)
+        assert w3._part_path("coverage", stamp, tmp_path).read_bytes() == frozen
+        assert w3.load_coverage(tmp_path).set_index("member").loc["alpha"]["status"] == "voting"
+        assert any(r.get("grain") == "coverage" for r in doc["same_stamp_revisions_refused"])
+
+    def test_new_valid_stamp_persists_all_grains_and_session(self, tmp_path, monkeypatch):
+        doc = _accrue(tmp_path, monkeypatch, [_cand(stamp_date="2026-08-18")],
+                      [], _receipt())
+        assert not w3.load_paired(tmp_path).empty
+        assert not w3.load_family(tmp_path).empty
+        assert not w3.load_coverage(tmp_path).empty
+        rec = w3.sessions_by_stamp(tmp_path)["2026-08-18"]
+        assert rec["liveness"] == w3.LIVENESS_UNMATURED
+        assert rec["paired_fingerprint"]
+        assert rec["family_fingerprint"]
+        assert rec["coverage_fingerprint"]
+        assert rec["observation_fingerprint"]
+        assert doc["sessions_written"]["written"] == 1
+
+    def test_injected_failure_between_grains_leaves_no_partial(self, tmp_path, monkeypatch):
+        real = w3._write_part
+
+        def _boom(path, frame):
+            if "/family/" in path.as_posix().replace("\\", "/"):
+                raise RuntimeError("injected family write failure")
+            return real(path, frame)
+
+        monkeypatch.setattr(w3, "_write_part", _boom)
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        with pytest.raises(RuntimeError, match="injected family"):
+            w3.accrue(
+                root=tmp_path,
+                candidates=pd.DataFrame([_cand()]),
+                grades=pd.DataFrame(),
+                structural_by_stamp={"2026-08-18": _receipt()},
+            )
+        assert w3.load_paired(tmp_path).empty
+        assert w3.load_family(tmp_path).empty
+        assert w3.load_coverage(tmp_path).empty
+
+    def test_pre_pr3d_complete_stamp_bootstraps_session_from_parts(
+            self, tmp_path, monkeypatch):
+        cands = _pending_cands(65)
+        _accrue(tmp_path, monkeypatch, cands, [], _f1_receipt(3.696969697))
+        assert len(w3.load_paired(tmp_path)) == 65
+        w3.sessions_path(tmp_path).unlink()
+        w3.status_path(tmp_path).unlink()
+        assert not w3.sessions_path(tmp_path).exists()
+        doc = _accrue(tmp_path, monkeypatch, cands, [], _f1_receipt(3.696969697))
+        rec = w3.sessions_by_stamp(tmp_path)["2026-08-17"]
+        assert rec["liveness"] == w3.LIVENESS_UNMATURED
+        assert rec["n_paired"] == 65
+        assert rec["n_pending_outcome"] == 65
+        assert rec["terminal"] is False
+        assert rec["bootstrap"] is True
+        assert rec["paired_fingerprint"]
+        status = w3.build_status_surface(tmp_path)
+        assert status["commissioned"] is True
+        assert status["paired_sessions_accrued"] == 1
+        assert status["unmatured_sessions"] == 1
+        assert status["matured_h10_sessions"] == 0
+        assert status["first_eligible_paired_stamp"] == "2026-08-17"
+        assert status["authority"] == "measurement only / none"
+        assert status["comparison_surface"] == "forbidden"
+        assert "PENDING until 20" in status["first_lawful_comparison_read"]
+        dumped = json.dumps(status)
+        for token in w3.FORBIDDEN_STATUS_TOKENS:
+            assert token.lower() not in dumped.lower()
+        assert doc["sessions_written"]["written"] == 1
+
+    def test_historical_missing_date_cannot_be_bootstrapped(self, tmp_path):
+        assert w3.bootstrap_session_record("2026-01-01", tmp_path) is None
+        assert w3.stamp_observation_complete(tmp_path, "2026-01-01") is False
+
+    def test_board_commit_date_is_not_a_second_observation(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        _write_board(tmp_path, as_of="2026-08-17", receipt=_f1_receipt(3.696969697))
+        _accrue(tmp_path, monkeypatch, [_cand(stamp_date="2026-08-17")],
+                [], _f1_receipt(3.696969697))
+        _write_board(tmp_path, as_of="2026-08-17", receipt=_f1_receipt(3.8484848485))
+        doc = w3.accrue(
+            root=tmp_path,
+            candidates=pd.DataFrame([_cand(stamp_date="2026-08-17")]),
+            grades=pd.DataFrame(),
+            structural_by_stamp=None,
+            require_board_as_of=True,
+        )
+        assert len(w3.sessions_by_stamp(tmp_path)) == 1
+        assert w3.sessions_by_stamp(tmp_path)["2026-08-17"]["stamp_date"] == "2026-08-17"
+        family = w3.load_family(tmp_path).set_index("family")
+        assert family.loc["F1_TECHNICAL_CONFLUENCE"]["mean_abs_rank_delta"] == (
+            pytest.approx(3.696969697))
+        assert doc["same_stamp_revisions_refused"]

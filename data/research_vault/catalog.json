@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T02:10:41.593193+00:00",
-  "count": 1376,
+  "generated_at": "2026-08-19T04:55:32.263968+00:00",
+  "count": 1384,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -504,6 +504,127 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tgkhwkhqmsb-8ed5bd",
+      "title": "GOAL Kickstart Summer data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:37Z",
+      "summary_points": [
+        "**S&P 500 Valuation & Credit Spreads**: S&P 500 at 20.0x (59th percentile) signals relative expensiveness vs.",
+        "10y history, while US HY credit spreads at 267bp indicate elevated risk premium, demanding caution in equity allocation.",
+        "**Gold-VIX Hedge Opportunity**: Strong negative correlation (-0.74) between Gold and VIX, with current percentile (0.13) showing active hedging potential amid elevated equity volatility.",
+        "**EM Equity-Bond Divergence**: EM Equity shows strong inflows (YTD), but EM Bonds exhibit negative weekly flows (-0.4% AUM), signaling imminent rotation risk and underperformance in EM fixed income.",
+        "**Monetary Policy-TIPS Yield Link**: Inverse correlation between PC2 (monetary policy factor) and US 10-yr TIPS yield (1y z-score, inverted), critical for bond positioning amid Fed tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gj8h50uqyms-858c9c",
+      "title": "Global Markets Comment Market Stress Monitor — 17 August 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:34Z",
+      "summary_points": [
+        "**European Credit Stress**: EUR 10y Swap Spreads at 90-100% percentile signals severe credit stress in Europe, driven by geopolitical tensions and policy tightening.",
+        "**Japanese Equity Illiquidity**: R3000 Single Stock Liquidity Index at 90-100% percentile indicates extreme illiquidity in Japanese equities, heightening volatility risk.",
+        "**JPY Basis Surge**: JPY 1y OIS XCCY Basis surge (2024-2026) signals potential BoJ policy shift (e.g., ending yield curve control) and carry trade unwinding.",
+        "**EM Cross Currency Basis Spike**: 12-month cross currency basis vs USD spikes, indicating currency stress (USD strength, EM currency weakness), critical for EM portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jrepgcbs7sc-3e5c43",
+      "title": "Global Markets Analyst Finding Factors in FX Markets",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:30Z",
+      "summary_points": [
+        "**National Debt Factor**: Low debt/GDP currencies consistently outperform, critical for fundamental currency allocation decisions (Exhibit 3).",
+        "**NIIP as Carry Hedge**: High NIIP currencies (e.g., USD) offer risk-off/low-yielding traits via home-bias repatriation, enabling carry trade hedging during capital retreatment.",
+        "**Blended Factor Performance**: Carry/Risk-On and Carry/Mean Reversion blends outperform constituents (e.g., 40pp higher returns), enhancing vol-adjusted returns in procyclical regimes.",
+        "**Concentrated Weighting**: Strategic concentration (vs.",
+        "linear weights) boosts average annualized returns and Sharpe ratios across National Debt, Carry, Mean Reversion, and Equity Risk factors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-unaooukoknv-c93138",
+      "title": "Canada Economics Comment Headline and Core Surprise to the Upside on Energy Prices and World Cup Effects",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:28Z",
+      "summary_points": [
+        "**Core Inflation Anchored Near 2%**: BoC's preferred core measures (CPI-Trim, CPI-Median) near 2% on year-over-year and three-month annualized bases, confirming persistent inflation control without immediate policy urgency.",
+        "**BoC Rate Hold Until 2026**: Policy stance confirmed—rates held at 2.25% with no expected hike until 2026, driven by core inflation stability and absence of acceleration.",
+        "**Temporary Drivers Overstated**: Energy prices and World Cup-related categories caused headline CPI surprise (+3.0% yoy), but core goods/services inflation (unchanged services, slight goods rise) shows no structural shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-stcsrwclhsp-5c83df",
+      "title": "Brazil Weaker Than Expected June Real GDP Growth (Ramos)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:27Z",
+      "summary_points": [
+        "**June GDP Miss**: Real GDP declined 0.64% mom sa (vs consensus -0.50%), driven by industry weakness; non-farm GDP fell 0.91% mom sa.",
+        "**Q2 Growth Deceleration**: Real GDP growth slowed to 0.18% qoq sa in Q2 2026 (vs 1.23% qoq sa in Q1 2026), signaling weakening momentum.",
+        "**Q3 Carryover Risk**: Negative sequential growth of -0.42% qoq sa for Q3 2026 with annual growth at 1.3%, indicating potential further slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zhoxdsnkeox-d24ca0",
+      "title": "UK—Labour Market Quantities Slightly Weaker Than Expected",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:24Z",
+      "summary_points": [
+        "**Labor Market Weakness**: Payroll employment fell -13k (vs.",
+        "expected unchanged), vacancies edged down to 707k, signaling deteriorating labor conditions beyond official data.",
+        "**Private Pay Growth Deceleration**: Private sector pay growth slowed to 2.8% YoY (from 2.9%), reinforcing easing inflation pressures.",
+        "**Payroll-LFS Discrepancy**: Payroll shows 0.1% three-month contraction vs.",
+        "LFS's 0.2% expansion, indicating labor market weakness underestimated by volatile short-term LFS data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-t81thnxmgss-dfaf9a",
       "title": "Trade Update Closing our short THB INR for a small gain, as RBI brings forward FCNR(B) deadline",
       "institution": "Goldman Sachs",
@@ -520,6 +641,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lndxcxpgsya-6d04c5",
+      "title": "TIC Data Rebound in Purchases of US Equities in June",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:18Z",
+      "summary_points": [
+        "**Accelerating Foreign Outflows**: Net sales of US Treasuries/corporate stocks by private investors and EM Asia ex-China/Japan (late 2025/early 2026) signal capital flight, weakening foreign demand and impacting US asset valuations.",
+        "**Valuation-Adjusted Holdings Divergence**: Euro Area/UK show sustained growth in valuation-adjusted holdings (robust demand), while Japan/Brazil exhibit volatility and declines, indicating regional risk exposure.",
+        "**Geopolitical Sensitivity in Saudi Holdings**: Sharp volatility in Saudi Arabia’s valuation-adjusted holdings reflects oil market dynamics or regional tensions, requiring active monitoring for portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fuw10f586pp-de60ad",
+      "title": "LATAM Today August 18, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:16Z",
+      "summary_points": [
+        "**Ecuador CPI Distortion**: New basket (13 categories, base 2025-26) distorts inflation: headline -0.09% mom (vs +1.39% yoy), core -1.06% mom (vs 1.25% yoy), services weight up to 43.80%.",
+        "**Electricity Price Shock**: Electricity prices +29.1% mom due to subsidy normalization, driving services inflation +0.71% mom and creating market distortions.",
+        "**Core Inflation Shift**: Core inflation (ex food/energy) fell 1.06% mom driven by fuel reweighting (gasoline +7.7% mom, diesel +1.4% mom), annual core at 1.25% yoy.",
+        "**Colombia GDP Momentum**: Q2 2026 GDP forecast at 3.4% yoy (+1.3% qoq sa), led by public admin, retail, manufacturing, and election-related payments (June ISE +3.6% yoy)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
