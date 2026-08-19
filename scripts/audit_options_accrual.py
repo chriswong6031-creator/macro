@@ -85,24 +85,67 @@ def _latest_chain_date(chains_dir: Path) -> date | None:
         return None
 
 
-def _latest_chain_health(data_root: Path, latest: date | None) -> dict | None:
-    """AD-1C0: the most recent health-receipt attempt for the latest stored
-    chain session, or None when no receipt exists (a legacy session, or the
-    sidecar is simply absent on this runner). Read-only; never raises into the
-    audit. Lives at data/polygon_gex_health/<session>.json — a SIBLING of
-    data/polygon_gex/, not nested inside it (see build_polygon_gex._health_dir
-    for why: a nested subdirectory there breaks an existing stray-file check)."""
-    if latest is None:
+def _health_receipt_dir(data_root: Path) -> Path:
+    # SIBLING of data/polygon_gex/, not nested inside it — see
+    # scripts.build_polygon_gex._health_dir()'s docstring for why (a nested
+    # subdirectory there breaks tests/test_polygon_gex_session_stamps.py's
+    # stray-file invariant). NOT the same function as build_polygon_gex's own
+    # _health_dir() (which also mkdir()s it as a writer) — the audit is
+    # read-only over this directory and must never create it.
+    return data_root / "polygon_gex_health"
+
+
+def _latest_receipt_date(health_dir: Path) -> date | None:
+    """Date of the most recent polygon_gex_health/*.json receipt, or None if
+    none exist. Mirrors _latest_chain_date. The ``*.json`` glob does not match
+    a preserved corrupt-aside file (B3's ``<session>.json.corrupt-<ts>`` does
+    not end in ``.json``), so a corrupted-and-recovered session is read from
+    its FRESH recovery receipt, not the quarantined original."""
+    files = sorted(glob.glob(str(health_dir / "*.json")))
+    if not files:
         return None
-    receipt_path = data_root / "polygon_gex_health" / f"{latest.isoformat()}.json"
+    stem = Path(files[-1]).stem
+    try:
+        return datetime.strptime(stem, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _read_receipt_attempts(health_dir: Path, session: date) -> list[dict] | None:
+    receipt_path = health_dir / f"{session.isoformat()}.json"
     if not receipt_path.exists():
         return None
     try:
         data = json.loads(receipt_path.read_text())
-        attempts = data.get("attempts") if isinstance(data, dict) else None
-        return attempts[-1] if attempts else None
-    except (OSError, ValueError, IndexError):
+    except (OSError, ValueError):
         return None
+    attempts = data.get("attempts") if isinstance(data, dict) else None
+    return attempts if isinstance(attempts, list) else None
+
+
+def _latest_chain_health(health_dir: Path, session: date | None) -> dict | None:
+    """AD-1C0: the health-receipt entry describing the CURRENT authoritative
+    state of `session`'s stored chain — or None when no receipt exists (a
+    legacy session, or the sidecar is simply absent on this runner). Read-only;
+    never raises into the audit.
+
+    M12 (AD-1C0 review): reads through
+    ``scripts.build_polygon_gex._stored_state_entry`` — the SAME anchor lookup
+    accrue() itself uses — rather than blindly taking the literal last attempt.
+    A force-run whose capture totally failed against an otherwise-INTACT store
+    appends a "nothing_captured"/health="failed" attempt describing that
+    REJECTED attempt, not the store; reading the literal last entry would then
+    misreport a perfectly healthy, untouched store as failed. _stored_state_entry
+    skips every non-anchor (skip-shaped) decision by construction.
+    """
+    if session is None:
+        return None
+    try:
+        from scripts.build_polygon_gex import _stored_state_entry
+    except ImportError:  # pragma: no cover — defensive; keeps the audit alive
+        return None
+    attempts = _read_receipt_attempts(health_dir, session)
+    return _stored_state_entry(attempts)
 
 
 def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
@@ -148,8 +191,29 @@ def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
                 "if tonight's accrual is missed"
             )
 
-    # ── AD-1C0: surface the latest session's health-receipt verdict, if any ───
-    latest_health_entry = _latest_chain_health(data_root, latest)
+    # ── M4 (AD-1C0 review): a totally-failed newest session is invisible if we
+    # only ever glob chains/*.parquet — a session whose accrual captured NOTHING
+    # (B2's universe-resolution-failed gate, or a plain zero-capture run) never
+    # writes a parquet at all, so the freshness check above silently looks past
+    # it and reports whatever the PRIOR successful session's age happens to be.
+    # The effective reference is max(newest parquet session, newest receipt
+    # session); when the receipt is newer and has no matching parquet, that is
+    # its own FAILED finding, independent of the age computation above (which
+    # would otherwise see age=0 against the wrong file and call it healthy).
+    health_dir = _health_receipt_dir(data_root)
+    latest_receipt_session = _latest_receipt_date(health_dir)
+    detail["health_latest_receipt_session"] = (
+        str(latest_receipt_session) if latest_receipt_session else None)
+    if latest_receipt_session is not None and (latest is None or latest_receipt_session > latest):
+        fail.append(
+            f"CHAINS SESSION FAILED: session {latest_receipt_session} has a health-receipt "
+            f"attempt but NO chain parquet was ever written for it — the accrual captured "
+            f"nothing for the most recently attempted session (see "
+            f"data/polygon_gex_health/{latest_receipt_session.isoformat()}.json)"
+        )
+
+    # ── AD-1C0: surface the latest STORED session's health-receipt verdict ───
+    latest_health_entry = _latest_chain_health(health_dir, latest)
     if latest_health_entry is not None:
         health = latest_health_entry.get("health")
         detail["chains_latest_health"] = health
