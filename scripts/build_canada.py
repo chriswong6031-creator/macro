@@ -1443,6 +1443,16 @@ def main() -> int:
             setups = build_canada_library.main(alpha=alpha, overlay=(latest.get("overlay") or {}))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada stock library build failed (%s); skipping", e)
+        # CA-TRUTH (masterplan §5.0): `setups` IS the canonical board — do not
+        # recompute the standouts enrichment, re-rank via the old open-entry-
+        # first helper (or any other named re-rank), or otherwise mutate
+        # vm["setups"]["buy"]'s order below this line.
+        # tests/test_canada_canonical_board.py::
+        # test_canada_page_render_has_no_rederive_or_resort_tokens source-checks
+        # for the two known re-rank call sites; a novel raw sorted()/.sort() call
+        # naming neither one is NOT caught by any test at reasonable cost — this
+        # comment plus the owed-session digest receipt (execution packet §17)
+        # are the guard for that residual form.
         vm["setups"] = setups
 
         # ── top_setups: top-5 buy rows for the glance card ───────────────────

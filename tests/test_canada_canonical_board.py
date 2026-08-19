@@ -179,14 +179,43 @@ def test_canada_artifact_page_order_parity():
     board_pos_order = [r["ticker"] for r in sorted(board["buy"], key=lambda r: r["board_pos"])]
     assert tickers == board_pos_order == ["B.TO", "C.TO", "A.TO"]
 
-    # build_canada.py must render main()'s return value verbatim: no second
-    # compute_canada_standouts() pass, no re-sort of vm["setups"].
+    # build_canada.py must render main()'s return value verbatim.
+    src = Path(bca.__file__).read_text()
+    assert 'setups = build_canada_library.main(alpha=alpha, overlay=' in src
+
+
+def test_canada_page_render_has_no_rederive_or_resort_tokens():
+    """scripts/build_canada.py must contain NEITHER of the two realistic forms of
+    mutation (f) — a page-level re-derive/re-sort of the canonical board:
+      (i)  a second compute_canada_standouts() recompute of the page object
+           (the ORIGINAL defect: build_canada.py used to run this AFTER
+           build_canada_library.main() already wrote+returned the canonical
+           board, so the page could silently diverge from the artifact);
+      (ii) an entry_open_first()-style re-sort of vm["setups"]["buy"] (the OLD
+           page-facing composite/open-entry order this PR retired).
+
+    Both the recompute call AND its import were deleted outright, so BOTH tokens
+    are expected to be entirely absent from this file's source — confirmed by
+    direct read before writing this test (grep for both names returned nothing).
+    If either legitimately reappears for an unrelated reason in the future, scope
+    this assert to exclude that specific site rather than deleting it wholesale.
+
+    A THIRD, unnamed form — a novel raw `sorted()`/`.sort()` re-rank that reads
+    neither name — is NOT caught by this or any test here at reasonable cost; the
+    guard for that residual is the in-code CA-TRUTH comment at the `vm["setups"]
+    = setups` assignment site (scripts/build_canada.py) plus the owed-session
+    digest receipt (execution packet §17), not an automated assertion."""
     src = Path(bca.__file__).read_text()
     assert "compute_canada_standouts" not in src, (
-        "build_canada.py must not re-derive the board — it renders build_canada_"
-        "library.main()'s return value verbatim (CA-TRUTH)"
+        "build_canada.py must not re-derive the board via a second "
+        "compute_canada_standouts() pass — it renders build_canada_library."
+        "main()'s return value verbatim (CA-TRUTH); mutation-kill form (f-i)"
     )
-    assert 'setups = build_canada_library.main(alpha=alpha, overlay=' in src
+    assert "entry_open_first" not in src, (
+        "build_canada.py must not re-sort vm['setups']['buy'] with "
+        "entry_open_first() (or any named re-rank) after main() returns the "
+        "canonical board; mutation-kill form (f-ii)"
+    )
 
 
 # ---------------------------------------------------------------------------
