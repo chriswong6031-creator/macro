@@ -128,13 +128,33 @@ merge. Consequences:
   after the deploy: a profile that had loaded the page pre-merge still ran the old
   code and still requested `/stocks/mm_brain.js`.
 
-**The re-stamp did not need a manual dispatch.** The merge triggered
-`public-render` (run `32251225693`, 12:09:53Z) on the `templates/*.js` path, and
-`scripts/ci/public_render.sh` runs `python -m scripts.optimize_assets`, which
-refreshes asset stamps **site-wide**. Confirm that run concluded `success` and that
-`site/*.html` now references `theme.js?v=b1128870`; if it did not land, dispatch
-`render.yml` (`scope=all`, 40–85 min) — checking the pool for an in-flight render
-first, and never cancelling one.
+**The re-stamp did not need a manual dispatch, and it has landed.** The merge
+triggered `public-render` (run `32251225693`, 12:09:53Z) on the `templates/*.js`
+path, and `scripts/ci/public_render.sh` runs `python -m scripts.optimize_assets`,
+which refreshes asset stamps **site-wide**. That run concluded `completed/success`,
+and production HTML now carries the new key:
+
+```
+GET /stocks/AAPL.html  ->  <script defer src="../theme.js?v=b1128870">
+GET /macro.html        ->  theme.js?v=b1128870
+```
+
+Because the URL key moved, the warm-`immutable` cohort is closed too — there is no
+client left holding the old body for a referenced URL.
+
+**Final live proof, `/stocks/AAPL.html` — the route that 404'd this morning:**
+
+```
+before interaction   #mmb-boot present (role=button, aria-label="Ask Mastermind")
+                     #mmb-root absent · window.MMBrain false
+                     mm_brain requests: 0
+after one click      1 fetch -> https://www.mastermind-x.com/mm_brain.js?v=f74045d8  200
+                     mounted=true · panel open · stub retired · #mmb-launch present
+```
+
+If a future change ever needs the bodies rebuilt (not just re-stamped), dispatch
+`render.yml` (`scope=all`, 40–85 min) — check the pool for an in-flight render first,
+and never cancel one.
 
 > Caveat when reading that lane's commits: `public-render` fully rebuilds only the
 > three public pages; for product pages it re-stamps `?v=` and nothing else. A
