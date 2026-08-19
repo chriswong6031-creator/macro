@@ -2278,6 +2278,7 @@ jobs:
           tests/test_capital_structure_share_count_r2_concurrency_operator.py
           tests/test_sec_capital_structure.py
           tests/test_sec_capital_structure_companyfacts.py
+          tests/test_capital_structure_evidence_identity.py
           tests/test_nwqs_c_dilution.py
           tests/test_compile_capital_structure_registration_lifecycles.py -q
 

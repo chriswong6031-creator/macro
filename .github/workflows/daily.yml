@@ -1345,6 +1345,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Whole-generation append-only fence (DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE).
+            # Two overlapping capital_structure jobs can each compile from the ledger they
+            # checked out; `-X theirs` below then REPLACES origin/main's coherent CS
+            # generation. Runs after fetch and before rebase so a proven drop of
+            # source_manifest.jsonl withholds data/capital_structure and
+            # site/capital-structure-data together — never one file, never merge=union.
+            # Collect cannot host this fence: collect unstages those paths.
+            if ! push_append_only_fence origin/main; then push_backoff; continue; fi
             if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then
                 echo "pushed capital-structure generation on attempt $PUSH_ATTEMPT"

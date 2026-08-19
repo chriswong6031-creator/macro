@@ -582,3 +582,59 @@ def test_the_job_is_declared_in_the_dag(steps):
         f"config/dag.yml declares {declared} for {JOB}, the workflow runs "
         f"{actual_ids}. The lane must match the job's real serial order."
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CS push-loop fence: append-only fence call is after fetch and before rebase
+# ──────────────────────────────────────────────────────────────────────────────
+
+_PUSH_STEP_FRAGMENT = "push capital-structure"
+_FENCE_CALL = "push_append_only_fence"
+_FETCH_FRAGMENT = "git fetch"
+_REBASE_FRAGMENT = "pull --rebase"
+
+
+def _pushcs_run(steps: list[dict]) -> str:
+    """Return the `run:` script of the CS push step."""
+    for step in steps:
+        if _PUSH_STEP_FRAGMENT in (step.get("name") or ""):
+            return str(step.get("run") or "")
+    for step in steps:
+        sid = step.get("id") or ""
+        if "pushcs" in sid or "push_cs" in sid:
+            return str(step.get("run") or "")
+    raise AssertionError(
+        f"no pushcs step found (looked for name containing {_PUSH_STEP_FRAGMENT!r} "
+        "or id containing 'pushcs')"
+    )
+
+
+def test_cs_push_loop_calls_append_only_fence(steps):
+    """daily.yml's CS push loop must call push_append_only_fence.
+
+    DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE: the fence runs after fetch
+    and before rebase -X theirs so a proven source_manifest.jsonl prefix drop
+    withholds the whole CS family before any --autostash stash-pop can reintroduce
+    the stale generation.
+    """
+    run_script = _pushcs_run(steps)
+    assert _FENCE_CALL in run_script, (
+        f"the CS push step must call {_FENCE_CALL!r}; "
+        "without it, overlapping CS jobs can clobber coherent generations (#5792 ext)"
+    )
+
+
+def test_cs_push_fence_is_after_fetch_before_rebase(steps):
+    """The fence call must appear AFTER a git fetch and BEFORE pull --rebase."""
+    run_script = _pushcs_run(steps)
+    assert _FETCH_FRAGMENT in run_script, (
+        f"CS push step must fetch before fencing; no {_FETCH_FRAGMENT!r} found"
+    )
+    assert _REBASE_FRAGMENT in run_script, (
+        f"CS push step must rebase after fencing; no {_REBASE_FRAGMENT!r} found"
+    )
+    fence_pos = run_script.index(_FENCE_CALL)
+    fetch_pos = run_script.index(_FETCH_FRAGMENT)
+    rebase_pos = run_script.index(_REBASE_FRAGMENT)
+    assert fetch_pos < fence_pos, "fence must come AFTER fetch"
+    assert fence_pos < rebase_pos, "fence must come BEFORE rebase"

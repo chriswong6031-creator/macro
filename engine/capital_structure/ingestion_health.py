@@ -178,9 +178,20 @@ def decide_verdict(
     verified_retained: int,
     no_new_work_proven: bool,
     no_new_work_reason: str | None,
+    re_observed: int = 0,
 ) -> tuple[str, str]:
-    """Fail closed when work was selected but no durable evidence progressed."""
-    progressed = int(manifested_delta) > 0 or int(verified_retained) > 0
+    """Fail closed when work was selected but no durable evidence progressed.
+
+    Third progress term (W1): a verified re-observation of an already-retained
+    evidence_id counts as progress so idempotent nights are not the #5792 fail.
+    selected>0 AND no progressed AND re_observed==0 still fails (#5792 must not
+    regress).
+    """
+    progressed = (
+        int(manifested_delta) > 0
+        or int(verified_retained) > 0
+        or int(re_observed) > 0
+    )
     if progressed:
         return "ok", "durable verified source evidence advanced"
     if int(selected) == 0 and no_new_work_proven:
@@ -212,6 +223,10 @@ def build_ingestion_run(
     watermark_after: Mapping[str, Any],
     no_new_work_proven: bool,
     no_new_work_reason: str | None = None,
+    re_observed: int = 0,
+    unique_evidence_count: int | None = None,
+    manifest_revision_count: int | None = None,
+    observation_count: int | None = None,
 ) -> dict[str, Any]:
     manifested_delta = int(watermark_after["source_manifest_count"]) - int(
         watermark_before["source_manifest_count"]
@@ -222,22 +237,31 @@ def build_ingestion_run(
         verified_retained=verified_retained,
         no_new_work_proven=no_new_work_proven,
         no_new_work_reason=no_new_work_reason,
+        re_observed=re_observed,
     )
+    counters: dict[str, Any] = {
+        "selected": int(selected),
+        "retrieved": int(retrieved),
+        "verified_retained_sources": int(verified_retained),
+        "manifested_sources": int(manifested),
+        "deferred": int(deferred),
+        "parser_deferred": int(parser_deferred),
+        "storage_deferred": int(storage_deferred),
+        "parked": int(parked),
+        "re_observed": int(re_observed),
+    }
+    if unique_evidence_count is not None:
+        counters["unique_evidence_count"] = int(unique_evidence_count)
+    if manifest_revision_count is not None:
+        counters["manifest_revision_count"] = int(manifest_revision_count)
+    if observation_count is not None:
+        counters["observation_count"] = int(observation_count)
     return {
         "schema": INGESTION_RUN_SCHEMA,
         "as_of": as_of,
         "authority": dict(_AUTHORITY),
         "store_id": store_id,
-        "counters": {
-            "selected": int(selected),
-            "retrieved": int(retrieved),
-            "verified_retained_sources": int(verified_retained),
-            "manifested_sources": int(manifested),
-            "deferred": int(deferred),
-            "parser_deferred": int(parser_deferred),
-            "storage_deferred": int(storage_deferred),
-            "parked": int(parked),
-        },
+        "counters": counters,
         "source_high_watermark_before": dict(watermark_before),
         "source_high_watermark_after": dict(watermark_after),
         "no_new_work_proven": bool(no_new_work_proven),

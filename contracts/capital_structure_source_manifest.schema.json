@@ -11,6 +11,34 @@
   "properties": {
     "schema": {"const": "capital_structure.source_manifest/v1"},
     "manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^evidence:cs:[a-f0-9]{64}$",
+      "description": "Derived occurrence+bytes identity. Optional on historical v1 rows; projected on read."
+    },
+    "evidence_key_format": {"type": "integer", "const": 1},
+    "evidence_occurrence": {
+      "description": "Frozen key_format 1 occurrence. Absent on historical v1 rows (projected as submission or legacy:{source_id}).",
+      "oneOf": [
+        {"const": "submission"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parent_content_sha256", "byte_start", "byte_end"],
+          "properties": {
+            "parent_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "byte_start": {"type": "integer", "minimum": 0},
+            "byte_end": {"type": "integer", "minimum": 1}
+          }
+        },
+        {"type": "string", "pattern": "^legacy:.+"}
+      ]
+    },
+    "first_known_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Canonical first Git-publication time of this evidence_id. Frozen; never moved backward."
+    },
     "source_system": {"type": "string", "enum": ["sec_edgar", "issuer", "market_data", "other"]},
     "source_id": {"type": "string", "minLength": 1},
     "issuer": {"$ref": "#/$defs/issuer"},

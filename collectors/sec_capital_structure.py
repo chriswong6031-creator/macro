@@ -32,8 +32,14 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from collectors.base import Adapter, is_connection_error
 from engine.capital_structure.source_identity import (
+    EvidenceIdentityError,
+    child_occurrence,
+    document_inner_spans,
+    evidence_id_for,
+    evidence_id_from_manifest,
     manifest_id_for,
     merge_manifest_ledgers,
+    published_first_known_at,
     validate_manifest_identity,
     validate_manifest_ledger,
 )
@@ -170,6 +176,7 @@ _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
     "state", "error", "content_sha256", "retrieval_lane", "collection_scope",
     "http_status", "storage_operation", "store_id", "error_class",
+    "observed_evidence_ids", "retained_available_at",
 ]
 
 class IndexNotPublished(RuntimeError):
@@ -380,6 +387,8 @@ class SubmissionDocument:
     filename: str | None
     description: str | None
     raw: bytes
+    byte_start: int | None = None
+    byte_end: int | None = None
 
 
 @dataclass(frozen=True)
@@ -517,7 +526,13 @@ def file_number_provenance_errors(filing: dict | object) -> list[str]:
 
 
 def parse_submission(raw: bytes) -> SubmissionBundle:
-    """Parse SEC submission header fields and raw ``<DOCUMENT>`` blocks."""
+    """Parse SEC submission header fields and raw ``<DOCUMENT>`` blocks.
+
+    key_format 1: each DOCUMENT is stamped with ``(byte_start, byte_end)`` from
+    ``document_inner_spans`` so child evidence identities are bound to exact bytes.
+    Spans are attached only when count and content-equality checks pass; individual
+    failures leave the document's span fields as ``None`` (legacy path).
+    """
     accepted_at = None
     accepted_match = _HEADER_FIELD_RE["accepted_at"].search(raw)
     if accepted_match:
@@ -532,6 +547,18 @@ def parse_submission(raw: bytes) -> SubmissionBundle:
         except ValueError:
             accepted_at = None
     file_number, file_number_provenance = _file_number_observation(raw)
+    blocks = _DOCUMENT_RE.findall(raw)
+    # Attempt to bind exact inner spans for key_format 1 child occurrences.
+    spans: tuple[tuple[int, int], ...] = ()
+    try:
+        candidate_spans = document_inner_spans(raw)
+        if len(candidate_spans) == len(blocks) and all(
+            raw[s:e] == block
+            for (s, e), block in zip(candidate_spans, blocks)
+        ):
+            spans = candidate_spans
+    except EvidenceIdentityError:
+        pass
     documents = tuple(
         SubmissionDocument(
             sequence=_sgml_value(block, b"SEQUENCE"),
@@ -539,8 +566,10 @@ def parse_submission(raw: bytes) -> SubmissionBundle:
             filename=_sgml_value(block, b"FILENAME"),
             description=_sgml_value(block, b"DESCRIPTION"),
             raw=block,
+            byte_start=spans[i][0] if spans else None,
+            byte_end=spans[i][1] if spans else None,
         )
-        for block in _DOCUMENT_RE.findall(raw)
+        for i, block in enumerate(blocks)
     )
     return SubmissionBundle(
         accepted_at=accepted_at,
@@ -1406,6 +1435,10 @@ class SecCapitalStructureAdapter(Adapter):
         document_version: int,
         parent_manifest_id: str | None,
         sanitized: list[str] | None = None,
+        parent_content_sha256: str | None = None,
+        byte_start: int | None = None,
+        byte_end: int | None = None,
+        existing_manifests: "list[dict] | None" = None,
     ) -> dict:
         digest = hashlib.sha256(raw).hexdigest()
         from engine.capital_structure.source_store import object_key_for_sha256
@@ -1497,6 +1530,41 @@ class SecCapitalStructureAdapter(Adapter):
                 "text_sha256": digest,
             }],
         }
+        # --- Evidence identity (key_format 1) stamped BEFORE manifest_id_for ---
+        # occurrence: "submission" for complete submissions; child_occurrence for
+        # documents with bound byte spans; "legacy:{source_id}" otherwise.
+        accession_str = str(discovery.get("accession") or "")
+        if document_role == "complete_submission":
+            evidence_occurrence: Any = "submission"
+        elif (
+            parent_content_sha256
+            and isinstance(byte_start, int)
+            and isinstance(byte_end, int)
+        ):
+            evidence_occurrence = child_occurrence(
+                parent_content_sha256=parent_content_sha256,
+                byte_start=byte_start,
+                byte_end=byte_end,
+            )
+        else:
+            evidence_occurrence = f"legacy:{source_id}"
+        eid = evidence_id_for(
+            source_system="sec_edgar",
+            submission_accession=accession_str,
+            occurrence=evidence_occurrence,
+            content_sha256=digest,
+        )
+        # first_known_at: copy from the first published row for this evidence_id
+        # so a later re-observation cannot move the published boundary backward.
+        candidate_first_known_at = retrieved_at
+        if existing_manifests:
+            candidate_first_known_at = published_first_known_at(
+                eid, existing_manifests, candidate_timestamp=retrieved_at
+            )
+        record["evidence_id"] = eid
+        record["evidence_key_format"] = 1
+        record["evidence_occurrence"] = evidence_occurrence
+        record["first_known_at"] = candidate_first_known_at
         record["manifest_id"] = manifest_id_for(record)
         return record
 
@@ -1663,6 +1731,7 @@ class SecCapitalStructureAdapter(Adapter):
         new_manifests: list[dict] = []
         new_attempts: list[dict] = []
         sanitized_fields: list[str] = []
+        re_observed = 0
         # ``to_dict("records")`` rather than ``iterrows()``: ``iterrows`` builds a
         # per-row Series, and building it normalizes a ``None`` in an object column
         # into ``float('nan')``.  That laundering is the 2026-08-06 nightly abort —
@@ -1678,6 +1747,8 @@ class SecCapitalStructureAdapter(Adapter):
             source_id = f"{accession}:0:complete-submission.txt"
             bundle_version = _next_bundle_document_version(manifests, accession)
             attempted_at = _iso(self._now_fn())
+            attempt_observed_eids: list[str] = []
+            retained_available_at: str | None = None
             try:
                 if source_store is None:
                     raise RuntimeError("content-addressed source store unavailable")
@@ -1690,6 +1761,36 @@ class SecCapitalStructureAdapter(Adapter):
                     filename="complete-submission.txt",
                     document_role="complete_submission",
                 )
+                # Fail closed: a production-eligible complete submission must have
+                # bound spans so child occurrences are deterministic. Deferred
+                # submissions (not eligible/clean) may proceed without spans.
+                is_eligible_complete = (
+                    complete_inspection.parser_eligibility == "eligible"
+                    and complete_inspection.corruption_state == "clean"
+                )
+                if is_eligible_complete and not bundle.documents and not _DOCUMENT_RE.search(raw):
+                    raise EvidenceIdentityError(
+                        f"{accession}: no DOCUMENT blocks found in eligible complete submission"
+                    )
+                if is_eligible_complete:
+                    # Verify spans; fail closed if they cannot be bound.
+                    try:
+                        candidate_spans = document_inner_spans(raw)
+                        blocks = _DOCUMENT_RE.findall(raw)
+                        if len(candidate_spans) != len(blocks):
+                            raise EvidenceIdentityError(
+                                f"{accession}: span count {len(candidate_spans)} != "
+                                f"document block count {len(blocks)}"
+                            )
+                        for i, ((s, e), block) in enumerate(zip(candidate_spans, blocks)):
+                            if raw[s:e] != block:
+                                raise EvidenceIdentityError(
+                                    f"{accession}: document[{i}] inner bytes do not "
+                                    "match document_inner_spans"
+                                )
+                    except EvidenceIdentityError:
+                        raise  # fail closed — re-raise to defer this filing
+
                 receipt = source_store.put_verified(
                     raw, media_type=complete_inspection.media_type
                 )
@@ -1726,6 +1827,10 @@ class SecCapitalStructureAdapter(Adapter):
                 # readback has succeeded. A request-start timestamp would make
                 # evidence appear system-visible before durable retention.
                 retained_at = _iso(self._now_fn())
+                # The combined published pool for first_known_at resolution includes
+                # all already-committed rows plus manifests built earlier this run.
+                combined_published = list(manifests) + new_manifests
+                complete_sha256 = hashlib.sha256(raw).hexdigest()
                 filing_manifests: list[dict] = []
                 complete_manifest = self._manifest_record(
                     discovery=row, bundle=bundle, source_id=source_id,
@@ -1735,14 +1840,76 @@ class SecCapitalStructureAdapter(Adapter):
                     inspection=complete_inspection,
                     first_seen_at=retained_at, document_version=bundle_version,
                     parent_manifest_id=None, sanitized=sanitized_fields,
+                    existing_manifests=combined_published,
                 )
                 _validate_source_manifest(complete_manifest)
+                attempt_observed_eids.append(complete_manifest["evidence_id"])
+
+                # Re-observation detection: same evidence_id + same content_sha256
+                # in an already-committed (or this-run) manifest. Check if any
+                # interpretation fields differ to decide revision vs re-observation.
+                complete_eid = complete_manifest["evidence_id"]
+                prior_complete = next(
+                    (m for m in combined_published
+                     if m.get("evidence_id") == complete_eid
+                     and m.get("document", {}).get("content_sha256") == complete_sha256),
+                    None,
+                )
+                if prior_complete is not None:
+                    # Check interpretation fields for revision detection.
+                    def _interpretation_key(m: dict) -> tuple:
+                        f = m.get("filing") or {}
+                        i = m.get("issuer") or {}
+                        p = m.get("parser") or {}
+                        return (
+                            str(f.get("form") or ""),
+                            str(f.get("file_number") or ""),
+                            json.dumps(f.get("file_number_provenance"), sort_keys=True),
+                            str(i.get("cik") or ""),
+                            str(p.get("eligibility") or ""),
+                            str(p.get("corruption_state") or ""),
+                        )
+                    if _interpretation_key(complete_manifest) == _interpretation_key(prior_complete):
+                        # Pure re-observation: same occurrence+bytes+interpretation.
+                        # Do not append another manifest revision; count re_observed.
+                        re_observed += 1
+                        retained_available_at = retained_at
+                        state, error = "stored", None
+                        content_hash = complete_sha256
+                        http_status = None
+                        storage_operation = None
+                        error_class = None
+                        attempt_store_id = getattr(source_store, "store_id", None)
+                        attempt_id = hashlib.sha256(
+                            f"{source_id}|{attempted_at}|{state}".encode("utf-8")
+                        ).hexdigest()
+                        new_attempts.append({
+                            "attempt_id": attempt_id, "accession": accession,
+                            "source_id": source_id, "canonical_url": url,
+                            "attempted_at": attempted_at, "state": state,
+                            "error": error, "content_sha256": content_hash,
+                            "retrieval_lane": selected_lane,
+                            "collection_scope": row.get("collection_scope"),
+                            "http_status": http_status,
+                            "storage_operation": storage_operation,
+                            "store_id": attempt_store_id,
+                            "error_class": error_class,
+                            "observed_evidence_ids": json.dumps(attempt_observed_eids),
+                            "retained_available_at": retained_available_at,
+                        })
+                        time.sleep(PACE_SECONDS)
+                        continue
+                    # Interpretation revision: advance document_version, copy first_known_at.
+                    # complete_manifest already has correct first_known_at (published_first_known_at).
+                    # Nothing else changes here; the new manifest_id already differs.
+
                 filing_manifests.append(complete_manifest)
                 parent_id = complete_manifest["manifest_id"]
                 for role, document, filename, inspection, doc_receipt in stored_children:
+                    doc_source_id = f"{accession}:{document.sequence or 'unknown'}:{filename}"
                     document_manifest = self._manifest_record(
                         discovery=row, bundle=bundle,
-                        source_id=f"{accession}:{document.sequence or 'unknown'}:{filename}",
+                        source_id=doc_source_id,
                         # These exact bytes are the SGML document segment retained
                         # from the complete submission. Point at that source plus a
                         # stable segment fragment rather than pretending we fetched
@@ -1755,12 +1922,18 @@ class SecCapitalStructureAdapter(Adapter):
                         inspection=inspection,
                         first_seen_at=retained_at, document_version=bundle_version,
                         parent_manifest_id=parent_id, sanitized=sanitized_fields,
+                        parent_content_sha256=complete_sha256,
+                        byte_start=document.byte_start,
+                        byte_end=document.byte_end,
+                        existing_manifests=combined_published,
                     )
                     _validate_source_manifest(document_manifest)
+                    attempt_observed_eids.append(document_manifest["evidence_id"])
                     filing_manifests.append(document_manifest)
                 # All selected evidence must verify before any manifest for the
                 # filing is committed. A partially stored bundle stays retryable.
                 new_manifests.extend(filing_manifests)
+                retained_available_at = _iso(self._now_fn())
                 if (
                     complete_inspection.parser_eligibility == "eligible"
                     and complete_inspection.corruption_state == "clean"
@@ -1773,7 +1946,7 @@ class SecCapitalStructureAdapter(Adapter):
                         f"eligibility={complete_inspection.parser_eligibility}; "
                         f"corruption_state={complete_inspection.corruption_state}"
                     )
-                content_hash = hashlib.sha256(raw).hexdigest()
+                content_hash = complete_sha256
                 http_status = None
                 storage_operation = None
                 error_class = None
@@ -1811,6 +1984,8 @@ class SecCapitalStructureAdapter(Adapter):
                 "storage_operation": storage_operation,
                 "store_id": attempt_store_id,
                 "error_class": error_class,
+                "observed_evidence_ids": json.dumps(attempt_observed_eids) if attempt_observed_eids else None,
+                "retained_available_at": retained_available_at,
             })
             time.sleep(PACE_SECONDS)
 
@@ -1870,6 +2045,7 @@ class SecCapitalStructureAdapter(Adapter):
             parser_deferred=parser_deferred,
             storage_deferred=storage_deferred,
             parked=len(parked_after_run),
+            re_observed=re_observed,
             watermark_before=watermark_before,
             watermark_after=source_high_watermark(manifests),
             no_new_work_proven=no_new_work_proven,

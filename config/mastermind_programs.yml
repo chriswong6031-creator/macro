@@ -2269,7 +2269,11 @@ programs:
         - market-regime-risk
     canonical_docs:
       - repo: macro
-        path: research/STOCK_FUNDAMENTALS_PLAN.md
+        path: research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
+      - repo: macro
+        path: docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md
+      - repo: macro
+        path: research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
     implementation:
       - repo: macro
         roots:
