@@ -127,6 +127,37 @@ green immediately before merging.** Merging an authority-changing PR while main 
 permanently unclearable stop gate — the merged head's checks are frozen, and descendant healing is
 disabled by design for authority-changing PRs.
 
+## §4b Operator authorization for the session that executes this
+
+Recorded verbatim in intent from the operator on 2026-08-19, after being shown the §1
+measurement:
+
+> *"create hand off for this … And authorize Fable in the hand off access to do anything,
+> including admin privilege, squash merging, with primary focus on fixing this once and for all
+> from the root as per your diagnosis. and allow them to also freely diagnose if any other bugs
+> exist."*
+
+Concretely, the executing session is authorized to:
+
+- **`gh pr merge --admin --squash`** its own waves, including while main is red, when the reds
+  are provably not the PR's. Standing house law reserves `--admin` for "genuine wedges"; the
+  operator has ruled that this program IS the wedge. Record the justification in the PR before
+  using it, naming the inherited reds by logical job.
+- **Merge without waiting for a full-green window**, which the 44% rate would otherwise make
+  a coin flip per attempt.
+- **Diagnose and fix anything else it finds**, in any lane, without opening a separate
+  authorization. If a fix belongs to another lane, prefer a comment naming the owner over a
+  silent patch — but do not let lane etiquette block the root fix.
+- **Disarm, re-arm, rebase, or close** any pull request that stands in the way, provided the
+  house rule holds: a disarm leaves a visible marker naming the session and the intent.
+
+What is NOT authorized, and does not become authorized by this note: rotating or reading
+secrets, force-cancelling protected production lanes (`daily.yml`, `render.yml`,
+`closing-bell.yml`, `asia-close.yml`, `engine-render.yml`, `weekly.yml`, `prophet-rescue.yml`,
+`nightly-liveness.yml` — the `gh_quota_guard.py` shape-6 set), re-stamping `data/**` receipts
+from a pull request (nightly is the sole ledger advancer), or widening a tamper-detection
+allowlist to turn a check green.
+
 ## §5 Already landed (2026-08-19)
 
 | PR | what | effect |
@@ -155,6 +186,21 @@ These are real removals of specific generators. They do not change `N`, so they 
   minutes throughout this backlog. Read its log line: `main proof: N clean name(s)` next to
   `baseline is pending` means main is fine and the breaker is stale; `classification=unknown`
   means the semantic replay could not check out the base (#5916).
+
+## §6b The four roots red on main as of 2026-08-19 07:00Z
+
+Tracked on issue #5935. Characterised, with the verdict for each:
+
+| root | cause | verdict |
+|---|---|---|
+| `signal-contract` | CEG paid a dividend, so a hardcoded "non-payer" control name stopped being one | **fixed — #5937**, green on that PR's head |
+| `market-memory-contract` | the fixture froze the ratio's numerator (`n_members` @ 2026-08-07 = 504) and left the denominator live (`constituents.parquet` = 503), so coverage reads 1.0020 and fails the `<= 1.0` bound. Live-vs-live is 502/503 = 0.998 and passes | **test defect, fixable.** `_FROZEN_FIXTURE_SESSION` is duplicated in `tests/test_market_memory_breadth_observation.py:46` and `tests/test_market_memory_breadth_store.py:35`; two 64-hex digests at `..._observation.py:277` and `:316` may be digests of the frozen body. Do NOT just advance the constant — that re-arms for the next reconstitution |
+| `house-law-registry` | the symbol-directory snapshot collector wrote nothing after 2026-08-10, so the guard checked today's universe against a 9-day-old listing and reported the new S&P constituent `VMRK` as unresolvable | **root already fixed by #5936** (merged 2026-08-19T07:10Z): the live Nasdaq listing `NA` (Nano Labs) parsed as `NaN`, so the completeness guard refused the whole day's snapshot. Clears on the next nightly that writes a snapshot; verify `data/symbol_directory/manifest.json` shows `last_snapshot_date` past 2026-08-10 and `n_symbols` non-zero |
+| `unrun-prophet-learning-loop` | `data/baskets/ohlcv/ASTS.parquet` ends 2026-08-17 while `data/yahoo/ASTS.parquet` reaches 08-18, so the ladder fell from rung 1 to rung 2 | data-plane. Both rungs are in `ADJUSTED_SOURCES` and the sibling invariant still holds, so **do not loosen the test** — it is correctly reporting a stale store |
+
+Two of the four are the **same real-world event**: the S&P 500 reconstitution around 2026-08-18
+(Reddit replacing AvalonBay; post-merger Vivmark). One index change, two guards firing in two
+lanes. That is the §4 thesis in miniature — the gate is coupled to the world, not to the diff.
 
 ## §7 Open, not addressed here
 

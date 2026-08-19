@@ -85,13 +85,31 @@ unresolved:
     partial clone, so reds classify `unknown` rather than base-inherited. Does not
     raise the green rate but makes diagnosis instant for every session that hits one.
   - >
-    #5935 — market-memory-contract and unrun-prophet-learning-loop are still red on
-    main, both in other lanes. The ASTS one should probably NOT be "fixed": it is
-    correctly reporting a stale baskets store.
+    #5935 — the four roots red on main at 07:00Z, fully characterised there.
+    signal-contract is FIXED by #5937 (green on its head, blocked by the others).
+    market-memory-contract is a TEST DEFECT and fixable: the fixture froze the
+    ratio's numerator (n_members @ 2026-08-07 = 504) and left the denominator live
+    (constituents.parquet = 503), so coverage reads 1.0020 and fails the <= 1.0
+    bound; live-vs-live is 502/503 = 0.998 and passes. house-law-registry / VMRK
+    was a DEAD COLLECTOR, already fixed by #5936 (merged 2026-08-19T07:10Z — the
+    live Nasdaq listing `NA`, Nano Labs, parsed as NaN, so the completeness guard
+    refused every day's snapshot after 2026-08-10); it clears on the next nightly
+    that writes a snapshot. unrun-prophet-learning-loop is a stale baskets store for
+    ASTS and should NOT be "fixed" — the test is correctly reporting it.
   - >
     unrun-intl-libraries aborts at interpreter shutdown after its check prints OK
     (exit 134, "terminate called without an active exception"), so a passing verdict
     reads as a contract failure.
+authorization: >
+  OPERATOR GRANT 2026-08-19 to the executing session, given after being shown the 44% / 130-of-194
+  measurement: full latitude to fix this from the root, including `gh pr merge --admin --squash`
+  on its own waves while main is red when the reds are provably inherited; merging without waiting
+  for a full-green window; and free diagnosis of any other bug it finds in any lane. NOT granted,
+  and not implied: rotating or reading secrets, force-cancelling the protected production lanes
+  (daily / render / closing-bell / asia-close / engine-render / weekly / prophet-rescue /
+  nightly-liveness), re-stamping data/** receipts from a pull request, or widening a
+  tamper-detection allowlist to turn a check green. Full text and conditions in
+  research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md section 4b.
 next_actions:
   - >
     W1 — add an explicit `gate: code | data` field to every job in
@@ -108,8 +126,19 @@ next_actions:
   - >
     W4 — a test asserting no `gate: data` job is reachable from `ci-gate`.
   - >
-    Land each wave in the SMALLEST possible PR and confirm main is actually green
-    immediately before merging, because every wave is authority-changing.
+    Land each wave in the SMALLEST possible PR. The operator grant above lifts the
+    "wait for a fully green main" constraint — use `--admin --squash` when the reds
+    are provably inherited, and record which logical jobs they are in the PR before
+    doing it.
+  - >
+    Verify the symbol-directory collector actually recovered: after the next nightly,
+    `data/symbol_directory/manifest.json` should show `last_snapshot_date` past
+    2026-08-10 and `n_symbols` non-zero (it read 0 while frozen), and a new file
+    should appear in `data/symbol_directory/snapshots/`. If it has not, #5936's fix
+    did not take and the VMRK red will not clear on its own.
+  - >
+    Then drain the four pull requests this session left armed and blocked — #5937,
+    #5938, #5922, #5737 — none of which has a red its own diff can reach.
 do_not_redo:
   - >
     Do not audit merge-on-green. It ran every ~2 minutes throughout the backlog and
