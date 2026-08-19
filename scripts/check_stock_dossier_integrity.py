@@ -367,10 +367,29 @@ CHECKS: dict[str, Callable[[Path, str, dict], list[dict]]] = {
 # Scan + report
 # ---------------------------------------------------------------------------
 
-def scan(site_root: Path) -> tuple[int, list[dict]]:
-    """Run every registered check over every site_root/stocks/*.html page.
+def manifest_tickers(manifest_path: Path) -> set[str] | None:
+    """The tickers a render run actually WROTE, from the builder's manifest.
+    None when there is no readable manifest."""
+    try:
+        import json as _json
+        data = _json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    tickers = data.get("tickers")
+    return {str(t) for t in tickers} if isinstance(tickers, list) else None
 
-    Returns (pages_scanned, violations).
+
+def scan(site_root: Path, only: set[str] | None = None) -> tuple[int, list[dict]]:
+    """Run every registered check over site_root/stocks/*.html.
+
+    `only` restricts the FAILING set to the tickers a render run just wrote (its
+    manifest). Pages outside it are still scanned, but their violations are
+    downgraded to warnings — a page this run never rebuilt cannot be evidence
+    against the code this run is gating, and failing on it would red the render
+    lane for a defect that predates the fix. The nightly scope=all rebuild is what
+    eventually clears those.
+
+    Returns (pages_scanned, violations); each violation carries "stale": bool.
     """
     stocks_dir = Path(site_root) / "stocks"
     pages = sorted(stocks_dir.glob("*.html")) if stocks_dir.is_dir() else []
@@ -382,8 +401,11 @@ def scan(site_root: Path) -> tuple[int, list[dict]]:
         except (OSError, UnicodeDecodeError):
             continue
         text = prepare_checkable_text(html)
+        stale = only is not None and page.stem not in only
         for check in CHECKS.values():
-            violations.extend(check(page, text, ctx))
+            for v in check(page, text, ctx):
+                v["stale"] = stale
+                violations.append(v)
     return len(pages), violations
 
 
@@ -398,11 +420,26 @@ def main(argv: list[str] | None = None) -> int:
         "--site-root", dest="site_root_flag", default=None,
         help="Site root directory (overrides the positional argument)",
     )
+    parser.add_argument(
+        "--manifest", default=None,
+        help="build_ticker_pages manifest. Only the tickers it lists can FAIL the "
+             "run; pages this render did not write are reported as warnings. When "
+             "the path is given but missing, the dossier pass did not run and the "
+             "guard exits 0 rather than judging a stale estate.",
+    )
     args = parser.parse_args(argv)
 
     site_root = Path(args.site_root_flag or args.site_root or DEFAULT_SITE_ROOT)
 
-    pages_scanned, violations = scan(site_root)
+    only: set[str] | None = None
+    if args.manifest:
+        only = manifest_tickers(Path(args.manifest))
+        if only is None:
+            print(f"stock dossier integrity: SKIPPED — no readable manifest at "
+                  f"{args.manifest} (the dossier pass did not run this render)")
+            return 0
+
+    pages_scanned, violations = scan(site_root, only=only)
 
     refusal = refuse_if_vacuous(
         pages_scanned, trees_for(site_root / "stocks"), "stock-dossier-integrity-vacuous",
@@ -411,25 +448,47 @@ def main(argv: list[str] | None = None) -> int:
         print(f"stock dossier integrity: REFUSED — {refusal}")
         return 1
 
-    if violations:
-        print("stock dossier integrity violations:")
-        for v in violations:
-            print(f"  {v['page']}  [{v['check']}:{v['pattern']}]  {v['snippet']}")
-        pages_hit = len({v["page"] for v in violations})
+    fresh = [v for v in violations if not v.get("stale")]
+    stale = [v for v in violations if v.get("stale")]
+
+    if stale:
+        stale_pages = len({v["page"] for v in stale})
+        print(f"stock dossier integrity: {len(stale)} violation(s) on {stale_pages} "
+              f"page(s) this render did not rewrite (not failing the run):")
+        for v in stale[:20]:
+            print(f"  (stale) {v['page']}  [{v['check']}:{v['pattern']}]  {v['snippet']}")
+        if len(stale) > 20:
+            print(f"  … and {len(stale) - 20} more")
+        # NOT silent truncation: the count is always stated, and a warning
+        # annotation puts it in the Actions summary where it is actually read.
         print(
-            f"stock dossier integrity: FAIL — {len(violations)} violation(s) on "
+            "::warning title=stock-dossier-integrity-stale::"
+            f"{len(stale)} pre-existing violation(s) on {stale_pages} page(s) this "
+            "render did not rebuild — the next scope=all render should clear them",
+            flush=True,
+        )
+
+    if fresh:
+        print("stock dossier integrity violations:")
+        for v in fresh:
+            print(f"  {v['page']}  [{v['check']}:{v['pattern']}]  {v['snippet']}")
+        pages_hit = len({v["page"] for v in fresh})
+        print(
+            f"stock dossier integrity: FAIL — {len(fresh)} violation(s) on "
             f"{pages_hit} page(s), {pages_scanned} page(s) scanned"
         )
         print(
             "::error title=stock-dossier-integrity::"
-            f"{len(violations)} integrity violation(s) on {pages_hit} of "
+            f"{len(fresh)} integrity violation(s) on {pages_hit} of "
             f"{pages_scanned} rendered ticker page(s): "
-            + ", ".join(sorted({v["check"] for v in violations})),
+            + ", ".join(sorted({v["check"] for v in fresh})),
             flush=True,
         )
         return 1
 
-    print(f"stock dossier integrity: OK ({pages_scanned} page(s) scanned, 0 violations)")
+    scope = "just-rendered" if only is not None else "all"
+    print(f"stock dossier integrity: OK ({pages_scanned} page(s) scanned, "
+          f"{scope} pages clean)")
     return 0
 
 

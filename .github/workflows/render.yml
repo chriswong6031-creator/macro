@@ -1163,7 +1163,9 @@ jobs:
         # accepted-article provenance. RWT shipped a Portland restaurant's blurb
         # under a mortgage REIT, and RMD shipped as "ResMed|", through a green lane.
         if: steps.render_pages.outputs.complete == 'true'
-        run: python3 scripts/check_stock_dossier_integrity.py site
+        run: |
+          python3 scripts/check_stock_dossier_integrity.py site \
+            --manifest "$RUNNER_TEMP/ticker-pages-manifest.json"
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
         # WITHOUT node, so this guard failed on every render there 07-18; the old

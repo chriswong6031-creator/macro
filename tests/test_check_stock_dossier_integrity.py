@@ -319,3 +319,79 @@ def test_identity_does_not_fail_a_page_that_asserts_nothing(tmp_path):
     page = tmp_path / "RWT.html"
     html = "<!doctype html><html><head><title>RWT — Redwood Trust Inc</title></head><body></body></html>"
     assert check_identity(page, html, ctx) == []
+
+
+# --- manifest scoping --------------------------------------------------------
+# A post-render gate must judge what THIS render wrote. The dossier build step
+# skips entirely on some scopes, and individual tickers can be skipped for want of
+# price history, so a whole-estate failure would red the render lane for defects
+# that predate the fix and that this run had no chance to clear.
+
+import json as _json  # noqa: E402
+
+from scripts.check_stock_dossier_integrity import (  # noqa: E402
+    main as guard_main,
+    manifest_tickers,
+    scan as guard_scan,
+)
+
+
+def _estate(tmp_path, pages: dict[str, str]):
+    stocks = tmp_path / "stocks"
+    stocks.mkdir(parents=True, exist_ok=True)
+    for name, html in pages.items():
+        (stocks / name).write_text(html, encoding="utf-8")
+    return tmp_path
+
+
+_DIRTY = '<html><body><small class="num">$nanM</small></body></html>'
+_CLEAN = '<html><body><small class="num">$12B</small></body></html>'
+
+
+def test_manifest_tickers_reads_the_builder_manifest(tmp_path):
+    m = tmp_path / "m.json"
+    m.write_text(_json.dumps({"tickers": ["AAPL", "MSFT"]}), encoding="utf-8")
+    assert manifest_tickers(m) == {"AAPL", "MSFT"}
+    assert manifest_tickers(tmp_path / "absent.json") is None
+    bad = tmp_path / "bad.json"
+    bad.write_text("not json", encoding="utf-8")
+    assert manifest_tickers(bad) is None
+
+
+def test_scan_marks_pages_outside_the_manifest_as_stale(tmp_path):
+    root = _estate(tmp_path, {"NEW.html": _DIRTY, "OLD.html": _DIRTY})
+    _, violations = guard_scan(root, only={"NEW"})
+    by_page = {v["page"]: v["stale"] for v in violations}
+    assert by_page["NEW.html"] is False
+    assert by_page["OLD.html"] is True
+
+
+def test_guard_fails_on_a_just_rendered_page_but_not_a_stale_one(tmp_path, capsys):
+    root = _estate(tmp_path, {"NEW.html": _CLEAN, "OLD.html": _DIRTY})
+    m = tmp_path / "m.json"
+    m.write_text(_json.dumps({"tickers": ["NEW"]}), encoding="utf-8")
+
+    # the stale defect warns but does not fail — this render never wrote that page
+    assert guard_main([str(root), "--manifest", str(m)]) == 0
+    out = capsys.readouterr().out
+    assert "stale" in out and "::warning title=stock-dossier-integrity-stale::" in out
+    assert "1 pre-existing violation(s)" in out      # counted, never silently dropped
+
+    # the same defect on a page this render DID write fails the run
+    (root / "stocks" / "NEW.html").write_text(_DIRTY, encoding="utf-8")
+    assert guard_main([str(root), "--manifest", str(m)]) == 1
+    assert "::error title=stock-dossier-integrity::" in capsys.readouterr().out
+
+
+def test_guard_skips_rather_than_judging_a_stale_estate(tmp_path, capsys):
+    """No manifest file => the dossier pass did not run this render. Failing here
+    would red the lane for a defect the run had no opportunity to fix."""
+    root = _estate(tmp_path, {"OLD.html": _DIRTY})
+    assert guard_main([str(root), "--manifest", str(tmp_path / "absent.json")]) == 0
+    assert "SKIPPED" in capsys.readouterr().out
+
+
+def test_guard_without_a_manifest_still_judges_the_whole_estate(tmp_path):
+    """The standalone/local contract is unchanged: everything must be clean."""
+    root = _estate(tmp_path, {"OLD.html": _DIRTY})
+    assert guard_main([str(root)]) == 1
