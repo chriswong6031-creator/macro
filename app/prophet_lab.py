@@ -89,11 +89,19 @@ def _response(payload: dict[str, Any], *, status_code: int = 200) -> JSONRespons
     return JSONResponse(content=payload, status_code=status_code, headers=_PRIVATE_HEADERS)
 
 
+# Review N4: case-insensitive OFF set; anything NOT recognized as "off" is
+# treated as the switch being ACTIVE (fail TOWARD disabled — an operator
+# typo or an unexpected value takes the Lab down rather than silently
+# leaving it up).
+_KILL_SWITCH_OFF_VALUES = frozenset({"", "0", "false", "no", "off"})
+
+
 def _kill_switch_active() -> bool:
     """``PROPHET_LAB_DISABLED`` — evaluated PER REQUEST, independent of Radar's
     own ``ENTRY_RADAR_LIVE_ENABLE``/``ENTRY_RADAR_LIVE_DISABLED`` (LAB-0 §5/§7).
     """
-    return os.environ.get(KILL_SWITCH_ENV, "").strip() not in ("", "0", "false", "False")
+    raw = os.environ.get(KILL_SWITCH_ENV, "").strip().casefold()
+    return raw not in _KILL_SWITCH_OFF_VALUES
 
 
 def _env_path(name: str, default: Path | None) -> Path | None:
@@ -101,6 +109,24 @@ def _env_path(name: str, default: Path | None) -> Path | None:
     if raw:
         return Path(raw)
     return default
+
+
+def _env_path_labeled(
+    primary_name: str, fallback_name: str | None, default: Path | None, default_label: str,
+) -> tuple[Path | None, str]:
+    """Same ladder as :func:`_env_path`, but also names WHICH source won.
+
+    Review S2 (cheap half): the health block should say which env var/path
+    resolved the Radar spool root, or "unconfigured" — not just a boolean.
+    """
+    raw = os.environ.get(primary_name, "").strip()
+    if raw:
+        return Path(raw), primary_name
+    if fallback_name:
+        raw = os.environ.get(fallback_name, "").strip()
+        if raw:
+            return Path(raw), fallback_name
+    return default, default_label
 
 
 def _resolve_roots() -> LabRoots:
@@ -135,11 +161,12 @@ def _resolve_roots() -> LabRoots:
       baseline is the fail-honest starting state (LAB-0 §4) — every row is
       ``retrospective_seed`` until an operator provisions this marker.
     """
+    radar_spool_dir, radar_spool_source_label = _env_path_labeled(
+        "PROPHET_LAB_RADAR_SPOOL_DIR", "ENTRY_RADAR_SPOOL_DIR", None, "unconfigured",
+    )
     return LabRoots(
-        radar_spool_dir=_env_path(
-            "PROPHET_LAB_RADAR_SPOOL_DIR",
-            _env_path("ENTRY_RADAR_SPOOL_DIR", None),
-        ),
+        radar_spool_dir=radar_spool_dir,
+        radar_spool_source_label=radar_spool_source_label,
         radar_state_dir=_env_path("PROPHET_LAB_RADAR_STATE_DIR", None),
         prophet_index_path=_env_path(
             "PROPHET_LAB_PROPHET_INDEX_PATH", _REPO_ROOT / "site" / "prophet" / "index.json",

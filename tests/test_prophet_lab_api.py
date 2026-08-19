@@ -162,11 +162,28 @@ def test_kill_switch_returns_503_and_skips_the_projection(app_client, monkeypatc
     _assert_private_headers(response)
 
 
-@pytest.mark.parametrize("off_value", ["0", "false", "False", ""])
+@pytest.mark.parametrize(
+    "off_value",
+    # review N4: the OFF set is case-insensitive, and "no"/"off" join the
+    # original "0"/"false"/"" set.
+    ["0", "false", "False", "FALSE", "", "no", "No", "NO", "off", "OFF", "Off"],
+)
 def test_kill_switch_off_values_serve_normally(app_client, monkeypatch, off_value) -> None:
     monkeypatch.setenv(KILL_SWITCH_ENV, off_value)
     response = app_client.get("/api/prophet/lab/v1")
     assert response.status_code == 200
+
+
+@pytest.mark.parametrize("on_value", ["1", "true", "TRUE", "yes", "banana"])
+def test_kill_switch_any_unrecognized_or_truthy_value_disables(
+    app_client, monkeypatch, on_value,
+) -> None:
+    # review N4: fail TOWARD disabled — an operator typo or an unexpected
+    # value takes the Lab down rather than silently leaving it up.
+    monkeypatch.setenv(KILL_SWITCH_ENV, on_value)
+    response = app_client.get("/api/prophet/lab/v1")
+    assert response.status_code == 503
+    assert response.json()["error"] == "prophet_lab_disabled"
 
 
 def test_kill_switch_is_independent_of_radar_live_switches(app_client, monkeypatch) -> None:
@@ -177,6 +194,33 @@ def test_kill_switch_is_independent_of_radar_live_switches(app_client, monkeypat
     monkeypatch.delenv(KILL_SWITCH_ENV, raising=False)
     response = app_client.get("/api/prophet/lab/v1")
     assert response.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# review S2 (cheap half) — the spool-source label the health block echoes
+# ---------------------------------------------------------------------------
+def test_resolve_roots_labels_the_primary_env_var(monkeypatch) -> None:
+    monkeypatch.setenv("PROPHET_LAB_RADAR_SPOOL_DIR", "/tmp/prophet-lab-spool")
+    monkeypatch.delenv("ENTRY_RADAR_SPOOL_DIR", raising=False)
+    roots = prophet_lab_api._resolve_roots()  # noqa: SLF001
+    assert roots.radar_spool_source_label == "PROPHET_LAB_RADAR_SPOOL_DIR"
+    assert str(roots.radar_spool_dir) == "/tmp/prophet-lab-spool"
+
+
+def test_resolve_roots_labels_the_fallback_env_var(monkeypatch) -> None:
+    monkeypatch.delenv("PROPHET_LAB_RADAR_SPOOL_DIR", raising=False)
+    monkeypatch.setenv("ENTRY_RADAR_SPOOL_DIR", "/tmp/entry-radar-spool")
+    roots = prophet_lab_api._resolve_roots()  # noqa: SLF001
+    assert roots.radar_spool_source_label == "ENTRY_RADAR_SPOOL_DIR"
+    assert str(roots.radar_spool_dir) == "/tmp/entry-radar-spool"
+
+
+def test_resolve_roots_labels_unconfigured_when_neither_env_var_is_set(monkeypatch) -> None:
+    monkeypatch.delenv("PROPHET_LAB_RADAR_SPOOL_DIR", raising=False)
+    monkeypatch.delenv("ENTRY_RADAR_SPOOL_DIR", raising=False)
+    roots = prophet_lab_api._resolve_roots()  # noqa: SLF001
+    assert roots.radar_spool_source_label == "unconfigured"
+    assert roots.radar_spool_dir is None
 
 
 # ---------------------------------------------------------------------------

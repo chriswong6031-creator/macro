@@ -31,12 +31,15 @@ Two kinds of row:
 Every row also carries a row-level ``observation_class``/``evidence_eligible``,
 computed as "ANY constituent expert is live_forward -> the row is
 live_forward" — a disclosed aggregation rule for the (underspecified)
-multi-expert case; each entry inside ``experts[]`` still carries its OWN
-per-event ``observation_class`` so no information is lost to the aggregate
-(see ``research/prophet_v4/P_LAB_API_NOTES.md``).
+multi-expert case. Review B3: each entry inside ``experts[]`` still carries
+its OWN per-event ``observation_class`` so no information is lost to the
+aggregate, and a card whose experts disagree sets ``observation_class_mixed``
+so a consumer can see the promoted flag is covering ineligible seed evidence
+too (see ``research/prophet_v4/P_LAB_API_NOTES.md``).
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
 from engine.prophet_lab import observation as obs
@@ -53,7 +56,41 @@ from engine.prophet_lab.contracts import (
     C2A_SUBTYPE,
     G0_DETECTOR_ID,
     OBSERVATION_LIVE_FORWARD,
+    OBSERVATION_RETROSPECTIVE_SEED,
 )
+
+# ---------------------------------------------------------------------------
+# N1: one normalized sort clock. Raw ISO-8601 string compares are fragile
+# (missing 'Z', an offset instead of 'Z', a bare date vs a full timestamp) —
+# every sort in this module goes through this one parser instead. An empty or
+# unparseable ``sort_ts`` sorts LAST (oldest / least informative) rather than
+# raising or silently mis-ordering; ``sort_basis`` on the row still discloses
+# which raw field the timestamp came from.
+# ---------------------------------------------------------------------------
+_UNKNOWN_SORT_FLOOR = datetime.min.replace(tzinfo=timezone.utc)
+
+
+def _parse_sort_ts(ts: str | None) -> tuple[int, datetime]:
+    if not ts:
+        return (0, _UNKNOWN_SORT_FLOOR)
+    normalized = ts[:-1] + "+00:00" if ts.endswith("Z") else ts
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return (0, _UNKNOWN_SORT_FLOOR)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return (1, parsed)
+
+
+def _sort_rows_newest_first(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows.sort(key=lambda row: (_parse_sort_ts(row["sort_ts"]), row["ticker"]), reverse=True)
+    return rows
+
+
+def _sort_experts_newest_first(experts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    experts.sort(key=lambda e: _parse_sort_ts(e["sort_ts"]), reverse=True)
+    return experts
 
 
 # ---------------------------------------------------------------------------
@@ -105,20 +142,58 @@ def _build_expert(
     }
 
 
-def _row_observation_class(experts: Sequence[Mapping[str, Any]]) -> str:
-    """Row aggregate: any live_forward expert promotes the whole card."""
-    if any(e.get("observation_class") == OBSERVATION_LIVE_FORWARD for e in experts):
-        return OBSERVATION_LIVE_FORWARD
-    return experts[0]["observation_class"] if experts else "retrospective_seed"
+def _row_observation_class_and_mixed(
+    experts: Sequence[Mapping[str, Any]],
+) -> tuple[str, bool]:
+    """Row aggregate (review B3): any live_forward expert promotes the card.
+
+    ``mixed`` is True when the card's experts do NOT all agree — the signal a
+    consumer needs to know the promoted ``live_forward``/``evidence_eligible``
+    flags are covering at least one expert that is individually a seed.
+    """
+    classes = {str(e.get("observation_class")) for e in experts}
+    mixed = len(classes) > 1
+    if OBSERVATION_LIVE_FORWARD in classes:
+        return OBSERVATION_LIVE_FORWARD, mixed
+    if experts:
+        return str(experts[0]["observation_class"]), mixed
+    return OBSERVATION_RETROSPECTIVE_SEED, mixed
 
 
-def _earliest_live_forward_observed_at(experts: Sequence[Mapping[str, Any]]) -> str | None:
+def _live_forward_lead_anchor(
+    experts: Sequence[Mapping[str, Any]],
+) -> tuple[str | None, str | None]:
+    """``(first_observed_at, event_id)`` of the EARLIEST live_forward expert.
+
+    Review B3: this is the event a multi-expert card's measured lead is
+    ATTRIBUTED to (``measured_from_event_id``) — never left implicit when a
+    card mixes a seed and a live observation.
+    """
     candidates = [
-        e["first_observed_at"]
+        (e["first_observed_at"], e.get("event_id"))
         for e in experts
         if e.get("observation_class") == OBSERVATION_LIVE_FORWARD and e.get("first_observed_at")
     ]
-    return min(candidates) if candidates else None
+    if not candidates:
+        return None, None
+    candidates.sort(key=lambda pair: pair[0])
+    return candidates[0]
+
+
+def _current_and_prior_plans(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[Mapping[str, Any] | None, Mapping[str, Any] | None]:
+    """Review B1: split a ticker's plan rows into (current, most-recent-closed).
+
+    ``rows`` is already sorted most-recent-first (``sources.index_plans_by_ticker``).
+    "Current" is the newest NON-CLOSED plan — a closed plan is never reported
+    as membership, however recently it closed. "Prior" is the newest CLOSED
+    plan, surfaced separately and clearly labeled, never blended with a
+    measured lead.
+    """
+    current = next((r for r in rows if not r.get("closed")), None)
+    prior = next((r for r in rows if r.get("closed")), None)
+    return current, prior
 
 
 def _prophet_comparison(
@@ -126,12 +201,30 @@ def _prophet_comparison(
     *,
     plans_by_ticker: Mapping[str, Sequence[Mapping[str, Any]]],
     lab_first_observed_at: str | None,
+    lead_anchor_event_id: str | None,
     row_observation_class: str,
 ) -> dict[str, Any]:
-    """The Prophet-side comparison block — ticker-level, most-recent plan wins."""
+    """The Prophet-side comparison block — ticker-level, CURRENT plan only.
+
+    Review B1: membership/lifecycle/stance derive ONLY from a non-closed
+    plan. A ticker whose only plans are closed reports ``membership: False``
+    and carries the most recent closed plan under ``prior_plan`` instead —
+    clearly labeled, and NEVER carrying a measured lead (a closed plan is
+    history, not something the Lab can claim to have "led").
+    """
     rows = plans_by_ticker.get(ticker) or ()
-    plan = rows[0] if rows else None
-    if plan is None:
+    current, prior = _current_and_prior_plans(rows)
+    prior_plan = None
+    if prior is not None:
+        prior_plan = {
+            "closed": True,
+            "lifecycle": prior.get("phase"),
+            "stance": prior.get("direction"),
+            "first_recorded_at": prior.get("recorded_at"),
+            "signal_anchor": prior.get("signal_date"),
+            "entry_date": prior.get("entry_date"),
+        }
+    if current is None:
         return {
             "membership": False,
             "lifecycle": None,
@@ -140,9 +233,11 @@ def _prophet_comparison(
             "signal_anchor": None,
             "entry_date": None,
             "measured_lab_to_prophet_lead_days": None,
+            "measured_from_event_id": None,
+            "prior_plan": prior_plan,
         }
-    signal_anchor = plan.get("signal_date")
-    entry_date = plan.get("entry_date")
+    signal_anchor = current.get("signal_date")
+    entry_date = current.get("entry_date")
     anchor_for_lead = entry_date or signal_anchor
     lead = obs.measured_lead_days(
         row_observation_class,
@@ -151,17 +246,19 @@ def _prophet_comparison(
     )
     return {
         "membership": True,
-        "lifecycle": plan.get("phase"),
-        "stance": plan.get("direction"),
+        "lifecycle": current.get("phase"),
+        "stance": current.get("direction"),
         # LAB-0 §5 asks for "first recorded/published" as one fact; the
         # current `prophet.index/v1` plan row carries a single origination
         # timestamp (`recorded_at`) and no separate publish-history field, so
         # both concepts resolve to that one value here (disclosed choice —
         # see research/prophet_v4/P_LAB_API_NOTES.md).
-        "first_recorded_at": plan.get("recorded_at"),
+        "first_recorded_at": current.get("recorded_at"),
         "signal_anchor": signal_anchor,
         "entry_date": entry_date,
         "measured_lab_to_prophet_lead_days": lead,
+        "measured_from_event_id": lead_anchor_event_id if lead is not None else None,
+        "prior_plan": prior_plan,
     }
 
 
@@ -171,17 +268,30 @@ def _enrich(ticker: str, *, library: Any, plans_by_ticker: Mapping[str, Sequence
 
     Tries the injected ``LibraryIndex`` first (the same source
     ``scripts/build_prophet.py`` uses); when it is unavailable AND the ticker
-    already carries a published ``board_read`` block on its Prophet plan row
-    (index.json), falls back to that.  When neither is reachable the fields
-    ship ``None`` with the health note this module's caller attaches — never
-    a fabricated name/sector, per LAB-0 §1.
+    already carries a published ``board_read`` block on a NON-CLOSED Prophet
+    plan row (review N5: every such row is consulted, not just the first one
+    encountered), falls back to that for name/sector only. When neither is
+    reachable the fields ship ``None`` with the health note this module's
+    caller attaches — never a fabricated name/sector, per LAB-0 §1.
+
+    Review S6: the returned ``spark`` is either a fully resolved SVG body or
+    ``None`` — never a bare reference (``board_read_sparks.json#TICKER``)
+    into an artifact this API does not itself serve, which would dangle for
+    any caller that only has this response. The primary (``LibraryIndex``)
+    path resolves the real body via the ``sparks`` accumulator
+    ``build_board_read`` already populates as a side effect; the published
+    ``board_read`` fallback path only ever holds the SAME kind of reference
+    (from a prior build), which this function cannot itself resolve without
+    reading a second site artifact — so that path ships ``spark: None``
+    rather than propagate a reference it cannot back.
     """
     from engine.prophet_board_read import build_board_read  # noqa: PLC0415
 
     # NOTE: build_board_read keys the plan by "asset" (the ticker field name
     # on a Prophet plan row), not "ticker" — see engine/prophet_board_read.py.
     plan_stub = {"asset": ticker, "closed": False}
-    block = build_board_read(plan_stub, library=library, sparks=sparks)
+    spark_accumulator: dict[str, str] = {}
+    block = build_board_read(plan_stub, library=library, sparks=spark_accumulator)
     fields = block.get("fields") or {}
     name_field = fields.get("name") or {}
     sector_field = fields.get("sector") or {}
@@ -189,28 +299,30 @@ def _enrich(ticker: str, *, library: Any, plans_by_ticker: Mapping[str, Sequence
 
     name = name_field.get("value") if name_field.get("state") == "available" else None
     sector = sector_field.get("value") if sector_field.get("state") == "available" else None
-    spark = spark_field.get("value") if spark_field.get("state") == "available" else None
+    # Resolved body, not the "board_read_sparks.json#TICKER" reference the
+    # field itself carries — see the docstring's S6 note.
+    spark = spark_accumulator.get(ticker) if spark_field.get("state") == "available" else None
+    if sparks is not None and spark is not None:
+        sparks[ticker] = spark
 
-    if name is None and sector is None and spark is None:
-        # Library unreachable/miss — fall back to the ticker's own published
-        # Prophet plan row, which already carries a board_read block once
-        # build_prophet.py has run (same source, published copy).
-        rows = plans_by_ticker.get(ticker) or ()
+    if name is None and sector is None:
+        # Library unreachable/miss — fall back to EVERY non-closed Prophet
+        # plan row for this ticker (review N5: not just the first one), and
+        # take the first AVAILABLE value found for each field independently.
+        rows = [r for r in (plans_by_ticker.get(ticker) or ()) if not r.get("closed")]
         for row in rows:
             published = row.get("board_read")
             if not isinstance(published, Mapping):
                 continue
             published_fields = published.get("fields") or {}
-            pname = (published_fields.get("name") or {})
-            psector = (published_fields.get("sector") or {})
-            pspark = (published_fields.get("spark") or {})
+            pname = published_fields.get("name") or {}
+            psector = published_fields.get("sector") or {}
             if name is None and pname.get("state") == "available":
                 name = pname.get("value")
             if sector is None and psector.get("state") == "available":
                 sector = psector.get("value")
-            if spark is None and pspark.get("state") == "available":
-                spark = pspark.get("value")
-            break
+            if name is not None and sector is not None:
+                break
 
     return {"name": name, "sector": sector, "spark": spark}
 
@@ -263,6 +375,7 @@ def _build_single_family_rows(
             continue
         expert = _build_expert(event, first_observed_at=first_observed_at, baseline=baseline)
         row_class = expert["observation_class"]
+        lead_anchor_event_id = expert["event_id"] if row_class == OBSERVATION_LIVE_FORWARD else None
         enrichment = _enrich(
             ticker, library=library, plans_by_ticker=plans_by_ticker, sparks=sparks,
         )
@@ -270,6 +383,7 @@ def _build_single_family_rows(
             ticker,
             plans_by_ticker=plans_by_ticker,
             lab_first_observed_at=expert["first_observed_at"],
+            lead_anchor_event_id=lead_anchor_event_id,
             row_observation_class=row_class,
         )
         rows.append({
@@ -284,12 +398,12 @@ def _build_single_family_rows(
             "sort_ts": expert["sort_ts"],
             "sort_basis": expert["sort_basis"],
             "observation_class": row_class,
-            "evidence_eligible": expert["evidence_eligible"],
+            "observation_class_mixed": False,  # single-expert row: never mixed
+            "evidence_eligible": row_class == OBSERVATION_LIVE_FORWARD,
             "experts": [expert],
             "prophet_comparison": comparison,
         })
-    rows.sort(key=lambda row: (row["sort_ts"], row["ticker"]), reverse=True)
-    return rows
+    return _sort_rows_newest_first(rows)
 
 
 def build_g0_board(events: Sequence[Mapping[str, Any]], **kw: Any) -> list[dict[str, Any]]:
@@ -336,14 +450,15 @@ def _ticker_card(
         _build_expert(e, first_observed_at=first_observed_at, baseline=baseline)
         for e in matching_events
     ]
-    experts.sort(key=lambda e: e["sort_ts"], reverse=True)
-    row_class = _row_observation_class(experts)
-    lead_anchor_observed_at = _earliest_live_forward_observed_at(experts)
+    _sort_experts_newest_first(experts)
+    row_class, mixed = _row_observation_class_and_mixed(experts)
+    lead_anchor_observed_at, lead_anchor_event_id = _live_forward_lead_anchor(experts)
     enrichment = _enrich(ticker, library=library, plans_by_ticker=plans_by_ticker, sparks=sparks)
     comparison = _prophet_comparison(
         ticker,
         plans_by_ticker=plans_by_ticker,
         lab_first_observed_at=lead_anchor_observed_at,
+        lead_anchor_event_id=lead_anchor_event_id,
         row_observation_class=row_class,
     )
     return {
@@ -360,7 +475,13 @@ def _ticker_card(
         "sort_ts": experts[0]["sort_ts"] if experts else "",
         "sort_basis": experts[0]["sort_basis"] if experts else "signal_ts",
         "observation_class": row_class,
-        "evidence_eligible": any(e["evidence_eligible"] for e in experts),
+        "observation_class_mixed": mixed,
+        # Review B3: derived from the SAME promoted row_class, not an
+        # independent any(...) over the experts — identical arithmetic
+        # result, but a single source of truth, and `observation_class_mixed`
+        # is what tells a consumer this promoted flag may be covering
+        # individually-ineligible (seed) experts.
+        "evidence_eligible": row_class == OBSERVATION_LIVE_FORWARD,
         "experts": experts,
         "prophet_comparison": comparison,
     }
@@ -389,8 +510,7 @@ def build_intersection_board(
         _ticker_card(ticker, matching, board_id=BOARD_G0_C2A_INTERSECTION, **kw)
         for ticker, matching in by_ticker.items()
     ]
-    rows.sort(key=lambda row: (row["sort_ts"], row["ticker"]), reverse=True)
-    return rows
+    return _sort_rows_newest_first(rows)
 
 
 def build_all_early_board(
@@ -402,6 +522,17 @@ def build_all_early_board(
     expert identities are never flattened).  C3/C5 events are never read into
     the matching set at all, so they cannot appear here regardless of what
     else is in the pool.
+
+    Review S5: when the episode ledger itself is unavailable, ``episodes`` is
+    simply ``[]`` and the C1 contribution here is empty — same shape as
+    "genuinely no nonterminal C1 episodes today". Disclosing WHICH of those
+    two happened is deliberately NOT this function's job: it stays a pure
+    projection over whatever it is handed, and the caller (``response.py``)
+    surfaces the distinction alongside this board's rows via
+    ``board_availability["lab-all-early-v1"]["components"]["c1"]``, so a
+    ticker whose only qualifying signal was a nonterminal C1 episode does not
+    silently vanish from the union with no explanation anywhere in the
+    response.
     """
     nonterminal_tickers = _nonterminal_c1_tickers(episodes)
     g0_events = _events_for_detector(events, detector_id=G0_DETECTOR_ID)
@@ -421,8 +552,7 @@ def build_all_early_board(
         _ticker_card(ticker, matching, board_id=BOARD_ALL_EARLY, **kw)
         for ticker, matching in by_ticker.items()
     ]
-    rows.sort(key=lambda row: (row["sort_ts"], row["ticker"]), reverse=True)
-    return rows
+    return _sort_rows_newest_first(rows)
 
 
 __all__ = [

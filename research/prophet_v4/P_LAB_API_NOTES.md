@@ -1,8 +1,9 @@
 # P-LAB-API — Prophet Operator Lab API build notes
 
 **Wave:** V4-B5A / P-LAB-API, per `research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md`
-(LAB-0) §5-§6. **Status at this PR:** fixture-based implementation, tests green
-locally. Not yet wired to a live Radar spool/state dir or a live Prophet
+(LAB-0) §5-§6. **Status:** fixture-based implementation, tests green locally,
+**round 1 of independent review addressed** (see §Review round 1 dispositions
+below). Not yet wired to a live Radar spool/state dir or a live Prophet
 index/stockdata tree on any host — see "Production wiring" below.
 
 ## What shipped
@@ -12,40 +13,42 @@ index/stockdata tree on any host — see "Production wiring" below.
     observation-class vocabulary, the all-false authority block, restated
     from LAB-0 §3-§5 as importable constants.
   * `sources.py` — injectable-root readers: Radar event-spool envelopes
-    (`entry_radar.events/v1`), the live episode ledger (via
-    `engine.entry_radar.live_ledger.LiveEpisodeLedger`), the Prophet
+    (`entry_radar.events/v1`, now returning a `SpoolReadResult` with
+    read-outcome counts, not just a list), the live episode ledger (via
+    `engine.entry_radar.live_ledger.LiveEpisodeLedger`, now returning an
+    `EpisodeReadResult` with an `available`/`reason` pair), the Prophet
     `index.json`, the existing board-read enrichment library
-    (`engine.prophet_board_read.LibraryIndex`), and the observation-baseline
-    marker. Every reader degrades to empty/`None` rather than raising.
+    (`engine.prophet_board_read.LibraryIndex`), the observation-baseline
+    marker (now schema-validated), and `baseline_coverage_verified()` (fail
+    CLOSED coverage check). Every reader degrades to empty/`None` rather than
+    raising.
   * `observation.py` — LAB-0 §4 classification (`retrospective_seed` vs
-    `live_forward`) and the measured-lead calculation, both pure functions.
+    `live_forward`) and the measured-lead calculation (now refusing a
+    non-positive lead), both pure functions.
   * `boards.py` — the six board builders, each a filter/join/decorate over
-    already-read data.
+    already-read data. Now: a deterministic parsed-datetime sort key, CURRENT
+    (non-closed)-only Prophet membership with a `prior_plan` fallback,
+    multi-expert mixed-class attribution, and spark resolution that never
+    ships a dangling reference.
   * `response.py` — `LabRoots` + `build_lab_response()`, the single
-    orchestration entry point.
+    orchestration entry point. Now assembles the `generation` block,
+    `board_definitions`, and `board_availability`.
 * `app/prophet_lab.py` — `GET /api/prophet/lab/v1`, registered in
   `app/main.py` immediately after the BioCatalyst block (same paid-router
   wiring-fails-loudly convention). Auth is the exact
   `app/biocatalyst.py::require_site_full_user` shape: `require_user` then
   `enforce_site_full(..., always=True)`. Kill switch `PROPHET_LAB_DISABLED`
-  is read per request (not at import time) and returns a clean 503 with a
-  machine-readable `error` field, independent of Radar's own
-  `ENTRY_RADAR_LIVE_ENABLE`/`ENTRY_RADAR_LIVE_DISABLED`.
-* `tests/test_prophet_lab.py` (32 tests) — pure projection contract tests
-  against `tests/fixtures/prophet_lab/**`: all six boards, observation-class
-  honesty (including the null-baseline fail-honest case), null
-  `signal_known_ts` preservation, expert-identity preservation, the
-  intersection board minting nothing, the union board excluding C3/C5,
-  enrichment precedence (library -> published board_read -> null).
-* `tests/test_prophet_lab_api.py` (14 tests) — transport-layer contract
-  tests: anonymous->401, free-tier->403, paid->200, the kill switch (on/off
-  values, independence from Radar's switches), a projection failure
-  degrading to 503 (never 500), and `app.main` route registration with the
-  paid dependency declared.
+  is read per request (not at import time), case-insensitively, fail-toward-
+  disabled, and returns a clean 503 with a machine-readable `error` field,
+  independent of Radar's own `ENTRY_RADAR_LIVE_ENABLE`/`ENTRY_RADAR_LIVE_DISABLED`.
+* `tests/test_prophet_lab.py` (70 tests) — pure projection contract tests
+  against `tests/fixtures/prophet_lab/**`.
+* `tests/test_prophet_lab_api.py` (29 tests) — transport-layer contract
+  tests.
 * `agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md` — added this PR's five
   new paths to `owns_paths` (ruling 8), no other edit.
 
-## Board -> detector mapping (as implemented)
+## Board -> detector mapping (as implemented, unchanged by review round 1)
 
 | Board id | Filter |
 |---|---|
@@ -55,6 +58,37 @@ index/stockdata tree on any host — see "Production wiring" below.
 | `lab-c2-variants-v1` | `detector_id == C2_1D_TURN@1` AND `subtype` in the six-variant set — each variant is its own row, never merged |
 | `lab-g0-c2a-v1` | tickers present in BOTH `lab-g0-v1` and `lab-c2a-v1`'s underlying event sets; `detector_id=null` at the row level; `experts[]` carries both real identities |
 | `lab-all-early-v1` | union of `lab-g0-v1` ∪ `lab-c1-v1`(nonterminal) ∪ `lab-c2-variants-v1`, grouped by ticker; C3/C5 are never read into the matching pool at all |
+
+## Response shape additions (review round 1)
+
+* **`generation`** (top level): `generated_at` (server clock), `latest_pass_ts`
+  (max envelope `pass_ts` read), `pack_as_of`/`pack_hash` (from the newest
+  envelope's `pack` block), `baseline_started_at` (the CONFIGURED value, even
+  when coverage is unverified), `baseline_coverage_verified` (bool — see S1
+  below). This is what a UI's LAB-stale/unavailable states key on.
+* **`board_definitions`** (top level): the frozen LAB-0 §3 prose per board id
+  — kept in the payload rather than dropped (review N3; my call, documented
+  in the disposition table).
+* **`board_availability`** (top level): per-board `{"available": bool,
+  "reason": str|None}`, plus `lab-all-early-v1.components.{g0,c1,c2_variants}`
+  — lets a consumer distinguish "the episode ledger is unconfigured/unreadable"
+  from "genuinely nothing nonterminal today" (review S5). The board's own
+  `rows` list stays a plain list either way — this is a SIBLING structure, not
+  a restructuring of `boards[board_id]`, to keep the blast radius on existing
+  consumers minimal.
+* **`prophet_comparison.prior_plan`**: populated only when a ticker's ONLY
+  Prophet plan(s) are closed — the most recent closed plan, clearly labeled
+  `"closed": true`, and carrying no lead-related key at all (review B1).
+* **`prophet_comparison.measured_from_event_id`**: the `event_id` of the
+  live_forward expert a card's measured lead is attributed to; `None`
+  whenever no lead is reported (review B3).
+* **row-level `observation_class_mixed`**: `true` when a multi-expert card's
+  constituent experts do not all agree on observation class (review B3).
+* **`health`**: `radar_spool_configured`, `radar_spool_source` (which env
+  var/path resolved the spool root, or `"unconfigured"` — review S2 cheap
+  half), `radar_envelopes_skipped` (torn/off-schema counts — review S4/S7),
+  `radar_episode_ledger_available` (renamed from `..._readable` to match the
+  new `EpisodeReadResult` semantics), `observation_baseline_coverage_verified`.
 
 ## Row shape (disclosed design choices, not frozen-spec changes)
 
@@ -75,8 +109,11 @@ here and documented rather than silently decided:
    live_forward G0 event on the same ticker). Resolved as: **any live_forward
    expert promotes the whole row** to `live_forward`; every entry inside
    `experts[]` still carries its OWN true per-event `observation_class`, so no
-   information is lost to the aggregate. `evidence_eligible` follows the same
-   rule at the row level.
+   information is lost to the aggregate, and `observation_class_mixed` names
+   the card as covering ineligible seed evidence too (review B3).
+   `evidence_eligible` at the row level is now DERIVED directly from the
+   promoted `observation_class` (a single source of truth) rather than an
+   independent `any(...)` scan.
 3. **"First recorded/published"** (LAB-0 §5) resolves to the Prophet plan
    row's single `recorded_at` field — the current `prophet.index/v1` schema
    has no separate publish-history timestamp to split the two concepts
@@ -86,8 +123,8 @@ here and documented rather than silently decided:
 ## Observation baseline
 
 No production baseline marker exists yet — this PR ships the CONSUMER side
-(`sources.read_observation_baseline`, `observation.classify_observation`) and
-documents the expected shape:
+(`sources.read_observation_baseline`, `observation.classify_observation`,
+`sources.baseline_coverage_verified`) and documents the expected shape:
 
 ```json
 {
@@ -99,20 +136,29 @@ documents the expected shape:
 
 Until an operator provisions `$PROPHET_LAB_OBSERVATION_BASELINE_PATH`, every
 row on every board is `retrospective_seed` — this is the frozen fail-honest
-default (LAB-0 §4), not a bug. Minting the baseline marker at Radar-live
-commissioning time is LAB-0 §6 step 3 ("Radar live commissioning"), out of
-scope for this PR.
+default (LAB-0 §4), not a bug. Review S1 hardens this further: even WITH a
+baseline configured, if the spool's earliest surviving envelope postdates
+`baseline_started_at` (a coverage gap — retention, compaction, or a
+misconfigured root), `baseline_coverage_verified` is `false` and EVERY row
+still degrades to `retrospective_seed`, because an unverifiable "continuous
+since X" claim is not a verified one. Minting the baseline marker at
+Radar-live commissioning time is LAB-0 §6 step 3 ("Radar live
+commissioning"), out of scope for this PR.
 
 ## Production wiring (env vars, all optional, all fail-open)
 
 | Env var | Falls back to |
 |---|---|
-| `PROPHET_LAB_DISABLED` | unset = enabled |
+| `PROPHET_LAB_DISABLED` | unset = enabled (case-insensitive OFF set: `""`/`"0"`/`"false"`/`"no"`/`"off"`; anything else disables — fail toward disabled) |
 | `PROPHET_LAB_RADAR_SPOOL_DIR` | `$ENTRY_RADAR_SPOOL_DIR` (Radar's own local-spool fallback var), else unset |
 | `PROPHET_LAB_RADAR_STATE_DIR` | unset (no repo-relative default — the live runtime state dir is operator-provisioned) |
 | `PROPHET_LAB_PROPHET_INDEX_PATH` | `<repo>/site/prophet/index.json` |
 | `PROPHET_LAB_ENRICHMENT_ROOT` | `<repo>/site/stockdata` |
 | `PROPHET_LAB_OBSERVATION_BASELINE_PATH` | unset |
+
+`health.radar_spool_source` echoes which of the two spool env vars resolved
+(or `"unconfigured"`), so an operator can tell the difference between "the
+Lab has its own spool root" and "it is quietly riding Radar's".
 
 **STOP-CONDITION note, resolved rather than escalated:** the enrichment
 source (`engine.prophet_board_read.LibraryIndex` over `site/stockdata/`) is
@@ -124,23 +170,72 @@ UNVERIFIED (this worktree cannot reach the VPS layout). The design therefore
 degrades gracefully either way: `LibraryIndex(None)` (or a root that does not
 exist) reports `available=False`, every enrichment field resolves to a
 disclosed `BLOCKED_DATA` state inside `engine.prophet_board_read`, and
-`boards._enrich()` reports `name`/`sector`/`spark` as `None` — exactly the
-"spark=null + health note" fallback the MISSION specifies, via the
-`health.enrichment_library_available` flag on every response, with a
-same-source fallback to the ticker's own published `board_read` block on its
-Prophet plan row (also already-published data) before giving up to `None`.
-No new data plane is created either way.
+`boards._enrich()` reports `name`/`sector` as `None` — exactly the "health
+note" fallback the MISSION specifies — with a same-source fallback to the
+ticker's OWN non-closed Prophet plan rows' published `board_read` block
+before giving up to `None`. Review S6 hardens `spark` specifically: it is
+now EITHER a fully resolved SVG body (never a
+`board_read_sparks.json#TICKER` reference this API does not itself serve) OR
+`None` — the published-`board_read` fallback path in particular cannot
+resolve a real body without reading a second site artifact this API does not
+read, so it ships `spark: None` there rather than propagate an unresolvable
+reference. No new data plane is created either way.
+
+## Review round 1 dispositions
+
+Independent review returned BLOCKED with 15 named findings (architecture,
+auth boundary, and board/detector definitions were judged clean). Every
+finding is fixed in this PR; none were deferred except the three explicitly
+marked DEFERRED below (which the review itself scoped out of this PR).
+
+| Finding | Disposition | Where |
+|---|---|---|
+| B1 — `prophet_comparison` must reflect current membership only | Fixed: membership/lifecycle/stance now derive from the newest NON-closed plan only; a closed-only ticker reports `membership:false` + a `prior_plan` sub-object with no lead field at all | `boards._current_and_prior_plans`, `boards._prophet_comparison` |
+| N5 (bundled with B1) — enrichment fallback must not stop at the first plan row | Fixed: the fallback now iterates every non-closed plan row and keeps the first AVAILABLE value per field, rather than breaking on the first row that merely HAS a `board_read` mapping | `boards._enrich` |
+| B1 — never emit a negative lead against historical plans | Fixed: `measured_lead_days` now returns `None` unless the Prophet anchor strictly POSTDATES the Lab's first observation (positive-only); `prior_plan` never carries a lead key | `observation.measured_lead_days` |
+| B2 — add the frozen §5 `generation` block | Fixed: `generated_at`, `latest_pass_ts`, `pack_as_of`, `pack_hash`, `baseline_started_at`, `baseline_coverage_verified` | `response.build_lab_response` |
+| B3 — multi-expert card attribution (`measured_from_event_id`, `observation_class_mixed`) | Fixed: both fields added; row `evidence_eligible` now derives from the promoted `observation_class` directly | `boards._row_observation_class_and_mixed`, `boards._live_forward_lead_anchor`, `boards._prophet_comparison` |
+| S1 — baseline coverage must fail CLOSED | Fixed: `sources.baseline_coverage_verified()` requires the earliest surviving envelope to be AT OR BEFORE `baseline_started_at`; when unverified the baseline is treated as absent for every board (both directions tested) | `sources.baseline_coverage_verified`, `response.build_lab_response` |
+| S4/S7 — health from read outcomes, not `is_dir()` | Fixed: `read_radar_envelopes` now returns a `SpoolReadResult` with `files_seen`/`envelopes_skipped`; health reports both, surfacing schema drift as a visible skip count | `sources.SpoolReadResult`, `response.build_lab_response` |
+| S5 — per-board availability (episode ledger unavailable vs. genuinely empty) | Fixed: `read_live_episodes` returns an `EpisodeReadResult(available, reason)`; `board_availability` in the response names `lab-c1-v1` and `lab-all-early-v1`'s `components.c1` | `sources.EpisodeReadResult`, `response.build_lab_response` |
+| S6 — never emit a dangling spark reference | Fixed: the primary (LibraryIndex) enrichment path now returns the resolved SVG body (via the same `sparks` accumulator `build_board_read` already populates) instead of the `board_read_sparks.json#TICKER` reference; the published-fallback path ships `spark:null` rather than propagate an unresolvable reference | `boards._enrich` |
+| S2 (cheap part) — `spool_source` in health | Fixed: `LabRoots.radar_spool_source_label`, populated by `app.prophet_lab._env_path_labeled`, echoed as `health.radar_spool_source` | `app/prophet_lab.py`, `response.build_lab_response` |
+| N1 — deterministic single-clock sort | Fixed: every sort now goes through `boards._parse_sort_ts` (a parsed, tz-normalized `datetime`, with an explicit "unknown sorts last" floor) instead of raw string comparison; `sort_basis` still discloses the source field | `boards._parse_sort_ts`, `_sort_rows_newest_first`, `_sort_experts_newest_first` |
+| N2 — validate the baseline marker's schema field | Fixed: `read_observation_baseline` now rejects a missing or mismatched `schema` field with a warning, before checking `baseline_started_at` | `sources.read_observation_baseline` |
+| N4 — normalize `PROPHET_LAB_DISABLED` parsing | Fixed: case-insensitive OFF set (`""`/`"0"`/`"false"`/`"no"`/`"off"`); anything else disables (fail toward disabled, unchanged direction) | `app.prophet_lab._kill_switch_active` |
+| N3 — `BOARD_DEFINITIONS` dead export | **Decision: included** in the payload under `board_definitions` — cheap, and it lets an operator/UI read what a board id means without cross-referencing this doc | `response.build_lab_response` |
+| S8 — additional tests | Fixed: default-sort-newest-first asserted explicitly; C3/C5 absence asserted on all four single-family boards (not just the union); one fixture event built from a real `EntryEvent`/`build_radar_native_event().to_dict()` (full 21-field `EVENT_FIELDS` width); the closed-plan B1 case; both S1 directions; the B3 EEE mixed-card assertions | `tests/test_prophet_lab.py` |
+
+### DEFERRED (per the review's own scoping — not built in this PR)
+
+* **S3** — pagination/windowing. The review names this as the UI wave's
+  responsibility, not the API's; the current response returns full boards
+  (fixture-scale today) with no cursor. Revisit if/when board sizes in
+  production make an unbounded response impractical.
+* **S2 (full part)** — actual R2 transport wiring for the Radar spool root in
+  production (beyond the cheap env-var-label half already shipped here). A
+  deployment-step task, not a code change this PR should make blind to the
+  live topology.
+* **Production baseline marker provisioning** — no `PROPHET_LAB_OBSERVATION_BASELINE_PATH`
+  is set anywhere yet; minting that marker is explicitly LAB-0 §6 step 3
+  ("Radar live commissioning"), owned by that later wave.
 
 ## Verified
 
 * `python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py -q`
-  → 46 passed.
+  → **99 passed** (70 + 29).
+* `python3.12 -m pytest tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w4_ledger.py -q`
+  → **98 passed** — the W5 reconciler and W4 ledger suites (adjacent to the
+  four radar-transport files this PR must not touch) are unaffected.
 * `python3.12 scripts/agentos.py validate` → 0 errors (pre-existing
   sparse-worktree phantom-path warnings on unrelated workstreams unchanged;
   this PR's five new `owns_paths` entries are not phantom).
-* `git diff --stat` against the branch base touches only: `app/main.py` (7
-  lines, the router registration), `agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md`
-  (5 lines, `owns_paths` only), plus the new files listed above. Zero edits to
-  `engine/entry_radar/live_pack.py`, `live_eval.py`, `live_ledger.py`, or
-  `scripts/reconcile_entry_radar.py` (the four W4.1 radar-transport files).
-  Zero writes to any Prophet store, zero writes under `data/`.
+* `git diff --stat` against the branch base touches only: `app/main.py` (the
+  router registration), `agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md`
+  (`owns_paths` only), plus the `engine/prophet_lab/`, `app/prophet_lab.py`,
+  `tests/test_prophet_lab*.py`, `tests/fixtures/prophet_lab/**`, and this
+  notes doc. Zero edits to `engine/entry_radar/live_pack.py`, `live_eval.py`,
+  `live_ledger.py`, or `scripts/reconcile_entry_radar.py` (the four W4.1
+  radar-transport files) — confirmed via `git diff --stat HEAD -- <those
+  four paths>` returning empty. Zero writes to any Prophet store, zero
+  writes under `data/`.

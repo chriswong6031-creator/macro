@@ -20,7 +20,28 @@
       "closed": false,
       "recorded_at": "2026-08-10T09:00:00Z",
       "signal_date": "2026-08-10",
-      "entry_date": null
+      "entry_date": "2026-08-19"
+    },
+    {
+      "id": "plan-ccc-2",
+      "asset": "CCC",
+      "direction": "long",
+      "phase": "live",
+      "closed": false,
+      "recorded_at": "2026-08-17T09:00:00Z",
+      "signal_date": "2026-08-17",
+      "entry_date": "2026-08-17",
+      "board_read": {
+        "schema": "prophet.board_read/v1",
+        "scope": "ticker",
+        "ticker": "CCC",
+        "as_of": "2026-08-17",
+        "fields": {
+          "name": {"state": "blocked_data", "reason": "library_source_unavailable"},
+          "sector": {"state": "blocked_data", "reason": "library_source_unavailable"},
+          "spark": {"state": "blocked_data", "reason": "library_source_unavailable"}
+        }
+      }
     },
     {
       "id": "plan-ccc-1",
@@ -42,6 +63,16 @@
           "spark": {"state": "blocked_data", "reason": "spark_svg_absent"}
         }
       }
+    },
+    {
+      "id": "plan-aaa-closed-1",
+      "asset": "AAA",
+      "direction": "short",
+      "phase": "closed",
+      "closed": true,
+      "recorded_at": "2026-08-01T09:00:00Z",
+      "signal_date": "2026-08-01",
+      "entry_date": "2026-08-02"
     }
   ]
 }

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -29,28 +30,58 @@ ENVELOPE_SCHEMA = "entry_radar.events/v1"
 BASELINE_SCHEMA = "prophet_lab.observation_baseline/v1"
 
 
+@dataclass(frozen=True)
+class SpoolReadResult:
+    """Read OUTCOME, not just directory presence (review S4/S7).
+
+    ``configured`` — a root was given at all. ``dir_exists`` — that root is a
+    real directory. ``envelopes`` — the successfully parsed
+    ``entry_radar.events/v1`` objects. ``files_seen``/``envelopes_skipped`` —
+    how many candidate files were found vs. how many of those (or the
+    envelopes inside a list-shaped file) were torn/off-schema and dropped.  A
+    schema drift that silently empties every envelope (S7's failure mode)
+    shows up here as ``envelopes_skipped > 0`` with ``envelopes == []``,
+    rather than as an indistinguishable "nothing to read" — the health block
+    surfaces this directly instead of collapsing it into ``is_dir()``.
+    """
+
+    configured: bool
+    dir_exists: bool
+    envelopes: list[dict[str, Any]] = field(default_factory=list)
+    files_seen: int = 0
+    envelopes_skipped: int = 0
+
+    @property
+    def readable(self) -> bool:
+        """True once a real read pass actually happened (not just "dir exists")."""
+        return self.dir_exists
+
+
 # ---------------------------------------------------------------------------
 # Radar live output — event spool envelopes
 # ---------------------------------------------------------------------------
-def read_radar_envelopes(spool_dir: Path | str | None) -> list[dict[str, Any]]:
-    """Every ``entry_radar.events/v1`` envelope under ``spool_dir``.
+def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
+    """Every ``entry_radar.events/v1`` envelope under ``spool_dir``, plus outcome.
 
     Mirrors the production local-spool layout (one JSON object per file,
     ``EventSpool``/``NominationSpool`` — ``engine/entry_radar/spool.py``), but
     is tolerant of a fixture file holding a JSON array of envelopes too.  A
-    torn or off-schema file is skipped and counted, never repaired or
-    guessed at (house discipline, ``reconcile_entry_radar.read_spool_events``).
+    torn or off-schema file (or list entry) is skipped and counted, never
+    repaired or guessed at (house discipline,
+    ``reconcile_entry_radar.read_spool_events``).
     """
     if spool_dir is None:
-        return []
+        return SpoolReadResult(configured=False, dir_exists=False)
     root = Path(spool_dir)
     if not root.is_dir():
-        return []
+        return SpoolReadResult(configured=True, dir_exists=False)
     out: list[dict[str, Any]] = []
     bad = 0
+    files_seen = 0
     for path in sorted(root.rglob("*.json")):
         if not path.is_file():
             continue
+        files_seen += 1
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -64,10 +95,13 @@ def read_radar_envelopes(spool_dir: Path | str | None) -> list[dict[str, Any]]:
             out.append(env)
     if bad:
         log.warning(
-            "prophet_lab: %d spool file(s) under %s unreadable or off-schema (skipped)",
+            "prophet_lab: %d spool object(s) under %s unreadable or off-schema (skipped)",
             bad, root,
         )
-    return out
+    return SpoolReadResult(
+        configured=True, dir_exists=True, envelopes=out,
+        files_seen=files_seen, envelopes_skipped=bad,
+    )
 
 
 def extract_events(
@@ -104,32 +138,90 @@ def extract_events(
     return list(events_by_id.values()), first_observed
 
 
+def earliest_pass_ts(envelopes: Iterable[Mapping[str, Any]]) -> str | None:
+    """The earliest envelope ``pass_ts`` in the set, or ``None`` when empty."""
+    stamps = [str(env.get("pass_ts") or "").strip() for env in envelopes]
+    stamps = [s for s in stamps if s]
+    return min(stamps) if stamps else None
+
+
+def latest_envelope(envelopes: Iterable[Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    """The envelope with the greatest ``pass_ts`` (ties broken arbitrarily)."""
+    best: Mapping[str, Any] | None = None
+    best_ts = ""
+    for env in envelopes:
+        ts = str(env.get("pass_ts") or "").strip()
+        if ts and ts >= best_ts:
+            best_ts = ts
+            best = env
+    return best
+
+
+def baseline_coverage_verified(
+    envelopes: Iterable[Mapping[str, Any]], baseline: Mapping[str, Any] | None,
+) -> bool:
+    """S1, fail CLOSED: does the spool actually reach back to the baseline start?
+
+    ``True`` only when a baseline exists, at least one envelope was read, AND
+    the earliest surviving envelope's ``pass_ts`` is AT OR BEFORE
+    ``baseline_started_at`` — i.e. there is no gap between "the operator says
+    continuous coverage began here" and "the oldest evidence we can actually
+    see". A spool that has aged out past the baseline start (retention,
+    compaction, an empty/misconfigured root) POSTDATES the claimed start and
+    fails this check, which the caller (``response.py``) turns into "treat
+    the baseline as absent" — every row falls back to ``retrospective_seed``,
+    never a false ``live_forward`` built on an unverifiable window.
+    """
+    if not baseline:
+        return False
+    started_at = str(baseline.get("baseline_started_at") or "")
+    if not started_at:
+        return False
+    earliest = earliest_pass_ts(envelopes)
+    if earliest is None:
+        return False
+    return earliest <= started_at
+
+
 # ---------------------------------------------------------------------------
 # Radar live output — episode ledger (nonterminal state, C1 board)
 # ---------------------------------------------------------------------------
-def read_live_episodes(state_dir: Path | str | None) -> list[Any]:
-    """``LiveEpisode`` records from the injected runtime state dir, or ``[]``.
+@dataclass(frozen=True)
+class EpisodeReadResult:
+    """S5: lets a board tell "genuinely empty" apart from "unavailable"."""
+
+    configured: bool
+    available: bool
+    episodes: list[Any] = field(default_factory=list)
+    reason: str | None = None
+
+
+def read_live_episodes(state_dir: Path | str | None) -> EpisodeReadResult:
+    """``LiveEpisode`` records from the injected runtime state dir, plus outcome.
 
     Reuses ``engine.entry_radar.live_ledger.LiveEpisodeLedger`` — the
     canonical reader — rather than re-parsing ``episodes.json`` by hand.
     Imported lazily so a Lab test that never exercises this path does not pay
-    for the full Radar detector stack import.  A missing or unreadable state
-    dir returns ``[]`` (fail-honest: the C1 board's caller must treat an
-    empty ledger as "unavailable", never as "nothing nonterminal").
+    for the full Radar detector stack import. ``available=False`` (with a
+    named ``reason``) covers both "no state dir configured" and "state dir
+    present but unreadable" — a caller (the C1 board, and the C1 component of
+    the union board) must show "unavailable", never silently render as
+    "nothing nonterminal today" (docstring promise this dataclass now makes
+    structural rather than merely stated).
     """
     if state_dir is None:
-        return []
+        return EpisodeReadResult(configured=False, available=False, reason="not_configured")
     root = Path(state_dir)
     if not root.is_dir():
-        return []
+        return EpisodeReadResult(configured=True, available=False, reason="state_dir_absent")
     try:
         from engine.entry_radar.live_ledger import LiveEpisodeLedger  # noqa: PLC0415
 
         ledger = LiveEpisodeLedger.load(root)
-        return list(ledger.episodes)
+        return EpisodeReadResult(configured=True, available=True, episodes=list(ledger.episodes))
     except Exception as exc:  # noqa: BLE001 — a bad state dir must not break the Lab
         log.warning("prophet_lab: live episode ledger at %s unreadable (%s)", root, exc)
-        return []
+        return EpisodeReadResult(configured=True, available=False, reason="unreadable")
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +252,11 @@ def index_plans_by_ticker(index: Mapping[str, Any]) -> dict[str, list[dict[str, 
 
     Ordering key mirrors ``scripts/build_prophet.py``'s own precedence for a
     "which plan is current" read: ``entry_date`` then ``signal_date`` then
-    ``recorded_at``, all falling back to empty string (never guessed).
+    ``recorded_at``, all falling back to empty string (never guessed). Rows
+    include BOTH open and closed plans — every plan the index published — so
+    a caller (``boards._prophet_comparison``, review B1) can distinguish
+    "currently active" from "closed" itself; this function does not decide
+    that, it only orders.
     """
     out: dict[str, list[dict[str, Any]]] = {}
     plans = index.get("plans")
@@ -208,14 +304,16 @@ def build_enrichment_library(library_root: Path | str | None) -> Any:
 
 
 def read_observation_baseline(baseline_path: Path | str | None) -> dict[str, Any] | None:
-    """The observation-baseline marker (LAB-0 §4), or ``None`` when absent.
+    """The observation-baseline marker (LAB-0 §4), or ``None`` when absent/invalid.
 
     Absence is not an error — it is the honest starting state: with no
-    baseline, EVERY event is ``retrospective_seed`` (fail-honest).  A present
-    file must carry ``baseline_started_at``; ``continuous_through`` is
-    optional and, when given, bounds how far forward the "continuous
-    coverage" claim is trusted — an event first observed after
-    ``continuous_through`` cannot yet be certified live_forward either.
+    baseline, EVERY event is ``retrospective_seed`` (fail-honest). A present
+    file must declare ``schema == BASELINE_SCHEMA`` (review N2 — an
+    unrecognised or missing schema is rejected rather than trusted blind) and
+    carry ``baseline_started_at``; ``continuous_through`` is optional and,
+    when given, bounds how far forward the "continuous coverage" claim is
+    trusted — an event first observed after ``continuous_through`` cannot yet
+    be certified live_forward either.
     """
     if baseline_path is None:
         return None
@@ -227,7 +325,16 @@ def read_observation_baseline(baseline_path: Path | str | None) -> dict[str, Any
     except (OSError, ValueError) as exc:
         log.warning("prophet_lab: observation baseline at %s unreadable (%s)", path, exc)
         return None
-    if not isinstance(raw, dict) or not str(raw.get("baseline_started_at") or "").strip():
+    if not isinstance(raw, dict):
+        return None
+    if str(raw.get("schema") or "") != BASELINE_SCHEMA:
+        log.warning(
+            "prophet_lab: observation baseline at %s carries schema %r (expected %r) — "
+            "rejected, not trusted blind",
+            path, raw.get("schema"), BASELINE_SCHEMA,
+        )
+        return None
+    if not str(raw.get("baseline_started_at") or "").strip():
         log.warning("prophet_lab: observation baseline at %s missing baseline_started_at", path)
         return None
     return raw
@@ -236,8 +343,13 @@ def read_observation_baseline(baseline_path: Path | str | None) -> dict[str, Any
 __all__ = [
     "ENVELOPE_SCHEMA",
     "BASELINE_SCHEMA",
+    "SpoolReadResult",
+    "EpisodeReadResult",
     "read_radar_envelopes",
     "extract_events",
+    "earliest_pass_ts",
+    "latest_envelope",
+    "baseline_coverage_verified",
     "read_live_episodes",
     "read_prophet_index",
     "index_plans_by_ticker",

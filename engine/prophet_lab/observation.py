@@ -66,6 +66,15 @@ def measured_lead_days(
     timestamps are truncated to their date component before differencing so a
     fixture supplying bare ``YYYY-MM-DD`` values (as Prophet plan dates are)
     still produces a lead against a full ISO-8601 spool timestamp.
+
+    Review B1: a lead is reported ONLY when the Prophet anchor POSTDATES the
+    Lab's first observation — i.e. only when the Lab genuinely led Prophet.
+    An anchor at or before the Lab's observation is not a "negative lead", it
+    is a different fact entirely (Prophet recorded the name before the Lab's
+    baseline saw it, or on the same day) and is never emitted as a signed
+    lead — this function returns ``None`` for that case rather than a
+    negative or zero integer a UI could mistake for "the Lab was N days
+    behind".
     """
     if observation_class != OBSERVATION_LIVE_FORWARD:
         return None
@@ -78,7 +87,8 @@ def measured_lead_days(
         prophet_date = date.fromisoformat(str(prophet_anchor_at)[:10])
     except ValueError:
         return None
-    return (prophet_date - lab_date).days
+    lead = (prophet_date - lab_date).days
+    return lead if lead > 0 else None
 
 
 __all__ = ["classify_observation", "evidence_eligible", "measured_lead_days"]
