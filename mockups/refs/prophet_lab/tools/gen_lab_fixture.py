@@ -191,11 +191,13 @@ def build() -> dict:
             }
         lead = None
         if cls == "live_forward" and pro and pro["opened"]:
-            # a measured lead exists only where the Lab's OWN first sighting
-            # predates the plan Prophet opened. Where Prophet was first, the
-            # row says so — that is a real result, not a slot to leave blank.
-            d = daydelta(first["iso"][:10], pro["opened"]["iso"])
-            lead = d if d > 0 else None
+            # R5.1 / VTL-403: the lead is SIGNED and is emitted whenever it is
+            # measurable, favourable or not. The R5 fixture wrote null for every
+            # adverse case, which made the asymmetry invisible in the artifact
+            # and left the adverse branch unphotographed — the generator's
+            # convention was standing in for a guard. Positive = the Lab saw it
+            # first; negative = Prophet's plan opened first; zero = same day.
+            lead = daydelta(first["iso"][:10], pro["opened"]["iso"])
         rows.append({
             "id": eid, "tk": tk, "nm": nm, "sec": sec,
             "spark": spark, "px": px,
@@ -216,18 +218,23 @@ def build() -> dict:
 
     # ── live-forward observations (6), spread across the live baseline's own
     #    week. Only these may ever show a measured lead, and between them they
-    #    exhibit ALL THREE lead states the design has to be able to say:
-    #      · a real measured lead   (the Lab saw it first)
-    #      · Prophet was first      (an honest negative result, printed)
-    #      · nothing to compare     (Prophet has no plan on the name at all)
-    #    A fixture that only ever produced flattering leads would design the
-    #    slot for one case and leave the other two to a builder to invent. ──
+    #    exhibit EVERY lead state the design has to be able to say:
+    #      · a favourable measured lead  (+3 / +2 / +1 — the Lab saw it first)
+    #      · a SAME-DAY result            ( 0 — neither was earlier)
+    #      · an ADVERSE measured lead     (-3 — Prophet's plan opened first)
+    #      · nothing to compare           (Prophet has no plan on the name)
+    #    R5.1 / VTL-403: the R5 fixture produced only favourable magnitudes, so
+    #    the adverse and same-day branches were unphotographed and the one-sided
+    #    treatment was invisible in the artifact. A fixture that only ever
+    #    flatters the system it measures is not a fixture, it is a brochure. ──
     by_tk = {r["tk"]: r for r in sparked}
     live_specs = [
-        # (ticker, experts, sighting day, clock, why this row is here)
+        # (ticker, experts, sighting day, clock) — plan-open dates come from the
+        # real payload, so every lead below is arithmetic on real Prophet dates
         ("DAR",  ["g0_grey_dot", "c2a_kd_cross"],                   "2026-08-09", "11:22"),
         ("MRK",  ["c1_live_washout", "c2d_hist_trough"],            "2026-08-10", "09:41"),
         ("KEYS", ["c2a_kd_cross", "c2c_higher_k_low"],              "2026-08-11", "13:58"),
+        ("CVCO", ["c2a_kd_cross", "c2f_rebound_atr"],               "2026-08-12", "10:35"),
         ("FTI",  ["g0_grey_dot"],                                   "2026-08-13", "10:07"),
     ]
     for tk, ex, day, hm in live_specs:

@@ -28,8 +28,14 @@ dependencies standing between the frozen reference and the MP-1 production migra
   `5c9f31af1f1a` (`engine/prophet_board_read.py`). Coverage went from the axis reaching **61/179**
   and enrichment **45/179** to **204/229 available with 0 `blocked_data`**, and name/sector/spark
   at **229/229**.
-- **`overtime_producer_contradiction` (#5540)** — closed by `444f80d62774`
-  (`engine/prophet_bridge.py:811 plan_clock_date()` now anchors both `phase` and horizon expiry).
+- **`overtime_producer_contradiction` (#5540)** — closed by `444f80d62774`, which reconciled the
+  consumers (`scripts/build_prophet.py`, `engine/prophet_management.py`) onto
+  `plan_clock_date()` so `phase` and horizon expiry now read the same clock. The helper itself is
+  older: `engine/prophet_bridge.py:811 plan_clock_date()` was introduced by `242aafda0dc7`
+  (#4684), and `444f80d62774` touches no file under `engine/prophet_bridge.py` at all.
+  *(Corrected under R5 verdict condition C5 / finding DA-401 — the R5 headline conflated the
+  helper's origin with the reconciliation that consumed it. §2.12 stated the relationship
+  correctly; this headline now matches it.)*
   Measured today: **0** open rows are past their horizon on the clock the phase uses, and **0**
   carry `phase=overtime` — the two now agree by construction rather than by coincidence.
 
@@ -157,10 +163,14 @@ themes, at the `.pv-chart svg *` rule, and against the R4 reference's values.
 
 The one item where the R4 reference is *ahead of* production, and the gap matters at migration.
 
-- `templates/theme.css:80-81` (dark `:root`) — `--pv-buy: #45b873` and `--up: #45b873`:
-  **byte-identical.**
-- `templates/theme.css:152-153` (`html[data-theme="light"]`) — `--pv-buy: #1f9a55` and
-  `--up: #1f9a55`: **byte-identical.**
+*(Line citations corrected under R5 verdict condition C5 / finding DA-401. The R5 text cited only
+the `--pv-buy` lines and attributed both tokens to them; the two tokens are declared on different
+lines and the comparison needs both.)*
+
+- dark `:root` — `templates/theme.css:72` declares `--up: #45b873`, and `:80` declares
+  `--pv-buy: #45b873`: **byte-identical.**
+- `html[data-theme="light"]` — `templates/theme.css:148` declares `--up: #1f9a55`, and `:152`
+  declares `--pv-buy: #1f9a55`: **byte-identical.**
 - `templates/theme.css:185` (`html[data-lang="zh"]`) — `--pv-buy: var(--up)`: identical by
   explicit declaration.
 - The chip's *text* ink routes through a separate family: `_prophet_card.html.j2:77`
@@ -243,8 +253,11 @@ The one item where the R4 reference is *ahead of* production, and the gap matter
   computed by a reader disagreed with `phase=overtime` **by construction**
   (`R4_CLOSURE_LEDGER.md:466`, `README.md:80-83`).
 - Merged as: `444f80d62774 prophet: reconcile Overtime with the horizon clock (ruling §13) (#5540)`;
-  the suite was wired by `d8a52b369a7a` (#5671).
-- `engine/prophet_bridge.py:811` defines `plan_clock_date()`, consumed at
+  the suite was wired by `d8a52b369a7a` (#5671). `git show --stat 444f80d62774` touches
+  `engine/prophet_management.py`, `scripts/build_prophet.py`, the ruling doc and the tests —
+  **not** `engine/prophet_bridge.py`. What it changed is which clock the CONSUMERS read.
+- `engine/prophet_bridge.py:811` defines `plan_clock_date()` — introduced separately by
+  `242aafda0dc7` (#4684), not by #5540 — consumed at
   `scripts/build_prophet.py:852,1013`, `engine/prophet_management.py:199`,
   `engine/prophet_arena.py:486`.
 - Measured today on `git show origin/main:site/prophet/index.json`:

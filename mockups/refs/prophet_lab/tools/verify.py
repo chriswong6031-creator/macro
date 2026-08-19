@@ -14,6 +14,7 @@ undoing a closure item breaks a named check rather than merely looking
 different. Run tools/mutation_test.py to confirm the checks actually bite.
 """
 import json
+import re
 import sys
 
 from playwright.sync_api import sync_playwright
@@ -107,11 +108,42 @@ def main():                                                    # noqa: C901
             };
         }""")
 
-        # D4 — no LIVE content may stand under a LAB label
+        # D4 — the principal grid is the Lab's; no Prophet SETUP CARD may stand
+        # under the Lab label. (This is the half of R5's D4 that survives.)
         ck("D4 no-prophet-card-in-lab", lab["pvcards"] == 0, f"{lab['pvcards']} visible")
-        ck("D4b no-plan-book-ladder-in-lab", lab["ladder"] == 0)
-        ck("D4c no-plan-book-stamp-in-lab", lab["stamp"] == 0 and lab["stale"] == 0)
-        ck("D4d no-other-live-sections-in-lab", lab["otherSec"] == 0, f"{lab['otherSec']} sections")
+
+        # ── R5.1 / VTL-401 — THE MODE IS A REGION, NOT THE PAGE ───────────
+        #    R5's D4b/D4c/D4d asserted the OPPOSITE of the law: they required
+        #    the ladder, the page stamp and every other section to be HIDDEN,
+        #    which is exactly the contract breach the R5 verdict found. They
+        #    are replaced, not relaxed — the new checks fail if anything
+        #    outside the principal grid disappears on mode entry.
+        scope = pg.evaluate("""() => {
+            const vis = q => [...document.querySelectorAll(q)].filter(n => n.offsetParent !== null);
+            return {
+              ladder: vis('.ladder-block').length,
+              purpose: vis('.bh-purpose').length,
+              stamp: vis('.bh-stamp').length,
+              candidates: vis('#candidates').length,
+              groups: vis('#groups').length,
+              evidence: vis('#evidence, #record').length,
+              hiddenSecs: [...document.querySelectorAll('.mx-sec')]
+                  .filter(n => n.id !== 'setups' && n.offsetParent === null).map(n => n.id),
+              region: vis('.lab-region').length,
+              regionEnd: vis('.lab-region-end').length,
+              ladhint: vis('.lab-ladhint').length
+            };
+        }""")
+        ck("D4b ladder-survives-the-mode", scope["ladder"] == 1, str(scope))
+        ck("D4c page-header-survives-the-mode",
+           scope["purpose"] == 1 and scope["stamp"] == 1)
+        ck("D4d plan-book-sections-survive-the-mode",
+           scope["candidates"] == 1 and scope["groups"] == 1 and scope["evidence"] == 1
+           and not scope["hiddenSecs"], f"hidden: {scope['hiddenSecs']}")
+        # separation, which is what the ruling asks for INSTEAD of deletion
+        ck("D4e lab-is-a-bounded-labelled-region",
+           scope["region"] == 1 and scope["regionEnd"] == 1)
+        ck("D4f ladder-says-where-a-click-lands", scope["ladhint"] == 1)
         # D5 — one control, one label. A hidden duplicate radiogroup is a defect.
         ck("D5 single-mode-control", lab["segs"] == 1, f"{lab['segs']} visible radiogroups")
         ck("D5b lab-state-announced", lab["eyebrow"] == 1 and lab["mode"] == "lab")
@@ -128,9 +160,21 @@ def main():                                                    # noqa: C901
               // and an empty label all satisfy "the node exists" while
               // disclosing nothing — the vacuous-guard trap the R4 cycle
               // found twice and told the next cycle to re-check first.
-              seedsWithChip: seeds.filter(r => {
-                  const c = r.querySelector('.lab-cls--seed');
-                  return c && c.offsetParent !== null && c.innerText.trim().length > 3;
+              // R5.1 / VTL-408: the per-row seed chip is gone (23 repeats of a
+              // constant below a divider that already said it). What replaces
+              // it is the STICKY divider, so the label is present wherever it
+              // applies. The check moves with the design: the divider must
+              // exist, be sticky, and carry a visible non-trivial label.
+              markStickyLabelled: (() => {
+                  const m = document.querySelector('.lab-mark');
+                  if (!m || m.offsetParent === null) return false;
+                  return getComputedStyle(m).position === 'sticky'
+                      && m.innerText.trim().length > 20;
+              })(),
+              // the four structural channels that remain ON the seed row
+              seedsWithAbsenceRail: seeds.filter(r => {
+                  const l = r.querySelector('.lab-tl');
+                  return l && l.offsetParent !== null && l.innerText.trim().length > 3;
               }).length,
               seedsWithMeasuredLead: seeds.filter(
                   r => r.querySelector('.lab-lead:not(.lab-lead--none)')).length,
@@ -155,10 +199,30 @@ def main():                                                    # noqa: C901
            f"{seed['seedsWithMeasuredLead']} of {seed['seeds']} seeds")
         ck("D6b seed-never-prints-a-sighting-time", seed["seedsWithClock"] == 0,
            f"{seed['seedsWithClock']} seeds printed a clock time")
-        ck("D6c every-seed-carries-its-class-chip",
-           seed["seedsWithChip"] == seed["seeds"], f"{seed['seedsWithChip']}/{seed['seeds']}")
+        ck("D6c sticky-divider-carries-the-class-label", seed["markStickyLabelled"],
+           "the divider replaced 23 per-row constants and must stay visible while they apply")
+        ck("D6c1 every-seed-prints-its-absent-sighting-time",
+           seed["seedsWithAbsenceRail"] == seed["seeds"],
+           f"{seed['seedsWithAbsenceRail']}/{seed['seeds']}")
         ck("D6c2 no-seed-wears-the-live-treatment", seed["seedsWearingLiveChip"] == 0,
            f"{seed['seedsWearingLiveChip']} seeds painted as live sightings")
+        # D6h — ANTI-VACUITY. Every seed check above measures the set selected by
+        # .lab-row--seed, so a change that stopped emitting that class would make
+        # all of them pass over an empty set while the honesty encoding silently
+        # vanished. The class census is therefore pinned to the PAYLOAD, which is
+        # the one thing a rendering bug cannot move. (Added in R5.1 after a
+        # mutation aimed at D6c2 revealed the hole.)
+        pay = pg.evaluate("""() => {
+            const rows = window.PROPHET_LAB.rows;
+            const ids = new Set(window.PROPHET_LAB.boards
+                .find(b => b.id === 'lab-all-early-v1').rows);
+            const sel = rows.filter(r => ids.has(r.id));
+            return {seed: sel.filter(r => r.cls === 'seed').length,
+                    live: sel.filter(r => r.cls === 'live_forward').length};
+        }""")
+        ck("D6h seed-live-class-census-matches-the-payload",
+           seed["seeds"] == pay["seed"] and seed["live"] == pay["live"],
+           f"rendered {seed['seeds']}/{seed['live']} vs payload {pay['seed']}/{pay['live']}")
         ck("D6d every-live-row-carries-its-class-chip",
            seed["liveWithChip"] == seed["live"], f"{seed['liveWithChip']}/{seed['live']}")
         # the distinction is STRUCTURAL, not only a badge: the spine changes
@@ -241,15 +305,69 @@ def main():                                                    # noqa: C901
         # ── D11 · zero authority, disclosed on the surface ────────────────
         ck("D11 authority-block-all-false",
            all(v is False for v in DATA["authority"].values()), str(DATA["authority"]))
+        # R5.1 / VTL-412: the stance line and the authority line were merged, so
+        # the glance tier carries ONE sentence that does both jobs.
         ck("D11b authority-stated-at-glance",
-           "Observation only" in lab["text"])
+           "ranks, sizes, or changes a Prophet plan" in lab["text"])
 
         # ── D12 · house copy law ──────────────────────────────────────────
+        #    "validated" is matched with a negative lookbehind: the RULED
+        #    lifecycle word "Invalidated" contains it as a substring, and a
+        #    naive `in` test flags a word the J9C-J10 ruling requires the page
+        #    to print. A check that fires on compliant copy trains people to
+        #    ignore it. (Found by the R5.1 LIVE-view sweep, which is the first
+        #    time the scan ever ran over a page carrying the lexicon.)
         low = lab["text"].lower()
-        for banned in ["falsif", "refut", "证伪", "validated", "blocked_data",
+        for banned in ["falsif", "refut", "证伪", "blocked_data",
                        "prereg", "gauntlet", "k-of-n"]:
             ck(f"D12 no-banned-copy[{banned}]", banned not in low)
+        ck("D12 no-banned-copy[validated]",
+           re.search(r"(?<!in)validated", low) is None)
         ck("D12b stance-present", "don’t chase" in low or "don't chase" in low)
+        pg.close()
+
+        # ── C3 · COPY-LAW COVERAGE — ZH, ALL SIX BOARDS, AND THE LIVE VIEW ─
+        #    R5 ran the slug-leak and banned-vocabulary scans on ONE board in
+        #    ONE language and never on LIVE, so the checks proved a property of
+        #    a single view rather than of the surface. The sweep below is the
+        #    correction: 6 boards x 2 languages in LAB, plus both languages in
+        #    LIVE, with both scans applied to every one of them.
+        BANNED = ["falsif", "refut", "证伪", "blocked_data",
+                  "prereg", "gauntlet", "k-of-n"]
+        leaks, banned_hits, views = [], [], 0
+        for lg in ("en", "zh"):
+            # LIVE first — the mode R5 never scanned at all
+            pgv = b.new_page(viewport={"width": 1440, "height": 900})
+            pgv.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
+            txt = pgv.evaluate("() => document.getElementById('board').innerText")
+            views += 1
+            leaks += [f"live/{lg}:{s}" for s in SLUGS if s in txt]
+            banned_hits += [f"live/{lg}:{w}" for w in BANNED if w in txt.lower()]
+            if re.search(r"(?<!in)validated", txt.lower()):
+                banned_hits.append(f"live/{lg}:validated")
+            for bid in WANT:
+                pgv.goto(f"{BASE}/?chrome=0&lang={lg}&board={bid}", wait_until="networkidle")
+                el = pgv.query_selector(LAB_SEG)
+                if el is None:
+                    FAILS.append(f"C3 sweep  {bid}/{lg}: mode control missing")
+                    continue
+                el.click()
+                pgv.wait_for_timeout(260)
+                txt = pgv.evaluate("() => document.getElementById('board').innerText")
+                views += 1
+                leaks += [f"{bid}/{lg}:{s}" for s in SLUGS if s in txt]
+                banned_hits += [f"{bid}/{lg}:{w}" for w in BANNED if w in txt.lower()]
+                if re.search(r"(?<!in)validated", txt.lower()):
+                    banned_hits.append(f"{bid}/{lg}:validated")
+            pgv.close()
+        ck("C3 no-slug-leak-across-every-view", not leaks, f"{views} views; leaks: {leaks[:6]}")
+        ck("C3b no-banned-vocab-across-every-view", not banned_hits,
+           f"{views} views; hits: {banned_hits[:6]}")
+        ck("C3c sweep-covered-both-modes-both-languages-all-six-boards", views == 14,
+           f"{views} views scanned (expected 2 LIVE + 12 LAB)")
+        pg = b.new_page(viewport={"width": 1440, "height": 900})
+        pg.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        enter_lab(pg)
 
         # ── D13 · the Lab spark carries no stance ink ─────────────────────
         ck("D13 no-stance-chip-in-lab", ".pv-chip" not in lab["html"])
@@ -261,6 +379,150 @@ def main():                                                    # noqa: C901
         ck("D13b spark-is-not-direction-ink", stroke is not None and up not in (stroke or ""),
            f"stroke {stroke}")
         pg.close()
+
+        # ══ R5.1 CHECKS ══════════════════════════════════════════════════
+        # ── D19 · VTL-403 — the lead is symmetric and signed ──────────────
+        pg2 = b.new_page(viewport={"width": 1440, "height": 900})
+        pg2.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        enter_lab(pg2)
+        ld = pg2.evaluate("""() => {
+            const rows = [...document.querySelectorAll('.lab-row')];
+            const cs = n => n ? getComputedStyle(n) : null;
+            const fav = document.querySelector('.lab-lead--measured:not(.lab-lead--adverse)');
+            const adv = document.querySelector('.lab-lead--adverse');
+            const tk  = document.querySelector('.lab-tk');
+            return {
+              measured: document.querySelectorAll('.lab-lead--measured').length,
+              adverse: document.querySelectorAll('.lab-lead--adverse').length,
+              favInk: fav ? cs(fav).color : null,
+              advInk: adv ? cs(adv).color : null,
+              favBg: fav ? cs(fav).backgroundColor : null,
+              favWeight: fav ? cs(fav).fontWeight : null,
+              tkWeight: tk ? cs(tk).fontWeight : null,
+              advText: adv ? adv.innerText : '',
+              slots: document.querySelectorAll('.lab-lead').length,
+              rows: rows.length
+            };
+        }""")
+        # the adverse branch must EXIST and carry a magnitude, not a category
+        ck("D19 adverse-lead-is-rendered", ld["adverse"] >= 1, str(ld["advText"]))
+        ck("D19b adverse-lead-carries-a-magnitude",
+           any(c.isdigit() for c in ld["advText"]), ld["advText"])
+        # THE SYMMETRY LAW: a measurement is a measurement. Favourable and
+        # adverse share one ink; only the sentence changes.
+        ck("D19c favourable-and-adverse-share-one-ink",
+           ld["favInk"] is not None and ld["favInk"] == ld["advInk"],
+           f"{ld['favInk']} vs {ld['advInk']}")
+        # and it must not be the loudest thing in the row
+        ck("D19d favourable-lead-has-no-fill",
+           ld["favBg"] in ("rgba(0, 0, 0, 0)", "transparent"), str(ld["favBg"]))
+        ck("D19e favourable-lead-does-not-out-ink-the-ticker",
+           int(ld["favWeight"] or 0) < int(ld["tkWeight"] or 0),
+           f"lead {ld['favWeight']} vs ticker {ld['tkWeight']}")
+        # Math.abs may not stand between the payload and the branch again
+        with open(__file__.rsplit("/tools/", 1)[0] + "/lab.js", encoding="utf-8") as fh:
+            js_src = fh.read()
+        # comments are stripped first: the source COMMENT explains why the call
+        # was removed and naming it there is documentation, not a defect. A
+        # check that cannot tell code from prose punishes the explanation.
+        js_code = re.sub(r"/\*.*?\*/", "", js_src, flags=re.S)
+        ck("D19f no-abs-on-the-lead", "Math.abs(r.lead)" not in js_code)
+        ck("D19g every-row-still-fills-its-lead-slot",
+           ld["slots"] == ld["rows"], f"{ld['slots']}/{ld['rows']}")
+
+        # ── D21 · VTL-407 — count discipline, responsive to the filter ────
+        def counts(page):
+            return page.evaluate("""() => ({
+                showing: (document.querySelector('.lab-showing')||{}).innerText || '',
+                split: (document.querySelector('.lab-split')||{}).innerText || '',
+                rows: document.querySelectorAll('.lab-row').length
+            })""")
+        c_all = counts(pg2)
+        ck("D21 rendered-count-is-stated", str(c_all["rows"]) in c_all["showing"],
+           f"{c_all['showing']!r} vs {c_all['rows']} rows")
+        pg2.click('[data-lab-cls="live"]')
+        pg2.wait_for_timeout(250)
+        c_live = counts(pg2)
+        ck("D21b count-follows-the-filter", str(c_live["rows"]) in c_live["showing"]
+           and c_live["rows"] < c_all["rows"], f"{c_live['showing']!r} / {c_live['rows']} rows")
+        # the split is computed from the FILTERED set, not the whole board
+        ck("D21c split-follows-the-filter", "0" in c_live["split"],
+           f"{c_live['split']!r} — seeds must read 0 under a live-only filter")
+        pg2.click('[data-lab-cls="all"]')
+        pg2.wait_for_timeout(250)
+        pg2.close()
+
+        # ── D18 · VTL-402 — unknown is not zero ───────────────────────────
+        def pills(page):
+            return page.evaluate("""() => ({
+                nums: [...document.querySelectorAll('.lab-sel .lab-n')].map(n => n.innerText.trim()),
+                unk: document.querySelectorAll('.lab-sel .lab-n--unk').length,
+                note: !!document.querySelector('.lab-unknote'),
+                dashed: [...document.querySelectorAll('.lab-sel .lab-n')]
+                        .filter(n => getComputedStyle(n).borderStyle === 'dashed').length
+            })""")
+        pdn = pdempty = None
+        for feed, want in (("down", "unknown"), ("empty", "zero")):
+            pg3 = b.new_page(viewport={"width": 1440, "height": 900})
+            pg3.goto(f"{BASE}/?chrome=0&feed={feed}", wait_until="networkidle")
+            enter_lab(pg3)
+            p = pills(pg3)
+            if feed == "down":
+                pdn = p
+                ck("D18 down-prints-no-literal-zero", "0" not in p["nums"], str(p["nums"]))
+                ck("D18b down-marks-every-count-unknown",
+                   p["unk"] == 6 and p["dashed"] == 6, str(p))
+                ck("D18c down-says-what-the-dash-means", p["note"])
+            else:
+                pdempty = p
+                ck("D18d empty-prints-a-real-zero",
+                   p["nums"] == ["0"] * 6 and p["unk"] == 0, str(p))
+                ck("D18e empty-claims-no-unknown", not p["note"])
+            pg3.close()
+        # and the two states must not be pixel-identical at the pill row, which
+        # is exactly what the R5 defect was
+        ck("D18f unknown-and-zero-are-distinguishable",
+           pdn["nums"] != pdempty["nums"], f"{pdn['nums']} vs {pdempty['nums']}")
+
+        # ── D20 · VTL-411 (C4) — all six boards reachable at 390 ──────────
+        pg4 = b.new_page(viewport={"width": 390, "height": 844})
+        pg4.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        enter_lab(pg4)
+        sel = pg4.evaluate("""() => {
+            const bs = [...document.querySelectorAll('[data-lab-board]')];
+            const w = document.documentElement.clientWidth;
+            return {
+              n: bs.length,
+              offscreen: bs.filter(b => { const r = b.getBoundingClientRect();
+                  return r.width === 0 || r.right > w + 1 || r.left < -1; })
+                  .map(b => b.getAttribute('data-lab-board')),
+              clipped: bs.filter(b => { const p = b.parentElement.parentElement;
+                  return p.scrollWidth > p.clientWidth + 1; }).length,
+              minH: Math.min(...bs.map(b => b.getBoundingClientRect().height))
+            };
+        }""")
+        ck("D20 all-six-boards-onscreen-at-390",
+           sel["n"] == 6 and not sel["offscreen"], f"offscreen: {sel['offscreen']}")
+        ck("D20b no-hidden-scroller-at-390", sel["clipped"] == 0,
+           "the strip must not hide boards behind an unaffordanced scroll")
+        ck("D20c lab-selectors-clear-the-touch-floor-at-390", sel["minH"] >= 40,
+           f"min height {sel['minH']}px")
+        pg4.close()
+
+        # ── D23 · VTL-409 — the error state retries and dates itself ──────
+        pg5 = b.new_page(viewport={"width": 1440, "height": 900})
+        pg5.goto(f"{BASE}/?chrome=0&feed=down", wait_until="networkidle")
+        enter_lab(pg5)
+        err = pg5.evaluate("""() => ({
+            retry: !!document.querySelector('[data-lab-retry]'),
+            escape: !!document.querySelector('.lab-state-act[data-mode="live"]'),
+            asof: (document.querySelector('.lab-stamp .dtp-asof')||{}).innerText || ''
+        })""")
+        ck("D23 error-offers-retry", err["retry"])
+        ck("D23b error-names-what-still-works", err["escape"])
+        ck("D23c error-keeps-the-last-known-good-stamp",
+           any(c.isdigit() for c in err["asof"]), f"{err['asof']!r}")
+        pg5.close()
 
         # ── D14 · every degraded Lab state stays visibly LAB ──────────────
         for feed in ("empty", "stale", "down"):
@@ -306,6 +568,38 @@ def main():                                                    # noqa: C901
         ck("D15c control-survives-the-repaint", rt["seg"] == 1)
         ck("D15d live-was-re-derived-not-restored", "repaints: 1" in rt["harness"],
            rt["harness"].replace("\n", " "))
+        pg.close()
+
+        # ── D22 · C1 — RE-DERIVATION, PROVEN INDEPENDENTLY OF THE COUNTER ──
+        #    R5 pinned "LAB->LIVE re-derives, never restores" only with the
+        #    controller's OWN self-reported repaint counter, and the mutation
+        #    that attacked it broke the counter rather than the mechanism. A
+        #    self-report is not evidence. This plants a SENTINEL attribute on a
+        #    real card before entering LAB: a genuine re-derivation destroys the
+        #    node, so the sentinel must be gone afterwards; a cached-and-restored
+        #    innerHTML brings it back verbatim. The counter is not consulted.
+        pg = b.new_page(viewport={"width": 1440, "height": 900})
+        pg.goto(f"{BASE}/?chrome=1", wait_until="networkidle")
+        planted = pg.evaluate("""() => {
+            const c = document.querySelector('.pvcard');
+            if (!c) return false;
+            c.setAttribute('data-r51-sentinel', '1');
+            return true;
+        }""")
+        ck("D22a sentinel-planted", planted, "no .pvcard to plant on")
+        pg.click(LAB_SEG)
+        pg.wait_for_timeout(300)
+        ck("D22b sentinel-gone-while-in-lab",
+           pg.evaluate("() => document.querySelectorAll('[data-r51-sentinel]').length") == 0)
+        pg.click(LIVE_SEG)
+        pg.wait_for_timeout(700)
+        sent = pg.evaluate("""() => ({
+            sentinels: document.querySelectorAll('[data-r51-sentinel]').length,
+            cards: document.querySelectorAll('.pvcard').length
+        })""")
+        ck("D22 live-is-re-derived-sentinel-does-not-return",
+           sent["sentinels"] == 0 and sent["cards"] > 0,
+           f"{sent} — a returning sentinel means the DOM was restored, not re-derived")
         pg.close()
 
         # ── D16 · 390w has no horizontal scroll in ANY captured Lab view ──

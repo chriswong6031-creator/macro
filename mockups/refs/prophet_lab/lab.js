@@ -127,7 +127,25 @@
     for (var i = 0; i < L.boards.length; i++) if (L.boards[i].id === id) return L.boards[i];
     return L.boards[L.boards.length - 1];
   }
+  /* ── R5.1 / VTL-402 — UNKNOWN IS NOT ZERO ────────────────────────────────
+     R5 collapsed "the feed is not answering" and "the feed answered, with
+     nothing" into one `return []`, so the pill row emitted byte-identical DOM
+     in both states and six pills asserted a literal 0 sourced from a feed that
+     had said nothing at all. That is a null printed AS A ZERO — the exact
+     failure the nulls-printed law exists to stop — and it was worse here than
+     elsewhere because the empty state one flip away explicitly teaches the
+     reader that these zeros are trustworthy ("a real zero, not a gap").
+
+     The two states are now separate facts everywhere they surface: the pill
+     counts, the split, the row count, and the copy. R4 solved the same problem
+     at the count-cell level (its Watch cell prints an em dash plus a disclosure
+     line when the key is ABSENT, and a muted 0 when the count is genuinely
+     zero); this is that idiom, applied to the pill row. */
+  function countsUnknown() { return C.feed === "down"; }
+
   function boardRows(id) {
+    /* down: we hold no answer. empty: the answer is none. Both render zero
+       rows, and they must never render the same NUMBERS. */
     if (C.feed === "down" || C.feed === "empty") return [];
     var ids = boardDef(id).rows, out = [];
     L.rows.forEach(function (r) { if (ids.indexOf(r.id) >= 0) out.push(r); });
@@ -151,7 +169,11 @@
      In LAB the status cluster belongs to a different producer and is replaced,
      so the control re-mounts into the Lab band with the mode eyebrow. */
   function segHtml() {
-    var h = '<span class="lab-seg" role="radiogroup" aria-label="Board mode">';
+    /* C11 — bilingual aria. The visible copy has always shipped both languages;
+       the assistive label shipped English only, which is the one surface where
+       a bilingual page can lose parity with nobody seeing it. */
+    var h = '<span class="lab-seg" role="radiogroup" aria-label="' +
+            esc(lang() === "zh" ? "看板模式" : "Board mode") + '">';
     h += '<button type="button" role="radio" data-mode="live" aria-checked="' +
          (C.desiredMode === "live") + '" tabindex="' + (C.desiredMode === "live" ? "0" : "-1") +
          '">' + t("Live", "实时") + "</button>";
@@ -177,8 +199,16 @@
     var g = C.feed === "stale" ? L.stale_gen : L.gen;
     var h = '<div class="lab-stamp">';
     if (C.feed === "down") {
+      /* R5.1 / VTL-409: the unavailable state used to return here BEFORE the
+         as-of was appended, so the one state where "how old is my last read"
+         matters most was the only state that did not print it. It now prints
+         the last KNOWN-GOOD pass, labelled as such so it can never be mistaken
+         for a current one. */
       h += '<span class="lab-feed lab-feed--rest"><span class="dtp-dot"></span>' +
            t("Feed unavailable", "数据源不可用") + "</span>";
+      h += '<span class="dtp-asof">' + t(
+        "last good pass " + L.gen.hm + " ET &middot; " + L.gen.day.en,
+        "最后一次正常采集 " + L.gen.hm + " 美东 &middot; " + L.gen.day.zh) + "</span>";
       return h + "</div>";
     }
     if (C.feed === "stale") {
@@ -200,18 +230,20 @@
     h += '<p class="lab-purpose">' + t(
       "Early-entry candidates as they are detected, before Prophet writes a plan.",
       "早期入场候选：在 Prophet 形成计划之前，检测到即呈现。") + "</p>";
-    /* Law 1 — a stance on the glance tier, even when the stance is "watch". */
-    h += '<p class="lab-stance">' + t(
-      "Watch &mdash; don&rsquo;t chase. Nothing here is a Prophet call.",
-      "观察，勿追。此处内容不构成 Prophet 的判断。") + "</p>";
-    h += '<span class="lab-auth"' + tip(
+    /* Law 1 — a stance on the glance tier, even when the stance is "watch".
+       R5.1 / VTL-412: the stance line and the authority line were two stacked
+       sentences both asserting absence of authority, costing three lines above
+       the first observation in every state. They are now ONE line: the stance,
+       then the authority clause it implies, with the full receipt still one
+       hover deeper. Two lines above the pills instead of three. */
+    h += '<span class="lab-stance lab-auth"' + tip(
       "What this view can and cannot do", "本视图的权限",
       "The Lab shows what the detectors saw. It does not rank names, decide position size, open or close anything, or change a Prophet plan in any way. Everything below is a read of another system's output.",
       "实验台只呈现检测器看到的内容。它不对股票排序，不决定仓位，不开仓不平仓，也不会以任何方式改动 Prophet 计划。以下全部内容都只是对另一套系统输出的读取。",
       "authority: rank=false · gate=false · size=false · originate=false · mutate_prophet=false (LAB-0 §1/§5). Source: " + L.source.pack + " → " + L.source.event + ". Kill switch: " + L.source.kill + ".",
       "权限位：rank=false · gate=false · size=false · originate=false · mutate_prophet=false（LAB-0 §1/§5）。来源：" + L.source.pack + " → " + L.source.event + "。停用开关：" + L.source.kill + "。") + ">" +
-      t("Observation only &mdash; nothing here ranks, sizes, or changes a plan.",
-        "仅供观察 —— 不参与排序、仓位或任何计划变更。") + "</span>";
+      t("Watch &mdash; don&rsquo;t chase. Nothing here ranks, sizes, or changes a Prophet plan.",
+        "观察，勿追。此处内容不参与排序、仓位或任何 Prophet 计划变更。") + "</span>";
     h += "</div>" + feedStamp() + "</div>";
 
     /* the Lab's own degraded-feed disclosure. Deliberately NOT production's
@@ -231,40 +263,89 @@
   }
 
   function selectors() {
-    var h = '<div class="lab-sel-wrap"><div class="lab-sel" role="group" aria-label="Lab boards">';
+    var unk = countsUnknown();
+    /* C11: the group label is bilingual like every other string on the page.
+       An English-only aria-label under data-lang=zh is a screen-reader-only
+       monolingual surface, which is the one place a bilingual page can lose
+       parity without anyone seeing it. */
+    var h = '<div class="lab-sel-wrap' + (unk ? " lab-sel-wrap--unk" : "") +
+            '"><div class="lab-sel" role="group" aria-label="' +
+            esc(lang() === "zh" ? "实验台板块" : "Lab boards") + '">';
     L.boards.forEach(function (b) {
       var on = b.id === C.labSelection;
-      var n = (C.feed === "down" || C.feed === "empty") ? 0 : b.rows.length;
+      /* three distinct facts, three distinct glyphs: an em dash when we hold no
+         answer, a real 0 when the feed answered with none, the count otherwise */
+      var n = unk ? "&mdash;" : (C.feed === "empty" ? "0" : String(b.rows.length));
       h += '<button type="button" data-lab-board="' + b.id + '" aria-pressed="' + on + '"' +
            tip(lang() === "zh" ? b.zh : b.en, b.zh,
                (lang() === "zh" ? b.sub_zh : b.sub_en), b.sub_zh,
                b.rc_en, b.rc_zh) + ">" +
-           t(b.en, b.zh) + '<span class="lab-n">' + n + "</span></button>";
+           t(b.en, b.zh) + '<span class="lab-n' + (unk ? " lab-n--unk" : "") + '"' +
+           (unk ? ' aria-label="' + esc(lang() === "zh" ? "数量未知" : "count unknown") + '"' : "") +
+           ">" + n + "</span></button>";
     });
-    return h + "</div></div>";
+    h += "</div></div>";
+    /* The disclosure that turns the em dash from a glyph into a statement. R4's
+       own key-absence idiom: the dash plus a line saying what the dash means. */
+    if (unk) {
+      h += '<p class="lab-unknote">' + t(
+        "&mdash; means we do not know: the feed is not answering, so no board has a count right now. A zero here would be a number we never received.",
+        "「—」表示未知：数据源没有响应，因此当前任何板块都没有数量。此处若显示 0，那会是一个我们从未收到过的数字。") + "</p>";
+    }
+    /* VTL-406: the pill row reads pre-attentively as a partition, and it is not
+       one — 63 memberships across 30 rows. Said once, here, rather than left
+       for the reader to discover by adding the pills up. */
+    h += '<p class="lab-overlap">' + t(
+      "Boards overlap &mdash; one name can appear on several, so these do not add up to a total.",
+      "各板块互有重叠 —— 同一只股票可能出现在多个板块中，因此这些数字不能相加。") + "</p>";
+    return h;
   }
 
+  /* ── R5.1 / VTL-407 (R51-C14) — COUNT DISCIPLINE ─────────────────────────
+     R5 printed a split computed from the WHOLE board while rendering a filtered
+     subset, so "Live only" showed "6 live · 23 seeds" above six rows with no
+     on-screen integer equal to what was on screen. R4 states its row count
+     three different ways; the Lab stated it none.
+
+     Now: a "Showing N of M" line whose N is the rendered count and whose M is
+     the board total, and a split computed from the FILTERED set. Deliberately
+     NOT adopted from R4: pagination. R4 pages because 159 cards is a scanning
+     problem; 30 observations is not, and hiding observations behind a control
+     on a surface whose entire job is to show every early sighting would trade a
+     real capability for a scroll. Stated rather than silently diverged. */
   function meta(rows, all) {
     var b = boardDef(C.labSelection);
-    var lf = all.filter(function (r) { return r.cls === "live_forward"; }).length;
-    var sd = all.length - lf;
+    var lf = rows.filter(function (r) { return r.cls === "live_forward"; }).length;
+    var sd = rows.length - lf;
+    var filtered = rows.length !== all.length;
     var h = '<div class="lab-meta">';
     h += '<span class="lab-sub">' + t(b.sub_en, b.sub_zh) + "</span>";
+    h += '<span class="lab-showing">' + t(
+      filtered ? "Showing <b>" + rows.length + "</b> of <b>" + all.length + "</b>"
+               : "Showing all <b>" + all.length + "</b>",
+      filtered ? "显示 <b>" + all.length + "</b> 条中的 <b>" + rows.length + "</b> 条"
+               : "显示全部 <b>" + all.length + "</b> 条") + "</span>";
     /* the sort key and its basis are STATED, because two clocks feed one
        stream and a reader must know which one ordered the row they are on.
        At 390w the sentence is DEMOTED to this chip's LENS rather than cut —
        demotion with a landing, never silent removal (§15). */
     h += '<span class="lab-split"' + tip(
       "How this stream is ordered", "本时间流的排序方式",
-      "Newest first. A row we watched live is placed by the moment we first saw it; a historical row is placed by the signal's own date, because no sighting time exists for it.",
-      "按时间倒序。实时观测到的记录按首次看到的时刻排列；历史记录按信号自身的日期排列，因为它没有观测时刻。") + ">" + t(
-      "<b>" + lf + "</b> live &middot; <b>" + sd + "</b> seeds",
-      "实时 <b>" + lf + "</b> &middot; 回溯 <b>" + sd + "</b>") + "</span>";
+      "Newest first. A row we saw live is placed by the moment we first saw it; a row from history is placed by the signal's own date, because no sighting time exists for it.",
+      "按时间倒序。实时观测到的记录按首次看到的时刻排列；回溯记录按信号自身的日期排列，因为它没有观测时刻。") + ">" + t(
+      "<b>" + lf + "</b> seen live &middot; <b>" + sd + "</b> from history",
+      "实时观测 <b>" + lf + "</b> &middot; 回溯 <b>" + sd + "</b>") + "</span>";
     h += '<span class="lab-basis">' + t(
       "Newest first &mdash; by first sighting where there is one, otherwise by the signal&rsquo;s own date.",
       "按时间倒序 —— 有首次观测时间的用该时间，否则用信号自身的日期。") + "</span>";
-    h += '<span class="lab-cls-filter" role="group" aria-label="Observation class">';
-    [["all", "All", "全部"], ["live", "Live only", "仅实时"], ["seed", "Seeds only", "仅回溯"]]
+    /* R5.1 / VTL-405 (R51-C15): the filter now uses the SAME words as the row
+       chips — one referent, one word — and the EN drops the "seeds" enum
+       shorthand for the plain phrase the ZH already had (回溯). "Live" is left
+       to mean the MODE and nothing else; the observation class is "seen live",
+       a phrase, never the bare word. */
+    h += '<span class="lab-cls-filter" role="group" aria-label="' +
+         esc(lang() === "zh" ? "观测类别" : "Observation class") + '">';
+    [["all", "All", "全部"], ["live", "Seen live", "实时观测"], ["seed", "From history", "回溯"]]
       .forEach(function (o) {
         h += '<button type="button" data-lab-cls="' + o[0] + '" aria-pressed="' +
              (C.labClass === o[0]) + '">' + t(o[1], o[2]) + "</button>";
@@ -321,23 +402,31 @@
          (r.nm ? '<span class="lab-nm">' + esc(r.nm) + "</span>" : "") + "</a></div>";
     if (r.sec) h += '<div class="lab-sec">' + esc(r.sec) + "</div>";
     h += '<div class="lab-chips">';
-    if (seed) {
-      h += '<span class="lab-cls lab-cls--seed"' + tip(
-        "Retrospective seed", "回溯样本",
-        "A historical event, shown so you can see the shape it makes. It is not evidence that we saw anything early, and it can never carry a lead over Prophet.",
-        "这是一条历史事件，呈现出来是为了让您看清它的形态。它不能作为「我们提前看到」的证据，也永远不会带有相对 Prophet 的提前量。",
-        "observation_class = retrospective_seed · evidence_eligible = false · measured lead = null, always (LAB-0 §4). signal_known_ts was not supplied and is never reconstructed.",
-        "observation_class = retrospective_seed · evidence_eligible = false · 测得提前量恒为 null（LAB-0 §4）。emitter 未提供 signal_known_ts，且我们不做任何重建。") + ">" +
-        t("Seed &middot; history, not a sighting", "回溯样本 &middot; 非实时观测") + "</span>";
-    } else {
+    /* ── R5.1 / VTL-408 — the per-row constant below the divider is GONE ────
+       23 identical "Seed · history, not a sighting" chips sat below a divider
+       that had already established the fact for everything under it, which is
+       per-row repetition of a constant (doctrine Law 4).
+
+       It is not simply deleted, because the reason it existed is real: a reader
+       deep in the seed region, mid-scroll at 390w, cannot see a divider that is
+       2,000px above them. So the DIVIDER ITSELF is now sticky — it pins to the
+       top of the viewport for exactly as long as any seed row is on screen, so
+       the label is present whenever it applies and printed once instead of 23
+       times. The signature device does the work the repetition was doing.
+
+       Four independent channels still separate the classes ON the row: dashed
+       spine, hollow node, the "signal date / not a sighting" rail, and the
+       "Lead not measurable" slot. The live rows keep their chip — there are
+       seven of them, above the divider, and it is not a constant there. */
+    if (!seed) {
       h += '<span class="lab-cls lab-cls--live"' + tip(
-        "Live sighting", "实时观测",
-        "The feed carried this for the first time at " + r.first.hm + " ET on " + r.sig.en +
+        "Seen live", "实时观测",
+        "The feed carried this for the first time at " + r.first.hm + " ET on " + r.first.day.en +
         ". It is a new observation, not history — so it is the only kind of row that can show a lead.",
-        "数据源在 " + r.sig.zh + " 美东 " + r.first.hm + " 首次带来这条记录。它是新的观测，不是历史 —— 因此只有这类行可以显示提前量。",
+        "数据源在 " + r.first.day.zh + " 美东 " + r.first.hm + " 首次带来这条记录。它是新的观测，不是历史 —— 因此只有这类行可以显示提前量。",
         "observation_class = live_forward · first_observed_at derived from the live pack envelope pass_ts at the consumption plane; the immutable event is never mutated (LAB-0 §4).",
         "observation_class = live_forward · first_observed_at 由消费层的 live pack envelope pass_ts 推导；不可变事件本身从不被改写（LAB-0 §4）。") + ">" +
-        t("Live sighting", "实时观测") + "</span>";
+        t("Seen live", "实时观测") + "</span>";
     }
     /* one chip per expert — identities are never merged into "3 signals"
        (DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED) */
@@ -371,29 +460,71 @@
     return h;
   }
 
-  /* THE LEAD SLOT. Only a true live-forward observation may ever carry a
-     measured number (LAB-0 §4). Every other case prints WHY there is none —
-     an empty slot would read as "zero lead", which is a claim nobody made. */
+  /* ── THE LEAD SLOT ───────────────────────────────────────────────────────
+     R5.1 / VTL-403 — SYMMETRY. The R5 version had two defects that pointed the
+     same way, and both are fixed here:
+
+       1. `Math.abs(r.lead)` ran BEFORE the sign was ever inspected, so a signed
+          -2 would have printed "Seen 2 days before Prophet" in accent ink. The
+          only thing preventing it was the generator's habit of writing null for
+          adverse cases — a convention standing in for a guard. The sign is now
+          the branch, `Math.abs` is gone, and the fixture emits signed leads so
+          the adverse and same-day branches are real and photographed.
+
+       2. A measured ADVERSE result ("Prophet was first") wore the same muted,
+          dashed idiom as a genuinely UNMEASURABLE one (a seed). Those are
+          different facts: one is a measurement that came out against us, the
+          other is the absence of any measurement. They now use different
+          treatments, and MEASUREMENTS SHARE ONE INK regardless of which way
+          they came out — favourable and adverse are distinguished by the WORD
+          and the NUMBER, never by loudness. `.lab-lead` no longer carries a
+          tinted background or accent ink; verify D19c pins the two to the same
+          computed colour so a future edit cannot quietly re-amplify one side.
+
+     Only a true live-forward observation may carry a measured number at all
+     (LAB-0 §4). Every non-measured case still prints WHY there is none — an
+     empty slot would read as "zero lead", which is a claim nobody made. */
   function lead(r) {
-    if (r.cls === "live_forward" && r.lead != null) {
-      var d = Math.abs(r.lead);
-      return '<span class="lab-lead">' + t(
+    var measurable = r.cls === "live_forward" && r.lead != null;
+
+    if (measurable && r.lead > 0) {
+      var d = r.lead;
+      return '<span class="lab-lead lab-lead--measured"' + tip(
+        "Measured lead", "已测得提前量",
+        "Our first sighting came " + d + " day" + (d === 1 ? "" : "s") +
+          " before Prophet opened its plan on this name.",
+        "我们的首次观测比 Prophet 就该股开启计划早 " + d + " 天。") + ">" + t(
         "Seen <b>" + d + "</b> day" + (d === 1 ? "" : "s") + " before Prophet",
         "比 Prophet 早 <b>" + d + "</b> 天看到") + "</span>";
     }
+    if (measurable && r.lead < 0) {
+      /* an adverse MEASUREMENT — carries its magnitude, in the measurement
+         treatment, because "how late were we" is exactly as much a result as
+         "how early were we" and the surface may not print only one of them */
+      var b = -r.lead;
+      return '<span class="lab-lead lab-lead--measured lab-lead--adverse"' + tip(
+        "Measured, and against us", "已测得，且结果不利",
+        "Prophet opened its plan " + b + " day" + (b === 1 ? "" : "s") +
+          " before we saw this. A real measurement that came out against the Lab, shown as it is.",
+        "在我们看到这条记录之前 " + b + " 天，Prophet 已经开启了计划。这是一个真实测得的、对实验台不利的结果，如实呈现。") +
+        ">" + t(
+        "Prophet was <b>" + b + "</b> day" + (b === 1 ? "" : "s") + " earlier",
+        "Prophet 早 <b>" + b + "</b> 天") + "</span>";
+    }
+    if (measurable) {
+      return '<span class="lab-lead lab-lead--measured"' + tip(
+        "Same day", "同一天",
+        "We saw this on the same day Prophet opened its plan. Neither was earlier.",
+        "我们看到这条记录与 Prophet 开启计划在同一天，双方没有先后。") +
+        ">" + t("Same day as Prophet", "与 Prophet 同一天") + "</span>";
+    }
+    /* ── from here down: genuine ABSENCES, and they keep the null idiom ── */
     if (r.cls === "live_forward" && !r.pro) {
       return '<span class="lab-lead lab-lead--none"' + tip(
         "Nothing to compare yet", "暂无可比对象",
-        "We saw this today and Prophet has no plan on this name, so there is no plan date to measure against. If a plan opens later, the comparison appears then.",
-        "我们今天看到了它，而 Prophet 目前对这只股票没有计划，因此没有可比的计划日期。若之后开启计划，这里会出现比较结果。") +
+        "We saw this and Prophet has no plan on this name, so there is no plan date to measure against. If a plan opens later, the comparison appears then.",
+        "我们看到了它，而 Prophet 目前对这只股票没有计划，因此没有可比的计划日期。若之后开启计划，这里会出现比较结果。") +
         ">" + t("Nothing to compare yet", "暂无可比对象") + "</span>";
-    }
-    if (r.cls === "live_forward") {
-      return '<span class="lab-lead lab-lead--none"' + tip(
-        "No lead here", "此处没有提前量",
-        "Prophet already had a plan open on this name before we saw this. That is a real result and it is shown as it is.",
-        "在我们看到这条记录之前，Prophet 已经对这只股票开启了计划。这是一个真实结果，如实呈现。") +
-        ">" + t("No lead &mdash; Prophet was first", "无提前量 —— Prophet 更早") + "</span>";
     }
     return '<span class="lab-lead lab-lead--none"' + tip(
       "Lead cannot be measured", "无法测量提前量",
@@ -411,26 +542,46 @@
       h += '<div class="mx-empty"><b>' + t(
         "The Lab feed is not answering", "实验台数据源没有响应") + "</b>";
       h += '<div class="mx-empty-why">' + t(
-        "No candidates can be shown until it does. Prophet&rsquo;s live board is unaffected &mdash; switch back to Live to use it.",
-        "在它恢复之前无法显示任何候选。Prophet 的实时看板不受影响 —— 切回「实时」即可正常使用。") + "</div>";
+        "No candidates can be shown until it does, and no board has a count. Prophet&rsquo;s live board is unaffected &mdash; switch back to Live to use it.",
+        "在它恢复之前无法显示任何候选，各板块也没有数量。Prophet 的实时看板不受影响 —— 切回「实时」即可正常使用。") + "</div>";
+      /* R5.1 / VTL-409: an error state names what failed AND what still works,
+         WITH a retry (design system §9.12). R5 offered only the escape hatch. */
+      h += '<div class="lab-state-acts">';
+      h += '<button type="button" class="lab-state-act lab-state-act--primary" data-lab-retry="1">' +
+           t("Try again", "重试") + "</button>";
       h += '<button type="button" class="lab-state-act" data-mode="live">' +
            t("Back to Live", "返回实时") + "</button>";
+      h += "</div>";
       return h + "</div></div>";
     }
     h += '<div class="mx-empty"><b>' + t(
       "Nothing early on this board right now", "该板目前没有早期候选") + "</b>";
     h += '<div class="mx-empty-why">' + t(
       "The feed is reporting and it is reporting nothing. That is a real zero, not a gap &mdash; try another board, or check back after the next pass.",
-      "数据源正常，且确实没有内容。这是真实的零，不是数据缺失 —— 可以换一个板查看，或等下一次采集后再来。") + "</div>";
+      "数据源正常，且确实没有内容。这是真实的零，不是数据缺失 —— 可以换一个板块查看，或等下一次采集后再来。") + "</div>";
     return h + "</div></div>";
   }
 
+  /* The closing rule of the Lab region. Everything after it on the page belongs
+     to Prophet's own book and was never touched by this controller. */
+  function regionEnd() {
+    return '<div class="lab-region-end"><span>' + t(
+      "End of Lab observations &mdash; everything below is Prophet&rsquo;s own book.",
+      "实验台观测到此结束 —— 以下均为 Prophet 自身的计划簿。") + "</span></div>";
+  }
+
+  /* THE BASELINE MARKER, now doing two jobs (R5.1 / VTL-408).
+     It still marks where continuous live watching began, drawn where the stream
+     actually crosses that date. It is also STICKY: it pins to the top of the
+     viewport for as long as any row below it is on screen, so the sentence that
+     licenses the whole seed treatment is visible wherever it applies — which is
+     what the 23 deleted per-row chips were buying, bought once. */
   function baselineMark() {
-    return '<li class="lab-mark"><div class="lab-mark-when">' +
+    return '<li class="lab-mark" role="separator"><div class="lab-mark-when">' +
       t(L.baseline.en, L.baseline.zh) + "</div>" +
-      '<div class="lab-mark-l">' + t(
-        "Continuous live watching began here. Everything below is history we already had.",
-        "从这里开始持续实时观测。以下均为此前已有的历史记录。") + "</div></li>";
+      '<div class="lab-mark-l"><b>' + t("From history", "回溯记录") + "</b>" + t(
+        " &mdash; below this line we were not yet watching, so no row carries a lead. Live watching began " + L.baseline.en + ".",
+        " —— 此线以下我们尚未开始实时观测，因此均无提前量。实时观测始于 " + L.baseline.zh + "。") + "</div></li>";
   }
 
   /* the spine's own way of saying "and nothing since" */
@@ -441,19 +592,25 @@
       "</div></div>";
   }
 
+  /* The Lab renders inside a BOUNDED, LABELLED region (R5.1 / VTL-401). The
+     ruling's own answer to the authority-hygiene worry is separation, not
+     deletion, so the zero-authority stream gets a visible start and a visible
+     end and the plan-book sections outside it are untouched. */
   function plane() {
     var all = boardRows(C.labSelection);
     var rows = classFilter(all);
-    var h = '<div class="lab-plane">' + band();
-    if (C.feed === "down" || all.length === 0) return h + stateBlock() + "</div>";
+    var h = '<div class="lab-plane lab-region" role="region" aria-label="' +
+            esc(lang() === "zh" ? "实验台 · 观测（只读）" : "Lab observations, read-only") +
+            '">' + band();
+    if (C.feed === "down" || all.length === 0) return h + stateBlock() + regionEnd() + "</div>";
     h += meta(rows, all);
     if (rows.length === 0) {
       h += '<div class="lab-state"><div class="mx-empty"><b>' + t(
         "No rows of that kind on this board", "该板没有这一类记录") + "</b>";
       h += '<div class="mx-empty-why">' + t(
         "This board has rows, but none of the kind you filtered to. Choose All to see the rest.",
-        "该板有记录，但没有您所筛选的那一类。选择「全部」可查看其余记录。") + "</div></div></div>";
-      return h + "</div>";
+        "该板块有记录，但没有您所筛选的那一类。选择「全部」可查看其余记录。") + "</div></div></div>";
+      return h + regionEnd() + "</div>";
     }
     h += gapHead();
     h += '<ul class="lab-stream">';
@@ -468,40 +625,52 @@
       if (!marked && r.cls === "seed") { h += baselineMark(); marked = true; }
       h += row(r);
     });
-    return h + "</ul></div>";
+    return h + "</ul>" + regionEnd() + "</div>";
   }
 
   /* ═══════════════ 3. PAINT ═════════════════════════════════════════════ */
+  /* ═══ R5.1 / VTL-401 — THE MODE IS A REGION, NOT THE PAGE ════════════════
+     R5 read LAB-0 §6.5 as a page mode and hid the page subtitle, the ladder,
+     Candidates, Groups, Evidence & Record and the footer. The verdict ruled
+     that a contract breach: "the principal Prophet grid" is a NARROWING clause
+     naming one region of a page that demonstrably has others, and two of the
+     hidden sections are core baseline capabilities. A page-level mode would not
+     have been written as "grid".
+
+     R5.1 paints `#setups` and NOTHING else. The page header, the plan book's
+     own as-of, its behind-the-tape banner, the ladder, Candidates, Groups,
+     Evidence & Record and the footer all survive the mode, because they
+     describe the plan book and the plan book is still on the page.
+
+     The authority-hygiene worry that motivated the over-reach is real, and it
+     is answered the way the ruling says to answer it — by SEPARATION, not
+     deletion. The Lab renders inside a bounded, labelled region with its own
+     accent boundary, eyebrow and feed stamp, and closes with an explicit
+     end-of-region rule, so a reader can see exactly where the zero-authority
+     stream starts and stops. Nothing outside that boundary is ever painted by
+     this controller. */
   function paintLab() {
     root.setAttribute("data-mode", "lab");
-    /* the LIVE furniture is REMOVED from view, not decorated. A lifecycle
-       ladder counting the plan book, a candidates shelf, a groups band or a
-       track record left standing above Lab rows would be LIVE content under a
-       LAB label — the one thing LAB-0 §6.5 forbids by name. */
-    ["ladder-block"].forEach(function (c) {
-      var n = document.querySelector("." + c); if (n) n.style.display = "none";
-    });
-    ["candidates", "groups", "evidence", "record"].forEach(function (id) {
-      var n = document.getElementById(id); if (n) n.style.display = "none";
-    });
-    document.querySelectorAll(".mx-sec").forEach(function (n) {
-      if (n.id !== "setups") n.style.display = "none";
-    });
-    /* the page header speaks for the Lab's producer while the Lab is shown —
-       printing the plan book's as-of or its behind-the-tape banner over Lab
-       rows would date the wrong thing */
-    var p = document.querySelector(".bh-purpose"); if (p) p.style.display = "none";
     var s = document.querySelector(".bh-stamp");
     if (s) {
       /* the inline LIVE control is REMOVED, not hidden. Two radiogroups with
          the same label — one of them invisible — is an assistive-technology
          defect, and a hidden duplicate is also the kind of thing an automated
-         check clicks by accident and reports as a pass. */
+         check clicks by accident and reports as a pass. The stamp ITSELF stays:
+         it dates the plan book, and the plan book is still on this page. */
       var dup = s.querySelector(".lab-seg"); if (dup) dup.remove();
       var opv = s.querySelector(".lab-opv"); if (opv) opv.remove();
-      s.style.display = "none";
     }
-    var sn = document.querySelector(".nb-stale-note"); if (sn) sn.style.display = "none";
+    /* The ladder is the grid's own count header and filter, so a cell click is
+       a request to see the plan book — which is a LIVE act. It stays rendered
+       and fully operable; one line says where a click lands, so nothing is
+       inert and nothing is deleted. */
+    var lad = document.querySelector(".ladder-block");
+    if (lad && !lad.querySelector(".lab-ladhint")) {
+      lad.insertAdjacentHTML("beforeend", '<p class="lab-ladhint">' + t(
+        "These count Prophet&rsquo;s book, not the Lab &mdash; choosing a cell returns to Live.",
+        "此处统计的是 Prophet 的计划簿，与实验台无关 —— 选择某一档将返回「实时」。") + "</p>");
+    }
     var setups = document.getElementById("setups");
     if (setups) setups.innerHTML = plane();
     syncSeg();
@@ -554,6 +723,17 @@
     if (b) { C.labSelection = b.getAttribute("data-lab-board"); paintLab(); return; }
     var c = e.target.closest("[data-lab-cls]");
     if (c) { C.labClass = c.getAttribute("data-lab-cls"); paintLab(); return; }
+    /* R5.1 / VTL-409 — the retry. In production this re-requests the Lab API;
+       here it re-runs the same fetch path, which with `?feed=down` still finds
+       the feed down. It is a real control on a real path, not a decoration:
+       the harness lens is what is pinned down, not the button. */
+    var rt = e.target.closest("[data-lab-retry]");
+    if (rt) {
+      rt.disabled = true;
+      rt.textContent = lang() === "zh" ? "重试中…" : "Retrying…";
+      window.setTimeout(function () { paintLab(); }, 400);
+      return;
+    }
   });
   /* arrow keys move within the radiogroup, per the segmented-control pattern */
   document.addEventListener("keydown", function (e) {

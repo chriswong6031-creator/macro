@@ -35,13 +35,17 @@ CSS = LAB / "lab.css"
 
 # (id, file, pattern, replacement, the check id that must catch it)
 MUTATIONS = [
-    ("M1  paint a seed with the live-sighting treatment", JS,
-     r'<span class="lab-cls lab-cls--seed"',
-     '<span class="lab-cls lab-cls--live"',
-     "D6c"),
+    # aimed at the class census (D6h) rather than the chip: with the per-row
+    # seed chip gone, the way a seed can wear the live treatment is to be
+    # LABELLED live, and that also silently empties every seed-scoped check —
+    # the vacuity hole this mutation found.
+    ("M1  label every row a live sighting", JS,
+     r'\(seed \? "lab-row--seed" : "lab-row--live"\)',
+     '("lab-row--live")',
+     "D6h"),
     ("M2  let a seed carry a measured lead", JS,
-     r'if \(r\.cls === "live_forward" && r\.lead != null\) \{',
-     'if (r.lead != null || r.cls === "seed") {',
+     r'var measurable = r\.cls === "live_forward" && r\.lead != null;',
+     'var measurable = r.lead != null || r.cls === "seed";',
      "D6"),
     ("M3  make the seed spine solid", CSS,
      r'\.lab-row--seed \.lab-when \{ border-right-style: dashed;',
@@ -62,10 +66,18 @@ MUTATIONS = [
      r'r\.ex\.forEach\(function \(e\) \{',
      'r.ex.slice(0, 1).forEach(function (e) {',
      "D8"),
-    ("M7  leave the plan-book ladder standing under a LAB label", JS,
-     r'\["ladder-block"\]\.forEach',
-     '[].forEach',
-     "D4b"),
+    # R5.1: the R5 mutation attacked the OVER-REACH (a ladder left standing).
+    # The law inverted, so the mutation inverts with it: the defect to catch is
+    # now the mode DELETING a plan-book section, which is what VTL-401 found.
+    ("M7  make LAB delete a plan-book section again (the VTL-401 defect)", JS,
+     r'    var setups = document\.getElementById\("setups"\);\n    if \(setups\) setups\.innerHTML = plane\(\);',
+     '    var _c = document.getElementById("candidates"); if (_c) _c.style.display = "none";\n'
+     '    var setups = document.getElementById("setups");\n    if (setups) setups.innerHTML = plane();',
+     "D4d"),
+    ("M18 make the class divider non-sticky", CSS,
+     r'  position: sticky; top: 0; z-index: 4;\n  background: var\(--panel\);',
+     '  position: static; z-index: 4;\n  background: var(--panel);',
+     "D6c"),
     ("M8  restore LIVE from a snapshot instead of re-deriving it", JS,
      r'sc\.src = "\.\./institutionalize/us_stocks/board\.js\?repaint=" \+ \(\+\+C\.repaints\);',
      'sc.src = "../institutionalize/us_stocks/board.js?repaint=" + C.repaints;',
@@ -93,6 +105,46 @@ MUTATIONS = [
      r'      "Lead cannot be measured", "无法测量提前量",',
      '    return ""; var _mut = tip(\n      "Lead cannot be measured", "无法测量提前量",',
      "D6g"),
+
+    # ══ R5.1 mutations — one per revision requirement ═══════════════════════
+    ("M14 print a literal 0 from a feed that is not answering (VTL-402)", JS,
+     r'var n = unk \? "&mdash;" : \(C\.feed === "empty" \? "0" : String\(b\.rows\.length\)\);',
+     'var n = (C.feed === "down" || C.feed === "empty") ? "0" : String(b.rows.length);',
+     "D18"),
+    ("M15 route an adverse lead back through the favourable branch (VTL-403)", JS,
+     r'    if \(measurable && r\.lead > 0\) \{\n      var d = r\.lead;',
+     '    if (measurable && r.lead !== 0) {\n      var d = Math.abs(r.lead);',
+     "D19"),
+    ("M16 re-amplify the favourable lead chip (VTL-403)", CSS,
+     r'\.lab-lead--measured \{\n  color: color-mix\(in srgb, var\(--text\) 88%, var\(--muted\)\);\n'
+     r'  background: transparent;\n  border: 1px solid var\(--line\);\n\}',
+     '.lab-lead--measured {\n  color: var(--lab-ink);\n'
+     '  background: var(--lab-wash);\n  border: 1px solid var(--lab-rule);\n}\n'
+     '.lab-lead--adverse { color: var(--muted); }',
+     "D19c"),
+    # C1 — the one the R5 verdict asked for by name. It restores a CACHED DOM
+    # on the way back to LIVE while leaving the repaint counter untouched, so
+    # D15d still passes and only the sentinel check can see it. That is the
+    # point: it proves the counter was never evidence.
+    ("M17 cache the board on LAB entry and restore it on LIVE (C1)", JS,
+     [r'    var setups = document\.getElementById\("setups"\);\n    if \(setups\) setups\.innerHTML = plane\(\);',
+      r'    var sc = document\.createElement\("script"\);'],
+     ['    var _b0 = document.getElementById("board");\n'
+      '    if (_b0 && !window.__labSnap) window.__labSnap = _b0.innerHTML;\n'
+      '    var setups = document.getElementById("setups");\n'
+      '    if (setups) setups.innerHTML = plane();',
+      '    if (window.__labSnap) {\n'
+      '      C.repaints++;\n'
+      '      document.getElementById("board").innerHTML = window.__labSnap;\n'
+      '      window.__labSnap = null; mountModebar(); syncSeg(); harnessStamp(); return;\n'
+      '    }\n    var sc = document.createElement("script");'],
+     "D22"),
+    ("M19 put the six boards back behind an unaffordanced scroller (VTL-411)", CSS,
+     r'@media \(max-width: 980px\) \{\n  \.lab-sel-wrap \{ overflow-x: visible; \}\n'
+     r'  \.lab-sel \{ flex-wrap: wrap; row-gap: 7px; \}',
+     '@media (max-width: 980px) {\n  .lab-sel-wrap { overflow-x: auto; }\n'
+     '  .lab-sel { flex-wrap: nowrap; row-gap: 7px; }',
+     "D20"),
 ]
 
 
@@ -131,13 +183,20 @@ def main():
 
         for name, path, pat, rep, want in MUTATIONS:
             src = originals[path]
-            new, n = re.subn(pat, rep, src, count=1)
-            if n != 1:
-                # a mutation that does not apply proves nothing and would make
-                # a decorative guard look green. Loud failure, never a skip.
-                raise SystemExit(
-                    f"::error title=mutation::{name}: pattern did not match "
-                    f"{path.name} — the mutation is stale, rewrite it")
+            # a mutation may need to change more than one site (C1's snapshot
+            # restore touches both the LAB entry and the LIVE return); pattern
+            # and replacement may therefore be parallel lists.
+            pats = pat if isinstance(pat, list) else [pat]
+            reps = rep if isinstance(rep, list) else [rep]
+            new = src
+            for p_, r_ in zip(pats, reps):
+                new, n = re.subn(p_, r_, new, count=1)
+                if n != 1:
+                    # a mutation that does not apply proves nothing and would
+                    # make a decorative guard look green. Loud, never a skip.
+                    raise SystemExit(
+                        f"::error title=mutation::{name}: pattern did not match "
+                        f"{path.name} — the mutation is stale, rewrite it")
             path.write_text(new, encoding="utf-8")
             failed, _, _ = run_verify()
             path.write_text(src, encoding="utf-8")

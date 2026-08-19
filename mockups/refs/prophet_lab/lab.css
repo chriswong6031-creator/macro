@@ -90,10 +90,48 @@ body {
 .lab-seg button[data-mode="lab"][aria-checked="true"] {
   color: var(--panel); background: var(--lab-acc);
 }
-html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
+/* C10 — this file's stated token policy is "no hex literal", and a light-theme
+   override here declared one directly. It was also redundant: light `--panel`
+   already resolves to white, so the base rule above produces the same paint.
+   Deleted rather than tokenised — the smallest honest fix is the one that
+   removes the rule the policy contradicted. */
 .lab-seg button:focus-visible {
   outline: 2px solid var(--ink-link, var(--link)); outline-offset: -3px;
 }
+/* ═══════════════ 1b. THE LAB REGION (R5.1 / VTL-401) ═══════════════════
+   The mode replaces the principal Prophet grid and nothing else. Everything
+   outside this boundary — the page header and its as-of, the ladder,
+   Candidates, Groups, Evidence & Record, the footer — survives untouched.
+
+   The authority-hygiene worry that made R5 hide them is answered by SEPARATION:
+   the zero-authority stream gets a visible start (the accent rule at the top of
+   the modebar) and a visible end, so a reader can see where it stops rather
+   than having to infer it. A bounded region is a stronger honesty device than
+   an empty page, and it costs no capability. */
+.lab-region {
+  padding-left: 14px;
+  border-left: 2px solid color-mix(in srgb, var(--lab-acc) 34%, transparent);
+  border-radius: 2px;
+}
+.lab-region-end {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0 4px;
+  font: 600 10.5px/1.4 var(--font-ui); color: var(--muted);
+}
+.lab-region-end::before {
+  content: ""; width: 18px; height: 0; flex: none;
+  border-top: 2px solid color-mix(in srgb, var(--lab-acc) 34%, transparent);
+}
+.lab-region-end::after {
+  content: ""; flex: 1; height: 0; border-top: 1px dashed var(--line);
+}
+/* the ladder stays rendered and operable in LAB; this one line says where a
+   cell click lands, so nothing is inert and nothing is deleted */
+.lab-ladhint {
+  margin: 6px 0 0; font-size: 11px; color: var(--muted); line-height: 1.45;
+}
+html[data-mode="live"] .lab-ladhint { display: none; }
+
 /* ═══════════════ 2. THE LAB BAND — header of the Lab plane ═════════════ */
 .lab-band { margin: 2px 0 0; }
 .lab-band-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
@@ -130,10 +168,27 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
    Plain words at the glance tier; the exact detector and expert identities
    live on the LENS receipt (DESIGN_DOCTRINE §2 Law 2 — no raw slug at
    Tier 1). The chips are a control strip, not tabs: they never move. */
+/* R5.1 / VTL-411 (C4) — THE SCROLLER IS GONE BELOW 980w.
+   R5 put six frozen product-contract boards in an `overflow-x:auto` strip with
+   no edge fade and no chevron, so at 390w three of them were off-screen with no
+   indication they existed — and the empty state's own copy told the reader to
+   "try another board" while the selector was visibly cut mid-pill. The page-
+   level overflow checks were structurally blind to it, because the inner
+   scroller keeps documentElement.scrollWidth clean.
+
+   The fix removes the mechanism rather than decorating it: below 980w the pills
+   WRAP, so all six are on screen with no gesture to discover and nothing to
+   afford. It costs one extra row of vertical space and buys back a product
+   contract. Above 980w all six fit on one line anyway. */
 .lab-sel-wrap { margin: 14px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 .lab-sel-wrap::-webkit-scrollbar { height: 4px; }
 .lab-sel-wrap::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 .lab-sel { display: flex; gap: 7px; padding-bottom: 3px; }
+@media (max-width: 980px) {
+  .lab-sel-wrap { overflow-x: visible; }
+  .lab-sel { flex-wrap: wrap; row-gap: 7px; }
+  .lab-sel button { flex: 0 1 auto; }
+}
 .lab-sel button {
   appearance: none; cursor: pointer; white-space: nowrap; flex: none;
   display: inline-flex; align-items: baseline; gap: 7px;
@@ -151,6 +206,26 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
   font: 700 11px/1 var(--font-mono); font-variant-numeric: tabular-nums;
   color: inherit; opacity: .8;
 }
+/* ── R5.1 / VTL-402 — UNKNOWN IS NOT ZERO ──────────────────────────────────
+   When the feed is not answering, the count is an em dash in the key-absence
+   treatment R4 uses for its own unpublished cell — dashed outline, muted ink —
+   and it can never be confused with the confident tabular 0 that a real zero
+   prints one flip away. The distinction is carried by GLYPH, WEIGHT and BORDER
+   at once, so it survives both themes, both languages and 390w. */
+.lab-sel .lab-n--unk {
+  opacity: 1; color: var(--muted); font-weight: 600;
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  border-radius: 4px; padding: 0 4px; line-height: 1.3;
+}
+.lab-sel-wrap--unk button { color: var(--muted); }
+.lab-unknote {
+  margin: 8px 0 0; padding: 8px 11px; border-radius: 8px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 40%, transparent);
+  font-size: 11px; line-height: 1.5; color: var(--muted);
+}
+/* VTL-406: six counted pills read pre-attentively as a partition, and they are
+   not one. Said once, here, rather than left for the reader to add up. */
+.lab-overlap { margin: 8px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--muted); }
 
 /* ═══════════════ 4. META LINE — what this board is, and how it is sorted */
 .lab-meta {
@@ -159,6 +234,10 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
   border-bottom: 1px solid var(--line);
 }
 .lab-sub { font-size: 12.5px; color: var(--text); }
+/* R5.1 / VTL-407 — the rendered row count, stated. R4 states its three ways;
+   the Lab stated it none, and printed a split computed off the unfiltered set. */
+.lab-showing { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lab-showing b { color: var(--text); font-weight: 800; }
 .lab-basis { font-size: 11px; color: var(--muted); }
 .lab-split { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help; }
 .lab-split b { color: var(--text); font-weight: 800; }
@@ -333,19 +412,45 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
 .lab-pro-state { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
 .lab-pro-state--none { color: var(--muted); font-weight: 600; }
 .lab-pro-when { margin-top: 2px; font-size: 10.5px; color: var(--muted); }
-/* THE LEAD. Only a true live-forward observation may ever carry a measured
-   number (LAB-0 §4). Every other case prints WHY there is no number — a blank
-   slot would read as "zero lead", which is a claim nobody made. */
+/* ── THE LEAD, SYMMETRIC (R5.1 / VTL-403) ─────────────────────────────────
+   R5 painted the only self-referential metric on the surface in accent ink
+   with a tinted fill when it flattered the Lab, and in the muted dashed
+   ABSENCE idiom when it did not — so the aggregate glance of the board was a
+   column of credit badges, and a real adverse measurement wore the costume of
+   a missing one.
+
+   The law now, and the reason it is a law rather than a preference: A
+   MEASUREMENT IS A MEASUREMENT. Favourable, adverse and same-day share ONE
+   treatment and ONE ink; they are distinguished by the word and the number,
+   never by loudness. Only genuine absences — no plan to compare against, or a
+   seed that can never be measured — keep the dashed null idiom.
+
+   `.lab-lead--adverse` exists to carry a different WORD ORDER and its own
+   receipt, not a different volume: it deliberately declares no colour of its
+   own, so a future edit cannot make one side louder without deleting the rule
+   that verify D19c reads. */
 .lab-lead {
   margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
-  font: 750 11px/1.35 var(--font-ui); color: var(--lab-ink);
-  background: var(--lab-wash); border: 1px solid var(--lab-rule);
-  border-radius: 6px; padding: 4px 9px;
+  font: 650 11px/1.35 var(--font-ui);
+  border-radius: 6px; padding: 4px 9px; cursor: help;
 }
-.lab-lead b { font: 800 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lab-lead b { font: 750 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+/* the measurement treatment — quiet, and identical whichever way it came out.
+   It no longer out-inks the ticker: same ink family, lighter weight, no fill. */
+.lab-lead--measured {
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  background: transparent;
+  border: 1px solid var(--line);
+}
+.lab-lead--measured b { color: var(--text); }
+/* NO colour, weight or background is declared here. Adverse and favourable are
+   the same object; only the sentence changes. */
+.lab-lead--adverse { }
+/* the absence idiom — dashed, muted, and reserved for things that were never
+   measured at all */
 .lab-lead--none {
   color: var(--muted); background: transparent; font-weight: 600;
-  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); cursor: help;
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 /* ═══════════════ 6. LAB STATES — empty · behind · unavailable ══════════
@@ -368,11 +473,20 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
       the spine. Above it the spine is solid and rows are sightings; below it
       the spine is dashed and rows are history. The reader is never asked to
       infer the rule from a badge. ─────────────────────────────────────────── */
+/* R5.1 / VTL-408 — THE DIVIDER IS STICKY, AND THAT IS WHY THE 23 PER-ROW
+   CHIPS COULD GO. It pins to the top of the viewport for exactly as long as any
+   row below it is on screen, so the sentence that licenses the whole seed
+   treatment is present wherever it applies — printed once instead of 23 times.
+   The signature device absorbs the job the repetition was doing. */
 .lab-mark {
   display: grid; align-items: center;
   grid-template-columns: var(--lab-gut) minmax(0, 1fr);
   border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 4;
+  background: var(--panel);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--lab-acc) 30%, transparent);
 }
+.lab-mark-l b { color: var(--lab-ink); font-weight: 800; }
 .lab-mark-when {
   padding: 10px 16px 10px 0; text-align: right;
   border-right: 2px solid var(--lab-spine);
@@ -397,11 +511,17 @@ html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
 
 .lab-state { margin: 18px 0 0; }
 .lab-state .mx-empty { border-color: var(--lab-rule); background: var(--lab-wash); }
+.lab-state-acts { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .lab-state-act {
-  margin-top: 12px; display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 40px;                      /* VTL-410: the controls R5.1 adds clear the touch floor */
   appearance: none; cursor: pointer; border: 1px solid var(--line); border-radius: 999px;
-  background: var(--panel); color: var(--text); font: 700 11.5px/1 var(--font-ui); padding: 8px 14px;
+  background: var(--panel); color: var(--text); font: 700 11.5px/1 var(--font-ui); padding: 8px 16px;
 }
+.lab-state-act--primary {
+  border-color: var(--lab-rule); background: var(--lab-wash); color: var(--lab-ink);
+}
+.lab-state-act[disabled] { opacity: .55; cursor: default; }
 .lab-state-act:hover { border-color: color-mix(in srgb, var(--text) 36%, var(--line)); }
 .lab-state-act:focus-visible { outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px; }
 
@@ -446,7 +566,16 @@ html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: lab-i
   .lab-pro-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 }
 @media (max-width: 560px) {
-  body { --lab-gut: 62px; }
+  /* VTL-413: at 62px the rail broke "not a sighting" across two lines, putting
+     the break inside the phrase the design most needs read as one unit. */
+  body { --lab-gut: 76px; }
+  .lab-region { padding-left: 10px; }
+  /* VTL-410 — the controls R5 itself introduced clear the 40px touch floor at
+     the design floor. The R4-inherited sub-40 targets elsewhere on the page are
+     a platform gap and are named in the notes rather than silently forked. */
+  .lab-sel button { min-height: 40px; padding-top: 0; padding-bottom: 0; }
+  .lab-cls-filter button { min-height: 40px; padding-left: 12px; padding-right: 12px; }
+  .lab-seg button { padding-top: 12px; padding-bottom: 12px; }
   /* Mobile reduction (§15): a deliberate re-composition, not a squeeze. The
      band tightens so the first observation reaches the fold; the sort-basis
      sentence demotes to the count chip's LENS; nothing is silently removed. */
