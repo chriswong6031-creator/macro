@@ -775,8 +775,16 @@ jobs:
       # synthetic pack + recovery tape, no data/, no site/, no network, no LLM.
       # Unnamed suites never run in this manifest; leaving W6 off this line would
       # ship the ranking path dark.
-      - name: entry-radar W1+W2+W3+W4+W5+W6 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence, RP1 Research Priority
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py tests/test_entry_radar_w6_priority.py -q
+      #
+      # W4.1 (2026-08-18/19, live-transport correction) joins the SAME step:
+      # tests/test_entry_radar_w41_transport.py is the real-envelope contract
+      # battery (entry_radar.events/v1 spool envelope -> W5's read_spool_events,
+      # confirmed_lanes pack field -> the RTH reader, byte-exact event identity,
+      # keep-first dedup on a re-spooled event_id, unparseable-pass_ts latch
+      # guard). Hermetic: tmp_path spool files + synthetic packs, no data/, no
+      # site/, no network. Unnamed suites never run in this manifest.
+      - name: entry-radar W1+W2+W3+W4+W4.1+W5+W6 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, live-transport correction, W5 prereg gates + forward evidence, RP1 Research Priority
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w41_transport.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py tests/test_entry_radar_w6_priority.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
@@ -1326,6 +1334,121 @@ jobs:
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
       - "engine/press/**"
+      - "engine/prophet_board_read.py"
+      # 2026-08-19 ci-pack-10 heal: this job's inferred (non-exclusive) closure
+      # newly reaches these engine/*.py files on the P-LAB-API branch. Verified
+      # via a real `git clone --local --depth 1` baseline (not a `git archive`
+      # extraction, which has no `.git` and silently under-reports
+      # discover_suites()'s tracked-file census) that origin/main shows ZERO
+      # uncovered for this SAME job -- so this is a genuine new reachability
+      # edge from this branch's diff, not stale pre-existing drift, though the
+      # exact causal chain (none of these files are imported by
+      # engine/prophet_lab/** or engine/prophet_board_read.py, both already
+      # declared above) was not fully isolated within this PR's budget.
+      # Widening here per the guard's own remedy ("widening is always the safe
+      # direction") rather than leaving the pack red.
+      - "engine/oracle/**"
+      - "engine/pick_lab/**"
+      - "engine/prophet_live/**"
+      - "engine/activist.py"
+      - "engine/analyst_revisions.py"
+      - "engine/anticipation.py"
+      - "engine/basket_breadth_divergence.py"
+      - "engine/basket_index.py"
+      - "engine/basket_mtf.py"
+      - "engine/basket_score.py"
+      - "engine/basket_tape.py"
+      - "engine/baskets_intl.py"
+      - "engine/beneficial_ownership.py"
+      - "engine/btc_mtf.py"
+      - "engine/capital_allocation.py"
+      - "engine/coiled.py"
+      - "engine/composite_score.py"
+      - "engine/conviction_accrual.py"
+      - "engine/conviction_delta.py"
+      - "engine/cross_asset_trend.py"
+      - "engine/crowding.py"
+      - "engine/dannytrades.py"
+      - "engine/dannytrades_chip.py"
+      - "engine/demand_chain.py"
+      - "engine/dispersion.py"
+      - "engine/donor.py"
+      - "engine/earnings_blackout.py"
+      - "engine/earnings_catalyst.py"
+      - "engine/entry_primitives.py"
+      - "engine/event_atlas.py"
+      - "engine/event_landmine.py"
+      - "engine/expectation_state.py"
+      - "engine/extension.py"
+      - "engine/forward_dist.py"
+      - "engine/gex_confirm.py"
+      - "engine/gov_exposure.py"
+      - "engine/hold.py"
+      - "engine/htf_durability.py"
+      - "engine/ignition_features.py"
+      - "engine/index_direction.py"
+      - "engine/inputs.py"
+      - "engine/ledger_identity.py"
+      - "engine/liquidity_chip.py"
+      - "engine/long_hold_clocks.py"
+      - "engine/moat_falsifiers.py"
+      - "engine/mtf_upturn.py"
+      - "engine/name_direction.py"
+      - "engine/name_score.py"
+      - "engine/narrative_rotation.py"
+      - "engine/path_personality.py"
+      - "engine/pit.py"
+      - "engine/pit_lag_recorder.py"
+      - "engine/playbook.py"
+      - "engine/postcross.py"
+      - "engine/prophet_doors.py"
+      - "engine/provenance_sidecar.py"
+      - "engine/pullback_zone.py"
+      - "engine/rate_inflation_transmission.py"
+      - "engine/risk_sizing.py"
+      - "engine/roc_blowoff.py"
+      - "engine/sector_pulse.py"
+      - "engine/sector_rate_inflation.py"
+      - "engine/setup_tier.py"
+      - "engine/setups.py"
+      - "engine/shadow_book.py"
+      - "engine/short_volume.py"
+      - "engine/signal_archive.py"
+      - "engine/signal_gate.py"
+      - "engine/special_arb.py"
+      - "engine/special_situations.py"
+      - "engine/stock_dossier.py"
+      - "engine/stock_events.py"
+      - "engine/stock_fundamentals.py"
+      - "engine/stock_macro_sensitivity.py"
+      - "engine/stock_personality.py"
+      - "engine/stock_score.py"
+      - "engine/stock_technicals.py"
+      - "engine/stock_view.py"
+      - "engine/t0_indicator.py"
+      - "engine/theme_crowding.py"
+      - "engine/theme_scoring.py"
+      - "engine/theme_validation.py"
+      - "engine/thesis_funnel.py"
+      - "engine/ticker_alerts.py"
+      - "engine/track_record.py"
+      - "engine/us_board_rank.py"
+      - "engine/us_candidate_lanes.py"
+      - "engine/us_context_vector.py"
+      - "engine/us_prophet_fusion.py"
+      - "engine/valuation.py"
+      - "engine/velocity.py"
+      - "engine/vol_squeeze.py"
+      - "engine/washout_turn.py"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/build_stock_library.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "engine/prophet_lab/**"
       - "engine/research_vault/**"
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
@@ -1650,10 +1773,16 @@ jobs:
       # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
       # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
       # jsonschema/pyyaml/requests, already on this install line. No new job.
+      # tests/test_canada_canonical_board.py (CA-TRUTH, PR #5926) rides next to
+      # test_canada_build.py: same Canada-builder subject, same pandas/pyarrow
+      # install this step already owns (it also imports engine.board_ledger,
+      # already exercised by tests/test_board_ledger.py further down this same
+      # step). No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
-          tests/test_canada_build.py tests/test_commodity_signals.py
+          tests/test_canada_build.py tests/test_canada_canonical_board.py
+          tests/test_commodity_signals.py
           tests/test_commodity_index.py
           tests/test_commodity_confluence.py
           tests/test_commodity_cycle_state.py
@@ -1682,6 +1811,9 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
+          tests/test_prophet_lab.py
+          tests/test_prophet_lab_api.py
+          tests/test_prophet_lab_timeparse.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -2162,6 +2294,7 @@ jobs:
           tests/test_capital_structure_share_count_r2_concurrency_operator.py
           tests/test_sec_capital_structure.py
           tests/test_sec_capital_structure_companyfacts.py
+          tests/test_capital_structure_evidence_identity.py
           tests/test_nwqs_c_dilution.py
           tests/test_compile_capital_structure_registration_lifecycles.py -q
 
@@ -4068,6 +4201,34 @@ jobs:
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976-class): the token-
+      # segmentation unit tests for THIS job's own checker were named by no run:
+      # step. `_token_segments`/`_matches_around_tokens` are the stdlib fallback
+      # `check_template_site_sync.py` uses when PyYAML cannot reproduce the bake
+      # (pages.yml, a DEPLOY GATE) — it walks N tokens -> N+1 invariant segments,
+      # and this suite is what proved the generalization from one token
+      # (Supabase) to two (mm_brain.js's content hash, added by #5976) still
+      # accepts the real committed pair and still rejects a one-sided edit. Rides
+      # this step's own venv (pytest + pyyaml, already above) and this job's full
+      # checkout (it reads templates/theme.js AND site/theme.js). Ordered right
+      # after the checker it tests, before the unrelated chat-nav/asset-stamp
+      # steps below, so a regression here is not masked behind them.
+      - name: template-site-sync token-segmentation unit tests (N-token fallback)
+        run: python -m pytest tests/test_template_site_sync_tokens.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976): theme.js's lazy
+      # assistant launcher (#mmb-boot stub) — the RESOLUTION guard (every
+      # dynamically injected same-origin child asset must resolve from
+      # _mmSharedAssetRoot, not a document-relative literal; this is the exact
+      # class of the 2026-08-19 ~4,600-page /stocks/ 404) and the EAGERNESS guard
+      # (the bundle loads on activation, not at DOMContentLoaded), plus the drift
+      # guard comparing #mmb-boot's geometry to mm_brain.js's real #mmb-launch.
+      # Static analysis of templates/theme.js + templates/mm_brain.js only — no
+      # network, no render, no site/ read — so it needs nothing past this job's
+      # existing pytest install. Joins this job because it is the templates/**
+      # plain-copy-asset home and the sibling suite immediately above already
+      # reads templates/theme.js for the same PR's change.
+      - name: chat launcher stub — shared-asset-root resolution + lazy activation + drift guard
+        run: python -m pytest tests/test_chat_launcher_stub.py -q
       # The other half of plain-copy integrity: byte-matching its site copy says
       # nothing about whether chat.html's HEADER still matches the shared partial.
       # It did not — 12 live pages missing, 17 removed pages still linked — because
@@ -5722,6 +5883,11 @@ jobs:
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_structure.py"
+      # options_universe: engine/oracle/oopt.py (in this job's engine/oracle/** scope)
+      # imports it since the AD-1 options-brief merge (#5872) — the import-closure
+      # contract requires the declared scope to cover it or this job goes dark for
+      # edits to it.
+      - "engine/options_universe.py"
       - "engine/ownership_event_wire.py"
       - "engine/passport.py"
       - "engine/path_personality.py"
@@ -5854,6 +6020,8 @@ jobs:
       - "engine/oracle/**"
       - "engine/pick_lab/**"
       - "engine/press/**"
+      - "engine/prophet_board_read.py"
+      - "engine/prophet_lab/**"
       - "engine/prophet_live/**"
       - "engine/quant_lab/**"
       - "engine/research_vault/**"
@@ -6133,6 +6301,151 @@ jobs:
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
       - "engine/press/**"
+      - "engine/prophet_board_read.py"
+      # 2026-08-19 ci-pack-10 heal: this job's inferred (non-exclusive) closure
+      # newly reaches these engine/*.py files on the P-LAB-API branch. Verified
+      # via a real `git clone --local --depth 1` baseline (not a `git archive`
+      # extraction, which has no `.git` and silently under-reports
+      # discover_suites()'s tracked-file census) that origin/main shows ZERO
+      # uncovered for this SAME job -- so this is a genuine new reachability
+      # edge from this branch's diff, not stale pre-existing drift, though the
+      # exact causal chain (none of these files are imported by
+      # engine/prophet_lab/** or engine/prophet_board_read.py, both already
+      # declared above) was not fully isolated within this PR's budget.
+      # Widening here per the guard's own remedy ("widening is always the safe
+      # direction") rather than leaving the pack red.
+      - "engine/oracle/**"
+      - "engine/pick_lab/**"
+      - "engine/prophet_live/**"
+      - "engine/activist.py"
+      - "engine/analyst_revisions.py"
+      - "engine/anticipation.py"
+      - "engine/basket_breadth_divergence.py"
+      - "engine/basket_index.py"
+      - "engine/basket_mtf.py"
+      - "engine/basket_score.py"
+      - "engine/basket_tape.py"
+      - "engine/baskets.py"
+      - "engine/baskets_canada.py"
+      - "engine/baskets_china.py"
+      - "engine/baskets_hk.py"
+      - "engine/baskets_intl.py"
+      - "engine/baskets_region.py"
+      - "engine/beneficial_ownership.py"
+      - "engine/btc_mtf.py"
+      - "engine/capital_allocation.py"
+      - "engine/coiled.py"
+      - "engine/composite_score.py"
+      - "engine/conditions.py"
+      - "engine/confluence_tiers.py"
+      - "engine/conviction_accrual.py"
+      - "engine/conviction_delta.py"
+      - "engine/cross_asset.py"
+      - "engine/cross_asset_trend.py"
+      - "engine/crowding.py"
+      - "engine/cycles.py"
+      - "engine/dannytrades.py"
+      - "engine/dannytrades_chip.py"
+      - "engine/demand_chain.py"
+      - "engine/dispersion.py"
+      - "engine/donor.py"
+      - "engine/earnings_blackout.py"
+      - "engine/earnings_catalyst.py"
+      - "engine/entry_primitives.py"
+      - "engine/entry_signal.py"
+      - "engine/equity_factors.py"
+      - "engine/event_atlas.py"
+      - "engine/event_landmine.py"
+      - "engine/expectation_state.py"
+      - "engine/extension.py"
+      - "engine/forward_dist.py"
+      - "engine/gex_confirm.py"
+      - "engine/gex_engine.py"
+      - "engine/gov_exposure.py"
+      - "engine/greeks.py"
+      - "engine/group_flow.py"
+      - "engine/hold.py"
+      - "engine/htf_durability.py"
+      - "engine/hysteresis.py"
+      - "engine/ignition_features.py"
+      - "engine/index_direction.py"
+      - "engine/indicators.py"
+      - "engine/inputs.py"
+      - "engine/ledger_identity.py"
+      - "engine/liquidity_chip.py"
+      - "engine/long_hold_clocks.py"
+      - "engine/moat_falsifiers.py"
+      - "engine/mtf_upturn.py"
+      - "engine/name_direction.py"
+      - "engine/name_score.py"
+      - "engine/name_score_grader.py"
+      - "engine/narrative_rotation.py"
+      - "engine/options_ivspread.py"
+      - "engine/options_structure.py"
+      - "engine/path_personality.py"
+      - "engine/pit.py"
+      - "engine/pit_lag_recorder.py"
+      - "engine/playbook.py"
+      - "engine/postcross.py"
+      - "engine/prophet_bridge.py"
+      - "engine/prophet_doors.py"
+      - "engine/prophet_stage_inputs.py"
+      - "engine/provenance_sidecar.py"
+      - "engine/pullback_zone.py"
+      - "engine/rate_inflation_transmission.py"
+      - "engine/residual_alpha.py"
+      - "engine/risk_sizing.py"
+      - "engine/roc_blowoff.py"
+      - "engine/sector_pulse.py"
+      - "engine/sector_rate_inflation.py"
+      - "engine/setup_tier.py"
+      - "engine/setups.py"
+      - "engine/shadow_book.py"
+      - "engine/short_volume.py"
+      - "engine/signal_archive.py"
+      - "engine/signal_gate.py"
+      - "engine/signal_quality.py"
+      - "engine/special_arb.py"
+      - "engine/special_situations.py"
+      - "engine/spotlight.py"
+      - "engine/stock_dossier.py"
+      - "engine/stock_events.py"
+      - "engine/stock_fundamentals.py"
+      - "engine/stock_macro_sensitivity.py"
+      - "engine/stock_personality.py"
+      - "engine/stock_score.py"
+      - "engine/stock_technicals.py"
+      - "engine/stock_view.py"
+      - "engine/sue.py"
+      - "engine/t0_indicator.py"
+      - "engine/technicals.py"
+      - "engine/theme_crowding.py"
+      - "engine/theme_scoring.py"
+      - "engine/theme_validation.py"
+      - "engine/thesis_funnel.py"
+      - "engine/ticker_alerts.py"
+      - "engine/track_record.py"
+      - "engine/us_board_rank.py"
+      - "engine/us_candidate_lanes.py"
+      - "engine/us_context_vector.py"
+      - "engine/us_early_turn.py"
+      - "engine/us_prophet_fusion.py"
+      - "engine/valuation.py"
+      - "engine/velocity.py"
+      - "engine/vol_forecast.py"
+      - "engine/vol_regime.py"
+      - "engine/vol_squeeze.py"
+      - "engine/washout_turn.py"
+      - "engine/weinstein_stage.py"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/build_stock_library.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "engine/prophet_lab/**"
       - "engine/research_vault/**"
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
@@ -7179,6 +7492,7 @@ jobs:
     scope: exclusive
     paths:
       - "config/**"
+      - "contracts/options/OPTIONS_INTEL_BRIEF_V1.md"
       - "data/**"
       - "engine/*"
       - "engine/government_revenue/**"
@@ -7191,6 +7505,7 @@ jobs:
       - "scripts/build_market_structure.py"
       - "scripts/build_market_structure_page.py"
       - "scripts/build_options_command.py"
+      - "scripts/build_options_intel_brief.py"
       - "scripts/build_options_screener.py"
       - "scripts/validate_gex.py"
       - "site/altdata/**"
@@ -7203,6 +7518,8 @@ jobs:
       - "site/leaderradar/**"
       - "site/neuralwebdata/**"
       - "site/options.html"
+      - "site/options_intel_brief.json"
+      - "site/prophet/index.json"
       - "templates/options.html.j2"
       - "tests/test_build_flow_leaders.py"
       - "tests/test_build_market_structure_page.py"
@@ -7212,6 +7529,8 @@ jobs:
       - "tests/test_market_structure.py"
       - "tests/test_market_structure_nw.py"
       - "tests/test_options_gap_discipline.py"
+      - "tests/test_options_intel_brief.py"
+      - "tests/test_options_intel_brief_ui.py"
       - "tests/test_support_map.py"
       - "tools/index.html"
     timeout-minutes: 15
@@ -7244,7 +7563,13 @@ jobs:
       - name: options-screener builder suite (denominator pins)
         run: python -m pytest tests/test_build_options_screener.py tests/test_options_gap_discipline.py -q
       - name: options workspace suite (OEU M-CMD — 4 modes, close-line honesty, payload law)
-        run: python -m pytest tests/test_build_options_command.py -q
+        # AD-1 joins this step (not a new job — the manifest is at the narrow-diff
+        # ceiling and a step is the masking unit): the intel-brief engine/producer
+        # contract suite plus the Workspace consumer/parity suite ride with the
+        # workspace they render into. tests/test_options_intel_brief.py includes the
+        # data-feasibility law test, which reads the committed data/polygon_gex store
+        # present on a full CI checkout.
+        run: python -m pytest tests/test_build_options_command.py tests/test_options_intel_brief.py tests/test_options_intel_brief_ui.py -q
       - name: neural-web support-map suite (real-synapse census bands)
         run: python -m pytest tests/test_support_map.py -q
 
@@ -7819,6 +8144,12 @@ jobs:
         run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
+      # D2 Identity Atlas: projector + graph-delta pins + the node-harness test
+      # that renders the shipped dossier JS factory against the COMMITTED
+      # identity-atlas artifact (needs node, present on these runners for the
+      # dossier-UI suite above).
+      - name: D2 identity atlas — projector, hostile tests, committed-artifact UI render
+        run: python -m pytest tests/test_government_revenue_identity_atlas.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
         run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_sam_gov_radar_leg.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
       # The 2026-08-03 backfill wired the builder/fence/UI/collector suites but
@@ -9070,6 +9401,8 @@ jobs:
       - "research/prophet_fusion/families.yml"
       - "research/prophet_fusion/pr1b_baseline_race/report.json"
       - "research/prophet_fusion/pr2_c2/report.json"
+      - "research/prophet_fusion/pr2_c2/era_frame_keys.parquet"
+      - "research/prophet_fusion/pr2_c2/era_frame_pin.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
@@ -9466,6 +9799,32 @@ jobs:
         run: python -m pytest tests/test_collector_freshness_disclosure.py -q
       - name: off-render Yahoo universe backfill contract
         run: python -m pytest tests/test_yahoo_universe_backfill.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5942 sibling): the
+      # NA-ticker pandas-sentinel guard. pandas decodes the bare strings
+      # NA/NULL/NONE/NAN/N-A/NaN to NaN by default, and 'NA' is a live ticker on
+      # both sides (Nano Labs Ltd, Nasdaq; National Bank of Canada, TSX) — every
+      # read_csv/read_excel over a ticker column silently dropped those rows
+      # with adapter status still `ok`. Pins the keep_default_na=False +
+      # na_values=[""] guard (an AST call-site census — pure ast.parse, no
+      # import) across all 18 parse sites in the nine collector files this
+      # fixed, plus the is_non_equity_holding() truth table (collectors/
+      # holdings.py, Part B of the fix) and the documented regression a BARE
+      # keep_default_na=False would reintroduce (numeric columns silently
+      # turning to dtype str).
+      #
+      # Lives HERE, not on the ETF lane its subject reads closest to
+      # (unrun-scoring-engine), for the same reason test_collector_freshness_
+      # disclosure sits in THIS job two steps up: one of its behavioural
+      # round-trips imports collectors.canada_universe (_to_ticker), and that
+      # module's `import yfinance as yf` is module-scope — it ERRORS at
+      # collection under the shared unrun-* install (verified: this exact
+      # placement in unrun-scoring-engine failed CI on PR #5985 with
+      # `ModuleNotFoundError: No module named 'yfinance'`, even though it
+      # passed locally where yfinance happened to already be installed). This
+      # lane already declares the yfinance wheel and already owns a
+      # yfinance-import-at-collection suite, so it costs nothing new.
+      - name: NA-ticker pandas-sentinel guard — 18 parse sites + is_non_equity_holding truth table
+        run: python -m pytest tests/test_collectors_na_sentinel.py -q
 
   unrun-brain-gateway:
     # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
@@ -10377,6 +10736,151 @@ jobs:
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
       - "engine/press/**"
+      - "engine/prophet_board_read.py"
+      # 2026-08-19 ci-pack-10 heal: this job's inferred (non-exclusive) closure
+      # newly reaches these engine/*.py files on the P-LAB-API branch. Verified
+      # via a real `git clone --local --depth 1` baseline (not a `git archive`
+      # extraction, which has no `.git` and silently under-reports
+      # discover_suites()'s tracked-file census) that origin/main shows ZERO
+      # uncovered for this SAME job -- so this is a genuine new reachability
+      # edge from this branch's diff, not stale pre-existing drift, though the
+      # exact causal chain (none of these files are imported by
+      # engine/prophet_lab/** or engine/prophet_board_read.py, both already
+      # declared above) was not fully isolated within this PR's budget.
+      # Widening here per the guard's own remedy ("widening is always the safe
+      # direction") rather than leaving the pack red.
+      - "engine/oracle/**"
+      - "engine/pick_lab/**"
+      - "engine/prophet_live/**"
+      - "engine/activist.py"
+      - "engine/analyst_revisions.py"
+      - "engine/anticipation.py"
+      - "engine/basket_breadth_divergence.py"
+      - "engine/basket_index.py"
+      - "engine/basket_mtf.py"
+      - "engine/basket_score.py"
+      - "engine/basket_tape.py"
+      - "engine/baskets.py"
+      - "engine/baskets_canada.py"
+      - "engine/baskets_china.py"
+      - "engine/baskets_hk.py"
+      - "engine/baskets_intl.py"
+      - "engine/baskets_region.py"
+      - "engine/beneficial_ownership.py"
+      - "engine/btc_mtf.py"
+      - "engine/capital_allocation.py"
+      - "engine/coiled.py"
+      - "engine/composite_score.py"
+      - "engine/conditions.py"
+      - "engine/confluence_tiers.py"
+      - "engine/conviction_accrual.py"
+      - "engine/conviction_delta.py"
+      - "engine/cross_asset.py"
+      - "engine/cross_asset_trend.py"
+      - "engine/crowding.py"
+      - "engine/cycles.py"
+      - "engine/dannytrades.py"
+      - "engine/dannytrades_chip.py"
+      - "engine/demand_chain.py"
+      - "engine/dispersion.py"
+      - "engine/donor.py"
+      - "engine/earnings_blackout.py"
+      - "engine/earnings_catalyst.py"
+      - "engine/entry_primitives.py"
+      - "engine/entry_signal.py"
+      - "engine/equity_factors.py"
+      - "engine/event_atlas.py"
+      - "engine/event_landmine.py"
+      - "engine/expectation_state.py"
+      - "engine/extension.py"
+      - "engine/forward_dist.py"
+      - "engine/gex_confirm.py"
+      - "engine/gex_engine.py"
+      - "engine/gov_exposure.py"
+      - "engine/greeks.py"
+      - "engine/group_flow.py"
+      - "engine/hold.py"
+      - "engine/htf_durability.py"
+      - "engine/hysteresis.py"
+      - "engine/ignition_features.py"
+      - "engine/index_direction.py"
+      - "engine/indicators.py"
+      - "engine/inputs.py"
+      - "engine/ledger_identity.py"
+      - "engine/liquidity_chip.py"
+      - "engine/long_hold_clocks.py"
+      - "engine/moat_falsifiers.py"
+      - "engine/mtf_upturn.py"
+      - "engine/name_direction.py"
+      - "engine/name_score.py"
+      - "engine/name_score_grader.py"
+      - "engine/narrative_rotation.py"
+      - "engine/options_ivspread.py"
+      - "engine/options_structure.py"
+      - "engine/path_personality.py"
+      - "engine/pit.py"
+      - "engine/pit_lag_recorder.py"
+      - "engine/playbook.py"
+      - "engine/postcross.py"
+      - "engine/prophet_bridge.py"
+      - "engine/prophet_doors.py"
+      - "engine/prophet_stage_inputs.py"
+      - "engine/provenance_sidecar.py"
+      - "engine/pullback_zone.py"
+      - "engine/rate_inflation_transmission.py"
+      - "engine/residual_alpha.py"
+      - "engine/risk_sizing.py"
+      - "engine/roc_blowoff.py"
+      - "engine/sector_pulse.py"
+      - "engine/sector_rate_inflation.py"
+      - "engine/setup_tier.py"
+      - "engine/setups.py"
+      - "engine/shadow_book.py"
+      - "engine/short_volume.py"
+      - "engine/signal_archive.py"
+      - "engine/signal_gate.py"
+      - "engine/signal_quality.py"
+      - "engine/special_arb.py"
+      - "engine/special_situations.py"
+      - "engine/spotlight.py"
+      - "engine/stock_dossier.py"
+      - "engine/stock_events.py"
+      - "engine/stock_fundamentals.py"
+      - "engine/stock_macro_sensitivity.py"
+      - "engine/stock_personality.py"
+      - "engine/stock_score.py"
+      - "engine/stock_technicals.py"
+      - "engine/stock_view.py"
+      - "engine/sue.py"
+      - "engine/t0_indicator.py"
+      - "engine/technicals.py"
+      - "engine/theme_crowding.py"
+      - "engine/theme_scoring.py"
+      - "engine/theme_validation.py"
+      - "engine/thesis_funnel.py"
+      - "engine/ticker_alerts.py"
+      - "engine/track_record.py"
+      - "engine/us_board_rank.py"
+      - "engine/us_candidate_lanes.py"
+      - "engine/us_context_vector.py"
+      - "engine/us_early_turn.py"
+      - "engine/us_prophet_fusion.py"
+      - "engine/valuation.py"
+      - "engine/velocity.py"
+      - "engine/vol_forecast.py"
+      - "engine/vol_regime.py"
+      - "engine/vol_squeeze.py"
+      - "engine/washout_turn.py"
+      - "engine/weinstein_stage.py"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/build_stock_library.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "engine/prophet_lab/**"
       - "engine/research_vault/**"
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
@@ -11127,6 +11631,11 @@ jobs:
     gate: code
     paths:
       - config/delisted_symbols.yml
+      # issuer_group_allowlist: read by scripts/build_security_master.py since the
+      # D2 Identity Atlas merge (#5932) — the import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure) requires the
+      # declared scope to cover it or this job goes dark for edits to it.
+      - config/issuer_group_allowlist.yml
       - lib/__init__.py
       - lib/config.py
       - lib/delisted_symbols.py

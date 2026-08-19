@@ -8,7 +8,7 @@
  "may_gate": false,
  "may_alert": false,
  "as_of": "2026-08-19",
- "generated_utc": "2026-08-19T06:04:56.133323+00:00",
+ "generated_utc": "2026-08-19T15:13:57.639761+00:00",
  "gate_open": true,
  "artifact_ok": true,
  "train_end": "2022-12-31",
@@ -20,7 +20,7 @@
   "selected": 42,
   "not_selected": 327,
   "appended_today": 0,
-  "advanced_today": 16,
+  "advanced_today": 0,
   "score_failures_today": 0,
   "statuses": {
    "expired": 11,

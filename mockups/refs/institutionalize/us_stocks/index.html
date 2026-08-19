@@ -18,13 +18,22 @@
 
   HARNESS — state switching by query parameter:
     ?theme=dark|light   ?lang=en|zh   ?view=grid|table   ?chrome=0|1
-    ?state=paid|anon|empty|episodes
+    ?state=paid|today|anon|empty|episodes|stale|fallback|loading|error
     ?life=watch|ready|entered|delivering|overtime|invalidated|resolved
+    ?watch=present    forces the watch key present-and-empty (production's
+                      state since 2026-08-18; the frozen fixture has it absent)
+    ?focus=<plan id>  opens the live board scrolled to that plan's card
 
   Data: board-data.js is a real extract of the committed payload
-  (site/prophet/index.json asof 2026-08-12 + site/factordata/us_standouts.json
-  as_of 2026-08-10) — regenerate with tools/gen_fixture.py. Every count on the
-  page reconciles against that payload: 62+96+0+0+4 = 162 = open_count.
+  (site/prophet/index.json asof 2026-08-13 + site/factordata/us_standouts.json
+  as_of 2026-08-12) — regenerate with tools/gen_fixture.py. Every count on the
+  page reconciles against that payload:
+      62 ready + 95 entered + 0 delivering + 0 overtime + 2 invalidated
+        = 159 = open_count = live_total
+      159 live + 20 resolved = 179 = active_count = grand_total
+  These five addends, the two totals and the two as-of dates are asserted by
+  tools/verify_r4.py (R30) against board-data.js itself, so this block cannot
+  go stale without failing the harness.
   ══════════════════════════════════════════════════════════════════════════
 -->
 <link rel="stylesheet" href="board.css">

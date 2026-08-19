@@ -1,0 +1,55 @@
+# RIG manifest (RIG V1 §3) — Prophet Operator Lab, R5 reference candidate.
+#
+# STATUS IS `draft` AND STAYS THERE UNTIL TWO INDEPENDENT CRITICS HAVE RUN.
+# The author of the artifact wrote this packet; RIG §6/§7 forbid the author
+# judging the author, so there is no verdict.yml and no approval.yml here and
+# neither may be written by this session. See README.md.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-lab-r5
+scope: full
+status: draft
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "claude design session, D-LAB-R5 (branch claude/prophet-lab-r5-reference)"
+  role: designer
+
+# The reference artifact, frozen. `frozen_sha` is the commit that froze the
+# mockup directory; moving it stales every receipt bound to it (RIG §3).
+reference_files:
+  - path: mockups/refs/prophet_lab
+    frozen_sha: 6ee8f34480ce3299b4692a3e732c6a5c75d9782a
+
+# Ordered OLDEST -> NEAREST. Every non-approved artifact set governing this same
+# surface.route must be named, or `undeclared-predecessor` fires: declaring a
+# conveniently old ancestor is not a way out (RIG §13.2). The nearest one carries
+# the closure obligation, which continuity.yml discharges.
+#
+# NOTE the gap in this chain, deliberately recorded: the R4 CLOSURE CYCLE
+# (research/reference_integrity/prophet-board-5514-r4/) answered the R3 verdict
+# and produced the artifact this candidate extends, but it never minted an
+# artifact SET of its own — no manifest, no reviews, no verdict. So the nearest
+# RIG-visible predecessor is r3, while the nearest ARTIFACT is R4 at
+# 168a9be00691, which has never been independently reviewed. continuity.yml
+# closes r3's items through R4's work and says so row by row.
+lineage:
+  predecessors:
+    - {reference_id: prophet-board-5514-original, verdict: REVISE,
+       note: "founding regression fixture (PR #5520)"}
+    - {reference_id: prophet-board-5514-r2, verdict: REVISE,
+       note: "r2 cycle (PR #5533)"}
+    - {reference_id: prophet-board-5514-r3, verdict: REVISE,
+       note: "r3 cycle (PR #5552); its 10 blockers + 11 conditions are closed in continuity.yml"}
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+  # approval: approval.yml    # ABSENT ON PURPOSE — see README.md §"What is missing"

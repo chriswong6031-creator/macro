@@ -43,6 +43,7 @@ from engine.capital_structure.source_ledger_io import (
     source_ledger_path,
 )  # noqa: E402
 from engine.capital_structure.source_identity import (
+    evidence_id_from_manifest,
     source_ledger_prefix_hash,
     validate_manifest_ledger,
 )  # noqa: E402
@@ -391,7 +392,27 @@ def event_from_manifest_group(
     source_first_seen = _utc_dependency_max([
         row.get("retrieval", {}).get("first_seen_at") for row in rows
     ])
-    first_seen = produced_at or source_first_seen
+    # W1: Use canonical first_known_at from evidence to prevent a later re-
+    # observation from moving the published PIT boundary backward.  Fall back to
+    # the retrieval wall clock when no first_known_at is present (historical v1).
+    first_known_at_values = [
+        row.get("first_known_at")
+        for row in rows
+        if row.get("first_known_at") and isinstance(row.get("first_known_at"), str)
+    ]
+    canonical_first_known = first_known_at_values[0] if first_known_at_values else None
+    first_seen = produced_at or canonical_first_known or source_first_seen
+    # W1: Collect stable evidence_ids from manifest rows (skip silently on errors
+    # so historical v1 rows that cannot project still compile without crashing).
+    collected_evidence_ids: list[str] = []
+    for row in rows:
+        try:
+            eid = evidence_id_from_manifest(row)
+            if eid:
+                collected_evidence_ids.append(eid)
+        except Exception:  # noqa: BLE001
+            pass
+    evidence_ids = sorted(set(collected_evidence_ids)) if collected_evidence_ids else None
     exhibits = [
         row.get("document", {}).get("canonical_url")
         for row in rows
@@ -399,7 +420,7 @@ def event_from_manifest_group(
             "exhibit", "underwriting_exhibit", "filing_fee_exhibit",
         }
     ]
-    observation = {
+    observation: dict[str, Any] = {
         "source_system": "sec_edgar",
         "source_id": str(accession),
         "manifest_ids": sorted(str(row["manifest_id"]) for row in rows),
@@ -414,6 +435,7 @@ def event_from_manifest_group(
         "filing_date": filing_date,
         "accepted_at": accepted_at,
         "first_seen_at": first_seen,
+        "first_known_at": canonical_first_known or first_seen,
         "primary_document_url": (
             evidence_record.get("document", {}).get("canonical_url") if primaries else None
         ),
@@ -423,6 +445,8 @@ def event_from_manifest_group(
             for row in rows if row.get("document", {}).get("content_sha256")
         }),
     }
+    if evidence_ids:
+        observation["evidence_ids"] = evidence_ids
     parser = evidence_record.get("parser") or {}
     root_parser = complete[0].get("parser") or {}
     if str(root_parser.get("corruption_state") or "unknown") != "clean":
@@ -725,14 +749,68 @@ def _linkage_metadata(events: Sequence[Mapping[str, Any]]) -> dict[str, dict[str
 
 
 def _semantic_event_body(event: Mapping[str, Any]) -> bytes:
-    """Canonical event meaning, excluding immutable-version bookkeeping clocks."""
+    """Canonical event meaning, excluding immutable-version bookkeeping clocks.
+
+    W1: manifest_ids are clock-contaminated (they hash retrieved_at and other
+    retrieval noise) and must not drive economic identity comparison.  Pop them
+    from source and evidence so that a later re-observation that yields the same
+    occurrence+bytes but a different manifest_id does not generate a spurious
+    correction event.  evidence_ids (stable, occurrence+bytes) are retained when
+    present; when absent (historical v1 rows) both sides lack them so equality
+    still holds.
+    """
     body = copy.deepcopy(dict(event))
     body.pop("event_id", None)
     body.pop("version", None)
     body.pop("point_in_time", None)
     relationships = body.get("relationships") or {}
     relationships["supersedes"] = []
+    # Pop clock-contaminated manifest reference fields.
+    source = body.get("source")
+    if isinstance(source, dict):
+        source.pop("manifest_ids", None)
+    evidence_list = body.get("evidence")
+    if isinstance(evidence_list, list):
+        for item in evidence_list:
+            if isinstance(item, dict):
+                item.pop("manifest_id", None)
     return _canonical_json(body)
+
+
+def _project_evidence_ids_into_event(
+    event: Mapping[str, Any],
+    manifest_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Return a shallow copy of event with evidence_ids projected into source.
+
+    Used to make historical v1 events (which lack evidence_ids) comparable to
+    freshly compiled W1 events so the first W1 compile does not mint a
+    correction for every historical accession whose economic content is
+    unchanged.  Silently skips any manifest row that cannot project.
+    """
+    projected = copy.deepcopy(dict(event))
+    source = projected.get("source")
+    if not isinstance(source, dict) or source.get("evidence_ids"):
+        return projected
+    accession = str((projected.get("filing") or {}).get("accession") or "")
+    manifest_ids = {str(m) for m in (source.get("manifest_ids") or [])}
+    if not accession or not manifest_ids:
+        return projected
+    eids: list[str] = []
+    for row in manifest_records:
+        if str((row.get("filing") or {}).get("accession") or "") != accession:
+            continue
+        if str(row.get("manifest_id") or "") not in manifest_ids:
+            continue
+        try:
+            eid = evidence_id_from_manifest(row)
+            if eid:
+                eids.append(eid)
+        except Exception:  # noqa: BLE001
+            pass
+    if eids:
+        source["evidence_ids"] = sorted(set(eids))
+    return projected
 
 
 def _latest_events_by_logical_key(
@@ -933,8 +1011,15 @@ def compile_manifest_records(
             candidate = event_from_manifest_group(groups[accession])
             logical_key = ("sec_edgar", accession)
             prior = latest.get(logical_key)
-            if prior is not None and _semantic_event_body(candidate) == _semantic_event_body(prior):
-                continue
+            if prior is not None:
+                # W1: project evidence_ids into historical prior so that the
+                # first W1 compile does not generate a spurious correction for
+                # every accession whose economic content is unchanged.
+                prior_for_compare = _project_evidence_ids_into_event(
+                    prior, manifest_records
+                )
+                if _semantic_event_body(candidate) == _semantic_event_body(prior_for_compare):
+                    continue
             if prior is not None:
                 produced = pd.Timestamp(now)
                 prior_available = pd.Timestamp(

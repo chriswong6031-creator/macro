@@ -1,0 +1,23 @@
+{
+  "schema": "prophet_fusion.c2_era_pin.v1",
+  "source_commit": "6adf8b728785",
+  "source_path": "data/us_board_ledger/retro_grades.parquet",
+  "grain": [
+    "date",
+    "ticker",
+    "horizon"
+  ],
+  "n_keys": 4075,
+  "n_rows_expected": 4077,
+  "n_dates": 24,
+  "date_range": [
+    "2026-06-15",
+    "2026-07-31"
+  ],
+  "horizon_n_dates": {
+    "5": 24,
+    "10": 17,
+    "21": 7
+  },
+  "note": "Row-identity pin of the PR-2 / PR-1b graded frame. An as-of cutoff does not recover this vintage (maturation lands inside the window). Tests rebuild C2 from the LIVE ledger inner-joined to these keys. Snapshots are filtered to the same dates; they are not frozen as a fixture."
+}

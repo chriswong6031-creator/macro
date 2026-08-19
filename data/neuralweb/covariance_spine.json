@@ -54,7 +54,7 @@
           "track_record"
         ],
         "unmeasurable": {
-          "altdata": 9,
+          "altdata": 10,
           "altdata_conv": 1,
           "basket_turn.v1": 2,
           "ca_board": 8,
@@ -72,8 +72,8 @@
           "macro_context": 8,
           "narrative": 7,
           "options_entry": 6,
-          "policy": 8,
-          "radar": 9,
+          "policy": 9,
+          "radar": 10,
           "reflex.commodity_shock": 1,
           "reflex.cortex_attention": 4,
           "reflex.options_flow_attention": 7,
@@ -81,8 +81,8 @@
           "stock_personality": 1,
           "tech_signals": 1,
           "us_board": 8,
-          "us_importance_v0": 8,
-          "us_importance_v0_pit": 8,
+          "us_importance_v0": 9,
+          "us_importance_v0_pit": 9,
           "whitehouse": 7
         },
         "pairs_below_floor": 0,
@@ -96,7 +96,7 @@
       "track_record"
     ],
     "unmeasurable": {
-      "altdata": 9,
+      "altdata": 10,
       "altdata_conv": 1,
       "basket_turn.v1": 2,
       "ca_board": 8,
@@ -114,8 +114,8 @@
       "macro_context": 8,
       "narrative": 7,
       "options_entry": 6,
-      "policy": 8,
-      "radar": 9,
+      "policy": 9,
+      "radar": 10,
       "reflex.commodity_shock": 1,
       "reflex.cortex_attention": 4,
       "reflex.options_flow_attention": 7,
@@ -123,8 +123,8 @@
       "stock_personality": 1,
       "tech_signals": 1,
       "us_board": 8,
-      "us_importance_v0": 8,
-      "us_importance_v0_pit": 8,
+      "us_importance_v0": 9,
+      "us_importance_v0_pit": 9,
       "whitehouse": 7
     },
     "pairs_below_floor": 0,

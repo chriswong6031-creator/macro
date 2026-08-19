@@ -242,6 +242,28 @@ class CommittedTrialProjection:
 
 
 @dataclass(frozen=True)
+class ValidatedPointerBoundGeneration:
+    """This pointer and this fully validated generation for this logical read.
+
+    Callers pass the value through one bundle construction.  The publisher
+    never retains it across calls; a later logical read must validate again.
+    """
+
+    pointer: Mapping[str, Any]
+    committed: CommittedGeneration
+    manifest: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class ProductReadBundle:
+    """Projection and operational health derived from one validated generation."""
+
+    projection: CommittedTrialProjection
+    operational_health: Mapping[str, Any]
+    health_unavailable_reason: str | None = None
+
+
+@dataclass(frozen=True)
 class HistoryPublicationEvidence:
     """Private, replay-validated B2 evidence supplied for one public model.
 
@@ -1304,6 +1326,8 @@ class PublicGenerationPublisher:
         self.public_root = raw_public_root.resolve()
         self.now_fn = now_fn
         self._pointer_after_replace_hook = pointer_after_replace_hook
+        # Validated generations travel as explicit request-local values.
+        # This instance never stores a last-validated generation.
 
     @property
     def pointer_path(self) -> Path:
@@ -1671,8 +1695,8 @@ class PublicGenerationPublisher:
         )
         return manifest
 
-    def read_committed(self) -> CommittedGeneration | None:
-        """Read a fully validated committed state, never a loose watermark file."""
+    def _read_current_pointer(self) -> dict[str, Any] | None:
+        """Validate the current pointer file without loading its generation."""
 
         if self.pointer_path.is_symlink():
             raise PublicationError("PUBLIC_POINTER_INVALID")
@@ -1696,15 +1720,22 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_POINTER_INVALID")
         _validate_utc_datetime(pointer.get("watermark_after"))
         _validate_utc_datetime(pointer.get("published_at"))
-        manifest = self._load_generation_manifest(generation_id)
+        return pointer
+
+    @staticmethod
+    def _committed_from_pointer_and_manifest(
+        pointer: Mapping[str, Any],
+        manifest: Mapping[str, Any],
+    ) -> CommittedGeneration:
         if (
-            pointer.get("manifest_sha256") != manifest["manifest_sha256"]
+            pointer.get("generation_id") != manifest.get("generation_id")
+            or pointer.get("manifest_sha256") != manifest["manifest_sha256"]
             or pointer.get("watermark_after") != manifest["watermark_after"]
             or pointer.get("published_at") != manifest["published_at"]
         ):
             raise PublicationError("PUBLIC_POINTER_INVALID")
         return CommittedGeneration(
-            generation_id=generation_id,
+            generation_id=str(pointer["generation_id"]),
             manifest_sha256=manifest["manifest_sha256"],
             watermark_after=manifest["watermark_after"],
             published_at=manifest["published_at"],
@@ -1716,6 +1747,79 @@ class PublicGenerationPublisher:
             schema_version=manifest["schema_version"],
         )
 
+    def read_validated_generation(self) -> ValidatedPointerBoundGeneration | None:
+        """Validate the current pointer and fully load that generation once.
+
+        The returned value is request-local.  This publisher instance does not
+        remember it, and a later logical read must prove the generation again.
+        """
+
+        pointer = self._read_current_pointer()
+        if pointer is None:
+            return None
+        manifest = self._load_generation_manifest(pointer["generation_id"])
+        committed = self._committed_from_pointer_and_manifest(pointer, manifest)
+        return ValidatedPointerBoundGeneration(
+            pointer=dict(pointer),
+            committed=committed,
+            manifest=dict(manifest),
+        )
+
+    def _pointer_matches_validated(self, validated: ValidatedPointerBoundGeneration) -> bool:
+        current = self._read_current_pointer()
+        if current is None:
+            return False
+        return (
+            current.get("generation_id") == validated.committed.generation_id
+            and current.get("manifest_sha256") == validated.committed.manifest_sha256
+            and current.get("watermark_after") == validated.committed.watermark_after
+            and current.get("published_at") == validated.committed.published_at
+        )
+
+    def read_committed(self) -> CommittedGeneration | None:
+        """Read a fully validated committed state, never a loose watermark file."""
+
+        validated = self.read_validated_generation()
+        if validated is None:
+            return None
+        return validated.committed
+
+    def read_product_bundle(self, *, now: datetime | None = None) -> ProductReadBundle | None:
+        """Return projection and health from one pointer-bound generation load."""
+
+        return self._read_product_bundle(now=now, retried=False)
+
+    def _read_product_bundle(
+        self,
+        *,
+        now: datetime | None,
+        retried: bool,
+    ) -> ProductReadBundle | None:
+        validated = self.read_validated_generation()
+        if validated is None:
+            return None
+        projection = self._trial_projection_from_validated(validated)
+        health_unavailable_reason: str | None = None
+        try:
+            health = self._operational_health_from_validated(validated, now=now)
+        except (OSError, PublicationError) as exc:
+            health_unavailable_reason = getattr(exc, "code", type(exc).__name__)
+            health = {
+                "state": "unavailable",
+                "last_success_at": projection.generation.last_success_at,
+                "last_attempt_at": projection.generation.last_attempt_at,
+                "last_error_code": "OPERATIONAL_HEALTH_UNAVAILABLE",
+            }
+        if not self._pointer_matches_validated(validated):
+            if retried:
+                raise PublicationError("PUBLIC_GENERATION_CHANGED")
+            return self._read_product_bundle(now=now, retried=True)
+        return ProductReadBundle(
+            projection=projection,
+            operational_health=dict(health),
+            health_unavailable_reason=health_unavailable_reason,
+        )
+
     def read_trial_projection(self) -> CommittedTrialProjection | None:
         """Return only current pointer-bound normalized trial facts.
 
@@ -1724,10 +1828,17 @@ class PublicGenerationPublisher:
         unavailable code until the worker publishes the first v1.1 generation.
         """
 
-        committed = self.read_committed()
-        if committed is None:
+        validated = self.read_validated_generation()
+        if validated is None:
             return None
-        manifest = self._load_generation_manifest(committed.generation_id)
+        return self._trial_projection_from_validated(validated)
+
+    def _trial_projection_from_validated(
+        self,
+        validated: ValidatedPointerBoundGeneration,
+    ) -> CommittedTrialProjection:
+        committed = validated.committed
+        manifest = validated.manifest
         generation_schema = manifest.get("schema_version")
         if generation_schema not in {"1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
             raise PublicationError("TRIAL_PROJECTION_UNAVAILABLE")
@@ -2302,6 +2413,19 @@ class PublicGenerationPublisher:
             raise PublicationError("HEALTH_PAYLOAD_INVALID")
         atomic_write(self.health_path, _json_bytes(dict(payload)))
 
+    def _read_root_health(self) -> dict[str, Any]:
+        if self.health_path.is_symlink() or not self.health_path.exists():
+            raise PublicationError("HEALTH_PAYLOAD_INVALID")
+        try:
+            health_metadata = self.health_path.lstat()
+        except OSError as exc:
+            raise PublicationError("HEALTH_PAYLOAD_INVALID") from exc
+        if not stat.S_ISREG(health_metadata.st_mode):
+            raise PublicationError("HEALTH_PAYLOAD_INVALID")
+        health = _load_json_object(self.health_path, code="HEALTH_PAYLOAD_INVALID")
+        self._validate_health(health)
+        return health
+
     def read_operational_health(
         self,
         *,
@@ -2315,18 +2439,19 @@ class PublicGenerationPublisher:
         The derived downgrade is observational and never rewrites disk.
         """
 
-        if self.health_path.is_symlink() or not self.health_path.exists():
-            raise PublicationError("HEALTH_PAYLOAD_INVALID")
-        try:
-            health_metadata = self.health_path.lstat()
-        except OSError as exc:
-            raise PublicationError("HEALTH_PAYLOAD_INVALID") from exc
-        if not stat.S_ISREG(health_metadata.st_mode):
-            raise PublicationError("HEALTH_PAYLOAD_INVALID")
-        health = _load_json_object(self.health_path, code="HEALTH_PAYLOAD_INVALID")
-        self._validate_health(health)
+        return self._operational_health_from_validated(
+            self.read_validated_generation(),
+            now=now,
+        )
 
-        committed = self.read_committed()
+    def _operational_health_from_validated(
+        self,
+        validated: ValidatedPointerBoundGeneration | None,
+        *,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        health = self._read_root_health()
+        committed = None if validated is None else validated.committed
         generation_id = health.get("generation_id")
         if generation_id is not None:
             if committed is None or (

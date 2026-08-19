@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -41,7 +42,11 @@ from lib import config
 log = logging.getLogger(__name__)
 
 SCHEMA = "china_special_sits.v1"
-_MAX_ROWS = 8  # capped row count per category
+_MAX_ROWS = 8  # capped row count per category — a DISPLAY limit, never a statistic
+# "this week" on this desk means an explicit forward calendar window: today through
+# today+_WEEK_DAYS inclusive. Any sentence saying "this week" counts only rows inside
+# it — it is never inferred from whichever row happens to be soonest.
+_WEEK_DAYS = 7
 
 
 # --------------------------------------------------------------------------- #
@@ -153,20 +158,186 @@ def _unlock_note(float_pct: float | None, dtd: int | None) -> dict:
             "level": "active"}
 
 
-def _inquiry_note(has_reply: bool) -> dict:
+# ── Inquiry thread identity ──────────────────────────────────────────────────
+# china_filings carries no thread/parent identifier: announcementId is per
+# DOCUMENT, and announcement_type_raw is a document-category code, not a thread.
+# What the source DOES provide is the filer naming the letter it answers — either
+# quoted in 《》 book-title marks or spelled out inline ending at the 函 word.
+# That referenced title is the strongest source-native inquiry identity available,
+# so it is the join key. Matching is additionally scoped to the same issuer, which
+# is what makes the normalisation below safe: a key only has to discriminate
+# between DIFFERENT inquiries of the SAME company, so tokens that carry no
+# discriminating information inside one issuer (the issuer's own name, the
+# exchange, the announcing firm) are stripped rather than left to block a match.
+# Deterministic and pure — no inference, no LLM, no ticker-presence heuristic.
+_INQ_EXCHANGE_RE = re.compile(
+    r"(?:上海证券交易所|深圳证券交易所|北京证券交易所|上交所|深交所|北交所)"
+)
+_INQ_FN = r"(?:问询函|关注函|监管函|质询函)"
+_INQ_BOOK_RE = re.compile(r"《([^《》]+)》")
+_INQ_BARE_RE = re.compile(r"([一-鿿0-9A-Za-z（）()]{2,80}?" + _INQ_FN + r")")
+# An announcing-party clause: a professional firm or company organ that filed the
+# document, running up to the 关于 that introduces the inquiry name proper.
+_INQ_PARTY_RE = re.compile(
+    r"^.{0,40}?(?:会计师事务所|律师事务所|资产评估|证券股份有限公司|独立董事|监事会|保荐(?:机构|人))"
+    r"[^关]{0,20}关于"
+)
+_INQ_CO_SUFFIX_RE = re.compile(r"(?:股份有限公司|有限责任公司|有限公司)")
+_INQ_PUNCT_RE = re.compile(r"[《》（）()\[\]、，,。·\"“”'’：:]")
+# 收到 belongs to the RECEIPT framing ("we received X"), not to the inquiry's
+# identity — the exchange's own letter and every reply omit it. Leaving it in the
+# key made a receipt permanently unmatchable: "关于收到上海证券交易所问询函的公告"
+# keyed to …收到问询函 and could never equal any reply's key, so the letter was
+# published as an open question while its own reply sat in the same window.
+_INQ_FILLER_RE = re.compile(r"(?:关于|对|的|之|有关|相关|事项|申请文件|申请|公司|收到)")
+_INQ_MIN_KEY_LEN = 6
+
+
+def _inquiry_thread_keys(title: str, issuer_name: str = "") -> list[str]:
+    """Deterministic inquiry-thread keys referenced by one filing title.
+
+    Returns [] when the title names no inquiry — the caller must then report the
+    reply state as 'undetermined' rather than guessing. Pure function.
+    """
+    text = str(title or "")
+    spans = _INQ_BOOK_RE.findall(text) or _INQ_BARE_RE.findall(text)
+    issuer = _INQ_CO_SUFFIX_RE.sub("", str(issuer_name or ""))
+    issuer = issuer.replace("*ST", "").replace("ST", "").strip()
+    keys = set()
+    for span in spans:
+        s = re.sub(r"\s+", "", span)
+        s = _INQ_PARTY_RE.sub("", s)
+        s = _INQ_EXCHANGE_RE.sub("", s)
+        s = _INQ_CO_SUFFIX_RE.sub("", s)
+        if len(issuer) >= 2:
+            s = s.replace(issuer, "")
+        s = _INQ_PUNCT_RE.sub("", s)
+        s = _INQ_FILLER_RE.sub("", s)
+        if len(s) >= _INQ_MIN_KEY_LEN:
+            keys.add(s)
+    return sorted(keys)
+
+
+# Document role within the inquiry family, derived from the title.
+#
+# The stored `kind` cannot carry this on its own: collectors.china_filings.
+# classify_kind defaults to "letter" for anything lacking 回函/回复/答复/复函/
+# 专项说明/核查意见, so 100 of the 140 stored "letter" rows are actually
+# reply-side filings (会计师事务所…说明, 独立董事…独立意见, 律师…法律意见书).
+# Counting those as open inquiries makes the plane assert unanswered regulatory
+# questions that were never asked of the company — and simultaneously discards
+# them as the reply evidence they really are. `kind` is baked into the parquet and
+# only the nightly may advance it, so the engine derives the role at read time.
+#
+# 延期回复 ("we are deferring our reply") is the trap in the other direction: it
+# contains 回复 and is stored kind="reply" for all 41 such notices, so it would
+# otherwise mark an inquiry answered by the very filing that says it is not.
+# A deferral is specifically a postponed REPLY. Matching a bare 延期 would also
+# swallow a genuine inquiry whose SUBJECT happens to concern a postponement,
+# removing it from the letter population and the reply evidence at once; and the
+# 延长/推迟/顺延 variants must not fall through to reply_side, where they would
+# mark the inquiry answered by the notice saying it has not been.
+_INQ_DEFERRAL_RE = re.compile(r"(?:延期|延长|推迟|顺延)回复")
+# 意见 is deliberately broad rather than an enumeration of 核查意见/独立意见/
+# 法律意见书: the reply side invents new organ and adviser forms constantly
+# (独立董事意见, 董事会审计委员会…相关意见, 评估机构…发表意见, 专项法律意见), and
+# an enumeration silently re-admits each new one as a fake open inquiry. Measured
+# against the full store, broadening to 意见 excludes 18 further reply-side rows
+# and leaves 22 survivors that are genuine "关于收到…问询函的公告" receipts or the
+# exchange's own "关于对…的问询函" — no exchange-issued letter was lost.
+_INQ_REPLY_SIDE_RE = re.compile(r"(?:回复|回函|复函|答复|意见|说明)")
+
+
+def _inquiry_doc_role(title: Any) -> str:
+    """Role of one inquiry-family filing: letter | reply_side | deferral.
+
+    'letter'     — an exchange-issued inquiry (or the company's receipt of one)
+    'reply_side' — a reply, or a professional/organ filing made in answer to one
+    'deferral'   — a notice that the reply is being POSTPONED; evidence of the
+                   opposite of a reply, so it answers nothing and asks nothing.
+    Pure function.
+    """
+    text = str(title or "")
+    if _INQ_DEFERRAL_RE.search(text):
+        return "deferral"
+    if _INQ_REPLY_SIDE_RE.search(text):
+        return "reply_side"
+    return "letter"
+
+
+def _dedupe_letters_by_thread(rows: list[tuple[Any, str, list[str]]]) -> list[Any]:
+    """Collapse rows describing the SAME inquiry down to one per (issuer, thread).
+
+    One inquiry routinely files twice: the exchange publishes its own letter AND
+    the company publishes a receipt announcement for it, with identical thread
+    keys (measured on 600683 京投发展, both 2026-05-12). Counting rows rather than
+    inquiries reported one question as two. Rows carrying no thread key cannot be
+    proven duplicate, so every one is kept. Input order is preserved.
+    """
+    seen: set[tuple[str, str]] = set()
+    out = []
+    for row, sec_code, keys in rows:
+        if keys:
+            ident = {(sec_code, k) for k in keys}
+            if ident & seen:
+                continue
+            seen |= ident
+        out.append(row)
+    return out
+
+
+def _resolve_reply_state(
+    sec_code: str,
+    title: Any,
+    issuer_name: Any,
+    reply_threads: set[tuple[str, str]],
+) -> str:
+    """Reply state for one inquiry letter against known (issuer, thread) replies.
+
+    'replied'      — a same-issuer reply-side filing names the same inquiry.
+    'open'         — the letter names an inquiry and nothing answered THAT inquiry
+                     inside the window.
+    'undetermined' — no inquiry name could be extracted, so no honest claim is
+                     available. Never silently optimistic: an unmatched letter is
+                     never reported as replied.
+    """
+    keys = _inquiry_thread_keys(title, issuer_name)
+    if not keys:
+        return "undetermined"
+    if any((sec_code, k) in reply_threads for k in keys):
+        return "replied"
+    return "open"
+
+
+def _inquiry_note(reply_state: str) -> dict:
     """Plain-word 'so what' for one exchange inquiry letter."""
-    if has_reply:
+    if reply_state == "replied":
         return {"en": "the company has replied", "zh": "公司已回复", "level": "active"}
-    return {"en": "an open question — no reply yet", "zh": "尚无回复的公开问询", "level": "elevated"}
+    if reply_state == "undetermined":
+        return {"en": "reply status not established from the filing record",
+                "zh": "根据公告记录无法确认回复状态", "level": "active"}
+    return {"en": "an open question — no reply filed in the window",
+            "zh": "该窗口内尚无回复的公开问询", "level": "elevated"}
 
 
-def _inquiry_glance(n_letters: int, n_unreplied: int) -> dict:
-    """Plane glance for exchange inquiry letters. Elevated on any unreplied letter."""
-    if n_unreplied:
+def _inquiry_glance(n_letters: int, n_open: int, n_undetermined: int = 0) -> dict:
+    """Plane glance for exchange inquiry letters. Elevated on any open letter.
+
+    Counts are population counts over the whole 14-day window, never the display
+    slice, and the sentence is scoped to that window — a letter answered before
+    the window opened is not something this plane can see, so it says "in the last
+    14 days" rather than asserting a letter is unanswered outright.
+    """
+    if n_open:
         return {"level": "elevated",
-                "en": (f"{n_unreplied} letter{'s' if n_unreplied > 1 else ''} still "
-                       f"unanswered (last 14d)."),
-                "zh": f"过去14天有{n_unreplied}封问询函尚未回复。"}
+                "en": (f"{n_open} letter{'s' if n_open > 1 else ''} with no reply "
+                       f"filed in the last 14 days."),
+                "zh": f"过去14天有{n_open}封问询函未见回复。"}
+    if n_undetermined:
+        return {"level": "active",
+                "en": (f"{n_undetermined} letter{'s' if n_undetermined > 1 else ''} "
+                       f"— reply status not established."),
+                "zh": f"{n_undetermined}封问询函回复状态无法确认。"}
     if n_letters:
         return {"level": "active",
                 "en": f"{n_letters} letter{'s' if n_letters > 1 else ''}, all replied.",
@@ -290,6 +461,29 @@ def _unlock_block() -> dict | None:
             fwd["_float_pct"] = None
         fwd = fwd.sort_values("_float_pct", ascending=False, na_position="last")
 
+        # ── Population statistics, computed BEFORE any display truncation ──
+        # `fwd` is the POPULATION (every unlock in the next 30d). `events` below
+        # is a DISPLAY slice of _MAX_ROWS. Counting "large" off the slice made the
+        # display cap an analytical cap: because `fwd` is sorted by float% desc,
+        # the count saturated at _MAX_ROWS and the hero read "8 large unlocks"
+        # against a 144-event population. A display limit is never a statistic.
+        fwd["_large"] = fwd["_float_pct"].apply(
+            lambda x: x is not None and not pd.isna(x) and x >= 5.0
+        )
+        # "this week" is an explicit calendar window — today .. today+7 inclusive —
+        # never "whatever the soonest row happens to be".
+        week_end = today_ts + pd.Timedelta(days=_WEEK_DAYS)
+        in_week = (fwd[date_col] >= today_ts) & (fwd[date_col] <= week_end)
+        # Whether ANY row carries a usable float share at all — distinguishes
+        # "measured, none large" from "we could not measure".
+        _float_pct_known = bool(
+            fwd["_float_pct"].apply(lambda x: x is not None and not pd.isna(x)).any()
+        )
+        n_events_30d = int(len(fwd))
+        n_large_30d = int(fwd["_large"].sum())
+        n_events_7d = int(in_week.sum())
+        n_large_7d = int((in_week & fwd["_large"]).sum())
+
         events = []
         for _, row in fwd.head(_MAX_ROWS).iterrows():
             float_pct = _safe_float(row.get("_float_pct")) if "_float_pct" in row.index else None
@@ -318,8 +512,6 @@ def _unlock_block() -> dict | None:
                     ev["regime_chip"] = chip
             events.append(ev)
 
-        n_large = sum(1 for e in events if e["large_flag"])
-
         # Weekly aggregate strip from summary
         # Summary date column is 解禁时间; fall back to 时间, then 日期
         weekly_strip: list[dict] = []
@@ -346,35 +538,49 @@ def _unlock_block() -> dict | None:
             log.debug("china_special_sits: weekly strip failed (%s)", e)
 
         # Plane glance: elevated when any ≥5%-float ("large") supply event is queued.
-        # Soonest large event drives the one-line plain summary.
-        soonest_large = None
-        for e in events:
-            if e["large_flag"] and e.get("days_to") is not None:
-                if soonest_large is None or e["days_to"] < soonest_large.get("days_to", 1e9):
-                    soonest_large = e
-        if n_large and soonest_large:
-            _d = soonest_large["days_to"]
-            _when = "this week" if _d is not None and _d <= 7 else "ahead"
-            _when_zh = "本周" if _d is not None and _d <= 7 else "未来"
+        # Every number below comes from the POPULATION (fwd), and each sentence
+        # names the window its own count was measured over — a count taken over
+        # 30 days may never be described as happening "this week".
+        if n_large_7d:
             glance = {
                 "level": "elevated",
-                "en": (f"{n_large} large unlock{'s' if n_large > 1 else ''} {_when} "
-                       f"(≥5% of float)."),
-                "zh": f"{_when_zh}有{n_large}笔大额解禁（占流通≥5%）。",
+                "en": (f"{n_large_7d} large unlock{'s' if n_large_7d > 1 else ''} "
+                       f"in the next {_WEEK_DAYS} days (≥5% of float)."),
+                "zh": f"未来{_WEEK_DAYS}天有{n_large_7d}笔大额解禁（占流通≥5%）。",
             }
-        elif len(fwd):
+        elif n_large_30d:
+            glance = {
+                "level": "elevated",
+                "en": (f"{n_large_30d} large unlock{'s' if n_large_30d > 1 else ''} "
+                       f"in the next 30 days (≥5% of float)."),
+                "zh": f"未来30天有{n_large_30d}笔大额解禁（占流通≥5%）。",
+            }
+        elif n_events_30d and not _float_pct_known:
+            # No usable float ratio on any row: we can count the events but cannot
+            # rank them, so "none large" would be a negative the data cannot support.
             glance = {"level": "active",
-                      "en": f"{len(fwd)} unlocks in 30d, none large.",
-                      "zh": f"未来30天{len(fwd)}笔解禁，均不大额。"}
+                      "en": f"{n_events_30d} unlocks in 30d; float share not reported.",
+                      "zh": f"未来30天{n_events_30d}笔解禁；未披露占流通比例。"}
+        elif n_events_30d:
+            glance = {"level": "active",
+                      "en": f"{n_events_30d} unlocks in 30d, none large.",
+                      "zh": f"未来30天{n_events_30d}笔解禁，均不大额。"}
         else:
             glance = {"level": "quiet", "en": "No unlocks ahead.", "zh": "近期无解禁。"}
 
         return {
             "asof": asof, "status": status,
-            "events": events,
+            "events": events,                 # DISPLAY slice, capped at _MAX_ROWS
             "weekly_strip": weekly_strip,
-            "n_events_30d": len(fwd),
-            "n_large": n_large,
+            "n_events_30d": n_events_30d,     # population counts — never display-capped
+            "n_large_30d": n_large_30d,
+            "n_events_7d": n_events_7d,
+            "n_large_7d": n_large_7d,
+            "week_days": _WEEK_DAYS,
+            # Back-compat alias for existing consumers (china_altdata.html.j2); now
+            # carries the true 30d population count instead of the display-slice count.
+            "n_large": n_large_30d,
+            "n_shown": len(events),
             "glance": glance,
         }
     except Exception as e:  # noqa: BLE001
@@ -451,29 +657,62 @@ def _inquiry_block() -> dict | None:
             cutoff = (date.today() - timedelta(days=14)).isoformat()
             df_filt = df_raw[df_raw["_date_str"].fillna("") >= cutoff].copy()
 
-            # Build reply lookup: sec_code → True if there's a reply in the window
-            replies = set(df_filt[df_filt["kind"] == "reply"]["sec_code"].dropna().tolist())
+            # Reply lookup keyed by (issuer, inquiry thread) — NOT by issuer alone.
+            # Keying on the ticker let any reply from a company mark every one of
+            # that company's letters answered, including letters belonging to a
+            # different inquiry entirely. Replies AND attachments both count as
+            # reply-side evidence: a third-party 核查意见 filed against an inquiry
+            # is filed because that inquiry is being answered.
+            df_filt["_role"] = df_filt["title"].apply(_inquiry_doc_role)
+            reply_threads: set[tuple[str, str]] = set()
+            _is_evidence = (
+                (df_filt["kind"] != "letter") | (df_filt["_role"] == "reply_side")
+            ) & (df_filt["_role"] != "deferral")
+            for _, rr in df_filt[_is_evidence].iterrows():
+                _code = str(rr.get("sec_code") or "")
+                for _k in _inquiry_thread_keys(rr.get("title"), rr.get("sec_name")):
+                    reply_threads.add((_code, _k))
 
-            # Letters only
-            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-                "_date_str", ascending=False, na_position="last"
-            )
+            # Exchange-issued letters only: `kind` alone would admit reply-side
+            # filings (see _inquiry_doc_role), which would then be published as
+            # unanswered inquiries.
+            _letters_df = df_filt[
+                (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
+            ].sort_values("_date_str", ascending=False, na_position="last")
+            # One inquiry, one row (see _dedupe_letters_by_thread).
+            letter_rows = _dedupe_letters_by_thread([
+                (r, str(r.get("sec_code") or ""),
+                 _inquiry_thread_keys(r.get("title"), r.get("sec_name")))
+                for _, r in _letters_df.iterrows()
+            ])
+
+            # Resolve reply state for the WHOLE letter population first, so the
+            # counts below describe the population and not the display slice.
+            states = [
+                _resolve_reply_state(
+                    str(r.get("sec_code") or ""), r.get("title"),
+                    r.get("sec_name"), reply_threads,
+                )
+                for r in letter_rows
+            ]
 
             rows = []
-            for _, r in letters.head(_MAX_ROWS).iterrows():
+            for r, _state in list(zip(letter_rows, states))[:_MAX_ROWS]:
                 letter_date = str(r.get("_date_str") or "")
                 # secCode for claim-key: filings uses sec_code
                 sec_code_val = str(r.get("sec_code") or "")
-                _has_reply = sec_code_val in replies
                 letter: dict = {
                     "secCode":   sec_code_val,
                     "secName":   str(r.get("sec_name") or ""),
                     "title":     str(r.get("title") or ""),
                     "date":      letter_date,
                     "pdf_url":   str(r.get("adjunct_url") or ""),
-                    "has_reply": _has_reply,
+                    "reply_state": _state,          # replied | open | undetermined
+                    # has_reply stays the strict positive claim: True ONLY on a
+                    # thread-matched reply. 'undetermined' must never read as replied.
+                    "has_reply": _state == "replied",
                     "type_name": str(r.get("announcement_type_raw") or ""),
-                    "note":      _inquiry_note(_has_reply),
+                    "note":      _inquiry_note(_state),
                     # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
                 }
                 if letter_date:
@@ -483,15 +722,22 @@ def _inquiry_block() -> dict | None:
                 rows.append(letter)
 
             n_replies = int(len(df_filt[df_filt["kind"] == "reply"]))
-            _n_letters = int(len(letters))
-            _n_unreplied = sum(1 for x in rows if not x["has_reply"])
+            _n_letters = int(len(letter_rows))
+            _n_open = sum(1 for s in states if s == "open")
+            _n_undetermined = sum(1 for s in states if s == "undetermined")
+            _n_replied = sum(1 for s in states if s == "replied")
             return {
                 "asof": asof, "status": status,
-                "letters": rows,
-                "n_letters": _n_letters,
+                "letters": rows,                    # DISPLAY slice
+                "n_letters": _n_letters,            # population counts below
                 "n_replies": n_replies,
-                "n_unreplied": _n_unreplied,
-                "glance": _inquiry_glance(_n_letters, _n_unreplied),
+                "n_replied": _n_replied,
+                "n_open": _n_open,
+                "n_undetermined": _n_undetermined,
+                # Back-compat alias; now the population open count, not a slice count.
+                "n_unreplied": _n_open,
+                "n_shown": len(rows),
+                "glance": _inquiry_glance(_n_letters, _n_open, _n_undetermined),
             }
 
         else:
@@ -506,24 +752,49 @@ def _inquiry_block() -> dict | None:
             else:
                 df_filt = df.copy()
 
-            replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
-            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-                "announcementTime", ascending=False, na_position="last"
-            )
+            # Same thread-identity and document-role contract as the filings path.
+            df_filt["_role"] = df_filt["announcementTitle"].apply(_inquiry_doc_role)
+            reply_threads: set[tuple[str, str]] = set()
+            _is_evidence = (
+                (df_filt["kind"] != "letter") | (df_filt["_role"] == "reply_side")
+            ) & (df_filt["_role"] != "deferral")
+            for _, rr in df_filt[_is_evidence].iterrows():
+                _code = str(rr.get("secCode") or "")
+                for _k in _inquiry_thread_keys(
+                    rr.get("announcementTitle"), rr.get("secName")
+                ):
+                    reply_threads.add((_code, _k))
+
+            _letters_df = df_filt[
+                (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
+            ].sort_values("announcementTime", ascending=False, na_position="last")
+            letter_rows = _dedupe_letters_by_thread([
+                (r, str(r.get("secCode") or ""),
+                 _inquiry_thread_keys(r.get("announcementTitle"), r.get("secName")))
+                for _, r in _letters_df.iterrows()
+            ])
+
+            states = [
+                _resolve_reply_state(
+                    str(r.get("secCode") or ""), r.get("announcementTitle"),
+                    r.get("secName"), reply_threads,
+                )
+                for r in letter_rows
+            ]
 
             rows = []
-            for _, r in letters.head(_MAX_ROWS).iterrows():
+            for r, _state in list(zip(letter_rows, states))[:_MAX_ROWS]:
                 letter_date = str(r.get("announcementTime") or "")
-                _has_reply = str(r.get("secCode") or "") in replies
                 letter: dict = {
                     "secCode":   str(r.get("secCode") or ""),
                     "secName":   str(r.get("secName") or ""),
                     "title":     str(r.get("announcementTitle") or ""),
                     "date":      letter_date,
                     "pdf_url":   str(r.get("adjunctUrl") or ""),
-                    "has_reply": _has_reply,
+                    "reply_state": _state,
+                    "has_reply": _state == "replied",
                     "type_name": str(r.get("announcementTypeName") or ""),
-                    "note":      _inquiry_note(_has_reply),
+                    "note":      _inquiry_note(_state),
                     # Note: no 'kind' key — list is letters-only
                 }
                 if letter_date:
@@ -532,15 +803,21 @@ def _inquiry_block() -> dict | None:
                         letter["regime_chip"] = chip
                 rows.append(letter)
 
-            _n_letters = len(letters)
-            _n_unreplied = sum(1 for x in rows if not x["has_reply"])
+            _n_letters = int(len(letter_rows))
+            _n_open = sum(1 for s in states if s == "open")
+            _n_undetermined = sum(1 for s in states if s == "undetermined")
+            _n_replied = sum(1 for s in states if s == "replied")
             return {
                 "asof": asof, "status": status,
                 "letters": rows,
                 "n_letters": _n_letters,
-                "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
-                "n_unreplied": _n_unreplied,
-                "glance": _inquiry_glance(_n_letters, _n_unreplied),
+                "n_replies": int(len(df_filt[df_filt["kind"] == "reply"])),
+                "n_replied": _n_replied,
+                "n_open": _n_open,
+                "n_undetermined": _n_undetermined,
+                "n_unreplied": _n_open,
+                "n_shown": len(rows),
+                "glance": _inquiry_glance(_n_letters, _n_open, _n_undetermined),
             }
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: inquiry block failed (source=%s, %s)", source, e)
@@ -787,24 +1064,82 @@ def _block_trade_block() -> dict | None:
                 "last_date":      str(r.get("last_date") or ""),
             }
 
+        # Population counts BEFORE truncation. `_n_anom` used to be
+        # len(top_premium) + len(top_discount) — both display slices of a frame
+        # sorted by the very property being counted — so it saturated at
+        # 2 * _MAX_ROWS and published "16 block-trade price gaps" against a true
+        # population of 220. Same defect as the unlock plane (#5975); this one
+        # survived that sweep because the cap is applied to two frames rather
+        # than one, so the saturated total did not look like _MAX_ROWS.
+        n_premium = int(len(df_prem))
+        n_discount = int(len(df_disc))
+        _n_anom = n_premium + n_discount
+
         top_premium  = [_row(r) for _, r in df_prem.head(_MAX_ROWS).iterrows()]
         top_discount = [_row(r) for _, r in df_disc.head(_MAX_ROWS).iterrows()]
 
-        _n_anom = len(top_premium) + len(top_discount)
         glance = ({"level": "active",
                    "en": f"{_n_anom} block-trade price gap{'s' if _n_anom > 1 else ''}.",
                    "zh": f"{_n_anom}笔大宗交易价差异常。"} if _n_anom else
                   {"level": "quiet", "en": "No block-trade anomalies.", "zh": "无大宗交易异常。"})
         return {"asof": asof, "status": status,
                 "top_premium": top_premium, "top_discount": top_discount,
+                "n_premium": n_premium, "n_discount": n_discount,
+                "n_anomalies": _n_anom,
+                "n_shown": len(top_premium) + len(top_discount),
                 "n_names": len(df), "glance": glance}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: block trade block failed (%s)", e)
         return None
 
 
+# ── Goodwill dimensional contract ────────────────────────────────────────────
+# The upstream aggregate carries Chinese-keyed columns whose UNITS cannot be
+# inferred from magnitude: absolute CNY, fractional ratios (1.0 == 100%) and a
+# period string all sit side by side. Emitting them raw forced the template to
+# guess from magnitude ("v > 1000 → 亿, else → %"), which printed a −¥51.2bn
+# impairment as "-51245300029.70%" and a 2.58% ratio as "0.03%".
+# Units now live in the field NAME. Never re-derive a unit from a magnitude.
+_GOODWILL_CNY_FIELDS = {          # absolute CNY (yuan), sign-preserving
+    "商誉":       "goodwill_cny",
+    "商誉减值":   "impairment_cny",
+    "净资产":     "net_assets_cny",
+    "净利润规模": "net_profit_cny",
+}
+_GOODWILL_FRACTION_FIELDS = {     # source stores a FRACTION; ×100 exactly once here
+    "商誉占净资产比例":     "goodwill_to_net_assets_pct",
+    "商誉减值占净资产比例": "impairment_to_net_assets_pct",
+    "商誉减值占净利润比例": "impairment_to_net_profit_pct",
+}
+_GOODWILL_PERIOD_SRC = "报告期"
+
+
+def _goodwill_row(raw: dict, asof: str | None) -> dict:
+    """Project one raw goodwill record onto the typed canonical contract.
+
+    Pure function — no I/O, unit-testable. Every emitted numeric field carries
+    its unit in its NAME:
+      *_cny  — absolute yuan, sign preserved (a negative impairment stays money)
+      *_pct  — percent on a 0-100 scale (source fraction already ×100 here)
+    A value the source omits (None/NaN/empty string) emits None, never 0.0 and
+    never "" — a missing impairment must not render as a real zero.
+    """
+    out: dict = {"period": _safe_str(raw.get(_GOODWILL_PERIOD_SRC)) or None}
+    for src, dest in _GOODWILL_CNY_FIELDS.items():
+        out[dest] = _safe_float(raw.get(src))
+    for src, dest in _GOODWILL_FRACTION_FIELDS.items():
+        f = _safe_float(raw.get(src))
+        out[dest] = None if f is None else f * 100.0
+    out["asof"] = asof
+    return out
+
+
 def _goodwill_block() -> dict | None:
-    """Whole-market annual goodwill aggregate context chip."""
+    """Whole-market annual goodwill aggregate context chip.
+
+    Emits typed rows (see _goodwill_row) plus the untouched source record under
+    `raw` for provenance, so the dimensional projection stays auditable.
+    """
     path = _data_dir() / "china_st" / "goodwill.parquet"
     asof, status = _asof_status(path)
     try:
@@ -813,19 +1148,17 @@ def _goodwill_block() -> dict | None:
         df = pd.read_parquet(path)
         if df.empty:
             return None
-        # Coerce all values to safe Python scalars (guard against numpy int64 → json.dumps TypeError)
-        raw_rows = df.tail(5).to_dict("records")
-        coerced_rows = []
-        for row in raw_rows:
-            coerced = {}
-            for k, v in row.items():
+        rows = []
+        for raw in df.tail(5).to_dict("records"):
+            # Coerce provenance copy to JSON-safe scalars (numpy int64 → TypeError).
+            prov = {}
+            for k, v in raw.items():
                 f = _safe_float(v)
-                if f is not None:
-                    coerced[k] = f
-                else:
-                    coerced[k] = _safe_str(v) if v is not None else None
-            coerced_rows.append(coerced)
-        return {"asof": asof, "status": status, "annual_rows": coerced_rows[:5]}
+                prov[str(k)] = f if f is not None else (_safe_str(v) or None)
+            row = _goodwill_row(raw, asof)
+            row["raw"] = prov
+            rows.append(row)
+        return {"asof": asof, "status": status, "annual_rows": rows[:5]}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: goodwill block failed (%s)", e)
         return None
@@ -876,6 +1209,11 @@ def _by_ticker_rollup(blocks: dict) -> dict:
 
 # Plane display order + icon/label metadata for the hero overhang meter.
 # label twins are plain-word plane names (no internal/machine vocabulary).
+# Plane status vocabulary. `stale` is READABLE but NOT current: it keeps its
+# last-known reading visible and dated, and is excluded from aggregate authority.
+_PLANE_UNREADABLE = (None, "missing", "no_date_col")
+_PLANE_STALE = ("stale",)
+
 _PLANE_META = [
     ("unlocks",      "🔓", {"en": "Unlock supply",   "zh": "解禁供给"}),
     ("inquiry",      "📬", {"en": "Open questions",   "zh": "监管问询"}),
@@ -898,27 +1236,66 @@ def _build_hero(blocks: dict) -> dict:
     segments = []
     n_elevated = 0
     n_active = 0
+    n_stale = 0
+    stale_labels: list[dict] = []
     for key, icon, label in _PLANE_META:
         blk = blocks.get(key) or {}
         g = blk.get("glance") if isinstance(blk, dict) else None
+        status = blk.get("status") if isinstance(blk, dict) else None
         # A missing/unreadable plane reads 'quiet' visually but is NOT counted as hot.
         level = (g or {}).get("level", "quiet")
-        readable = isinstance(blk, dict) and blk.get("status") not in (None, "missing")
+        readable = isinstance(blk, dict) and status not in _PLANE_UNREADABLE
+        # Fresh == readable AND observed recently enough to describe the market NOW.
+        # A stale plane keeps its last-known reading on screen, but it may not lend
+        # that reading aggregate authority: a six-week-old ST board answering
+        # "what is happening today" is the exact failure this guard exists to stop.
+        fresh = readable and status not in _PLANE_STALE
+        line = g if g else {"en": "nothing flagged", "zh": "无标记"}
         if not readable:
             level = "quiet"
-        if level == "elevated":
+        elif not fresh:
+            n_stale += 1
+            stale_labels.append(label)
+            # Re-frame the plain line as an observation with a date on it, so the
+            # number on screen never reads as a current count.
+            _asof = str(blk.get("asof") or "")
+            line = {
+                "en": f"{line.get('en', '')} Last seen {_asof} — not updated since.".strip(),
+                "zh": f"{line.get('zh', '')}最后观测 {_asof}，此后未更新。".strip(),
+            }
+        # Only FRESH planes count toward the aggregate state.
+        if fresh and level == "elevated":
             n_elevated += 1
-        elif level == "active":
+        elif fresh and level == "active":
             n_active += 1
         segments.append({
             "key": key, "icon": icon, "label": label, "level": level,
-            "line": g if g else {"en": "nothing flagged", "zh": "无标记"},
+            "line": line,
+            "status": status,
+            "stale": readable and not fresh,
+            "readable": readable,
+            "asof": blk.get("asof") if isinstance(blk, dict) else None,
+            # False when this plane's reading is excluded from the aggregate state.
+            "counts_toward_state": bool(fresh),
         })
 
     # Most notable = soonest large unlock, else an unreplied letter, else new ST,
     # else heavy pledge — the single item a watcher would look at first.
     notable = None
-    u = blocks.get("unlocks") or {}
+
+    def _current(key: str) -> dict:
+        """A plane's block only if its reading is current.
+
+        `notable` asserts "look at this now", which no frozen observation can
+        support — so every candidate source is gated, not just ST.
+        """
+        blk = blocks.get(key) or {}
+        status = blk.get("status") if isinstance(blk, dict) else None
+        if status in _PLANE_UNREADABLE or status in _PLANE_STALE:
+            return {}
+        return blk
+
+    u = _current("unlocks")
     large = [e for e in (u.get("events") or []) if e.get("large_flag")]
     if large:
         large.sort(key=lambda e: (e.get("days_to") if e.get("days_to") is not None else 1e9))
@@ -930,15 +1307,18 @@ def _build_hero(blocks: dict) -> dict:
             "days_to": e.get("days_to"),
         }
     if notable is None:
-        inq = blocks.get("inquiry") or {}
-        unreplied = [l for l in (inq.get("letters") or []) if not l.get("has_reply")]
+        inq = _current("inquiry")
+        # Only a letter we positively established as OPEN may be headlined as
+        # unanswered; an 'undetermined' letter is not evidence of an open question.
+        unreplied = [l for l in (inq.get("letters") or [])
+                     if l.get("reply_state") == "open"]
         if unreplied:
             l = unreplied[0]
             notable = {"icon": "📬", "ticker": l.get("secCode", ""), "name": l.get("secName", ""),
-                       "en": "an exchange inquiry letter, still unanswered",
-                       "zh": "一封尚未回复的交易所问询函", "days_to": None}
+                       "en": "an exchange inquiry letter with no reply filed",
+                       "zh": "一封未见回复的交易所问询函", "days_to": None}
     if notable is None:
-        st = blocks.get("st") or {}
+        st = _current("st")
         adds = st.get("additions") or []
         if adds:
             a = adds[0]
@@ -946,7 +1326,7 @@ def _build_hero(blocks: dict) -> dict:
                        "en": "newly flagged for risk-warning", "zh": "新增风险警示",
                        "days_to": None}
     if notable is None:
-        pl = blocks.get("pledge") or {}
+        pl = _current("pledge")
         tops = pl.get("top") or []
         if tops and (pl.get("n_high") or 0):
             t = tops[0]
@@ -980,11 +1360,38 @@ def _build_hero(blocks: dict) -> dict:
             "zh": "整体平静——今日无明显事件压力。无需操作。",
         }
 
+    # Coverage receipt. Tier-1 copy reads this instead of asserting the board is
+    # whole: when a plane is stale or unreadable the page must say so in the same
+    # breath as the aggregate, not only in a small per-plane chip.
+    n_planes = len(_PLANE_META)
+    n_unreadable = sum(1 for s in segments if not s["readable"])
+    freshness = {
+        "n_planes": n_planes,
+        "n_fresh": n_planes - n_stale - n_unreadable,
+        "n_stale": n_stale,
+        "n_unreadable": n_unreadable,
+        "all_fresh": n_stale == 0 and n_unreadable == 0,
+        "stale_labels": stale_labels,
+        # Oldest observation among planes that are readable but no longer current.
+        "oldest_stale_asof": min(
+            [str(s["asof"]) for s in segments if s["stale"] and s.get("asof")],
+            default=None,
+        ),
+    }
+    if not freshness["all_fresh"]:
+        stance = {
+            "en": (stance["en"] + " Part of the board is not current — "
+                   "this read covers the planes that are."),
+            "zh": (stance["zh"] + "部分数据线尚未更新——本解读仅覆盖数据为最新的部分。"),
+        }
+
     return {
         "state": state,           # quiet | active | elevated  (drives aurora + accent)
         "n_elevated": n_elevated,
         "n_active": n_active,
-        "n_planes": len(_PLANE_META),
+        "n_planes": n_planes,
+        "n_stale": n_stale,
+        "freshness": freshness,
         "segments": segments,
         "notable": notable,
         "stance": stance,

@@ -5,10 +5,10 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2789	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	5069	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+.github/workflows/daily.yml	2813	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+.github/workflows/daily.yml	5104	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
-app/biocatalyst.py	2337	@router.get("/api/biocatalyst/v1/health")
+app/biocatalyst.py	2333	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	455	"""Render one sanitized, hash-bound immutable ``/version`` receipt."""
@@ -23,12 +23,12 @@ config/site_access.yml	297	# THIS LIST IS THE EXCEPTION, NOT THE PREFIX. Everyth
 config/site_access.yml	299	# /live/prophet_live.json (Prophet Live provisional states, masterplan §4.4a)
 config/site_access.yml	303	# (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
 config/site_access.yml	346	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
-config/synapse.yml	5885	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
-config/synapse.yml	6082	path: data/options_entry/state.parquet
-config/synapse.yml	11519	# --- prophet-ledger: Prophet forward outcome ledger ---
+config/synapse.yml	5917	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
+config/synapse.yml	6114	path: data/options_entry/state.parquet
+config/synapse.yml	11551	# --- prophet-ledger: Prophet forward outcome ledger ---
 engine/biocatalyst/activation.py	577	"contract_id": "biocatalyst_retention_preflight.v1",
 engine/biocatalyst/prospective.py	509	def build_public_model(
-engine/biocatalyst/publication.py	1137	def build_private_mirror_manifest(
+engine/biocatalyst/publication.py	1159	def build_private_mirror_manifest(
 engine/biocatalyst/storage.py	19	_REQUIRED_R2_ENV = (
 engine/biocatalyst/storage.py	112	class DedicatedR2Store:
 engine/capital_structure/share_count_publication.py	65	HEAD_GUARD_KEY = "capital_structure/share_counts/v2/current_head.json"

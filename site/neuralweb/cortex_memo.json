@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-19T09:07:13+00:00",
+  "as_of": "2026-08-19T17:58:11+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -8,7 +8,7 @@
   "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-18",
+    "as_of": "2026-08-19",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -20,8 +20,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 1,
-      "total_rows": 9
+      "ungradeable": 2,
+      "total_rows": 10
     },
     "is_context_only": true
   },
@@ -38,8 +38,8 @@
         "model": "claude-opus-4-8",
         "attempted": true,
         "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBqqeFDoQV8eAGD6KVYL'}"
+        "error_type": "auth",
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeCYKbjMNRDzhHKpTQMbe'}"
       },
       {
         "provider": "oauth",
@@ -47,7 +47,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBqrxhWpYCBQTFBLkiGY'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYKqCUUMEtjZ3k7zjQt'}"
       },
       {
         "provider": "oauth",
@@ -55,7 +55,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBqwa7MV71RSQWfn7mha'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYM8hxhoA8FvmuFpGAG'}"
       },
       {
         "provider": "oauth",
@@ -63,77 +63,29 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBrB67FXNQAtiL8GyhNY'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYRkAH7tGtk59JbS4ES'}"
       },
       {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYfDctHpR1FPGcmbbgP'}"
       },
       {
         "provider": "oauth",
         "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBrG7NJ9jMtvbKwogpwn'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBrGJZF7TN4v26pdA93j'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBrGVmgXBmRPQWvx4edU'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeBrGfEhh8veAu6tJWKTf'}"
+        "error_type": "auth",
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeCYfH5zW69QNzgtNoYjv'}"
       }
     ],
     "tool_call_batches": 0,
     "individual_tool_calls": 0,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-19T08:37:27Z"
+    "context_as_of": "2026-08-19T17:01:26Z"
   }
 }

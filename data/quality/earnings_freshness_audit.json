@@ -1,29 +1,29 @@
 {
-  "as_of": "2026-08-19T05:27:48.507668+00:00",
+  "as_of": "2026-08-19T15:10:38.741923+00:00",
   "ok": false,
   "fail_reasons": [],
   "warnings": [
-    "earnings store COVERAGE stale: only 229 of 1987 rows (11.5%) carry an as_of within the 2 td SLA (floor=50%) \u2014 the store-level as_of looks fresh because a few rows were refreshed while the rest are frozen; check that the collector is sweeping the whole universe, not a named-ticker subset"
+    "earnings store COVERAGE stale: only 241 of 1989 rows (12.1%) carry an as_of within the 2 td SLA (floor=50%) \u2014 the store-level as_of looks fresh because a few rows were refreshed while the rest are frozen; check that the collector is sweeping the whole universe, not a named-ticker subset"
   ],
   "errors": [
-    "earnings store stale AT SCALE: only 229 of 1987 names reporting within the sweep window (11.5%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-08-19) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
+    "earnings store stale AT SCALE: only 241 of 1989 names reporting within the sweep window (12.1%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-08-19) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
   ],
   "detail": {
     "today_utc": "2026-08-19",
     "store_path": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/earnings/earnings.parquet",
     "store_present": true,
-    "as_of_str": "2026-08-19T05:27:34.560118+00:00",
+    "as_of_str": "2026-08-19T15:10:10.943140+00:00",
     "as_of_age_td": 0,
-    "ticker_count": 1987,
-    "with_next_date": 1987,
-    "fresh_rows": 229,
-    "fresh_share": 0.1152,
+    "ticker_count": 1989,
+    "with_next_date": 1989,
+    "fresh_rows": 241,
+    "fresh_share": 0.1212,
     "min_fresh_share": 0.5,
     "max_age_td": 2,
-    "rows_within_sla": 229,
-    "fresh_row_fraction": 0.1152,
+    "rows_within_sla": 241,
+    "fresh_row_fraction": 0.1212,
     "sla_ok": true,
-    "fresh_denominator": 1987,
+    "fresh_denominator": 1989,
     "denominator_basis": "sweep_window",
     "sweep_window_calendar_days": 95
   }

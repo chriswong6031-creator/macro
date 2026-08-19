@@ -2,58 +2,133 @@
 
 # Active Build Map
 
-Generated: 2026-08-19T05:17:28.953080+00:00  |  Open PRs: 21  |  Merged (window): 500  |  base: `12702166ded13ee47ab9703b811f964c237a275c`
+Generated: 2026-08-19T15:02:31.031579+00:00  |  Open PRs: 33  |  Merged (window): 500  |  base: `2313bdbd9b73634ced5dd34c41858c7ab25136df`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
+| #5992 | docs(research_vault): Wave 4 production acceptance results + the 918-row corpus search gap | `claude/rv-wave4-acceptance` | 2026-08-19 | — |
+| #5991 | docs(agentos): record the Saved Layout contract decision and the empty-layouts census | `claude/agentos-layouts-scripts-c4abc8` | 2026-08-19 | — |
+| #5985 | ci: wire three unrun suites (chat_launcher_stub, collectors_na_sentinel, template_site_sync_tokens) | `claude/wire-unrun-suites-0819b` | 2026-08-19 | — |
+| #5984 | fix(stocks): stop the dossier estate publishing the wrong company | `claude/stock-dossier-identity-truth` | 2026-08-19 | ⚠ protected:3 |
+| #5983 | feat(fif): FIF-2A authenticated canonical financial query bridge — HELD FOR SOL REVIEW | `claude/fif-2a-query-bridge` | 2026-08-19 | — |
+| #5974 | feat(options-source): AD-1C0 — accrual failure-state durability, first-writer quality rule, log hardening | `claude/ad1c0-options-source-recovery` | 2026-08-19 | — |
+| #5959 | feat(cs-v2-w1): Capital Structure V2 Wave 1 — evidence identity wiring + hostile tests | `claude/cs-v2-w1-evidence-identity` | 2026-08-19 | ⚠ protected:1 |
+| #5955 | docs(earnings): G0 post-event reinterpretation research census | `grok/g0-post-event-census` | 2026-08-19 | — |
+| #5953 | research(china-alpha): canonical China Alpha Intelligence masterplan — FABLE-00 reconciliation + G0 census + builder commissions | `claude/china-alpha-masterplan-2026-08-19` | 2026-08-19 | — |
+| #5951 | docs(cn): GROK-CN-E commercial supply-chain diligence — no seat purchase | `grok/cn-e-commercial-supply-diligence` | 2026-08-19 | — |
+| #5950 | research(cn-f): sector-clock census — only Bio and EV earn a China specialist lobe | `grok/cn-f-sector-clock-census` | 2026-08-19 | — |
+| #5949 | docs(cn-g): empirical prior table for twelve China evidence families | `grok/cn-g-empirical-priors` | 2026-08-19 | — |
+| #5947 | docs(cn-b): PRC corporate entity resolver bake-off, no-buy | `grok/cn-b-prc-entity-resolver` | 2026-08-19 | — |
+| #5946 | research: CN project/EIA source map + lithium-battery pilot (GROK-CN-D) | `grok/cn-d-project-eia-source-map` | 2026-08-19 | — |
+| #5945 | research(cn): Tushare P0 purchase/rights matrix (GROK-CN-A) | `grok/cn-a-tushare-entitlement` | 2026-08-19 | — |
+| #5944 | research(cn-c): Government/SOE Demand first-party source map | `grok/cn-c-soe-demand-source-map` | 2026-08-19 | — |
+| #5943 | docs(alpha-intel): CN-G0 China post-event reinterpretation census | `grok/cn-g0-post-event-census` | 2026-08-19 | — |
+| #5940 | design(prophet-lab-r5-1): close the R5 REVISE — grid-scoped mode, unknown-not-zero, symmetric lead | `claude/prophet-lab-r5-1-revision` | 2026-08-19 | — |
 | #5933 | docs(alpha-intel): c0 adjudication — five census verdicts, FABLE-A conditional GO with amendment rider | `claude/alpha-intel-c0-adjudication` | 2026-08-19 | — |
-| #5932 | D2 Identity Atlas: defense21-v1 graph + per-issuer identity vertical (five pilots + SPR control) | `claude/defense-d2-identity-atlas` | 2026-08-19 | ⚠ protected:1 |
 | #5931 | design(prophet-lab-r5): Prophet Operator Lab reference candidate + RIG R5 packet (no approval) | `claude/prophet-lab-r5-reference` | 2026-08-19 | — |
 | #5929 | radar(w4.1): live-transport correction — confirmed-lane pack field + W4->W5 spool envelope contract | `claude/radar-w41-transport` | 2026-08-19 | — |
-| #5928 | feat(prophet-lab): P-LAB-API — Prophet Operator Lab read-only projection | `claude/prophet-lab-api` | 2026-08-19 | — |
 | #5927 | P0-C2R0: public generation read-path profile (evidence only) | `claude/p0c2r0-read-path-profile` | 2026-08-19 | — |
 | #5926 | fix(canada): CA-TRUTH — one canonical Canada Prophet board per session | `claude/ca-truth-canonical-board` | 2026-08-19 | — |
 | #5925 | fix(entry-radar): W4 pack snapshot reads live ProbeSet.records | `claude/w4-probeset-pack-snapshot` | 2026-08-19 | — |
-| #5922 | ci(baseline): keep the merge-train circuit breaker fresh on a clock | `claude/integration-baseline-keepalive` | 2026-08-19 | ⚠ protected:1 |
-| #5909 | BPC-RECON-0: JV snapshot reconstruction freeze (Sol accepted — pending merge) | `claude/bpc-recon-0` | 2026-08-19 | — |
+| #5909 | BPC-RECON-0: soak-safe architecture freeze (canonical identity frozen; runtime registry deferred) | `claude/bpc-recon-0` | 2026-08-19 | — |
 | #5908 | feat(fleet): AionUi/Grok SessionStart mints sparse worktrees | `worktree-grok-aionui-sparse-sessions` | 2026-08-19 | — |
-| #5903 | fix(prophet-fusion): pin C2 construction tests to the registered-era frame | `claude/fusion-c2-era-pin` | 2026-08-19 | ⚠ CONFLICTING |
+| #5903 | fix(prophet-fusion): pin C2 construction tests to the registered-era frame | `claude/fusion-c2-era-pin` | 2026-08-19 | — |
 | #5901 | research: Capital Structure Intelligence V2 architecture freeze (Sol AMEND) | `claude/cs-intel-v2-masterplan` | 2026-08-19 | — |
 | #5898 | FF-1P2R: current-quarter EDGAR index discovery (do not merge; recovery fail-closed) | `claude/ff-1p2-bulk-census` | 2026-08-19 | ⚠ protected:2 |
 | #5892 | fix(leader-radar): make _build_fire_history honor its data_root parameter | `claude/leader-radar-honor-data-root` | 2026-08-19 | — |
-| #5889 | FIF-1R3: final semantic closure — amend in place (DO NOT MERGE) | `claude/fif-1r3-semantic-closure` | 2026-08-19 | — |
-| #5872 | feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief — runtime implementation (v1.2) | `claude/ad1-intel-brief-runtime` | 2026-08-19 | ⚠ protected:4 |
-| #5822 | research: China institutional intelligence alpha masterplan | `research/china-intelligence-alpha-masterplan-2026-08-17` | 2026-08-17 | DRAFT |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
-| #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | ⚠ CONFLICTING |
+| #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | — |
 | #5424 | data(govrev): publish reviewed defense20-v1 recipient graph — BWXT + refreshed exact edges | `claude/govrev-defense20-bwxt-graph` | 2026-08-14 | DRAFT |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
+> ℹ 29 of 33 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #5898 | #5872 | 5 ⚠ | `.github/ci/legacy-jobs.yml`, `config/dag.yml`, `config/r2_delivery_plane_classification.v1.json`, `tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` |
-| #5932 | #5424 | 2 | `data/government_revenue/recipient_entity_graph.json`, `tests/test_government_revenue_recipient_graph.py` |
-| #5901 | #5872 | 2 | `config/mastermind_programs.yml`, `docs/MASTERMIND_SYSTEM_MAP.md` |
+| #5940 | #5931 | 67 | `mockups/refs/prophet_lab/DESIGN_NOTES.md`, `mockups/refs/prophet_lab/crops/01-live-desktop-dark-en--full.png`, `mockups/refs/prophet_lab/crops/01-live-desktop-dark-en.png`, `mockups/refs/prophet_lab/crops/02-live-desktop-light-zh--full.png`, `mockups/refs/prophet_lab/crops/02-live-desktop-light-zh.png`, `mockups/refs/prophet_lab/crops/03-live-mobile390-dark-en.png`, `mockups/refs/prophet_lab/crops/04-live-no-operator-dark-en--full.png`, `mockups/refs/prophet_lab/crops/04-live-no-operator-dark-en.png` +59 more |
+| #5959 | #5901 | 16 | `agentos/decisions/DEC-CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES.md`, `agentos/decisions/DEC-CS-V2-GIT-REMAINS-GENERATION-SELECTOR.md`, `agentos/decisions/DEC-CS-V2-IDENTITY-DUAL-READ.md`, `agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md`, `agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md`, `agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md`, `agentos/discoveries/DSC-CS-EVENT-EDGES-NEAR-ZERO.md`, `agentos/discoveries/DSC-CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY.md` +8 more |
+| #5959 | #5898 | 4 | `.github/ci/legacy-jobs.yml`, `config/r2_delivery_plane_classification.v1.json`, `tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` |
+| #5985 | #5983 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5985 | #5959 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5985 | #5929 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5985 | #5926 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5985 | #5903 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5985 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5983 | #5959 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5983 | #5929 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5983 | #5926 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5983 | #5903 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5983 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5959 | #5929 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5959 | #5926 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5959 | #5903 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5950 | #5949 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5950 | #5947 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5950 | #5933 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5949 | #5947 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5949 | #5933 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5947 | #5933 | 1 | `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` |
+| #5929 | #5926 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5929 | #5925 | 1 | `engine/entry_radar/live_pack.py` |
+| #5929 | #5903 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5929 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5929 | #5737 | 1 | `agentos/workstreams/WS-LIVE-ENTRY-RADAR.md` |
+| #5926 | #5903 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5926 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5903 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5903 | #5889 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5903 | #5872 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5898 | #5889 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5889 | #5872 | 1 | `.github/ci/legacy-jobs.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5990 | rig(r4-composition): C8 dual-critic pass — receipts + verdict REVISE (MP-1 amendment + R4.2 chartered) | 2026-08-19 |
+| #5989 | Record E2-T1 production landing in Earnings Agent OS | 2026-08-19 |
+| #5988 | agentos: record the Terminal D-sweep's durable findings | 2026-08-19 |
+| #5987 | fix(china): W0.7 coverage banner cross-reads the tape before blaming the collectors | 2026-08-19 |
+| #5986 | fix(research_vault): publication integrity — the vault cannot report a success it did not achieve | 2026-08-19 |
+| #5982 | docs(perf): continuation handoff for the 7-PR site performance remediation | 2026-08-19 |
+| #5981 | fix(ipo,quant-lab): stop raw NaN/inf sentinels from reaching site/ipo.html and site/quant_lab.html | 2026-08-19 |
+| #5980 | fix(analyzer,china): real display twins + percentile nesting fix | 2026-08-19 |
+| #5978 | fix(tests): three main reds where the assertion, not the artifact, was wrong | 2026-08-19 |
+| #5977 | fix(live-quotes): cover every visible live-change board, not just China | 2026-08-19 |
+| #5976 | fix(theme): assistant 404s on every nested route — resolve from the shared asset root, load on intent | 2026-08-19 |
+| #5975 | fix(china-special-sits): dimensional, population and freshness truth (4 P1 defects) | 2026-08-19 |
+| #5973 | agentos: W-GATE-SPLIT wave recorded on WS-CI-MERGE-CONTROL-PLANE (W1+W2 merged) | 2026-08-19 |
+| #5972 | fix(qledger): control clocks are registrar-local — ignore the dir, untrack the committed clock | 2026-08-19 |
+| #5971 | docs(prophet-fusion): accept PR-3D after natural ledgers proof | 2026-08-19 |
+| #5970 | fix(qledger): untrack committed control-evidence clock file + gitignore fence (fleet-wide T9 red) | 2026-08-19 |
+| #5969 | ci(W2): merge gate packs only gate:code; data receipts move to a post-nightly data-health lane | 2026-08-19 |
+| #5968 | ci: confine an unrepresentable semantic unit to its job instead of voiding the whole run | 2026-08-19 |
+| #5967 | fix(ship-loop): a timed-out git status must not wedge the tree it reads | 2026-08-19 |
+| #5966 | agentos: FIF-1 DONE — financial_intelligence_packet.v1 FROZEN | 2026-08-19 |
+| #5965 | feat(dataos): V4-D2B1 issuer authority hardening — economic issuer axis, typed refusals, nightly refresh seam | 2026-08-19 |
+| #5964 | fix(ci): a dark step on main must not void the whole semantic aggregate | 2026-08-19 |
+| #5963 | records(grey-deer): GD-0A durable landing — architecture freeze, workstream, 8 decisions, program registration | 2026-08-19 |
+| #5962 | docs(prophet-lab): day-1 continuation handoff + b5a wave status | 2026-08-19 |
+| #5961 | research(gd1): Grey Deer August 2026 point-in-time event replay | 2026-08-19 |
+| #5960 | perf(admin): unblock the console, and name the analytics failure instead of "bad json" | 2026-08-19 |
+| #5958 | agentos: W1-execution handoff + breadth-ledger discovery (WS:CI-MERGE-CONTROL-PLANE) | 2026-08-19 |
+| #5957 | Remove stray Chinese sentence from English disclaimer page | 2026-08-19 |
+| #5954 | ci(W1): classify every legacy job by which tree moves its verdict | 2026-08-19 |
+| #5952 | fix(ci): wire the merge-gate reliability suite into a run: step | 2026-08-19 |
+| #5948 | ci(backfill): fix the push path — backfill concluded SUCCESS while publishing nothing | 2026-08-19 |
+| #5942 | fix(collectors): NA-ticker pandas-sentinel corruption across 18 parse sites | 2026-08-19 |
+| #5941 | fix(tests): market-memory breadth fixtures pinned to one era | 2026-08-19 |
+| #5939 | fix(main-red-repair): ASTS ladder-rung re-pin + breadth union-universe DSC | 2026-08-19 |
+| #5938 | ci: measure why the merge train stalls — main is green 44% of the time | 2026-08-19 |
+| #5937 | fix(main-red-repair): the price-ladder control asserts its mechanism, not a calendar | 2026-08-19 |
+| #5936 | fix(symbol_directory): NA ticker parsed as NaN froze the exchange roster since 2026-08-11 | 2026-08-19 |
+| #5934 | P0-C2R1 — single-validation BioCatalyst generation read | 2026-08-19 |
+| #5932 | D2 Identity Atlas: defense21-v1 graph + per-issuer identity vertical (five pilots + SPR control) | 2026-08-19 |
 | #5930 | fix(main-red-repair): pin CI to a CPython the parser allowlist has reviewed | 2026-08-19 |
+| #5928 | feat(prophet-lab): P-LAB-API — Prophet Operator Lab read-only projection | 2026-08-19 |
 | #5924 | docs(prophet-lab): LAB-0 — recut V4-B5 into B5A Operator Lab + B5B desk; commission Radar W4.1 | 2026-08-19 |
 | #5923 | agentos: mint WS:PROPHET-HK-CA-REVAMP + hardened execution packet | 2026-08-19 |
+| #5922 | ci(baseline): keep the merge-train circuit breaker fresh on a clock | 2026-08-19 |
 | #5921 | feat(prophet-fusion): PR-3D-R1 same-stamp revision + atomic W3 persist | 2026-08-19 |
 | #5919 | docs(agentos): D1 closure proof — next action is Sol acceptance | 2026-08-18 |
 | #5918 | docs(agentos): the sweeper's forward-rebase can drop a commit you pushed | 2026-08-18 |
@@ -77,6 +152,7 @@ Generated: 2026-08-19T05:17:28.953080+00:00  |  Open PRs: 21  |  Merged (window)
 | #5894 | research+engine(prophet-v4): V4-D2A canonical identity authority bridge (GMI → Data OS) | 2026-08-18 |
 | #5893 | fix(prophet-fusion): assert PR-2's registered numbers against the artifact, not a rebuild | 2026-08-18 |
 | #5890 | feat(prophet-fusion): PR-3D W3 liveness fence and lawful status surface | 2026-08-18 |
+| #5889 | FIF-1R3: land accepted financial_intelligence_packet.v1 | 2026-08-19 |
 | #5888 | fix(leader-radar): honour the caller's data_root when joining fire grades | 2026-08-18 |
 | #5887 | docs(agentos): govrev event_id folds the collector's retrieval clock, so a re-run re-mints candidates | 2026-08-18 |
 | #5886 | docs(agentos): record why the daily collect mutex cannot live in et_gate | 2026-08-18 |
@@ -90,6 +166,7 @@ Generated: 2026-08-19T05:17:28.953080+00:00  |  Open PRs: 21  |  Merged (window)
 | #5875 | fix(stock-identity): band the B live-plane tripwire on uniformity, not level | 2026-08-18 |
 | #5874 | fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields | 2026-08-18 |
 | #5873 | docs(agentos): correct the govrev record — the projection lane does NOT clear the ci-pack-6 red | 2026-08-18 |
+| #5872 | feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief — runtime implementation (v1.2) | 2026-08-19 |
 | #5871 | docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs | 2026-08-18 |
 | #5870 | fix(govrev): restore the collection generation the candidate projection was frozen against | 2026-08-18 |
 | #5867 | ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class | 2026-08-18 |
@@ -508,49 +585,6 @@ Generated: 2026-08-19T05:17:28.953080+00:00  |  Open PRs: 21  |  Merged (window)
 | #5392 | leader_radar: fix .receipt-machine-state font-family to use --num token | 2026-08-12 |
 | #5391 | fix(fund-pages): port SM4-R3 font fix to fund_dossier + fund_index | 2026-08-12 |
 | #5390 | fix(china): restore Connect Leaderboard — builder/template key mismatch | 2026-08-12 |
-| #5389 | fix(fleet): declare .codex/worktrees — the fourth agent root the three lists all missed | 2026-08-11 |
-| #5388 | Forensics: independently verify seed review bundles | 2026-08-11 |
-| #5387 | BioCatalyst: render verified Change Tape values | 2026-08-11 |
-| #5386 | fix(macro): quad map — neutral position marker, and name the label/reading split | 2026-08-12 |
-| #5385 | ci: make merge-on-green handoff terminal for every agent | 2026-08-12 |
-| #5384 | docs(executive-os): cross-reference the Mastermind strategic state + worker contract | 2026-08-11 |
-| #5383 | research(prophet-us): stop-curvature context charter — pre-registration (§6.8(a) follow-up) | 2026-08-12 |
-| #5382 | Revamp Filing Forensics into an insight-first dashboard | 2026-08-11 |
-| #5381 | Forensics: diagnose attested credential rejection | 2026-08-11 |
-| #5380 | feat(marketing): W2C-1 throughput unlock — 15-min ladder, armed daily read, receipt floor | 2026-08-12 |
-| #5379 | marketing: v5-register market-clock fixtures; wire the unrun suite into CI | 2026-08-12 |
-| #5378 | Docs: reconcile GMI Market Memory prerequisites | 2026-08-11 |
-| #5377 | design(govrev): budget-rail status word — word font, sentence case; re-pair parity.css | 2026-08-12 |
-| #5376 | research(options): freeze sparse selector abstention receipt | 2026-08-11 |
-| #5375 | fix(group-reads): W-A correctness — session units, as_of stamp, and pins for the two non-defects | 2026-08-12 |
-| #5374 | feat(winner-health): three-tier board — per-tier libraries, honest no-analog/unread states (W2b) | 2026-08-11 |
-| #5373 | feat(options): capture prospective owner-time W1A context | 2026-08-11 |
-| #5372 | research(top-anatomy): phase-1 anchor-matched re-registration — AM instrument failure adjudicated open, DM discharges duration, AM-v2 chartered | 2026-08-11 |
-| #5371 | tests: pin origination_note bilingual completeness on every emit path | 2026-08-12 |
-| #5370 | feat(prophet-us): union admission on the EARLY-TURN starter tier (bake-off §A2) | 2026-08-11 |
-| #5369 | design(govrev): radar surface pass — label vocabulary, fact-grid disclosure, value-change direction | 2026-08-12 |
-| #5368 | marketing: a recall never polls Buffer, the dark quota suite gets a job, five v5 follow-ups closed | 2026-08-12 |
-| #5367 | research(cn-limit): P-A charter — actual pick panel read contract + two-phase design | 2026-08-12 |
-| #5366 | marketing: the number gate was taxing the doctrine it enforces (date strip + breaking budget) | 2026-08-12 |
-| #5365 | Strict JSON for research summary emitters: NaN→null at write time | 2026-08-12 |
-| #5364 | research(cn-limit): W-P0 washout-onset first results (display-tier) + program home v2 | 2026-08-12 |
-| #5363 | contracts(govrev): restore recipient_query_terms to required — manifest carries it fleet-wide | 2026-08-12 |
-| #5362 | feat(options): add canonical campaign v2 ledgers | 2026-08-11 |
-| #5361 | Market Memory: accrue prospective SPY experience | 2026-08-11 |
-| #5360 | research(cn-limit): exact-plane forward ledger + advancer prereg requirements | 2026-08-12 |
-| #5359 | research(prophet-us): footprint-picker prereg + measurement — the picker inside the filter | 2026-08-12 |
-| #5358 | ci: wire tests/test_constitution.py into the neural-web legacy job | 2026-08-12 |
-| #5357 | fix(china-micro): registration-era main-board IPO window + launch-era ChiNext ST width | 2026-08-12 |
-| #5356 | research: Executive OS Phase 0 institutional census | 2026-08-12 |
-| #5355 | feat(prophet): add private exact-option shadow lifecycle receipts | 2026-08-11 |
-| #5354 | fix(options): keep public GEX state on fresh main | 2026-08-11 |
-| #5353 | options: persist durable Market Memory truth receipts | 2026-08-11 |
-| #5352 | Options: bind exact Market Memory context receipts | 2026-08-11 |
-| #5351 | research: freeze MomoEdge completion benchmark | 2026-08-11 |
-| #5350 | Prophet: preserve host-private exact-option mark evidence | 2026-08-11 |
-| #5349 | fix(options): isolate chain snapshot scheduler deployment | 2026-08-11 |
-| #5348 | feat(release-radar): add coherent CPI ridge shadow | 2026-08-11 |
-| #5347 | Map the three-repository Mastermind system | 2026-08-11 |
 
 ---
 

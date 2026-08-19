@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FOXF-BULL-20260526",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 68.6,
-  "raw_confidence": 68.9,
-  "delta_vs_base": 8.6,
+  "management_confidence": 68.7,
+  "raw_confidence": 68.8,
+  "delta_vs_base": 8.7,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 48.0,
-    "pace": 58.1,
+    "pace": 57.7,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.943,
     "dist_to_t1_r": 0.557,
     "dist_to_t2_r": 2.057,
-    "horizon_pct_used": 75.6,
+    "horizon_pct_used": 77.8,
     "p1": 0.6286,
     "p2": 0.3143,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 34,
-  "tau": 0.7556
+  "days_elapsed": 35,
+  "tau": 0.7778
 }

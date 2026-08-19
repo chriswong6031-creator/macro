@@ -1,0 +1,578 @@
+#!/usr/bin/env python3
+"""scripts/build_options_intel_brief.py — AD-1 Daily EOD Options Intelligence Brief producer.
+
+Repository adapter for ``engine/options_intel_brief.py`` (the pure scoring engine).
+Contract: ``contracts/options/OPTIONS_INTEL_BRIEF_V1.md``. This script owns 100% of the
+file I/O (reads §2 inputs through their existing loaders/paths, never re-ingests, never
+calls a collector), then hands fully materialised in-memory frames/dicts to the engine
+and writes its returned payload to ``site/options_intel_brief.json``. Zero network calls.
+
+NYSE-session arithmetic is the repository's canonical calendar module,
+``lib/nyse_calendar.py`` — R1 of ``research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION
+_BY_FABLE.md`` ("pure rule arithmetic, zero data dependencies"; already the reference
+every other nightly builder anchors sessions against, e.g. ``engine/session_anchor.py``).
+This is the ONE canonical trading-calendar helper in the repo (grepped: no other module
+defines a competing ``next_nyse_session``); we reuse ``session_n_forward(d, 1)`` for
+"the next NYSE session" and ``sessions_apart`` for session-count arithmetic. No new
+calendar is minted here (contract §1).
+
+Atomic-write idiom mirrors the house pattern already used by
+``scripts/reconcile_entry_radar.py::write_json_atomic`` (temp file in the same
+directory, fsync, ``os.replace`` — a reader never observes a torn file), with the
+contract's semantic no-op rule layered on top (§7): a rerun producing an identical
+``receipt_id`` AND identical payload (module ``built_at_utc`` and the diagnostic-only
+``_run`` block) leaves the committed bytes untouched.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import hashlib
+import json
+import os
+import sys
+import tempfile
+from datetime import date, datetime, time as dt_time, timezone
+from pathlib import Path
+from typing import Any
+from zoneinfo import ZoneInfo
+
+import numpy as np
+import pandas as pd
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_REPO_ROOT))
+
+from lib import nyse_calendar as nc  # noqa: E402
+from engine import options_intel_brief as brief  # noqa: E402
+from engine import gex_confirm  # noqa: E402 — read-only use per contract §2 input #3
+from engine import options_universe  # noqa: E402 — B2: the canonical current universe
+
+CHAINS_DIR = _REPO_ROOT / "data" / "polygon_gex" / "chains"
+SUMMARY_GLOB = str(_REPO_ROOT / "data" / "polygon_gex" / "summary_{sym}.parquet")
+GEX_JSON_GLOB = str(_REPO_ROOT / "site" / "gex" / "{sym}.json")
+EARNINGS_PATH = _REPO_ROOT / "data" / "earnings" / "earnings.parquet"
+PROPHET_INDEX_PATH = _REPO_ROOT / "site" / "prophet" / "index.json"
+SIGNING_GATE_PATH = _REPO_ROOT / "data" / "options_flow" / "signing_gate.json"
+OUT_PATH = _REPO_ROOT / "site" / "options_intel_brief.json"
+
+_ET = ZoneInfo("America/New_York")
+_CLOSE_PLUS_SETTLE_ET = dt_time(17, 0)   # matches lib.nyse_calendar's own settle buffer
+_STALE_AFTER_HOURS = 36                  # contract §4 input #1 "absent >36h after close"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# File discovery / hashing.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _sha256_file(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _committed_chain_sessions() -> list[str]:
+    """Every session date with a chain parquet on disk, filtered to real NYSE sessions
+    (a non-session filename is silently excluded — never fabricated as a scoreable day;
+    mirrors ``lib.nyse_calendar.session_dates``' filename-keyed convention)."""
+    files = sorted(glob.glob(str(CHAINS_DIR / "*.parquet")))
+    stems = [Path(f).stem for f in files]
+    return nc.session_dates(stems, label="options_intel_brief chains")
+
+
+def _lawful_pairs(sessions: list[str]) -> dict[str, str]:
+    sset = set(sessions)
+    out = {}
+    for a in sessions:
+        b = nc.session_n_forward(date.fromisoformat(a), 1)
+        if b is not None and b.isoformat() in sset:
+            out[a] = b.isoformat()
+    return out
+
+
+def _load_chain(session: str) -> pd.DataFrame:
+    return pd.read_parquet(CHAINS_DIR / f"{session}.parquet")
+
+
+def _load_summary_spot(symbol: str, upto_session: str) -> list[float]:
+    fp = Path(SUMMARY_GLOB.format(sym=symbol))
+    if not fp.exists():
+        return []
+    df = pd.read_parquet(fp, columns=["spot"])
+    idx = pd.to_datetime(df.index, errors="coerce")
+    keep = idx.notna() & (idx.date <= date.fromisoformat(upto_session))
+    vals = df.loc[keep, "spot"].astype(float)
+    vals = vals[np.isfinite(vals)]
+    return [float(v) for v in vals.tolist()]
+
+
+def _load_gex_verdicts(symbols: list[str], as_of_session: str) -> tuple[dict[str, str | None], bool, dict[str, str]]:
+    """Read ``site/gex/{SYM}.json`` and call the EXISTING ``engine.gex_confirm.assess``
+    (contract §2 input #3). A verdict is kept ONLY when the artifact's own ``meta.asof``
+    binds to S — otherwise the mechanics family is ABSENT for that symbol (contract §1:
+    "GEX mechanics may set M_gex only when its evidence binds to S"; never borrowed).
+
+    B1: also returns the per-file sha256 manifest (repo-relative path -> hash) of every
+    file this call actually CONSUMED — i.e. read AND bound to S. A file that exists but
+    fails the ``meta.asof`` check was opened but never consumed (its bytes never
+    influenced the payload), so it is deliberately excluded from the manifest — this is
+    what makes test 3 ("mutate an unconsumed gex payload -> receipt unchanged") true by
+    construction rather than by convention.
+    """
+    out: dict[str, str | None] = {}
+    manifest: dict[str, str] = {}
+    any_bound = False
+    for sym in symbols:
+        fp = Path(GEX_JSON_GLOB.format(sym=sym))
+        if not fp.exists():
+            out[sym] = None
+            continue
+        try:
+            payload = json.loads(fp.read_text())
+        except Exception:
+            out[sym] = None
+            continue
+        meta_asof = (payload.get("meta") or {}).get("asof")
+        if meta_asof != as_of_session:
+            out[sym] = None
+            continue
+        h = _sha256_file(fp)
+        if h is not None:
+            manifest[str(fp.relative_to(_REPO_ROOT))] = h
+        try:
+            verdict = gex_confirm.assess(payload, direction="up")
+        except Exception:
+            verdict = None
+        out[sym] = (verdict.get("verdict") if isinstance(verdict, dict) else None)
+        any_bound = True
+    return out, any_bound, manifest
+
+
+def _load_earnings(symbols: list[str]) -> tuple[dict[str, str | None], bool]:
+    if not EARNINGS_PATH.exists():
+        return {s: None for s in symbols}, False
+    try:
+        df = pd.read_parquet(EARNINGS_PATH, columns=["next_date"])
+    except Exception:
+        return {s: None for s in symbols}, False
+    nd = df["next_date"].to_dict()
+    return {s: nd.get(s) for s in symbols}, True
+
+
+def _load_prophet() -> tuple[dict[str, str | None], dict[str, str | None], dict[str, bool],
+                              dict[str, str | None], str | None]:
+    """B4 — read BOTH Prophet domains from ``site/prophet/index.json``: ``plans[]``
+    (``entry_status``/``lifecycle_state``/``closed``) and ``intake.receipts.groups``
+    (bucket ``reason``, e.g. ``ran_too_far``/``already_open``/``not_ready``). Returns
+    ``(entry_status, lifecycle_state, closed, group_reason, asof)``, all keyed by
+    symbol; the two-domain precedence resolution itself is pure and lives in the engine
+    (``prophet_plan_state``/``prophet_group_state``/``prophet_state_combined``).
+
+    A symbol with more than one ``plans[]`` entry (a resolved/invalidated history entry
+    alongside a live one) keeps its first OPEN (``closed`` False) record and ignores
+    later entries — once an open record is found, a later closed one never overwrites it.
+    """
+    if not PROPHET_INDEX_PATH.exists():
+        return {}, {}, {}, {}, None
+    try:
+        payload = json.loads(PROPHET_INDEX_PATH.read_text())
+    except Exception:
+        return {}, {}, {}, {}, None
+
+    entry_status: dict[str, str | None] = {}
+    lifecycle_state: dict[str, str | None] = {}
+    closed: dict[str, bool] = {}
+    for pl in (payload.get("plans") or []):
+        asset = pl.get("asset")
+        if not asset:
+            continue
+        if asset in closed and not closed[asset]:
+            continue  # already hold an OPEN record for this asset — never displaced
+        entry_status[asset] = pl.get("entry_status")
+        lifecycle_state[asset] = pl.get("lifecycle_state")
+        closed[asset] = bool(pl.get("closed"))
+
+    # F13 (2026-08-18): a ticker can appear in MORE THAN ONE intake.receipts.groups
+    # bucket in the same file (e.g. both `not_ready` and `ran_too_far`); the keep
+    # must resolve by the SAME ruled precedence B4 already uses for cross-domain
+    # collisions (EXTENDED > ALREADY_OPEN > NOT_READY > READY > OTHER), never by
+    # file/array order — a `setdefault` silently kept whichever bucket happened to
+    # be enumerated first, which rendered a genuinely `ran_too_far`/EXTENDED name
+    # as "Entry not ready yet" whenever `not_ready` preceded it in the array.
+    group_reason: dict[str, str | None] = {}
+    groups = (((payload.get("intake") or {}).get("receipts") or {}).get("groups")) or []
+    for g in groups:
+        reason = g.get("reason")
+        for entry in (g.get("names") or []):
+            ticker = entry.get("ticker") if isinstance(entry, dict) else entry
+            if not ticker:
+                continue
+            if ticker not in group_reason or (
+                brief.prophet_group_precedence_rank(reason)
+                < brief.prophet_group_precedence_rank(group_reason[ticker])
+            ):
+                group_reason[ticker] = reason
+
+    return entry_status, lifecycle_state, closed, group_reason, payload.get("asof")
+
+
+def _load_signing_gate() -> tuple[bool, str | None]:
+    if not SIGNING_GATE_PATH.exists():
+        return False, None
+    try:
+        payload = json.loads(SIGNING_GATE_PATH.read_text())
+    except Exception:
+        return False, None
+    return bool(payload.get("direction_reliable")), payload.get("asof")
+
+
+def _gex_cfg() -> dict[str, Any]:
+    """F2a — the ``polygon.gex`` config block, read INDEPENDENTLY of
+    ``options_universe.gex_symbols()``'s own internal resolution (mirrors it exactly:
+    same nested-get chain) so this fail-closed diagnostic probe never touches that
+    call's signature or its existing zero-arg test monkeypatch surface across the
+    whole b1-b5 fixture family."""
+    from lib import config as _config
+    return (_config.load().get("polygon", {}) or {}).get("gex", {}) or {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Staleness (wall-clock; the ONE place `now` may be read — engine never sees it).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _sessions_apart_str(a: str | None, b: str | None) -> int | None:
+    """String-date wrapper for ``lib.nyse_calendar.sessions_apart`` — the engine deals
+    only in ISO session strings (it never imports a calendar module itself)."""
+    if a is None or b is None:
+        return None
+    return nc.sessions_apart(date.fromisoformat(a), date.fromisoformat(b))
+
+
+def _session_n_forward_str(d: str, n: int) -> str:
+    got = nc.session_n_forward(date.fromisoformat(d), n)
+    return got.isoformat() if got is not None else d
+
+
+def _is_stale(newest_session: str, now: datetime) -> bool:
+    close_dt = datetime.combine(date.fromisoformat(newest_session), _CLOSE_PLUS_SETTLE_ET, tzinfo=_ET)
+    hours = (now.astimezone(timezone.utc) - close_dt.astimezone(timezone.utc)).total_seconds() / 3600.0
+    return hours > _STALE_AFTER_HOURS
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Atomic write + semantic no-op (house idiom, contract §7).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def write_json_atomic(path: Path, payload: dict[str, Any]) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_name: str | None = None
+    try:
+        body = json.dumps(payload, sort_keys=True, indent=2, allow_nan=False).encode("utf-8") + b"\n"
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(body)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+        tmp_name = None
+        return True
+    finally:
+        if tmp_name:
+            try:
+                os.unlink(tmp_name)
+            except OSError:
+                pass
+
+
+def _semantic_unchanged(existing_path: Path, new_payload: dict[str, Any]) -> bool:
+    """True iff a prior artifact exists with the same receipt_id AND identical payload
+    once ``built_at_utc`` is excluded (contract §7 — never churn git on a semantic no-op)."""
+    if not existing_path.exists():
+        return False
+    try:
+        old = json.loads(existing_path.read_text())
+    except Exception:
+        return False
+    if old.get("receipt_id") != new_payload.get("receipt_id"):
+        return False
+    strip = lambda d: {k: v for k, v in d.items() if k != "built_at_utc"}  # noqa: E731
+    return strip(old) == strip(new_payload)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def build(*, now: datetime | None = None, out_path: Path = OUT_PATH,
+          ignore_staleness: bool = False) -> dict[str, Any]:
+    now = now or datetime.now(timezone.utc)
+    sessions = _committed_chain_sessions()
+    S, D, pending = brief.select_settled_pair(sessions, lambda d: (
+        nc.session_n_forward(date.fromisoformat(d), 1).isoformat()
+        if nc.session_n_forward(date.fromisoformat(d), 1) else None
+    ))
+
+    lawful_pairs = _lawful_pairs(sessions)
+    input_receipts: list[dict[str, Any]] = []
+
+    if S is None:
+        # No lawful pair at all — MIXED_VINTAGE. Engine handles this branch directly
+        # off a SessionPanel with as_of_session=None; still supply a receipt so the
+        # header/receipt path is exercised honestly (empty watermark set).
+        panel = brief.SessionPanel(
+            as_of_session=None, oi_counted_date=None, pending_session=pending,
+            pending_reason=("OI_NOT_YET_SETTLED" if pending else None),
+            chains_by_session={}, chain_next=None, lawful_pairs=lawful_pairs,
+        )
+        watermarks = {"chains_session_S": None, "chains_session_D": None,
+                      "summaries_max_session": None, "events_loaded": False,
+                      "prophet_asof": None, "signing_gate_asof": None}
+        return brief.build_intel_brief(
+            panel, source_watermarks=watermarks, input_receipts=input_receipts,
+            built_at_utc=now.isoformat(), sessions_apart_fn=_sessions_apart_str,
+            session_n_forward_fn=_session_n_forward_str,
+        )
+
+    # Load every committed chain session up to and including S (our real store is
+    # small — 28 sessions / ~115MB total; the census in the AD-1 handoff §5.4 already
+    # measured this feasible in one process).
+    chains_by_session = {s: _load_chain(s) for s in sessions if s <= S}
+    chain_D = _load_chain(D) if D not in chains_by_session else chains_by_session[D]
+
+    for s, fp in ((S, CHAINS_DIR / f"{S}.parquet"), (D, CHAINS_DIR / f"{D}.parquet")):
+        input_receipts.append({
+            "logical_source": f"chains_{('S' if s == S else 'D')}", "path": str(fp.relative_to(_REPO_ROOT)),
+            "asof": s, "sha256": _sha256_file(fp), "state": "ok" if fp.exists() else "missing",
+        })
+
+    # F1 — the `chains` source_manifest domain: per-file sha256 of EVERY chain
+    # parquet actually loaded above (every session <= S consumed for d1/d3/Q_oi
+    # history/tiers/skew history, plus D). This is the receipt-closure blocker fix:
+    # a HISTORICAL (< S) chain was already read into scoring but never hashed
+    # anywhere before this domain existed, so mutating it moved the payload without
+    # ever moving receipt_id. `chains_S`/`chains_D` above are unchanged (existing,
+    # narrower per-session receipts); this is the CLOSURE domain over the full set.
+    chains_manifest: dict[str, str] = {}
+    for s in sorted(set(chains_by_session.keys()) | {D}):
+        fp = CHAINS_DIR / f"{s}.parquet"
+        h = _sha256_file(fp)
+        if h is not None:
+            chains_manifest[str(fp.relative_to(_REPO_ROOT))] = h
+    chains_root = brief.sha256_of(sorted(chains_manifest.items())) if chains_manifest else None
+    input_receipts.append({
+        "logical_source": "chains_manifest", "path": "data/polygon_gex/chains/*.parquet",
+        "asof": S, "sha256": chains_root, "member_count": len(chains_manifest),
+        "state": "ok" if chains_manifest else "missing",
+    })
+
+    present_names = sorted(brief.session_metrics(chains_by_session[S]).keys())
+
+    # B2 — the canonical current universe (config anchors + baskets, capped), resolved
+    # ONCE here and handed to the pure engine as an explicit list+count. Never derived
+    # from the chain store itself (that was the deleted historical-max heuristic).
+    # The call signature is UNCHANGED (zero-arg) — F2a's own config read below is a
+    # deliberately SEPARATE, independently-mockable probe (`_gex_cfg()`), so this
+    # line's existing monkeypatch surface (`producer.options_universe.gex_symbols`,
+    # used across the whole b1-b5 fixture family) is untouched.
+    universe = options_universe.gex_symbols()
+
+    # F1 — universe_resolution receipt: the resolved universe binds into receipt_id
+    # too, same as every other §2 input (contract §5 `receipt_id` formula already
+    # hashes the full input_receipts list). Not a file — sha256 over the resolved
+    # LIST itself (mirrors the two merkle-style aggregate roots below).
+    universe_sha = brief.sha256_of(sorted(universe))
+    input_receipts.append({
+        "logical_source": "universe_resolution", "path": "engine/options_universe.py::gex_symbols",
+        "asof": S, "sha256": universe_sha, "count": len(universe),
+        "state": "ok" if universe else "missing",
+    })
+
+    # F2a — fail CLOSED (producer-only; engine/options_universe.py is a shared plane
+    # and is never touched here) when the config wants baskets folded in
+    # (`include_baskets: true`) but the resolved universe came back no larger than
+    # the config anchor list — the OBSERVABLE signature of
+    # `options_universe.baskets_universe()`'s own swallowed-error empty return (that
+    # function logs and returns `[]` on any read failure rather than raising). A
+    # silently-empty basket resolution used to fail OPEN: the board scored against
+    # just the anchor list while still claiming full coverage. `_gex_cfg()` is a
+    # deliberately separate read from `options_universe.gex_symbols()`'s own internal
+    # config resolution so this diagnostic probe never changes that call's signature
+    # or its existing test monkeypatch surface.
+    gex_cfg = _gex_cfg()
+    _anchor_list = list(gex_cfg.get("symbols") or options_universe.DEFAULT_ANCHORS)
+    n_anchors = len({str(t).upper() for t in _anchor_list})
+    if bool(gex_cfg.get("include_baskets", False)) and len(universe) <= n_anchors:
+        panel = brief.SessionPanel(
+            as_of_session=S, oi_counted_date=D, pending_session=pending,
+            pending_reason=("OI_NOT_YET_SETTLED" if pending else None),
+            chains_by_session=chains_by_session, chain_next=chain_D, lawful_pairs=lawful_pairs,
+        )
+        watermarks = {
+            "chains_session_S": S, "chains_session_D": D, "summaries_max_session": None,
+            "events_loaded": False, "prophet_asof": None, "signing_gate_asof": None,
+        }
+        partial_manifest = {
+            "gex_summary": {"root": None, "member_count": 0, "files": {}},
+            "gex_confirm": {"root": None, "member_count": 0, "files": {}},
+            "chains": {"root": chains_root, "member_count": len(chains_manifest),
+                       "files": dict(sorted(chains_manifest.items()))},
+        }
+        return brief.degraded_payload(
+            reason="UNIVERSE_RESOLUTION_FAILED", panel=panel, source_watermarks=watermarks,
+            input_receipts=input_receipts, built_at_utc=now.isoformat(),
+            source_manifest=partial_manifest,
+        )
+
+    summary_spot = {sym: _load_summary_spot(sym, S) for sym in present_names}
+    summaries_max_session = None
+    # B1 — per-file sha256 manifest of every summary_{SYM}.parquet actually consumed
+    # (read) for a present-session symbol; mirrors _load_summary_spot's own existence
+    # gate exactly, so "consumed" here means precisely "the file _load_summary_spot
+    # opened", never the whole data/polygon_gex/ directory.
+    summary_manifest: dict[str, str] = {}
+    for sym in present_names:
+        fp = Path(SUMMARY_GLOB.format(sym=sym))
+        if fp.exists():
+            h = _sha256_file(fp)
+            if h is not None:
+                summary_manifest[str(fp.relative_to(_REPO_ROOT))] = h
+            try:
+                df = pd.read_parquet(fp, columns=[])
+                last = str(pd.to_datetime(df.index).max().date())
+                if summaries_max_session is None or last > summaries_max_session:
+                    summaries_max_session = last
+            except Exception:
+                continue
+
+    gex_verdict, gex_any_bound, gex_confirm_manifest = _load_gex_verdicts(present_names, S)
+    event_date, events_loaded = _load_earnings(present_names)
+    (prophet_entry_status, prophet_lifecycle_state, prophet_plan_closed,
+     prophet_group_reason, prophet_asof) = _load_prophet()
+    direction_reliable, signing_gate_asof = _load_signing_gate()
+
+    # B1 — the two merkle-style aggregate roots (sha256 over the SORTED per-file
+    # manifest), folded into input_receipts so they bind into receipt_id below exactly
+    # like every other source. A domain with zero consumed files gets a null root and
+    # state="missing" — never a fabricated non-empty hash.
+    summary_root = brief.sha256_of(sorted(summary_manifest.items())) if summary_manifest else None
+    gex_confirm_root = brief.sha256_of(sorted(gex_confirm_manifest.items())) if gex_confirm_manifest else None
+    source_manifest = {
+        "gex_summary": {"root": summary_root, "member_count": len(summary_manifest),
+                         "files": dict(sorted(summary_manifest.items()))},
+        "gex_confirm": {"root": gex_confirm_root, "member_count": len(gex_confirm_manifest),
+                         "files": dict(sorted(gex_confirm_manifest.items()))},
+        # F1 — chains domain, computed earlier (before the F2a fail-closed check) so
+        # it is available on both the healthy AND the UNIVERSE_RESOLUTION_FAILED path.
+        "chains": {"root": chains_root, "member_count": len(chains_manifest),
+                   "files": dict(sorted(chains_manifest.items()))},
+    }
+
+    input_receipts.append({
+        "logical_source": "earnings", "path": str(EARNINGS_PATH.relative_to(_REPO_ROOT)),
+        "asof": S, "sha256": _sha256_file(EARNINGS_PATH),
+        "state": "ok" if events_loaded else "missing",
+    })
+    input_receipts.append({
+        "logical_source": "prophet_index", "path": str(PROPHET_INDEX_PATH.relative_to(_REPO_ROOT)),
+        "asof": prophet_asof, "sha256": _sha256_file(PROPHET_INDEX_PATH),
+        "state": "ok" if PROPHET_INDEX_PATH.exists() else "missing",
+    })
+    input_receipts.append({
+        "logical_source": "signing_gate", "path": str(SIGNING_GATE_PATH.relative_to(_REPO_ROOT)),
+        "asof": signing_gate_asof, "sha256": _sha256_file(SIGNING_GATE_PATH),
+        "state": "ok" if SIGNING_GATE_PATH.exists() else "missing",
+    })
+    input_receipts.append({
+        "logical_source": "gex_summary_manifest", "path": "data/polygon_gex/summary_*.parquet",
+        "asof": S, "sha256": summary_root, "member_count": len(summary_manifest),
+        "state": "ok" if summary_manifest else "missing",
+    })
+    input_receipts.append({
+        "logical_source": "gex_confirm_manifest", "path": "site/gex/*.json",
+        "asof": S, "sha256": gex_confirm_root, "member_count": len(gex_confirm_manifest),
+        "state": "ok" if gex_confirm_manifest else "missing",
+    })
+
+    stale = (not ignore_staleness) and _is_stale(max(sessions), now)
+
+    panel = brief.SessionPanel(
+        as_of_session=S, oi_counted_date=D, pending_session=pending,
+        pending_reason=("OI_NOT_YET_SETTLED" if pending else None),
+        chains_by_session=chains_by_session, chain_next=chain_D, lawful_pairs=lawful_pairs,
+        summary_spot=summary_spot, gex_verdict=gex_verdict, gex_bound_to_S=True,
+        event_date=event_date, events_loaded=events_loaded,
+        prophet_entry_status=prophet_entry_status, prophet_lifecycle_state=prophet_lifecycle_state,
+        prophet_plan_closed=prophet_plan_closed, prophet_group_reason=prophet_group_reason,
+        prophet_asof=prophet_asof,
+        signing_gate_direction_reliable=direction_reliable, signing_gate_asof=signing_gate_asof,
+        universe=universe, stale=stale,
+    )
+
+    watermarks = {
+        "chains_session_S": S, "chains_session_D": D,
+        "summaries_max_session": summaries_max_session,
+        "events_loaded": events_loaded, "prophet_asof": prophet_asof,
+        "signing_gate_asof": signing_gate_asof,
+    }
+
+    payload = brief.build_intel_brief(
+        panel, source_watermarks=watermarks, input_receipts=input_receipts,
+        built_at_utc=now.isoformat(), sessions_apart_fn=_sessions_apart_str,
+        session_n_forward_fn=_session_n_forward_str, source_manifest=source_manifest,
+    )
+    return payload
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", default=str(OUT_PATH))
+    ap.add_argument("--ignore-staleness", action="store_true",
+                     help="diagnostic only: score the newest committed session even if "
+                          "it is older than the >36h freshness rule. Never used by the "
+                          "nightly lane; for local verification of the scoring math "
+                          "against a deliberately frozen test store.")
+    args = ap.parse_args(argv)
+
+    out_path = Path(args.out)
+    payload = build(out_path=out_path, ignore_staleness=args.ignore_staleness)
+
+    if _semantic_unchanged(out_path, payload):
+        print(f"::notice title=options-intel-brief::semantic no-op — {out_path} unchanged "
+              f"(receipt_id={payload.get('receipt_id')})", flush=True)
+    else:
+        write_json_atomic(out_path, payload)
+        print(f"::notice title=options-intel-brief::wrote {out_path} "
+              f"(receipt_id={payload.get('receipt_id')})", flush=True)
+
+    print("=== options.intel_brief/v1 header ===")
+    for k in ("as_of_session", "oi_counted_date", "pending_session", "pending_reason",
+              "board_state", "board_reason", "eligibility", "receipt_id", "config_hash"):
+        print(f"  {k}: {payload.get(k)}")
+    sm = payload.get("source_manifest") or {}
+    for domain in ("gex_summary", "gex_confirm"):
+        d = sm.get(domain) or {}
+        print(f"  source_manifest.{domain}: member_count={d.get('member_count')} root={d.get('root')}")
+    print("state counts:")
+    print(f"  opportunities={len(payload.get('opportunities') or [])} "
+          f"(overflow={payload.get('opportunities_overflow')}) "
+          f"event_board={len(payload.get('event_board') or [])} "
+          f"risk_warnings={len(payload.get('risk_warnings') or [])} "
+          f"no_signal_exemplar={'yes' if payload.get('no_signal_exemplar') else 'no'}")
+    print("top-6 opportunities:")
+    for c in (payload.get("opportunities") or [])[:6]:
+        print(f"  {c['symbol']:6s} {c['direction']:10s} R={c['research_priority_score']:4d} "
+              f"es={c['evidence_strength']:.3f} ec={c['evidence_confidence']:.3f} "
+              f"({c['evidence_confidence_band']})")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

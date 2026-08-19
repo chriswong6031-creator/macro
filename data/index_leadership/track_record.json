@@ -1,32 +1,32 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-17",
-  "generated_at": "2026-08-19T06:48:38.920032+00:00",
+  "as_of": "2026-08-18",
+  "generated_at": "2026-08-19T15:24:52.047787+00:00",
   "is_context_only": true,
-  "n_snapshots": 291,
-  "n_days": 9,
+  "n_snapshots": 309,
+  "n_days": 10,
   "horizons": {
     "5": {
-      "n_matured": 222,
+      "n_matured": 242,
       "by_stage": {
         "running": {
-          "n": 203,
-          "mean_fwd_rel": 0.0021,
-          "hit_rate": 0.517
+          "n": 218,
+          "mean_fwd_rel": 0.0018,
+          "hit_rate": 0.514
         },
         "coiling": {
-          "n": 10,
-          "mean_fwd_rel": 0.0004,
-          "hit_rate": 0.6
+          "n": 13,
+          "mean_fwd_rel": 0.004,
+          "hit_rate": 0.692
         },
         "coiling_primed": {
-          "n": 9,
-          "mean_fwd_rel": 0.0174,
-          "hit_rate": 0.778
+          "n": 11,
+          "mean_fwd_rel": 0.0178,
+          "hit_rate": 0.818
         }
       },
-      "running_ic": 0.1658,
-      "running_ic_t_hac": null,
+      "running_ic": 0.1987,
+      "running_ic_t_hac": 3.592,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
@@ -40,7 +40,7 @@
         },
         "coiling": {
           "n": 10,
-          "mean_fwd_rel": -0.0151,
+          "mean_fwd_rel": -0.0141,
           "hit_rate": 0.4
         },
         "coiling_primed": {
@@ -64,7 +64,7 @@
         },
         "coiling": {
           "n": 7,
-          "mean_fwd_rel": -0.0178,
+          "mean_fwd_rel": -0.0157,
           "hit_rate": 0.571
         }
       },
@@ -82,17 +82,17 @@
       "coiling_ic_t_hac": null
     }
   },
-  "lead_time_d": null,
-  "peak_ic": null,
+  "lead_time_d": 5,
+  "peak_ic": 0.1987,
   "proven": {
-    "5": false,
+    "5": true,
     "10": false,
     "21": false,
     "63": false
   },
   "any_matured": true,
-  "verdict": "measuring",
-  "note": "Accruing forward observations; no horizon clears the Newey-West significance bar yet. Early numbers are provisional, context-only.",
+  "verdict": "validated",
+  "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
       "date": "2026-06-30",
@@ -120,14 +120,6 @@
     },
     {
       "date": "2026-06-30",
-      "id": "russell:specialty-industrial-machinery",
-      "name": "Specialty Industrial Machinery",
-      "stage": "coiling",
-      "fwd_rel": -0.097,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
       "id": "subsectors:industrial-distribution",
       "name": "Industrial Distribution",
       "stage": "running",
@@ -148,6 +140,14 @@
       "name": "Scientific & Technical Instruments",
       "stage": "coiling",
       "fwd_rel": -0.0865,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-06-30",
+      "id": "russell:specialty-industrial-machinery",
+      "name": "Specialty Industrial Machinery",
+      "stage": "coiling",
+      "fwd_rel": -0.0828,
       "horizon_d": 21
     },
     {

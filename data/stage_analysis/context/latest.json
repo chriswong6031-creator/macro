@@ -2,7 +2,7 @@
   "schema": "stage_context.v1",
   "asof": "2026-08-19",
   "data_session": "2026-08-18",
-  "built": "2026-08-19T07:08:55Z",
+  "built": "2026-08-19T15:45:36Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -25,65 +25,48 @@
   },
   "top_stage2": [
     {
-      "ticker": "KELYA",
-      "company": "Kelly Services Inc",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-18",
+      "ticker": "FDMT",
+      "company": "4D Molecular Therapeutics Inc",
+      "sector": "Healthcare",
+      "stage_source_asof": "2026-08-17",
       "stage": 2,
-      "weeks_in_stage": 10,
+      "weeks_in_stage": 5,
       "fresh": true,
       "sga_score": 63,
-      "ma30_slope_pct5w": 10.572,
-      "pct_vs_ma30": 44.29,
-      "mansfield_rs": 30.74,
-      "vol_ratio": 0.86,
+      "ma30_slope_pct5w": 5.459,
+      "pct_vs_ma30": 24.86,
+      "mansfield_rs": 15.89,
+      "vol_ratio": 0.82,
       "event": "pullback_resume",
-      "gate_tier": "T1",
+      "gate_tier": "T2",
       "blackout": false,
-      "arc_pos": 0.375,
+      "arc_pos": 0.3125,
       "earnings": {
-        "present": true,
-        "sentiment": 0.3333333333333333,
-        "performance": 3.75,
-        "tone_word": "confident",
-        "tags": [
-          "staffing",
-          "talent_solutions",
-          "msp",
-          "rpo",
-          "technology_modernization",
-          "cost_reduction",
-          "1_kelly_strategy",
-          "growth_office",
-          "human_capital_services",
-          "professional_staffing",
-          "it_staffing",
-          "education_services",
-          "outsourced_solutions",
-          "recruitment_process_outsourcing",
-          "managed_service_provider",
-          "consulting_services"
-        ],
-        "quarter": "Q1",
-        "summary": "Excluding... reduced demand from the federal government and 3 top ETM customers, revenue was down 3.3% on an underlying basis, which was improved."
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
       },
       "why": [
-        "Early in its climb — 10 weeks up so far",
+        "Early in its climb — 5 weeks up so far",
         "Already stretched well above its 30-week line — may need a rest",
         "Also shows a strong confirmation from our other checks"
       ],
       "why_zh": [
-        "上升初期 — 已上行 10 周",
+        "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 1.3768,
-      "atr_ext": 3.58,
-      "atr_pct_price": 0.08573,
-      "sata_score": 9,
-      "sata_change_1w": 1,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 91.9
+      "atr_14w": 1.7341,
+      "atr_ext": 1.4,
+      "atr_pct_price": 0.14225,
+      "sata_score": 7,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 68.1
     },
     {
       "ticker": "SILA",
@@ -139,50 +122,6 @@
       "sata_score": 9,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "AVTX",
-      "company": "Avalo Therapeutics Inc",
-      "sector": "Healthcare",
-      "stage_source_asof": "2026-08-18",
-      "stage": 2,
-      "weeks_in_stage": 3,
-      "fresh": true,
-      "sga_score": 57,
-      "ma30_slope_pct5w": 1.656,
-      "pct_vs_ma30": 20.11,
-      "mansfield_rs": 11.19,
-      "vol_ratio": 0.63,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.2875,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 3 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 3 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 2.5443,
-      "atr_ext": 1.289,
-      "atr_pct_price": 0.12988,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
     {
@@ -352,50 +291,6 @@
       "sata_change_1w": -1,
       "stage_detailed": "2D_extended_run",
       "industry_percentile": null
-    },
-    {
-      "ticker": "JANX",
-      "company": "Janux Therapeutics Inc",
-      "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
-      "stage": 2,
-      "weeks_in_stage": 3,
-      "fresh": true,
-      "sga_score": 55,
-      "ma30_slope_pct5w": 2.142,
-      "pct_vs_ma30": 11.19,
-      "mansfield_rs": -20.08,
-      "vol_ratio": 0.66,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.2875,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 3 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 3 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.2186,
-      "atr_ext": 1.331,
-      "atr_pct_price": 0.07559,
-      "sata_score": 6,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 23.0
     },
     {
       "ticker": "NKTR",
@@ -2947,9 +2842,130 @@
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
+    },
+    {
+      "ticker": "SJM",
+      "company": "J.M. Smucker Company (The)",
+      "sector": "Consumer Staples",
+      "stage_source_asof": "2026-08-18",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 3.401,
+      "pct_vs_ma30": 15.14,
+      "mansfield_rs": 4.53,
+      "vol_ratio": 0.73,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.3333333333333333,
+        "performance": 6.666666666666667,
+        "tone_word": "confident",
+        "tags": [
+          "coffee",
+          "uncrustables",
+          "hostess",
+          "spreads",
+          "pet_food",
+          "guidance",
+          "tariffs",
+          "cost_inflation",
+          "packaged_foods",
+          "snack_foods",
+          "brand_management",
+          "commodity_exposure",
+          "supply_chain_management"
+        ],
+        "quarter": "Q4",
+        "summary": "$0.75 [of EPS growth] is coming through our portfolio which is driven by segment profit growth from both coffee and Hostess..."
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 7.1117,
+      "atr_ext": 2.244,
+      "atr_pct_price": 0.05859,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 82.6
+    },
+    {
+      "ticker": "TOI",
+      "company": "Oncology Institute Inc",
+      "sector": "Healthcare",
+      "stage_source_asof": "2026-07-31",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 8.034,
+      "pct_vs_ma30": 24.05,
+      "mansfield_rs": 18.45,
+      "vol_ratio": 1.06,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.55,
+        "performance": 7.0,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raised",
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration"
+        ],
+        "quarter": "Q2",
+        "summary": "Starling Oncology reported Q2 FY2026 revenue of $161.3 million, up 34.6% year-over-year, driven by Specialty Pharmacy growth of 57.6%. Gross margin improved to 16.8% from 14.6%, and adjusted EBITDA turned positive at $0.2 million versus a loss of $4.1 million a year ago. The c…"
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 0.7455,
+      "atr_ext": 1.264,
+      "atr_pct_price": 0.1534,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     }
   ],
   "warnings_stage3": [
+    {
+      "ticker": "DSP",
+      "company": "Viant Technology Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 45
+    },
+    {
+      "ticker": "OPK",
+      "company": "Opko Health Inc",
+      "weeks_in_stage": 4,
+      "sga_score": 40
+    },
+    {
+      "ticker": "EPM",
+      "company": "Evolution Petroleum Corp",
+      "weeks_in_stage": 10,
+      "sga_score": 28
+    },
     {
       "ticker": "ARR",
       "company": "Armour Residential REIT",
@@ -2969,9 +2985,15 @@
       "sga_score": 26
     },
     {
-      "ticker": "ABUS",
-      "company": "Arbutus Biopharma Corp",
-      "weeks_in_stage": 4,
+      "ticker": "BORR",
+      "company": "Borr Drilling Ltd",
+      "weeks_in_stage": 2,
+      "sga_score": 25
+    },
+    {
+      "ticker": "CPSS",
+      "company": "Consumer Portfolio Service Inc",
+      "weeks_in_stage": 3,
       "sga_score": 25
     },
     {
@@ -2979,12 +3001,6 @@
       "company": "Planet Labs PBC",
       "weeks_in_stage": 1,
       "sga_score": 21
-    },
-    {
-      "ticker": "DSP",
-      "company": "Viant Technology Inc",
-      "weeks_in_stage": 3,
-      "sga_score": 20
     },
     {
       "ticker": "BBIO",
@@ -3029,18 +3045,6 @@
       "sga_score": 15
     },
     {
-      "ticker": "NUTX",
-      "company": "Nutex Health Inc",
-      "weeks_in_stage": 3,
-      "sga_score": 15
-    },
-    {
-      "ticker": "OPK",
-      "company": "Opko Health Inc",
-      "weeks_in_stage": 4,
-      "sga_score": 15
-    },
-    {
       "ticker": "RGP",
       "company": "Resources Connection, Inc.",
       "weeks_in_stage": 4,
@@ -3063,12 +3067,6 @@
       "company": "Value Line Inc",
       "weeks_in_stage": 3,
       "sga_score": 15
-    },
-    {
-      "ticker": "FRPH",
-      "company": "FRP Holdings Inc",
-      "weeks_in_stage": 3,
-      "sga_score": 14
     }
   ],
   "sectors": [

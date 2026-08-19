@@ -54,8 +54,18 @@ waves:
       Do not start D2. Do not merge #5424.
   - id: D2
     title: Defense Identity Atlas vertical slice
-    status: todo
+    status: done
+    pr: [5932]
     depends_on: [D1.1]
+    next_action: >
+      D2 shipped defense21-v1 (digest 93171ba0e6f7…) + the Identity Atlas
+      artifact/product on #5932 with two-round opus adversarial review.
+      Five BWXT chains reviewed; MMACD85DT5D5 / PM7HBL2KDX46 / URJ3CAC3MSH8
+      refused (see DEC:D2-BWXT-EXACT-ADMISSION-GE-STAYS-UNRESOLVED); GE and
+      SPR stay not_asserted by design. Remaining mapping_needed pilots: GE.
+      Return to Sol before D3. Do not merge #5424 (superseded for BWXT;
+      close-or-recut is a Sol call). Graph republish law:
+      DSC:GRAPH-REPUBLISH-RETIMES-EVERY-CANDIDATE-CLOCK.
   - id: D3
     title: Temporal event v3 and Change Tape
     status: todo
@@ -71,7 +81,7 @@ waves:
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
-  - "HEAD recipient graph is defense19-v1. #5424 defense20-v1 is still open and must not be treated as live."
+  - "Reviewed recipient graph on HEAD is defense21-v1 as of #5932 (defense19 rows byte-preserved). #5424 defense20-v1 is still open, superseded for BWXT evidence, and must not be treated as live or merged wholesale."
   - "government-revenue-live can build-and-prove a projection and still fail to publish; prior live projection stays authoritative until commit complete evidence projection lands (run 32112383533 did not publish; run 32177051815 did)."
   - "Radar 48 is the coherent published queue, not 26 new awards. Ledger line_count is append-only audit and is not required to equal Radar."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."

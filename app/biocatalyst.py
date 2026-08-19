@@ -323,22 +323,18 @@ def _read_bundle() -> tuple[Any, dict[str, Any]]:
     publication_error, publisher_type = _publication_runtime()
     publisher = publisher_type(_PUBLIC_ROOT)
     try:
-        projection = publisher.read_trial_projection()
+        bundle = publisher.read_product_bundle()
     except (OSError, publication_error) as exc:
         raise _unavailable(exc) from None
-    if projection is None:
+    if bundle is None:
         raise _unavailable()
-    try:
-        health = publisher.read_operational_health()
-    except (OSError, publication_error) as exc:
-        log.warning("BioCatalyst operational health unavailable (%s)", getattr(exc, "code", type(exc).__name__))
-        health = {
-            "state": "unavailable",
-            "last_success_at": projection.generation.last_success_at,
-            "last_attempt_at": projection.generation.last_attempt_at,
-            "last_error_code": "OPERATIONAL_HEALTH_UNAVAILABLE",
-        }
-    return projection, health
+    health = dict(bundle.operational_health)
+    if bundle.health_unavailable_reason:
+        log.warning(
+            "BioCatalyst operational health unavailable (%s)",
+            bundle.health_unavailable_reason,
+        )
+    return bundle.projection, health
 
 
 def _response(payload: Mapping[str, Any], *, status_code: int = 200) -> JSONResponse:

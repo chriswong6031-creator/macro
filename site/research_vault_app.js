@@ -96,7 +96,9 @@
   var TOTAL_COUNT = 0;       // full inventory count; the public bake carries only 3 items
   var CATALOG_SUMMARY = null;// whole-vault, public-safe aggregates (even for the 3-item preview)
   var CATALOG_PREVIEW = false;
-  var CATALOG_SOURCE = 'loading'; // 'loading' | 'live' | 'snapshot'
+  var CATALOG_SOURCE = 'loading'; // 'loading' | 'live' | 'snapshot' | 'unavailable'
+  var CATALOG_FRESH = false; // did the painted copy clear the freshness threshold?
+  var CATALOG_GENERATED = '';// producer clock (generated_at) of the painted copy
   var CATALOG_REQ = 0;       // newest-request-wins guard for auth/bootstrap refresh races
   var CATALOG_ABORT = null;
   var LANE = 'latest';
@@ -196,6 +198,89 @@
     return fmtDate(d) + t;
   }
 
+  /* ── catalog freshness (mirrors engine/research_vault/catalog.py) ────────────
+     A successful fetch is NOT evidence of fresh data: the API happily returns an
+     arbitrarily old object, and the SSR bake is by construction a lagging copy.
+     The only clock that ticks every hour is the producer's own `generated_at` —
+     the ingest rewrites the catalog every run even when it admits no new report —
+     so both copies are judged, and compared to each other, on that one field.
+     Thresholds are kept identical to the server's (2h fresh window, 5min future
+     tolerance) so the two tiers never disagree about the same document. */
+  var FRESH_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+  var FUTURE_TOLERANCE_MS = 5 * 60 * 1000;
+
+  function genMs(catalog) {
+    // Epoch ms of a catalog's producer clock, or null when it cannot be trusted.
+    if (!catalog || typeof catalog !== 'object') return null;
+    var raw = catalog.generated_at;
+    if (typeof raw !== 'string' || !raw.trim()) return null;
+    var t = Date.parse(raw);
+    if (isNaN(t)) return null;
+    // A materially future producer clock makes every age we could derive from it
+    // meaningless, so the copy is unusable rather than merely young.
+    if (t - Date.now() > FUTURE_TOLERANCE_MS) return null;
+    return t;
+  }
+
+  function validCatalog(catalog) {
+    // Structurally a catalog AND datable. An empty items[] is VALID — a vault
+    // that genuinely holds zero reports is a real state, and conflating it with
+    // corruption is the exact defect this wave removes. What is never valid is a
+    // document we cannot date, because no freshness claim about it can be honest.
+    if (!catalog || typeof catalog !== 'object') return false;
+    if (!Array.isArray(catalog.items)) return false;
+    return genMs(catalog) !== null;
+  }
+
+  function isFresh(catalog) {
+    var t = genMs(catalog);
+    return t !== null && (Date.now() - t) <= FRESH_MAX_AGE_MS;
+  }
+
+  function fmtStamp(iso, useZh) {
+    // The generation time for the status line, rendered in an EXPLICIT language.
+    // fmtWhen/fmtDate read the live <html data-lang>, which is wrong here: the EN
+    // and ZH status spans are both written in a single paint and only one is ever
+    // visible, so deriving both from the current language leaves the hidden span
+    // carrying the other language's date until something repaints it.
+    var hasT = iso && iso.indexOf('T') > -1;
+    var d = (hasT ? iso.split('T')[0] : '') || '';
+    var p = d.split('-');
+    var day = d;
+    if (p.length >= 3) {
+      day = useZh ? p[0] + '年' + (+p[1]) + '月' + (+p[2]) + '日'
+                  : _MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0];
+    }
+    var t = '';
+    if (hasT) {
+      var hm = iso.split('T')[1].slice(0, 5);
+      if (/^\d\d:\d\d$/.test(hm)) t = ' · ' + hm + ' UTC';
+    }
+    return day + t;
+  }
+
+  function pickCatalog(api, bake) {
+    // Newest valid producer clock wins, whichever transport it arrived on. The
+    // bake is committed by the same hourly job that publishes to R2, so after an
+    // R2 outage it can genuinely be the fresher of the two — but it is never
+    // RELABELLED live, and a live copy is never assumed newer than it.
+    var a = validCatalog(api)
+      ? { catalog: api, source: 'live', at: genMs(api), n: api.items.length } : null;
+    var b = validCatalog(bake)
+      ? { catalog: bake, source: 'snapshot', at: genMs(bake), n: bake.items.length } : null;
+    if (!a) return b;
+    if (!b) return a;
+    // ...with one guard: a snapshot may never displace a live copy that carries
+    // MORE reports. The bake is a deliberately truncated three-item public preview
+    // (scripts/build_research_vault._preview_items), so for an entitled Pro reader
+    // "newer" would otherwise mean trading 1,400 reports for 3. A complete catalog
+    // labelled stale is strictly more useful than a fresh stub, and the status line
+    // carries the real generation time in both cases — so nothing is misrepresented.
+    // Ties go to the live copy (same document; prefer the authoritative transport).
+    if (b.at > a.at && b.n >= a.n) return b;
+    return a;
+  }
+
   /* ── ticker dossier deep-link: the site routes tickers to the Terminal.
        (No same-origin /stocks/<T> dossier route exists; the search box in the
        nav resolves tickers, and the Terminal is the canonical dossier host.) ── */
@@ -208,6 +293,22 @@
 
   /* ═══════════ hero counts (client-side, descriptive only) ═══════════ */
   function updateHero() {
+    // An unavailable catalog knows NOTHING about the vault, so every figure stays
+    // neutral. "0 new institutional reports this week · 0 highlighted · 0 desks
+    // publishing" is the SAME false empty-vault claim the feed's unavailable state
+    // exists to prevent — just in bigger type, above the fold. The '—' path
+    // already exists for the entitlement-preview case; this reuses it.
+    if (CATALOG_SOURCE === 'unavailable') {
+      $('fig-new').textContent = '—';
+      $('fig-desks').textContent = '—';
+      $('fig-theme').textContent = '—';
+      $('fig-total').textContent = '—';
+      buildWeb();
+      $('v-en-lead').textContent =
+        'The research catalog could not be loaded. This is a loading problem, not an empty vault.';
+      $('v-zh-lead').textContent = '无法载入研报目录。这是加载问题，并非研报库为空。';
+      return;
+    }
     var wk = ITEMS.filter(isThisWeek);
     var derivedNewN = wk.length;
     var desks = {}; wk.forEach(function (x) { if (x.inst && x.inst !== 'Unknown') desks[x.inst] = 1; });
@@ -526,7 +627,15 @@
     // reset the pager whenever the result set (lane + filters + search) changes
     var sig = LANE + '|' + FILT.inst + '|' + FILT.side + '|' + FILT.theme + '|' + FILT.q;
     if (sig !== _feedSig) { _feedSig = sig; shownN = PAGE_SIZE; }
-    if (!ITEMS.length) {
+    if (CATALOG_SOURCE === 'unavailable') {
+      // NOT the onboarding copy below: "we hold no reports yet" is a claim about
+      // the vault, and we have no basis for it when we could not read a verified
+      // catalog at all. Saying so plainly is the whole point of this state.
+      feed.innerHTML = emptyState(
+        T('Live research is temporarily unavailable', '实时研报暂时不可用'),
+        T('We could not reach a verified copy of the research catalog. This is a loading problem, not an empty vault — please try again shortly.',
+          '暂时无法获取经校验的研报目录。这是加载问题，并非研报库为空 —— 请稍后重试。'));
+    } else if (!ITEMS.length) {
       feed.innerHTML = emptyState(
         T('Institutional research is being onboarded', '机构研报正在接入'),
         T('New buy-side and sell-side desk reports arrive hourly — check back shortly.', '买方与卖方研究每小时更新 —— 请稍后再来查看。'));
@@ -1174,26 +1283,40 @@
   /* ═══════════ unread count ═══════════ */
   function updateUnread() {
     var n = ITEMS.filter(function (x) { return !DocState.isRead(x.id); }).length;
-    $('unread-n').textContent = n;
-    $('badge-latest').textContent = TOTAL_COUNT;
+    var unknown = CATALOG_SOURCE === 'unavailable';   // no catalog → no counts
+    $('unread-n').textContent = unknown ? '—' : n;
+    $('badge-latest').textContent = unknown ? '—' : TOTAL_COUNT;
     var picks = summaryNumber('highlighted');
-    $('badge-picks').textContent = picks !== null ? picks : (CATALOG_PREVIEW ? '—' : ITEMS.filter(function (x) { return x.top; }).length);
+    $('badge-picks').textContent = unknown ? '—'
+      : (picks !== null ? picks : (CATALOG_PREVIEW ? '—' : ITEMS.filter(function (x) { return x.top; }).length));
     $('badge-saved').textContent = ITEMS.filter(function (x) { return DocState.isSaved(x.id); }).length;
   }
 
   /* ═══════════ hydrate + refresh ═══════════ */
-  function finishCatalogPaint(source) {
+  function finishCatalogPaint(source, generatedAt) {
     CATALOG_SOURCE = source;
+    CATALOG_GENERATED = generatedAt || '';
+    CATALOG_FRESH = source === 'live' && isFresh({ generated_at: CATALOG_GENERATED, items: [] });
     doc.documentElement.classList.remove('rv-awaiting-live');
     if (window.__rvShellTimer) { clearTimeout(window.__rvShellTimer); window.__rvShellTimer = null; }
     var shell = $('feed-shell'); if (shell) shell.setAttribute('aria-busy', 'false');
     var en = $('rv-status-en'), cn = $('rv-status-zh');
-    if (source === 'snapshot') {
-      if (en) en.textContent = 'Saved snapshot · live update unavailable';
-      if (cn) cn.textContent = '已保存快照 · 实时更新暂不可用';
-    } else {
+    // "Updated hourly" is a claim about the PRODUCER, so only a live copy still
+    // inside the freshness window may make it. Every other outcome states that
+    // the data is saved and shows the clock it was actually generated on, so a
+    // reader can judge the lag themselves instead of trusting an adjective.
+    if (source === 'unavailable') {
+      if (en) en.textContent = 'Live research unavailable · try again shortly';
+      if (cn) cn.textContent = '实时研报暂不可用 · 请稍后重试';
+    } else if (CATALOG_FRESH) {
       if (en) en.textContent = 'This week · Updated hourly';
       if (cn) cn.textContent = '本周 · 每小时更新';
+    } else {
+      var iso = CATALOG_GENERATED;
+      if (en) en.textContent = 'Saved snapshot · live update delayed'
+        + (iso ? ' · updated ' + fmtStamp(iso, false) : '');
+      if (cn) cn.textContent = '已保存快照 · 实时更新延迟'
+        + (iso ? ' · 更新于 ' + fmtStamp(iso, true) : '');
     }
   }
   function ingest(catalog, source) {
@@ -1204,15 +1327,32 @@
     TOTAL_COUNT = Math.max(ITEMS.length, Number(catalog && catalog.count) || 0, aggregateTotal || 0);
     CATALOG_PREVIEW = !!(catalog && catalog.preview) || TOTAL_COUNT > ITEMS.length;
     buildInstFacets(); buildThemeFacets();
+    // Source + freshness BEFORE the feed paints: renderFeed's empty state has to
+    // be able to tell an unavailable catalog from a vault that genuinely holds
+    // zero reports, and those two must never render as the same screen.
+    finishCatalogPaint(source || 'live', catalog && catalog.generated_at);
     buildTree(); updateHero(); updateUnread(); renderFeed();
-    finishCatalogPaint(source || 'live');
     openDeepLink();
   }
-  function hydrateFromBake() {
-    var el = $('rv-catalog'); if (!el) return;
-    try { ingest(JSON.parse(el.textContent || '{}'), 'snapshot'); return true; }
-    catch (e) { ingest({ items: [] }, 'snapshot'); return false; }
+  function bakedCatalog() {
+    // The SSR snapshot, or null when it is absent, unparseable, or undatable.
+    // Deliberately never a manufactured empty document: an unusable bake must not
+    // be able to paint a "0 reports" vault that reads as a real inventory.
+    var el = $('rv-catalog'); if (!el) return null;
+    var parsed;
+    try { parsed = JSON.parse(el.textContent || '{}'); }
+    catch (e) { return null; }
+    return validCatalog(parsed) ? parsed : null;
   }
+  function paintChoice(choice) {
+    // No valid copy anywhere → the honest unavailable state. We do NOT fall back
+    // to an empty catalog here: "0 reports" and "we could not read the catalog"
+    // are different facts, and only one of them is true.
+    if (!choice) { ingest({ items: [] }, 'unavailable'); return false; }
+    ingest(choice.catalog, choice.source);
+    return true;
+  }
+  function hydrateFromBake() { return paintChoice(pickCatalog(null, bakedCatalog())); }
   function refreshFromApi() {
     var req = ++CATALOG_REQ;
     if (CATALOG_ABORT) { try { CATALOG_ABORT.abort(); } catch (e) {} }
@@ -1232,8 +1372,12 @@
       .then(function (j) {
         if (req !== CATALOG_REQ) return false;
         if (!j || !Array.isArray(j.items)) throw new Error('invalid catalog payload');
-        ingest(j, j.stale ? 'snapshot' : 'live');
-        return true;
+        // Both copies are judged on the producer clock, never on which one the
+        // transport happened to deliver. The server's own catalog_health verdict
+        // is carried in `j` and agrees with genMs() by construction (same
+        // thresholds); we recompute locally so the page stays truthful even when
+        // it is served by an older API that predates the health block.
+        return paintChoice(pickCatalog(j, bakedCatalog()));
       });
     // Cover auth bootstrap as well as network/body time. AbortController alone
     // cannot settle a hung withAuth() promise, which could otherwise leave the

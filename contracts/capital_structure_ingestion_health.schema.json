@@ -47,7 +47,15 @@
         "deferred": {"type": "integer", "minimum": 0},
         "parser_deferred": {"type": "integer", "minimum": 0},
         "storage_deferred": {"type": "integer", "minimum": 0},
-        "parked": {"type": "integer", "minimum": 0}
+        "parked": {"type": "integer", "minimum": 0},
+        "re_observed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Verified successful re-observations of already-retained evidence_ids. Third progress term so idempotent nights are not the #5792 fail."
+        },
+        "unique_evidence_count": {"type": ["integer", "null"], "minimum": 0},
+        "manifest_revision_count": {"type": ["integer", "null"], "minimum": 0},
+        "observation_count": {"type": ["integer", "null"], "minimum": 0}
       }
     },
     "source_high_watermark_before": {"$ref": "#/$defs/watermark"},

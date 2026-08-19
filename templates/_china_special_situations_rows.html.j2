@@ -68,10 +68,15 @@
     <div class="ssx-row">
       <div class="rlead">
         <span class="ssx-tkr">{{ ltr.secCode }}</span>
-        {%- if ltr.has_reply %}<span class="ssx-tag replied">{{ t('replied', '已回复') }}</span>{%- else %}<span class="ssx-tag open">{{ t('open', '待回复') }}</span>{%- endif %}
+        {#- Three states, not two. 'undetermined' means the filing record does not
+            let us tie a reply to THIS inquiry — it is not a quiet "replied". #}
+        {%- set _rs = ltr.reply_state | default('open' if not ltr.has_reply else 'replied') %}
+        {%- if _rs == 'replied' %}<span class="ssx-tag replied">{{ t('replied', '已回复') }}</span>
+        {%- elif _rs == 'undetermined' %}<span class="ssx-tag unknown">{{ t('unconfirmed', '状态未确认') }}</span>
+        {%- else %}<span class="ssx-tag open">{{ t('open', '待回复') }}</span>{%- endif %}
       </div>
       <div class="rbody">
-        <div class="rnote {{ 'e' if not ltr.has_reply else 'q' }}">{{ tw(ltr.note) }}</div>
+        <div class="rnote {{ 'e' if _rs == 'open' else 'q' }}">{{ tw(ltr.note) }}</div>
         <div class="rmeta">
           <b class="rname">{{ ltr.secName }}</b>
           {%- if ltr.title %} · {{ ltr.title }}{%- endif %}

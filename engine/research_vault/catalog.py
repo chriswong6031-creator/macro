@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -66,11 +67,246 @@ def _now_iso(now: datetime | None = None) -> str:
     return now.astimezone(timezone.utc).isoformat()
 
 
+# ---------------------------------------------------------------------------
+# the serving-tier truth contract (Wave 4 — Defects 1 + 3)
+# ---------------------------------------------------------------------------
+# :func:`load` below is deliberately fail-SOFT and stays that way for the repair
+# utilities that need to open a damaged store. It is NOT a serving contract: it
+# converts "the authoritative catalog is missing/corrupt" into a document that is
+# indistinguishable from "the vault legitimately holds zero reports", and a
+# successful read of an arbitrarily OLD object into something the browser labels
+# "Updated hourly".
+#
+# Everything below is the strict counterpart. Its rules:
+#   * unavailable ≠ absent — the store read goes through ``get_bytes_strict``,
+#     whose ``None`` means only "the backing service authoritatively reported this
+#     key does not exist" (r2_store §StrictReadStore);
+#   * freshness is read from the PRODUCER clock (``generated_at``), never from a
+#     successful HTTP status and never from the newest item's ``published_at`` —
+#     the hourly run rewrites the catalog even when it admits no new report, so
+#     ``generated_at`` is the only clock that ticks every hour;
+#   * a legitimately EMPTY vault (valid schema, recent clock, ``items: []``) is a
+#     FRESH catalog, not a failure — that distinction is the whole point.
+
+# A catalog older than this is still usable as last-known data, but may never be
+# presented as "Updated hourly" (the producer runs at the top of every hour, so
+# two hours is one whole missed cycle plus a full hour of grace).
+FRESH_MAX_AGE_SECONDS = 2 * 60 * 60
+
+# Tolerance for benign clock skew between the producer host and the serving host.
+# Beyond it the producer clock is materially wrong, which makes every age we could
+# compute from it meaningless — so the document is invalid, not merely fresh.
+FUTURE_TOLERANCE_SECONDS = 5 * 60
+
+STATE_FRESH = "fresh"
+STATE_STALE = "stale"
+
+
+class CatalogUnavailable(RuntimeError):
+    """The authoritative catalog could not be established as valid.
+
+    ``reason`` is a stable machine-readable slug (it reaches the API response and
+    the browser's saved-snapshot copy), ``detail`` is free text for the log. This
+    is raised for EVERY unavailable/invalid state in the freeze — authoritative
+    miss, malformed JSON, schema mismatch, malformed items, blank/unparseable/
+    future producer clock, and object-store operational failure — because the
+    caller's correct response is the same in all of them: fall back to a valid
+    known-good copy, or serve an honest unavailable state. It is never raised for
+    a merely OLD catalog; age is a :func:`health` verdict, not an error.
+    """
+
+    def __init__(self, reason: str, detail: str = "") -> None:
+        super().__init__(f"{reason}: {detail}" if detail else reason)
+        self.reason = reason
+        self.detail = detail
+
+
+def _coerce_now(now: datetime | None) -> datetime:
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    return current.astimezone(timezone.utc)
+
+
+def parse_generated_at(value: Any) -> datetime:
+    """Parse a catalog ``generated_at`` to an aware UTC datetime, or raise.
+
+    Blank and unparseable are DIFFERENT reasons on purpose: a blank clock is the
+    signature of :func:`empty` having been published (the Defect 2 fault), while
+    an unparseable one is a corrupt or foreign producer. Both are unavailable, but
+    an operator reading the reason should be able to tell them apart.
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise CatalogUnavailable("blank_generated_at",
+                                 "catalog carries no producer timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except Exception as exc:  # noqa: BLE001 — any parse failure is the same verdict
+        raise CatalogUnavailable("unparseable_generated_at",
+                                 f"{value!r} ({exc})") from None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def validate(obj: Any, now: datetime | None = None, *,
+             check_future_clock: bool = True, check_items: bool = True) -> dict:
+    """Return ``obj`` iff it is a serveable authoritative catalog, else raise.
+
+    Checks, in the order an operator would want them reported:
+
+      1. the document is an object carrying the exact expected ``schema``;
+      2. ``items`` is a list, and every element is an object with a non-blank
+         string ``id`` — the catalog's whole job at the serving tier is to say
+         which ids are admitted, so an item we cannot identify invalidates the
+         answer rather than being skipped;
+      3. ``generated_at`` parses (see :func:`parse_generated_at`);
+      4. the producer clock is not materially in the future — SERVING ONLY, see
+         ``check_future_clock``.
+
+    ``check_future_clock`` and ``check_items`` are both False for the INGEST path,
+    and each asymmetry is deliberate:
+
+    * **the future-clock rule is a SERVING rule.** It exists because a tier that
+      cannot trust the producer clock cannot make an honest freshness claim from
+      it. Ingest makes no freshness claim — it REWRITES ``generated_at`` with its
+      own clock on the next publish — so a timestamp ahead of this runner says
+      nothing about whether the item set is trustworthy. Enforcing it there would
+      convert ordinary clock skew between two self-hosted runners into a refused
+      publish over a mature vault: an outage worse than the drift, and one that
+      self-heals on the very next publish anyway.
+    * **per-row validation is a SERVING rule.** The serving tier's whole job is to
+      answer "which ids are admitted", so a row it cannot identify makes the
+      answer unknown. Ingest is rebuilding the document, and one unidentifiable
+      row truncates nothing — every other row republishes unchanged and the
+      downstream passes already survive it. Refusing there would recreate the
+      "one bad document kills the batch" failure the ingest module exists to
+      avoid. What ingest DOES gate on is starting from zero rows over a vault
+      with history, which is the only input that actually loses data.
+
+    Deliberately NOT checked on either path: ``count`` against ``len(items)`` and
+    the ``institutions`` list. Both are derived fields that :func:`_reindex`
+    rewrites on every publish, so a disagreement is a stale-derivation nit, not
+    evidence that the item set is untrustworthy — and the serving tier reads the
+    items themselves. Raising on those would turn cosmetic drift into an outage.
+
+    Raises :class:`CatalogUnavailable`. Never mutates ``obj``.
+    """
+    if not isinstance(obj, dict):
+        raise CatalogUnavailable("schema_mismatch",
+                                 f"catalog is {type(obj).__name__}, not an object")
+    schema = obj.get("schema")
+    if schema != SCHEMA:
+        raise CatalogUnavailable("schema_mismatch",
+                                 f"schema={schema!r} (expected {SCHEMA!r})")
+    items = obj.get("items")
+    if not isinstance(items, list):
+        raise CatalogUnavailable("malformed_items",
+                                 f"items is {type(items).__name__}, not a list")
+    for index, item in enumerate(items if check_items else ()):
+        if not isinstance(item, dict):
+            raise CatalogUnavailable(
+                "malformed_items",
+                f"item[{index}] is {type(item).__name__}, not an object")
+        doc_id = item.get("id")
+        if not isinstance(doc_id, str) or not doc_id.strip():
+            raise CatalogUnavailable("malformed_items",
+                                     f"item[{index}] has no usable id ({doc_id!r})")
+
+    generated = parse_generated_at(obj.get("generated_at"))
+    if check_future_clock:
+        current = _coerce_now(now)
+        skew = (generated - current).total_seconds()
+        if skew > FUTURE_TOLERANCE_SECONDS:
+            raise CatalogUnavailable(
+                "future_generated_at",
+                f"producer clock is {skew:.0f}s ahead (tolerance "
+                f"{FUTURE_TOLERANCE_SECONDS}s)")
+    return obj
+
+
+def parse_strict(raw: bytes, now: datetime | None = None, *,
+                 check_future_clock: bool = True, check_items: bool = True) -> dict:
+    """Decode + :func:`validate` authoritative catalog bytes, or raise."""
+    if not raw:
+        raise CatalogUnavailable("malformed_json", "catalog object is empty")
+    try:
+        obj = json.loads(raw)
+    except Exception as exc:  # noqa: BLE001 — any decode failure is unavailable
+        raise CatalogUnavailable("malformed_json", str(exc)) from None
+    return validate(obj, now=now, check_future_clock=check_future_clock,
+                    check_items=check_items)
+
+
+def health(catalog: dict, now: datetime | None = None,
+           reason: str = "") -> dict[str, Any]:
+    """Deterministic freshness projection over an ALREADY-VALIDATED catalog.
+
+    Returns ``{state, generated_at, age_seconds, reason}``. This is a pure
+    function of the document and the current clock — there is no health store,
+    no persisted flag, and nothing to keep in sync (freeze §A: the catalog is the
+    only publication authority).
+
+    ``reason`` lets a caller that is serving a known-good copy AFTER a failed
+    refresh stamp WHY it is stale (e.g. ``store_error``); it forces the state to
+    stale, because a copy we could not re-verify is never presentable as live no
+    matter how young it is.
+    """
+    generated = parse_generated_at(catalog.get("generated_at"))
+    age = (_coerce_now(now) - generated).total_seconds()
+    if reason:
+        state = STATE_STALE
+    else:
+        state = STATE_FRESH if age <= FRESH_MAX_AGE_SECONDS else STATE_STALE
+        reason = "" if state == STATE_FRESH else "age_exceeded"
+    return {
+        "state": state,
+        "generated_at": generated.isoformat(),
+        "age_seconds": int(age),
+        "reason": reason,
+    }
+
+
+def read_strict(store, now: datetime | None = None, *,
+                check_future_clock: bool = True, check_items: bool = True) -> dict:
+    """Fail-closed authoritative catalog read: bytes → validated document.
+
+    The counterpart to :func:`load`. Every failure mode raises
+    :class:`CatalogUnavailable` with a distinguishing reason; nothing is ever
+    degraded to :func:`empty`, so a caller can never mistake a broken store for a
+    vault that holds no reports. See :func:`validate` for why the ingest path
+    passes ``check_future_clock=False`` and the serving path does not.
+    """
+    reader = getattr(store, "get_bytes_strict", None)
+    if store is None or not callable(reader):
+        # Fail CLOSED: without the strict primitive we cannot tell an authoritative
+        # miss from an outage, which is precisely the ambiguity this path exists to
+        # remove. Guessing with get_bytes would reintroduce Defect 3.
+        raise CatalogUnavailable(
+            "store_unavailable",
+            "store does not support fail-closed reads (get_bytes_strict)")
+    try:
+        raw = reader(CATALOG_KEY)
+    except Exception as exc:  # noqa: BLE001 — operational failure, NOT absence
+        raise CatalogUnavailable("store_error", f"{type(exc).__name__}: {exc}") from None
+    if raw is None:
+        raise CatalogUnavailable("missing",
+                                 f"{CATALOG_KEY} is authoritatively absent")
+    return parse_strict(raw, now=now, check_future_clock=check_future_clock,
+                        check_items=check_items)
+
+
 def load(store) -> dict:
     """Load the catalog from the store, or an empty one if absent/unparsable.
 
     Never raises — a corrupt/missing catalog degrades to :func:`empty` so a bad
-    prior write can be healed by the next ingest rather than wedging the pipeline.
+    prior write can be healed by a deliberate repair pass rather than wedging it.
+
+    NOT a serving or publication contract. Callers that decide what the public
+    sees, or that are about to PUBLISH over the authoritative object, must use
+    :func:`read_strict`: this function cannot tell a broken store from a vault
+    with zero reports, and an ingest that starts from the :func:`empty` it returns
+    republishes a truncated catalog over a mature vault (Wave 4, Defect 2).
     """
     raw = store.get_bytes(CATALOG_KEY)
     if not raw:
@@ -80,14 +316,14 @@ def load(store) -> dict:
         if not isinstance(obj, dict) or not isinstance(obj.get("items"), list):
             log.warning("catalog malformed — starting fresh")
             return empty()
-        _heal_titles(obj)
+        heal_titles(obj)
         return obj
     except Exception as e:  # noqa: BLE001 — corrupt catalog: rebuild from empty
         log.warning("catalog parse failed (%s) — starting fresh", e)
         return empty()
 
 
-def _heal_titles(catalog: dict) -> int:
+def heal_titles(catalog: dict) -> int:
     """Repair already-PUBLISHED titles in place; returns the number changed.
 
     Ingest is receipt-idempotent, so a document already in the vault never
@@ -253,21 +489,57 @@ def _reindex(catalog: dict) -> None:
     catalog["institutions"] = insts
 
 
-def write(store, catalog: dict, now: datetime | None = None) -> bytes:
+@dataclass(frozen=True)
+class CatalogPublishResult:
+    """The outcome of an authoritative catalog publish.
+
+    ``data`` (the serialized document) and ``published`` (did the store actually
+    accept it) are SEPARATE fields, and that separation is the whole point.
+
+    The removed ``write()`` returned bytes on BOTH paths and merely logged a
+    failed put, so every caller downstream read "here are the bytes we wanted to
+    publish" as "these bytes ARE published" — which is how a failed catalog PUT
+    still flushed receipts and still advanced the git mirror (Wave 4, Defect 4).
+    A function that returns bytes cannot express failure, so it no longer does.
+    """
+
+    data: bytes
+    published: bool
+    error: str = ""
+
+
+def publish(store, catalog: dict, now: datetime | None = None) -> CatalogPublishResult:
     """Stamp ``generated_at``, serialize, and atomically put to the store.
 
-    Returns the serialized bytes (so the caller can also snapshot them to the
-    repo). Serialization mirrors the atomic-JSON idiom (indent=2,
-    ensure_ascii=False, trailing newline). Fails-open: a store put failure is
-    logged; the bytes are still returned.
+    Serialization mirrors the atomic-JSON idiom (indent=2, ensure_ascii=False,
+    trailing newline) and happens whether or not the put succeeds, so a caller can
+    still inspect what it TRIED to publish — it just cannot mistake that for
+    success. This is the visibility commit (freeze §A): the point at which a
+    report becomes user-visible, so its outcome gates receipt flushing and the
+    repo mirror.
+
+    Never raises: a store that throws is reported as a failed publish, because the
+    caller's correct response is identical either way (do not advance anything).
     """
     _reindex(catalog)
     catalog["generated_at"] = _now_iso(now)
     data = (json.dumps(catalog, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
-    ok = store.put_bytes(CATALOG_KEY, data, "application/json")
+    try:
+        ok = bool(store.put_bytes(CATALOG_KEY, data, "application/json"))
+        detail = getattr(store, "last_put_error", None)
+        error = "" if ok else f"store rejected the catalog put ({detail or 'no detail'})"
+    except Exception as exc:  # noqa: BLE001 — a raising store is a failed publish
+        ok, error = False, f"{type(exc).__name__}: {exc}"
     if not ok:
-        log.warning("catalog put to store failed (bytes still returned)")
-    return data
+        # Bare print at column 0: this module runs inside GitHub Actions steps and
+        # every entry point logs with a "%(levelname)s " prefix, which silently
+        # stops "::error" from parsing as an annotation (see CLAUDE.md).
+        print(f"::error title=research_vault::catalog publish FAILED to "
+              f"{CATALOG_KEY} — {error}. The prior catalog remains the visibility "
+              f"authority; receipts and the repo mirror must NOT advance.",
+              flush=True)
+        log.error("catalog publish failed: %s", error)
+    return CatalogPublishResult(data=data, published=ok, error=error)
 
 
 def serialize(catalog: dict, now: datetime | None = None) -> bytes:

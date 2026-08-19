@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v2",
   "as_of": "2026-08-19",
-  "generated_at": "2026-08-19T08:23:13.531938+00:00",
+  "generated_at": "2026-08-19T16:48:45.671020+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
@@ -9,7 +9,7 @@
     91
   ],
   "seed_horizon_cal_d": 91,
-  "n_snapshots": 10524,
+  "n_snapshots": 10525,
   "n_matured": 6856,
   "ic_all": -0.1977,
   "ic_all_signed": -0.0825,
@@ -35,17 +35,17 @@
     }
   },
   "by_state": {
-    "POSITIVE_DIVERGENCE": {
-      "n": 1442,
-      "dir_accuracy": 0.423,
-      "excess_vs_base": -0.025,
-      "mean_fwd_ret": -0.0174
-    },
     "CONFIRMED_UP": {
       "n": 1357,
       "dir_accuracy": 0.333,
       "excess_vs_base": -0.115,
       "mean_fwd_ret": -0.0395
+    },
+    "POSITIVE_DIVERGENCE": {
+      "n": 1442,
+      "dir_accuracy": 0.423,
+      "excess_vs_base": -0.025,
+      "mean_fwd_ret": -0.0174
     },
     "CONFIRMED_DOWN": {
       "n": 1879,
@@ -124,17 +124,17 @@
         }
       },
       "by_state": {
-        "POSITIVE_DIVERGENCE": {
-          "n": 1442,
-          "dir_accuracy": 0.423,
-          "excess_vs_base": -0.025,
-          "mean_fwd_ret": -0.0174
-        },
         "CONFIRMED_UP": {
           "n": 1357,
           "dir_accuracy": 0.333,
           "excess_vs_base": -0.115,
           "mean_fwd_ret": -0.0395
+        },
+        "POSITIVE_DIVERGENCE": {
+          "n": 1442,
+          "dir_accuracy": 0.423,
+          "excess_vs_base": -0.025,
+          "mean_fwd_ret": -0.0174
         },
         "CONFIRMED_DOWN": {
           "n": 1879,

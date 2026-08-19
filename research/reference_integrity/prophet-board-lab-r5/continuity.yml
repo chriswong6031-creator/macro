@@ -1,0 +1,245 @@
+# Revision continuity closure (RIG V1.1 §13) — derived, then dispositioned.
+#
+#   python3 scripts/check_reference_integrity.py --mandate prophet-board-lab-r5
+#
+# HOW TO READ EVERY ROW BELOW, because the provenance is unusual and a stranger
+# would otherwise mis-read it:
+#
+#   The r3 verdict's ten blockers were closed by the **R4 closure cycle**
+#   (research/reference_integrity/prophet-board-5514-r4/), whose artifact this
+#   candidate loads UNMODIFIED. So `changed_files` names the path that CARRIES
+#   the fix in the new SHA — not a path this cycle edited. This cycle edited
+#   none of them; that is the point of R5 being additive.
+#
+#   Every one of those closures was authored by the same lane that wrote the
+#   fix, and **none has ever been confirmed by an independent critic**: the R4
+#   cycle produced a SHA and stopped, minting no artifact set, no reviews and no
+#   verdict. RESOLVED_BY_CHANGE below therefore means "a checkable change exists
+#   in the new SHA", NOT "a critic agreed". The R5 cycle is the first
+#   opportunity to adjudicate them, and it must adjudicate them — approving the
+#   Lab while leaving R4's own closures unreviewed would launder them.
+#
+# Where the item also has a PRODUCTION half, the row says so and points at
+# research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md, which measured all twelve
+# against origin/main rather than copying R4's five-day-old prose. Three are
+# still open in production (PRC-303, VTC-301's printed null, DA-002) and are
+# recorded there, not hidden here.
+schema: mastermind.rig_continuity.v1
+reference_id: prophet-board-lab-r5
+
+predecessors:
+  - reference_id: prophet-board-5514-r3
+    verdict: REVISE
+    source: on_disk
+    closure:
+
+      - id: PRC-301
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The card routes to the name's detail surface. The whole card is a link to
+          stock.html#TICKER, implemented as a sibling anchor stretched over the card by
+          ::after so the caution / trigger / priority / lane controls stay reachable and no
+          <a> is nested inside an <a>. Closed by the R4 cycle at 168a9be00691 and carried
+          here unmodified; proof handles R1 / R1b / R1c in that cycle's verify harness, crops
+          01-04. Production side re-censused independently and also CLOSED
+          (templates/_prophet_card.html.j2:376, href from _us_board_cards.html.j2:246) —
+          D_LAB_R5_BLOCKER_RECENSUS.md §2.1.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+
+      - id: PRC-302
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The anonymous gate states what the paid Board actually provides — full setups,
+          stance, live quote/change, Priority, lifecycle, zone and cautions — and no longer
+          promises the entry/target/void levels the card tier bans. Closed by the R4 cycle at
+          168a9be00691, carried unmodified; proof handle R2, crops 40/41. Production side
+          re-censused and also CLOSED (templates/tier_preview.js:103-165) —
+          D_LAB_R5_BLOCKER_RECENSUS.md §2.2.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+
+      - id: PRC-305
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The behind-the-tape state exists with a capability id and reuses production's own
+          freshness producer: fresh renders "Settled close", behind renders the ranking
+          vintage, the sessions-behind count and a verify-live-price instruction, EN + ZH.
+          Closed by the R4 cycle at 168a9be00691, carried unmodified; proof handles R3b/R3c,
+          crops 80-82. Production side re-censused and also CLOSED
+          (scripts/build_stock_library.py:1524; templates/dashboard.html.j2:1448,15832-15837)
+          — D_LAB_R5_BLOCKER_RECENSUS.md §2.4.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+
+      - id: PRC-306
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Every live plan row is reachable as a CARD. The grid holds the whole partition and
+          reveals it in place through the shipped .sm-* expansion bar rather than routing the
+          tail to a table; 159 cards are visible after one click. Closed by the R4 cycle at
+          168a9be00691, carried unmodified; proof handles R4/R4b/R4c, crops 90/91 — which are
+          post-interaction captures, because a capability that only exists after a click
+          cannot be evidenced by a URL. Production side re-censused as PARTIAL/UNVERIFIED —
+          no render cap exists in the current template path, but end-to-end reachability was
+          not traced (D_LAB_R5_BLOCKER_RECENSUS.md §2.5). That is a production question, not
+          an artifact one.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+
+      - id: VTC-301
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The chartless hero renders at the SAME 74px height as a drawn chart and PRINTS its
+          own absence ("No chart yet" / "暂无图表") rather than leaving a void that cannot be
+          told from flat price or a broken render. Closed by the R4 cycle at 168a9be00691,
+          carried unmodified; proof handles R5/R5b. The R5 Lab row inherits the same law at
+          72px (mockups/refs/prophet_lab/lab.css .lab-nochart; DESIGN_NOTES §2.6), so the
+          closure now holds on both planes. Production side re-censused as PARTIAL: the
+          heights ARE equalised (templates/_prophet_card.html.j2:156,165) but production
+          ships no printed label at all — the null is a hue-tinted void
+          (D_LAB_R5_BLOCKER_RECENSUS.md §2.6). MP-1 carries the printed null into production.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.css
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: PRC-303
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The on-card incoherence is gone from the artifact: the stance slot names its axis
+          (ENTRY), Ready's gloss was restated as the lifecycle fact so it no longer
+          contradicts a sourced ⚡Triggered, the zone prints its stance-branched treatment,
+          and the caution rows are bound to real candidate fields. Closed by the R4 cycle at
+          168a9be00691, carried unmodified; proof handle R14. **The production code path is
+          still open** and is recorded rather than absorbed: at
+          templates/_us_board_cards.html.j2:96,99 the chase caution's gate never consults the
+          zone state, so a card with no read and no zone can still print "Don't chase above
+          the buy zone" (D_LAB_R5_BLOCKER_RECENSUS.md §2.3). That is MP-1's to fix, and it is
+          named there so the shell wave inherits it.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+
+      - id: VTC-302
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The stance ramp is luminance-ordered and the ordering is the design — BUY > WAIT >
+          NO-READ against the card plane in all four theme x language quadrants, with the
+          measured contrasts recorded in the R4 notes. Closed by the R4 cycle at 168a9be00691,
+          carried unmodified; proof handles R7/R7b/R-E2/R-E3/R9. The R5 Lab plane cannot
+          reintroduce the defect by construction: it carries NO stance ink at all
+          (DESIGN_NOTES §2.2), pinned by check D13. The production half of the
+          stroke-salience question was not separately measured this pass and is recorded as
+          INSUFFICIENT in D_LAB_R5_BLOCKER_RECENSUS.md §2.7 rather than assumed closed.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.css
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: DA-001
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The repealed state=paid exemption is struck at §0b.1 and §7 of the R4 design notes,
+          retained only as a labelled blockquote so the repeal is legible, with an amendment
+          record naming DA-001. A migration builder can now tell which paragraph is law.
+          Closed by the R4 cycle at 168a9be00691, carried unmodified; proof handle R8.
+          Independently re-read this pass at
+          mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:184-218 —
+          D_LAB_R5_BLOCKER_RECENSUS.md §2.9.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md
+
+      - id: DA-002
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The stance family is decoupled from the direction inks in the artifact's own
+          stylesheet: --pv-buy is a deliberate mix off --up (82% dark / 54% light) rather than
+          identical to it, so a solid BUY chip and a positive live change no longer paint one
+          value, and the zh flip stays structural because the token still derives FROM --up.
+          Closed by the R4 cycle at 168a9be00691, carried unmodified; proof handles R-E2/R9.
+          **The production half is still open and is the most consequential finding of this
+          cycle's re-census**: templates/theme.css:80-81 and :152-153 declare --pv-buy
+          byte-identical to --up in both themes, and :185 sets --pv-buy: var(--up) under zh,
+          so a shipped BUY chip and a shipped positive change still resolve to one hex. See
+          D_LAB_R5_BLOCKER_RECENSUS.md §2.8 — including a correction to this finding's own
+          note, which attributes the chip ink to --ink-up when it actually travels the
+          --ink-pv-* family.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.css
+
+      - id: DA-003
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The three-way comparison no longer argues by omission: production-column styles are
+          scoped into .cmp-prod with production's own explicit values so a whole class of
+          regression stops being invisible by construction, the chartless modal row the grid
+          is actually made of is drawn, and a "what it costs" section exists for all three
+          columns. Closed by the R4 cycle at 168a9be00691, carried unmodified. Independently
+          re-read this pass at mockups/refs/institutionalize/us_stocks/compare.html:12,
+          128-140, 462, 493, 525, 617-623. One residual is NOT claimed closed: FTI's rendered
+          stance value (wait vs a hardcoded hold) was not re-verified —
+          D_LAB_R5_BLOCKER_RECENSUS.md §2.10 and its gap table.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/compare.html
+
+      # ── the three conditions that are not a blocker's remedy ──────────────
+      # (ids minted by this cycle under RIG §13.3; the other eight conditions
+      #  are each the remedy for the blocker of the same id, closed above)
+
+      - id: COND-VTC-302-NOT-BLOCKING
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The conditioned ramp was implemented, and the critic's central insight — that the
+          free parameter is the DIRECTION of the distinctness mix, toward --text, rather than
+          more deepening — is what the shipped values are built on. The R4 cycle adopted it
+          with ONE proven deviation, recorded before adoption: light resolves at 54%, not the
+          critic's 62%, because at 62% --pv-buy resolves byte-identical to --ink-up (light
+          --ink-mix-up is also 62%), which would have reproduced the DA-002 defect in the
+          other theme. At 54% the ordering holds in all four quadrants, light contrast rises
+          (7.12 vs 6.29 en; 8.75 vs 7.85 zh), and the chip separates from the tape ink in four
+          quadrants instead of two. Closed by the R4 cycle at 168a9be00691, carried
+          unmodified; proof handles R7/R7b.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.css
+
+      - id: COND-MAJORS-CARRIED
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The carried majors (VTC-303/304/306/307/308, PRC-307/309/310/311/312/313/314) each
+          received an explicit written disposition in the R4 closure ledger, which is
+          GENERATED by joining the frozen R3 record against the disposition table and
+          hard-fails unless the join is total in both directions — so a carried major cannot
+          be dropped by forgetting it. Coverage at that SHA: 41 record rows / 41 dispositions
+          / 12 condition-cited ids. Verify with
+          `python3 research/reference_integrity/prophet-board-5514-r4/tools/build_ledger.py --check`.
+          Carried here unmodified.
+        changed_files:
+          - research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md
+
+      - id: COND-RESUBMISSION
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Half satisfied, half deliberately not — and the unsatisfied half is the reason this
+          packet exists in the state it is in. A new frozen SHA exists
+          (6ee8f34480ce3299b4692a3e732c6a5c75d9782a) under a new artifact set
+          (prophet-board-lab-r5). FRESH CRITIC RECEIPTS DO NOT EXIST: there is no
+          reviews/product_regression.yml, no reviews/visual_taste.yml, no verdict.yml and no
+          approval.yml, because the author of an artifact may not judge it (RIG §6/§7). The
+          condition's own last clause — "approval is possible only then" — is therefore the
+          operative one, and it BLOCKS. It clears when two independent critics have run
+          against this frozen SHA and a design authority has rendered a verdict, not before.
+          Recorded as CARRIED_BLOCK rather than quietly deferred, because an unstated debt
+          resets to zero for the next cycle.

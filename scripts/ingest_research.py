@@ -15,9 +15,30 @@ Usage:
     python -m scripts.ingest_research                 # R2 (R2_RESEARCH_BUCKET + creds)
     RESEARCH_LOCAL_STORE=/tmp/rv python -m scripts.ingest_research --local /tmp/rv
     python -m scripts.ingest_research --dry-run       # ingest, but publish nothing
+    python -m scripts.ingest_research --require-store # a missing store is a FAILURE
 
-Never-raise: exits 0 with a warning on error so the hourly workflow keeps going.
-Store precedence: --local > RESEARCH_LOCAL_STORE > R2_RESEARCH_BUCKET; no store → no-op.
+EXIT SEMANTICS (Wave 4, Defect 6) — fail soft on documents, fail closed on the
+publication plane:
+
+  * 0 — the plane completed. Individual documents may have failed; one malformed
+    PDF must never red the hourly lane, and ``failed=N`` is reported as a warning.
+  * 1 — a PLANE failure: the authoritative catalog was unavailable over a mature
+    vault, the corpus could not be restored or published, the catalog could not be
+    published, receipts could not be flushed behind a publish, no usable store was
+    configured under ``--require-store``, or the run raised at top level.
+
+The CLI used to be unconditionally never-raise (``exits 0 with a warning on
+error``), and the workflow then discarded the captured rc as well — so an hour in
+which ingestion accomplished nothing at all concluded green, twice over. The
+per-document never-raise contract is unchanged; only plane outcomes now exit
+non-zero.
+
+The repo snapshots are written ONLY behind a successful canonical publish (freeze
+§B): the git mirror exists so the nightly render can SSR-bake without R2, and a
+mirror that advanced past a failed R2 publish would make the fallback copy
+independently newer than the authority it mirrors.
+
+Store precedence: --local > RESEARCH_LOCAL_STORE > R2_RESEARCH_BUCKET.
 Mirrors the brevity of scripts/build_marketing.py.
 """
 from __future__ import annotations
@@ -25,6 +46,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sqlite3
 import sys
 import tempfile
@@ -35,8 +57,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 log = logging.getLogger("ingest_research")
 
 # Repo snapshots the nightly render SSR-bakes from (masterplan §4).
-_REPO_CATALOG = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "catalog.json"
-_REPO_EXCERPTS = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "excerpts.json"
+_REPO_SNAPSHOT_DIR = Path(__file__).resolve().parent.parent / "data" / "research_vault"
+
+
+def _repo_snapshot_dir(override: str | None = None) -> Path:
+    """Where the SSR snapshots are written; defaults to the committed mirror.
+
+    Overridable via ``--repo-dir`` or ``RESEARCH_REPO_SNAPSHOT_DIR`` so that a run
+    against a scratch store cannot write into the LIVE committed mirror. That is
+    not a hypothetical: writing this wave's own CLI tests truncated
+    ``data/research_vault/catalog.json`` from 1,402 rows to 1, because a
+    subprocess ``--local`` run happily snapshotted its two-document scratch vault
+    over the real file. A store override with no matching snapshot override is a
+    footgun, so the two now travel together.
+    """
+    raw = override or os.environ.get("RESEARCH_REPO_SNAPSHOT_DIR", "")
+    return Path(raw).expanduser() if raw else _REPO_SNAPSHOT_DIR
 
 
 def _report_measured(summary: dict, dry_run: bool = False) -> None:
@@ -144,7 +180,19 @@ def main() -> int:
                     help="run ingest but do NOT publish corpus/catalog back to R2")
     ap.add_argument("--corpus", metavar="PATH",
                     help="corpus.sqlite path (default: a temp file)")
+    ap.add_argument("--repo-dir", metavar="DIR",
+                    help="write the SSR repo snapshots (catalog.json, excerpts.json) "
+                         "under DIR instead of the committed data/research_vault "
+                         "mirror. Env: RESEARCH_REPO_SNAPSHOT_DIR")
+    ap.add_argument("--require-store", action="store_true",
+                    help="treat a missing/unusable store as a FAILURE (exit 1). Set "
+                         "on the scheduled production run, where 'no store' means "
+                         "the secrets did not reach the runner — not 'nothing to do'")
     a = ap.parse_args()
+
+    repo_dir = _repo_snapshot_dir(a.repo_dir)
+    repo_catalog = repo_dir / "catalog.json"
+    repo_excerpts = repo_dir / "excerpts.json"
 
     try:
         from engine.research_vault import ingest as ingest_mod
@@ -152,6 +200,14 @@ def main() -> int:
 
         store = r2_store.build_store(local_dir=a.local)
         if store is None:
+            # On a developer box this is genuinely nothing to do. On the hourly
+            # production run it means the R2 secrets did not reach the runner, and
+            # a green lane would report "ingested nothing" as success forever.
+            if a.require_store:
+                print("::error title=research-ingest::no research store configured "
+                      "(RESEARCH_LOCAL_STORE / --local / R2_RESEARCH_BUCKET + creds) "
+                      "— the hourly ingest could not run at all", flush=True)
+                return 1
             print("ingest_research: no store (set RESEARCH_LOCAL_STORE, --local, "
                   "or R2_RESEARCH_BUCKET + R2 creds) — nothing to do", file=sys.stderr)
             return 0
@@ -173,14 +229,32 @@ def main() -> int:
             _report_measured(summary, dry_run=True)
             return 0
 
-        # Catalog + corpus were already published to the store by run(); snapshot
-        # catalog.json to the repo for the nightly SSR bake.
-        if catalog_bytes:
+        # The publication plane's own verdict. A per-document failure is NOT here:
+        # `failed=N` stays a warning, because one bad PDF must never red the lane.
+        plane_ok = bool(summary.get("corpus_published")
+                        and summary.get("catalog_published")
+                        and not summary.get("error")
+                        and not summary.get("receipts_unflushed"))
+
+        # Snapshot catalog.json to the repo for the nightly SSR bake — but ONLY
+        # behind a successful canonical publish (freeze §B). The mirror exists so
+        # the render can build without R2; it is not a second authority, and a
+        # mirror that advanced past a failed R2 publish would be independently
+        # newer than the catalog it mirrors — exactly the split that let a failed
+        # catalog PUT still ship a "newer" generation to git (Defect 4).
+        if catalog_bytes and plane_ok:
             try:
-                _REPO_CATALOG.parent.mkdir(parents=True, exist_ok=True)
-                _REPO_CATALOG.write_bytes(catalog_bytes)
+                repo_catalog.parent.mkdir(parents=True, exist_ok=True)
+                repo_catalog.write_bytes(catalog_bytes)
             except Exception as exc:  # noqa: BLE001
                 log.warning("ingest_research: repo snapshot write failed: %s", exc)
+        elif not plane_ok:
+            print(f"::warning title=research-ingest::repo catalog mirror NOT advanced "
+                  f"— canonical publish did not complete (corpus_published="
+                  f"{summary.get('corpus_published')}, catalog_published="
+                  f"{summary.get('catalog_published')}, error="
+                  f"{summary.get('error') or 'none'}). The last fully published "
+                  f"mirror is kept.", flush=True)
 
         # Public first-pages excerpts, snapshotted beside the catalog so the
         # nightly render stays R2-free (the corpus body text lives only in R2).
@@ -188,7 +262,10 @@ def main() -> int:
         # and a failure here simply leaves yesterday's committed snapshot in place.
         n_excerpts = 0
         try:
-            if corpus_path.is_file() and catalog_bytes:
+            # Same gate as the catalog mirror: the excerpts are a projection of the
+            # very corpus+catalog that failed to publish, so advancing them would
+            # ship public first-page text for a generation that never went live.
+            if plane_ok and corpus_path.is_file() and catalog_bytes:
                 from engine.research_vault import excerpt as excerpt_mod
 
                 items = (json.loads(catalog_bytes.decode("utf-8")) or {}).get("items") or []
@@ -200,7 +277,7 @@ def main() -> int:
                     excerpts = excerpt_mod.snapshot(conn, ids)
                 finally:
                     conn.close()
-                if excerpt_mod.write_repo_snapshot(excerpts, _REPO_EXCERPTS):
+                if excerpt_mod.write_repo_snapshot(excerpts, repo_excerpts):
                     n_excerpts = len(excerpts)
         except Exception as exc:  # noqa: BLE001 — keep the hourly job alive
             log.warning("ingest_research: excerpt snapshot failed: %s", exc)
@@ -218,13 +295,31 @@ def main() -> int:
               f"(checked={summary.get('reextract_checked', 0)}, "
               f"remaining={summary.get('reextract_remaining', 0)}) "
               f"corpus_published={summary.get('corpus_published')} "
-              f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
+              f"catalog_published={summary.get('catalog_published')} "
+              f"catalog_state={summary.get('catalog_state')} "
+              f"excerpts={n_excerpts} snapshot={repo_catalog}")
         _report_measured(summary)
+
+        if not plane_ok:
+            # Every plane failure has ALREADY printed its own ::error with the
+            # specific cause (engine side). This is the exit code that makes the
+            # workflow red, which is the part that was missing.
+            print(f"::error title=research-ingest::publication plane FAILED "
+                  f"(error={summary.get('error') or 'none'}, corpus_published="
+                  f"{summary.get('corpus_published')}, catalog_published="
+                  f"{summary.get('catalog_published')}, receipts_unflushed="
+                  f"{summary.get('receipts_unflushed', 0)}) — nothing user-visible "
+                  f"advanced this run", flush=True)
+            return 1
         return 0
-    except Exception as exc:  # noqa: BLE001 — never-raise: keep the hourly job alive
+    except Exception as exc:  # noqa: BLE001 — report, then FAIL the lane
+        # Still never-RAISE (the salvage step must run), but no longer never-fail:
+        # an unexpected top-level exception means the plane did not complete, and
+        # returning 0 here reported a dead hour as a healthy one.
         log.warning("ingest_research: run failed: %s", exc)
-        print(f"ingest_research: WARN (never-raise) — {exc}", file=sys.stderr)
-        return 0
+        print(f"::error title=research-ingest::ingest raised at top level — "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return 1
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -316,6 +317,156 @@ def test_current_source_truth_reconciles_against_the_ledger_and_the_correction()
     assert is_valid_candidate_queue(queue)
 
 
+def _attributing_path_known_at(
+    candidate: dict, ownership_edges_by_id: dict[str, dict]
+) -> datetime:
+    """The moment a candidate's FULL exact ownership path became attributable.
+
+    ``ownership_path_refs`` (``candidates.py:1727``) names the exact graph
+    ``ownership_edges`` rows the resolver walked -- every one of them has to
+    exist for the exact path to resolve at all, so the path as a whole only
+    became attributable once its YOUNGEST member edge was admitted.  This is
+    row-level and graph-clock-independent: it does not move just because the
+    graph document was republished, only when the SPECIFIC edges behind this
+    candidate change.
+
+    Deliberately fails loudly rather than excusing when a ref does not
+    resolve -- an unresolvable reference is not evidence the row is new, and
+    softening the gate on missing data is exactly the escape this replaces.
+    """
+    refs = candidate.get("ownership_path_refs") or []
+    assert refs, (
+        f"{candidate.get('candidate_id')} carries no ownership_path_refs; "
+        "cannot derive a row-level attribution clock"
+    )
+    known_ats: list[datetime] = []
+    for ref in refs:
+        edge = ownership_edges_by_id.get(ref)
+        assert edge is not None, (
+            f"{candidate.get('candidate_id')} ownership_path_refs {ref!r} does not "
+            "resolve against the current graph's ownership_edges"
+        )
+        known_ats.append(datetime.fromisoformat(edge["known_at"]))
+    return max(known_ats)
+
+
+def _ledger_rows(root: Path) -> list[dict]:
+    """Parse every row currently in the committed, append-only candidate ledger."""
+    return [
+        json.loads(line)
+        for line in (root / "data/government_revenue/candidate_ledger.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+
+
+def _issuance_frontier(ledger_rows: list[dict]) -> datetime:
+    """The newest ``known_at`` the append-only ledger has already issued.
+
+    This replaces ``candidate_projection_state.generated_at`` as the incident
+    boundary's anchor.  That state field is the WALL clock of whichever run
+    last published it, and a same-day rebuild -- this heal's own repro
+    included -- advances it on every invocation with no source fact having
+    changed: an ownership edge admitted this morning reads "pre-freeze"
+    against last night's frozen state and "post-freeze" against this
+    morning's own republish, purely because the run happened again.  That
+    self-invalidation is what turned the two live BWXT rows from excused to
+    "escaped" the instant this heal's own repro rebuild advanced the state
+    file (measured: edge known_at 05:44:34, rebuilt state generated_at
+    15:04:12, so the strict ``>`` this gate depends on flips with no
+    underlying fact moving).
+
+    The ledger's own issuance frontier is bounded by DATA, not wall-clock: it
+    only advances when the append-only ledger actually gains a new row, so
+    re-running the SAME projection over the SAME sources -- any number of
+    times -- can never move it.  It still advances legitimately the moment a
+    real new candidate is issued, which is exactly the boundary this gate
+    means to track.
+
+    Ties are common and expected: every candidate the graph resolves for the
+    FIRST time in one republish shares that republish's document-level
+    ``graph_known_at`` (measured 54/54 on the 2026-08-19 defense21
+    republish), so an unaccounted row minted in the very same republish that
+    produced the newest issued row sits exactly AT the frontier, not behind
+    it.  See the caller for why that makes the boundary strict-less-than
+    (excused on a tie) rather than less-than-or-equal.
+    """
+    known_ats = [datetime.fromisoformat(row["known_at"]) for row in ledger_rows]
+    if not known_ats:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    return max(known_ats)
+
+
+def _published_graph_vintage(root: Path) -> str:
+    """The reviewed graph vintage the LAST PUBLISHED projection was bound to.
+
+    Read from the publisher's own committed receipt, never inferred.  When it
+    differs from the committed graph's identity, the published ledger provably
+    could not have carried anything only the newer vintage resolves.
+    """
+    status = json.loads(
+        (root / "data/government_revenue/candidate_projection_status.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    graph_id = status["recipient_graph_id"]
+    assert isinstance(graph_id, str) and graph_id, (
+        "candidate_projection_status carries no recipient_graph_id; the "
+        "transitional excuse has no receipt to stand on"
+    )
+    return graph_id
+
+
+def _escaped_candidates(
+    unaccounted: set[str],
+    rows_by_id: dict[str, dict],
+    ownership_edges_by_id: dict[str, dict],
+    issuance_frontier: datetime,
+    *,
+    published_graph_id: str,
+    committed_graph_id: str,
+) -> set[str]:
+    """Unaccounted rows with no live excuse -- the 2026-08-10 incident class.
+
+    Two independent conditions must BOTH hold for a row to stay excused, and
+    the gate returns to full strength when either fails:
+
+    * the publisher must still be behind -- its committed receipt names an
+      older reviewed graph vintage than the graph on disk.  This is the only
+      state in which the published ledger provably could not have seen the
+      row.  It is a fact read from an artifact the publisher writes, not a
+      guess about newness, and it goes false for every row at once the moment
+      the publisher consumes the vintage: nothing to curate, nothing to retire.
+    * the row's own attributing ownership path must postdate everything the
+      ledger has already issued (``_attributing_path_known_at`` vs
+      ``_issuance_frontier``).  A row whose entire path predates the frontier
+      is the 2026-08-10 incident class and is never excused, stale publisher
+      or not.
+
+    This is a strict NARROWING: every row the frontier comparison alone caught
+    is still caught, plus every row whose excuse rested on a lag the publisher
+    has since closed.
+    """
+    publisher_is_behind = published_graph_id != committed_graph_id
+    return {
+        candidate_id
+        for candidate_id in unaccounted
+        if not publisher_is_behind
+        or _attributing_path_known_at(rows_by_id[candidate_id], ownership_edges_by_id)
+        < issuance_frontier
+    }
+
+
+def _suppression_identity(entry: dict) -> dict:
+    """One tombstone minus the graph-clock-derived field.
+
+    Built by EXCLUSION rather than from an allowlist, so a field added to the
+    entry contract is compared by default instead of silently escaping the gate.
+    """
+    return {key: value for key, value in entry.items() if key != "observed_known_at"}
+
+
 def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_review() -> None:
     """The reviewed eight are derived truth, not a hand-transcribed allowlist.
 
@@ -331,13 +482,33 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
     issued forward, which is the correct disposition and the one the nightly
     already took (``candidate_projection_status`` ``status: ok``).  So partition
     the rebuild the way the engine itself partitions it -- quarantined vs active
-    -- and hold the reviewed cohort to byte equality on its own terms.
+    -- and hold the reviewed cohort to identity equality on its own terms.
+
+    ``observed_known_at`` is excluded from that equality: it tracks
+    ``graph_known_at`` and would red on every legitimate republish, inviting a
+    regen that stamps observation after the review act.  The engine already
+    binds by :func:`historical_suppression_entry_key` (graph/clock-independent)
+    and substitutes the reviewed entry's clock before comparing a current row.
+    The clock is still asserted present and offset-aware on both sides.
 
     The gate the count was standing in for is restored explicitly below: every
     row the source engine currently sees must be accounted for in the append-only
     audit ledger.  A first-seen candidate that is neither issued nor reviewed
     still fails here, which is the protection the manifest's own limitations
     clause promises.
+
+    A DIFFERENT guard already covers a DIFFERENT failure mode and survives
+    independently of the row-level discriminator below: the manifest loader
+    itself (``candidates.py:315-324``,
+    ``load_candidate_issuance_correction_manifest``) requires every entry's
+    ``observed_known_at`` to sit at or before its own declared
+    ``predecessor.projection_generated_at``, refusing to admit an entry that
+    claims to have been observed AFTER the predecessor projection it is
+    supposedly correcting.  That is the surviving forward-retiming guard for
+    anything that actually reaches the manifest in this receipt-present
+    regime; it says nothing about an unaccounted row that never reached the
+    manifest at all, which is exactly the gap the ``escaped`` check below
+    exists to close.
     """
     payload = build_payload(root=ROOT)
     graph = json.loads(
@@ -370,29 +541,369 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
         key=historical_suppression_entry_key,
     )
 
-    # The reviewed cohort rebuilds from live source, byte for byte, in bijection
-    # with the manifest.  A reviewed identity that stopped rebuilding, drifted a
-    # field, or gained a sibling still fails.
+    # The reviewed cohort rebuilds from live source in bijection with the
+    # manifest.  A reviewed identity that stopped rebuilding, drifted a field,
+    # or gained a sibling still fails.  Equality is the engine's
+    # graph/clock-independent identity plus every other field; the clock is
+    # asserted present rather than frozen to one graph vintage.
     assert len(entries) == len(manifest["entries"]) == len(quarantined)
-    assert entries == manifest["entries"]
+    assert [historical_suppression_entry_key(entry) for entry in entries] == [
+        historical_suppression_entry_key(entry) for entry in manifest["entries"]
+    ]
+    assert [_suppression_identity(entry) for entry in entries] == [
+        _suppression_identity(entry) for entry in manifest["entries"]
+    ]
+    for entry in (*entries, *manifest["entries"]):
+        observed_at = datetime.fromisoformat(entry["observed_known_at"])
+        assert observed_at.tzinfo is not None
     assert {row["source_event"]["source_rail"] for row in reviewed_rows} == {
         "usaspending_award_snapshot"
     }
     # Nothing the source engine sees may escape review: the append-only ledger
     # is where an issued row is accounted for, and the manifest is where an
     # unissued historical row is.  A row in neither is a publication failure.
-    ledger_ids = {
-        json.loads(line)["candidate_id"]
-        for line in (ROOT / "data/government_revenue/candidate_ledger.jsonl")
-        .read_text(encoding="utf-8")
-        .splitlines()
-        if line.strip()
-    }
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
     unaccounted = set(by_row) - ledger_ids - quarantined
-    assert not unaccounted, (
-        "first-seen candidates with neither a ledger issuance nor a reviewed "
-        f"historical suppression: {sorted(unaccounted)}"
+    # A reviewed-graph expansion can make a source row attributable AFTER the
+    # committed projection froze, but candidate ``known_at`` folds the WHOLE
+    # graph document's clock (``graph_known_at``), not the clock of the
+    # specific rows that attribute this candidate.  Every candidate minted
+    # against the current graph shares one ``known_at`` (measured 64/64), so
+    # ``known_at > frozen_generated_at`` excuses every unaccounted row after
+    # ANY republish -- including one attributed entirely through defense19-era
+    # edges that existed well before the freeze.  That is precisely the
+    # 2026-08-10 incident class this gate exists to catch, and the graph-level
+    # discriminator would have waved it through.
+    #
+    # The row-level, graph-clock-independent replacement:
+    # ``_attributing_path_known_at`` reads the SPECIFIC ownership edges named
+    # in ``ownership_path_refs`` and takes the youngest of them -- the moment
+    # this candidate's exact path actually became attributable, independent of
+    # when the document containing it was last republished.  A row excused
+    # here only because its attributing edges are new is a genuine
+    # transitional state; a row whose attributing edges all predate the
+    # freeze, unaccounted, is the incident class and fails hard.
+    #
+    # The freeze boundary itself is ``_issuance_frontier`` (see its docstring),
+    # never ``candidate_projection_state.generated_at``: that field is a WALL
+    # clock the very next rebuild advances with no source fact changing, which
+    # self-invalidates the excuse for a row still legitimately mid-transition
+    # (measured on this heal's own repro: the two live BWXT rows flipped from
+    # excused to "escaped" purely because the state file was rebuilt).  The
+    # ledger's own issuance frontier moves only when a real candidate is
+    # actually appended, so it cannot be un-excused by re-running the same
+    # projection.  The comparison is strict-less-than rather than
+    # less-than-or-equal because every candidate a republish resolves for the
+    # first time shares that republish's document-level clock (measured
+    # 54/54): a row sitting exactly AT the frontier is exactly as new as the
+    # newest thing already issued, not behind it, so a tie excuses rather than
+    # escapes.  A row whose attributing path is STRICTLY older than everything
+    # already issued -- the actual 2026-08-10 incident shape -- still fails
+    # hard below.
+    #
+    # The excuse above is now additionally conjoined with the publisher's own
+    # committed vintage receipt (``_published_graph_vintage``): a row stays
+    # excused only while that receipt still names an OLDER reviewed graph
+    # vintage than the graph committed here.  The moment the publisher's
+    # receipt catches up to the committed graph, the excuse dies for every
+    # row at once -- there is no manifest to curate and no third state -- and
+    # any row still unissued at that point becomes a hard failure below.  This
+    # turns what used to be a silent, indefinitely-renewable transitional
+    # state into a loud one: staleness in the publisher is now a fact the gate
+    # reads and retires on, not a window that quietly stays open forever.
+    rows_by_id = {row["candidate_id"]: row for row in rows}
+    ownership_edges_by_id = {
+        edge["edge_id"]: edge for edge in graph.get("ownership_edges", [])
+    }
+    issuance_frontier = _issuance_frontier(ledger_rows)
+    published_graph_id = _published_graph_vintage(ROOT)
+    escaped = _escaped_candidates(
+        unaccounted,
+        rows_by_id,
+        ownership_edges_by_id,
+        issuance_frontier,
+        published_graph_id=published_graph_id,
+        committed_graph_id=graph["graph_id"],
     )
+    assert not escaped, (
+        "first-seen candidates with neither a ledger issuance nor a reviewed "
+        "historical suppression, and no live transitional excuse -- either the "
+        "published projection has already consumed this graph vintage "
+        f"(published={published_graph_id}, committed={graph['graph_id']}) or the "
+        "attributing ownership path predates everything the ledger has already "
+        f"issued -- the 2026-08-10 incident class: {sorted(escaped)}"
+    )
+
+
+def test_row_level_discriminator_catches_the_2026_08_10_incident_class_and_excuses_only_genuinely_new_paths() -> None:
+    """FIX-A: prove the replacement discriminator does what the graph-level one could not.
+
+    The graph-level bound (``candidate known_at <= frozen_generated_at``) is
+    vacuous: candidate ``known_at`` folds ``graph_known_at``, so it is
+    identical across every candidate minted against one graph document
+    (measured 64/64 on the live payload).  A republish moves it for every row
+    at once, excusing an unaccounted candidate attributed ENTIRELY through
+    edges that existed long before the freeze -- which is exactly what
+    happened in the 2026-08-10 incident.
+
+    ``_attributing_path_known_at`` reads the row's own ``ownership_path_refs``
+    against the graph's ``ownership_edges`` and is blind to the document-level
+    republish clock, so it tells the two cases apart correctly:
+
+    * an unaccounted row attributed through a pre-freeze (defense19-era) edge
+      -- the incident class -- must be caught (escaped == True);
+    * an unaccounted row attributed through a freshly admitted edge -- a
+      legitimate post-freeze graph expansion, the transitional state the
+      surrounding test's comment describes -- must be excused (escaped == False).
+    """
+    payload = _payload(_award_event())
+
+    # Case 1 -- the incident class: the candidate's one attributing edge
+    # ("edge:noc") is defense19-vintage, admitted well before the freeze.
+    incident_graph = _graph()
+    incident_rows = build_candidate_observations(payload, incident_graph, generated_at=GENERATED_AT)
+    assert len(incident_rows) == 1
+    incident_row = incident_rows[0]
+    assert incident_row["ownership_path_refs"] == ["edge:noc"]
+    incident_edges_by_id = {
+        edge["edge_id"]: edge for edge in incident_graph["ownership_edges"]
+    }
+    assert incident_edges_by_id["edge:noc"]["known_at"] == "2026-08-01T00:00:00+00:00"
+    frozen_after_the_edge = datetime.fromisoformat("2026-08-01T12:00:00+00:00")
+    incident_attributed_at = _attributing_path_known_at(incident_row, incident_edges_by_id)
+    assert incident_attributed_at <= frozen_after_the_edge, (
+        "the incident-class row's attributing edge must read as pre-freeze"
+    )
+    # This is the exact predicate the surrounding test applies to `unaccounted`
+    # candidates -- an unaccounted row here would fail hard, as required.
+    incident_would_escape = incident_attributed_at <= frozen_after_the_edge
+    assert incident_would_escape, (
+        "FIX-A must NOT excuse a row attributed entirely through a pre-freeze "
+        "edge -- this is the 2026-08-10 incident class"
+    )
+    # The vacuous graph-level bound this replaces WOULD have excused it: the
+    # candidate's own known_at sits after this freeze point regardless of how
+    # old its attributing edge actually is, which is exactly what made the old
+    # discriminator vacuous rather than merely imprecise.
+    vacuous_bound_would_excuse = (
+        datetime.fromisoformat(incident_row["known_at"]) > frozen_after_the_edge
+    )
+    assert vacuous_bound_would_excuse, (
+        "the demonstration requires the OLD graph-level bound to actually excuse "
+        "this incident-class row (candidate known_at after the freeze point) -- "
+        "otherwise it proves nothing about the bound being vacuous"
+    )
+
+    # Case 2 -- a legitimate post-freeze graph expansion: the SAME candidate
+    # shape, but its attributing edge was admitted AFTER the freeze point --
+    # the same relative ordering as today's live BWXT rows, whose attributing
+    # edges (known_at 2026-08-19T05:44:34) postdate the committed
+    # candidate_projection_state freeze (2026-08-19T05:25:42). The edge's
+    # new known_at must still satisfy the graph's own admission (<=
+    # graph_known_at), so it moves within this fixture's existing clock
+    # window rather than reusing the unrelated real BWXT timestamps.
+    fresh_graph = _graph()
+    fresh_graph["ownership_edges"][0]["known_at"] = "2026-08-01T18:00:00+00:00"
+    fresh_rows = build_candidate_observations(payload, fresh_graph, generated_at=GENERATED_AT)
+    assert len(fresh_rows) == 1
+    fresh_row = fresh_rows[0]
+    fresh_edges_by_id = {edge["edge_id"]: edge for edge in fresh_graph["ownership_edges"]}
+    frozen_before_the_edge = datetime.fromisoformat("2026-08-01T06:00:00+00:00")
+    fresh_attributed_at = _attributing_path_known_at(fresh_row, fresh_edges_by_id)
+    assert fresh_attributed_at > frozen_before_the_edge, (
+        "the demonstration requires the fresh edge to genuinely postdate this freeze point"
+    )
+    fresh_would_escape = fresh_attributed_at <= frozen_before_the_edge
+    assert not fresh_would_escape, (
+        "FIX-A must excuse a row whose attributing edge is genuinely new, exactly "
+        "like today's live BWXT rows (grc1-2431cef9…, grc1-81a1a8df…)"
+    )
+
+    # Fail-closed: an unresolvable ownership_path_refs entry must never excuse
+    # silently -- it is not evidence of anything, so softening the gate here
+    # would reopen the exact hole this fix closes.
+    tampered_row = dict(incident_row)
+    tampered_row["ownership_path_refs"] = ["edge:does-not-exist"]
+    with pytest.raises(AssertionError, match="does not resolve"):
+        _attributing_path_known_at(tampered_row, incident_edges_by_id)
+    empty_row = dict(incident_row)
+    empty_row["ownership_path_refs"] = []
+    with pytest.raises(AssertionError, match="no ownership_path_refs"):
+        _attributing_path_known_at(empty_row, incident_edges_by_id)
+
+
+def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -> None:
+    """FIX-A verification (a): today's two BWXT rows, against the real payload.
+
+    Confirms the row-level discriminator excuses ``grc1-2431cef9…`` and
+    ``grc1-81a1a8df…`` because the five BWXT identifier/ownership rows they
+    attribute through carry ``known_at`` 2026-08-19T05:44:34 -- at or after
+    the newest ``known_at`` the append-only ledger has already issued, not
+    because of anything document-level.
+
+    The candidate ids are pinned rather than derived: they rebuild byte-stable
+    across the defense19->defense21 republish (``candidate_id`` folds only
+    ``candidate_family``/``issuer_company_id``/``event_id``, never the graph
+    digest -- see ``historical_suppression_entry_key``'s docstring), so unlike
+    a census or a vintage clock this identity is not a scheduled failure.
+
+    What is NOT stable is the freeze this excuse was originally checked
+    against: ``candidate_projection_state.generated_at`` is the WALL clock of
+    whichever run last published it, and the very next rebuild -- including
+    this heal's own repro -- advances it with no source fact changing, which
+    silently un-excuses a row still legitimately mid-transition.  The anchor
+    here is ``_issuance_frontier`` instead (see its docstring): the newest
+    ``known_at`` the ledger has actually issued, which only moves when a real
+    candidate is appended.
+
+    These two rows are also a known, separately-tracked non-issuance gap
+    (source observes them; the published queue currently does not carry
+    them) -- a different bug than the one this test guards, and not this
+    test's job to fix.  So the assertion below self-retires the moment that
+    gap closes: once a BWXT row is actually issued into the ledger, whether
+    it is *also* excused by the row-level clock is moot, because it is no
+    longer unaccounted at all.
+    """
+    payload = build_payload(root=ROOT)
+    graph = json.loads(
+        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8")
+    )
+    rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
+    bwxt_rows = [row for row in rows if row["ticker"] == "BWXT"]
+    assert {row["candidate_id"] for row in bwxt_rows} == {
+        "grc1-2431cef9fbca1f209edb0f45",
+        "grc1-81a1a8df4bdb97de3b1cdfa8",
+    }
+    ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    issuance_frontier = _issuance_frontier(ledger_rows)
+    for row in bwxt_rows:
+        if row["candidate_id"] in ledger_ids:
+            # Already issued: accounted for by the ledger itself, so the
+            # row-level excuse this test guards is no longer load-bearing.
+            continue
+        attributed_at = _attributing_path_known_at(row, ownership_edges_by_id)
+        assert attributed_at >= issuance_frontier, (
+            f"{row['candidate_id']} must be excused or issued: its attributing "
+            f"BWXT edges ({row['ownership_path_refs']}) neither postdate the "
+            "ledger's issuance frontier nor are they in the ledger"
+        )
+
+
+def test_transitional_excuse_dies_when_the_publisher_catches_up() -> None:
+    """The vintage conjunct is a LIVE fact, not a one-time grant.
+
+    ``_escaped_candidates`` must return NOTHING once the publisher's own
+    receipt names the same graph vintage as the one committed here -- the
+    state the publisher reaches the instant it consumes this graph.  This
+    holds in both states the live data can be in: while rows are still
+    pending (``unaccounted`` is non-empty, and every one of them loses its
+    excuse and is returned) and after they have issued (``unaccounted`` is
+    already empty, so both sides of the equality are the empty set).  Because
+    the invariant holds either way, this test does not go stale the moment
+    the pending BWXT rows actually publish.
+    """
+    payload = build_payload(root=ROOT)
+    graph = json.loads(
+        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8")
+    )
+    rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
+    quarantined = {entry["candidate_id"] for entry in corrections["entries"]}
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    unaccounted = {row["candidate_id"] for row in rows} - ledger_ids - quarantined
+    rows_by_id = {row["candidate_id"]: row for row in rows}
+    ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
+    issuance_frontier = _issuance_frontier(ledger_rows)
+
+    caught_up = _escaped_candidates(
+        unaccounted, rows_by_id, ownership_edges_by_id, issuance_frontier,
+        published_graph_id=graph["graph_id"],
+        committed_graph_id=graph["graph_id"],
+    )
+    assert caught_up == unaccounted
+
+
+def test_incident_class_is_still_red_under_a_stale_publisher() -> None:
+    """FIX-B: the vintage conjunct narrows, it never grants blanket amnesty.
+
+    The one incident-class row from ``test_row_level_discriminator_catches_the_
+    2026_08_10_incident_class_and_excuses_only_genuinely_new_paths`` -- whose
+    sole attributing edge ``edge:noc`` is defense19-vintage -- must stay in the
+    escaped set even while the publisher genuinely IS behind
+    (``published_graph_id`` names an older vintage than ``committed_graph_id``).
+    A stale publisher only ever widens the excuse for rows whose attributing
+    path is fresh; it can never rescue a row whose entire path predates the
+    ledger's own issuance frontier.
+    """
+    payload = _payload(_award_event())
+    incident_graph = _graph()
+    incident_rows = build_candidate_observations(payload, incident_graph, generated_at=GENERATED_AT)
+    assert len(incident_rows) == 1
+    incident_row = incident_rows[0]
+    assert incident_row["ownership_path_refs"] == ["edge:noc"]
+    incident_edges_by_id = {
+        edge["edge_id"]: edge for edge in incident_graph["ownership_edges"]
+    }
+    assert incident_edges_by_id["edge:noc"]["known_at"] == "2026-08-01T00:00:00+00:00"
+    issuance_frontier = datetime.fromisoformat("2026-08-01T12:00:00+00:00")
+
+    escaped = _escaped_candidates(
+        {incident_row["candidate_id"]},
+        {incident_row["candidate_id"]: incident_row},
+        incident_edges_by_id,
+        issuance_frontier,
+        published_graph_id="recipient-graph:reviewed:2026-08-08:defense19-v1",
+        committed_graph_id="recipient-graph:reviewed:2026-08-19:defense21-v1",
+    )
+    assert incident_row["candidate_id"] in escaped
+
+
+def test_covered_row_that_issues_leaves_unaccounted_by_construction() -> None:
+    """Issuance retires a row by construction -- no manifest, no curation step.
+
+    Once a currently-unaccounted candidate id is present in the ledger, it is
+    no longer a member of ``unaccounted`` at all, so it cannot appear in
+    ``_escaped_candidates``'s output under EITHER publisher state.  There is
+    no third state to track and nothing to remember to clean up.
+    """
+    payload = build_payload(root=ROOT)
+    graph = json.loads(
+        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8")
+    )
+    rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
+    quarantined = {entry["candidate_id"] for entry in corrections["entries"]}
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    unaccounted = {row["candidate_id"] for row in rows} - ledger_ids - quarantined
+    if not unaccounted:
+        pytest.skip("no unaccounted rows to exercise")
+
+    injected_id = sorted(unaccounted)[0]
+    issued_ledger_ids = ledger_ids | {injected_id}
+    unaccounted_after_issuance = {row["candidate_id"] for row in rows} - issued_ledger_ids - quarantined
+    assert injected_id not in unaccounted_after_issuance
+
+    rows_by_id = {row["candidate_id"]: row for row in rows}
+    ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
+    issuance_frontier = _issuance_frontier(ledger_rows)
+    for published_graph_id in (
+        graph["graph_id"],
+        "recipient-graph:reviewed:2026-08-08:defense19-v1",
+    ):
+        escaped = _escaped_candidates(
+            unaccounted_after_issuance,
+            rows_by_id,
+            ownership_edges_by_id,
+            issuance_frontier,
+            published_graph_id=published_graph_id,
+            committed_graph_id=graph["graph_id"],
+        )
+        assert injected_id not in escaped
 
 
 def test_exact_receipt_bound_reviewed_event_builds_one_context_candidate() -> None:

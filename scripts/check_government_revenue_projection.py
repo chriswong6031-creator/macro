@@ -191,6 +191,11 @@ def validate_projection(
         public_dir / "idv-dossiers.json",
         label="IDV dossier",
     )
+    optional_identity_atlas = _read_optional_exact_twin(
+        canonical_dir / "identity_atlas.json",
+        public_dir / "identity-atlas.json",
+        label="Identity Atlas",
+    )
     try:
         from scripts import build_government_revenue_candidates
 
@@ -293,6 +298,15 @@ def validate_projection(
             raise ProjectionDriftError("canonical IDV dossier is invalid") from exc
         if build_government_revenue._canonical_json(idv_dossier).encode("utf-8") != idv_dossier_raw:
             raise ProjectionDriftError("canonical IDV dossier bytes are non-canonical")
+    identity_atlas = None
+    if optional_identity_atlas is not None:
+        identity_atlas_raw, identity_atlas = optional_identity_atlas
+        if not build_government_revenue.is_valid_identity_atlas_payload(identity_atlas):
+            raise ProjectionDriftError(
+                "canonical Identity Atlas failed schema/content-id admission"
+            )
+        if build_government_revenue._canonical_json(identity_atlas).encode("utf-8") != identity_atlas_raw:
+            raise ProjectionDriftError("canonical Identity Atlas bytes are non-canonical")
 
     embedded_workspace = _object(
         canonical_latest.get("procurement_workspace"),
@@ -401,6 +415,12 @@ def validate_projection(
             idv_dossier.get("content_id") if idv_dossier is not None else None
         ),
         "idv_relationships": len(idv_dossier.get("relationships") or []) if idv_dossier is not None else 0,
+        "identity_atlas_content_id": (
+            identity_atlas.get("content_id") if identity_atlas is not None else None
+        ),
+        "identity_atlas_issuers": (
+            len(identity_atlas.get("issuers") or []) if identity_atlas is not None else 0
+        ),
         "candidate_content_id": candidate_projection.get("queue_content_id"),
         "candidates": candidate_projection.get("candidate_count", 0),
         "candidate_mapping_backlog": candidate_projection.get("mapping_backlog_count", 0),

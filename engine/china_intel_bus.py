@@ -536,6 +536,12 @@ def _special_situations_block() -> dict | None:
             "secName": newest.get("secName"),
             "date":    newest.get("date"),
             "has_reply": newest.get("has_reply"),
+            # has_reply is a strict positive claim, so it collapses "no reply
+            # filed" and "we could not tie a reply to THIS inquiry" into one
+            # False. A consumer reading only that boolean would render an
+            # undetermined letter as an open regulatory question. Carry the
+            # three-valued state so downstream surfaces can tell them apart.
+            "reply_state": newest.get("reply_state"),
         }
 
     return out

@@ -14,9 +14,12 @@ spurious rgb(0,1,0) for --pv-buy during the R3 cycle).
 Usage: python3 tools/verify_r4.py [base_url]
 Exit 0 = every check passed.
 """
+import hashlib
 import io
+import json
 import pathlib
 import re
+import subprocess
 import sys
 
 from playwright.sync_api import sync_playwright
@@ -73,6 +76,56 @@ def strip_js_comments(s):
     return re.sub(r"(?m)^\s*//.*$", "", s)
 
 
+REPO = ART.parents[3]          # …/mockups/refs/institutionalize/us_stocks -> repo root
+
+
+def _git(*args):
+    """git, from the repo root, returning bytes or None. Never raises."""
+    try:
+        out = subprocess.run(("git",) + args, cwd=str(REPO), check=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        return out.stdout
+    except Exception:
+        return None
+
+
+def read_from_head(relpath):
+    """Read a repo file from DISK, falling back to HEAD.
+
+    N1's whole defect was declaring a committed file non-existent because a
+    sparse worktree had not checked out mockups/. A guard that asks the
+    filesystem inherits that bug; git still holds the bytes, so ask git.
+    """
+    p = REPO / relpath
+    if p.exists():
+        return p.read_text()
+    blob = _git("show", "HEAD:" + relpath)
+    return blob.decode("utf-8", "replace") if blob else None
+
+
+def crop_blobs(cropdir):
+    """{filename: content-hash} for the crop set, from disk or from HEAD.
+
+    Content identity, not filename identity: the point of the check is that two
+    differently-named crops can be the SAME render, which is how a manifest ends
+    up claiming coverage it does not have.
+    """
+    if cropdir.is_dir() and any(cropdir.glob("*.png")):
+        return {f.name: hashlib.sha256(f.read_bytes()).hexdigest()
+                for f in sorted(cropdir.glob("*.png"))}
+    rel = cropdir.relative_to(REPO).as_posix()
+    listing = _git("ls-tree", "HEAD", rel + "/")
+    if not listing:
+        return {}
+    out = {}
+    for line in listing.decode().splitlines():
+        meta, name = line.split("\t", 1)
+        if not name.endswith(".png"):
+            continue
+        out[pathlib.PurePosixPath(name).name] = meta.split()[2]   # the blob sha
+    return out
+
+
 def main():
     css_raw = (ART / "board.css").read_text()
     js_raw = (ART / "board.js").read_text()
@@ -83,6 +136,7 @@ def main():
     js = strip_js_comments(js_raw)
     notes = (ART / "DESIGN_NOTES.md").read_text()
     cmp_html = (ART / "compare.html").read_text()
+    fixture = (ART / "board-data.js").read_text()
 
     with sync_playwright() as p:
         br = p.chromium.launch()
@@ -503,6 +557,197 @@ def main():
            sep["ok"], sep.get("why", ""))
         pg.close()
 
+        # ══ R4.2 / V-N2 — MEASUREMENTS the prose-vs-artifact class asserts on ══
+        # Each of these lands in FACTS below and is joined against a sentence
+        # some law-bearing document states in its own voice. Measured here so a
+        # claim is checked against the ARTIFACT, never against another sentence.
+        pg = page_at("theme=dark&lang=en&state=paid")
+        caps = pg.evaluate("""() => {
+          const all=[...document.querySelectorAll('.mx-cap')];
+          return {total: all.length,
+                  inLadder: all.filter(e=>e.closest('.mx-cell')).length,
+                  onCard: all.filter(e=>e.closest('.pvcard')).length};
+        }""")
+        ok("R29a cap-is-ladder-only — .mx-cap is emitted on ladder cells and nowhere else",
+           caps["total"] > 0 and caps["onCard"] == 0 and caps["inLadder"] == caps["total"],
+           f"{caps['onCard']} caps on cards, {caps['inLadder']}/{caps['total']} in ladder cells")
+        # VTC-305 separated Delivering from Entered; §3 used to call them identical.
+        deliv = pg.evaluate("""() => {
+          const st=[...document.styleSheets].flatMap(s=>{try{return [...s.cssRules]}catch(e){return []}});
+          const txt=st.map(r=>r.cssText||'').join('\\n');
+          const ent=(txt.match(/\\.mx-cap--entered[^{]*\\{[^}]*\\}/g)||[]).join('');
+          const del=(txt.match(/\\.mx-cap--delivering[^{]*\\{[^}]*\\}/g)||[]).join('');
+          return {entRules:(txt.match(/\\.mx-cap--entered/g)||[]).length,
+                  delRules:(txt.match(/\\.mx-cap--delivering/g)||[]).length,
+                  identical: ent.replace(/entered/g,'X')===del.replace(/delivering/g,'X')};
+        }""")
+        DELIVERING_IDENTICAL = bool(deliv["identical"])
+        ok("R29b delivering-measured — the Entered/Delivering weight rules are compared, not assumed",
+           deliv["entRules"] > 0 and deliv["delRules"] > 0,
+           f"entered rules={deliv['entRules']} delivering rules={deliv['delRules']}")
+        # the ZH sector twin (V-B3): no card may print an un-twinned sector line
+        pgz = page_at("theme=dark&lang=zh&state=paid")
+        sec = pgz.evaluate("""() => {
+          const inds=[...document.querySelectorAll('.pvcard .pv-ind')];
+          return {n: inds.length,
+                  twinned: inds.filter(e=>e.querySelector('.l-en')&&e.querySelector('.l-zh')).length,
+                  latinVisible: inds.filter(e=>{
+                    const zh=e.querySelector('.l-zh');
+                    return zh && /[A-Za-z]/.test(zh.textContent) && !zh.classList.contains('pv-ind--raw');
+                  }).length};
+        }""")
+        ok("R31 sector-zh-twin — every rendered sector line carries its zh twin",
+           sec["n"] > 0 and sec["twinned"] == sec["n"] and sec["latinVisible"] == 0,
+           f"{sec['twinned']}/{sec['n']} twinned, {sec['latinVisible']} untwinned latin in zh")
+        pgz.close()
+        pg.close()
+
+        # ── V-B4: the two states the specimen ships ─────────────────────────
+        pg = page_at("theme=dark&lang=en&state=loading")
+        load = pg.evaluate("""() => ({
+          skel: document.querySelectorAll('.pv-skcard').length,
+          chartH: (document.querySelector('.sk-chart')||{}).clientHeight,
+          words: [...document.querySelectorAll('.mx-cell-l')].length,
+          counts: document.querySelectorAll('.mx-cell .mx-cell-n').length,
+          skelCounts: document.querySelectorAll('.mx-cell .sk-n').length,
+          dashes: (document.querySelector('.mx-ladder')||{textContent:''}).textContent.indexOf('\\u2014'),
+          busy: document.querySelectorAll('[aria-busy="true"]').length
+        })""")
+        ok("R32 loading-state — skeleton cards at the shipped 74px hero geometry, ladder words kept",
+           load["skel"] >= 6 and load["chartH"] == 74 and load["words"] == 7
+           and load["skelCounts"] == 7 and load["counts"] == 0 and load["busy"] >= 1,
+           f"skel={load['skel']} chartH={load['chartH']} words={load['words']} "
+           f"skelCounts={load['skelCounts']} liveCounts={load['counts']} busy={load['busy']}")
+        ok("R32b loading-dash-free — the em dash keeps its single meaning (key-absent), never 'loading'",
+           load["dashes"] == -1, "an em dash appears in the loading ladder")
+        pg.close()
+        for lang, retry in (("en", "Retry"), ("zh", "重试")):
+            pg = page_at("theme=dark&lang=" + lang + "&state=error")
+            err = pg.evaluate("""() => {
+              const e=document.querySelector('.mx-error');
+              const b=document.querySelector('.mx-error-retry');
+              const r=b?b.getBoundingClientRect():null;
+              return {present:!!e, role:e?e.getAttribute('role'):'',
+                      text:e?e.innerText:'', btnH:r?Math.round(r.height):0,
+                      ladder: document.querySelectorAll('.mx-cell').length,
+                      setups: document.querySelectorAll('#setups').length,
+                      below: document.querySelectorAll('#candidates,#groups,#evidence').length};
+            }""")
+            ok(f"R33-{lang} error-state — names the failure, keeps the rest, offers a >=40px Retry",
+               err["present"] and err["role"] == "alert" and retry in err["text"]
+               and err["btnH"] >= 40 and err["ladder"] == 0 and err["setups"] == 0
+               and err["below"] == 3,
+               f"present={err['present']} btn={err['btnH']}px ladder={err['ladder']} "
+               f"setups={err['setups']} below={err['below']}")
+            pg.close()
+
+        # ── P-K19: the watch key present-and-empty ──────────────────────────
+        pg = page_at("theme=dark&lang=en&state=paid&watch=present")
+        wp = pg.evaluate("""() => {
+          const cells=[...document.querySelectorAll('.mx-ladder .mx-cell')];
+          const live=cells.slice(0,6);
+          const n=e=>{const v=(e.querySelector('.mx-cell-n')||{}).textContent||'';return v.trim();};
+          return {watch:n(live[0]),
+                  sum: live.reduce((a,e)=>a+(parseInt(n(e),10)||0),0),
+                  head: parseInt((document.querySelector('.ladder-n')||{}).textContent,10),
+                  sub: (document.querySelector('.ladder-sub .l-en')||{}).textContent||'',
+                  absence: document.querySelectorAll('.ladder-absence').length,
+                  absentAttr: document.querySelectorAll('.mx-cell[data-absent]').length,
+                  lens: /2026-08-18/.test(document.body.innerText)};
+        }""")
+        ok("R34 watch-present-zero — a published-and-empty watch key prints 0 inside the sum",
+           wp["watch"] == "0" and wp["sum"] == wp["head"] and wp["absence"] == 0
+           and wp["absentAttr"] == 0 and "six published cells" in wp["sub"] and wp["lens"],
+           f"watch={wp['watch']!r} sum={wp['sum']} head={wp['head']} absence={wp['absence']} "
+           f"absentAttr={wp['absentAttr']} sub={wp['sub']!r} lens={wp['lens']}")
+        pg.close()
+        # and the frozen fixture's own state still reads as key-ABSENT
+        pg = page_at("theme=dark&lang=en&state=paid")
+        wa = pg.evaluate("""() => ({
+          watch: ((document.querySelector('.mx-ladder .mx-cell .mx-cell-n')||{}).textContent||'').trim(),
+          absence: document.querySelectorAll('.ladder-absence').length,
+          sub: (document.querySelector('.ladder-sub .l-en')||{}).textContent||''})""")
+        ok("R34b watch-absent-unchanged — the frozen fixture still renders key-absence, not zero",
+           wa["watch"] == "—" and wa["absence"] == 1 and "five published cells" in wa["sub"],
+           f"watch={wa['watch']!r} absence={wa['absence']} sub={wa['sub']!r}")
+        pg.close()
+
+        # ── P-B2: the newer-plan link resolves ──────────────────────────────
+        pg = page_at("theme=dark&lang=en&state=paid&life=resolved")
+        nl = pg.evaluate("""() => {
+          const links=[...document.querySelectorAll('.pv-newer')];
+          return {n: links.length,
+                  anchors: links.filter(a=>a.tagName==='A').length,
+                  hashOnly: links.filter(a=>(a.getAttribute('href')||'').indexOf('#id=')===0).length,
+                  targets: links.filter(a=>a.tagName==='A')
+                                .map(a=>new URLSearchParams((a.getAttribute('href')||'').slice(1)).get('focus'))};
+        }""")
+        ok("R35 newer-link-shape — the newer-plan affordance is a query-string link, never a dead #id=",
+           nl["n"] > 0 and nl["hashOnly"] == 0 and nl["anchors"] == nl["n"]
+           and all(nl["targets"]),
+           f"links={nl['n']} anchors={nl['anchors']} hash={nl['hashOnly']} targets={nl['targets']}")
+        # A link with no resolvable target must FAIL this check, not crash it:
+        # a harness that throws stops every later check and reads as breakage
+        # rather than as the finding it just caught.
+        first = next((t for t in nl["targets"] if t), None)
+        pg.close()
+        pg = page_at("theme=dark&lang=en&state=paid&focus=" + (first or "NO-TARGET"))
+        land = pg.evaluate("""(id) => {
+          const c=document.querySelector('.pvcard[data-id="'+id+'"]');
+          if(!c) return {found:false};
+          const r=c.getBoundingClientRect();
+          return {found:true, ringed:c.classList.contains('pv-landed'),
+                  hidden:c.classList.contains('sm-hidden'),
+                  note: document.querySelectorAll('.pv-landnote').length,
+                  noteHasTicker: (document.querySelector('.pv-landnote')||{innerText:''})
+                                   .innerText.indexOf(c.dataset.ticker)>=0,
+                  noteHasSlug: (document.querySelector('.pv-landnote')||{innerText:''})
+                                   .innerText.indexOf(id)>=0,
+                  onScreen: r.top < window.innerHeight && r.bottom > 0};
+        }""", first)
+        ok("R35b newer-link-lands — the target card is revealed, ringed and named by ticker",
+           first is not None
+           and land.get("found") and land["ringed"] and not land["hidden"] and land["note"] == 1
+           and land["noteHasTicker"] and not land["noteHasSlug"] and land["onScreen"],
+           str(land))
+        pg.close()
+        # a focus id with no row must SAY so rather than silently doing nothing
+        pg = page_at("theme=dark&lang=en&state=paid&focus=NO-SUCH-PLAN")
+        miss = pg.evaluate("""() => ({note: document.querySelectorAll('.pv-landnote').length,
+                                      ringed: document.querySelectorAll('.pv-landed').length,
+                                      text: (document.querySelector('.pv-landnote')||{innerText:''}).innerText})""")
+        ok("R35c newer-link-miss — an unresolvable focus id is disclosed, never a silent no-op",
+           miss["note"] == 1 and miss["ringed"] == 0 and "not on" in miss["text"],
+           str(miss))
+        pg.close()
+
+        # ── P-B6: the expectancy interval sits at the strip's own tier ──────
+        for lang in ("en", "zh"):
+            pg = page_at("theme=dark&lang=" + lang + "&state=paid")
+            band = pg.evaluate("""() => {
+              const strip=document.querySelector('.trd-btn');
+              const bands=[...strip.querySelectorAll('.trd-band')]
+                            .filter(e=>e.offsetParent!==null);
+              const fig=strip.querySelector('.trd-stat b');
+              const fs=e=>parseFloat(getComputedStyle(e).fontSize);
+              return {n: bands.length, text: strip.innerText.replace(/\\s+/g,' '),
+                      sameSize: bands.every(b=>fs(b)===fs(fig))};
+            }""")
+            ok(f"R36-{lang} expectancy-interval-at-tier — both strip figures carry their interval, same type size",
+               band["n"] == 2 and band["sameSize"]
+               and "-0.61" in band["text"] and "1.25" in band["text"]
+               and "50.4" in band["text"],
+               f"bands={band['n']} sameSize={band['sameSize']} strip={band['text']!r}")
+            pg.close()
+        # and the plain-word straddle is translated in BOTH languages
+        for lang, phrase in (("en", "crosses zero"), ("zh", "跨过 0")):
+            pg = page_at("theme=dark&lang=" + lang + "&state=paid")
+            note = pg.evaluate("""() => [...document.querySelectorAll('.trk-note')]
+                                        .map(p=>p.innerText).join(' ')""")
+            ok(f"R36b-{lang} expectancy-straddle-in-words — the zero crossing is stated in plain words",
+               phrase in note, f"missing {phrase!r}")
+            pg.close()
+
         br.close()
 
     # ══ static-document checks ════════════════════════════════════════════
@@ -549,6 +794,168 @@ def main():
        "DESIGN_NOTES still asserts 69 = 28+27+10+2+2 in its own voice")
     ok("R22 enrichment-gap-disclosed — the coverage gap is stated as a number",
        re.search(r"134\s*(of|/)\s*179", notes) is not None, "no 134/179 coverage disclosure")
+
+    # ══ R4.2 / V-N2 — the PROSE-vs-ARTIFACT class ═════════════════════════
+    # R8 and R27 each pinned ONE hard-coded string. That is not a guard, it is
+    # two guards, and the finding is a CLASS: a law-bearing document asserting,
+    # in its own voice, something the artifact contradicts. What follows is the
+    # class. Each row pairs a claim the document may make with a fact MEASURED
+    # from the artifact (never from another sentence), so adding a claim without
+    # a measurement, or letting a measurement drift away from its claim, fails.
+    #
+    # Deliberately NOT a banned-string list: a repeal is recorded by quoting the
+    # repealed text, and a string ban punishes exactly the documentation this
+    # cycle demands. asserting_text() above supplies the document's own voice;
+    # FACTS supplies the artifact's.
+    fixture_json = json.loads(
+        fixture[fixture.index("{", fixture.index("window")):fixture.rindex("}") + 1])
+    C = fixture_json["counts"]
+    live_addends = [C["ready"], C["entered"], C["delivering"], C["overtime"], C["invalidated"]]
+
+    crops = crop_blobs(ART / "crops")
+    crop_files = len(crops)
+    crop_views = len({n[:-len("--full.png")] if n.endswith("--full.png") else n[:-4]
+                      for n in crops})
+    crop_distinct = len(set(crops.values()))
+    alias_pairs = {}
+    for name, blob in crops.items():
+        if name.startswith("00-R3-"):
+            twins = [n for n, b in crops.items() if b == blob and not n.startswith("00-R3-")]
+            if twins:
+                alias_pairs[name] = sorted(twins)
+    r3_alias_views = len({n[:-len("--full.png")] if n.endswith("--full.png") else n[:-4]
+                          for n in alias_pairs})
+
+    specimen = read_from_head("mockups/design_system/specimen.html")
+    # The overtime question is closed by a RULING, so the artifact it is joined
+    # against is the ruling record — read from HEAD like the specimen, for the
+    # same reason.
+    c8 = read_from_head("research/reference_integrity/"
+                        "prophet-board-5514-r4-composition/verdict.yml") or ""
+    OVERTIME_STILL_OPEN = not ("b8_overtime_clock" in c8 and "CLOSED BY CITATION" in c8)
+
+    FACTS = {
+        # claim pattern (in the doc's own voice)          -> (holds?, why)
+        r"Entered and Delivering are \*\*deliberately identical\*\*":
+            (DELIVERING_IDENTICAL,
+             "board.css separates them at VTC-305 — Delivering carries a terminal "
+             "marker Entered does not, so the two rules are NOT identical"),
+        r"Resolved still 17":
+            (C["resolved"] == 17,
+             f"the payload's resolved count is {C['resolved']}"),
+        r"\*\*does not exist on disk\*\*":
+            (specimen is None,
+             "mockups/design_system/specimen.html exists (landed 2026-08-12 in "
+             "#5459) — read it from HEAD rather than off a sparse-tree ls"),
+        r"42 views, 62 files":
+            (crop_views == 42 and crop_files == 62 and crop_distinct == crop_files,
+             f"crops/ holds {crop_views} view stems and {crop_files} files, but only "
+             f"{crop_distinct} are distinct — a manifest that counts aliases as "
+             f"coverage overstates it"),
+        r"`00-R3-\*` the R3 matrix":
+            (r3_alias_views == 0,
+             f"{r3_alias_views} 00-R3-* views are byte-identical to their 01-04 "
+             f"twins — they are freeze aliases of R4 renders, not an R3 matrix"),
+        r"the card cap": (False, "the card's top cap was removed at #5514 v1"),
+        r"remains UNRESOLVED and blocks production":
+            (OVERTIME_STILL_OPEN,
+             "the C8 verdict's b8_overtime_clock ruling closed the overtime clock "
+             "question by citation (SEA #4684 + the #5540 closure re-census)"),
+        # §0b.5 quotes the operator's verbatim zh wording 「下方 6 个状态合计」.
+        # The frozen fixture renders FIVE (watch key-absent); production's
+        # present-and-empty key renders six. The quote is true in exactly one
+        # state, so the document may only carry it while naming that state.
+        r"下方 6 个状态合计":
+            ("watch=present" in notes and "present-and-empty" in notes,
+             "the frozen fixture renders five published cells — a verbatim quote "
+             "of the six-cell wording must name the watch=present state it "
+             "belongs to (P-K19)"),
+    }
+    live_notes_l = live_notes
+    for pat, (holds, why) in FACTS.items():
+        m = re.search(pat, live_notes_l)
+        ok(f"R29 prose-vs-artifact — DESIGN_NOTES does not assert: {pat[:44]}",
+           (m is None) or holds,
+           f"asserted in the document's own voice, but {why}")
+
+    # The crop manifest must state the coverage it actually has. All four
+    # figures are joined to the DIRECTORY, and content identity is what counts:
+    # two differently-named files holding one render are one render.
+    ev = notes[notes.index("## 8. Evidence"):]
+    ev = ev[:ev.index("### Honest screenshot gaps")]
+    want = {"files on disk": crop_files,
+            "view stems": crop_views,
+            "distinct renders": crop_distinct,
+            "distinct views": crop_views - r3_alias_views}
+    missing = [f"{k}={v}" for k, v in want.items()
+               if re.search(re.escape(k) + r"[^|]*\|[^|]*\b" + str(v) + r"\b", ev) is None]
+    ok("R29g crop-manifest-arithmetic — §8's four counts are the directory's own",
+       not missing,
+       f"§8 does not state {missing}; crops/ measures {want} "
+       f"({r3_alias_views} alias views)")
+    ok("R29h crop-alias-declared — the 00-R3-* stems are declared as aliases, not as coverage",
+       r3_alias_views == 0 or "aliases" in ev,
+       f"{r3_alias_views} 00-R3-* views duplicate an 01-04 render and §8 must say so")
+    ok("R29e specimen-exists — the canonical component sheet is read from HEAD, not from an ls",
+       specimen is not None and ".mx-error" in specimen and "@keyframes skel" in specimen,
+       "specimen.html unreadable from disk or HEAD, or missing its error/skeleton components")
+
+    # ── R30: the widened stale-number sweep (P-B5) ─────────────────────────
+    # R27 swept DESIGN_NOTES while index.html's reconciliation header sat unswept
+    # one file away, carrying three wrong addends and two wrong dates. The sweep
+    # now covers BOTH documents, and the numbers are joined against the fixture
+    # rather than against each other.
+    idx = (ART / "index.html").read_text()
+    idx_nums = re.search(
+        r"(\d+)\s*ready\s*\+\s*(\d+)\s*entered\s*\+\s*(\d+)\s*delivering\s*\+\s*"
+        r"(\d+)\s*overtime\s*\+\s*(\d+)\s*invalidated\s*=\s*(\d+)\s*=\s*open_count",
+        idx, re.I | re.S)
+    ok("R30a index-checksum-addends — the reconciliation block's five addends are the fixture's",
+       idx_nums is not None
+       and [int(g) for g in idx_nums.groups()[:5]] == live_addends
+       and int(idx_nums.group(6)) == fixture_json["open_count"],
+       f"index.html says {idx_nums.groups() if idx_nums else None}; "
+       f"fixture says {live_addends} = {fixture_json['open_count']}")
+    idx_tot = re.search(r"(\d+)\s*live\s*\+\s*(\d+)\s*resolved\s*=\s*(\d+)\s*=\s*active_count",
+                        idx, re.I | re.S)
+    ok("R30b index-checksum-totals — the two-total law is stated with the fixture's totals",
+       idx_tot is not None
+       and int(idx_tot.group(1)) == fixture_json["live_total"]
+       and int(idx_tot.group(2)) == C["resolved"]
+       and int(idx_tot.group(3)) == fixture_json["active_count"] == fixture_json["grand_total"],
+       f"index.html says {idx_tot.groups() if idx_tot else None}; fixture says "
+       f"{fixture_json['live_total']} + {C['resolved']} = {fixture_json['active_count']}")
+    ok("R30c index-checksum-dates — both as-of dates are the fixture's, not a previous bake's",
+       re.search(r"index\.json\s+asof\s+" + re.escape(fixture_json["asof"]), idx) is not None
+       and re.search(r"us_standouts\.json\s*\n?\s*as_of\s+" + re.escape(fixture_json["cand_asof"]),
+                     idx) is not None,
+       f"index.html must state asof {fixture_json['asof']} and as_of {fixture_json['cand_asof']}")
+    # every harness state the renderer accepts must be documented in the header
+    js_states = set(re.findall(r'S\.state\s*===\s*"([a-z]+)"', js))
+    documented = set("|".join(re.findall(r"\?state=([a-z|]+)", idx)).split("|"))
+    ok("R30d index-states-complete — the header documents every state the renderer implements",
+       js_states <= documented,
+       f"undocumented states: {sorted(js_states - documented)}")
+    # …and so does the rationale's own run table. K17 counted index.html's four
+    # of seven; a second document listing a different subset is the same defect
+    # one file over, which is how P-B5 happened in the first place.
+    notes_states = set(re.findall(r"`([a-z]+)`", notes[notes.index("| `state` |"):]
+                                  .split("\n")[0]))
+    ok("R30e notes-states-complete — §0's run table documents every state too",
+       js_states <= notes_states,
+       f"undocumented in DESIGN_NOTES §0: {sorted(js_states - notes_states)}")
+
+    # ── R31b: the sector lexicon covers the payload it is joined against ────
+    lex = set(re.findall(r'"([A-Za-z][A-Za-z &]+)":\s*"[^"]+"',
+                         js[js.index("var SECTOR"):js.index("var LANE")]))
+    payload_secs = {r["sec"] for r in fixture_json["rows"] if r.get("sec")}
+    payload_secs |= {r["sec"] for r in fixture_json.get("cand_rows", []) if r.get("sec")}
+    ok("R31b sector-lexicon-covers-payload — every sector the fixture publishes has a zh term",
+       payload_secs and payload_secs <= lex,
+       f"unmapped: {sorted(payload_secs - lex)}")
+    ok("R31c sector-fallback-exists — an unmapped sector has a disclosed, non-silent path",
+       "pv-ind--raw" in js and "pv-ind--raw" in css,
+       "no marked fallback for a sector the lexicon does not carry")
 
     # compare page (DA-003)
     ok("R10 compare-true-stance — the specimen is not hardcoded to a neutral stance",

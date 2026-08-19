@@ -5549,3 +5549,9 @@
 {"date":"2026-08-19","ticker":"ODFL","departed":true,"left_desk":"2026-08-19","last_rank":145,"last_score":20.1}
 {"date":"2026-08-19","ticker":"STLD","departed":true,"left_desk":"2026-08-19","last_rank":62,"last_score":38.1}
 {"date":"2026-08-19","ticker":"VNOM","departed":true,"left_desk":"2026-08-19","last_rank":34,"last_score":48.6}
+{"date":"2026-08-19","ticker":"AVGO","rank":145,"score":24.4,"lean":1,"covered":false,"unconfirmed":true}
+{"date":"2026-08-19","ticker":"UBER","rank":146,"score":23.2,"lean":1,"covered":false,"unconfirmed":true}
+{"date":"2026-08-19","ticker":"SPGI","rank":147,"score":20.5,"lean":1,"covered":false,"unconfirmed":true}
+{"date":"2026-08-19","ticker":"BRK.B","rank":148,"score":19.8,"lean":1,"covered":false,"unconfirmed":true}
+{"date":"2026-08-19","ticker":"META","rank":149,"score":19.7,"lean":1,"covered":false,"unconfirmed":true}
+{"date":"2026-08-19","ticker":"ABT","rank":150,"score":19.5,"lean":1,"covered":false,"unconfirmed":true}

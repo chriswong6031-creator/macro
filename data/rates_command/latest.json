@@ -1,7 +1,7 @@
 {
   "schema": "rates_command.v1",
   "asof": "2026-08-18",
-  "built": "2026-08-19T08:36:24.340738+00:00",
+  "built": "2026-08-19T17:00:34.765999+00:00",
   "display_only": true,
   "authority": false,
   "board": {
@@ -312,7 +312,7 @@
   "caveats": [
     "futures-implied path reflects risk premium not stripped — not a forecast",
     "All legs are display-tier context only; no scoring or authority.",
-    "commodity/shock_state.json oil entry is 12d old (>7d threshold) — H3 leg judged on trend+cause_badge only",
+    "commodity/shock_state.json oil entry is 13d old (>7d threshold) — H3 leg judged on trend+cause_badge only",
     "policy/intel.json is 37d old — policy row quotes as-of 2026-07-13"
   ],
   "stance": {

@@ -1,6 +1,6 @@
 {
  "schema": "artifact_manifest/v1",
- "as_of": "2026-08-18",
+ "as_of": "2026-08-19",
  "cadence_basis": "trading_calendar",
  "note": "Per-artifact expected freshness in TRADING-calendar days. A consumer compares the artifact's as_of against `today` counting only trading days; older than expected_max_age_td \u21d2 abstain + flag (fail-closed on genuine staleness, audit #9). Benign weekend/holiday lag is NOT stale because the cadence excludes non-trading days.",
  "artifacts": [
@@ -314,7 +314,7 @@
   {
    "artifact": "site/factordata/canada_standouts.json",
    "kind": "board",
-   "schema_version": "1.2.0",
+   "schema_version": "1.3.0",
    "schema_fields": [
     "as_of",
     "branch",
@@ -326,8 +326,14 @@
     "universe"
    ],
    "optional_fields": [
+    "authority",
+    "board_definition",
     "dispersion_regime",
-    "sector_concentration"
+    "legacy_buy_key_semantics",
+    "official_pick_authority",
+    "sector_concentration",
+    "selection_status",
+    "watch"
    ],
    "schema_item_fields": [
     "align_tier",
@@ -367,7 +373,7 @@
    "consumers": [
     "bot:canada_book"
    ],
-   "note": "Prophet Canada board. dispersion_regime + sector_concentration are conditional (optional_fields) \u2014 bot:canada_book must treat both as may-be-absent, unchanged from prior behaviour (they were always emitted conditionally; 1.2.0 only corrects the contract classification)"
+   "note": "Prophet Canada board \u2014 one canonical Branch-B ripe-list SCREEN, not a scored official-pick list (authority='screen', selection_status='accruing', official_pick_authority=False). `buy` is a projection of the canonical board (legacy_buy_key_semantics='ripe_list_screen'); membership does NOT imply official-pick authority. dispersion_regime + sector_concentration stay conditional (optional_fields) \u2014 bot:canada_book must treat both as may-be-absent, unchanged from prior behaviour. bot:canada_book is a stale manifest declaration with no live reader in macro/Mastermind/terminal as of this census (CA-TRUTH); nothing depends on `buy` row order, so the canonical-board switch is additive-compatible"
   },
   {
    "artifact": "site/data/portfolio_ctx.json",

@@ -1946,7 +1946,7 @@ def main() -> int:
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
-        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t, t_pctile=i18n.t_pctile)
         # One shared view-model feeds BOTH the China macro-regime page and the
         # A-share Stock Dashboard — the same china.html.j2 is rendered twice with
         # a `mode` flag (macro / stocks) that selects which sections show. No data

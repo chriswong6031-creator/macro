@@ -755,3 +755,121 @@ def test_unrepresentable_unit_is_confined_to_its_job_not_the_whole_run(
     assert jobs["job-b"]["infrastructure"] == {"outcome": "passed"}
     assert jobs["job-b"]["steps"][0]["classification"] == "passed"
     assert proof.semantic_gate_verdict(evidence).clear is False
+
+def _dark_step_fragment(*, plan: dict, later_outcome: str = "not_run_prior_failure") -> dict:
+    """A main-role fragment whose first step failed and whose later step went
+    dark behind it -- the exact production shape from main run 32231891958,
+    pack-1, logical_job_id "workflow-yaml" (proof-a ~ audit_unrun_tests
+    selftest which failed; proof-b ~ unrun-census discovery unit tests which
+    went not_run_prior_failure behind it)."""
+    return {
+        "schema": proof.FRAGMENT_SCHEMA,
+        **{key: plan[key] for key in (
+            "workflow_run_id",
+            "workflow",
+            "event",
+            "role",
+            "tested_tree_sha",
+            "subject_head_sha",
+            "base_sha",
+            "plan_sha256",
+        )},
+        "pack_index": 5,
+        "infrastructure": [],
+        "jobs": [
+            {
+                "logical_job_id": "job-a",
+                "job_exec_sha256": JOB_SHA,
+                "infrastructure": {"outcome": "passed"},
+                "steps": [
+                    {
+                        "proof_id": "proof-a",
+                        "step_spec_sha256": STEP_SHA,
+                        "outcome": "failed",
+                        "failure_signature": _signature(),
+                    },
+                    {
+                        "proof_id": "proof-b",
+                        "step_spec_sha256": OTHER_STEP_SHA,
+                        "outcome": later_outcome,
+                        "failure_signature": None,
+                        "detail": "an earlier semantic step did not pass",
+                    },
+                ],
+            }
+        ],
+    }
+
+
+def test_main_dark_step_behind_earlier_failure_does_not_void_aggregate(
+    tmp_path: Path,
+) -> None:
+    """Regression for the fleet-wide blocker: a main-role job whose first
+    step failed and whose later step went dark (not_run_prior_failure) must
+    still reconcile into a real, non-empty jobs list -- not get voided into
+    an empty jobs list plus a planner_configuration_failure, which used to
+    strip every session's ability to mint a descendant-PASS witness."""
+    main_plan = _plan(role="main")
+    fragment = _dark_step_fragment(plan=main_plan)
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(main_plan))
+    fragments_dir = tmp_path / "fragments"
+    fragments_dir.mkdir()
+    (fragments_dir / "pack-5.json").write_text(json.dumps(fragment))
+    output = tmp_path / "final" / "ci-semantic-evidence.json"
+
+    rc = proof.main(
+        [
+            "reconcile",
+            "--plan",
+            str(plan_path),
+            "--fragments-dir",
+            str(fragments_dir),
+            "--output",
+            str(output),
+        ]
+    )
+
+    document = json.loads(output.read_text())
+    assert document["jobs"], "aggregate jobs list must not be voided by a dark step"
+    assert rc == 1, "genuinely blocked (main_failure present) but not an infrastructure meltdown"
+    assert not any(
+        row.get("outcome") == "planner_configuration_failure"
+        for row in document["infrastructure"]
+    )
+    steps = {step["proof_id"]: step for step in document["jobs"][0]["steps"]}
+    assert steps["proof-a"]["outcome"] == "failed"
+    assert steps["proof-a"]["classification"] == "main_failure"
+    assert steps["proof-b"]["outcome"] == "not_run_prior_failure"
+    assert steps["proof-b"]["classification"] == "unknown"
+
+
+def test_main_genuine_failure_is_still_classified_main_failure() -> None:
+    """No regression: a main step that actually failed (not merely dark)
+    must still be attributed as main_failure so real attribution logic does
+    not silently start ignoring genuine main breaks."""
+    main_plan = _plan(role="main")
+    evidence = proof.reconcile_evidence(
+        main_plan,
+        [_fragment(role="main", a_outcome="failed", a_signature=_signature(), plan=main_plan)],
+    )
+    step = evidence["jobs"][0]["steps"][0]
+    assert step["outcome"] == "failed"
+    assert step["classification"] == "main_failure"
+    assert proof.semantic_gate_verdict(evidence).clear is False
+
+
+@pytest.mark.parametrize("outcome", ["timed_out", "infrastructure_blocked", "not_run_prior_failure"])
+def test_main_non_failed_outcomes_map_to_unknown_not_main_failure(outcome: str) -> None:
+    """timed_out / infrastructure_blocked / not_run_prior_failure are all
+    non-"failed" outcomes on a main step; each must classify as "unknown"
+    rather than "main_failure" so the aggregate validates instead of
+    voiding."""
+    main_plan = _plan(role="main")
+    fragment = _fragment(role="main", a_outcome=outcome, plan=main_plan)
+    evidence = proof.reconcile_evidence(main_plan, [fragment])
+    step = evidence["jobs"][0]["steps"][0]
+    assert step["outcome"] == outcome
+    assert step["classification"] == "unknown"
+    verdict = proof.semantic_gate_verdict(evidence)
+    assert verdict.clear is False

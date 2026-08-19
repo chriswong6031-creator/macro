@@ -12,7 +12,7 @@
       "quote": 1.1583,
       "chg": 1.4,
       "action": "FLAT",
-      "score": -18.4,
+      "score": -18.5,
       "headline": "Risk-context: net neutral EUR (-18)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aEUR \u51c0\u4e2d\u6027\uff08-18\uff09",
       "sub": "Led by carry (rate diff), trend (idiosyncratic).",
@@ -27,7 +27,7 @@
       "quote": 1.3535,
       "chg": 1.6,
       "action": "FLAT",
-      "score": 1.2,
+      "score": 1.0,
       "headline": "Risk-context: net neutral GBP (+1)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aGBP \u51c0\u4e2d\u6027\uff08+1\uff09",
       "sub": "Led by positioning (cot), trend (idiosyncratic).",
@@ -42,7 +42,7 @@
       "quote": 159.406,
       "chg": -2.3,
       "action": "SHORT",
-      "score": -26.8,
+      "score": -26.5,
       "headline": "Risk-context: net short JPY (-27)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aJPY \u51c0\u504f\u7a7a\uff08-27\uff09",
       "sub": "Led by trend (idiosyncratic), risk index. In the MoF intervention watch zone (~150\u2013162); conviction capped.",
@@ -57,7 +57,7 @@
       "quote": 0.8116,
       "chg": -0.3,
       "action": "LONG",
-      "score": 28.2,
+      "score": 28.3,
       "headline": "Risk-context: net long CHF (+28)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCHF \u51c0\u504f\u591a\uff08+28\uff09",
       "sub": "Led by carry (rate diff), price structure. SNB has historically capped CHF (2015 floor gapped ~20%).",
@@ -72,37 +72,37 @@
       "quote": 0.708,
       "chg": 1.4,
       "action": "SHORT",
-      "score": -34.4,
-      "headline": "Risk-context: net short AUD (-34)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-34\uff09",
+      "score": -34.6,
+      "headline": "Risk-context: net short AUD (-35)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-35\uff09",
       "sub": "Led by risk index, value (reer).",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u98ce\u9669\u6307\u6570\u3001\u4f30\u503c\uff08REER\uff09\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-34\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-35\uff09"
     },
     "USDCAD": {
       "label": "USD/CAD",
       "quote": 1.3895,
       "chg": -1.4,
       "action": "FLAT",
-      "score": 5.6,
-      "headline": "Risk-context: net neutral CAD (+6)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+6\uff09",
+      "score": 5.5,
+      "headline": "Risk-context: net neutral CAD (+5)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+5\uff09",
       "sub": "Led by carry (rate diff), positioning (cot).",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u5957\u606f\uff08\u5229\u5dee\uff09\u3001\u6301\u4ed3\uff08COT\uff09\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+6\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+5\uff09"
     },
     "USDMXN": {
       "label": "USD/MXN",
       "quote": 17.0598,
       "chg": -2.0,
       "action": "SHORT",
-      "score": -50.1,
+      "score": -50.2,
       "headline": "Risk-context: net short MXN (-50)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aMXN \u51c0\u504f\u7a7a\uff08-50\uff09",
       "sub": "Led by trend (idiosyncratic), risk index.",
@@ -117,7 +117,7 @@
       "quote": 5.2114,
       "chg": 2.7,
       "action": "FLAT",
-      "score": 13.4,
+      "score": 13.2,
       "headline": "Risk-context: net neutral BRL (+13)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aBRL \u51c0\u4e2d\u6027\uff08+13\uff09",
       "sub": "Led by positioning (cot), trend (idiosyncratic).",
@@ -191,7 +191,7 @@
       "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
       "gaps": [],
       "display_only": true,
-      "built": "2026-08-19T07:09:02.465527+00:00"
+      "built": "2026-08-19T15:45:44.484566+00:00"
     }
   },
   "transmission": {
@@ -496,7 +496,7 @@
     "intensity": {
       "carry_unwind": 0.0,
       "dollar_wrecking_ball": 0.0,
-      "em_crisis_capital_flight": 25.7,
+      "em_crisis_capital_flight": 26.3,
       "haven_flight_risk_off": 0.0,
       "reflation_risk_on": 1.1,
       "intervention_risk": 0.0
@@ -542,17 +542,17 @@
         "key": "em_crisis_capital_flight",
         "name_en": "EM Crisis / Capital Flight",
         "name_zh": "\u65b0\u5174\u5e02\u573a\u5371\u673a / \u8d44\u672c\u5916\u9003",
-        "intensity": 25.7,
+        "intensity": 26.3,
         "active": false,
         "illustrative": true,
         "prob": {
           "status": "ok",
-          "p_cond": 0.293,
+          "p_cond": 0.2877,
           "base_rate": 0.2769,
-          "wilson_lo": 0.1753,
-          "wilson_hi": 0.4469,
-          "n_raw": 802,
-          "n_eff": 40.1,
+          "wilson_lo": 0.17,
+          "wilson_hi": 0.4434,
+          "n_raw": 782,
+          "n_eff": 39.1,
           "N": 20
         }
       },
@@ -677,7 +677,7 @@
   "em": {
     "cnh_basis_bps": -13.0,
     "cnh_basis_state": "neutral",
-    "risk_off_composite": -0.138
+    "risk_off_composite": -0.118
   },
   "stance": {
     "word_en": "Watch \u2014 don't chase",

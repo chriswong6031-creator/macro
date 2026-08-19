@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 143,
+          "n_events": 170,
           "source": "research_vault",
           "theme": null,
           "top_events": []
@@ -421,7 +421,7 @@
     {
       "clusters": [
         {
-          "n_events": 4,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []

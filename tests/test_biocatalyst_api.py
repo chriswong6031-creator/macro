@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 from hashlib import sha256
 import json
+import logging
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Iterator
@@ -23,6 +24,7 @@ from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import app.biocatalyst as biocatalyst_api  # noqa: E402
+from engine.biocatalyst.publication import PublicGenerationPublisher  # noqa: E402
 from engine.biocatalyst.trials import build_trial_snapshot  # noqa: E402
 from engine.sector_intelligence import canonical_json_bytes, canonical_json_sha256  # noqa: E402
 import scripts.biocatalyst_worker as worker  # noqa: E402
@@ -744,6 +746,77 @@ def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_cli
         "state": "unavailable",
         "reason": "disabled",
     }
+
+
+def _count_generation_loads(monkeypatch: pytest.MonkeyPatch, sink: list[str]) -> None:
+    orig = PublicGenerationPublisher._load_generation_manifest
+
+    def wrapped(self: PublicGenerationPublisher, generation_id: str) -> dict[str, Any]:
+        sink.append(generation_id)
+        return orig(self, generation_id)
+
+    monkeypatch.setattr(PublicGenerationPublisher, "_load_generation_manifest", wrapped)
+
+
+def test_unchanged_product_bundle_loads_generation_once(
+    promoted_config,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    publisher = PublicGenerationPublisher(promoted_config.public_root)
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert len(loads) == 1
+    assert loads == [bundle.projection.generation.generation_id]
+    assert bundle.operational_health["generation_id"] == loads[0]
+
+
+def test_entitled_health_endpoint_uses_one_generation_load(
+    entitled_client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+
+    response = entitled_client.get("/api/biocatalyst/v1/health")
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
+    assert len(loads) == 1
+    payload = response.json()
+    assert payload["health"]["state"] in {"fresh", "stale"}
+    assert payload["coverage"]["observed"] == 1
+
+
+def test_operational_health_publication_error_stays_fail_soft_and_logs_cause(
+    entitled_client,
+    promoted_config,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    health_path = Path(promoted_config.public_root) / "health.json"
+    mutable_health = json.loads(health_path.read_text(encoding="utf-8"))
+    mutable_health["generation_id"] = "ctgov_run_20260801T160000000000Z_abcdef123456"
+    health_path.write_bytes(canonical_json_bytes(mutable_health) + b"\n")
+
+    caplog.set_level(logging.WARNING, logger="macro.biocatalyst")
+    response = entitled_client.get("/api/biocatalyst/v1/health")
+    payload = response.json()
+    serialized = json.dumps(payload)
+
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    assert payload["health"]["state"] == "unavailable"
+    assert payload["health"]["last_error_code"] == "OPERATIONAL_HEALTH_UNAVAILABLE"
+    assert "HEALTH_PAYLOAD_INVALID" not in serialized
+    assert "health_unavailable_reason" not in serialized
+    assert any(
+        rec.getMessage()
+        == "BioCatalyst operational health unavailable (HEALTH_PAYLOAD_INVALID)"
+        for rec in caplog.records
+    )
 
 
 def test_list_filters_sorting_cursor_and_bounds_are_deterministic(entitled_client) -> None:

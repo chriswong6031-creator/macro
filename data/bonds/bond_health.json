@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-08-18",
-    "built": "2026-08-19T07:09:07.602319+00:00",
+    "built": "2026-08-19T15:45:50.586468+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -759,13 +759,13 @@
       }
     },
     "breadth": {
-      "finra_advance_share": 0.24715831590433754,
-      "finra_lows_share": 0.132,
+      "finra_advance_share": 0.46731715741300406,
+      "finra_lows_share": 0.12,
       "source": "FINRA trade data"
     },
     "watch": {
       "orcl_g_spread_bp": 158.0,
-      "orcl_premium_vs_ig_bp": 78.0
+      "orcl_premium_vs_ig_bp": 77.0
     },
     "divergence_accruing": true,
     "display_only": true

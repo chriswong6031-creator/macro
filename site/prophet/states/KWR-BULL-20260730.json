@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KWR-BULL-20260730",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.4,
-  "raw_confidence": 50.7,
-  "delta_vs_base": -5.6,
+  "management_confidence": 52.2,
+  "raw_confidence": 49.6,
+  "delta_vs_base": -7.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 8.1,
-    "pace": 35.2,
+    "pace": 30.2,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.088,
     "dist_to_t1_r": 1.412,
     "dist_to_t2_r": 2.912,
-    "horizon_pct_used": 40.0,
+    "horizon_pct_used": 42.2,
     "p1": 0.059,
     "p2": 0.0295,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 19,
+  "tau": 0.4222
 }

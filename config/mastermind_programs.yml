@@ -2269,7 +2269,11 @@ programs:
         - market-regime-risk
     canonical_docs:
       - repo: macro
-        path: research/STOCK_FUNDAMENTALS_PLAN.md
+        path: research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
+      - repo: macro
+        path: docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md
+      - repo: macro
+        path: research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
     implementation:
       - repo: macro
         roots:
@@ -3850,6 +3854,10 @@ owner_program_dispositions:
   options-flow:
     disposition: subprogram_of
     program: options-intelligence
+  options-intelligence:
+    disposition: mapped
+    program: options-intelligence
+    note: AD-1 options-intel-brief registers under the program's own key (WS:ADVANCED-DATA-OPTIONS).
   options-intelligence-program:
     disposition: mapped
     program: options-intelligence
