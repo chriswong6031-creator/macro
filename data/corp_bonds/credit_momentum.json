@@ -1,6 +1,6 @@
 {
   "organ": "credit_momentum.v1",
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "data_session": "2026-08-17",
   "authority": {
     "rank": false,
@@ -1861,6 +1861,6 @@
       "note": "accruing \u2014 fewer than 22 theme_daily dates"
     }
   ],
-  "_timing_s": 8.04,
+  "_timing_s": 7.99,
   "_n_ledger_new": 0
 }
