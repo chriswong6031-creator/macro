@@ -14551,3 +14551,4 @@
 {"series": "hk_cbbc_sld", "group": "hk_cbbc", "fetch_ts": "2026-08-19T08:58:14.061661+00:00", "last_obs_date": "2026-08-19"}
 {"series": "china_filings", "group": "china_filings", "fetch_ts": "2026-08-19T08:59:38.016237+00:00", "last_obs_date": "2026-08-19"}
 {"series": "china_irm", "group": "china_irm", "fetch_ts": "2026-08-19T09:01:20.159867+00:00", "last_obs_date": "2026-08-19"}
+{"series": "symbol_directory", "group": "sec", "fetch_ts": "2026-08-19T12:08:27.509765+00:00", "last_obs_date": "2026-08-19"}

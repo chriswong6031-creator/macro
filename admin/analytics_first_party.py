@@ -21,11 +21,14 @@ Surfaces (all return the {ok, …} / {ok:False, reason} envelope the SPA expects
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import re
 import subprocess
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -464,15 +467,77 @@ def status() -> dict:
     }
 
 
+_QUERY_TIMEOUT_S = 20
+
+# Whole-surface budget. Every panel here is a chain of round trips to the Supabase
+# Management API, and admin.mastermind-x.com is served THROUGH a CDN edge (see the
+# admin block in app/deploy/Caddyfile) — so an endpoint that outruns the edge's
+# origin-pull timeout does not fail as this module's {ok:False,...} envelope. It
+# fails as the EDGE's HTML error page, which reaches app.js as a body that is not
+# JSON at all. That is the "bad json" the console was reporting: not a serialization
+# bug in here, a request that never got to finish.
+#
+# Bounding the whole surface below the edge's patience is what makes the failure
+# legible: whatever else goes wrong, the operator gets a JSON error naming the
+# timeout instead of a gateway page the SPA can only describe as malformed.
+_REQUEST_BUDGET_S = 22.0
+_DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "fp_deadline", default=None)
+
+# The management endpoint is one shared upstream; a handful of concurrent statements
+# per surface is the point, a stampede is not.
+_FANOUT_MAX_WORKERS = 6
+
+
+def _remaining_budget() -> float | None:
+    """Seconds left in this surface's budget, or None when no deadline is set."""
+    deadline = _DEADLINE.get()
+    return None if deadline is None else deadline - time.monotonic()
+
+
+def _parallel(**thunks):
+    """Run INDEPENDENT _query thunks concurrently, returning {name: result}.
+
+    Every caller below was written as a straight-line sequence of `_query(...)`
+    assignments, which meant a panel paid the SUM of its round trips: the default
+    Analytics tab alone fired six, so a half-second statement became a three-second
+    page. None of these statements consumes another's result (checked per call site),
+    so the sum was never necessary — the wall time is now the slowest single query.
+
+    Each thunk runs in a fresh copy of the calling context so the deadline set by
+    _guard is visible inside the worker threads; ThreadPoolExecutor does not
+    propagate contextvars on its own, and one Context cannot be entered by two
+    threads at once, hence a copy per thunk rather than a shared one.
+
+    Exceptions propagate out of .result() to _guard, which is what turns a failed
+    statement into the {ok: False, error: ...} envelope the SPA renders.
+    """
+    if len(thunks) <= 1:
+        return {name: fn() for name, fn in thunks.items()}
+    with ThreadPoolExecutor(max_workers=min(len(thunks), _FANOUT_MAX_WORKERS),
+                            thread_name_prefix="fp-analytics") as pool:
+        futures = {name: pool.submit(contextvars.copy_context().run, fn)
+                   for name, fn in thunks.items()}
+        return {name: fut.result() for name, fut in futures.items()}
+
+
 def _query(sql: str):
     pat = settings.supabase_pat()
     if not (pat and requests):
         return None
     ref = settings.supabase_project_ref()
+    timeout = _QUERY_TIMEOUT_S
+    remaining = _remaining_budget()
+    if remaining is not None:
+        if remaining <= 0:
+            raise TimeoutError(
+                f"analytics query budget exhausted ({_REQUEST_BUDGET_S:.0f}s) — "
+                "narrow the time window and retry")
+        timeout = max(1.0, min(float(_QUERY_TIMEOUT_S), remaining))
     r = requests.post(
         f"{_API}/projects/{ref}/database/query",
         headers={"Authorization": f"Bearer {pat}", "Content-Type": "application/json"},
-        json={"query": sql}, timeout=20)
+        json={"query": sql}, timeout=timeout)
     if not (200 <= r.status_code < 300):   # the query endpoint answers 201 on success
         raise RuntimeError(f"HTTP {r.status_code}: {r.text[:200]}")
     return r.json()
@@ -523,10 +588,16 @@ def _limit(v, default: int = 50, hi: int = 500) -> int:
 def _guard(fn):
     if not status()["configured"]:
         return {"ok": False, **status()}
+    # Open the surface's budget here, so every _query underneath it — including the
+    # ones _parallel runs on worker threads — shares one deadline rather than each
+    # getting its own independent 20s.
+    token = _DEADLINE.set(time.monotonic() + _REQUEST_BUDGET_S)
     try:
         return {"ok": True, **fn()}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
+    finally:
+        _DEADLINE.reset(token)
 
 
 # ---------- surfaces ----------
@@ -542,47 +613,55 @@ def overview(days=7, minutes=None, gap=None) -> dict:
         # hidden cookies (excluded) AND crawlers (bots) are dropped so the headline counts
         # reflect real humans and match the tables below.
         human = f"and {_not_excluded('e')} and {_not_a_bot('e')}"
-        win = (_query(_cte(include_ident=True) +
-            "select count(*)::int as events, "
-            f"{_CANON_VISITORS}, "
-            "count(*) filter (where e.type in ('pageview','route'))::int as pageviews, "
-            "count(*) filter (where e.type='ticker_view')::int as ticker_views, "
-            "count(*) filter (where e.type='search')::int as searches "
-            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{m} minutes' {human}") or [{}])[0]
-        # 'sessions' counts VISITS, not raw per-tab session_ids, so the headline agrees with
-        # the Sessions tab (which stitches tabs/origins) instead of triple-counting a hop.
-        win["sessions"] = (_query(_cte(include_ident=True) +
-            f"select count(*) filter (where b = 1)::int as sessions from ("
-            f"  select {_visit_break(g)} as b from ("
-            "    select coalesce(i.uid, e.visitor_id) as canon, e.created_at, e.id "
-            "    from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"    where e.visitor_id is not null and e.created_at > now() - interval '{m} minutes' "
-            f"    {human}) y) z") or [{}])[0].get("sessions")
-        alltime = (_query(_cte(include_ident=True) +
-            f"select count(*)::int as events, {_CANON_VISITORS} "
-            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where {_not_excluded('e')} and {_not_a_bot('e')}") or [{}])[0]
-        # Bots filtered out of the window (shown separately so detection is transparent).
-        bots = (_query(_cte() +
-            "select count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
-            "from public.analytics_events e "
-            f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} "
-            "and e.visitor_id in (select visitor_id from bots)") or [{}])[0]
-        by_site = _query(_cte(include_ident=True) +
-            f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
-            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{m} minutes' {human} "
-            "group by e.site order by events desc") or []
-        daily = _query(_cte(include_ident=True) +
-            f"select to_char({dt},'{fmt}') as day, "
-            f"{_CANON_VISITORS}, count(*)::int as events "
-            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{m} minutes' {human} "
-            f"group by {dt} order by {dt}") or []
-        return {"days": round(m / 1440, 2), "minutes": m, "window": win, "alltime": alltime, "bots": bots,
-                "by_site": by_site, "daily": daily, "tz": _TZ, "tz_label": _tz_label(),
-                "visit_gap_min": g}
+        # Six independent statements — none reads another's result — so they go out as
+        # one wave. This is the tab the console opens by default, and serially it was
+        # the slowest surface in the console.
+        r = _parallel(
+            win=lambda: (_query(_cte(include_ident=True) +
+                "select count(*)::int as events, "
+                f"{_CANON_VISITORS}, "
+                "count(*) filter (where e.type in ('pageview','route'))::int as pageviews, "
+                "count(*) filter (where e.type='ticker_view')::int as ticker_views, "
+                "count(*) filter (where e.type='search')::int as searches "
+                "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+                f"where e.created_at > now() - interval '{m} minutes' {human}") or [{}])[0],
+            # 'sessions' counts VISITS, not raw per-tab session_ids, so the headline agrees with
+            # the Sessions tab (which stitches tabs/origins) instead of triple-counting a hop.
+            sessions=lambda: (_query(_cte(include_ident=True) +
+                f"select count(*) filter (where b = 1)::int as sessions from ("
+                f"  select {_visit_break(g)} as b from ("
+                "    select coalesce(i.uid, e.visitor_id) as canon, e.created_at, e.id "
+                "    from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+                f"    where e.visitor_id is not null and e.created_at > now() - interval '{m} minutes' "
+                f"    {human}) y) z") or [{}])[0].get("sessions"),
+            alltime=lambda: (_query(_cte(include_ident=True) +
+                f"select count(*)::int as events, {_CANON_VISITORS} "
+                "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+                f"where {_not_excluded('e')} and {_not_a_bot('e')}") or [{}])[0],
+            # Bots filtered out of the window (shown separately so detection is transparent).
+            bots=lambda: (_query(_cte() +
+                "select count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
+                "from public.analytics_events e "
+                f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} "
+                "and e.visitor_id in (select visitor_id from bots)") or [{}])[0],
+            by_site=lambda: _query(_cte(include_ident=True) +
+                f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
+                "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+                f"where e.created_at > now() - interval '{m} minutes' {human} "
+                "group by e.site order by events desc") or [],
+            daily=lambda: _query(_cte(include_ident=True) +
+                f"select to_char({dt},'{fmt}') as day, "
+                f"{_CANON_VISITORS}, count(*)::int as events "
+                "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+                f"where e.created_at > now() - interval '{m} minutes' {human} "
+                f"group by {dt} order by {dt}") or [],
+        )
+        win = r["win"]
+        win["sessions"] = r["sessions"]
+        return {"days": round(m / 1440, 2), "minutes": m, "window": win,
+                "alltime": r["alltime"], "bots": r["bots"],
+                "by_site": r["by_site"], "daily": r["daily"], "tz": _TZ,
+                "tz_label": _tz_label(), "visit_gap_min": g}
     return _guard(run)
 
 
@@ -605,21 +684,24 @@ def pages(days=7, limit=25, minutes=None) -> dict:
 def geo(days=30, limit=200, minutes=None) -> dict:
     m, n = _win(minutes, days, 43200), _limit(limit, 200)
     def run():
-        countries = _query(_cte() +
-            "select coalesce(g.country,'(unknown)') as country, g.country_code, "
-            "count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
-            "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
-            "group by 1,2 order by visitors desc nulls last") or []
-        cities = _query(_cte() +
-            "select g.city, g.region, g.country_code, g.lat, g.lon, "
-            "count(distinct e.visitor_id)::int as visitors "
-            "from public.analytics_events e join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '{m} minutes' and g.city is not null "
-            f"and {_not_excluded('e')} and {_not_a_bot('e')} "
-            "group by 1,2,3,4,5 order by visitors desc "
-            f"limit {n}") or []
-        return {"days": round(m / 1440, 2), "minutes": m, "countries": countries, "cities": cities}
+        r = _parallel(
+            countries=lambda: _query(_cte() +
+                "select coalesce(g.country,'(unknown)') as country, g.country_code, "
+                "count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
+                "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
+                f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
+                "group by 1,2 order by visitors desc nulls last") or [],
+            cities=lambda: _query(_cte() +
+                "select g.city, g.region, g.country_code, g.lat, g.lon, "
+                "count(distinct e.visitor_id)::int as visitors "
+                "from public.analytics_events e join public.ip_geo g on g.ip = e.ip "
+                f"where e.created_at > now() - interval '{m} minutes' and g.city is not null "
+                f"and {_not_excluded('e')} and {_not_a_bot('e')} "
+                "group by 1,2,3,4,5 order by visitors desc "
+                f"limit {n}") or [],
+        )
+        return {"days": round(m / 1440, 2), "minutes": m,
+                "countries": r["countries"], "cities": r["cities"]}
     return _guard(run)
 
 
@@ -811,11 +893,12 @@ def session(session_id: str, gap=None) -> dict:
             f"vis as (select brk.*, {_visit_no(part=None)} as vn from brk), "
             f"cur as (select vn from vis where session_id = '{sid}' order by created_at, id limit 1) "
         )
-        path = _query(cte +
-            "select type, coalesce(path,'') as path, ticker, dwell_ms, scroll, site, session_id, "
-            f"to_char({_lt('created_at')},'HH24:MI:SS') as t, meta "
-            "from vis where vn = (select vn from cur) order by created_at, id limit 2000") or []
-        head = (_query(cte +
+        r = _parallel(
+            path=lambda: _query(cte +
+                "select type, coalesce(path,'') as path, ticker, dwell_ms, scroll, site, session_id, "
+                f"to_char({_lt('created_at')},'HH24:MI:SS') as t, meta "
+                "from vis where vn = (select vn from cur) order by created_at, id limit 2000") or [],
+            head=lambda: (_query(cte +
             "select s.*, u.email, "
             f"{users.display_name_sql('u')} as name from ("
             "select (array_agg(visitor_id order by created_at, id))[1] as visitor_id, "
@@ -824,13 +907,15 @@ def session(session_id: str, gap=None) -> dict:
             f"to_char(min({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as started, "
             f"to_char(max({_lt('created_at')}),'HH24:MI') as ended, "
             "round(extract(epoch from (max(created_at) - min(created_at))))::int as duration_s, "
-            "(array_agg(ip order by created_at, id))[1] as ip, "
-            "(array_agg(fp) filter (where fp is not null))[1] as fp "
-            "from vis where vn = (select vn from cur)) s "
-            "left join auth.users u on u.id::text = s.user_id") or [{}])[0]
+                "(array_agg(ip order by created_at, id))[1] as ip, "
+                "(array_agg(fp) filter (where fp is not null))[1] as fp "
+                "from vis where vn = (select vn from cur)) s "
+                "left join auth.users u on u.id::text = s.user_id") or [{}])[0],
+        )
+        path, head = r["path"], r["head"]
         # Origins in first-touch order — derived from the already-ordered path rather than a
         # third round trip.
-        sites = list(dict.fromkeys([r.get("site") for r in path if r.get("site")]))
+        sites = list(dict.fromkeys([e.get("site") for e in path if e.get("site")]))
         head["site"] = " → ".join(sites)
         return {"session_id": sid, "head": head, "path": path, "sites": sites,
                 "tz": _TZ, "tz_label": _tz_label(), "visit_gap_min": g}
@@ -858,23 +943,26 @@ def terminal(days=7, limit=25, minutes=None) -> dict:
     m, n = _win(minutes, days, 10080), _limit(limit, 25)
     def run():
         no_bot_search = "(anon_id is null or anon_id not in (select visitor_id from bots))"
-        searches = _query(_cte() +
-            "select symbol as ticker, count(*)::int as searches, "
-            "count(distinct coalesce(user_id::text, anon_id, ip))::int as visitors "
-            f"from public.search_events where created_at > now() - interval '{m} minutes' "
-            f"and {_not_excluded_search()} and {no_bot_search} "
-            f"group by 1 order by searches desc limit {n}") or []
-        views = _query(_cte() +
-            "select ticker, count(*)::int as views, count(distinct visitor_id)::int as visitors "
-            "from public.analytics_events where type='ticker_view' and ticker is not null "
-            f"and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')} "
-            f"group by 1 order by views desc limit {n}") or []
-        totals = (_query(_cte() +
-            "select (select count(*)::int from public.search_events "
-            f"  where created_at > now() - interval '{m} minutes' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
-            "(select count(*)::int from public.analytics_events where type='ticker_view' "
-            f"  and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')}) as view_total") or [{}])[0]
-        return {"days": round(m / 1440, 2), "minutes": m, "top_searches": searches, "top_views": views, "totals": totals}
+        r = _parallel(
+            searches=lambda: _query(_cte() +
+                "select symbol as ticker, count(*)::int as searches, "
+                "count(distinct coalesce(user_id::text, anon_id, ip))::int as visitors "
+                f"from public.search_events where created_at > now() - interval '{m} minutes' "
+                f"and {_not_excluded_search()} and {no_bot_search} "
+                f"group by 1 order by searches desc limit {n}") or [],
+            views=lambda: _query(_cte() +
+                "select ticker, count(*)::int as views, count(distinct visitor_id)::int as visitors "
+                "from public.analytics_events where type='ticker_view' and ticker is not null "
+                f"and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')} "
+                f"group by 1 order by views desc limit {n}") or [],
+            totals=lambda: (_query(_cte() +
+                "select (select count(*)::int from public.search_events "
+                f"  where created_at > now() - interval '{m} minutes' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
+                "(select count(*)::int from public.analytics_events where type='ticker_view' "
+                f"  and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')}) as view_total") or [{}])[0],
+        )
+        return {"days": round(m / 1440, 2), "minutes": m, "top_searches": r["searches"],
+                "top_views": r["views"], "totals": r["totals"]}
     return _guard(run)
 
 
@@ -902,47 +990,71 @@ def visitor(visitor_id: str, gap=None) -> dict:
     def run():
         # `sessions` counts VISITS (the Sessions-tab rule), so one person's numbers agree
         # across every surface; `tab_sessions` keeps the raw per-tab/per-origin count.
-        profile = (_query(cte +
-            f"select to_char(min({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as first_seen, "
-            f"to_char(max({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as last_seen, "
-            "count(*)::int as events, count(distinct vn)::int as sessions, "
-            "count(distinct session_id)::int as tab_sessions, "
-            "count(distinct ip)::int as ips, count(distinct fp)::int as fingerprints, "
-            "count(distinct visitor_id)::int as identities, max(user_id::text) as user_id "
-            f"from (select w.*, {_visit_no(part=None)} as vn from ("
-            f"  select x.*, {_visit_break(g, part=None)} as b "
-            f"  from public.analytics_events x where {inaids}) w) z") or [{}])[0]
-        er = _query(
-            "select u.email, "
-            f"{users.display_name_sql('u')} as name "
-            f"from auth.users u where u.id::text = '{v}'") or []
-        email = er[0].get("email") if er else None
-        name = er[0].get("name") if er else None
-        ips = _apply_geo_overrides(_query(cte +
-            "select e.ip, g.city, g.region, g.country_code, g.asn, g.org, "
-            "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
-            "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or [])
+        # Seven independent statements in one wave. The candidate lookup below stays
+        # sequential because it is genuinely dependent — it only runs when this profile
+        # turned out to have no registered identity, and it feeds off its own result.
+        r = _parallel(
+            profile=lambda: (_query(cte +
+                f"select to_char(min({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as first_seen, "
+                f"to_char(max({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as last_seen, "
+                "count(*)::int as events, count(distinct vn)::int as sessions, "
+                "count(distinct session_id)::int as tab_sessions, "
+                "count(distinct ip)::int as ips, count(distinct fp)::int as fingerprints, "
+                "count(distinct visitor_id)::int as identities, max(user_id::text) as user_id "
+                f"from (select w.*, {_visit_no(part=None)} as vn from ("
+                f"  select x.*, {_visit_break(g, part=None)} as b "
+                f"  from public.analytics_events x where {inaids}) w) z") or [{}])[0],
+            er=lambda: _query(
+                "select u.email, "
+                f"{users.display_name_sql('u')} as name "
+                f"from auth.users u where u.id::text = '{v}'") or [],
+            ips=lambda: _apply_geo_overrides(_query(cte +
+                "select e.ip, g.city, g.region, g.country_code, g.asn, g.org, "
+                "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
+                "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
+                f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or []),
         # OTHER visitors sharing a fingerprint or IP with this person (not yet merged by login).
         # Each linked cookie is resolved to its registered email when it is itself login-stitched,
         # so a shared device/IP surfaces WHO the other identity is — not just an opaque cookie.
-        linked = _query(cte +
-            "select e2.visitor_id, max(li.uid) as user_id, count(*)::int as shared_events, "
-            "max(case when e2.fp = k.e1fp then 1 else 0 end) as via_fp, "
-            "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip, "
-            "max(lu.email) as email, "
-            f"max({users.display_name_sql('lu')}) as name "
-            "from public.analytics_events e2 "
-            "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
-            f"      where {inaids}) k "
-            "  on (e2.fp = k.e1fp and e2.fp is not null) "
-            f"  or (e2.ip = k.e1ip and {_routable('e2.ip')}) "
-            "left join ident li on li.visitor_id = e2.visitor_id "
-            "left join auth.users lu on lu.id::text = li.uid "
-            "where e2.visitor_id not in (select visitor_id from myaids) "
-            f"  and {_not_a_bot('e2')} and {_not_excluded('e2')} "
-            f"group by 1 order by coalesce(max({users.display_name_sql('lu')}), "
-            "max(lu.email)) is null, shared_events desc limit 50") or []
+            linked=lambda: _query(cte +
+                "select e2.visitor_id, max(li.uid) as user_id, count(*)::int as shared_events, "
+                "max(case when e2.fp = k.e1fp then 1 else 0 end) as via_fp, "
+                "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip, "
+                "max(lu.email) as email, "
+                f"max({users.display_name_sql('lu')}) as name "
+                "from public.analytics_events e2 "
+                "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
+                f"      where {inaids}) k "
+                "  on (e2.fp = k.e1fp and e2.fp is not null) "
+                f"  or (e2.ip = k.e1ip and {_routable('e2.ip')}) "
+                "left join ident li on li.visitor_id = e2.visitor_id "
+                "left join auth.users lu on lu.id::text = li.uid "
+                "where e2.visitor_id not in (select visitor_id from myaids) "
+                f"  and {_not_a_bot('e2')} and {_not_excluded('e2')} "
+                f"group by 1 order by coalesce(max({users.display_name_sql('lu')}), "
+                "max(lu.email)) is null, shared_events desc limit 50") or [],
+            recent=lambda: _query(cte +
+                "select type, coalesce(path,'') as path, ticker, site, "
+                f"to_char({_lt('created_at')},'YYYY-MM-DD HH24:MI') as t "
+                f"from public.analytics_events where {inaids} order by id desc limit 40") or [],
+            # tickers this person searched (search_events.anon_id = the mm_aid cookie, OR the
+            # signed-in user_id directly — catches searches from a cookie with no beacon rows) + viewed
+            searches=lambda: _query(cte +
+                "select symbol as ticker, count(*)::int as n, "
+                f"to_char(max({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as last "
+                "from public.search_events "
+                f"where (anon_id in (select visitor_id from myaids) or user_id::text = '{v}') "
+                "group by 1 order by n desc, last desc limit 50") or [],
+            tickers_viewed=lambda: _query(cte +
+                "select ticker, count(*)::int as n "
+                f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
+                "group by 1 order by n desc limit 50") or [],
+        )
+        profile, ips, linked = r["profile"], r["ips"], r["linked"]
+        recent, searches, tickers_viewed = r["recent"], r["searches"], r["tickers_viewed"]
+        er = r["er"]
+        email = er[0].get("email") if er else None
+        name = er[0].get("name") if er else None
         # If THIS profile is an anonymous cookie, name the registered user it most likely belongs
         # to: the account owning a fingerprint/routable-IP it shares — but only when exactly one
         # account matches (ambiguous shared device/IP → no guess). Suggestion only, never a merge.
@@ -969,22 +1081,6 @@ def visitor(visitor_id: str, gap=None) -> dict:
                              "email": (er2[0].get("email") if er2 else None),
                              "name": (er2[0].get("name") if er2 else None),
                              "via_fp": crows[0].get("via_fp"), "via_ip": crows[0].get("via_ip")}
-        recent = _query(cte +
-            "select type, coalesce(path,'') as path, ticker, site, "
-            f"to_char({_lt('created_at')},'YYYY-MM-DD HH24:MI') as t "
-            f"from public.analytics_events where {inaids} order by id desc limit 40") or []
-        # tickers this person searched (search_events.anon_id = the mm_aid cookie, OR the
-        # signed-in user_id directly — catches searches from a cookie with no beacon rows) + viewed
-        searches = _query(cte +
-            "select symbol as ticker, count(*)::int as n, "
-            f"to_char(max({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as last "
-            "from public.search_events "
-            f"where (anon_id in (select visitor_id from myaids) or user_id::text = '{v}') "
-            "group by 1 order by n desc, last desc limit 50") or []
-        tickers_viewed = _query(cte +
-            "select ticker, count(*)::int as n "
-            f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
-            "group by 1 order by n desc limit 50") or []
         return {"visitor_id": v, "email": email, "name": name,
                 "candidate": candidate, "profile": profile,
                 "ips": ips, "linked": linked, "recent": recent, "searches": searches,
@@ -995,18 +1091,22 @@ def visitor(visitor_id: str, gap=None) -> dict:
 
 def realtime() -> dict:
     def run():
-        now = (_query(_cte() +
-            "select count(distinct visitor_id)::int as visitors, "
-            "count(distinct session_id)::int as sessions, count(*)::int as events "
-            "from public.analytics_events where created_at > now() - interval '5 minutes' "
-            f"and {_not_excluded('')} and {_not_a_bot('')}") or [{}])[0]
-        recent = _apply_geo_overrides(_query(_cte() +
-            "select e.type, e.site, coalesce(e.path,'') as path, e.ticker, e.ip, "
-            f"to_char({_lt('e.created_at')},'HH24:MI:SS') as t, g.city, g.country_code "
-            "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '15 minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
-            "order by e.id desc limit 30") or [])
-        return {"active": now, "recent": recent, "tz": _TZ, "tz_label": _tz_label()}
+        # This one is POLLED every 15s while the Analytics tab is open, so halving its
+        # round trips halves a cost the console pays continuously, not just on open.
+        r = _parallel(
+            now=lambda: (_query(_cte() +
+                "select count(distinct visitor_id)::int as visitors, "
+                "count(distinct session_id)::int as sessions, count(*)::int as events "
+                "from public.analytics_events where created_at > now() - interval '5 minutes' "
+                f"and {_not_excluded('')} and {_not_a_bot('')}") or [{}])[0],
+            recent=lambda: _apply_geo_overrides(_query(_cte() +
+                "select e.type, e.site, coalesce(e.path,'') as path, e.ticker, e.ip, "
+                f"to_char({_lt('e.created_at')},'HH24:MI:SS') as t, g.city, g.country_code "
+                "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
+                f"where e.created_at > now() - interval '15 minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
+                "order by e.id desc limit 30") or []),
+        )
+        return {"active": r["now"], "recent": r["recent"], "tz": _TZ, "tz_label": _tz_label()}
     return _guard(run)
 
 

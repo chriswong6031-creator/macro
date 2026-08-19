@@ -4,7 +4,7 @@
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-19T07:35:10Z",
+  "computed_at": "2026-08-19T11:03:21Z",
   "counts": {
     "capability": 641,
     "edges": 8292,
@@ -16,10 +16,10 @@
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
-    "DEFERRED_IDENTITY_EXCEPTION": 1,
+    "DEFERRED_IDENTITY_EXCEPTION": 2,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 1869,
-    "RESOLVED": 701,
+    "NOT_IN_MASTER": 1868,
+    "RESOLVED": 702,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",
@@ -114,7 +114,7 @@
     "capability": 641,
     "edges": 0,
     "evidence": 0,
-    "identity_resolution": 2805,
+    "identity_resolution": 2806,
     "nodes": 0
   },
   "skipped_suites": {},

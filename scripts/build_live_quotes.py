@@ -127,24 +127,66 @@ DISPLAY_SYMBOLS = [
     "^N225", "^KS11", "^TWII",                        # macro overnight/Asia strip
 ]
 
-# BOARD leg of the display universe (2026-08-13). The Prophet act-now cards render
-# a price + a `.nb-chg` percentage pill per card (show_change=true, pinned by
-# tests/test_prophet_card_live_change.py) — but DISPLAY_SYMBOLS above is a hand-kept
-# list of macro TILE symbols only, so every single-name card asked live.js for a
-# symbol this snapshot never fetched: `pick()` returned an empty reading,
-# patchChgNode() bailed on `chg == null`, and all 133 A-share pills on
-# china_stocks.html held their baked "—" through an entire live A-share session.
-# The board's names are re-picked nightly, so this leg is SCRAPED from the built
-# page rather than hard-listed — same contract as the full-universe scrape below
-# ("whatever the page renders goes live"), just narrowed to the board pages so the
-# once-a-minute same-origin snapshot stays small.
-# CHINA ONLY, deliberately: .SS/.SZ names route to the keyless Yahoo leg (measured
-# 2026-08-13: 133 symbols resolve in seconds, +~25 KB on a 6.7 KB file), whereas the
-# US board's names would route the every-60s lane through the Polygon leg. The other
-# three boards (dashboard/hk/canada .j2 also pass show_change — us_stocks.html emits
-# 70 data-sym, hk_stocks.html 11, canada.html 6) carry the SAME dead pill and want
-# their own measured decision; adding a page here is the whole change.
-DISPLAY_BOARD_PAGES = ("china_stocks.html",)
+# BOARD leg of the display universe (2026-08-13, expanded 2026-08-19 #wave2).
+# The Prophet act-now cards render a price + a `.nb-chg` percentage pill per card
+# (show_change=true, pinned by tests/test_prophet_card_live_change.py) — but
+# DISPLAY_SYMBOLS above is a hand-kept list of macro TILE symbols only, so every
+# single-name card asked live.js for a symbol this snapshot never fetched:
+# `pick()` returned an empty reading, patchChgNode() bailed on `chg == null`, and
+# every board's pills held their baked "—" through a live session no matter how
+# the tape actually moved. The board's names are re-picked nightly, so this leg
+# is SCRAPED from the built pages rather than hard-listed — same contract as the
+# full-universe scrape below ("whatever the page renders goes live"), just
+# narrowed to the board pages so the once-a-minute same-origin snapshot stays
+# small.
+#
+# EVERY VISIBLE nb-chg BOARD, not just China (2026-08-19). The original
+# China-only cut (2026-08-13) was a scoped-decision placeholder, not a permanent
+# split: us_stocks.html, hk_stocks.html and canada_stocks.html render the exact
+# same live-change pill and were shipping the exact same dead-pill bug (measured
+# in production 2026-08-19 against https://www.mastermind-x.com/live/quotes.json,
+# 89 symbols: china_stocks.html 54/54 covered, us_stocks.html 0/3, hk_stocks.html
+# 0/4, canada_stocks.html 0/10). Measured in THIS checkout (`site/` scan,
+# 2026-08-19): every page below is a page this repo actually builds that emits a
+# `.nb-chg` tag carrying a `data-sym` — us_stocks.html 4, china_stocks.html 54,
+# hk_stocks.html 4, canada_stocks.html 10, crypto.html 27 distinct (30 tags),
+# macro.html 10, canada.html 5, china.html 4, commodities.html 4, hk.html 4.
+# Full-site scan found no OTHER built page emitting visible nb-chg+data-sym
+# markup outside this list (sector_central.html is the one deliberate exemption
+# — see DISPLAY_BOARD_EXEMPT_PAGES below). Board leg went 54 -> 128 distinct
+# symbols (still under DISPLAY_BOARD_CAP); universe 89 -> 144 (+55). Vendor
+# split of the expanded universe: 12 Polygon-routable US names (one chunk, at
+# most 100/chunk, so +1 request) + 132 keyless-Yahoo-routable (batch size 20);
+# a free keyless probe of all 45 NEW Yahoo-routable symbols resolved 45/45 in
+# 2.13s. Per-symbol serialized size is ~183B median, so 144 symbols is ~26KB —
+# nowhere near the 500KB browser-fetch budget. The quality gate
+# (scripts/vps_live_orchestrator.py min_resolved=50 / min_coverage=0.10) stays
+# far above both floors at the observed resolve rate, so this expansion cannot
+# starve the gate or freeze the published file, and the China leg is additive
+# only — nothing about china_stocks.html's scrape changes.
+DISPLAY_BOARD_PAGES = (
+    "us_stocks.html", "china_stocks.html", "hk_stocks.html", "canada_stocks.html",
+    "crypto.html", "macro.html", "canada.html", "china.html", "commodities.html",
+    "hk.html",
+)
+# Pages that DO emit `.nb-chg` + `data-sym` markup but are deliberately excluded
+# from the fetched board leg, with the reason on record so a future session
+# doesn't either (a) silently re-add a dead-pill board with no measurement, or
+# (b) "fix" this omission by adding sector_central.html without reading why.
+DISPLAY_BOARD_EXEMPT_PAGES = {
+    # sector_central.html emits 702 nb-chg spans (measured 2026-08-19), but they
+    # live inside a `display:none` `aria-hidden="true"` registry div
+    # (templates/sector_central.html.j2:2472, the FTR W2a basket-member scraper
+    # hook) — never rendered as a visible live-change claim to a user, so there
+    # is no dead pill to fix. Adding it would also blow DISPLAY_BOARD_CAP (240)
+    # on its own. Its basket members are already covered by the separate
+    # basket_member_symbols() leg used by build_universe().
+    "sector_central.html": (
+        "702 nb-chg spans are a display:none/aria-hidden basket-member registry "
+        "(FTR W2a scraper hook), not visible live UI; already covered via "
+        "basket_member_symbols()"
+    ),
+}
 DISPLAY_BOARD_CAP = 240
 
 

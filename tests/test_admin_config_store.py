@@ -1,6 +1,7 @@
 """admin.config_store — surgical, comment-preserving config.yml edits."""
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -101,6 +102,53 @@ def test_set_int_rejects_bool_and_missing(monkeypatch):
     _temp(monkeypatch, LIST_SAMPLE)
     assert cs.set_int("top.count", 5, 1, 7)["ok"]            # real int → ok
     assert not cs.set_int("top.items.enabled", 5, 1, 7)["ok"]  # non-int path → fail closed
+
+
+# ---- parse cache (2026-08-19) ----------------------------------------------
+# read_config() is on the admin's landing path and re-parsing this 475 KB file cost
+# 259 ms of every /api/summary. It is now cached on (inode, size, mtime_ns). The
+# speedup is not the thing worth pinning — the INVALIDATION is: a cache that goes
+# stale shows the operator flags that are not what is on disk.
+
+def test_read_config_caches_the_parse(monkeypatch):
+    """A repeat read of an UNCHANGED file must not re-parse it."""
+    _temp(monkeypatch, "top:\n  enabled: true\n")
+    monkeypatch.setattr(cs, "_PARSE_CACHE", None)
+    calls = []
+    real_load = cs.yaml.load
+    monkeypatch.setattr(cs.yaml, "load",
+                        lambda *a, **k: (calls.append(1), real_load(*a, **k))[1])
+    for _ in range(3):
+        assert cs.read_config() == {"top": {"enabled": True}}
+    assert len(calls) == 1, "config.yml was re-parsed despite being unchanged"
+
+
+def test_read_config_sees_an_edit_made_behind_its_back(monkeypatch):
+    """The cache is a speedup, NOT a snapshot: an out-of-process edit must win.
+
+    This is the property the old "never cached" docstring was protecting, and the
+    one that matters — a git pull or a hand edit on the VPS changes the file
+    without this process knowing.
+    """
+    p = _temp(monkeypatch, "top:\n  enabled: true\n")
+    monkeypatch.setattr(cs, "_PARSE_CACHE", None)
+    assert cs.read_config()["top"]["enabled"] is True
+    # Different size first, then a same-size rewrite so the check cannot be
+    # passing on size alone while mtime does nothing.
+    p.write_text("top:\n  enabled: false\n  extra: 1\n")
+    assert cs.read_config()["top"]["enabled"] is False
+    time.sleep(0.01)
+    p.write_text("top:\n  enabled: true\n  extra: 2\n")
+    assert cs.read_config()["top"]["extra"] == 2
+
+
+def test_write_path_invalidates_the_cache(monkeypatch):
+    """set_bool edits the file; the very next read must show the new value."""
+    _temp(monkeypatch, "top:\n  enabled: true   # keep me\n")
+    monkeypatch.setattr(cs, "_PARSE_CACHE", None)
+    assert cs.read_config()["top"]["enabled"] is True
+    assert cs.set_bool("top.enabled", False)["ok"] is True
+    assert cs.read_config()["top"]["enabled"] is False
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-19T09:01:20.163643+00:00",
+  "last_run": "2026-08-19T12:08:27.511924+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -1859,8 +1859,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.9,
-      "checked_at": "2026-08-19T04:42:05.724744+00:00"
+      "elapsed_sec": 3.0,
+      "checked_at": "2026-08-19T12:08:27.511956+00:00"
     },
     "flow_signals": {
       "status": "ok",
@@ -3567,41 +3567,41 @@
     "health": {
       "valuation": {
         "table": "valuation",
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "lag_days": 0,
         "state": "fresh"
       },
       "margin": {
         "table": "margin",
-        "asof": "2026-08-17",
+        "asof": "2026-08-18",
         "lag_days": 1,
         "state": "fresh"
       },
       "moneyflow": {
         "table": "moneyflow",
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "lag_days": 0,
         "state": "fresh"
       },
       "chips": {
         "table": "chips",
-        "asof": "2026-08-17",
+        "asof": "2026-08-18",
         "lag_days": 1,
         "state": "fresh"
       },
       "broker": {
         "table": "broker",
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "lag_days": 0,
         "state": "fresh"
       },
       "forecast": {
         "table": "forecast",
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "lag_days": 0,
         "state": "fresh"
       }
     },
-    "asof": "2026-08-18 09:51:34.087856+00:00"
+    "asof": "2026-08-19 09:33:59.923821+00:00"
   }
 }

@@ -1,0 +1,47 @@
+# Issuer group allowlist — V4-D2B1 FIX 5 (M3, latent)
+#
+# WHY THIS FILE EXISTS.  The security master's issuer-identity correction era
+# (scripts/build_security_master.py::apply_issuer_correction, D2B1 §1) groups master
+# securities that share identical SEC registrant CIK evidence
+# (data/symbol_directory/cik_map/*.parquet).  A shared CIK is NECESSARY evidence for
+# treating two securities as one economic issuer, but it is NOT SUFFICIENT on its own
+# to form a group for the FIRST time: the SEC registrant CIK on an ETP filing is
+# frequently the SPONSOR or TRUST, not the fund itself (the frozen contract's original
+# §1 sentence "ETFs/trusts group to the fund's own CIK" is corrected by this file's
+# existence — see D2B1_FROZEN_CONTRACT_2026-08-19.md AMENDMENTS). Blindly grouping
+# every ticker that shares a registrant CIK risks silently collapsing UNRELATED
+# products under one issuer the first time such a CIK appears in the weekly map.
+#
+# THE RULE.  scripts/build_security_master.py::apply_issuer_correction forms a BRAND
+# NEW multi-member issuer group ONLY when the group's CIK is listed below.  A CIK NOT
+# listed here that would otherwise form a new multi-member group instead types every
+# would-be member EVIDENCE_CONFLICT (evidence stamped: issuer_cik + evidence_snapshot;
+# issuer_id VALUE left UNCHANGED — recorded, never executed, per frozen contract §2),
+# and the builder emits a bare ::warning naming the CIK and the members it would have
+# grouped, so a human can review and add a ratified row here.
+#
+# WHAT IS NOT GATED.  Adoption of an ALREADY-ESTABLISHED group (mint-once, spec §2 — a
+# later pending security joining a CIK group that already has a committed canonical
+# issuer_id from an earlier run) is NEVER gated here: the review already happened when
+# that group first formed. Every SINGLE-member group is likewise never gated — there
+# is no grouping decision being made for one security.
+#
+# SCHEMA.  Each entry: `cik` (the zero-padded 10-digit SEC registrant id the era stage
+# keys grouping decisions on — the ONLY field the code reads), `legal_name` (SEC title,
+# documentary only), `members` (the master's listing_key for every security in the
+# group at the time it was ratified — documentary; membership is free to grow later
+# via ADOPTION without a new row here).
+#
+# SEEDED WITH THE THREE GROUPS ALREADY COMMITTED in data/reference/security_master.parquet
+# + issuer_master.parquet at D2B1 landing (measured 2026-08-19) — these are RATIFIED,
+# not proposed; the D2B1 era already formed them before this gate existed.
+groups:
+  - cik: "0001652044"
+    legal_name: "Alphabet Inc."
+    members: ["US-XNAS-GOOG", "US-XNAS-GOOGL"]
+  - cik: "0001754301"
+    legal_name: "Fox Corp"
+    members: ["US-XNAS-FOX", "US-XNAS-FOXA"]
+  - cik: "0001564708"
+    legal_name: "NEWS CORP"
+    members: ["US-XNAS-NWS", "US-XNAS-NWSA"]

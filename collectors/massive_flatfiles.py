@@ -153,7 +153,9 @@ def fetch_aggs(d: date, product: str = "minute", underlyings: list[str] | None =
         return pd.DataFrame()
     try:
         gz = gzip.GzipFile(fileobj=io.BytesIO(raw))
-        df = pd.read_csv(gz)
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(gz, keep_default_na=False, na_values=[""])
     except Exception as e:  # noqa: BLE001
         log.warning("massive_flat: parse %s failed: %s", key, e)
         return pd.DataFrame()

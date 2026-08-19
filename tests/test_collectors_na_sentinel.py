@@ -1,0 +1,233 @@
+"""Regression coverage for the NA-ticker pandas-sentinel defect (PR #5936 sibling).
+
+pandas decodes the strings NA/NULL/NONE/NAN/N-A/NaN into NaN by default. Real
+listings carry 'NA' as a ticker — Nano Labs Ltd on Nasdaq AND National Bank of
+Canada on the TSX — so every collectors/ parse site that reads a ticker/symbol
+column must pass keep_default_na=False, na_values=[""] to read_csv/read_excel
+(bare keep_default_na=False alone is a REGRESSION: it also stringifies every
+numeric column, since blank cells no longer decode to NaN either — verified on
+pandas 3.0.5 in this tree, see test_bare_keep_default_na_is_a_regression below).
+
+Three layers are covered:
+  1. A static AST guard over the 9 owned collector files (18 parse sites total —
+     15 from the original audit + 3 read_excel(header=None) sponsor sites in
+     etf_holdings.py that the original census missed because it grepped
+     read_csv only: _fetch_ssga, _fetch_vaneck, _fetch_defiance), pinning both
+     the total read_csv/read_excel call count and the guarded-call count per
+     file, so a newly-added unguarded parse site fails the test.
+  2. Behavioural round-trips proving the motivating exemplar (NA / Nano Labs /
+     National Bank of Canada) survives parsing with the real kwargs.
+  3. The is_non_equity_holding() truth table for the downstream sentinel fix in
+     collectors/holdings.py (_AMBIGUOUS_SENTINEL_TICKERS).
+"""
+from __future__ import annotations
+
+import ast
+import io
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+
+# (relpath, total read_csv/read_excel calls in file, calls carrying BOTH
+# keep_default_na and na_values). etf_holdings.py is 9/9: all nine parse sites
+# in this file are guarded, including the three read_excel(header=None)
+# sponsor sites (_fetch_ssga, _fetch_vaneck, _fetch_defiance) that carry the
+# identical defect one level removed — they slice raw.iloc[hdr+1:] and hand the
+# frame to _normalize, which does df["ticker"].astype(str).str.strip(), so an
+# NA cell still becomes the literal "nan" without the guard. header=None itself
+# is untouched: _xlsx_header_row / the "Name" probe / the "As of" scan all key
+# off str(cell) comparisons, and na_values=[""] does not change how a genuinely
+# blank Excel cell decodes, so header detection is unaffected.
+_SITES = [
+    ("collectors/etf_holdings.py", 9, 9),
+    ("collectors/holdings.py", 2, 2),
+    ("collectors/canada_universe.py", 1, 1),
+    ("collectors/intl_universe.py", 1, 1),
+    ("collectors/massive_flatfiles.py", 1, 1),
+    ("collectors/sec_insider.py", 1, 1),
+    ("collectors/hk_shorts.py", 1, 1),
+    ("collectors/thetadata.py", 1, 1),
+    ("collectors/sector_holdings.py", 1, 1),
+]
+
+
+def _parse_calls(path: Path) -> list[set[str]]:
+    """Keyword-arg name sets for every read_csv/read_excel Call node in `path`.
+    Pure source parse via ast — does NOT import the module (no network deps)."""
+    tree = ast.parse(path.read_text())
+    calls: list[set[str]] = []
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr in ("read_csv", "read_excel")):
+            calls.append({kw.arg for kw in node.keywords if kw.arg})
+    return calls
+
+
+@pytest.mark.parametrize("relpath,total,guarded", _SITES)
+def test_na_sentinel_guard_present(relpath: str, total: int, guarded: int) -> None:
+    calls = _parse_calls(ROOT / relpath)
+    assert len(calls) == total, (
+        f"{relpath}: expected {total} read_csv/read_excel call(s), found "
+        f"{len(calls)} — a new/removed parse site changed the pinned count")
+    n_guarded = sum(1 for kw in calls if "keep_default_na" in kw and "na_values" in kw)
+    assert n_guarded == guarded, (
+        f"{relpath}: expected {guarded} guarded (keep_default_na+na_values) "
+        f"parse site(s), found {n_guarded} — a site lost its guard or a "
+        f"newly-added site shipped unguarded")
+
+
+def test_bare_keep_default_na_is_a_regression() -> None:
+    """Pins the exact regression the FROZEN SPEC calls out: keep_default_na=False
+    alone stops blank cells decoding to NaN, so a numeric column with any blank
+    cell silently becomes dtype str/object — breaking every downstream
+    pd.to_numeric(errors='coerce') / .dropna(subset=[...]) that assumed a float
+    column. na_values=[""] is what keeps the existing behaviour intact."""
+    csv_text = "ticker,Weight\nNA,4.2\nRY,10.1\nBNS,\n"       # BNS: blank weight
+    default = pd.read_csv(io.StringIO(csv_text))
+    bare = pd.read_csv(io.StringIO(csv_text), keep_default_na=False)
+    fixed = pd.read_csv(io.StringIO(csv_text), keep_default_na=False, na_values=[""])
+
+    assert pd.isna(default["ticker"].iloc[0])             # {} : NA ticker LOST
+    assert default["Weight"].dtype == "float64"
+
+    assert bare["ticker"].tolist() == ["NA", "RY", "BNS"]  # ticker kept ...
+    assert bare["Weight"].dtype != "float64"                # ... but Weight broke
+
+    assert fixed["ticker"].tolist() == ["NA", "RY", "BNS"]  # ticker kept
+    assert fixed["Weight"].dtype == "float64"                # AND Weight intact
+    assert pd.isna(fixed["Weight"].iloc[2])                  # blank cell still -> NaN
+
+
+# --- behavioural round-trips: the motivating exemplar survives ------------------
+
+def test_to_ticker_na_maps_to_na_dot_to() -> None:
+    """collectors.canada_universe._to_ticker('NA') -> 'NA.TO'. Already true today
+    (the skip-list is ('CAD','--','-','USD','NAN','NONE') — 'NA' was never in
+    it), pinned here so a future skip-list edit cannot silently regress it."""
+    from collectors.canada_universe import _to_ticker
+    assert _to_ticker("NA") == "NA.TO"
+    assert _to_ticker("RY") == "RY.TO"
+    assert _to_ticker("NAN") is None    # str(float('nan')) residue — stays dropped
+    assert _to_ticker("NONE") is None   # str(None) residue — stays dropped
+
+
+def test_ishares_xic_na_ticker_survives_and_weight_stays_numeric() -> None:
+    """Synthetic iShares XIC-shaped CSV parsed with the exact call
+    collectors/canada_universe.py._ishares_holdings now makes: the NA row (
+    National Bank of Canada) keeps ticker 'NA' (not NaN) AND the weight column
+    stays numeric — the numeric half is what a bare keep_default_na=False would
+    have broken."""
+    csv_text = (
+        "Ticker,Name,Sector,Asset Class,Weight (%)\n"
+        "NA,NATIONAL BANK OF CANADA,Financials,Equity,4.2\n"
+        "RY,ROYAL BANK OF CANADA,Financials,Equity,10.1\n"
+        "BNS,BANK OF NOVA SCOTIA,Financials,Equity,8.3\n"
+    )
+    df = pd.read_csv(io.StringIO(csv_text), thousands=",",
+                     keep_default_na=False, na_values=[""])
+    tcol = next(c for c in df.columns if "ticker" in c.lower())
+    wcol = next(c for c in df.columns if "weight" in c.lower())
+
+    assert "NA" in df[tcol].tolist()
+    na_row = df[df[tcol] == "NA"].iloc[0]
+    assert not pd.isna(na_row[tcol])
+    assert na_row["Name"] == "NATIONAL BANK OF CANADA"
+
+    w = pd.to_numeric(df[wcol], errors="coerce")
+    assert w.notna().all()                       # no numeric row was coerced to NaN
+    assert w.iloc[0] == 4.2
+
+
+def test_xlsx_sponsor_pattern_na_ticker_survives_header_detection_unaffected() -> None:
+    """The three read_excel(header=None) sponsor sites (_fetch_ssga, _fetch_vaneck,
+    _fetch_defiance) hand the raw sheet to a 'Name'/_xlsx_header_row probe, then
+    slice raw.iloc[hdr+1:] into _normalize. Builds the raw frame the SAME shape
+    read_excel(..., keep_default_na=False, na_values=[""]) produces — string
+    cells (including a literal 'NA') stay literal, genuinely blank Excel cells
+    still decode to NaN because they were never text — and threads it through
+    the real header-detection + normalize code. openpyxl is not installed in
+    this test environment (existing tests/test_corp_bond_holdings.py errors at
+    collection for the same reason), so this exercises the downstream logic
+    directly rather than via actual xlsx bytes. Proves both halves of the
+    addendum's safety claim: header detection is unaffected (still keys on
+    str(cell) == 'Ticker'/'Weight'), and the NA / Nano Labs row survives."""
+    import numpy as np
+    from collectors.etf_holdings import EtfHoldingsAdapter
+    raw = pd.DataFrame([
+        ["Fund XYZ Holdings", None, None, None],
+        ["As of", "01/15/2026", None, None],
+        ["Ticker", "Name", "Weight (%)", "Shares"],
+        ["NA", "Nano Labs Ltd", 1.2, 500],
+        ["AAPL", "Apple Inc", 8.0, 2000],
+        [np.nan, np.nan, np.nan, np.nan],   # genuinely blank trailing row -> still NaN
+    ])
+    hdr = EtfHoldingsAdapter._xlsx_header_row(raw, need=("ticker",), any_of=("share",))
+    assert hdr == 2                          # header detection unaffected by the guard
+    df = raw.iloc[hdr + 1:].copy()
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in raw.iloc[hdr]]
+    out = EtfHoldingsAdapter._normalize(df, "XYZ", "2026-01-15",
+                                        wcol="weight_(%)", scol="shares")
+    assert "NA" in list(out["ticker"])
+    row = out[out["ticker"] == "NA"].iloc[0]
+    assert row["name"] == "Nano Labs Ltd"
+    assert row["shares"] == 500
+    assert "AAPL" in list(out["ticker"])     # blank trailing row correctly dropped
+
+
+def test_etf_normalize_retains_na_ticker_nano_labs() -> None:
+    """ETFHoldingsAdapter._normalize (staticmethod) on a frame whose ticker is
+    'NA' and name is 'Nano Labs Ltd' retains the row — Part A (parse) + Part B
+    (is_non_equity_holding no longer treats bare 'NA' as an unconditional
+    sentinel) must compose for the exemplar to actually survive end to end."""
+    from collectors.etf_holdings import EtfHoldingsAdapter
+    df = pd.DataFrame({
+        "ticker": ["NA", "AAPL"],
+        "name": ["Nano Labs Ltd", "Apple Inc"],
+        "weight": ["1.2", "8.0"],
+        "shares_held": ["500", "2000"],
+    })
+    out = EtfHoldingsAdapter._normalize(df, "XYZ", "2026-08-19",
+                                        wcol="weight", scol="shares_held")
+    assert "NA" in list(out["ticker"])
+    row = out[out["ticker"] == "NA"].iloc[0]
+    assert row["name"] == "Nano Labs Ltd"
+    assert row["shares"] == 500
+
+
+# --- is_non_equity_holding truth table (Part B) ---------------------------------
+
+@pytest.mark.parametrize("ticker,name,expected", [
+    ("NA", "Nano Labs Ltd", False),
+    ("NA", "NATIONAL BANK OF CANADA", False),
+    ("NA", "", True),
+    ("NA", float("nan"), True),
+    ("NA", "USD Cash", True),
+    ("NAN", "Nano Labs Ltd", True),     # pandas residue — str(float('nan')) == 'nan'
+    ("NONE", "None Inc", True),         # pandas residue — str(None) == 'None'
+    ("NULL", "Null Co", True),          # unconditional sentinel, unchanged
+    # The ambiguous "NA" branch must FALL THROUGH to the shared name rules, not
+    # early-return False. An early return handed a futures leg or a cash sleeve
+    # back as an equity — the one thing moving "NA" out of the unconditional
+    # sentinel set must not cost us.
+    ("NA", "NASDAQ 100 E-MINI JUN26", True),          # _FUTURES_NAME_RE
+    ("NA", "SOME GOVERNMENT OBLIGATIONS FUND", True), # _CASH_EQUIV_NAME_RE
+    ("NA", "US TREASURY BILL 0% 09/2026", True),
+    # A literal missing-value NAME now reaches us as a string, because the parse
+    # sites pass keep_default_na=False so the ticker column survives. It carries
+    # no evidence and must still blank out, or every currency ticker filed with
+    # an "N/A" name silently becomes an equity.
+    ("NA", "N/A", True),
+    ("USD", "N/A", True),
+    ("USD", "NULL", True),
+    ("USD", "nan", True),
+    ("USD", "", True),
+    # real equities still survive
+    ("NVDA", "NVIDIA CORP", False),
+    ("RY", "Royal Bank", False),
+])
+def test_is_non_equity_holding_na_truth_table(ticker, name, expected) -> None:
+    from collectors.holdings import is_non_equity_holding
+    assert is_non_equity_holding(ticker, name) is expected
