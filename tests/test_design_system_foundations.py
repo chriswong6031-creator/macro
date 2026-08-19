@@ -136,7 +136,14 @@ def test_documented_overrides_actually_differ_from_the_site_ramp():
 
 @pytest.mark.parametrize("selector", [".mx-ladder", ".mx-chg-row", ".mx-empty"])
 def test_the_shared_primitive_is_defined_in_theme_css(theme, selector):
-    assert re.search(rf"^{re.escape(selector)}\s*\{{", _strip_comments(theme), re.M), (
+    # A trailing :not()/compound is allowed: C8-C split the ladder into two disjoint
+    # forms (the generic bar and .mx-ladder--board), so the bar's own rule now reads
+    # `.mx-ladder:not(.mx-ladder--board) {`. What this guard is for is that the
+    # primitive has ONE definition in theme.css rather than a page-local re-invention,
+    # and that is unchanged — so the pattern accepts the qualifier and nothing else
+    # (no descendant space, no comma).
+    pattern = rf"^{re.escape(selector)}(?::[a-z-]+\([^)]*\))*\s*\{{"
+    assert re.search(pattern, _strip_comments(theme), re.M), (
         f"{selector} must be defined in theme.css so both builders consume one definition"
     )
 
@@ -152,11 +159,131 @@ def test_mx_empty_why_ships_with_mx_empty(theme):
 
 def test_the_ladder_carries_sol_scoping_rider(theme):
     """Sol §J.9 (2026-08-12): .mx-ladder is scoped to Prophet/lifecycle-derived surfaces."""
-    m = re.search(r"/\*[^*]*(?:\*(?!/)[^*]*)*\*/\s*\.mx-ladder\s*\{", theme)
+    m = re.search(r"/\*[^*]*(?:\*(?!/)[^*]*)*\*/\s*\.mx-ladder(?::[a-z-]+\([^)]*\))*\s*\{", theme)
     assert m, ".mx-ladder must carry a comment immediately above its rule"
     comment = m.group(0)
     assert "J.9" in comment and "MUST NOT proliferate" in comment, (
         "the comment above .mx-ladder must record Sol's binding §J.9 scope rider"
+    )
+
+
+# ── (c) the archetype-B board ladder + the lifecycle weight grammar (C8-C) ──────────
+
+#: The seven lifecycle states the grammar draws, over six distinct weights — Delivering
+#: is deliberately Entered's solid commitment weight plus an arrival mark, not a seventh
+#: weight, because a holder reads them as the same commitment at different stages. A
+#: CLOSED set: the grammar is what lets a reader learn one vocabulary on the ladder and
+#: re-read it on a card, so a state added without a weight would paint as nothing at all.
+LIFECYCLE_STATES = ("watch", "ready", "entered", "delivering", "overtime", "invalidated",
+                    "resolved")
+
+
+@pytest.mark.parametrize("selector", [".mx-ladder--board", ".mx-mark", ".mx-cell"])
+def test_the_board_ladder_primitives_are_defined_in_theme_css(theme, selector):
+    """MP-1 §5 (Amendment 1) classes these as inherited DS primitives, not page-scoped
+    inventions — so the packet's builder must find them here, in the shared sheet."""
+    css = _strip_comments(theme)
+    assert re.search(rf"(?:^|[\s,>]){re.escape(selector)}(?![\w-])", css, re.M), (
+        f"{selector} must be defined in theme.css — MP-1 §5 reuses it as an inherited "
+        "primitive, and a page-scoped copy is exactly what the namespace law forbids"
+    )
+
+
+@pytest.mark.parametrize("state", LIFECYCLE_STATES)
+def test_every_lifecycle_state_ships_at_both_scales(theme, state):
+    """One grammar, two scales: the cap on a ladder cell and the inline mark on a card.
+
+    A state that ships at only one scale silently breaks the link the grammar exists
+    to make — the ladder would name a state the card cannot echo, or the reverse.
+    """
+    css = _strip_comments(theme)
+    for family in ("mx-cap", "mx-mark"):
+        assert f".{family}--{state}" in css, (
+            f".{family}--{state} is missing — the weight grammar must ship at BOTH scales "
+            "(.mx-cap on a ladder cell, .mx-mark inline on a card/table row)"
+        )
+
+
+def test_the_weight_grammar_never_touches_a_direction_hue(theme):
+    """Lifecycle is WEIGHT; stance is HUE. The two channels must never collide.
+
+    The marks paint in currentColor/--text/--muted only. That is what makes the whole
+    grammar byte-identical under the Chinese direction flip: if any weight referenced
+    --up/--down/--q*, a plan's lifecycle state would silently recolour with the tape's
+    convention and mean something different in the two languages.
+    """
+    css = _strip_comments(theme)
+    block = re.search(r"\.mx-cell\s*>\s*\.mx-cap\s*\{.*?(?=\n@media|\nhtml\[)", css, re.S)
+    assert block, "the weight-grammar block must be locatable for this guard to bind"
+    banned = re.findall(r"var\(\s*(--(?:up|down|q[1-4]|pv-[a-z]+))\b", block.group(0))
+    assert not banned, (
+        f"the lifecycle weight grammar references {sorted(set(banned))} — a direction or "
+        "stance hue inside a weight mark breaks the zh flip and collides the two channels"
+    )
+
+
+def test_the_cap_is_structurally_confined_to_ladder_cells(theme):
+    """R4.2-corrected contract: .mx-cap is a LADDER-CELL cap and nothing else.
+
+    The card's own top cap was repealed so it would stop competing with the chart for
+    the card's head. Here that repeal is enforced by the selector rather than by prose
+    plus an external guard: both the cap's base rule and its ``content:""`` are scoped
+    to ``.mx-cell``, so a .mx-cap emitted anywhere else generates no box at all instead
+    of a stray 3px artefact. Deleting the scope is the mutation this must fail on.
+    """
+    css = _strip_comments(theme)
+    assert re.search(r"^\.mx-cell\s*>\s*\.mx-cap\s*\{", css, re.M), (
+        ".mx-cap's base rule must be scoped to .mx-cell — an unscoped cap re-opens the "
+        "repealed card-cap contract"
+    )
+    content = re.search(r"^([^\n{]*\.mx-cap[^\n{]*)\{[^}]*content\s*:", css, re.M)
+    assert content and ".mx-cell" in content.group(1), (
+        'the rule giving .mx-cap its content:"" must also be .mx-cell-scoped, or an '
+        "out-of-ladder cap still paints"
+    )
+
+
+def test_the_two_ladder_forms_are_disjoint(theme):
+    """The generic bar and the board grid must not half-inherit each other.
+
+    ``.mx-ladder button:last-child`` and ``.mx-ladder button[aria-pressed]`` out-specify
+    a bare ``.mx-cell``: on an element carrying both classes they would strip the
+    terminal cell's dashed rule and double-mark selection. The bar's rules therefore
+    exclude the board form explicitly.
+    """
+    css = _strip_comments(theme)
+    # Only the rules whose key selector the board form actually renders can collide:
+    # its children are `button.mx-cell` / `div.mx-cell`. `.mx-lad-total` is a bar-only
+    # part (the board ladder's total sits out of the device, per the R4 composition),
+    # so a rule keyed on it cannot reach a board cell and is left alone.
+    leaks = [m.group(0).strip()
+             for m in re.finditer(r"^\.mx-ladder\s+(?:button|\.mx-cell)[^\n{]*\{", css, re.M)]
+    assert not leaks, (
+        f"these bar-form rules also match the board form: {leaks} — add "
+        ":not(.mx-ladder--board), or scope the rule to the form it belongs to"
+    )
+
+
+def test_no_comment_closes_itself_early(theme):
+    """A `*/` inside a comment's PROSE silently deletes the rule that follows it.
+
+    Found the hard way in this PR: a comment reading "not re-keyed to --r-*/--fs-*"
+    terminated at the `*/` in the middle of that token name. Everything after it —
+    four more lines of prose plus the whole `.mx-ladder--board { display:grid … }`
+    rule — became one unparseable declaration block, so the board ladder shipped with
+    no grid at all while every regex-based guard in this file still passed: strip the
+    comments the way a browser does and the selector is still right there in the text.
+
+    The check is the residue of a NON-GREEDY comment strip, which is exactly what a
+    CSS parser does. If a comment body contains an extra `*/`, the strip stops at it
+    and the comment's real terminator is left behind in the residue — so a stray `*/`
+    outside any comment is a proof of the defect, not a heuristic for it.
+    """
+    residue = _strip_comments(theme)
+    assert "*/" not in residue, (
+        "a comment in theme.css closes early — some token in its prose contains `*/`, "
+        "which ends the comment and swallows the next rule into unparseable garbage. "
+        f"First offence near: ...{residue[max(0, residue.index('*/') - 90):residue.index('*/') + 40]}..."
     )
 
 

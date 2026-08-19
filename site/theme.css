@@ -76,8 +76,35 @@
      One hue per card state: buy/near/wait/hold/avoid. English uses the Western
      green-up/red-down convention. Chinese mode rebinds only these Prophet tokens
      onto the site's Asia-aware --up/--down pair below, so every Prophet board
-     becomes red-bullish/green-bearish without recolouring non-Prophet status UI. */
-  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
+     becomes red-bullish/green-bearish without recolouring non-Prophet status UI.
+
+     STANCE IS NOT DIRECTION (DA-002 cure, C8-C — reference board.css:48/:83/:110).
+     --pv-buy used to be the literal #45b873, byte-identical to --up above: a Buy
+     chip and a +2.1% change printed the SAME ink, so one colour on one card meant
+     two different things and no reader could tell the call from the tape. Stance
+     now sits a deliberate tone off the direction ink it belongs to — same semantic
+     family, visibly not the same colour. Derived FROM --up rather than hand-picked
+     so the zh flip stays structural: 红涨绿跌 needs no second table below, and a
+     future --up nudge carries the stance with it instead of silently re-colliding.
+     Deepening toward --text also RAISES contrast on both planes (measured by
+     tests/test_prophet_verb_ink_contrast.py, all 5 verbs x 4 consumers x 4
+     theme/lang quadrants; re-measure with mockups/refs/prophet_verb_ink/probe_pv_ink.py).
+     Separation, CIELAB dE, raw token / text ink, all eight readings 0.00 before:
+       en-light 30.5 / 5.6 · zh-light 35.1 / 23.3 · en-dark 10.1 / 10.1 · zh-dark 12.5 / 12.5
+     en/light's 5.6 is the thinnest and is INHERITED, not chosen: light's --ink-mix-up
+     is 62% and this mix is 54% — two points on one axis, so those two inks are close
+     by construction. It clears the ~2.3 just-noticeable threshold and the two never
+     take the same form (Buy is a solid pill, the change is small text), but it is the
+     quadrant to re-open first if the separation is ever judged too thin.
+
+     --pv-near follows --pv-buy rather than carrying its own literal, and that is
+     forced, not tidy: at the old literal #63c08d, Near landed within ~4/255 per
+     channel of the retuned Buy, i.e. curing DA-002 alone would have replaced a
+     stance/direction collision with a Buy/Near one. Mixing toward --muted keeps
+     Near reading as the softer call at every point on the ramp. */
+  --pv-buy: color-mix(in srgb, var(--up) 82%, var(--text));
+  --pv-near: color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
+  --pv-wait: #e0a030;
   --pv-hold: #8b93a1; --pv-avoid: #e06464;
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
@@ -148,8 +175,15 @@ html[data-theme="light"] {
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
   --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
-  /* prophet-card verb hues — light English variants; zh rebinds them below */
-  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
+  /* prophet-card verb hues — the same stance ramp, re-authored for a WHITE card.
+     The mix is 54%, NOT the 62% that would mirror --ink-mix-up: at 62% the stance
+     token resolves byte-identically to --ink-up (light --ink-mix-up is also 62%),
+     so the solid BUY chip and the live +N% change on the same card would be one
+     colour again — DA-002 in the other theme. 54% separates them and raises
+     contrast at the same time. (reference board.css:83) */
+  --pv-buy: color-mix(in srgb, var(--up) 54%, var(--text));
+  --pv-near: color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
+  --pv-wait: #b9791a;
   --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
   --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
@@ -180,16 +214,25 @@ html[data-lang="zh"] {
   --q1: #d04545;                         /* Goldilocks -> red */
   --q3: #2e9e4f;                         /* Stagflation -> green */
   /* Prophet-only verdict palette: buy/near = bullish red, avoid = bearish green.
-     Wait/hold stay direction-neutral amber/grey.  `near` is a lighter red so it
-     remains distinguishable from the solid Buy state without changing meaning. */
-  --pv-buy: var(--up);
-  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
+     Wait/hold stay direction-neutral amber/grey.
+     C8-C: buy/near no longer need a zh line at all. They derive from --up, which
+     this very block has just flipped, so a zh Buy chip is red BY CONSTRUCTION
+     rather than by a second hand-tuned palette that a future --up edit could
+     desynchronise. --pv-avoid still needs its line: it is a literal on the :root
+     plane, so without this it would keep the EN bearish red under zh. */
   --pv-avoid: var(--down);
 }
 html[data-theme="light"][data-lang="zh"] {
   --up: #cf4040; --down: #1f9a55;
   --q1: #c12f2f;
   --q3: #1f8b41;
+  /* No --pv-buy/--pv-near line here, deliberately. The C8-C retune left exactly
+     ONE declaration of each per theme plane, and the zh block no longer competes
+     for them, so this quadrant resolves the light formula over the flipped --up
+     above with no source-order hazard left to pin. Restating the formula here
+     would re-create the drift it used to guard against — two copies that a later
+     palette edit can desynchronise — rather than prevent it. --pv-avoid is the
+     one stance token still carrying literals, so it keeps its zh line above. */
 }
 /* ---- odo-needle: shared light-mode odometer pointer -------------------------
    Dark mode's white blade + coloured hub already reads beautifully. The country
@@ -322,11 +365,14 @@ html[data-theme="light"][data-lang="zh"] {
    next palette nudge re-breaks. Hue drift is small by design: #e06464 -> #df7273.
 
    Systematic note, so a future palette edit does not re-open this: what is weak in
-   dark is the HUE #e06464, not the verb. zh binds that same red to --pv-buy (红涨),
-   where it measures 4.57 on .pv-trg — passing, so it is deliberately left alone
-   rather than re-keyed, but it is now the thinnest margin on the dark plane. Both
-   are pinned by tests/test_prophet_verb_ink_contrast.py, which measures all 5 verbs
-   x 4 consumers x 4 theme/lang combos, so neither can drift silently.
+   dark is the HUE #e06464, not the verb. zh used to bind that same raw red straight
+   to --pv-buy (红涨), which put the thinnest margin on the whole dark plane — 4.57
+   on .pv-trg — on the Buy card of every Chinese board. C8-C's stance retune moved
+   that off the raw hue (zh dark --pv-buy now resolves #de7a7b, .pv-trg 5.21), so
+   the dark plane's thinnest margin is no longer a Buy at all; it is zh/dark Near
+   at 4.69 on the chip tint. Pinned by tests/test_prophet_verb_ink_contrast.py,
+   which measures all 5 verbs x 4 consumers x 4 theme/lang combos, so none of this
+   can drift silently.
    .pv-hold has no rung here at all: it binds --pvh-ink straight to --pv-hold in
    _prophet_card.html.j2 (4.58 light / 4.61 dark — passing on every consumer). */
 :root {
@@ -335,29 +381,28 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 88%, var(--text));
 }
 html[data-theme="light"] {
-  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   62%, var(--text));
-  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  56%, var(--text));
+  /* C8-C: buy and near pass through on the light plane too, because the deepening
+     they used to get here now lives in the TOKEN (see the stance block above).
+     Keeping both would mix toward --text twice — light --pv-buy at 54% re-mixed at
+     62% lands the verb near a third of its own hue, a grey-green that no longer
+     reads as a call. One deepening, declared once, at the token. */
+  --ink-pv-buy:   var(--pv-buy);
+  --ink-pv-near:  var(--pv-near);
   --ink-pv-wait:  color-mix(in srgb, var(--pv-wait)  62%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 84%, var(--text));
 }
 html[data-theme="light"][data-lang="zh"] {
-  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   84%, var(--text));
-  /* 70%, NOT buy's 84%: --pv-near is not the plain red. It is that red already
-     pushed 82% toward white (the zh block above), so the red rung over-states how
-     much hue this token can afford to keep. At 84% the ink measured 3.90:1 on the
-     chip tint, 4.00 on --panel2, 4.09 on the target pill and 4.41 on the zone
-     label — under AA on the Near card of EVERY prophet board (us_stocks, china,
-     hk, canada, international), which is ~a third of the cards on a normal board.
-     The EN twin already makes this compensation in the same direction (buy 62% ->
-     near 56%) for the same reason: its near hue is likewise the lighter one.
-     70% is the joint optimum of the two live constraints — it clears 4.5:1 on all
-     four ink consumers (chip 4.83 · edn 4.95 · znl 5.46 · trg 5.06) while staying
-     LIGHTER than --ink-pv-buy, which is what keeps Near reading softer than Buy.
-     Below 68% that ordering INVERTS and Near starts reading as the stronger call —
-     so the obvious "just match EN's 56%" is a legibility fix that breaks the
-     semantics. Re-measure with mockups/refs/prophet_verb_ink/probe_pv_ink.py;
-     tests/test_prophet_verb_ink_contrast.py pins the floor. */
-  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  70%, var(--text));
+  /* C8-C RETIRED the buy/near rungs that used to sit here (84% / 70%). They existed
+     to repair a hand-keyed zh palette: --pv-near was `color-mix(--up 82%, #fff)`, a
+     red pushed most of the way to WHITE, so its ink had to be deepened hard and buy
+     and near needed two different percentages to stay in the right order. Neither
+     token is hand-keyed any more — buy derives from the flipped --up, near derives
+     from buy toward --muted — so the ramp's ordering (Near lighter than Buy) is now
+     a property of the derivation rather than of two tuned numbers that a palette
+     edit could invert. tests/test_prophet_verb_ink_contrast.py still pins both the
+     AA floor and that ordering on this exact quadrant; re-measure with
+     mockups/refs/prophet_verb_ink/probe_pv_ink.py. --pv-avoid keeps its rung
+     because it is still a literal on this plane. */
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
 /* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
@@ -1936,9 +1981,15 @@ html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--mu
    Prophet / lifecycle-derived surfaces and MUST NOT proliferate as a generic
    site-wide control. It is the signature device of one archetype, not a general
    segmented-control primitive; reach for it only where the counts it ladders are
-   lifecycle-derived. */
-.mx-ladder { display:flex; align-items:stretch; gap:0; border:1px solid var(--line);
-  border-radius:var(--r-btn,10px); overflow:hidden; }
+   lifecycle-derived.
+
+   FORM RIDER (C8-C): the two ladder forms are DISJOINT, not cascaded. Every rule
+   in this bar block excludes .mx-ladder--board (the archetype-B grid ladder that
+   lands below) so an element carrying both classes cannot inherit half of one
+   form — `:last-child` and `[aria-pressed]` here out-specify a bare `.mx-cell`
+   and would otherwise strip the terminal cell's rule and double-mark selection. */
+.mx-ladder:not(.mx-ladder--board) { display:flex; align-items:stretch; gap:0;
+  border:1px solid var(--line); border-radius:var(--r-btn,10px); overflow:hidden; }
 .mx-ladder .mx-lad-total { padding:8px 14px; font-weight:800; font-size:var(--fs-md);
   border-right:1px solid var(--line); background:var(--panel2); }
 .mx-ladder .mx-lad-total small { display:block; font-size:var(--fs-micro);
@@ -1949,15 +2000,229 @@ html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--mu
    labels printed in the total cell under zh. Restore the toggle explicitly. */
 html:not([data-lang="zh"]) .mx-ladder .mx-lad-total small.l-zh,
 html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
-.mx-ladder button { appearance:none; background:none; border:none;
+.mx-ladder:not(.mx-ladder--board) button { appearance:none; background:none; border:none;
   border-right:1px solid var(--line); padding:8px 12px;
   font:600 var(--fs-sm)/1.2 var(--font-ui); color:var(--muted); cursor:pointer; }
-.mx-ladder button:last-child { border-right:none; }
-.mx-ladder button b { display:block; font-size:var(--fs-md); color:var(--text);
-  font-variant-numeric:tabular-nums; }
-.mx-ladder button[aria-pressed="true"] { color:var(--text); font-weight:800;
-  box-shadow:inset 0 -3px 0 var(--text); }
+.mx-ladder:not(.mx-ladder--board) button:last-child { border-right:none; }
+.mx-ladder:not(.mx-ladder--board) button b { display:block; font-size:var(--fs-md);
+  color:var(--text); font-variant-numeric:tabular-nums; }
+.mx-ladder:not(.mx-ladder--board) button[aria-pressed="true"] { color:var(--text);
+  font-weight:800; box-shadow:inset 0 -3px 0 var(--text); }
+
+/* ── the BOARD ladder (.mx-ladder--board) + the lifecycle weight grammar ───────
+   Landed by C8-C, the Design-System PR chartered by the R4 composition verdict
+   (research/reference_integrity/prophet-board-5514-r4-composition/verdict.yml).
+   Source geometry: mockups/refs/institutionalize/us_stocks/board.css:221-387,
+   the ratified reference; grammar: its DESIGN_NOTES §3/§4b.
+
+   WHY A MODIFIER RATHER THAN A REPLACEMENT (verdict ruling n1). R4's ladder — a
+   grid of enclosed cells with a per-cell weight cap and a terminal cell held
+   visibly outside the live sum — is CANONICAL for archetype-B board pages. The
+   flex bar above stays: it is the specimen's generic illustration, and the
+   operator-ruled seven-cell partition + two-total law simply cannot fit a
+   single-total bar. Two forms, one family, one namespace; the board form is
+   opt-in and greppable, so nothing that ships the bar today changes a byte.
+   Every board-form rule below carries the .mx-ladder--board prefix for a second
+   reason as well: `.mx-ladder button` above is (0,1,1) and would otherwise WIN
+   over a bare `.mx-cell` (0,1,0) and repaint every cell's border and padding.
+
+   The SCOPE RIDER on the bar (Sol §J.9) binds here unchanged, and harder: this
+   form is the signature device of ONE archetype. Reach for it only where the
+   counts it ladders are lifecycle-derived and exhaustive.
+
+   DIRECTION-NEUTRAL BY CONSTRUCTION. The whole grammar paints in currentColor,
+   --text and --muted — no --up/--down/--q* hue ever touches a lifecycle mark. So
+   it is byte-identical under the zh direction flip, and it never competes with
+   the stance ramp for meaning: lifecycle is WEIGHT, stance is HUE.
+
+   The 11px/9px radii and 18px/11.5px sizes below are the reference's measured
+   geometry, deliberately not re-keyed to the --r- or --fs- scales: the enclosure reads
+   against the card radius rather than the button scale, and 11.5px is what fits
+   six labels across without ellipsis at the widths this ladder actually runs at.
+   ───────────────────────────────────────────────────────────────────────────── */
+.mx-ladder--board { display:grid; align-items:stretch; gap:0;
+  grid-template-columns:repeat(6, minmax(0, 1fr)) 15px minmax(0, .9fr);
+  border:none; border-radius:0; overflow:visible; }
+
+/* The live enclosure: cells 1-6 share one recessed band, so "these six sum to the
+   headline" is a visual fact rather than a caption. */
+.mx-ladder--board .mx-cell { position:relative; display:flex; flex-direction:column;
+  gap:2px; padding:11px 10px 8px; min-width:0;   /* top padding clears the weight cap */
+  background:color-mix(in srgb, var(--panel) 72%, transparent);
+  border:1px solid var(--line); border-right-width:0;
+  font:inherit; color:inherit; text-align:left; overflow:hidden;
+  transition:background .13s, border-color .13s; }
+.mx-ladder--board .mx-cell:first-child { border-radius:11px 0 0 11px; }
+.mx-ladder--board .mx-cell--last-live { border-right-width:1px; border-radius:0 11px 11px 0; }
+/* Affordance follows interactivity. The ladder renders static <div> cells on the
+   surfaces where filtering is not offered (locked tier, print), and a pointer
+   cursor plus a hover wash on a cell that does nothing is a promise the page
+   cannot keep — so both are scoped to the button form. */
+.mx-ladder--board button.mx-cell { cursor:pointer; }
+.mx-ladder--board button.mx-cell:hover { background:color-mix(in srgb, var(--text) 6%, var(--panel)); }
+.mx-ladder--board .mx-cell:focus-visible { outline:2px solid var(--ink-link);
+  outline-offset:2px; z-index:3; }
+
+.mx-ladder--board .mx-cell-n { font-size:18px; font-weight:800; line-height:1;
+  letter-spacing:-.025em; font-variant-numeric:tabular-nums; color:var(--text); }
+.mx-ladder--board .mx-cell-l { font-size:11.5px; font-weight:650; line-height:1.25;
+  color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* zero is honest inventory for a producing cell — it recedes, it does not vanish */
+.mx-ladder--board .mx-cell[data-zero="1"] .mx-cell-n { color:var(--muted); opacity:.75; }
+/* key-absence is NOT zero — an em dash, never a silent 0 */
+.mx-ladder--board .mx-cell[data-absent="1"] .mx-cell-n { color:var(--muted); opacity:.6; }
+
+/* The terminal cell: visibly OUTSIDE the live sum, because a closed plan is
+   record rather than inventory. The divider owns a column of its own so the
+   separation survives every width. */
+.mx-ladder--board .mx-ladder-gap { position:relative; }
+.mx-ladder--board .mx-ladder-gap::before { content:""; position:absolute; left:50%;
+  top:9px; bottom:9px; width:1px; background:var(--line); }
+.mx-ladder--board .mx-cell--term { background:transparent;
+  border:1px dashed var(--line); border-radius:11px; }
+.mx-ladder--board .mx-cell--term .mx-cell-n { color:var(--muted); }
+.mx-ladder--board .mx-ladder-termnote { grid-column:8; font-size:9.5px; line-height:1.3;
+  color:var(--muted); padding:5px 3px 0; text-align:left; }
+
+/* SELECTION — never violet; violet is lock-only estate-wide. Identity and
+   selection ride deliberately separate channels so they can never collide:
+   identity is the weight MARK (a short inset rule under the label), selection is
+   the CELL CHROME (fill + a full-bleed heavier rule). Different width, different
+   position, different property — a selected Watch cell still reads as dashed. */
+.mx-ladder--board .mx-cell[aria-pressed="true"] {
+  background:color-mix(in srgb, var(--text) 11%, var(--panel));
+  border-color:color-mix(in srgb, var(--text) 34%, var(--line)); z-index:2; }
+.mx-ladder--board .mx-cell[aria-pressed="true"]::after { content:""; position:absolute;
+  left:0; right:0; bottom:0; height:3px; background:var(--text); }
+.mx-ladder--board .mx-cell[aria-pressed="true"] .mx-cell-l { color:var(--text); }
+
+/* ── THE SIX-WEIGHT LIFECYCLE GRAMMAR ────────────────────────────────────────
+   ONE grammar, two scales, in two different places:
+     .mx-cap  — a full-bleed 3px cap at the top of a LADDER CELL. Ladder only:
+                the card's top cap was repealed so it would stop competing with
+                the chart for the card's head, and that repeal is law. The cap's
+                base rule and its content:"" are therefore SCOPED to .mx-cell,
+                which makes the law structural — a .mx-cap emitted anywhere else
+                generates no box at all rather than a stray 3px artefact.
+     .mx-mark — the same six weights at inline scale (26x8px), for the card's
+                lifecycle fact column, the table cell and the absence line.
+   So the ladder-to-card link is carried by the INLINE MARK, not by a shared cap:
+   the same six weights on both surfaces, each at the scale that surface can
+   afford. Identical grammar, deliberately non-identical geometry. */
+.mx-cell > .mx-cap { position:absolute; top:0; left:0; right:0; height:3px;
+  color:var(--text); pointer-events:none; }
+.mx-mark { position:relative; display:inline-block; width:26px; height:8px; flex:none;
+  color:var(--text); vertical-align:middle; }
+.mx-cell > .mx-cap::before, .mx-mark::before { content:""; position:absolute; inset:0; }
+
+/* Watch — dashed hairline: a signal fired, nothing is committed */
+.mx-cap--watch::before  { background:repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 9px); }
+.mx-mark--watch::before { top:3px; height:2px;
+  background:repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6.5px); }
+/* Ready — half filled: the plan is armed, the position is not open yet */
+.mx-cap--ready::before  { background:linear-gradient(90deg, currentColor 0 50%,
+  color-mix(in srgb, currentColor 16%, transparent) 50%); }
+.mx-mark--ready::before { top:2.5px; height:3px;
+  background:linear-gradient(90deg, currentColor 0 50%,
+  color-mix(in srgb, currentColor 20%, transparent) 50%); }
+/* Entered — solid: a live commitment */
+.mx-cap--entered::before  { background:currentColor; }
+.mx-mark--entered::before { top:2.5px; height:3px; background:currentColor; }
+/* Delivering — the SAME commitment weight as Entered, not a re-encoding, with the
+   first target it has reached marked at the end of the run. Entered is a plain
+   bar; Delivering is a bar that arrives somewhere. (Before this distinction
+   existed, the one difference a holder cares about most had no visual difference
+   at all.) */
+.mx-cap--delivering::before { background:currentColor; }
+.mx-cap--delivering::after { content:""; position:absolute; right:0; top:0;
+  width:22%; height:6px; background:currentColor; }
+.mx-mark--delivering::before { top:2.5px; height:3px; background:currentColor; }
+.mx-mark--delivering::after { content:""; position:absolute; right:0; top:0;
+  width:5px; height:8px; border-radius:1px; background:currentColor; }
+/* Overtime — solid muted: the declared window expired, the plan is still open */
+.mx-cap--overtime::before  { background:color-mix(in srgb, currentColor 34%, transparent); }
+.mx-mark--overtime::before { top:2.5px; height:3px;
+  background:color-mix(in srgb, currentColor 42%, transparent); }
+/* Invalidated — hollow + struck: the plan's own stated void level was hit */
+.mx-cap--invalidated::before { top:1px; bottom:0; background:transparent;
+  border-top:1px solid color-mix(in srgb, currentColor 60%, transparent);
+  border-bottom:1px solid color-mix(in srgb, currentColor 60%, transparent); }
+.mx-cap--invalidated::after { content:""; position:absolute; left:0; right:0; top:1.5px;
+  height:1px; background:repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 10px); }
+.mx-mark--invalidated::before { top:2.5px; height:3px; background:transparent;
+  border:1px solid color-mix(in srgb, currentColor 62%, transparent); }
+.mx-mark--invalidated::after { content:""; position:absolute; left:-1px; right:-1px;
+  top:3.5px; height:1px; background:currentColor; transform:rotate(-9deg); }
+/* Resolved — neutral outline: graded out, archive weight */
+.mx-cap--resolved, .mx-mark--resolved { color:var(--muted); }
+.mx-cap--resolved::before { top:1px; bottom:0; background:transparent;
+  border-top:1px solid color-mix(in srgb, var(--muted) 52%, transparent);
+  border-bottom:1px solid color-mix(in srgb, var(--muted) 52%, transparent); }
+.mx-mark--resolved::before { top:2.5px; height:3px; background:transparent;
+  border:1px solid color-mix(in srgb, var(--muted) 55%, transparent); }
+
+/* Light plane: the recessed band reads as a wash on a white page, so the cells
+   take the card surface itself. */
+html[data-theme="light"] .mx-ladder--board .mx-cell { background:var(--panel); }
+
+/* ≤720px: the ladder keeps its full 4+3 wrap and EVERY count. The divider
+   survives rather than collapsing — it used to be display:none, which turned the
+   terminal cell into the third cell of an ordinary row and left "Resolved sits
+   outside the total" resting on a caption alone, on exactly the viewport where a
+   count claim is most likely to be misread. */
+@media (max-width:720px) {
+  .mx-ladder--board { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:5px; }
+  .mx-ladder--board .mx-ladder-gap { display:block; }
+  .mx-ladder--board .mx-ladder-gap::before { top:4px; bottom:4px; }
+  .mx-ladder--board .mx-cell { border-right-width:1px; border-radius:9px;
+    padding:9px 9px 7px; }
+  .mx-ladder--board .mx-cell:first-child,
+  .mx-ladder--board .mx-cell--last-live { border-radius:9px; }
+  .mx-ladder--board .mx-cell-l { font-size:10.5px; white-space:normal; }
+  .mx-ladder--board .mx-ladder-termnote { grid-column:4; text-align:left; padding:4px 2px 0; }
+}
 
 /* keyboard affordance for the two interactive primitives landed here */
 :where(.mx-chg-row, .mx-ladder button):focus-visible {
   outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+
+/* ── TOUCH FLOOR for the estate's inherited small controls (MPDS §14, ≥40x40) ──
+   Landed by C8-C. The C8 composition review measured three shared controls under
+   the floor on a 390px board — the `?` help dot at 17px, the Grid/Table segmented
+   toggle at ~22px, and the ⚠N caution pill at 19px, which on touch is the ONLY
+   route to a card's safety copy. All three are inherited estate debt, not a
+   migration defect, so the cure belongs here in the shared sheet rather than as a
+   page-scoped fork.
+
+   THE VISUAL SIZE IS NOT THE DEFECT. A 17px `?` beside a heading is correct
+   typography; a 40px one would shout over the text it annotates. What was wrong
+   was the TARGET. So two different instruments, chosen per control:
+
+     · isolated controls (`?`, ⚠N) get an invisible ::after that extends the hit
+       area to 40x40 around the unchanged glyph. Layout, ink and desktop bytes are
+       untouched.
+     · the segmented toggle gets REAL height, because its buttons are adjacent:
+       overlapping invisible targets do not enlarge a target, they hand taps near
+       the seam to whichever control paints last.
+
+   Gated on `pointer: coarse` — the floor is a touch obligation, and both isolated
+   controls open on hover, so a fine pointer must keep its exact trigger area or
+   popovers start firing at nothing. */
+@media (pointer: coarse) {
+  /* `?` — .lens-q's visible chrome is injected by theme.js; only the target is set
+     here, and ::after is a property that injection never declares, so no cascade
+     race exists between the two sheets. */
+  .lens-q { position:relative; }
+  .lens-q::after { content:""; position:absolute; top:50%; left:50%;
+    width:40px; height:40px; transform:translate(-50%,-50%); }
+  /* ⚠N caution pill (_prophet_card.html.j2) — it sits in an absolutely positioned
+     overlay row above the sparkline, so growing the box would push the row over
+     the chart. The pill keeps its 19px; the tap does not. */
+  .pv-cau-btn { position:relative; }
+  .pv-cau-btn::after { content:""; position:absolute; top:50%; left:50%;
+    min-width:40px; min-height:40px; width:100%; height:100%;
+    transform:translate(-50%,-50%); }
+  /* Grid/Table view toggle (declared page-locally on every board that ships it;
+     none of them set a height, so this reaches all of them without a fork). */
+  .st-view-toggle button { min-height:40px; }
+}
