@@ -58,6 +58,69 @@ def test_all_legacy_jobs_are_disabled_and_packable() -> None:
     assert all(job.definition["if"] == PACK.DISABLED_IF for job in jobs)
 
 
+def test_every_real_legacy_job_declares_its_gate() -> None:
+    """Every job in the real manifest says which tree moves its verdict.
+
+    The loader defaults an ABSENT `gate:` to "code" so synthetic fixtures keep
+    working (and so nothing can leave the merge gate silently), but the real
+    manifest must declare the field on every job: the code/data split is the
+    W1 deliverable of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md
+    and an undeclared job is an unclassified one, not a classified-by-default
+    one.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    undeclared = sorted(job.job_id for job in jobs if "gate" not in job.definition)
+    assert not undeclared, (
+        "legacy jobs without an explicit gate declaration: "
+        + ", ".join(undeclared)
+    )
+    assert all(job.gate in PACK.GATE_VALUES for job in jobs)
+
+
+def test_invalid_gate_value_fails_closed(tmp_path: Path) -> None:
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  typo:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: dtaa
+    steps:
+      - run: echo typo
+"""
+    )
+    with pytest.raises(PACK.ManifestError, match="gate must be one of code/data"):
+        PACK.load_legacy_jobs(workflow)
+
+
+def test_absent_gate_defaults_to_code_never_data(tmp_path: Path) -> None:
+    """An undeclared job stays a merge precondition — fail-closed direction."""
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  bare:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: bare step
+        proof_id: bare-step
+        run: echo bare
+"""
+    )
+    (job,) = PACK.load_legacy_jobs(workflow)
+    assert job.gate == "code"
+
+
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
     jobs = PACK.load_legacy_jobs(MANIFEST)
     packs = PACK.partition_jobs(jobs, 2)
@@ -1004,7 +1067,7 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     owner = PACK.LegacyJob("owner", definition, 0, 1, ("engine/**",))
     skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
     jobs = [owner, skipped]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: jobs)
     _stub_planner_paths(monkeypatch, ["engine/example.py"])
     monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
     assert PACK.main([
@@ -1223,7 +1286,7 @@ def test_packing_contract_ignores_ambient_ci_changed_files_json(
         _plan_job("owner", 0, paths=("engine/**",)),
         _plan_job("would-skip", 1, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -1542,7 +1605,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
         _plan_job("owns-new", 1, paths=("engine/new.py",)),
         _plan_job("elsewhere", 2, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     _stub_planner_paths(monkeypatch, ["engine/old.py", "engine/new.py"])
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
@@ -1570,7 +1633,7 @@ def test_planner_failure_never_emits_no_work(
     aggregate for a PR on which nothing ran.
     """
 
-    def explode(path: object) -> object:
+    def explode(path: object, gate: object = None) -> object:
         raise PACK.ManifestError("job 'x' is broken\njob 'y' is broken too")
 
     monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
@@ -1621,7 +1684,7 @@ def test_planner_failure_without_github_output_still_fails_loudly(
     fine on a developer's machine.
     """
 
-    def explode(path: object) -> object:
+    def explode(path: object, gate: object = None) -> object:
         raise PACK.ManifestError("manifest is broken")
 
     monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
@@ -1695,7 +1758,7 @@ def test_a_pack_refuses_a_changed_file_list_it_cannot_prove(
         _plan_job("engine-owner", 0, paths=("engine/**",)),
         _plan_job("site-owner", 1, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     plan = PACK.plan_from_workflow(
         MANIFEST,
         changed_from="basesha",
@@ -1879,7 +1942,7 @@ def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
     """
     _freeze_scope_inference(monkeypatch)
     jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     _stub_planner_paths(monkeypatch, ["research/NOTE.md"])
     emitted: dict[str, dict[str, str]] = {}
     for mode in ("active", "shadow", "off"):
@@ -3044,3 +3107,222 @@ def test_ci_python_is_pinned_to_a_released_parser_runtime() -> None:
             "the 3.12.13 entry records its actions/python-versions archive "
             "SHA-256 — then bump this pin."
         )
+
+
+# ---------------------------------------------------------------------------
+# W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md: the merge
+# gate packs only `gate: code` legacy jobs; `gate: data` jobs move to the
+# post-nightly data-health.yml lane. `--gate` is the mechanism (load_legacy_jobs
+# filters immediately, before any partition/weight arithmetic); the two tests
+# below guard the mechanism itself and that every production caller actually
+# uses it, so a future edit cannot silently widen the merge gate back to 194.
+# ---------------------------------------------------------------------------
+
+DATA_HEALTH_WORKFLOW = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_gate_filter_selects_only_matching_jobs(tmp_path: Path) -> None:
+    """`--gate` (via `load_legacy_jobs(gate=...)`) is a strict partition.
+
+    A synthetic two-job manifest — one `gate: code`, one `gate: data` — proves
+    `code` selection excludes the data job and vice versa, and that omitting
+    `gate` entirely (the pre-W2 default) still returns both, unchanged.
+    """
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  code-job:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: code
+    steps:
+      - name: code step
+        proof_id: code-step
+        run: echo code
+  data-job:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: data
+    steps:
+      - name: data step
+        proof_id: data-step
+        run: echo data
+"""
+    )
+
+    code_only = PACK.load_legacy_jobs(workflow, gate="code")
+    assert [job.job_id for job in code_only] == ["code-job"]
+
+    data_only = PACK.load_legacy_jobs(workflow, gate="data")
+    assert [job.job_id for job in data_only] == ["data-job"]
+
+    unfiltered = PACK.load_legacy_jobs(workflow)
+    assert sorted(job.job_id for job in unfiltered) == ["code-job", "data-job"]
+
+    # partition_jobs only ever sees what it is handed — proving the filter
+    # runs before partitioning, not merely that the loader can produce it.
+    code_packs = PACK.partition_jobs(code_only, 3)
+    assert sum(len(pack) for pack in code_packs) == 1
+    assert "data-job" not in [job.job_id for pack in code_packs for job in pack]
+
+
+def _run_ci_pack_invocation_blocks(text: str) -> list[str]:
+    """Every shell block that actually invokes run_ci_pack.py, as raw text.
+
+    Matches only an interpreter invocation (`.../bin/python" scripts/
+    run_ci_pack.py`), never a `paths:` trigger entry or a prose/comment
+    mention of the filename — both of which also appear in ci.yml. A block
+    runs from the invocation line through every following line indented AT
+    LEAST as deep as it (YAML nesting, not blank lines: this file has no
+    blank line between many adjacent steps, so a blank-line terminator
+    swallows unrelated later steps — verified against the false positive
+    that shape produced here). This covers both invocation shapes used in
+    this repo: the `>-` folded-scalar argument list, whose continuation
+    lines sit at the SAME indentation as the interpreter line, and the
+    backslash-continued `run: |` block, whose continuation lines sit deeper.
+    Either way the block ends at the first line that DEDENTS below the
+    interpreter line — the next YAML key/step.
+    """
+    lines = text.splitlines()
+    invocation_re = re.compile(r'bin/python"?\s+scripts/run_ci_pack\.py\b')
+    blocks: list[str] = []
+    index = 0
+    while index < len(lines):
+        if invocation_re.search(lines[index]):
+            indent = len(lines[index]) - len(lines[index].lstrip(" "))
+            block: list[str] = [lines[index]]
+            cursor = index + 1
+            while cursor < len(lines):
+                line = lines[cursor]
+                if not line.strip():
+                    cursor += 1
+                    continue
+                line_indent = len(line) - len(line.lstrip(" "))
+                if line_indent < indent:
+                    break
+                block.append(line)
+                cursor += 1
+            blocks.append("\n".join(block))
+            index = cursor
+        else:
+            index += 1
+    return blocks
+
+
+# Workflows allowed to invoke run_ci_pack.py WITHOUT an explicit --gate, each
+# with a reason a reviewer can check. This is a NAMED exception list, not a
+# way to silence the guard — adding an entry here must be a deliberate,
+# reasoned call, the same way GATE_VALUES itself is deliberate.
+GATE_REACHABILITY_ALLOWLIST: dict[str, str] = {
+    "selfhosted-ci-canary.yml": (
+        "deliberate full-suite parity/contamination canary: it exists to "
+        "compare self-hosted runner output against the hosted baseline over "
+        "the COMPLETE manifest, so narrowing it to one gate would defeat its "
+        "purpose"
+    ),
+}
+
+
+def test_no_data_gated_job_is_reachable_from_ci_gate() -> None:
+    """Every merge-gate invocation of run_ci_pack.py passes `--gate code`.
+
+    This is the reachability half of the W2 guard: it is not enough for the
+    `--gate` flag to exist and work (see the unit test above) — every actual
+    caller inside ci.yml (the plan step and both pack-execution paths, plan-
+    json and the unpinned fail-safe fallback) must pass it, or a `gate: data`
+    job stays reachable from the merge gate despite the split. Symmetrically,
+    data-health.yml's own invocation must pass `--gate data`, or the new lane
+    silently re-runs (or worse, never runs) the wrong half of the manifest.
+
+    Widened (Opus review of commit 18e0f878) to enumerate EVERY workflow file
+    repo-wide, not just ci.yml and data-health.yml: a run_ci_pack.py call
+    anywhere without an explicit --gate is exactly the kind of silent
+    reachability hole this guard exists to catch, whichever workflow it is
+    added to later. `GATE_REACHABILITY_ALLOWLIST` is the one permitted
+    exception, and it is named and reasoned, not blanket.
+    """
+    ci_text = WORKFLOW.read_text()
+    ci_blocks = _run_ci_pack_invocation_blocks(ci_text)
+    assert len(ci_blocks) == 3, (
+        f"expected exactly 3 run_ci_pack.py invocations in ci.yml (ci-plan, "
+        f"the plan-json pack execution, and the unpinned fallback), found "
+        f"{len(ci_blocks)}: re-point this guard if ci.yml's call sites changed"
+    )
+    for block in ci_blocks:
+        assert "--gate code" in block, (
+            "a run_ci_pack.py invocation in ci.yml is missing --gate code — "
+            "this would leave a gate: data job reachable from the merge gate:\n"
+            + block
+        )
+
+    assert DATA_HEALTH_WORKFLOW.exists(), (
+        "W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md "
+        "requires .github/workflows/data-health.yml to exist"
+    )
+    data_health_text = DATA_HEALTH_WORKFLOW.read_text()
+    data_health_blocks = _run_ci_pack_invocation_blocks(data_health_text)
+    assert data_health_blocks, "data-health.yml never invokes run_ci_pack.py"
+    for block in data_health_blocks:
+        assert "--gate data" in block, (
+            "a run_ci_pack.py invocation in data-health.yml is missing "
+            "--gate data:\n" + block
+        )
+
+    data_health_workflow = _yaml(DATA_HEALTH_WORKFLOW)
+    for job_name, job in (data_health_workflow.get("jobs") or {}).items():
+        runs_on = job.get("runs-on")
+        assert runs_on == "ubuntu-latest" or (
+            isinstance(runs_on, list) and "self-hosted" not in runs_on
+        ), (
+            f"data-health.yml job {job_name!r} runs on {runs_on!r} — this lane "
+            "must stay on GitHub-hosted runners, never self-hosted "
+            "(CLAUDE.md — render/nightly compute stays off this pool)"
+        )
+
+    # Repo-wide sweep: any OTHER workflow (present or future) that invokes
+    # run_ci_pack.py must carry an explicit --gate, unless it is named in
+    # GATE_REACHABILITY_ALLOWLIST above.
+    workflows_dir = ROOT / ".github" / "workflows"
+    gate_flag_re = re.compile(r"--gate\s+(?:code|data)\b")
+    for workflow_path in sorted(workflows_dir.glob("*.yml")):
+        name = workflow_path.name
+        if name in {"ci.yml", "data-health.yml"}:
+            continue  # already fully covered above
+        blocks = _run_ci_pack_invocation_blocks(workflow_path.read_text())
+        if not blocks:
+            continue
+        if name in GATE_REACHABILITY_ALLOWLIST:
+            continue
+        for block in blocks:
+            assert gate_flag_re.search(block), (
+                f"{name} invokes run_ci_pack.py without an explicit --gate — "
+                "either pass --gate code/data or add a NAMED, reasoned entry "
+                f"to GATE_REACHABILITY_ALLOWLIST:\n{block}"
+            )
+
+
+def test_no_empty_pack_in_the_code_gate_partition() -> None:
+    """An empty ci-pack-N under the code gate would vanish from main's baseline.
+
+    ci-gate's base-inherited-red refresh resolves a PR's failing check NAMES
+    against main's own newest concluded ci.yml run by NAME (CLAUDE.md
+    "green proof against a stale base"; #5037). A pack index with zero jobs
+    still has to exist and publish a name on main's baseline, or a PR whose
+    plan happens to land work on that index has no baseline check of the same
+    name to compare against, and any red there becomes permanently
+    unrefreshable. The load-bearing property is "no pack is empty" — not any
+    particular per-pack job count, which shifts as the manifest grows.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST, gate="code")
+    packs = PACK.partition_jobs(jobs, 12)
+    empty = [index for index, pack in enumerate(packs) if not pack]
+    assert not empty, (
+        f"pack index(es) {empty} are empty under --gate code with --pack-count "
+        "12 — an empty pack's name would vanish from main's ci.yml baseline "
+        "and any PR whose plan lands work there could never refresh a red"
+    )

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T08:22:33.584741+00:00",
-  "count": 1394,
+  "generated_at": "2026-08-19T11:15:11.237716+00:00",
+  "count": 1402,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -80,6 +80,127 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-neqfjnbkdxm-f1e0a5",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T10:39:54Z",
+      "summary_points": [
+        "**Memory Scarcity Risk**: Micron confirms demand exceeds supply (>50% shortfall), creating persistent scarcity for memory-intensive semiconductors—critical supply constraint driving AI/tech pricing power.",
+        "**GPU/TPU Allocation Risk**: NVDA/GOOGL shipments constrained by Hynix/Samsung/Micron HBM/memory allocation; breaking LTAs risks next-cycle production cuts, with firms unlikely to accept penalties.",
+        "**Fed Minutes & PCE Thresholds**: Bull case dovish (PCE MoM <0.25%, YoY <3.35%) vs.",
+        "bear case hawkish (PCE MoM >0.3%, YoY >3.4%); Fed Minutes key for rate trajectory clarity.",
+        "**Election Seasonality Data**: Post-midterms SPX returns: 3m (+5.4%, 78% hit), 6m/9m/12m (+11.4%/+12.5%/+14.7%, 100% hit since 1990)—strategic for Healthcare/sector allocation timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lbhcu1tsnlj-6747ba",
+      "title": "JPM APAC Consumer AI Survey",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:08:05Z",
+      "summary_points": [
+        "**Sector-Specific Profitability Outlook**: Discretionary firms (50% optimism) significantly more bullish on AI-driven profitability vs Staples (17%), prioritizing customer-facing use cases over Staples’ productivity focus; Discretionary anticipates 6.0% labor productivity uplift vs Staples’ 3.2%.",
+        "**Productivity & Revenue Drivers**: Near-term AI upside centered on revenue (+4.5%) and customer satisfaction (+5.5%) in Discretionary, not cost savings; value creation stems from enhanced execution, decision-making, and customer engagement, not headcount reduction.",
+        "**Execution Capability as Critical Differentiator**: Scaling barriers (data quality, workforce readiness, change management) widen gap between strong operators and laggards; proprietary data, loyalty ecosystems, and AI-driven pricing/personalization determine growth durability and earnings conversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mbiiutd4p4l-b17aad",
+      "title": "JPM The BoJ s Catch 22",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:08:02Z",
+      "summary_points": [
+        "**BoJ Rate Hike Timeline Shift**: Revised to Sept 2026 hike (vs prior), raising end-2026 policy rate to 1.5%; three 2027 hikes (Apr/Jul/Dec) targeting 2.25% by end-2027.",
+        "**Market Destabilization Risk**: Delaying Sept hike risks destabilizing JGB/fx markets as pricing already reflects it; fiscal expansion concerns amplify \"behind the curve\" risks.",
+        "**Fiscal-BoJ Tension Catalyst**: Rising debt-service costs in budget now salient, risking administrative-BoJ friction amid yen depreciation triggering early hikes.",
+        "**Policy Communication Uncertainty**: Neutral rate ambiguity impedes market expectation anchoring; rate hikes likely market-prompted, increasing timing volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h3npfuiyytp-cb57aa",
+      "title": "JPM Humanoid Robot",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:07:57Z",
+      "summary_points": [
+        "**Unitree IPO Catalyst**: Unitree’s Aug 19 IPO marks a watershed shift from scarcity-driven \"proxy\" trades to commercial proof points, resetting valuation anchors toward execution (Rmb7T China investment, US foundation models, Korea industrial deployment), compressing premiums for incumbents.",
+        "**Policy-Driven Commercialization**: China’s Rmb7T 15th Five-Year Plan investment in \"Six Networks\" infrastructure (2026) and MIT’s Humanoid Robot Standard System accelerate mass production, while localization targets (80% core components by 2026) secure supply chains.",
+        "**Valuation Reset & Rotation**: Price targets revised downward (e.g., UBTECH $118 vs $161), signaling near-term risk; sector shifts from order-driven (govt pilots) to event-driven (IPOs/commercial wins), prioritizing shipment credibility over scarcity.",
+        "**Physical AI Adoption Curve**: Adoption mirrors AV/smartphone trajectories (not LLMs), demanding uptime, failure rates, and deployment cost per site—vs.",
+        "software iteration—making component suppliers (Leader Drive, Hengli Hydraulic) favored over OEMs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 42,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3ct49xr4ozh-03d032",
+      "title": "Duttenhoefer´s Daily (19.08.2026)",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:02:40Z",
+      "summary_points": [
+        "**Fed Dovish Stance**: S&P 500 momentum reversal (+12% ytd) amid High Beta Basket decline (-6%), Fed unlikely to hike in Sept barring dramatic data.",
+        "**AI Robotics Policy Catalyst**: Unitree Robotics surge (600% IPO) and China's 10k humanoid robot mandate; AT&T shifts to open AI models, saving 80-90% in app costs.",
+        "**AI Infrastructure Constraints**: AI token costs down 49% (Chinese models vs US peers), BloombergNEF data center power capacity risk for AI server chips."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dcorebvn8dl-97660a",
+      "title": "JPM International Market Intelligence | Morning Briefing: 20 SECONDS",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T08:58:15Z",
+      "summary_points": [
+        "**Iran Geopolitics & Oil Dynamics**: Declining oil inventories + China reserve additions signal reduced US escalation appetite; SoH odds at 36% (vs 50% Aug start), near-term incentives uncertain.",
+        "**China Manufacturing Deterioration**: Output decline (Apr-Jul 2026) contrasts with stable US/EM, signaling weakening industrial activity critical for China-linked assets.",
+        "**Tech Giants' Off-Balance Sheet Liabilities**: $2.42T commitments (Alphabet, Amazon, Meta, Microsoft) indicate hidden leverage risks amid rising rates.",
+        "**Natural Rate Trend**: Structural decline to 1-2% (vs 4% 1980s), implying prolonged low-rate environment and impacting fixed-income positioning.",
+        "**AI Unwinding & Flows**: Asia-wide risk-off driven by AI sector correction; \"It's August\" explains steep drop despite Codex user growth (50% in 22 days)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-cq6mru0v5yk-a55ba3",
       "title": "JPM Software Industry Thoughts and Rank Order AI Disruption Concerns Present Compelling Opportunities in Relation to Both Growth and Inexpensive Valuation",
@@ -399,6 +520,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u3n9ooy47fb-5519ac",
+      "title": "ME cio weekly letter",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:18:52Z",
+      "summary_points": [
+        "**Fed Rate-Hike Odds at 31%**: Weak July labor data (non-farm payroll -23k, shrinking labor supply) and easing inflation (core CPI YoY 2.47%) reduce September hike probability to 31% (CME Fedwatch), supporting risk assets despite oil rebound and geopolitical tensions.",
+        "**Defense Structural Rearmament**: Depleted interceptors (Patriot/THAAD) from global conflicts (620+ strikes) trigger Defense Production Act, $76B FY2027 budget, and $21B supplemental funding; U.S.",
+        "defense spending at 3.1% (vs.",
+        "historical 5% in wars), driving $850B order backlog and sector outperformance.",
+        "**AI Capex Surge & Earnings**: Hyperscalers’ AI capex to $800B (2026, +50% vs 2025) fuels S&P 500 EPS growth (28.9% Q1, 50.7% Q2), with \"receivers of capital investment\" maintaining growth potential amid slowing earnings cycle."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1489,6 +1631,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9jpfdoqlhmy-644427",
+      "title": "Weekly Flows and CFTC Positioning",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:46:41Z",
+      "summary_points": [
+        "**Gold Longs Surge**: Speculative net gold longs jumped USD14.7bn (23% rise in 3 months) post-Trump’s War nomination, signaling downward USD pressure and elevated risk from speculative USD long exposure.",
+        "**EUR/GBP Net Shorts Surge**: Net position expansion (negative values) as EURUSD/GBPUSD decline, indicating intensified bearish sentiment and risk for cross-currency trades.",
+        "**JPY/CHF/AUD/NZD Divergence**: Net short positions rising while spot rates strengthen for JPY, CHF, AUD, NZD, signaling potential reversal risk.",
+        "**USD Positioning Caution**: Aggregate USD longs fell USD382mn post-JPY short covering; traders await US inflation data amid AUD/EUR shorts rising and JPY/CAD shorts trimmed."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

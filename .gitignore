@@ -712,3 +712,11 @@ data/product_experience/evidence/
 # Agent OS CEO-brief check-in marker — a local pointer to "when did I last look",
 # not organizational state.  Machine-local by construction; never committed.
 data/governance/.ceo_brief_last
+
+# qledger write-once control clocks (C3.1) — REGISTRAR-LOCAL state, never
+# committed: a clock a lane can commit is a clock a lane can re-stamp, and
+# tests/test_qledger_control_policy.py::test_t9 reds any tracked entry. The
+# 2026-08-19 nightly's blanket `git add data/` committed demand_chain.json and
+# redded the merge gate fleet-wide; ignoring the directory makes that
+# impossible at the plumbing instead of merely detected.
+data/qledger/control_evidence_clock_start/

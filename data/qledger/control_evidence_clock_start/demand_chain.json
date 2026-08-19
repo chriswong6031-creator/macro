@@ -1,8 +1,0 @@
-{
-  "claim_family": "demand_chain",
-  "first_controlled_prospective_registration_utc": "2026-08-19T08:10:37.332100+00:00",
-  "declared_horizon_d": 126,
-  "horizon_unit": "trading_days",
-  "control": "XLU",
-  "git_sha": "34899ec5235884e183be86088ab01f81e34a693f"
-}

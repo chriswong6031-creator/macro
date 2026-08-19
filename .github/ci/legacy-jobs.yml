@@ -29,6 +29,7 @@
 jobs:
   inline-js:
     if: ${{ false }}
+    gate: data
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -78,6 +79,7 @@ jobs:
 
   nav-gap:
     if: ${{ false }}
+    gate: data
     # The shared nav menu (.site-nav / vector-family .topbar) has no built-in top
     # gap — it relies on each page's body top padding. A new page that zeroes its
     # body padding jams the menu against the viewport top ("menu with no padding").
@@ -90,6 +92,7 @@ jobs:
 
   nav-mega:
     if: ${{ false }}
+    gate: data
     # The Research nav is a shared partial (_navlinks.html.j2) whose Research entry is
     # the grouped 'nav-mega' panel. A page built OUTSIDE the routine render loop (an
     # out-of-loop page builder, or a hand-static page) can render the shared nav but
@@ -102,6 +105,7 @@ jobs:
 
   crypto-shelves:
     if: ${{ false }}
+    gate: code
     # W0 lands the governor unarmed against the legacy templates. The first
     # data-shelf marker on each surface arms exact-set enforcement for that page.
     runs-on: ubuntu-latest
@@ -114,6 +118,7 @@ jobs:
 
   board-contradictions:
     if: ${{ false }}
+    gate: code
     # W2 board invariant guard: validates site/factordata/us_standouts.json for four
     # contradictions that the W8 arbiter + W6-US fix passes must prevent:
     #   (a) FRESH-BUY-ish state with stale cross or extended grade,
@@ -157,6 +162,7 @@ jobs:
 
   signal-gate-pair-coherence:
     if: ${{ false }}
+    gate: code
     # #5490 tripwire. site/factordata/us_standouts.json and site/factordata/signal_gate.json
     # are written by ONE scripts/build_stock_library.py run and carry two copies of the same
     # reading — a board row's embedded `signal` blob is a strict superset of that ticker's
@@ -204,6 +210,7 @@ jobs:
 
   ms-board-coherence:
     if: ${{ false }}
+    gate: data
     # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board
     # (score 56 / "Mixed" verdict beside a "Risk Radar forces Risk-off." note + Risk-off
     # thesis) — stitched by the render lane's `git pull --rebase -X theirs` racing the
@@ -227,6 +234,7 @@ jobs:
 
   gh-annotation-line-start:
     if: ${{ false }}
+    gate: code
     # A "::warning"/"::error" routed through logging NEVER reaches the Actions
     # summary: every builder logs with a prefixing format ("WARNING ::warning …")
     # and GitHub only parses a workflow command at column 0. The call reviews as
@@ -246,6 +254,7 @@ jobs:
 
   all-exports-resolve:
     if: ${{ false }}
+    gate: code
     # A stale __all__ entry — a name the module never binds — is a dormant
     # AttributeError: `from m import *` raises on the first missing name, and
     # the traceback lands on the importing PR, not on the module that broke
@@ -268,6 +277,7 @@ jobs:
 
   no-module-leak:
     if: ${{ false }}
+    gate: code
     # A test that evicts a module from sys.modules and does not put it back
     # poisons every LATER test in the process, and the victim lands in an
     # unrelated FILE — so the failure only appears when the collected file set
@@ -302,6 +312,7 @@ jobs:
 
   admin-js-no-undef:
     if: ${{ false }}
+    gate: code
     # admin/static/app.js is a flat top-level browser script and NOTHING in CI
     # read its scopes, so a reference to a name declared in another function
     # parsed clean and threw only on click. PR #3693 shipped exactly that
@@ -339,6 +350,7 @@ jobs:
 
   path-prune-lint:
     if: ${{ false }}
+    gate: code
     # A tree-walk that prunes on the ABSOLUTE path also matches anything ABOVE
     # its scan root. House law puts every agent session in a
     # `.claude/worktrees/<name>/` checkout, so a guard excluding ".claude" or
@@ -361,6 +373,7 @@ jobs:
 
   rebase-css-autoresolve:
     if: ${{ false }}
+    gate: code
     # 2026-07-22 incident: asia-close run 29904079071 committed the day's engine outputs,
     # then every push retry died on the SAME rename/rename conflict — two lanes had
     # renamed a content-hashed site/assets/css/<hash>.css to different hashes, and
@@ -388,6 +401,7 @@ jobs:
 
   conflict-markers:
     if: ${{ false }}
+    gate: code
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers
     # and merged GREEN — Jinja parses marker lines as plain text, pytest never rendered
     # that block, and no other guard greps for them. This fails RED on any conflict-marker
@@ -405,6 +419,7 @@ jobs:
 
   title-i18n:
     if: ${{ false }}
+    gate: data
     # The i18n rule: translated text NEVER goes in HTML attributes — the dual-span
     # l-en/l-zh mechanism cannot operate there, so a bilingual title= shows both
     # languages mashed together. This scans template SOURCE for CJK, t() calls, or
@@ -423,6 +438,7 @@ jobs:
 
   signal-contract:
     if: ${{ false }}
+    gate: data
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
     # the single source of truth shared with the charting app). A PR that drifts the engine output
     # from the schema, weakens the validator, or breaks a contract rule fails RED here — the safe
@@ -806,6 +822,7 @@ jobs:
     # whichever ships second. Venv sharing is by BYTE-IDENTICAL install command, not by
     # adjacency, so position costs nothing: the pip line below is the 32-job group's.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -820,6 +837,7 @@ jobs:
 
   trial-budgets:
     if: ${{ false }}
+    gate: data
     # W1d (audit #21): every multiple-testing harness must REGISTER its trial budget, or the
     # DSR/kill/FDR deflation it feeds is a lie. A NEW validate_*/*_phase0 script that deflates a
     # Sharpe without registering fails RED here (the ~33 pre-existing offenders are grandfathered
@@ -873,6 +891,7 @@ jobs:
 
   breakdown-control-seed-determinism:
     if: ${{ false }}
+    gate: code
     # BD-4/5/6 control sampling derives a per-ticker RNG sub-seed from the ticker.
     # Until 2026-07-26 that derivation was builtin hash(), which Python salts per
     # process (PYTHONHASHSEED) — control draws differed on EVERY run while the frozen
@@ -909,6 +928,7 @@ jobs:
 
   outcome-spine:
     if: ${{ false }}
+    gate: data
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
     # badge-passport ratchet (#41) fails RED if a desk brief renders a conviction badge with no
     # provenance passport; the spine/pooling tests prove the four safety properties (sign-safety,
@@ -970,6 +990,7 @@ jobs:
 
   conviction-profile:
     if: ${{ false }}
+    gate: code
     # Wired 2026-08-02: neither suite was named by ANY run step, so #4297's caution
     # rewrite ran 4 stock_score pins red for a day with no CI signal, and the dossier's
     # prose-matched risk_veto died silently. test_stock_score pins the honesty
@@ -989,6 +1010,7 @@ jobs:
 
   chronicle-suite:
     if: ${{ false }}
+    gate: data
     # Chronicle W0 (agentic_media program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md):
     # deterministic event spine + rollups + context_pack over 6 sources. No paths filter narrows
     # this beyond the shared top-level trigger above (engine/chronicle/**, scripts/build_chronicle.py,
@@ -1008,6 +1030,7 @@ jobs:
 
   cycle-ontology-js:
     if: ${{ false }}
+    gate: code
     # W1.5 (A10/A12 ruling): the generated site/cycle_ontology.js must exactly match what
     # engine/cycle_ontology.py produces at HEAD.  A PR that edits the engine but forgets to
     # regenerate the JS — or hand-edits the committed JS — fails RED here.  The flag-day
@@ -1029,6 +1052,7 @@ jobs:
 
   cycle-forward-log:
     if: ${{ false }}
+    gate: code
     # W1.5 (W0.2 acceptance): four acceptance criteria for the shared forward-log writer.
     # A regression here silently breaks prospective cone-coverage grading for every cycle
     # family (US sectors + country cycles).  Hard gate: the keep-FIRST invariant and
@@ -1046,6 +1070,7 @@ jobs:
 
   tier-gate:
     if: ${{ false }}
+    gate: data
     # Revenue + serving boundary. A paid desk ships as a free preview shell at the
     # page URL plus a separate /premiumdata/ payload that app/paywall.py gates as
     # Insider+ ahead of the site-wide PAYWALL_ENABLED switch
@@ -1119,6 +1144,7 @@ jobs:
 
   cycles-payload-split:
     if: ${{ false }}
+    gate: code
     # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
     # usd_record) off the cycle-map payload into a lazy-hydrated series chunk. A regression
     # here (wrong family stripped, lossy split, or input mutation) would corrupt every cycle
@@ -1136,6 +1162,7 @@ jobs:
 
   flow-surface:
     if: ${{ false }}
+    gate: data
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -1484,6 +1511,7 @@ jobs:
 
   cycle-grading-stats:
     if: ${{ false }}
+    gate: code
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one
     # cone_coverage implementation (no silent second definition), and the China-grader
     # refactor must be numerically identical to the pre-refactor path on fixed inputs.
@@ -1542,6 +1570,7 @@ jobs:
 
   engine-render-guards:
     if: ${{ false }}
+    gate: data
     # 2026-07-02 rot sweep: these test files silently broke on main because ci.yml only
     # ran a targeted subset. They cover the template render guards (canada / fear↔euphoria /
     # froth merged card / risk-state banner), the froth display-only firewall, the
@@ -1614,6 +1643,9 @@ jobs:
       # tests/test_fundamental_forensics_financial_intelligence_packet_r2.py rides
       # the same step as the v1 packet suite (FIF-1R2): same assembler, same
       # jsonschema/decimal install, no new job.
+      # tests/test_fundamental_forensics_financial_intelligence_packet_r3.py rides
+      # the same step (FIF-1R3 semantic closure): against-input, revision
+      # vocabulary, entity identity, bounded graph validation. No new job.
       # tests/test_fundamental_forensics_broad_sec.py and
       # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
       # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
@@ -1696,6 +1728,7 @@ jobs:
           tests/test_fundamental_forensics_query.py
           tests/test_fundamental_forensics_financial_intelligence_packet.py
           tests/test_fundamental_forensics_financial_intelligence_packet_r2.py
+          tests/test_fundamental_forensics_financial_intelligence_packet_r3.py
           tests/test_fundamental_forensics_query_snapshots.py
           tests/test_fundamental_forensics_attested_query_snapshots.py
           tests/test_fundamental_forensics_attested_history_reader.py
@@ -1764,6 +1797,7 @@ jobs:
 
   attested-history-guards:
     if: ${{ false }}
+    gate: code
     # Wave 3B-B4 / attested-history cluster, split out of `engine-render-guards`
     # 2026-08-14. These four steps are one dependency story and one security story:
     # they are the ONLY suites in the old job that needed boto3, and they pin the
@@ -1840,6 +1874,7 @@ jobs:
 
   express-render-guards:
     if: ${{ false }}
+    gate: data
     # The express render/engine guards, split out of `engine-render-guards`
     # 2026-08-14. Every step here is a focused, sub-10-second guard that was wired
     # into the old job one incident at a time — and every one of them carried a
@@ -2010,6 +2045,7 @@ jobs:
 
   collector-registry:
     if: ${{ false }}
+    gate: code
     # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the
     # pyarrow exit deadlock documented in lib/procutil.py) would block PRs for hours.
     timeout-minutes: 15
@@ -2045,6 +2081,7 @@ jobs:
 
   capital-structure-intelligence:
     if: ${{ false }}
+    gate: data
     # W0-W3A is an evidence/event/precision/candidate-term contract, not merely a collector.
     # This dedicated offline job keeps schemas, PIT/correction behavior, R2 wrapper,
     # graph linkage, exact fee-table spans, legacy boundary, and SEC fixtures in one
@@ -2134,6 +2171,7 @@ jobs:
 
   stock-seasonality:
     if: ${{ false }}
+    gate: data
     # WIRING LAW (#1253 precedent): a suite that NO job names never runs. The
     # foundation suite (tests/test_biopharma_seasonality_foundation.py) landed
     # with no job naming it and has therefore never executed in CI — this job is
@@ -2201,6 +2239,7 @@ jobs:
 
   china-native-collectors:
     if: ${{ false }}
+    gate: data
     # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /
     # 股东户数. WIRING LAW (#1253 precedent): a suite that NO job names never runs — these
     # four files would merge green untested without this job, and their whole point is
@@ -2295,6 +2334,7 @@ jobs:
 
   china-board-breadth:
     if: ${{ false }}
+    gate: code
     # Whole-board 沪深 涨跌家数 (~5,200 names) behind the A-share heatmap's breadth
     # card. WIRING LAW (#1253 precedent): tests/test_market_heatmap.py was named by
     # NO job before this — the CN/HK/CA map contract merged untested for its whole
@@ -2315,6 +2355,7 @@ jobs:
 
   china-search-universe:
     if: ${{ false }}
+    gate: code
     # The A-Share Analyzer's searchable name set (Sina top-800 ∪ CSI 300 ∪ CSI 1000).
     # WIRING LAW (#1253 precedent): both suites were named by NO job, so the CSI union —
     # the part of this collector that has now produced four separate silent-shrink
@@ -2339,6 +2380,7 @@ jobs:
 
   cycle-consistency:
     if: ${{ false }}
+    gate: data
     # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every
     # page that renders it (cycle.html flagship / country_cycles / markets.html / sector),
     # within tolerance, OR carry a declared basis label explaining the difference.  A page
@@ -2360,6 +2402,7 @@ jobs:
 
   synapse-read-gate:
     if: ${{ false }}
+    gate: code
     # W0 PR3: literal-path scan over engine/*.py, scripts/*.py, collectors/*.py.
     # WARN tier (exit 0): any undeclared reader of a registered artifact.
     # HARD FAIL (exit 1): an undeclared reader that is an Article-2 money-path
@@ -2411,6 +2454,7 @@ jobs:
 
   neural-web:
     if: ${{ false }}
+    gate: data
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO
     # GitHub workflows before this job was added.  Without CI wiring, an edit to
     # config/synapse.yml (not under any prior ci.yml path glob) could merge GREEN with a
@@ -2453,6 +2497,7 @@ jobs:
 
   intelligence-registry:
     if: ${{ false }}
+    gate: code
     # Eval OS T1 — the Mastermind engine registry. Two laws, one script, both WARN:
     # governance.intelligence_registry_integrity (partition / attribution / overlay
     # allowlist — invariants of the derivation) and epistemics.engine_authority_evidence
@@ -2684,6 +2729,7 @@ jobs:
 
   neural-web-core:
     if: ${{ false }}
+    gate: data
     # NW Macro Context Rail R5 (PR-A): wires the five orphan NW test files that were
     # previously run by ZERO GitHub workflows.  Path-gated on engine/neuralweb/** and
     # the five test files (workflow-level on.pull_request.paths covers engine/neuralweb/**).
@@ -2719,6 +2765,7 @@ jobs:
 
   cn-standout-audit:
     if: ${{ false }}
+    gate: code
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
     # Tests: lane fail-closed, keep-first, species_id mapping, axis precedence, us_proxy
     # isolation, premature_stop_noise unimplemented (F5), never-raise, data_gap honesty,
@@ -2824,6 +2871,7 @@ jobs:
 
   workflow-yaml:
     if: ${{ false }}
+    gate: data
     # Every .github/workflows/* file must load as YAML and carry on: + jobs:.
     # An unparseable workflow file makes GitHub stamp a FAILED zero-job run on
     # every push to every branch carrying it (metabolism-agenda.yml col-0
@@ -2871,6 +2919,15 @@ jobs:
         run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
+      # The merge-gate reliability report is the progress metric for
+      # research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md, so a silent
+      # regression in it would make that program's acceptance gate meaningless.
+      # It belongs to this job because it reads the same manifest the packing
+      # contract above reads. Its suite is offline and sparse-safe (the coupling
+      # half never shells out; the green-rate half degrades to a stated skip), so
+      # it cannot skip its way to green on a pack runner with no `gh`.
+      - name: merge-gate reliability report contract
+        run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
         run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
@@ -3060,6 +3117,7 @@ jobs:
 
   causal-factory:
     if: ${{ false }}
+    gate: data
     # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: all ten test files
     # below were run by ZERO GitHub workflows before this job — the same 'merged green
     # because no CI job covered X' rot class as #1052 / #1193 / #1195 and the neural-web
@@ -3090,6 +3148,7 @@ jobs:
 
   rlt-rebalance-calendar-pulse:
     if: ${{ false }}
+    gate: code
     # RLT-R1/R2: rebalance calendar organ + rebalance pulse detector.
     # Hermetic tests: synthetic fixtures, no network, no live data stores.
     runs-on: ubuntu-latest
@@ -3105,6 +3164,7 @@ jobs:
 
   nyse-calendar-freshness:
     if: ${{ false }}
+    gate: code
     # lib/nyse_calendar.py — the exchange-calendar reference every freshness SLA
     # is built on (expected_last_session / sessions_behind), plus the import-name
     # tripwire.
@@ -3155,6 +3215,7 @@ jobs:
 
   dag-conformance:
     if: ${{ false }}
+    gate: code
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
     # scripts/check_dag_conformance.py diffs the declared sequences against the LIVE
     # .github/workflows/ files and exits 1 on any mismatch not covered by a divergences
@@ -3221,6 +3282,7 @@ jobs:
 
   push-retry-policy:
     if: ${{ false }}
+    gate: code
     # scripts/ci/push_retry.sh is the shared retry policy that EVERY lane's commit→push
     # step sources (render, engine-render, daily ×13, closing-bell, asia-close ×2,
     # weekly, earlyclose). It exists because render.yml run 30167139398 (2026-07-25)
@@ -3267,6 +3329,7 @@ jobs:
 
   transmission-chains:
     if: ${{ false }}
+    gate: data
     # TXI W1/W3: the transmission chain library (knowledge/transmission/*.yaml), its compiler
     # (engine/transmission_chains.py), the runner (scripts/run_transmission_chains.py), AND the
     # W3 historical episode miner (engine/transmission_calibration.py + its runner).
@@ -3296,6 +3359,7 @@ jobs:
 
   research-factory-authority:
     if: ${{ false }}
+    gate: code
     # RF-11 (Research Factory W1): authority guard — no Article-2 money-path
     # module (alert_triage / board_ordering / top_setups) may read
     # data/research_factory/ or import engine.research_factory.  The factory
@@ -3323,6 +3387,7 @@ jobs:
 
   cycle-pattern-authority:
     if: ${{ false }}
+    gate: code
     # CPI P2: authority guard — no Article-2 money-path module (alert_triage /
     # board_ordering / top_setups) may read data/cycle_pattern/ or import the
     # cycle-pattern lake.  The CPI substrate is display-only (context tier);
@@ -3345,6 +3410,7 @@ jobs:
 
   private-boundary:
     if: ${{ false }}
+    gate: data
     # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
     # Verifies that data/private/ and data/operator/ are gitignored, and that
     # committed feedback artifacts carry only counts — no tickers, fill/position/
@@ -3367,6 +3433,7 @@ jobs:
 
   ruling-graph:
     if: ${{ false }}
+    gate: code
     # Ruling Graph v1 (RUL-CL-1/6/7/8/11/12): canonical case-law registry guard.
     # Checks that:
     #   - committed site JSON + case-law doc match YAML regeneration (--check)
@@ -3407,6 +3474,7 @@ jobs:
 
   contract-drift:
     if: ${{ false }}
+    gate: data
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in
     # site/factordata/contracts/artifact_manifest.json has not drifted from the
     # live artifact's actual top-level JSON fields.  A bot consuming china_standouts
@@ -3434,6 +3502,7 @@ jobs:
 
   flow-cohorts:
     if: ${{ false }}
+    gate: code
     # FL-B cohort flow aggregation (flow-continuity-program): aggregation correctness,
     # coverage honesty counts, idempotence, JSON schema, no-history raw_fallback.
     # Triggers on engine/flow_cohorts.py, scripts/build_flow_desk.py,
@@ -3453,6 +3522,7 @@ jobs:
 
   flow-signals-ledger:
     if: ${{ false }}
+    gate: code
     # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
     # keep-first dedup, tz-normalization (aware-UTC enforcement),
     # PIT leak-injection (no future-data lookahead), split-seam guard,
@@ -3479,6 +3549,7 @@ jobs:
 
   flow-signal-cohorts:
     if: ${{ false }}
+    gate: code
     # FS-1 historical flow cohorts (ops lane, off-render):
     # Covers detector parity, eod_proxy PIT leak-injection, cohort separation guard,
     # tz-aware UTC round-trip, resume idempotence, concurrency cap, terminal-down.
@@ -3511,6 +3582,7 @@ jobs:
 
   broad-etf-flows:
     if: ${{ false }}
+    gate: code
     # RLT-R3: broad-market index ETF creation/redemption proxy.
     # Tests: proxy math + SO-jump guard (>25% clamped to NaN), causal z60 (no
     # lookahead, min_periods=2), schema of broad_flow_proxy.parquet, upsert
@@ -3529,6 +3601,7 @@ jobs:
 
   qledger-cluster-honest-ci:
     if: ${{ false }}
+    gate: code
     # altdata-diagnosis PR-A: cluster-honest Wilson CI fix.
     # Proves that _aggregate and promotion_check compute wilson_ci_low on n_dates
     # (independent date clusters), not on the correlated n_obs, per the
@@ -3645,6 +3718,7 @@ jobs:
 
   altdata-new-sources:
     if: ${{ false }}
+    gate: code
     # altdata-W1: new free altdata sources — Finnhub transcript metadata catalog
     # (plan-gated graceful no-op on free tier) + StockTwits public sentiment
     # (keyless, bullish/bearish ratios + watchlist_count). Pure parse + store tests;
@@ -3664,6 +3738,7 @@ jobs:
 
   china-native-w2:
     if: ${{ false }}
+    gate: code
     # china_native_data W2 (funding curve / CB plane / fund issuance / full-universe
     # ETF shares): pure parse + aggregate fixture tests, no network. Executed via
     # the ci-pack matrix like every other legacy job.
@@ -3686,6 +3761,7 @@ jobs:
 
   wri-risk-core:
     if: ${{ false }}
+    gate: code
     # WRI W3: the watchlist book-structure math (templates/risk_core.js) is a pure
     # ES5 module exercised by shelling `node` over fixture JSON — proves the §7
     # sanity anchors (ENB≈20 pure-idio / →1 single-factor, negative-MCTR hedge,
@@ -3759,6 +3835,7 @@ jobs:
 
   house-law-registry:
     if: ${{ false }}
+    gate: data
     # DECLARED scope, UNIONed with the runtime-derived one (run_ci_pack.infer_job_scopes
     # keeps `set(job.paths) | set(derived)`), and it exists for exactly one entry:
     # root `config.yml`. That file is where BOTH of this repo's timeless rename maps
@@ -3859,6 +3936,7 @@ jobs:
 
   leader-radar-unit:
     if: ${{ false }}
+    gate: code
     # LRV-W1: leader lifecycle engine + builder unit tests.
     # Engine (test_leader_lifecycle.py): state machine, hysteresis, tri-state Kleene,
     # rs_line_gap_pct, count_k_true_n_avail, display chip fence.
@@ -3880,6 +3958,7 @@ jobs:
 
   evidence-clock:
     if: ${{ false }}
+    gate: data
     # Global Evidence Clock (EC-R1..R8): the committed display-only artifact
     # data/neuralweb/evidence_clock.json must parse, keep authority=display_only,
     # stay inside the 9-state vocabulary, carry forbidden_actions on every row,
@@ -3904,6 +3983,7 @@ jobs:
   vintage-pin-fence:
     scope: exclusive
     if: ${{ false }}
+    gate: data
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
     # ``episodes.jsonl`` 384→1206 used as a closed replay, prophet open-keys
@@ -3939,6 +4019,7 @@ jobs:
 
   validated-claims:
     if: ${{ false }}
+    gate: data
     # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
     # backed claim. This is the PR-time companion to the nightly calibration run
     # (cycle-calibration.yml/calibrate). A sibling builder is fixing the current
@@ -3965,6 +4046,7 @@ jobs:
 
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: data
     # (Which pack runs it is weight-balanced and shifts as jobs are added, so it is
     # deliberately not named here; resolve it with run_ci_pack.py --validate-only.)
     # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
@@ -4086,6 +4168,7 @@ jobs:
 
   data-base-shim:
     if: ${{ false }}
+    gate: code
     # ui.data_base_shim: every builder must write site/**/*.html through
     # lib.pages.write_page, which injects the depth-aware R2 fetch shim. A raw
     # write_text drops it, so a standalone builder run ships the page with its
@@ -4124,6 +4207,7 @@ jobs:
 
   grader-manifest:
     if: ${{ false }}
+    gate: code
     # F1 (Metabolism Phase 0 / R-AUT-7): grader-immutability manifest guard.
     # The fitness-producing files (grade_thematic, foresight_leadlag, theme_placebo,
     # qledger_falsifier, sample_qledger_placebo) are registered in
@@ -4148,6 +4232,7 @@ jobs:
 
   self-mod-fence:
     if: ${{ false }}
+    gate: code
     # The Stop hook is itself a release-control subject. Scope inference sees the
     # test imports but not a hook reached by subprocess/path, so an edit under
     # .claude/hooks/ could otherwise skip the job that owns its contract.
@@ -4271,6 +4356,7 @@ jobs:
 
   capability-broker:
     if: ${{ false }}
+    gate: data
     # F3 (Metabolism Phase 0 / §3 of masterplan): capability broker + redline scanner.
     # The capability broker (engine/neuralweb/capability_broker.py) resolves capability
     # IDs to ref names only — never secret values.  The redline scanner hard-fails on
@@ -4404,6 +4490,7 @@ jobs:
 
   hub-a11y:
     if: ${{ false }}
+    gate: data
     # Hub UX program (W5 — a11y regression guard): six static checks — (a)-(d) on
     # every committed page that embeds the globe deck (gd-stage presence), (e)-(f)
     # on the shared JS assets those pages load:
@@ -4435,6 +4522,7 @@ jobs:
 
   font-ui-defined:
     if: ${{ false }}
+    gate: code
     # Font-UI definition guard (PR #2647 recurrence tripwire): any template whose
     # body-level CSS sets the page font via var(--font-ui) must either link
     # theme.css (<link rel="stylesheet"> href attribute — never the bare string,
@@ -4461,6 +4549,7 @@ jobs:
 
   ratio-lens:
     if: ${{ false }}
+    gate: code
     # Ratio Lens W1 (RL-R1..R16): AUTHORITY block, forbidden-key walk,
     # ledger gate, idempotency, builder exit-0, state-signature isolation,
     # anchor honesty. Display-tier oracle organ; no gauntlet.
@@ -4477,6 +4566,7 @@ jobs:
 
   hk-confirming-turn:
     if: ${{ false }}
+    gate: code
     # HKRV-W1: evidence-witness bypass in engine/cycles.py — CONFIRMING TURN state.
     # Tests: confirm=None byte-identity, V-recovery+witnesses→CONFIRMING TURN,
     # hard_fail wins, flat/no-witnesses unchanged, ontology crosswalk resolves.
@@ -4493,6 +4583,7 @@ jobs:
 
   hk-cycle-ontology:
     if: ${{ false }}
+    gate: code
     # HKRV-W1: cycle_ontology completeness — CONFIRMING TURN present in all required
     # sets (SIMPLE_CROSSWALK, LADDER, fallbacks). 5 conformance tests that W4 reviewer
     # found red must pass.
@@ -4509,6 +4600,7 @@ jobs:
 
   hk-leadership:
     if: ${{ false }}
+    gate: code
     # HKRV-W2: HK leadership participation organ — cohort cohesion, thrust detection,
     # southbound context, ledger gating (CN_LANE=asia). Display-only authority fence.
     runs-on: ubuntu-latest
@@ -4524,6 +4616,7 @@ jobs:
 
   hk-context-chips:
     if: ${{ false }}
+    gate: code
     # HKRV-W4: factor/EM context chips — 9 pure fail-open chip functions.
     # Tests: fail-open on absent store, rate_path state mapping, vhsi_pctile sanity,
     # compute_all no-None-values, authority fence (display_only=True) across all chips.
@@ -4540,6 +4633,7 @@ jobs:
 
   hk-robustness-w5:
     if: ${{ false }}
+    gate: code
     # HKRV-W5: robustness fixes — alignment health banner, southbound trading-day
     # staleness, freshness sentinel 7th check (southbound holdings), universe coverage
     # logging. Includes tests/test_hk_freshness.py (updated) + test_hk_robustness_w5.py.
@@ -4561,6 +4655,7 @@ jobs:
 
   hk-integration-seams:
     if: ${{ false }}
+    gate: code
     # HKRV-F6: integration seam tests — sb_persist_map ticker-key seam guards
     # silent all-False reindex; _apply_hk_confirm ladder bypass unit tests.
     runs-on: ubuntu-latest
@@ -4576,6 +4671,7 @@ jobs:
 
   hkrv-w3-banner:
     if: ${{ false }}
+    gate: code
     # HKRV-W3: leadership banner + CONFIRMING TURN chip in hk.html.j2.
     # Tests: banner renders with leaders_participating; absent on quiet/missing;
     # dynamic counts from members; breadth line; Tier-2 receipt; chip on TURN IN
@@ -4593,6 +4689,7 @@ jobs:
 
   regen-hk-g1-fixture-guard:
     if: ${{ false }}
+    gate: code
     # Guards scripts/regen_hk_g1_fixture.py — the regeneration remedy for the G1
     # staleness tripwire: byte-idempotency on an unchanged panel, the
     # ADJUSTMENT-SIGNATURE receipts on a constant-ratio re-pricing, the refusals
@@ -4624,6 +4721,7 @@ jobs:
 
   basket-staleness-warn:
     if: ${{ false }}
+    gate: code
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
     # fires a ::warning annotation and ops alert when collect timed out upstream.
     runs-on: ubuntu-latest
@@ -4639,6 +4737,7 @@ jobs:
 
   ftr-tape-surfaces:
     if: ${{ false }}
+    gate: code
     # FTR W1/W2a + W3/W8-UI template guards for the three tape surfaces
     # (baskets / allocation / basket_detail): shock banner + lever chip reading
     # framing_zh from JSON, tape band v3 ranked columns + per-column expander,
@@ -4663,6 +4762,7 @@ jobs:
 
   live-flow-ops:
     if: ${{ false }}
+    gate: data
     # FL-C (FC-R6/R7/R8 + Task 3): live-flow lane ops test suite.
     # Tests two-tier cadence, max_concurrent env override, pinned-publish
     # guarantee, and end-of-session daily summary writer.
@@ -4686,6 +4786,7 @@ jobs:
 
   ird-substrate-engines:
     if: ${{ false }}
+    gate: code
     # IRD-W1 + IRD-W2 International Risk Desk tests:
     #   W1: IMF WEO adapter, FRED alias-collision lint, CB calendar, liquidity_plumbing
     #   W2: intl_risk (EM stress + vulnerability), contagion (DY + two-tier), cb_desk
@@ -4711,6 +4812,7 @@ jobs:
 
   itr-turn-rotation:
     if: ${{ false }}
+    gate: data
     # ITR-W1 (research/INTL_TURN_ROTATION_REVAMP.md): per-market turn state
     # machine (crash/breaking/topping/... incl. KOSPI replay goldens on the
     # committed _KS11 store) + fast rotation re-rank + ITR-R6 benchmark
@@ -4728,6 +4830,7 @@ jobs:
 
   altdata-brain-govern:
     if: ${{ false }}
+    gate: code
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup
     # comment fix.  Two suites:
     #   test_w7a_tenants.py          — Article-3 verdict, actionable flag, governance
@@ -4749,6 +4852,7 @@ jobs:
 
   nw-lobe-unfreeze:
     if: ${{ false }}
+    gate: code
     # Regression guard for the two Neural-Web lobes frozen since 2026-07-07:
     #   1. dt_contra_state crash: build_dt_contra_state.py crashed on index.json (list root);
     #      fixed by isinstance(data, dict) guard — 8 tests covering the fix.
@@ -4771,6 +4875,7 @@ jobs:
 
   sa-w4-improvement-lanes:
     if: ${{ false }}
+    gate: code
     # SA-W4: standout improvement lanes — clamped review engine + Tier-0 replay +
     # lab come-back alerts.
     # Covers: whitelist/step/disjointness enforcement, dormant-reject on null baseline,
@@ -4791,6 +4896,7 @@ jobs:
 
   rc-r14-china-rotation-events:
     if: ${{ false }}
+    gate: code
     # RC-R14: China + HK rotation-event detector port tests.
     # Covers: sector_legs_china/hk loaders (basket series from baskets.json),
     # run_nightly data_subdir parameterization (China/HK path isolation from US),
@@ -4809,6 +4915,7 @@ jobs:
 
   codex-research-engine:
     if: ${{ false }}
+    gate: code
     # CRX W1 (CRX-R1..R8): Codex Research Engine — runner/budget core + both lanes.
     # Three suites, one job:
     #   test_codex_runner_budget.py  — runner binary resolution, run_codex subprocess
@@ -4840,6 +4947,7 @@ jobs:
 
   metab-throttle-ux:
     if: ${{ false }}
+    gate: code
     # V11 Metabolism Throttle UX (budget gate + run-until dispatch):
     # Three suites, one job:
     #   test_metabolism_budget_gate.py — key_budget header parsing, gate_verdict
@@ -4871,6 +4979,7 @@ jobs:
 
   admin-live-runs:
     if: ${{ false }}
+    gate: code
     # Live-runs feed: server-side snapshot for the admin live-runs panel.
     # Covers: snapshot() shape, active/queued split, elapsed_s computation,
     # last_completed duration + html_url, jobs API budget cap (≤2 calls),
@@ -4891,6 +5000,7 @@ jobs:
 
   cbf-regime:
     if: ${{ false }}
+    gate: code
     # CBF-W1 Cross-Border Flow Regime Census (CBF-R1..R12):
     # Classifier engine: pure functions, strictly causal rolling windows,
     # 5-session hysteresis, era split, EM FX sign normalization.
@@ -4914,6 +5024,7 @@ jobs:
 
   ccw-w1-data-spine:
     if: ${{ false }}
+    gate: code
     # CCW-W1 Corporate Credit Watch data spine:
     #   collectors/corp_bond_holdings.py — bond XLSX parser (ISIN-keyed, not equity path)
     #   data/corp_bonds/issuer_themes.json — issuer→theme registry v1
@@ -4947,6 +5058,7 @@ jobs:
 
   ccw-w2-gspread-engine:
     if: ${{ false }}
+    gate: code
     # CCW-W2 g-spread engine:
     #   engine/corp_credit.py — vectorized YTM solver (Newton+bisection), 30/360 US
     #                           accrued, CMT interpolation (merge_asof ≤7d backward),
@@ -4978,6 +5090,7 @@ jobs:
 
   ccw-w3-credit-momentum:
     if: ${{ false }}
+    gate: code
     # CCW-W3 credit momentum organ:
     #   engine/credit_momentum.py — spread velocity/pctile, oscillator states
     #     (secondary per CCW-R15), density gate, composition suppression,
@@ -5012,6 +5125,7 @@ jobs:
 
   ccw-w4-credit-desk:
     if: ${{ false }}
+    gate: code
     # CCW-W4 corporate credit desk surfaces:
     #   scripts/build_bonds.py — build_corp_credit_vm (null-safe vm builder),
     #     _build_corp_credit_bond_health (bond_health.corporate_credit block),
@@ -5039,6 +5153,7 @@ jobs:
 
   ccw-w6-study-s1:
     if: ${{ false }}
+    gate: code
     # CCW-W6 Study S1 — spread-velocity percentile lead study (frozen pre-registration):
     #   scripts/ccw_study_s1.py — ONE-SHOT study implementing the frozen spec in
     #     research/CCW_STUDY_S1_PREREG.md. Tests cover §9 anti-look-ahead checklist
@@ -5064,6 +5179,7 @@ jobs:
 
   support-email-spine:
     if: ${{ false }}
+    gate: data
     # Support + Email estate: the W1 spine (app/mailer.py, app/support.py,
     # admin/support_tickets.py) plus the W2 public surface (templates/support.html.j2, the
     # pinned email base). Five suites, all fully offline — no SMTP, no Supabase, no live
@@ -5143,6 +5259,7 @@ jobs:
 
   billing-emails:
     if: ${{ false }}
+    gate: code
     # Support + Email estate, W3 (app/billing_emails.py, app/account_prefs.py). A SIBLING
     # of support-email-spine rather than three more steps inside it: this lane needs the
     # Stripe SDK, and run_ci_pack only shares a virtualenv between jobs whose install
@@ -5190,6 +5307,7 @@ jobs:
 
   billing-offers:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
     # Founding Pro offer inventory + allotment pacing (app/billing.py, #3856).
     # tests/test_billing_offers.py was named by NO workflow (the unrun-suite
     # census class — the suite landed 2026-07-27, a day AFTER the census swept),
@@ -5225,6 +5343,7 @@ jobs:
 
   site-gate:
     if: ${{ false }}
+    gate: code
     # Site Access Gate: IP/country blocklist enforced at the origin.
     # Covers: fail-open contract (disabled default, missing/corrupt file allows all),
     # IP/CIDR matching (v4+v6, exact+CIDR, malformed ignored), allow_ips precedence
@@ -5252,6 +5371,7 @@ jobs:
 
   pick-lab-liquidity:
     if: ${{ false }}
+    gate: code
     # Pick Lab liquidity gate regression (P0 fix):
     # On float64, NaN.ge(threshold) returns False — not NA — so the old
     # fillna(True) was a no-op and null-adv rows were silently excluded
@@ -5282,6 +5402,7 @@ jobs:
 
   ric-w2-surface:
     if: ${{ false }}
+    gate: code
     # RIC W2 SURFACE: whole-market dealer-surface history engine unit tests.
     #   test_options_surface.py — 24 tests covering:
     #     dealer-sign convention (call-heavy +GEX, put-heavy -GEX)
@@ -5309,6 +5430,7 @@ jobs:
 
   collect-identity:
     if: ${{ false }}
+    gate: code
     # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie
     # parsing (single + chunked base64url), secretless cached token verification (monkeypatched),
     # and the EO-Client-IP real-IP precedence. Imports app.main, so fastapi is installed.
@@ -5334,6 +5456,7 @@ jobs:
 
   research-vault:
     if: ${{ false }}
+    gate: data
     # RV W1 ingestion spine: the sidecar contract normalization + every fallback
     # (missing/blank/bad-JSON, never-drop), catalog upsert ordering + institutions
     # rollup, corpus FTS5 build + a BODY-only search (proves body is searchable) +
@@ -5372,6 +5495,7 @@ jobs:
 
   research-vault-api:
     if: ${{ false }}
+    gate: code
     # RV W2 serving API + download gate (SECURITY-CRITICAL): the app/research.py
     # router — anon→401, free/unknown→402 (fails CLOSED), insider view 200 (no
     # quota), download metering 5/20 (server-authoritative, next-day reset),
@@ -5398,6 +5522,7 @@ jobs:
 
   biocatalyst-serving:
     if: ${{ false }}
+    gate: code
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -5829,6 +5954,7 @@ jobs:
 
   biocatalyst-evidence:
     if: ${{ false }}
+    gate: code
     # Security, source registry, immutable storage and normalized trial facts.
     # Kept separate from worker/history replay so a slow adversarial replay has
     # a bounded, attributable failure rather than consuming the whole suite.
@@ -5853,6 +5979,7 @@ jobs:
 
   biocatalyst-worker:
     if: ${{ false }}
+    gate: code
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -5902,6 +6029,7 @@ jobs:
 
   biocatalyst-history:
     if: ${{ false }}
+    gate: code
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -6051,6 +6179,7 @@ jobs:
 
   biocatalyst-contracts:
     if: ${{ false }}
+    gate: code
     # Schema, authority and ownership boundaries stay separately attributable.
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -6092,6 +6221,7 @@ jobs:
 
   biocatalyst-deploy-integration:
     if: ${{ false }}
+    gate: code
     # The self-heal suite tests the BioCatalyst service update boundary together
     # with the repository's deploy invariants.  It was previously co-run here;
     # giving it its own bounded command keeps that coverage without borrowing
@@ -6112,6 +6242,7 @@ jobs:
 
   biocatalyst-regulatory:
     if: ${{ false }}
+    gate: code
     # Dark B4A official Drugs@FDA archive, parser, typed-index, recovery, and
     # authority contracts. This does not arm collection or publish an API/UI.
     timeout-minutes: 12
@@ -6130,6 +6261,7 @@ jobs:
 
   marketing-social-publisher:
     if: ${{ false }}
+    gate: code
     # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer
     # adapter (all HTTP mocked via _transport), and the live runner (kill-switch
     # + --live gating, approved→posting→posted, idempotency, no-double-post).
@@ -6216,6 +6348,7 @@ jobs:
 
   marketing-media-pipeline:
     if: ${{ false }}
+    gate: code
     # D02 chart-image pipeline: the PNG signal-chart renderer (determinism +
     # magic bytes + no-indicator-words) and the R2 media publisher (fail-soft,
     # S3 stubbed). Separate job because these need Pillow (PNG raster) — the
@@ -6234,6 +6367,7 @@ jobs:
 
   marketing-engine:
     if: ${{ false }}
+    gate: data
     # Marketing lobe engine unit suite (state, departments, authority ladder,
     # opportunity scoring/bus, campaign compiler, economics, events, ledgers,
     # provenance, claims + seed-ledger round-trips). Never whitelisted when it
@@ -6562,6 +6696,7 @@ jobs:
 
   marketing-scoring-optional:
     if: ${{ false }}
+    gate: code
     # XG-W5 (= IS-W2) optional-dependency lane: the MinHash-LSH near-dup pass in
     # engine/marketing/story_spine.py.
     #
@@ -6601,6 +6736,7 @@ jobs:
 
   marketing-data:
     if: ${{ false }}
+    gate: data
     # The data-dependent half of two marketing suites whose only lanes are
     # deliberately stdlib+pyyaml. Same pairing shape as chart-render /
     # chart-render-data: the thin lanes stay thin because their minimal env IS the
@@ -6780,6 +6916,7 @@ jobs:
 
   publish-r2-client:
     if: ${{ false }}
+    gate: data
     # scripts/publish_r2._client's retry posture — 10 adaptive attempts and the
     # 15s/60s connect/read bounds that replaced the 4/standard config which died
     # 2026-07-16 mid-nightly. The assertion reads botocore's normalized config, so
@@ -6830,6 +6967,7 @@ jobs:
 
   chart-render:
     if: ${{ false }}
+    gate: code
     # chart_render SVG suites — the renderer behind every marketing card and the
     # brain gateway's inline chat chart, and (since #3551) the SVG that is
     # rasterized and posted to the live MastermindX X account.
@@ -6895,6 +7033,7 @@ jobs:
 
   chart-render-data:
     if: ${{ false }}
+    gate: code
     # The data-dependent half of the chart-render suites (see the job above).
     #
     # Added 2026-07-27. #3722 shipped load_ohlcv's crypto source resolution
@@ -6942,6 +7081,7 @@ jobs:
 
   portfolio-ctx:
     if: ${{ false }}
+    gate: data
     # Portfolio-Aware Intelligence W0 + W1 (charter:
     # research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §6). Two unit suites:
     #   * test_build_portfolio_ctx — the portfolio_ctx.v1 bake (build_ctx joins/omission/
@@ -6984,6 +7124,7 @@ jobs:
 
   options-estate-guards:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: data
     # OEU M-FIX wiring (2026-07-25): the flow-leaders / market-structure /
     # options-screener engine+builder suites (plus the neural-web support-map
     # suite, surfaced unwired by the same audit) were run by ZERO GitHub
@@ -7113,6 +7254,7 @@ jobs:
 
   prelaunch-hardening:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
     # Pre-launch hardening (P1, 2026-07-26): the anonymous /api/collect per-IP beacon
     # throttle, the /ws/tape per-IP connection cap, and generic billing/auth 5xx
     # errors (no raw-exception leak) were guarded by ZERO GitHub workflows —
@@ -7135,6 +7277,7 @@ jobs:
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: data
     # Declared (non-exclusive) ownership: the estate is BUILT from content/**
     # markdown, but that read lives inside the builder's traversal code, where
     # the opaque fallback tier no longer lets a smear claim select on `.md`
@@ -7194,6 +7337,7 @@ jobs:
 
   public-render-fastlane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
     # Public fast-path contract (2026-07-28): scripts/build_public_pages.py plus
     # the render.yml/public-render.yml surface split. Named by ZERO workflows
     # until now, so it rotted red on main invisibly — #3856 moved the founding
@@ -7219,6 +7363,7 @@ jobs:
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: data
     # D14 W1 Media Network press engine (2026-07-26). The press lane emits INTO
     # the free acquisition estate, so its own suite has to run wherever that
     # estate's drift law runs — a press change that breaks the frontmatter
@@ -7318,6 +7463,7 @@ jobs:
   unrun-vector-dsr:
     # BTC vector allocation + the DSR trial budget that haircuts it.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -7359,6 +7505,7 @@ jobs:
   unrun-oracle-desk:
     # oracle nightly + its gauntlet promotion gates.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -7380,6 +7527,7 @@ jobs:
     # (XG-W7), and the two committed X ad-campaign asset manifests. None was
     # named by any run: step before the 2026-08-03 backfill.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -7397,6 +7545,7 @@ jobs:
   unrun-grading-board:
     # US board grading — the shipped verdict ledgers and their tenure stamps.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -7441,6 +7590,7 @@ jobs:
   unrun-intl-libraries:
     # China / HK / Canada library writers behind the international surfaces.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -7550,6 +7700,7 @@ jobs:
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -7621,6 +7772,7 @@ jobs:
     # subaward rails import fastapi at module scope. Like unrun-brain-gateway
     # this buys one extra venv in whichever pack it lands.
     if: ${{ false }}
+    gate: data
     # 6 -> 8 for the nineteen-suite darkness backfill below (+~20s of tests on
     # top of an install-dominated job); the margin is for a cold wheel cache,
     # not for the suites themselves.
@@ -7742,6 +7894,7 @@ jobs:
     # API suite. Keep projection isolated; the shorter API suite runs with the
     # existing candidate-grader owner below so both retain bounded runner margin.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -7757,6 +7910,7 @@ jobs:
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -7795,6 +7949,7 @@ jobs:
   unrun-serving-admin:
     # admin control surfaces + the brain/tape serving edges.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -7846,6 +8001,7 @@ jobs:
     # China board watch-lane artifact contract, and the live session-floor
     # guard. None was named by any run: step before the 2026-08-03 backfill.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -7867,6 +8023,7 @@ jobs:
   unrun-builders-render:
     # page/render builders whose output ships to the site.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -7888,6 +8045,7 @@ jobs:
     # cross-surface consistent. All were named by no run: step before the
     # 2026-08-03 backfill — the header-family law was enforced by nothing.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -7907,6 +8065,7 @@ jobs:
   unrun-builders-stores:
     # store/ops builders behind the nightly data lanes.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -8049,6 +8208,7 @@ jobs:
   unrun-site-surfaces:
     # scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -8089,6 +8249,7 @@ jobs:
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -8123,6 +8284,7 @@ jobs:
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -8146,6 +8308,7 @@ jobs:
     # the guards that keep the plain-word doctrine enforced by CI instead of by
     # memory; none was named by any run: step before the 2026-08-03 backfill.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -8163,6 +8326,7 @@ jobs:
   unrun-neuralweb-cortex:
     # neural-web cortex world-state consumers + the factor-contradiction plane.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -8191,6 +8355,7 @@ jobs:
   unrun-vector-baskets:
     # vector allocation surfaces + the calibration ledger and basket pulse they read.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -8218,6 +8383,7 @@ jobs:
     # The Signal Episode Atlas suites (stock_events / event_atlas) ride the same
     # lane: same organ family, same canon math, same ledger-lane gate.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -8270,6 +8436,7 @@ jobs:
     # StochRSI/RSI-MACD/session-anchor helpers), and one test pins that import so a
     # local re-derivation fails immediately.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
@@ -8381,6 +8548,7 @@ jobs:
     # threading. The battery reads the tracked CN reference store
     # (data/china/000001.SS.parquet) and skips that single test if absent.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 6
     #
     # CURATED SCOPE (2026-08-15 wave 4). `scope: exclusive` makes the paths below
@@ -8471,6 +8639,7 @@ jobs:
     # measurement trap describes: their subjects were always path-covered,
     # but no run: step named the suites themselves before 2026-08-03.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -8527,6 +8696,7 @@ jobs:
     # `co_consts` scan reading an empty tuple. A guard nothing runs is a guard
     # that is already open: the repair and the enrolment ship together.
     if: ${{ false }}
+    gate: data
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -9128,6 +9298,7 @@ jobs:
     # nightly-lane gates and scorecard null-disclosure had no CI eye on them at all.
     # A gate hung on a suite nothing runs is a gate that is already open.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -9217,6 +9388,7 @@ jobs:
     # COMMITTED board + china_stocks stores, the S1/S2 HTF super-tier engine
     # fields, and the Prophet × Stage-Analysis fusion harness.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -9243,6 +9415,7 @@ jobs:
   unrun-intl-collectors:
     # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -9271,6 +9444,7 @@ jobs:
   unrun-russell-breadth:
     # the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -9303,6 +9477,7 @@ jobs:
     # (httpx). Kept off the shared unrun-* line so the other twenty jobs still share
     # one venv; execute_pack sorts by install string, so this costs one extra venv.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -9318,6 +9493,7 @@ jobs:
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 7
     runs-on: ubuntu-latest
     steps:
@@ -9349,6 +9525,7 @@ jobs:
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
     if: ${{ false }}
+    gate: data
     # 6 -> 15. This job is STRUCTURALLY at-cap, not slowed by any change. Measured on a
     # fast Mac Studio, its FIRST step alone (27 test files, 941 passed) runs 3:40 — 61% of
     # a 6-minute budget that must ALSO cover `pip install ... scikit-learn` and seven more
@@ -9561,6 +9738,7 @@ jobs:
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -9590,6 +9768,7 @@ jobs:
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
     if: ${{ false }}
+    gate: code
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
@@ -9612,6 +9791,7 @@ jobs:
     # the #1115 order-dependent flake happened.  The suite AST-parses all four trees,
     # so it costs ~48s wall on its own; 5 minutes leaves headroom on a cold runner.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -9644,6 +9824,7 @@ jobs:
     # today.  A pack continues past a failing JOB, so a job boundary is what actually keeps
     # this eye open.  Same install line as its neighbours, so it shares their venv.
     if: ${{ false }}
+    gate: code
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -9674,6 +9855,7 @@ jobs:
   # dominated by test_sector_central's compute() over the real store (~40s).
   unrun-scoring-engine:
     if: ${{ false }}
+    gate: code
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -9745,6 +9927,7 @@ jobs:
   # layer compact while preserving the click-through detail affordances.
   unrun-template-chips:
     if: ${{ false }}
+    gate: code
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -9791,6 +9974,7 @@ jobs:
   # pandas/numpy/pyarrow environment and remain isolated from product authority.
   unrun-pit-probes:
     if: ${{ false }}
+    gate: data
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -9837,6 +10021,7 @@ jobs:
   # ci.yml — check how a suite reaches its subject before believing a dark verdict.
   unrun-dark-guards:
     if: ${{ false }}
+    gate: code
     timeout-minutes: 4
     runs-on: ubuntu-latest
     steps:
@@ -9890,6 +10075,7 @@ jobs:
   # set's single venv instead of adding one.
   unrun-hk-board:
     if: ${{ false }}
+    gate: data
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -9944,6 +10130,7 @@ jobs:
     # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside
     # the census set's single venv instead of adding one.
     if: ${{ false }}
+    gate: data
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -10055,6 +10242,7 @@ jobs:
     # pyarrow is not optional: every fixture round-trips through parquet, which
     # is the only way the test can see a dtype/schema regression in the reader.
     if: ${{ false }}
+    gate: data
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -10083,6 +10271,7 @@ jobs:
     # own tests are dark is worse than no grader, which is the whole reason this
     # job exists on the day the module lands rather than in a later backfill.
     if: ${{ false }}
+    gate: data
     # CURATED SCOPE (2026-08-14 incident follow-up). `scope: exclusive` makes
     # the paths below REPLACE inference instead of being unioned under it, so
     # the opaque fallback tier this job used to carry — whole-tree `site/**`,
@@ -10232,6 +10421,7 @@ jobs:
 
   research-price-panel:
     if: ${{ false }}
+    gate: code
     # The versioned FROZEN research price panel (data/research_panels/).  Two audits
     # measured that our evidence base is not reproducible: the breadth close caches are
     # re-based at a full rebuild and accrue RAW closes after it, so PNC's 2026-06-22 close
@@ -10286,6 +10476,7 @@ jobs:
     # the pending ratchet, which is what keeps this from turning into a blanket
     # file-level exemption the next time a sweep is in flight.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -10319,6 +10510,7 @@ jobs:
     # imports it at module scope; without it the collector suite errors on import
     # rather than running, which reads as a pack failure rather than a missing dep.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -10342,6 +10534,7 @@ jobs:
     # transport is exercised only with bounded offline fixtures in this
     # zero-network lane.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: data
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -10431,6 +10624,7 @@ jobs:
     # `pyyaml` because lib/config.py reads config.yml at import. No `requests`: this
     # plane is an assembler over committed parquet and makes no network call.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -10488,6 +10682,7 @@ jobs:
     # No pyarrow or network — it otherwise reads two templates, one plain-copy JS
     # asset, and shells node.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
@@ -10543,6 +10738,7 @@ jobs:
     # installed the equivalence test compares the two definitions for real; without it the
     # test would skip and the fallback could drift unnoticed.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -10573,6 +10769,7 @@ jobs:
     # a missing pulse.json or a missing tape from either crashing the nightly or
     # printing a state it cannot support.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -10602,6 +10799,7 @@ jobs:
     # is already a strict superset, and keeping one selected owner preserves the
     # representative-diff job ceiling without leaving either suite dark.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: data
     paths:
       - data/alerts/alerts_log.parquet
       - data/cycle_ontology/falsifiers.json
@@ -10718,6 +10916,7 @@ jobs:
     # offline: source responses and authenticated producer rows are synthetic,
     # while raw production bytes remain host-private outside git.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
     paths:
       - config/dag.yml
       - contracts/options/options.prospective_nbbo_cohort.v1.schema.json
@@ -10747,6 +10946,7 @@ jobs:
 
   product-experience-registry:
     if: ${{ false }}
+    gate: code
     # HANDOFF C (Operation Institutionalize), half one: the cross-repo page
     # registry census. Pure pytest, no browser anywhere near it.
     #
@@ -10778,6 +10978,7 @@ jobs:
 
   product-experience-capture:
     if: ${{ false }}
+    gate: code
     # HANDOFF C (Operation Institutionalize), half two: the browser evidence
     # capture harness. The suite is pure pytest with an injected fake driver —
     # playwright is deliberately NOT installed here and must never be: a missing
@@ -10809,6 +11010,7 @@ jobs:
     # never contact MomoEdge, inspect browser authentication, or write cohort
     # coverage. Exact source bytes remain host-private outside git.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
     paths:
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
@@ -10848,6 +11050,7 @@ jobs:
     # tests are synthetic and cannot arm a selector, inspect candidate data,
     # write private evidence, or dispatch any workflow.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
     paths:
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
@@ -10875,6 +11078,7 @@ jobs:
 
   reference-integrity:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
     # design.reference_integrity PR gate (RIG V1, research/REFERENCE_INTEGRITY_GATE_V1.md).
     # Stops REFERENCE LAUNDERING: a bad product decision becomes a reference, the reference
     # becomes law, builders reproduce it faithfully, reviewers compare against it instead of
@@ -10924,6 +11128,7 @@ jobs:
     # imports stdlib-only and pulls yaml lazily inside registry.load_registry, so a
     # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
     paths:
       - config/delisted_symbols.yml
       - lib/__init__.py
@@ -10984,6 +11189,7 @@ jobs:
     # test. Non-emptiness guards are explicit, because an agreement gate over zero securities
     # is green forever and means nothing.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
     paths:
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
@@ -11026,6 +11232,7 @@ jobs:
 
   no-client-supplied-identity:
     if: ${{ false }}
+    gate: code
     # WS-9 / GATE-6: route handlers must not take user identity from the client.
     # _pg() uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS); token-derived identity
     # is the only cross-tenant fence. Scoped to app/** — an app-only PR must
