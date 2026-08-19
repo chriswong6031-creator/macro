@@ -1,20 +1,20 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-18",
-  "data_session": "2026-08-17",
-  "built": "2026-08-18T10:14:45Z",
+  "asof": "2026-08-19",
+  "data_session": "2026-08-18",
+  "built": "2026-08-19T07:08:55Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
   "counts": {
-    "total": 2738,
+    "total": 2739,
     "stage1": 148,
     "stage2": 1561,
     "stage2_fresh": 350,
     "stage3": 164,
-    "stage4": 865,
-    "too_young": 348,
-    "new_today": 29
+    "stage4": 866,
+    "too_young": 350,
+    "new_today": 0
   },
   "market": {
     "pct_stage2": 57.0,
@@ -25,140 +25,65 @@
   },
   "top_stage2": [
     {
-      "ticker": "GENC",
-      "company": "Gencor Industries Inc",
+      "ticker": "KELYA",
+      "company": "Kelly Services Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 70,
-      "ma30_slope_pct5w": 2.695,
-      "pct_vs_ma30": 19.87,
-      "mansfield_rs": 9.91,
-      "vol_ratio": 1.32,
-      "event": "trendline_recapture",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.18,
-      "atr_ext": 2.529,
-      "atr_pct_price": 0.06556,
-      "sata_score": 8,
-      "sata_change_1w": 4,
-      "stage_detailed": "2D_extended_run",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "AVAH",
-      "company": "Aveanna Healthcare Holdings Inc",
-      "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
-      "stage": 2,
-      "weeks_in_stage": 3,
+      "weeks_in_stage": 10,
       "fresh": true,
       "sga_score": 63,
-      "ma30_slope_pct5w": 2.947,
-      "pct_vs_ma30": 57.0,
-      "mansfield_rs": 33.9,
-      "vol_ratio": 1.58,
+      "ma30_slope_pct5w": 10.572,
+      "pct_vs_ma30": 44.29,
+      "mansfield_rs": 30.74,
+      "vol_ratio": 0.86,
       "event": "pullback_resume",
       "gate_tier": "T1",
       "blackout": false,
-      "arc_pos": 0.2875,
+      "arc_pos": 0.375,
       "earnings": {
         "present": true,
-        "sentiment": 0.8,
-        "performance": 9.5,
+        "sentiment": 0.3333333333333333,
+        "performance": 3.75,
         "tone_word": "confident",
         "tags": [
-          "guidance_raised",
-          "beat_and_raise",
-          "demand_acceleration"
+          "staffing",
+          "talent_solutions",
+          "msp",
+          "rpo",
+          "technology_modernization",
+          "cost_reduction",
+          "1_kelly_strategy",
+          "growth_office",
+          "human_capital_services",
+          "professional_staffing",
+          "it_staffing",
+          "education_services",
+          "outsourced_solutions",
+          "recruitment_process_outsourcing",
+          "managed_service_provider",
+          "consulting_services"
         ],
-        "quarter": "Q2",
-        "summary": "Aveanna Healthcare reported Q2 FY26 revenue of $670 million (up 13.7% YoY) and adjusted EBITDA of $95.4 million (up 8% YoY), driven by volume growth across all segments including a 14.8% increase in Home Health & Hospice. Management raised full-year guidance to revenue greater…"
+        "quarter": "Q1",
+        "summary": "Excluding... reduced demand from the federal government and 3 top ETM customers, revenue was down 3.3% on an underlying basis, which was improved."
       },
       "why": [
-        "Early in its climb — 3 weeks up so far",
+        "Early in its climb — 10 weeks up so far",
         "Already stretched well above its 30-week line — may need a rest",
         "Also shows a strong confirmation from our other checks"
       ],
       "why_zh": [
-        "上升初期 — 已上行 3 周",
+        "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 1.0742,
-      "atr_ext": 4.164,
-      "atr_pct_price": 0.08719,
+      "atr_14w": 1.3768,
+      "atr_ext": 3.58,
+      "atr_pct_price": 0.08573,
       "sata_score": 9,
       "sata_change_1w": 1,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 85.1
-    },
-    {
-      "ticker": "FDMT",
-      "company": "4D Molecular Therapeutics Inc",
-      "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
-      "stage": 2,
-      "weeks_in_stage": 5,
-      "fresh": true,
-      "sga_score": 63,
-      "ma30_slope_pct5w": 5.459,
-      "pct_vs_ma30": 24.86,
-      "mansfield_rs": 15.89,
-      "vol_ratio": 0.82,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3125,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 5 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 5 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.7341,
-      "atr_ext": 1.4,
-      "atr_pct_price": 0.14225,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 68.1
+      "industry_percentile": 91.9
     },
     {
       "ticker": "SILA",
@@ -220,7 +145,7 @@
       "ticker": "AVTX",
       "company": "Avalo Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -306,7 +231,7 @@
       "ticker": "ITIC",
       "company": "Investors Title Co",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -476,7 +401,7 @@
       "ticker": "NKTR",
       "company": "Nektar Therapeutics",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -517,6 +442,61 @@
       "sata_change_1w": -2,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
+    },
+    {
+      "ticker": "GNW",
+      "company": "Genworth Financial, Inc.",
+      "sector": "Financials",
+      "stage_source_asof": "2026-08-17",
+      "stage": 2,
+      "weeks_in_stage": 7,
+      "fresh": true,
+      "sga_score": 54,
+      "ma30_slope_pct5w": 1.914,
+      "pct_vs_ma30": 13.8,
+      "mansfield_rs": 2.53,
+      "vol_ratio": 0.94,
+      "event": "pullback_resume",
+      "gate_tier": "T3",
+      "blackout": false,
+      "arc_pos": 0.3375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.4444444444444444,
+        "performance": 5.0,
+        "tone_word": "confident",
+        "tags": [
+          "long_term_care",
+          "mortgage_insurance",
+          "capital_allocation",
+          "share_repurchase",
+          "closed_block",
+          "aging_care_services",
+          "life_insurance",
+          "capital_returns",
+          "share_buybacks",
+          "risk_management",
+          "new_business_growth",
+          "aging_services"
+        ],
+        "quarter": "Q1",
+        "summary": "Our results this quarter were led by continued strong performance from Enact, with adjusted operating income of $140 million."
+      },
+      "why": [
+        "Early in its climb — 7 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 7 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 0.485,
+      "atr_ext": 2.54,
+      "atr_pct_price": 0.04774,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 63.3
     },
     {
       "ticker": "LPRO",
@@ -572,50 +552,6 @@
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
       "industry_percentile": 100.0
-    },
-    {
-      "ticker": "MGRC",
-      "company": "McGrath Rentcorp",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 54,
-      "ma30_slope_pct5w": 1.851,
-      "pct_vs_ma30": 7.88,
-      "mansfield_rs": -2.65,
-      "vol_ratio": 0.94,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 7.0507,
-      "atr_ext": 1.267,
-      "atr_pct_price": 0.05766,
-      "sata_score": 6,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
     },
     {
       "ticker": "COOK",
@@ -821,7 +757,7 @@
       "ticker": "HNST",
       "company": "Honest Company Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -877,7 +813,7 @@
       "ticker": "WNC",
       "company": "Wabash National Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -933,7 +869,7 @@
       "ticker": "AMLX",
       "company": "Amylyx Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -975,7 +911,7 @@
       "ticker": "MNPR",
       "company": "Monopar Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -1106,7 +1042,7 @@
       "ticker": "BZH",
       "company": "Beazer Homes USA Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1161,7 +1097,7 @@
       "ticker": "DSGR",
       "company": "Distribution Solutions Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -1245,7 +1181,7 @@
       "ticker": "HNVR",
       "company": "Hanover Bancorp Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -1329,7 +1265,7 @@
       "ticker": "ACIW",
       "company": "ACI Worldwide",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -1387,7 +1323,7 @@
       "ticker": "KTB",
       "company": "Kontoor Brands",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1432,7 +1368,7 @@
       "ticker": "LEGH",
       "company": "Legacy Housing Corp",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1474,7 +1410,7 @@
       "ticker": "LWAY",
       "company": "Lifeway Foods Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1519,7 +1455,7 @@
       "ticker": "NEXN",
       "company": "Nexxen International Ltd",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1564,7 +1500,7 @@
       "ticker": "AIRS",
       "company": "Airsculpt Technologies Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -1611,7 +1547,7 @@
       "ticker": "FLR",
       "company": "Fluor",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1658,7 +1594,7 @@
       "ticker": "LH",
       "company": "Labcorp",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -1715,7 +1651,7 @@
       "ticker": "PSNL",
       "company": "Personalis Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1830,7 +1766,7 @@
       "ticker": "SEG",
       "company": "Seaport Entertainment Group Inc",
       "sector": "Real Estate",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1943,7 +1879,7 @@
       "ticker": "XNCR",
       "company": "Xencor Inc",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -1985,7 +1921,7 @@
       "ticker": "ALTG",
       "company": "Alta Equipment Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2042,7 +1978,7 @@
       "ticker": "ATAI",
       "company": "AtaiBeckley Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2084,7 +2020,7 @@
       "ticker": "CVI",
       "company": "CVR Energy, Inc.",
       "sector": "Energy",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -2181,7 +2117,7 @@
       "ticker": "MASS",
       "company": "908 Devices Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2269,7 +2205,7 @@
       "ticker": "BLFS",
       "company": "BioLife Solutions, Inc.",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2325,7 +2261,7 @@
       "ticker": "BOW",
       "company": "Bowhead Specialty Holdings Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2424,7 +2360,7 @@
       "ticker": "HAS",
       "company": "Hasbro",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 2,
       "fresh": true,
@@ -2479,7 +2415,7 @@
       "ticker": "SMTI",
       "company": "Sanara MedTech Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -2583,7 +2519,7 @@
       "ticker": "AGIO",
       "company": "Agios Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -2640,7 +2576,7 @@
       "ticker": "CNK",
       "company": "Cinemark Holdings, Inc.",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2698,7 +2634,7 @@
       "ticker": "FIVN",
       "company": "Five9 Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2750,6 +2686,48 @@
       "industry_percentile": 93.2
     },
     {
+      "ticker": "GENC",
+      "company": "Gencor Industries Inc",
+      "sector": "Industrials",
+      "stage_source_asof": "2026-08-18",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 2.695,
+      "pct_vs_ma30": 19.87,
+      "mansfield_rs": 9.91,
+      "vol_ratio": 1.32,
+      "event": "trendline_recapture",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 1.18,
+      "atr_ext": 2.529,
+      "atr_pct_price": 0.06556,
+      "sata_score": 8,
+      "sata_change_1w": 4,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
+    },
+    {
       "ticker": "NUAI",
       "company": "New Era Energy & Digital Inc",
       "sector": "Technology",
@@ -2767,13 +2745,16 @@
       "blackout": false,
       "arc_pos": 0.35,
       "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
+        "present": true,
+        "sentiment": 0.5,
+        "performance": 7.5,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raised",
+          "demand_acceleration"
+        ],
+        "quarter": "Q2",
+        "summary": "New Era delivered significant de-risking progress in Q2 FY2026 by securing construction permits and closing the acquisition of a critical land corridor at its flagship TCDC site. The company expanded Phase Two power capacity from 450 MW to approximately 550 MW, bringing total …"
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
@@ -2837,7 +2818,7 @@
       "ticker": "PESI",
       "company": "Perma-Fix Environmental Services Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-17",
+      "stage_source_asof": "2026-08-18",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -2924,21 +2905,51 @@
       "sata_change_1w": -2,
       "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": null
+    },
+    {
+      "ticker": "SAFT",
+      "company": "Safety Insurance Group, Inc.",
+      "sector": "Financials",
+      "stage_source_asof": "2026-08-18",
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 5.092,
+      "pct_vs_ma30": 33.16,
+      "mansfield_rs": 23.16,
+      "vol_ratio": 2.91,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 4.8407,
+      "atr_ext": 5.317,
+      "atr_pct_price": 0.04684,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
     }
   ],
   "warnings_stage3": [
-    {
-      "ticker": "INDI",
-      "company": "Indie Semiconductor Inc",
-      "weeks_in_stage": 5,
-      "sga_score": 30
-    },
-    {
-      "ticker": "EPM",
-      "company": "Evolution Petroleum Corp",
-      "weeks_in_stage": 10,
-      "sga_score": 28
-    },
     {
       "ticker": "ARR",
       "company": "Armour Residential REIT",
@@ -2960,18 +2971,6 @@
     {
       "ticker": "ABUS",
       "company": "Arbutus Biopharma Corp",
-      "weeks_in_stage": 4,
-      "sga_score": 25
-    },
-    {
-      "ticker": "BORR",
-      "company": "Borr Drilling Ltd",
-      "weeks_in_stage": 2,
-      "sga_score": 25
-    },
-    {
-      "ticker": "EW",
-      "company": "Edwards Lifesciences",
       "weeks_in_stage": 4,
       "sga_score": 25
     },
@@ -3046,6 +3045,30 @@
       "company": "Resources Connection, Inc.",
       "weeks_in_stage": 4,
       "sga_score": 15
+    },
+    {
+      "ticker": "SRTA",
+      "company": "Strata Critical Medical Inc",
+      "weeks_in_stage": 2,
+      "sga_score": 15
+    },
+    {
+      "ticker": "TR",
+      "company": "Tootsie Roll Industries, Inc.",
+      "weeks_in_stage": 10,
+      "sga_score": 15
+    },
+    {
+      "ticker": "VALU",
+      "company": "Value Line Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 15
+    },
+    {
+      "ticker": "FRPH",
+      "company": "FRP Holdings Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 14
     }
   ],
   "sectors": [
@@ -10305,6 +10328,10 @@
       4,
       1
     ],
+    "NXH": [
+      4,
+      5
+    ],
     "NXPI": [
       2,
       15
@@ -14109,410 +14136,15 @@
   "changes": {
     "items": [
       {
-        "kind": "topping",
-        "ticker": "ACH",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ADTN",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "ADUS",
-        "detail": "Moved into an advancing stage"
-      },
-      {
         "kind": "entered_stage4",
-        "ticker": "AG",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "AHCO",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "AII",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "ALH",
-        "detail": "Now in an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "ALRM",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ANNX",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "APLD",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ARE",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "ARL",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ATO",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "AWK",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "B",
+        "ticker": "NXH",
         "detail": "Now in a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "BEAM",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "BF-B",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "BH",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "BIOA",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "BKTI",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "BOX",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "BRSP",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "BRT",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "BTDR",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "BV",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "BWXT",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "BXC",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "BXP",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "CBFV",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CDNS",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CDXS",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "CHRS",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CHRW",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CIM",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CLPT",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "CLW",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "CRCT",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "CRD-A",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "CXDO",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "DIN",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "DJCO",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "DOLE",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "DOV",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "EOLS",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "ESNT",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "FBK",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "FHTX",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "FSBW",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "GATX",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "GBX",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "GCT",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "GDOT",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "GLUE",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "GPN",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "GRNT",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "HAE",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "HE",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "HGV",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "HRTG",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "HUN",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "HYMC",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "HYPR",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "IRMD",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ISSC",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "KODK",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "LAND",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "LFMD",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "LHX",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "LII",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "MARA",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "MFA",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "MNTK",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "NMAX",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "NOG",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "NPB",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "NXE",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "OCFC",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "OMC",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "PACK",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "PAGS",
-        "detail": "Rolled over into a declining stage"
       }
     ],
-    "n": 80
+    "n": 1
   },
   "prev_state": {
-    "asof": "2026-08-14",
+    "asof": "2026-08-18",
     "by_key": {
       "A": {
         "stage": 1,
@@ -14537,12 +14169,12 @@
       "AAP": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AAPL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AARD": {
         "stage": 4,
@@ -14562,7 +14194,7 @@
       "ABBV": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "ABCB": {
         "stage": 2,
@@ -14572,7 +14204,7 @@
       "ABEO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ABG": {
         "stage": 4,
@@ -14582,7 +14214,7 @@
       "ABM": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ABNB": {
         "stage": 2,
@@ -14592,7 +14224,7 @@
       "ABOS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ABR": {
         "stage": 4,
@@ -14622,7 +14254,7 @@
       "ACA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ACAD": {
         "stage": 1,
@@ -14632,7 +14264,7 @@
       "ACCO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ACDC": {
         "stage": 2,
@@ -14647,17 +14279,17 @@
       "ACGL": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "ACH": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "ACHC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ACHR": {
         "stage": 4,
@@ -14682,12 +14314,12 @@
       "ACLS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ACMR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ACN": {
         "stage": 4,
@@ -14697,7 +14329,7 @@
       "ACNB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ACNT": {
         "stage": 3,
@@ -14717,7 +14349,7 @@
       "ACRS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ACT": {
         "stage": 2,
@@ -14727,7 +14359,7 @@
       "ACTG": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ACTU": {
         "stage": 4,
@@ -14737,7 +14369,7 @@
       "ACU": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ACVA": {
         "stage": 4,
@@ -14767,12 +14399,12 @@
       "ADI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ADM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ADMA": {
         "stage": 4,
@@ -14792,7 +14424,7 @@
       "ADPT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ADSK": {
         "stage": 4,
@@ -14800,24 +14432,24 @@
         "event": null
       },
       "ADTN": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "ADUS": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "ADV": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "AEE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "AEHR": {
         "stage": 2,
@@ -14827,7 +14459,7 @@
       "AEIS": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AEM": {
         "stage": 4,
@@ -14846,8 +14478,8 @@
       },
       "AES": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "AESI": {
         "stage": 2,
@@ -14865,7 +14497,7 @@
         "event": null
       },
       "AFCG": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -14885,14 +14517,14 @@
         "event": null
       },
       "AG": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "AGEN": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "AGI": {
         "stage": 4,
@@ -14902,7 +14534,7 @@
       "AGIO": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AGL": {
         "stage": 2,
@@ -14912,7 +14544,7 @@
       "AGM": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AGNT": {
         "stage": 4,
@@ -14922,7 +14554,7 @@
       "AGX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AGYS": {
         "stage": 4,
@@ -14930,7 +14562,7 @@
         "event": null
       },
       "AHCO": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -14941,7 +14573,7 @@
       },
       "AHRT": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": null
       },
       "AI": {
@@ -14955,14 +14587,14 @@
         "event": null
       },
       "AII": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "AIN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AIOT": {
         "stage": 4,
@@ -14992,7 +14624,7 @@
       "AIRS": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AISP": {
         "stage": 4,
@@ -15012,7 +14644,7 @@
       "AIZ": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AJG": {
         "stage": 1,
@@ -15022,7 +14654,7 @@
       "AKAM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "AKBA": {
         "stage": 4,
@@ -15032,12 +14664,12 @@
       "AKR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ALAB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ALB": {
         "stage": 4,
@@ -15067,11 +14699,16 @@
       "ALGN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ALGT": {
         "stage": 2,
         "fresh": false,
+        "event": null
+      },
+      "ALH": {
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "ALHC": {
@@ -15092,7 +14729,7 @@
       "ALKS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ALKT": {
         "stage": 4,
@@ -15102,10 +14739,10 @@
       "ALL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ALLE": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -15132,7 +14769,7 @@
       "ALNT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ALNY": {
         "stage": 4,
@@ -15142,17 +14779,17 @@
       "ALOY": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ALRM": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "ALRS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ALT": {
         "stage": 4,
@@ -15177,12 +14814,12 @@
       "ALX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ALXO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMAL": {
         "stage": 2,
@@ -15192,12 +14829,12 @@
       "AMAT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMBA": {
         "stage": 2,
         "fresh": true,
-        "event": "breakout"
+        "event": null
       },
       "AMBP": {
         "stage": 2,
@@ -15207,7 +14844,7 @@
       "AMBQ": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMC": {
         "stage": 2,
@@ -15217,7 +14854,7 @@
       "AMCR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMCX": {
         "stage": 2,
@@ -15242,12 +14879,12 @@
       "AMLX": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AMP": {
         "stage": 2,
@@ -15287,7 +14924,7 @@
       "AMRX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AMSC": {
         "stage": 3,
@@ -15307,7 +14944,7 @@
       "AMTB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AMTX": {
         "stage": 3,
@@ -15365,7 +15002,7 @@
         "event": null
       },
       "ANNX": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -15382,7 +15019,7 @@
       "AOMR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AON": {
         "stage": 1,
@@ -15412,7 +15049,7 @@
       "AP": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "APA": {
         "stage": 2,
@@ -15437,15 +15074,15 @@
       "APGE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "APH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "APLD": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -15462,7 +15099,7 @@
       "APOG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "APP": {
         "stage": 4,
@@ -15477,7 +15114,7 @@
       "APPS": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "APTV": {
         "stage": 4,
@@ -15502,7 +15139,7 @@
       "ARCB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ARCT": {
         "stage": 1,
@@ -15512,7 +15149,7 @@
       "ARDT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ARDX": {
         "stage": 4,
@@ -15520,8 +15157,8 @@
         "event": null
       },
       "ARE": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "AREC": {
@@ -15547,7 +15184,7 @@
       "ARI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ARKO": {
         "stage": 2,
@@ -15555,7 +15192,7 @@
         "event": null
       },
       "ARL": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -15567,7 +15204,7 @@
       "ARM": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ARMP": {
         "stage": 4,
@@ -15582,7 +15219,7 @@
       "AROW": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ARQ": {
         "stage": 4,
@@ -15637,17 +15274,17 @@
       "ASC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ASH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ASIC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ASIX": {
         "stage": 2,
@@ -15682,7 +15319,7 @@
       "ASPN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ASTE": {
         "stage": 2,
@@ -15722,12 +15359,12 @@
       "ATEN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ATEX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ATKR": {
         "stage": 2,
@@ -15737,7 +15374,7 @@
       "ATLC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ATLN": {
         "stage": 4,
@@ -15757,11 +15394,11 @@
       "ATNI": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ATO": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "ATOM": {
@@ -15792,7 +15429,7 @@
       "AUB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AUPH": {
         "stage": 3,
@@ -15802,7 +15439,7 @@
       "AURA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AVA": {
         "stage": 2,
@@ -15822,22 +15459,22 @@
       "AVB": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AVBC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AVBH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "AVBP": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "AVD": {
         "stage": 4,
@@ -15847,12 +15484,12 @@
       "AVGO": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "AVIR": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AVNS": {
         "stage": 2,
@@ -15862,7 +15499,7 @@
       "AVNT": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AVNW": {
         "stage": 1,
@@ -15872,10 +15509,10 @@
       "AVO": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AVPT": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -15900,9 +15537,9 @@
         "event": null
       },
       "AWK": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "AWR": {
         "stage": 2,
@@ -15912,7 +15549,7 @@
       "AX": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "AXGN": {
         "stage": 2,
@@ -15937,7 +15574,7 @@
       "AXTI": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "AZN": {
         "stage": 4,
@@ -15958,6 +15595,11 @@
         "stage": 2,
         "fresh": false,
         "event": "pullback_resume"
+      },
+      "B": {
+        "stage": 4,
+        "fresh": false,
+        "event": null
       },
       "BA": {
         "stage": 3,
@@ -16007,17 +15649,17 @@
       "BATRA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BATRK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BAX": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "BBAI": {
         "stage": 4,
@@ -16032,7 +15674,7 @@
       "BBCP": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BBIO": {
         "stage": 3,
@@ -16052,7 +15694,7 @@
       "BBT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BBUC": {
         "stage": 4,
@@ -16067,17 +15709,17 @@
       "BBY": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "BCAL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BCAX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BCBP": {
         "stage": 2,
@@ -16102,7 +15744,7 @@
       "BCPC": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "BCRX": {
         "stage": 2,
@@ -16117,7 +15759,7 @@
       "BDN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "BDTX": {
         "stage": 4,
@@ -16135,7 +15777,7 @@
         "event": null
       },
       "BEAM": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -16152,12 +15794,12 @@
       "BELFB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BEN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BETR": {
         "stage": 4,
@@ -16165,8 +15807,8 @@
         "event": null
       },
       "BF-B": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "BFC": {
@@ -16187,12 +15829,12 @@
       "BFS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BFST": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BG": {
         "stage": 2,
@@ -16202,7 +15844,7 @@
       "BGC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "BGS": {
         "stage": 4,
@@ -16210,8 +15852,8 @@
         "event": null
       },
       "BH": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "BHB": {
@@ -16222,7 +15864,7 @@
       "BHE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BHR": {
         "stage": 4,
@@ -16237,7 +15879,7 @@
       "BHVN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "BIIB": {
         "stage": 2,
@@ -16245,7 +15887,7 @@
         "event": "pullback_resume"
       },
       "BIOA": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -16262,7 +15904,7 @@
       "BJRI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BKD": {
         "stage": 2,
@@ -16277,7 +15919,7 @@
       "BKH": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "BKKT": {
         "stage": 4,
@@ -16297,17 +15939,17 @@
       "BKSY": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "BKTI": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "BKU": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "BKV": {
         "stage": 4,
@@ -16352,7 +15994,7 @@
       "BLMN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BLND": {
         "stage": 4,
@@ -16397,12 +16039,12 @@
       "BNED": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BNL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BNTC": {
         "stage": 1,
@@ -16417,12 +16059,12 @@
       "BOC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "BOH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BOOM": {
         "stage": 1,
@@ -16445,14 +16087,14 @@
         "event": "pullback_resume"
       },
       "BOX": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "BPOP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BPRN": {
         "stage": 2,
@@ -16470,7 +16112,7 @@
         "event": null
       },
       "BRBS": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -16500,13 +16142,13 @@
         "event": null
       },
       "BRSP": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "BRT": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "BRZE": {
@@ -16540,7 +16182,7 @@
         "event": null
       },
       "BTDR": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -16557,7 +16199,7 @@
       "BTSG": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BTU": {
         "stage": 4,
@@ -16577,7 +16219,7 @@
       "BURL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BUSE": {
         "stage": 2,
@@ -16585,14 +16227,14 @@
         "event": "pullback_resume"
       },
       "BV": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "BVFL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "BVS": {
         "stage": 2,
@@ -16612,7 +16254,7 @@
       "BWFG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BWIN": {
         "stage": 2,
@@ -16625,7 +16267,7 @@
         "event": null
       },
       "BWXT": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -16635,8 +16277,8 @@
         "event": null
       },
       "BXC": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "BXMT": {
@@ -16645,14 +16287,14 @@
         "event": null
       },
       "BXP": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "BY": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "BYD": {
         "stage": 3,
@@ -16677,7 +16319,7 @@
       "BZH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "C": {
         "stage": 2,
@@ -16697,7 +16339,7 @@
       "CAC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CADL": {
         "stage": 2,
@@ -16712,7 +16354,7 @@
       "CAH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CAKE": {
         "stage": 2,
@@ -16747,7 +16389,7 @@
       "CAMT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CAPR": {
         "stage": 4,
@@ -16760,22 +16402,22 @@
         "event": null
       },
       "CARG": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "CARL": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "CARR": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "CARS": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -16792,7 +16434,7 @@
       "CASY": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CAT": {
         "stage": 2,
@@ -16820,14 +16462,14 @@
         "event": "pullback_resume"
       },
       "CBFV": {
-        "stage": 3,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "CBIO": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "CBK": {
         "stage": 2,
@@ -16837,7 +16479,7 @@
       "CBL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CBLL": {
         "stage": 4,
@@ -16852,12 +16494,12 @@
       "CBNK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CBOE": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CBRE": {
         "stage": 4,
@@ -16872,7 +16514,7 @@
       "CBT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CBU": {
         "stage": 2,
@@ -16927,7 +16569,7 @@
       "CCNE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CCO": {
         "stage": 2,
@@ -16947,12 +16589,12 @@
       "CCS": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "CCSI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CD": {
         "stage": 4,
@@ -16967,10 +16609,10 @@
       "CDNA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CDNS": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -16990,8 +16632,8 @@
         "event": null
       },
       "CDXS": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "CDZI": {
@@ -17002,7 +16644,7 @@
       "CECO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CEG": {
         "stage": 4,
@@ -17017,12 +16659,12 @@
       "CENT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CENTA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CENX": {
         "stage": 2,
@@ -17032,7 +16674,7 @@
       "CERS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CERT": {
         "stage": 4,
@@ -17042,12 +16684,12 @@
       "CEVA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CF": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CFBK": {
         "stage": 2,
@@ -17062,7 +16704,7 @@
       "CFFN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CFG": {
         "stage": 2,
@@ -17072,7 +16714,7 @@
       "CFR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CGEM": {
         "stage": 2,
@@ -17082,22 +16724,22 @@
       "CGNX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CGON": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CHCI": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "CHCO": {
         "stage": 2,
-        "fresh": true,
-        "event": null
+        "fresh": false,
+        "event": "pullback_resume"
       },
       "CHCT": {
         "stage": 2,
@@ -17107,7 +16749,7 @@
       "CHD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CHEF": {
         "stage": 2,
@@ -17117,7 +16759,7 @@
       "CHMG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CHPT": {
         "stage": 4,
@@ -17125,12 +16767,12 @@
         "event": null
       },
       "CHRS": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "CHRW": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -17152,7 +16794,7 @@
       "CIEN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CIFR": {
         "stage": 2,
@@ -17160,7 +16802,7 @@
         "event": null
       },
       "CIM": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -17172,7 +16814,7 @@
       "CIVB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CIX": {
         "stage": 2,
@@ -17182,7 +16824,7 @@
       "CL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CLAR": {
         "stage": 4,
@@ -17202,7 +16844,7 @@
       "CLDT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CLDX": {
         "stage": 2,
@@ -17222,7 +16864,7 @@
       "CLMT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CLNE": {
         "stage": 4,
@@ -17232,7 +16874,7 @@
       "CLOV": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CLPR": {
         "stage": 4,
@@ -17240,8 +16882,8 @@
         "event": null
       },
       "CLPT": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "CLSK": {
@@ -17255,8 +16897,8 @@
         "event": null
       },
       "CLW": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "CLX": {
@@ -17280,7 +16922,7 @@
         "event": null
       },
       "CMCO": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -17292,7 +16934,7 @@
       "CMDB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CME": {
         "stage": 1,
@@ -17307,7 +16949,7 @@
       "CMI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CMP": {
         "stage": 2,
@@ -17342,7 +16984,7 @@
       "CMT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CMTG": {
         "stage": 4,
@@ -17352,7 +16994,7 @@
       "CMTV": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CNC": {
         "stage": 2,
@@ -17387,7 +17029,7 @@
       "CNOB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CNP": {
         "stage": 2,
@@ -17405,7 +17047,7 @@
         "event": "pullback_resume"
       },
       "CNTB": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -17420,7 +17062,7 @@
         "event": null
       },
       "CNX": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -17432,12 +17074,12 @@
       "CNXN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "COCO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "CODI": {
         "stage": 2,
@@ -17457,12 +17099,12 @@
       "COGT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "COHR": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "COHU": {
         "stage": 2,
@@ -17477,7 +17119,7 @@
       "COLB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "COLL": {
         "stage": 4,
@@ -17507,7 +17149,7 @@
       "COP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "COR": {
         "stage": 4,
@@ -17517,12 +17159,12 @@
       "CORZ": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "COSO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "COST": {
         "stage": 2,
@@ -17581,8 +17223,8 @@
       },
       "CPT": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "CRAI": {
         "stage": 4,
@@ -17592,7 +17234,7 @@
       "CRBP": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "CRBU": {
         "stage": 1,
@@ -17610,13 +17252,13 @@
         "event": null
       },
       "CRCT": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "CRD-A": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "CRDF": {
@@ -17632,7 +17274,7 @@
       "CRGY": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CRH": {
         "stage": 4,
@@ -17642,7 +17284,7 @@
       "CRI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CRK": {
         "stage": 4,
@@ -17691,8 +17333,8 @@
       },
       "CRSR": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "CRTO": {
         "stage": 4,
@@ -17722,7 +17364,7 @@
       "CSCO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CSGP": {
         "stage": 4,
@@ -17752,7 +17394,7 @@
       "CSTM": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "CSV": {
         "stage": 4,
@@ -17777,7 +17419,7 @@
       "CTBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CTEV": {
         "stage": 4,
@@ -17807,7 +17449,7 @@
       "CTO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CTOS": {
         "stage": 2,
@@ -17832,7 +17474,7 @@
       "CTS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CTSH": {
         "stage": 4,
@@ -17852,7 +17494,7 @@
       "CURB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CURI": {
         "stage": 4,
@@ -17861,8 +17503,8 @@
       },
       "CURV": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "CV": {
         "stage": 3,
@@ -17882,7 +17524,7 @@
       "CVEO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CVGI": {
         "stage": 2,
@@ -17892,12 +17534,12 @@
       "CVI": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "CVLG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CVLT": {
         "stage": 2,
@@ -17917,17 +17559,17 @@
       "CVS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CVSA": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "CVX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "CW": {
         "stage": 2,
@@ -17965,7 +17607,7 @@
         "event": "pullback_resume"
       },
       "CXDO": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -17977,7 +17619,7 @@
       "CXT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "CXW": {
         "stage": 2,
@@ -18012,17 +17654,17 @@
       "CZR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "CZWI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "D": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DAKT": {
         "stage": 1,
@@ -18032,7 +17674,7 @@
       "DAL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DAN": {
         "stage": 2,
@@ -18047,7 +17689,7 @@
       "DAVE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DBD": {
         "stage": 2,
@@ -18062,7 +17704,7 @@
       "DBRG": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DC": {
         "stage": 4,
@@ -18087,32 +17729,32 @@
       "DCOM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DCTH": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "DD": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "DDD": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "DDOG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DEA": {
         "stage": 2,
@@ -18157,7 +17799,7 @@
       "DFTX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DG": {
         "stage": 4,
@@ -18177,7 +17819,7 @@
       "DGX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DH": {
         "stage": 4,
@@ -18210,19 +17852,19 @@
         "event": null
       },
       "DIN": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "DINO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DIOD": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "DIS": {
         "stage": 4,
@@ -18230,7 +17872,7 @@
         "event": null
       },
       "DJCO": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -18242,7 +17884,7 @@
       "DK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DKNG": {
         "stage": 4,
@@ -18262,7 +17904,7 @@
       "DLR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DLTR": {
         "stage": 3,
@@ -18290,7 +17932,7 @@
         "event": "pullback_resume"
       },
       "DMRC": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -18302,7 +17944,7 @@
       "DNLI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "DNN": {
         "stage": 3,
@@ -18312,7 +17954,7 @@
       "DNOW": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "DNTH": {
         "stage": 2,
@@ -18340,7 +17982,7 @@
         "event": null
       },
       "DOLE": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -18352,7 +17994,7 @@
       "DORM": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "DOUG": {
         "stage": 4,
@@ -18360,7 +18002,7 @@
         "event": null
       },
       "DOV": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -18387,7 +18029,7 @@
       "DRS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "DRUG": {
         "stage": 4,
@@ -18422,7 +18064,7 @@
       "DTIL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "DUK": {
         "stage": 2,
@@ -18452,7 +18094,7 @@
       "DVN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "DX": {
         "stage": 3,
@@ -18466,7 +18108,7 @@
       },
       "DXCM": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "DXPE": {
@@ -18482,7 +18124,7 @@
       "DYN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "EA": {
         "stage": 3,
@@ -18507,17 +18149,17 @@
       "EBC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "EBF": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EBMT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EBS": {
         "stage": 4,
@@ -18557,12 +18199,12 @@
       "EDIT": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "EE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "EEX": {
         "stage": 2,
@@ -18582,7 +18224,7 @@
       "EFSC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "EFSI": {
         "stage": 2,
@@ -18597,7 +18239,7 @@
       "EG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "EGAN": {
         "stage": 4,
@@ -18607,7 +18249,7 @@
       "EGBN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "EGHT": {
         "stage": 1,
@@ -18622,7 +18264,7 @@
       "EGY": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "EHTH": {
         "stage": 4,
@@ -18637,7 +18279,7 @@
       "EIX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "EL": {
         "stage": 4,
@@ -18652,7 +18294,7 @@
       "ELDN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ELE": {
         "stage": 3,
@@ -18662,7 +18304,7 @@
       "ELMD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ELME": {
         "stage": 4,
@@ -18682,7 +18324,7 @@
       "ELVN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EMBC": {
         "stage": 4,
@@ -18702,7 +18344,7 @@
       "EMR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ENOV": {
         "stage": 1,
@@ -18717,7 +18359,7 @@
       "ENS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ENSG": {
         "stage": 4,
@@ -18732,12 +18374,12 @@
       "ENTG": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ENVA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ENVX": {
         "stage": 4,
@@ -18747,12 +18389,12 @@
       "EOG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "EOLS": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "EOSE": {
         "stage": 4,
@@ -18787,7 +18429,7 @@
       "EPSN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EQBK": {
         "stage": 2,
@@ -18802,7 +18444,7 @@
       "EQR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EQT": {
         "stage": 1,
@@ -18817,7 +18459,7 @@
       "ERAS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ERIE": {
         "stage": 4,
@@ -18837,22 +18479,22 @@
       "ESCA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ESE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ESNT": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "ESOA": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ESP": {
         "stage": 2,
@@ -18867,7 +18509,7 @@
       "ESQ": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ESRT": {
         "stage": 4,
@@ -18877,12 +18519,12 @@
       "ESS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ESTA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ETD": {
         "stage": 1,
@@ -18902,7 +18544,7 @@
       "ETON": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ETR": {
         "stage": 2,
@@ -18917,7 +18559,7 @@
       "EVC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "EVCM": {
         "stage": 4,
@@ -18925,7 +18567,7 @@
         "event": null
       },
       "EVER": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -19017,12 +18659,12 @@
       "EXR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "EXTR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "EYE": {
         "stage": 4,
@@ -19037,22 +18679,22 @@
       "F": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FANG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FAST": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "FATE": {
         "stage": 2,
@@ -19070,9 +18712,9 @@
         "event": "pullback_resume"
       },
       "FBK": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "FBLA": {
         "stage": 2,
@@ -19087,7 +18729,7 @@
       "FBP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FBRT": {
         "stage": 4,
@@ -19107,7 +18749,7 @@
       "FC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FCAP": {
         "stage": 2,
@@ -19127,7 +18769,7 @@
       "FCEL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FCF": {
         "stage": 2,
@@ -19137,7 +18779,7 @@
       "FCFS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "FCNCA": {
         "stage": 3,
@@ -19147,7 +18789,7 @@
       "FCPT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FCX": {
         "stage": 2,
@@ -19187,11 +18829,11 @@
       "FELE": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FENC": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "FER": {
@@ -19222,17 +18864,17 @@
       "FFBC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FFIN": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "FFIV": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FG": {
         "stage": 1,
@@ -19242,17 +18884,17 @@
       "FGBI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FHN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FHTX": {
-        "stage": 2,
-        "fresh": true,
-        "event": "trendline_recapture"
+        "stage": 3,
+        "fresh": false,
+        "event": null
       },
       "FI": {
         "stage": 4,
@@ -19262,7 +18904,7 @@
       "FIBK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FICO": {
         "stage": 4,
@@ -19270,7 +18912,7 @@
         "event": null
       },
       "FIGS": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -19307,12 +18949,12 @@
       "FIVN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FIX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FIZZ": {
         "stage": 2,
@@ -19332,7 +18974,7 @@
       "FLG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FLGT": {
         "stage": 4,
@@ -19357,12 +18999,12 @@
       "FLOC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "FLR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FLWS": {
         "stage": 3,
@@ -19372,7 +19014,7 @@
       "FLXS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FLY": {
         "stage": 4,
@@ -19397,7 +19039,7 @@
       "FMBH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FMC": {
         "stage": 4,
@@ -19407,7 +19049,7 @@
       "FMNB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FN": {
         "stage": 2,
@@ -19427,7 +19069,7 @@
       "FNRN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FNWD": {
         "stage": 4,
@@ -19441,13 +19083,13 @@
       },
       "FOR": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "FORM": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "FORR": {
         "stage": 2,
@@ -19477,7 +19119,7 @@
       "FOXF": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FPI": {
         "stage": 3,
@@ -19487,7 +19129,7 @@
       "FRAF": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FRBA": {
         "stage": 2,
@@ -19496,13 +19138,13 @@
       },
       "FRD": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "FRME": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FROG": {
         "stage": 2,
@@ -19532,12 +19174,12 @@
       "FSBC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FSBW": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "FSLR": {
         "stage": 4,
@@ -19562,12 +19204,12 @@
       "FSS": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FSTR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FSUN": {
         "stage": 3,
@@ -19577,7 +19219,7 @@
       "FTDR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "FTK": {
         "stage": 2,
@@ -19592,7 +19234,7 @@
       "FTNT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FTRE": {
         "stage": 2,
@@ -19602,7 +19244,7 @@
       "FTV": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "FUBO": {
         "stage": 4,
@@ -19610,7 +19252,7 @@
         "event": null
       },
       "FUL": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -19622,7 +19264,7 @@
       "FULT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FUN": {
         "stage": 2,
@@ -19642,7 +19284,7 @@
       "FVCB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "FVR": {
         "stage": 2,
@@ -19672,7 +19314,7 @@
       "GABC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GAIA": {
         "stage": 4,
@@ -19690,14 +19332,14 @@
         "event": null
       },
       "GATX": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "GBCI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GBFH": {
         "stage": 4,
@@ -19707,10 +19349,10 @@
       "GBTG": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GBX": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -19730,8 +19372,8 @@
         "event": null
       },
       "GCT": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "GD": {
@@ -19750,9 +19392,9 @@
         "event": null
       },
       "GDOT": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "GDYN": {
         "stage": 4,
@@ -19762,12 +19404,12 @@
       "GE": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "GEF": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GEHC": {
         "stage": 4,
@@ -19787,7 +19429,7 @@
       "GENC": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "trendline_recapture"
       },
       "GENI": {
         "stage": 4,
@@ -19797,12 +19439,12 @@
       "GEO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GERN": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "GETY": {
         "stage": 4,
@@ -19822,7 +19464,7 @@
       "GFF": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GFI": {
         "stage": 4,
@@ -19842,7 +19484,7 @@
       "GHC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GHM": {
         "stage": 2,
@@ -19852,7 +19494,7 @@
       "GIC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "GIII": {
         "stage": 2,
@@ -19862,7 +19504,7 @@
       "GILD": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "GIS": {
         "stage": 4,
@@ -19877,7 +19519,7 @@
       "GL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GLIBA": {
         "stage": 4,
@@ -19910,14 +19552,14 @@
         "event": null
       },
       "GLUE": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "GLW": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "GLXY": {
         "stage": 4,
@@ -19937,12 +19579,12 @@
       "GNK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GNL": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "GNRC": {
         "stage": 2,
@@ -19952,10 +19594,10 @@
       "GNW": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "GO": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -19977,7 +19619,7 @@
       "GOOD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GOOG": {
         "stage": 2,
@@ -20020,9 +19662,9 @@
         "event": null
       },
       "GPN": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "GPOR": {
         "stage": 4,
@@ -20032,7 +19674,7 @@
       "GPRE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "GPRO": {
         "stage": 4,
@@ -20047,22 +19689,22 @@
       "GRBK": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "GRC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GRDN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GRMN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "GRND": {
         "stage": 2,
@@ -20070,9 +19712,9 @@
         "event": null
       },
       "GRNT": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "trendline_recapture"
       },
       "GRPN": {
         "stage": 2,
@@ -20082,7 +19724,7 @@
       "GS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "GSAT": {
         "stage": 2,
@@ -20115,7 +19757,7 @@
         "event": null
       },
       "GTLB": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -20130,7 +19772,7 @@
         "event": null
       },
       "GTN": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -20157,7 +19799,7 @@
       "GWW": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "GYRE": {
         "stage": 4,
@@ -20170,9 +19812,9 @@
         "event": "pullback_resume"
       },
       "HAE": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "HAFC": {
         "stage": 2,
@@ -20222,7 +19864,7 @@
       "HBNC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "HBT": {
         "stage": 2,
@@ -20270,7 +19912,7 @@
         "event": null
       },
       "HE": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -20300,7 +19942,7 @@
         "event": null
       },
       "HGV": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -20332,7 +19974,7 @@
       "HIW": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "HL": {
         "stage": 4,
@@ -20347,12 +19989,12 @@
       "HLIO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "HLIT": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "HLLY": {
         "stage": 4,
@@ -20367,7 +20009,7 @@
       "HLT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "HLX": {
         "stage": 2,
@@ -20387,12 +20029,12 @@
       "HNGE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "HNI": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HNRG": {
         "stage": 4,
@@ -20402,7 +20044,7 @@
       "HNST": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HNVR": {
         "stage": 2,
@@ -20417,7 +20059,7 @@
       "HOMB": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "HON": {
         "stage": 2,
@@ -20437,12 +20079,12 @@
       "HOV": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HP": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "HPE": {
         "stage": 2,
@@ -20451,13 +20093,13 @@
       },
       "HPK": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "HPP": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HPQ": {
         "stage": 2,
@@ -20482,7 +20124,7 @@
       "HRL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HRMY": {
         "stage": 3,
@@ -20495,9 +20137,9 @@
         "event": null
       },
       "HRTG": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "HRTX": {
         "stage": 4,
@@ -20542,12 +20184,12 @@
       "HTH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "HTLD": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "HTO": {
         "stage": 2,
@@ -20562,12 +20204,12 @@
       "HUBB": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "HUBG": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "HUBS": {
         "stage": 4,
@@ -20576,7 +20218,7 @@
       },
       "HUM": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "HUMA": {
@@ -20585,7 +20227,7 @@
         "event": null
       },
       "HUN": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -20607,12 +20249,12 @@
       "HVT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "HWBK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "HWC": {
         "stage": 2,
@@ -20627,12 +20269,12 @@
       "HWM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "HY": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "HYLN": {
         "stage": 2,
@@ -20640,12 +20282,12 @@
         "event": "pullback_resume"
       },
       "HYMC": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "HYPR": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -20661,7 +20303,7 @@
       },
       "IART": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "IBCP": {
@@ -20682,7 +20324,7 @@
       "IBKR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IBM": {
         "stage": 4,
@@ -20692,7 +20334,7 @@
       "IBOC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IBP": {
         "stage": 4,
@@ -20702,12 +20344,12 @@
       "IBRX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "IBTA": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "ICE": {
         "stage": 4,
@@ -20722,12 +20364,12 @@
       "ICHR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ICUI": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "IDCC": {
         "stage": 4,
@@ -20747,7 +20389,7 @@
       "IDT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IDXX": {
         "stage": 4,
@@ -20777,7 +20419,7 @@
       "IFF": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "IHRT": {
         "stage": 4,
@@ -20802,12 +20444,12 @@
       "IIPR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "IKT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ILPT": {
         "stage": 2,
@@ -20827,12 +20469,12 @@
       "IMMR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "IMMX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "IMNM": {
         "stage": 2,
@@ -20867,17 +20509,17 @@
       "INBX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "INCY": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "INDB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "INDI": {
         "stage": 3,
@@ -20887,12 +20529,12 @@
       "INDV": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "INFU": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "INGN": {
         "stage": 4,
@@ -20947,7 +20589,7 @@
       "INSW": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "INTA": {
         "stage": 4,
@@ -20981,8 +20623,8 @@
       },
       "INVH": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "INVX": {
         "stage": 2,
@@ -21052,15 +20694,15 @@
       "IRM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IRMD": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "IRON": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -21095,14 +20737,14 @@
         "event": null
       },
       "ISSC": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "ISTR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IT": {
         "stage": 4,
@@ -21111,23 +20753,23 @@
       },
       "ITGR": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "ITIC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ITRI": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "ITW": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "IVR": {
         "stage": 3,
@@ -21137,7 +20779,7 @@
       "IVT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "IVVD": {
         "stage": 4,
@@ -21162,7 +20804,7 @@
       "JAKK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "JANX": {
         "stage": 2,
@@ -21177,7 +20819,7 @@
       "JBHT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "JBI": {
         "stage": 4,
@@ -21197,7 +20839,7 @@
       "JBLU": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "JBSS": {
         "stage": 2,
@@ -21227,7 +20869,7 @@
       "JILL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "JJSF": {
         "stage": 4,
@@ -21242,7 +20884,7 @@
       "JMSB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "JNJ": {
         "stage": 2,
@@ -21287,22 +20929,22 @@
       "KAI": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "KALU": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "KBH": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "KDP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KE": {
         "stage": 4,
@@ -21332,7 +20974,7 @@
       "KFRC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "KFY": {
         "stage": 2,
@@ -21352,21 +20994,21 @@
       "KGEI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KGS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "KHC": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "KIDS": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "KIM": {
@@ -21377,7 +21019,7 @@
       "KINS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KKR": {
         "stage": 4,
@@ -21412,7 +21054,7 @@
       "KMI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "KMPR": {
         "stage": 4,
@@ -21425,14 +21067,14 @@
         "event": null
       },
       "KMTS": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "KN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "KNF": {
         "stage": 3,
@@ -21452,27 +21094,27 @@
       "KNTK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KOD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "KODK": {
-        "stage": 3,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "KOP": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "KOPN": {
         "stage": 2,
@@ -21487,7 +21129,7 @@
       "KOS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KPTI": {
         "stage": 4,
@@ -21522,12 +21164,12 @@
       "KRNY": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KRO": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "KROS": {
         "stage": 4,
@@ -21537,7 +21179,7 @@
       "KRRO": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "KRT": {
         "stage": 2,
@@ -21552,7 +21194,7 @@
       "KRYS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KSS": {
         "stage": 1,
@@ -21562,7 +21204,7 @@
       "KTB": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "KTOS": {
         "stage": 4,
@@ -21587,7 +21229,7 @@
       "KVUE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "KVYO": {
         "stage": 4,
@@ -21640,7 +21282,7 @@
         "event": null
       },
       "LAND": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -21657,7 +21299,7 @@
       "LAUR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LAW": {
         "stage": 4,
@@ -21672,7 +21314,7 @@
       "LBRX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LCID": {
         "stage": 4,
@@ -21687,7 +21329,7 @@
       "LCNB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LCTX": {
         "stage": 4,
@@ -21717,7 +21359,7 @@
       "LEE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "LEG": {
         "stage": 4,
@@ -21750,8 +21392,8 @@
         "event": null
       },
       "LFMD": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "LFST": {
@@ -21772,7 +21414,7 @@
       "LGIH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "LGN": {
         "stage": 2,
@@ -21787,10 +21429,10 @@
       "LH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "LHX": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -21805,7 +21447,7 @@
         "event": null
       },
       "LII": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -21832,7 +21474,7 @@
       "LIND": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LION": {
         "stage": 2,
@@ -21842,22 +21484,22 @@
       "LITE": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "LIVN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LKFN": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "LLY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LMAT": {
         "stage": 2,
@@ -21882,12 +21524,12 @@
       "LMT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LNG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LNN": {
         "stage": 4,
@@ -21907,7 +21549,7 @@
       "LNTH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LNZA": {
         "stage": 4,
@@ -21917,12 +21559,12 @@
       "LOB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LOCO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LODE": {
         "stage": 4,
@@ -21932,7 +21574,7 @@
       "LOVE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LOW": {
         "stage": 4,
@@ -21947,7 +21589,7 @@
       "LPG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LPRO": {
         "stage": 2,
@@ -21957,12 +21599,12 @@
       "LPTH": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "LQDA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LQDT": {
         "stage": 2,
@@ -21977,7 +21619,7 @@
       "LRMR": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "LRN": {
         "stage": 2,
@@ -21992,12 +21634,12 @@
       "LTC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LTH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "LTRX": {
         "stage": 4,
@@ -22032,7 +21674,7 @@
       "LUV": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LVS": {
         "stage": 4,
@@ -22047,7 +21689,7 @@
       "LWAY": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "LWLG": {
         "stage": 2,
@@ -22062,7 +21704,7 @@
       "LXFR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LXP": {
         "stage": 2,
@@ -22072,7 +21714,7 @@
       "LXRX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LXU": {
         "stage": 2,
@@ -22082,7 +21724,7 @@
       "LYB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "LYEL": {
         "stage": 4,
@@ -22092,7 +21734,7 @@
       "LYTS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "LYV": {
         "stage": 2,
@@ -22107,7 +21749,7 @@
       "LZB": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "LZM": {
         "stage": 4,
@@ -22127,7 +21769,7 @@
       "MAC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MAGN": {
         "stage": 3,
@@ -22147,17 +21789,17 @@
       "MAR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "MARA": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "MAS": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "MASS": {
         "stage": 2,
@@ -22182,7 +21824,7 @@
       "MAX": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MAZE": {
         "stage": 4,
@@ -22202,7 +21844,7 @@
       "MBIN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MBUU": {
         "stage": 4,
@@ -22247,12 +21889,12 @@
       "MCHB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MCHP": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "MCK": {
         "stage": 1,
@@ -22267,22 +21909,22 @@
       "MCRI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MCS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MCY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MDB": {
         "stage": 4,
@@ -22296,7 +21938,7 @@
       },
       "MDLZ": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "MDT": {
@@ -22341,8 +21983,8 @@
       },
       "MET": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "META": {
         "stage": 4,
@@ -22355,7 +21997,7 @@
         "event": null
       },
       "MFA": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -22367,7 +22009,7 @@
       "MG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "MGEE": {
         "stage": 3,
@@ -22462,7 +22104,7 @@
       "MKTW": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MLAB": {
         "stage": 2,
@@ -22472,7 +22114,7 @@
       "MLKN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MLM": {
         "stage": 4,
@@ -22507,7 +22149,7 @@
       "MMM": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MMS": {
         "stage": 4,
@@ -22527,7 +22169,7 @@
       "MNPR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MNRO": {
         "stage": 4,
@@ -22545,9 +22187,9 @@
         "event": null
       },
       "MNTK": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "MNTN": {
         "stage": 4,
@@ -22557,7 +22199,7 @@
       "MO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MOD": {
         "stage": 2,
@@ -22571,7 +22213,7 @@
       },
       "MOH": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "MOS": {
@@ -22592,17 +22234,17 @@
       "MPAA": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MPB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MPC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MPTI": {
         "stage": 2,
@@ -22612,7 +22254,7 @@
       "MPWR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MQ": {
         "stage": 4,
@@ -22622,7 +22264,7 @@
       "MRAM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "MRBK": {
         "stage": 2,
@@ -22642,7 +22284,7 @@
       "MRK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MRNA": {
         "stage": 2,
@@ -22667,7 +22309,7 @@
       "MRX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MS": {
         "stage": 2,
@@ -22677,7 +22319,7 @@
       "MSBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MSCI": {
         "stage": 3,
@@ -22697,7 +22339,7 @@
       "MSGE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MSI": {
         "stage": 2,
@@ -22707,7 +22349,7 @@
       "MSM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "MSTR": {
         "stage": 4,
@@ -22720,19 +22362,19 @@
         "event": "pullback_resume"
       },
       "MTD": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "MTH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "MTRN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MTRX": {
         "stage": 3,
@@ -22772,7 +22414,7 @@
       "MVBF": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "MVIS": {
         "stage": 4,
@@ -22802,7 +22444,7 @@
       "MYE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "MYFW": {
         "stage": 2,
@@ -22847,7 +22489,7 @@
       "NAT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NATH": {
         "stage": 2,
@@ -22857,7 +22499,7 @@
       "NATL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NATR": {
         "stage": 4,
@@ -22882,17 +22524,17 @@
       "NBBK": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "NBHC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NBIS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NBN": {
         "stage": 2,
@@ -22902,7 +22544,7 @@
       "NBR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "NBTB": {
         "stage": 2,
@@ -22937,17 +22579,17 @@
       "NDSN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "NE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "NECB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NEE": {
         "stage": 2,
@@ -22955,14 +22597,14 @@
         "event": null
       },
       "NEM": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "NEO": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "NEOG": {
         "stage": 2,
@@ -22997,12 +22639,12 @@
       "NEXN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "NEXT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "NFBK": {
         "stage": 2,
@@ -23042,12 +22684,12 @@
       "NGVT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "NHC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NHI": {
         "stage": 3,
@@ -23072,7 +22714,7 @@
       "NJR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NKE": {
         "stage": 4,
@@ -23087,7 +22729,7 @@
       "NKTR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "NKTX": {
         "stage": 2,
@@ -23097,17 +22739,17 @@
       "NL": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NLOP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NMAX": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "NMIH": {
         "stage": 2,
@@ -23152,12 +22794,12 @@
       "NODK": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "NOG": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "trendline_recapture"
       },
       "NOVT": {
         "stage": 2,
@@ -23171,12 +22813,12 @@
       },
       "NP": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "NPB": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "NPCE": {
@@ -23187,7 +22829,7 @@
       "NPK": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NPKI": {
         "stage": 2,
@@ -23222,7 +22864,7 @@
       "NREF": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "NRG": {
         "stage": 4,
@@ -23257,7 +22899,7 @@
       "NSP": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "NSSC": {
         "stage": 4,
@@ -23277,7 +22919,7 @@
       "NTCT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NTGR": {
         "stage": 1,
@@ -23297,17 +22939,17 @@
       "NTST": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NUAI": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NUE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "NUS": {
         "stage": 4,
@@ -23342,7 +22984,7 @@
       "NVCT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NVDA": {
         "stage": 2,
@@ -23352,12 +22994,12 @@
       "NVEC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "NVGS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NVMI": {
         "stage": 2,
@@ -23382,7 +23024,7 @@
       "NVTS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "NWBI": {
         "stage": 2,
@@ -23392,12 +23034,12 @@
       "NWE": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NWFL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "NWL": {
         "stage": 2,
@@ -23407,7 +23049,7 @@
       "NWN": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NWPX": {
         "stage": 2,
@@ -23427,20 +23069,20 @@
       "NX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "NXDR": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "NXDT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "NXE": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -23467,7 +23109,7 @@
       "O": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OABI": {
         "stage": 2,
@@ -23482,7 +23124,7 @@
       "OBK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OBT": {
         "stage": 2,
@@ -23492,12 +23134,12 @@
       "OC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "OCFC": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "OCGN": {
         "stage": 4,
@@ -23522,17 +23164,17 @@
       "ODFL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OEC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OFG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OFIX": {
         "stage": 4,
@@ -23557,7 +23199,7 @@
       "OII": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OIS": {
         "stage": 2,
@@ -23567,7 +23209,7 @@
       "OKE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OKLO": {
         "stage": 4,
@@ -23576,13 +23218,13 @@
       },
       "OKTA": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "OKUR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OLLI": {
         "stage": 4,
@@ -23597,7 +23239,7 @@
       "OLP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OLPX": {
         "stage": 2,
@@ -23610,9 +23252,9 @@
         "event": null
       },
       "OMC": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "OMCL": {
         "stage": 4,
@@ -23637,7 +23279,7 @@
       "ONB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ONDS": {
         "stage": 4,
@@ -23672,7 +23314,7 @@
       "OOMA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OPAL": {
         "stage": 4,
@@ -23682,7 +23324,7 @@
       "OPBK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OPCH": {
         "stage": 4,
@@ -23712,7 +23354,7 @@
       "OPRT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "OPRX": {
         "stage": 4,
@@ -23727,7 +23369,7 @@
       "OPTX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "ORA": {
         "stage": 4,
@@ -23787,7 +23429,7 @@
       "OSCR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "OSG": {
         "stage": 4,
@@ -23802,7 +23444,7 @@
       "OSPN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "OSS": {
         "stage": 2,
@@ -23827,7 +23469,7 @@
       "OTTR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "OUST": {
         "stage": 2,
@@ -23842,12 +23484,12 @@
       "OVBC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "OVID": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "OVLY": {
         "stage": 2,
@@ -23862,12 +23504,12 @@
       "OXY": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PAA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PAAS": {
         "stage": 4,
@@ -23880,17 +23522,17 @@
         "event": null
       },
       "PACK": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
       "PACS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PAGS": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -23911,7 +23553,7 @@
       },
       "PAMT": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": null
       },
       "PANL": {
@@ -23932,7 +23574,7 @@
       "PARR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PATH": {
         "stage": 4,
@@ -23957,7 +23599,7 @@
       "PAYO": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "PAYS": {
         "stage": 2,
@@ -23972,7 +23614,7 @@
       "PBF": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PBFS": {
         "stage": 2,
@@ -23992,12 +23634,12 @@
       "PBYI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PCAR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PCB": {
         "stage": 2,
@@ -24027,10 +23669,10 @@
       "PCVX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "PCYO": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -24057,7 +23699,7 @@
       "PDLB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PDM": {
         "stage": 2,
@@ -24072,7 +23714,7 @@
       "PEB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PEBK": {
         "stage": 2,
@@ -24082,7 +23724,7 @@
       "PEBO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PECO": {
         "stage": 2,
@@ -24106,7 +23748,7 @@
       },
       "PENN": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": null
       },
       "PEP": {
@@ -24117,7 +23759,7 @@
       "PESI": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PFBC": {
         "stage": 2,
@@ -24125,14 +23767,14 @@
         "event": "pullback_resume"
       },
       "PFE": {
-        "stage": 3,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "PFG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PFIS": {
         "stage": 2,
@@ -24142,7 +23784,7 @@
       "PFS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PFSI": {
         "stage": 4,
@@ -24157,12 +23799,12 @@
       "PGC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PGEN": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PGNY": {
         "stage": 2,
@@ -24182,7 +23824,7 @@
       "PH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PHAT": {
         "stage": 4,
@@ -24192,7 +23834,7 @@
       "PHIN": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "PHM": {
         "stage": 3,
@@ -24212,7 +23854,7 @@
       "PII": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PINE": {
         "stage": 2,
@@ -24232,7 +23874,7 @@
       "PK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PKBK": {
         "stage": 2,
@@ -24247,15 +23889,15 @@
       "PKG": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PKOH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PL": {
-        "stage": 2,
+        "stage": 3,
         "fresh": false,
         "event": null
       },
@@ -24282,7 +23924,7 @@
       "PLD": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PLG": {
         "stage": 4,
@@ -24302,12 +23944,12 @@
       "PLOW": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PLPC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PLSE": {
         "stage": 2,
@@ -24337,17 +23979,17 @@
       "PLX": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PLXS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PMI": {
         "stage": 4,
@@ -24380,19 +24022,19 @@
         "event": null
       },
       "PNRG": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "trendline_recapture"
       },
       "PNTG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PNW": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PODD": {
         "stage": 4,
@@ -24412,7 +24054,7 @@
       "POWI": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "POWL": {
         "stage": 2,
@@ -24422,12 +24064,12 @@
       "POWW": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PPG": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "PPIH": {
         "stage": 4,
@@ -24447,7 +24089,7 @@
       "PR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PRAA": {
         "stage": 2,
@@ -24457,7 +24099,7 @@
       "PRAX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "PRCH": {
         "stage": 2,
@@ -24472,7 +24114,7 @@
       "PRDO": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "PRG": {
         "stage": 2,
@@ -24485,7 +24127,7 @@
         "event": null
       },
       "PRGS": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -24497,12 +24139,12 @@
       "PRK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PRKS": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PRLB": {
         "stage": 2,
@@ -24517,7 +24159,7 @@
       "PRM": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PRME": {
         "stage": 4,
@@ -24537,7 +24179,7 @@
       "PRSU": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PRTA": {
         "stage": 4,
@@ -24552,17 +24194,17 @@
       "PRU": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "PRVA": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "PSA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PSFE": {
         "stage": 1,
@@ -24582,12 +24224,12 @@
       "PSMT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PSNL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "PSTL": {
         "stage": 2,
@@ -24597,7 +24239,7 @@
       "PSX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "PTC": {
         "stage": 4,
@@ -24612,7 +24254,7 @@
       "PTEN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "PTGX": {
         "stage": 2,
@@ -24637,7 +24279,7 @@
       "PUBM": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PUMP": {
         "stage": 2,
@@ -24647,7 +24289,7 @@
       "PVLA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "PWP": {
         "stage": 4,
@@ -24659,8 +24301,13 @@
         "fresh": false,
         "event": "pullback_resume"
       },
-      "PYPL": {
+      "PXED": {
         "stage": 4,
+        "fresh": false,
+        "event": null
+      },
+      "PYPL": {
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -24697,7 +24344,7 @@
       "QNST": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "QSI": {
         "stage": 4,
@@ -24727,7 +24374,7 @@
       "QUIK": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "RAIL": {
         "stage": 4,
@@ -24737,7 +24384,7 @@
       "RAMP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "RAPP": {
         "stage": 2,
@@ -24745,7 +24392,7 @@
         "event": "pullback_resume"
       },
       "RARE": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -24802,12 +24449,12 @@
       "RCKY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "RCL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "RCMT": {
         "stage": 2,
@@ -24822,7 +24469,7 @@
       "RDN": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "RDNT": {
         "stage": 4,
@@ -24832,17 +24479,17 @@
       "RDNW": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "RDVT": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "RDW": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "RDZN": {
         "stage": 4,
@@ -24877,12 +24524,12 @@
       "REI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "RELL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "RELY": {
         "stage": 2,
@@ -24902,7 +24549,7 @@
       "REPX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "RES": {
         "stage": 3,
@@ -24912,10 +24559,10 @@
       "REX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "REZI": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -24972,7 +24619,7 @@
       "RHP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "RICK": {
         "stage": 2,
@@ -25015,14 +24662,14 @@
         "event": "pullback_resume"
       },
       "RKLB": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "RL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "RLAY": {
         "stage": 2,
@@ -25045,7 +24692,7 @@
         "event": null
       },
       "RM": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -25072,7 +24719,7 @@
       "RMNI": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "RMR": {
         "stage": 2,
@@ -25082,20 +24729,20 @@
       "RNAC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "RNGR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "RNST": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ROAD": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -25112,7 +24759,7 @@
       "ROK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "ROL": {
         "stage": 4,
@@ -25132,7 +24779,7 @@
       "ROST": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "RPAY": {
         "stage": 2,
@@ -25162,11 +24809,11 @@
       "RRBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "RRR": {
-        "stage": 2,
-        "fresh": true,
+        "stage": 3,
+        "fresh": false,
         "event": null
       },
       "RSG": {
@@ -25177,7 +24824,7 @@
       "RSI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "RSVR": {
         "stage": 2,
@@ -25202,7 +24849,7 @@
       "RUSHA": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "RVLV": {
         "stage": 4,
@@ -25216,7 +24863,7 @@
       },
       "RVTY": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "RWT": {
@@ -25242,7 +24889,7 @@
       "RXT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "RYAM": {
         "stage": 2,
@@ -25280,19 +24927,19 @@
         "event": "pullback_resume"
       },
       "SABS": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
       "SAFE": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SAFT": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SAFX": {
         "stage": 4,
@@ -25327,12 +24974,12 @@
       "SATL": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "SB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SBAC": {
         "stage": 3,
@@ -25347,7 +24994,7 @@
       "SBCF": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "SBET": {
         "stage": 4,
@@ -25377,7 +25024,7 @@
       "SBSI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SBSW": {
         "stage": 4,
@@ -25392,7 +25039,7 @@
       "SCHL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SCHW": {
         "stage": 2,
@@ -25406,7 +25053,7 @@
       },
       "SCSC": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": null
       },
       "SD": {
@@ -25422,7 +25069,7 @@
       "SDRL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SEAT": {
         "stage": 4,
@@ -25432,12 +25079,12 @@
       "SEG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SEI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SEM": {
         "stage": 2,
@@ -25477,7 +25124,7 @@
       "SEZL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SFBC": {
         "stage": 1,
@@ -25487,7 +25134,7 @@
       "SFBS": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SFIX": {
         "stage": 4,
@@ -25497,12 +25144,12 @@
       "SFL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SFNC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SFST": {
         "stage": 2,
@@ -25517,12 +25164,12 @@
       "SGC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SGHC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SGHT": {
         "stage": 4,
@@ -25552,7 +25199,7 @@
       "SHBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SHEN": {
         "stage": 2,
@@ -25562,12 +25209,12 @@
       "SHIM": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "SHLS": {
-        "stage": 2,
-        "fresh": true,
-        "event": "trendline_recapture"
+        "stage": 3,
+        "fresh": false,
+        "event": null
       },
       "SHO": {
         "stage": 2,
@@ -25580,8 +25227,8 @@
         "event": null
       },
       "SHOO": {
-        "stage": 3,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "SHOP": {
@@ -25597,7 +25244,7 @@
       "SI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SIBN": {
         "stage": 4,
@@ -25617,7 +25264,7 @@
       "SIG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SIGA": {
         "stage": 4,
@@ -25627,7 +25274,7 @@
       "SIGI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SILA": {
         "stage": 2,
@@ -25635,9 +25282,9 @@
         "event": "pullback_resume"
       },
       "SION": {
-        "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "stage": 3,
+        "fresh": false,
+        "event": null
       },
       "SITC": {
         "stage": 4,
@@ -25672,17 +25319,17 @@
       "SKWD": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SKY": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "SKYH": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SKYT": {
         "stage": 2,
@@ -25702,12 +25349,12 @@
       "SLAB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SLB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SLDB": {
         "stage": 2,
@@ -25727,7 +25374,7 @@
       "SLG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SLND": {
         "stage": 4,
@@ -25767,12 +25414,12 @@
       "SM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SMA": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SMBC": {
         "stage": 2,
@@ -25782,15 +25429,15 @@
       "SMBK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SMC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SMCI": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -25837,12 +25484,12 @@
       "SNA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SND": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SNDA": {
         "stage": 2,
@@ -25852,7 +25499,7 @@
       "SNDK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SNDX": {
         "stage": 3,
@@ -25862,17 +25509,17 @@
       "SNEX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "SNFCA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SNOW": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "SNPS": {
         "stage": 4,
@@ -25922,7 +25569,7 @@
       "SPB": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SPCE": {
         "stage": 4,
@@ -25932,7 +25579,7 @@
       "SPFI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SPG": {
         "stage": 2,
@@ -25957,7 +25604,7 @@
       "SPNT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SPOK": {
         "stage": 4,
@@ -26007,7 +25654,7 @@
       "SRCE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SRE": {
         "stage": 3,
@@ -26016,8 +25663,8 @@
       },
       "SRI": {
         "stage": 2,
-        "fresh": true,
-        "event": "trendline_recapture"
+        "fresh": false,
+        "event": null
       },
       "SRPT": {
         "stage": 4,
@@ -26027,7 +25674,7 @@
       "SRRK": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "SRTA": {
         "stage": 3,
@@ -26041,7 +25688,7 @@
       },
       "SSB": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "SSP": {
@@ -26052,7 +25699,7 @@
       "SSRM": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "SSTI": {
         "stage": 2,
@@ -26072,7 +25719,7 @@
       "STBA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "STC": {
         "stage": 1,
@@ -26097,7 +25744,7 @@
       "STGW": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "STIM": {
         "stage": 4,
@@ -26107,7 +25754,7 @@
       "STLD": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "STLN": {
         "stage": 2,
@@ -26117,7 +25764,7 @@
       "STM": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "STNE": {
         "stage": 4,
@@ -26127,7 +25774,7 @@
       "STNG": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "STOK": {
         "stage": 3,
@@ -26167,7 +25814,7 @@
       "STRZ": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "STT": {
         "stage": 2,
@@ -26187,7 +25834,7 @@
       "STX": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "STXS": {
         "stage": 4,
@@ -26222,7 +25869,7 @@
       "SVM": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "SVRA": {
         "stage": 4,
@@ -26242,21 +25889,21 @@
       "SWBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SWIM": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "SWK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SWKS": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "SWX": {
@@ -26266,13 +25913,13 @@
       },
       "SXC": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "SXI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SXT": {
         "stage": 2,
@@ -26282,7 +25929,7 @@
       "SYBT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SYF": {
         "stage": 4,
@@ -26302,12 +25949,12 @@
       "SYNA": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "SYRE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "SYY": {
         "stage": 2,
@@ -26322,12 +25969,12 @@
       "TALK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TALO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TAP": {
         "stage": 4,
@@ -26387,12 +26034,12 @@
       "TCBI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "TCBK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TCI": {
         "stage": 4,
@@ -26400,7 +26047,7 @@
         "event": null
       },
       "TCMD": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -26415,7 +26062,7 @@
         "event": null
       },
       "TDC": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -26427,7 +26074,7 @@
       "TDOC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "TDS": {
         "stage": 4,
@@ -26447,7 +26094,7 @@
       "TDY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TE": {
         "stage": 4,
@@ -26472,7 +26119,7 @@
       "TECX": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "TEL": {
         "stage": 4,
@@ -26490,7 +26137,7 @@
         "event": "pullback_resume"
       },
       "TENX": {
-        "stage": 2,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -26562,7 +26209,7 @@
       "TILE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TIPT": {
         "stage": 1,
@@ -26572,7 +26219,7 @@
       "TITN": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "TJX": {
         "stage": 3,
@@ -26582,7 +26229,7 @@
       "TK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TKNO": {
         "stage": 2,
@@ -26625,14 +26272,14 @@
         "event": "pullback_resume"
       },
       "TMO": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "TMP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TMUS": {
         "stage": 4,
@@ -26662,7 +26309,7 @@
       "TNK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TNXP": {
         "stage": 4,
@@ -26677,7 +26324,7 @@
       "TOL": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "TOST": {
         "stage": 4,
@@ -26687,7 +26334,7 @@
       "TOWN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TOYO": {
         "stage": 4,
@@ -26702,7 +26349,7 @@
       "TPC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TPL": {
         "stage": 2,
@@ -26712,7 +26359,7 @@
       "TPR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TR": {
         "stage": 3,
@@ -26742,7 +26389,7 @@
       "TRGP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TRI": {
         "stage": 4,
@@ -26762,7 +26409,7 @@
       "TRMK": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TRN": {
         "stage": 2,
@@ -26780,14 +26427,14 @@
         "event": "pullback_resume"
       },
       "TRON": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "TROW": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "TROX": {
         "stage": 2,
@@ -26797,12 +26444,12 @@
       "TRS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TRST": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "TRTX": {
         "stage": 1,
@@ -26817,12 +26464,12 @@
       "TRV": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TRVI": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TSBK": {
         "stage": 2,
@@ -26837,7 +26484,7 @@
       "TSHA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TSLA": {
         "stage": 4,
@@ -26857,7 +26504,7 @@
       "TT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TTAM": {
         "stage": 3,
@@ -26947,7 +26594,7 @@
       "TXN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "TXNM": {
         "stage": 3,
@@ -26960,7 +26607,7 @@
         "event": null
       },
       "TYGO": {
-        "stage": 2,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -26996,11 +26643,11 @@
       },
       "UAL": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "UAMY": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -27012,7 +26659,7 @@
       "UBSI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UCB": {
         "stage": 2,
@@ -27022,17 +26669,17 @@
       "UCTT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "UDR": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "UE": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UEC": {
         "stage": 4,
@@ -27042,7 +26689,7 @@
       "UFCS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "UFPI": {
         "stage": 4,
@@ -27072,7 +26719,7 @@
       "ULCC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ULH": {
         "stage": 1,
@@ -27092,7 +26739,7 @@
       "UMBF": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UMH": {
         "stage": 3,
@@ -27117,7 +26764,7 @@
       "UNFI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UNH": {
         "stage": 2,
@@ -27127,7 +26774,7 @@
       "UNIT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "UNP": {
         "stage": 2,
@@ -27152,7 +26799,7 @@
       "UPBD": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "UPS": {
         "stage": 2,
@@ -27170,7 +26817,7 @@
         "event": null
       },
       "URBN": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -27186,8 +26833,8 @@
       },
       "URI": {
         "stage": 2,
-        "fresh": true,
-        "event": "pullback_resume"
+        "fresh": false,
+        "event": null
       },
       "UROY": {
         "stage": 4,
@@ -27196,7 +26843,7 @@
       },
       "USAR": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": null
       },
       "USAU": {
@@ -27225,7 +26872,7 @@
         "event": null
       },
       "USNA": {
-        "stage": 3,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -27242,7 +26889,7 @@
       "UTL": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UTMD": {
         "stage": 2,
@@ -27252,7 +26899,7 @@
       "UTZ": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "UUUU": {
         "stage": 4,
@@ -27262,12 +26909,12 @@
       "UVE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "UVSP": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "UVV": {
         "stage": 1,
@@ -27275,19 +26922,19 @@
         "event": null
       },
       "V": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "VABK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VAC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VAL": {
         "stage": 2,
@@ -27302,12 +26949,12 @@
       "VATE": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "VC": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "VCEL": {
         "stage": 2,
@@ -27322,12 +26969,12 @@
       "VCYT": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VECO": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VEEV": {
         "stage": 4,
@@ -27377,7 +27024,7 @@
       "VHI": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "VIA": {
         "stage": 4,
@@ -27402,12 +27049,12 @@
       "VIK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VIR": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "VIRC": {
         "stage": 4,
@@ -27417,7 +27064,7 @@
       "VISN": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "VITL": {
         "stage": 4,
@@ -27437,7 +27084,7 @@
       "VLO": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "VLTO": {
         "stage": 4,
@@ -27450,7 +27097,7 @@
         "event": "pullback_resume"
       },
       "VMC": {
-        "stage": 1,
+        "stage": 4,
         "fresh": false,
         "event": null
       },
@@ -27467,7 +27114,7 @@
       "VOR": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "VOXR": {
         "stage": 4,
@@ -27477,7 +27124,7 @@
       "VOYG": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "VPG": {
         "stage": 2,
@@ -27490,7 +27137,7 @@
         "event": null
       },
       "VREX": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -27517,12 +27164,12 @@
       "VRSN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VRT": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "VRTS": {
         "stage": 1,
@@ -27542,12 +27189,12 @@
       "VSEC": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "VSH": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VST": {
         "stage": 4,
@@ -27567,7 +27214,7 @@
       "VSXY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "VTEX": {
         "stage": 1,
@@ -27617,7 +27264,7 @@
       "VZ": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WAB": {
         "stage": 2,
@@ -27627,7 +27274,7 @@
       "WABC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WAFD": {
         "stage": 2,
@@ -27647,7 +27294,7 @@
       "WASH": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WAT": {
         "stage": 3,
@@ -27657,7 +27304,7 @@
       "WATT": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "WAY": {
         "stage": 4,
@@ -27682,7 +27329,7 @@
       "WCC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WD": {
         "stage": 4,
@@ -27697,12 +27344,12 @@
       "WDC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WDFC": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WEAV": {
         "stage": 4,
@@ -27717,7 +27364,7 @@
       "WELL": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WEN": {
         "stage": 4,
@@ -27737,7 +27384,7 @@
       "WEYS": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WFC": {
         "stage": 1,
@@ -27767,12 +27414,12 @@
       "WHG": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "WHWK": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WINA": {
         "stage": 4,
@@ -27802,17 +27449,17 @@
       "WLY": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WM": {
         "stage": 2,
         "fresh": true,
-        "event": "trendline_recapture"
+        "event": null
       },
       "WMB": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "trendline_recapture"
       },
       "WMK": {
         "stage": 2,
@@ -27827,17 +27474,17 @@
       "WNC": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "WNEB": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "WOLF": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "WOOF": {
         "stage": 4,
@@ -27861,7 +27508,7 @@
       },
       "WRLD": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "WS": {
@@ -27887,7 +27534,7 @@
       "WSM": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "WSO": {
         "stage": 3,
@@ -27902,7 +27549,7 @@
       "WST": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "WT": {
         "stage": 2,
@@ -27917,12 +27564,12 @@
       "WTFC": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WTI": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "WTS": {
         "stage": 2,
@@ -27935,7 +27582,7 @@
         "event": "pullback_resume"
       },
       "WTW": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
@@ -27955,9 +27602,9 @@
         "event": null
       },
       "WWW": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "WY": {
         "stage": 3,
@@ -27982,12 +27629,12 @@
       "XENE": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "XERS": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "XFOR": {
         "stage": 3,
@@ -28002,7 +27649,7 @@
       "XMAX": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "XMTR": {
         "stage": 2,
@@ -28017,7 +27664,7 @@
       "XOM": {
         "stage": 2,
         "fresh": false,
-        "event": null
+        "event": "pullback_resume"
       },
       "XOMA": {
         "stage": 2,
@@ -28047,7 +27694,7 @@
       "XPRO": {
         "stage": 2,
         "fresh": false,
-        "event": "trendline_recapture"
+        "event": null
       },
       "XRAY": {
         "stage": 2,
@@ -28062,7 +27709,7 @@
       "XRX": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "XYL": {
         "stage": 4,
@@ -28072,7 +27719,7 @@
       "XYZ": {
         "stage": 2,
         "fresh": true,
-        "event": null
+        "event": "pullback_resume"
       },
       "YELP": {
         "stage": 4,
@@ -28100,19 +27747,19 @@
         "event": null
       },
       "ZBH": {
-        "stage": 1,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "ZBIO": {
-        "stage": 4,
+        "stage": 1,
         "fresh": false,
         "event": null
       },
       "ZBRA": {
         "stage": 2,
         "fresh": true,
-        "event": "pullback_resume"
+        "event": null
       },
       "ZD": {
         "stage": 2,
@@ -28126,17 +27773,17 @@
       },
       "ZETA": {
         "stage": 2,
-        "fresh": true,
+        "fresh": false,
         "event": "pullback_resume"
       },
       "ZGN": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": null
       },
       "ZIP": {
-        "stage": 1,
-        "fresh": false,
+        "stage": 2,
+        "fresh": true,
         "event": null
       },
       "ZNTL": {
@@ -28176,8 +27823,8 @@
       },
       "ZVRA": {
         "stage": 2,
-        "fresh": true,
-        "event": "trendline_recapture"
+        "fresh": false,
+        "event": null
       },
       "ZWS": {
         "stage": 2,
@@ -37132,6 +36779,11 @@
       "fresh": false,
       "event": null
     },
+    "NXH": {
+      "stage": 4,
+      "fresh": false,
+      "event": null
+    },
     "NXPI": {
       "stage": 2,
       "fresh": false,
@@ -38080,7 +37732,7 @@
     "PNW": {
       "stage": 2,
       "fresh": false,
-      "event": null
+      "event": "pullback_resume"
     },
     "PODD": {
       "stage": 4,

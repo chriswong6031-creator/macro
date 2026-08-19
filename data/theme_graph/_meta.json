@@ -1,10 +1,10 @@
 {
-  "belief_time": "2026-08-18",
+  "belief_time": "2026-08-19",
   "capability_counts": {
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-19T09:45:09Z",
+  "computed_at": "2026-08-19T10:11:38Z",
   "counts": {
     "capability": 641,
     "edges": 8292,

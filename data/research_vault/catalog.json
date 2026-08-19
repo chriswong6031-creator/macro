@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T08:22:33.584741+00:00",
-  "count": 1394,
+  "generated_at": "2026-08-19T09:22:38.448157+00:00",
+  "count": 1397,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -80,6 +80,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-dcorebvn8dl-97660a",
+      "title": "JPM International Market Intelligence | Morning Briefing: 20 SECONDS",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T08:58:15Z",
+      "summary_points": [
+        "**Iran Geopolitics & Oil Dynamics**: Declining oil inventories + China reserve additions signal reduced US escalation appetite; SoH odds at 36% (vs 50% Aug start), near-term incentives uncertain.",
+        "**China Manufacturing Deterioration**: Output decline (Apr-Jul 2026) contrasts with stable US/EM, signaling weakening industrial activity critical for China-linked assets.",
+        "**Tech Giants' Off-Balance Sheet Liabilities**: $2.42T commitments (Alphabet, Amazon, Meta, Microsoft) indicate hidden leverage risks amid rising rates.",
+        "**Natural Rate Trend**: Structural decline to 1-2% (vs 4% 1980s), implying prolonged low-rate environment and impacting fixed-income positioning.",
+        "**AI Unwinding & Flows**: Asia-wide risk-off driven by AI sector correction; \"It's August\" explains steep drop despite Codex user growth (50% in 22 days)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-cq6mru0v5yk-a55ba3",
       "title": "JPM Software Industry Thoughts and Rank Order AI Disruption Concerns Present Compelling Opportunities in Relation to Both Growth and Inexpensive Valuation",
@@ -399,6 +420,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u3n9ooy47fb-5519ac",
+      "title": "ME cio weekly letter",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:18:52Z",
+      "summary_points": [
+        "**Fed Rate-Hike Odds at 31%**: Weak July labor data (non-farm payroll -23k, shrinking labor supply) and easing inflation (core CPI YoY 2.47%) reduce September hike probability to 31% (CME Fedwatch), supporting risk assets despite oil rebound and geopolitical tensions.",
+        "**Defense Structural Rearmament**: Depleted interceptors (Patriot/THAAD) from global conflicts (620+ strikes) trigger Defense Production Act, $76B FY2027 budget, and $21B supplemental funding; U.S.",
+        "defense spending at 3.1% (vs.",
+        "historical 5% in wars), driving $850B order backlog and sector outperformance.",
+        "**AI Capex Surge & Earnings**: Hyperscalers’ AI capex to $800B (2026, +50% vs 2025) fuels S&P 500 EPS growth (28.9% Q1, 50.7% Q2), with \"receivers of capital investment\" maintaining growth potential amid slowing earnings cycle."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1489,6 +1531,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9jpfdoqlhmy-644427",
+      "title": "Weekly Flows and CFTC Positioning",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:46:41Z",
+      "summary_points": [
+        "**Gold Longs Surge**: Speculative net gold longs jumped USD14.7bn (23% rise in 3 months) post-Trump’s War nomination, signaling downward USD pressure and elevated risk from speculative USD long exposure.",
+        "**EUR/GBP Net Shorts Surge**: Net position expansion (negative values) as EURUSD/GBPUSD decline, indicating intensified bearish sentiment and risk for cross-currency trades.",
+        "**JPY/CHF/AUD/NZD Divergence**: Net short positions rising while spot rates strengthen for JPY, CHF, AUD, NZD, signaling potential reversal risk.",
+        "**USD Positioning Caution**: Aggregate USD longs fell USD382mn post-JPY short covering; traders await US inflation data amid AUD/EUR shorts rising and JPY/CAD shorts trimmed."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

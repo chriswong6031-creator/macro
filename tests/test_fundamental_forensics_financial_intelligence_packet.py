@@ -187,7 +187,8 @@ def test_law2_and_law3_later_revision_does_not_leak_before_2025_filing() -> None
     assert _cell(known_2024, "revenue", "FY2023")["accession"] == "0000999999-24-000010"
     assert known_2024["revisions"] == []
     revenue_rev = next(item for item in known_2025["revisions"] if item["metric_id"] == "revenue")
-    assert revenue_rev["original_value"] == "1050"
+    assert revenue_rev["root_value"] == "1050"
+    assert revenue_rev["prior_value"] == "1050"
     assert revenue_rev["revised_value"] == "1060"
     assert revenue_rev["used_as_selected_value"] is True
 
@@ -216,9 +217,10 @@ def test_law6_latest_restated_is_labeled_hindsight() -> None:
     cell = _cell(packet, "revenue", "FY2023")
     assert cell["value"] == "1060"
     revision = next(item for item in packet["revisions"] if item["metric_id"] == "revenue")
-    assert revision["original_accession"] == "0000999999-24-000010"
+    assert revision["root_accession"] == "0000999999-24-000010"
+    assert revision["prior_accession"] == "0000999999-24-000010"
     assert revision["revised_accession"] == "0000999999-25-000010"
-    assert revision["uses_later_restatement"] is True
+    assert revision["uses_later_reported_revision"] is True
     assert packet["query"]["policy"] == "latest_restated"
     assert packet["query"]["evaluation_mode"] == "historical_replay"
 
@@ -231,7 +233,8 @@ def test_law7_receivables_follow_the_same_temporal_rule() -> None:
     revision = next(
         item for item in known_2025["revisions"] if item["metric_id"] == "accounts_receivable_net"
     )
-    assert revision["original_value"] == "120"
+    assert revision["root_value"] == "120"
+    assert revision["prior_value"] == "120"
     assert revision["revised_value"] == "121"
 
 

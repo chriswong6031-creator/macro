@@ -7,7 +7,6 @@
     "ai_semiconductors",
     "ai_software",
     "big_pharma",
-    "crypto",
     "cybersecurity",
     "data_center_power",
     "defense",
@@ -31,6 +30,7 @@
     "silver_miners",
     "space_economy",
     "travel",
+    "us_sector_comm",
     "us_sector_discretionary",
     "us_sector_energy",
     "us_sector_financials",
@@ -45,8 +45,8 @@
   "held": [
     "memory_storage",
     "ai_infra",
-    "silver_miners",
-    "cybersecurity"
+    "cybersecurity",
+    "silver_miners"
   ],
   "leader": "memory_storage",
   "names": {

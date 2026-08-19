@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-08-12",
+  "asof": "2026-08-17",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -11,7 +11,7 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 1814
+        "n_spine_rows": 1884
       }
     },
     {
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 21
+        "n_spine_rows": 25
       }
     },
     {
@@ -35,7 +35,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 1528
+        "n_spine_rows": 1600
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 81
+        "n_spine_rows": 87
       }
     },
     {
@@ -59,7 +59,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 672
+        "n_spine_rows": 92
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 3372
+        "n_spine_rows": 3435
       }
     },
     {
@@ -75,7 +75,15 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 3372
+        "n_spine_rows": 3435
+      }
+    },
+    {
+      "id": "engine:demand_chain",
+      "type": "engine",
+      "label": "demand_chain",
+      "meta": {
+        "n_spine_rows": 1
       }
     },
     {
@@ -91,7 +99,7 @@
       "type": "engine",
       "label": "desk:stock_desk",
       "meta": {
-        "n_spine_rows": 115
+        "n_spine_rows": 121
       }
     },
     {
@@ -107,7 +115,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1816
+        "n_spine_rows": 1856
       }
     },
     {
@@ -115,7 +123,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 3251
+        "n_spine_rows": 3349
       }
     },
     {
@@ -123,7 +131,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 327
+        "n_spine_rows": 338
       }
     },
     {
@@ -131,7 +139,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 907
+        "n_spine_rows": 917
       }
     },
     {
@@ -155,7 +163,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 56
+        "n_spine_rows": 59
       }
     },
     {
@@ -163,7 +171,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 16488
+        "n_spine_rows": 16676
       }
     },
     {
@@ -187,7 +195,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 288
+        "n_spine_rows": 302
       }
     },
     {
@@ -219,7 +227,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 294930
+        "n_spine_rows": 294980
       }
     },
     {
@@ -235,7 +243,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 19867
+        "n_spine_rows": 20282
       }
     },
     {
@@ -243,7 +251,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 19867
+        "n_spine_rows": 20282
       }
     },
     {
@@ -251,7 +259,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 118
+        "n_spine_rows": 124
       }
     },
     {
@@ -1862,6 +1870,51 @@
       "id": "thesis:2026-08-17-radar-non_ai_tech",
       "type": "thesis",
       "label": "2026-08-17-radar-non_ai_tech",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-18-radar-space_economy",
+      "type": "thesis",
+      "label": "2026-08-18-radar-space_economy",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-18-radar-semicap_equipment",
+      "type": "thesis",
+      "label": "2026-08-18-radar-semicap_equipment",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-18-radar-us_sector_staples",
+      "type": "thesis",
+      "label": "2026-08-18-radar-us_sector_staples",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-18-radar-ai_semiconductors",
+      "type": "thesis",
+      "label": "2026-08-18-radar-ai_semiconductors",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-18-radar-ai_infra",
+      "type": "thesis",
+      "label": "2026-08-18-radar-ai_infra",
       "meta": {
         "direction": null,
         "onset_date": null
@@ -20379,7 +20432,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=43 ticker-level demand-vs-supply divergences b=n_divergences=43, top tickers=['GOOGL', 'PM', 'AVGO', 'VRT',"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=43 ticker-level demand-vs-supply divergences b=n_divergences=43, top tickers=['NVDA', 'PM', 'AVGO', 'VRT', "
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -20395,23 +20448,23 @@
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 30,
-      "lift": 0.00614,
+      "n": 33,
+      "lift": 0.00977,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0061 n=30 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0098 n=33 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 105,
-      "lift": -0.027,
+      "n": 109,
+      "lift": -0.02598,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0270 n=105 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0260 n=109 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20429,11 +20482,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 27,
-      "lift": -0.00149,
+      "lift": -0.00113,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0015 n=27 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0011 n=27 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20450,12 +20503,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 896,
-      "lift": 0.00024,
+      "n": 903,
+      "lift": 0.00037,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0002 n=896 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0004 n=903 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20473,11 +20526,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 32,
-      "lift": -0.02252,
+      "lift": -0.02278,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0225 n=32 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0228 n=32 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20494,12 +20547,12 @@
       "src": "engine:policy",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 17,
-      "lift": -0.01887,
+      "n": 18,
+      "lift": -0.02028,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0189 n=17 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0203 n=18 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -20517,11 +20570,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 101,
-      "lift": 0.00208,
+      "lift": 0.00199,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0021 n=101 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0020 n=101 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -20655,12 +20708,12 @@
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=43, top tickers=['GOOGL', 'PM', 'AVGO', 'VRT', 'IRDM']"
+        "reading": "n_divergences=43, top tickers=['NVDA', 'PM', 'AVGO', 'VRT', 'IRDM']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-18",
-      "note": "43 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: GOOGL, PM, AVGO, VRT, IRDM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-19",
+      "note": "43 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, PM, AVGO, VRT, IRDM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -20675,7 +20728,7 @@
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-17",
+      "as_of": "2026-08-18",
       "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (usd_positioning).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
@@ -20683,7 +20736,7 @@
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 30,
+    "n_lobes_total": 31,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -20698,7 +20751,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-18T11:18:03Z",
-  "inputs_hash": "sha256:4e31587abcd2fd0b3341acca8cac8a48fc7df9a6d025a104eef6d40bec139935",
+  "produced_at": "2026-08-19T08:20:26Z",
+  "inputs_hash": "sha256:e4c3607f8c78d8c704c40fa9b85150b8d40962261a260f8337ba6b1f3f0ca0a1",
   "tier": "display"
 }

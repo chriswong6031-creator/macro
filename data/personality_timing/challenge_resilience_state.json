@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,20 +38,20 @@
   },
   "family": "pss_cr1_challenge_resilience_prospective",
   "gate_open": true,
-  "generated_utc": "2026-08-18T08:46:35.175951+00:00",
+  "generated_utc": "2026-08-19T06:05:01.268937+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 0,
-    "challenged_control": 0,
-    "earliest_action": null,
-    "events": 0,
-    "failed_hold_diagnostic": 0,
-    "latest_action": null,
+    "appended_today": 8,
+    "challenged_control": 6,
+    "earliest_action": "2026-08-18",
+    "events": 8,
+    "failed_hold_diagnostic": 1,
+    "latest_action": "2026-08-18",
     "matured": 0,
-    "primary_events": 0,
+    "primary_events": 7,
     "rejected_pre_cutoff_today": 0,
-    "resilient_leader": 0,
-    "ungraded": 0
+    "resilient_leader": 1,
+    "ungraded": 8
   },
   "manifest_sha256": "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1",
   "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
@@ -60,11 +60,14 @@
   "program_id": "PSS-CR1",
   "registration_ok": true,
   "scan_census": {
-    "derived_events": 0,
-    "eligible_future_rh1_sources": 11,
+    "derived_events": 8,
+    "eligible_future_rh1_sources": 12,
     "reasons": {
-      "awaiting_challenge_window": 1,
-      "awaiting_or_no_challenge_yet": 10
+      "awaiting_challenge_window": 2,
+      "awaiting_or_no_challenge_yet": 2,
+      "group_challenged_control": 6,
+      "group_failed_hold_diagnostic": 1,
+      "group_resilient_leader": 1
     }
   },
   "schema": "personality_challenge_resilience.state/v1",
