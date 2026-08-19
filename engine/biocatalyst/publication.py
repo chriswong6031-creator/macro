@@ -260,6 +260,7 @@ class ProductReadBundle:
 
     projection: CommittedTrialProjection
     operational_health: Mapping[str, Any]
+    health_unavailable_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -1798,9 +1799,11 @@ class PublicGenerationPublisher:
         if validated is None:
             return None
         projection = self._trial_projection_from_validated(validated)
+        health_unavailable_reason: str | None = None
         try:
             health = self._operational_health_from_validated(validated, now=now)
-        except (OSError, PublicationError):
+        except (OSError, PublicationError) as exc:
+            health_unavailable_reason = getattr(exc, "code", type(exc).__name__)
             health = {
                 "state": "unavailable",
                 "last_success_at": projection.generation.last_success_at,
@@ -1814,6 +1817,7 @@ class PublicGenerationPublisher:
         return ProductReadBundle(
             projection=projection,
             operational_health=dict(health),
+            health_unavailable_reason=health_unavailable_reason,
         )
 
     def read_trial_projection(self) -> CommittedTrialProjection | None:

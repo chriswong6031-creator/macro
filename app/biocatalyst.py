@@ -329,10 +329,10 @@ def _read_bundle() -> tuple[Any, dict[str, Any]]:
     if bundle is None:
         raise _unavailable()
     health = dict(bundle.operational_health)
-    if health.get("last_error_code") == "OPERATIONAL_HEALTH_UNAVAILABLE":
+    if bundle.health_unavailable_reason:
         log.warning(
             "BioCatalyst operational health unavailable (%s)",
-            health.get("last_error_code"),
+            bundle.health_unavailable_reason,
         )
     return bundle.projection, health
 
