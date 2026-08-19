@@ -780,6 +780,29 @@ artifacts:
     external_consumers: []
     notes: "weights=hand: composite uses docstring-declared weights 0.24/0.18/0.16/0.16/0.14/0.12 for its six sub-components. W3 measurement plan will replace hand weights with measured. Producer: engine/market_state.py:795 persist() called from scripts/build_site.py:1700."
 
+  risk-envelope-settled:
+    path: site/riskdata/risk_envelope.json
+    format: json
+    producer: scripts/build_risk_envelope.py
+    known_extra_writers:
+      - "engine/risk_envelope.py — the PURE composer (states in, envelope out); build_risk_envelope.py is the only writer"
+      - "scripts/build_risk_envelope.py also mirrors the same bytes to data/risk_envelope/latest.json (durable settled copy; site/ path is the public contract)"
+    owner_program: grey-deer-risk-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: source_session
+    freshness_sla_hours: 30
+    schema: contracts/risk_envelope.schema.json
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: "Grey Deer GD-2 settled Risk Envelope. weights=none by construction: the composer SELECTS and CARRIES source-native states (market-state-latest verdict/score verbatim, leadership_crack state, the radar read on market-state) and mints NO new weighted number — the hazard stage is a max over an ordinal, never a mean, and a stale or missing source may only shrink confidence or null the stage, never cast a calm vote. Birth authority is DESCRIPTIVE ONLY (Sol ruling 2026-08-19): every authority boolean is hard-false, policy_actions_require_individual_authority is true, hazard_stage is restricted to NONE|FRAGILE|TRANSMITTING|BREAKDOWN|null (ARMED/TRIGGERING are anticipatory and reserved for promoted experts), and zero policies exist. engine/risk_state.py's frozen legacy fused score is excluded by contract and by regression test. Live provisional lane (site/live/risk_envelope.json) is GD-3, not yet built."
+
   cycle-ontology-falsifiers:
     path: data/cycle_ontology/falsifiers.json
     format: json

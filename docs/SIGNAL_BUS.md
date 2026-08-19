@@ -39,6 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fundamental-forensics | 3 |
 | gmi-theme-graph | 4 |
 | government-revenue-foresight | 42 |
+| grey-deer-risk-intelligence | 1 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -115,7 +116,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 376 |
+| display | 377 |
 | infrastructure | 162 |
 | scored | 5 |
 | shadow | 101 |
@@ -124,7 +125,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 604 |
+| git | 605 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 18 |
@@ -481,6 +482,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-government-revenue-dossiers | `site/government-revenue-data/dossiers.json` | json | intraday | display | 1 | 0 |
 | site-government-revenue-subaward-dossiers | `site/government-revenue-data/subaward-dossiers.json` | json | intraday | display | 1 | 0 |
 | site-government-revenue-workspace | `site/government-revenue-data/workspace.json` | json | intraday | display | 1 | 0 |
+
+### grey-deer-risk-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| risk-envelope-settled | `site/riskdata/risk_envelope.json` | json | daily-engine | display | 1 | 0 |
 
 ### hk-canada
 
@@ -1951,6 +1958,14 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/research_queue.py`
 - **extra writers:**
   - scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic
+
+### risk-envelope-settled
+
+- **path:** `site/riskdata/risk_envelope.json`
+- **declared producer:** `scripts/build_risk_envelope.py`
+- **extra writers:**
+  - engine/risk_envelope.py — the PURE composer (states in, envelope out); build_risk_envelope.py is the only writer
+  - scripts/build_risk_envelope.py also mirrors the same bytes to data/risk_envelope/latest.json (durable settled copy; site/ path is the public contract)
 
 ### sector-central-calls
 

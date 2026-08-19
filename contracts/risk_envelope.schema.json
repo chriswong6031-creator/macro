@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/risk_envelope.schema.json",
+  "title": "Mastermind Risk Envelope v1 (Grey Deer settled projection)",
+  "description": "Three orthogonal answers carried side by side and never blended: measured slow trend, descriptive transition hazard, and capital posture as a display projection of active policies. Birth authority is DESCRIPTIVE ONLY - every authority boolean is false and hazard_stage may never be ARMED or TRIGGERING.",
+  "type": "object",
+  "required": [
+    "schema", "definition_id", "market", "revision", "bundle_id", "source_session",
+    "as_of", "observed_at", "produced_at", "stale_after", "measured_state",
+    "hazard_summary", "episodes", "policies", "policy_summary", "data_state",
+    "coherence", "coverage", "freshness", "correction", "provenance", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "mastermind.risk_envelope/v1"},
+    "definition_id": {"type": "string", "minLength": 1},
+    "market": {"type": "string", "minLength": 1},
+    "revision": {"enum": ["settled", "live_provisional", "corrected"]},
+    "bundle_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+    "source_session": {"type": ["string", "null"]},
+    "as_of": {"type": ["string", "null"]},
+    "observed_at": {"type": "string"},
+    "produced_at": {"type": "string"},
+    "stale_after": {"type": ["string", "null"]},
+
+    "measured_state": {
+      "type": "object",
+      "description": "The slow trend organ carried verbatim. verdict/score are null when the organ is missing or stale - never substituted with a default.",
+      "required": ["source_artifact", "verdict", "score", "role", "as_of", "usable"],
+      "properties": {
+        "source_artifact": {"type": ["string", "null"]},
+        "verdict": {"type": ["string", "null"], "enum": ["RISK_ON", "MIXED", "RISK_OFF", null]},
+        "score": {"type": ["number", "null"]},
+        "role": {"const": "slow_confirmed_trend"},
+        "as_of": {"type": ["string", "null"]},
+        "usable": {"type": "boolean"}
+      }
+    },
+
+    "hazard_summary": {
+      "type": "object",
+      "description": "Descriptive transition hazard. stage null means NOT LAWFULLY KNOWABLE with current coverage - it is neither NONE nor 0. ARMED/TRIGGERING are anticipatory claims reserved for separately promoted experts and are absent from this enum by construction.",
+      "required": [
+        "stage", "stage_reason", "unreadable_sources", "contributing_sources",
+        "primary_episode_id", "active_episode_count", "stage_since", "display_only"
+      ],
+      "properties": {
+        "stage": {"enum": ["NONE", "FRAGILE", "TRANSMITTING", "BREAKDOWN", null]},
+        "stage_reason": {
+          "enum": ["observed_settled_evidence", "required_coverage_unavailable", "no_usable_hazard_evidence"]
+        },
+        "unreadable_sources": {"type": "array", "items": {"type": "string"}},
+        "contributing_sources": {"type": "array", "items": {"type": "string"}},
+        "primary_episode_id": {"type": ["string", "null"]},
+        "active_episode_count": {"type": "integer", "minimum": 0},
+        "stage_since": {"type": ["string", "null"]},
+        "display_only": {"const": true}
+      }
+    },
+
+    "episodes": {
+      "type": "array",
+      "description": "V0 mints no episodes - the Risk Envelope owns no forward ledger.",
+      "maxItems": 0
+    },
+    "policies": {
+      "type": "array",
+      "description": "V0 carries no policies - no registered policy object exists yet.",
+      "maxItems": 0
+    },
+    "policy_summary": {
+      "type": "object",
+      "description": "Display projection of active policies. NORMAL with zero policies means nothing is restricted, NOT a judgement that conditions are normal.",
+      "required": ["posture", "active_policy_ids", "policy_count", "basis", "display_only"],
+      "properties": {
+        "posture": {
+          "enum": ["NORMAL", "SELECTIVE", "PROTECTIVE", "DEFENSIVE_ONLY", "NO_NEW_RISK", "EMERGENCY"]
+        },
+        "active_policy_ids": {"type": "array", "maxItems": 0},
+        "policy_count": {"type": "integer", "minimum": 0, "maximum": 0},
+        "basis": {"const": "zero_active_policies"},
+        "display_only": {"const": true}
+      }
+    },
+
+    "data_state": {"enum": ["FRESH", "PARTIAL", "DEGRADED", "STALE", "UNKNOWN"]},
+    "repair_state": {
+      "enum": ["NONE", "IMPULSE", "BROADENING", "CONFIRMED", "FAILED", null],
+      "description": "V0 tracks no repair lifecycle (needs an episode store); always null."
+    },
+
+    "coherence": {
+      "type": "object",
+      "description": "Do the answers agree? A structural verdict, never a severity and never a score.",
+      "required": ["state", "contradictions", "contradiction_count", "display_only"],
+      "properties": {
+        "state": {"enum": ["ALIGNED", "MIXED", "CONTRADICTORY"]},
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "left", "left_state", "right", "right_state"],
+            "properties": {
+              "kind": {"enum": ["trend_vs_hazard", "hazard_split"]},
+              "left": {"type": ["string", "null"]},
+              "left_state": {"type": ["string", "null"]},
+              "right": {"type": ["string", "null"]},
+              "right_state": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "contradiction_count": {"type": "integer", "minimum": 0},
+        "display_only": {"const": true}
+      }
+    },
+
+    "coverage": {
+      "type": "object",
+      "required": ["required", "optional", "fresh", "stale", "missing", "source_count"],
+      "properties": {
+        "required": {"type": "array", "items": {"type": "string"}},
+        "optional": {"type": "array", "items": {"type": "string"}},
+        "fresh": {"type": "array", "items": {"type": "string"}},
+        "stale": {"type": "array", "items": {"type": "string"}},
+        "missing": {"type": "array", "items": {"type": "string"}},
+        "source_count": {"type": "integer", "minimum": 0}
+      }
+    },
+
+    "freshness": {
+      "type": "object",
+      "description": "Per-source clocks kept separate. Three separate truths need three separate clocks; collapsing them to one page timestamp is what makes a stale organ look current.",
+      "required": ["source_session", "per_source", "off_session_sources", "all_on_session"],
+      "properties": {
+        "source_session": {"type": ["string", "null"]},
+        "per_source": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["as_of", "state", "matches_session"],
+            "properties": {
+              "as_of": {"type": ["string", "null"]},
+              "state": {"enum": ["FRESH", "STALE", "MISSING"]},
+              "matches_session": {"type": ["boolean", "null"]}
+            }
+          }
+        },
+        "off_session_sources": {"type": "array", "items": {"type": "string"}},
+        "all_on_session": {"type": "boolean"}
+      }
+    },
+
+    "correction": {"type": ["object", "null"]},
+
+    "provenance": {
+      "type": "object",
+      "required": ["sources", "composer", "excludes"],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source_id", "role", "state", "score", "as_of", "coverage", "required", "hazard_stage"],
+            "properties": {
+              "source_id": {"type": "string"},
+              "role": {"enum": ["measured_state", "hazard_evidence", "context"]},
+              "state": {"type": ["string", "null"]},
+              "score": {"type": ["number", "null"]},
+              "as_of": {"type": ["string", "null"]},
+              "coverage": {"enum": ["FRESH", "STALE", "MISSING"]},
+              "required": {"type": "boolean"},
+              "hazard_stage": {"enum": ["NONE", "FRAGILE", "TRANSMITTING", "BREAKDOWN", null]},
+              "label_en": {"type": ["string", "null"]},
+              "label_zh": {"type": ["string", "null"]},
+              "detail": {"type": "object"}
+            }
+          }
+        },
+        "composer": {"const": "engine/risk_envelope.py"},
+        "excludes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "authority": {
+      "type": "object",
+      "description": "Birth authority is DESCRIPTIVE ONLY (Sol ruling 2026-08-19). Every permission is hard-false; any action traces to one separately registered, separately promoted policy rule.",
+      "required": [
+        "envelope_may_rank", "envelope_may_gate", "envelope_may_size",
+        "envelope_may_execute", "policy_actions_require_individual_authority"
+      ],
+      "properties": {
+        "envelope_may_rank": {"const": false},
+        "envelope_may_gate": {"const": false},
+        "envelope_may_size": {"const": false},
+        "envelope_may_execute": {"const": false},
+        "policy_actions_require_individual_authority": {"const": true}
+      }
+    }
+  }
+}
