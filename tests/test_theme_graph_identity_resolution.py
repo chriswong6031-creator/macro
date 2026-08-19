@@ -664,18 +664,40 @@ def test_every_resolved_security_id_exists_in_the_master(company_nodes, master_i
 # ---------------------------------------------------------------------------
 
 def test_the_committed_bake_is_reproducible_from_the_committed_inputs(nodes):
-    baked = pd.read_parquet(BAKED_IDRES_PATH)
+    # The store is deliberately append-only, keyed on (node_id, computed_at): one row
+    # per node PER MATERIALIZED GENERATION (engine/theme_graph/store.py). Comparing the
+    # raw artifact would mix an older generation's rows in with the newest once a
+    # second bake has landed, so collapse to the store's own "current view" first —
+    # the same reader every production consumer uses.
+    current_view = store.read_identity_resolution(latest=True)
+    assert not current_view.empty
+
+    # Even the per-node "current view" can carry one stale row: a node whose latest
+    # committed row predates the newest bake (e.g. it was not part of that run, or the
+    # graph grew a node after the run). That is a legitimate state for the store — it is
+    # NOT a legitimate state for THIS check, whose whole point is "does the newest
+    # generation reproduce from today's committed master". So scope the reproducibility
+    # comparison to the newest generation's own cohort (max computed_at), not the whole
+    # current view. An older generation legitimately may not reproduce from today's
+    # inputs — that is expected, not a defect.
+    newest_computed_at = current_view["computed_at"].max()
+    baked = current_view[current_view["computed_at"] == newest_computed_at].reset_index(drop=True)
     assert not baked.empty
     resolution_asof = str(baked["resolution_asof"].iloc[0])
     engine_version = str(baked["engine_version"].iloc[0])
     assert (baked["resolution_asof"].astype(str) == resolution_asof).all(), (
-        "the committed bake must be a single generation for this comparison to be valid")
+        "the newest generation's own cohort must be a single generation for this "
+        "comparison to be valid")
     assert (baked["engine_version"].astype(str) == engine_version).all()
 
     fresh_rows = ir.derive_rows(
         nodes.to_dict("records"), resolution_asof=resolution_asof,
         computed_at="reproducibility-check", engine_version=engine_version)
     fresh = pd.DataFrame(fresh_rows).reindex(columns=list(store.IDENTITY_RESOLUTION_COLUMNS))
+    # Scope fresh the same way: a node the graph grew AFTER this generation was baked
+    # was never resolved at this resolution_asof by the committed run, so it cannot be
+    # part of a check for whether that run reproduces.
+    fresh = fresh[fresh["node_id"].astype(str).isin(baked["node_id"].astype(str))]
 
     baked_sorted = baked.sort_values("node_id", kind="stable").reset_index(drop=True)
     fresh_sorted = fresh.sort_values("node_id", kind="stable").reset_index(drop=True)

@@ -1278,12 +1278,23 @@ class TestTrainServeRatio:
 class TestPermutationPEstimator:
     @NEEDS_REAL_FRAME
     def test_cmi_p_can_never_be_exactly_zero(self, real_report):
-        """(1 + #{null >= observed}) / (B + 1): the observed draw counts itself."""
+        """(1 + #{null >= observed}) / (B + 1): the observed draw counts itself.
+
+        The producer writes p_one_sided through _round(..., 6) (prophet_fusion_race._round,
+        scripts/prophet_fusion_c2.py). At the estimator floor (#{null >= observed} == 0)
+        the raw p is exactly 1/(B+1) — for B=500, 0.001996007984..., which rounds to
+        0.001996, strictly BELOW the unrounded floor. Comparing a 6dp-rounded value
+        against an unrounded bound is a false floor violation, not a real one, so the
+        floor comparison must be rounded the same way the producer rounds its output —
+        never the other way around: this file refuses to re-stamp registered PR-2
+        evidence, so the producer's rounding stays exactly as registered."""
         estimated = [c for c in real_report["cmi"]["cells"] if c["status"] == "estimated"]
         assert estimated
         for cell in estimated:
             assert cell["p_one_sided_estimator"] == "(1 + #{null >= observed}) / (B + 1)"
-            assert cell["p_one_sided"] >= 1.0 / (cell["permutation_b"] + 1)
+            floor = round(1.0 / (cell["permutation_b"] + 1), 6)
+            assert cell["p_one_sided"] >= floor
+            assert cell["p_one_sided"] > 0.0
 
 
 class TestUnresolvableEdgeSpec:
