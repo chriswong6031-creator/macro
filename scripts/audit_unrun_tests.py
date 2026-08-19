@@ -703,6 +703,42 @@ def _load_baseline() -> set[str]:
     return rows
 
 
+def _gated_findings(unrun: list[str], baseline: set[str],
+                    normalized: dict[str, str]) -> list[str]:
+    """Suite paths ``gate()`` exits 1 on: unrun and named in neither file.
+
+    Factored out so ``gated_unrun_suites()`` below (the census/gate function
+    ``scripts/check_contract_delta.py`` imports for its differential contract-delta
+    gate) computes the identical set ``gate()`` itself reds on, with no second copy
+    of the filter to drift.
+    """
+    return [rel for rel in unrun if rel not in baseline and rel not in normalized]
+
+
+def gated_unrun_suites() -> list[str]:
+    """Suite paths ``main()``'s gate would exit 1 on right now, with no printing.
+
+    Mirrors the CLI's own pipeline exactly (``census`` -> unrun -> baseline/waiver
+    filter) as a pure function, for callers that need the gated set itself rather
+    than an exit code — currently ``scripts/check_contract_delta.py``'s PR-vs-base
+    delta, which needs to know WHICH suites are unwired on each side, not just
+    whether any are.
+
+    Raises ``RuntimeError`` if the waivers file is malformed — the same condition
+    that makes the real CLI refuse rather than compute a gate, surfaced as an
+    exception here so a diffing caller does not mistake "unreadable" for "clean".
+    """
+    rows = census()
+    unrun = sorted(r["test"] for r in rows)
+    baseline = _load_baseline()
+    normalized, malformed = _validate_waivers(_load_waivers())
+    if malformed:
+        raise RuntimeError(
+            f"config/{WAIVERS.name} is malformed: " + "; ".join(malformed)
+        )
+    return _gated_findings(unrun, baseline, normalized)
+
+
 def gate(unrun: list[str], baseline: set[str], waivers: object,
          suites: set[str]) -> int:
     """0 unless a suite is unrun and in neither file. Pure: prints, reads nothing."""
@@ -738,8 +774,7 @@ def gate(unrun: list[str], baseline: set[str], waivers: object,
               f"waived; the waiver is the reason of record — prune the row from "
               f"config/{BASELINE.name}", flush=True)
 
-    findings = [rel for rel in unrun
-                if rel not in baseline and rel not in normalized]
+    findings = _gated_findings(unrun, baseline, normalized)
     for rel in findings:
         print(
             f"::error title=unrun-suite::{rel} is a collecting pytest suite named by "

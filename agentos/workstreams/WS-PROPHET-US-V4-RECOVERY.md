@@ -179,7 +179,24 @@ waves:
       independent RIG R5 — note R4 reference is committed but carries NO approval.yml;
       R4 was a closure pass, 10 blocking findings in
       research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md),
-      P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6."
+      P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6.
+      DAY-2 STATE (2026-08-19): R-LAB-1 DONE (Radar W4.1 #5929 squash 9ef200f +
+      commissioning-prep #5995 squash 85d651bc5bbb, live-verified via /api/health
+      commit match; W4 arming stays an OPERATOR act per
+      research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md). P-LAB-API DONE (#5928
+      squash 4295c05; /api/prophet/lab/v1 live, 401 fail-closed). D-LAB-R5 DONE —
+      R5.3 APPROVED: approval.yml minted at frozen dcbea7cd
+      (research/reference_integrity/prophet-board-lab-r5-1/, two-pass independent
+      dual-critic, author excluded). R4-composition C8 pass COMPLETE (#5990 squash
+      2313bdb, verdict REVISE + rulings b1/b8/n1); repairs C8-A/C8-B MERGED
+      (#5998 squash fa9ceeb, 98/98 verify_r4); MP-1 Amendment 1 MERGED (#5994
+      squash a3c3b69); C8-C DS-PR #6011 in flight (independent review MERGE-SAFE,
+      pre-merge repairs applied; commissioning session merges by hand — never
+      armed). P-MP1-SHELL gated on: #6011 merged + G-D coverage re-measured at a
+      post-#6006 nightly payload (08-19 library collapse was a #5980 partial
+      build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork
+      branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the
+      settled shell + API, per the day-2 directive §7."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]

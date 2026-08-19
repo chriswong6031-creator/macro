@@ -4753,6 +4753,83 @@ jobs:
           if-no-files-found: warn
           overwrite: true
           retention-days: 14
+  # DIFFERENTIAL merge-train contract gate (2026-08-19). ci-pack's own path
+  # scoping is exactly the blind spot this job exists to cover: a curated
+  # `scope: exclusive` job's import closure, or the set of pytest suites no
+  # workflow wires, are both CI-CONTRACT facts that a normal path-scoped pack
+  # never re-derives unless the edit happens to land inside that job's own
+  # declared paths (tests/test_ci_pack.py, scripts/audit_unrun_tests.py). Two
+  # PRs (#5872, #5932) each widened a curated job's import closure without
+  # widening its declared paths; neither PR's pack ran
+  # test_curated_exclusive_scopes_cover_their_own_import_closure, both merged
+  # green, and main went red 5+ hours later with 21 armed PRs baseline-blocked
+  # behind it (research the incident under WS/PROPHET or grep press-wire for
+  # 2026-08-19 ~12:00Z). This job re-derives both finding classes on every PR,
+  # unconditionally of path scope, and reds ONLY when the PR's own tree
+  # introduces a finding that the PR's base did not already carry.
+  #
+  # DIFFERENTIAL, NEVER ABSOLUTE, on purpose — see
+  # scripts/check_contract_delta.py's module docstring for the full argument.
+  # An absolute validator would re-jam the fleet at PR level the moment main
+  # itself carries an inherited finding (main law: "Validator in an ALWAYS-ON
+  # job = fleet control plane"), which is exactly the failure mode ci-gate's
+  # own base-inherited-red carve-outs exist to avoid for every OTHER check.
+  contract-delta:
+    # PR events only. A push/workflow_dispatch main-proof run has no
+    # `pull_request.base.sha` to diff against and must never be asked to run
+    # this job — see ci-gate's handling of this job's `result` below, which
+    # treats `skipped` as OK precisely because non-PR events skip it here.
+    if: github.event_name == 'pull_request'
+    name: contract-delta
+    runs-on: ubuntu-latest
+    # 25 -> 45 (2026-08-19). PR #6013's contract-delta job was CANCELLED at
+    # exactly 25 minutes — checkout/setup/fetch all green, only the gate step
+    # itself killed mid-run — because scripts/check_contract_delta.py's two
+    # whole-repo censuses (head + base) ran serially and this hosted 2-core
+    # runner is slower than the machine they were timed on. The script itself
+    # now overlaps those two censuses (concurrent head/base, see its module
+    # docstring), which is the real fix; this is belt-and-suspenders margin.
+    # Safe to keep generous: this job is off the critical path entirely — the
+    # ci-pack matrix it runs alongside already takes ~30 min.
+    timeout-minutes: 45
+    steps:
+      # Checkout recipe copied verbatim from integration-baseline.yml's
+      # `baseline` job (2026-08-13 diet) — same reasoning applies here: this
+      # job parses .github/ci/legacy-jobs.yml, walks workflow definitions, and
+      # runs static/manifest analysis only. It opens nothing under site/ or
+      # data/. Non-cone with negation, deliberately: it states the EXCLUSION,
+      # so a new top-level directory is included by default and cannot
+      # silently fall out of this job's view the way a cone allowlist would.
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            /*
+            !/site/
+            !/data/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          # PINNED to the same exact patch release as ci-plan/ci-pack above —
+          # see their comment for why a floating "3.12" is unsafe on this
+          # hosted pool (2026-08-19, ci-pack-8 red on two unrelated PR heads
+          # when the tool cache silently moved 3.12.13 -> 3.12.14).
+          python-version: "3.12.13"
+      - name: install control-plane dependencies
+        # Static/manifest analysis only, same posture as integration-baseline.yml —
+        # neither scripts/run_ci_pack.py's inference nor
+        # scripts/audit_unrun_tests.py's census imports the product data stack.
+        run: pip install pytest pyyaml
+      - name: fetch the PR's base commit
+        # check_contract_delta.py materializes the base tree itself (a detached
+        # `git worktree add`), which needs the base commit's object present
+        # locally — the fetch-depth: 1 checkout above only guarantees the head.
+        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+      - name: differential contract-delta gate
+        run: >-
+          python scripts/check_contract_delta.py
+          --base ${{ github.event.pull_request.base.sha }}
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan
   # selected pack N, and the whole matrix is skipped on a proven no-work PR. That
@@ -4773,7 +4850,7 @@ jobs:
     # repository would publish a red `ci-gate` — blocking the sweeper fleet-wide.
     if: always() && github.event.action != 'closed'
     name: ci-gate
-    needs: [ci-plan, ci-pack]
+    needs: [ci-plan, ci-pack, contract-delta]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -4893,3 +4970,20 @@ jobs:
             exit 1
           fi
           echo "::notice title=ci-gate::complete semantic proof is clear"
+      # `contract-delta` is `if: github.event_name == 'pull_request'` (see its own
+      # job above), so a push/workflow_dispatch main-proof run always sees
+      # `skipped` here — that must NOT fail ci-gate, or every main baseline would
+      # go red the moment this job was added. Matches PLAN_RESULT's own idiom
+      # above: read the upstream job's `needs.<job>.result` into an env var and
+      # branch on it in a plain shell step, rather than folding it into the
+      # semantic-proof reconciler, which has no notion of this job at all.
+      - name: enforce contract-delta verdict
+        if: always()
+        env:
+          CONTRACT_DELTA_RESULT: ${{ needs.contract-delta.result }}
+        run: |
+          if [ "$CONTRACT_DELTA_RESULT" = "failure" ]; then
+            echo "::error title=ci-gate::contract-delta found a NEW CI-contract defect this PR introduces ($CONTRACT_DELTA_RESULT) — see the contract-delta job's own log for the job/suite and the exact fix"
+            exit 1
+          fi
+          echo "::notice title=ci-gate::contract-delta clear (result=$CONTRACT_DELTA_RESULT)"
