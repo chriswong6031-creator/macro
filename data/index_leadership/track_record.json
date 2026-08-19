@@ -1,71 +1,71 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-17",
-  "generated_at": "2026-08-18T09:47:40.576516+00:00",
+  "generated_at": "2026-08-19T06:48:38.920032+00:00",
   "is_context_only": true,
   "n_snapshots": 291,
   "n_days": 9,
   "horizons": {
     "5": {
-      "n_matured": 209,
+      "n_matured": 222,
       "by_stage": {
         "running": {
-          "n": 194,
-          "mean_fwd_rel": -0.0,
-          "hit_rate": 0.495
+          "n": 203,
+          "mean_fwd_rel": 0.0021,
+          "hit_rate": 0.517
         },
         "coiling": {
-          "n": 7,
-          "mean_fwd_rel": -0.0072,
-          "hit_rate": 0.429
+          "n": 10,
+          "mean_fwd_rel": 0.0004,
+          "hit_rate": 0.6
         },
         "coiling_primed": {
-          "n": 8,
-          "mean_fwd_rel": 0.0212,
-          "hit_rate": 0.875
+          "n": 9,
+          "mean_fwd_rel": 0.0174,
+          "hit_rate": 0.778
         }
       },
-      "running_ic": 0.1643,
+      "running_ic": 0.1658,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 188,
+      "n_matured": 200,
       "by_stage": {
         "running": {
-          "n": 175,
-          "mean_fwd_rel": 0.0003,
-          "hit_rate": 0.531
+          "n": 183,
+          "mean_fwd_rel": 0.0034,
+          "hit_rate": 0.546
         },
         "coiling": {
-          "n": 7,
-          "mean_fwd_rel": -0.035,
-          "hit_rate": 0.143
+          "n": 10,
+          "mean_fwd_rel": -0.0151,
+          "hit_rate": 0.4
         },
         "coiling_primed": {
-          "n": 6,
-          "mean_fwd_rel": 0.0295,
-          "hit_rate": 0.667
+          "n": 7,
+          "mean_fwd_rel": 0.0237,
+          "hit_rate": 0.714
         }
       },
-      "running_ic": 0.1945,
+      "running_ic": 0.1922,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 30,
+      "n_matured": 31,
       "by_stage": {
         "running": {
           "n": 24,
-          "mean_fwd_rel": -0.0193,
+          "mean_fwd_rel": -0.0199,
           "hit_rate": 0.5
         },
         "coiling": {
-          "n": 6,
-          "mean_fwd_rel": -0.0329,
-          "hit_rate": 0.5
+          "n": 7,
+          "mean_fwd_rel": -0.0178,
+          "hit_rate": 0.571
         }
       },
       "running_ic": null,
@@ -131,7 +131,7 @@
       "id": "subsectors:industrial-distribution",
       "name": "Industrial Distribution",
       "stage": "running",
-      "fwd_rel": -0.0969,
+      "fwd_rel": -0.0962,
       "horizon_d": 21
     },
     {
@@ -139,7 +139,7 @@
       "id": "baskets:housing",
       "name": "Housing Chain",
       "stage": "running",
-      "fwd_rel": -0.0966,
+      "fwd_rel": -0.0922,
       "horizon_d": 21
     },
     {

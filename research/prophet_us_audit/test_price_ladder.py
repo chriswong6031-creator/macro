@@ -46,6 +46,65 @@ CFG_ADJUSTED = 67.5514     # data/baskets/ohlcv/CFG.parquet — back-adjusted
 CFG_CONVERGE_DATE = "2026-07-07"   # after the 2026-07-01 ex-date both sources agree
 CFG_CONVERGE = 71.3170
 
+# ---- the control's mechanism, not its 2026-06 calendar ---------------------------
+CONTROL_QUANTUM = 1e-3          # the same 1e-3 the receipt asserts with
+CONTROL_BAND = (0.90, 1.10)     # a distribution re-base, not a split or a bad join
+CONTROL_FACTOR_SPREAD = 1e-4    # measured spread on a real name is ~1e-6 (KO)
+
+
+def adjustment_diagnosis(unadjusted: pd.Series, adjusted: pd.Series) -> tuple[str, str]:
+    """Classify how one name's two price bases differ.
+
+    The control this backs claims the CFG gap is an ADJUSTMENT artefact and not
+    "the two stores are simply different data". A back-adjusted series has an
+    exact signature for that: every point before the last ex-date is the
+    unadjusted one scaled by ONE constant factor, and every point after it
+    matches to the cent. Different data cannot fake that — its ratio wanders.
+
+    Returns ``(kind, detail)`` where kind is ``identical``,
+    ``single_factor_adjustment`` or ``divergent``. Only ``divergent`` means the
+    control assumption actually broke.
+    """
+    index = unadjusted.dropna().index.intersection(adjusted.dropna().index)
+    if len(index) == 0:
+        return "divergent", "the two bases share no dates"
+    left, right = unadjusted.loc[index], adjusted.loc[index]
+    disagreeing = index[(left - right).abs() > CONTROL_QUANTUM]
+    if len(disagreeing) == 0:
+        return "identical", None
+
+    if (right.loc[disagreeing] <= 0).any():
+        return "divergent", "the adjusted base carries a non-positive close"
+    ratios = (left.loc[disagreeing] / right.loc[disagreeing]).astype(float)
+    low, high = CONTROL_BAND
+    if not low <= float(ratios.median()) <= high:
+        return "divergent", (
+            f"ratio {float(ratios.median()):.6f} is outside the distribution band "
+            f"{low}-{high} — a split, a bad join, or two different names")
+    spread = float(ratios.max()) - float(ratios.min())
+    if spread > CONTROL_FACTOR_SPREAD:
+        return "divergent", (
+            f"the ratio wanders by {spread:.2e} across {len(disagreeing)} point(s) "
+            "— one adjustment factor cannot explain this, so the bases are "
+            "different data")
+
+    # An adjustment converges ONCE: back-adjustment scales a contiguous prefix by
+    # one factor, so every shared date up to the last ex-date disagrees and every
+    # date after it matches. A gap — agree, then disagree again at the same factor
+    # — is not an adjustment, it is a splice. Checking `index > last` instead would
+    # be dead code, since `last` is by definition the final disagreement.
+    last = disagreeing.max()
+    prefix = index[index <= last]
+    reconverged = prefix.difference(disagreeing)
+    if len(reconverged):
+        return "divergent", (
+            f"the bases agree at {reconverged.max().date()} and disagree again by "
+            f"{last.date()} — an adjustment converges once and stays converged, so "
+            "this is a splice")
+    return "single_factor_adjustment", (
+        f"one factor {float(ratios.median()):.6f} over {len(disagreeing)} point(s), "
+        f"last ex-date on or before {last.date()}, exact thereafter")
+
 
 # --------------------------------------------------------------------------- #
 # synthetic store
@@ -328,16 +387,94 @@ def test_non_payer_and_no_exdiv_names_agree_across_bases():
     explained by the two stores simply being different data."""
     cache = pd.read_parquet(REPO / "data" / "breadth" / "_closes_cache.parquet")
     cache.index = pd.to_datetime(cache.index)
-    d = pd.Timestamp(CFG_DATE)
     checked = 0
     for tk in ("JPM", "KO", "ALB", "CEG"):
-        if tk not in cache.columns or d not in cache.index:
+        if tk not in cache.columns:
             continue
         r = resolve_close(tk, data_dir=str(REPO / "data"), asof="2026-07-31")
-        if not r.ok or d not in r.series.index:
+        if not r.ok:
             continue
-        assert float(cache.loc[d, tk]) == pytest.approx(float(r.series.loc[d]), abs=1e-3), (
-            f"{tk} disagrees across bases at {CFG_DATE} — the control assumption moved")
+        kind, detail = adjustment_diagnosis(cache[tk], r.series)
+        assert kind != "divergent", (
+            f"{tk}: the two bases are not one name adjusted two ways — {detail}. "
+            "That is the explanation the CFG receipt exists to rule out, so this "
+            "is a real regression, not a calendar move.")
         checked += 1
     if checked == 0:
         pytest.skip("no control name resolvable in this store")
+
+
+# --------------------------------------------------------------------------- #
+# the control's mechanism, pinned synthetically so it never skips
+# --------------------------------------------------------------------------- #
+class TestAdjustmentDiagnosis:
+    """`adjustment_diagnosis` decides whether the control held, so it is the thing
+    that must not be able to skip. The store-dependent control above can only run
+    where `data/` exists; these cases run everywhere (module docstring: *a skipping
+    test proves nothing*)."""
+
+    @staticmethod
+    def _series(values: list[float]) -> pd.Series:
+        idx = pd.bdate_range("2026-06-01", periods=len(values))
+        return pd.Series(values, index=idx, dtype=float)
+
+    def test_identical_bases_are_identical(self) -> None:
+        s = self._series([10.0, 11.0, 12.0, 13.0])
+        assert adjustment_diagnosis(s, s)[0] == "identical"
+
+    def test_one_factor_that_converges_is_an_adjustment(self) -> None:
+        """CEG's real shape: a constant ratio over a prefix, exact after the ex-date."""
+        factor = 1.001537
+        adjusted = self._series([10.0, 11.0, 12.0, 13.0, 14.0])
+        unadjusted = adjusted.copy()
+        unadjusted.iloc[:3] = (adjusted.iloc[:3] * factor).round(4)
+        kind, detail = adjustment_diagnosis(unadjusted, adjusted)
+        assert kind == "single_factor_adjustment", detail
+        assert "one factor 1.0015" in detail
+
+    def test_a_wandering_ratio_is_different_data(self) -> None:
+        """The case the control exists to catch — no single factor explains it."""
+        adjusted = self._series([10.0, 11.0, 12.0, 13.0, 14.0])
+        unadjusted = self._series([10.05, 11.30, 12.10, 13.0, 14.0])
+        kind, detail = adjustment_diagnosis(unadjusted, adjusted)
+        assert kind == "divergent"
+        assert "wanders" in detail
+
+    def test_a_split_sized_ratio_is_not_a_distribution(self) -> None:
+        adjusted = self._series([10.0, 11.0, 12.0, 13.0])
+        unadjusted = self._series([20.0, 22.0, 24.0, 13.0])
+        kind, detail = adjustment_diagnosis(unadjusted, adjusted)
+        assert kind == "divergent"
+        assert "outside the distribution band" in detail
+
+    def test_bases_that_diverge_again_after_converging_are_divergent(self) -> None:
+        """An adjustment converges once and stays converged."""
+        factor = 1.001
+        adjusted = self._series([10.0, 11.0, 12.0, 13.0, 14.0])
+        unadjusted = adjusted.copy()
+        # same factor either side of an exactly-matching date in the middle
+        unadjusted.iloc[0] = round(float(adjusted.iloc[0]) * factor, 6)
+        unadjusted.iloc[1] = round(float(adjusted.iloc[1]) * factor, 6)
+        unadjusted.iloc[3] = round(float(adjusted.iloc[3]) * factor, 6)
+        kind, detail = adjustment_diagnosis(unadjusted, adjusted)
+        assert kind == "divergent", detail
+        assert "converges once and stays converged" in detail
+
+    def test_no_shared_dates_is_divergent_not_identical(self) -> None:
+        """An empty intersection must never read as agreement."""
+        a = pd.Series([10.0], index=pd.DatetimeIndex(["2026-06-01"]))
+        b = pd.Series([10.0], index=pd.DatetimeIndex(["2026-07-01"]))
+        assert adjustment_diagnosis(a, b)[0] == "divergent"
+
+    def test_a_non_positive_adjusted_close_never_yields_a_ratio(self) -> None:
+        adjusted = self._series([0.0, 11.0, 12.0, 13.0])
+        unadjusted = self._series([5.0, 11.0, 12.0, 13.0])
+        kind, detail = adjustment_diagnosis(unadjusted, adjusted)
+        assert kind == "divergent"
+        assert "non-positive" in detail
+
+    def test_nans_do_not_manufacture_a_disagreement(self) -> None:
+        adjusted = self._series([10.0, 11.0, 12.0, 13.0])
+        unadjusted = adjusted.copy()
+        unadjusted.iloc[1] = float("nan")
+        assert adjustment_diagnosis(unadjusted, adjusted)[0] == "identical"

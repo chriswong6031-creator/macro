@@ -33,6 +33,18 @@ _SOURCE_PATHS = {
     "xnys_calendar_module": "lib/nyse_calendar.py",
 }
 _FROZEN_FIXTURE_SESSION = "2026-08-07"
+# Byte-pinned captures from ONE nightly commit (448cfacc0957) so numerator and
+# denominator share an era; the nightly revises historical ledger rows, so a
+# live read is not stable. Twin rationale in
+# tests/test_market_memory_breadth_observation.py. Advance both together.
+_FROZEN_FIXTURE_PATHS = {
+    "breadth_actual_output": (
+        "tests/fixtures/market_memory/breadth_through_2026-08-07.parquet"
+    ),
+    "current_constituents": (
+        "tests/fixtures/market_memory/constituents_2026-08-07.parquet"
+    ),
+}
 
 
 def _git_blob_oid(body: bytes) -> str:
@@ -42,21 +54,21 @@ def _git_blob_oid(body: bytes) -> str:
 
 @functools.lru_cache(maxsize=1)
 def _frozen_breadth_body() -> bytes:
-    """Keep store clock tests independent of the nightly breadth append."""
+    """Keep store clock tests independent of the nightly-revised ledger."""
 
-    frame = pd.read_parquet(
-        ROOT / _SOURCE_PATHS["breadth_actual_output"],
-        engine="pyarrow",
-    )
-    frozen = frame.loc[:_FROZEN_FIXTURE_SESSION].copy()
-    assert frozen.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
-    return _parquet_bytes(frozen)
+    body = (ROOT / _FROZEN_FIXTURE_PATHS["breadth_actual_output"]).read_bytes()
+    frame = pd.read_parquet(io.BytesIO(body), engine="pyarrow")
+    assert frame.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
+    return body
 
 
 def _inputs(
     *, breadth_body: bytes | None = None, pinned_commit: str = "1" * 40
 ) -> breadth.PinnedBreadthInputs:
     bodies = {role: (ROOT / path).read_bytes() for role, path in _SOURCE_PATHS.items()}
+    bodies["current_constituents"] = (
+        ROOT / _FROZEN_FIXTURE_PATHS["current_constituents"]
+    ).read_bytes()
     bodies["breadth_actual_output"] = (
         _frozen_breadth_body() if breadth_body is None else breadth_body
     )

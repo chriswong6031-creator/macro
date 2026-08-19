@@ -2,16 +2,16 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "market": {
     "stance": "Range-bound, waiting for participation",
     "total_state": "Steady",
     "dominance_state": "Steady",
-    "fear_state": "Fearful",
+    "fear_state": "Neutral",
     "breadth_state": "Building history"
   },
   "flows": {
-    "etf": "Falling",
+    "etf": "Rising",
     "stablecoins": "Steady",
     "volume": "Quiet tape"
   },
@@ -26,13 +26,13 @@
       "trend": "Range",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "3,731 daily observations from Coinbase daily OHLCV."
+      "coverage": "3,732 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
       "trend": "Fading",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "1,889 daily observations from Coinbase daily OHLCV."
+      "coverage": "1,890 daily observations from Coinbase daily OHLCV."
     }
   }
 }

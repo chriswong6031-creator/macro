@@ -2953,3 +2953,94 @@ jobs:
     )
     with pytest.raises(PACK.ManifestError, match="scope: exclusive but no paths"):
         PACK.load_legacy_jobs(empty)
+
+
+def _released_cpython_versions() -> set[tuple[int, int, int]]:
+    """Patch releases `document_terms` will accept, read without importing it.
+
+    The module is parsed rather than imported on purpose. Importing it executes
+    `_make_validate_released_parser_runtime`, which seals itself against the
+    *running* interpreter — so on an unreleased CPython the import path is
+    exactly the thing under test, and a guard that dies the same way it is
+    meant to detect proves nothing.
+    """
+    source = (ROOT / "engine" / "capital_structure" / "document_terms.py").read_text()
+    tree = ast.parse(source)
+    allowlist = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "_PARSER_V1_1_0_RUNTIME_ALLOWLIST"
+            for t in node.targets
+        ):
+            allowlist = node.value
+            break
+    assert allowlist is not None, (
+        "_PARSER_V1_1_0_RUNTIME_ALLOWLIST vanished from document_terms.py — this "
+        "guard pins CI's Python against it and must be re-pointed, not deleted"
+    )
+    # MappingProxyType({...}) -> unwrap to the dict literal.
+    if isinstance(allowlist, ast.Call):
+        allowlist = allowlist.args[0]
+    assert isinstance(allowlist, ast.Dict)
+
+    versions: set[tuple[int, int, int]] = set()
+    for key in allowlist.keys:
+        assert isinstance(key, ast.Call), "allowlist keys are ParserRuntimeFingerprint(...)"
+        for kw in key.keywords:
+            if kw.arg != "version_info":
+                continue
+            parts = ast.literal_eval(kw.value)
+            versions.add((int(parts[0]), int(parts[1]), int(parts[2])))
+    assert versions, "no version_info keys parsed out of the runtime allowlist"
+    return versions
+
+
+def test_ci_python_is_pinned_to_a_released_parser_runtime() -> None:
+    """A floating `python-version` lets a tool-cache bump red the whole fleet.
+
+    `engine/capital_structure/document_terms.py` seals its parser behind an
+    allowlist keyed on `sys.version_info` plus stdlib source digests, so a
+    CPython PATCH bump produces an unreleased fingerprint and the parser fails
+    closed — 22 tests at once, in whichever pack currently owns
+    `capital-structure-intelligence`, on every PR regardless of its diff.
+
+    Measured 2026-08-19: the hosted tool cache moved 3.12.13 -> 3.12.14,
+    `python-version: "3.12"` followed it, and ci-pack-8 went red on two
+    independent heads (#5737, #5903) with an identical failure neither PR's
+    files could cause. The self-hosted lanes stayed green on Homebrew 3.12.13.
+
+    So the pin must be EXACT and must name a release the allowlist carries.
+    Moving it is therefore ordered: extend the allowlist first (a review act
+    owned by the Capital Structure Intelligence lane), bump the pin second.
+    """
+    released = _released_cpython_versions()
+    workflow = _yaml(WORKFLOW)
+
+    pins: list[tuple[str, str]] = []
+    for job_name, job in (workflow.get("jobs") or {}).items():
+        for step in job.get("steps") or []:
+            uses = str(step.get("uses") or "")
+            if not uses.startswith("actions/setup-python"):
+                continue
+            pins.append((job_name, str((step.get("with") or {}).get("python-version", ""))))
+
+    assert pins, "ci.yml no longer calls actions/setup-python — re-point this guard"
+
+    for job_name, pin in pins:
+        parts = pin.split(".")
+        assert len(parts) == 3 and all(p.isdigit() for p in parts), (
+            f"ci.yml job {job_name!r} pins python-version={pin!r}. A floating pin "
+            "follows the hosted tool cache onto CPython releases the "
+            "capital-structure parser allowlist has never reviewed, which reds "
+            "every PR at once. Pin an exact major.minor.patch."
+        )
+        version = (int(parts[0]), int(parts[1]), int(parts[2]))
+        assert version in released, (
+            f"ci.yml job {job_name!r} pins CPython {pin}, which is NOT in "
+            "_PARSER_V1_1_0_RUNTIME_ALLOWLIST in "
+            "engine/capital_structure/document_terms.py "
+            f"(released: {sorted('.'.join(map(str, v)) for v in released)}). "
+            "Add the release to that allowlist first — with provenance, the way "
+            "the 3.12.13 entry records its actions/python-versions archive "
+            "SHA-256 — then bump this pin."
+        )
