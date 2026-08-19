@@ -185,7 +185,13 @@ AGENT_WORKTREE_ROOTS = (
 # git left a zero-byte `index.lock` in the worktree gitdir, and the guard filed
 # `guard_error` against a tree it had just wedged itself. Asking before shooting
 # is the fix: git installs a SIGTERM handler for exactly this case.
-GIT_TERM_GRACE_SECONDS = 5
+#
+# `scripts/worktree_sparse.py` fought the same hazard from the other end (#5907,
+# a killed `sparse-checkout add` leaving a truncated file plus a stale lock) and
+# landed on the same ladder; this is deliberately its `TERM_GRACE_S`, same value
+# and same reasoning — generous for a cleanup handler that measures well under a
+# second, bounded enough that a process ignoring SIGTERM dies promptly.
+GIT_TERM_GRACE_SECONDS = 10
 # Two status budgets, because the first `git status` on a cold full checkout PAYS
 # FOR the second: the same tree that needed 161s cold answered in 13s once its
 # index and page cache were warm. One budget cannot express that — it would have
@@ -195,11 +201,11 @@ GIT_TERM_GRACE_SECONDS = 5
 # (SessionStart, 30s), and the HARNESS enforces it. A retry budget larger than
 # what is left of that wall is a retry that can never conclude: the hook is
 # cancelled mid-flight and the Stop evaluation silently does not happen at all,
-# which is worse than a block. 60 + GIT_TERM_GRACE_SECONDS + 100 = 165 leaves the
+# which is worse than a block. 60 + GIT_TERM_GRACE_SECONDS + 95 = 165 leaves the
 # rest of the evaluation its margin. `tests/test_ship_loop_guard.py` pins the sum
 # against the settings file so the two cannot drift apart unnoticed.
 STATUS_TIMEOUT_SECONDS = 60
-STATUS_RETRY_TIMEOUT_SECONDS = 100
+STATUS_RETRY_TIMEOUT_SECONDS = 95
 # When this process started, and therefore the floor for "a lock THIS guard's own
 # killed git could have created". Anything older is somebody else's and is never
 # ours to remove. Module import time, not Stop time, because a SessionStart
@@ -222,25 +228,34 @@ def _capture(
     apart — except by the state of the worktree afterwards, which is the whole
     point (see ``GIT_TERM_GRACE_SECONDS``). A child that ignores SIGTERM is still
     killed, so this can never hang past ``timeout + GIT_TERM_GRACE_SECONDS``.
+
+    The sibling ladder is ``_run_git_timed`` in ``scripts/worktree_sparse.py``.
+    Deliberately NOT written as ``with subprocess.Popen(...)``: that context
+    manager's exit waits on the child unconditionally, so an unexpected failure
+    mid-``communicate`` would hang the guard on a process nobody has signalled.
     """
-    with subprocess.Popen(
+    proc = subprocess.Popen(
         args,
         cwd=root,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-    ) as proc:
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as expired:
+        proc.terminate()  # SIGTERM — lets git's own cleanup handlers run
         try:
-            stdout, stderr = proc.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired as expired:
-            proc.terminate()
-            try:
-                proc.communicate(timeout=GIT_TERM_GRACE_SECONDS)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.communicate()
-            raise expired
-        return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
+            proc.communicate(timeout=GIT_TERM_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # last resort; `_sweep_stale_index_lock` is its backstop
+            proc.communicate()
+        raise expired
+    except Exception:  # noqa: BLE001 — always reap, even on an unexpected failure
+        proc.kill()
+        proc.communicate()
+        raise
+    return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
 
 
 def _run(root: Path, *args: str, timeout: int = 45) -> str:
@@ -267,7 +282,9 @@ def _worktree_index_lock(root: Path) -> Path | None:
     so ``--git-common-dir`` (what ``_git_common_dir`` asks, for a different
     question) would point every session in the clone at the PRIMARY checkout's
     lock file — a file this guard must never touch. ``--absolute-git-dir`` is the
-    per-worktree answer, and is the same path the killed git wrote to.
+    per-worktree answer, and is the same path the killed git wrote to. Same
+    resolution ``index_lock_path`` in ``scripts/worktree_sparse.py`` makes, and
+    the same None-on-unreadable contract.
     """
     try:
         found = _run(root, "git", "rev-parse", "--absolute-git-dir", timeout=15)
@@ -318,6 +335,13 @@ def _sweep_stale_index_lock(root: Path) -> Path | None:
     ``lsof`` that cannot be trusted — because the two errors are not symmetric: a
     lock left behind is loud and fixable with one `rm`, while a lock deleted out
     from under a live git is silent index corruption in a tree somebody is using.
+
+    The sibling ``refuse_if_locked`` in ``scripts/worktree_sparse.py`` refuses on
+    ANY lock and deletes none, which is right for it: it is about to start a heavy
+    write and cannot know who else is in the tree. This one deletes, because it is
+    scoped to the lock its OWN kill just made — that provenance is what the three
+    conditions establish, and without all three it declines exactly like the
+    sibling does.
     """
     lock = _worktree_index_lock(root)
     if lock is None:
