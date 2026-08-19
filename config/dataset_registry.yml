@@ -277,7 +277,37 @@ datasets:
     version: "0.1.0"
     schema:
       security_id: {dtype: string, nullable: false, note: "SEC:<inception listing key>, minted once and stored"}
-      issuer_id: {dtype: string, nullable: false}
+      issuer_id:
+        dtype: string
+        nullable: true
+        note: >
+          ISS:<inception listing key> of the security's CANONICAL MEMBER (V4-D2B1
+          §2) — the economic issuer, which one or more securities may share
+          (GOOG/GOOGL both -> ISS:US-XNAS-GOOG). Existing minted values are RETAINED
+          under mint-once (Sol: "previous issuer values are not erased");
+          repointed ONLY via an issuer_migrations.parquet receipt row. NULL only for
+          a post-era row with no CIK evidence — never a fresh per-listing mint (the
+          abolished fallback). See issuer_state for the evidentiary status.
+      issuer_state:
+        dtype: string
+        nullable: false
+        note: >
+          Closed enum (V4-D2B1 §3): RESOLVED (CIK evidence backs issuer_id; only
+          these rows are lawful for issuer-level aggregation) | NO_ISSUER_EVIDENCE
+          (issuer_id may be a retained legacy mint, or NULL for an evidence-less new
+          row — both aggregation-forbidden) | AMBIGUOUS (current symbol maps to >1
+          CIK; reserved, fail-closed) | EVIDENCE_CONFLICT (later evidence disagrees
+          with a committed assignment; recorded, never auto-executed) |
+          DEFERRED_IDENTITY_EXCEPTION (named in _receipt.json identity_exceptions —
+          GOLD today; B never mints a row — excluded from grouping entirely).
+      issuer_cik:
+        dtype: string
+        nullable: true
+        note: "Zero-padded 10-digit SEC registrant CIK backing issuer_id when issuer_state=RESOLVED."
+      issuer_evidence_snapshot:
+        dtype: date
+        nullable: true
+        note: "data/symbol_directory/cik_map/*.parquet observation date backing the RESOLVED link."
       listing_key: {dtype: string, nullable: false, note: "<CC>-<MIC>-<CODE>[.N] — inception code, never today's symbol"}
       country: {dtype: string, nullable: false}
       mic: {dtype: string, nullable: false}
@@ -293,16 +323,32 @@ datasets:
       data/baskets/membership.json and config/delisted_symbols.yml; the VENUE comes from
       the newest data/symbol_directory/snapshots/*.parquet (exit ledger first for a
       delisted name — the directory is a CURRENT listing set and cannot carry a finished
-      tape). Coverage is REPORTED, not asserted: the 2026-08-13 seed resolved 703/711,
-      8 unresolved and named in data/reference/_receipt.json. effective_at is NOT a
+      tape). Coverage is REPORTED, not asserted, and named in data/reference/_receipt.json.
+      effective_at is NOT a
       listing date — no in-repo US listing-date source exists (§4) and back-dating one
       from a store's earliest bar would be fabrication, so it carries the earliest DATED
-      OBSERVATION in the committed seeds instead. NOT SCHEDULED (frequency: on_demand)
-      — no workflow, cron or nightly step runs the producer, so the freshness contract
-      is a TEST rather than a lane: the suite rebuilds from the current seeds on top of
-      the committed artifact and reds when a seed change would add a security, which is
-      the moment a re-run is owed. DISPLAY TIER: nothing reads this as authority yet;
-      the master becomes authority at spec §11.4.
+      OBSERVATION in the committed seeds instead.
+      ISSUER AXIS (V4-D2B1, 2026-08-19): the era-inside-the-builder correction
+      `issuer_semantic_correction_v1` groups securities by identical SEC registrant CIK
+      (evidence: data/symbol_directory/cik_map/*.parquet, joined on the security's
+      CURRENT symbol, dot->dash normalized — NEVER a historical/dated alias symbol,
+      two-clock safe) and repoints issuer_id to the group's canonical member (spec §2
+      tie-break). security_id/listing_key are byte-identical before/after; only
+      issuer_id may change, and only via a data/reference/issuer_migrations.parquet
+      receipt row. See data/reference/issuer_master.parquet for the issuer-level
+      rollup and lib/dataos/identity.IssuerMaster for the canonical reader.
+      LIVE-REFRESH SEAM (spec §7): one non-fatal `daily.yml` collect-job step now runs
+      `python3 scripts/build_security_master.py --nightly` — fail-closed (refuses on a
+      missing/unreadable identity input, byte-stable no-op when nothing advanced,
+      generated_at only re-stamped when inputs genuinely changed). The freshness TEST
+      (test_the_committed_artifact_is_not_stale_against_the_current_seeds) remains the
+      backstop for anyone who forgets to run the seam.
+      DISPLAY TIER for signal/ranking/trade; PROMOTED to canonical exact-identity
+      AUTHORITY for CURRENT issuer/security/listing identity (Sol's D2A ruling,
+      research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md) — see _receipt.json's
+      decomposed `authority` block. Historical issuer lineage is explicitly
+      UNAVAILABLE: CIK evidence is a current-registrant observation only (no `asof`
+      parameter anywhere on the issuer reader).
 
   - dataset_id: reference.vendor_aliases
     layer: L2
@@ -375,3 +421,81 @@ datasets:
       DISPLAY TIER: nothing reads it as authority yet; lib/ticker_aliases.py remains the
       live seam until spec §11.4.
     supersedes: lib/ticker_aliases.py   # the `yahoo_fetch`/`store` rows only — see notes
+
+  # ── V4-D2B1 issuer axis (2026-08-19) — produced by the SAME builder, SAME era ────
+  - dataset_id: reference.issuer_master
+    layer: L2
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: scripts/build_security_master.py
+    storage: data/reference/issuer_master.parquet
+    format: parquet
+    grain: [issuer_id]
+    identity:
+      id_column: issuer_id
+      id_type: ISS
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: UTC
+    frequency: on_demand   # same producer, same reason — see reference.security_master
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, referential]
+    version: "0.1.0"
+    inputs: [reference.security_master]
+    schema:
+      issuer_id: {dtype: string, nullable: false, note: "ISS:<canonical member's inception listing key>; primary key"}
+      cik: {dtype: string, nullable: true, note: "Zero-padded 10-digit SEC registrant CIK; null for a legacy/unevidenced issuer"}
+      legal_name: {dtype: string, nullable: true, note: "SEC company_tickers.json title, verbatim, when evidence_source=sec_company_tickers"}
+      n_securities: {dtype: int64, nullable: false, note: "Count of security_master rows currently carrying this issuer_id"}
+      evidence_source: {dtype: string, nullable: false, note: "sec_company_tickers | legacy_mint (closed enum)"}
+      evidence_snapshot: {dtype: date, nullable: true, note: "cik_map observation date; null for legacy_mint"}
+      status: {dtype: string, nullable: false, note: "always 'active' in this minimal cut — no delisting-awareness yet"}
+      era: {dtype: string, nullable: false, note: "issuer_semantic_correction_v1 | legacy (closed enum)"}
+    notes: >
+      One row per distinct non-null issuer_id in reference.security_master (spec
+      D2B1 §3 minimal cut). NOT a second identity system: minted only via
+      lib.dataos.identity.issuer_id inside scripts/build_security_master.py's era
+      stage, pointed into by security_master.issuer_id — this is a CENSUS over that
+      column, never an independent allocator. Read through
+      lib.dataos.identity.IssuerMaster (securities_of_issuer / issuer_of_security),
+      the one canonical reader. Historical limitation: CIK evidence is a
+      current-registrant observation — this table has no asof and answers only
+      "which securities does this issuer own TODAY".
+
+  - dataset_id: reference.issuer_migrations
+    layer: L2
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: scripts/build_security_master.py
+    storage: data/reference/issuer_migrations.parquet
+    format: parquet
+    grain: [security_id, old_issuer_id, new_issuer_id, reason]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: on_demand   # same producer, same reason — see reference.security_master
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [referential]
+    version: "0.1.0"
+    inputs: [reference.security_master]
+    schema:
+      security_id: {dtype: string, nullable: false}
+      listing_key: {dtype: string, nullable: false}
+      old_issuer_id: {dtype: string, nullable: true, note: "the issuer_id this security carried before the era (may be null if it was never minted)"}
+      new_issuer_id: {dtype: string, nullable: false}
+      reason: {dtype: string, nullable: false, note: "the era constant, e.g. issuer_semantic_correction_v1"}
+      evidence_cik: {dtype: string, nullable: false, note: "the CIK evidence that justified the repoint"}
+      evidence_snapshot: {dtype: date, nullable: true, note: "cik_map observation date backing evidence_cik"}
+      migrated_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      Append-only durable migration receipt (spec §3): one row per security whose
+      issuer_id VALUE changed in an authorized correction era. Old ids whose groups
+      emptied stay visible here — never silently erased from history. Asserted
+      non-empty iff any value actually changed; a security that only GAINED an
+      issuer_id for the first time (no prior stored value) does not get a row — that
+      is a mint, not a migration. First and only era to date:
+      issuer_semantic_correction_v1 (V4-D2B1, 2026-08-19) — groups securities by
+      identical SEC registrant CIK and repoints issuer_id to the group's canonical
+      member (e.g. GOOGL's issuer_id repoints to GOOG's, per spec §2 tie-break rule
+      4); security_id/listing_key are never touched.

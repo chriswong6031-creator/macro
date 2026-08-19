@@ -98,6 +98,7 @@ from lib.dataos.identity import (  # noqa: E402
     ListingKey,
     VendorAliasTable,
     issuer_id,
+    parse_listing_key,
     security_id,
 )
 
@@ -109,6 +110,8 @@ DEFAULT_OUT = ROOT / "data" / "reference"
 MASTER_NAME = "security_master.parquet"
 ALIASES_NAME = "vendor_aliases.parquet"
 RECEIPT_NAME = "_receipt.json"
+ISSUER_MASTER_NAME = "issuer_master.parquet"
+ISSUER_MIGRATIONS_NAME = "issuer_migrations.parquet"
 
 CONSTITUENTS = ROOT / "data" / "breadth" / "constituents.parquet"
 MEMBERSHIP = ROOT / "data" / "baskets" / "membership.json"
@@ -116,15 +119,26 @@ DELISTED_LEDGER = ROOT / "config" / "delisted_symbols.yml"
 CONFIG_YML = ROOT / "config.yml"
 TICKER_ALIASES_PY = ROOT / "lib" / "ticker_aliases.py"
 SYMBOL_DIR_SNAPSHOTS = ROOT / "data" / "symbol_directory" / "snapshots"
+#: Weekly SEC registrant map (V4-D2B1 §1) — read-only, collector-owned
+#: (``data/symbol_directory/**`` is never written by this script).
+CIK_MAP_DIR = ROOT / "data" / "symbol_directory" / "cik_map"
 
 #: The exact column order written to each artifact.  These are the ``schema:`` keys of
 #: ``reference.security_master`` / ``reference.vendor_aliases`` in
 #: ``config/dataset_registry.yml``, in declaration order, and
 #: ``tests/test_dataos_security_master.py`` pins the equality both ways — the registry
 #: is the contract, not a description of whatever this script happened to emit.
+#:
+#: The issuer axis (``issuer_state``/``issuer_cik``/``issuer_evidence_snapshot``) is
+#: V4-D2B1: it sits next to ``issuer_id`` because the four columns together are one
+#: semantic unit (the value, its evidentiary status, the evidence CIK, and the
+#: snapshot it was observed in).
 MASTER_COLUMNS = (
     "security_id",
     "issuer_id",
+    "issuer_state",
+    "issuer_cik",
+    "issuer_evidence_snapshot",
     "listing_key",
     "country",
     "mic",
@@ -140,13 +154,49 @@ ALIAS_COLUMNS = (
     "valid_to",
     "ingested_at",
 )
+#: ``reference.issuer_master`` — one row per distinct non-null issuer_id (spec §3).
+ISSUER_MASTER_COLUMNS = (
+    "issuer_id",
+    "cik",
+    "legal_name",
+    "n_securities",
+    "evidence_source",
+    "evidence_snapshot",
+    "status",
+    "era",
+)
+#: ``reference.issuer_migrations`` — append-only, one row per security whose issuer_id
+#: VALUE changed in an era (spec §3).
+ISSUER_MIGRATIONS_COLUMNS = (
+    "security_id",
+    "listing_key",
+    "old_issuer_id",
+    "new_issuer_id",
+    "reason",
+    "evidence_cik",
+    "evidence_snapshot",
+    "migrated_at",
+)
 
 #: Non-string column kinds, from the same ``schema:`` blocks.  Rows are carried in
 #: memory as ISO STRINGS and cast only at write, so a re-read of a committed artifact
 #: compares byte-for-byte against a freshly derived row instead of "Timestamp vs str".
 #: That equality is what makes the builder idempotent rather than merely deterministic.
-MASTER_DTYPES = {"effective_at": "datetime", "ingested_at": "datetime"}
+MASTER_DTYPES = {"effective_at": "datetime", "ingested_at": "datetime",
+                 "issuer_evidence_snapshot": "date"}
 ALIAS_DTYPES = {"valid_from": "date", "valid_to": "date", "ingested_at": "datetime"}
+ISSUER_MASTER_DTYPES = {"evidence_snapshot": "date", "n_securities": "int"}
+ISSUER_MIGRATIONS_DTYPES = {"evidence_snapshot": "date", "migrated_at": "datetime"}
+
+#: Columns a PRE-D2B1 committed ``security_master.parquet`` will not carry yet.
+#: ``_read_existing`` fills these with ``None`` instead of refusing, which is what
+#: makes ``issuer_state is None`` the "not yet migrated by this era" marker the D2B1
+#: era stage (:func:`apply_issuer_correction`) reads (spec §4 "era-inside-the-builder
+#: idempotent migration").
+ISSUER_AXIS_COLUMNS = frozenset({"issuer_state", "issuer_cik", "issuer_evidence_snapshot"})
+
+#: The one authorized issuer-identity correction era (spec §4).
+ERA_ISSUER_CORRECTION = "issuer_semantic_correction_v1"
 
 # ── Vendors (symbol SPACES) — TWO CLOCKS, never one ───────────────────────────
 # A "vendor" here is a symbol space, which is why several of them are this repo.
@@ -503,6 +553,32 @@ def load_directory() -> tuple[dict[str, str], str | None, Path | None]:
     return mapping, newest.stem, newest
 
 
+def load_cik_map() -> tuple[dict[str, tuple[str, str]], str | None, Path | None]:
+    """``({current symbol: (zero-padded 10-digit CIK, SEC registrant title)}, snapshot
+    date, path)`` from the NEWEST weekly ``data/symbol_directory/cik_map/*.parquet``
+    (V4-D2B1 §1).  Newest by FILENAME stem, never by mtime — same reasoning as
+    :func:`load_directory`: this repo's file mtimes are observer-stamped.
+
+    Ticker is a unique key on the source (measured 2026-08-18: 10,398 rows, 7,998
+    CIKs, zero ticker->multi-CIK); the ``if t not in mapping`` guard is defensive only.
+    """
+    import pandas as pd
+
+    if not CIK_MAP_DIR.is_dir():
+        return {}, None, None
+    files = sorted(p for p in CIK_MAP_DIR.glob("*.parquet"))
+    if not files:
+        return {}, None, None
+    newest = files[-1]
+    frame = pd.read_parquet(newest)
+    mapping: dict[str, tuple[str, str]] = {}
+    for ticker, cik, title in zip(frame["ticker"], frame["cik"], frame["title"]):
+        t = str(ticker).strip().upper()
+        if t not in mapping:
+            mapping[t] = (f"{int(cik):010d}", str(title))
+    return mapping, newest.stem, newest
+
+
 def load_config_maps() -> tuple[dict[str, str], dict[str, str]]:
     """``(breadth.ticker_fixups, quality.ticker_key_migrations)`` — both TIMELESS maps."""
     raw = config.load()
@@ -566,6 +642,53 @@ def _inception_code(key: str, directory_symbol: str | None) -> str:
         seen.add(nxt)
         current = nxt
     return current
+
+
+def _current_symbol(inception_code: str) -> str:
+    """Inception code -> this repo's own CURRENT symbol for the listing (V4-D2B1 §1
+    evidence join law), walking the SAME rename records :func:`_inception_code` walks
+    BACKWARD (``RENAME_EVENTS`` + ``UNDATED_RENAMES``) but FORWARDS to the chain's tip.
+
+    This is deliberately this repo's OWN rename record, not "whatever Yahoo currently
+    serves" — the two disagree for exactly the case the FI/FISV row exists to carry:
+    Yahoo still serves the pre-rename ``FISV`` (the vendor lags), but this repo's own
+    ``UNDATED_RENAMES`` records the venue-current name as ``FI``, and ``FI`` is the
+    join key spec §1 asks for (the SEC registrant map is an independent, current
+    observation of the same real-world fact — it does not follow Yahoo's lag).  For
+    MMC/SATS, where the vendor LED the rename, this walk and Yahoo's current symbol
+    agree (``MMC``->``MRSH``, ``SATS``->``ECHO``) because both ``RENAME_EVENTS`` rows
+    were sourced from the same real-world change.
+
+    A name no chain mentions returns itself unchanged — the venue is the authority on
+    its own current spelling when this repo has recorded no rename for it.
+    """
+    forwards: dict[str, str] = {}
+    for event in RENAME_EVENTS:
+        forwards[event.old] = event.new
+    for old, new, _ in UNDATED_RENAMES:
+        forwards[old] = new
+
+    seen = {inception_code}
+    current = inception_code
+    while current in forwards:
+        nxt = forwards[current]
+        if nxt in seen:  # a cycle is a config defect, never a loop here
+            break
+        seen.add(nxt)
+        current = nxt
+    return current
+
+
+def _evidence_join_key(inception_code: str) -> str:
+    """The CIK-map join key for one master row (V4-D2B1 §1): the security's current
+    symbol (:func:`_current_symbol`), dot->dash normalized — the CIK map spells class
+    suffixes with a dash (``BRK-B``) while the master spells them with a dot
+    (``BRK.B``).  NEVER joins a historical/dated alias symbol against the CURRENT
+    observation CIK map — that would be the two-clock violation spec §1 names (a
+    reused ticker binding the wrong registrant); this function only ever answers
+    "what is this security called today".
+    """
+    return _current_symbol(inception_code).replace(".", "-")
 
 
 def _effective_at(universe_row: dict | None, delisted_row: dict | None,
@@ -769,23 +892,38 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
 
 # ── Mint-once-and-store ───────────────────────────────────────────────────────
 def _read_existing(path: Path, columns: tuple[str, ...],
-                   dtypes: dict[str, str]) -> list[dict]:
-    """Committed rows as plain dicts of ISO strings / None.  The stored value is the AUTHORITY."""
+                   dtypes: dict[str, str],
+                   allow_missing: frozenset[str] = frozenset()) -> list[dict]:
+    """Committed rows as plain dicts of ISO strings / None.  The stored value is the AUTHORITY.
+
+    ``allow_missing`` names declared columns a COMMITTED file is allowed to lack —
+    filled with ``None`` rather than raising.  This is the era-migration seam
+    (V4-D2B1 §4): a pre-D2B1 ``security_master.parquet`` has no issuer-axis columns
+    at all, and reading it should mean "not yet migrated by this era"
+    (``issuer_state is None``), not a schema-mismatch refusal.  Every OTHER declared
+    column absent from a committed file is still a hard failure — this does not widen
+    the refusal to genuine schema drift.
+    """
     import pandas as pd
 
     if not path.exists():
         return []
     frame = pd.read_parquet(path)
     missing = [c for c in columns if c not in frame.columns]
-    if missing:
+    hard_missing = [c for c in missing if c not in allow_missing]
+    if hard_missing:
         raise SystemExit(
-            f"{path} is missing declared column(s) {missing} — refusing to append to an "
+            f"{path} is missing declared column(s) {hard_missing} — refusing to append to an "
             "artifact whose schema does not match config/dataset_registry.yml"
         )
+    present = [c for c in columns if c not in missing]
     rows: list[dict] = []
-    for record in frame[list(columns)].to_dict("records"):
+    for record in frame[present].to_dict("records"):
         row: dict = {}
         for column in columns:
+            if column in missing:
+                row[column] = None
+                continue
             value = record[column]
             kind = dtypes.get(column)
             if kind == "date":
@@ -793,7 +931,15 @@ def _read_existing(path: Path, columns: tuple[str, ...],
             elif kind == "datetime":
                 row[column] = _normalize_datetime(value)
             else:
-                row[column] = None if value is None else str(value)
+                # A nullable STRING column (e.g. issuer_id/issuer_cik) round-trips a
+                # missing cell as a bare `value is None` check would miss: measured on
+                # this stack (pandas 3.0.3), pd.read_parquet(...).to_dict("records")
+                # hands back a genuine `float('nan')` for a null cell in a column that
+                # also carries real strings, not `None` and not `pd.NA`. `is None`
+                # alone let that NaN fall through to `str(value)` == the LITERAL
+                # STRING "nan", silently corrupting every null issuer_id/issuer_cik on
+                # the very next read. `pd.isna` catches None/NaN/NaT uniformly.
+                row[column] = None if (value is None or pd.isna(value)) else str(value)
         rows.append(row)
     return rows
 
@@ -824,9 +970,22 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
     listing key, so it reads as a new security).  Per §D2 that correction is expressed
     by APPENDING an alias, never by rewriting a master row — and this builder never
     deletes a row it did not re-derive, so nothing is silently dropped either.
+
+    ``issuer_id`` is deliberately NOT minted here (V4-D2B1 §2/§3): a brand-new row
+    starts with ``issuer_id=None`` and no issuer axis — the abolished per-listing
+    mint fallback.  :func:`apply_issuer_correction`, run once over the FULL returned
+    row set, is the only place an issuer_id is ever assigned or repointed.  Every row
+    read from ``existing`` is tagged ``_existed_before`` (an in-memory marker only —
+    never a declared column, never written to parquet) so the era stage can tell a
+    genuine issuer_id VALUE CHANGE (migration-worthy) from a brand-new mint's first
+    assignment (not a migration: there was no prior stored value to migrate from).
     """
     by_listing_key = {str(row["listing_key"]): dict(row) for row in existing}
-    out: dict[str, dict] = {k: dict(v) for k, v in by_listing_key.items()}
+    out: dict[str, dict] = {}
+    for k, v in by_listing_key.items():
+        row = dict(v)
+        row["_existed_before"] = True
+        out[k] = row
     ids: dict[str, str] = {}
     notes: list[str] = []
 
@@ -851,7 +1010,10 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
             minted_by[rendered] = res.key
             out[rendered] = {
                 "security_id": sec,
-                "issuer_id": issuer_id(res.listing_key),
+                "issuer_id": None,
+                "issuer_state": None,
+                "issuer_cik": None,
+                "issuer_evidence_snapshot": None,
                 "listing_key": rendered,
                 "country": res.listing_key.country,
                 "mic": res.listing_key.mic,
@@ -868,6 +1030,200 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
 
     rows = [out[k] for k in sorted(out)]
     return rows, ids, notes
+
+
+# ── Issuer axis (V4-D2B1) — the one authorized correction era ─────────────────
+def _exception_by_inception_code() -> dict[str, dict]:
+    """``{inception code -> exception info}`` for both fail-closed families.
+
+    Keyed the way a master row's own ``inception_code`` spells them: neither ``B``
+    nor ``GOLD`` is inside any rename chain (:data:`RENAME_EVENTS` /
+    :data:`UNDATED_RENAMES`), so their inception_code IS their own bare name.
+    """
+    out: dict[str, dict] = {}
+    for key, info in DEFERRED_IDENTITY_KEYS.items():
+        out[key.upper()] = {"status": "deferred_no_mint", **info}
+    for key, info in DISCLOSED_IDENTITY_EXCEPTIONS.items():
+        out[key.upper()] = {"status": "disclosed_existing_alias", **info}
+    return out
+
+
+def _pick_canonical_member(members: list[dict]) -> dict:
+    """Canonical member of a CIK group — spec §2 tie-break, rules 1-4.
+
+    Rules 1 (earliest ``list_date``) and 2 (venue in the issuer's country of
+    incorporation) have NO in-repo data source: this repo carries no per-security
+    listing-date or country-of-incorporation table, so per spec ("skip when
+    unsourced, never guess") they can never fire here and are not attempted — only
+    rules 3 (lowest MIC) and 4 (the D2B1 extension: lowest full listing key) are ever
+    operative.  Rule 4 is what discriminates GOOG from GOOGL (same venue, same
+    country): ``US-XNAS-GOOG`` < ``US-XNAS-GOOGL`` lexicographically.
+    """
+    if len(members) == 1:
+        return members[0]
+    lowest_mic = min(m["mic"] for m in members)
+    candidates = [m for m in members if m["mic"] == lowest_mic]
+    return min(candidates, key=lambda m: m["listing_key"])
+
+
+def apply_issuer_correction(
+    rows: list[dict], cik_map: dict[str, tuple[str, str]], snapshot_date: str | None,
+    now: str,
+) -> tuple[list[dict], list[dict]]:
+    """The one authorized issuer-identity correction era (spec §4), run over the FULL
+    accumulated master row set (existing + freshly minted this run) EVERY build.
+
+    IDEMPOTENT BY CONSTRUCTION — mint-once for the issuer axis, the same law as
+    ``security_id`` itself.  A row is "pending" (not yet migrated by this era) iff its
+    ``issuer_state`` is falsy — exactly what a pre-D2B1 committed row (the column did
+    not exist; :func:`_read_existing` fills it ``None``) or a brand-new mint
+    (:func:`mint_master_rows` sets it ``None``) looks like.  Once a row's
+    ``issuer_state`` is stamped, this function never revisits it: a later run whose
+    seeds are unchanged sees an EMPTY pending set and returns ``(rows, [])`` — a
+    byte-stable no-op.  A CIK group that later grows to include an already-RESOLVED
+    member ADOPTS that member's existing ``issuer_id`` rather than re-running the
+    tie-break ("the id is never re-derived because membership grew", spec §2).
+
+    Per-row outcome (spec §3 state semantics):
+      * inception_code names a fail-closed identity exception (``B``/``GOLD`` today)
+        -> ``DEFERRED_IDENTITY_EXCEPTION``, excluded from grouping entirely, issuer_id
+        UNCHANGED (the legacy value, if any, is retained — never cleared).
+      * the evidence join (:func:`_evidence_join_key`) misses the CIK map -> state
+        ``NO_ISSUER_EVIDENCE``, issuer_id UNCHANGED (legacy value retained for a
+        pre-era row; stays ``None`` for a brand-new row — never a fresh per-listing
+        mint, the abolished fallback).  Self-heals on a later map.
+      * the join hits -> grouped by CIK; every member of a group RESOLVED, issuer_id
+        set to the group's canonical id (adopted from an existing evidenced group, or
+        freshly tie-broken).  For the vast majority of rows the group has exactly one
+        member, so the canonical id IS the row's own pre-existing value — no visible
+        change, only the evidentiary status becomes explicit (spec §2).
+
+    Returns ``(rows, migration_rows)``.  ``rows`` is the SAME objects, mutated in
+    place (every element is also referenced by the caller's ``out`` dict).
+    ``migration_rows`` covers ONLY securities that EXISTED before this run
+    (``_existed_before``) whose issuer_id VALUE changed — a brand-new mint's first
+    assignment is not a migration, because there was no prior stored value to migrate
+    from (spec §3: "one row per security whose issuer_id VALUE changed in the era").
+    """
+    existed_before = {r["listing_key"] for r in rows if r.get("_existed_before")}
+    exceptions = _exception_by_inception_code()
+
+    pending = [r for r in rows if not r.get("issuer_state")]
+    if not pending:
+        return rows, []
+
+    # Adoption index: a CIK already carrying a RESOLVED canonical id (from an earlier
+    # era run, or from a different pending group processed earlier in THIS loop —
+    # groups are keyed by CIK so this only matters across runs, not within one).
+    cik_to_existing_issuer: dict[str, str] = {}
+    for r in rows:
+        if r.get("issuer_state") == "RESOLVED" and r.get("issuer_cik"):
+            cik_to_existing_issuer.setdefault(r["issuer_cik"], r["issuer_id"])
+
+    groups: dict[str, list[dict]] = {}
+    for r in pending:
+        code = str(r["inception_code"]).upper()
+        exc = exceptions.get(code)
+        if exc is not None:
+            r["issuer_state"] = "DEFERRED_IDENTITY_EXCEPTION"
+            r["issuer_cik"] = None
+            r["issuer_evidence_snapshot"] = None
+            continue
+        join_key = _evidence_join_key(code)
+        evidence = cik_map.get(join_key)
+        if evidence is None:
+            r["issuer_state"] = "NO_ISSUER_EVIDENCE"
+            r["issuer_cik"] = None
+            r["issuer_evidence_snapshot"] = None
+            continue
+        cik, _title = evidence
+        groups.setdefault(cik, []).append(r)
+
+    migrations: list[dict] = []
+    for cik, members in sorted(groups.items()):
+        existing_issuer = cik_to_existing_issuer.get(cik)
+        canonical_issuer_id = existing_issuer or issuer_id(
+            parse_listing_key(_pick_canonical_member(members)["listing_key"])
+        )
+        for r in members:
+            old_issuer = r["issuer_id"]
+            r["issuer_state"] = "RESOLVED"
+            r["issuer_cik"] = cik
+            r["issuer_evidence_snapshot"] = snapshot_date
+            r["issuer_id"] = canonical_issuer_id
+            if r["listing_key"] in existed_before and old_issuer != canonical_issuer_id:
+                migrations.append({
+                    "security_id": r["security_id"],
+                    "listing_key": r["listing_key"],
+                    "old_issuer_id": old_issuer,
+                    "new_issuer_id": canonical_issuer_id,
+                    "reason": ERA_ISSUER_CORRECTION,
+                    "evidence_cik": cik,
+                    "evidence_snapshot": snapshot_date,
+                    "migrated_at": now,
+                })
+
+    return rows, sorted(migrations, key=lambda m: m["security_id"])
+
+
+def _merge_issuer_migrations(existing: list[dict], fresh: list[dict]) -> list[dict]:
+    """Append-only on ``(security_id, old_issuer_id, new_issuer_id, reason)`` — the
+    same shape as :func:`merge_alias_rows`.  Mint-once means a security migrates at
+    most once per reason in practice; the dedup is defensive, not load-bearing."""
+    merged: dict[tuple, dict] = {}
+    for row in existing:
+        key = (str(row["security_id"]), str(row["old_issuer_id"]), str(row["new_issuer_id"]),
+               str(row["reason"]))
+        merged[key] = dict(row)
+    for row in fresh:
+        key = (row["security_id"], row["old_issuer_id"], row["new_issuer_id"], row["reason"])
+        if key in merged:
+            continue
+        merged[key] = row
+    return [merged[k] for k in sorted(merged, key=lambda k: (k[0], k[3]))]
+
+
+def _build_issuer_master_rows(master_rows: list[dict],
+                              cik_to_title: dict[str, str]) -> list[dict]:
+    """``reference.issuer_master`` — one row per distinct non-null ``issuer_id`` in the
+    master (spec §3 minimal cut).  NOT a second identity system: minted only via
+    ``lib.dataos.identity.issuer_id`` (inside :func:`apply_issuer_correction`),
+    pointed into by ``security_master.issuer_id`` — this is a CENSUS over that column,
+    never an independent allocator.
+    """
+    groups: dict[str, list[dict]] = {}
+    for r in master_rows:
+        iid = r.get("issuer_id")
+        if iid:
+            groups.setdefault(iid, []).append(r)
+
+    out: list[dict] = []
+    for issuer, members in groups.items():
+        resolved = [m for m in members if m.get("issuer_state") == "RESOLVED"]
+        if resolved:
+            cik = resolved[0].get("issuer_cik")
+            out.append({
+                "issuer_id": issuer,
+                "cik": cik,
+                "legal_name": cik_to_title.get(cik) if cik else None,
+                "n_securities": len(members),
+                "evidence_source": "sec_company_tickers",
+                "evidence_snapshot": resolved[0].get("issuer_evidence_snapshot"),
+                "status": "active",
+                "era": ERA_ISSUER_CORRECTION,
+            })
+        else:
+            out.append({
+                "issuer_id": issuer,
+                "cik": None,
+                "legal_name": None,
+                "n_securities": len(members),
+                "evidence_source": "legacy_mint",
+                "evidence_snapshot": None,
+                "status": "active",
+                "era": "legacy",
+            })
+    return sorted(out, key=lambda r: r["issuer_id"])
 
 
 def merge_alias_rows(fresh: list[AliasRow], existing: list[dict], now: str) -> list[dict]:
@@ -956,13 +1312,45 @@ def _write_parquet(rows: list[dict], columns: tuple[str, ...], path: Path,
                 [None if v is None else date.fromisoformat(str(v)[:10]) for v in values],
                 dtype="object",
             )
-        else:
+        elif kind == "int":
             data[column] = pd.Series(
-                [None if v is None else str(v) for v in values], dtype="object"
+                [None if v is None else int(v) for v in values], dtype="Int64"
+            )
+        else:
+            # Same NaN-is-not-None trap as _read_existing: a caller that assigns
+            # `frame.loc[..., col] = None` onto a pandas "str"-dtype column can hand
+            # this a `float('nan')`, not a Python `None` — `v is None` alone would
+            # stringify it into the LITERAL STRING "nan" and corrupt the column.
+            data[column] = pd.Series(
+                [None if (v is None or pd.isna(v)) else str(v) for v in values],
+                dtype="object",
             )
     frame = pd.DataFrame(data, columns=list(columns))
     path.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(path, index=False)
+
+
+def _issuer_state_counts(master_rows: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for r in master_rows:
+        state = r.get("issuer_state") or "UNMIGRATED"
+        counts[state] = counts.get(state, 0) + 1
+    return counts
+
+
+def _multi_security_issuer_groups(master_rows: list[dict]) -> list[dict]:
+    """Every issuer_id carried by >1 security — the multi-security group census
+    (spec §6): machine-visible confirmation of what the era actually grouped."""
+    groups: dict[str, list[str]] = {}
+    for r in master_rows:
+        iid = r.get("issuer_id")
+        if iid:
+            groups.setdefault(iid, []).append(r["security_id"])
+    return [
+        {"issuer_id": iid, "security_ids": sorted(secs)}
+        for iid, secs in sorted(groups.items())
+        if len(secs) > 1
+    ]
 
 
 def build(out_dir: Path, dry_run: bool = False) -> dict:
@@ -971,6 +1359,7 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
     delisted = load_delisted()
     directory, snapshot_date, snapshot_path = load_directory()
     fixups, migrations = load_config_maps()
+    cik_map, cik_snapshot_date, cik_map_path = load_cik_map()
 
     resolutions = resolve_universe(universe, delisted, directory, snapshot_date)
     resolved = [r for r in resolutions if r.listing_key is not None]
@@ -979,23 +1368,43 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
     now = _iso_now()
     master_path = out_dir / MASTER_NAME
     aliases_path = out_dir / ALIASES_NAME
+    issuer_master_path = out_dir / ISSUER_MASTER_NAME
+    issuer_migrations_path = out_dir / ISSUER_MIGRATIONS_NAME
 
     seed_notes = unmodelled_renames(fixups, migrations)
 
     master_rows, ids, notes = mint_master_rows(
-        resolutions, _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES), now
+        resolutions,
+        _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES,
+                       allow_missing=ISSUER_AXIS_COLUMNS),
+        now,
     )
+    master_rows, fresh_issuer_migrations = apply_issuer_correction(
+        master_rows, cik_map, cik_snapshot_date, now
+    )
+
     fresh_aliases = build_alias_rows(resolutions, ids)
     alias_rows = merge_alias_rows(
         fresh_aliases, _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES), now
     )
+
+    issuer_migration_rows = _merge_issuer_migrations(
+        _read_existing(issuer_migrations_path, ISSUER_MIGRATIONS_COLUMNS,
+                       ISSUER_MIGRATIONS_DTYPES),
+        fresh_issuer_migrations,
+    )
+    cik_to_title = {cik: title for cik, title in cik_map.values()}
+    issuer_master_rows = _build_issuer_master_rows(master_rows, cik_to_title)
 
     # THE ONLY READER, used as the validator: an ambiguous table must fail HERE, at
     # write time, not in whatever consumer first asks it a question.
     table = VendorAliasTable.from_records(alias_rows)
 
     receipt = {
-        "dataset_ids": ["reference.security_master", "reference.vendor_aliases"],
+        "dataset_ids": [
+            "reference.security_master", "reference.vendor_aliases",
+            "reference.issuer_master", "reference.issuer_migrations",
+        ],
         "producer": "scripts/build_security_master.py",
         "code_version": _git_sha(),
         "generated_at": now,
@@ -1004,13 +1413,17 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
             for path in (
                 CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML, TICKER_ALIASES_PY,
                 *( [snapshot_path] if snapshot_path is not None else [] ),
+                *( [cik_map_path] if cik_map_path is not None else [] ),
             )
         },
         "symbol_directory_snapshot": snapshot_date,
+        "cik_map_snapshot": cik_snapshot_date,
         "row_counts": {
             "security_master": len(master_rows),
             "vendor_aliases": len(alias_rows),
             "vendor_alias_rows_readable": len(table.rows),
+            "issuer_master": len(issuer_master_rows),
+            "issuer_migrations": len(issuer_migration_rows),
         },
         "coverage": {
             "total": len(resolutions),
@@ -1049,17 +1462,136 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
             for key in sorted(DISCLOSED_IDENTITY_EXCEPTIONS)
         ],
         "notes": seed_notes + notes,
-        "authority": "display_only — DOS-1.1 materializes the spine; nothing reads it as authority yet",
+        # V4-D2B1 §12: authority is semantically DECOMPOSED — identity is canonical
+        # for CURRENT exact issuer/security/listing identity (Sol's D2A ruling); the
+        # spine never gates/ranks/trades on its own account. `consumers` names every
+        # real reader so the next session does not have to re-discover D2A by grep.
+        "authority": {
+            "identity_authority": "canonical_exact_identity",
+            "signal_authority": "none",
+            "ranking_authority": "none",
+            "trade_authority": "none",
+            "consumers": ["gmi.identity_resolution/v1"],
+        },
+        "issuer": {
+            "era": ERA_ISSUER_CORRECTION,
+            "state_counts": _issuer_state_counts(master_rows),
+            "multi_security_groups": _multi_security_issuer_groups(master_rows),
+            "migrations_this_run": len(fresh_issuer_migrations),
+            "evidence_snapshot": cik_snapshot_date,
+        },
     }
 
     if not dry_run:
         out_dir.mkdir(parents=True, exist_ok=True)
         _write_parquet(master_rows, MASTER_COLUMNS, master_path, MASTER_DTYPES)
         _write_parquet(alias_rows, ALIAS_COLUMNS, aliases_path, ALIAS_DTYPES)
+        _write_parquet(issuer_master_rows, ISSUER_MASTER_COLUMNS, issuer_master_path,
+                       ISSUER_MASTER_DTYPES)
+        _write_parquet(issuer_migration_rows, ISSUER_MIGRATIONS_COLUMNS,
+                       issuer_migrations_path, ISSUER_MIGRATIONS_DTYPES)
         (out_dir / RECEIPT_NAME).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
     receipt["_resolutions"] = resolutions  # in-process only; never serialized
     return receipt
+
+
+# ── Nightly fail-closed refresh seam (V4-D2B1 §7) ──────────────────────────────
+#: The artifacts a nightly refresh compares byte-for-byte to decide "did anything
+#: actually change" (RECEIPT_NAME is handled separately — see :func:`run_nightly_refresh`).
+_NIGHTLY_ARTIFACT_NAMES = (MASTER_NAME, ALIASES_NAME, ISSUER_MASTER_NAME, ISSUER_MIGRATIONS_NAME)
+
+
+def _read_bytes_if_exists(path: Path) -> bytes | None:
+    return path.read_bytes() if path.exists() else None
+
+
+def _restore_artifacts(out_dir: Path, before: dict[str, bytes | None],
+                       before_receipt: bytes | None) -> None:
+    for name, content in before.items():
+        path = out_dir / name
+        if content is None:
+            if path.exists():
+                path.unlink()
+        else:
+            path.write_bytes(content)
+    receipt_path = out_dir / RECEIPT_NAME
+    if before_receipt is None:
+        if receipt_path.exists():
+            receipt_path.unlink()
+    else:
+        receipt_path.write_bytes(before_receipt)
+
+
+def run_nightly_refresh(out_dir: Path) -> int:
+    """The ``daily.yml`` collect-job seam (spec §7).  Fail-closed refresh laws:
+
+      (a) a missing/unreadable identity input -> REFUSE, keep last-good artifacts,
+          ``::warning``, exit 0, ``generated_at`` NOT re-stamped;
+      (b) inputs unchanged since the last generation -> byte-stable no-op,
+          ``generated_at`` NOT re-stamped;
+      (c) inputs advanced -> regenerate, stamp, receipt pins the exact snapshot ids
+          consumed.
+
+    A source failure can never produce a falsely fresh identity generation (§23.24):
+    the real (writing) build always runs first into ``out_dir``, and its output is
+    then compared byte-for-byte against what was there before — if nothing besides
+    the receipt's own wall-clock stamp changed, or if the run surfaced a config
+    defect (an unmodelled rename / listing-key collision, the two things
+    ``receipt['notes']`` ever carries), every artifact including the receipt is
+    restored to its prior bytes.  Non-fatal throughout: this function always returns
+    0 — a nightly step must never fail the collect job over an identity refresh.
+    """
+    required = (CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML, TICKER_ALIASES_PY)
+    missing = [
+        str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
+        for p in required if not p.exists()
+    ]
+    if missing:
+        print(
+            f"::warning title=security-master-nightly::missing identity input(s) "
+            f"{missing} — refusing, keeping last-good artifacts, generated_at not "
+            "re-stamped", flush=True,
+        )
+        return 0
+
+    before = {name: _read_bytes_if_exists(out_dir / name) for name in _NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = _read_bytes_if_exists(out_dir / RECEIPT_NAME)
+
+    try:
+        receipt = build(out_dir, dry_run=False)
+    except Exception as exc:  # noqa: BLE001 — any read/parse failure refuses, never half-writes
+        print(
+            f"::warning title=security-master-nightly::build failed reading identity "
+            f"inputs ({exc}) — keeping last-good artifacts, generated_at not "
+            "re-stamped", flush=True,
+        )
+        return 0
+
+    if receipt.get("notes"):
+        _restore_artifacts(out_dir, before, before_receipt)
+        print(
+            f"::warning title=security-master-nightly::{'; '.join(receipt['notes'])} — "
+            "unmodelled rename or listing-key collision; keeping last-good artifacts, "
+            "generated_at not re-stamped", flush=True,
+        )
+        return 0
+
+    after = {name: _read_bytes_if_exists(out_dir / name) for name in _NIGHTLY_ARTIFACT_NAMES}
+    if after == before:
+        if before_receipt is not None:
+            (out_dir / RECEIPT_NAME).write_bytes(before_receipt)
+        print(
+            "::notice title=security-master-nightly::inputs unchanged since the last "
+            "generation — byte-stable no-op, generated_at not re-stamped", flush=True,
+        )
+        return 0
+
+    print(
+        f"::notice title=security-master-nightly::identity inputs advanced — "
+        f"regenerated ({coverage_line(receipt)})", flush=True,
+    )
+    return 0
 
 
 # ── Reporting ─────────────────────────────────────────────────────────────────
@@ -1111,7 +1643,19 @@ def main(argv: list[str] | None = None) -> int:
                         help="build and report, write nothing")
     parser.add_argument("--report", action="store_true",
                         help="full census: row counts, rename events, input hashes")
+    parser.add_argument(
+        "--nightly", action="store_true",
+        help=(
+            "daily.yml collect-job seam (spec §7): fail-closed refresh — refuses "
+            "non-fatally on a missing/unreadable identity input, is a byte-stable "
+            "no-op when nothing advanced, and only re-stamps generated_at when "
+            "inputs genuinely changed. Always exits 0. Ignores --dry-run/--report."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.nightly:
+        return run_nightly_refresh(Path(args.out))
 
     receipt = build(Path(args.out), dry_run=args.dry_run)
     _report(receipt, verbose=args.report)

@@ -398,6 +398,12 @@ def test_resolver_refuses_to_mint_b_even_when_the_current_directory_resolves_it(
 def test_the_master_mints_on_the_inception_code_not_on_todays_symbol(
     master: pd.DataFrame,
 ) -> None:
+    """State-aware replacement of the old bare ``SEC:->ISS:`` prefix-swap assertion
+    (V4-D2B1, per the frozen contract's instruction to update this test to "the new
+    law: state-aware; RESOLVED groups share canonical ids").  MMC and SATS are each
+    the sole member of their own CIK-evidenced group, so the swap still holds for
+    them AS A COROLLARY of mint-once + a single-member canonical tie-break — it is no
+    longer a bare invariant of every row (GOOG/GOOGL below is the counter-example)."""
     rows = master.set_index("security_id")
     for security, mic, code in ((MMC_ID, "XNYS", "MMC"), (SATS_ID, "XNAS", "SATS")):
         assert security in rows.index, f"{security} missing from the committed master"
@@ -406,9 +412,311 @@ def test_the_master_mints_on_the_inception_code_not_on_todays_symbol(
         assert row["inception_code"] == code
         assert row["issuer_id"] == security.replace("SEC:", "ISS:")
         assert row["listing_key"] == security.replace("SEC:", "")
+        assert row["issuer_state"] == "RESOLVED"
+        assert row["issuer_cik"], f"{security} should carry CIK evidence"
     # Neither of today's symbols may have minted an id of its own.
     assert "SEC:US-XNYS-MRSH" not in rows.index
     assert "SEC:US-XNAS-ECHO" not in rows.index
+
+
+# ── V4-D2B1: issuer axis ────────────────────────────────────────────────────────
+GOOG_ID = "SEC:US-XNAS-GOOG"
+GOOGL_ID = "SEC:US-XNAS-GOOGL"
+CANONICAL_GOOG_ISSUER = "ISS:US-XNAS-GOOG"
+
+
+@pytest.fixture(scope="module")
+def issuer_master() -> pd.DataFrame:
+    path = ROOT / "data" / "reference" / BUILD.ISSUER_MASTER_NAME
+    assert path.is_file(), f"{path} is missing (gate G1)"
+    return pd.read_parquet(path)
+
+
+@pytest.fixture(scope="module")
+def issuer_migrations() -> pd.DataFrame:
+    path = ROOT / "data" / "reference" / BUILD.ISSUER_MIGRATIONS_NAME
+    assert path.is_file(), f"{path} is missing (gate G1)"
+    return pd.read_parquet(path)
+
+
+def test_goog_and_googl_are_two_securities_and_one_issuer(master: pd.DataFrame) -> None:
+    """The regression V4-D2B1 exists to make possible (mirrors
+    tests/test_theme_graph_identity_resolution.py's flipped GOOG/GOOGL assertion).
+
+    Mutation control (1): GOOG/GOOGL landing on two DIFFERENT issuer_ids again must
+    fail this test.
+    """
+    rows = master.set_index("security_id")
+    assert GOOG_ID in rows.index and GOOGL_ID in rows.index
+    # Mutation control (2): security_id/listing_key are NEVER touched by the era —
+    # still two distinct securities.
+    assert GOOG_ID != GOOGL_ID
+    assert rows.loc[GOOG_ID, "listing_key"] != rows.loc[GOOGL_ID, "listing_key"]
+    goog_issuer = rows.loc[GOOG_ID, "issuer_id"]
+    googl_issuer = rows.loc[GOOGL_ID, "issuer_id"]
+    assert goog_issuer == googl_issuer == CANONICAL_GOOG_ISSUER
+    for security_id_ in (GOOG_ID, GOOGL_ID):
+        assert rows.loc[security_id_, "issuer_state"] == "RESOLVED"
+        assert rows.loc[security_id_, "issuer_cik"] == "0001652044"
+
+
+def test_googl_is_the_migrated_member_not_goog(
+    master: pd.DataFrame, issuer_migrations: pd.DataFrame,
+) -> None:
+    """Rule 4 (lowest full listing key) picks GOOG as canonical — GOOGL is the row
+    whose issuer_id VALUE actually changed, so it is the one with a receipt."""
+    row = issuer_migrations.loc[issuer_migrations["security_id"] == GOOGL_ID]
+    assert len(row) == 1, "GOOGL must carry exactly one migration receipt row"
+    r = row.iloc[0]
+    assert r["old_issuer_id"] == "ISS:US-XNAS-GOOGL"
+    assert r["new_issuer_id"] == CANONICAL_GOOG_ISSUER
+    assert r["reason"] == BUILD.ERA_ISSUER_CORRECTION
+    assert r["evidence_cik"] == "0001652044"
+    # GOOG itself never moved (it already WAS its own canonical value) — no receipt row.
+    assert issuer_migrations.loc[issuer_migrations["security_id"] == GOOG_ID].empty
+    assert not issuer_migrations.empty, "issuer_migrations.parquet must be non-empty"
+
+
+def test_brk_b_resolves_via_dash_normalization_as_a_single_member_group(
+    master: pd.DataFrame,
+) -> None:
+    rows = master.set_index("security_id")
+    row = rows.loc["SEC:US-XNYS-BRK.B"]
+    assert row["issuer_state"] == "RESOLVED"
+    assert row["issuer_cik"] == "0001067983"
+    assert row["issuer_id"] == "ISS:US-XNYS-BRK.B", "single-member group keeps its own id"
+    # BRK.A is not in this master — no fabricated second security (spec §11).
+    assert "SEC:US-XNYS-BRK.A" not in rows.index
+
+
+def test_gold_is_deferred_and_excluded_from_grouping(master: pd.DataFrame) -> None:
+    """GOLD's committed issuer_id predates this era and is RETAINED, unevidenced —
+    never repointed by CIK, because the current 'GOLD' ticker's registrant (per the
+    live CIK map) is Gold.com, not the master's Barrick-era GOLD security (spec §9
+    EQR/VMRK note; the same reuse defect motivates the exception)."""
+    row = master.set_index("inception_code").loc["GOLD"]
+    assert row["issuer_state"] == "DEFERRED_IDENTITY_EXCEPTION"
+    assert row["issuer_id"] == "ISS:US-XNYS-GOLD", "legacy value retained, never cleared"
+    assert row["issuer_cik"] is None or pd.isna(row["issuer_cik"])
+
+
+def test_ibit_resolves_to_the_trusts_own_cik(master: pd.DataFrame) -> None:
+    row = master.set_index("inception_code").loc["IBIT"]
+    assert row["issuer_state"] == "RESOLVED"
+    assert row["issuer_cik"] == "0001980994"
+
+
+def test_no_issuer_evidence_rows_retain_their_legacy_value(master: pd.DataFrame) -> None:
+    """AEP/CTRA/TPH (measured misses) and FISV (current symbol FI misses the map) —
+    spec §11: legacy issuer_id retained, aggregation-forbidden, self-heals later."""
+    rows = master.set_index("inception_code")
+    for code in ("AEP", "CTRA", "TPH", "FISV"):
+        row = rows.loc[code]
+        assert row["issuer_state"] == "NO_ISSUER_EVIDENCE", code
+        assert row["issuer_id"] == f"ISS:{row['listing_key']}", code
+        assert row["issuer_cik"] is None or pd.isna(row["issuer_cik"]), code
+
+
+def test_rddt_enters_resolved_from_current_seeds(master: pd.DataFrame) -> None:
+    """The staleness heal (spec §9/§11): RDDT was the RED case on main; this master's
+    regeneration is the lawful fix, and it arrives already RESOLVED."""
+    row = master.set_index("inception_code").loc["RDDT"]
+    assert row["issuer_state"] == "RESOLVED"
+    assert row["issuer_id"] == "ISS:US-XNYS-RDDT"
+
+
+def test_issuer_master_has_one_row_per_distinct_issuer_id(
+    master: pd.DataFrame, issuer_master: pd.DataFrame,
+) -> None:
+    assert issuer_master["issuer_id"].is_unique
+    assert set(issuer_master["issuer_id"]) == set(master["issuer_id"].dropna())
+    row = issuer_master.set_index("issuer_id").loc[CANONICAL_GOOG_ISSUER]
+    assert row["n_securities"] == 2
+    assert row["cik"] == "0001652044"
+    assert row["evidence_source"] == "sec_company_tickers"
+    assert row["era"] == BUILD.ERA_ISSUER_CORRECTION
+
+
+def test_issuer_migrations_never_touches_security_id_or_listing_key(
+    master: pd.DataFrame, issuer_migrations: pd.DataFrame,
+) -> None:
+    """Mutation control (8): a migration row is about the issuer_id column only."""
+    by_sec = master.set_index("security_id")
+    for _, row in issuer_migrations.iterrows():
+        assert row["security_id"] in by_sec.index
+        assert by_sec.loc[row["security_id"], "listing_key"] == row["listing_key"]
+        assert row["old_issuer_id"] != row["new_issuer_id"]
+
+
+def test_the_issuer_axis_is_registered_in_the_dataset_registry() -> None:
+    declared = load_registry().get("reference.security_master").schema
+    for column in ("issuer_state", "issuer_cik", "issuer_evidence_snapshot"):
+        assert column in declared, column
+    assert declared["issuer_id"]["nullable"] is True
+    assert load_registry().get("reference.issuer_master").status is DatasetStatus.PRODUCED
+    assert load_registry().get("reference.issuer_migrations").status is DatasetStatus.PRODUCED
+
+
+# ── V4-D2B1: pure functions over fixtures ───────────────────────────────────────
+def test_current_symbol_walks_the_same_chain_forward(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The forward mirror of :func:`BUILD._inception_code` — same rename records,
+    opposite direction, landing on the security's own current symbol."""
+    assert BUILD._current_symbol("MMC") == "MRSH"
+    assert BUILD._current_symbol("SATS") == "ECHO"
+    # The vendor-lag case: this repo's OWN rename record says the current symbol is
+    # FI even though Yahoo still serves FISV — §1 asks for THIS repo's record, not
+    # whatever a lagging vendor currently serves.
+    assert BUILD._current_symbol("FISV") == "FI"
+    assert BUILD._current_symbol("AAPL") == "AAPL"
+    assert BUILD._evidence_join_key("BRK.B") == "BRK-B"
+
+
+def test_pick_canonical_member_applies_rule_4_on_a_tie(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rules 1-2 have no in-repo data source and can never fire (spec §2); only rule 3
+    (lowest MIC) then rule 4 (lowest full listing key, the D2B1 extension) ever do."""
+    goog = {"listing_key": "US-XNAS-GOOG", "mic": "XNAS"}
+    googl = {"listing_key": "US-XNAS-GOOGL", "mic": "XNAS"}
+    assert BUILD._pick_canonical_member([goog, googl]) is goog
+    assert BUILD._pick_canonical_member([googl, goog]) is goog
+    assert BUILD._pick_canonical_member([goog]) is goog
+    # A lower MIC beats a lexicographically-lower key on a higher MIC.
+    nyse_a = {"listing_key": "US-XNYS-AAA", "mic": "XNYS"}
+    nasdaq_z = {"listing_key": "US-XNAS-ZZZ", "mic": "XNAS"}
+    assert BUILD._pick_canonical_member([nyse_a, nasdaq_z]) is nasdaq_z
+
+
+def test_apply_issuer_correction_groups_by_cik_and_is_idempotent() -> None:
+    """Pure-function proof over a hand-built fixture — the whole era in miniature."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-AAA", "issuer_id": "ISS:US-XNAS-AAA",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-AAA", "mic": "XNAS", "inception_code": "AAA"},
+        {"security_id": "SEC:US-XNAS-BBB", "issuer_id": "ISS:US-XNAS-BBB",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-BBB", "mic": "XNAS", "inception_code": "BBB"},
+        {"security_id": "SEC:US-XNAS-CCC", "issuer_id": "ISS:US-XNAS-CCC",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-CCC", "mic": "XNAS", "inception_code": "CCC"},
+    ]
+    cik_map = {"AAA": ("0000000001", "Test Co A"), "BBB": ("0000000001", "Test Co A")}
+    # CCC has no evidence at all — NO_ISSUER_EVIDENCE, legacy value retained.
+
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-15", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-AAA"]["issuer_state"] == "RESOLVED"
+    assert by_id["SEC:US-XNAS-BBB"]["issuer_state"] == "RESOLVED"
+    assert by_id["SEC:US-XNAS-AAA"]["issuer_id"] == by_id["SEC:US-XNAS-BBB"]["issuer_id"]
+    assert by_id["SEC:US-XNAS-CCC"]["issuer_state"] == "NO_ISSUER_EVIDENCE"
+    assert by_id["SEC:US-XNAS-CCC"]["issuer_id"] == "ISS:US-XNAS-CCC", "legacy value retained"
+    # None of these three "existed before" (no _existed_before marker) — a brand-new
+    # mint's first assignment is not a migration.
+    assert migrations == []
+
+    # Idempotent: a second pass over the SAME (now-stamped) rows is a byte-stable
+    # no-op — every row's issuer_state is already set, so `pending` is empty.
+    again_rows, again_migrations = BUILD.apply_issuer_correction(out_rows, cik_map,
+                                                                  "2026-08-15", now)
+    assert again_rows == out_rows
+    assert again_migrations == []
+
+
+def test_apply_issuer_correction_records_a_migration_only_for_a_preexisting_row() -> None:
+    """Mutation control (9) reversed as a positive assertion: a genuine repoint of an
+    _existed_before row DOES get a migration row; a brand-new mint sharing that same
+    CIK does NOT (spec §3: "one row per security whose issuer_id VALUE changed")."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-OLD", "issuer_id": "ISS:US-XNAS-OLD",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-OLD", "mic": "XNAS", "inception_code": "OLD",
+         "_existed_before": True},
+        {"security_id": "SEC:US-XNAS-NEW", "issuer_id": None,
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-NEW", "mic": "XNAS", "inception_code": "NEW"},
+    ]
+    cik_map = {"OLD": ("0000000009", "Shared Co"), "NEW": ("0000000009", "Shared Co")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-15", now)
+    assert len(migrations) == 1
+    assert migrations[0]["security_id"] == "SEC:US-XNAS-OLD"
+    assert migrations[0]["old_issuer_id"] == "ISS:US-XNAS-OLD"
+
+
+def test_a_later_pending_security_adopts_an_already_resolved_groups_issuer_id() -> None:
+    """Mint-once for issuers (spec §2): membership growing never re-derives the
+    canonical id — it is ADOPTED from whichever member the group already settled on."""
+    now = "2026-08-19T00:00:00"
+    already_resolved = {
+        "security_id": "SEC:US-XNAS-FIRST", "issuer_id": "ISS:US-XNAS-FIRST",
+        "issuer_state": "RESOLVED", "issuer_cik": "0000000042",
+        "issuer_evidence_snapshot": "2026-08-01",
+        "listing_key": "US-XNAS-FIRST", "mic": "XNAS", "inception_code": "FIRST",
+    }
+    new_member = {
+        "security_id": "SEC:US-XNAS-AAAAA", "issuer_id": None, "issuer_state": None,
+        "issuer_cik": None, "issuer_evidence_snapshot": None,
+        "listing_key": "US-XNAS-AAAAA", "mic": "XNAS", "inception_code": "AAAAA",
+    }
+    cik_map = {"AAAAA": ("0000000042", "Shared Co")}
+    out_rows, _migrations = BUILD.apply_issuer_correction(
+        [already_resolved, new_member], cik_map, "2026-08-19", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    # AAAAA sorts before FIRST, so a fresh tie-break would have picked AAAAA — but the
+    # group already had a RESOLVED canonical id, which must be ADOPTED, not re-derived.
+    assert by_id["SEC:US-XNAS-AAAAA"]["issuer_id"] == "ISS:US-XNAS-FIRST"
+
+
+def test_a_brand_new_evidence_less_row_gets_no_fallback_mint() -> None:
+    """Mutation control (3): the abolished per-listing fallback must NOT come back —
+    a brand-new row (no prior stored issuer_id) with no CIK evidence stays NULL,
+    never a freshly minted ``ISS:<own listing key>``."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-NOEV", "issuer_id": None,
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-NOEV", "mic": "XNAS", "inception_code": "NOEV"},
+    ]
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, {}, "2026-08-19", now)
+    assert out_rows[0]["issuer_state"] == "NO_ISSUER_EVIDENCE"
+    assert out_rows[0]["issuer_id"] is None, "no fallback mint for an evidence-less new row"
+    assert migrations == []
+
+
+def test_two_different_ciks_never_merge_into_one_group() -> None:
+    """Mutation control (5): distinct CIK evidence must never force-merge — the
+    group key IS the CIK string, with no fuzzy or partial matching anywhere."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-AAA", "issuer_id": "ISS:US-XNAS-AAA",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-AAA", "mic": "XNAS", "inception_code": "AAA"},
+        {"security_id": "SEC:US-XNAS-BBB", "issuer_id": "ISS:US-XNAS-BBB",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-BBB", "mic": "XNAS", "inception_code": "BBB"},
+    ]
+    cik_map = {"AAA": ("0000000001", "Company One"), "BBB": ("0000000002", "Company Two")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-19", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-AAA"]["issuer_id"] == "ISS:US-XNAS-AAA"
+    assert by_id["SEC:US-XNAS-BBB"]["issuer_id"] == "ISS:US-XNAS-BBB"
+    assert by_id["SEC:US-XNAS-AAA"]["issuer_id"] != by_id["SEC:US-XNAS-BBB"]["issuer_id"]
+    assert migrations == [], "single-member groups that already held their own id don't migrate"
+
+
+def test_deferred_exception_rows_are_excluded_from_grouping_even_with_matching_cik() -> None:
+    """Mutation control: an exception key must never join a CIK group, even when its
+    join-key symbol happens to collide with evidence for a real group."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNYS-GOLD", "issuer_id": "ISS:US-XNYS-GOLD",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNYS-GOLD", "mic": "XNYS", "inception_code": "GOLD"},
+    ]
+    cik_map = {"GOLD": ("0000000099", "Gold.com, Inc.")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-19", now)
+    assert out_rows[0]["issuer_state"] == "DEFERRED_IDENTITY_EXCEPTION"
+    assert out_rows[0]["issuer_id"] == "ISS:US-XNYS-GOLD", "never repointed to Gold.com's CIK"
+    assert migrations == []
 
 
 def test_the_master_grain_is_one_row_per_security(master: pd.DataFrame) -> None:
@@ -497,6 +805,8 @@ def test_the_receipt_carries_provenance_for_every_input(receipt: dict) -> None:
     assert set(receipt["dataset_ids"]) == {
         "reference.security_master",
         "reference.vendor_aliases",
+        "reference.issuer_master",
+        "reference.issuer_migrations",
     }
     inputs = receipt["inputs"]
     assert inputs, "a receipt with no inputs cannot support a lineage query"
@@ -835,6 +1145,96 @@ def test_the_rename_maps_live_in_a_file_that_can_reach_this_suite() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
     triggers = (workflow.get("on") or workflow.get(True))["pull_request"]["paths"]
     assert "config.yml" in triggers
+
+
+# ── V4-D2B1: nightly fail-closed refresh seam (§7) ──────────────────────────────
+def test_nightly_refuses_non_fatally_on_a_missing_identity_input(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    monkeypatch.setattr(BUILD, "CONSTITUENTS", tmp_path / "does-not-exist.parquet")
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "::warning" in out
+    assert not (tmp_path / BUILD.MASTER_NAME).exists()
+
+
+def test_nightly_is_a_byte_stable_noop_when_inputs_are_unchanged(
+    tmp_path: Path, capsys,
+) -> None:
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {
+        name: (tmp_path / name).read_bytes()
+        for name in BUILD._NIGHTLY_ARTIFACT_NAMES
+    }
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "byte-stable no-op" in out
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], name
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt, (
+        "generated_at must NOT be re-stamped on a no-op nightly run"
+    )
+
+
+def test_nightly_regenerates_and_restamps_only_when_inputs_advance(
+    tmp_path: Path, capsys,
+) -> None:
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before_master = (tmp_path / BUILD.MASTER_NAME).read_bytes()
+
+    # Force a stored id to a value the derivation would never produce (the same
+    # "mint-once, not merely deterministic" trick as test_the_stored_id_is_the_
+    # authority_not_the_derivation) — the master itself now differs, so a fresh
+    # nightly run must regenerate and re-stamp.
+    frame = pd.read_parquet(tmp_path / BUILD.MASTER_NAME)
+    frame.loc[frame["listing_key"] == "US-XNYS-MMC", "issuer_state"] = None
+    frame.loc[frame["listing_key"] == "US-XNYS-MMC", "issuer_id"] = "ISS:US-XNYS-FORCED"
+    rows = [
+        {k: BUILD._normalize_datetime(v) if k in BUILD.MASTER_DTYPES else v
+         for k, v in record.items()}
+        for record in frame.to_dict("records")
+    ]
+    BUILD._write_parquet(rows, BUILD.MASTER_COLUMNS, tmp_path / BUILD.MASTER_NAME,
+                         BUILD.MASTER_DTYPES)
+    forced_bytes = (tmp_path / BUILD.MASTER_NAME).read_bytes()
+    assert forced_bytes != before_master
+
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "regenerated" in out
+    # Content-based proof (robust to same-second wall-clock stamps, unlike comparing
+    # generated_at strings): the forced value is gone — the era re-derived it — and
+    # the artifact is no longer the forced bytes.
+    after = pd.read_parquet(tmp_path / BUILD.MASTER_NAME)
+    mmc = after.loc[after["listing_key"] == "US-XNYS-MMC"].iloc[0]
+    assert mmc["issuer_id"] != "ISS:US-XNYS-FORCED"
+    assert mmc["issuer_state"] == "RESOLVED"
+    assert (tmp_path / BUILD.MASTER_NAME).read_bytes() != forced_bytes
+
+
+def test_nightly_restores_last_good_on_an_unmodelled_rename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    """§7 fail-closed law (a)-adjacent: a config defect (the two things
+    ``receipt['notes']`` ever carries) must never produce a falsely fresh generation
+    — every artifact, INCLUDING the receipt, is restored to its prior bytes."""
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {name: (tmp_path / name).read_bytes() for name in BUILD._NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+
+    real = BUILD.load_config_maps
+    monkeypatch.setattr(
+        BUILD, "load_config_maps",
+        lambda: ({**real()[0], "NEWNAME": "OLDNAME"}, real()[1]),
+    )
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "::warning" in out
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], name
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt
 
 
 def test_an_unresolved_name_mints_nothing() -> None:
