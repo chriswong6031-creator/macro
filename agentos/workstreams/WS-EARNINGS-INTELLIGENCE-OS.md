@@ -35,6 +35,7 @@ discoveries:
   - "DSC:EARNINGS-WIRE-AND-CI-DIVERGE-ON-THE-SAME-ISSUER"
   - "DSC:E1-READER-IS-NOT-THE-PRODUCTION-OBJECT"
   - "DSC:EDGAR-INDEX-HEADERS-ARE-HTML-ESCAPED"
+  - "DSC:CN-POST-EVENT-TAPES-SHARE-NO-EVENT-ID"
 do_not_redo:
   - Rebuild Terminal transcripts, Stage, Group Reads, TIL, or a standalone earnings app.
   - Treat Earnings Wire excerpt archive as the finished intelligence product.
