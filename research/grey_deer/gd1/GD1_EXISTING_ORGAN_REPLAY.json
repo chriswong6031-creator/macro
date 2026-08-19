@@ -1,0 +1,145 @@
+{
+  "schema": "grey_deer.gd1.organ_replay.v1",
+  "prereg_sha": "663fb02b500c966785628d52c709f0d40c27a146",
+  "replay_note": "Emission-log read, not a silent mix of current code into missing history. A later latest.json is recomputed history.",
+  "worktree_head_at_extract": "see GD1_REPRO_MANIFEST.json",
+  "organs": [
+    {
+      "id": "leadership_crack",
+      "module": "engine/leadership_crack.py",
+      "schema": "leadership_crack.v1",
+      "authority_at_t": "display-only",
+      "authority_cite": "engine/leadership_crack.py:1-24",
+      "artifact": "data/leadership_crack/forward_log.jsonl",
+      "freshness": "nightly_forward_log; latest.json overwritten",
+      "entry_fn": "implied compute_latest / nightly append",
+      "useful_but_disconnected": true,
+      "aug2026_asofs": ["2026-08-05", "2026-08-07", "2026-08-12", "2026-08-13", "2026-08-17", "2026-08-18"],
+      "states": [
+        {"asof": "2026-07-17", "state": "BROKEN", "dislocation": true, "z_vel": -2.3034, "med_dd": -0.2955, "carnage_share_ema": 0.8104},
+        {"asof": "2026-07-31", "state": "BROKEN", "dislocation": true, "z_vel": -0.9369, "med_dd": -0.3334, "carnage_share_ema": 0.8326},
+        {"asof": "2026-08-05", "state": "BROKEN", "dislocation": true, "z_vel": 2.1424, "med_dd": -0.2867, "carnage_share_ema": 0.7916},
+        {"asof": "2026-08-13", "state": "BROKEN", "dislocation": true, "z_vel": 0.8234, "med_dd": -0.2209, "carnage_share_ema": 0.5976},
+        {"asof": "2026-08-17", "state": "BROKEN", "dislocation": true, "z_vel": 1.5292, "med_dd": -0.1802, "carnage_share_ema": 0.5065},
+        {"asof": "2026-08-18", "state": "BROKEN", "dislocation": true, "z_vel": 0.4138, "med_dd": -0.2484, "carnage_share_ema": 0.5747}
+      ],
+      "divergence": "Velocity healed toward zero/positive in August while state stayed BROKEN via hysteresis (med_dd/carnage). That is the organ working as designed, not a silent rewrite."
+    },
+    {
+      "id": "market_state",
+      "module": "engine/market_state.py",
+      "schema": "market_state.v1",
+      "authority_at_t": "advisory / not a Prophet gate",
+      "artifact": "data/market_state/forward_log.jsonl",
+      "aug2026_verdicts": [
+        {"asof": "2026-07-29", "verdict": "RISK_OFF", "score": 40},
+        {"asof": "2026-07-31", "verdict": "RISK_ON", "score": 66},
+        {"asof": "2026-08-03", "verdict": "RISK_ON", "score": 69},
+        {"asof": "2026-08-04", "verdict": "MIXED", "score": 50},
+        {"asof": "2026-08-05", "verdict": "MIXED", "score": 50},
+        {"asof": "2026-08-07", "verdict": "MIXED", "score": 50},
+        {"asof": "2026-08-12", "verdict": "RISK_ON", "score": 76},
+        {"asof": "2026-08-13", "verdict": "RISK_ON", "score": 77},
+        {"asof": "2026-08-17", "verdict": "RISK_ON", "score": 77},
+        {"asof": "2026-08-18", "verdict": "RISK_ON", "score": 76}
+      ],
+      "useful_but_disconnected": false,
+      "note": "Actively de-escalated to RISK_ON while leadership_crack remained BROKEN. latest.json radar.state=calm, recovery.deescalation.eligible=true on 2026-08-18."
+    },
+    {
+      "id": "risk_radar_us",
+      "module": "engine/risk_radar.py",
+      "authority_at_t": "advisory; can_force=false; early_tier_advisory",
+      "artifact": "data/risk_radar/forward_log.jsonl",
+      "aug2026": [
+        {"asof": "2026-08-03", "state": "watch", "alert": false, "dominant_scare": "bubble", "top_score": 50.7},
+        {"asof": "2026-08-04", "state": "caution", "alert": false, "dominant_scare": "bubble", "top_score": 71.5},
+        {"asof": "2026-08-13", "state": "caution", "alert": false, "dominant_scare": "bubble", "top_score": 73.7},
+        {"asof": "2026-08-17", "state": "watch", "alert": false, "dominant_scare": "bubble", "top_score": 63.9},
+        {"asof": "2026-08-18", "state": "calm", "alert": false, "dominant_scare": "bubble", "top_score": 53.9}
+      ],
+      "note": "No alert=true in the July-August window. De-escalation to calm on the US session SMH/SOXX sold off."
+    },
+    {
+      "id": "risk_radar_kr",
+      "module": "engine/risk_radar_intl.py",
+      "artifact": "data/risk_radar_intl/kr_forward_log.jsonl",
+      "aug2026_last": {"asof": "2026-08-19", "state": "calm", "alert": false, "dominant_scare": "extension", "top_score": 38},
+      "note": "Calm on the Korea session KOSPI printed about -4.75 percent. Organ had no useful warning on the regional clock."
+    },
+    {
+      "id": "risk_radar_cn",
+      "artifact": "data/risk_radar_intl/cn_forward_log.jsonl",
+      "aug2026": "MISSING — last emission 2026-07-16 risk-off",
+      "replay": "BLOCKED"
+    },
+    {
+      "id": "rates_command",
+      "module": "engine/rates_inflation_command.py",
+      "artifact": "data/rates_command/latest.json",
+      "asof": "2026-08-18",
+      "display_only": true,
+      "authority": false,
+      "replay": "LATEST_ONLY"
+    },
+    {
+      "id": "transmission",
+      "module": "engine/rate_inflation_transmission.py",
+      "artifact": "data/transmission/latest.json",
+      "replay": "LATEST_ONLY — not dated-emitted for August sessions in this pass"
+    },
+    {
+      "id": "anticipation",
+      "module": "engine/anticipation.py",
+      "replay": "BLOCKED — no data artifact"
+    },
+    {
+      "id": "velocity",
+      "module": "engine/velocity.py",
+      "replay": "BLOCKED — no data artifact"
+    },
+    {
+      "id": "deterioration_cascade",
+      "module": "engine/deterioration_cascade.py",
+      "replay": "NOT_EXTRACTED — no dedicated dated forward log opened this wave"
+    },
+    {
+      "id": "contagion",
+      "module": "engine/contagion.py",
+      "artifact": "data/risk_radar/forward_log_contagion.jsonl exists",
+      "replay": "NOT_FULLY_REPLAYED this wave"
+    },
+    {
+      "id": "pboc_omo",
+      "module": "collectors + engine/china_pboc_stance.py",
+      "artifact": "data/china_omo/operations.parquet",
+      "authority_at_t": "context",
+      "zero_7d_days": ["2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18"],
+      "outright_tenders": [
+        {"announce_date": "2026-08-04", "op_date": "2026-08-05", "tenor_label": "3个月", "amount_bn": 5000.0},
+        {"announce_date": "2026-08-13", "op_date": "2026-08-14", "tenor_label": "6个月", "amount_bn": 10000.0}
+      ],
+      "funding": "FR007 1.41-1.43, soft vs 1.4 operation rate",
+      "classification_after_transmission": "TOOL_MIGRATION (provisional) — not tightening; not ACUTE_SUPPORT"
+    },
+    {
+      "id": "prophet_us",
+      "artifact": "data/us_prophet_rank/candidates/2026-08.parquet",
+      "board_definition": {"2026-08-12": "us_prophet_v2", "2026-08-17": "us_prophet_v3", "2026-08-18": "us_prophet_v3"},
+      "authority_at_t": "selection/gating on the live board; GD-1 sidecar has none",
+      "raw_population_preserved": true
+    },
+    {
+      "id": "prophet_cn",
+      "artifact": "data/china_prophet_rank/candidates.parquet",
+      "board_definition": "cn_prophet_v2",
+      "2026-08-18": {"n": 1635, "featured": 23, "more_actionable": 49, "buyable_tech": 47, "buyable_industrials": 45},
+      "session_returns": "UNAVAILABLE in artifact",
+      "intraday": "UNAVAILABLE"
+    },
+    {
+      "id": "portfolio_shadow",
+      "replay": "NOT_LOCATED"
+    }
+  ]
+}

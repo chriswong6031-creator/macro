@@ -1,0 +1,122 @@
+{
+  "schema": "grey_deer.gd1.repro.v1",
+  "generated_at_utc": "2026-08-19T09:18:25.740763+00:00",
+  "git_head": "bd5ff95b02256944667afa40e973d4d16afe61ce",
+  "python": "3.12.4 | packaged by Anaconda, Inc. | (main, Jun 18 2024, 10:07:17) [Clang 14.0.6 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "prereg_registration_sha": "663fb02b500c966785628d52c709f0d40c27a146",
+  "prereg_content_sha256_at_freeze": "13df565dadad787fe64ee00e67e6d1f9d04dff0fdc79702148fa321964ef17b3",
+  "inputs": [
+    {
+      "path": "data/leadership_crack/forward_log.jsonl",
+      "exists": true,
+      "bytes": 8884,
+      "sha256": "2d77c5dc736f40ab6e4eef291e58ad7ff9d830df67f28a3264ab03eaa09fd2ed"
+    },
+    {
+      "path": "data/leadership_crack/latest.json",
+      "exists": true,
+      "bytes": 676,
+      "sha256": "8c3852f567c5185dc0141b61d909cb2b9ddc135689a204a5e633211c89dbef31"
+    },
+    {
+      "path": "data/market_state/forward_log.jsonl",
+      "exists": true,
+      "bytes": 16361,
+      "sha256": "d978a84e43819eeade459faf188e49387b742162f887afe5bca9373d0757e013"
+    },
+    {
+      "path": "data/market_state/latest.json",
+      "exists": true,
+      "bytes": 28658,
+      "sha256": "b82e7b7b2d07bf59832bbba13e1e2462d291ddac24e700fb476de62c5f6d5da3"
+    },
+    {
+      "path": "data/risk_radar/forward_log.jsonl",
+      "exists": true,
+      "bytes": 41512,
+      "sha256": "e6d16c31d610bcd1f0ad8b424cff864fa3d5b222928132e1317775afa4d703a9"
+    },
+    {
+      "path": "data/china_omo/operations.parquet",
+      "exists": true,
+      "bytes": 15479,
+      "sha256": "bbd5fe011558696e5de3bccaf36c794a2250a6e0c4a1a5aae8363a528b36ee9a"
+    },
+    {
+      "path": "data/treasury_auctions/auctions.parquet",
+      "exists": true,
+      "bytes": 58190,
+      "sha256": "eb8417ea141db1e5a9ef01ffbdda3cd11090bb519c7b5ec8a7664e45190108aa"
+    },
+    {
+      "path": "data/us_prophet_rank/candidates/2026-08.parquet",
+      "exists": true,
+      "bytes": 2250526,
+      "sha256": "33bf54cb6d0fb67acc6421c79a21d376c86357a152a9c10eea561997046d5478"
+    },
+    {
+      "path": "data/china_prophet_rank/candidates.parquet",
+      "exists": true,
+      "bytes": 1834308,
+      "sha256": "f585be23fe54ddcba41a83e28f05587392079a1ac3c62ea7a191a0c4c4d1c2ee"
+    },
+    {
+      "path": "data/yahoo/SPY.parquet",
+      "exists": true,
+      "bytes": 243458,
+      "sha256": "500eb15439f45234cd9e10ef44e82061d5de121255c3db33f6209f77028026ae"
+    },
+    {
+      "path": "data/yahoo/SMH.parquet",
+      "exists": true,
+      "bytes": 178140,
+      "sha256": "cb1e619f05a172364e4fa5b39a10206ac793e020b35af8f5f0aab92cc2551f91"
+    },
+    {
+      "path": "data/yahoo/EWY.parquet",
+      "exists": true,
+      "bytes": 172521,
+      "sha256": "fd2b55f18b26edc8e0a3a6857e49879ae2f13f2b90a8c1253e6550f994b765d7"
+    },
+    {
+      "path": "data/yahoo/_KS11.parquet",
+      "exists": true,
+      "bytes": 199351,
+      "sha256": "4a515055e4aace35e3a056eeb09e09473c2f7a9b8e462d3c75410ebe28059786"
+    },
+    {
+      "path": "data/fred/DGS10.parquet",
+      "exists": true,
+      "bytes": 171215,
+      "sha256": "3442837a347fab56b467164130b960ebe56f431f5c19891ca4ec5d2feca48080"
+    },
+    {
+      "path": "data/fred/DGS30.parquet",
+      "exists": true,
+      "bytes": 132802,
+      "sha256": "38096814ea770d8f41a82aa3bc0c6e48964ead6c4202fa164b2320f0358695f2"
+    },
+    {
+      "path": "data/fred/VIXCLS.parquet",
+      "exists": true,
+      "bytes": 108014,
+      "sha256": "02ce90b5e108b4ede781274a2033e0f7b570cb324ee5fae0cdef59351e7e7880"
+    },
+    {
+      "path": "research/grey_deer/gd1/GD1_PREREG_2026-08-19.md",
+      "exists": true,
+      "bytes": 27762,
+      "sha256": "94009ba6780965450a383a3c6a5b1a9af91934615c324a8f6c81e665d5715147"
+    }
+  ],
+  "not_computed": [
+    "full 2016-2026 truncate-and-recompute of leadership_crack",
+    "when-issued auction tail",
+    "intraday Prophet board quotes",
+    "SK Hynix 000660.KS issuer tape",
+    "Portfolio derisk live shadow rows",
+    "MOVE/VVIX series (absent from FRED store)"
+  ],
+  "git_head_time": "2026-08-19T02:10:43-07:00"
+}
