@@ -2,41 +2,42 @@
 
 **Question (packet §16):** was the absence of technology from U.S. actionable recommendations a repeatable consequence of canonical candidate evidence, an entry/availability gate, ranking, data absence, or chance?
 
-**Answer:** On 2026-08-17, technology was **not** absent. It was 29 of 241 buyable names (~12%). On 2026-08-18, buyable collapsed 241 → 52 and technology buyable 29 → 6 (~12% again). The shelf *looked* more defensive because **N collapsed** and Healthcare became the modal buyable sector, not because Prophet allocated away from tech before the 08-18 session.
+**Answer:** On the **pit_live** board, technology was **not** absent on 2026-08-17: 29 of 127 buyable names (22.8%). On 2026-08-18 it was 6 of 52 (11.5%). Live `n_raw` is 2936 both days. The 4439→2936 and 241→52 figures in an unfiltered read mix in 1503 `recomputed_history` rows on 08-17 (114 of them buyable, `sector` NA). Prereg §11: that slice is not emission at `t`.
 
-Do not infer "Prophet knew the crash."
+Tech share of live buyable **did fall** 22.8% → 11.5%. That is a same-session gate effect on 08-18, not proof the board pre-empted the crash. Do not infer "Prophet knew."
 
 ## Board identity (do not rebuild)
 
-| stamp_date | board_definition | n_raw | on_board | eligible | buyable |
+| stamp_date | board_definition | basis | n_raw | eligible | buyable |
 |---|---|---|---|---|---|
-| 2026-08-12 | us_prophet_v2 | 1508 | 0 | 125 | 113 |
-| 2026-08-17 | us_prophet_v3 | 4439 | 140 | 269 | 241 |
-| 2026-08-18 | us_prophet_v3 | 2936 | 134 | 115 | 52 |
+| 2026-08-12 | us_prophet_v2 | recomputed_history only | 1508 | 125 | 113 |
+| 2026-08-17 | us_prophet_v3 | **pit_live** | **2936** | **148** | **127** |
+| 2026-08-17 | us_prophet_v3 | recomputed_history (do not use) | 1503 | 121 | 114 |
+| 2026-08-18 | us_prophet_v3 | **pit_live** | **2936** | 115 | 52 |
 
-Raw population is preserved in `data/us_prophet_rank/candidates/2026-08.parquet`. Era stamp on rows includes `anchor_era = abs-session-2026-08-06`.
+Raw population is preserved in `data/us_prophet_rank/candidates/2026-08.parquet`. Compare live-to-live only.
 
-Missing emission dates in August: 03, 04, 10, 11, 13, 15.
+Missing **pit_live** dates in August: everything before 08-17 except none — only 08-17 and 08-18 are `pit_live`. Earlier August stamps are recomputed history.
 
 ## Buyable sector mix
 
-**2026-08-17 buyable (n=241)** — bucketed as in the prereg:
+**2026-08-17 pit_live buyable (n=127)**
 
 | bucket | n | share |
 |---|---|---|
-| tech (IT + Technology + Communication Services) | 29 | 12% |
-| defensive (Healthcare/Health Care/Staples/Utilities/Real Estate + Consumer Defensive) | 36 | 15% |
-| other | 176 | 73% |
+| tech (IT + Technology + Communication Services) | 29 | 22.8% |
+| defensive (Healthcare/Health Care/Staples/Utilities/Real Estate + Consumer Defensive) | 36 | 28.3% |
+| other | 62 | 48.8% |
 
-**2026-08-18 buyable (n=52):**
+**2026-08-18 pit_live buyable (n=52)**
 
 | bucket | n | share |
 |---|---|---|
-| tech | 6 | 12% |
-| defensive | 26 | 50% |
-| other | 20 | 38% |
+| tech | 6 | 11.5% |
+| defensive | 26 | 50.0% |
+| other | 20 | 38.5% |
 
-Tech **share of buyable is unchanged**. Defensive share rose because other/tech names left the buyable set faster than Healthcare/Energy.
+Tech share of live buyable fell 22.8% → 11.5%. Absolute tech buyable 29 → 6. Healthcare is the modal 08-18 buyable sector. That is **same-session** gate firing, not a pre-08-18 defensive allocation.
 
 ## Why tech names were not buyable (08-18, tech-like n=487)
 
@@ -63,7 +64,7 @@ This is **canonical gate vocabulary** (trend/reclaim/hold/rollover/divergence), 
 
 ## Disposition vs chance
 
-A chance-composition story would predict tech share jittering randomly. Observed tech share of buyable is 12% on both 08-17 and 08-18. The change that needs explaining is **buyable N**, which is the gate stack firing on the 08-18 tape — **same-session**, therefore not an anticipatory defensive allocation.
+A chance-composition story is not needed to explain a 22.8% → 11.5% share move when buyable N also fell 127 → 52 on the same session the tape sold off. The 08-17 live board still carried 29 buyable tech names. That coexistence — LC BROKEN + 29 live buyable tech — is the fact. A restriction would have been a new policy, not something the board already did.
 
 ## Intraday
 

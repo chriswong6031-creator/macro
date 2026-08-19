@@ -15,7 +15,7 @@ That is one session, one incident, and **not** a PASS under the prereg.
 
 ## Coverage (this is the result)
 
-Of 241 buyable names on 2026-08-17, only **39** had both 2026-08-17 and 2026-08-18 closes in `data/yahoo/<ticker>.parquet` (16%). 159 missing yahoo files; 43 KeyError on the date index.
+Of **127 pit_live** buyable names on 2026-08-17 (not the unfiltered 241, which mixed 114 `recomputed_history` rows), only a minority had both 2026-08-17 and 2026-08-18 closes in `data/yahoo/<ticker>.parquet`. The earlier 39/241 coverage figure is withdrawn because the denominator was contaminated. **Full-board losses avoided remain BLOCKED on coverage.**
 
 **Full-board losses avoided / upside forgone: BLOCKED on coverage.**
 
@@ -57,4 +57,4 @@ Intraday CN board quotes: **UNAVAILABLE**. `data/cn_prophet_live/forward.parquet
 
 Nothing here is a live new-entry restriction. The only honest product sentence on 2026-08-17:
 
-> Leadership Crack is still BROKEN (display). Prophet still has 29 buyable tech names. Those facts coexist. A restriction would be a new policy, not something the board already did.
+> Leadership Crack is still BROKEN (display). The **pit_live** board still has 29 buyable tech names (22.8% of 127). Those facts coexist. A restriction would be a new policy, not something the board already did.

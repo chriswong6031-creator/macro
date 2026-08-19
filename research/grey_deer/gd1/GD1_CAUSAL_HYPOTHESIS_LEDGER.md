@@ -15,12 +15,12 @@ Do not force one cause. Roles are packet §12. Confidence wording is calibrated 
 ## H-TR1. Long-end auction as trigger receipt
 
 - **Role:** trigger (candidate)
-- **Evidence for:** 30y 2026-08-13 BTC 2.39, then DGS30 +10bp into 2026-08-17.
-- **Evidence against:** WI tail UNAVAILABLE; SLF-006 and D2 auction studies already null; 10y 08-12 BTC 2.53 is not extreme on its face without a frozen historical percentile (not computed here); standalone "bad auction predicts equities" is disallowed.
+- **Evidence for:** 30y 2026-08-13 result exists (BTC 2.39, hy 5.216).
+- **Evidence against:** WI tail UNAVAILABLE; auction-day DGS30 **fell** 3bp (5.24→5.21); 08-12→08-17 +7bp equals (does not exceed) a 7bp design-era 80th on this latest-revised FRED file; SLF-006 and D2 already null; standalone ban stands.
 - **First-known:** auction result ~13:00 ET 2026-08-13
-- **Kind:** deterministic observation of results; statistical increment **UNTESTED** (GD-H3 tail blocked)
-- **Confidence:** low as a causal trigger; medium as a dated rates fact
-- **What would change it:** a lawful WI tail or a design-era test of `broken LC × concession_proxy × yield confirmation`
+- **Kind:** deterministic observation of results; statistical increment **UNTESTED**; yield confirmation **does not fire** as preregistered
+- **Confidence:** medium as a dated result; **low / withdrawn** as a conditional trigger
+- **What would change it:** a lawful WI tail, or a design-era test that actually exceeds the frozen 80th
 
 ## H-TR2. PBOC zero 7-day as tightening
 

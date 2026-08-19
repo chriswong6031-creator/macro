@@ -22,7 +22,7 @@ First **useful fragility observation that is actually emitted:** 2026-07-17 LC `
 |---|---|---|---|---|
 | PBOC 3m outright tender announced | 2026-08-04 | first_seen 2026-08-04T12:03Z | 5000 bn, 3 months | context |
 | 7-day RR 630/465/50/10/10/180 bn | 2026-08-03..10 | same-day first_seen | Gross 7-day shrinking | context |
-| Zero 7-day RR | 2026-08-11..14, 17..18 | same-day first_seen | amount_bn=0 | context |
+| Zero 7-day RR | 2026-08-11..14, 17..18 | 08-11..14 first_seen same day; **08-17 first_seen 2026-08-18T09:00Z** | amount_bn=0 | context |
 | 6m outright tender announced | 2026-08-13 | first_seen 2026-08-14T09:41Z | 10000 bn, 6 months | context |
 | FR007 | 2026-08-07..18 | store has no published_at | 1.41–1.43, soft | context |
 
