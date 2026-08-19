@@ -891,8 +891,13 @@ def _write_receipt_file(tmp_path, session_iso, attempts):
         json.dumps({"session": session_iso, "attempts": attempts}))
 
 
-def _entry(decision, health, successful, coverage_pct, requested=100):
-    return {
+def _entry(decision, health, successful, coverage_pct, requested=100, rows=None):
+    """`rows` (C1, AD-1C0 round 4) is deliberately OMITTED by default — a
+    write_pending entry with no "rows" field is the forward-safety
+    "unverifiable" case. Tests exercising the VERIFIED-match path must pass
+    the real raw row count explicitly (42 rows per symbol from _raw: 21
+    strikes x calls+puts)."""
+    out = {
         "capture_instant": "2026-06-14T21:00:00+00:00",
         "requested_underlyings": requested,
         "attempted_underlyings": requested,
@@ -902,6 +907,9 @@ def _entry(decision, health, successful, coverage_pct, requested=100):
         "decision": decision,
         "health": health,
     }
+    if rows is not None:
+        out["rows"] = rows
+    return out
 
 
 # M7's same-day vintage guard needs an explicit `_now` — the real wall clock
@@ -1607,24 +1615,27 @@ class TestB3WriteAheadReceipt:
     def test_crash_after_the_parquet_write_reads_the_pending_entrys_own_health(
             self, tmp_path, monkeypatch):
         """The parquet WAS written (a 40% partial capture) and MATCHES the
-        pending entry's claim, but the FINAL decision entry never landed —
-        the receipt's trailing entry is still "write_pending". W1: this is
-        the VERIFIED-MATCH case, so the store must read as PARTIAL (the
-        pending entry's own health, now verified rather than assumed), never
-        fall through to a legacy "healthy" default. This is the exact B3-t2
-        behavior pinned in round 2 — kept green under W1's added
-        verification, per the round-3 ruling."""
+        pending entry's claim on BOTH underlying nunique AND row count (C1),
+        but the FINAL decision entry never landed — the receipt's trailing
+        entry is still "write_pending". W1/C1: this is the VERIFIED-MATCH
+        case, so the store must read as PARTIAL (the pending entry's own
+        health, now verified rather than assumed), never fall through to a
+        legacy "healthy" default. This is the exact B3-t2 behavior pinned in
+        round 2 — kept green under W1/C1's added verification."""
         import scripts.build_polygon_gex as bpg
         from scripts.build_polygon_gex import _read_receipt, _stored_health
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         _mock_baskets(monkeypatch)
         monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
-        # A 40-of-100 chain WAS actually written to disk...
+        # A 40-of-100 chain WAS actually written to disk — 40 symbols x 42
+        # rows each (21 strikes x call/put, per _raw) = 1680 rows.
         _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
         # ...and the receipt's trailing entry (still write_pending — the
-        # finalize-entry append never landed) MATCHES it exactly: 40.
+        # finalize-entry append never landed) MATCHES it exactly: 40 unique,
+        # 1680 rows.
         _write_receipt_file(tmp_path, "2026-06-15",
-                            [_entry("write_pending", "partial", 40, 0.40, requested=100)])
+                            [_entry("write_pending", "partial", 40, 0.40, requested=100,
+                                    rows=1680)])
         chain_path = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
 
         attempts = _read_receipt(date(2026, 6, 15))
@@ -1752,6 +1763,138 @@ class TestW1VerifiedWriteAhead:
         chains_dir = tmp_path / "polygon_gex" / "chains"
         names = [p.name for p in chains_dir.iterdir()]
         assert names == ["2026-06-15.parquet"], names
+
+
+class TestC1TwoFieldVerificationMatch:
+    """C1 ruling (AD-1C0 round 4): underlying nunique ALONE can COLLIDE — a
+    forced re-capture of a totally DIFFERENT symbol set that happens to claim
+    the SAME count as what's on disk would pass a nunique-only check and
+    mislabel a stale store healthy. Verification now requires BOTH nunique
+    AND total row count to match, and treats a write_pending entry with no
+    "rows" field at all as unverifiable (forward safety)."""
+
+    def test_the_reviewer_repro_shape_nunique_collision_is_caught_by_rows(
+            self, tmp_path, monkeypatch):
+        """40 U*-named symbols on disk (1680 rows, per _raw's 42 rows/symbol).
+        A FORCED capture claims 40 DIFFERENT V*-named symbols — same COUNT,
+        but built with only 1 row per symbol (40 total, not 1680) — and its
+        write fails (simulated ENOSPC). A nunique-only check would read
+        40 == 40 and call the phantom capture's health safe; the row-count
+        mismatch (40 claimed vs 1680 actual) must catch it instead."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("wrote", "partial", 40, 0.40, requested=100)])
+        chain_path = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
+        old_bytes = chain_path.read_bytes()
+
+        v_symbols = tuple(f"V{i}" for i in range(40))
+        new_raw = pd.DataFrame([
+            dict(underlying=sym, strike_ticker=f"O:{sym}100",
+                expiry=ASOF + pd.Timedelta(days=30), K=100.0, T=30 / 365,
+                is_call=True, oi=1000.0, iv=0.25, gamma=0.01, delta=0.5,
+                volume=10.0, spot=100.0, asof=ASOF)
+            for sym in v_symbols
+        ])
+        assert new_raw["underlying"].nunique() == 40      # the COLLIDING count
+        assert len(new_raw) == 40                          # but NOT 1680 rows
+
+        all_syms = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, all_syms)))
+
+        def _boom(self, *a, **kw):
+            raise OSError("simulated ENOSPC")
+
+        monkeypatch.setattr(pd.DataFrame, "to_parquet", _boom)
+        with pytest.raises(OSError):
+            bpg.accrue(date(2026, 6, 15), force=True, _now=SAME_DAY_NOW)
+
+        # the OLD parquet is completely untouched
+        assert chain_path.read_bytes() == old_bytes
+
+        from scripts.build_polygon_gex import _read_receipt, _stored_health
+        attempts = _read_receipt(date(2026, 6, 15))
+        pending = attempts[-1]
+        assert pending["decision"] == "write_pending"
+        assert pending["successful_underlyings"] == 40     # matches on-disk nunique...
+        assert pending["rows"] == 40                        # ...but NOT on-disk rows (1680)
+        assert _stored_health(attempts, chain_path) == "unknown_write_interrupted", (
+            "nunique alone (40 == 40) would wrongly say 'match' -- the row-"
+            "count mismatch must catch the collision and refuse to call this "
+            "stale store healthy")
+
+    def test_a_write_pending_entry_with_no_rows_field_is_unverifiable(self, tmp_path):
+        """Forward safety: a write_pending entry from before the "rows" field
+        existed (or any caller that omits it) must degrade exactly like a
+        verification failure — never trusted at face value even if its
+        underlying nunique happens to match."""
+        from scripts.build_polygon_gex import _stored_health
+        d = tmp_path / "polygon_gex" / "chains"
+        d.mkdir(parents=True)
+        _raw(tuple(f"U{i}" for i in range(40))).to_parquet(d / "2026-06-15.parquet")
+        chain_path = d / "2026-06-15.parquet"
+        # no "rows" key at all -- the pre-C1 shape.
+        attempts = [_entry("write_pending", "partial", 40, 0.40, requested=100)]
+        assert "rows" not in attempts[-1]
+        assert _stored_health(attempts, chain_path) == "unknown_write_interrupted"
+
+
+class TestC2AtomicityCrashInjection:
+    """C2 ruling (AD-1C0 round 4): half (a) — atomic parquet writes — shipped
+    with no crash-injection test that actually DISTINGUISHES _atomic_to_parquet
+    from a naive direct df.to_parquet(path) call. to_parquet is monkeypatched
+    to write REAL bytes to whatever path it is CALLED WITH, then raise. With
+    the atomic writer that call target is the TMP path (garbage lands there,
+    then gets unlinked by the except-cleanup) — the REAL path's old bytes must
+    survive byte-for-byte. A naive direct call would be invoked WITH the real
+    path, so the garbage would land there instead."""
+
+    def test_a_mid_write_crash_leaves_the_real_path_byte_identical_and_no_tmp_residue(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("wrote", "partial", 40, 0.40, requested=100)])
+        chain_path = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
+        old_bytes = chain_path.read_bytes()
+
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))     # strictly better
+        all_syms = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, all_syms)))
+
+        def _write_garbage_then_raise(self, target, *a, **kw):
+            # This is the DISTINGUISHING move: real bytes actually land at
+            # whatever path to_parquet was called with. Atomic -> that path
+            # is the tmp file. Naive/reverted -> that path IS `path` itself.
+            Path(target).write_bytes(b"GARBAGE-MID-WRITE-CRASH")
+            raise OSError("simulated crash mid-write")
+
+        monkeypatch.setattr(pd.DataFrame, "to_parquet", _write_garbage_then_raise)
+        with pytest.raises(OSError):
+            bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+
+        # (a) atomicity: the real path's OLD bytes survive byte-for-byte --
+        # if _atomic_to_parquet is reverted to a direct df.to_parquet(path)
+        # call, the garbage bytes above would have landed AT `path` and this
+        # assertion fails.
+        assert chain_path.read_bytes() == old_bytes, (
+            "the real path must be byte-identical to before the crash — a "
+            "direct (non-atomic) to_parquet call would have corrupted it "
+            "with the injected garbage bytes")
+        # cleanup-and-reraise: no tmp parquet residue survives -- if the
+        # `tmp.unlink(missing_ok=True)` cleanup in _atomic_to_parquet's except
+        # clause is removed, the garbage tmp file leaks here.
+        leftovers = [p.name for p in chain_path.parent.iterdir() if ".tmp." in p.name]
+        assert not leftovers, (
+            f"no tmp parquet residue may survive the crash: {leftovers}")
 
 
 class TestN1ForceBypassesUniverseGates:

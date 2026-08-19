@@ -264,28 +264,47 @@ def _verify_write_pending(entry: dict, chain_path: Path) -> dict:
     """W1 ruling (AD-1C0 round 3): a TRAILING write_pending entry describes a
     capture that MAY or may not have actually landed on disk — to_parquet
     could have failed, been killed, or (pre-W1) torn the file. Verify before
-    trusting it: read the parquet's OWN underlying nunique and compare to the
-    entry's claimed successful_underlyings.
-      * match -> the entry's health is safe to trust (the capture that
-        landed IS the one the entry describes) — B3 trigger-2's original
-        behavior, now verified rather than assumed.
-      * mismatch OR unreadable parquet -> health "unknown_write_interrupted",
-        with successful_underlyings/coverage_pct corrected to the parquet's
-        ACTUAL readable state (0 successful if unreadable) rather than the
-        entry's unverified claim — so the first-writer quality rule's
-        strictly-better comparison (which reads these two fields) compares
-        against reality, not against a phantom capture that never landed.
+    trusting it.
+
+    C1 (AD-1C0 round 4): underlying nunique ALONE can COLLIDE — a forced
+    re-capture that fails its write but happens to claim the SAME underlying
+    COUNT as what is actually on disk (e.g. 40 U*-named symbols on disk, a
+    forced capture of 40 DIFFERENT V*-named symbols that never lands) would
+    pass a nunique-only check and mislabel a stale/partial store healthy.
+    Verification now requires match on BOTH underlying nunique AND total raw
+    row count ("rows", persisted on every write_pending entry at append
+    time). A write_pending entry with NO "rows" field at all (forward
+    safety: a legacy entry predating this field) is UNVERIFIABLE BY
+    CONSTRUCTION and degrades exactly like a verification failure.
+      * two-field match -> the entry's health is safe to trust (the capture
+        that landed IS the one the entry describes) — B3 trigger-2's
+        original behavior, now verified rather than assumed.
+      * any mismatch, a missing "rows" field, or an unreadable parquet ->
+        health "unknown_write_interrupted", with successful_underlyings/
+        coverage_pct corrected to the parquet's ACTUAL readable state (0
+        successful if unreadable) rather than the entry's unverified claim —
+        so the first-writer quality rule's strictly-better comparison (which
+        reads these two fields) compares against reality, not a phantom
+        capture that never landed.
     Only ever called on the rare trailing-write_pending path; every other
     anchor decision is trusted as-is by _stored_state_entry, unchanged."""
-    claimed = entry.get("successful_underlyings")
-    try:
-        df = pd.read_parquet(chain_path, columns=["underlying"])
-        actual: int | None = int(df["underlying"].nunique())
-    except Exception:  # noqa: BLE001 — any read failure means "unverifiable"
-        actual = None
-    if actual is not None and actual == claimed:
+    claimed_unique = entry.get("successful_underlyings")
+    claimed_rows = entry.get("rows")
+    actual_unique: int | None = None
+    actual_rows: int | None = None
+    if claimed_rows is not None:
+        try:
+            df = pd.read_parquet(chain_path, columns=["underlying"])
+            actual_unique = int(df["underlying"].nunique())
+            actual_rows = int(len(df))
+        except Exception:  # noqa: BLE001 — any read failure means "unverifiable"
+            actual_unique = None
+            actual_rows = None
+    verified = (claimed_rows is not None and actual_unique is not None
+               and actual_unique == claimed_unique and actual_rows == claimed_rows)
+    if verified:
         return entry
-    stored_successful = actual if actual is not None else 0
+    stored_successful = actual_unique if actual_unique is not None else 0
     requested = entry.get("requested_underlyings") or 0
     coverage_pct = round(stored_successful / requested, 4) if requested else 0.0
     return {
@@ -836,8 +855,12 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     #     anchor — "the capture self-describes" — so the next run reads THIS
     #     entry's health (a 40% capture stays "partial", never a silent
     #     fallback to "healthy") instead of skipping past it to legacy-healthy.
+    # C1 (AD-1C0 round 4): "rows" (the raw per-strike row count, distinct from
+    # the per-underlying nunique) is persisted too — _verify_write_pending
+    # requires BOTH to match before trusting this entry, closing a collision
+    # a nunique-only check could not see.
     _append_health_attempt(asof, decision="write_pending", health=health,
-                           census=census, now=now)
+                           census=census, now=now, extra={"rows": int(len(raw))})
 
     # 1. raw per-strike chain, session-partitioned (append-only, git-friendly).
     # `decision` is one of wrote/replaced_partial/forced here — a single-vintage

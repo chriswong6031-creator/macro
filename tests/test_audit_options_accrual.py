@@ -347,6 +347,27 @@ def test_n6_unknown_receipt_corrupt_health_gets_its_own_warning(tmp_path, monkey
         result["warnings"])
 
 
+def test_c2_unknown_write_interrupted_health_gets_its_own_warning(tmp_path, monkeypatch):
+    """C2.3 (AD-1C0 round 4): W1's verified-anchor health value
+    (unknown_write_interrupted) must also get its own audit warning,
+    mirroring N6's unknown_receipt_corrupt coverage. A trailing write_pending
+    entry with NO "rows" field is unverifiable by construction (C1) and
+    degrades to unknown_write_interrupted regardless of the stub chain
+    parquet's actual content."""
+    last_td = date(2026, 7, 8)
+    monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
+                        lambda ref=None: last_td)
+    _make_chains_dir(tmp_path, ["2026-07-08"])
+    _write_receipt(tmp_path, "2026-07-08",
+                   [_receipt_entry("write_pending", "partial", successful=5, coverage_pct=0.5)])
+    import scripts.audit_options_accrual as aoa
+    monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
+    result = aoa.audit()
+    assert result["detail"]["chains_latest_health"] == "unknown_write_interrupted"
+    assert any("INTERRUPTED" in w and "2026-07-08" in w for w in result["warnings"]), (
+        result["warnings"])
+
+
 def test_n8_a_stray_non_date_json_sibling_does_not_disable_m4(tmp_path, monkeypatch):
     """N8 (AD-1C0 round 2): the pre-fix _latest_receipt_date took ONLY the
     lexically-last *.json path and returned None outright when THAT ONE
