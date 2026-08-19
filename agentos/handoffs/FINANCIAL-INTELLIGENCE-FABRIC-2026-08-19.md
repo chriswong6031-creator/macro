@@ -3,7 +3,7 @@ workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
 session: claude/fif-2a-query-bridge
 model: local
 ended_because: complete
-prs: []
+prs: [5983]
 mission: >
   Ship FIF-2A only: POST /api/forensics/v1/financial/query as an authenticated
   adapter over the frozen MetricMatrix kernel. Stop for Sol review. Do not

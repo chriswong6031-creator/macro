@@ -44,9 +44,9 @@ decisions:
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
   - DEC:FIF-1-V1-FROZEN
 next_action: >
-  FIF-2A is fixture_proven and held for Sol review. Do not merge until
-  that review accepts. Do not start FIF-2B. Do not claim a production
-  issuer query service. Native auto-merge stays disarmed.
+  FIF-2A is fixture_proven on PR #5983 and held for Sol review. Do not
+  merge until that review accepts. Do not start FIF-2B. Do not claim a
+  production issuer query service. Native auto-merge stays disarmed.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -102,8 +102,8 @@ waves:
     status: in_progress
     depends_on: [FIF-1]
     next_action: >
-      FIF-2A fixture_proven, held for Sol review. FIF-2 remains in_progress.
-      Do not start FIF-2B. Production issuer coverage is FIF-3.
+      FIF-2A fixture_proven on PR #5983, held for Sol review. FIF-2 remains
+      in_progress. Do not start FIF-2B. Production issuer coverage is FIF-3.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
