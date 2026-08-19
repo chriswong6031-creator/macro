@@ -67,9 +67,10 @@ USAGE
     python3 scripts/prophet_lab_baseline.py --write --remint      # deliberate re-mint over an existing marker
 
 Exit 0 on a successful dry-run report OR a successful mint; exit 1 on any
-refusal (no baseline path configured, no readable spooled pass, an ordering
-violation, an implausible clock skew, an existing marker without --remint,
-or a post-write consistency check failure).
+refusal (no baseline path configured, no readable spooled pass, a
+zero/negative clock-skew ordering violation, a large positive skew without
+--allow-stale-source, an existing marker without --remint, or a pre-publish
+consistency check failure).
 """
 from __future__ import annotations
 
@@ -95,11 +96,17 @@ _SPOOL_DIR_ENV_PRIMARY = "PROPHET_LAB_RADAR_SPOOL_DIR"
 _SPOOL_DIR_ENV_FALLBACK = "ENTRY_RADAR_SPOOL_DIR"  # Radar's own local-spool var
 _BASELINE_PATH_ENV = "PROPHET_LAB_OBSERVATION_BASELINE_PATH"
 
-#: Review N1: a skew this large between "now" and the latest observed pass
-#: is far outside any plausible commissioning workflow (the pack cadence is
-#: 5 minutes) and much more likely to mean either a badly wrong --spool-dir
-#: (stale/wrong-source data) or a genuinely skewed clock on this host than a
-#: deliberately slow operator. Refused rather than warned, per the review.
+#: Review N1 / round 3 NEW-2: a skew this large between "now" and the latest
+#: observed pass is far outside a 5-minute pack cadence and worth a LOUD
+#: warning -- but it is not automatically unsafe the way a zero/negative
+#: skew is (round 2 hard-refused both directions; round 3 narrowed that:
+#: "arm Friday, mint Monday" is a legitimate ~60h gap that must not get
+#: permanently stuck behind a misdiagnosing "implausible" message). Only
+#: skew <= 0 is the genuinely UNSAFE direction (this process's clock does
+#: not actually postdate the writer's, the entire safety property this
+#: marker rests on) and stays a hard refusal with no override. A large
+#: POSITIVE skew warns and requires --allow-stale-source to proceed with
+#: --write; a dry run never needs the flag.
 _IMPLAUSIBLE_SKEW = timedelta(hours=24)
 
 
@@ -156,6 +163,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
                     help="required (review S7) alongside --as-of when --write "
                          "is also given -- confirms this run is a deliberate "
                          "rehearsal/test, not production")
+    ap.add_argument("--allow-stale-source", action="store_true",
+                    help="required (with --write) when the now-vs-latest-pass "
+                         "skew exceeds 24h -- confirms a large gap (e.g. "
+                         "commissioning days after the last confirmed pass) "
+                         "is expected, not a stale/wrong-source spool")
     args = ap.parse_args(argv)
 
     # Review S7: --as-of + --write with no confirmation flag would silently
@@ -275,16 +287,27 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         )
         return 1
     if skew > _IMPLAUSIBLE_SKEW:
+        # Review round 3, NEW-2: a WARNING, not an automatic refusal -- large
+        # positive skew has two plausible causes, only one of them wrong.
         print(
-            f"[prophet_lab_baseline] REFUSING: the now-vs-latest-pass skew "
-            f"({skew}) is implausibly large for a 5-minute pack cadence. "
-            "This usually means --spool-dir (or the resolved R2 backend) is "
-            "pointed at stale or wrong-source data, or this host's clock is "
-            "skewed relative to the spool writer's. Verify the source before "
-            "re-running.",
+            f"[prophet_lab_baseline] WARNING: the now-vs-latest-pass skew "
+            f"({skew}) is far larger than a 5-minute pack cadence would "
+            "suggest. This can mean --spool-dir (or the resolved R2 backend) "
+            "is pointed at stale or wrong-source data, or this host's clock "
+            "is skewed relative to the spool writer's -- OR it can mean the "
+            "spool has genuinely been quiet for a while (e.g. commissioning "
+            "days after the operator confirmed the first pass, a weekend "
+            "gap). Verify the source is the one you intend before proceeding.",
             file=sys.stderr,
         )
-        return 1
+        if args.write and not args.allow_stale_source:
+            print(
+                "[prophet_lab_baseline] REFUSING: --write with a skew this "
+                "large requires --allow-stale-source to confirm this is "
+                "expected, not a wrong/stale source.",
+                file=sys.stderr,
+            )
+            return 1
 
     marker = {
         "schema": sources.BASELINE_SCHEMA,
@@ -303,36 +326,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     baseline_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = baseline_path.with_name(baseline_path.name + ".tmp")
     tmp.write_bytes(body)
-    os.replace(tmp, baseline_path)
-    print(f"[prophet_lab_baseline] MINTED: {baseline_path}")
 
-    # Review N1: post-write consistency re-check. The spool could have kept
-    # advancing during the brief window between the read above and this
-    # write (a concurrently running live evaluator on the same host, the
-    # scenario the HOST REQUIREMENT note exists to make rare but not
-    # impossible). If a re-read now shows ANY envelope whose pass_ts parses
-    # to an instant AT OR AFTER the instant we just minted, the ordering
-    # guarantee this marker is supposed to carry can no longer be vouched
-    # for with confidence -- remove the just-written marker and hard-fail
-    # rather than leave a marker whose own safety property may already be
-    # stale the moment it was written.
+    # Review round 3, NEW-1: re-probe BEFORE publishing, never after. The
+    # previous order (os.replace, THEN re-probe, THEN unlink-on-race)
+    # published a bad marker and only retracted it afterward -- a window in
+    # which the API could already have served live_forward rows off it, and
+    # with --remint the retraction unlink()'d the TARGET, destroying both
+    # the new marker AND the operator's prior valid one, with no backup and
+    # no undo. Now: the candidate body is already on disk as `tmp`; NOTHING
+    # has been published yet. Re-read the spool once; if a race is detected,
+    # remove ONLY the tmp file and leave the target (any existing marker)
+    # completely untouched. A failed cleanup (OSError) must not traceback
+    # past the diagnosis -- it is caught and reported as a secondary,
+    # non-fatal warning (the tmp file was never published, so it is inert
+    # either way).
     recheck = sources.resolve_radar_spool(spool_dir)
     for envelope in recheck.envelopes:
         pass_ts = envelope.get("pass_ts")
         instant = parse_instant(pass_ts) if pass_ts else None
         if instant is not None and instant >= minted_instant:
-            baseline_path.unlink(missing_ok=True)
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError as exc:
+                print(
+                    f"[prophet_lab_baseline] WARNING: failed to remove the "
+                    f"unpublished tmp file {tmp} after detecting a race "
+                    f"({exc}) -- it was never published (no os.replace ran "
+                    "yet), so it is inert, but consider cleaning it up by "
+                    "hand.",
+                    file=sys.stderr,
+                )
             print(
-                f"[prophet_lab_baseline] HARD-FAIL: a post-write re-read found "
-                f"an envelope (pass_ts={pass_ts!r}) at or after the just-minted "
-                f"baseline_started_at ({_iso(minted_instant)}) -- the spool "
-                "kept advancing during the write window, so this marker's "
-                "ordering guarantee cannot be trusted. Removed "
-                f"{baseline_path}. Re-run once the source is quiet.",
+                f"[prophet_lab_baseline] HARD-FAIL: a re-read (before "
+                f"publishing) found an envelope (pass_ts={pass_ts!r}) at or "
+                f"after the candidate baseline_started_at "
+                f"({_iso(minted_instant)}) -- the spool kept advancing "
+                "during the write window, so this marker's ordering "
+                f"guarantee cannot be trusted. NOTHING was published -- "
+                f"{baseline_path} is unchanged. Re-run once the source is "
+                "quiet.",
                 file=sys.stderr,
             )
             return 1
 
+    os.replace(tmp, baseline_path)
+    print(f"[prophet_lab_baseline] MINTED: {baseline_path}")
     return 0
 
 

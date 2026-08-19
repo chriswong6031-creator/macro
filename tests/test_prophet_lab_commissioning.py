@@ -840,7 +840,12 @@ def test_baseline_cli_prints_and_refuses_a_zero_skew(tmp_path: Path, capsys) -> 
     assert "CLOCK SKEW" in out.err
 
 
-def test_baseline_cli_refuses_an_implausibly_large_skew(tmp_path: Path, capsys) -> None:
+def test_baseline_cli_large_positive_skew_warns_and_refuses_write_without_the_override(
+    tmp_path: Path, capsys,
+) -> None:
+    """Review round 3, NEW-2: a large positive skew is a WARNING, not an
+    automatically-unsafe hard refusal (it has two plausible causes) -- but
+    --write still requires --allow-stale-source to proceed past it."""
     spool = tmp_path / "spool"
     env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
                     events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
@@ -856,8 +861,55 @@ def test_baseline_cli_refuses_an_implausibly_large_skew(tmp_path: Path, capsys) 
     assert rc == 1
     assert not baseline_path.exists()
     err = capsys.readouterr().err
+    assert "WARNING" in err
     assert "REFUSING" in err
-    assert "implausibly large" in err
+    assert "--allow-stale-source" in err
+
+
+def test_baseline_cli_large_positive_skew_succeeds_with_allow_stale_source(
+    tmp_path: Path, capsys,
+) -> None:
+    """The legitimate case NEW-2 exists to unblock: a real gap between the
+    last confirmed pass and commissioning time (e.g. armed Friday, minted
+    Monday -- ~60h skew) must not get permanently stuck."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-22T10:00:00Z",  # 72h later -- a real weekend gap
+        "--write", "--i-know-this-is-rehearsal", "--allow-stale-source",
+    ])
+
+    assert rc == 0
+    assert baseline_path.exists()
+    marker = json.loads(baseline_path.read_text(encoding="utf-8"))
+    assert marker["baseline_started_at"] == "2026-08-22T10:00:00.000000Z"
+    out = capsys.readouterr().out
+    assert "WARNING" not in out  # the warning goes to stderr, not stdout
+
+
+def test_baseline_cli_large_positive_skew_dry_run_needs_no_override(
+    tmp_path: Path, capsys,
+) -> None:
+    """A dry run never publishes, so it warns but never needs the flag."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-09-19T10:00:00Z",
+    ])
+
+    assert rc == 0
+    assert not baseline_path.exists()
+    assert "WARNING" in capsys.readouterr().err
 
 
 def test_baseline_cli_prints_a_plausible_positive_skew_and_succeeds(
@@ -879,28 +931,15 @@ def test_baseline_cli_prints_a_plausible_positive_skew_and_succeeds(
     assert "now - latest_pass skew: 0:05:00" in capsys.readouterr().out
 
 
-def test_baseline_cli_post_write_recheck_hard_fails_and_removes_the_marker_on_a_race(
-    tmp_path: Path, capsys, monkeypatch,
-) -> None:
-    """N1: simulate the spool advancing DURING the write window -- a
-    post-write re-read shows a pass at or after the just-minted
-    baseline_started_at, so the CLI must remove the marker and hard-fail
-    rather than leave a marker whose ordering guarantee is already stale."""
-    spool = tmp_path / "spool"
-    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
-                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
-    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
-    baseline_path = tmp_path / "state" / "observation_baseline.json"
-
-    real_resolve = sources_mod.resolve_radar_spool
+def _racy_resolve_factory(real_resolve):
+    """Shared helper: a resolve_radar_spool stand-in whose SECOND call (the
+    pre-publish recheck) injects a race envelope the first call never saw."""
     calls = {"n": 0}
 
     def _racy_resolve(local_dir, **kwargs):
         calls["n"] += 1
         result = real_resolve(local_dir, **kwargs)
         if calls["n"] >= 2:
-            # Simulate a NEW pass landing after the CLI's own read/write,
-            # with a pass_ts AT the just-minted baseline_started_at.
             race_env = _envelope(
                 pass_ts="2026-08-19T10:05:00Z", pass_id="p2",
                 events=[_g0_event("evt-race", "BBB", signal_ts="2026-08-19T10:04:00Z")],
@@ -909,7 +948,25 @@ def test_baseline_cli_post_write_recheck_hard_fails_and_removes_the_marker_on_a_
             result = _replace(result, envelopes=[*result.envelopes, race_env])
         return result
 
-    monkeypatch.setattr(baseline_cli.sources, "resolve_radar_spool", _racy_resolve)
+    return _racy_resolve
+
+
+def test_baseline_cli_race_is_caught_before_publish_target_never_created(
+    tmp_path: Path, capsys, monkeypatch,
+) -> None:
+    """Review round 3, NEW-1: the re-probe now runs BEFORE os.replace. A
+    detected race must mean NOTHING was ever published -- no target file at
+    all -- not a publish-then-retract cycle."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    monkeypatch.setattr(
+        baseline_cli.sources, "resolve_radar_spool",
+        _racy_resolve_factory(sources_mod.resolve_radar_spool),
+    )
 
     rc = baseline_cli.main([
         "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
@@ -917,16 +974,94 @@ def test_baseline_cli_post_write_recheck_hard_fails_and_removes_the_marker_on_a_
     ])
 
     assert rc == 1
-    assert not baseline_path.exists()  # removed after the hard-fail
+    assert not baseline_path.exists()  # NEVER created, not created-then-removed
+    tmp = baseline_path.with_name(baseline_path.name + ".tmp")
+    assert not tmp.exists()  # the tmp is cleaned up too
     err = capsys.readouterr().err
     assert "HARD-FAIL" in err
-    assert "removed" in err.lower() or "Removed" in err
+    assert "NOTHING was published" in err
+
+
+def test_baseline_cli_remint_race_leaves_the_prior_marker_completely_untouched(
+    tmp_path: Path, capsys, monkeypatch,
+) -> None:
+    """Review round 3, NEW-1 (the headline bug): with --remint, a detected
+    race must NOT destroy the operator's PRIOR valid marker -- the new one
+    is never published in the first place, so there is nothing to retract
+    and nothing to lose."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+    baseline_path.parent.mkdir(parents=True)
+    baseline_path.write_text(json.dumps({
+        "schema": sources_mod.BASELINE_SCHEMA,
+        "baseline_started_at": "2026-08-19T05:00:00Z",
+    }), encoding="utf-8")
+    prior_bytes = baseline_path.read_bytes()
+
+    monkeypatch.setattr(
+        baseline_cli.sources, "resolve_radar_spool",
+        _racy_resolve_factory(sources_mod.resolve_radar_spool),
+    )
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:05:00Z", "--write",
+        "--i-know-this-is-rehearsal", "--remint",
+    ])
+
+    assert rc == 1
+    # THE property under test: byte-for-byte untouched.
+    assert baseline_path.read_bytes() == prior_bytes
+    err = capsys.readouterr().err
+    assert "HARD-FAIL" in err
+    assert "NOTHING was published" in err
+
+
+def test_baseline_cli_race_cleanup_oserror_does_not_crash_the_diagnosis(
+    tmp_path: Path, capsys, monkeypatch,
+) -> None:
+    """Review round 3, NEW-1: a failed tmp cleanup (OSError) must not
+    traceback past the race diagnosis -- caught and reported as a secondary
+    warning, never an unhandled exception."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    monkeypatch.setattr(
+        baseline_cli.sources, "resolve_radar_spool",
+        _racy_resolve_factory(sources_mod.resolve_radar_spool),
+    )
+
+    real_unlink = Path.unlink
+
+    def _boom_unlink(self, *a, **kw):
+        if self.name.endswith(".tmp"):
+            raise OSError("permission denied (simulated)")
+        return real_unlink(self, *a, **kw)
+
+    monkeypatch.setattr(Path, "unlink", _boom_unlink)
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:05:00Z", "--write", "--i-know-this-is-rehearsal",
+    ])
+
+    assert rc == 1  # still reports the race, never crashes
+    err = capsys.readouterr().err
+    assert "HARD-FAIL" in err
+    assert "WARNING" in err
+    assert "failed to remove" in err
 
 
 def test_baseline_cli_post_write_recheck_passes_when_the_spool_is_quiet(
     tmp_path: Path,
 ) -> None:
-    """The control: no race -> the marker survives the post-write re-read."""
+    """The control: no race -> the marker is published normally."""
     spool = tmp_path / "spool"
     env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
                     events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
@@ -940,3 +1075,114 @@ def test_baseline_cli_post_write_recheck_passes_when_the_spool_is_quiet(
 
     assert rc == 0
     assert baseline_path.exists()
+    tmp = baseline_path.with_name(baseline_path.name + ".tmp")
+    assert not tmp.exists()
+
+
+# ---------------------------------------------------------------------------
+# Review round 3 — NEW-3: local-path disclosure (parity with R2 bucket/
+# prefix) and the wrong-subdirectory hint.
+# ---------------------------------------------------------------------------
+def test_resolve_radar_spool_discloses_the_scoped_local_path_read(tmp_path: Path) -> None:
+    root = tmp_path / "spool_root"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(root, session="2026-08-19", stamp="100000-p1", envelope=env)
+
+    result = sources_mod.resolve_radar_spool(root)
+
+    assert result.backend == "local"
+    expected = str(root / sources_mod.RADAR_EVENT_SPOOL_PREFIX)
+    assert result.local_path == expected
+
+
+def test_health_block_discloses_the_scoped_local_path_read(tmp_path: Path) -> None:
+    root = tmp_path / "spool_root"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(root, session="2026-08-19", stamp="100000-p1", envelope=env)
+
+    roots = LabRoots(radar_spool_dir=root)
+    payload = build_lab_response(roots)
+
+    expected = str(root / sources_mod.RADAR_EVENT_SPOOL_PREFIX)
+    assert payload["health"]["radar_spool_local_path_read"] == expected
+
+
+def test_resolve_radar_spool_hints_when_spool_dir_points_at_the_events_subdirectory_by_name(
+    tmp_path: Path,
+) -> None:
+    """Round 1 accepted --spool-dir pointed directly at the events
+    subdirectory; round 2's S3 scoping silently redefined that to mean
+    ROOT. An operator still using the round-1 convention must get a NAMED
+    hint, never a clean empty board."""
+    wrong_root = tmp_path / "entry_radar_events"
+    wrong_root.mkdir(parents=True)
+    # A real envelope sitting directly in this (wrongly-pointed) directory.
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    (wrong_root / "100000-p1.json").write_text(json.dumps(env), encoding="utf-8")
+
+    result = sources_mod.resolve_radar_spool(wrong_root)
+
+    assert result.backend == "local"
+    assert result.envelopes == []  # still empty -- the scoped path doesn't exist
+    assert result.error is not None
+    assert "events subdirectory" in result.error
+    assert "spool ROOT" in result.error or "pass the spool ROOT" in result.error
+
+
+def test_resolve_radar_spool_hints_when_events_shaped_files_sit_directly_in_spool_dir(
+    tmp_path: Path,
+) -> None:
+    """The content-based half of the same heuristic: even when the
+    directory name doesn't literally match, envelope-shaped JSON sitting
+    directly in --spool-dir is the same tell."""
+    wrong_root = tmp_path / "some_custom_name"
+    wrong_root.mkdir(parents=True)
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    (wrong_root / "100000-p1.json").write_text(json.dumps(env), encoding="utf-8")
+
+    result = sources_mod.resolve_radar_spool(wrong_root)
+
+    assert result.error is not None
+    assert "events subdirectory" in result.error
+
+
+def test_resolve_radar_spool_no_hint_when_the_directory_is_genuinely_empty(
+    tmp_path: Path,
+) -> None:
+    """The negative control: a directory that is just empty (no name match,
+    no envelope-shaped content) gets no hint -- "nothing here yet" stays
+    error=None, not a false-positive diagnosis."""
+    root = tmp_path / "spool_root"
+    root.mkdir(parents=True)
+
+    result = sources_mod.resolve_radar_spool(root)
+
+    assert result.error is None
+    assert result.envelopes == []
+
+
+# ---------------------------------------------------------------------------
+# Review round 3 — NEW-4: _scoped_local_dir defensive prefix validation.
+# ---------------------------------------------------------------------------
+def test_scoped_local_dir_rejects_an_absolute_prefix(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="not a safe relative scoping segment"):
+        sources_mod._scoped_local_dir(tmp_path, "/etc/passwd")  # noqa: SLF001
+
+
+def test_scoped_local_dir_rejects_an_empty_prefix(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="not a safe relative scoping segment"):
+        sources_mod._scoped_local_dir(tmp_path, "")  # noqa: SLF001
+
+
+def test_scoped_local_dir_rejects_a_dotdot_prefix(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="not a safe relative scoping segment"):
+        sources_mod._scoped_local_dir(tmp_path, "../../etc")  # noqa: SLF001
+
+
+def test_scoped_local_dir_accepts_a_safe_relative_prefix(tmp_path: Path) -> None:
+    result = sources_mod._scoped_local_dir(tmp_path, "live_flow/entry_radar_events")  # noqa: SLF001
+    assert result == tmp_path / "live_flow" / "entry_radar_events"

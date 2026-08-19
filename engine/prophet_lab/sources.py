@@ -91,6 +91,13 @@ class SpoolReadResult:
     from inside this reader -- but naming what was actually queried lets an
     operator check it against the writer's own config in one glance, which
     is the health block's job whenever a result cannot self-certify.
+
+    ``local_path`` (review round 3, NEW-3) -- set on a LOCAL read to the
+    exact directory that was actually walked (the SCOPED path, i.e.
+    ``local_dir/prefix`` when scoping applied) -- parity with ``bucket``/
+    ``prefix`` for the R2 side. An operator debugging "why is this empty"
+    should never have to guess which directory this reader actually looked
+    at.
     """
 
     configured: bool
@@ -102,6 +109,7 @@ class SpoolReadResult:
     error: str | None = None
     bucket: str | None = None
     prefix: str | None = None
+    local_path: str | None = None
 
     @property
     def readable(self) -> bool:
@@ -152,7 +160,9 @@ def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
         return SpoolReadResult(configured=False, dir_exists=False, backend="unconfigured")
     root = Path(spool_dir)
     if not root.is_dir():
-        return SpoolReadResult(configured=True, dir_exists=False, backend="local")
+        return SpoolReadResult(
+            configured=True, dir_exists=False, backend="local", local_path=str(root),
+        )
     out: list[dict[str, Any]] = []
     bad = 0
     files_seen = 0
@@ -176,6 +186,7 @@ def read_radar_envelopes(spool_dir: Path | str | None) -> SpoolReadResult:
     return SpoolReadResult(
         configured=True, dir_exists=True, envelopes=out,
         files_seen=files_seen, envelopes_skipped=bad, backend="local",
+        local_path=str(root),
     )
 
 
@@ -253,8 +264,80 @@ def _scoped_local_dir(local_dir: Path | str | None, prefix: str) -> Path | None:
     ``envelopes_skipped`` forever — permanent, meaningless pollution of a
     counter whose whole purpose (S4/S7) is to make a REAL schema drift
     visible.
+
+    Review round 3, NEW-4 (defensive): ``pathlib`` silently DISCARDS the left
+    operand of ``/`` when the right one is absolute (``Path("/a") /
+    "/b" == Path("/b")``) — a ``prefix`` that is absolute, empty, or carries
+    a ``..`` component would therefore either escape ``local_dir`` entirely
+    or (empty) silently revert to the exact unscoped-walk vulnerability this
+    function exists to close. ``prefix`` is always a caller-supplied
+    constant in this codebase today (never operator input), but this is a
+    programming-contract violation worth failing LOUD on rather than
+    trusting every future caller to get right by convention alone.
     """
-    return Path(local_dir) / prefix if local_dir is not None else None
+    if local_dir is None:
+        return None
+    prefix_path = Path(prefix)
+    if not prefix or prefix_path.is_absolute() or ".." in prefix_path.parts:
+        raise ValueError(
+            f"prefix {prefix!r} is not a safe relative scoping segment "
+            "(must be non-empty, relative, and contain no '..' component)"
+        )
+    return Path(local_dir) / prefix_path
+
+
+def _looks_like_the_events_subdirectory_itself(root: Path, prefix: str) -> bool:
+    """Cheap heuristic (review round 3, NEW-3 bonus).
+
+    Round 1 accepted ``--spool-dir``/``$PROPHET_LAB_RADAR_SPOOL_DIR`` pointed
+    directly AT the events subdirectory (e.g.
+    ``.../spool/live_flow/entry_radar_events``); round 2's S3 scoping now
+    requires the spool ROOT instead (``.../spool``), and an operator who
+    still points at the subdirectory gets a clean, silent, ``error=None``
+    empty board — indistinguishable from "no passes yet". This is a bounded,
+    cheap probe (never a second full walk) for the single most likely
+    explanation: the given root's own name matches the prefix's last
+    segment, or it already holds envelope-shaped JSON directly (one or two
+    levels down, capped at a handful of files).
+    """
+    if not root.is_dir():
+        return False
+    tail = Path(prefix).name
+    if root.name == tail:
+        return True
+    candidates = list(root.glob("*.json"))[:5] or list(root.glob("*/*.json"))[:5]
+    for path in candidates:
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(raw, dict) and raw.get("schema") == ENVELOPE_SCHEMA:
+            return True
+    return False
+
+
+def _read_local(local_dir: Path | str | None, prefix: str) -> SpoolReadResult:
+    """Local-backend read: scoped, with the NEW-3 wrong-root hint attached.
+
+    The one place :func:`resolve_radar_spool` reads local data — every call
+    site funnels through here so the hint check (and the ``local_path``
+    disclosure already carried by :func:`read_radar_envelopes`) applies
+    uniformly whether this is the primary local backend or an R2-failure
+    fallback.
+    """
+    if local_dir is None:
+        return read_radar_envelopes(None)
+    result = read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
+    if not result.dir_exists and result.error is None:
+        root = Path(local_dir)
+        if _looks_like_the_events_subdirectory_itself(root, prefix):
+            result = replace(result, error=(
+                f"spool-dir appears to point at the events subdirectory "
+                f"itself ({root}) -- pass the spool ROOT instead (the "
+                f"directory that also holds Radar's other spool families, "
+                f"e.g. the parent of .../{prefix})"
+            ))
+    return result
 
 
 def resolve_radar_spool(
@@ -304,7 +387,7 @@ def resolve_radar_spool(
     if client is not None:
         result = _read_radar_envelopes_from_r2(client, prefix)
         if result.error and local_dir is not None:
-            fallback = read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
+            fallback = _read_local(local_dir, prefix)
             return replace(fallback, backend="local", error=result.error)
         return result
 
@@ -315,7 +398,7 @@ def resolve_radar_spool(
         # unconfigured read with no error.
         error = "r2_client_build_failed"
         if local_dir is not None:
-            fallback = read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
+            fallback = _read_local(local_dir, prefix)
             return replace(fallback, backend="local", error=error)
         return SpoolReadResult(
             configured=True, dir_exists=False, backend="r2", error=error,
@@ -323,7 +406,7 @@ def resolve_radar_spool(
         )
 
     # No R2 credentials at all -- the ordinary local-dev/CI/local-backend case.
-    return read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
+    return _read_local(local_dir, prefix)
 
 
 def extract_events(

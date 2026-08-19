@@ -145,6 +145,18 @@ override is needed — the CLI resolves the identical R2-first ladder the API us
 spool dir differs from `$ENTRY_RADAR_SPOOL_DIR`/`$PROPHET_LAB_RADAR_SPOOL_DIR`, pass `--spool-dir`
 explicitly.
 
+**`--spool-dir` (and `$PROPHET_LAB_RADAR_SPOOL_DIR`/`$ENTRY_RADAR_SPOOL_DIR`) must be the spool
+ROOT — e.g. `/var/lib/macro-live/state/entry_radar/spool` — never the events subdirectory itself
+(`.../spool/live_flow/entry_radar_events`).** The reader scopes every local read to
+`<root>/live_flow/entry_radar_events` internally (so it never gets polluted by Radar's own
+nomination spool sharing the same root); pointing it AT that subdirectory directly produces a
+clean, empty read with a named hint error rather than a silent false-empty board — read the
+printed `objects seen:`/`error:` lines if the count looks wrong.
+
+Every read report also prints the actual local path scoped to (`health.radar_spool_local_path_read`
+in the API's own health block, parity with the R2 `radar_spool_bucket`/`radar_spool_prefix_queried`
+fields) — check it against the real spool root if a local read looks suspiciously empty.
+
 **Read the printed `backend resolved:` line before trusting the report.** If production is
 supposed to run on R2 and this CLI reports `backend resolved: local`, that is a WRONG-SOURCE
 signal, not a quiet fallback to celebrate — it means the environment file above was not actually
@@ -161,6 +173,13 @@ command from silently minting a fake timestamp in production). And if
 from a prior attempt, `--write` alone refuses — pass `--remint` only when deliberately re-minting
 (this resets every event observed since the original baseline back to `retrospective_seed`, so
 confirm that is actually intended before adding it).
+
+If the printed `now - latest_pass skew` is unusually large (commissioning days after the last
+confirmed pass rather than minutes — e.g. armed Friday, minted Monday), the CLI WARNS rather than
+silently proceeding, and `--write` additionally requires `--allow-stale-source` to confirm the gap
+is expected and not a stale/wrong-source spool. A skew of zero or negative always hard-refuses
+with no override (that direction is never safe — it means this host's clock does not actually
+postdate the writer's).
 
 Set the API process's own environment (so `GET /api/prophet/lab/v1` reads the same marker):
 
@@ -190,6 +209,11 @@ Check, in order:
      succeeds with ZERO keys reads identically to "no passes yet" whether the Lab is pointed at
      the right bucket/prefix or the wrong one; these two fields are the only way to tell without
      reaching for the writer's own config directly.
+   - When the backend is `"local"`, check `health.radar_spool_local_path_read` — the exact
+     directory actually scoped to and walked (`<configured root>/live_flow/entry_radar_events`).
+     If it looks wrong (e.g. doubled, or missing the events segment), the configured root is
+     probably pointed at the events subdirectory itself rather than the spool ROOT — see the
+     `--spool-dir` note in step 5.
 2. `health.observation_baseline_present` — `true`.
 3. `generation.baseline_coverage_verified` — `true`. If `false` here, the marker was minted
    before the spool actually held evidence reaching back that far (a coverage gap — retention,

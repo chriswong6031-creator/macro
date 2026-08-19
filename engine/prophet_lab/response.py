@@ -208,6 +208,11 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
         health["radar_spool_bucket"] = spool_result.bucket
     if spool_result.prefix is not None:
         health["radar_spool_prefix_queried"] = spool_result.prefix
+    # Review round 3, NEW-3: parity with the R2 bucket/prefix disclosure
+    # above -- an operator debugging an empty LOCAL read should never have
+    # to guess which directory this reader actually scoped to and walked.
+    if spool_result.local_path is not None:
+        health["radar_spool_local_path_read"] = spool_result.local_path
     # Review round 2, S4: a malformed marker (e.g. a naive/unparseable
     # baseline_started_at) is distinguishable by NAME from a spool-coverage
     # gap or a simply-unconfigured baseline -- both of which otherwise read
