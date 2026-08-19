@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-17",
-  "generated_at": "2026-08-18T06:06:33.016802+00:00",
+  "as_of": "2026-08-18",
+  "generated_at": "2026-08-19T05:24:55.956094+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -16,7 +16,7 @@
   },
   "honesty_header": "This is a WATCHLIST / candidate feed. Detection is noisy — ~half of phrase-velocity accelerations correspond to real supply-stress shifts. Early-entry return edge ≈ 0. Not a buy signal. Not a scored factor. Carries the same honesty stance as theme_discovery.py.",
   "coverage_stats": {
-    "bottleneck_rows": 76,
+    "bottleneck_rows": 81,
     "emergence_rows": 1254,
     "combined_rows": 1198,
     "date_range_min": "2025-05-28",
