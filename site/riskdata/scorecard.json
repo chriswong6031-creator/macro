@@ -1,16 +1,16 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-08-19T05:16:04+00:00",
+  "generated_at": "2026-08-19T07:52:25+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-08-17",
+      "asof_last_row": "2026-08-18",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 15,
         "backlog_cutoff_bd": 28,
-        "graded_n": 17
+        "graded_n": 18
       },
       "windows": {
         "full": {
@@ -21,9 +21,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 17,
+            "n": 18,
             "tp": 0,
-            "tn": 17,
+            "tn": 18,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -43,9 +43,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 17,
+            "n": 18,
             "tp": 0,
-            "tn": 17,
+            "tn": 18,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -174,14 +174,14 @@
       }
     },
     "ca": {
-      "asof_last_row": "2026-08-17",
+      "asof_last_row": "2026-08-18",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 14,
         "backlog_cutoff_bd": 28,
-        "graded_n": 9
+        "graded_n": 10
       },
       "windows": {
         "full": {
@@ -192,9 +192,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -214,9 +214,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {

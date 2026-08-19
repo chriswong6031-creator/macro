@@ -2,35 +2,35 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-18T10:59:40.772923+00:00",
+  "generated_at": "2026-08-19T07:56:47.726658+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-17",
+  "state_asof": "2026-08-18",
   "tldr": [
-    "Edge drift: US map sliding from Reflation toward stagflation \u2014 not yet confirmed.",
-    "China leads: Hong Kong, mainland shares and copper are down; signal is mixed.",
-    "Bonds calm: Credit is tight and healthy \u2014 no stress alarm yet.",
-    "What to do: Watch \u2014 don't chase"
+    "Oil shock: energy leads, breakevens up, but the signal has low confidence.",
+    "Regime drift: still Reflation, but weak growth counts toward the firm-inflation neighbor.",
+    "Bond caution: the bond side is late-cycle while the dollar side is crowded.",
+    "What to do: Watch \u2014 don't chase."
   ],
-  "summary": "China-led risk-off and a US drift toward stagflation meet calm credit; watch, don't chase.",
-  "regime_read": "The US still reads Reflation, but its own growth and inflation dials now point toward a stagflation corner; the move is pending, not confirmed. China is today's driver \u2014 Hong Kong, mainland shares and copper are leading down, though that signal is mixed and low-confidence.",
+  "summary": "Oil shock leads while Reflation drifts toward a weak-growth, firm-inflation neighbor; bonds and FX urge caution.",
+  "regime_read": "The map still says Reflation, but it is drifting: growth has cooled below flat and the system is counting the sessions needed to flip into the neighboring weak-growth, firm-inflation regime. Today's dominant driver is an oil spike \u2014 energy leading and inflation expectations up, though the driver itself is low-confidence.\n\nThat is the story: a supply-side inflation impulse arriving just as growth cools, which is why the bond desk reads late-cycle and the dollar side is crowded while stocks have not yet cracked.",
   "conflicts": [
-    "Bonds vs stocks: The bond desk is calm and credit is tight, while the price tape drifts toward stagflation \u2014 attention flag, not a forecast.",
-    "Credit vs copper: Credit is calm while copper leads down \u2014 the drop is China-led, not a credit accident."
+    "Stocks vs bonds: stocks hold a Reflation read, bonds read late-cycle with credit tight but widening \u2014 the bond side is not confirming.",
+    "Price tape caution: the cross-asset check flags a dollar positioning warning, but it reads the same price tape as stocks \u2014 one observation, not a second vote."
   ],
-  "rotation_check": "China/HK and Bitcoin are both soft as liquidity drains \u2014 the later rotation legs are unwinding first.",
+  "rotation_check": "Liquidity is contracting, and the reverse sequence is visible: crypto and semis bleed while software absorbs.",
   "transmission": [
-    "If China-led selling keeps up \u2192 copper and global growth bets stay pressured, reinforcing the stagflation drift.",
-    "If restrictive real yields keep rising \u2192 tech, small caps and long-duration assets feel the most pressure."
+    "If the oil spike keeps lifting inflation expectations \u2192 long-end yields keep rising and rate-sensitive tech stays pressured.",
+    "If the soft, crowded dollar keeps up \u2192 it stays a headwind for US and emerging stocks."
   ],
   "watch_items": [
-    "China A-shares reversal: the China-led risk-off read would fade.",
-    "US stagflation confirmation: next sessions decide if the map flips.",
-    "Credit spread widening: calm bond desk turns into a warning.",
-    "Dollar breaks higher: stocks, gold, copper and Bitcoin feel pressure."
+    "Oil reversal: if crude fades, the inflation-fingerprint driver fades.",
+    "Weak-growth count: a few more soft sessions tip the map into the firm-inflation neighbor.",
+    "High-yield spread: widening from tight would put the credit canary on watch.",
+    "Fed path: a dovish market against a hawkish Fed is the gap to watch."
   ],
   "confidence": "low",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Edge drift: US map sliding from Reflation toward stagflation \u2014 not yet confirmed.\",\n    \"China leads: Hong Kong, mainland shares and copper are down; signal is mixed.\",\n    \"Bonds calm: Credit is tight and healthy \u2014 no stress alarm yet.\",\n    \"What to do: Watch \u2014 don't chase\"\n  ],\n  \"summary\": \"China-led risk-off and a US drift toward stagflation meet calm credit; watch, don't chase.\",\n  \"regime_read\": \"The US still reads Reflation, but its own growth and inflation dials now point toward a stagflation corner; the move is pending, not confirmed. China is today's driver \u2014 Hong Kong, mainland shares and copper are leading down, though that signal is mixed and low-confidence.\",\n  \"conflicts\": [\n    \"Bonds vs stocks: The bond desk is calm and credit is tight, while the price tape drifts toward stagflation \u2014 attention flag, not a forecast.\",\n    \"Credit vs copper: Credit is calm while copper leads down \u2014 the drop is China-led, not a credit accident.\"\n  ],\n  \"transmission\": [\n    \"If China-led selling keeps up \u2192 copper and global growth bets stay pressured, reinforcing the stagflation drift.\",\n    \"If restrictive real yields keep rising \u2192 tech, small caps and long-duration assets feel the most pressure.\"\n  ],\n  \"rotation_check\": \"China/HK and Bitcoin are both soft as liquidity drains \u2014 the later rotation legs are unwinding first.\",\n  \"watch_items\": [\n    \"China A-shares reversal: the China-led risk-off read would fade.\",\n    \"US stagflation confirmation: next sessions decide if the map flips.\",\n    \"Credit spread widening: calm bond desk turns into a warning.\",\n    \"Dollar breaks higher: stocks, gold, copper and Bitcoin feel pressure.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-08-26\",\n      \"label\": \"GDP (BEA estimate)\",\n      \"kind\": \"GDP\",\n      \"note\": \"Growth print could confirm or dent the cooling drift.\"\n    },\n    {\n      \"date\": \"2026-08-26\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"Inflation and income check the stagflation drift.\"\n    }\n  ],\n  \"forward_read\": \"The next notable date is August 26, with growth and inflation readings that could confirm or dent the cooling drift. No quarterly rebalance window is active this session.\"\n}",
+  "raw_text": "{\n  \"tldr\": [\n    \"Oil shock: energy leads, breakevens up, but the signal has low confidence.\",\n    \"Regime drift: still Reflation, but weak growth counts toward the firm-inflation neighbor.\",\n    \"Bond caution: the bond side is late-cycle while the dollar side is crowded.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"Oil shock leads while Reflation drifts toward a weak-growth, firm-inflation neighbor; bonds and FX urge caution.\",\n  \"regime_read\": \"The map still says Reflation, but it is drifting: growth has cooled below flat and the system is counting the sessions needed to flip into the neighboring weak-growth, firm-inflation regime. Today's dominant driver is an oil spike \u2014 energy leading and inflation expectations up, though the driver itself is low-confidence.\\n\\nThat is the story: a supply-side inflation impulse arriving just as growth cools, which is why the bond desk reads late-cycle and the dollar side is crowded while stocks have not yet cracked.\",\n  \"conflicts\": [\n    \"Stocks vs bonds: stocks hold a Reflation read, bonds read late-cycle with credit tight but widening \u2014 the bond side is not confirming.\",\n    \"Price tape caution: the cross-asset check flags a dollar positioning warning, but it reads the same price tape as stocks \u2014 one observation, not a second vote.\"\n  ],\n  \"transmission\": [\n    \"If the oil spike keeps lifting inflation expectations \u2192 long-end yields keep rising and rate-sensitive tech stays pressured.\",\n    \"If the soft, crowded dollar keeps up \u2192 it stays a headwind for US and emerging stocks.\"\n  ],\n  \"rotation_check\": \"Liquidity is contracting, and the reverse sequence is visible: crypto and semis bleed while software absorbs.\",\n  \"watch_items\": [\n    \"Oil reversal: if crude fades, the inflation-fingerprint driver fades.\",\n    \"Weak-growth count: a few more soft sessions tip the map into the firm-inflation neighbor.\",\n    \"High-yield spread: widening from tight would put the credit canary on watch.\",\n    \"Fed path: a dovish market against a hawkish Fed is the gap to watch.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-08-26\",\n      \"label\": \"GDP (BEA estimate)\",\n      \"kind\": \"GDP\",\n      \"note\": \"Growth check arrives the same day as the Fed's preferred inflation gauge.\"\n    },\n    {\n      \"date\": \"2026-08-26\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"Hot print would support the oil-shock read; cold print would blunt it.\"\n    }\n  ],\n  \"forward_read\": \"The next big test lands the same day \u2014 growth and the Fed's preferred inflation gauge. The initial-claims model is in benchmark-only mode, so it carries no forecast edge. A hot inflation print would reinforce the oil-shock read; a cold one would blunt it.\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
@@ -39,18 +39,18 @@
       "date": "2026-08-26",
       "label": "GDP (BEA estimate)",
       "kind": "GDP",
-      "note": "Growth print could confirm or dent the cooling drift."
+      "note": "Growth check arrives the same day as the Fed's preferred inflation gauge."
     },
     {
       "date": "2026-08-26",
       "label": "PCE / personal income (BEA)",
       "kind": "PCE",
-      "note": "Inflation and income check the stagflation drift."
+      "note": "Hot print would support the oil-shock read; cold print would blunt it."
     }
   ],
-  "forward_read": "The next notable date is August 26, with growth and inflation readings that could confirm or dent the cooling drift. No quarterly rebalance window is active this session.",
+  "forward_read": "The next big test lands the same day \u2014 growth and the Fed's preferred inflation gauge. The initial-claims model is in benchmark-only mode, so it carries no forecast edge. A hot inflation print would reinforce the oil-shock read; a cold one would blunt it.",
   "nw_context_used": true,
-  "cortex_status": "absent",
+  "cortex_status": "degraded",
   "refresh_days": 1,
   "key_facts": [
     {
@@ -89,42 +89,42 @@
       "key": "credit",
       "label_en": "Credit",
       "label_zh": "\u4fe1\u7528",
-      "value_en": "Tight",
-      "value_zh": "\u504f\u7d27",
-      "tone": "good"
+      "value_en": "Tight, but widening",
+      "value_zh": "\u504f\u7d27\u4f46\u5728\u8d70\u5bbd",
+      "tone": "warn"
     },
     {
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "China stimulus",
-      "value_zh": "China stimulus",
+      "value_en": "Oil shock",
+      "value_zh": "Oil shock",
       "tone": "info"
     }
   ],
   "zh": {
-    "summary": "\u4e2d\u56fd\u5f15\u53d1\u7684\u907f\u9669\u60c5\u7eea\u4e0e\u7f8e\u56fd\u7684\u6ede\u80c0\u503e\u5411\u76f8\u9047\uff0c\u4f46\u4fe1\u8d37\u5e02\u573a\u5e73\u9759\uff1b\u89c2\u671b\uff0c\u52ff\u8ffd\u9ad8\u3002",
-    "regime_read": "\u7f8e\u56fd\u4ecd\u663e\u793a\u518d\u901a\u80c0\uff0c\u4f46\u5176\u81ea\u8eab\u589e\u957f\u4e0e\u901a\u80c0\u6307\u6807\u6b63\u6307\u5411\u6ede\u80c0\u89d2\u843d\uff1b\u8fd9\u4e00\u52a8\u5411\u4ecd\u672a\u786e\u8ba4\u3002\u4e2d\u56fd\u662f\u4eca\u65e5\u7684\u4e3b\u8981\u9a71\u52a8\u2014\u2014\u9999\u6e2f\u3001\u5185\u5730\u80a1\u5e02\u548c\u94dc\u9886\u8dcc\uff0c\u4f46\u8be5\u4fe1\u53f7\u6df7\u6742\u3001\u4fe1\u5fc3\u4e0d\u8db3\u3002",
-    "rotation_check": "\u4e2d\u56fd/\u9999\u6e2f\u548c\u6bd4\u7279\u5e01\u5747\u56e0\u6d41\u52a8\u6027\u6d41\u5931\u800c\u75b2\u8f6f\u2014\u2014\u8f6e\u52a8\u7684\u540e\u7eed\u90e8\u5206\u5148\u884c\u74e6\u89e3\u3002",
+    "summary": "\u6cb9\u4ef7\u51b2\u51fb\u4e3b\u5bfc\uff0c\u518d\u901a\u80c0\u6f02\u79fb\u5411\u589e\u957f\u75b2\u5f31\u3001\u901a\u80c0\u575a\u633a\u7684\u90bb\u57df\uff1b\u503a\u5238\u548c\u5916\u6c47\u6566\u4fc3\u8c28\u614e\u3002",
+    "regime_read": "\u5730\u56fe\u4ecd\u663e\u793a\u518d\u901a\u80c0\uff0c\u4f46\u6b63\u5728\u6f02\u79fb\uff1a\u589e\u957f\u5df2\u964d\u6e29\u81f3\u6301\u5e73\u7ebf\u4ee5\u4e0b\uff0c\u7cfb\u7edf\u6b63\u5728\u8ba1\u7b97\u8fd8\u9700\u591a\u5c11\u4e2a\u4ea4\u6613\u65e5\u624d\u80fd\u8f6c\u5165\u76f8\u90bb\u7684\u589e\u957f\u75b2\u5f31\u3001\u901a\u80c0\u575a\u633a\u533a\u95f4\u3002\u4eca\u65e5\u4e3b\u5bfc\u56e0\u7d20\u662f\u6cb9\u4ef7\u98d9\u5347\u2014\u2014\u80fd\u6e90\u9886\u6da8\u3001\u901a\u80c0\u9884\u671f\u4e0a\u5347\uff0c\u5c3d\u7ba1\u8be5\u9a71\u52a8\u56e0\u7d20\u672c\u8eab\u4fe1\u5fc3\u4e0d\u8db3\u3002\n\n\u8fd9\u5c31\u662f\u53d9\u4e8b\u4e3b\u7ebf\uff1a\u4f9b\u5e94\u4fa7\u901a\u80c0\u51b2\u51fb\u6070\u9022\u589e\u957f\u964d\u6e29\uff0c\u56e0\u6b64\u503a\u5238\u4ea4\u6613\u53f0\u89e3\u8bfb\u4e3a\u5468\u671f\u540e\u671f\uff0c\u7f8e\u5143\u5934\u5bf8\u62e5\u6324\uff0c\u800c\u80a1\u7968\u5c1a\u672a\u7834\u4f4d\u3002",
+    "rotation_check": "\u6d41\u52a8\u6027\u6b63\u5728\u6536\u7f29\uff0c\u53cd\u5411\u5e8f\u5217\u53ef\u89c1\uff1a\u52a0\u5bc6\u8d27\u5e01\u548c\u534a\u5bfc\u4f53\u5728\u5931\u8840\uff0c\u800c\u8f6f\u4ef6\u677f\u5757\u5728\u5438\u7eb3\u8d44\u91d1\u3002",
     "tldr": [
-      "\u8fb9\u7f18\u6f02\u79fb\uff1a\u7f8e\u56fd\u683c\u5c40\u6b63\u4ece\u518d\u901a\u80c0\u6ed1\u5411\u6ede\u80c0\u2014\u2014\u5c1a\u672a\u786e\u8ba4\u3002",
-      "\u4e2d\u56fd\u9886\u8dcc\uff1a\u9999\u6e2f\u3001\u5185\u5730\u80a1\u5e02\u548c\u94dc\u4ef7\u5747\u4e0b\u8dcc\uff1b\u4fe1\u53f7\u597d\u574f\u53c2\u534a\u3002",
-      "\u503a\u5238\u7a33\u5b9a\uff1a\u4fe1\u8d37\u7d27\u800c\u5065\u5eb7\u2014\u2014\u5c1a\u65e0\u538b\u529b\u8b66\u62a5\u3002",
-      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\uff0c\u4e0d\u8981\u8ffd\u6da8\u3002"
+      "\u6cb9\u4ef7\u51b2\u51fb\uff1a\u80fd\u6e90\u9886\u6da8\uff0c\u76c8\u4e8f\u5e73\u8861\u901a\u80c0\u7387\u4e0a\u5347\uff0c\u4f46\u8be5\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u8f83\u4f4e\u3002",
+      "\u4f53\u5236\u6f02\u79fb\uff1a\u4ecd\u662f\u518d\u901a\u80c0\uff0c\u4f46\u589e\u957f\u75b2\u8f6f\u66f4\u6307\u5411\u901a\u80c0\u987d\u56fa\u7684\u90bb\u8fd1\u60c5\u5883\u3002",
+      "\u503a\u5e02\u8c28\u614e\uff1a\u503a\u5238\u7aef\u5df2\u5904\u5468\u671f\u5c3e\u58f0\uff0c\u7f8e\u5143\u7aef\u5219\u4ea4\u6613\u62e5\u6324\u3002",
+      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\uff0c\u5207\u52ff\u8ffd\u6da8\u3002"
     ],
     "conflicts": [
-      "\u503a\u5238\u4e0e\u80a1\u7968\uff1a\u503a\u5238\u4ea4\u6613\u53f0\u5e73\u9759\uff0c\u4fe1\u7528\u5229\u5dee\u504f\u7d27\uff0c\u800c\u884c\u60c5\u6b63\u6ed1\u5411\u6ede\u80c0\u2014\u2014\u8fd9\u662f\u8b66\u793a\u4fe1\u53f7\uff0c\u800c\u975e\u9884\u6d4b\u3002",
-      "\u4fe1\u8d37\u4e0e\u94dc\uff1a\u4fe1\u8d37\u5e73\u9759\u800c\u94dc\u9886\u8dcc\u2014\u2014\u8fd9\u8f6e\u4e0b\u8dcc\u7531\u4e2d\u56fd\u5e26\u52a8\uff0c\u800c\u975e\u4fe1\u8d37\u4e8b\u6545\u3002"
+      "\u80a1\u7968\u5bf9\u503a\u5238\uff1a\u80a1\u7968\u7ef4\u6301\u518d\u901a\u80c0\u89e3\u8bfb\uff0c\u503a\u5238\u89e3\u8bfb\u4e3a\u5468\u671f\u540e\u671f\uff0c\u4fe1\u7528\u7d27\u7f29\u4f46\u5229\u5dee\u8d70\u9614\u2014\u2014\u503a\u5238\u7aef\u672a\u4e88\u786e\u8ba4\u3002",
+      "\u884c\u60c5\u8b66\u793a\uff1a\u8de8\u8d44\u4ea7\u68c0\u67e5\u63d0\u793a\u7f8e\u5143\u5934\u5bf8\u9884\u8b66\uff0c\u4f46\u5b83\u4e0e\u80a1\u7968\u8bfb\u53d6\u7684\u662f\u540c\u4e00\u884c\u60c5\u2014\u2014\u4e00\u4e2a\u89c2\u5bdf\uff0c\u800c\u975e\u7b2c\u4e8c\u7968\u3002"
     ],
     "transmission": [
-      "\u82e5\u4e2d\u56fd\u5f15\u53d1\u7684\u629b\u552e\u6301\u7eed\uff0c\u94dc\u548c\u5168\u7403\u589e\u957f\u62bc\u6ce8\u5c06\u7ee7\u7eed\u627f\u538b\uff0c\u8fdb\u4e00\u6b65\u5f3a\u5316\u6ede\u80c0\u503e\u5411\u3002",
-      "\u5982\u679c\u9650\u5236\u6027\u5b9e\u9645\u6536\u76ca\u7387\u6301\u7eed\u4e0a\u5347\u2192\u79d1\u6280\u80a1\u3001\u5c0f\u76d8\u80a1\u548c\u957f\u4e45\u671f\u8d44\u4ea7\u538b\u529b\u6700\u5927\u3002"
+      "\u5982\u679c\u6cb9\u4ef7\u98d9\u5347\u7ee7\u7eed\u63a8\u9ad8\u901a\u80c0\u9884\u671f \u2192 \u957f\u7aef\u6536\u76ca\u7387\u6301\u7eed\u4e0a\u5347\uff0c\u5229\u7387\u654f\u611f\u7684\u79d1\u6280\u80a1\u4ecd\u627f\u538b\u3002",
+      "\u5982\u679c\u75b2\u8f6f\u4e14\u62e5\u6324\u7684\u7f8e\u5143\u6301\u7eed\u4e0b\u53bb \u2192 \u5b83\u4ecd\u662f\u7f8e\u56fd\u548c\u65b0\u5174\u5e02\u573a\u80a1\u7968\u7684\u4e0d\u5229\u56e0\u7d20\u3002"
     ],
     "watch_items": [
-      "\u4e2d\u56fdA\u80a1\u9006\u8f6c\uff1a\u4e2d\u56fd\u5f15\u53d1\u7684\u907f\u9669\u89e3\u8bfb\u6216\u5c06\u6d88\u9000\u3002",
-      "\u7f8e\u56fd\u6ede\u80c0\u786e\u8ba4\uff1a\u672a\u6765\u51e0\u4e2a\u4ea4\u6613\u65e5\u5c06\u51b3\u5b9a\u683c\u5c40\u662f\u5426\u7ffb\u8f6c\u3002",
-      "\u4fe1\u7528\u5229\u5dee\u8d70\u9614\uff1a\u5e73\u9759\u7684\u503a\u5238\u4ea4\u6613\u53f0\u8f6c\u4e3a\u8b66\u793a\u3002",
-      "\u7f8e\u5143\u7a81\u7834\u4e0a\u884c\uff1a\u80a1\u5e02\u3001\u9ec4\u91d1\u3001\u94dc\u548c\u6bd4\u7279\u5e01\u627f\u538b\u3002"
+      "\u6cb9\u4ef7\u9006\u8f6c\uff1a\u5982\u679c\u539f\u6cb9\u8d70\u5f31\uff0c\u901a\u80c0\u7279\u5f81\u7684\u9a71\u52a8\u56e0\u7d20\u4e5f\u4f1a\u6d88\u9000\u3002",
+      "\u5f31\u589e\u957f\u8ba1\u6570\uff1a\u518d\u6709\u51e0\u4e2a\u75b2\u8f6f\u4ea4\u6613\u65e5\uff0c\u5c31\u4f1a\u628a\u683c\u5c40\u63a8\u5411\u901a\u80c0\u987d\u56fa\u7684\u9886\u57df\u3002",
+      "\u9ad8\u6536\u76ca\u5229\u5dee\uff1a\u4ece\u4f4e\u4f4d\u8d70\u9614\u5c06\u4ee4\u4fe1\u8d37\u9884\u8b66\u4fe1\u53f7\u8fdb\u5165\u8b66\u6212\u72b6\u6001\u3002",
+      "\u7f8e\u8054\u50a8\u8def\u5f84\uff1a\u9e3d\u6d3e\u5e02\u573a\u4e0e\u9e70\u6d3e\u7f8e\u8054\u50a8\u4e4b\u95f4\u7684\u843d\u5dee\u503c\u5f97\u5173\u6ce8\u3002"
     ]
   }
 }

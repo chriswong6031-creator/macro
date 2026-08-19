@@ -1,17 +1,17 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-08-17",
+  "as_of": "2026-08-18",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -12.9,
-    "drawdown_z": -1.72,
-    "as_of": "2026-08-17",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -12.9% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-12.9%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -16.85,
+    "drawdown_z": -2.45,
+    "as_of": "2026-08-18",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -16.9% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-16.9%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
     "n_7d": 11,
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 79.93,
-        "stoch_d": 77.32,
+        "stoch_k": 91.39,
+        "stoch_d": 81.9,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.1287,
+        "flatness": 0.0992,
         "armed": false,
         "stoch_curl_recent": true,
         "stoch_traverse": true,
@@ -83,7 +83,7 @@
       "copy_stale": false
     }
   ],
-  "state": "QUIET",
+  "state": "ELEVATED",
   "framing": "Conditions under which violent reversals are more likely \u2014 not intent, not timing.",
   "framing_zh": "\u8861\u91cf\u5267\u70c8\u53cd\u8f6c\u66f4\u53ef\u80fd\u53d1\u751f\u7684\u6761\u4ef6\u2014\u2014\u4e0d\u662f\u610f\u56fe\uff0c\u4e5f\u4e0d\u662f\u65f6\u70b9\u3002"
 }
