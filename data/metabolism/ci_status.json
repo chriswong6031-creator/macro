@@ -1,55 +1,25 @@
 {
-  "ts": "2026-08-18T22:56:35+00:00",
-  "main_sha": "f5833d1656e60796dcc09c8abb4adfe1fc749239",
+  "ts": "2026-08-19T03:24:10+00:00",
+  "main_sha": "e554e15b419ad8371e68b020a56cb2bad108de75",
   "red_required": [
     {
-      "name": "enrich",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32194739734/job/95896318274"
-    },
-    {
-      "name": "engine-render-guards",
+      "name": "immune",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367784"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206522892/job/95930755661"
     },
     {
-      "name": "tier-gate",
+      "name": "project",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367181"
-    },
-    {
-      "name": "chronicle-suite",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367176"
-    },
-    {
-      "name": "contract-drift",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367134"
-    },
-    {
-      "name": "workflow-yaml",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367097"
-    },
-    {
-      "name": "nav-gap",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32173938879/job/95831367088"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206433331/job/95930509401"
     }
   ],
   "green": false,
-  "consecutive_failures": 4,
+  "consecutive_failures": 5,
   "sensed_shas": [
-    "f5833d1656e60796dcc09c8abb4adfe1fc749239",
-    "dba6069b427913c5befdcef6e8414e16df095833"
+    "e554e15b419ad8371e68b020a56cb2bad108de75",
+    "3d39073351bf5895ca6c439377851c24dd5c36e8"
   ],
   "heartbeat_degraded": false
 }
