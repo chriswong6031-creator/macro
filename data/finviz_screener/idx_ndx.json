@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-08-19 04:19 UTC",
+"as_of":"2026-08-19 21:57 UTC",
 "n":102,
 "total_reported":102,
 "unmapped_industries":[],
@@ -11,7 +11,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":5317.71
+"market_cap_b":5264.95
 },
 {
 "ticker":"AAPL",
@@ -19,7 +19,7 @@
 "industry":"Consumer Electronics",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":4524.63
+"market_cap_b":4623.87
 },
 {
 "ticker":"GOOGL",
@@ -27,7 +27,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4195.46
+"market_cap_b":4199.76
 },
 {
 "ticker":"GOOG",
@@ -35,7 +35,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4190.94
+"market_cap_b":4198.59
 },
 {
 "ticker":"MSFT",
@@ -43,7 +43,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":3576.37
+"market_cap_b":3596.27
 },
 {
 "ticker":"AMZN",
@@ -51,7 +51,7 @@
 "industry":"Internet Retail",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":2798.51
+"market_cap_b":2867.43
 },
 {
 "ticker":"SPCX",
@@ -59,7 +59,7 @@
 "industry":"Aerospace & Defense",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":1945.28
+"market_cap_b":1895.2
 },
 {
 "ticker":"AVGO",
@@ -67,7 +67,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":1807.88
+"market_cap_b":1724.53
 },
 {
 "ticker":"META",
@@ -75,7 +75,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":1385.0
+"market_cap_b":1391.01
 },
 {
 "ticker":"TSLA",
@@ -83,7 +83,7 @@
 "industry":"Auto Manufacturers",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":1330.48
+"market_cap_b":1386.77
 },
 {
 "ticker":"MU",
@@ -91,7 +91,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":1062.49
+"market_cap_b":1058.36
 },
 {
 "ticker":"WMT",
@@ -99,7 +99,7 @@
 "industry":"Discount Stores",
 "sector":"Consumer Defensive",
 "country":"USA",
-"market_cap_b":916.77
+"market_cap_b":909.61
 },
 {
 "ticker":"AMD",
@@ -107,7 +107,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":790.75
+"market_cap_b":761.42
 },
 {
 "ticker":"ASML",
@@ -115,7 +115,7 @@
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
 "country":"Netherlands",
-"market_cap_b":694.9
+"market_cap_b":675.15
 },
 {
 "ticker":"INTC",
@@ -123,7 +123,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":487.68
+"market_cap_b":487.62
 },
 {
 "ticker":"CSCO",
@@ -131,7 +131,7 @@
 "industry":"Communication Equipment",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":439.9
+"market_cap_b":435.73
 },
 {
 "ticker":"COST",
@@ -139,7 +139,7 @@
 "industry":"Discount Stores",
 "sector":"Consumer Defensive",
 "country":"USA",
-"market_cap_b":426.34
+"market_cap_b":424.4
 },
 {
 "ticker":"PLTR",
@@ -147,15 +147,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":412.23
-},
-{
-"ticker":"LRCX",
-"company":"Lam Research Corp",
-"industry":"Semiconductor Equipment & Materials",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":410.33
+"market_cap_b":421.0
 },
 {
 "ticker":"AMAT",
@@ -163,7 +155,15 @@
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":408.36
+"market_cap_b":393.94
+},
+{
+"ticker":"LRCX",
+"company":"Lam Research Corp",
+"industry":"Semiconductor Equipment & Materials",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":384.37
 },
 {
 "ticker":"NFLX",
@@ -171,7 +171,7 @@
 "industry":"Entertainment",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":323.83
+"market_cap_b":334.03
 },
 {
 "ticker":"PANW",
@@ -179,7 +179,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":304.92
+"market_cap_b":293.2
 },
 {
 "ticker":"ARM",
@@ -187,15 +187,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"United Kingdom",
-"market_cap_b":270.55
-},
-{
-"ticker":"SNDK",
-"company":"Sandisk Corp",
-"industry":"Computer Hardware",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":261.63
+"market_cap_b":266.3
 },
 {
 "ticker":"KLAC",
@@ -203,7 +195,7 @@
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":254.5
+"market_cap_b":244.68
 },
 {
 "ticker":"TXN",
@@ -211,7 +203,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":248.62
+"market_cap_b":244.25
 },
 {
 "ticker":"AMGN",
@@ -219,7 +211,15 @@
 "industry":"Drug Manufacturers - General",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":229.92
+"market_cap_b":239.15
+},
+{
+"ticker":"SNDK",
+"company":"Sandisk Corp",
+"industry":"Computer Hardware",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":229.71
 },
 {
 "ticker":"LIN",
@@ -227,39 +227,7 @@
 "industry":"Specialty Chemicals",
 "sector":"Basic Materials",
 "country":"United Kingdom",
-"market_cap_b":220.67
-},
-{
-"ticker":"CRWD",
-"company":"Crowdstrike Holdings Inc",
-"industry":"Software - Infrastructure",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":216.81
-},
-{
-"ticker":"STX",
-"company":"Seagate Technology Holdings Plc",
-"industry":"Computer Hardware",
-"sector":"Technology",
-"country":"Singapore",
-"market_cap_b":204.81
-},
-{
-"ticker":"TMUS",
-"company":"T-Mobile US Inc",
-"industry":"Telecom Services",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":196.03
-},
-{
-"ticker":"PEP",
-"company":"PepsiCo Inc",
-"industry":"Beverages - Non-Alcoholic",
-"sector":"Consumer Defensive",
-"country":"USA",
-"market_cap_b":191.26
+"market_cap_b":221.79
 },
 {
 "ticker":"MRVL",
@@ -267,7 +235,39 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":189.17
+"market_cap_b":207.79
+},
+{
+"ticker":"CRWD",
+"company":"Crowdstrike Holdings Inc",
+"industry":"Software - Infrastructure",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":205.31
+},
+{
+"ticker":"TMUS",
+"company":"T-Mobile US Inc",
+"industry":"Telecom Services",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":195.61
+},
+{
+"ticker":"PEP",
+"company":"PepsiCo Inc",
+"industry":"Beverages - Non-Alcoholic",
+"sector":"Consumer Defensive",
+"country":"USA",
+"market_cap_b":194.61
+},
+{
+"ticker":"STX",
+"company":"Seagate Technology Holdings Plc",
+"industry":"Computer Hardware",
+"sector":"Technology",
+"country":"Singapore",
+"market_cap_b":188.7
 },
 {
 "ticker":"SHOP",
@@ -278,28 +278,20 @@
 "market_cap_b":188.6
 },
 {
-"ticker":"ADI",
-"company":"Analog Devices Inc",
-"industry":"Semiconductors",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":183.45
-},
-{
-"ticker":"WDC",
-"company":"Western Digital Corp",
-"industry":"Computer Hardware",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":178.89
-},
-{
 "ticker":"GILD",
 "company":"Gilead Sciences Inc",
 "industry":"Drug Manufacturers - General",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":177.86
+"market_cap_b":183.02
+},
+{
+"ticker":"ADI",
+"company":"Analog Devices Inc",
+"industry":"Semiconductors",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":181.81
 },
 {
 "ticker":"QCOM",
@@ -307,7 +299,15 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":168.24
+"market_cap_b":170.04
+},
+{
+"ticker":"WDC",
+"company":"Western Digital Corp",
+"industry":"Computer Hardware",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":166.6
 },
 {
 "ticker":"BKNG",
@@ -315,7 +315,7 @@
 "industry":"Travel Services",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":156.47
+"market_cap_b":160.04
 },
 {
 "ticker":"ISRG",
@@ -323,7 +323,7 @@
 "industry":"Medical Instruments & Supplies",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":138.2
+"market_cap_b":140.51
 },
 {
 "ticker":"VRTX",
@@ -331,7 +331,7 @@
 "industry":"Biotechnology",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":133.88
+"market_cap_b":139.93
 },
 {
 "ticker":"PDD",
@@ -339,7 +339,7 @@
 "industry":"Internet Retail",
 "sector":"Consumer Cyclical",
 "country":"China",
-"market_cap_b":124.22
+"market_cap_b":128.39
 },
 {
 "ticker":"SBUX",
@@ -347,7 +347,7 @@
 "industry":"Restaurants",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":120.85
+"market_cap_b":119.68
 },
 {
 "ticker":"FTNT",
@@ -355,7 +355,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":115.93
+"market_cap_b":112.15
 },
 {
 "ticker":"ABNB",
@@ -363,7 +363,7 @@
 "industry":"Travel Services",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":109.73
+"market_cap_b":111.61
 },
 {
 "ticker":"ADP",
@@ -371,7 +371,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":106.99
+"market_cap_b":110.13
 },
 {
 "ticker":"ADBE",
@@ -379,7 +379,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":104.6
+"market_cap_b":108.31
 },
 {
 "ticker":"APP",
@@ -387,7 +387,7 @@
 "industry":"Advertising Agencies",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":102.82
+"market_cap_b":104.01
 },
 {
 "ticker":"INTU",
@@ -395,7 +395,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":95.85
+"market_cap_b":99.15
 },
 {
 "ticker":"CEG",
@@ -403,47 +403,7 @@
 "industry":"Utilities - Independent Power Producers",
 "sector":"Utilities",
 "country":"USA",
-"market_cap_b":94.54
-},
-{
-"ticker":"DASH",
-"company":"DoorDash Inc",
-"industry":"Internet Retail",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":93.75
-},
-{
-"ticker":"MAR",
-"company":"Marriott International Inc",
-"industry":"Lodging",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":93.18
-},
-{
-"ticker":"CSX",
-"company":"CSX Corp",
-"industry":"Railroads",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":93.07
-},
-{
-"ticker":"CMCSA",
-"company":"Comcast Corp",
-"industry":"Telecom Services",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":92.97
-},
-{
-"ticker":"MNST",
-"company":"Monster Beverage Corp",
-"industry":"Beverages - Non-Alcoholic",
-"sector":"Consumer Defensive",
-"country":"USA",
-"market_cap_b":92.82
+"market_cap_b":97.14
 },
 {
 "ticker":"MELI",
@@ -451,15 +411,47 @@
 "industry":"Internet Retail",
 "sector":"Consumer Cyclical",
 "country":"Uruguay",
-"market_cap_b":90.2
+"market_cap_b":96.76
 },
 {
-"ticker":"DDOG",
-"company":"Datadog Inc",
-"industry":"Software - Application",
-"sector":"Technology",
+"ticker":"DASH",
+"company":"DoorDash Inc",
+"industry":"Internet Retail",
+"sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":88.33
+"market_cap_b":95.43
+},
+{
+"ticker":"CMCSA",
+"company":"Comcast Corp",
+"industry":"Telecom Services",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":94.36
+},
+{
+"ticker":"CSX",
+"company":"CSX Corp",
+"industry":"Railroads",
+"sector":"Industrials",
+"country":"USA",
+"market_cap_b":93.88
+},
+{
+"ticker":"MAR",
+"company":"Marriott International Inc",
+"industry":"Lodging",
+"sector":"Consumer Cyclical",
+"country":"USA",
+"market_cap_b":93.86
+},
+{
+"ticker":"MNST",
+"company":"Monster Beverage Corp",
+"industry":"Beverages - Non-Alcoholic",
+"sector":"Consumer Defensive",
+"country":"USA",
+"market_cap_b":92.92
 },
 {
 "ticker":"CDNS",
@@ -467,7 +459,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":87.17
+"market_cap_b":86.74
 },
 {
 "ticker":"REGN",
@@ -475,7 +467,15 @@
 "industry":"Biotechnology",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":83.42
+"market_cap_b":86.57
+},
+{
+"ticker":"DDOG",
+"company":"Datadog Inc",
+"industry":"Software - Application",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":83.85
 },
 {
 "ticker":"MDLZ",
@@ -483,7 +483,7 @@
 "industry":"Confectioners",
 "sector":"Consumer Defensive",
 "country":"USA",
-"market_cap_b":79.97
+"market_cap_b":81.89
 },
 {
 "ticker":"CTAS",
@@ -491,7 +491,7 @@
 "industry":"Specialty Business Services",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":79.81
+"market_cap_b":81.27
 },
 {
 "ticker":"SNPS",
@@ -499,7 +499,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":77.44
+"market_cap_b":76.83
 },
 {
 "ticker":"ROST",
@@ -507,39 +507,7 @@
 "industry":"Apparel Retail",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":75.83
-},
-{
-"ticker":"ORLY",
-"company":"O'Reilly Automotive Inc",
-"industry":"Auto Parts",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":73.42
-},
-{
-"ticker":"HON",
-"company":"Honeywell International Inc",
-"industry":"Conglomerates",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":72.17
-},
-{
-"ticker":"WBD",
-"company":"Warner Bros. Discovery Inc",
-"industry":"Entertainment",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":71.5
-},
-{
-"ticker":"AEP",
-"company":"American Electric Power Company Inc",
-"industry":"Utilities - Regulated Electric",
-"sector":"Utilities",
-"country":"USA",
-"market_cap_b":68.78
+"market_cap_b":75.28
 },
 {
 "ticker":"LITE",
@@ -547,15 +515,39 @@
 "industry":"Communication Equipment",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":67.94
+"market_cap_b":74.24
 },
 {
-"ticker":"NBIS",
-"company":"Nebius Group NV",
-"industry":"Software - Infrastructure",
-"sector":"Technology",
-"country":"Netherlands",
-"market_cap_b":67.54
+"ticker":"ORLY",
+"company":"O'Reilly Automotive Inc",
+"industry":"Auto Parts",
+"sector":"Consumer Cyclical",
+"country":"USA",
+"market_cap_b":73.78
+},
+{
+"ticker":"WBD",
+"company":"Warner Bros. Discovery Inc",
+"industry":"Entertainment",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":71.63
+},
+{
+"ticker":"HON",
+"company":"Honeywell International Inc",
+"industry":"Conglomerates",
+"sector":"Industrials",
+"country":"USA",
+"market_cap_b":70.28
+},
+{
+"ticker":"AEP",
+"company":"American Electric Power Company Inc",
+"industry":"Utilities - Regulated Electric",
+"sector":"Utilities",
+"country":"USA",
+"market_cap_b":68.74
 },
 {
 "ticker":"PCAR",
@@ -563,15 +555,7 @@
 "industry":"Farm & Heavy Construction Machinery",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":67.39
-},
-{
-"ticker":"MPWR",
-"company":"Monolithic Power System Inc",
-"industry":"Semiconductors",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":65.52
+"market_cap_b":67.1
 },
 {
 "ticker":"BKR",
@@ -579,7 +563,23 @@
 "industry":"Oil & Gas Equipment & Services",
 "sector":"Energy",
 "country":"USA",
-"market_cap_b":63.97
+"market_cap_b":64.01
+},
+{
+"ticker":"MPWR",
+"company":"Monolithic Power System Inc",
+"industry":"Semiconductors",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":63.89
+},
+{
+"ticker":"NBIS",
+"company":"Nebius Group NV",
+"industry":"Software - Infrastructure",
+"sector":"Technology",
+"country":"Netherlands",
+"market_cap_b":60.87
 },
 {
 "ticker":"TER",
@@ -587,7 +587,7 @@
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":63.21
+"market_cap_b":59.35
 },
 {
 "ticker":"FAST",
@@ -595,7 +595,7 @@
 "industry":"Industrial Distribution",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":58.83
+"market_cap_b":59.03
 },
 {
 "ticker":"FANG",
@@ -603,7 +603,7 @@
 "industry":"Oil & Gas E&P",
 "sector":"Energy",
 "country":"USA",
-"market_cap_b":58.81
+"market_cap_b":58.4
 },
 {
 "ticker":"NXPI",
@@ -611,39 +611,7 @@
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"Netherlands",
-"market_cap_b":57.63
-},
-{
-"ticker":"ALAB",
-"company":"Astera Labs Inc",
-"industry":"Semiconductors",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":52.64
-},
-{
-"ticker":"ADSK",
-"company":"Autodesk Inc",
-"industry":"Software - Application",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":52.07
-},
-{
-"ticker":"PYPL",
-"company":"PayPal Holdings Inc",
-"industry":"Credit Services",
-"sector":"Financial",
-"country":"USA",
-"market_cap_b":51.7
-},
-{
-"ticker":"CRWV",
-"company":"CoreWeave Inc",
-"industry":"Software - Infrastructure",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":51.39
+"market_cap_b":56.99
 },
 {
 "ticker":"HONA",
@@ -651,7 +619,15 @@
 "industry":"Aerospace & Defense",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":50.95
+"market_cap_b":54.0
+},
+{
+"ticker":"ADSK",
+"company":"Autodesk Inc",
+"industry":"Software - Application",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":53.02
 },
 {
 "ticker":"AXON",
@@ -659,7 +635,31 @@
 "industry":"Aerospace & Defense",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":50.36
+"market_cap_b":52.46
+},
+{
+"ticker":"PYPL",
+"company":"PayPal Holdings Inc",
+"industry":"Credit Services",
+"sector":"Financial",
+"country":"USA",
+"market_cap_b":52.4
+},
+{
+"ticker":"ALAB",
+"company":"Astera Labs Inc",
+"industry":"Semiconductors",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":50.14
+},
+{
+"ticker":"CRWV",
+"company":"CoreWeave Inc",
+"industry":"Software - Infrastructure",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":50.12
 },
 {
 "ticker":"XEL",
@@ -667,23 +667,7 @@
 "industry":"Utilities - Regulated Electric",
 "sector":"Utilities",
 "country":"USA",
-"market_cap_b":49.45
-},
-{
-"ticker":"CCEP",
-"company":"Coca-Cola Europacific Partners Plc",
-"industry":"Beverages - Non-Alcoholic",
-"sector":"Consumer Defensive",
-"country":"United Kingdom",
-"market_cap_b":47.65
-},
-{
-"ticker":"RKLB",
-"company":"Rocket Lab Corp",
-"industry":"Aerospace & Defense",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":47.37
+"market_cap_b":49.6
 },
 {
 "ticker":"WDAY",
@@ -691,15 +675,15 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":47.09
+"market_cap_b":49.01
 },
 {
-"ticker":"EXC",
-"company":"Exelon Corp",
-"industry":"Utilities - Regulated Electric",
-"sector":"Utilities",
-"country":"USA",
-"market_cap_b":46.77
+"ticker":"CCEP",
+"company":"Coca-Cola Europacific Partners Plc",
+"industry":"Beverages - Non-Alcoholic",
+"sector":"Consumer Defensive",
+"country":"United Kingdom",
+"market_cap_b":47.28
 },
 {
 "ticker":"FER",
@@ -707,15 +691,15 @@
 "industry":"Engineering & Construction",
 "sector":"Industrials",
 "country":"Netherlands",
-"market_cap_b":45.99
+"market_cap_b":46.89
 },
 {
-"ticker":"TTWO",
-"company":"Take-Two Interactive Software Inc",
-"industry":"Electronic Gaming & Multimedia",
-"sector":"Communication Services",
+"ticker":"EXC",
+"company":"Exelon Corp",
+"industry":"Utilities - Regulated Electric",
+"sector":"Utilities",
 "country":"USA",
-"market_cap_b":45.32
+"market_cap_b":46.76
 },
 {
 "ticker":"TRI",
@@ -723,7 +707,23 @@
 "industry":"Specialty Business Services",
 "sector":"Industrials",
 "country":"Canada",
-"market_cap_b":44.04
+"market_cap_b":45.81
+},
+{
+"ticker":"RKLB",
+"company":"Rocket Lab Corp",
+"industry":"Aerospace & Defense",
+"sector":"Industrials",
+"country":"USA",
+"market_cap_b":45.38
+},
+{
+"ticker":"TTWO",
+"company":"Take-Two Interactive Software Inc",
+"industry":"Electronic Gaming & Multimedia",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":44.32
 },
 {
 "ticker":"IDXX",
@@ -731,15 +731,7 @@
 "industry":"Diagnostics & Research",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":43.59
-},
-{
-"ticker":"ODFL",
-"company":"Old Dominion Freight Line Inc",
-"industry":"Trucking",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":43.13
+"market_cap_b":44.29
 },
 {
 "ticker":"PAYX",
@@ -747,15 +739,15 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":42.66
+"market_cap_b":43.57
 },
 {
-"ticker":"MCHP",
-"company":"Microchip Technology Inc",
-"industry":"Semiconductors",
-"sector":"Technology",
+"ticker":"ODFL",
+"company":"Old Dominion Freight Line Inc",
+"industry":"Trucking",
+"sector":"Industrials",
 "country":"USA",
-"market_cap_b":42.46
+"market_cap_b":42.52
 },
 {
 "ticker":"KDP",
@@ -763,7 +755,15 @@
 "industry":"Beverages - Non-Alcoholic",
 "sector":"Consumer Defensive",
 "country":"USA",
-"market_cap_b":41.9
+"market_cap_b":42.27
+},
+{
+"ticker":"MCHP",
+"company":"Microchip Technology Inc",
+"industry":"Semiconductors",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":41.86
 },
 {
 "ticker":"ROP",
@@ -771,7 +771,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":38.98
+"market_cap_b":40.28
 },
 {
 "ticker":"MSTR",
@@ -779,7 +779,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":35.55
+"market_cap_b":40.06
 },
 {
 "ticker":"DXCM",
@@ -787,7 +787,7 @@
 "industry":"Medical Devices",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":33.81
+"market_cap_b":33.92
 },
 {
 "ticker":"GEHC",
@@ -795,7 +795,7 @@
 "industry":"Medical Devices",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":32.81
+"market_cap_b":33.7
 },
 {
 "ticker":"ALNY",
@@ -803,15 +803,7 @@
 "industry":"Biotechnology",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":30.59
-},
-{
-"ticker":"KHC",
-"company":"Kraft Heinz Co",
-"industry":"Packaged Foods",
-"sector":"Consumer Defensive",
-"country":"USA",
-"market_cap_b":29.43
+"market_cap_b":32.46
 },
 {
 "ticker":"CPRT",
@@ -819,7 +811,15 @@
 "industry":"Specialty Business Services",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":29.17
+"market_cap_b":31.34
+},
+{
+"ticker":"KHC",
+"company":"Kraft Heinz Co",
+"industry":"Packaged Foods",
+"sector":"Consumer Defensive",
+"country":"USA",
+"market_cap_b":30.45
 }
 ]
 }

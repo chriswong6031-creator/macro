@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-19T12:16:40.372719+00:00",
+  "generated_at": "2026-08-19T22:26:29.269276+00:00",
   "as_of": "2026-08-19",
   "absent_stores": [],
   "feature_coverage": {
@@ -510,19 +510,17 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-19T12:16:40.116608+00:00",
+      "generated_at": "2026-08-19T22:26:29.209686+00:00",
       "ok": false,
       "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-08-13 (3 NYSE session(s) behind last_session=2026-08-18); threshold=1 \u2014 OI snapshot may have been missed"
+        "CHAINS STALE: latest chain file is 2026-08-13 (4 NYSE session(s) behind last_session=2026-08-19); threshold=1 \u2014 OI snapshot may have been missed"
       ],
-      "warnings": [
-        "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
-      ]
+      "warnings": []
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-19T12:16:40.372706+00:00",
+    "generated_at_utc": "2026-08-19T22:26:29.269267+00:00",
     "as_of": "2026-08-19",
     "absent_stores": []
   }

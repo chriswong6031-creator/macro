@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-19T21:01:03+00:00",
-  "main_sha": "7d203ee2862fd81d8215da25f3f724e091e6c307",
+  "ts": "2026-08-19T22:57:27+00:00",
+  "main_sha": "9fecb8976089ddef8069e21b4072582cba64c788",
   "red_required": [
     {
       "name": "dag-conformance",
@@ -22,9 +22,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 12,
+  "consecutive_failures": 13,
   "sensed_shas": [
-    "7d203ee2862fd81d8215da25f3f724e091e6c307",
+    "9fecb8976089ddef8069e21b4072582cba64c788",
     "4b133e18871816909ecd4380d08eecfa439f81e1"
   ],
   "heartbeat_degraded": false
