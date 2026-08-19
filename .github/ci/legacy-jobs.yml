@@ -1012,9 +1012,32 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy markupsafe
+        # jinja2 added 2026-08-19 with the analyzer-i18n step below: that suite renders the
+        # REAL china.html.j2 turnover row (macro + row extracted from the shipped file, so it
+        # cannot silently drift from a hand-copied duplicate) through a bare jinja2 Environment.
+        # Nothing else widened — probed at RUN time the suite loads only jinja2/pandas/numpy
+        # /markupsafe; with pyarrow and pyyaml blocked it is still 63-passed.
+        run: pip install pytest pandas numpy markupsafe jinja2
       - name: conviction profile honesty invariants + dossier reason codes
         run: python -m pytest tests/test_stock_score.py tests/test_stock_dossier.py -q
+      # P1 unrun backfill 2026-08-19: tests/test_analyzer_i18n_percentile.py (#5980) was named
+      # by no `run:` step in any workflow, so scripts/audit_unrun_tests.py reds the whole
+      # fleet's full-manifest runs on it. Same defect class as #5952 / #5985, discovered while
+      # landing the latter. THIS JOB OWNS THE SUBJECT: #5980's fix is the analyzer display-twin
+      # contract across engine/stock_score.py (the new bucket_display twin) and
+      # engine/stock_view.py (state_label_zh on BOTH timing paths, including the no-conviction
+      # fallback that would have kept the bug if only the main branch were fixed) — the two
+      # modules this job already exercises via test_stock_score/test_stock_dossier — plus
+      # engine/cycles.py's ladder_state() propagating STATE_DISPLAY's label_zh and
+      # engine/i18n.py's t_pctile() helper + the t() nesting guard. The defect it pins is
+      # invisible at runtime: `B(t.state_label, t.state_label)` renders perfectly in both
+      # languages, it just renders ENGLISH in Chinese mode, so nothing raises when it
+      # regresses. Appended LAST and as its OWN step (not folded into the step above) because
+      # a step is the masking unit — run_ci_pack.py returns on the first non-zero step — and
+      # the conviction/dossier honesty invariants are the older, higher-signal failure a
+      # reader should see first.
+      - name: analyzer display twins + china turnover percentile i18n (#5980)
+        run: python -m pytest tests/test_analyzer_i18n_percentile.py -q
 
   chronicle-suite:
     if: ${{ false }}
