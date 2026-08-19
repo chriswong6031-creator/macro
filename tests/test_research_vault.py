@@ -450,7 +450,7 @@ def test_catalog_load_write_roundtrip_local_store(tmp_path):
     store = LocalStore(tmp_path / "store")
     cat = catalog_mod.empty()
     catalog_mod.upsert_item(cat, _item("a", "GS", "2026-07-01", top=True))
-    data = catalog_mod.write(store, cat)
+    data = catalog_mod.publish(store, cat).data
     assert store.exists(catalog_mod.CATALOG_KEY)
     reloaded = catalog_mod.load(store)
     assert reloaded["count"] == 1
@@ -502,7 +502,7 @@ def test_catalog_load_heals_already_published_titles(tmp_path):
     assert [it["id"] for it in cat["items"]] == ["md-1", "md-2", "md-3"]  # ids never move
 
     # Idempotent: writing the healed catalog back and reloading changes nothing.
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
     assert {it["id"]: it["title"] for it in catalog_mod.load(store)["items"]} == titles
 
 
@@ -1479,7 +1479,7 @@ def test_repair_titles_heals_documents_already_in_the_catalog(tmp_path, canned_p
     # Simulate the pre-fix state: put the filename title back into both stores.
     cat = catalog_mod.load(store)
     cat["items"][0]["title"] = "Rates Weekly Outlook en 1663849 1"
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
     conn = corpus_mod.open_db(corpus_path)
     conn.execute("UPDATE documents SET title=?, body=? WHERE doc_id=?",
                  ("Rates Weekly Outlook en 1663849 1",
@@ -1520,7 +1520,7 @@ def test_repair_titles_survives_a_missing_corpus_row(tmp_path, canned_pdftotext)
     # A catalog row with no corpus body at all (id never ingested here).
     cat["items"].append({"id": "ghost-1", "title": "Swiss economy en 1663943 1",
                          "institution": "UBS", "published_at": "2026-07-01"})
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
 
     summary = ingest_mod.run(store, corpus_path)
     assert summary["titles_repaired"] == 1
@@ -1699,7 +1699,7 @@ def test_sidecar_refresh_survives_a_catalog_row_with_an_unhashable_id(tmp_path, 
     cat = catalog_mod.load(store)
     cat["items"].append({"id": ["not", "hashable"], "title": "Broken",
                          "published_at": "2026-07-28T09:00:00Z"})
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
     store.put_bytes("research_inbox/ok.json", json.dumps({
         "id": "marketdesk-ok-000010", "title": "Fine Row", "institution": "UBS",
         "published_at": "2026-07-28T09:00:00Z", "summary_points": ["Still healed"],
@@ -1852,9 +1852,15 @@ def test_the_cap_keeps_undated_rows_the_ones_it_exists_for(tmp_path, canned_pdft
 
 
 def test_corpus_summary_resync_heals_a_failed_corpus_publish(tmp_path, canned_pdftotext):
-    """run() writes the catalog BEFORE publishing the corpus, so a failed publish
-    strands bullets in the catalog with a blank corpus summary — and that row is
-    no longer a refresh candidate, so search would rank it on stale text forever."""
+    """A catalog row with bullets whose corpus row has none is unreachable by the
+    refresh pass (its summary_points is non-empty), so search would rank it on
+    stale text forever.
+
+    Wave 4 removed the mechanism that CREATED this skew — the catalog used to
+    publish before the corpus — but rows skewed by that historical ordering are
+    still in the published store, so the heal is still load-bearing. The skew is
+    manufactured directly below rather than by ordering, which is what keeps this
+    test meaningful under the corpus → catalog order."""
     store = LocalStore(tmp_path / "store")
     corpus_path = tmp_path / "corpus.sqlite"
     # Every refresh field filled, so the row is NOT a refresh candidate — the

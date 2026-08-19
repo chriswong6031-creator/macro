@@ -85,7 +85,7 @@ def _seed_store(root) -> LocalStore:
         "pages": 12,
         "needs_metadata": False,
     })
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
 
     # The promoted PDF at the canonical vault key.
     store.put_bytes(f"research_vault/{_DOC_ID}.pdf", _MINIMAL_PDF, "application/pdf")
@@ -1026,7 +1026,7 @@ def _republish(store, items, *, age_hours: float = 0.0):
     for item in items:
         catalog_mod.upsert_item(cat, item)
     stamp = datetime.now(timezone.utc) - timedelta(hours=age_hours)
-    catalog_mod.write(store, cat, now=stamp)
+    catalog_mod.publish(store, cat, now=stamp)
     return cat
 
 

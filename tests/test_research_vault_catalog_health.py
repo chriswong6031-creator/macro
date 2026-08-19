@@ -223,7 +223,7 @@ def test_read_strict_round_trips_a_published_catalog(tmp_path):
     store = LocalStore(tmp_path / "store")
     cat = catalog_mod.empty()
     catalog_mod.upsert_item(cat, _item())
-    catalog_mod.write(store, cat)
+    catalog_mod.publish(store, cat)
     loaded = catalog_mod.read_strict(store)
     assert [it["id"] for it in loaded["items"]] == [_item()["id"]]
 
