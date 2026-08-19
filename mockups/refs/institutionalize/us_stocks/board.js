@@ -43,6 +43,38 @@
                    gEn: "closed and graded",                gZh: "已平仓并计入战绩" }
   };
 
+  /* ── SECTOR lexicon (V-B3) ────────────────────────────────────────────────
+     The card's sector line was the last English string left on a zh card: it
+     printed `esc(r.sec)` with no t() twin, so a Chinese reader got "Energy" on
+     a page where every other word had been through a native pass. Same class
+     the R4 pass already cured at PRC-316 for the theme RECO slug.
+
+     The words are the ones a Chinese brokerage app uses, not literal GICS
+     translations — the same register rule §0b.5 applied to the rest of the
+     copy (可选消费, not 非必需消费品). The payload publishes the eleven GICS
+     sectors and all eleven are mapped; coverage is asserted, not assumed
+     (verify_r4.py R31 joins this table against board-data.js).
+
+     UNMAPPED IS AN HONEST FALLBACK, NOT A SILENT PASS-THROUGH. A sector this
+     table does not carry renders its English term unchanged, marked as
+     untranslated, with a LENS receipt saying so — because a Chinese reader
+     must be able to tell "we have no Chinese name for this" from "this name
+     is English". Zero rows take that branch tonight, exactly like ⚡ Imminent:
+     a real path with an honest zero, never a guess. */
+  var SECTOR = {
+    "Energy":                 "能源",
+    "Materials":              "原材料",
+    "Industrials":            "工业",
+    "Consumer Discretionary": "可选消费",
+    "Consumer Staples":       "日常消费",
+    "Health Care":            "医疗保健",
+    "Financials":             "金融",
+    "Information Technology": "信息技术",
+    "Communication Services": "通信服务",
+    "Utilities":              "公用事业",
+    "Real Estate":            "房地产"
+  };
+
   /* lane MARK chips — bottoming / continuation only. There is deliberately NO
      recovery chip: `recovery` is structurally empty in the engine, and a chip
      with no producer is the exact defect the four-dot rail died of. */
@@ -84,9 +116,21 @@
     state:  qs.get("state")  || "paid",
     life:   qs.get("life")   || "",
     view:   qs.get("view")   || "grid",
-    chrome: qs.get("chrome") || "1"
+    chrome: qs.get("chrome") || "1",
+    /* P-K19 — the watch key moved under the frozen fixture. `early_turn_watch`
+       was genuinely ABSENT when this payload was extracted (2026-08-13) and is
+       present-and-empty in production from 2026-08-18, which is a different
+       rendering: a literal 0 inside the enclosure, six published cells instead
+       of five, and no absence disclosure line. The fixture is deliberately NOT
+       re-baked (§0c.2), so the second state is reached by a declared forced
+       state rather than by moving the population under the verdict. */
+    watch:  qs.get("watch")  || "",
+    /* P-B2 — the plan id the board should land on, written by the newer-plan
+       link. A plan id, never a lifecycle cell: it selects a CARD, not a filter. */
+    focus:  qs.get("focus")  || ""
   };
   if (CELLS.indexOf(S.life) < 0) S.life = "";
+  if (["present", "absent"].indexOf(S.watch) < 0) S.watch = "";
 
   var root = document.documentElement;
   root.setAttribute("data-theme", S.theme);
@@ -106,6 +150,15 @@
      prove the degraded card still reads, and to size the enrichment gap
      honestly (DESIGN_NOTES §6 Q1). It is not a page control. */
   var isFall  = S.state === "fallback";
+  /* V-B4 — the two states the specimen ships and this reference did not.
+     They are scoped to the SAME region on purpose: the ladder and the Setups
+     grid are one producer (the plan payload), while Candidates, Groups and
+     Evidence come from their own artifacts. So loading skeletons that region
+     and error names that region, and both leave the rest of the page alone —
+     which is exactly what the error sentence promises the reader. Two states
+     that teach one page model, rather than two ad-hoc treatments. */
+  var isLoad  = S.state === "loading";
+  var isErr   = S.state === "error";
   /* ONE UNIVERSE (R2-C). `paid` and `today` are the same board: the whole plan
      book. There is no reference-only subset, because a view that renders a
      different population than the one its integers describe is the count-law
@@ -124,9 +177,21 @@
     if (isEmpty) return 0;
     return B.live_total;
   }
-  /* watch is key-ABSENT on this payload, which is a different fact from zero
-     (ruling §6 fn.1). It renders as an em dash plus a disclosure line. */
-  function watchAbsent() { return !B.watch_key_present; }
+  /* Watch is key-ABSENT on this payload, which is a different fact from zero
+     (ruling §6 fn.1): key-absent renders an em dash plus a disclosure line,
+     present-and-zero renders a literal 0 inside the enclosure.
+
+     P-K19: production's payload flipped from the first to the second on
+     2026-08-18, after this fixture was frozen. `?watch=present|absent` forces
+     either reading of the SAME frozen counts, so the reference can photograph
+     the state production is actually in without re-baking the population the
+     verdict was issued over (§0c.2). The count law is unaffected either way —
+     `counts.watch` is 0 in both, and 0+62+95+0+0+2 = 159 = live_total. */
+  function watchAbsent() {
+    if (S.watch === "present") return false;
+    if (S.watch === "absent") return true;
+    return !B.watch_key_present;
+  }
 
   function t(en, zh) {
     return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + "</span>";
@@ -137,6 +202,21 @@
     });
   }
   function money(v) { return v == null ? "—" : "$" + Number(v).toFixed(2); }
+
+  /* V-B3 — the sector line's zh twin. Mapped: the native term. Unmapped: the
+     English term, VISIBLY marked as untranslated and carrying its own receipt,
+     so an untranslated string can never pass as a translated one. */
+  function sectorLabel(sec) {
+    if (!sec) return "";
+    var en = esc(sec);
+    var zh = SECTOR[sec];
+    if (zh) return t(en, zh);
+    return '<span class="l-en">' + en + "</span>" +
+           '<span class="l-zh pv-ind--raw" tabindex="0"' +
+           ' data-tip-t-en="Sector name" data-tip-t-zh="行业名称"' +
+           ' data-tip-en="No Chinese name has published for this sector, so the English term is shown unchanged."' +
+           ' data-tip-zh="该行业暂无中文名称发布，此处保留英文原文，未作翻译。">' + en + "</span>";
+  }
 
   /* PRC-318: a zone whose endpoints are equal is a PRICE, not a range. 4 of the
      61 zone-bearing rows are zero-width (CENX, BKSY, FBRT, SBSI) and printed
@@ -230,6 +310,36 @@
        read as an error on any night Watch is both unpublished and non-zero.
        `published` is a computed difference of published values (COUNT LAW). */
     var published = LIVE.length - (watchAbsent() ? 1 : 0);
+    /* V-B4 — under load the ladder keeps its GEOMETRY and its ruled cell WORDS
+       (both are constants, not data) and skeletons only the counts, which are
+       the only unknown. It does NOT fall back to em dashes: on this surface the
+       dash already means "published and absent" (ruling §6 fn.1), and one glyph
+       may not carry two facts. Declared divergence from MP-1 §10 — DESIGN_NOTES
+       §9 records which string is law and why. */
+    if (isLoad) {
+      h += '<div class="ladder-headline">';
+      h += '<span class="skel sk-head" aria-hidden="true"></span>';
+      h += '<span class="ladder-nl">' + t("live setups today", "个跟踪中计划") + "</span>";
+      h += "</div>";
+      h += '<div class="mx-ladder" role="group" aria-busy="true" aria-label="' +
+           (S.lang === "zh" ? "生命周期状态加载中" : "Lifecycle counts loading") + '">';
+      LIVE.forEach(function (k, i) {
+        h += '<div class="mx-cell' + (i === 5 ? " mx-cell--last-live" : "") + '">';
+        h += '<span class="mx-cap mx-cap--' + k + '" aria-hidden="true"></span>';
+        h += '<span class="skel sk-n" aria-hidden="true"></span>';
+        h += '<span class="mx-cell-l">' + t(LEX[k].en, LEX[k].zh) + "</span>";
+        h += "</div>";
+      });
+      h += '<div class="mx-ladder-gap" aria-hidden="true"></div>';
+      h += '<div class="mx-cell mx-cell--term">';
+      h += '<span class="mx-cap mx-cap--resolved" aria-hidden="true"></span>';
+      h += '<span class="skel sk-n" aria-hidden="true"></span>';
+      h += '<span class="mx-cell-l">' + t(LEX.resolved.en, LEX.resolved.zh) + "</span>";
+      h += "</div>";
+      h += '<div class="ladder-termnote">' + t("not in today&rsquo;s count", "不计入上方总数") + "</div>";
+      h += "</div>";
+      return h;
+    }
     h += '<div class="ladder-headline">';
     h += '<span class="ladder-n fig">' + total + "</span>";
     h += '<span class="ladder-nl">' + t("live setups today", "个跟踪中计划") + "</span>";
@@ -492,11 +602,52 @@
   function lifeRow(r, L) {
     var h = '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '" aria-hidden="true"></span>' +
             '<span class="pv-life-w">' + t(L.en, L.zh) + "</span>";
-    if (r.newer) {
-      h += '<a class="pv-newer" href="#id=' + esc(r.newer) + '" style="margin-left:auto">' +
-           t("Newer plan &rarr;", "最新计划 &rarr;") + "</a>";
-    }
+    if (r.newer) h += newerLink(r);
     return h + "</div>";
+  }
+
+  function rowById(id) {
+    for (var i = 0; i < B.rows.length; i++) {
+      if (B.rows[i].id === id) return B.rows[i];
+    }
+    return null;
+  }
+
+  /* ── P-B2: the newer-plan affordance, which now RESOLVES ──────────────────
+     It used to emit `href="#id=<plan>"`. Nothing on this page has ever read an
+     `#id=` fragment (the state machine reads location.search only), the cards
+     key on `data-id`, and in the one view where these cards appear — the
+     Resolved partition — the live row it points at has been filtered out of
+     the DOM. Three independent reasons it could not work, in every state.
+
+     MP-1 §10 mandates the capability, so the answer is a mechanism, not a
+     deletion. The link is now an ordinary <a> onto the board's own
+     query-string contract — `?focus=<plan id>` with the lifecycle filter
+     cleared — and applyFocus() below unfilters, expands past the initial cap
+     if it has to, scrolls the card into view, rings it and says what it did.
+     Ordinary href: middle-click, copy-link and open-in-new-tab all behave, and
+     a full navigation lands on the same view a click does.
+
+     If the payload ever carries a `newer` id with no row behind it, the
+     affordance renders DISABLED and says why, rather than offering a link that
+     goes nowhere — the failure this finding exists to end. Zero rows take that
+     branch tonight; both `newer` targets resolve. */
+  function newerLink(r) {
+    var tgt = rowById(r.newer);
+    if (!tgt) {
+      return '<span class="pv-newer pv-newer--off" tabindex="0"' +
+             ' data-tip-t-en="Newer plan" data-tip-t-zh="最新计划"' +
+             ' data-tip-en="This name has a newer plan, but tonight&rsquo;s board does not carry it, so there is nothing to open yet."' +
+             ' data-tip-zh="该股已有更新的计划，但今晚的看板尚未收录，因此暂时无法打开。">' +
+             t("Newer plan", "最新计划") + "</span>";
+    }
+    /* the lens states (`episodes`, `fallback`) and the degraded states render a
+       SUBSET, so a focus link out of one of them must land on the whole book —
+       otherwise the target could be filtered away a second time. */
+    var whole = (S.state === "today" || S.state === "stale") ? S.state : "paid";
+    var q = qsWith({ state: whole, life: "", view: "grid", focus: tgt.id });
+    return '<a class="pv-newer" href="?' + q + '">' +
+           t("Newer plan &rarr;", "最新计划 &rarr;") + "</a>";
   }
 
   /* ── zone footer: the price AREA that matters ─────────────────────────────
@@ -590,7 +741,7 @@
     h += '<span class="pv-prin' + (r.pri == null ? " pv-prin--na" : "") + ' fig">' +
          (r.pri == null ? "&mdash;" : Math.round(r.pri)) + "</span></span>";
     h += "</div>";
-    if (r.sec) h += '<div class="pv-ind">' + esc(r.sec) + "</div>";
+    if (r.sec) h += '<div class="pv-ind">' + sectorLabel(r.sec) + "</div>";
 
     /* ── marks: restrained, at most three ───────────────────────────────── */
     var mk = marksRow(r, flags);
@@ -606,6 +757,46 @@
 
   function ghost() {
     return '<div class="pv-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i></div>';
+  }
+
+  /* ── V-B4: the LOADING card ────────────────────────────────────────────────
+     The shipped card's real geometry — 74px hero, the same body padding, the
+     same zone footer rule — so the grid does not reflow when the payload
+     lands. Deliberately wordless: a skeleton that labels itself is telling the
+     reader about the pipeline, which is the one thing the states section of
+     MP-1 forbids. Distinct from ghost(): the lock BLURS content that exists,
+     this SHIMMERS where content has not arrived. */
+  function skcard() {
+    return '<div class="pv-skcard" aria-hidden="true">' +
+           '<span class="skel sk-chart"></span>' +
+           '<span class="sk-bd"><span class="skel"></span><span class="skel"></span>' +
+           '<span class="skel"></span><span class="skel"></span></span>' +
+           '<span class="sk-zn"><span class="skel"></span></span></div>';
+  }
+
+  /* ── V-B4: the ERROR state ────────────────────────────────────────────────
+     The specimen's .mx-error (:114-116, used at :455-459), with MP-1 §10's
+     copy shape — name what failed AND what still works, then give a control.
+
+     ONE DELIBERATE DEPARTURE FROM MP-1 §10's VERBATIM STRING: the packet's
+     sentence names "Market context" as one of the sections that is still
+     current. That section was DELETED at R4 (VTC-307 / §0a.D) for having no
+     producer, so the packet's copy would tell the reader to look at something
+     that is not on the page. The sentence names the three sections that
+     actually survive. MP-1 §10 has to move; the C8-A amendment owns that edit
+     (V-B2), and DESIGN_NOTES §9 records which string is law meanwhile.
+
+     No apology, no "oops", no pipeline vocabulary: the sentence says what
+     happened, what is unaffected, and what the reader can do. */
+  function boardError() {
+    var h = '<div class="mx-error" role="alert">';
+    h += "<span>" + t(
+      "<b>The board didn&rsquo;t load.</b> Candidates, Groups and the record below are current.",
+      "<b>看板未能加载。</b>下方的候选、板块与战绩仍是最新。") + "</span>";
+    h += '<button class="mx-error-retry" type="button" data-retry="1">' +
+         t("Retry", "重试") + "</button>";
+    h += "</div>";
+    return h;
   }
 
   function gate(shown) {
@@ -638,6 +829,22 @@
     var r = rows();
     var cellN = S.life ? cellCount(S.life) : liveTotal();
     var h = "";
+
+    /* V-B4 — LOADING. The section keeps its heading (a constant) and skeletons
+       the total and the grid. Two rows of cards, because the state has to show
+       the grid RHYTHM, not one lonely placeholder; and no expansion bar, since
+       there is nothing yet to be showing N of M of. */
+    if (isLoad) {
+      h += '<div class="mx-sec-hd">';
+      h += '<h2 class="mx-sec-h2">' + t("Setups", "跟踪中计划") + "</h2>";
+      h += '<span class="mx-sec-total"><span class="skel" style="width:118px;height:12px"' +
+           ' aria-hidden="true"></span></span>';
+      h += "</div>";
+      h += '<div class="pv-grid" aria-busy="true">';
+      for (var sk = 0; sk < 10; sk++) h += skcard();
+      h += "</div>";
+      return h;
+    }
 
     /* section header — ONE canonical total, quoted from the block */
     h += '<div class="mx-sec-hd">';
@@ -697,6 +904,14 @@
       h += '<span class="sort-rule">' + t(
         "Mockup-gate lens: how the board reads when the ranking prices are behind the tape. Production computes this state from the board's own freshness check.",
         "样稿评审视角：当排序所用的价格落后于行情时，看板会这样呈现。正式环境下这一状态由看板自身的数据新鲜度判定得出。") + "</span>";
+    }
+    /* P-K19 — a forced state has to say it is one, on the surface, where a crop
+       can see it. This one renders the frozen fixture's counts under the watch
+       key production began publishing on 2026-08-18. */
+    if (S.watch === "present") {
+      h += '<span class="sort-rule">' + t(
+        "Mockup-gate lens: the same frozen counts read with <b>early_turn_watch</b> published and empty — the state production has been in since 2026-08-18. Watch shows a real <b>0</b> inside the enclosure and six cells are published, not five.",
+        "样稿评审视角：同一份冻结数据，按「观察」名单已发布但为空来呈现——这是 2026-08-18 起正式环境所处的状态。此时「观察」格显示真实的 <b>0</b> 并计入合计，已发布状态为 6 个而非 5 个。") + "</span>";
     }
     /* PRC-304 — the ONE simulated number, disclosed where a crop can see it.
        Every % change in every crop is a deterministic hash of the ticker, and
@@ -905,7 +1120,11 @@
     h += '<div class="cand-rows">';
     cr.forEach(function (x) {
       h += '<div class="cand-row"><span class="cand-tk">' + esc(x.tk) + "</span>" +
-           '<span class="cand-nm">' + esc(x.nm || x.sec || "") + "</span>" +
+           /* V-B3: the sector is a legitimate name FALLBACK here, so it goes
+              through the same twin — otherwise a zh candidate row could still
+              print an English sector under a Chinese heading. 0 rows tonight
+              (all 70 carry `nm`); the path is bilingual anyway. */
+           '<span class="cand-nm">' + (x.nm ? esc(x.nm) : sectorLabel(x.sec)) + "</span>" +
            '<span class="cand-px fig">' + money(x.px) + "</span></div>";
     });
     h += "</div>";
@@ -1039,16 +1258,36 @@
     }
 
     var sign = K.expectancy_pct > 0 ? "+" : "";
-    /* production's shipped strip copy, _track_record_dlg.html.j2:424 */
+    var expHi = (K.exp_hi_pct > 0 ? "+" : "") + K.exp_hi_pct;
+    /* production's shipped strip copy, _track_record_dlg.html.j2:424 — with
+       P-B6 applied: BOTH figures now carry their interval on the same line,
+       in the same type size, one weight quieter (.trd-band).
+
+       The strip used to print two bare numbers. The win rate survives that
+       treatment badly and the per-trade figure does not survive it at all:
+       its 95% interval is -0.61 to +1.25, which CROSSES ZERO, so "+0.45% a
+       trade" at glance tier states a positive edge the sample does not
+       establish. The interval is not a footnote to that claim — it is the
+       claim's actual shape, and Law 3 puts it beside the number, not under it.
+
+       The two ranges are punctuated differently ON PURPOSE: an en dash reads
+       cleanly between two positive rates (50.4-64.4) and becomes unreadable
+       between two signed ones (-0.61-+1.25), so the signed pair takes the
+       word. Precision is not worth a glyph the reader has to parse. */
     h += '<div class="trd-wrap"><span class="trd-btn">';
     h += '<span class="trd-lead">' + t("Track record", "往绩") + "</span>";
     h += '<span class="trd-sep">&middot;</span>';
     h += '<span class="trd-stat">' + t(
-      "<b>" + K.win_pct + "% win</b>", "<b>胜率 " + K.win_pct + "%</b>") + "</span>";
+      "<b>" + K.win_pct + "% win</b> <span class=\"trd-band\">" +
+        K.ci_lo_pct + "&ndash;" + K.ci_hi_pct + "</span>",
+      "<b>胜率 " + K.win_pct + "%</b> <span class=\"trd-band\">" +
+        K.ci_lo_pct + "&ndash;" + K.ci_hi_pct + "</span>") + "</span>";
     h += '<span class="trd-sep">&middot;</span>';
     h += '<span class="trd-stat">' + t(
-      "<b>" + sign + K.expectancy_pct + "%</b> a trade",
-      "每笔 <b>" + sign + K.expectancy_pct + "%</b>") + "</span>";
+      "<b>" + sign + K.expectancy_pct + "%</b> a trade <span class=\"trd-band\">" +
+        K.exp_lo_pct + " to " + expHi + "</span>",
+      "每笔 <b>" + sign + K.expectancy_pct + "%</b> <span class=\"trd-band\">" +
+        K.exp_lo_pct + " 至 " + expHi + "</span>") + "</span>";
     h += "</span></div>";
 
     var cells = [
@@ -1078,14 +1317,23 @@
     });
     h += "</div>";
 
-    /* the honest read of the interval, in plain words — not a footnote */
+    /* the honest read of the interval, in plain words — not a footnote.
+       P-B6: BOTH straddles are translated here now. The win-rate sentence
+       existed; the per-trade one did not, and it is the one that matters more,
+       because its interval crosses zero rather than merely widening. Plain
+       words, no refutation vocabulary (#3821): the sentence says what the
+       sample can and cannot settle, and stops. */
     h += '<p class="trk-note">' + t(
       "Read it as an early record, not a settled edge: the win-rate interval " +
       "(<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct + "</b>) still spans a coin flip, and it is built from " +
-      "<b>" + K.n_boards + "</b> boards since " + esc(K.first_board) + ". Every plan is scored against " +
-      t_bench(K) + " on the same rule for every name.",
+      "<b>" + K.n_boards + "</b> boards since " + esc(K.first_board) + ". The per-trade interval " +
+      "(<b>" + K.exp_lo_pct + " to " + expHi + "</b>) still crosses zero, so on this much history the average " +
+      "trade could as easily have been a small loss as the <b>" + sign + K.expectancy_pct + "%</b> shown. " +
+      "Every plan is scored against " + t_bench(K) + " on the same rule for every name.",
       "请把它当作一份仍在积累的早期记录，而不是已经确定的优势：胜率区间（<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct +
       "</b>）仍跨过 50% 一线，样本为 " + esc(K.first_board) + " 以来的 <b>" + K.n_boards + "</b> 期看板。" +
+      "每笔盈亏的区间（<b>" + K.exp_lo_pct + " 至 " + expHi + "</b>）仍跨过 0：以目前的样本量，每笔的真实平均值" +
+      "既可能是所示的 <b>" + sign + K.expectancy_pct + "%</b>，也可能是小幅亏损。" +
       "所有计划都以同一规则对照" + t_bench_zh(K) + "评分。") + "</p>";
     h += '<p class="trk-note">' + t(
       "<b>" + K.n_skipped_no_price + "</b> of " + K.n_total + " rows had no usable price and are left out of the scoring; " +
@@ -1154,7 +1402,8 @@
   /* ═══════════════ harness bar ════════════════════════════════════════ */
   function qsWith(over) {
     var p = new URLSearchParams();
-    var cur = { theme: S.theme, lang: S.lang, state: S.state, life: S.life, view: S.view, chrome: S.chrome };
+    var cur = { theme: S.theme, lang: S.lang, state: S.state, life: S.life, view: S.view,
+                chrome: S.chrome, watch: S.watch };
     Object.keys(over).forEach(function (k) { cur[k] = over[k]; });
     Object.keys(cur).forEach(function (k) { if (cur[k]) p.set(k, cur[k]); });
     return p.toString();
@@ -1163,7 +1412,7 @@
     var g = [
       ["theme", [["dark", "Dark"], ["light", "Light"]]],
       ["lang",  [["en", "EN"], ["zh", "中文"]]],
-      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["stale", "Behind the tape"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
+      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["loading", "Loading"], ["error", "Error"], ["stale", "Behind the tape"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
       ["view",  [["grid", "Grid"], ["table", "Table"]]]
     ];
     var h = '<div class="harness"><strong>Mockup harness</strong>';
@@ -1181,6 +1430,13 @@
     CELLS.forEach(function (k) {
       h += '<a class="' + (S.life === k ? "on" : "") + '" href="?' + qsWith({ life: k }) + '">' + LEX[k].en + "</a>";
     });
+    h += "</span>";
+    /* P-K19: the watch key's two readings, switchable. Labelled by the FACT
+       each one renders, not by the flag name — "present, 0" is what the ladder
+       shows, "key absent" is what the frozen fixture carries. */
+    h += '<span class="harness-g"><strong>Watch key</strong>';
+    h += '<a class="' + (S.watch ? "" : "on") + '" href="?' + qsWith({ watch: "" }) + '">Fixture (absent)</a>';
+    h += '<a class="' + (S.watch === "present" ? "on" : "") + '" href="?' + qsWith({ watch: "present" }) + '">Present, 0</a>';
     h += "</span></div>";
     return h;
   }
@@ -1193,8 +1449,15 @@
   document.getElementById("harness").innerHTML = harness();
   document.getElementById("board").innerHTML =
     header() +
-    '<div class="ladder-block">' + ladder() + "</div>" +
-    '<section class="mx-sec" id="setups">' + setups() + "</section>" +
+    /* V-B4 — in the ERROR state the board's own region is REPLACED by the
+       error, not decorated with it: the ladder has no counts and the grid has
+       no rows, and a Setups heading standing over nothing is precisely the
+       defect VTC-307 deleted a whole section for. The failure sits exactly
+       where the failed content would have been, and the page continues. */
+    (isErr
+      ? '<div class="ladder-block">' + boardError() + "</div>"
+      : '<div class="ladder-block">' + ladder() + "</div>" +
+        '<section class="mx-sec" id="setups">' + setups() + "</section>") +
     '<section class="mx-sec" id="candidates">' + candidates() + "</section>" +
     '<section class="mx-sec" id="groups">' + groups() + "</section>" +
     /* VTC-307: no `context` section. It had no producer left after the regime
@@ -1273,10 +1536,82 @@
     }
     var v = e.target.closest("[data-view]");
     if (v) { location.search = qsWith({ view: v.getAttribute("data-view") }); }
+    /* V-B4: Retry re-requests the board. There is no failing fetch to retry in
+       a static reference, so it returns to the loaded state — the control does
+       the one thing its word promises and nothing is faked around it. */
+    if (e.target.closest("[data-retry]")) { location.search = qsWith({ state: "paid" }); }
   });
   if (S.life) {
     try { history.replaceState(null, "", location.pathname + location.search + "#life=" + S.life); } catch (err) {}
   }
+
+  /* ── P-B2: land on the plan the newer-plan link asked for ─────────────────
+     Three outcomes, all of them honest:
+       1. the card is in the DOM  -> reveal it if the initial cap is hiding it,
+          scroll, ring it, move focus there, and say what happened;
+       2. the row exists but sits behind a filter this view is not showing ->
+          offer the one link that reaches it, never a silent no-op;
+       3. no such row on tonight's book -> say exactly that.
+     The note is written in the reader's vocabulary — ticker, not plan id: a
+     plan slug is an internal identifier and never reaches a user surface. */
+  (function applyFocus() {
+    if (!S.focus) return;
+    var sec = document.getElementById("setups");
+    if (!sec) return;
+    var grid = sec.querySelector(".pv-grid");
+    var target = null, cards = sec.querySelectorAll(".pvcard");
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].getAttribute("data-id") === S.focus) { target = cards[i]; break; }
+    }
+
+    function note(inner) {
+      var p = document.createElement("p");
+      p.className = "pv-landnote";
+      p.innerHTML = inner;
+      if (grid) grid.parentNode.insertBefore(p, grid);
+      else sec.appendChild(p);
+    }
+
+    if (!target) {
+      var row = rowById(S.focus);
+      if (row) {
+        var href = "?" + qsWith({ state: "paid", life: row.life, view: "grid", focus: row.id });
+        note(t("<b>" + esc(row.tk) + "</b> is on tonight&rsquo;s book, but not in this view. " +
+               '<a href="' + href + '">Open it in ' + LEX[row.life].en + "</a>",
+               "<b>" + esc(row.tk) + "</b> 在今晚的计划簿中，但不在当前视图内。" +
+               '<a href="' + href + '">在「' + LEX[row.life].zh + "」中打开</a>"));
+      } else {
+        note(t("That plan is not on tonight&rsquo;s board. " +
+               '<a href="?' + qsWith({ focus: "" }) + '">Back to the full board</a>',
+               "该计划不在今晚的看板上。" +
+               '<a href="?' + qsWith({ focus: "" }) + '">返回完整看板</a>'));
+      }
+      return;
+    }
+
+    /* reveal through the expansion bar rather than around it, so `Showing N of
+       M` repaints from the same accessor instead of disagreeing with the DOM */
+    if (target.classList.contains("sm-hidden")) {
+      var all = document.querySelector('.sm-bar [data-sm="all"]');
+      if (all) all.click();
+    }
+    target.classList.add("pv-landed");
+    var tk = target.getAttribute("data-ticker") || "";
+    note(t("Showing the live plan on <b>" + esc(tk) + "</b>. " +
+           '<a href="?' + qsWith({ focus: "" }) + '">Back to the full board</a>',
+           "已定位到 <b>" + esc(tk) + "</b> 的最新计划。" +
+           '<a href="?' + qsWith({ focus: "" }) + '">返回完整看板</a>'));
+    /* Focus lands on the CARD, not on its title link: the thing the reader
+       asked for is the plan, and focusing the anchor painted a second ring
+       inside the first. `tabindex="-1"` makes the card programmatically
+       focusable without entering the tab order, and .pv-landed IS the visible
+       focus indicator — one ring, one meaning. */
+    try {
+      target.setAttribute("tabindex", "-1");
+      target.scrollIntoView({ block: "center" });
+      target.focus({ preventScroll: true });
+    } catch (err) {}
+  })();
 
   /* ── LENS: Tier-2 receipts on hover / focus ─────────────────────────── */
   var pop = document.createElement("div");

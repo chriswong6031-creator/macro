@@ -4,6 +4,9 @@
 SHA stands as an immutable checkpoint. The work below is authorized by the R2 REVISE verdict and
 produces a **new SHA for a fresh RIG cycle**. It does not reopen G-C.
 
+**R4.2 (current):** the C8-B reference repair round — record repairs and two missing canonical
+components, **no composition change**. Full disposition in **§9**.
+
 **Not self-approved.** No `approval.yml`. The new SHA is returned for review.
 Frozen visual reference for the `us_stocks.html` migration.
 **No production file is touched by this directory.**
@@ -27,9 +30,11 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 |---|---|
 | `theme` | `dark` (default) · `light` |
 | `lang` | `en` (default) · `zh` |
-| `state` | `paid` (default) · `today` (alias — same universe) · `anon` · `empty` · `episodes` · `fallback` (diagnostic) |
+| `state` | `paid` (default) · `today` (alias — same universe) · `anon` · `empty` · `loading` · `error` · `stale` · `episodes` · `fallback` (diagnostic) |
 | `life` | `watch` `ready` `entered` `delivering` `overtime` `invalidated` `resolved` |
 | `view` | `grid` (default) · `table` |
+| `watch` | *(unset — the frozen fixture's key-absent reading)* · `present` (the key published and empty, §9 / P-K19) · `absent` |
+| `focus` | a plan `id` — opens the live board scrolled to that plan's card (§9 / P-B2) |
 | `chrome` | `1` (default, harness bar) · `0` (clean, used for crops) |
 
 `compare.html` is the three-way card adjudication (production · #5514 v1 · revised).
@@ -169,6 +174,11 @@ a closure pass, not a redesign.
 **Not waived.** G-D (#5541) and the overtime producer contradiction (#5540) remain open production
 blockers. Closing a visual reference closes neither, and neither is a reason to weaken it.
 
+*(Superseded in part at R4.2: #5540 was subsequently HEALED and its closure verified — see §6 Q2,
+closed by citation under the C8 `b8_overtime_clock` ruling. G-D (#5541) is unaffected and stands.
+The B1 half of G-D was additionally re-measured at C8 against `board_read`, which did not exist at
+this fixture's vintage; that re-measurement belongs to the gate record, not to this artifact.)*
+
 **This pass self-approves nothing.** It produces a SHA and stops; approval requires a fresh
 independent RIG cycle with new critic receipts, because receipts go stale the moment the frozen SHA
 moves (RIG §3).
@@ -249,6 +259,14 @@ than four cards inferred from a nearby field. Trigger recency is not derivable f
 `今日变化 · 过去 24 小时新增 N`) plus a wider pass over the same register — build-system
 vocabulary (`夜间构建`, `档位`) and literal translations (`在场计划`, `计划簿`) removed
 throughout. The GitHub PR body has been rewritten to describe the current contract.
+
+*Amended at R4.2 under DA-001.* The count in that second wording is **state-dependent, and this
+paragraph did not say so**: the sub-line prints how many cells actually published, which is
+`下方 6 个已发布状态合计` when the watch key is present and `下方 5 个已发布状态合计` on this
+frozen fixture, where it is absent (PRC-310 scoped the claim to published cells for exactly this
+reason). Quoted bare, the adopted wording read as a fixed string the surface was failing to
+render. It is the **watch-present-and-empty** wording — the state production has been in since
+2026-08-18 — reachable here as `?watch=present` and photographed in the `28-*` crops (§9).
 
 ---
 
@@ -370,13 +388,20 @@ is a **ring**, never a container wash.
 | `watch` | Watch / 观察 | dashed hairline |
 | `ready` | Ready / 就绪 | half filled |
 | `entered` | Entered / 入场 | solid |
-| `delivering` | Delivering / 达标 | solid |
+| `delivering` | Delivering / 达标 | solid, with a terminal marker |
 | `overtime` | Overtime / 超时 | solid muted |
 | `invalidated` | Invalidated / 失效 | hollow, struck |
 | `resolved` | Resolved / 已结 | neutral outline |
 
-Entered and Delivering are **deliberately identical**: the grammar encodes *commitment class*,
-not per-cell identity, and the partition law guarantees label and count tell them apart.
+Entered and Delivering share one **commitment weight** — the grammar encodes *commitment class*,
+not per-cell identity — but they are **not identical marks**. *(Corrected at R4.2 under DA-001.
+This paragraph read "deliberately identical" and was written before VTC-305, which it then
+outlived: `board.css:322-337` gives Delivering the same solid bar **plus a terminal block at the
+end of the run**, precisely because the one distinction a holder cares about most had no visual
+difference at all. Entered is a plain bar; Delivering is a bar that arrives somewhere. The class
+is shared, the mark is not, and the rationale had been asserting the pre-VTC-305 position as
+current law. `verify_r4.py` R29 now compares the two rule bodies and fails on the claim rather
+than on the wording.)*
 
 **Direction-neutrality is structural.** No lifecycle mark references `--up`/`--down`/`--q*`.
 `verify.py` G1 resolves computed styles against the live token values in both languages rather
@@ -389,10 +414,18 @@ fill plus a **bottom** rule, only when pressed.
 
 **Resolved is outside the live count three ways:** outside the enclosure past a divider, labelled
 "not in today's count", and absent from the default grid. The empty state proves it — headline 0,
-six live cells 0, **Resolved still 17**.
+Watch an em dash, the five other live cells 0, **Resolved still 20** (`50-empty-dark-en`).
+*(Corrected at R4.2 under DA-001: this line read "six live cells 0, Resolved still 17". Both
+numbers were wrong against the committed payload — `counts.resolved` is 20, and the Watch cell in
+the empty state renders the em dash, not a sixth zero, so only five cells print `0`. A number in
+prose has no producer checking it; `verify_r4.py` R29 now joins this claim to `board-data.js`.)*
 
-**Key-absence is not zero.** `early_turn_watch` is genuinely absent from the payload, so the Watch
-cell renders an em dash plus a disclosure line, never a silent `0`.
+**Key-absence is not zero.** `early_turn_watch` is genuinely absent from **this frozen payload**,
+so the Watch cell renders an em dash plus a disclosure line, never a silent `0`. Production
+publishes the key **present-and-empty** from 2026-08-18, which is the other rendering: a literal
+`0` inside the enclosure, six published cells, no disclosure line. Both are photographed —
+`24-filter-watch-absent` and the R4.2 `28-*` set — and the reference switches between them with
+`?watch=present`, without re-baking the fixture (§9, P-K19).
 
 **Vertical footprint** was reduced per the handoff: the headline drops 40px→30px and the header,
 ladder and section paddings tighten, so three card rows are visible above the fold instead of two.
@@ -473,22 +506,29 @@ The `state=fallback` lens renders the 134 un-enriched rows so the degraded card 
 its own: it still answers ticker, stance, priority, lifecycle, zone and date. It is quiet and
 deliberate rather than broken — but it is a gap to close, not the target.
 
-### Q2 — UNRESOLVED: the Overtime cell's gloss and its producer disagree
+### Q2 — CLOSED BY CITATION at R4.2: which clock the Overtime cell is measured on
 
-- `overtime` = **0**; open rows past their **own declared horizon** = **16** (PINS at day 166 of 45).
-- Those rows sit in `ready` (7) and `entered` (9).
+**The question was: is `phase=overtime` failing to fire?** Measured at R3: `overtime` = **0** while
+open rows past their **own declared horizon** = **16** (PINS at day 166 of 45), sitting in `ready`
+(7) and `entered` (9). Recorded here as **UNRESOLVED and production-blocking** on 2026-08-13.
 
-Either `phase=overtime` means something narrower than "past its declared window without
-resolving" (then the ruled gloss overclaims), or the phase is not firing (then Overtime is a
-de-facto producer-less cell — the stage=4 defect reborn).
+**That recording is stale, and the C8 authority verdict closed the question by citation** (ruling
+`b8_overtime_clock`). The contradiction was an **anchor** disagreement, not a producer failure:
+`age_days` is anchored to `signal_date`, while the plan's authoritative clock is
+`plan_clock_date()` — ruled at **SEA #4684** (commit `242aafda0dc7`). #5540's overtime
+contradiction was healed and its closure verified in the D-LAB-R5 blocker re-census (commit
+`444f80d62774`: **0** open rows past horizon on the plan's own clock, **0** rows at
+`phase=overtime`). The C8 product seat re-measured the current payload and reproduces it —
+`clock_age_days > horizon` on **0** rows; the 35-row divergence it also found is the retired
+`age_days` anchor, not a second defect.
 
-**Ruled (operator 2026-08-13): this remains UNRESOLVED and blocks production.** Removing
-`day X of 45` fixed the user-facing card problem; it did **not** cure the underlying contradiction.
-The ladder still carries an Overtime semantic whose producer disagrees with current plan
-arithmetic, and a producer defect must not be considered closed merely because the redesigned card
-no longer exposes it. This needs a **Prophet / data-lane resolution before the production
-migration** — either the phase begins firing, or the ruled gloss is re-worded by the lane that owns
-it. It is not the designer's to reword.
+**So the Overtime cell is honest**: its producer and its gloss agree on the clock that owns the
+plan. Two numbers measured on two different clocks were never a contradiction in the cell — they
+were a contradiction in which number this document was reading. No design change follows; what
+was owed was the correction of this paragraph, and R4.2 pays it.
+
+*(The R3 measurements above are retained rather than deleted, because the stale reading is how the
+question was framed for two cycles and a reader of the crops will meet it again.)*
 
 ### Q3 — "What changed today" has no producer
 
@@ -500,11 +540,34 @@ only `age_days`. Only the derivable figure is printed.
 `recorded_at` is null on **83 / 179** rows, including one of the two FBRT rows the ruling cites.
 `entry_date` is present on 179/179. PR-0(c) should sort on `entry_date` or pin the null path.
 
-### Q5 — three primitives here are not shipped yet
+### Q5 — CORRECTED at R4.2: the specimen exists, and the ladder divergence is now ruled
 
-`.mx-ladder`, `.mx-sec`, `.mx-empty` are DS-PR-0 deliverables (gate G-B).
-`mockups/design_system/specimen.html`, cited normatively by the design-system masterplan,
-**does not exist on disk**.
+`.mx-ladder`, `.mx-sec`, `.mx-empty` are DS-PR-0 deliverables (gate G-B). That part stands.
+
+~~`mockups/design_system/specimen.html`, cited normatively by the design-system masterplan, **does
+not exist on disk**.~~ — **struck at R4.2 under DA-001 (finding N1).** It exists, and it did when
+this line was written: it landed **2026-08-12 in #5459**, before these notes. The sentence was
+true of a *filesystem* and false of the *repository* — this session ran in a sparse worktree with
+the `mockups/` tree omitted, and reported the `ls` as a fact about the codebase. The fleet's own
+sparse-worktree law warns about precisely this, and the check that should have caught it was
+written against `pathlib.exists()`.
+
+**The cost was not the sentence, it was the gate that never ran.** Declaring the canonical
+component sheet non-existent removed the conformance pass, and two of its canonical components —
+`.mx-error` and the loading skeleton — were absent from this reference for two full cycles as a
+result. Both are now built (§9, V-B4). The remedy is in the harness, not in a promise:
+`verify_r4.py` **R29e** reads the specimen from **HEAD** when it is not on disk, so a sparse
+checkout can no longer make a committed file disappear.
+
+**The ladder divergence, now declared and ruled.** The specimen's `.mx-ladder` (`:132-143`,
+`:390-399`) is a flex bar with an in-device total; this reference's (`board.css:221-280`) is a
+grid with an out-of-device headline, per-cell weight grammar and a terminal cell. Two binding
+visual contracts disagreed about the signature device and **nobody had adjudicated which wins** —
+the invisibility being the actual defect. The C8 authority ruled it (`n1_ladder_canonicity`):
+**R4's ladder is CANONICAL for archetype-B board pages.** The specimen's cells are self-labelled
+illustrative, and the operator-ruled seven-cell partition plus the two-total law cannot fit a
+single-total bar. Annotating the specimen with a pointer to that ruling belongs to the DS-PR lane
+(C8-C), not here.
 
 ### Q6 — zh copy needing a native pass
 
@@ -648,21 +711,51 @@ to show. `state=fallback` remains a committed diagnostic lens isolating the un-e
 inspection, so the coverage gap stays reviewable rather than argued — but it is a lens, never a
 population the product surface may substitute for the book.
 
-**Overtime (Q2) is a separate hard production blocker** and is not cleared by this pass.
+~~**Overtime (Q2) is a separate hard production blocker** and is not cleared by this pass.~~
+— **struck at R4.2.** #5540 was healed and verified closed; the cell is measured on
+`plan_clock_date()` and its producer and gloss agree. See §6 Q2 for the citation chain.
 
 ---
 
 ## 8. Evidence
 
-`crops/` — 42 views, 62 files, at 1440×900 and 390×844:
+`crops/` at 1440×900 and 390×844. **Counted honestly, which is not the same as counted:**
 
-- `00-R3-*` the R3 matrix: dark+light x EN+ZH
+| | |
+|---|---|
+| files on disk | **76** |
+| view stems (a stem plus its optional `--full`) | 52 |
+| **distinct renders** (sha256) | **68** |
+| **distinct views** — stems that are not an alias of another stem | **48** |
+
+*Corrected at R4.2 under DA-001 (finding K9). This manifest read "42 views, 62 files" and counted
+the four `00-R3-*` freeze stems as coverage. They are not: `capture.py:23-31` shoots them from the
+**same four URLs** as `01`–`04`, and all eight files are byte-identical to their twins
+(`43a510cb` / `5d6fb631` / `c5747956` / `cad33752` …). Retained as the operator's named freeze
+pointers, but they add **zero** views and zero renders. A coverage claim that counts a file twice
+is the same defect class as a count law that counts a plan row twice. `verify_r4.py` **R29g** now
+hashes the directory and fails if these four figures drift.*
+
+- `00-R3-*` — the operator's freeze pointers, **byte-identical aliases** of `01`–`04`
+  (dark+light × EN+ZH). Named for the R3 freeze; the renders are R4's.
 - `01`–`07` the required matrix: desktop dark/light × EN/ZH, 390w dark EN/ZH, 390w light EN
 - `10`–`12` **missing-enrichment fallback** (dark EN, light ZH, 390w)
 - `20`–`27` each ladder filter incl. Ready, Entered, Invalidated, and the zero/absent cells
+- `28`–`29` **R4.2 / P-K19 — the watch key present-and-empty** (dark EN full-page, light ZH): the
+  same frozen counts read the way production has published them since 2026-08-18 — a literal `0`
+  inside the enclosure, six published cells, no absence line. `24` remains the key-absent state.
 - `30`–`33` multi-episode, incl. resolved episodes with forward links, and 390w
+- `34`–`35` **R4.2 / P-B2 — where the newer-plan link lands** (dark EN full-page, light ZH): the
+  live plan is revealed past the initial cap, ringed, and named by ticker. Before this round the
+  link was dead in every state, so the capability had no picture.
 - `40`–`42` anonymous lock (dark EN, light ZH, 390w)
-- `50`–`51` empty board · `60`–`61` table view
+- `50`–`51` empty board
+- `52`–`57` **R4.2 / V-B4 — loading and error** (loading: dark EN full-page, light ZH, 390w;
+  error: dark EN full-page, light ZH, 390w). Shot beside `50`–`51` on purpose: empty, loading and
+  error are one family, and what the crops have to prove is that a reader can tell them apart.
+  The skeleton sweep is pinned to one frame for capture (`capture.py` `FREEZE_CSS`) so a crop diff
+  still means a design change rather than a different animation phase.
+- `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 - `80`–`82` **R4 / PRC-305 — behind the tape** (dark EN, light ZH, 390w). Production ships this
   banner today and the R3 reference had no stale path at all, so it needs its own committed
@@ -682,9 +775,9 @@ identical in a crop index:
 
 | Cell | Rows in payload | Why no card crop exists | What IS captured |
 |---|---|---|---|
-| **Watch** | 0 — key **absent**, not zero | The producer has not published the tier; `watch_key_present: false`, `watch_n: null`. A card cannot be drawn for a row that does not exist. | `24-filter-watch-absent` — the em-dash + disclosure state, which is the honest rendering of key-absence |
+| **Watch** | 0 — key **absent** in this frozen payload, not zero; **present-and-empty** in production since 2026-08-18 | The producer had not published the tier at this fixture's vintage (`watch_key_present: false`, `watch_n: null`). A card cannot be drawn for a row that does not exist — and it still cannot, because the published key is empty. | `24-filter-watch-absent` (em dash + disclosure) **and** `28`/`29` (`?watch=present`) — the literal `0`-inside-the-enclosure state production actually publishes |
 | **Delivering** | 0 — key present, genuinely zero | No plan is at or past its first target tonight. A real zero, not a gap. | `25-filter-delivering-zero` — the empty-cell copy |
-| **Overtime** | 0 — key present, genuinely zero | Compounded by the Q2 producer contradiction (`age_days` anchored to `signal_date` vs `plan_clock_date()`), a **separate open production blocker** (#5540) not cured here. | `26-filter-overtime-zero` |
+| **Overtime** | 0 — key present, genuinely zero | No plan is past its window on the plan's own clock. A real zero: the `age_days`-vs-`plan_clock_date()` anchor question (#5540) is **closed** — §6 Q2 — so this cell is measured, not merely unfired. | `26-filter-overtime-zero` |
 
 So the lifecycle card treatment is photographed for **4 of 7** cells (Ready, Entered, Invalidated,
 Resolved). The remaining three are evidenced by their empty/absent states only. This is a real
@@ -708,3 +801,112 @@ guard look green), reports any mutation the harness survives, and rejects two gu
 observable kill. Zero horizontal page scroll at every captured width, asserted per shot.
 
 This is a visual gate: green checks are a floor, not the acceptance. The crops are the deliverable.
+
+---
+
+## 9. R4.2 — the C8-B reference repair round
+
+The C8 dual-critic pass ratified the **composition** and blocked on the **record**: stale contract
+text stated as current law, a checksum header carrying a previous bake's numbers, an untranslated
+string on a bilingual surface, a link that could not work, and two canonical components missing
+because a sparse `ls` had declared the specimen non-existent. This round repairs those. **No
+composition changed.** Every item below cites the finding it closes.
+
+### What was repaired
+
+| # | Finding | What changed |
+|---|---|---|
+| 1 | **V-B1** | `board.css:282-299` — the `.mx-cap` contract sentence stated the **repealed** shared cap ("at the top of a ladder cell AND at the top of a card") as current law. The card cap was removed at #5514 v1, deliberately, so it would stop competing with the chart. The comment now states the law: **cap on ladder cells only**, and the ladder↔card link is carried by the **inline `.mx-mark`** — same grammar, deliberately different geometry. Pinned by **R29a**, which measures where `.mx-cap` is actually emitted. |
+| 2 | **P-B2** | The newer-plan link emitted `href="#id="`, which nothing read, aimed at a card the Resolved partition had filtered out of the DOM. Now `?focus=<plan id>` on the board's own query-string contract; `applyFocus()` unfilters, expands past the initial cap, scrolls, rings the card and names it **by ticker**. Unresolvable ids get a stated miss, never a silent no-op. Crops `34`/`35`; pinned by **R35/R35b/R35c**. |
+| 3 | **P-B5** | `index.html`'s reconciliation header carried three wrong addends and two wrong dates (`62+96+0+0+4 = 162`, asof 08-12/08-10). Now the fixture's own: `62+95+0+0+2 = 159 = open_count`, `159 + 20 = 179`, asof **2026-08-13** / **2026-08-12**. The R27 stale-number sweep is widened to this file: **R30a/b/c** parse the block and join it to `board-data.js`, and **R30d** fails if the renderer implements a state the header does not document. |
+| 4 | **P-B6** | The strip printed `+0.45% a trade` bare while its 95% interval, **−0.61 to +1.25**, crosses zero. Both strip figures now carry their interval on the same line, same type size, one weight quieter (`.trd-band`), and the honesty paragraph translates **both** straddles in plain words. Pinned by **R36/R36b** in both languages. |
+| 5 | **V-B3** | The card's sector line was the last English string on a zh card. An eleven-term lexicon in the register a Chinese brokerage app uses (可选消费, not 非必需消费品) covers **11/11** of the payload's sectors; an unmapped sector renders its English term **marked as untranslated** with its own receipt, so a gap can never pass as a translation. Zero rows take that branch tonight — an honest zero, like ⚡ Imminent. Pinned by **R31/R31b/R31c**. |
+| 6 | **V-B4** | The specimen's `.mx-error` and loading skeleton, absent for two cycles (cause: N1 below). Both built, both photographed (`52`–`57`). |
+| 7 | **V-N2 / K9** | The DA-001 guard was two hard-coded strings; it is now a **class** (see below), and the six live instances are corrected. |
+| 8 | **P-K19** | `?watch=present` renders the frozen counts under the watch key production has published since 2026-08-18. Crops `28`/`29`; pinned by **R34** (present-and-empty) and **R34b** (the fixture's own key-absent reading is unchanged). |
+| 9 | **pv_cau ruling** | Answered — see below. |
+| 10 | **b8 / n1 rulings** | §6 Q2 and §6 Q5 refreshed. |
+
+### The DA-001 guard is now a class, not two strings
+
+`verify_r4.py` R8 and R27 each pinned one literal. That is two guards, not a guard, and the
+finding is a class: **a law-bearing document asserting, in its own voice, something the artifact
+contradicts.** The harness now carries a `FACTS` table pairing each claim a document may make with
+a fact **measured from the artifact** — never from another sentence. Adding a claim without a
+measurement, or letting a measurement drift from its claim, fails.
+
+It deliberately stays a claim→measurement join rather than a banned-string list: a repeal is
+recorded *by quoting the repealed text*, so a string ban punishes exactly the documentation this
+cycle demands, and its obvious "fix" is to delete the record of the repeal.
+
+Two of the measurements are read **from `HEAD`, not from disk** — the specimen and the crop blobs.
+That is N1's lesson made executable: a sparse worktree omitted `mockups/`, an `ls` reported the
+absence, and a committed file was written up as non-existent. Git still held the bytes. A guard
+that asks the filesystem inherits the bug it exists to catch.
+
+The six instances it caught, all now corrected: the `.mx-cap` sentence (§1 / board.css), §3's
+"Entered and Delivering are deliberately identical" (VTC-305 separated them), §3's "Resolved still
+17" (the payload says 20, and the empty state's Watch cell is a dash, not a sixth zero), §6 Q5's
+"the specimen does not exist on disk" (it landed 2026-08-12 in #5459), §0b.5's verbatim
+「下方 6 个状态合计」 quoted without the state that renders six, and §8's crop-manifest arithmetic
+plus the `00-R3-*` "R3 matrix" claim.
+
+### The `.pv-cau` shipped-CSS check — ANSWERED: it is shipped
+
+The C8 `pv_cau_classification` ruling deferred one measurement to this round. Run
+declaration-by-declaration against `templates/_prophet_card.html.j2` at `origin/main`:
+
+| Rule | Result |
+|---|---|
+| `.pv-cau` | identical (2/2 declarations) |
+| `.pv-cau-btn` | identical set (13/13); source **order** differs only |
+| `.pv-cau-pop` | identical (17/17) |
+| `.pv-cau-hd` · `.pv-cau-row` · `.pv-cau-row::before` | identical (7/7 · 6/6 · 9/9) |
+| `:hover` / `:focus-within` reveal · card overflow escape | identical |
+| `.pv-cau-row + .pv-cau-row { margin-top:7px }` | **production only — not carried here** |
+| `position:relative; z-index:2` raise (`board.css:628`) | reference only — PRC-301's stretched anchor, not a production rule |
+
+**So the 19px touch target is INHERITED ESTATE DEBT, not reference-minted.** Per the ruling it
+joins K5's DS-PR list with the estate's other sub-40px controls (MPDS §14) and MP-1 §5 records it
+as an inherited primitive. It is **not** raised here: a reference that unilaterally re-cuts a
+shipped component stops being a faithful reference, and the C8-C lane owns the estate-wide fix.
+
+Two provenance corrections fall out and are made: `board.css` cited `:307-318` (the family is at
+`:308-320`) and called the block "verbatim" while omitting one rule. The omission is now **named**
+rather than silently patched — same reason.
+
+New controls are held to the floor even though inherited ones are not: the error state's **Retry**
+is minted at **≥40px**, asserted by **R33**. Nothing added in this round adds to the debt.
+
+### Declared divergences from MP-1 §10 (record which string is law)
+
+Two, both deliberate, both the reference's to state and MP-1's to absorb (the C8-A amendment owns
+that edit — V-B2):
+
+1. **The error copy does not name "Market context."** MP-1 §10's verbatim string promises the
+   reader that "Candidates, Groups and Market context below are current". That section was
+   **deleted** at R4 (VTC-307) for having no producer, so the packet's sentence would point a
+   reader at something that is not on the page. This reference names the three sections that
+   survive: *"The board didn't load. Candidates, Groups and the record below are current."* /
+   「看板未能加载。下方的候选、板块与战绩仍是最新。」
+2. **The loading ladder does not use dashes.** MP-1 §10 says "ladder cells show dashes, never
+   zeros". On this surface the em dash is already **law** for *published-and-absent* (ruling §6
+   fn.1), so a loading dash would make one glyph carry two facts — and the one it would collide
+   with is the honesty device this reference is built around. Loading skeletons the **counts**
+   only; the seven cell words and the weight caps are constants and render normally. Asserted by
+   **R32b**: no em dash may appear in the loading ladder.
+
+The three states are also kept visibly distinct, because that is what the family has to teach:
+`.pv-ghost` **blurs** content that exists and is withheld (the tier lock); `.skel` **shimmers**
+where content has not arrived; `.mx-error` **stops moving** and names what failed. Motion is the
+distinction — a stalled shimmer would be a lie.
+
+### What this round did NOT do
+
+- No composition change: no new section, no re-ordered device, no re-cut card.
+- No production file touched (`templates/`, `theme.css`, `site/`, `engine/`, `data/`) — unchanged
+  from §7, and the C8-C DS-PR owns every estate-wide cure this round names.
+- The fixture is **not** re-baked (§0c.2 still holds). The watch-key change is a declared forced
+  state over the same counts, not a new population.
+- MP-1 is not edited here; every packet-side consequence above is routed to the C8-A amendment.
+- Nothing is self-approved. Final composition approval mints with both C8 seats' delta re-check.
