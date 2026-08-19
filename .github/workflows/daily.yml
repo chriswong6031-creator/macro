@@ -537,7 +537,6 @@ jobs:
       # function (e.g. an import error), never load-bearing for the refresh logic
       # itself.
       - name: security master — issuer axis nightly refresh (V4-D2B1)
-        if: always()
         continue-on-error: true
         run: |
           python3 scripts/build_security_master.py --nightly \

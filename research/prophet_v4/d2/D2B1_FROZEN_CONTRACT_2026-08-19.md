@@ -333,3 +333,11 @@ NOT_IN_MASTER queue stays open).
      ticker/symbol/CIK-level keys, never a true issuer-level collapse. The corrected
      semantics take effect only once a caller wires a governed identity resolver in;
      until then this D2B1 change has NO observable effect on event-study grouping.
+
+5. **Re-verification residuals closed (orchestrator, same day):** (a) reviewer finding
+   N1 — `AMBIGUOUS` was terminal (the B1 shape one state over); it is now re-examined
+   every build like `NO_ISSUER_EVIDENCE` (it is a source-snapshot artifact with no
+   committed assignment at stake); RESOLVED/DEFERRED/EVIDENCE_CONFLICT remain the only
+   mint-once states. (b) m4 — the daily.yml step no longer carries `if: always()`, so
+   it does not run after a failed collect; `continue-on-error` + the `::warning`
+   fallback remain the non-fatality mechanism.

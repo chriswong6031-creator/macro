@@ -619,11 +619,23 @@ def test_an_ambiguous_ticker_types_its_security_ambiguous_not_a_silent_miss() ->
     assert out_rows[0]["issuer_cik"] is None
     assert migrations == []
 
-    # Mint-once: a second pass never re-examines an AMBIGUOUS row.
+    # Idempotency: the same (still-ambiguous) inputs re-produce the same outcome.
     again_rows, again_migrations = BUILD.apply_issuer_correction(
         out_rows, {}, "2026-08-19", now, ambiguous_tickers=frozenset({"DUP"}))
     assert again_rows == out_rows
     assert again_migrations == []
+
+    # N1 heal: AMBIGUOUS is a source-snapshot artifact, NOT a terminal state — the
+    # very next CLEAN weekly map (ticker carries exactly one CIK, ambiguous set
+    # empty) must settle the row.  Evidence agreeing with the retained legacy value
+    # heals to RESOLVED; RESOLVED/DEFERRED/EVIDENCE_CONFLICT stay mint-once.
+    healed_rows, healed_migrations = BUILD.apply_issuer_correction(
+        again_rows, {"DUP": ("0001234567", "DUP CORP")}, "2026-08-26", now,
+        ambiguous_tickers=frozenset())
+    assert healed_rows[0]["issuer_state"] == "RESOLVED"
+    assert healed_rows[0]["issuer_id"] == "ISS:US-XNAS-DUP", "value stable across the heal"
+    assert healed_rows[0]["issuer_cik"] == "0001234567"
+    assert healed_migrations == []
 
 
 # ── V4-D2B1: pure functions over fixtures ───────────────────────────────────────

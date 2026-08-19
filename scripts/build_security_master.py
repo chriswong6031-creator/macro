@@ -1179,17 +1179,19 @@ def apply_issuer_correction(
     exceptions = _exception_by_inception_code()
     allowed_ciks = allowlist if allowlist is not None else _load_issuer_group_allowlist()
 
-    # FIX 1 (B1): re-examine unstamped rows AND rows already NO_ISSUER_EVIDENCE — the
-    # only two states a not-yet-settled row can carry.  Captured BEFORE either loop
-    # below mutates issuer_state, so a row's PRIOR state is still readable here.
-    pending = [
-        r for r in rows
-        if not r.get("issuer_state") or r.get("issuer_state") == "NO_ISSUER_EVIDENCE"
-    ]
+    # FIX 1 (B1) + N1: re-examine unstamped rows, rows already NO_ISSUER_EVIDENCE,
+    # and rows typed AMBIGUOUS — AMBIGUOUS is a pure source-snapshot artifact with no
+    # committed assignment at stake, so a clean later map must be allowed to settle it
+    # (RESOLVED/DEFERRED/EVIDENCE_CONFLICT stay mint-once).  Captured BEFORE either
+    # loop below mutates issuer_state, so a row's PRIOR state is still readable here.
+    _REOPENABLE = (None, "", "NO_ISSUER_EVIDENCE", "AMBIGUOUS")
+    pending = [r for r in rows if r.get("issuer_state") in _REOPENABLE]
     if not pending:
         return rows, []
     reexamined_ids = {
-        r["security_id"] for r in pending if r.get("issuer_state") == "NO_ISSUER_EVIDENCE"
+        r["security_id"]
+        for r in pending
+        if r.get("issuer_state") in ("NO_ISSUER_EVIDENCE", "AMBIGUOUS")
     }
 
     # Adoption index: a CIK already carrying a RESOLVED canonical id (from an earlier
