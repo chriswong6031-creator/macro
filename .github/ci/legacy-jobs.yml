@@ -5881,6 +5881,11 @@ jobs:
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_structure.py"
+      # options_universe: engine/oracle/oopt.py (in this job's engine/oracle/** scope)
+      # imports it since the AD-1 options-brief merge (#5872) — the import-closure
+      # contract requires the declared scope to cover it or this job goes dark for
+      # edits to it.
+      - "engine/options_universe.py"
       - "engine/ownership_event_wire.py"
       - "engine/passport.py"
       - "engine/path_personality.py"
@@ -11624,6 +11629,11 @@ jobs:
     gate: code
     paths:
       - config/delisted_symbols.yml
+      # issuer_group_allowlist: read by scripts/build_security_master.py since the
+      # D2 Identity Atlas merge (#5932) — the import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure) requires the
+      # declared scope to cover it or this job goes dark for edits to it.
+      - config/issuer_group_allowlist.yml
       - lib/__init__.py
       - lib/config.py
       - lib/delisted_symbols.py
