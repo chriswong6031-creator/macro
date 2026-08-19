@@ -327,7 +327,7 @@ def test_live_label_is_gated_on_a_fresh_producer_clock():
     )
     # Every other outcome shows the real generation time rather than an adjective.
     assert "'Saved snapshot · live update delayed'" in js
-    assert "' · updated ' + when" in js
+    assert "' · updated ' + fmtStamp(iso, false)" in js
     assert "'已保存快照 · 实时更新延迟'" in js
 
 
@@ -414,3 +414,42 @@ def test_not_investment_advice_and_framing(page_seeded):
 def test_no_validated_word(page_seeded):
     # the 'validated' word is CI-banned in user-facing text
     assert not re.search(r"\bvalidated\b", page_seeded, re.I)
+
+
+def test_unavailable_catalog_never_prints_fabricated_zero_counters():
+    """The status line is not the only place that can claim an empty vault.
+
+    Caught in browser verification: with the catalog unavailable the feed said
+    "temporarily unavailable" while the hero above it read "0 new institutional
+    reports this week · 0 highlighted · 0 desks publishing" — the same false claim
+    in bigger type. Every count must go neutral, not to zero.
+    """
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+
+    hero = js.index("function updateHero()")
+    guard = js.index("if (CATALOG_SOURCE === 'unavailable') {", hero)
+    derived = js.index("var wk = ITEMS.filter(isThisWeek);", hero)
+    assert guard < derived, (
+        "the unavailable guard must precede any derived-from-ITEMS figure"
+    )
+    for fig in ("fig-new", "fig-desks", "fig-theme", "fig-total"):
+        assert f"$('{fig}').textContent = '—';" in js, f"{fig} must go neutral"
+    assert "not an empty vault" in js
+
+    # ...and the lane badges too.
+    assert "var unknown = CATALOG_SOURCE === 'unavailable';" in js
+    assert "$('badge-latest').textContent = unknown ? '—' : TOTAL_COUNT;" in js
+    assert "$('badge-picks').textContent = unknown ? '—'" in js
+
+
+def test_status_timestamp_is_rendered_per_language():
+    """Both status spans are written in one paint, so each needs its own format.
+
+    Caught in browser verification: the ZH span read
+    '已保存快照 · 实时更新延迟 · 更新于 Aug 19, 2026 · 09:38 UTC' because fmtWhen
+    reads the LIVE <html data-lang> and only one span is ever visible.
+    """
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "function fmtStamp(iso, useZh)" in js
+    assert "fmtStamp(iso, false)" in js and "fmtStamp(iso, true)" in js
+    assert "useZh ? p[0] + '年'" in js

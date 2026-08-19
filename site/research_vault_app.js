@@ -237,6 +237,28 @@
     return t !== null && (Date.now() - t) <= FRESH_MAX_AGE_MS;
   }
 
+  function fmtStamp(iso, useZh) {
+    // The generation time for the status line, rendered in an EXPLICIT language.
+    // fmtWhen/fmtDate read the live <html data-lang>, which is wrong here: the EN
+    // and ZH status spans are both written in a single paint and only one is ever
+    // visible, so deriving both from the current language leaves the hidden span
+    // carrying the other language's date until something repaints it.
+    var hasT = iso && iso.indexOf('T') > -1;
+    var d = (hasT ? iso.split('T')[0] : '') || '';
+    var p = d.split('-');
+    var day = d;
+    if (p.length >= 3) {
+      day = useZh ? p[0] + '年' + (+p[1]) + '月' + (+p[2]) + '日'
+                  : _MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0];
+    }
+    var t = '';
+    if (hasT) {
+      var hm = iso.split('T')[1].slice(0, 5);
+      if (/^\d\d:\d\d$/.test(hm)) t = ' · ' + hm + ' UTC';
+    }
+    return day + t;
+  }
+
   function pickCatalog(api, bake) {
     // Newest valid producer clock wins, whichever transport it arrived on. The
     // bake is committed by the same hourly job that publishes to R2, so after an
@@ -271,6 +293,22 @@
 
   /* ═══════════ hero counts (client-side, descriptive only) ═══════════ */
   function updateHero() {
+    // An unavailable catalog knows NOTHING about the vault, so every figure stays
+    // neutral. "0 new institutional reports this week · 0 highlighted · 0 desks
+    // publishing" is the SAME false empty-vault claim the feed's unavailable state
+    // exists to prevent — just in bigger type, above the fold. The '—' path
+    // already exists for the entitlement-preview case; this reuses it.
+    if (CATALOG_SOURCE === 'unavailable') {
+      $('fig-new').textContent = '—';
+      $('fig-desks').textContent = '—';
+      $('fig-theme').textContent = '—';
+      $('fig-total').textContent = '—';
+      buildWeb();
+      $('v-en-lead').textContent =
+        'The research catalog could not be loaded. This is a loading problem, not an empty vault.';
+      $('v-zh-lead').textContent = '无法载入研报目录。这是加载问题，并非研报库为空。';
+      return;
+    }
     var wk = ITEMS.filter(isThisWeek);
     var derivedNewN = wk.length;
     var desks = {}; wk.forEach(function (x) { if (x.inst && x.inst !== 'Unknown') desks[x.inst] = 1; });
@@ -1245,10 +1283,12 @@
   /* ═══════════ unread count ═══════════ */
   function updateUnread() {
     var n = ITEMS.filter(function (x) { return !DocState.isRead(x.id); }).length;
-    $('unread-n').textContent = n;
-    $('badge-latest').textContent = TOTAL_COUNT;
+    var unknown = CATALOG_SOURCE === 'unavailable';   // no catalog → no counts
+    $('unread-n').textContent = unknown ? '—' : n;
+    $('badge-latest').textContent = unknown ? '—' : TOTAL_COUNT;
     var picks = summaryNumber('highlighted');
-    $('badge-picks').textContent = picks !== null ? picks : (CATALOG_PREVIEW ? '—' : ITEMS.filter(function (x) { return x.top; }).length);
+    $('badge-picks').textContent = unknown ? '—'
+      : (picks !== null ? picks : (CATALOG_PREVIEW ? '—' : ITEMS.filter(function (x) { return x.top; }).length));
     $('badge-saved').textContent = ITEMS.filter(function (x) { return DocState.isSaved(x.id); }).length;
   }
 
@@ -1272,11 +1312,11 @@
       if (en) en.textContent = 'This week · Updated hourly';
       if (cn) cn.textContent = '本周 · 每小时更新';
     } else {
-      var when = CATALOG_GENERATED ? fmtWhen(CATALOG_GENERATED) : '';
+      var iso = CATALOG_GENERATED;
       if (en) en.textContent = 'Saved snapshot · live update delayed'
-        + (when ? ' · updated ' + when : '');
+        + (iso ? ' · updated ' + fmtStamp(iso, false) : '');
       if (cn) cn.textContent = '已保存快照 · 实时更新延迟'
-        + (when ? ' · 更新于 ' + when : '');
+        + (iso ? ' · 更新于 ' + fmtStamp(iso, true) : '');
     }
   }
   function ingest(catalog, source) {
