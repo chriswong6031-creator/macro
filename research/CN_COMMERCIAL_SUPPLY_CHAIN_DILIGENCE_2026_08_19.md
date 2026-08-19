@@ -20,7 +20,7 @@ No public 2026-08-19 license grants that bundle.
 
 - QCC TECH PTE. LTD. (the only named vendor whose public ToS we could read in full) grants use **solely for internal business and compliance** and **forbids** redistribution, derivative datasets, scoring systems, and automated data products (`qcckyc.com/terms-conditions`, §§6.1, 8.1) `[V]`.
 - TuShare's ordinary paid token is a **personal, non-commercial, personal-viewing** licence (`tushare.pro/document/2?doc_id=405` §2(二)5) `[V]`. The full-A spine is already gated on a written commercial grant (`research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md`) `[V]`.
-- CNRDS registration requires a promise to use data **only for academic research, not commercial purposes** (`cnrds.com` registration copy, 2026-08-16 crawl) `[V]`.
+- CNRDS registration forbids transfer/sale/third-party disclosure, confines use to a named-author research project, and requires a promise of **academic use only, not commercial** (`cnrds.com` registration copy) `[V]`.
 - Wind WDS / Server API and QCC industrial-chain / offline datasets market **internal-system embedding**, not OEM redistribution into a customer-facing SaaS (`wind.com.cn/mobile/WDS/sapi/zh.html`; `qcckyc.com/industrial-chain-intelligence`) `[V]`.
 - Choice's quant API is unlocked **inside the Choice terminal** (`quantapi.eastmoney.com`) `[V]`.
 - Tianyancha's public site **geo-blocks the United States** (`tianyancha.com/data`, 2026-08-19) `[V]`.
@@ -142,7 +142,7 @@ Primary pages on `wind.com.cn` market WFT, EDB, Client API, and WDS. They do **n
 
 **This is the disclosure graph, already cleaned.** It is exactly the CNInfo 年报 table plus derived distance/network columns.
 
-**License.** Campus-IP trials. No public commercial-redistribution grant. Academic CSMAR contracts conventionally bar commercial product use `[I]` — treat commercial CSMAR as quote-only and assume display is forbidden until a written grant says otherwise.
+**License.** Two-track vendor `[V]`: academic/WRDS path sold to universities (`wrds-www.wharton.upenn.edu`, last-updated 2025-08-24 on the one-sheet), and a separate institutional 红楹 line that claims exchange/CSRC provenance and API/loader delivery (`csmar.com` EN + 金融数据服务). Neither public page grants a foreign SaaS the right to persist a derived graph and display it to customers. Campus-IP trials are not a product license. Commercial 红楹 redistribution terms are unpublished — quote-only, assume display is forbidden until a written grant says otherwise. Entity IDs on the public pages are exchange security codes, not a documented USCC join.
 
 **Does it cut our debt?** It would save the PDF-parse if and only if a commercial license allowed persist + derive + display. An academic login does not.
 
@@ -150,7 +150,7 @@ Primary pages on `wind.com.cn` market WFT, EDB, Client API, and WDS. They do **n
 
 **Coverage `[V]`.** University catalogs (SCNU, UESTC, Renmin) list **中国上市公司供应链研究数据库-SCRD** as a named CNRDS sub-database.
 
-**License `[V]`.** CNRDS registration copy: “承诺只把数据库数据用于学术研究，不用于商业目的.” That is a hard commercial bar on the public click-wrap. Do not buy, borrow, or tunnel a campus CNRDS login into Mastermind.
+**License `[V]`.** CNRDS registration copy (`cnrds.com` → `/Home/Login`) publishes 《CNRDS平台数据使用协议》 with three stacked bars: (2) do not transfer, sell, or disclose any part of the data to any third party in any form; (3) use only in a research project on which the registrant is a named author; (4) “承诺只把数据库数据用于学术研究，不用于商业目的.” Unpurchased schools are refused registration. Do not buy, borrow, or tunnel a campus CNRDS login into Mastermind.
 
 ### 4.6 QCC (企查查 international) — the one readable commercial ToS
 
@@ -188,7 +188,11 @@ A Commercial Agreement can override (order of precedence §1.3). The *public* te
 
 Wind WDS lists **线上销量** as an alt-data module `[V]`. QuestMobile, 易观, 艾瑞, Sensor Tower / data.ai are attention or app-store panels. They do not resolve A-share counterparties, do not give relationship effective dates, and do not replace 年报 top-5. They do not reduce *this* normalization debt. Do not buy them for GROK-CN-E.
 
-Western FactSet Revere / Bloomberg SPLC: useful on listed-to-listed global edges; thin on unlisted PRC counterparties and on A-share 年报 vintages. One-line contrast only; not a substitute.
+Western FactSet Revere / Bloomberg SPLC: useful on listed-to-listed global edges; thin on unlisted PRC counterparties and on A-share 年报 vintages. One-line contrast only; not a substitute. WRDS lists Revere as a paired catalog item next to CSMAR; that is not a license.
+
+**聚源 / Gildata (恒生聚源).** Official `gildata.com` is a JS SPA; this session extracted no public 供应链 API, data dictionary, or redistribution page. Do not conflate with `go-goal.com` (朝阳永续, earnings-estimate vendor). Treat as UNKNOWN / quote-only; not a reason to buy.
+
+**ImportGenius / Panjiva.** Foreign bill-of-lading graphs (US CBP and selected other countries). ImportGenius self-serve pricing is public (USA Essentials $229/mo; Global Enterprise from $1,999/mo) `[V]` and still does not map GACC microdata onto A-share issuers via USCC. Wrong graph for this debt.
 
 ---
 
@@ -270,7 +274,12 @@ Absent that document, do not reopen. A sales deck, a seat trial, or “we have �
 | https://data.csmar.com/ | CSMAR host |
 | https://lib.tsinghua.edu.cn/finance/info/1198/1952.htm | CSMAR 供应链 trial description |
 | https://library.bnuzh.edu.cn/zy/zydt/b43a2582f3dc43aa9490d8cd5b43c2bb.htm | same, 2025 |
-| https://www.cnrds.com/ | academic-only click-wrap |
+| https://www.cnrds.com/ | academic-only click-wrap (no transfer/sale/third-party; named-author research only; no commercial use) |
+| https://www.csmar.com/en/index.html | CSMAR EN: Supply Chain Research + Related Party Transaction listed |
+| https://www.csmar.com/channels/金融数据服务.html | 红楹 institutional track; unpublished SaaS-display terms |
+| https://wrds-www.wharton.upenn.edu/pages/about/data-vendors/china-stock-market-accounting-research-csmar/ | CSMAR academic/WRDS path |
+| https://www.gildata.com/ | 聚源 SPA; no public graph API extracted |
+| https://www.importgenius.com/pricing | BOL graph; wrong problem; public price band |
 | https://www.qcckyc.com/terms-conditions?type=1 | QCC ToS 2026-07-09 |
 | https://www.qcckyc.com/industrial-chain-intelligence | QCC industry-chain, internal systems |
 | https://www.qcckyc.com/featured-offline-datasets | offline persist, internal |

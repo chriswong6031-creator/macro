@@ -48,7 +48,8 @@ alternatives:
 evidence:
   - "https://www.qcckyc.com/terms-conditions?type=1 §§6.1, 8.1, 2(d), 13.3 (fetched 2026-08-19)"
   - "https://tushare.pro/document/2?doc_id=405 §2(二)5 personal non-commercial licence (fetched 2026-08-19)"
-  - "https://www.cnrds.com/ registration copy: academic-only, not commercial (2026-08-16 crawl)"
+  - "https://www.cnrds.com/ registration: no transfer/sale/third-party; named-author research only; academic, not commercial (fetched 2026-08-19)"
+  - "https://www.csmar.com/en/index.html Supply Chain Research listed; 红楹 commercial display rights unpublished"
   - "https://www.wind.com.cn/mobile/WDS/sapi/zh.html internal-system embedding (fetched 2026-08-19)"
   - "https://quantapi.eastmoney.com/Cmd/ShowPromotionpage?from=web Choice API is terminal-bound (fetched 2026-08-19)"
   - "https://www.tianyancha.com/data US geo-block (fetched 2026-08-19)"
