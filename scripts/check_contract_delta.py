@@ -78,10 +78,25 @@ back to rebuilding the identical computation from the pre-existing, unrenamed
 primitives (`load_legacy_jobs` / `infer_job_scopes` / `_matches_any` / `replace`;
 `census` / `_load_baseline` / `_load_waivers` / `_validate_waivers`) when the
 base tree predates this refactor — true only while THIS gate's own PR is open,
-since `origin/main` today has neither convenience function. Kept permanently
-rather than deleted post-merge: a `--base` far enough back to predate this gate
-is rare but not impossible, and refusing outright there is worse than paying the
-fallback's cost.
+since `origin/main` today had neither convenience function at the time this
+script first merged. Kept permanently rather than deleted post-merge: a
+`--base` far enough back to predate this gate is rare but not impossible, and
+refusing outright there is worse than paying the fallback's cost.
+
+CONCURRENT HEAD/BASE (2026-08-19, post-merge fix). The head and base
+computations are two INDEPENDENT whole-repo censuses with no data dependency
+between them, so running them serially pays their cost twice. PR #6013's
+`contract-delta` job was CANCELLED at exactly its 25-minute `timeout-minutes`
+ceiling — checkout/setup/fetch all green, the gate step itself killed mid-run
+— because the two ~6-8-minute censuses (measured on a faster 24-core
+development Mac) run noticeably slower on `ci.yml`'s 2-core hosted runner, and
+serial execution left no margin. `run()` now materializes the base worktree,
+launches its worker via `subprocess.Popen` (non-blocking), computes head
+findings IN-PROCESS while that subprocess runs, then joins it — overlapping
+the two dominant costs instead of paying for them back to back. Semantics and
+output are unchanged; only wall time moves. `.github/workflows/ci.yml` also
+raised `contract-delta`'s `timeout-minutes` 25 -> 45 as a second, independent
+margin (the job is off the critical path — packs run ~30 min regardless).
 """
 from __future__ import annotations
 
@@ -203,15 +218,39 @@ print(json.dumps({"closure": closure, "suites": suites}))
 '''
 
 
-def _run_worker(repo_root: Path) -> dict[str, Any]:
-    """Findings for an ARBITRARY tree, via a fresh interpreter (see module doc)."""
-    completed = subprocess.run(
+def _start_worker(repo_root: Path) -> subprocess.Popen:
+    """Launch the whole-repo census for `repo_root` WITHOUT waiting for it.
+
+    Paired with `_finish_worker`. Split out of the pre-2026-08-19 single
+    blocking call so a caller can overlap this subprocess's wall time with
+    other work (`run()` overlaps it with the in-process head computation —
+    see "CONCURRENT HEAD/BASE" in the module docstring) instead of paying for
+    them one after another.
+    """
+    return subprocess.Popen(
         [sys.executable, "-c", _WORKER_SOURCE],
-        cwd=repo_root, capture_output=True, text=True, timeout=600,
+        cwd=repo_root, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
-    stdout = completed.stdout.strip()
-    if completed.returncode != 0:
-        detail = stdout or completed.stderr.strip() or "(no output)"
+
+
+def _finish_worker(proc: subprocess.Popen, repo_root: Path, *, timeout: int = 600) -> dict[str, Any]:
+    """Join a `_start_worker` process and parse its result.
+
+    Same error handling the old single-shot `_run_worker` had: a nonzero exit,
+    unparseable stdout, or an explicit ``{"error": ...}`` payload all raise
+    `ContractDeltaError` rather than handing the caller a malformed result.
+    """
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.communicate()
+        raise ContractDeltaError(
+            f"finding computation timed out after {timeout}s in {repo_root}"
+        )
+    stdout = stdout.strip()
+    if proc.returncode != 0:
+        detail = stdout or stderr.strip() or "(no output)"
         raise ContractDeltaError(f"finding computation failed in {repo_root}: {detail}")
     try:
         payload = json.loads(stdout)
@@ -222,6 +261,29 @@ def _run_worker(repo_root: Path) -> dict[str, Any]:
     if "error" in payload:
         raise ContractDeltaError(f"finding computation refused in {repo_root}: {payload['error']}")
     return payload
+
+
+def _run_worker(repo_root: Path) -> dict[str, Any]:
+    """Findings for an ARBITRARY tree, run and awaited synchronously.
+
+    Thin blocking wrapper over `_start_worker`/`_finish_worker` for callers
+    (and the `repo_root != ROOT` branch of `run()` below) that have no other
+    work to overlap it with.
+    """
+    return _finish_worker(_start_worker(repo_root), repo_root)
+
+
+def _kill_quietly(proc: subprocess.Popen) -> None:
+    """Best-effort cleanup for a worker `run()` is abandoning on another error.
+
+    Never raises: this runs from an `except` block, and a cleanup failure must
+    not shadow the real error already being propagated.
+    """
+    try:
+        proc.kill()
+        proc.communicate(timeout=30)
+    except Exception:  # noqa: BLE001 — best-effort only, see docstring
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -334,15 +396,27 @@ def format_report(delta: dict[str, list]) -> list[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run(base_ref: str, *, repo_root: Path = ROOT) -> int:
-    try:
-        head = _head_findings() if repo_root == ROOT else _run_worker(repo_root)
-    except ValueError as exc:
-        # curated_exclusive_closure_findings's own hard-fail (a curated job derives
-        # no closure at all) -- a script refusal, not a diffable finding.
-        raise ContractDeltaError(f"finding computation refused on this PR's head: {exc}") from exc
+    # CONCURRENT HEAD/BASE (see module docstring): materialize the base tree,
+    # launch its worker WITHOUT waiting, then do the head computation while
+    # that subprocess runs, then join. Both sides are an independent
+    # whole-repo census, so this overlaps the two dominant costs instead of
+    # paying for them serially.
     base_tree, base_sha, cleanup = materialize_base_tree(base_ref, repo_root=repo_root)
     try:
-        base = _run_worker(base_tree)
+        base_proc = _start_worker(base_tree)
+        try:
+            head = _head_findings() if repo_root == ROOT else _run_worker(repo_root)
+        except ValueError as exc:
+            # curated_exclusive_closure_findings's own hard-fail (a curated job
+            # derives no closure at all) -- a script refusal, not a diffable
+            # finding. The base worker is still running; it would otherwise
+            # leak past this function's return.
+            _kill_quietly(base_proc)
+            raise ContractDeltaError(f"finding computation refused on this PR's head: {exc}") from exc
+        except BaseException:
+            _kill_quietly(base_proc)
+            raise
+        base = _finish_worker(base_proc, base_tree)
     finally:
         cleanup()
 
