@@ -266,3 +266,70 @@ NOT_IN_MASTER queue stays open).
    pull_request CI schedules NOTHING while conflicted. Resolution = re-derivation over
    the merged nodes plane + this branch's master (merge commit 283ef52f05cc), never
    pick-a-side.
+4. **D2B1 fix packet (post-freeze adversarial review, 2026-08-19) — five corrections
+   to the era/refresh stage, executed under the orchestrator's adjudicated fix
+   packet.** The review's B1/B2 findings were both blockers: `apply_issuer_correction`
+   never re-examined a row already stamped `NO_ISSUER_EVIDENCE`, so the contract's own
+   promised self-heal (§11 "FI/FISV … self-heals on a later map") was unreachable, and
+   `EVIDENCE_CONFLICT` (§3) was unreachable dead vocabulary; separately, the nightly's
+   required-rails preflight covered the 5 seed files + the CIK rail but NOT the
+   listing-snapshots directory, so an empty snapshots dir let `load_directory()`
+   silently degrade and the nightly stamp a falsely-fresh, near-empty regeneration.
+   - **B1 re-examination law**: `apply_issuer_correction` now re-examines every row
+     whose `issuer_state == NO_ISSUER_EVIDENCE` on EVERY build, in addition to
+     unstamped rows. A later map that finally covers the row's ticker heals it to
+     `RESOLVED` (adopting an existing group's canonical id, or keeping its own value
+     when no other member shares the CIK). A later map whose evidence DISAGREES with
+     the row's own already-committed non-null `issuer_id` flips it to
+     `EVIDENCE_CONFLICT` instead — the value is never rewritten (recorded, never
+     executed; a future authorized era executes). `RESOLVED`, `DEFERRED_IDENTITY_
+     EXCEPTION`, and `EVIDENCE_CONFLICT` stay mint-once — never re-examined again.
+   - **B2 nightly + manual-path hardening**: the nightly preflight gained a third
+     required rail — the newest `data/symbol_directory/snapshots/*.parquet` must
+     exist and be readable, or the run refuses with `::warning`, keeps last-good,
+     exits 0, same law as the existing CIK-rail fence. The receipt's `inputs` section
+     now ALWAYS names every rail key (value `null` when the rail is absent) rather
+     than silently dropping an absent one. The manual `build()` CLI path is
+     symmetrically hardened: a missing/empty CIK-map directory now raises
+     `IdentityError` unless an explicit `--allow-missing-evidence` opt-out is passed
+     (closes the B1-amplifier where a bare-checkout manual run would silently stamp
+     every row `NO_ISSUER_EVIDENCE`).
+   - **M3 correction to §1**: the original sentence *"ETFs/trusts group to the fund's
+     own CIK"* is WRONG as a general property — an SEC registrant CIK on an ETP
+     filing is frequently the SPONSOR or TRUST, not the fund, so a shared CIK is
+     necessary but not SUFFICIENT evidence to group securities that have never been
+     grouped before. `config/issuer_group_allowlist.yml` (new; documentary note in
+     `config/identity_seams.yml`) is the operator ratification gate: a BRAND-NEW
+     multi-member group forms only when its CIK is listed there; an unlisted CIK's
+     would-be members are typed `EVIDENCE_CONFLICT` instead (never grouped), with a
+     bare `::warning` naming the CIK and members. Seeded with the three groups
+     already committed at D2B1 landing (GOOG/GOOGL 1652044, FOX/FOXA 1754301,
+     NWS/NWSA 1564708) — ratified, not proposed. Adoption of an ALREADY-established
+     group, and every single-member group, are never gated by this rule.
+   - **m3 sidecar rule**: `engine/theme_graph/identity_resolution.py`'s
+     `load_master_inputs` now copies a master row's `issuer_id` into the sidecar ONLY
+     when that master row's own `issuer_state` is `RESOLVED`. A RESOLVED sidecar row
+     is therefore lawful with a null `issuer_id` whenever the master's own state is
+     anything else (`NO_ISSUER_EVIDENCE`, `AMBIGUOUS`, `EVIDENCE_CONFLICT`,
+     `DEFERRED_IDENTITY_EXCEPTION`) — `security_id`/`listing_key` stay unaffected.
+     `scripts/check_theme_graph_contracts.py`'s state<->ids biconditional (F3a) is
+     amended symmetrically: a non-null `issuer_id` on a RESOLVED sidecar row whose
+     master `issuer_state` is NOT `RESOLVED` is now ALSO a breach (previously only the
+     null-when-`NO_ISSUER_EVIDENCE` direction was legalized). The sidecar was
+     re-derived from the committed `nodes.parquet` + the current master (never the
+     full pipeline in a worktree, `DSC:THEME-GRAPH-FULL-REBAKE-DIVERGES-LOCALLY`):
+     4 rows change (`co:us:AEP`, `co:us:CTRA`, `co:us:FI`, `co:us:FISV` — every
+     graph-carried `NO_ISSUER_EVIDENCE` master row — now carry a null sidecar
+     `issuer_id`), resolution-state counts unchanged (RESOLVED 702, all else as
+     before).
+   - **n1 disclosure correction to §8.8**: the original PR body's disclosure — "GOOG/
+     GOOGL events will newly group together" in `engine/seasonality/event_study.py`'s
+     `_issuer_id`-keyed clustering — is FORWARD-LOOKING ONLY and was stated too
+     strongly. Measured 2026-08-19: no production caller anywhere in the repo injects
+     a real `resolve_issuer` into `engine/seasonality/event_clock.py` (`grep
+     resolve_issuer=` matches only that module's own default parameter and its own
+     test file) — every event payload's `issuer_id` field is unpopulated in
+     production today, so `event_study.py::_issuer_id` falls back to
+     ticker/symbol/CIK-level keys, never a true issuer-level collapse. The corrected
+     semantics take effect only once a caller wires a governed identity resolver in;
+     until then this D2B1 change has NO observable effect on event-study grouping.
