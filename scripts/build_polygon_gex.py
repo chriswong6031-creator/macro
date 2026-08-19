@@ -76,14 +76,25 @@ SOURCE_HEALTH_FLOOR = 0.90
 STORE_SHRINK_FACTOR = 3
 
 # Decisions that ANCHOR the stored chain's CURRENT authoritative state: either a
-# decision that actually WROTE the parquet (wrote/replaced_partial/forced), or
-# one that re-established the receipt's ground truth after corruption
+# decision that actually WROTE the parquet (wrote/replaced_partial/forced), one
+# that re-established the receipt's ground truth after corruption
 # (receipt_recovered — touches no chain bytes, but B3 requires the corruption
 # event itself to become the new anchor so a later run never falls back to a
-# 'healthy' default). Every other decision (skipped_*, nothing_captured) is a
-# SKIP: it describes an attempt, not a change to what's on disk, and must be
-# invisible to _stored_state_entry.
-_STATE_ANCHOR_DECISIONS = ("wrote", "replaced_partial", "forced", "receipt_recovered")
+# 'healthy' default), or a TRAILING write_pending (B3 trigger 2 — see
+# accrue()'s write-ahead sequence: a write_pending entry is appended BEFORE
+# to_parquet with the FULL census/health the write is ABOUT to produce, so a
+# crash between that append and the final decision entry still leaves the
+# receipt self-describing the parquet that DID get written, instead of
+# silently falling through to legacy-healthy). This is only ever consulted
+# when the chain parquet is confirmed to exist (accrue() gates the whole
+# lookup on path.exists()), so a trailing write_pending reached here is
+# necessarily the "parquet written, finalize-entry crashed" case — never the
+# "crashed before to_parquet" one, which never reaches this lookup at all
+# (path.exists() is false, so accrue() proceeds straight to a fresh write).
+# Every other decision (skipped_*, nothing_captured) is a SKIP: it describes
+# an attempt, not a change to what's on disk, and must be invisible here.
+_STATE_ANCHOR_DECISIONS = ("wrote", "replaced_partial", "forced", "receipt_recovered",
+                          "write_pending")
 
 
 class _CorruptReceipt(Exception):
@@ -193,14 +204,31 @@ def _recover_corrupt_receipt(session: date, exc: _CorruptReceipt,
          "healthy" — that was the original defect), prior_receipt_corrupt=True.
       4. a bare line-start ::warning (never a logger — see
          tests/test_gh_annotation_line_start).
-    Returns the fresh attempts list so the caller can proceed as if it had just
-    read a normal (if minimal) receipt.
+      5. (N7, AD-1C0 round 2) CONCURRENT-RECOVERY SAFE: if the rename fails
+         with FileNotFoundError specifically, another recoverer most likely
+         already won this exact race between our failed read and this rename
+         attempt — renamed `path` aside and written its own fresh receipt
+         there. Re-read `path`; if it now parses, ADOPT its attempts instead
+         of clobbering the winner with a second, redundant recovery entry.
+    Returns the fresh (or adopted) attempts list so the caller can proceed as
+    if it had just read a normal (if minimal) receipt.
     """
     path = _receipt_path(session)
     compact_ts = now.strftime("%Y%m%dT%H%M%S%fZ")
     corrupt_aside = path.with_name(f"{path.name}.corrupt-{compact_ts}")
     try:
         path.replace(corrupt_aside)
+    except FileNotFoundError:
+        try:
+            adopted = _read_receipt(session)
+        except _CorruptReceipt:
+            adopted = None   # still corrupt (or corrupt again) -- fall through
+        if adopted is not None:
+            log.info("polygon: receipt %s recovery race — adopting a "
+                     "concurrent recoverer's fresh receipt instead of "
+                     "overwriting it", session)
+            return adopted
+        corrupt_aside = None
     except OSError as move_exc:  # noqa: BLE001 — losing the evidence copy must
         # never crash the run; recovery still proceeds without it.
         log.warning("polygon: could not preserve corrupt receipt %s aside: %s",
@@ -373,25 +401,53 @@ def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
                  "vintage — symbol absent from the replacement capture)", sym, session)
 
 
-def _store_shrink_reference(chains_dir: Path, asof: date) -> int | None:
-    """The most recent PRIOR session's stored underlying count, or None when no
-    such file exists — a fresh environment (no stored chains yet) has no
-    reference, so the shrink tripwire in accrue() stays silent for it. 'Prior'
-    is strictly-before `asof` (a lexical compare on the ISO stem is exact for
+def _store_shrink_reference(chains_dir: Path, health_dir: Path, asof: date) -> int | None:
+    """The shrink tripwire's reference count, or None when there is nothing at
+    all to compare against (a fresh environment — the tripwire stays silent).
+
+    N2 ruling (AD-1C0 round 2): receipt-AWARE. A prior night that only
+    captured a PARTIAL chain (say 20 of a 375-name universe) disarms a
+    parquet-only reference — the next night's anchors-only collapse (10) would
+    read as 20 >= 3x10=30? FALSE, silently passing. But that partial night's
+    own health receipt still remembers what was actually REQUESTED that night
+    (375), which is the true signal of how big the universe used to be. The
+    reference is therefore max(the most recent PRIOR session's stored chain's
+    captured underlying count, the most recent PRIOR session's receipt's
+    largest recorded requested_underlyings) — independently found (they need
+    not be the same session). Legacy sessions with a chain but no receipt fall
+    back to the captured count alone (unchanged prior behavior). 'Prior' is
+    strictly-before `asof` (a lexical compare on the ISO stem is exact for
     YYYY-MM-DD filenames): this must never compare the session accrue() is
     CURRENTLY processing against itself."""
     asof_iso = asof.isoformat()
-    prior = sorted(p for p in chains_dir.glob("*.parquet") if p.stem < asof_iso)
-    if not prior:
-        return None
-    latest = prior[-1]
-    try:
-        df = pd.read_parquet(latest, columns=["underlying"])
-        return int(df["underlying"].nunique())
-    except Exception as e:  # noqa: BLE001 — a reference read must never crash the run
-        log.warning("polygon: could not read %s for the store-shrink tripwire "
-                    "reference: %s", latest.name, e)
-        return None
+    candidates: list[int] = []
+
+    prior_chains = sorted(p for p in chains_dir.glob("*.parquet") if p.stem < asof_iso)
+    if prior_chains:
+        latest_chain = prior_chains[-1]
+        try:
+            df = pd.read_parquet(latest_chain, columns=["underlying"])
+            candidates.append(int(df["underlying"].nunique()))
+        except Exception as e:  # noqa: BLE001 — a reference read must never crash the run
+            log.warning("polygon: could not read %s for the store-shrink "
+                        "tripwire reference: %s", latest_chain.name, e)
+
+    prior_receipts = sorted(p for p in health_dir.glob("*.json") if p.stem < asof_iso)
+    if prior_receipts:
+        latest_receipt = prior_receipts[-1]
+        try:
+            data = json.loads(latest_receipt.read_text())
+            attempts = data.get("attempts") if isinstance(data, dict) else None
+            if isinstance(attempts, list):
+                reqs = [a.get("requested_underlyings") for a in attempts
+                       if isinstance(a.get("requested_underlyings"), int)]
+                if reqs:
+                    candidates.append(max(reqs))
+        except (OSError, ValueError) as e:
+            log.warning("polygon: could not read %s for the store-shrink "
+                        "tripwire receipt reference: %s", latest_receipt.name, e)
+
+    return max(candidates) if candidates else None
 
 
 def _compact(raw: pd.DataFrame) -> pd.DataFrame:
@@ -502,70 +558,89 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                  "— re-fetching to check for a strictly-better replacement",
                  asof, SOURCE_HEALTH_FLOOR * 100)
 
-    # B2 ruling (AD-1C0 review): fail CLOSED on a degraded universe. When config
-    # expects baskets (`include_baskets: true`) but the membership file resolves
-    # to ZERO members, the universe silently collapses from ~300+ names down to
-    # just the config anchors. Without this gate that shrunken capture reports
-    # 100% COVERAGE against its own (wrong) denominator, is graded "healthy",
-    # and becomes IMMUTABLE forever under rule 1 — freezing the store at a
-    # handful of ETFs even after the membership file comes back. Refuse to
-    # fetch or write at all.
-    #
-    # Scoped to membership_path.exists(): the file EXISTS but resolved to zero
-    # members (corrupted/truncated content, or every member marked removed) —
-    # not merely ABSENT. In production the file is a committed, nightly-
-    # maintained artifact, so "exists but empty" is the realistic incident
-    # shape (a bad write), while "absent" is the ordinary state of any
-    # environment (dev, CI, a fresh worktree) that has simply never run the
-    # basket-membership builder — engine.options_universe's own contract calls
-    # a missing file a graceful degradation, not an incident, and gating on it
-    # unconditionally would refuse to accrue in every such environment.
-    membership_path = config.data_dir() / "baskets" / "membership.json"
-    membership_degraded = (gx_cfg.get("include_baskets", False) and membership_path.exists()
-                           and not baskets_universe())
+    # N1 ruling (AD-1C0 round 2): --force bypasses BOTH universe gates below —
+    # a forced diagnostic run is the operator explicitly overriding the
+    # quality machinery, and the gates would otherwise be an unremovable wedge
+    # under exactly the condition force exists to escape. The resulting write
+    # still lands as decision "forced" (see below), which is itself the
+    # receipt's record that a bypass happened.
+    if not force:
+        # B2 ruling (AD-1C0 review): fail CLOSED on a degraded universe. When
+        # config expects baskets (`include_baskets: true`) but the membership
+        # file resolves to ZERO members, the universe silently collapses from
+        # ~300+ names down to just the config anchors. Without this gate that
+        # shrunken capture reports 100% COVERAGE against its own (wrong)
+        # denominator, is graded "healthy", and becomes IMMUTABLE forever
+        # under rule 1 — freezing the store at a handful of ETFs even after
+        # the membership file comes back. Refuse to fetch or write at all.
+        #
+        # Scoped to membership_path.exists(): the file EXISTS but resolved to
+        # zero members (corrupted/truncated content, or every member marked
+        # removed) — not merely ABSENT. In production the file is a
+        # committed, nightly-maintained artifact, so "exists but empty" is
+        # the realistic incident shape (a bad write), while "absent" is the
+        # ordinary state of any environment (dev, CI, a fresh worktree) that
+        # has simply never run the basket-membership builder —
+        # engine.options_universe's own contract calls a missing file a
+        # graceful degradation, not an incident, and gating on it
+        # unconditionally would refuse to accrue in every such environment.
+        membership_path = config.data_dir() / "baskets" / "membership.json"
+        membership_degraded = (gx_cfg.get("include_baskets", False)
+                               and membership_path.exists() and not baskets_universe())
 
-    # B2 ADDENDUM (coordinator ruling, 2026-08-19): the membership-file check
-    # above is deliberately blind to the file being simply ABSENT — that is
-    # the ordinary state of a fresh/dev/CI environment (see the comment
-    # above), so gating on absence would fight the pinned graceful-degradation
-    # contract. But that same exemption is exactly the reviewer's real attack
-    # path: a degraded/sparse/husk checkout with NO membership file at all
-    # would sail through the check above and silently accrue an anchors-only
-    # capture graded "healthy" at 100% of its own shrunken denominator. The
-    # STORE ITSELF is the only self-contained witness available here that the
-    # universe used to be materially bigger: if the most recent PRIOR
-    # session's stored chain has >= STORE_SHRINK_FACTOR times as many
-    # underlyings as the CURRENTLY resolved universe, treat it exactly like
-    # the membership-file check — refuse to fetch or write. A fresh
-    # environment with no stored chains has no reference (_store_shrink_reference
-    # returns None) and proceeds normally, which is what keeps every pinned
-    # unowned fixture (whose stored chains carry a single underlying —
-    # reference 1, never >= 3xN) untouched.
-    store_shrink_ref = _store_shrink_reference(_chains_dir(), asof)
-    store_shrunk = (store_shrink_ref is not None
-                    and store_shrink_ref >= STORE_SHRINK_FACTOR * len(symbols))
+        # B2 ADDENDUM (coordinator ruling, 2026-08-19): the membership-file
+        # check above is deliberately blind to the file being simply ABSENT
+        # — that is the ordinary state of a fresh/dev/CI environment (see the
+        # comment above), so gating on absence would fight the pinned
+        # graceful-degradation contract. But that same exemption is exactly
+        # the reviewer's real attack path: a degraded/sparse/husk checkout
+        # with NO membership file at all would sail through the check above
+        # and silently accrue an anchors-only capture graded "healthy" at
+        # 100% of its own shrunken denominator. The STORE ITSELF is the only
+        # self-contained witness available here that the universe used to be
+        # materially bigger: if the reference (see _store_shrink_reference —
+        # N2-amended to also consider a prior night's receipt-recorded
+        # requested_underlyings, not just its captured chain) is >=
+        # STORE_SHRINK_FACTOR times the CURRENTLY resolved universe, treat it
+        # exactly like the membership-file check — refuse to fetch or write.
+        # A fresh environment with no stored chains/receipts has no reference
+        # and proceeds normally, which is what keeps every pinned unowned
+        # fixture (whose stored chains carry a single underlying — reference
+        # 1, never >= 3xN) untouched.
+        #
+        # N1 ruling: scoped to include_baskets=TRUE only. Baskets OFF is the
+        # operator's DECLARED anchors-only intent (a documented config
+        # revert), never a silent collapse — checking the shrink tripwire
+        # against it turned a legitimate `include_baskets: false` revert into
+        # a PERMANENT WEDGE (a large historical chain on disk would forever
+        # outsize the now-intentionally-smaller anchors-only universe).
+        store_shrink_ref = None
+        if gx_cfg.get("include_baskets", False):
+            store_shrink_ref = _store_shrink_reference(_chains_dir(), _health_dir(), asof)
+        store_shrunk = (store_shrink_ref is not None
+                        and store_shrink_ref >= STORE_SHRINK_FACTOR * len(symbols))
 
-    if membership_degraded or store_shrunk:
-        reason_detail = (
-            "include_baskets is true but the basket membership universe "
-            "resolved to ZERO members" if membership_degraded else
-            f"the most recent prior session's stored chain had "
-            f"{store_shrink_ref} underlyings — >= {STORE_SHRINK_FACTOR}x the "
-            f"{len(symbols)} currently resolved — the universe likely collapsed")
-        census = _coerce_unknown_reasons({
-            "requested_underlyings": len(symbols), "attempted_underlyings": 0,
-            "successful_underlyings": 0, "coverage_pct": 0.0,
-            "failure_reasons": {"universe_resolution_failed": 1},
-            "failure_examples": {}, "aborted_early": True,
-        })
-        print(f"::warning title=polygon-universe-degraded::session {asof}: "
-              f"{reason_detail} — refusing to fetch/write against a collapsed "
-              f"universe ({len(symbols)} names)", flush=True)
-        log.warning("polygon: universe resolution failed for %s (%s)", asof, census)
-        _append_health_attempt(asof, decision="nothing_captured", health="failed",
-                               census=census, now=now)
-        return {"status": "failed", "date": asof.isoformat(), "session": asof.isoformat(),
-                "health": "failed", "census": census}
+        if membership_degraded or store_shrunk:
+            reason_detail = (
+                "include_baskets is true but the basket membership universe "
+                "resolved to ZERO members" if membership_degraded else
+                f"the most recent prior reference had {store_shrink_ref} "
+                f"underlyings — >= {STORE_SHRINK_FACTOR}x the {len(symbols)} "
+                f"currently resolved — the universe likely collapsed")
+            census = _coerce_unknown_reasons({
+                "requested_underlyings": len(symbols), "attempted_underlyings": 0,
+                "successful_underlyings": 0, "coverage_pct": 0.0,
+                "failure_reasons": {"universe_resolution_failed": 1},
+                "failure_examples": {}, "aborted_early": True,
+            })
+            print(f"::warning title=polygon-universe-degraded::session {asof}: "
+                  f"{reason_detail} — refusing to fetch/write against a collapsed "
+                  f"universe ({len(symbols)} names)", flush=True)
+            log.warning("polygon: universe resolution failed for %s (%s)", asof, census)
+            _append_health_attempt(asof, decision="nothing_captured", health="failed",
+                                   census=census, now=now)
+            return {"status": "failed", "date": asof.isoformat(), "session": asof.isoformat(),
+                    "health": "failed", "census": census}
 
     result = client.snapshot(symbols, asof)
     # New contract: snapshot() returns (raw_df, census), and requested_underlyings
@@ -663,6 +738,23 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
         except Exception as e:  # noqa: BLE001 — cleanup must never block the write
             log.warning("polygon: could not read prior chain %s for orphan-summary "
                         "cleanup: %s", path.name, e)
+
+    # B3 trigger-2 ruling (AD-1C0 round 2) — WRITE-AHEAD receipt entry, BEFORE
+    # to_parquet: a "write_pending" attempt carrying the FULL census and the
+    # health THIS write is about to produce. Two crash windows this closes:
+    #   * crash between THIS append and the parquet write below: path never
+    #     gets created, so path.exists() is False on the next run and the
+    #     immutable-skip gate above never even executes — proceeds to a fresh
+    #     write untouched by this entry (nothing to disarm).
+    #   * crash AFTER the parquet write but BEFORE the FINAL decision entry
+    #     at the bottom of this function: the receipt's trailing entry is
+    #     this "write_pending" one, but the parquet IS on disk.
+    #     _stored_state_entry now recognizes a trailing write_pending as an
+    #     anchor — "the capture self-describes" — so the next run reads THIS
+    #     entry's health (a 40% capture stays "partial", never a silent
+    #     fallback to "healthy") instead of skipping past it to legacy-healthy.
+    _append_health_attempt(asof, decision="write_pending", health=health,
+                           census=census, now=now)
 
     # 1. raw per-strike chain, session-partitioned (append-only, git-friendly).
     # `decision` is one of wrote/replaced_partial/forced here — a single-vintage
