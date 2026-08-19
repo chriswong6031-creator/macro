@@ -2910,7 +2910,7 @@ jobs:
       # untested code otherwise); no importorskip, no data/ or site/ reads, so it
       # cannot skip its way to a green on a pack runner.
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
-        run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
+        run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py tests/test_ci_gate_reliability_report.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
       # The merge-gate reliability report is the progress metric for
