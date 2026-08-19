@@ -1,6 +1,6 @@
 # CN-G0 — Open questions (China)
 
-**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/G0_OPEN_QUESTIONS_US_ESTATE.md` on PR #5953). Do not file these as answers to US G0 Q1–Q8.
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (canonical: `research/earnings_intelligence/g0/G0_OPEN_QUESTIONS.md`, PR #5955; the #5953 rival copy was withdrawn). Do not file these as answers to the US G0 open questions.
 **Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
 **None of these unblocks writing this census.** They unblock a later Earnings OS E-wave after E2.
 
@@ -14,7 +14,7 @@
 | GQ4 | Is a post-print 问询函 the same event (`corrected`) or a sibling (`event_type=exchange_inquiry`)? | Inquiry can be about the print or about something else (减持, 重组). Title-keyword cannot always tell. | Earnings OS + filings category | Default sibling. Join as `related_event` only when the letter title names the same fiscal period (heuristic later; not this census). |
 | GQ5 | Which 预告 tape is primary — Eastmoney or Tushare? | Two stores, one derived `guidance_score`. | Earnings OS after a rights/coverage check | Eastmoney keyless tape as document primary; Tushare hist as validation substrate only. |
 | GQ6 | May workspace Q&A cite IRM/e互动 **text**, or only metadata? | Collectors store answer text as an input plane, "not a display surface". | Earnings OS + rights | Metadata + typed "body not licensed" until a rights verdict. Same spirit as US consensus `unlicensed`. |
-| GQ7 | Does #5822's `china_corporate_event.v1` get renamed as an alias or refused? | Duplicate event truth. | FABLE-00 / Earnings owner when #5822 is reviewed | Refuse the schema name; harvest field list. |
+| GQ7 | Does #5822's `china_corporate_event.v1` get renamed as an alias or refused? | Duplicate event truth. | RESOLVED 2026-08-19 (c0g seat + canonical #5953 masterplan: refused — `DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL`) | Refuse the schema name; harvest field list. |
 | GQ8 | Is there an in-tree `stk_surv` / institutional-visit collector? | #5822 P0-A. This session did not find one. | China program / B-lane | Treat as **absent**. Not a G blocker. |
 | GQ9 | Production depth of `preliminary.parquet` and IRM shards? | Sparse worktree omits `data/`. | Next E-wave with `worktree_sparse.py add data` or live replica | UNKNOWN. Census treats the **contracts** as verified, not the row counts. |
 | GQ10 | Should QLedger `cn_special_sits` ever register 预告/快报? | Today only inquiry + large unlock, direction=0. | Eval OS + Earnings OS | No, until an event_id exists. Registering off ticker+date would fork identity. |

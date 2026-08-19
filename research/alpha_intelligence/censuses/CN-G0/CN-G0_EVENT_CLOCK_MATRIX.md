@@ -1,8 +1,8 @@
 # CN-G0 — Event-clock matrix (China)
 
-**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/G0_EVENT_CLOCK_AND_CONTRACT_CENSUS.md` on PR #5953).
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (canonical: `research/earnings_intelligence/g0/G0_EVENT_CLOCK_AND_CONTRACT_CENSUS.md`, PR #5955; governing adjudication: `research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md`, PR #5933).
 **Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
-**Parent:** China Alpha Intelligence program (PR #5953 / #5822 §7.2 / §7.5 / §8). US G0 clocks stay in the US packet.
+**Parent:** China Alpha Intelligence program (PR #5953; superseded #5822 draft §7.2 / §7.5 / §8). US G0 clocks stay in the US packet.
 
 Four independent clock vocabularies already exist on the China event-adjacent estate. They do not interoperate. Earnings OS `company_event.v1` is a fifth vocabulary that China cannot currently enter.
 

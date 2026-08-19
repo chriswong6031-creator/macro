@@ -1,11 +1,11 @@
 # CN-G0 — Current-estate census (China post-event reinterpretation)
 
-**Lane id:** `CN-G0`. This is **not** the US Alpha Intelligence GROK-G0. The US packet lives at `research/alpha_intelligence/censuses/G0/` (PR #5953: academic review, US event-clock census, frontier spec draft, US casebook, reaction-geometry matrix). This packet must not occupy that directory.
+**Lane id:** `CN-G0`. This is **not** the US Alpha Intelligence GROK-G0. The canonical US packet lives at `research/earnings_intelligence/g0/` (PR #5955: academic review, US event-clock census, frontier spec draft, US casebook, reaction-geometry matrix; governing adjudication `C0G_G0_SEAT_ADJUDICATION_2026-08-19.md` on PR #5933). This packet must not occupy that territory.
 **Lane:** GROK-CN-G0 (China post-event reinterpretation)
 **Date:** 2026-08-19
 **Reconciliation pin:** `origin/main` @ `6353b77f5aaa`
 **Authority of this document:** NONE. Research census only. No production scoring, no Prophet change, no new store, no E2 change.
-**Parent snapshot:** PASS-0 PR #5910 §1-G names the *US* G responsibility. C0 (#5933) recorded US G0 outstanding; PR #5953 returns that US G0. **This file is the China-program sibling, not a second copy of that return.**
+**Parent snapshot:** PASS-0 PR #5910 §1-G names the *US* G responsibility. C0 (#5933) recorded US G0 outstanding; canonical US G0 was returned on PR #5955 and adjudicated by the c0g seat packet (#5933) — #5953's rival copy was withdrawn. **This file is the China-program sibling, not a second copy of that return.**
 **China program under census:** China Alpha Intelligence (open PR #5953 / closed draft #5822). Not the July `china_alpha/` pick-board program. Not CN-limit-alpha (`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`).
 **Addressee:** `WS:EARNINGS-INTELLIGENCE-OS` for event/document/claim contract. China source planes stay in `china-system`. There is never an independent G or CN-G build lane.
 

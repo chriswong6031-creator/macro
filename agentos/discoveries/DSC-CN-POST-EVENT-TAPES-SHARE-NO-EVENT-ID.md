@@ -42,4 +42,4 @@ scope:
 confidence: verified
 ---
 
-CN-G0 census finding (China program). Not the US GROK-G0 packet in `censuses/G0/`. The missing object is a join, not a scrape.
+CN-G0 census finding (China program). Not the US GROK-G0 packet (canonical: `research/earnings_intelligence/g0/`, PR #5955). The missing object is a join, not a scrape.

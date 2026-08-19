@@ -1,8 +1,8 @@
 # CN-G0 — Adoption and collision map (China)
 
-**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/` on PR #5953).
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (canonical: `research/earnings_intelligence/g0/`, PR #5955).
 **Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
-**Parent:** China Alpha Intelligence program. US c0g / GROK-G0 is a sibling wave and a **path collision** if this packet stays under `censuses/G0/`.
+**Parent:** China Alpha Intelligence program. US c0g / GROK-G0 is a sibling wave; the old `censuses/G0/` path collision is DISSOLVED (this packet renamed to `censuses/CN-G0/`; #5953 withdrew its rival US copy, so `censuses/G0/` no longer exists on any live head).
 
 ---
 
@@ -31,11 +31,11 @@
 
 | Collision | State at pin | Rule for G |
 |---|---|---|
-| **US GROK-G0 directory** | PR #5953 owns `research/alpha_intelligence/censuses/G0/` (US estate + c0g adjudication). | **This packet lives only in `censuses/CN-G0/`.** Do not merge the two directories. |
+| **US GROK-G0 home** | Canonical US G0 = PR #5955, `research/earnings_intelligence/g0/` (inside the Earnings owner's paths); governing adjudication = seat packet on #5933. #5953 withdrew its rival `censuses/G0/` copy — that directory no longer exists on any live head. | **This packet lives only in `censuses/CN-G0/`.** Do not merge the two homes. |
 | **E2 frozen scope** | `WS:EARNINGS-INTELLIGENCE-OS` next_action is AAPL FY2026 Q3 Terminal + dossier glance. Do not broaden into E3+. | **Untouchable.** Any China adapter is a later E-wave. |
 | **`company_id = cik:`** | `identity.py` / `events.py` / E0 freeze § issuer rule | A China adapter is a **contract amendment**, not a silent ticker pad. Dual-class law still applies (one issuer, many listings). |
-| **#5822 China institutional alpha masterplan** | OPEN research PR. Proposes `china_corporate_event.v1` and a full announcement corpus. | Reconcile *fields* into Earnings OS. Refuse a second store. Same standing as PASS-0 collision #4 for lane B. |
-| **#5933 C0 adjudication** | OPEN. Five censuses accepted; G0 outstanding; `c0g` wave added. | This packet **is** the G0 return. Do not open a second G0. |
+| **#5822 China institutional alpha masterplan** | CLOSED draft, superseded by the canonical masterplan on PR #5953 (which forbids `china_corporate_event.v1`). The draft proposed that schema and a full announcement corpus. | Reconcile *fields* into Earnings OS. Refuse a second store. Same standing as PASS-0 collision #4 for lane B. |
+| **#5933 C0 adjudication** | OPEN; five censuses accepted; the `c0g` wave has since ADJUDICATED the G0 returns (this packet ACCEPTED as CN-G0; #5955 canonical US). | This packet **is** the CN-G0 return. Do not open a second G0 of either scope. |
 | **Special Situations vs event workspace** | Live page vs US-only workspace | Desk stays. Workspace, when it exists, may *cite* the desk; it must not replace it. |
 | **Two 预告 tapes** | Eastmoney keyless + Tushare gated + derived `guidance_score` | One primary document source per workspace. Score stays in `china_validation`, never in the workspace facts. |
 | **Q&A shard coverage** | ≤40 names/night per exchange platform | Workspace must print typed absence, not imply full-universe Q&A. |

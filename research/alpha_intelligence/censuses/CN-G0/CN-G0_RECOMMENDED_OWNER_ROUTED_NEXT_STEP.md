@@ -1,6 +1,6 @@
 # CN-G0 — Recommended owner-routed next step
 
-**Lane id:** `CN-G0`. **Not** US GROK-G0. Do not treat this file as the c0g return; that return is PR #5953 `research/alpha_intelligence/censuses/G0/` plus `C0G_G0_ADJUDICATION_2026-08-19.md`.
+**Lane id:** `CN-G0`. **Not** US GROK-G0. Do not treat this file as the US G0 return: canonical US G0 is PR #5955 (`research/earnings_intelligence/g0/`), and the governing c0g adjudication is `research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md` (PR #5933). PR #5953 withdrew its rival US G0 copy.
 **Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
 **Addressee:** `WS:EARNINGS-INTELLIGENCE-OS` (event contract) and the China Alpha Intelligence owner (PR #5953 / `WS:CHINA-ALPHA-INTELLIGENCE` when that record lands).
 **China program in scope:** China Alpha Intelligence Corporate Event Intelligence — **not** a new owner, and **not** a second US G0.
@@ -52,10 +52,10 @@ Until that wave is commissioned, **next action on Earnings OS stays E2**.
 
 ## What FABLE-00 should record
 
-- US GROK-G0 is PR #5953 `censuses/G0/` + `C0G_G0_ADJUDICATION_2026-08-19.md`. **Do not file this packet as that return.**
+- Canonical US GROK-G0 is PR #5955 (`research/earnings_intelligence/g0/`); the governing adjudication is `C0G_G0_SEAT_ADJUDICATION_2026-08-19.md` (PR #5933). #5953 withdrew its rival US copy. **Do not file this packet as the US return.**
 - **CN-G0** is this directory: China-program post-event estate, addressed to Earnings OS for the contract and to China Alpha Intelligence for the source planes.
 - Any China event-join remains **WAIT** on E2 (same as US G).
-- #5953 / #5822 `china_corporate_event.v1` is a **named collision**, not a build license.
+- The superseded #5822 draft's `china_corporate_event.v1` was a **named collision**; the canonical #5953 masterplan now forbids it outright — not a build license on any path.
 
 ---
 

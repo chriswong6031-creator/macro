@@ -1,6 +1,6 @@
 # CN-G0 — Post-event reinterpretation casebook (China)
 
-**Lane id:** `CN-G0`. **Not** US GROK-G0 (`research/alpha_intelligence/censuses/G0/G0_POST_EVENT_CASEBOOK.md` on PR #5953 — US 8-K / transcript / PEAD estate).
+**Lane id:** `CN-G0`. **Not** US GROK-G0 (canonical: `research/earnings_intelligence/g0/G0_POST_EVENT_CASEBOOK.md`, PR #5955 — US 8-K / transcript / PEAD estate).
 **Lane:** GROK-CN-G0 · **Date:** 2026-08-19 · **Pin:** `6353b77f5aaa`
 **Rule:** cases are repo artifacts or documented production objects, not invented stories. US flagship AAPL appears only as a contrast case (C6), not as this census's estate.
 
