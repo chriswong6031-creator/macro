@@ -1,10 +1,19 @@
 {
-  "authority": "display_only \u2014 DOS-1.1 materializes the spine; nothing reads it as authority yet",
-  "code_version": "ba2bb82052bcc427262909ba26790f820f69a44a",
+  "authority": {
+    "consumers": [
+      "gmi.identity_resolution/v1"
+    ],
+    "identity_authority": "canonical_exact_identity",
+    "ranking_authority": "none",
+    "signal_authority": "none",
+    "trade_authority": "none"
+  },
+  "cik_map_snapshot": "2026-08-18",
+  "code_version": "6e3e1625a3212f0fbaf00a9581b09f0bb3b4fa3b",
   "coverage": {
-    "resolved": 702,
-    "total": 711,
-    "unresolved": 9,
+    "resolved": 703,
+    "total": 713,
+    "unresolved": 10,
     "unresolved_names": [
       "ANGPY",
       "B",
@@ -14,14 +23,17 @@
       "GATO",
       "IMPUY",
       "MAG",
-      "RHHBY"
+      "RHHBY",
+      "VMRK"
     ]
   },
   "dataset_ids": [
     "reference.security_master",
-    "reference.vendor_aliases"
+    "reference.vendor_aliases",
+    "reference.issuer_master",
+    "reference.issuer_migrations"
   ],
-  "generated_at": "2026-08-14T16:45:46",
+  "generated_at": "2026-08-19T09:44:15",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -37,12 +49,46 @@
     }
   ],
   "inputs": {
-    "config.yml": "03f16dda2d96a57affd2dac08ca8b1c3e98834cb593bd9284266d670a37c22ee",
+    "config.yml": "3c34cf00574ba9c316e4e767b59bed1e311b5d42e5bdded5aebaf8fb1840940c",
     "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
     "data/baskets/membership.json": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
-    "data/breadth/constituents.parquet": "a0bad230bfdf0052743d27d74c972f1a0be17ee6ddc732ac26db8086b7b98711",
+    "data/breadth/constituents.parquet": "be304e529465ec96e141749ff9c882963fab5db3ba75e340d9f205e738943441",
+    "data/symbol_directory/cik_map/2026-08-18.parquet": "1e47a7312c27fb70da6863eac31eb70b2fa35e605f1325f1bafc941340bca748",
     "data/symbol_directory/snapshots/2026-08-10.parquet": "f082a2bee3171061b1f61b4b38bba98a2bceccb0a49425a62def9dca9d1eb370",
     "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
+  },
+  "issuer": {
+    "era": "issuer_semantic_correction_v1",
+    "evidence_snapshot": "2026-08-18",
+    "migrations_this_run": 0,
+    "multi_security_groups": [
+      {
+        "issuer_id": "ISS:US-XNAS-FOX",
+        "security_ids": [
+          "SEC:US-XNAS-FOX",
+          "SEC:US-XNAS-FOXA"
+        ]
+      },
+      {
+        "issuer_id": "ISS:US-XNAS-GOOG",
+        "security_ids": [
+          "SEC:US-XNAS-GOOG",
+          "SEC:US-XNAS-GOOGL"
+        ]
+      },
+      {
+        "issuer_id": "ISS:US-XNAS-NWS",
+        "security_ids": [
+          "SEC:US-XNAS-NWS",
+          "SEC:US-XNAS-NWSA"
+        ]
+      }
+    ],
+    "state_counts": {
+      "DEFERRED_IDENTITY_EXCEPTION": 1,
+      "NO_ISSUER_EVIDENCE": 4,
+      "RESOLVED": 699
+    }
   },
   "notes": [],
   "producer": "scripts/build_security_master.py",
@@ -69,16 +115,18 @@
     }
   ],
   "row_counts": {
-    "security_master": 703,
-    "vendor_alias_rows_readable": 2817,
-    "vendor_aliases": 2817
+    "issuer_master": 701,
+    "issuer_migrations": 3,
+    "security_master": 704,
+    "vendor_alias_rows_readable": 2821,
+    "vendor_aliases": 2821
   },
   "seed_counts": {
     "delisted_keys": 2,
     "directory_symbols": 13112,
     "ticker_fixups": 2,
     "ticker_key_migrations": 1,
-    "universe_keys": 709
+    "universe_keys": 711
   },
   "symbol_directory_snapshot": "2026-08-10",
   "undated_renames": [
