@@ -26,6 +26,7 @@ import re
 import threading
 import time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -70,6 +71,32 @@ _STATIC_ASSET_VERSIONS = {
     name: hashlib.sha256((STATIC / name).read_bytes()).hexdigest()[:12]
     for name in _STATIC_ASSET_NAMES
 }
+
+# The console is one ~950 KB bundle plus a ~210 KB stylesheet, and _file() used to
+# read the whole thing off disk on every hit (and redo index.html's ?v= rewrite each
+# time). The asset hashes above are already computed once at import from these exact
+# bytes, so the version a client is told about is pinned to process start — caching
+# the bodies to match is consistent, not a staleness risk: a deploy restarts the unit
+# (admin/deploy/admin.service), which is what re-reads the files and re-stamps the
+# hashes. Guarded by a lock so two first-hit threads don't both read the file.
+_STATIC_BODY_CACHE: dict[str, bytes] = {}
+_STATIC_BODY_LOCK = threading.Lock()
+
+
+def _static_body(name: str, path) -> bytes:
+    cached = _STATIC_BODY_CACHE.get(name)
+    if cached is not None:
+        return cached
+    body = path.read_bytes()
+    if name == "index.html":
+        for asset_name, version in _STATIC_ASSET_VERSIONS.items():
+            body = body.replace(
+                asset_name.encode(),
+                f"{asset_name}?v={version}".encode(),
+            )
+    with _STATIC_BODY_LOCK:
+        _STATIC_BODY_CACHE[name] = body
+    return body
 
 # Page panels are read-only snapshots assembled from files and integrations. Several
 # take hundreds of milliseconds (or more on the VPS) to fold, while a human commonly
@@ -357,30 +384,49 @@ def _repo_summary(cfg: dict | None = None) -> dict:
 
 
 def _summary_payload() -> dict:
-    """Build the landing snapshot while parsing the large config only once."""
+    """Build the landing snapshot while parsing the large config only once.
+
+    The eleven panels are INDEPENDENT of one another and every one of them is
+    I/O-bound — `git` subprocesses, five `systemctl show` spawns, and a pile of
+    JSON/YAML file reads — so folding them serially just adds their latencies up.
+    This endpoint is on the console's boot path (app.js awaits it before it routes
+    to a tab), which made it the single biggest contributor to "the admin feels
+    laggy": measured 0.85-3.5 s cold. Running them on a small pool collapses the
+    wall time to roughly the slowest panel, because each one releases the GIL
+    while it waits on the OS.
+
+    Ordering is preserved by building the result from a fixed list, so the JSON
+    key order does not depend on which panel happens to finish first.
+    """
     def _safe(fn):
         try:
             return fn()
         except Exception as exc:  # noqa: BLE001
             return {"error": str(exc)}
 
+    # Parsed first and shared: three panels take it as an argument, so folding it
+    # concurrently with them would just re-read the same file three more times.
     shared_cfg = _safe(config_store.read_config)
     if not isinstance(shared_cfg, dict) or set(shared_cfg) == {"error"}:
         shared_cfg = None
 
-    result = {
-        "meta": _safe(lambda: _repo_summary(shared_cfg)),
-        "flags": _safe(lambda: flags.snapshot(shared_cfg)),
-        "brief": _safe(lambda: brief.panel(shared_cfg)),
-        "health": _safe(health.summary),
-        "cost": _safe(lambda: ai_cost.estimate(shared_cfg)),
-        "git": _safe(gitops.status),
-        "system": _safe(system.snapshot),
-        "services": _safe(services.status),
-        "experiments": _safe(experiments.alert_summary),
-        "key_alerts": _safe(key_alerts.panel),
-        "program_watch": _safe(program_watch.panel),
-    }
+    panels = (
+        ("meta", lambda: _repo_summary(shared_cfg)),
+        ("flags", lambda: flags.snapshot(shared_cfg)),
+        ("brief", lambda: brief.panel(shared_cfg)),
+        ("health", health.summary),
+        ("cost", lambda: ai_cost.estimate(shared_cfg)),
+        ("git", gitops.status),
+        ("system", system.snapshot),
+        ("services", services.status),
+        ("experiments", experiments.alert_summary),
+        ("key_alerts", key_alerts.panel),
+        ("program_watch", program_watch.panel),
+    )
+    with ThreadPoolExecutor(max_workers=len(panels),
+                            thread_name_prefix="admin-summary") as pool:
+        futures = [(key, pool.submit(_safe, fn)) for key, fn in panels]
+        result = {key: fut.result() for key, fut in futures}
     if isinstance(result["health"], dict) and "error" not in result["health"]:
         result["health"] = {
             k: v for k, v in result["health"].items()
@@ -397,6 +443,22 @@ def _summary_payload() -> dict:
 class Handler(BaseHTTPRequestHandler):
     server_version = "MacroAdmin/2.0"
 
+    # Keep the connection open between requests. BaseHTTPRequestHandler defaults to
+    # HTTP/1.0, which means "assume close after body" — every single API call paid a
+    # fresh TCP handshake and a fresh worker thread, and the console fires a burst of
+    # them on boot and on every tab switch. Every response this class writes carries an
+    # accurate Content-Length (_json_body / _csv / _file / the outbox-media path), which
+    # is the precondition for framing a persistent connection; the two places that could
+    # desync one — a 204 that still shipped a body, and an over-sized POST body that was
+    # never drained — are handled in _json_body and _body below.
+    protocol_version = "HTTP/1.1"
+
+    # A persistent connection holds a ThreadingHTTPServer worker for as long as it
+    # stays open, so an idle one must not be able to pin a thread forever. This is
+    # the socket timeout socketserver applies to the connection; handle_one_request
+    # turns the resulting timeout into close_connection and the thread exits.
+    timeout = 30
+
     # ---- low-level helpers --------------------------------------------------
     def _json(self, obj, code: int = 200, cookies: list[str] | None = None) -> None:
         body = json.dumps(obj, default=str).encode()
@@ -412,9 +474,16 @@ class Handler(BaseHTTPRequestHandler):
     def _json_body(self, body: bytes, code: int = 200,
                    cookies: list[str] | None = None,
                    cache_status: str | None = None) -> None:
+        # 204/304 carry no body BY DEFINITION. Sending one anyway is invisible on a
+        # close-after-body connection but desynchronises a persistent one: the client
+        # reads the stray bytes as the head of the NEXT response and fails to parse it.
+        # /favicon.ico answers 204, so this is a live path, not a hypothetical.
+        if code in (204, 304):
+            body = b""
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
+        if code not in (204, 304):
+            self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         if cache_status:
             self.send_header("X-Admin-Cache", cache_status)
@@ -456,20 +525,24 @@ class Handler(BaseHTTPRequestHandler):
         if not str(p).startswith(str(STATIC.resolve())) or not p.is_file():
             self._json({"error": "not found"}, 404)
             return
-        body = p.read_bytes()
-        if name == "index.html":
-            for asset_name, version in _STATIC_ASSET_VERSIONS.items():
-                body = body.replace(
-                    asset_name.encode(),
-                    f"{asset_name}?v={version}".encode(),
-                )
+        body = _static_body(name, p)
+        etag = f'"{_STATIC_ASSET_VERSIONS[name]}"' if name in _STATIC_ASSET_VERSIONS else None
+        # The bundle is served under a content-addressed ?v= URL and marked
+        # immutable, so a conforming browser will not revalidate at all. This
+        # answers the ones that do anyway (a forced reload, an intermediary)
+        # without pushing ~950 KB back down the pipe for a byte-identical body.
+        if etag and self.headers.get("If-None-Match") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+            self.end_headers()
+            return
         self.send_response(200)
         self.send_header("Content-Type", _CTYPES.get(p.suffix, "application/octet-stream"))
         self.send_header("Content-Length", str(len(body)))
-        if name in _STATIC_ASSET_VERSIONS:
-            version = _STATIC_ASSET_VERSIONS[name]
+        if etag:
             self.send_header("Cache-Control", "public, max-age=31536000, immutable")
-            self.send_header("ETag", f'"{version}"')
+            self.send_header("ETag", etag)
         else:
             self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -484,9 +557,24 @@ class Handler(BaseHTTPRequestHandler):
             if n <= 0:
                 return {}
             if n > 1_000_000:
+                # Refuse without reading it. On a persistent connection the unread
+                # body would still be sitting in the socket and would be parsed as
+                # the next request line, so drop the connection instead of draining
+                # (draining is what turns an over-sized body into free work for a
+                # caller who sent it deliberately).
+                self.close_connection = True
                 return {}
-            return json.loads(self.rfile.read(n) or b"{}")
+            raw = self.rfile.read(n)
         except Exception:  # noqa: BLE001
+            # The body could not be pulled off the wire, so the stream position is
+            # unknown — this connection cannot be reused.
+            self.close_connection = True
+            return {}
+        try:
+            return json.loads(raw or b"{}")
+        except Exception:  # noqa: BLE001
+            # Malformed JSON from a caller who framed the request correctly: the
+            # body WAS consumed, so the connection stays in sync and usable.
             return {}
 
     def log_message(self, fmt, *args):  # quieter console

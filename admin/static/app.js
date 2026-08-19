@@ -121,6 +121,41 @@ function wireLobeTipNode(el) {
   el.addEventListener("blur",       hideLobeTip);
 }
 
+/* A response that fails to parse is almost never a serialization bug in the panel that
+   asked for it — every /api/* handler serializes through one json.dumps and its own
+   catch-all returns {"error": ...}. What actually arrives instead is one of two things:
+   an HTML error page from the edge/proxy in front of this console (admin.* is served
+   through a CDN, so an endpoint that outruns the origin-pull timeout is answered by the
+   EDGE, not by us), or nothing at all when the upstream connection is dropped.
+
+   Reporting all of that as the literal string "bad json" is what made the Analytics pane
+   undiagnosable: the single fact needed to act — WHICH LAYER failed — was the fact being
+   thrown away. Keep the status line, the content type, and a snippet of what came back. */
+function describeNonJson(r, raw) {
+  const ctype = (r.headers.get("content-type") || "").split(";")[0].trim() || "no content-type";
+  const status = `HTTP ${r.status}${r.statusText ? " " + r.statusText : ""}`;
+  if (!raw) {
+    return `${status} — empty response. The admin service closed the connection without ` +
+           `answering (on the VPS: systemctl status admin, journalctl -u admin -n 50).`;
+  }
+  const head = raw.replace(/\s+/g, " ").trim().slice(0, 180);
+  if (/^\s*<(?:!doctype|html|\?xml)/i.test(raw)) {
+    return `${status} — an HTML error page from the proxy/CDN in front of this console, ` +
+           `not from the panel itself. This is what a request that ran longer than the edge ` +
+           `will wait looks like: narrow the time window and retry. [${ctype}] ${head}`;
+  }
+  return `${status} — response was not JSON [${ctype}]: ${head}`;
+}
+
+async function readJson(r) {
+  let raw = "";
+  try { raw = await r.text(); } catch (e) { raw = ""; }
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) { /* fall through — report what arrived */ }
+  }
+  return { ok: false, error: describeNonJson(r, raw) };
+}
+
 async function api(path, opts) {
   const cacheable = apiCacheable(path, opts);
   if (cacheable) {
@@ -142,7 +177,7 @@ async function api(path, opts) {
       showLogin();
       throw new Error("auth required");
     }
-    const value = await r.json().catch(() => ({ error: "bad json" }));
+    const value = await readJson(r);
     if (cacheable && generation === API_CACHE_GENERATION) {
       if (r.ok) apiCacheStore(path, { value, expiresAt: Date.now() + API_CACHE_TTL_MS });
       else API_CACHE.delete(path);
@@ -1641,10 +1676,24 @@ const AN_RENDER = {};
 const AN_WINDOWS = [[60, "1h"], [180, "3h"], [360, "6h"], [720, "12h"], [1440, "24h"], [4320, "3d"], [10080, "7d"], [43200, "30d"]];
 function anWinLabel() { const f = AN_WINDOWS.find(w => w[0] === AN.minutes); return f ? f[1] : Math.round(AN.minutes / 1440) + "d"; }
 
+/* Two different failures used to share one headline. "Not connected" is a SETUP state —
+   the reader answers it with `configured:false` plus the steps to fix it. A query that
+   errored, timed out, or came back as a gateway page is a RUNNING system failing a
+   request, and telling the operator to go re-apply a migration is a wrong instruction.
+   Split them on the key only the setup path carries. */
 function anNotReady(d) {
-  return `<div class="card"><h3>First-party analytics — not connected</h3>
-    <div class="sub">${esc(d.reason || d.error || "no data yet — the tracker + tables may not be live")}</div>
-    <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+  const isSetup = d.configured === false || (d.setup_steps && d.setup_steps.length);
+  const title = isSetup ? "First-party analytics — not connected" : "Couldn't load this panel";
+  const detail = d.reason || d.error || (isSetup
+    ? "no data yet — the tracker + tables may not be live"
+    : "the request failed without saying why");
+  const steps = isSetup
+    ? `<ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol>`
+    : `<div class="sub" style="margin-top:10px">The tracker and tables are configured — this is a
+       failed request, not a setup gap. A shorter time window is the usual fix.</div>`;
+  return `<div class="card"><h3>${esc(title)}</h3>
+    <div class="sub">${esc(detail)}</div>
+    ${steps}</div>`;
 }
 /* horizontal ranked bars. labelFn(row)->html, valKey numeric; opt.fmt, opt.sub(row)->html */
 function anBars(rows, labelFn, valKey, opt) {
@@ -15790,7 +15839,17 @@ async function boot() {
   refreshSupportNavDot();  /* advisory open-ticket dot on the Support Tickets nav item */
 }
 (async function init() {
+  /* The landing snapshot is the one fetch the first paint genuinely blocks on (every
+     tile of the Overview reads SUMMARY), and it used to be started only AFTER the
+     session probe had come back — two serialized round trips before anything renders.
+     Start it here instead, concurrently. api()'s in-flight map dedupes by path, so the
+     refresh() inside boot() below joins THIS request rather than issuing a second one.
+     On a logged-out load it 401s harmlessly: api() routes that to showLogin(), which is
+     where the session probe was about to send us anyway. */
+  const summaryWarm = api("/api/summary").catch(() => {});
   SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));
   if (SESSION.auth_enabled && !SESSION.authenticated) { showLogin(); return; }
-  hideLogin(); boot();
+  hideLogin();
+  void summaryWarm;   // already in flight; refresh() below joins it via the in-flight map
+  boot();
 })();
