@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T22:13:15.279666+00:00",
-  "count": 1426,
+  "generated_at": "2026-08-19T23:12:41.599439+00:00",
+  "count": 1430,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,45 @@
   ],
   "items": [
     {
+      "id": "marketdesk-xzz5vueeybb-8b5ff7",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 19",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T22:57:38Z",
+      "summary_points": [
+        "**US Curve Flattening & Sector Flows**: Treasury yields down 1-10bp (2y-30y), tech lagging, healthcare (pharma/biotech) leading on melanoma vaccine data; dollar softened, gold/bitcoin rallied (fundamentals, technicals, flows).",
+        "**Critical Data Catalysts**: Philly Fed Business Outlook, Jobless Claims, Germany PPI, Japan CPI/PMIs dominate near-term market direction (data releases, policy sensitivity).",
+        "**Geopolitical Risk & Sector Flows**: US/Iran oil dynamics (shipping corridor/rail transit) and healthcare/retail flows (biotech sell, pharma buy) drive positioning (geopolitics, risk factors, flows).",
+        "**Monetization Strategy Shift**: Tech/Cyclicals barbell favored (AI theme + rally broadening), delaying deployment until CPI/Retail Sales prints; Large-Cap bias if inflation softens (policy, fundamentals, flows)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h9g3cfifzst-77ee3e",
+      "title": "GS Contessa US Equities Color MO MELT 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T22:56:24Z",
+      "summary_points": [
+        "**Systematic Drawdown**: Systematic L/S down 1.4% (worst 2+ years) driven by momentum; crypto rallied on SEC \"Regulation Crypto Assets\" proposal and Trump remarks.",
+        "**Geopolitical Cash Drop**: US equity mutual fund cash balances fell to 1.2% (June) amid US-Iran war, signaling acute risk aversion and strategic positioning.",
+        "**Derivatives Flow Surge**: Massive crypto call volumes (IBIT: 1.6mm contracts) and GLD flows; S&P implied move 0.43% tomorrow; mutual fund cash near historical lows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-x1qsmzcdhao-2506b0",
       "title": "Citi Getting long 20y after today’s buyback announcement Aug 19",
       "institution": "Citi",
@@ -97,6 +136,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jser9hvqkyk-d984e1",
+      "title": "RMC",
+      "institution": "Curvature",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T19:29:41Z",
+      "summary_points": [
+        "**Treasury Buyback Expansion**: $4B program (Sept 9–Nov 4) in 10–30Y bonds, no net supply change, yield curve flattening impact (Operation Twist analog) - **GC/Fed Funds Spread Negative**: GC rate below Fed Funds rate signals liquidity stress in Treasury repo market, indicating market disruption or policy misalignment - **MBS/GC Spread Widening**: MBS underperformance relative to Treasuries highlights critical credit risk for mortgage-backed securities - **2Y/5Y Rate Volatility**: Sharp decline in 2Y/5Y overnight rates signals rate cut expectations or liquidity stress, directly impacting short-term yield curve positioning"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -262,6 +318,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-treqd2yjlys-c002d9",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:13Z",
+      "summary_points": [
+        "**<u>FII Outflows Intensify</u>**: Cumulative FII outflows in EM Asia ex-China (Taiwan -40.6bn, India -210bn, Korea -104bn) signal severe capital flight, driven by geopolitical tensions/economic uncertainty, posing immediate downside risk.",
+        "**<u>Korea vs Taiwan Valuation Divergence</u>**: Korea (P/E 4.8) vs.",
+        "Taiwan (P/E 18.7) reveals stark valuation disparity; GS targets reflect divergent growth narratives (Taiwan 1795 vs.",
+        "Korea 1338).",
+        "**<u>MXAPJ Undervaluation vs Bonds</u>**: MXAPJ forward P/E at 10.7x (2.4 s.d."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
