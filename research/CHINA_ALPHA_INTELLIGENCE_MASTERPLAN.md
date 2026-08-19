@@ -1,8 +1,9 @@
 # China Alpha Intelligence — Canonical Masterplan
 **Base:** Sol (AI CEO) final architecture synthesis after 8 research turns, 2026-08-19, for Chairman Chris.  
-**Reconciled by:** FABLE-00 (COO seat), 2026-08-19 — against PASS-0 (#5910), the c0 Wave-0 census adjudication (#5933), the completed GROK-G0 census (this PR), and current `origin/main`.  
+**Reconciled by:** FABLE-00 (COO seat), 2026-08-19 — against PASS-0 (#5910), the c0 Wave-0 census adjudication (#5933), the seat-adjudicated G0 returns (canonical US G0 #5955, CN-G0 #5943, seat packet on #5933), and current `origin/main`.  
+**Revised:** 2026-08-19, second pass — Sol freeze-review verdict "architecture APPROVED; freeze artifact REVISE" applied in full (§0-ter): rival G0/c0g files withdrawn from this PR, GROK-CN verdicts incorporated as binding freeze inputs, completion law hardened (merge = BUILT_NOT_PROVEN; production receipt = done), dated capability ledger added (§1.10), PR-0D commission authored with a tight identity-only boundary.  
 **Repository:** `mastermindx-market-intelligence/macro` · **Workstream:** `WS:CHINA-ALPHA-INTELLIGENCE` · **Decision record:** `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`  
-**Status:** ARCHITECTURE FREEZE / EXECUTION PLAN — no production authority change by this document.  
+**Status:** ARCHITECTURE FREEZE / EXECUTION PLAN — no production authority change by this document. Freeze becomes effective at Sol's final freeze review, not at merge.  
 **Supersedes:** the 2026-08-17 draft `research/CHINA_INTELLIGENCE_INSTITUTIONAL_ALPHA_MASTERPLAN_2026-08-17.md` (rewritten on the commissioned #5822 vehicle branch; renaming that branch into the fleet `claude/*` namespace closed #5822 as a GitHub side effect, so the identical content and commit lineage landed as its documented successor **#5953** — closure recorded on #5822 itself. The draft's two-axis architecture, collapsed `china_intelligence_state.v2` object, 8-shelf naming, and 15-wave roadmap are superseded). Its surviving repo archaeology and China-source detail: `research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md`.
 
 ## §0-bis. FABLE-00 reconciliation record (2026-08-19)
@@ -37,12 +38,20 @@ The nine commissioned adjudications, each ruled at current `origin/main`:
 6. **F0 canonical-grader reuse PRESERVED.** Any China full-pool grading
    extracts `engine/china_standout_track.py` semantics (pins in §1.5); a rival
    grader is forbidden (§15.11); L0 is the extraction wave.
-7. **G0 ROUTED strictly inside the Earnings owner.** The GROK-G0 census is
-   complete (this PR, `research/alpha_intelligence/censuses/G0/` — executed by
-   a macro-fleet researcher on FABLE-00 commission; Grok lane was
-   undispatched), closing Wave-0 at 6/6 and estate wave c0g. Its deliverable
-   addresses `WS:EARNINGS-INTELLIGENCE-OS`; any G build is that owner's wave
-   behind E2. There is never an independent G build lane.
+7. **G0 ROUTED strictly inside the Earnings owner.** The G0 census slot is
+   closed by the SEAT adjudication (wave c0g, packet
+   `research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md` on
+   #5933): canonical US G0 = PR #5955 (`research/earnings_intelligence/g0/`,
+   inside the Earnings owner's `owns_paths`); CN-G0 = PR #5943
+   (`research/alpha_intelligence/censuses/CN-G0/`). The US census bundle this
+   session had executed (plus its non-seat c0g draft) was ruled a
+   non-canonical rival and is WITHDRAWN from this PR per the seat's
+   disposition request — its unique value is preserved by citation in the
+   seat packet. Binding on any later G work: Earnings event truth is
+   venue-neutral (`DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL`);
+   no `china_corporate_event.v1`; the CN issuer adapter is a later
+   Earnings-owner identity-plane wave post-E2; any G build is that owner's
+   wave behind E2. There is never an independent G build lane.
 8. **Four-model architecture RECONCILED as the program frame.** Reality /
    Professional Belief / Market Recognition / Prophet-Path (§3), families
    F1–F10 (§6) mapped onto it; the 2026-08-17 draft's two-axis frame is
@@ -57,10 +66,66 @@ RIGHTS-0 (source entitlement audit) — commissions at
 `research/china_alpha_intelligence/commissions/`. P1 spawns after RIGHTS-0
 names a lawful visit source. PR-0D (identity extension) may run in parallel
 with all of these (different owner surface, coordinate with
-`WS:STOCK-IDENTITY`). Waiting on data/time: P1B (needs P1 accrual), L2+ (needs
+`WS:STOCK-IDENTITY`; commission `PR-0D_china_identity_extension.md`, boundary
+in §0-ter.6). Waiting on data/time: P1B (needs P1 accrual), L2+ (needs
 L0 + family states), C3 (needs data depth per §11.2). Stop conditions: §17.
 The estate-side FABLE-A contract wave is dispatched separately under its own
 DEC and is NOT a China-lane dependency.
+
+**Completion law (binding on every builder wave in this program):** a merged
+implementation PR proves BUILT, never DONE. Each build wave carries an
+explicit `BUILT_NOT_PROVEN` (proof-pending) state after merge and may flip to
+`done` only after a real production input has traversed the real production
+path — the actual scheduled lane run, not a dry-run or fixture — and the
+receipt (run id + produced-artifact evidence) is recorded in the workstream.
+For China collector waves the proving lane is the next real `asia-close.yml`
+run; for candidate-plane telemetry it is the next real nightly plane write.
+
+## §0-ter. Sol freeze-review revision record (2026-08-19, second pass)
+
+Sol's freeze review returned: **architecture thesis APPROVED; the freeze
+artifact REVISE** — six blockers, all resolved in this pass, none reopening
+the eight-turn strategic work:
+
+1. **G0/c0g authority repaired.** This PR's six `censuses/G0/` files and its
+   non-seat `C0G_G0_ADJUDICATION_2026-08-19.md` are WITHDRAWN (deleted from
+   this branch). Canonical: US G0 = #5955, CN-G0 = #5943, governing record =
+   the seat packet on #5933 (§0-bis.7). Two seat findings are adopted as
+   corrections to the withdrawn draft: the frontier-from-lifecycle-pairs
+   recipe is degenerate on the only live workspace (the real build surface is
+   the per-source-clock projection gap), and the withdrawn casebook's
+   "18 verified events" was inflated (≈13 defensible). Neither survives as a
+   program input here; K4-G preconditions live in the seat packet §6.
+2. **The AgentOS state asserted by this PR now matches its own head.** The
+   integration-WS c0g closure belongs to #5933 (the seat's own vehicle) and is
+   no longer claimed as this PR's change; the handoff's `changed:` list was
+   corrected to the actual diff.
+3. **Completion law hardened** (§0-bis Execution rulings above): merge =
+   `BUILT_NOT_PROVEN`; a real production receipt = `done`. PR-0B and P1
+   commissions rewritten accordingly.
+4. **GROK-CN verdicts incorporated as binding freeze inputs** — no longer
+   deferred to "later consuming waves." The material rulings, each adopted
+   into the named section: CN-B resolver bake-off is a NO-BUY (§8.2 is
+   settled, not open); CN-E commercial supply-chain foundation is a NO-BUY
+   absent a written redistribution/derived-display grant (§8.3 settled);
+   CN-F sector clocks — only Bio and EV currently earn a China specialist
+   lobe (§15.20 instantiated); CN-A Tushare entitlement matrix is the rights
+   authority RIGHTS-0 consumes (§8.1); CN-G twelve-family priors are L1's
+   registered prior table; CN-C/CN-D source maps are R2/R3's frozen source
+   inputs; CN-G0's no-`china_corporate_event.v1` ruling is seat-adopted
+   (§0-bis.7). Details and citations: §1.8 and §1.10.
+5. **Dated capability ledger added** (§1.10) — the 2026-08-17 archaeology
+   ledger no longer needs re-verification before acting; §1.10 is the current
+   canonical statement of what exists, what is settled-no-buy, and what is
+   absent.
+6. **PR-0D boundary tightened + commission authored**
+   (`commissions/PR-0D_china_identity_extension.md`): canonical China
+   identity/GMI resolution ONLY. It never inherits the Earnings event-adapter
+   job — CN issuer admission into event truth is a later Earnings-owner wave
+   post-E2 under the venue-neutral DEC, and no `china_corporate_event.v1`
+   exists on any path.
+
+The freeze becomes effective at Sol's final review of this revised head.
 
 ---
 
@@ -191,28 +256,37 @@ Merged:
 - GROK-D0 Economic propagation census — PR #5913 (`research/economic_propagation/`)
 - GROK-E0 Opportunity evidence census — PR #5914 (`research/opportunity_evidence/`)
 - GROK-F0 Path survival census — PR #5915 (`research/path_survival/`)
-- GROK-G0 Post-event reinterpretation census — TWO independent returns,
-  adjudicated complementary (c0g §2-bis): this PR's US/estate-scoped bundle
-  (`research/alpha_intelligence/censuses/G0/`, executed by a macro-fleet
-  researcher on FABLE-00 commission) + PR #5943's China-scoped bundle (same
-  directory; key finding: A-share issuers cannot enter `event_workspace.v1`
-  because `company_id` is CIK-only — adopted as PR-0D + F3 input).
+- GROK-G0 Post-event reinterpretation census — seat-adjudicated (wave c0g,
+  packet `research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md`
+  on #5933): canonical US G0 = PR #5955
+  (`research/earnings_intelligence/g0/`); CN-G0 = PR #5943
+  (`research/alpha_intelligence/censuses/CN-G0/`; key adopted finding: only
+  the ISSUER layer of Earnings identity is CIK-locked —
+  `engine/company_intelligence/identity.py:40,50-58,158` — so the future CN
+  adapter is an identity-plane delta of three named sites, not an event-model
+  change; adopted as PR-0D + F3 input). The rival US bundle this session had
+  executed was withdrawn from this PR (§0-ter.1).
 
 Adjudications: A0/B0/D0/E0/F0 in the c0 packet
 (`research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md`, #5933,
-with binding conditions on the K-waves); G0 (both returns) in the c0g packet
-(`research/alpha_intelligence/C0G_G0_ADJUDICATION_2026-08-19.md`, this PR).
+with binding conditions on the K-waves); G0 (all returns) in the seat c0g
+packet (#5933), which also mints
+`DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL` and
+`DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION`.
 
-**Incoming GROK-CN wave (open PRs at reconciliation time, routed not
-re-adjudicated here):** CN-A #5945 Tushare P0 entitlement/rights matrix →
-consumed by RIGHTS-0; CN-B #5947 PRC entity-resolver bake-off (no-buy) → §8.2
-input; CN-C #5944 Government/SOE demand first-party source map → R2 input;
-CN-D #5946 project/EIA source map + lithium pilot → R3 input; CN-E #5951
-commercial supply-chain diligence (no seat purchase; terminal license forbids
-Mastermind display) → §8.3 input; CN-F #5950 sector-clock census (only Bio
-and EV pin unique clocks) → Track S lobe gate; CN-G #5949 empirical prior
-table for twelve China evidence families → L1 input. Each is adjudicated at
-its consuming wave boundary; none carries authority until then.
+**GROK-CN wave (open PRs at revision time, ADJUDICATED into this freeze —
+§0-ter.4):** CN-A #5945 Tushare P0 entitlement/rights matrix → the Tushare
+rights authority; RIGHTS-0 consumes it and never re-derives it. CN-B #5947
+PRC entity-resolver bake-off → NO-BUY verdict adopted; §8.2 is settled.
+CN-C #5944 Government/SOE demand first-party source map → R2's frozen source
+input. CN-D #5946 project/EIA source map + lithium pilot → R3's frozen source
+input. CN-E #5951 commercial supply-chain diligence → NO seat purchase absent
+a written redistribution/derived-display grant; §8.3 is settled. CN-F #5950
+sector-clock census → only Bio and EV currently earn a China specialist lobe;
+Track S gate instantiated. CN-G #5949 empirical prior table for twelve China
+evidence families → L1's registered prior table (priors are display/research
+context, never a promotion shortcut). Consuming waves execute these verdicts;
+re-litigating one requires a superseding DEC, not a fresh census.
 
 ### 1.9 PR #5822 — supersession executed
 The 2026-08-17 draft predated the merged PASS-0 integration, the census
@@ -225,6 +299,106 @@ lineage landed as documented successor #5953 (closure comment on #5822). The
 draft's surviving archaeology is preserved at
 `research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md`.
 No second China masterplan exists.
+
+### 1.10 Canonical capability ledger (2026-08-19, post-reconciliation)
+
+This ledger supersedes the 2026-08-17 archaeology ledger for decision
+purposes — a builder may act on it without re-verifying the archaeology.
+Citations: scout extraction of the CN-wave PR heads, 2026-08-19; repo pins
+per §1.1–§1.7.
+
+**Live and canonical (build on these):**
+- `cn_prophet_v4` live champion; `engine/china_board_rank.py` sole board
+  authority; `cn_prophet_v3_shadow` accruing; R4 = the prospective ordering
+  race (§1.1).
+- Candidate plane `data/china_prophet_rank/candidates.parquet` (writer
+  `engine/china_prophet_shadow.py`) — persists ZERO intel anatomy today
+  (PR-0B closes this); ruler `engine/china_standout_track.py` (L0 extracts).
+- Live China collectors (asia lane only): IRM 互动易 + e互动 Q&A tapes,
+  LHB + block trades, per-name margin, money flow, analyst, reports,
+  filings metadata (CNInfo), holder counts/sales, 预告/快报
+  (`forecast.parquet`/`preliminary.parquet`), china_earnings.
+- Tushare client (`collectors/tushare_client.py`) with consumed families:
+  `stk_auction*`, `stk_mins`, `stk_premarket`, `cyq_perf`, `moneyflow_dc`,
+  `daily_basic`, `margin_detail`, `forecast_vip`, `report_rc`,
+  `broker_recommend`, chips distribution.
+- Identity: Data OS spine + GMI bridge (#5894). Named gap: China/HK issuer
+  resolution (PR-0D); the Earnings issuer layer is CIK-locked at three named
+  sites (`engine/company_intelligence/identity.py:40,50-58,158`).
+- G0 knowledge base: #5955 (US, `research/earnings_intelligence/g0/`),
+  #5943 (CN, `research/alpha_intelligence/censuses/CN-G0/`), seat packet on
+  #5933.
+
+**Settled NO-BUY / no-capture (reopen only via superseding DEC):**
+- PRC entity-resolver vendors — Qichacha, Tianyancha, Qixinbao, Aiqicha,
+  Jinghai — NO-BUY (#5947): overseas-subject/IP prohibitions (Tianyancha
+  geo-blocks the US; QCC forbids cross-border storage), 面议-only control
+  endpoints that are vendor models rather than filings. Free primary
+  sources resolved 110/111 legal-name profiles and 23/36 hostile
+  holder-parent lookups on the frozen 150-entity sample. Canonical keys =
+  USCC + LEI + exchange ticker/venue/ISIN as aliases; parent/control stored
+  as dated `(legal_person, role, counterparty, source, as_of, known_at)`
+  tuples from CNInfo/HKEX/annual reports; HKSCC is a nominee, never a
+  parent. Four flip conditions in #5947
+  (`DSC:PRC-REGISTRY-VENDORS-BLOCK-OVERSEAS`).
+- Commercial supply-chain seat — Wind/Choice/iFinD/CSMAR/QCC — NO purchase
+  (`DEC:CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE`, #5951): terminal/click-through
+  licenses forbid redistribution, derivative datasets, and product display
+  (`DSC:CN-TERMINAL-LICENSE-FORBIDS-MASTERMIND-DISPLAY`). Only reopen path:
+  one written OEM/WDS-class grant covering API/bulk delivery + local
+  persistence + derived-feature rights + customer-facing derived display of
+  SDB-class disclosure edges. Interim floor: parse CNInfo 年报 top-5
+  customer/supplier tables on the existing `china_filings` metadata plane;
+  masked "客户A" rows stay masked.
+- Tushare P0 purchases — ¥0 outlay now on every family (#5945): every OWNED
+  endpoint is access-owned but rights-unknown
+  (`DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`; doc 405 is
+  personal/non-commercial/view-only). The unlock is ONE operator-owned
+  vendor letter (account status, local retention, commercial
+  derived-display, redistribution default-forbidden, institutional
+  contract/price). Adopted per-family verdicts: `stk_surv` +
+  `fund_portfolio` UNKNOWN_RIGHTS (letter-gated); `anns_d` NOT_NEEDED
+  (CNInfo metadata already covers the P0 plane); `hm_list`/`hm_detail` =
+  the actual P0 named-actor gap, UNKNOWN_RIGHTS and tier-unlock
+  unconfirmed.
+- Third-party bid aggregators (dlnyzb.com, chinabidding.com.cn, toobiao.com,
+  ccpc360) — DO NOT INGEST (#5944).
+
+**Absent (the build queue, in program order):**
+- Institutional visit tape — P1 (source verdict = RIGHTS-0; `stk_surv` is
+  rights-gated, primary exchange-IR/CNInfo 调研 pages are the non-vendor
+  fallback).
+- Intel anatomy persistence — PR-0B.
+- China identity extension — PR-0D (primary-source route only).
+- Public-fund holdings (`fund_portfolio`, P4), named actors
+  (`hm_list`/`hm_detail`, rights-gated), NMPA/CDE/CTR collectors (the Bio
+  clock — zero exist today), MIIT vehicle-catalog parser (the EV clock —
+  none exists), CSG procurement pilot (R2, via `WS:CN-SOE-DEMAND`'s frozen
+  CSG-GD-货物-90d spec — CSG public notice HTML keyed by 采购编号; SGCC ECP
+  is explicitly rail 2, not first), lithium-battery EIA pilot (R3 — join
+  key is the 24-digit 项目代码 on municipal/provincial EIA cover forms,
+  `DSC:CN-PROJECT-CODE-LIVES-ON-LOCAL-EIA`; sum GWh only for role=cell),
+  CNInfo 年报 top-5 counterparty parser (supply-chain floor).
+
+**Registered house priors (CN-G #5949 — L1's prior table; display/research
+context, never a promotion shortcut):** institutional visits lit-POSITIVE
+(AIV residual construction, 114bp/mo t=5.52 — Wave-1 visit research copies
+the residual construction, never raw counts) with house evidence ABSENT;
+abnormal analyst coverage lit-positive, house has level only; LHB raw flag
+house-MEASURED to DRAIN (−1.43%/21d, t≈−2.2) — contradicts "LHB = smart
+money"; block premium house-MEASURED to DRAIN (−0.60%/5d, t≈−2.8) while
+deep-discount ≤−15% is weak-positive probationary (+3.45%/21d, 669 obs,
+zero weight); ownership breadth is SIGN-SPLIT by actor class (retail
+breadth strongly negative, institutional wealth-weighted positive); subsidy
+dependence is a demotion/risk feature, never a quality-plus. Cross-family
+laws adopted: actor-split-before-sign; abnormal/residual-before-level;
+house sign tests outrank foreign literature on LHB and blocks;
+`DNR:KILL-OWNERSHIP-BREAKAWAY` forbids fusing visits+holdings+LHB+blocks.
+
+**Sibling workstreams minted by the CN wave (coordinate, never duplicate):**
+`WS:TUSHARE-ENTITLEMENT` (done — one-wave census), `WS:CN-SOE-DEMAND`
+(C0 done, C1 display-adapter gated on adjudication — R2 routes through it),
+`WS:CN-COMMERCIAL-SUPPLY-DILIGENCE` (parked pending the written grant).
 
 ---
 
@@ -590,53 +764,49 @@ Priority Tushare/licensed horizontal families:
 
 Reason: inexpensive structured normalization is worth buying when engineering savings dwarf subscription cost.
 
-**Audit state (verified 2026-08-19):** already consumed via Tushare —
-`stk_auction*`/`stk_mins`/`stk_premarket`, `cyq_perf`, `moneyflow_dc`,
-`daily_basic`, `margin_detail`, `forecast_vip`, `report_rc`,
-`broker_recommend`, chips distribution (client `collectors/tushare_client.py`,
-token env `TUSHARE_TOKEN`). NOT consumed and P0-priority: `stk_surv`
-(institutional visits — P1-critical), `fund_portfolio` (public-fund holdings),
-`anns_d` (full announcements), `hm_list`/`hm_detail` (named actors),
-top-holder/holder-trade endpoints. Q&A history and holder families are already
-effectively owned via live NON-Tushare collectors (§1.2). The per-family
-entitlement/rights verdicts are the RIGHTS-0 deliverable
-(`research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md`);
-no purchase or capture before its verdict — account-tier questions are
-operator-decidable.
+**Audit state (verified 2026-08-19; CN-A #5945 verdicts adopted — §0-ter.4):**
+already consumed via Tushare — `stk_auction*`/`stk_mins`/`stk_premarket`,
+`cyq_perf`, `moneyflow_dc`, `daily_basic`, `margin_detail`, `forecast_vip`,
+`report_rc`, `broker_recommend`, chips distribution (client
+`collectors/tushare_client.py`, token env `TUSHARE_TOKEN`). The Tushare
+rights authority is the CN-A matrix
+(`research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`): ¥0 cash
+outlay recommended on every P0 family now; `stk_surv` (P1-critical) and
+`fund_portfolio` UNKNOWN_RIGHTS pending one operator-owned vendor letter;
+`anns_d` NOT_NEEDED (CNInfo metadata already covers the P0 plane);
+`hm_list`/`hm_detail` (named actors) = the actual P0 gap, UNKNOWN_RIGHTS
+with tier-unlock unconfirmed
+(`DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`). Q&A history and holder
+families are already effectively owned via live NON-Tushare collectors
+(§1.2). RIGHTS-0
+(`research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md`)
+consumes that matrix and covers only the residual (non-Tushare ToS posture,
+primary-route resolver rights, P1 source verdict); no purchase or capture
+before its verdict — account-tier questions are operator-decidable.
 
-### 8.2 Entity resolver bake-off
-Qichacha vs Tianyancha or equivalent.
+### 8.2 Entity resolver bake-off — SETTLED: NO-BUY (CN-B #5947, adopted §0-ter.4)
+The bake-off Sol's synthesis commissioned here has been RUN and returned
+**no-buy**: no commercial PRC entity resolver (Qichacha / Tianyancha /
+equivalent) is purchased now. PR-0D builds China identity resolution on
+official/registry primary sources plus the existing canonical master instead;
+vendor identity remains an alias/evidence source, never canonical authority
+(§15 boundary unchanged). Do not re-run the bake-off; reopening the purchase
+question requires a superseding DEC citing #5947's matrix and new evidence
+(changed rights terms, changed pricing, or a named resolution failure class
+the primary-source route cannot cover).
 
-Use 100–200 hostile real cases:
-- A/H;
-- historical name changes;
-- SOE groups;
-- deep subsidiary trees;
-- project companies;
-- joint ventures;
-- semiconductor/bio/auto subsidiaries.
-
-Measure:
-- issuer resolution;
-- ownership;
-- effective dates;
-- historical names;
-- unified social credit code;
-- API reliability;
-- persistence/cache rights;
-- derived-use rights.
-
-Vendor identity is an alias/evidence source, never canonical authority.
-
-### 8.3 Supply-chain foundation
-Seriously evaluate Wind PDB/SDB or another licensed foundation.
-
-Preferred model:
-commercial topology foundation
-+ official/event evidence
-+ Mastermind temporal relationship confidence.
-
-Do not pay to retype a huge static graph if a licensed base is affordable and rights-compatible.
+### 8.3 Supply-chain foundation — SETTLED: NO-BUY absent a written grant (CN-E #5951, adopted §0-ter.4)
+The commercial-foundation diligence Sol's synthesis commissioned here has been
+RUN and returned **no seat purchase**: terminal-style licenses (Wind and
+peers) bind display/redistribution to the licensed seat and forbid the
+Mastermind product surface. A commercial topology foundation may be bought
+ONLY on a written redistribution/derived-display grant (an OEM-style data
+license naming our product use), which no vendor has offered at diligence
+time. Until such a grant exists, the supply-chain plane builds from
+official/event evidence + Mastermind temporal relationship confidence
+(§8.4 sources), accepting slower coverage. Do not re-run the diligence;
+reopening requires the written grant in hand, routed through a superseding
+DEC.
 
 ### 8.4 Build from official public sources
 High priority:
@@ -834,12 +1004,18 @@ R3 Project/EIA Physical Expansion
 R4 Reality Model projection
 
 ### Track S — Specialist lobes
-S1 Bio/Medtech
-S2 Grid/Power
-S3 EV/Auto
-S4 Semis/Advanced Manufacturing
-S5 AI/Software/Games
-S6 Materials/Mining/Chemicals
+Gate (CN-F #5950, adopted §0-ter.4 — §15.20): only S1 and S3 currently pin
+an earlier unique dated public clock and may be chartered; S2/S4/S5/S6 are
+CLOSED until a superseding DEC shows a unique clock.
+S1 Bio/Medtech — OPEN (CDE + China CTR dated clocks; zero NMPA/CDE/CTR
+collectors exist today)
+S2 Grid/Power — closed (shares the MEE project-EIA clock; R3/CN-D territory)
+S3 EV/Auto — OPEN (MIIT numbered vehicle-catalog batches precede CPCA/OEM
+earnings; no collector exists)
+S4 Semis/Advanced Manufacturing — closed (the earlier clock is the
+already-owned US BIS/Entity-List tape)
+S5 AI/Software/Games — closed (no dated 版号/备案 tape located)
+S6 Materials/Mining/Chemicals — closed (same MEE EIA clock as S2)
 
 ### Track L — Learning / Rank
 L0 full-pool canonical outcomes
@@ -858,16 +1034,18 @@ No separate page merely because a dataset exists.
 
 ## 13. Ordered PR/capability graph
 
-### PR-0A — final research authority — **DONE (this PR)**
-Mission (executed):
-- GROK-G0 completed (`research/alpha_intelligence/censuses/G0/`);
-- FABLE-00 adjudicated A0/B0/D0/E0/F0 (inheriting c0 #5933) + G0 (c0g, this PR) — §0-bis;
+### PR-0A — final research authority — **BUILT; freeze effective at Sol's final review (this PR)**
+Mission (executed, revised per §0-ter):
+- FABLE-00 adjudicated A0/B0/D0/E0/F0 (inheriting c0 #5933) — §0-bis; the G0
+  slot is closed by the #5933 seat adjudication (canonical #5955 US / #5943
+  CN); this PR's rival G0 bundle was withdrawn (§0-ter.1);
+- the GROK-CN wave verdicts adjudicated into the freeze (§0-ter.4);
 - #5822 rewritten into this canonical masterplan on its vehicle branch
   (landed as documented successor #5953 after the branch's claude/* rename
   closed #5822);
 - AgentOS updated (`WS:CHINA-ALPHA-INTELLIGENCE` minted;
-  `WS:ALPHA-INTELLIGENCE-INTEGRATION` wave c0g closed;
-  `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`);
+  `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`; the integration-WS c0g
+  closure is #5933's change, not this PR's);
 - no runtime change.
 
 ### PR-0B — v4 telemetry preservation — **commission ready**
@@ -883,6 +1061,10 @@ future causal diagnosis of champion ranking.
 Non-goal:
 no rank change, no historical fabricated served values.
 
+Completion: merge = `BUILT_NOT_PROVEN`; `done` only on the first real nightly
+plane write carrying the new columns, receipt recorded in the workstream
+(§0-bis Completion law).
+
 ### PR-0C — Evidence contract / fixtures
 Mission:
 freeze pointer/event/independence/as-of contracts and prove them against real native objects.
@@ -890,9 +1072,19 @@ freeze pointer/event/independence/as-of contracts and prove them against real na
 Boring-baseline rule:
 no persistent Mesh store unless a funded cross-store consumer fails the owner-reader baseline.
 
-### PR-0D — China exact identity extension
+### PR-0D — China exact identity extension — **commission ready**
+`research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md`
+
 Mission:
 DataOS resolves China listing/security/issuer identities and vendor aliases; GMI bridge resolves real China company nodes or typed refusals.
+
+Authority boundary (binding, §0-ter.6): identity/GMI resolution ONLY. PR-0D
+never inherits the Earnings event-adapter job — CN issuer admission into
+event truth is a later Earnings-owner wave post-E2 under
+`DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL`, and no
+`china_corporate_event.v1` exists on any path. Primary-source resolution only
+(§8.2 resolver NO-BUY stands). Coordinate with `WS:STOCK-IDENTITY` before
+touching identity surfaces.
 
 ### P1 — Institutional Visit Tape + Dossier — **commission ready, gated on RIGHTS-0**
 `research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md`
@@ -901,6 +1093,13 @@ asia group / `asia-close.yml` only; visit data confirmed absent today).
 
 Producer + PIT clock + actor resolution + dossier + failure states.
 No score.
+
+Completion: merge = `BUILT_NOT_PROVEN`; `done` only after a real `asia-close`
+run collects real visit rows end-to-end and the production dossier renders
+them (desktop + mobile proof), receipt recorded (§0-bis Completion law).
+Coverage semantics: every derived "first/new" read is
+`first_seen_since_coverage_start`, never "first ever" — the tape's history
+starts at our coverage start, and the display layer must say so.
 
 ### P1B — Institutional Discovery State + prospective outcomes
 Abnormal/new/independent visitor metrics.
@@ -927,9 +1126,19 @@ One useful family end-to-end, recommended major contract/order or capacity miles
 
 ### R2 — Grid/SOE Demand pilot
 Demand → tender → candidate → award → contract for a bounded buyer/product domain.
+Frozen source input (CN-C #5944, §0-ter.4): the CSG-GD-货物-90d pilot spec —
+CSG public-notice HTML keyed by 采购编号; SGCC ECP is rail 2, never first;
+aggregators DO NOT INGEST; GovRev failure-state vocabulary reused, no store
+fork. R2 routes through `WS:CN-SOE-DEMAND` (C0 done there) — coordinate,
+never duplicate.
 
 ### R3 — Project/EIA pilot
 One industry; listed-parent resolution; project milestones; competitor capacity context.
+Frozen source input (CN-D #5946, §0-ter.4): lithium-ion battery
+manufacturing (C3841) first; join key = the 24-digit 项目代码 on
+municipal/provincial EIA cover forms
+(`DSC:CN-PROJECT-CODE-LIVES-ON-LOCAL-EIA`); national tzxm is ID authority
+only; `role` field mandatory and GWh sums only for role=cell.
 
 ### L0 — full-pool canonical outcomes
 Extract canonical China grading primitives for the candidate plane.
@@ -937,6 +1146,9 @@ No rival grader.
 
 ### L1 — family Phase-0 factory
 Uniform incremental tests against Prophet + v4.
+Registered prior table: CN-G #5949 (§1.10) — priors are context, never a
+promotion shortcut; visit research copies the AIV residual construction;
+house sign tests outrank literature on LHB and blocks.
 
 ### L2 — C1 equal-family shadow
 First serious vNext ranking challenger.
@@ -985,7 +1197,9 @@ Later C2/C3/C4/C5 only after depth.
 17. No government-support = bullish abstraction.
 18. Procurement and subsidy remain different.
 19. Economic relationships, narrative similarity and price co-movement remain separate graphs.
-20. Sector lobes require an earlier unique clock.
+20. Sector lobes require an earlier unique clock — instantiated by CN-F
+    #5950: only Bio and EV currently qualify; no other China specialist lobe
+    without a superseding DEC showing its unique clock.
 21. `asia-close` is not a heavy document/LLM processing lane.
 22. Missing/coverage failure is never zero.
 23. Historical recomputation is never described as prospective served history.
@@ -1012,34 +1226,45 @@ disclosure change).
 
 ## 16. Immediate next action
 
-GROK-G0 and FABLE-00 are **complete** (this PR — §0-bis, §1.8). The program is
-in execution:
+FABLE-00 reconciliation and the Sol revision pass are **complete** (§0-bis,
+§0-ter). The gate before execution: **Sol's final freeze review of this
+revised head.** After that clears:
 
-1. **NOW, parallel:** spawn PR-0B (builder) and RIGHTS-0 (researcher) from
+1. **Parallel first spawns:** PR-0B (builder) and RIGHTS-0 (researcher) from
    `research/china_alpha_intelligence/commissions/`. RIGHTS-0 CONSUMES the
    GROK-CN-A matrix (#5945, `research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`)
-   rather than re-deriving the Tushare half — its residual scope is the
-   non-Tushare ToS posture, resolver persistence rights, and the P1 source
-   verdict synthesis. PR-0D (China exact identity extension) may also run in
-   parallel, coordinated with `WS:STOCK-IDENTITY`; it inherits #5943's
-   CIK-only `company_id` finding.
+   and the CN-B (#5947 resolver no-buy) + CN-E (#5951 supply-chain no-buy)
+   rights findings rather than re-deriving any of them — its residual scope
+   is the non-Tushare ToS posture, resolver persistence rights for the
+   primary-source route, and the P1 source verdict synthesis. PR-0D (China
+   exact identity extension) may also run in parallel from its commission,
+   coordinated with `WS:STOCK-IDENTITY`; it inherits #5943's issuer-layer
+   CIK-lock finding and the §0-ter.6 boundary.
 2. **After the RIGHTS-0 verdict on the visit source:** spawn P1 Institutional
    Discovery (`P1_institutional_visit_tape.md`).
 3. **After P1 accrues + L0 lands:** P1B discovery state, then the L-track
    challenger ladder per §11.
 
+Every build wave carries the §0-bis completion law: merge =
+`BUILT_NOT_PROVEN`; a real production receipt = `done`.
+
 Do not block P1 on a universal Evidence Mesh runtime store.
 
 ---
 
-## 17. Stop condition for architecture phase — MET (2026-08-19)
+## 17. Stop condition for architecture phase — MET pending Sol's final review (2026-08-19)
 
-- G0 census present — ✅ `research/alpha_intelligence/censuses/G0/` (this PR);
-- FABLE-00 reconciliation committed — ✅ §0-bis (this PR);
+- G0 census present — ✅ canonical #5955 (US, `research/earnings_intelligence/g0/`)
+  + #5943 (CN, `research/alpha_intelligence/censuses/CN-G0/`), seat-adjudicated
+  on #5933; this PR carries no rival copy (§0-ter.1);
+- FABLE-00 reconciliation committed — ✅ §0-bis + the Sol revision record
+  §0-ter (this PR);
 - #5822 rewritten into the canonical final plan — ✅ this document, same
   vehicle branch (successor PR #5953; closure documented on #5822);
 - AgentOS points to one canonical plan — ✅ `WS:CHINA-ALPHA-INTELLIGENCE`
   artifacts + `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`;
+- GROK-CN wave verdicts adjudicated into the freeze — ✅ §0-ter.4, §1.8,
+  §1.10;
 - first P1 handoff names exact current repo pin, data clocks, storage owner,
   dossier consumer, tests and production proof — ✅
   (`commissions/P1_institutional_visit_tape.md`); its SOURCE-RIGHTS slot is
@@ -1047,10 +1272,12 @@ Do not block P1 on a universal Evidence Mesh runtime store.
   that is the P1 spawn gate, not an open architecture question;
 - no unresolved duplicate-store/ranker/grader/identity decision remains — ✅
   (§15 boundaries; the one identity GAP — China/HK not-in-master — has an
-  owner and a wave: PR-0D extends the canonical Data OS master).
+  owner, a wave, and a commission: PR-0D extends the canonical Data OS
+  master under the §0-ter.6 boundary).
 
-**Implementation is begun** (§16). Any future architecture change routes
-through a superseding DEC, never a silent edit here.
+**The freeze becomes effective at Sol's final review of this revised head**;
+implementation spawns then begin per §16. Any future architecture change
+routes through a superseding DEC, never a silent edit here.
 
 ---
 

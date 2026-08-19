@@ -5,12 +5,18 @@ model: fable
 ended_because: complete
 mission: >
   FABLE-00 China Alpha Intelligence reconciliation (Sol final 8-turn synthesis,
-  operator-delivered 2026-08-19): complete the missing GROK-G0 census,
-  adjudicate all six Wave-0 censuses for the China program, rewrite/supersede
-  the #5822 draft into one canonical China masterplan on its own vehicle
-  branch (landed as documented successor #5953 after the branch's claude/*
-  rename closed #5822), mint the China execution workstream, and emit the
-  first builder commissions. No builder code, no runtime change.
+  operator-delivered 2026-08-19): adjudicate the Wave-0 censuses for the China
+  program, rewrite/supersede the #5822 draft into one canonical China
+  masterplan on its own vehicle branch (landed as documented successor #5953
+  after the branch's claude/* rename closed #5822), mint the China execution
+  workstream, and emit the first builder commissions. REVISED the same day per
+  Sol's freeze-review verdict (architecture APPROVED / freeze artifact
+  REVISE): the session-executed rival US G0 bundle and non-seat c0g draft
+  were withdrawn in favor of the seat adjudication (#5933; canonical #5955
+  US / #5943 CN), the GROK-CN verdicts were adopted as binding freeze inputs,
+  the completion law hardened (merge = BUILT_NOT_PROVEN), a dated capability
+  ledger added, and the PR-0D commission authored. No builder code, no
+  runtime change. Freeze effective at Sol's final review.
 state_before: >
   Sol's final masterplan and the FABLE handoff pack existed only as
   operator-delivered files. PR #5822 sat as an open 1,284-line draft with a
@@ -24,10 +30,13 @@ changed:
   - path: research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md
     what: >
       canonical China masterplan — Sol's synthesis as base, plus §0-bis
-      FABLE-00 reconciliation record (nine adjudications), verified repo pins
-      in §1 (board/ruler/candidate-plane/estate state), §8.1 Tushare audit
-      state, §13 execution states with commission pointers, §15 DNR key list,
-      §17 stop conditions marked MET.
+      FABLE-00 reconciliation record (nine adjudications) with the program
+      completion law, §0-ter Sol freeze-review revision record (six blockers
+      resolved; GROK-CN verdicts adopted as binding freeze inputs), verified
+      repo pins in §1, §1.10 dated capability ledger, §8.1/§8.2/§8.3
+      settled acquisition verdicts, §13 execution states with commission
+      pointers and BUILT_NOT_PROVEN gates, §15 DNR key list with the CN-F
+      lobe gate, §17 stop conditions MET pending Sol's final review.
   - path: research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md
     what: >
       verbatim extracts of the superseded draft's surviving detail (capability
@@ -39,26 +48,38 @@ changed:
   - path: research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md
     what: researcher commission — per-family Tushare/non-Tushare rights registry, audit-first, P1 source verdict.
   - path: research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md
-    what: builder commission — visit collector (asia lane) + PIT store + actor resolution + dossier block + failure states, NO score; gated on RIGHTS-0.
-  - path: research/alpha_intelligence/censuses/G0/
     what: >
-      six GROK-G0 census files, US/estate-scoped (event clock + contract
-      census, casebook, frontier spec draft, reaction geometry input matrix,
-      academic review, open questions — return packet renamed
-      G0_OPEN_QUESTIONS_US_ESTATE.md to avoid the add/add collision with
-      PR #5943's China-scoped G0 bundle in the same directory). Wave-0 now
-      6/6, the G0 slot double-covered by two complementary returns.
-  - path: research/alpha_intelligence/C0G_G0_ADJUDICATION_2026-08-19.md
+      builder commission — visit collector (asia lane, failure-isolated) +
+      PIT store + provisional actor ontology (raw string + ontology version)
+      + coverage-start semantics + dossier block + failure states, NO score;
+      gated on RIGHTS-0; merge = BUILT_NOT_PROVEN, done only on real
+      asia-close receipt + production dossier desktop/mobile proof.
+  - path: research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md
     what: >
-      c0g adjudication — both G0 returns accepted (this PR's US/estate bundle
-      + #5943's China-scoped bundle, ruled complementary in §2-bis); frontier
-      view ruling; estate wave c0g closed.
+      builder commission — Data OS master + GMI bridge China resolution ONLY
+      (§0-ter.6 boundary: never the Earnings event adapter, no
+      china_corporate_event.v1, primary-source route only per the #5947
+      resolver NO-BUY); coordinate with WS:STOCK-IDENTITY.
   - path: agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md
-    what: new China execution workstream (program china-system) with wave graph g0→pr0a→{pr0b,rights0}→p1→… and landmines/do_not_redo.
-  - path: agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md
-    what: wave c0g marked done (G0 returned + adjudicated); artifacts and next_action updated.
+    what: >
+      new China execution workstream (program china-system) with wave graph
+      g0→pr0a→{pr0b,rights0,pr0d}→p1→…, landmines/do_not_redo carrying the
+      adopted CN-wave no-buys and the completion law.
   - path: agentos/decisions/DEC-CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE.md
-    what: the architecture-freeze decision (nine adjudications, supersession mechanics, boundary list).
+    what: >
+      the architecture-freeze decision (nine adjudications, supersession
+      mechanics, boundary list; answer records the Sol revision pass and the
+      seat-adjudicated G0 authority).
+  - path: research/alpha_intelligence/ (deletions)
+    what: >
+      WITHDRAWN in the revision pass — the six censuses/G0/ files and the
+      non-seat C0G_G0_ADJUDICATION_2026-08-19.md this session had authored
+      were deleted per the #5933 seat's disposition request; canonical G0 =
+      #5955 (US) + #5943 (CN), governing record =
+      C0G_G0_SEAT_ADJUDICATION_2026-08-19.md (#5933), which preserves this
+      bundle's unique value by citation. NOTE: this PR does NOT change
+      WS-ALPHA-INTELLIGENCE-INTEGRATION.md — the c0g closure there is
+      #5933's change (an earlier draft of this handoff wrongly listed it).
 verified:
   - claim: AgentOS store validates with the new records present
     command: python3 scripts/agentos.py validate
@@ -76,10 +97,8 @@ verified:
     command: read .github/workflows/asia-close.yml:1-40 and .github/workflows/daily.yml:372,632-634
     result: daily.yml excludes group asia and resets stray data/china* writes
 unverified:
-  - claim: casebook INFERRED rows' price magnitudes (18 of 48 rows are class-demonstration only)
-    what_would_verify: repo-native event replay against price stores once the Earnings owner commissions a G-wave casebook rebuild
-  - claim: our Tushare account tier covers stk_surv/fund_portfolio/anns_d/hm_list
-    what_would_verify: RIGHTS-0 audit + operator confirmation of the account plan (deliberately not probed with the token)
+  - claim: our Tushare account tier covers stk_surv/fund_portfolio/hm_list
+    what_would_verify: operator confirmation of the privilege page + the CN-A vendor letter (deliberately not probed with the token; anns_d ruled NOT_NEEDED by #5945)
   - claim: production freshness of data/ parquets cited in the G0 census
     what_would_verify: git ls-tree origin/main -- data/<store> from a full checkout or a later session (sparse worktree here)
 unresolved:
@@ -87,14 +106,16 @@ unresolved:
   - "PR-0D sequencing with WS:STOCK-IDENTITY (China/HK not-in-master gap, ~25% GMI node resolution) — coordinate before touching identity surfaces."
   - "Estate-side FABLE-A dispatch is a separate operator action under DEC:ALPHA-INTEL-FABLE-A-CONTRACT-FIRST-DISPATCH — not a China-lane dependency."
 next_actions:
-  - "Spawn PR-0B builder from research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md (parallel-safe now)."
-  - "Spawn RIGHTS-0 researcher from research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md (parallel-safe now)."
+  - "GATE: Sol's final freeze review of the revised #5953 head — no spawn before it clears."
+  - "Then spawn PR-0B builder from research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md and RIGHTS-0 researcher from RIGHTS-0_source_entitlement_audit.md in parallel; PR-0D builder from PR-0D_china_identity_extension.md in parallel, coordinated with WS:STOCK-IDENTITY."
   - "After RIGHTS-0's P1 verdict: spawn P1 from research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md."
-  - "PR-0D (China identity extension) may run in parallel, coordinated with WS:STOCK-IDENTITY."
+  - "Completion law on every build wave: merge = BUILT_NOT_PROVEN; flip to done only on the recorded production receipt."
 do_not_redo:
-  - "Do not re-run any Wave-0 census — all six are returned and adjudicated (c0 #5933 + c0g this PR; the G0 slot has TWO complementary returns)."
-  - "Do not re-derive the Tushare entitlement matrix — GROK-CN-A (#5945) delivered it; RIGHTS-0 consumes it and covers only the residual (non-Tushare ToS, resolver rights, P1 verdict)."
-  - "Do not re-census the GROK-CN wave surfaces (#5943-#5951: China G0, Tushare rights, resolver bake-off, SOE demand map, EIA map, supply-chain diligence, sector clocks, priors table) — route each to its consuming wave boundary per masterplan §1.8."
+  - "Do not re-run any Wave-0 census — all slots are returned and adjudicated (c0 #5933; G0 by the seat packet on #5933: canonical #5955 US + #5943 CN; this PR's rival bundle was withdrawn)."
+  - "Do not resurrect this session's withdrawn G0 bundle or non-seat c0g draft — the seat packet preserves its unique value by citation and names its defects (degenerate frontier recipe, inflated verified-event count)."
+  - "Do not re-derive the Tushare entitlement matrix — GROK-CN-A (#5945) delivered it; RIGHTS-0 consumes it and covers only the residual (non-Tushare ToS, primary-route resolver rights, P1 verdict)."
+  - "Do not re-run the resolver bake-off (#5947 NO-BUY), the supply-chain diligence (#5951 / DEC:CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE), or the sector-clock census (#5950 Bio+EV only) — adopted as binding freeze inputs (masterplan §0-ter.4)."
+  - "Do not re-census the remaining GROK-CN surfaces (#5944 SOE demand map, #5946 EIA map, #5949 priors table) — frozen source inputs for R2/R3/L1 per masterplan §1.8/§1.10."
   - "Do not mint a second China masterplan, candidate store, grader, or identity plane — masterplan §15 + WS do_not_redo."
   - "Do not build a Mesh runtime for P1 — boring-baseline ruling stands."
   - "Do not cite CN limit-alpha W1–W3 results (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT stop-ship)."
@@ -112,7 +133,9 @@ decisions:
 # Handoff — China Alpha Intelligence, FABLE-00 reconciliation session
 
 A cold session starts here: read `research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md`
-§0-bis and §16, then the commission file for the wave you are picking up. The
-masterplan is the single canonical architecture; the preserved-archaeology file
-is detail, not authority. Estate-side coordination lives in
-`WS:ALPHA-INTELLIGENCE-INTEGRATION` (c0 packet #5933 + c0g packet this PR).
+§0-bis, §0-ter, §1.10 and §16, then the commission file for the wave you are
+picking up. The masterplan is the single canonical architecture; the
+preserved-archaeology file is detail, not authority (§1.10 is the current
+capability ledger). Estate-side coordination lives in
+`WS:ALPHA-INTELLIGENCE-INTEGRATION` (c0 + c0g seat packets, both on #5933).
+The freeze is effective only at Sol's final review of the revised #5953 head.

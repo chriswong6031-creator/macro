@@ -7,13 +7,27 @@ question: >
 answer: >
   Sol's final 8-turn China architecture synthesis (2026-08-19, Chairman-delivered)
   is adopted as the canonical China program architecture, reconciled by FABLE-00
-  against PASS-0, the c0 Wave-0 census adjudication, and the completed G0 census
-  (wave c0g). The #5822 draft is REWRITTEN on its own vehicle branch into
-  research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md — one canonical plan, no
-  second masterplan store, old prose superseded. (Execution note: renaming the
-  vehicle branch into the fleet claude/* namespace closed #5822 as a GitHub
-  side effect; the identical content and commit lineage landed as documented
-  successor PR #5953, with the closure recorded on #5822 itself.) Frozen boundaries: four-model
+  against PASS-0, the c0 Wave-0 census adjudication, and the seat-adjudicated
+  G0 returns (canonical US G0 = PR #5955; CN-G0 = PR #5943; governing record =
+  C0G_G0_SEAT_ADJUDICATION_2026-08-19.md on #5933 — this program's own rival
+  US G0 bundle and non-seat c0g draft were WITHDRAWN from the vehicle PR per
+  the seat's disposition request). The #5822 draft is REWRITTEN on its own
+  vehicle branch into research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md — one
+  canonical plan, no second masterplan store, old prose superseded.
+  (Execution notes: renaming the vehicle branch into the fleet claude/*
+  namespace closed #5822 as a GitHub side effect; the identical content and
+  commit lineage landed as documented successor PR #5953, with the closure
+  recorded on #5822 itself. A second revision pass ran the same day on Sol's
+  freeze-review verdict — architecture APPROVED, freeze artifact REVISE:
+  G0/c0g authority re-pointed as above, GROK-CN verdicts CN-A…CN-G adopted
+  as binding freeze inputs [resolver NO-BUY #5947; supply-chain NO-BUY
+  absent a written OEM-class grant, DEC:CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE
+  #5951; sector clocks Bio+EV only #5950; Tushare rights matrix #5945 with
+  ¥0 outlay; CSG/EIA source maps #5944/#5946; twelve-family priors #5949],
+  completion law hardened [merge = BUILT_NOT_PROVEN; a real production
+  receipt = done], a dated capability ledger added at §1.10, and the PR-0D
+  commission authored with an identity-only boundary. The freeze becomes
+  effective at Sol's final review of the revised head.) Frozen boundaries: four-model
   architecture (Reality / Professional Belief / Market Recognition /
   Prophet-Path — never collapsed into one score); cn_prophet_v4 remains live
   champion with the new China rank arena shadow-only (C1–C5 challenger ladder);
@@ -65,8 +79,10 @@ evidence:
   - "Sol final synthesis + FABLE handoff pack (operator-delivered 2026-08-19): CHINA_ALPHA_INTELLIGENCE_FINAL_MASTERPLAN_2026-08-19.md, CHINA_ALPHA_INTELLIGENCE_FABLE_HANDOFF_PACK_2026-08-19.md"
   - "PASS-0 (#5910): research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md"
   - "c0 adjudication (#5933): research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md — five censuses accepted with conditions; DEC:ALPHA-INTEL-FABLE-A-CONTRACT-FIRST-DISPATCH"
-  - "G0 census (this PR): research/alpha_intelligence/censuses/G0/ — completes Wave-0 6/6"
+  - "G0 seat adjudication (#5933): research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md — canonical US G0 = #5955 (research/earnings_intelligence/g0/), CN-G0 = #5943; DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL; DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION"
   - "Census returns: A0 #5912, B0 #5911, D0 #5913, E0 #5914, F0 #5915"
+  - "GROK-CN wave verdicts adopted as freeze inputs: CN-A #5945 (Tushare rights matrix, DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT), CN-B #5947 (resolver NO-BUY, DSC:PRC-REGISTRY-VENDORS-BLOCK-OVERSEAS), CN-C #5944 (CSG pilot spec, DSC:CN-CSG-HTML-VS-SGCC-ECP-SPA), CN-D #5946 (EIA project-code join, DSC:CN-PROJECT-CODE-LIVES-ON-LOCAL-EIA), CN-E #5951 (no seat purchase, DEC:CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE), CN-F #5950 (Bio+EV clocks only, DSC:CN-F-ONLY-BIO-AND-EV-PIN-UNIQUE-CLOCKS), CN-G #5949 (twelve-family prior table)"
+  - "Sol freeze-review verdict 2026-08-19: architecture thesis APPROVED; #5953 freeze artifact REVISE — six blockers, all resolved in the §0-ter revision pass"
   - "GMI→Data OS identity bridge merged: #5894; PIT replay harness merged: #5902"
   - "cn_prophet_v4 live champion since 2026-08-15; canonical plane engine/china_prophet_shadow.py → data/china_prophet_rank/candidates.parquet; ruler engine/china_standout_track.py; board authority engine/china_board_rank.py"
   - "Standing kills honored: DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT, DNR:KILL-CN-SUPPLY-ABSORPTION, DNR:KILL-ASHARE-SUBSECTOR-GATE, DNR:KILL-OWNERSHIP-BREAKAWAY, DNR:KILL-SPONSORSHIP-SCORE, DNR:KILL-POSITIONING-FUSION, DNR:KILL-FUSED-COMPOSITE, DNR:KILL-LLM-ORIGINATION, DNR:KILL-PROPHET-POP-MERGE"
@@ -107,8 +123,10 @@ The nine FABLE-00 adjudications in one line each:
 5. E0 no-master-opportunity-score boundary PRESERVED.
 6. F0 canonical-grader reuse PRESERVED — China full-pool grading extracts
    china_standout_track semantics, never a rival grader.
-7. G0 ROUTED inside the Earnings owner — census complete (wave c0g), any G build
-   is an Earnings-OS wave behind E2.
+7. G0 ROUTED inside the Earnings owner — census slot closed by the seat
+   adjudication (canonical #5955 US / #5943 CN; this program's rival bundle
+   withdrawn); Earnings event truth is venue-neutral; no
+   `china_corporate_event.v1`; any G build is an Earnings-OS wave behind E2.
 8. China Professional / Reality / Recognition / Prophet four-model architecture
    RECONCILED as the program frame; families F1–F10 map onto it.
 9. cn_prophet_v4 PRESERVED as champion; the China rank arena is shadow-only with

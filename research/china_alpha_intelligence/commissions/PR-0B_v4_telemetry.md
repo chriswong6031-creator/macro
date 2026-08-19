@@ -70,12 +70,19 @@ NOT the full suite in a sparse tree.
 NOT DONE UNLESS: all four tests green; zero diff in any ordering/board output
 on fixtures; no `data/` in the PR diff; `python3 scripts/agentos.py validate`
 still exit 0; PR merged (own the ship loop: commit → push → PR → arm
-merge-on-green → merged) and the WS record wave `pr0b` flipped to done in the
-same PR. Production proof accrues at the NEXT asia-close nightly (new rows
-carry anatomy) — state in the PR body that this proof is deferred-prospective
-and name the command a later session runs to confirm
-(`git log --oneline -1 -- data/china_prophet_rank/ && python3 - <<'PY' ...read
-newest rows, assert intel_ columns non-null for covered names...PY`).
+merge-on-green → merged) and the WS record wave `pr0b` flipped to
+**`BUILT_NOT_PROVEN`** — NOT `done` — in the same PR.
+
+COMPLETION LAW (masterplan §0-bis, binding): merge proves BUILT; the real
+nightly proves LIVE. Wave `pr0b` flips to `done` ONLY when a real production
+nightly has written new candidate-plane rows carrying the intel anatomy and
+the receipt is recorded in the WS record (run id + verification output). The
+verification a follow-up session runs against a full checkout:
+`git log --oneline -1 -- data/china_prophet_rank/` then read the newest rows
+and assert `intel_` columns non-null for covered names and
+`intel_unavailable_reason` set for refused names. Your PR body must state
+this proof is deferred-prospective, name that command, and name whose job the
+flip is (the follow-up verification session, never yours at merge time).
 
 RETURN: STATUS / RESULT / EVIDENCE (test outputs, PR number, ordering-invariance
 proof) / GAPS / DEVIATIONS.

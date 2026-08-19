@@ -19,16 +19,23 @@ inherits the same registry. The estate's B0 census already established the
 FF-1P2 STOP discipline: capture without a rights verdict is forbidden.
 
 SCOPE:
-0. **CONSUME PRIOR ART FIRST — do not re-derive the Tushare half.** The
-   GROK-CN-A return (PR #5945,
+0. **CONSUME PRIOR ART FIRST — three completed rights bodies, none re-derived.**
+   (a) The GROK-CN-A return (PR #5945,
    `research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`, plus
    `WS:TUSHARE-ENTITLEMENT` and
    `DSC:TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT`) already delivers the
    per-family Tushare entitlement/cost matrix (headline verdicts: `stk_surv`
    and `fund_portfolio` UNKNOWN_RIGHTS pending vendor letter; `anns_d` and
    互动/e互动 NOT_NEEDED — native/CNInfo coverage exists; `report_rc` OWNED).
-   Read it in full, adopt its cells, and record deltas only where your own
-   verification disagrees or where it left UNKNOWN.
+   (b) The GROK-CN-B return (PR #5947) already RAN the PRC entity-resolver
+   bake-off and returned NO-BUY — adopted into the masterplan (§8.2 settled);
+   its rights/ToS findings on Qichacha/Tianyancha are your resolver cells.
+   (c) The GROK-CN-E return (PR #5951) already ran the commercial
+   supply-chain diligence and returned NO seat purchase absent a written
+   redistribution/derived-display grant — adopted (§8.3 settled); its
+   license findings are your commercial-foundation cells. Read all three in
+   full, adopt their cells with citations, and record deltas only where your
+   own verification disagrees or where they left UNKNOWN.
 1. **Tushare families — residual only** (client `collectors/tushare_client.py`,
    token env `TUSHARE_TOKEN` — name only, NEVER read or print its value):
    verify #5945's matrix against the repo state (consumed today, verified
@@ -51,10 +58,12 @@ SCOPE:
 3. **Primary official sources for the visit family**: SZSE/SSE investor-
    relations disclosure pages and cninfo 调研 records as the non-vendor
    fallback for P1 — availability, machine-readability, history depth, ToS.
-4. **Entity-resolver vendors** (Qichacha / Tianyancha / equivalent): API
-   persistence+cache rights and derived-use rights ONLY (the bake-off itself
-   is a later wave; masterplan §8.2) — enough to know whether a bake-off is
-   contractually possible.
+4. **Entity-resolver vendors** (Qichacha / Tianyancha / equivalent): the
+   bake-off is SETTLED NO-BUY (#5947; masterplan §8.2) — do NOT re-open it.
+   Your registry records #5947's rights findings as the vendor cells, plus
+   the persistence/derived-use posture of the PRIMARY-SOURCE resolution route
+   PR-0D will use (official registries, exchange pages) — the rights question
+   that remains live.
 5. Deliverable: `research/china_alpha_intelligence/RIGHTS_REGISTRY.md` — one
    table per family: {source, endpoint/page, access today (present/absent in
    repo), plan/point requirement, rate limit, history depth, PIT class,
@@ -71,8 +80,9 @@ QUESTIONS: (1) Can P1 run on Tushare `stk_surv` at a documented point tier, and
 is our tier sufficient (or operator-unknown)? (2) Which of the seven priority
 families are already effectively owned via live non-Tushare collectors?
 (3) Which families carry redistribution/display restrictions that shape the
-Hub/dossier surface? (4) Is a Qichacha/Tianyancha bake-off contractually
-viable with persistence rights?
+Hub/dossier surface? (4) What are the persistence/derived-use rights of the
+primary-source identity-resolution route (the #5947 no-buy stands — vendor
+cells come from that return, not fresh diligence)?
 
 SOURCE STANDARD: Every claim tagged CODE VERIFIED (repo receipts, path:line) /
 PRIMARY SOURCE VERIFIED (named public doc/ToS URL + date) / INFERRED /
