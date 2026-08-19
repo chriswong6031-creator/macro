@@ -44,7 +44,7 @@ verified:
     result: "decided_by: chairman"
   - claim: "AgentOS records validate (0 errors)."
     command: "python3 scripts/agentos.py validate"
-    result: "236 records (28 workstreams, 77 decisions, 62 discoveries, 69 handoffs) — 0 error(s), 13 warning(s); warnings are unrelated phantom-owns-path / active-but-complete"
+    result: "237 records (28 workstreams, 77 decisions, 63 discoveries, 69 handoffs) — 0 error(s), 14 warning(s); warnings are unrelated phantom-owns-path / review-overdue / active-but-complete"
   - claim: "Focused source-registry tests pass without requiring the JV identity in the live registry."
     command: "python3 -m pytest tests/test_biocatalyst_source_registry.py -q"
     result: "12 passed"
