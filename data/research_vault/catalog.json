@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T16:17:39.694019+00:00",
-  "count": 1417,
+  "generated_at": "2026-08-19T17:26:09.546037+00:00",
+  "count": 1420,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,69 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-itifvoltrre-aae341",
+      "title": "TJX Cos. (TJX) F2Q27 First Take 2Q adj",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:24Z",
+      "summary_points": [
+        "**Q2 EPS Beat & Marmaxx Concern**: Adj.",
+        "EPS $1.22 (+$0.03 vs.",
+        "consensus), FY27 guidance raised to $5.15-$5.20; Marmaxx comps +1% (weakest since 2023, 5pts QoQ decline) flagged as key focus.",
+        "**HomeGoods Comps Drive Margin Beats**: HomeGoods comps +7% (vs.",
+        "consensus 4.0%/4.8%), fueling 9.7% Y/Y sales growth; adj."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3w731zmrznm-546771",
+      "title": "SQM (SQM) 2Q26 Beat",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:21Z",
+      "summary_points": [
+        "**Capex vs.",
+        "EBITDA Beat**: SQM beat Q2 EBITDA by 10%/18% on lithium volumes/pricing and iodine efficiency, but $3B Salar Futuro capex (2026-28) may offset gains, creating near-term margin pressure.",
+        "**Growth Projects & Demand**: Mt.",
+        "Holland expansion (doubles capacity, 2030) and Salar Futuro ($3B capex) drive future growth, with lithium demand projected to exceed 2.1mt by 2026, supporting long-term volume growth.",
+        "**Critical Supply Chain Risks**: China’s lepidolite disruptions, Chile’s lithium capacity ramp-up, and Dixin refinery expansion threaten pricing/margins, directly impacting lithium segment profitability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iufhbreqa5u-c4615f",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:17Z",
+      "summary_points": [
+        "**AI's global labor market impact**: Goldman Sachs questions AI's labor market disruption, critical macro fundamental for productivity, labor costs, and sector valuations.",
+        "**Hardware sector sell call**: Murphy advises Sell on CRSR/CRCT due to cautious hardware outlook, signaling sector-specific risk and flow shifts.",
+        "**Home Depot (HD) Earnings Beat & Margin Protection**: Ticket-led comp beat; tariff refund cushions gross margins against input cost pressures (18 Aug 2026).",
+        "**Broadcom (AVGO) FY27 AI Revenue Outlook**: 2Q preview emphasizes solid AI revenue growth guidance and ASIC competition, critical for tech positioning.",
+        "**Brazil Healthcare Retail Pharma Growth**: 9.3% YoY sell-out growth in July-26 signals robust demand, key for LatAm healthcare exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-wn0fib9oeso-caae04",
       "title": "DB The Pennsylvania Plan Dealing with US Twin Deficits",
