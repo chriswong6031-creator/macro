@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T09:22:38.448157+00:00",
-  "count": 1397,
+  "generated_at": "2026-08-19T10:17:13.684741+00:00",
+  "count": 1400,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -80,6 +80,66 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-mbiiutd4p4l-b17aad",
+      "title": "JPM The BoJ s Catch 22",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:08:02Z",
+      "summary_points": [
+        "**BoJ Rate Hike Timeline Shift**: Revised to Sept 2026 hike (vs prior), raising end-2026 policy rate to 1.5%; three 2027 hikes (Apr/Jul/Dec) targeting 2.25% by end-2027.",
+        "**Market Destabilization Risk**: Delaying Sept hike risks destabilizing JGB/fx markets as pricing already reflects it; fiscal expansion concerns amplify \"behind the curve\" risks.",
+        "**Fiscal-BoJ Tension Catalyst**: Rising debt-service costs in budget now salient, risking administrative-BoJ friction amid yen depreciation triggering early hikes.",
+        "**Policy Communication Uncertainty**: Neutral rate ambiguity impedes market expectation anchoring; rate hikes likely market-prompted, increasing timing volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h3npfuiyytp-cb57aa",
+      "title": "JPM Humanoid Robot",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:07:57Z",
+      "summary_points": [
+        "**Unitree IPO Catalyst**: Unitree’s Aug 19 IPO marks a watershed shift from scarcity-driven \"proxy\" trades to commercial proof points, resetting valuation anchors toward execution (Rmb7T China investment, US foundation models, Korea industrial deployment), compressing premiums for incumbents.",
+        "**Policy-Driven Commercialization**: China’s Rmb7T 15th Five-Year Plan investment in \"Six Networks\" infrastructure (2026) and MIT’s Humanoid Robot Standard System accelerate mass production, while localization targets (80% core components by 2026) secure supply chains.",
+        "**Valuation Reset & Rotation**: Price targets revised downward (e.g., UBTECH $118 vs $161), signaling near-term risk; sector shifts from order-driven (govt pilots) to event-driven (IPOs/commercial wins), prioritizing shipment credibility over scarcity.",
+        "**Physical AI Adoption Curve**: Adoption mirrors AV/smartphone trajectories (not LLMs), demanding uptime, failure rates, and deployment cost per site—vs.",
+        "software iteration—making component suppliers (Leader Drive, Hengli Hydraulic) favored over OEMs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 42,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3ct49xr4ozh-03d032",
+      "title": "Duttenhoefer´s Daily (19.08.2026)",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:02:40Z",
+      "summary_points": [
+        "**Fed Dovish Stance**: S&P 500 momentum reversal (+12% ytd) amid High Beta Basket decline (-6%), Fed unlikely to hike in Sept barring dramatic data.",
+        "**AI Robotics Policy Catalyst**: Unitree Robotics surge (600% IPO) and China's 10k humanoid robot mandate; AT&T shifts to open AI models, saving 80-90% in app costs.",
+        "**AI Infrastructure Constraints**: AI token costs down 49% (Chinese models vs US peers), BloombergNEF data center power capacity risk for AI server chips."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-dcorebvn8dl-97660a",
       "title": "JPM International Market Intelligence | Morning Briefing: 20 SECONDS",
