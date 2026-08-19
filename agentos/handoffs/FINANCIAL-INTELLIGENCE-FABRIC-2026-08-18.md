@@ -30,19 +30,45 @@ decisions:
   - DEC:FIF-ENTITY-ID-IS-NOT-CIK
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
 verified:
-  - claim: Real v1 lineage-depth 63 packet validates; depth 64 fails at the packet guard.
+  - claim: Real v1 lineage-depth 63 packet validates; depth 64 fails at the packet guard before hop 64 is emitted.
     command: >
       project-venv python -m pytest
       tests/test_fundamental_forensics_financial_intelligence_packet_r3.py::test_packet_accepts_real_v1_revision_lineage_depth_63
       tests/test_fundamental_forensics_financial_intelligence_packet_r3.py::test_packet_refuses_real_v1_revision_lineage_depth_64
       tests/test_fundamental_forensics_financial_intelligence_packet_r3.py::test_packet_refuses_revision_lineage_deeper_than_v1_cap -q
     result: 3 passed
+  - claim: All three packet suites pass after golden regen and current-main integration.
+    command: >
+      project-venv python -m pytest
+      tests/test_fundamental_forensics_financial_intelligence_packet.py
+      tests/test_fundamental_forensics_financial_intelligence_packet_r2.py
+      tests/test_fundamental_forensics_financial_intelligence_packet_r3.py -q
+    result: 65 passed
+  - claim: Query, registry, raw-ledger, and import-pinning regressions pass locally.
+    command: >
+      project-venv python -m pytest tests/test_fundamental_forensics_query.py
+      tests/test_fundamental_forensics_metric_registry.py
+      tests/test_fundamental_forensics_raw_ledger.py
+      tests/test_check_script_import_pinning.py::test_unpinned_entry_scripts_only_shrink -q
+    result: 175 passed
+  - claim: AgentOS validation reports zero errors.
+    command: project-venv python scripts/agentos.py validate
+    result: 0 error(s), 8 warning(s) unrelated to FIF
+  - claim: Local fence selftests and live checks pass.
+    command: >
+      project-venv python scripts/check_self_mod_fence.py --selftest &&
+      project-venv python -m pytest tests/test_self_mod_fence.py -q &&
+      project-venv python scripts/check_capability_redline.py --selftest &&
+      project-venv python scripts/check_capability_redline.py &&
+      project-venv python scripts/check_grader_manifest.py --selftest &&
+      project-venv python scripts/check_grader_manifest.py
+    result: self-mod 16/16 + 53 passed; capability OK; grader 12 files match
   - claim: Golden body minus identity is unchanged from 0ff3c784 except packet_builder_digest/content_sha256/packet_id.
     command: local rebuild vs golden cells/evidence_cells/revisions/governance_bundle_id
-    result: those four identical; new packet_id fip_18e2f725f6ba20678d0612bb
+    result: those four identical; packet_id fip_18e2f725f6ba20678d0612bb
 unverified:
-  - claim: Packet suites, regressions, AgentOS, fences, and hosted CI conclude on the final merged head.
-    what_would_verify: local pytest + agentos validate + gh pr checks after push; do not merge
+  - claim: Hosted CI packs and fences conclude on the final merged head.
+    what_would_verify: gh pr checks after push; wait for concluded packs; do not merge
 unresolved:
   - Sol freeze review of amended #5889 before merge and before any FIF-2 work
   - financial_intelligence_packet.v1 freeze is pending that review
