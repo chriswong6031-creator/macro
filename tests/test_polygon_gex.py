@@ -1606,10 +1606,14 @@ class TestB3WriteAheadReceipt:
 
     def test_crash_after_the_parquet_write_reads_the_pending_entrys_own_health(
             self, tmp_path, monkeypatch):
-        """The parquet WAS written (a 40% partial capture), but the FINAL
-        decision entry never landed — the receipt's trailing entry is still
-        "write_pending". The store must read as PARTIAL (the pending entry's
-        own health), never fall through to a legacy "healthy" default."""
+        """The parquet WAS written (a 40% partial capture) and MATCHES the
+        pending entry's claim, but the FINAL decision entry never landed —
+        the receipt's trailing entry is still "write_pending". W1: this is
+        the VERIFIED-MATCH case, so the store must read as PARTIAL (the
+        pending entry's own health, now verified rather than assumed), never
+        fall through to a legacy "healthy" default. This is the exact B3-t2
+        behavior pinned in round 2 — kept green under W1's added
+        verification, per the round-3 ruling."""
         import scripts.build_polygon_gex as bpg
         from scripts.build_polygon_gex import _read_receipt, _stored_health
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
@@ -1617,16 +1621,17 @@ class TestB3WriteAheadReceipt:
         monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
         # A 40-of-100 chain WAS actually written to disk...
         _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
-        # ...but the receipt's trailing entry is still write_pending (the
-        # finalize-entry append never landed).
+        # ...and the receipt's trailing entry (still write_pending — the
+        # finalize-entry append never landed) MATCHES it exactly: 40.
         _write_receipt_file(tmp_path, "2026-06-15",
                             [_entry("write_pending", "partial", 40, 0.40, requested=100)])
+        chain_path = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
 
         attempts = _read_receipt(date(2026, 6, 15))
-        assert _stored_health(attempts) == "partial", (
-            "a trailing write_pending backed by a REAL parquet must read as "
-            "ITS OWN health, never a legacy-healthy default — a 40% capture "
-            "is not healthy")
+        assert _stored_health(attempts, chain_path) == "partial", (
+            "a trailing write_pending whose on-disk parquet MATCHES its claim "
+            "must read as ITS OWN (verified) health, never a legacy-healthy "
+            "default — a 40% capture is not healthy")
 
         # ... and because it reads as partial, a strictly-better capture may
         # still replace it under the ordinary first-writer quality rule.
@@ -1640,6 +1645,113 @@ class TestB3WriteAheadReceipt:
         assert receipt["attempts"][-1]["decision"] == "replaced_partial"
         back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
         assert back["underlying"].nunique() == 70
+
+
+class TestW1VerifiedWriteAhead:
+    """W1 ruling (AD-1C0 round 3): either half of B3-t2 alone was
+    insufficient — a trailing write_pending could still be TRUSTED even
+    though the parquet it describes was never actually written (to_parquet
+    failed/killed on a REPLACEMENT, leaving the OLD parquet paired with a NEW
+    trailing pending entry) or was torn (truncated bytes at the real path).
+    (a) atomic parquet writes make torn files at the real path impossible.
+    (b) the trailing-write_pending anchor is VERIFIED against the actual
+    on-disk parquet before being trusted."""
+
+    def test_a_failed_write_on_a_replacement_leaves_the_old_parquet_intact_and_unverified(
+            self, tmp_path, monkeypatch):
+        """Simulates ENOSPC (or any to_parquet failure) on a replaced_partial
+        run: the OLD parquet must survive byte-for-byte (atomic write never
+        touched the real path), and the resulting trailing write_pending must
+        NOT be trusted — _stored_health must read unknown_write_interrupted,
+        not the pending entry's own (unverified, and wrong) claim."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("wrote", "partial", 40, 0.40, requested=100)])
+        chain_path = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
+        old_bytes = chain_path.read_bytes()
+
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))     # strictly better
+        all_syms = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, all_syms)))
+
+        real_to_parquet = pd.DataFrame.to_parquet
+
+        def _boom(self, *a, **kw):
+            raise OSError("simulated ENOSPC")
+
+        monkeypatch.setattr(pd.DataFrame, "to_parquet", _boom)
+        with pytest.raises(OSError):
+            bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+
+        # the OLD parquet is completely untouched
+        assert chain_path.read_bytes() == old_bytes
+        # no orphaned tmp parquet left behind by the failed atomic write
+        leftovers = [p.name for p in chain_path.parent.iterdir() if ".tmp." in p.name]
+        assert not leftovers, leftovers
+
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "write_pending"
+        # the trailing write_pending is NOT trusted -- verification against
+        # the (unchanged, still-40) parquet shows unknown_write_interrupted
+        # because the pending entry's OWN claim (70) does not match what is
+        # actually on disk (40).
+        from scripts.build_polygon_gex import _read_receipt, _stored_health
+        attempts = _read_receipt(date(2026, 6, 15))
+        assert _stored_health(attempts, chain_path) == "unknown_write_interrupted"
+
+        # a next same-day run re-fetches (not immutable) and may replace, once
+        # to_parquet is no longer failing.
+        monkeypatch.setattr(pd.DataFrame, "to_parquet", real_to_parquet)
+        res2 = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res2["status"] == "ok"
+        back = pd.read_parquet(chain_path)
+        assert back["underlying"].nunique() == 70
+
+    def test_a_truncated_parquet_is_unreadable_and_reads_as_zero_stored_success(
+            self, tmp_path, monkeypatch):
+        """Simulates a torn/truncated file directly at the real path (e.g. a
+        pre-W1-era file, or any other source of corruption at rest) paired
+        with a trailing write_pending — garbage bytes make the parquet
+        unreadable, so verification must treat it as 0 successful, never the
+        pending entry's claim."""
+        from scripts.build_polygon_gex import _stored_health
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        chains_dir.mkdir(parents=True)
+        chain_path = chains_dir / "2026-06-15.parquet"
+        chain_path.write_bytes(b"not a real parquet file, just garbage bytes")
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("write_pending", "partial", 40, 0.40, requested=100)])
+
+        from scripts.build_polygon_gex import _read_receipt, _stored_state_entry
+        attempts = _read_receipt(date(2026, 6, 15))
+        assert _stored_health(attempts, chain_path) == "unknown_write_interrupted"
+        anchor = _stored_state_entry(attempts, chain_path)
+        assert anchor["successful_underlyings"] == 0, (
+            "an unreadable parquet must report 0 stored success, not the "
+            "pending entry's unverified claim")
+        assert anchor["coverage_pct"] == 0.0
+
+    def test_atomic_write_uses_os_replace_and_leaves_no_tmp_parquet(self, tmp_path, monkeypatch):
+        """(a) sanity: a NORMAL successful write leaves no tmp parquet behind
+        and the real path is the final, complete file."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok"
+        chains_dir = tmp_path / "polygon_gex" / "chains"
+        names = [p.name for p in chains_dir.iterdir()]
+        assert names == ["2026-06-15.parquet"], names
 
 
 class TestN1ForceBypassesUniverseGates:

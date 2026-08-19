@@ -132,7 +132,8 @@ def _read_receipt_attempts(health_dir: Path, session: date) -> list[dict] | None
     return attempts if isinstance(attempts, list) else None
 
 
-def _latest_chain_health(health_dir: Path, session: date | None) -> dict | None:
+def _latest_chain_health(health_dir: Path, chains_dir: Path,
+                         session: date | None) -> dict | None:
     """AD-1C0: the health-receipt entry describing the CURRENT authoritative
     state of `session`'s stored chain — or None when no receipt exists (a
     legacy session, or the sidecar is simply absent on this runner). Read-only;
@@ -146,6 +147,11 @@ def _latest_chain_health(health_dir: Path, session: date | None) -> dict | None:
     REJECTED attempt, not the store; reading the literal last entry would then
     misreport a perfectly healthy, untouched store as failed. _stored_state_entry
     skips every non-anchor (skip-shaped) decision by construction.
+
+    W1 (AD-1C0 round 3): passes the session's own chain parquet path through
+    so a trailing write_pending anchor is VERIFIED against the actual on-disk
+    file (same as accrue() itself) rather than trusted at face value — the
+    audit must never report a phantom capture's health as real.
     """
     if session is None:
         return None
@@ -154,7 +160,8 @@ def _latest_chain_health(health_dir: Path, session: date | None) -> dict | None:
     except ImportError:  # pragma: no cover — defensive; keeps the audit alive
         return None
     attempts = _read_receipt_attempts(health_dir, session)
-    return _stored_state_entry(attempts)
+    chain_path = chains_dir / f"{session.isoformat()}.parquet"
+    return _stored_state_entry(attempts, chain_path)
 
 
 def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
@@ -222,7 +229,7 @@ def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
         )
 
     # ── AD-1C0: surface the latest STORED session's health-receipt verdict ───
-    latest_health_entry = _latest_chain_health(health_dir, latest)
+    latest_health_entry = _latest_chain_health(health_dir, chains_dir, latest)
     if latest_health_entry is not None:
         health = latest_health_entry.get("health")
         detail["chains_latest_health"] = health
@@ -247,6 +254,18 @@ def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
                 f"(PIT-protected as immutable, never retro-replaced) — see "
                 f"data/polygon_gex_health/{latest.isoformat()}.json and any "
                 f"*.corrupt-* sibling for the preserved original"
+            )
+        elif health == "unknown_write_interrupted":
+            # W1 (AD-1C0 round 3): a trailing write_pending receipt entry
+            # whose on-disk parquet failed verification (mismatched or
+            # unreadable) — the write was interrupted (crash, ENOSPC, kill)
+            # and the entry's claimed health can no longer be trusted.
+            warn.append(
+                f"CHAINS HEALTH UNKNOWN: latest chain session {latest} has a stored "
+                f"capture whose write was INTERRUPTED — its receipt entry did not "
+                f"verify against the parquet on disk (replaceable by a same-day "
+                f"re-fetch, not immutable) — see "
+                f"data/polygon_gex_health/{latest.isoformat()}.json"
             )
 
     # ── options-flow S3 creds ────────────────────────────────────────────────

@@ -252,28 +252,84 @@ def _recover_corrupt_receipt(session: date, exc: _CorruptReceipt,
     return attempts
 
 
-def _stored_state_entry(attempts: list[dict] | None) -> dict | None:
+# Health values the first-writer quality rule treats as REPLACEABLE (never
+# immutable) — a real coverage shortfall (partial) and a verified-uncertain
+# write (unknown_write_interrupted, W1) both mean "try to do better on a
+# same-ET-day re-run"; everything else (healthy, unknown_receipt_corrupt, ...)
+# is immutable.
+_REPLACEABLE_HEALTHS = ("partial", "unknown_write_interrupted")
+
+
+def _verify_write_pending(entry: dict, chain_path: Path) -> dict:
+    """W1 ruling (AD-1C0 round 3): a TRAILING write_pending entry describes a
+    capture that MAY or may not have actually landed on disk — to_parquet
+    could have failed, been killed, or (pre-W1) torn the file. Verify before
+    trusting it: read the parquet's OWN underlying nunique and compare to the
+    entry's claimed successful_underlyings.
+      * match -> the entry's health is safe to trust (the capture that
+        landed IS the one the entry describes) — B3 trigger-2's original
+        behavior, now verified rather than assumed.
+      * mismatch OR unreadable parquet -> health "unknown_write_interrupted",
+        with successful_underlyings/coverage_pct corrected to the parquet's
+        ACTUAL readable state (0 successful if unreadable) rather than the
+        entry's unverified claim — so the first-writer quality rule's
+        strictly-better comparison (which reads these two fields) compares
+        against reality, not against a phantom capture that never landed.
+    Only ever called on the rare trailing-write_pending path; every other
+    anchor decision is trusted as-is by _stored_state_entry, unchanged."""
+    claimed = entry.get("successful_underlyings")
+    try:
+        df = pd.read_parquet(chain_path, columns=["underlying"])
+        actual: int | None = int(df["underlying"].nunique())
+    except Exception:  # noqa: BLE001 — any read failure means "unverifiable"
+        actual = None
+    if actual is not None and actual == claimed:
+        return entry
+    stored_successful = actual if actual is not None else 0
+    requested = entry.get("requested_underlyings") or 0
+    coverage_pct = round(stored_successful / requested, 4) if requested else 0.0
+    return {
+        **entry,
+        "health": "unknown_write_interrupted",
+        "successful_underlyings": stored_successful,
+        "coverage_pct": coverage_pct,
+    }
+
+
+def _stored_state_entry(attempts: list[dict] | None,
+                        chain_path: Path | None = None) -> dict | None:
     """The entry describing the CURRENT authoritative state of the stored
     parquet: the most recent attempt whose decision is a _STATE_ANCHOR_DECISION
-    (wrote/replaced_partial/forced/receipt_recovered). Every SKIP-shaped
-    decision (skipped_*, nothing_captured) is invisible here by design — it
-    describes a rejected/no-op ATTEMPT, not a change to what is on disk, so it
-    must never be mistaken for the store's ground truth (M12, audit + accrue()
-    both read through this one function so they can never disagree)."""
+    (wrote/replaced_partial/forced/receipt_recovered/write_pending). Every
+    SKIP-shaped decision (skipped_*, nothing_captured) is invisible here by
+    design — it describes a rejected/no-op ATTEMPT, not a change to what is on
+    disk, so it must never be mistaken for the store's ground truth (M12,
+    audit + accrue() both read through this one function so they can never
+    disagree).
+
+    `chain_path` (W1, AD-1C0 round 3): when the anchor found is a TRAILING
+    write_pending, it is VERIFIED against the on-disk parquet at `chain_path`
+    before being trusted (see _verify_write_pending) — omitted only by
+    read-only call sites that cannot afford the extra parquet read and are
+    willing to trust an unverified entry (none currently; every caller passes
+    it)."""
     if not attempts:
         return None
     for entry in reversed(attempts):
         if entry.get("decision") in _STATE_ANCHOR_DECISIONS:
+            if entry.get("decision") == "write_pending" and chain_path is not None:
+                return _verify_write_pending(entry, chain_path)
             return entry
     return None
 
 
-def _stored_health(attempts: list[dict] | None) -> str:
+def _stored_health(attempts: list[dict] | None,
+                   chain_path: Path | None = None) -> str:
     """Health of whatever is CURRENTLY stored, given its receipt's attempts (or
     None for a session with no receipt at all). A legacy chain file — or a
     receipt carrying no anchor entry — is treated as healthy: immutable, never
     retro-replaced (rule 4)."""
-    anchor = _stored_state_entry(attempts)
+    anchor = _stored_state_entry(attempts, chain_path)
     return (anchor or {}).get("health") or "healthy"
 
 
@@ -462,6 +518,27 @@ def _compact(raw: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _atomic_to_parquet(df: pd.DataFrame, path: Path) -> None:
+    """W1 ruling (AD-1C0 round 3): write to a UNIQUE tmp path (same PID+UUID
+    idiom as the health-receipt writer — m11), then os.replace() onto the
+    final path. A torn/truncated chain parquet becomes impossible: disk
+    content at `path` is always either the complete OLD vintage (the write
+    failed or was killed before the replace — `path` was never touched) or
+    the complete NEW one (the replace succeeded) — never a half-written file
+    at the real path. On any failure the orphaned tmp file is cleaned up and
+    the exception re-raised — the caller (accrue()) has already appended a
+    write_pending receipt entry before calling this, so a crash here is
+    exactly the "trailing write_pending, parquet write failed" case B3-t2/W1
+    verification is for."""
+    tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}.{uuid.uuid4().hex}")
+    try:
+        df.to_parquet(tmp)
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 def _summarize(raw: pd.DataFrame, sym: str, cfg: dict) -> pd.DataFrame | None:
     """compute_gex over one underlying's stored chain -> 1-row/day summary frame.
     Returns None when the chain has no iv-bearing strikes to trust."""
@@ -524,8 +601,10 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     # Sunday's, and Monday's pre-open one all describe Friday. A stored HEALTHY
     # session (>=SOURCE_HEALTH_FLOOR coverage) is IMMUTABLE — checked here, BEFORE
     # the fetch, so a repeat run of an already-good session still spends no API
-    # quota, same as before. A stored PARTIAL session is the one case that needs a
-    # fetch before deciding: only a STRICTLY better capture may replace it (see the
+    # quota, same as before. A stored REPLACEABLE session (_REPLACEABLE_HEALTHS:
+    # partial, or W1's unknown_write_interrupted — a trailing write_pending whose
+    # on-disk parquet failed verification) is the one case that needs a fetch
+    # before deciding: only a STRICTLY better capture may replace it (see the
     # decision block below), so control falls through instead of returning here. A
     # LEGACY chain file with no receipt at all is treated as healthy (immutable) —
     # it predates this sidecar and must never be retro-replaced. `--force` keeps
@@ -542,9 +621,12 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
             stored_attempts = _read_receipt(asof)
         except _CorruptReceipt as e:
             stored_attempts = _recover_corrupt_receipt(asof, e, now)
-        stored_last = _stored_state_entry(stored_attempts)
-        stored_health = _stored_health(stored_attempts)
-        if stored_health != "partial":
+        # W1: pass `path` so a trailing write_pending anchor is VERIFIED against
+        # the actual on-disk parquet (nunique match) before being trusted —
+        # never assumed healthy/partial off an unverified claim.
+        stored_last = _stored_state_entry(stored_attempts, path)
+        stored_health = _stored_health(stored_attempts, path)
+        if stored_health not in _REPLACEABLE_HEALTHS:
             print(f"::notice title=polygon-session-present::session {asof} already stored - "
                   f"keeping the first (closest-to-close) snapshot, skipping this run "
                   f"(pass --force to overwrite)", flush=True)
@@ -554,9 +636,10 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                                    now=now)
             return {"status": "already_present", "date": asof.isoformat(),
                     "session": asof.isoformat(), "path": str(path)}
-        log.info("polygon: session %s stored capture is PARTIAL (below the %.0f%% floor) "
-                 "— re-fetching to check for a strictly-better replacement",
-                 asof, SOURCE_HEALTH_FLOOR * 100)
+        log.info("polygon: session %s stored capture is %s (below the %.0f%% floor, or "
+                 "an unverified interrupted write) — re-fetching to check for a "
+                 "strictly-better replacement",
+                 asof, stored_health.upper(), SOURCE_HEALTH_FLOOR * 100)
 
     # N1 ruling (AD-1C0 round 2): --force bypasses BOTH universe gates below —
     # a forced diagnostic run is the operator explicitly overriding the
@@ -691,7 +774,7 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     health = _health_verdict(census["coverage_pct"], len(raw))
     if force:
         decision = "forced"
-    elif stored_health != "partial":
+    elif stored_health not in _REPLACEABLE_HEALTHS:
         # No prior file existed (stored_health is None here — the branch above
         # already returned for every case where a file existed and was immutable).
         decision = "wrote"
@@ -758,8 +841,14 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
 
     # 1. raw per-strike chain, session-partitioned (append-only, git-friendly).
     # `decision` is one of wrote/replaced_partial/forced here — a single-vintage
-    # overwrite either way, never a merge of captures.
-    _compact(raw).to_parquet(path)
+    # overwrite either way, never a merge of captures. ATOMIC (W1): a
+    # failed/killed write here leaves `path` completely untouched — the OLD
+    # vintage (if any) survives byte-for-byte, and the write_pending entry
+    # appended just above is left trailing with no VERIFIED parquet to match
+    # it, so the next run's _stored_state_entry reads it as
+    # "unknown_write_interrupted" (replaceable), never as this write's
+    # intended health.
+    _atomic_to_parquet(_compact(raw), path)
     log.info("polygon: wrote raw chain %s (%d rows, %d underlyings) decision=%s health=%s",
              path.name, len(raw), raw["underlying"].nunique(), decision, health)
 
