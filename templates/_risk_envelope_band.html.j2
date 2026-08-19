@@ -1,0 +1,277 @@
+{# ═══════════════════════════════════════════════════════════════════════════════
+   THREE SEPARATE READS — the Grey Deer settled Risk Envelope band (macro.html)
+
+   Consumes `risk_envelope` (site/riskdata/risk_envelope.json, composed by
+   engine/risk_envelope.py). Renders NOTHING when the artifact is absent — an
+   honest missing section beats an invented one.
+
+   ── The design job ────────────────────────────────────────────────────────────
+   The page above this band already answers "what regime am I in". It answers it
+   with ONE number, and until now it narrated the disagreement away in a prose
+   aside ("a rotation read, not a high-beta cue"). This band answers a different
+   question — "do the reads agree?" — and it is built so the answer cannot be
+   averaged: three co-equal rows, each carrying its own state, its own plain
+   clause, and its OWN clock.
+
+   ── The signature: the split spine ────────────────────────────────────────────
+   Under the reserved-hue law (MASTER_PRODUCT_DESIGN_SYSTEM_V1 §1) hue may mean
+   exactly five things — market direction, health/severity, wayfinding, epistemic
+   tier, or lock. "Agreement" is none of them, so coherence may NOT be a colour.
+   It is encoded structurally instead: the three rows share one continuous rail
+   when they agree, and the rail BREAKS into three separate marks when they do
+   not. One line = one truth; three marks = three truths. No legend needed, and
+   it survives both themes and the zh 红涨绿跌 flip because it derives from the
+   same tokens that flip.
+
+   Each row's ink then falls straight out of the same law:
+     · trend   → direction ink (--ink-up/--ink-down), the market's direction
+     · hazard  → health ink (--ink-ok/--ink-warn/--ink-act), severity
+     · posture → achromatic, because zero policies means nothing is restricted
+                 and there is no meaning for hue to carry
+   In the contradictory case the three rows are therefore literally different
+   hues by construction — the disagreement is visible before a word is read.
+
+   ── Deliberate omissions ──────────────────────────────────────────────────────
+   · NO 01/02/03 markers. Numbering asserts a sequence; these three questions are
+     orthogonal by design, which IS the thesis. Numbering them would be a lie.
+   · NO motion. Motion law: an animated element must encode a live/ongoing fact,
+     and settled data does not pulse. The stillness is the point — it is what
+     will distinguish this from the GD-3 live lane.
+   · NO falsifier/refutation vocabulary anywhere (operator ruling 2026-07-27).
+     Technicals, receipts and state enums live in the drawer, never at rest.
+   ═══════════════════════════════════════════════════════════════════════════ #}
+
+{% set _re = risk_envelope %}
+{% if _re and _re.get('schema') == 'mastermind.risk_envelope/v1' %}
+{% set _ms = _re.get('measured_state') or {} %}
+{% set _hz = _re.get('hazard_summary') or {} %}
+{% set _co = _re.get('coherence') or {} %}
+{% set _ps = _re.get('policy_summary') or {} %}
+{% set _prov = (_re.get('provenance') or {}).get('sources') or [] %}
+{% set _stage = _hz.get('stage') %}
+{% set _coh = _co.get('state') %}
+{% set _split = _coh in ('MIXED', 'CONTRADICTORY') %}
+
+{# ── the leading hazard source: whose read set the stage. Used for the clause so
+     the row names the actual organ instead of speaking in the abstract. ── #}
+{% set _ns = namespace(lead=none, ms=none) %}
+{% for s in _prov %}
+  {% if s.role == 'hazard_evidence' and s.hazard_stage == _stage and _ns.lead is none %}
+    {% set _ns.lead = s %}
+  {% endif %}
+  {% if s.role == 'measured_state' and _ns.ms is none %}
+    {% set _ns.ms = s %}
+  {% endif %}
+{% endfor %}
+{# The trend organ already publishes its own bilingual STATE label — reuse it verbatim
+   so this band and the hero above never drift into two names for one state. #}
+{% set _fresh = (_re.get('freshness') or {}).get('per_source') or {} %}
+{# source_id → human name, so even the drawer names organs rather than slugs #}
+{% set _names_en = {} %}
+{% set _names_zh = {} %}
+{% for s in _prov %}
+  {% if _names_en.update({s.source_id: (s.label_en or s.source_id)}) %}{% endif %}
+  {% if _names_zh.update({s.source_id: (s.label_zh or s.label_en or s.source_id)}) %}{% endif %}
+{% endfor %}
+{% set _ms_detail = (_ns.ms.detail if _ns.ms else {}) or {} %}
+{% set _ms_label_en = _ms_detail.get('state_label_en') or 'Risk-on' %}
+{% set _ms_label_zh = _ms_detail.get('state_label_zh') or '风险偏好' %}
+
+{# ── direction ink for the trend row ── #}
+{% set _ms_ink = {'RISK_ON': 'var(--ink-up)', 'RISK_OFF': 'var(--ink-down)',
+                  'MIXED': 'var(--ink-2)'}.get(_ms.get('verdict'), 'var(--prov-ink)') %}
+{# ── health ink for the hazard row; null takes the epistemic tone, never a health one ── #}
+{% set _hz_ink = {'NONE': 'var(--ink-ok)', 'FRAGILE': 'var(--ink-warn)',
+                  'TRANSMITTING': 'var(--ink-act)', 'BREAKDOWN': 'var(--ink-act)'}
+                 .get(_stage, 'var(--prov-ink)') %}
+
+{# ── plain-word answers. Internal enums never reach the glance tier. ── #}
+{% set _hz_word_en = {'NONE': 'Nothing breaking', 'FRAGILE': "Something's fragile",
+                      'TRANSMITTING': 'Damage is spreading', 'BREAKDOWN': 'Broken'}
+                     .get(_stage, 'Not enough to say') %}
+{% set _hz_word_zh = {'NONE': '未见断裂', 'FRAGILE': '出现脆弱',
+                      'TRANSMITTING': '损伤扩散', 'BREAKDOWN': '已断裂'}
+                     .get(_stage, '证据不足') %}
+
+<div class="panel span12 gde-band" id="risk-envelope-band">
+
+  <div class="gde-head">
+    <div>
+      <span class="gde-eyebrow"><span class="l-en">Three separate reads</span><span class="l-zh">三项独立判读</span></span>
+      <h2 class="gde-h2"><span class="l-en">Do the reads agree?</span><span class="l-zh">三项判读一致吗？</span></h2>
+    </div>
+    <span class="gde-stamp tnum"
+          data-tip-en="Settled session — the close these reads were taken from. Each source below also keeps its own clock."
+          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。下方每个来源另有各自的时间戳。">
+      <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ _re.get('source_session') or '—' }}
+    </span>
+  </div>
+
+  {# ══ THE ANSWER — this section's primary question, answered first ══ #}
+  {# EN and ZH each keep their bold clause INSIDE one span: separate elements would
+     collapse to an inter-element space, which reads as a stray gap in CJK. #}
+  <p class="gde-lead">
+    {% if _coh == 'CONTRADICTORY' %}
+      <span class="l-en"><b>No — they disagree.</b> The trend read and the damage read point opposite ways. Both are shown, unchanged.</span>
+      <span class="l-zh"><b>不一致。</b>趋势判读与损伤判读方向相反。两者原样并列，未做平均。</span>
+    {% elif _coh == 'MIXED' %}
+      <span class="l-en"><b>Not fully.</b> One read can't be made cleanly today. What we can see is shown below, unchanged.</span>
+      <span class="l-zh"><b>并不完全一致。</b>今日有一项无法干净判读，可见部分原样列于下方，未做平均。</span>
+    {% else %}
+      <span class="l-en"><b>Yes — all three point the same way.</b> Nothing below is contradicting anything else today.</span>
+      <span class="l-zh"><b>一致——三项方向相同。</b>今日下方各项之间没有相互矛盾。</span>
+    {% endif %}
+  </p>
+
+  {# ══ THE THREE READS — co-equal by construction, never ranked, never merged ══ #}
+  <div class="gde-reads{% if _split %} is-split{% endif %}">
+
+    {# ── 1 · measured trend ─────────────────────────────────────────────────── #}
+    <div class="gde-read" style="--gde-c: {{ _ms_ink }}">
+     <div class="gde-row">
+      <span class="gde-q"><span class="l-en">Is the trend still there?</span><span class="l-zh">趋势还在吗？</span></span>
+      <p class="gde-a">
+        {% if _ms.get('usable') and _ms.get('verdict') %}
+          <span class="l-en">{{ _ms_label_en }}</span><span class="l-zh">{{ _ms_label_zh }}</span
+          >{# Direction NEVER travels by hue alone. Under zh 红涨绿跌 this row's
+             direction ink turns red — the same red the hazard row uses for danger —
+             so without a sign a zh reader sees two identical reds and loses the
+             disagreement. The arrow is what keeps "up" readable as up. #}<span
+            class="gde-arr" aria-hidden="true">{{ {'RISK_ON': '▲', 'RISK_OFF': '▼'}.get(_ms.get('verdict'), '▶') }}</span>
+        {% else %}
+          <span class="l-en">Can't read it today</span><span class="l-zh">今日无法判读</span>
+        {% endif %}
+      </p>
+      <p class="gde-c">
+        {% if _ms.get('usable') and _ms.get('score') is not none %}
+          <span class="l-en">Slow trend read, carried unchanged from the score above —
+            <a class="gde-quote tnum" href="#regime-radar">{{ _ms.get('score') }}<span class="gde-outof">/100</span></a>.</span>
+          <span class="l-zh">慢速趋势判读，原样取自上方评分 —
+            <a class="gde-quote tnum" href="#regime-radar">{{ _ms.get('score') }}<span class="gde-outof">/100</span></a>。</span>
+        {% else %}
+          <span class="l-en">The trend source didn't settle for this session, so we're not quoting a stale one.</span>
+          <span class="l-zh">趋势来源本交易日未结算，因此不引用过期读数。</span>
+        {% endif %}
+      </p>
+      {# a coverage problem is a caveat that changes how the answer reads, so it sits
+         beside the clock rather than only in the drawer (doctrine §9.8) #}
+      {% set _msf = _fresh.get(_ns.ms.source_id) if _ns.ms else none %}
+      <span class="gde-clock tnum">{{ _ms.get('as_of') or '—' }}{% if _msf and _msf.state != 'FRESH' %}
+        <span class="gde-flag">{% if _msf.state == 'STALE' %}<span class="l-en">· older than this session</span><span class="l-zh">· 早于本交易日</span>{% else %}<span class="l-en">· didn't publish</span><span class="l-zh">· 未发布</span>{% endif %}</span>{% endif %}</span>
+     </div>
+    </div>
+
+    {# ── 2 · transition hazard + the evidence drawer ─────────────────────────── #}
+    <div class="gde-read" style="--gde-c: {{ _hz_ink }}">
+     <div class="gde-row">
+      <span class="gde-q"><span class="l-en">Is anything breaking?</span><span class="l-zh">有什么正在断裂？</span></span>
+      <p class="gde-a">
+        <span class="l-en">{{ _hz_word_en }}</span><span class="l-zh">{{ _hz_word_zh }}</span>
+      </p>
+      <p class="gde-c">
+        {% if _stage is none %}
+          <span class="l-en">A source we need didn't settle today, so we're not calling this either way.</span>
+          <span class="l-zh">今日缺少必需来源的结算数据，因此不作任何判定。</span>
+        {% elif _stage == 'NONE' %}
+          <span class="l-en">We looked at every source we need and none of them shows damage.</span>
+          <span class="l-zh">已核对全部必需来源，均未见损伤。</span>
+        {% else %}
+          <span class="l-en">{{ (_ns.lead.label_en if _ns.lead else 'A tracked group') }} has taken damage{% if _hz.get('stage_since') %} since {{ _hz.get('stage_since') }}{% endif %}, while the trend read above hasn't moved.</span>
+          <span class="l-zh">{{ (_ns.lead.label_zh if _ns.lead else '受追踪的一组标的') }}已出现损伤{% if _hz.get('stage_since') %}（自 {{ _hz.get('stage_since') }} 起）{% endif %}，而上方趋势判读未变。</span>
+        {% endif %}
+      </p>
+      {# the clock column means "when was this read taken", not "when did the state
+         begin" — the since-date already sits in the clause above, and conflating the
+         two is how a months-old state starts looking like a stale source #}
+      {% set _unread = _hz.get('unreadable_sources') or [] %}
+      <span class="gde-clock tnum">{{ (_ns.lead.as_of if _ns.lead else none) or _re.get('source_session') or '—' }}{% if _unread %}
+        <span class="gde-flag"><span class="l-en">· {{ _unread | length }} source{{ 's' if _unread | length != 1 else '' }} couldn't be read</span><span class="l-zh">· {{ _unread | length }} 个来源无法读取</span></span>{% endif %}</span>
+     </div>
+
+      {# Tier 2/3 lives here: source states, per-source clocks, contradictions,
+         and the machine receipt. The summary says what is inside AND why to open. #}
+      <details class="gde-disc">
+        <summary>
+          <span class="l-en">Evidence — {{ _prov | length }} sources{% if _co.get('contradiction_count') %}, {{ _co.get('contradiction_count') }} disagreement{{ 's' if _co.get('contradiction_count') != 1 else '' }}{% endif %}</span>
+          <span class="l-zh">证据 — {{ _prov | length }} 个来源{% if _co.get('contradiction_count') %}，{{ _co.get('contradiction_count') }} 处分歧{% endif %}</span>
+        </summary>
+        <div class="gde-disc-body">
+          <div class="gde-tblwrap">
+            <table class="gde-tbl">
+              <thead><tr>
+                <th><span class="l-en">Source</span><span class="l-zh">来源</span></th>
+                <th><span class="l-en">Its own read</span><span class="l-zh">自身读数</span></th>
+                <th><span class="l-en">As of</span><span class="l-zh">数据日期</span></th>
+                <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
+              </tr></thead>
+              <tbody>
+              {% for s in _prov %}
+                <tr>
+                  <td class="l">{% if s.label_en %}<span class="l-en">{{ s.label_en }}</span><span class="l-zh">{{ s.label_zh or s.label_en }}</span>{% else %}<span class="tnum">{{ s.source_id }}</span>{% endif %}</td>
+                  <td class="tnum">{{ s.state if s.state is not none else '—' }}{% if s.score is not none %} · {{ s.score }}{% endif %}</td>
+                  <td class="tnum">{{ s.as_of or '—' }}</td>
+                  <td>
+                    {% if s.coverage == 'FRESH' %}<span class="l-en">This session</span><span class="l-zh">本交易日</span>
+                    {% elif s.coverage == 'STALE' %}<span class="gde-warn"><span class="l-en">Older than this session</span><span class="l-zh">早于本交易日</span></span>
+                    {% else %}<span class="gde-warn"><span class="l-en">Did not publish</span><span class="l-zh">未发布</span></span>{% endif %}
+                    {%- if s.required %} <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if _co.get('contradictions') %}
+          <p class="gde-disc-h"><span class="l-en">Where they disagree</span><span class="l-zh">分歧所在</span></p>
+          <ul class="gde-conflicts">
+            {% for c in _co.get('contradictions') %}
+            <li>
+              <span class="l-en">{{ _names_en.get(c.left, c.left) }} reads <b>{{ c.left_state }}</b> while {{ _names_en.get(c.right, c.right) }} reads <b>{{ c.right_state }}</b>.</span>
+              <span class="l-zh">{{ _names_zh.get(c.left, c.left) }} 读为 <b>{{ c.left_state }}</b>，而 {{ _names_zh.get(c.right, c.right) }} 读为 <b>{{ c.right_state }}</b>。</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+
+          <p class="gde-receipt tnum">
+            {{ _re.get('definition_id') }} · bundle {{ _re.get('bundle_id') }} ·
+            coverage {{ _re.get('data_state') }} · coherence {{ _coh }} ·
+            stage {{ _stage if _stage is not none else 'null' }} ({{ _hz.get('stage_reason') }}) ·
+            engine/risk_envelope.py
+          </p>
+        </div>
+      </details>
+    </div>
+
+    {# ── 3 · capital posture — a display projection of zero policies ─────────── #}
+    <div class="gde-read gde-read--quiet">
+     <div class="gde-row">
+      <span class="gde-q"><span class="l-en">What's being held back?</span><span class="l-zh">有什么被限制？</span></span>
+      <p class="gde-a">
+        <span class="l-en">Nothing held back</span><span class="l-zh">未做任何限制</span>
+      </p>
+      <p class="gde-c">
+        <span class="l-en">No limits are in force. This read describes the market; it doesn't restrict anything you do.</span>
+        <span class="l-zh">当前没有任何限制。此判读只描述市场，不会限制你的任何操作。</span>
+      </p>
+      <span class="gde-clock tnum">{{ _ps.get('policy_count', 0) }} <span class="l-en">in force</span><span class="l-zh">项生效</span></span>
+     </div>
+    </div>
+
+  </div>
+
+  <div class="gde-foot">
+    {% if _split or (_stage and _stage != 'NONE') %}
+      <span class="gde-stance" style="--gde-c: var(--ink-warn)"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追</span></span>
+    {% else %}
+      <span class="gde-stance" style="--gde-c: var(--ink-2)"><span class="l-en">Ignore — nothing to act on</span><span class="l-zh">可忽略——无需动作</span></span>
+    {% endif %}
+    <span class="gde-note">
+      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm".</span>
+      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。</span>
+    </span>
+  </div>
+
+</div>
+{% endif %}
