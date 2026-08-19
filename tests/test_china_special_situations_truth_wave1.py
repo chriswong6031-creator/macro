@@ -706,8 +706,6 @@ def test_inquiry_letter_naming_no_inquiry_is_undetermined(tmp_path, monkeypatch)
 
     from engine import china_special_situations as css
     snap = css.scan()
-    import sys
-    print("DEBUG inquiry block:", snap["inquiry"], file=sys.stderr)
     letters = snap["inquiry"]["letters"]
     assert len(letters) == 1
     # THE regression-catching assertion.
