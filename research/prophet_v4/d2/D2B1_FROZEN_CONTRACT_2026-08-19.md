@@ -249,3 +249,20 @@ alt-data, UI/templates/site, unrelated CI work, graph node_id generation,
 NOT_IN_MASTER queue stays open).
 
 — FROZEN —
+
+## AMENDMENTS (post-freeze, 2026-08-19, orchestrator-ratified)
+
+1. **`tests/test_dataos_registry.py` added to the owned-file scope** — registering
+   `reference.issuer_master` + `reference.issuer_migrations` (required by §3/§13)
+   mechanically moved that suite's seeded-dataset enumerations; the builder's minimal
+   2-assertion update is ratified.
+2. **§7 law (a) hardened after a mutation-verification ESCAPE**: the CIK evidence rail
+   (`cik_map`) is now an explicit REQUIRED identity input of the nightly refresh —
+   missing/empty/unreadable ⇒ `::warning` refusal, last-good retained, exit 0, no
+   restamp (commit ed49d19083d0). The original implementation silently degraded to
+   zero evidence and claimed success via `::notice`; control §12.11 now provably dies.
+3. **Merge-resolution law recorded**: main's engine lane re-derives the D2A sidecar
+   nightly, so a sidecar-regenerating PR conflicts with main within hours and its
+   pull_request CI schedules NOTHING while conflicted. Resolution = re-derivation over
+   the merged nodes plane + this branch's master (merge commit 283ef52f05cc), never
+   pick-a-side.
