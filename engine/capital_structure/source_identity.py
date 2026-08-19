@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
+import copy
 import hashlib
 import hmac
 import json
@@ -127,6 +128,14 @@ class ManifestIdentityError(ValueError):
 
 class EvidenceIdentityError(ValueError):
     """Occurrence+bytes evidence identity cannot be derived or does not bind."""
+
+
+class ChildOccurrenceUnbound(EvidenceIdentityError):
+    """A new child write lacks parent-content byte coordinates.
+
+    ``legacy:{source_id}`` is a historical read-side projection only. New
+    writes must never use it as a canonical occurrence key.
+    """
 
 
 def _native(value: Any) -> Any:
@@ -250,6 +259,34 @@ def child_occurrence(
     }
 
 
+def writable_child_occurrence(
+    *,
+    parent_content_sha256: str | None,
+    byte_start: int | None,
+    byte_end: int | None,
+) -> dict[str, Any]:
+    """Return child occurrence coordinates for a NEW write.
+
+    Refuses unbound coordinates. ``legacy:{source_id}`` is not a substitute.
+    """
+    if (
+        not parent_content_sha256
+        or isinstance(byte_start, bool)
+        or isinstance(byte_end, bool)
+        or not isinstance(byte_start, int)
+        or not isinstance(byte_end, int)
+    ):
+        raise ChildOccurrenceUnbound(
+            "child occurrence unbound: parent-content byte coordinates are "
+            "required for new writes; legacy:{source_id} is read-side only"
+        )
+    return child_occurrence(
+        parent_content_sha256=parent_content_sha256,
+        byte_start=byte_start,
+        byte_end=byte_end,
+    )
+
+
 def normalize_occurrence(occurrence: Any) -> Any:
     """Canonicalize an occurrence value; refuse interpretation substitutes."""
     if occurrence == "submission":
@@ -365,16 +402,93 @@ def evidence_id_from_manifest(record: Mapping[str, Any]) -> str:
     return derived
 
 
+def interpretation_fingerprint(record: Mapping[str, Any]) -> bytes:
+    """Canonical interpretation body for re-observation vs revision.
+
+    Strips retrieval/publication clocks, derived evidence identity fields,
+    and revision counters. Same occurrence+bytes with a parser/selection/
+    file-number change fingerprints differently and is a real revision.
+    """
+    body = copy.deepcopy(dict(record))
+    body.pop("manifest_id", None)
+    body.pop("first_known_at", None)
+    body.pop("evidence_id", None)
+    body.pop("evidence_key_format", None)
+    body.pop("evidence_occurrence", None)
+    retrieval = body.get("retrieval")
+    if isinstance(retrieval, dict):
+        retrieval.pop("retrieved_at", None)
+        retrieval.pop("first_seen_at", None)
+    document = body.get("document")
+    if isinstance(document, dict):
+        document.pop("document_version", None)
+        document.pop("parent_manifest_id", None)
+    return canonical_manifest_bytes(body)
+
+
+def latest_published_for_evidence(
+    evidence_id: str,
+    published: Sequence[Mapping[str, Any]],
+) -> Mapping[str, Any] | None:
+    """Return the latest published row for ``evidence_id``.
+
+    Uses :func:`evidence_id_from_manifest` so historical v1 rows that lack a
+    stored ``evidence_id`` still match via read-side projection.
+    Ledger prefix order is publication order; the last match wins.
+    """
+    latest: Mapping[str, Any] | None = None
+    for record in published:
+        try:
+            if evidence_id_from_manifest(record) == evidence_id:
+                latest = record
+        except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+            continue
+    return latest
+
+
+def classify_bundle_against_published(
+    candidates: Sequence[Mapping[str, Any]],
+    published: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Adjudicate a retained filing bundle against the published ledger.
+
+    ``re_observed`` only when every candidate occurrence+bytes is already
+    known and every relevant interpretation is unchanged. A newly selected,
+    newly resolvable, or interpretation-revised child is a bundle revision
+    — never a complete-row shortcut.
+    """
+    if not candidates:
+        raise EvidenceIdentityError("bundle classification requires candidates")
+    append: list[Mapping[str, Any]] = []
+    unchanged: list[Mapping[str, Any]] = []
+    for candidate in candidates:
+        eid = evidence_id_from_manifest(candidate)
+        prior = latest_published_for_evidence(eid, published)
+        if (
+            prior is not None
+            and interpretation_fingerprint(candidate)
+            == interpretation_fingerprint(prior)
+        ):
+            unchanged.append(candidate)
+        else:
+            append.append(candidate)
+    status = "re_observed" if not append and unchanged else "revision"
+    return {"status": status, "append": append, "unchanged": unchanged}
+
+
 def published_first_known_at(
     evidence_id: str,
     published_records: Sequence[Mapping[str, Any]],
     *,
     candidate_timestamp: str,
 ) -> str:
-    """Freeze canonical first_known_at at first published row for this evidence.
+    """Freeze canonical first_known_at at the first published retention clock.
 
-    A later competing observation with an earlier local timestamp cannot move
-    the published boundary backward. Ledger prefix order is publication order.
+    The value is the verified-retention timestamp of the first observation
+    of this evidence_id whose generation later became canonical. Git
+    publication is the freeze event, not the timestamp. A later competing
+    observation with an earlier local timestamp cannot move the published
+    boundary backward. Ledger prefix order is publication order.
     """
     if not str(candidate_timestamp or "").strip():
         raise EvidenceIdentityError("candidate first_known_at is required")
