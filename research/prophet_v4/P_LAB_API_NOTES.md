@@ -509,3 +509,94 @@ new tests: 141 total across the three prophet_lab test files (94 + 29 + 18).
   deletion — the same file set as the prior round plus
   `engine/prophet_lab/timeparse.py` and `tests/test_prophet_lab_timeparse.py`.
   Forbidden radar-transport files and `data/` both still empty.
+
+## Temporal review round 2 (2026-08-19)
+
+A narrow independent review verdicted the round-1 temporal delta MERGE-SAFE
+as shipped, but found the "replace every remaining lexicographic ordering"
+completeness claim FALSE: three siblings of the same bug class survived,
+all still inside the honesty/evidence path (never display). Fixed in the
+same branch:
+
+* **S1 (must-fix) — `boards._live_forward_lead_anchor`.** Picked the
+  multi-expert-card measured-lead anchor via
+  ``candidates.sort(key=lambda pair: pair[0])`` — a raw string sort over
+  ``first_observed_at``. Executed failure: expert A
+  ``"2026-08-19T20:00:00-05:00"`` (= ``2026-08-20T01:00:00Z``) vs expert B
+  ``"2026-08-20T00:30:00Z"`` — A wrongly chosen (sorts first, '19' < '20'),
+  fabricating ``measured_from_event_id``/a lead where the TRUE anchor (B)
+  yields a different answer. Fixed: sorts by
+  ``timeparse.parse_instant(pair[0])``; an entry that fails to parse is
+  defensively EXCLUDED (every candidate is an ``extract_events`` output and
+  is therefore parseable in practice, but this never falls back to a string
+  compare on a hypothetical miss). This is EVIDENCE-tier parsing and does
+  NOT join `timeparse.py`'s one display-tier exemption
+  (`boards._parse_sort_ts`) — the module docstring now says so explicitly,
+  by name, so the exemption list cannot silently grow to cover it.
+* **S2 (must-fix) — `observation.measured_lead_days`'s LAB-side date.** Took
+  ``str(first_observed_at)[:10]``, the OFFSET-LOCAL calendar date.
+  ``"2026-08-19T20:00:00-05:00"`` slices to ``08-19`` but is ``08-20`` UTC —
+  a fabricated one-day lead where the honest answer differs. Fixed: the LAB
+  side is now ``timeparse.parse_instant(first_observed_at).date()`` (``None``
+  → no lead, fail closed); the PROPHET plan-date side KEEPS the ``[:10]``
+  slice unchanged — Prophet ``signal_date``/``entry_date`` are legitimately
+  bare ``YYYY-MM-DD`` with no time or offset at all, so there is no instant
+  to parse there. The function's own docstring now states this asymmetry
+  explicitly rather than leaving a reader to wonder why only one side
+  changed.
+* **S3 (must-fix) — regression tests.**
+  `test_extract_events_mixed_offset_regression_and_classification` — two
+  envelopes carrying the same event_id at ``09:00:00-04:00`` (13:00Z) and
+  ``10:00:00Z``, baseline ``12:00Z``: asserts the chosen ``first_observed_at``
+  is the ``10:00Z`` instant, the resulting classification is
+  ``retrospective_seed``, AND (via an explicit `raw_min` comparison) that a
+  revert to raw-string `min()` would pick the wrong envelope — the primary
+  assertion is revert-sensitive by construction. Plus
+  `test_live_forward_lead_anchor_picks_the_true_earliest_instant` (pins S1)
+  and `test_measured_lead_days_uses_utc_date_not_offset_local_date` (pins
+  S2), each with the exact executed-failure numbers from the review.
+* **S4 (take it) — `read_observation_baseline` parse-validates
+  `baseline_started_at` at READ time.** A naive/unparseable value now emits
+  the existing `log.warning` idiom (unchanged) AND is distinguishable from a
+  spool-coverage gap or a simply-unconfigured baseline in the health block:
+  the function's return type changed from `dict | None` to a new
+  `BaselineReadResult(baseline, error)` dataclass (matching the house
+  `SpoolReadResult`/`EpisodeReadResult` idiom already in this module); a
+  malformed marker surfaces `health.observation_baseline_error` (e.g.
+  `"naive_or_unparseable_started_at"`, `"schema_mismatch"`,
+  `"missing_baseline_started_at"`, `"unreadable_or_invalid_json"`,
+  `"schema_not_an_object"`); a genuinely absent baseline carries NO error key
+  at all (fail-closed DIRECTION unchanged — absence was never an error).
+  Every existing call site (`response.py` + 6 tests) updated to the new
+  shape.
+* **N1 (take it) — `earliest_instant_string` was dead.** Wired
+  `sources.earliest_pass_ts` through it instead of re-implementing the same
+  "earliest by parsed instant" scan a second time; `timeparse.py`'s docstring
+  updated to record this as the ROUND 2 set of fixes.
+
+**11 new tests** (152 total in `test_prophet_lab.py`/`test_prophet_lab_api.py`/
+`test_prophet_lab_timeparse.py`, up from 141): the S3-mandated
+`extract_events` regression + 2 pin tests, 3 `_live_forward_lead_anchor`
+tests (S1), 2 `measured_lead_days` UTC-date tests (S2), 4 `BaselineReadResult`
+tests including the health-block surfacing case (S4), 1
+`earliest_pass_ts`-through-`earliest_instant_string` wiring test (N1).
+
+### Round 2 verification
+
+```
+python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py tests/test_prophet_lab_timeparse.py tests/test_deploy_update_self_heal.py tests/test_entry_radar_w1.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w4_ledger.py -q
+# 569 passed, 1 skipped (same pre-existing conditional skip)
+
+python3.12 scripts/audit_unrun_tests.py
+# exit 0
+
+python3.12 -m pytest tests/test_ci_pack.py -q -k "test_curated_exclusive_scopes_cover_their_own_import_closure or test_the_curated_exclusive_set_is_actually_declared"
+# 2 passed — no .github/ci/legacy-jobs.yml edits this round; re-run as insurance
+```
+
+No board semantics, observation classes, or payload contract changed this
+round either — `BaselineReadResult` is a new internal return TYPE for one
+`sources.py` function with one call site (`response.py`) and 6 test call
+sites, all updated; the response payload itself gained exactly one optional
+health-block key (`observation_baseline_error`), additive and absent unless
+the marker is genuinely malformed.

@@ -78,10 +78,7 @@ def measured_lead_days(
     """Days between the Lab's first observation and the Prophet plan anchor.
 
     ``None`` unless the row is ``live_forward`` AND both timestamps are
-    present — a seed NEVER shows a measured lead, always, per LAB-0 §4.  Both
-    timestamps are truncated to their date component before differencing so a
-    fixture supplying bare ``YYYY-MM-DD`` values (as Prophet plan dates are)
-    still produces a lead against a full ISO-8601 spool timestamp.
+    present — a seed NEVER shows a measured lead, always, per LAB-0 §4.
 
     Review B1: a lead is reported ONLY when the Prophet anchor POSTDATES the
     Lab's first observation — i.e. only when the Lab genuinely led Prophet.
@@ -91,6 +88,20 @@ def measured_lead_days(
     lead — this function returns ``None`` for that case rather than a
     negative or zero integer a UI could mistake for "the Lab was N days
     behind".
+
+    Deliberate ASYMMETRY between the two sides (temporal review round 2, S2):
+    the LAB side (``first_observed_at``) is a full ISO-8601 spool instant, so
+    it goes through :func:`engine.prophet_lab.timeparse.parse_instant` and its
+    UTC ``.date()`` — never a raw ``[:10]`` slice of the original string,
+    which takes the OFFSET-LOCAL calendar date and silently gets the wrong
+    day whenever the offset crosses midnight UTC (measured:
+    ``"2026-08-19T20:00:00-05:00"`` is ``2026-08-20T01:00:00Z`` — the UTC
+    date is the 20th, but ``[:10]`` reads "2026-08-19"). The PROPHET side
+    (``prophet_anchor_at``) legitimately IS a bare ``YYYY-MM-DD`` calendar
+    date (Prophet plan ``signal_date``/``entry_date`` carry no time or offset
+    at all — there is no instant to parse), so it keeps the ``[:10]``-then-
+    ``date.fromisoformat`` reading unchanged; parsing it as an instant would
+    require inventing a time-of-day this package does not have.
     """
     if observation_class != OBSERVATION_LIVE_FORWARD:
         return None
@@ -98,8 +109,11 @@ def measured_lead_days(
         return None
     from datetime import date  # noqa: PLC0415
 
+    lab_instant = parse_instant(first_observed_at)
+    if lab_instant is None:
+        return None
+    lab_date = lab_instant.date()
     try:
-        lab_date = date.fromisoformat(str(first_observed_at)[:10])
         prophet_date = date.fromisoformat(str(prophet_anchor_at)[:10])
     except ValueError:
         return None

@@ -64,7 +64,8 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
     index = sources.read_prophet_index(roots.prophet_index_path)
     plans_by_ticker = sources.index_plans_by_ticker(index)
     library = sources.build_enrichment_library(roots.enrichment_library_root)
-    raw_baseline = sources.read_observation_baseline(roots.observation_baseline_path)
+    baseline_result = sources.read_observation_baseline(roots.observation_baseline_path)
+    raw_baseline = baseline_result.baseline
 
     # Review S1, fail CLOSED: a baseline that exists but whose coverage the
     # spool cannot actually verify (a gap between the claimed start and the
@@ -146,6 +147,12 @@ def build_lab_response(roots: LabRoots) -> dict[str, Any]:
         "observation_baseline_present": raw_baseline is not None,
         "observation_baseline_coverage_verified": coverage_verified,
     }
+    # Review round 2, S4: a malformed marker (e.g. a naive/unparseable
+    # baseline_started_at) is distinguishable by NAME from a spool-coverage
+    # gap or a simply-unconfigured baseline -- both of which otherwise read
+    # as the same "not verified" from this block alone.
+    if baseline_result.error:
+        health["observation_baseline_error"] = baseline_result.error
 
     return {
         "schema": SCHEMA_LAB_BOARD,

@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from engine.prophet_lab.timeparse import parse_instant
+from engine.prophet_lab.timeparse import earliest_instant_string, parse_instant
 
 log = logging.getLogger("macro.prophet_lab")
 
@@ -161,21 +161,13 @@ def earliest_pass_ts(envelopes: Iterable[Mapping[str, Any]]) -> str | None:
     ``None`` when no envelope carries a parseable ``pass_ts``. Temporal
     correctness amendment: this used to be ``min()`` over the raw strings,
     which is only correct when every string shares the same UTC-offset
-    notation — see ``timeparse.py``'s module docstring.
+    notation — see ``timeparse.py``'s module docstring. Wired through
+    :func:`engine.prophet_lab.timeparse.earliest_instant_string` (review
+    round 2, N1) rather than re-implementing the same "earliest by parsed
+    instant" scan a second time in this module.
     """
-    best_raw: str | None = None
-    best_instant: Any = None
-    for env in envelopes:
-        raw = str(env.get("pass_ts") or "").strip()
-        if not raw:
-            continue
-        instant = parse_instant(raw)
-        if instant is None:
-            continue
-        if best_instant is None or instant < best_instant:
-            best_instant = instant
-            best_raw = raw
-    return best_raw
+    raw_stamps = (str(env.get("pass_ts") or "").strip() for env in envelopes)
+    return earliest_instant_string(raw for raw in raw_stamps if raw)
 
 
 def latest_envelope(envelopes: Iterable[Mapping[str, Any]]) -> Mapping[str, Any] | None:
@@ -406,41 +398,81 @@ def build_enrichment_library(library_root: Path | str | None) -> Any:
     return LibraryIndex(library_root)
 
 
-def read_observation_baseline(baseline_path: Path | str | None) -> dict[str, Any] | None:
-    """The observation-baseline marker (LAB-0 §4), or ``None`` when absent/invalid.
+@dataclass(frozen=True)
+class BaselineReadResult:
+    """Review round 2, S4: distinguishes a MALFORMED marker from a genuinely
+    ABSENT one. Both used to collapse into the same ``None`` — a health-block
+    consumer could not tell "the operator has not provisioned a baseline yet"
+    apart from "one exists but is broken" (e.g. a naive/unparseable
+    ``baseline_started_at``), which matters because the second case is an
+    operator error worth surfacing by name, not silent absence.
+    """
+
+    baseline: dict[str, Any] | None
+    error: str | None = None
+
+
+def read_observation_baseline(baseline_path: Path | str | None) -> BaselineReadResult:
+    """The observation-baseline marker (LAB-0 §4), plus a named failure reason.
 
     Absence is not an error — it is the honest starting state: with no
-    baseline, EVERY event is ``retrospective_seed`` (fail-honest). A present
-    file must declare ``schema == BASELINE_SCHEMA`` (review N2 — an
-    unrecognised or missing schema is rejected rather than trusted blind) and
-    carry ``baseline_started_at``; ``continuous_through`` is optional and,
-    when given, bounds how far forward the "continuous coverage" claim is
-    trusted — an event first observed after ``continuous_through`` cannot yet
-    be certified live_forward either.
+    baseline, EVERY event is ``retrospective_seed`` (fail-honest); a call with
+    no configured path (or nothing on disk) returns ``BaselineReadResult(None)``
+    with no ``error`` at all. A PRESENT-but-broken file rejects to ``baseline=
+    None`` the same as before (the fail-closed DIRECTION is unchanged) but now
+    also names WHY via ``.error``:
+
+    * ``schema_not_an_object`` — the JSON parsed but isn't a ``{...}``.
+    * ``unreadable_or_invalid_json`` — the file could not be read or parsed.
+    * ``schema_mismatch`` — ``schema`` is missing or not ``BASELINE_SCHEMA``
+      (review N2 — an unrecognised schema is rejected, not trusted blind).
+    * ``missing_baseline_started_at`` — the required field is absent/blank.
+    * ``naive_or_unparseable_started_at`` (review round 2, S4) — the field is
+      present but does not parse to a tz-aware instant via
+      :func:`engine.prophet_lab.timeparse.parse_instant` — validated HERE, at
+      read time, rather than only failing later inside every comparison that
+      happens to touch it, so a malformed marker is distinguishable from a
+      genuine spool-coverage gap in the health block
+      (``observation_baseline_error``) instead of both reading as an
+      unexplained "not verified".
+
+    ``continuous_through`` (optional) is NOT read-time validated here — an
+    unparseable value there already fails closed correctly inside
+    ``observation.classify_observation`` itself (a present-but-broken upper
+    bound must reject, never silently act as "no upper bound"), and that
+    per-event check is the more precise place to name it.
     """
     if baseline_path is None:
-        return None
+        return BaselineReadResult(baseline=None)
     path = Path(baseline_path)
     if not path.is_file():
-        return None
+        return BaselineReadResult(baseline=None)
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         log.warning("prophet_lab: observation baseline at %s unreadable (%s)", path, exc)
-        return None
+        return BaselineReadResult(baseline=None, error="unreadable_or_invalid_json")
     if not isinstance(raw, dict):
-        return None
+        return BaselineReadResult(baseline=None, error="schema_not_an_object")
     if str(raw.get("schema") or "") != BASELINE_SCHEMA:
         log.warning(
             "prophet_lab: observation baseline at %s carries schema %r (expected %r) — "
             "rejected, not trusted blind",
             path, raw.get("schema"), BASELINE_SCHEMA,
         )
-        return None
-    if not str(raw.get("baseline_started_at") or "").strip():
+        return BaselineReadResult(baseline=None, error="schema_mismatch")
+    started_at = raw.get("baseline_started_at")
+    if not str(started_at or "").strip():
         log.warning("prophet_lab: observation baseline at %s missing baseline_started_at", path)
-        return None
-    return raw
+        return BaselineReadResult(baseline=None, error="missing_baseline_started_at")
+    if parse_instant(started_at) is None:
+        log.warning(
+            "prophet_lab: observation baseline at %s carries a naive or unparseable "
+            "baseline_started_at (%r) — rejected, fail closed",
+            path, started_at,
+        )
+        return BaselineReadResult(baseline=None, error="naive_or_unparseable_started_at")
+    return BaselineReadResult(baseline=raw)
 
 
 __all__ = [
@@ -449,6 +481,7 @@ __all__ = [
     "SpoolReadResult",
     "EpisodeReadResult",
     "EpisodeSummary",
+    "BaselineReadResult",
     "read_radar_envelopes",
     "extract_events",
     "earliest_pass_ts",

@@ -23,14 +23,29 @@ COMPARISON purposes in that honesty path; every caller compares the returned
 ``datetime`` objects (tz-aware, normalized to UTC) rather than the original
 strings.
 
-Scope note: this module is deliberately NOT used by
-``engine.prophet_lab.boards._parse_sort_ts`` (the row DISPLAY ORDER helper).
-Sorting and classifying have different, legitimately different failure
-semantics — see ``parse_instant``'s docstring for why a naive timestamp is
-REJECTED here but boards.py's own sort key treats one as UTC. Reusing this
-parser there would silently change which rows sort last for a naive
-``sort_ts`` (e.g. a bare ``YYYY-MM-DD`` Prophet plan date), which is a board
-DISPLAY semantic this amendment is explicitly forbidden from touching.
+ROUND 2 (2026-08-19): three more of the same bug class, all still inside the
+honesty/EVIDENCE path (never display): ``boards._live_forward_lead_anchor``
+(picking which multi-expert-card event a measured lead is attributed to —
+was ``candidates.sort(key=lambda pair: pair[0])`` over raw strings),
+``observation.measured_lead_days``'s LAB-side date extraction (was
+``str(first_observed_at)[:10]``, which reads the OFFSET-LOCAL calendar date
+and silently gets the wrong day whenever the offset crosses midnight UTC),
+and ``sources.earliest_pass_ts`` (now wired through
+:func:`earliest_instant_string` below instead of re-implementing the same
+scan). All three now go through this module.
+
+Scope note — the ONE deliberate exemption, and it does not grow: this module
+is NOT used by ``engine.prophet_lab.boards._parse_sort_ts`` (the row DISPLAY
+ORDER helper). Sorting and classifying/measuring have different,
+legitimately different failure semantics — see ``parse_instant``'s docstring
+for why a naive timestamp is REJECTED here but boards.py's own sort key
+treats one as UTC. Reusing this parser there would silently change which
+rows sort last for a naive ``sort_ts`` (e.g. a bare ``YYYY-MM-DD`` Prophet
+plan date), which is a board DISPLAY semantic this amendment is explicitly
+forbidden from touching. Every OTHER raw timestamp comparison in the
+observation/coverage/lead-measurement path is EVIDENCE-tier, not display,
+and belongs in this module, not on the exemption list — that list names
+exactly one function (``_parse_sort_ts``) and stays that length.
 """
 from __future__ import annotations
 

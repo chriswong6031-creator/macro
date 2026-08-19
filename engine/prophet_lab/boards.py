@@ -58,6 +58,7 @@ from engine.prophet_lab.contracts import (
     OBSERVATION_LIVE_FORWARD,
     OBSERVATION_RETROSPECTIVE_SEED,
 )
+from engine.prophet_lab.timeparse import parse_instant
 
 # ---------------------------------------------------------------------------
 # N1: one normalized sort clock. Raw ISO-8601 string compares are fragile
@@ -168,16 +169,39 @@ def _live_forward_lead_anchor(
     Review B3: this is the event a multi-expert card's measured lead is
     ATTRIBUTED to (``measured_from_event_id``) — never left implicit when a
     card mixes a seed and a live observation.
+
+    Temporal review round 2 (S1): "earliest" is decided by parsed INSTANT
+    (:func:`engine.prophet_lab.timeparse.parse_instant`), never by comparing
+    the ``first_observed_at`` strings directly. Measured failure this
+    replaces: expert A ``"2026-08-19T20:00:00-05:00"`` (= 2026-08-20T01:00Z)
+    vs expert B ``"2026-08-20T00:30:00Z"`` — A sorts first as a raw string
+    ('19' < '20'), but B is the TRUE earlier instant (00:30Z < 01:00Z),
+    fabricating a lead anchored to the wrong event. Every candidate here is
+    an ``extract_events`` output and is therefore guaranteed parseable in
+    practice, but an entry that somehow fails to parse is defensively
+    EXCLUDED (never allowed to win "earliest" by falling back to a string
+    compare) rather than crashing this projection.
+
+    This is EVIDENCE-tier parsing, not the DISPLAY-tier exemption
+    ``timeparse.py``'s module docstring describes for ``_parse_sort_ts`` —
+    the two are not the same call and this one does not join that exemption.
     """
-    candidates = [
-        (e["first_observed_at"], e.get("event_id"))
-        for e in experts
-        if e.get("observation_class") == OBSERVATION_LIVE_FORWARD and e.get("first_observed_at")
-    ]
+    candidates: list[tuple[datetime, str, str | None]] = []
+    for e in experts:
+        if e.get("observation_class") != OBSERVATION_LIVE_FORWARD:
+            continue
+        raw = e.get("first_observed_at")
+        if not raw:
+            continue
+        instant = parse_instant(raw)
+        if instant is None:
+            continue  # defensive: never let an unparseable entry win "earliest"
+        candidates.append((instant, raw, e.get("event_id")))
     if not candidates:
         return None, None
-    candidates.sort(key=lambda pair: pair[0])
-    return candidates[0]
+    candidates.sort(key=lambda triple: triple[0])
+    _, earliest_raw, earliest_event_id = candidates[0]
+    return earliest_raw, earliest_event_id
 
 
 def _current_and_prior_plans(

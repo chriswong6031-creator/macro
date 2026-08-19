@@ -454,6 +454,66 @@ def test_single_expert_row_is_never_flagged_mixed(roots: LabRoots) -> None:
 
 
 # ---------------------------------------------------------------------------
+# review round 2, S1 — _live_forward_lead_anchor picks the TRUE earliest
+# instant, not the lexicographically-first first_observed_at string
+# ---------------------------------------------------------------------------
+def test_live_forward_lead_anchor_picks_the_true_earliest_instant() -> None:
+    """The exact executed-failure scenario named in the review.
+
+    Expert A's ``first_observed_at`` string sorts FIRST lexicographically
+    ('19' < '20'), but expert B names the TRUE earlier instant
+    (2026-08-20T00:30:00Z < 2026-08-20T01:00:00Z). The old
+    ``candidates.sort(key=lambda pair: pair[0])`` (a raw string sort) would
+    have picked A -- fabricating a lead anchored to the wrong event.
+    """
+    expert_a = {
+        "observation_class": OBSERVATION_LIVE_FORWARD,
+        "first_observed_at": "2026-08-19T20:00:00-05:00",  # = 2026-08-20T01:00:00Z
+        "event_id": "evt-a",
+    }
+    expert_b = {
+        "observation_class": OBSERVATION_LIVE_FORWARD,
+        "first_observed_at": "2026-08-20T00:30:00Z",  # the TRUE earlier instant
+        "event_id": "evt-b",
+    }
+    assert expert_a["first_observed_at"] < expert_b["first_observed_at"], (
+        "sanity: A's string sorts first lexicographically -- this is the bug"
+    )
+    anchor_raw, anchor_event_id = boards_mod._live_forward_lead_anchor(  # noqa: SLF001
+        [expert_a, expert_b],
+    )
+    assert anchor_event_id == "evt-b"
+    assert anchor_raw == "2026-08-20T00:30:00Z"
+
+
+def test_live_forward_lead_anchor_defensively_excludes_unparseable_entries() -> None:
+    expert_bad = {
+        "observation_class": OBSERVATION_LIVE_FORWARD,
+        "first_observed_at": "not-a-timestamp",
+        "event_id": "evt-bad",
+    }
+    expert_good = {
+        "observation_class": OBSERVATION_LIVE_FORWARD,
+        "first_observed_at": "2026-08-20T00:30:00Z",
+        "event_id": "evt-good",
+    }
+    anchor_raw, anchor_event_id = boards_mod._live_forward_lead_anchor(  # noqa: SLF001
+        [expert_bad, expert_good],
+    )
+    assert anchor_event_id == "evt-good"
+    assert anchor_raw == "2026-08-20T00:30:00Z"
+
+
+def test_live_forward_lead_anchor_no_candidates_returns_none_pair() -> None:
+    seed_only = {
+        "observation_class": OBSERVATION_RETROSPECTIVE_SEED,
+        "first_observed_at": "2026-08-20T00:30:00Z",
+        "event_id": "evt-seed",
+    }
+    assert boards_mod._live_forward_lead_anchor([seed_only]) == (None, None)  # noqa: SLF001
+
+
+# ---------------------------------------------------------------------------
 # expert identity preservation
 # ---------------------------------------------------------------------------
 def test_experts_preserve_exact_detector_event_subtype_identity(roots: LabRoots) -> None:
@@ -752,13 +812,17 @@ def test_baseline_wrong_schema_is_rejected(tmp_path: Path) -> None:
         '{"schema": "some.other.schema/v1", "baseline_started_at": "2026-08-18T13:00:00Z"}',
         encoding="utf-8",
     )
-    assert sources_mod.read_observation_baseline(path) is None
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is None
+    assert result.error == "schema_mismatch"
 
 
 def test_baseline_missing_schema_field_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "baseline.json"
     path.write_text('{"baseline_started_at": "2026-08-18T13:00:00Z"}', encoding="utf-8")
-    assert sources_mod.read_observation_baseline(path) is None
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is None
+    assert result.error == "schema_mismatch"
 
 
 def test_baseline_correct_schema_is_accepted(tmp_path: Path) -> None:
@@ -768,7 +832,57 @@ def test_baseline_correct_schema_is_accepted(tmp_path: Path) -> None:
         '"baseline_started_at": "2026-08-18T13:00:00Z"}',
         encoding="utf-8",
     )
-    assert sources_mod.read_observation_baseline(path) is not None
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is not None
+    assert result.error is None
+
+
+# ---------------------------------------------------------------------------
+# review round 2, S4 — malformed marker distinguishable from absent by NAME
+# ---------------------------------------------------------------------------
+def test_baseline_naive_started_at_is_rejected_with_a_named_reason(tmp_path: Path) -> None:
+    path = tmp_path / "baseline.json"
+    path.write_text(
+        '{"schema": "prophet_lab.observation_baseline/v1", '
+        '"baseline_started_at": "2026-08-18T13:00:00"}',  # naive -- no UTC offset
+        encoding="utf-8",
+    )
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is None
+    assert result.error == "naive_or_unparseable_started_at"
+
+
+def test_baseline_garbage_started_at_is_rejected_with_a_named_reason(tmp_path: Path) -> None:
+    path = tmp_path / "baseline.json"
+    path.write_text(
+        '{"schema": "prophet_lab.observation_baseline/v1", '
+        '"baseline_started_at": "not-a-timestamp"}',
+        encoding="utf-8",
+    )
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is None
+    assert result.error == "naive_or_unparseable_started_at"
+
+
+def test_baseline_error_surfaces_in_the_health_block(tmp_path: Path, roots: LabRoots) -> None:
+    path = tmp_path / "baseline.json"
+    path.write_text(
+        '{"schema": "prophet_lab.observation_baseline/v1", '
+        '"baseline_started_at": "2026-08-18T13:00:00"}',  # naive
+        encoding="utf-8",
+    )
+    broken_roots = replace(roots, observation_baseline_path=path)
+    payload = build_lab_response(broken_roots)
+    assert payload["health"]["observation_baseline_present"] is False
+    assert payload["health"]["observation_baseline_error"] == "naive_or_unparseable_started_at"
+
+
+def test_baseline_unconfigured_has_no_error_in_the_health_block() -> None:
+    # A simply-absent baseline is NOT an error -- it is the fail-honest
+    # starting state (LAB-0 §4) -- so no `observation_baseline_error` key at
+    # all, distinguishing "not set up" from "set up but broken".
+    payload = build_lab_response(LabRoots())
+    assert "observation_baseline_error" not in payload["health"]
 
 
 # ---------------------------------------------------------------------------
@@ -849,6 +963,49 @@ def test_extract_events_first_observed_is_the_earliest_pass_ts() -> None:
     assert first_observed["e1"] == "2026-08-18T09:00:00Z"
 
 
+def test_extract_events_mixed_offset_regression_and_classification() -> None:
+    """Review round 2, S3 — the exact regression scenario, end to end.
+
+    Two envelopes carry the SAME event_id at different, both-legal offset
+    forms: ``09:00:00-04:00`` (= 13:00 UTC) and ``10:00:00Z`` (= 10:00 UTC).
+    The TRUE earliest observation is the ``10:00:00Z`` envelope (10:00 UTC <
+    13:00 UTC). A raw-string ``min()`` would instead pick the ``-04:00`` form
+    as "earliest" ('09' < '10' lexicographically) -- which actually names the
+    LATER instant.
+
+    With ``baseline_started_at=2026-08-19T12:00:00Z``: the TRUE earliest
+    (10:00 UTC) PREDATES the baseline start -> ``retrospective_seed`` is the
+    honest answer (this observation happened before continuous coverage
+    began). The buggy "earliest" (13:00 UTC, from the -04:00 form) would have
+    been AFTER the baseline start -> incorrectly ``live_forward``.
+    """
+    envelope_a = {
+        "pass_ts": "2026-08-19T09:00:00-04:00",  # = 13:00 UTC -- the buggy "earliest"
+        "events": [{"event_id": "e1", "ticker": "X"}],
+    }
+    envelope_b = {
+        "pass_ts": "2026-08-19T10:00:00Z",  # = 10:00 UTC -- the TRUE earliest
+        "events": [{"event_id": "e1", "ticker": "X"}],
+    }
+    events, first_observed = sources_mod.extract_events([envelope_a, envelope_b])
+    assert len(events) == 1
+    assert first_observed["e1"] == "2026-08-19T10:00:00Z"
+
+    # Regression proof: a raw-string min() over the same two pass_ts values
+    # picks the WRONG one -- this is exactly what "a revert would flip it"
+    # means. If extract_events were reverted to `pass_ts < first_observed[...]`
+    # (a raw string compare), the assertion above would fail.
+    raw_min = min(envelope_a["pass_ts"], envelope_b["pass_ts"])
+    assert raw_min == envelope_a["pass_ts"], "sanity: the buggy compare picks envelope_a"
+    assert raw_min != first_observed["e1"], "the fix picks a DIFFERENT (correct) answer"
+
+    baseline = {"baseline_started_at": "2026-08-19T12:00:00Z"}
+    classification = obs_mod.classify_observation(
+        "e1", first_observed_at=first_observed, baseline=baseline,
+    )
+    assert classification == OBSERVATION_RETROSPECTIVE_SEED
+
+
 def test_latest_envelope_picks_the_greatest_pass_ts() -> None:
     envelopes = [
         {"pass_ts": "2026-08-18T09:00:00Z", "pack": {"pack_hash": "old"}},
@@ -863,15 +1020,33 @@ def test_earliest_pass_ts_of_empty_set_is_none() -> None:
     assert sources_mod.earliest_pass_ts([]) is None
 
 
+def test_earliest_pass_ts_is_wired_through_earliest_instant_string() -> None:
+    # Review round 2, N1: earliest_pass_ts is no longer its own re-implemented
+    # scan -- it delegates to timeparse.earliest_instant_string, so this
+    # exercises the mixed-offset regression through the sources.py entry
+    # point too, not just the low-level helper directly.
+    envelopes = [
+        {"pass_ts": "2026-08-19T09:00:00-04:00"},  # = 13:00 UTC
+        {"pass_ts": "2026-08-19T10:00:00Z"},        # = 10:00 UTC -- the TRUE earliest
+    ]
+    assert sources_mod.earliest_pass_ts(envelopes) == "2026-08-19T10:00:00Z"
+
+
 def test_read_observation_baseline_absent_file_returns_none(tmp_path: Path) -> None:
-    assert sources_mod.read_observation_baseline(tmp_path / "nope.json") is None
-    assert sources_mod.read_observation_baseline(None) is None
+    absent = sources_mod.read_observation_baseline(tmp_path / "nope.json")
+    assert absent.baseline is None
+    assert absent.error is None  # absent is not an error -- see S4 tests above
+    unconfigured = sources_mod.read_observation_baseline(None)
+    assert unconfigured.baseline is None
+    assert unconfigured.error is None
 
 
 def test_read_observation_baseline_requires_baseline_started_at(tmp_path: Path) -> None:
     path = tmp_path / "baseline.json"
     path.write_text('{"schema": "prophet_lab.observation_baseline/v1"}', encoding="utf-8")
-    assert sources_mod.read_observation_baseline(path) is None
+    result = sources_mod.read_observation_baseline(path)
+    assert result.baseline is None
+    assert result.error == "missing_baseline_started_at"
 
 
 def test_read_live_episodes_missing_dir_returns_unavailable(tmp_path: Path) -> None:
@@ -1144,6 +1319,37 @@ def test_measured_lead_days_computes_a_signed_day_count() -> None:
         OBSERVATION_LIVE_FORWARD,
         first_observed_at="2026-08-18T14:00:00Z", prophet_anchor_at="2026-08-20",
     ) == 2
+
+
+def test_measured_lead_days_uses_utc_date_not_offset_local_date() -> None:
+    """Review round 2, S2 regression pin.
+
+    The LAB side used to slice ``[:10]`` off the raw string, reading the
+    OFFSET-LOCAL calendar date. ``"2026-08-19T20:00:00-05:00"`` is
+    ``2026-08-20T01:00:00Z`` -- the TRUE UTC date is the 20th, not the 19th a
+    ``[:10]`` slice reads. The Prophet side legitimately stays a bare-date
+    slice (see ``measured_lead_days``'s own docstring for the asymmetry).
+    """
+    raw = "2026-08-19T20:00:00-05:00"
+    assert raw[:10] == "2026-08-19", "sanity: the old buggy slice reads the 19th"
+    lead = obs_mod.measured_lead_days(
+        OBSERVATION_LIVE_FORWARD,
+        first_observed_at=raw,  # true UTC date = 2026-08-20
+        prophet_anchor_at="2026-08-21",
+    )
+    # True UTC lab date = 2026-08-20 -> lead = 1. The old buggy slice would
+    # have read lab_date=2026-08-19 -> lead = 2 (WRONG, off by one day).
+    assert lead == 1
+
+
+def test_measured_lead_days_naive_first_observed_at_returns_none() -> None:
+    # first_observed_at is contracted to always be a full spool instant; a
+    # naive value reaching here fails closed the same as an unparseable one.
+    assert obs_mod.measured_lead_days(
+        OBSERVATION_LIVE_FORWARD,
+        first_observed_at="2026-08-19T20:00:00",  # naive
+        prophet_anchor_at="2026-08-21",
+    ) is None
 
 
 # review B1: never a negative/zero lead — an anchor that does not POSTDATE
