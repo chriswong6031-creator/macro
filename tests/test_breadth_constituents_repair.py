@@ -61,3 +61,46 @@ def test_repair_handles_lowercase_and_whitespace_symbols():
                        "name": ["Apple", "Fiserv"], "sector": ["IT", "Fin"]})
     out = a._repair(df)
     assert set(out["symbol"]) == {"AAPL", "FI"}
+
+
+# --- issuer-name transport residue -------------------------------------------
+# Wikipedia's tables are wiki MARKUP, where "|" separates cells. One leaked into
+# the S&P 500 table and made RMD's issuer "ResMed|", which then reached the
+# <title>, meta description, OpenGraph, JSON-LD Corporation.name and the visible
+# company name of the public dossier. `symbol` had three layers of cleanup here;
+# `name` had none.
+
+def test_sanitize_company_name_strips_delimiter_residue():
+    s = BreadthAdapter.sanitize_company_name
+    assert s("ResMed|") == "ResMed"              # the measured defect (RMD)
+    assert s("|Leading") == "Leading"
+    assert s("Foo|Bar") == "Foo"                 # a leaked neighbouring cell
+    assert s("Acme;;") == "Acme"
+    assert s("Acme,") == "Acme"
+    assert s("  Spaced   Out  ") == "Spaced Out"
+    assert s("") == "" and s(None) == ""
+
+
+def test_sanitize_company_name_preserves_legitimate_punctuation():
+    """Punctuation inside a company name is load-bearing — an over-eager cleanup
+    would corrupt far more issuers than the delimiter leak it set out to fix."""
+    s = BreadthAdapter.sanitize_company_name
+    for name in ("AT&T Inc.", "Johnson & Johnson", "O'Reilly Automotive, Inc.",
+                 "Berkshire Hathaway Inc.", "Alphabet Inc. (Class A)",
+                 "Coca-Cola", "Smith A.O. Corp.", "Mastercard Inc.",
+                 "Moody's", "Lowe's Companies, Inc.", "3M", "E.W. Scripps"):
+        assert s(name) == name, f"sanitiser must not alter {name!r}"
+
+
+def test_repair_sanitises_issuer_names_end_to_end():
+    a = _adapter({})
+    df = pd.DataFrame({
+        "symbol": ["RMD", "T", "JNJ"],
+        "name": ["ResMed|", "AT&T Inc.", "Johnson & Johnson"],
+        "sector": ["Health Care", "Comm", "Health Care"],
+    })
+    out = a._repair(df).set_index("symbol")
+    assert out.loc["RMD", "name"] == "ResMed"
+    # ... and the neighbouring rows are untouched
+    assert out.loc["T", "name"] == "AT&T Inc."
+    assert out.loc["JNJ", "name"] == "Johnson & Johnson"
