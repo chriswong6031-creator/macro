@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-18T23:11:43.956529+00:00",
-  "count": 1360,
+  "generated_at": "2026-08-19T00:33:49.405261+00:00",
+  "count": 1371,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -15,6 +15,7 @@
     "BTIG",
     "Bank of America",
     "Barclays",
+    "Bear Traps",
     "Bertschis weekly chart",
     "Binance",
     "BlackRock",
@@ -80,6 +81,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-6j6rp1q7ei8-ced6b2",
+      "title": "GS CHART OF THE DAY Momentum Leadership Shifting 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T00:14:09Z",
+      "summary_points": [
+        "**Momentum Leadership Shift**: 3m momentum (GSPRHMO3) diverging from 12m (GSPRHIMO), with Software as top 3m long (GSXUHMO3) and Semis/AI as top 3m short (GSXULMO3), while 12m remains max long on Semis/AI (GSXUHMOM); 6.4% High Beta Momentum sell-off (GSPRHIMO) exceeds 5-year volatility extremes.",
+        "**Market Volatility Risk**: 1-day sell-offs >5% projected at ~23 (2026*), indicating escalating short-term volatility and systemic stress risk.",
+        "**Momentum Divergence**: 3m vs 12m momentum decoupling (GSPRHIMO3 vs GSPRHIMO) signals shifting dynamics, increasing rotation risk as short-term trends no longer align with longer-term positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9vjczla6ost-b0629a",
       "title": "JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
       "institution": "J.P. Morgan",
@@ -118,6 +138,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-acunejlmxsi-cd901e",
+      "title": "BofA Securities Equity Client Flows 7th week of equity inflows as S&P hits a new high",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:38:03Z",
+      "summary_points": [
+        "**Institutional Tech Dominance**: S&P 500 new high drives record $2.7bn Tech stock inflows (institutional buying resumes after 2 weeks), while Industrials face 3rd straight outflow (worst since Dec '23).",
+        "**ETF vs.",
+        "Single Stock Divergence**: Tech ETFs see outflows despite Tech stock inflows; Value/Blend ETFs bought vs Growth ETFs for 2nd week, signaling tactical rotation.",
+        "**Buyback Deceleration**: Corporate buybacks decelerating since March 2025 (peak $6bn mid-2024), now at 0.19% of S&P 500 market cap (vs 0.42% peak), with Financials/Health Care dominating flows.",
+        "**Hedge Fund Surge**: Sharp equity inflows (Exhibit 41) and single stock inflows (Exhibit 40) indicate aggressive institutional positioning amid volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
@@ -200,6 +241,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bijowb4tnbr-6037ca",
+      "title": "PNC Economics Research IP 18 August 2026",
+      "institution": "PNC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:12:23Z",
+      "summary_points": [
+        "**Industrial Output & Demand Drivers**: Industrial production +0.2% (July), manufacturing +0.2%, 1% below all-time high; capacity utilization (76.3%) driven by tariffs/Iran conflict, not capacity constraints.",
+        "**Manufacturing Employment Lag**: Gradual recovery in manufacturing output (consumer goods, AI/data centers, tariff shifts) outpaces employment growth due to productivity gains.",
+        "**Inflation Drivers & Fed Policy**: Tariffs/Iran conflict drive inflation (not capacity constraints); Fed likely holds rates unchanged through 2026-2027 if pressures ease."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-dyrigzibdxv-49d225",
       "title": "JPM US Treasury Market D",
       "institution": "J.P. Morgan",
@@ -216,6 +276,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o1xzdngsdow-edeaa0",
+      "title": "GS Kartik Singhal Hedge Funds Crowding Monitor Europe",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T18:38:57Z",
+      "summary_points": [
+        "**Chemicals Extreme Short Crowding**: Chemicals (SX4P) shows extreme short crowding (1.16, 99th percentile), 2nd most short-crowded sector, indicating severe short squeeze risk during trend reversals.",
+        "**Tech & Basic Resources Double Crowding**: Technology (SXP) and Basic Resources (SXP) exhibit extreme short crowding (99th/91st %ile) *and* long crowding, creating volatility hotspots where trend reversals could trigger sharp price moves.",
+        "**Autos/Chemicals/Telcoms Short Squeeze Vulnerability**: Autos & Parts, Chemicals, and Telcoms show high short interest + positive momentum (top-right quadrant), signaling elevated short squeeze risk amid crowded positions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -240,6 +319,128 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-sshqppoaaib-9fbe59",
+      "title": "Bear Traps Report Turning Point Final New II Aug 16 2026 1 .01",
+      "institution": "Bear Traps",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:35:33Z",
+      "summary_points": [
+        "**Bear Traps Cash Monitor**: 76 high-conviction positions exceed 75 threshold, triggering **DEPLOY CASH** signal for U.S.",
+        "equities due to deteriorating risk-reward dynamics.",
+        "**Iran Strait Attacks as Duration Weapon**: 65 confirmed attacks targeting oil supply (Soh closure, +21% gasoline) drive inflation, pressure bond markets, and render CPI irrelevant.",
+        "**CPI/PPI Data vs.",
+        "Market Pricing**: Lower rate-hike expectations but duration (long bonds) fails to rally, signaling market pricing higher GDP growth or capital competition beyond inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9rmkon3fayh-7cd65c",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:45Z",
+      "summary_points": [
+        "**Valuation Discount**: MXAPJ trades at 0.54x US P/E and 440bp equity/bond yield gap, confirming mid-cycle undervaluation vs.",
+        "US/Europe.",
+        "**Flow Divergence**: Persistent FII outflows in Korea/Taiwan (-210bn/-160bn) countered by robust DII inflows (India: 56bn, Korea: 31bn), signaling domestic capital cushioning geopolitical risks.",
+        "**Geopolitical Risk Exposure**: US-China tensions drive FII flight in Korea/Taiwan, while DII inflows (India) provide partial mitigation; requires monitoring policy shifts.",
+        "**Target Valuation Upside**: MXAPJ (10.9 iPE) and MXCN (10.7 iPE) target 12.4 iPE (+13%/+16%), contrasting with overvalued Taiwan (18.9 iPE) and Singapore (17.7 iPE)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ctokjwlcaqu-30779e",
+      "title": "Trade Update Closing our short THB INR for a small gain, as RBI brings forward FCNR(B) deadline",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:40Z",
+      "summary_points": [
+        "**FCNR(B) Deadline Shift**: RBI’s early closure (Aug 31 vs Sept 30) reflects eased BoP stress (lower oil prices, positive FDI equity), removing key catalyst for THB/INR trade.",
+        "**RBI’s $106bn Short Book**: Large short forward position limits conviction for THB/INR trade despite curtailed THB underperformance from RBI’s FX measures.",
+        "**USD/INR Range-Bound (94-96)**: Technical constraint (94-96 range) restricts directional bias for THB/INR trade, reducing upside potential.",
+        "**$40bn Net FCNR(B) Inflows**: Significant net inflows ($40bn) neutralize macro headwinds (energy prices, current account deficit), curbing THB weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eltss8jaiul-db8103",
+      "title": "Navigating China Internet eCommerce tracker July industry online retail GMV +3",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:40Z",
+      "summary_points": [
+        "**Retail Momentum Deceleration**: China online retail GMV growth slowed to +3% YoY (July) vs +4% June, with overall retail sales growth moderating to +0.6% YoY (below consensus +1.5%), driven by weaker food/jewelry/cosmetics demand.",
+        "**Meituan Structural Dominance**: Leads in daily order volume (89m vs Alibaba 82m) with positive unit economics (0.8 RMB) and adjusted operating profit (0.8 Rmb mn), while Alibaba and JD show negative unit economics and lower profitability.",
+        "**Critical Consumer Spending Shift**: Dining sales growth collapsed from 44% YoY (Mar 2023) to 1% YoY (July 2026), signaling severe discretionary spending slowdown and a major risk factor for consumer-facing equities.",
+        "**Douyin's Structural E-Commerce Shift**: Douyin GMV growth accelerated to 11% (2024/2025E) vs 3% for Alibaba/JD, capturing 22% market share by 2025E, widening the industry gap amid slowing traditional platform growth.",
+        "**Temu Volatility & User Erosion**: Temu US GMV growth mixed (+21% yoy July, but -8% yoy Q4 2025), with merchants down -5% mom and global MAU declining to 467m (-1% mom), indicating supply-side risks and market share pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-t81thnxmgss-dfaf9a",
+      "title": "Trade Update Closing our short THB INR for a small gain, as RBI brings forward FCNR(B) deadline",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:20Z",
+      "summary_points": [
+        "**FCNR(B) deadline shift removes catalyst**: RBI’s early closure (Aug 31 vs Sept 30) reflects eased BoP stress (lower oil prices, positive FDI equity), eliminating key trade driver for THB/INR short.",
+        "**RBI’s $106bn short forward book limits conviction**: Large existing short position constrains upside for THB/INR trade despite curtailed THB weakness from macro factors (energy prices, current account deficit).",
+        "**USD/INR range-bound (94-96) caps trade scope**: Technical constraint (94-96 range) limits directional conviction for THB/INR, overriding macro underperformance factors.",
+        "**Net FCNR(B) inflows ($40bn) offset THB weakness**: Significant net inflows curtail THB depreciation, reducing catalyst for short THB/INR positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uyfkt0q8gpx-709e2d",
+      "title": "GS Novak Industrials Materials 18 Aug 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:15Z",
+      "summary_points": [
+        "**Machinery Sector Divergence**: Construction (most positive), Truck (negative), Agricultural (flat); CAT leads construction amid gas turbine vs backlog debate.",
+        "**Geopolitical Commodity Shock**: Strait of Hormuz attack spiking WTI to $85+, Brent to $91, triggering S&P futures decline (50bps) on long-end Treasury pressure.",
+        "**Risk Factor Amplification**: Geopolitical event directly driving crude volatility and Treasury market stress, impacting broader equity valuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7d3kbqswapn-84db6c",
       "title": "Global Markets Daily Europe’s Fixed Maturity Funds — A Fading Marginal Tailwind for EUR Credit",
       "institution": "Goldman Sachs",
@@ -256,6 +457,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-imqj0xzgiky-8fb7a9",
+      "title": "Ecuador Benign Inflation Reading in July but Consumer Price Data Was Distorted by New CPI Basket",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:12Z",
+      "summary_points": [
+        "**CPI Basket Revision**: Revised basket (base year 2025-2026, 13 categories) distorts headline inflation, reducing reported decline (0.09% mom vs 1.39% yoy) despite electricity tariff shock (29.1% mom spike), with Energy weight rising to 6.8% (vs 4.7%).",
+        "**Core Inflation Distortion**: Core ex-food/energy decline (1.06% mom) is artificial due to reweighting, masking benign core ex-food inflation (-0.13% mom), critical for misreading disinflation trends.",
+        "**Energy Inflation Decoupling**: Energy inflation (Z-Score -1.2) falling sharply below historical averages while headline ex-electricity remains elevated (1.4% at Jul-26, Z-Score -0.2), creating policy and sector positioning risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
