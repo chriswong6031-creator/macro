@@ -398,6 +398,66 @@ def _issuance_frontier(ledger_rows: list[dict]) -> datetime:
     return max(known_ats)
 
 
+def _published_graph_vintage(root: Path) -> str:
+    """The reviewed graph vintage the LAST PUBLISHED projection was bound to.
+
+    Read from the publisher's own committed receipt, never inferred.  When it
+    differs from the committed graph's identity, the published ledger provably
+    could not have carried anything only the newer vintage resolves.
+    """
+    status = json.loads(
+        (root / "data/government_revenue/candidate_projection_status.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    graph_id = status["recipient_graph_id"]
+    assert isinstance(graph_id, str) and graph_id, (
+        "candidate_projection_status carries no recipient_graph_id; the "
+        "transitional excuse has no receipt to stand on"
+    )
+    return graph_id
+
+
+def _escaped_candidates(
+    unaccounted: set[str],
+    rows_by_id: dict[str, dict],
+    ownership_edges_by_id: dict[str, dict],
+    issuance_frontier: datetime,
+    *,
+    published_graph_id: str,
+    committed_graph_id: str,
+) -> set[str]:
+    """Unaccounted rows with no live excuse -- the 2026-08-10 incident class.
+
+    Two independent conditions must BOTH hold for a row to stay excused, and
+    the gate returns to full strength when either fails:
+
+    * the publisher must still be behind -- its committed receipt names an
+      older reviewed graph vintage than the graph on disk.  This is the only
+      state in which the published ledger provably could not have seen the
+      row.  It is a fact read from an artifact the publisher writes, not a
+      guess about newness, and it goes false for every row at once the moment
+      the publisher consumes the vintage: nothing to curate, nothing to retire.
+    * the row's own attributing ownership path must postdate everything the
+      ledger has already issued (``_attributing_path_known_at`` vs
+      ``_issuance_frontier``).  A row whose entire path predates the frontier
+      is the 2026-08-10 incident class and is never excused, stale publisher
+      or not.
+
+    This is a strict NARROWING: every row the frontier comparison alone caught
+    is still caught, plus every row whose excuse rested on a lag the publisher
+    has since closed.
+    """
+    publisher_is_behind = published_graph_id != committed_graph_id
+    return {
+        candidate_id
+        for candidate_id in unaccounted
+        if not publisher_is_behind
+        or _attributing_path_known_at(rows_by_id[candidate_id], ownership_edges_by_id)
+        < issuance_frontier
+    }
+
+
 def _suppression_identity(entry: dict) -> dict:
     """One tombstone minus the graph-clock-derived field.
 
@@ -541,22 +601,38 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
     # escapes.  A row whose attributing path is STRICTLY older than everything
     # already issued -- the actual 2026-08-10 incident shape -- still fails
     # hard below.
+    #
+    # The excuse above is now additionally conjoined with the publisher's own
+    # committed vintage receipt (``_published_graph_vintage``): a row stays
+    # excused only while that receipt still names an OLDER reviewed graph
+    # vintage than the graph committed here.  The moment the publisher's
+    # receipt catches up to the committed graph, the excuse dies for every
+    # row at once -- there is no manifest to curate and no third state -- and
+    # any row still unissued at that point becomes a hard failure below.  This
+    # turns what used to be a silent, indefinitely-renewable transitional
+    # state into a loud one: staleness in the publisher is now a fact the gate
+    # reads and retires on, not a window that quietly stays open forever.
     rows_by_id = {row["candidate_id"]: row for row in rows}
     ownership_edges_by_id = {
         edge["edge_id"]: edge for edge in graph.get("ownership_edges", [])
     }
     issuance_frontier = _issuance_frontier(ledger_rows)
-    escaped = {
-        candidate_id
-        for candidate_id in unaccounted
-        if _attributing_path_known_at(rows_by_id[candidate_id], ownership_edges_by_id)
-        < issuance_frontier
-    }
+    published_graph_id = _published_graph_vintage(ROOT)
+    escaped = _escaped_candidates(
+        unaccounted,
+        rows_by_id,
+        ownership_edges_by_id,
+        issuance_frontier,
+        published_graph_id=published_graph_id,
+        committed_graph_id=graph["graph_id"],
+    )
     assert not escaped, (
-        "first-seen candidates whose ENTIRE attributing ownership path predates "
-        "everything the ledger has already issued, with neither a ledger "
-        "issuance nor a reviewed historical suppression -- the 2026-08-10 "
-        f"incident class: {sorted(escaped)}"
+        "first-seen candidates with neither a ledger issuance nor a reviewed "
+        "historical suppression, and no live transitional excuse -- either the "
+        "published projection has already consumed this graph vintage "
+        f"(published={published_graph_id}, committed={graph['graph_id']}) or the "
+        "attributing ownership path predates everything the ledger has already "
+        f"issued -- the 2026-08-10 incident class: {sorted(escaped)}"
     )
 
 
@@ -714,6 +790,120 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
             f"BWXT edges ({row['ownership_path_refs']}) neither postdate the "
             "ledger's issuance frontier nor are they in the ledger"
         )
+
+
+def test_transitional_excuse_dies_when_the_publisher_catches_up() -> None:
+    """The vintage conjunct is a LIVE fact, not a one-time grant.
+
+    ``_escaped_candidates`` must return NOTHING once the publisher's own
+    receipt names the same graph vintage as the one committed here -- the
+    state the publisher reaches the instant it consumes this graph.  This
+    holds in both states the live data can be in: while rows are still
+    pending (``unaccounted`` is non-empty, and every one of them loses its
+    excuse and is returned) and after they have issued (``unaccounted`` is
+    already empty, so both sides of the equality are the empty set).  Because
+    the invariant holds either way, this test does not go stale the moment
+    the pending BWXT rows actually publish.
+    """
+    payload = build_payload(root=ROOT)
+    graph = json.loads(
+        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8")
+    )
+    rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
+    quarantined = {entry["candidate_id"] for entry in corrections["entries"]}
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    unaccounted = {row["candidate_id"] for row in rows} - ledger_ids - quarantined
+    rows_by_id = {row["candidate_id"]: row for row in rows}
+    ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
+    issuance_frontier = _issuance_frontier(ledger_rows)
+
+    caught_up = _escaped_candidates(
+        unaccounted, rows_by_id, ownership_edges_by_id, issuance_frontier,
+        published_graph_id=graph["graph_id"],
+        committed_graph_id=graph["graph_id"],
+    )
+    assert caught_up == unaccounted
+
+
+def test_incident_class_is_still_red_under_a_stale_publisher() -> None:
+    """FIX-B: the vintage conjunct narrows, it never grants blanket amnesty.
+
+    The one incident-class row from ``test_row_level_discriminator_catches_the_
+    2026_08_10_incident_class_and_excuses_only_genuinely_new_paths`` -- whose
+    sole attributing edge ``edge:noc`` is defense19-vintage -- must stay in the
+    escaped set even while the publisher genuinely IS behind
+    (``published_graph_id`` names an older vintage than ``committed_graph_id``).
+    A stale publisher only ever widens the excuse for rows whose attributing
+    path is fresh; it can never rescue a row whose entire path predates the
+    ledger's own issuance frontier.
+    """
+    payload = _payload(_award_event())
+    incident_graph = _graph()
+    incident_rows = build_candidate_observations(payload, incident_graph, generated_at=GENERATED_AT)
+    assert len(incident_rows) == 1
+    incident_row = incident_rows[0]
+    assert incident_row["ownership_path_refs"] == ["edge:noc"]
+    incident_edges_by_id = {
+        edge["edge_id"]: edge for edge in incident_graph["ownership_edges"]
+    }
+    assert incident_edges_by_id["edge:noc"]["known_at"] == "2026-08-01T00:00:00+00:00"
+    issuance_frontier = datetime.fromisoformat("2026-08-01T12:00:00+00:00")
+
+    escaped = _escaped_candidates(
+        {incident_row["candidate_id"]},
+        {incident_row["candidate_id"]: incident_row},
+        incident_edges_by_id,
+        issuance_frontier,
+        published_graph_id="recipient-graph:reviewed:2026-08-08:defense19-v1",
+        committed_graph_id="recipient-graph:reviewed:2026-08-19:defense21-v1",
+    )
+    assert incident_row["candidate_id"] in escaped
+
+
+def test_covered_row_that_issues_leaves_unaccounted_by_construction() -> None:
+    """Issuance retires a row by construction -- no manifest, no curation step.
+
+    Once a currently-unaccounted candidate id is present in the ledger, it is
+    no longer a member of ``unaccounted`` at all, so it cannot appear in
+    ``_escaped_candidates``'s output under EITHER publisher state.  There is
+    no third state to track and nothing to remember to clean up.
+    """
+    payload = build_payload(root=ROOT)
+    graph = json.loads(
+        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8")
+    )
+    rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
+    quarantined = {entry["candidate_id"] for entry in corrections["entries"]}
+    ledger_rows = _ledger_rows(ROOT)
+    ledger_ids = {row["candidate_id"] for row in ledger_rows}
+    unaccounted = {row["candidate_id"] for row in rows} - ledger_ids - quarantined
+    if not unaccounted:
+        pytest.skip("no unaccounted rows to exercise")
+
+    injected_id = sorted(unaccounted)[0]
+    issued_ledger_ids = ledger_ids | {injected_id}
+    unaccounted_after_issuance = {row["candidate_id"] for row in rows} - issued_ledger_ids - quarantined
+    assert injected_id not in unaccounted_after_issuance
+
+    rows_by_id = {row["candidate_id"]: row for row in rows}
+    ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
+    issuance_frontier = _issuance_frontier(ledger_rows)
+    for published_graph_id in (
+        graph["graph_id"],
+        "recipient-graph:reviewed:2026-08-08:defense19-v1",
+    ):
+        escaped = _escaped_candidates(
+            unaccounted_after_issuance,
+            rows_by_id,
+            ownership_edges_by_id,
+            issuance_frontier,
+            published_graph_id=published_graph_id,
+            committed_graph_id=graph["graph_id"],
+        )
+        assert injected_id not in escaped
 
 
 def test_exact_receipt_bound_reviewed_event_builds_one_context_candidate() -> None:
