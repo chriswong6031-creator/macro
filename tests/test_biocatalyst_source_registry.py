@@ -411,13 +411,41 @@ def test_jv_temporal_leakage_and_prophet_authority_remain_forbidden() -> None:
     assert "prophet_or_trade_authority" in snapshot["prohibited_uses"]
 
 
-def test_jv_seed_inventory_pins_surviving_workbook_and_four_csv_hashes() -> None:
+def test_jv_seed_inventory_pins_local_w4_hashes_and_unresolved_four_workbook_census() -> None:
     snapshot = _load_yaml(SOURCE_REGISTRY)["sources"]["biopharmcatalyst_jv_snapshot"]
     inventory = snapshot["seed_inventory"]
-    assert inventory["predecessor_workbooks"] == "not_recovered_on_disk"
-    assert inventory["surviving_workbook_sha256"] == (
+    assert inventory["local_operator_state"] == "w4_bytes_only_hash_verified"
+    assert inventory["global_corpus_state"] == (
+        "all_four_exist_in_chairman_file_library"
+    )
+    assert inventory["relationship_state"] == (
+        "UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS"
+    )
+    assert inventory["temporal_law"] == (
+        "not_four_vintages_unless_common_sheet_content_proven_time_varying"
+    )
+    assert "predecessor_workbooks" not in inventory
+    assert "surviving_workbook_sha256" not in inventory
+    assert inventory["local_w4_sha256"] == (
         "946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535"
     )
+    members = inventory["chairman_file_library_members"]
+    assert [row["capture"] for row in members] == ["W1", "W2", "W3", "W4"]
+    assert [row["tabs"] for row in members] == [3, 6, 8, 9]
+    assert [row["filename"] for row in members] == [
+        "BioPharmCatalyst_Tables.xlsx",
+        "BioPharmCatalyst_Tables(1).xlsx",
+        "BioPharmCatalyst_Tables(2).xlsx",
+        "BioPharmCatalyst_Tables(3).xlsx",
+    ]
+    assert [row["created"] for row in members] == [
+        "2026-08-16T08:33:25Z",
+        "2026-08-16T08:36:13Z",
+        "2026-08-16T08:36:58Z",
+        "2026-08-16T08:38:14Z",
+    ]
+    for row in members:
+        assert row["sha256"] is None
     assert inventory["csv_sha256"] == {
         "all_companies": (
             "a08afff0430c06138997f6b8a3e28fee63bb742eecdb4ea936c8bea99f225ee0"

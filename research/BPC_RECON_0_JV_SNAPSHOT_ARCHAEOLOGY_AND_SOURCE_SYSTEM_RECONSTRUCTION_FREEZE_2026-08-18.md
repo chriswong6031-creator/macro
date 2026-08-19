@@ -1,8 +1,8 @@
 # BPC-RECON-0 — JV snapshot archaeology and source-system reconstruction freeze
 
-Status: **AWAITING SOL REVIEW** (amended 2026-08-19 after Sol REQUEST CHANGES on #5909). Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR.
+Status: **AWAITING SOL ACCEPTANCE** (architecture accepted 2026-08-19; one corpus-state correction applied the same day). Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON.
 
-Date: 2026-08-18; rights amendment 2026-08-19  
+Date: 2026-08-18; rights amendment 2026-08-19; corpus-state correction 2026-08-19  
 Workstream: `WS:BPC-JV-RECON`  
 Program: `biocatalyst` (`authority_class: context_only`)  
 Session: `claude/bpc-recon-0` at `macro-main/.claude/worktrees/bpc-recon-0`
@@ -33,22 +33,39 @@ Three rights facts that bound every later PR:
 
 ## 1. Evidence boundary
 
-### 1.1 Four-workbook census (required by Sol 2026-08-19)
+### 1.1 Four-workbook census
 
-The original supply was four Excel workbooks in a 3→6→8→9-sheet sequence, plus four CSVs. This amendment hashed every locatable workbook and tested whether the sequence is strict supersession.
+The original supply was four Excel workbooks in a 3→6→8→9-sheet sequence, plus four CSVs. Durable truth has three layers. Do not collapse them (`DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK`).
 
-**Search protocol (2026-08-19):** Spotlight `BioPharmCatalyst*`; content search for sheet name `Device Catalysts`; all `Downloads/New Folder With Items*`; `Mastermind/BioPharmCatalyst_Tables.xlsx`; Trash; recent `.xlsx` mtime 2026-08-01..19; Mail/Slack/Cursor attachment paths.
+**1. Local operator state.** Only W4 bytes were available on the operator filesystem searched 2026-08-19 and hash-verified there. Search protocol: Spotlight `BioPharmCatalyst*`; content search for sheet name `Device Catalysts`; all `Downloads/New Folder With Items*`; `Mastermind/BioPharmCatalyst_Tables.xlsx`; Trash; recent `.xlsx` mtime 2026-08-01..19; Mail/Slack/Cursor attachment paths. Two copies, same SHA256, nine sheets. That local discovery is valid only as a local-environment statement.
 
-**Result:** exactly **one** distinct workbook byte-identity is recoverable. Two filesystem copies, same SHA256, nine sheets. The 3-sheet, 6-sheet, and 8-sheet predecessors are **not on disk**. Supersession vs unique-predecessor-rows **cannot be proven**. The surviving 9-sheet workbook is designated the **canonical surviving capture**, not a proven exact superset. Predecessor captures remain an open recovery item (`DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK`).
+**2. Global corpus state.** W1, W2, W3, and W4 all still exist in the Chairman's File Library and are members of the authorized licensed corpus. Sol independently verified this on 2026-08-19. They are not lost and not globally unrecovered.
 
-| Capture | Sheets | Bytes | SHA256 | Status |
-|---|---:|---:|---|---|
-| W1 (3-sheet predecessor) | 3 | — | — | **not recovered** |
-| W2 (6-sheet predecessor) | 6 | — | — | **not recovered** |
-| W3 (8-sheet predecessor) | 8 | — | — | **not recovered** |
-| W4 canonical surviving | 9 | 353,040 | `946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535` | recovered; two copies (Downloads dump + untracked Mastermind duplicate) |
+| Capture | Filename in File Library | Tabs | Created (File Library) | Local SHA256 |
+|---|---|---:|---|---|
+| W1 | `BioPharmCatalyst_Tables.xlsx` | 3 | 2026-08-16T08:33:25Z | *not invented — hash only when bytes are in the implementation environment* |
+| W2 | `BioPharmCatalyst_Tables(1).xlsx` | 6 | 2026-08-16T08:36:13Z | *not invented* |
+| W3 | `BioPharmCatalyst_Tables(2).xlsx` | 8 | 2026-08-16T08:36:58Z | *not invented* |
+| W4 | `BioPharmCatalyst_Tables(3).xlsx` | 9 | 2026-08-16T08:38:14Z | `946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535` (local operator copies only; 353,040 bytes; File Library W4 is not independently hashed here) |
 
-W4 facts, re-read: nine visible sheets, no hidden sheets. Dates are DD/MM/YYYY, usually with an `ET` timezone label rather than a time. Earnings Calendar carries `HH:MMAM ET`.
+**3. Relationship state.** `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. Do **not** call W4 a proven superset of W1–W3. Do **not** call W1–W3 lost. The unresolved question is whether W4 is a superset of W1–W3 with identical common-sheet content.
+
+**4. Temporal law.** W1→W4 must **not** be treated as four temporal vintages or as evidence of BPC row revisions unless a later deterministic comparison proves time-varying common-sheet content. Creation timestamps span ~5 minutes. Sol's spot checks: Device Pipeline reaches the same row 838 in W1/W2/W3/W4; PDUFA rows 71–77 agree across W1/W2/W3/W4. Those observations make progressively broader export packages the leading hypothesis. Full common-sheet equality has not been proven.
+
+**5. SNAPSHOT-ONBOARD census obligation (not this PR).** When the actual four workbook bytes are made available to that implementation environment, compute for each:
+
+workbook SHA-256 → ordered sheet set → dimensions per sheet → deterministic normalized row hash / exact worksheet-content hash → common-sheet equality/delta.
+
+Classify each pair as one of:
+
+- `ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT`
+- `COMMON_SHEET_CONTENT_CHANGED`
+- `DISTINCT_CAPTURE`
+- `UNRESOLVED`
+
+Preserve any genuinely unique predecessor rows if found. Do not invent predecessor SHA-256 values from File Library metadata.
+
+W4 facts from the local copies, re-read: nine visible sheets, no hidden sheets. Dates are DD/MM/YYYY, usually with an `ET` timezone label rather than a time. Earnings Calendar carries `HH:MMAM ET`.
 
 ### 1.2 Four additional CSVs (kept; hashes unchanged)
 
@@ -63,7 +80,7 @@ W4 facts, re-read: nine visible sheets, no hidden sheets. Dates are DD/MM/YYYY, 
 
 This PR does **not** ingest snapshot rows. Licensed snapshot onboarding is a later wave. Untracked `scraped_*.json` / `scraped_biopharmcatalyst_*.csv` under occupied checkouts are **out of scope** and are not evidence.
 
-Unique tickers across the surviving eleven sources (9 sheets + 4 CSVs): **1,907**. Largest overlap: Earnings ∩ Historical FDA = 358.
+Unique tickers across the locally hashed eleven sources (9-sheet W4 + 4 CSVs): **1,907**. Largest overlap: Earnings ∩ Historical FDA = 358. This count is a local-W4 census, not a four-workbook union.
 
 ---
 
@@ -363,7 +380,7 @@ Architecture sequencing, **not** authorization to implement these waves in #5909
 
 ### Concept A — Licensed snapshot onboarding
 
-Onboard the Chairman-authorized corpus under `biopharmcatalyst_jv_snapshot` finite-snapshot rights: storage, repo normalization, product projection, research use. Preserve raw Historical FDA bytes and a deterministic repaired form as **separate** artifacts. Recover or explicitly close the missing 3/6/8-sheet predecessors. This is not a continuous BPC producer.
+Onboard the Chairman-authorized corpus under `biopharmcatalyst_jv_snapshot` finite-snapshot rights: storage, repo normalization, product projection, research use. Preserve raw Historical FDA bytes and a deterministic repaired form as **separate** artifacts. All four Excel captures (W1–W4) are licensed corpus members in the Chairman's File Library. When those bytes are in the implementation environment, run the §1.1 census (SHA-256 → sheet set → dimensions → content hashes → pair class). Do not invent predecessor hashes from File Library metadata. Do not call W4 a proven superset until that census says so. Preserve any genuinely unique predecessor rows. This is not a continuous BPC producer. Do not start this concept from PR #5909.
 
 ### Concept B — Continuous source reconstruction
 
@@ -406,15 +423,16 @@ Until that chain exists, the matcher is calibration, not a completed production 
 
 ## 12. Questions for Sol (`needs_ceo`)
 
-Primary (this amendment):
+Sol accepted the rights architecture, completion law, two-track roadmap, temporal poison rules, reconciliation-key ruling, source-owner map, and authority boundaries (2026-08-19). One remaining corpus-state correction is applied in §1.1 of this amendment.
 
-1. **Accept this amended freeze** — Chairman finite-snapshot rights encoded; continuous API still forbidden; program-done definition in the header; two-concept roadmap; Drugs@FDA matcher demoted to calibration; predecessor workbooks recorded as unrecovered.
+Primary (this correction):
+
+1. **Accept this freeze** with the three-layer workbook truth: local operator state = W4 bytes only; global corpus state = W1/W2/W3/W4 exist in the Chairman's File Library; relationship = `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. W1→W4 are not four temporal vintages unless a later census proves time-varying common-sheet content.
 
 Secondary (do not start implementation from this PR):
 
-2. Confirm `jv_reconciliation_match_key` vs source-native canonical ids (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`).
+2. Confirm `jv_reconciliation_match_key` vs source-native canonical ids (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`) — already accepted as foundation.
 3. Advance `drugs_at_fda` `rights_state` for live ZIP ingest? Recommendation: **not until Concept B, and not as this PR's proof.**
-4. Recover the 3/6/8-sheet predecessor workbooks, or close them as lost.
 
 ---
 
@@ -429,10 +447,12 @@ Secondary (do not start implementation from this PR):
 
 ### Do not redo
 
-- Re-hash the surviving W4 workbook and four CSVs (hashes in §1).
+- Re-hash the locally verified W4 workbook and four CSVs (hashes in §1).
 - Re-count the Historical FDA 28.1% left-shift.
 - Re-litigate `biopharmcatalyst_benchmark` permitted/prohibited uses.
-- Treat the missing 3/6/8 workbooks as proven supersets of W4 — they were not recovered, so supersession is unproven.
+- Call W4 a proven superset of W1–W3, or call W1–W3 lost / globally unrecovered. Relationship is `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. The open question is whether W4 is a superset of W1–W3 with identical common-sheet content.
+- Treat W1→W4 as four temporal vintages or as evidence of BPC row revisions unless a later deterministic comparison proves time-varying common-sheet content.
+- Invent predecessor SHA-256 values from File Library metadata. Hash only when actual bytes are available.
 - Propose stuffing PDUFA into `evt_…_fy_action`, or using ticker+date+drug as canonical event identity.
 - Build LoA/LoP or a community-vote scraper.
 - Duplicate SEC ingest inside biocatalyst.
@@ -440,7 +460,7 @@ Secondary (do not start implementation from this PR):
 - Treat Market Memory W1A as a historical PIT price source for past catalysts.
 - Treat `collectors.biocatalyst.openfda_regulatory` as implemented.
 - Describe CI ZIP replay as production proof.
-- Start RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR.
+- Start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR.
 
 ---
 
@@ -451,6 +471,6 @@ In the same research PR as this freeze, and still not a runtime:
 - `license_class: licensed_finite_snapshot` (replaces the withdrawn `finite_jv_snapshot_seed` matching-only class)
 - source row `biopharmcatalyst_jv_snapshot` with `production_ingest_allowed: false` (continuous-producer gate) **and** explicit finite-snapshot capabilities allowed
 - tests that the benchmark YAML meaning is unchanged; finite licensed snapshot use is allowed; continuous BPC API/scraping and temporal leakage remain forbidden
-- Agent OS: `WS:BPC-JV-RECON` completion law; Chairman rights DEC; other DECs marked proposed pending Sol; predecessor-workbook DSC
+- Agent OS: `WS:BPC-JV-RECON` completion law; Chairman rights DEC; other DECs marked proposed pending Sol; predecessor-workbook DSC bounded to local operator state (File Library members still exist)
 
 No producers. No collectors. No snapshot row ingest. No soak YAML edits other than the JV source key.
