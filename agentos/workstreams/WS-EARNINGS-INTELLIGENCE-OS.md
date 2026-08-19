@@ -74,9 +74,10 @@ waves:
     title: Macro dossier glance from the live AAPL FY2026 Q3 workspace
     status: in_progress
     depends_on: [E2]
+    pr: 6021
     next_action: >
-      Sol review of the draft E2-D PR. Stop at review; do not merge, deploy,
-      or start E3+. Do not reopen E2-T1.
+      Sol review of draft PR #6021 (hold + do-not-merge). Stop at review;
+      do not merge, deploy, or start E3+. Do not reopen E2-T1.
 ---
 
 E0 is research/design only. E1/E2 are the first vertical slice. Later waves E3–E15 live in the V2 masterplan and are out of this workstream's immediate next_action.
