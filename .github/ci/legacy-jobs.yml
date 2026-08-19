@@ -2865,6 +2865,15 @@ jobs:
         run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
+      # The merge-gate reliability report is the progress metric for
+      # research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md, so a silent
+      # regression in it would make that program's acceptance gate meaningless.
+      # It belongs to this job because it reads the same manifest the packing
+      # contract above reads. Its suite is offline and sparse-safe (the coupling
+      # half never shells out; the green-rate half degrades to a stated skip), so
+      # it cannot skip its way to green on a pack runner with no `gh`.
+      - name: merge-gate reliability report contract
+        run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
         run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
