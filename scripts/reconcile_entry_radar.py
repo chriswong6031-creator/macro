@@ -244,8 +244,10 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> bool:
 #: The W4 pass-envelope schema (``live_ledger.SCHEMA_ENTRY_RADAR_EVENTS``,
 #: ``live_ledger.build_event_payload()``).  Named here rather than imported at
 #: module scope so this script keeps zero top-level ``engine.entry_radar``
-#: imports (``live_ledger`` pulls in pandas); :func:`read_spool_events` asserts
-#: the two strings agree the one time it matters, at read time.
+#: imports (``live_ledger`` pulls in pandas) — the string is pinned against the
+#: real constant by ``tests/test_entry_radar_w41_transport.py`` (asserts
+#: ``rec.ENVELOPE_SCHEMA == ll.SCHEMA_ENTRY_RADAR_EVENTS``), not by a runtime
+#: check in this module.
 ENVELOPE_SCHEMA = "entry_radar.events/v1"
 
 
@@ -266,16 +268,29 @@ def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
         ``EntryEvent.to_dict()`` never emits one) and is VALIDATED against that
         contract via ``EntryEvent.from_dict`` before it is trusted — a torn or
         foreign inner record is counted-by-omission exactly like a torn spool
-        file always was.  Each surviving event's transport-plane ``observed_at``
-        is set to the EARLIEST envelope ``pass_ts`` across the whole spool that
-        carried its ``event_id`` (§4's "first envelope to carry it" rule) — a
-        field the immutable store never has, added to the RETURNED COPY only;
+        file always was.  ``spool_then_commit`` is AT-LEAST-ONCE by design (a
+        crash between the spool write and the ledger commit re-spools the same
+        transitions next pass, ``live_ledger.py`` §"SPOOL BEFORE CONSUME"), so
+        the SAME ``event_id`` can legitimately appear in more than one envelope
+        across a night's worth of files.  This reader therefore returns AT MOST
+        ONE record per distinct ``event_id`` from the envelope branch
+        (keep-first content — mirrors ``engine/prophet_lab/sources.py``'s
+        ``events_by_id.setdefault`` sibling pattern), with its transport-plane
+        ``observed_at`` set to the EARLIEST envelope ``pass_ts`` across the
+        WHOLE spool that carried it (§4's "first envelope to carry it" rule) —
+        a field the immutable store never has, added to the RETURNED COPY only;
         the append-only ``mastermind.entry_event.v1`` record itself is never
-        touched, here or anywhere upstream of this function;
+        touched, here or anywhere upstream of this function.  Without this,
+        ``append_forward_rows`` (which dedups new rows only against rows
+        ALREADY PERSISTED, never within one new batch) would append one
+        ``forward.parquet`` row per envelope APPEARANCE of a re-spooled event —
+        an unrepairable duplicate in an append-only store;
       * **a bare event record**, with an optional ``{"record": {...}}`` wrapper —
         kept for a producer (or a test fixture) that spools one event directly
         with no pass envelope at all.  Nothing about accepting the real envelope
-        shape narrows what this reader already accepted.
+        shape narrows what this reader already accepted.  (Not deduped by this
+        function — a producer spooling bare records is not the W4 at-least-once
+        shape this dedup exists for.)
 
     JSONL and single-object JSON files are both read (one object per line, or
     one array).  A torn or foreign record is COUNTED-BY-OMISSION and annotated,
@@ -290,9 +305,12 @@ def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
     )
 
     out: list[dict[str, Any]] = []
-    # event_id -> earliest envelope pass_ts seen for it, across every file in
-    # the spool (not just one) — first-observation is a property of the whole
-    # spool, not of whichever file happened to be read first.
+    # event_id -> the FIRST-SEEN record for it from the envelope branch
+    # (keep-first content, insertion order = stable order).
+    envelope_events: dict[str, dict[str, Any]] = {}
+    # event_id -> earliest PARSED-VALID envelope pass_ts seen for it, across
+    # every file in the spool (not just one) — first-observation is a property
+    # of the whole spool, not of whichever file happened to be read first.
     first_pass_ts: dict[str, str] = {}
     bad = 0
     for path in sorted(directory.rglob("*")):
@@ -319,15 +337,20 @@ def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
                         bad += 1
                         continue
                     try:
-                        EntryEvent.from_dict(event_raw)
+                        # The VALIDATED object's own `event_id` is the dedup
+                        # key, not a blind read of the raw dict — a record
+                        # that passed `from_dict` always carries a real,
+                        # non-None, content-derived id (never blank).
+                        validated = EntryEvent.from_dict(event_raw)
                     except (EntryEventError, TypeError, ValueError, KeyError):
                         bad += 1
                         continue
-                    record = dict(event_raw)
-                    record.setdefault("_spool_path", str(path))
-                    eid = str(record.get("event_id") or "")
+                    eid = str(validated.event_id)
                     _note_earliest_pass_ts(first_pass_ts, eid, pass_ts)
-                    out.append(record)
+                    if eid not in envelope_events:
+                        record = dict(event_raw)
+                        record.setdefault("_spool_path", str(path))
+                        envelope_events[eid] = record
                 continue
             if schema not in ("", SPOOL_EVENT_SCHEMA):
                 bad += 1
@@ -342,11 +365,11 @@ def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
     # here — never onto anything `EntryEventStore`/`EntryEvent` owns — is the
     # "derived at the consumption plane, not written into the immutable event"
     # rule (contract §18 A5.8 / LAB-0 §4).
-    for record in out:
-        eid = str(record.get("event_id") or "")
+    for eid, record in envelope_events.items():
         stamped = first_pass_ts.get(eid)
         if stamped and not record.get("observed_at"):
             record["observed_at"] = stamped
+        out.append(record)
 
     if bad:
         print(f"::warning title=entry-radar-reconcile::{bad} spool record(s) were "
@@ -364,19 +387,29 @@ def _note_earliest_pass_ts(candidates: dict[str, str], event_id: str,
     the house ``...Z`` form in practice, but a reconciler that only worked on
     one exact string shape is a reconciler one format drift away from silently
     picking the wrong "earliest".  An unparseable candidate is skipped, not
-    guessed.
+    guessed — INCLUDING when it would be the first one latched: a bad first
+    ``pass_ts`` ("pending", a blank, a non-ISO string) must not permanently pin
+    a garbage ``observed_at`` that every later, PARSEABLE, genuinely-earlier
+    candidate would then lose to a broken comparison and never displace.
     """
     if not event_id or not pass_ts:
+        return
+    try:
+        parsed = _parse_iso(pass_ts)
+    except ValueError:
         return
     prior = candidates.get(event_id)
     if prior is None:
         candidates[event_id] = pass_ts
         return
     try:
-        if _parse_iso(pass_ts) < _parse_iso(prior):
+        if parsed < _parse_iso(prior):
             candidates[event_id] = pass_ts
     except ValueError:
-        pass
+        # The STORED prior is somehow unparseable (should be unreachable now
+        # that latching itself is guarded above) — the new, parseable
+        # candidate is strictly more trustworthy than garbage, so it wins.
+        candidates[event_id] = pass_ts
 
 
 def _iter_json_objects(text: str) -> Iterable[Any]:
@@ -432,13 +465,17 @@ def _decision_session(record: dict[str, Any]) -> str | None:
 def _observed_at(record: dict[str, Any]) -> tuple[str | None, str]:
     """``(observed_at_iso, basis)`` — what the §8 clause (a)/(b) test reads.
 
-    W4 is expected to stamp ``observed_at`` on the spool ENVELOPE (the moment the
-    event reached the spool).  It does not exist yet, so the fallback is the
-    event's own ``signal_known_ts`` — the earliest instant the fire was knowable
-    — and the basis word rides the row so a later reader can tell which clock
-    answered.  The fallback is CONSERVATIVE in the right direction: known_ts is
-    never later than the spool write, so it can only delay live-forward
-    eligibility, never grant it early.
+    ``observed_at`` IS stamped on real spool records now (W4.1):
+    :func:`read_spool_events` derives it, for an envelope-sourced event, from
+    the EARLIEST ``entry_radar.events/v1`` envelope ``pass_ts`` that carried
+    that ``event_id`` — the moment the event reached the spool.  The fallback
+    below (a record with no ``observed_at`` at all — a bare-event-shape spool
+    object with none supplied, or a v1-era fixture) is the event's own
+    ``signal_known_ts`` — the earliest instant the fire was knowable — and the
+    basis word rides the row so a later reader can tell which clock answered.
+    The fallback is CONSERVATIVE in the right direction: known_ts is never
+    later than the spool write, so it can only delay live-forward eligibility,
+    never grant it early.
     """
     for key, basis in (("observed_at", "spool_envelope"),
                        ("signal_known_ts", "signal_known_ts")):

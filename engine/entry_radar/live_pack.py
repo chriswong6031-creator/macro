@@ -105,6 +105,12 @@ from engine.session_digest import session_window_et
 SCHEMA_LIVE_PACK = "entry_radar.live_pack/v2"
 SCHEMA_INVERSION_PROOF = "entry_radar.inversion_proof/v1"
 
+#: The RETIRED v1 label, kept ONLY so :func:`load_pack` can tell a genuinely
+#: pre-W4.1 manifest (no ``schema`` key at all) apart from a v2 one instead of
+#: defaulting a missing field to the CURRENT schema — which would mislabel a
+#: pack that was never carrying ``confirmed_lanes`` as if it were.
+_SCHEMA_LIVE_PACK_V1 = "entry_radar.live_pack/v1"
+
 #: The honest default for a ticker the confirmed-lane source never covered — no
 #: slice directory configured, this ticker's slice absent, or a caller-supplied
 #: row that failed to normalize.  Same reason word the RTH reader has always
@@ -1430,8 +1436,13 @@ def load_pack(state_dir: Path | str, *, as_of: str | None = None) -> LivePack | 
             frame = block.set_index(pd.DatetimeIndex(pd.to_datetime(block["session"])))
             substrate[str(ticker)] = frame.loc[:, list(_SUBSTRATE_COLUMNS)].astype(float)
 
+    # A missing/empty `schema` field means this manifest predates the field
+    # entirely — that is a v1 pack, never the CURRENT `SCHEMA_LIVE_PACK`
+    # (N4): defaulting it to "whatever v2 currently is" would present a pack
+    # that never carried `confirmed_lanes` as though it did.
+    raw_confirmed_lanes = manifest.get("confirmed_lanes") or {}
     return LivePack(
-        schema=str(manifest.get("schema") or SCHEMA_LIVE_PACK),
+        schema=str(manifest.get("schema") or _SCHEMA_LIVE_PACK_V1),
         as_of=str(manifest["as_of"]), next_session=str(manifest["next_session"]),
         built_at=str(manifest.get("built_at") or ""),
         price_basis=str(manifest.get("price_basis") or ch.BASIS_ADJUSTED),
@@ -1442,7 +1453,13 @@ def load_pack(state_dir: Path | str, *, as_of: str | None = None) -> LivePack | 
         substrate_missing=tuple(dict(row) for row in
                                 manifest.get("substrate_missing") or ()),
         pack_hash=str(manifest.get("pack_hash") or ""),
-        confirmed_lanes=dict(manifest.get("confirmed_lanes") or {}),
+        # (S1) Routed through the SAME normalizer `build_pack` uses — a torn or
+        # hand-repaired manifest row must not reach the live reader verbatim;
+        # this is the production read path, and the module's own firewall
+        # claim (confirmed_lanes_snapshot's docstring) is only true if EVERY
+        # entry point normalizes, not just the write path.
+        confirmed_lanes=confirmed_lanes_snapshot(
+            raw_confirmed_lanes, list(raw_confirmed_lanes)),
         proof=manifest.get("proof"))
 
 

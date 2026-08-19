@@ -103,9 +103,19 @@ def test_event_identity_is_preserved_byte_exact_through_the_envelope(tmp_path):
     assert set(record) - set(EVENT_FIELDS) <= {"observed_at", "_spool_path"}
 
 
-def test_first_observation_is_the_earliest_envelope_pass_ts(tmp_path):
+def test_first_observation_is_the_earliest_envelope_pass_ts_keep_first_dedup(tmp_path):
     """§4: `first_observed_at` = the earliest envelope `pass_ts` that carried the
-    `event_id` — not the latest, and not simply the file-encounter order."""
+    `event_id` — not the latest, and not simply the file-encounter order.
+
+    B1 (review round 1): `spool_then_commit` is AT-LEAST-ONCE by design (a
+    crash between the spool write and the ledger commit re-spools the same
+    transitions next pass), so the SAME `event_id` legitimately appears in
+    more than one envelope.  `append_forward_rows` dedups new rows only
+    against rows ALREADY PERSISTED, never within one new batch, so
+    `read_spool_events` must itself return AT MOST ONE record per `event_id`
+    from the envelope branch — never one row per envelope APPEARANCE, which
+    would append an unrepairable duplicate to the append-only
+    `forward.parquet`."""
     event = _native_event()
     early = _envelope([event], pass_ts="2026-08-14T19:35:00Z", pass_id="pass-early")
     late = _envelope([event], pass_ts="2026-08-14T20:05:00Z", pass_id="pass-late")
@@ -116,8 +126,82 @@ def test_first_observation_is_the_earliest_envelope_pass_ts(tmp_path):
     _write_jsonl(spool / "a-late.jsonl", [late])
     _write_jsonl(spool / "b-early.jsonl", [early])
     records = rec.read_spool_events(spool)
-    assert len(records) == 2
-    assert {r["observed_at"] for r in records} == {"2026-08-14T19:35:00Z"}
+    assert len(records) == 1, "the same event_id re-spooled across two passes " \
+        "must collapse to ONE record, not one per envelope appearance"
+    assert records[0]["observed_at"] == "2026-08-14T19:35:00Z"
+    assert records[0]["event_id"] == event["event_id"]
+
+
+def test_observed_spool_events_counts_distinct_events_not_appearances(tmp_path,
+                                                                       monkeypatch):
+    """S3 (same root cause as B1): `main()`'s `observed_spool_events` count must
+    reflect distinct events, not one count per envelope appearance of a
+    re-spooled event."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    event = _native_event()
+    early = _envelope([event], pass_ts="2026-08-14T19:35:00Z", pass_id="pass-early")
+    late = _envelope([event], pass_ts="2026-08-14T20:05:00Z", pass_id="pass-late")
+
+    spool = tmp_path / "spool"
+    _write_jsonl(spool / "a-late.jsonl", [late])
+    _write_jsonl(spool / "b-early.jsonl", [early])
+    monkeypatch.setenv(rec.SPOOL_DIR_ENV, str(spool))
+
+    assert rec.main(["--root", str(tmp_path), "--nightly"]) == 0
+    state = json.loads((tmp_path / "data" / "entry_radar"
+                        / rec.LEDGER_STATE_NAME).read_text())
+    assert state["observed_spool_events"] == 1
+    assert state["forward_rows_total"] == 1
+
+
+def test_earliest_pass_ts_never_latches_an_unparseable_first_candidate(tmp_path):
+    """S2: a garbage FIRST `pass_ts` ("pending", not ISO) must never permanently
+    pin `observed_at` to garbage — every later comparison would then ValueError
+    against the stored junk and keep it forever, disenfranchising the event from
+    live-forward accrual.  An unparseable candidate is skipped even when it
+    would be the first one latched."""
+    event = _native_event()
+    garbage_first = _envelope([event], pass_ts="pending", pass_id="pass-garbage")
+    valid_second = _envelope([event], pass_ts="2026-08-14T19:35:00Z",
+                             pass_id="pass-valid")
+
+    spool = tmp_path / "spool"
+    _write_jsonl(spool / "a-garbage.jsonl", [garbage_first])
+    _write_jsonl(spool / "b-valid.jsonl", [valid_second])
+    [record] = rec.read_spool_events(spool)
+    assert record["observed_at"] == "2026-08-14T19:35:00Z"
+
+
+def test_earliest_pass_ts_skips_a_later_unparseable_candidate_too(tmp_path):
+    """S2 control: a VALID first `pass_ts` is not displaced by a later garbage
+    one — the garbage candidate is simply skipped, symmetric with the
+    garbage-first case above."""
+    event = _native_event()
+    valid_first = _envelope([event], pass_ts="2026-08-14T19:35:00Z",
+                            pass_id="pass-valid")
+    garbage_second = _envelope([event], pass_ts="pending", pass_id="pass-garbage")
+
+    spool = tmp_path / "spool"
+    _write_jsonl(spool / "a-valid.jsonl", [valid_first])
+    _write_jsonl(spool / "b-garbage.jsonl", [garbage_second])
+    [record] = rec.read_spool_events(spool)
+    assert record["observed_at"] == "2026-08-14T19:35:00Z"
+
+
+def test_note_earliest_pass_ts_unit_both_orderings():
+    """Direct unit coverage of `_note_earliest_pass_ts` for both S2 orderings,
+    independent of the full spool-read plumbing."""
+    candidates: dict[str, str] = {}
+    rec._note_earliest_pass_ts(candidates, "e1", "pending")
+    assert "e1" not in candidates, "an unparseable FIRST candidate must not latch"
+    rec._note_earliest_pass_ts(candidates, "e1", "2026-08-14T19:35:00Z")
+    assert candidates["e1"] == "2026-08-14T19:35:00Z"
+    rec._note_earliest_pass_ts(candidates, "e1", "pending")
+    assert candidates["e1"] == "2026-08-14T19:35:00Z", \
+        "a later unparseable candidate must not displace a good one"
+    rec._note_earliest_pass_ts(candidates, "e1", "2026-08-14T18:00:00Z")
+    assert candidates["e1"] == "2026-08-14T18:00:00Z", \
+        "a later, genuinely earlier, parseable candidate still wins"
 
 
 def test_a_torn_inner_event_is_skipped_never_repaired(tmp_path, capsys):
@@ -256,6 +340,54 @@ def test_a_v1_pack_with_no_confirmed_lanes_field_reads_unavailable_not_a_crash()
     assert pack.confirmed_lanes == {}
     row = le._nightly_lanes(pack, "AAPL")
     assert row["g0"]["reason"] == "slice_store_unconfigured"
+
+
+def test_load_pack_normalizes_a_hand_repaired_manifest_row(tmp_path):
+    """S1: the PRODUCTION read path (`load_pack`), not just `build_pack`, must
+    route `confirmed_lanes` through the normalizer.  A torn or hand-repaired
+    manifest on disk — e.g. an operator edit, a partial restore, a manual
+    correction — with an unrecognised `availability` value must not reach the
+    live reader verbatim; the module's own firewall claim (the null law
+    applied AT THE PACK BOUNDARY) is only true if every entry point
+    normalizes, not just the write path."""
+    pack = _minimal_pack({"AAPL": {"g0": {"availability": "available",
+                                          "grey_events": 1},
+                                   "c5": {"availability": "available",
+                                          "candidates": 1}}})
+    lp.save_pack(pack, tmp_path)
+
+    manifest_path = lp.pack_root(tmp_path) / pack.as_of / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # hand-corrupt exactly one lane's availability to an unrecognised value
+    manifest["confirmed_lanes"]["AAPL"]["g0"]["availability"] = "maybe"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    reloaded = lp.load_pack(tmp_path)
+    assert reloaded.confirmed_lanes["AAPL"]["g0"] == {
+        "availability": "unavailable", "reason": "slice_store_unconfigured"}
+    # the sound sibling lane is untouched (per-lane granularity, unchanged)
+    assert reloaded.confirmed_lanes["AAPL"]["c5"]["availability"] == "available"
+    # the RTH reader sees the normalized row, never the torn one
+    row = le._nightly_lanes(reloaded, "AAPL")
+    assert row["g0"]["availability"] == "unavailable"
+
+
+def test_load_pack_labels_a_schema_missing_manifest_as_v1_not_v2(tmp_path):
+    """N4: a manifest with NO `schema` key at all predates the field entirely —
+    that is a v1 pack.  Defaulting the missing field to the CURRENT
+    `SCHEMA_LIVE_PACK` would present a pack that never carried
+    `confirmed_lanes` as though it did."""
+    pack = _minimal_pack(None)
+    lp.save_pack(pack, tmp_path)
+
+    manifest_path = lp.pack_root(tmp_path) / pack.as_of / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["schema"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    reloaded = lp.load_pack(tmp_path)
+    assert reloaded.schema == "entry_radar.live_pack/v1"
+    assert reloaded.schema != lp.SCHEMA_LIVE_PACK
 
 
 _UNAVAILABLE = {"availability": "unavailable", "reason": "slice_store_unconfigured"}

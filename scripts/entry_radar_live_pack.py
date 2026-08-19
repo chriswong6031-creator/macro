@@ -228,8 +228,8 @@ def slice_lanes(tickers: list[str], *, as_of: date, slice_dir: Path | None,
     return lanes, runs
 
 
-def confirmed_lane_pack_rows(lanes: dict[str, Any], tickers: list[str],
-                             *, slice_dir: Path | None) -> dict[str, dict[str, Any]]:
+def confirmed_lane_pack_rows(lanes: dict[str, Any],
+                             tickers: list[str]) -> dict[str, dict[str, Any]]:
     """Reshape :func:`slice_lanes`'s per-ticker aggregate into the pack's
     ``{ticker: {g0: {...}, c5: {...}}}`` shape (W4.1).
 
@@ -371,8 +371,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     slice_dir_raw = os.environ.get(_SLICE_DIR_ENV, "").strip()
     slice_dir = Path(slice_dir_raw) if slice_dir_raw else None
     lanes, c5_runs = slice_lanes(snapshot_tickers, as_of=as_of, slice_dir=slice_dir)
-    confirmed_lanes = confirmed_lane_pack_rows(lanes, snapshot_tickers,
-                                               slice_dir=slice_dir)
+    confirmed_lanes = confirmed_lane_pack_rows(lanes, snapshot_tickers)
 
     pack = lp.build_pack(probe_set=probe_set, store_reader=store_reader(root),
                          as_of=as_of, built_at=iso(now) or "",
