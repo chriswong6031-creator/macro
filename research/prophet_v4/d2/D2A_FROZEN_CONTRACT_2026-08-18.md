@@ -271,3 +271,39 @@ description: `source_native_symbol` is PARSE PROVENANCE ONLY, never a join key. 
 only sanctioned resolution paths are `read_identity_resolution()` and
 `resolve_graph_node_identity()` — nothing downstream may re-derive or re-match on this
 column directly.
+
+## AMENDMENTS (V4-D2B1, 2026-08-19)
+
+`research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md` gave the Data OS security
+master an ISSUER AXIS: `issuer_id` became nullable and gained `issuer_state` /
+`issuer_cik` / `issuer_evidence_snapshot`, and the one authorized correction era
+(`issuer_semantic_correction_v1`) groups securities sharing identical SEC registrant
+CIK evidence, repointing `issuer_id` to the group's canonical member. This bridge
+module allocates and repoints NOTHING — it copies `issuer_id` verbatim from the master,
+exactly as D2A specified — but three things this document said about `issuer_id`
+changed underneath it, all consequences of that master-side change, none a bridge
+defect:
+
+1. **§6 table, `co:us:GOOG` / `co:us:GOOGL` row.** The "distinct per-listing issuer_ids
+   — the master has NO cross-share-class issuer axis" clause is SUPERSEDED: the master
+   now DOES carry a cross-share-class issuer axis, evidenced by CIK, and both nodes
+   RESOLVE to the SAME `issuer_id` (`ISS:US-XNAS-GOOG`) while keeping distinct
+   `security_id`s (`SEC:US-XNAS-GOOG` / `SEC:US-XNAS-GOOGL`) — `security_id`/
+   `listing_key` are byte-identical before/after the D2B1 era, so every OTHER cell in
+   that row is unchanged.
+2. **§4 rule 5/6 and the F3 state<->ids biconditional.** `issuer_id` may now be null on
+   a RESOLVED row (when the master's own `issuer_state` for that security is
+   `NO_ISSUER_EVIDENCE` with no legacy value) — `security_id`/`listing_key` stay
+   required on every RESOLVED row regardless. `scripts/check_theme_graph_contracts.py`'s
+   guard is amended accordingly (D2B1 contract §8.4); `engine/theme_graph/
+   identity_resolution.py::load_master_inputs` no longer bare-`str()`s a possibly-null
+   `issuer_id` cell (that would have silently written the literal string `"None"`/
+   `"nan"` — a real bug the D2B1 build caught and fixed).
+3. **`config/share_class_equiv.yml` is STILL never consulted** — the GOOG/GOOGL issuer
+   convergence is the Data OS master's own CIK evidence, not the 13F share-class
+   collapse; both remain registered as separate, deliberately different answers to
+   different questions (`config/identity_seams.yml`).
+
+Everything else in this document — the algorithm's ordered rules 1–4 and 7, the
+two-clock law, F1/F2/F4, the reader API shape, the guard's orphan/coverage/census
+checks — is UNCHANGED.

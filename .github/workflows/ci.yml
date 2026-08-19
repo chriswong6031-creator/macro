@@ -4422,6 +4422,7 @@ jobs:
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
+          --gate code
           --pack-count 12
           --plan-only
           --github-output "$GITHUB_OUTPUT"
@@ -4716,6 +4717,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
+            --gate code \
             --plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json" \
             --changed-files-file "$CI_CHANGED_FILES_FILE" \
             --expect-plan-sha "$EXPECTED_PLAN_SHA" \
@@ -4738,6 +4740,7 @@ jobs:
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
+          --gate code
           --pack-index ${{ matrix.pack }}
           --pack-count 12
           --execute

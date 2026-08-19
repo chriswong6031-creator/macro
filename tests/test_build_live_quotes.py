@@ -9,6 +9,8 @@ load-bearing fail-safe (offline = a valid, empty snapshot).
 """
 from __future__ import annotations
 
+import re
+
 from engine import live_quotes as lq
 from scripts import build_live_quotes as blq
 
@@ -293,6 +295,146 @@ def test_display_board_pages_are_pages_this_repo_actually_builds():
     assert "china_stocks.html" in blq.DISPLAY_BOARD_PAGES
     src = (blq._ROOT / "scripts" / "build_china.py").read_text(encoding="utf-8")
     assert '"china_stocks.html"' in src
+
+
+# ── Board coverage expansion (2026-08-19, wave 2) ────────────────────────────
+# Root cause: DISPLAY_BOARD_PAGES was china_stocks.html only, so us_stocks.html,
+# hk_stocks.html and canada_stocks.html rendered a `.nb-chg` live-change pill
+# live.js could never patch — the number stayed whatever the nightly render
+# baked while looking intraday. Measured in production 2026-08-19 against
+# https://www.mastermind-x.com/live/quotes.json (89 symbols): china_stocks.html
+# 54/54 covered, us_stocks.html 0/3, hk_stocks.html 0/4, canada_stocks.html
+# 0/10. These tests pin the expanded coverage and add the standing invariant
+# that makes a future dead pill fail CI instead of shipping silently.
+import logging
+
+import pytest
+
+
+@pytest.mark.parametrize("page,valid_syms,malformed", [
+    ("us_stocks.html", ["AAPL", "MSFT"], "bad sym!"),
+    ("china_stocks.html", ["600519.SS", "000001.SZ"], "bad sym!"),
+    ("hk_stocks.html", ["0700.HK", "9988.HK"], "bad sym!"),
+    ("canada_stocks.html", ["RY.TO", "SHOP.TO"], "bad sym!"),
+])
+def test_board_coverage_per_market_format(tmp_path, page, valid_syms, malformed):
+    """Every board named in DISPLAY_BOARD_PAGES must contribute its valid
+    data-sym values to board_display_symbols(), in that market's own symbol
+    format (bare US ticker, .SS/.SZ China, .HK Hong Kong, .TO Canada) — and
+    a malformed value on the same page must never survive the charset gate."""
+    assert page in blq.DISPLAY_BOARD_PAGES, f"{page} missing from DISPLAY_BOARD_PAGES"
+    tags = "".join(
+        f'<span class="nb-chg" data-sym="{s}">—</span>' for s in valid_syms
+    )
+    tags += f'<span class="nb-chg" data-sym="{malformed}">—</span>'
+    (tmp_path / page).write_text(tags)
+    board = blq.board_display_symbols(tmp_path)
+    for sym in valid_syms:
+        assert sym.upper() in board, sym
+    assert malformed.upper() not in board
+
+
+def test_board_duplicate_symbol_across_pages_collapses_to_one(tmp_path):
+    """The same symbol rendered on two different board pages must appear
+    exactly once in the fetched board leg — no double-counting toward the cap."""
+    (tmp_path / "china_stocks.html").write_text(
+        '<span class="nb-chg" data-sym="0700.HK">—</span>'
+    )
+    (tmp_path / "hk_stocks.html").write_text(
+        '<span class="nb-chg" data-sym="0700.HK">—</span>'
+    )
+    board = blq.board_display_symbols(tmp_path)
+    assert board.count("0700.HK") == 1
+
+
+def test_board_rejects_the_real_world_js_template_artifact(tmp_path):
+    """The built us_stocks.html carries a literal unrendered JS-template
+    artifact `data-sym="'+sym+'"` (a client-side string-concat placeholder
+    that never got substituted server-side) — it must never reach the fetched
+    universe, where it would poison a batch feed request."""
+    (tmp_path / "us_stocks.html").write_text(
+        '<span class="nb-chg" data-sym="AAPL">—</span>'
+        "<span class=\"nb-chg\" data-sym=\"'+sym+'\">—</span>"
+    )
+    board = blq.board_display_symbols(tmp_path)
+    assert "AAPL" in board
+    assert not any("SYM" in s or "+" in s or "'" in s for s in board)
+
+
+def test_macro_tiles_keep_priority_over_an_oversized_board(tmp_path):
+    """display_universe() must return every DISPLAY_SYMBOLS entry before any
+    board-only symbol, and a board leg at or over DISPLAY_BOARD_CAP must never
+    evict or reorder a macro tile."""
+    page = "".join(
+        f'<span class="nb-chg" data-sym="{i:06d}.SZ">—</span>'
+        for i in range(blq.DISPLAY_BOARD_CAP + 50)
+    )
+    (tmp_path / "china_stocks.html").write_text(page)
+    uni = blq.display_universe(tmp_path)
+    n_tiles = len(blq.DISPLAY_SYMBOLS)
+    assert uni[:n_tiles] == list(blq.DISPLAY_SYMBOLS)
+    assert len(uni) == n_tiles + blq.DISPLAY_BOARD_CAP
+    for sym in blq.DISPLAY_SYMBOLS:
+        assert sym in uni, sym
+
+
+def test_missing_board_page_degrades_visibly_with_a_named_warning(tmp_path, caplog):
+    """A missing board file must not fail the build — the universe still
+    assembles — but must log a warning NAMING the missing page, so a silently
+    empty board leg (which looks exactly like the bug this PR fixes) is
+    diagnosable. log.warning is correct here (this path never runs inside a
+    GitHub Actions step), not the bare ::warning print the CI-annotation rule
+    requires for Actions-step code."""
+    with caplog.at_level(logging.WARNING, logger="live_quotes_build"):
+        board = blq.board_display_symbols(tmp_path, pages=("us_stocks.html",))
+    assert board == []
+    assert any("us_stocks.html" in rec.message for rec in caplog.records), (
+        "missing board page must be named in a warning log line"
+    )
+
+
+def test_visible_nb_chg_board_pages_are_covered_or_explicitly_exempt():
+    """THE INVARIANT: scan the built site/*.html for every page emitting a
+    `data-sym` inside a tag whose class contains `nb-chg` (a visible live-
+    change claim) and assert each such page is either in DISPLAY_BOARD_PAGES
+    or in DISPLAY_BOARD_EXEMPT_PAGES with a written reason. This is what makes
+    a future board that renders the live-change pill without producer
+    coverage fail CI instead of shipping a dead pill silently. Skips cleanly
+    when site/ is not checked out (sparse worktree)."""
+    site_dir = blq._ROOT / "site"
+    if not site_dir.is_dir():
+        pytest.skip("site/ not checked out (sparse worktree) — nothing to scan")
+
+    tag_re = re.compile(r"<[a-zA-Z][^>]*>")
+    class_re = re.compile(r'class="([^"]*)"')
+    sym_re = re.compile(r'data-sym="([^"]*)"')
+
+    offenders = []
+    for html in sorted(site_dir.glob("*.html")):
+        text = html.read_text(errors="ignore")
+        emits_visible_live_change = False
+        for tag in tag_re.findall(text):
+            cm = class_re.search(tag)
+            if not cm or "nb-chg" not in cm.group(1).split():
+                continue
+            if sym_re.search(tag):
+                emits_visible_live_change = True
+                break
+        if not emits_visible_live_change:
+            continue
+        if html.name in blq.DISPLAY_BOARD_PAGES:
+            continue
+        if html.name in blq.DISPLAY_BOARD_EXEMPT_PAGES:
+            continue
+        offenders.append(html.name)
+
+    assert not offenders, (
+        f"page(s) render a visible .nb-chg live-change pill with no producer "
+        f"coverage and no exemption reason: {offenders} — add to "
+        f"DISPLAY_BOARD_PAGES (if the pill should go live) or to "
+        f"DISPLAY_BOARD_EXEMPT_PAGES with a written reason (if it genuinely "
+        f"should not)"
+    )
 
 
 def test_yahoo_spark_yield_indexes_are_percent_direct_scale():

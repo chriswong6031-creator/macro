@@ -49,6 +49,26 @@ never allowed to answer a historical-naming question, because it was never given
 Rule 5 (exact inception-code match) is asof-invariant in BOTH modes: the master's
 ``inception_code`` is the security's own canonical symbol, minted once and stored, so
 it never depends on the query date.
+
+ISSUER AXIS (V4-D2B1, 2026-08-19; FIX 8 / m3 amendment).  ``issuer_id`` is copied from
+the master's own issuer axis ONLY WHEN the master row's ``issuer_state`` is
+``RESOLVED`` — this module allocates nothing and repoints nothing, and never smuggles
+an unevidenced or disputed value into the graph bridge as if it were confirmed
+identity.  A RESOLVED sidecar row's ``issuer_id`` may be SHARED by more than one
+company node's security (``co:us:GOOG`` and ``co:us:GOOGL`` both resolve to the same
+``ISS:US-XNAS-GOOG``, per the master's CIK-evidenced grouping), while
+``security_id``/``listing_key`` stay per-node distinct.  A RESOLVED sidecar row's
+``issuer_id`` is null whenever the master's issuer_state for that security is
+anything OTHER than ``RESOLVED`` — ``NO_ISSUER_EVIDENCE`` (a legacy/new master row
+with no CIK evidence yet), ``AMBIGUOUS``, ``EVIDENCE_CONFLICT``, or
+``DEFERRED_IDENTITY_EXCEPTION`` all null the sidecar issuer_id the same way.
+``security_id``/``listing_key`` stay non-null regardless of the issuer axis, because
+exact security/listing identity is unaffected by whether an economic issuer has been
+evidenced.  ``scripts/check_theme_graph_contracts.py``'s state<->ids biconditional
+(F3a) is amended accordingly: RESOLVED requires ``security_id``/``listing_key``
+ALWAYS, and requires ``issuer_id`` iff the master's own issuer_state for that
+security is ``RESOLVED`` (a non-null issuer_id on any other master state is a
+breach — the bridge would be disagreeing with its own source of truth).
 """
 from __future__ import annotations
 
@@ -176,9 +196,26 @@ def load_master_inputs(data_dir: Path | None = None) -> MasterInputs | None:
     master_by_code: dict[str, dict] = {}
     master_by_security: dict[str, dict] = {}
     for r in master.to_dict("records"):
+        # V4-D2B1 FIX 8 (m3): issuer_id is copied into the sidecar ONLY when the
+        # master row's OWN issuer_state is RESOLVED — CIK evidence actually backs the
+        # link. Any other state (NO_ISSUER_EVIDENCE, AMBIGUOUS, EVIDENCE_CONFLICT,
+        # DEFERRED_IDENTITY_EXCEPTION, or a pre-D2B1 row with no issuer_state column
+        # at all) means the sidecar's own issuer_id is null — a legacy/unevidenced/
+        # disputed VALUE must never leak into the graph bridge as if it were
+        # confirmed identity. security_id/listing_key are UNAFFECTED — exact
+        # security/listing identity never depended on the issuer axis.
+        # ``pd.isna`` catches both the missing-cell shapes pandas can hand back
+        # (``None`` and a genuine ``float('nan')``) for a nullable string column that
+        # also carries real strings.
+        raw_issuer = r.get("issuer_id")
+        issuer_state = r.get("issuer_state")
+        issuer_is_resolved = not pd.isna(issuer_state) and str(issuer_state) == "RESOLVED"
+        issuer_evidenced = (
+            issuer_is_resolved and raw_issuer is not None and not pd.isna(raw_issuer)
+        )
         row = {
             "security_id": str(r["security_id"]),
-            "issuer_id": str(r["issuer_id"]),
+            "issuer_id": str(raw_issuer) if issuer_evidenced else None,
             "listing_key": str(r["listing_key"]),
         }
         code = str(r.get("inception_code") or "").strip().upper()

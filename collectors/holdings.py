@@ -49,9 +49,16 @@ _CURRENCY_CODES = {
 # from _CURRENCY_CODES because a currency code CAN also be a real issuer's ticker
 # (see _CURRENCY_NAME_RE below); a blank cell cannot.
 _SENTINEL_TICKERS = {
-    "", "-", "--", "—", "NAN", "NONE", "NULL", "<NA>", "N/A", "NA", "CASH",
+    "", "-", "--", "—", "NAN", "NONE", "NULL", "<NA>", "N/A", "CASH",
 }
-_NON_EQUITY_TICKERS = _CURRENCY_CODES | _SENTINEL_TICKERS   # kept: legacy importers
+# "NA" is ambiguous, not an unconditional sentinel: it is both the legacy
+# missing-value literal AND a live listing (Nano Labs Ltd on Nasdaq, National
+# Bank of Canada on TSX) — an unconditional match here silently dropped both
+# real names' holdings rows. Name-corroborated like the currency-code branch
+# below, never decided on the ticker alone. See PR #5936 / collectors/symbol_directory.py
+# for the sibling defect this mirrors on the identity-roster side.
+_AMBIGUOUS_SENTINEL_TICKERS = {"NA"}
+_NON_EQUITY_TICKERS = _CURRENCY_CODES | _SENTINEL_TICKERS | _AMBIGUOUS_SENTINEL_TICKERS  # kept: legacy importers
 # High-precision name patterns — kept tight to avoid flagging real issuers
 # (e.g. "FutureFuel", "Cash America" are NOT matched: we anchor on cash-sleeve /
 # currency / instrument phrasing, not bare substrings).
@@ -228,10 +235,28 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
     """
     tk = str(ticker).strip().upper()
     nm = str(name).strip()
-    if nm.lower() in ("nan", "none", "<na>"):       # pandas NaN → "nan" via str()
+    # A blank-ish NAME carries no evidence either way. "nan"/"none"/"<na>" are what
+    # str() leaves of a pandas missing value; the rest are literal missing-value
+    # cells that now REACH us, because the parse sites pass keep_default_na=False
+    # so a real 'NA' ticker survives — the name column stopped being pre-blanked
+    # for us, so blank it here instead.
+    if nm.lower() in ("nan", "none", "<na>", "n/a", "na", "null", "-", "--", "—"):
         nm = ""
     if tk in _SENTINEL_TICKERS:
         return True
+    if tk in _AMBIGUOUS_SENTINEL_TICKERS:
+        # "NA" — name-corroborated like the currency-code branch below, so
+        # Nano Labs Ltd / National Bank of Canada survive as equities.
+        if not nm:                                  # nothing can contradict it
+            return True
+        if _CURRENCY_NAME_RE.match(nm) or _CURRENCY_CONTEXT_RE.search(nm):
+            return True
+        # Deliberately NO `return False` here: fall through to the shared name
+        # rules below (_NON_EQUITY_NAME_RE / _FUTURES_NAME_RE / _CASH_EQUIV_NAME_RE)
+        # so ticker "NA" on a futures leg ("NASDAQ 100 E-MINI JUN26") or a cash
+        # sleeve ("… GOVERNMENT OBLIGATIONS FUND") is still caught. An early
+        # return would hand those back as equities — the one thing moving "NA"
+        # out of the unconditional set must not cost us.
     if _CURRENCY_INSTRUMENT_RE.match(tk):           # e.g. "USD CASH", "EUR FWD"
         return True
     # Currency-shaped ticker is evidence, not a verdict. A name that
@@ -333,7 +358,9 @@ class HoldingsAdapter(Adapter):
     # --- sponsor adapters -------------------------------------------------------
     def _fetch_ark(self, ticker: str, spec: dict) -> pd.DataFrame:
         r = self.http_get(spec["url"], retries=self.cfg["retries"])
-        df = pd.read_csv(io.StringIO(r.text))
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(io.StringIO(r.text), keep_default_na=False, na_values=[""])
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
         df = df.dropna(subset=["ticker"]) if "ticker" in df.columns else df
         keep = [c for c in ["date", "fund", "company", "ticker", "cusip",
@@ -353,7 +380,7 @@ class HoldingsAdapter(Adapter):
         if not url:
             raise RuntimeError("WGMI holdings URL not configured yet")
         r = self.http_get(url, retries=self.cfg["retries"])
-        df = pd.read_csv(io.StringIO(r.text))
+        df = pd.read_csv(io.StringIO(r.text), keep_default_na=False, na_values=[""])
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
         share_col = next((c for c in df.columns if "share" in c or "quantity" in c), None)
         tick_col = next((c for c in df.columns if "ticker" in c or "symbol" in c), None)

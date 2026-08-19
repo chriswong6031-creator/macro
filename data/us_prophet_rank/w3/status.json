@@ -1,108 +1,91 @@
 {
-  "benchmark": "SPY",
-  "canonical_board": "us_prophet_v3",
+  "authority": "measurement only / none",
+  "commissioned": true,
   "comparison_surface": "forbidden",
-  "coverage": {
-    "identical": 0,
-    "matured": 0,
-    "stamps": 1,
-    "written": 8
-  },
-  "degraded": [],
-  "dry_run": false,
-  "family": {
-    "identical": 0,
-    "matured": 0,
-    "stamps": 1,
-    "written": 8
-  },
-  "grader": "engine.us_prophet_grades.load_grades",
-  "honest_n_matured_h10_sessions": 0,
-  "horizon": 10,
-  "n_coverage_rows": 8,
-  "n_family_rows": 8,
-  "n_paired_rows": 65,
-  "note": "W3 measurement plumbing. Accrual/maturity/gap status only. No C1 IC, no shadow IC, no delta, no p-value, no leader.",
-  "paired": {
-    "identical": 0,
-    "matured": 0,
-    "stamps": 1,
-    "written": 65
-  },
-  "paired_qualify": {
-    "excluded_definition": 138,
-    "excluded_fallback": 0,
-    "excluded_null_canonical": 0,
-    "excluded_null_shadow": 0,
-    "excluded_off_board": 16436,
-    "excluded_source": 0,
-    "horizon": 10,
-    "n_grades_in": 1445,
-    "n_in": 16639,
-    "n_joined": 0,
-    "n_out": 65,
-    "n_paired": 65,
-    "n_pending": 65
-  },
-  "post_5769_merge_sha": "0233445657e8a6e40f3f5260d9cad7af4bb3e456",
-  "schema": "us.prophet_w3_status/v1",
-  "sessions": [
+  "degraded_or_unpaired_sessions": [
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-07-31"
     },
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-05"
     },
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-06"
     },
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-07"
     },
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-12"
     },
     {
-      "liveness": "degraded_or_unpaired",
-      "n_paired": 0,
-      "n_pending_outcome": 0,
-      "n_v3_buy_rows": 0,
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-14"
-    },
-    {
-      "liveness": "unmatured",
-      "n_paired": 65,
-      "n_pending_outcome": 65,
-      "n_v3_buy_rows": 65,
-      "reason": "paired observation accrued; H=10 outcome pending (not zero)",
-      "stamp_date": "2026-08-17"
     }
   ],
-  "shadow_definition": "us_prophet_v2_shadow"
+  "first_eligible_paired_stamp": "2026-08-17",
+  "first_lawful_comparison_read": "PENDING until 20 matured H=10 sessions",
+  "honest_n_floor": 20,
+  "last_run": {
+    "board_as_of": "2026-08-18",
+    "coverage": {
+      "identical": 0,
+      "matured": 0,
+      "revisions_refused": 0,
+      "stamps": 1,
+      "written": 8
+    },
+    "dry_run": false,
+    "failures": [],
+    "family": {
+      "identical": 0,
+      "matured": 0,
+      "revisions_refused": 0,
+      "stamps": 1,
+      "written": 8
+    },
+    "n_coverage_rows": 8,
+    "n_family_rows": 8,
+    "n_paired_rows": 124,
+    "paired": {
+      "identical": 65,
+      "matured": 0,
+      "revisions_refused": 0,
+      "stamps": 1,
+      "written": 59
+    },
+    "reconstruction_refused": [],
+    "require_stamp": "2026-08-18",
+    "same_stamp_revisions_refused": [],
+    "sessions_written": {
+      "identical": 0,
+      "matured": 0,
+      "refused": 0,
+      "written": 8
+    }
+  },
+  "latest_session": {
+    "liveness": "unmatured",
+    "reason": "paired observation accrued; H=10 outcome pending (not zero)",
+    "stamp_date": "2026-08-18"
+  },
+  "matured_h10_sessions": 0,
+  "missing_sessions": [],
+  "n_degraded_or_unpaired": 6,
+  "n_missing": 0,
+  "paired_sessions_accrued": 2,
+  "same_stamp_revisions_refused": [],
+  "schema": "us.prophet_w3_status/v1",
+  "structural": {
+    "n_coverage_rows": 16,
+    "n_family_rows": 16,
+    "outcome_blind": true,
+    "schema": "prophet_fusion.w3_structural.v1"
+  },
+  "unmatured_sessions": 2
 }

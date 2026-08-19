@@ -390,7 +390,8 @@ def test_press_lane_job_exists_and_obeys_the_pack_manifest_rules():
     job = _load(_LEGACY)["jobs"]["press-lane"]
     assert job["if"] == "${{ false }}"
     assert job["runs-on"] == "ubuntu-latest"
-    assert set(job) <= {"if", "runs-on", "steps", "timeout-minutes"}
+    assert set(job) <= {"gate", "if", "runs-on", "steps", "timeout-minutes"}
+    assert job["gate"] in ("code", "data")
     for step in job["steps"]:
         assert set(step) <= {"name", "run", "uses", "with"}
     installs = [s for s in job["steps"] if "pip install" in str(s.get("run") or "")]

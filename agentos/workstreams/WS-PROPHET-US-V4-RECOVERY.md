@@ -226,7 +226,15 @@ waves:
       config/identity_seams.yml); the bridge projection is the seam. Child D2A
       (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader +
       guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md)
-      is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C
+      MERGED 2026-08-18 (#5894). Child D2B1 (issuer authority hardening: economic
+      issuer axis via SEC-CIK evidence — GOOG/GOOGL, FOX/FOXA, NWS/NWSA one issuer
+      each; era issuer_semantic_correction_v1 with durable migration receipts; typed
+      issuer_state refusals; reference.issuer_master + issuer_migrations datasets;
+      receipt authority decomposition; nightly refresh seam in daily.yml collect;
+      frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md)
+      shipped as #5965 — live-refresh production proof gated on the first
+      post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868
+      NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
       (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
       authorized yet — Sol reviews after each child returns."
     status: in_progress
@@ -302,9 +310,12 @@ next_action: >
   contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
   routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
   sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
-  (Chairman 2026-08-18): LAB-0 records merged; next = parallel R-LAB-1 (Radar W4.1,
-  under WS:LIVE-ENTRY-RADAR), D-LAB-R5 RIG, P-LAB-API fixtures — per
-  research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.
+  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
+  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
+  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
+  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
+  its two-pass critic cycle + verdict OWED. Next session: execute
+  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
 ---
 
 ## Context

@@ -37,6 +37,16 @@ leave. The merge-on-CONCLUDED-checks law is unchanged — a pending check is not
 pass, and an ``--admin`` merge mid-flight destroyed the pull request's own proof
 run (#3867).
 
+THE GUARD MAY NOT WEDGE THE TREE IT IS JUDGING. Its own ``git status`` used to be
+run under a plain ``subprocess`` timeout, whose expiry is a SIGKILL git cannot
+catch; on 2026-08-19 that left a stale ``index.lock`` in a full worktree's gitdir
+and turned a slow read into a broken checkout. Timed-out git is now asked to leave
+with SIGTERM before it is killed, a timed-out status is retried once on the warm
+index the first pass paid for, and a lock this guard itself orphaned is swept —
+but only when zero-byte, unheld, and newer than this process. See
+``GIT_TERM_GRACE_SECONDS``, ``_status_output``, and ``_sweep_stale_index_lock``;
+none of them relaxes the gate, and a status that cannot answer twice still blocks.
+
 Every blocker also carries an escape ladder, because the field kept producing
 UNSATISFIABLE gates: one session refused Stop 258 consecutive times on ``unmerged``
 and another 245 times on ``render_failed``, and the guard took 13 patches in 17
@@ -163,22 +173,107 @@ AGENT_WORKTREE_ROOTS = (
     ".codex/worktrees/",
     ".codex-worktrees/",
 )
+# `subprocess.run(timeout=...)` shoots a straggler with SIGKILL, which git cannot
+# catch — so the `index.lock` git's own lockfile machinery would have unlinked on
+# its way out survives its owner. `git status` shrugs at a stale lock (it just
+# declines to write the refreshed index), which is what makes this quiet: what
+# fails is every git that WRITES the index — `add`, `commit`, `checkout`, `stash`
+# — i.e. exactly the session's next move. That is the #5907 class, a guard
+# timeout corrupting the checkout it was only reading, observed live 2026-08-19:
+# on a FULL worktree (~5,800 files, 3 GiB of `data/`) under fleet I/O load one
+# `git status` took 161s wall at 10% CPU, the 90s budget expired, the SIGKILLed
+# git left a zero-byte `index.lock` in the worktree gitdir, and the guard filed
+# `guard_error` against a tree it had just wedged itself. Asking before shooting
+# is the fix: git installs a SIGTERM handler for exactly this case.
+#
+# `scripts/worktree_sparse.py` fought the same hazard from the other end (#5907,
+# a killed `sparse-checkout add` leaving a truncated file plus a stale lock) and
+# landed on the same ladder; this is deliberately its `TERM_GRACE_S`, same value
+# and same reasoning — generous for a cleanup handler that measures well under a
+# second, bounded enough that a process ignoring SIGTERM dies promptly.
+GIT_TERM_GRACE_SECONDS = 10
+# Two status budgets, because the first `git status` on a cold full checkout PAYS
+# FOR the second: the same tree that needed 161s cold answered in 13s once its
+# index and page cache were warm. One budget cannot express that — it would have
+# to be the cold number, and the cold number does not fit the wall below.
+#
+# The wall is `.claude/settings.json`, where Stop gives this hook 180s
+# (SessionStart, 30s), and the HARNESS enforces it. Budgets larger than that wall
+# can never conclude: the hook is cancelled mid-flight and the Stop evaluation
+# silently does not happen at all, which is a fail-OPEN — strictly worse than the
+# block it was trying to file. So the numbers below are chosen so that the WHOLE
+# pathological path fits, sweeps and grace periods included, not just the two
+# status attempts: 60 + 10 grace, + a first sweep (5 + 10 grace to resolve the
+# gitdir, 5 for lsof), + 70 + 10 grace, + a second sweep (5 for lsof; the gitdir
+# is cached by then) = 175 of 180. That path ends in a raise and a `guard_error`
+# emit, so 5s is all it needs after it. The path that SUCCEEDS on the retry — the
+# 13s-warm one this is built for — leaves ~77s for the rest of the evaluation.
+# `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file
+# so the two cannot drift apart unnoticed.
+STATUS_TIMEOUT_SECONDS = 60
+STATUS_RETRY_TIMEOUT_SECONDS = 70
+# Metadata-only probes (`rev-parse`, `lsof`) that must never become the reason
+# the wall above is missed. Both are sub-second in health; this is the leash for
+# the pathological case, not a target.
+SWEEP_PROBE_TIMEOUT_SECONDS = 5
+# When this process started, and therefore the floor for "a lock THIS guard's own
+# killed git could have created". Anything older is somebody else's and is never
+# ours to remove. Module import time, not Stop time, because a SessionStart
+# fingerprint can orphan a lock just as a Stop one can.
+_GUARD_STARTED_AT = time.time()
+_INDEX_LOCK_CACHE: dict[str, Path | None] = {}
 
 
 def _emit(value: dict[str, Any]) -> None:
     print(json.dumps(value, ensure_ascii=False))
 
 
-def _run(root: Path, *args: str, timeout: int = 45) -> str:
-    proc = subprocess.run(
+def _capture(
+    root: Path, args: tuple[str, ...], timeout: int
+) -> subprocess.CompletedProcess[str]:
+    """Run ``args`` in ``root``, escalating SIGTERM -> SIGKILL on a timeout.
+
+    Only the escalation distinguishes this from ``subprocess.run(timeout=...)``:
+    the same ``TimeoutExpired`` is raised with the same ``cmd``/``timeout``, and
+    the completed process carries the same fields, so no caller can tell the two
+    apart — except by the state of the worktree afterwards, which is the whole
+    point (see ``GIT_TERM_GRACE_SECONDS``). A child that ignores SIGTERM is still
+    killed, so this can never hang past ``timeout + GIT_TERM_GRACE_SECONDS``.
+
+    The sibling ladder is ``_run_git_timed`` in ``scripts/worktree_sparse.py``.
+    Deliberately NOT written as ``with subprocess.Popen(...)``: that context
+    manager's exit waits on the child unconditionally, so an unexpected failure
+    mid-``communicate`` would hang the guard on a process nobody has signalled.
+    """
+    proc = subprocess.Popen(
         args,
         cwd=root,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=timeout,
-        check=False,
     )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as expired:
+        proc.terminate()  # SIGTERM — lets git's own cleanup handlers run
+        try:
+            proc.communicate(timeout=GIT_TERM_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # last resort; `_sweep_stale_index_lock` is its backstop
+            proc.communicate()
+        raise expired
+    except BaseException:  # noqa: BLE001 — always reap, even on an unexpected exit
+        # `subprocess.run` reaps on BaseException too, and this claims to be
+        # indistinguishable from it. Narrowing to Exception would leak a live git
+        # on a KeyboardInterrupt or a SystemExit mid-read.
+        proc.kill()
+        proc.communicate()
+        raise
+    return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
+
+
+def _run(root: Path, *args: str, timeout: int = 45) -> str:
+    proc = _capture(root, args, timeout)
     if proc.returncode:
         detail = (proc.stderr or proc.stdout).strip()
         raise RuntimeError(f"{' '.join(args)} failed: {detail[:500]}")
@@ -187,19 +282,115 @@ def _run(root: Path, *args: str, timeout: int = 45) -> str:
 
 def _run_raw(root: Path, *args: str, timeout: int = 45) -> str:
     """Run git while preserving porcelain's leading status column."""
-    proc = subprocess.run(
-        args,
-        cwd=root,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=timeout,
-        check=False,
-    )
+    proc = _capture(root, args, timeout)
     if proc.returncode:
         detail = (proc.stderr or proc.stdout).strip()
         raise RuntimeError(f"{' '.join(args)} failed: {detail[:500]}")
     return proc.stdout
+
+
+def _worktree_index_lock(root: Path) -> Path | None:
+    """``index.lock`` for THIS worktree — never the clone's shared one.
+
+    A linked worktree keeps its own index under ``<clone>/.git/worktrees/<name>/``,
+    so ``--git-common-dir`` (what ``_git_common_dir`` asks, for a different
+    question) would point every session in the clone at the PRIMARY checkout's
+    lock file — a file this guard must never touch. ``--absolute-git-dir`` is the
+    per-worktree answer, and is the same path the killed git wrote to. Same
+    resolution ``index_lock_path`` in ``scripts/worktree_sparse.py`` makes, and
+    the same None-on-unreadable contract.
+
+    Cached per root, including the failure: the second sweep runs on the far side
+    of a second blown budget, and re-paying a probe there is how the pathological
+    path would overrun the wall the budgets above are sized against.
+    """
+    key = str(root)
+    if key in _INDEX_LOCK_CACHE:
+        return _INDEX_LOCK_CACHE[key]
+    try:
+        found = _run(
+            root,
+            "git",
+            "rev-parse",
+            "--absolute-git-dir",
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        found = ""
+    lock = Path(found) / "index.lock" if found else None
+    _INDEX_LOCK_CACHE[key] = lock
+    return lock
+
+
+def _lock_is_held(lock: Path) -> bool:
+    """Whether any process still holds ``lock`` open — UNKNOWN counts as held.
+
+    ``lsof`` exits 1 both for "nobody has it open" and for its own errors, so the
+    exit code alone cannot answer this: a malformed invocation would read as proof
+    that a live git's lock is free. Measured (lsof 4.91, macOS), the three cases
+    separate cleanly on the streams instead — unheld: rc 1, both empty; held:
+    rc 0, stdout listing the holder; error (bad option, unreadable path): rc 1,
+    stdout empty, DIAGNOSTIC ON STDERR. So "unheld" requires all three of rc 1,
+    no stdout, and no stderr. ``-w`` suppresses the mount-scan warnings that would
+    otherwise put noise on stderr and cost a healthy machine the sweep.
+
+    Everything else is held: a missing ``lsof``, a hang, any other exit code.
+    """
+    try:
+        proc = subprocess.run(
+            ("lsof", "-w", "--", str(lock)),
+            capture_output=True,
+            text=True,
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except Exception:
+        return True
+    quiet = not proc.stdout.strip() and not proc.stderr.strip()
+    return not (proc.returncode == 1 and quiet)
+
+
+def _sweep_stale_index_lock(root: Path) -> Path | None:
+    """Remove an ``index.lock`` this guard's OWN killed git left behind.
+
+    Called only after a git of ours timed out, and then only for a lock that is
+    all three of: zero-byte (git had not yet written a replacement index into it),
+    unheld (nothing is mid-write), and created after this process started (so it
+    cannot predate us, and cannot be the operator's or a sibling session's).
+
+    Every condition fails CLOSED — an unresolvable gitdir, an unreadable stat, an
+    ``lsof`` that cannot be trusted — because the two errors are not symmetric: a
+    lock left behind is loud and fixable with one `rm`, while a lock deleted out
+    from under a live git is silent index corruption in a tree somebody is using.
+
+    The sibling ``refuse_if_locked`` in ``scripts/worktree_sparse.py`` refuses on
+    ANY lock and deletes none, which is right for it: it is about to start a heavy
+    write and cannot know who else is in the tree. This one deletes, because it is
+    scoped to the lock its OWN kill just made — that provenance is what the three
+    conditions establish, and without all three it declines exactly like the
+    sibling does.
+    """
+    lock = _worktree_index_lock(root)
+    if lock is None:
+        return None
+    try:
+        if lock.is_symlink() or not lock.is_file():
+            return None
+        info = lock.stat()
+    except OSError:
+        return None
+    if info.st_size:
+        return None
+    created = getattr(info, "st_birthtime", info.st_ctime)
+    if created <= _GUARD_STARTED_AT:
+        return None
+    if _lock_is_held(lock):
+        return None
+    try:
+        lock.unlink()
+    except OSError:
+        return None
+    return lock
 
 
 def _repo_root(payload: dict[str, Any]) -> Path | None:
@@ -281,16 +472,39 @@ def _is_agent_worktree_path(path: str, status: str) -> bool:
     return any(path.startswith(root) for root in AGENT_WORKTREE_ROOTS)
 
 
+def _status_output(root: Path) -> str:
+    """`git status --porcelain`, retried ONCE because the first run warms the index.
+
+    The retry is not optimism, it is the measured shape of the failure: the
+    2026-08-19 tree that blew a 90s budget at 161s cold answered the very next
+    invocation in 13s, because the first pass had already paid the cold-cache
+    cost for the second. Failing on the first timeout threw that warm-up away and
+    reported `guard_error` on a tree that was one cheap re-run from answering.
+
+    Both timeout paths sweep, because a lock this guard orphaned outlives the
+    process that made it: once before the retry, so the retry does not trip over
+    our own wreckage, and once more before giving up, so the NEXT invocation
+    starts from a tree this one did not wedge.
+
+    Fail-closed is unchanged. A status that times out twice re-raises, `main`
+    files `guard_error`, and Stop blocks — the retry buys a second chance to
+    ANSWER, never permission to skip the question.
+    """
+    args = ("git", "status", "--porcelain=v1", "--untracked-files=all")
+    try:
+        return _run_raw(root, *args, timeout=STATUS_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        _sweep_stale_index_lock(root)
+    try:
+        return _run_raw(root, *args, timeout=STATUS_RETRY_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        _sweep_stale_index_lock(root)
+        raise
+
+
 def _fingerprint(root: Path) -> dict[str, str]:
     """Return path -> status/content hash for the current dirty set."""
-    output = _run_raw(
-        root,
-        "git",
-        "status",
-        "--porcelain=v1",
-        "--untracked-files=all",
-        timeout=90,
-    )
+    output = _status_output(root)
     result: dict[str, str] = {}
     for line in output.splitlines():
         if len(line) < 4:

@@ -1,25 +1,37 @@
 {
-  "ts": "2026-08-19T07:19:59+00:00",
-  "main_sha": "3394690227a1c44e6fe4e6667dd46141086301d8",
+  "ts": "2026-08-19T11:11:01+00:00",
+  "main_sha": "10642922c221432a9cbf6cc693831e27b606d170",
   "red_required": [
     {
-      "name": "immune",
+      "name": "sweep",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206522892/job/95930755661"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32246189360/job/96047119774"
     },
     {
-      "name": "project",
+      "name": "sweep",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206433331/job/95930509401"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32246119365/job/96046897217"
+    },
+    {
+      "name": "sweep",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32245817733/job/96045960277"
+    },
+    {
+      "name": "sweep",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32245800656/job/96045907150"
     }
   ],
   "green": false,
-  "consecutive_failures": 7,
+  "consecutive_failures": 9,
   "sensed_shas": [
-    "3394690227a1c44e6fe4e6667dd46141086301d8",
-    "3d39073351bf5895ca6c439377851c24dd5c36e8"
+    "10642922c221432a9cbf6cc693831e27b606d170",
+    "f357885b1525aa49261cd57ac76310f8dd40b2d2"
   ],
   "heartbeat_degraded": false
 }

@@ -90,6 +90,16 @@ data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
 data/canada_breadth/_closes_cache.parquet
+
+# qledger control-evidence clock starts are WRITE-ONCE registrar receipts written
+# on the nightly checkout at a real registration (engine/qledger.py C3.1/C3.4,
+# record_control_clock_start). They live on the runner's disk, NEVER in git — a
+# committed clock file is the retrospective-stamping vector that
+# tests/test_qledger_control_policy.py::test_t9_no_clock_file_is_ever_committed
+# forbids. 2026-08-19: the regime-update lane's add-sweep committed
+# demand_chain.json (13750ecd1789) and redded qledger-cluster-honest-ci on every
+# merge-ref fleet-wide; this rule keeps the sweep from ever re-committing one.
+data/qledger/control_evidence_clock_start/
 # TOP ANATOMY W1: the Winner Health trailing panel — ~80 MB of repaired bars,
 # rebuilt from massive_stock_day on every run and keyed on each source file's
 # (mtime, size). Pure derived speed state: deleting it costs one cold rebuild and
@@ -712,3 +722,11 @@ data/product_experience/evidence/
 # Agent OS CEO-brief check-in marker — a local pointer to "when did I last look",
 # not organizational state.  Machine-local by construction; never committed.
 data/governance/.ceo_brief_last
+
+# qledger write-once control clocks (C3.1) — REGISTRAR-LOCAL state, never
+# committed: a clock a lane can commit is a clock a lane can re-stamp, and
+# tests/test_qledger_control_policy.py::test_t9 reds any tracked entry. The
+# 2026-08-19 nightly's blanket `git add data/` committed demand_chain.json and
+# redded the merge gate fleet-wide; ignoring the directory makes that
+# impossible at the plumbing instead of merely detected.
+data/qledger/control_evidence_clock_start/

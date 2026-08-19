@@ -89,6 +89,8 @@ __all__ = [
     "normalize_hk_symbol",
     "AliasRow",
     "VendorAliasTable",
+    "SecurityIssuerRow",
+    "IssuerMaster",
 ]
 
 
@@ -737,3 +739,123 @@ class VendorAliasTable:
             if row.vendor == vendor and row.security_id == security_id_ and row.covers(on):
                 return row.vendor_symbol
         return None
+
+
+# ── Issuer master reader (§D2B1) — the economic-entity axis over the security master ──
+def _null_to_none(value: object) -> object | None:
+    """``None`` for ``None`` OR a ``float('nan')`` cell; the value unchanged otherwise.
+
+    STDLIB-ONLY NaN check (no ``pandas`` import in this module): ``float('nan') !=
+    float('nan')`` is the one universal, dependency-free way to detect it — every
+    other float compares equal to itself.  See :meth:`IssuerMaster.from_records`.
+    """
+    if value is None:
+        return None
+    if isinstance(value, float) and value != value:  # noqa: PLR0124 — the NaN test itself
+        return None
+    return value
+
+
+@dataclass(frozen=True, slots=True)
+class SecurityIssuerRow:
+    """One ``security_master.parquet`` row's issuer axis, as read by :class:`IssuerMaster`.
+
+    Carries only the columns the issuer reader needs — not a copy of the whole master
+    row shape, so a future master column never forces a change here.
+    """
+
+    security_id: str
+    issuer_id: str | None
+    issuer_state: str
+    listing_key: str
+
+
+class IssuerMaster:
+    """Issuer <-> security lookups over the committed security-master rows.  NO I/O.
+
+    ``scripts/build_security_master.py`` is the ALLOCATOR/AUTHORITY for the issuer
+    axis (mint-once, era-gated correction, spec D2B1 §2/§4); this class is the ONE
+    canonical READER (spec §3 "Reader API" — no competing issuer allocator or reader
+    anywhere else).  Construct it from the security master's rows via
+    :meth:`from_records`; reading the parquet is the caller's job, exactly like
+    :class:`VendorAliasTable`.
+
+    HISTORICAL LIMITATION (spec §5).  CIK evidence is a CURRENT-registrant
+    observation: the newest ``data/symbol_directory/cik_map/*.parquet`` snapshot
+    proves who owns a ticker TODAY, never what the issuer mapping was on a past date
+    — it does not prove what the issuer mapping was in 2015.  This reader therefore
+    carries NO ``asof`` parameter and answers only "which securities does this issuer
+    own, right now" / "what is this security's issuer, right now" — the answer is
+    canonical for CURRENT identity and must never be read as a historical lineage
+    claim.  (This is the issuer-axis analogue of the two-clock law
+    :class:`VendorAliasTable` enforces for vendor symbols — a current observation
+    answering a historical question is exactly the defect that class exists to
+    prevent, one layer up.)
+    """
+
+    __slots__ = ("_by_security", "_by_issuer")
+
+    def __init__(self, rows: list[SecurityIssuerRow] | tuple[SecurityIssuerRow, ...] = ()) -> None:
+        by_security: dict[str, SecurityIssuerRow] = {}
+        by_issuer: dict[str, list[str]] = {}
+        for row in rows:
+            by_security[row.security_id] = row
+            if row.issuer_id is not None:
+                by_issuer.setdefault(row.issuer_id, []).append(row.security_id)
+        self._by_security = by_security
+        self._by_issuer: dict[str, tuple[str, ...]] = {
+            k: tuple(sorted(v)) for k, v in by_issuer.items()
+        }
+
+    @classmethod
+    def from_records(cls, records) -> "IssuerMaster":
+        """Build from a list of dicts — a ``security_master.parquet`` read the caller
+        already did (``to_dict("records")`` or equivalent).
+
+        NaN-SAFE WITHOUT PANDAS (V4-D2B1 FIX 3 / M1).  This module is stdlib-only
+        (module docstring), so it cannot reach for ``pd.isna``.  A ``pandas``
+        ``to_dict("records")`` round-trip can hand back a genuine ``float('nan')`` —
+        never Python ``None`` — for a null cell in a nullable string column that also
+        carries real strings (the same trap ``scripts/build_security_master.py``
+        documents at its own ``_read_existing``/``_write_parquet``).  ``value is None``
+        alone misses it, and NaN is TRUTHY, so the old ``rec.get(...) or ""`` fallback
+        used for ``issuer_state``/``listing_key`` would also stringify a NaN cell into
+        the literal string ``"nan"`` rather than treating it as absent.  A NaN
+        ``issuer_id`` must index as NO issuer, never the string ``'nan'``.
+        """
+        rows: list[SecurityIssuerRow] = []
+        for i, rec in enumerate(records or ()):
+            try:
+                sec = str(rec["security_id"])
+            except KeyError as exc:
+                raise IdentityError(
+                    f"security master record {i} is missing {exc.args[0]!r}"
+                ) from exc
+            issuer = _null_to_none(rec.get("issuer_id"))
+            state = _null_to_none(rec.get("issuer_state"))
+            listing_key = _null_to_none(rec.get("listing_key"))
+            rows.append(
+                SecurityIssuerRow(
+                    security_id=sec,
+                    issuer_id=None if issuer is None else str(issuer),
+                    issuer_state=str(state) if state is not None else "",
+                    listing_key=str(listing_key) if listing_key is not None else "",
+                )
+            )
+        return cls(rows)
+
+    @property
+    def rows(self) -> tuple[SecurityIssuerRow, ...]:
+        return tuple(self._by_security.values())
+
+    def issuer_of_security(self, security_id: str) -> str | None:
+        """This security's CURRENT issuer_id, or ``None`` (unknown security, or a
+        known one with no evidenced/legacy issuer_id — spec §3 ``NO_ISSUER_EVIDENCE``
+        + null case)."""
+        row = self._by_security.get(security_id)
+        return row.issuer_id if row is not None else None
+
+    def securities_of_issuer(self, issuer_id_: str) -> tuple[str, ...]:
+        """Every ``security_id`` CURRENTLY carrying this ``issuer_id`` — the §9.7
+        canonical query.  Sorted; empty tuple if the issuer id is unknown or unused."""
+        return self._by_issuer.get(issuer_id_, ())

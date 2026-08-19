@@ -72,7 +72,26 @@ from scripts.ci_authority_paths import (  # noqa: E402
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {
+    "gate",
+    "if",
+    "paths",
+    "runs-on",
+    "scope",
+    "steps",
+    "timeout-minutes",
+}
+
+#: Every job must declare which tree moves its verdict. `code`: the verdict is
+#: a function of the pull request's tree only (pure logic, tmp_path fixtures,
+#: committed goldens, config/contracts). `data`: a nightly/wire data commit
+#: alone — no code change — can change the verdict (assertions over live
+#: `data/**`, rendered `site/**`, or any ledger the nightly advances). The
+#: merge gate packs only `gate: code` jobs once the data-health lane exists
+#: (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md);
+#: `gate: data` jobs still run and still red something a human reads — the
+#: field never deletes a receipt.
+GATE_VALUES = ("code", "data")
 ALLOWED_STEP_KEYS = {"name", "proof_id", "run", "uses", "with"}
 
 # Changing any item in this string changes the job execution contract digest.
@@ -320,6 +339,10 @@ class LegacyJob:
     # `paths:` then REPLACE inference instead of being unioned under it, and
     # the declaration is coverage-audited fatally at load time.
     exclusive: bool = False
+    # Which tree moves this job's verdict: "code" (the PR's tree only) or
+    # "data" (a nightly/wire data commit alone can flip it). Mandatory in the
+    # manifest; see GATE_VALUES.
+    gate: str = "code"
 
     @property
     def is_scoped(self) -> bool:
@@ -1192,11 +1215,18 @@ def _job_weight(job_id: str, definition: dict[str, Any]) -> int:
     return max(1, len(commands) + text.count("tests/test_") * 2 + len(text) // 800)
 
 
-def load_legacy_jobs(path: Path) -> list[LegacyJob]:
+def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
     """Load and fail-closed validate every job in the legacy manifest.
 
     PACK_JOB_ID is still ignored when present so small historical test fixtures
     remain valid; the production manifest intentionally contains no pack job.
+
+    ``gate`` (optional, one of ``GATE_VALUES``) filters the returned jobs to
+    that ``LegacyJob.gate`` value. Filtering happens here — the single load
+    choke point — so every caller (plan-only, plan-json execution, and the
+    unpinned fallback) sees an identically filtered manifest before any
+    partition/weight arithmetic runs. ``None`` (the default) returns every
+    job, unchanged from before this parameter existed.
     """
     jobs = _workflow_jobs(path)
 
@@ -1305,6 +1335,19 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 "any pull request"
             )
 
+        # Absent defaults to "code": an undeclared job STAYS a merge
+        # precondition — nothing can leave the merge gate silently. An invalid
+        # value is fatal. The real manifest is additionally required to declare
+        # the field on every job (tests/test_ci_pack.py), so the default only
+        # serves synthetic fixtures.
+        raw_gate = raw_definition.get("gate", "code")
+        if raw_gate not in GATE_VALUES:
+            findings.append(
+                f"{prefix} gate must be one of {'/'.join(GATE_VALUES)} when "
+                f"present, got {raw_gate!r}"
+            )
+            raw_gate = "code"
+
         job = LegacyJob(
             job_id=str(job_id),
             definition=raw_definition,
@@ -1312,6 +1355,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
             weight=_job_weight(str(job_id), raw_definition),
             paths=scope,
             exclusive=exclusive,
+            gate=str(raw_gate),
         )
         try:
             semantic_step_specs(job)
@@ -1323,6 +1367,8 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
         raise ManifestError("\n".join(findings))
     if not legacy:
         raise ManifestError("workflow contains no legacy jobs")
+    if gate is not None:
+        legacy = [job for job in legacy if job.gate == gate]
     return legacy
 
 
@@ -1777,9 +1823,10 @@ def plan_from_workflow(
     tested_tree_sha: str | None = None,
     subject_head_sha: str | None = None,
     base_sha: str | None = None,
+    gate: str | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
-    legacy = load_legacy_jobs(workflow)
+    legacy = load_legacy_jobs(workflow, gate=gate)
     changed = resolve_changed_files(changed_from, explicit_file=changed_files_file)
     return build_plan(
         legacy,
@@ -1834,12 +1881,18 @@ def load_authoritative_plan(
     expect_tested_tree_sha: str | None = None,
     expect_subject_head_sha: str | None = None,
     expect_base_sha: str | None = None,
+    gate: str | None = None,
 ) -> CIPackPlan:
     """Load the planner artifact without recomputing scope or partition.
 
     The manifest is still validated and its semantic contracts must byte-for-
     byte agree with the plan.  What is forbidden here is re-deciding selection:
     the planner's selected jobs and pack assignment are the sole authority.
+
+    ``gate`` must match what produced the published plan: it narrows the
+    manifest used for the consistency/semantic checks below to the same set
+    the planner selected from, exactly as ``plan_from_workflow`` does for the
+    unpinned path.
     """
     document = _load_json_object(path)
     if document.get("schema") != PLAN_SCHEMA:
@@ -1929,7 +1982,7 @@ def load_authoritative_plan(
     ):
         raise ManifestError("authoritative plan skipped_jobs is malformed")
 
-    all_jobs = load_legacy_jobs(workflow)
+    all_jobs = load_legacy_jobs(workflow, gate=gate)
     by_id = {job.job_id: job for job in all_jobs}
     manifest_ids = set(by_id)
     if set(eligible) | set(skipped) != manifest_ids:
@@ -3938,6 +3991,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--workflow", type=Path, required=True)
     parser.add_argument("--pack-index", type=int, default=0)
     parser.add_argument("--pack-count", type=int, default=2)
+    parser.add_argument(
+        "--gate",
+        choices=GATE_VALUES,
+        default=None,
+        help=(
+            "filter the manifest to jobs declaring this gate value before "
+            "selection/partition; absent runs the whole manifest as before "
+            "this flag existed (research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_"
+            "2026_08_19.md W2)"
+        ),
+    )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument(
@@ -4126,6 +4190,7 @@ def main(argv: list[str] | None = None) -> int:
                 expect_tested_tree_sha=args.expect_tested_tree_sha,
                 expect_subject_head_sha=args.expect_subject_head_sha,
                 expect_base_sha=args.expect_base_sha,
+                gate=args.gate,
             )
         else:
             plan = plan_from_workflow(
@@ -4141,6 +4206,7 @@ def main(argv: list[str] | None = None) -> int:
                 tested_tree_sha=args.tested_tree_sha,
                 subject_head_sha=args.subject_head_sha,
                 base_sha=args.base_sha,
+                gate=args.gate,
             )
         shadow = args.scope_mode == "shadow" and args.changed_from
         if shadow:

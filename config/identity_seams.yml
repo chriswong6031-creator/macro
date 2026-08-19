@@ -39,15 +39,43 @@ master:
   artifacts:
     - data/reference/security_master.parquet
     - data/reference/vendor_aliases.parquet
+    - data/reference/issuer_master.parquet       # V4-D2B1, 2026-08-19 — issuer rollup
+    - data/reference/issuer_migrations.parquet   # V4-D2B1 — append-only issuer_id migration receipt
   id_conventions:
     issuer: "ISS:<CC>-<MIC>-<CODE>[.N]"
     security: "SEC:<CC>-<MIC>-<CODE>[.N]"
     listing: "<CC>-<MIC>-<CODE>[.N]"
   # HONEST LIMIT, measured 2026-08-13 from the committed artifact: the master's columns are
   # security_id, issuer_id, listing_key, country, mic, inception_code, effective_at,
-  # ingested_at — 703 rows.  There is NO lifecycle column.  The master therefore answers
+  # ingested_at.  There is NO lifecycle column.  The master therefore answers
   # "which security is this" but NOT "does it still exist".  Two feeders below are scoped
   # against that gap rather than against an existing column.
+  #
+  # ISSUER AXIS (V4-D2B1, 2026-08-19): the master gained issuer_state / issuer_cik /
+  # issuer_evidence_snapshot, and issuer_id became NULLABLE. The one authorized
+  # correction era (issuer_semantic_correction_v1) groups securities by identical SEC
+  # registrant CIK evidence (data/symbol_directory/cik_map/*.parquet, joined on the
+  # CURRENT symbol, dot->dash normalized) and repoints issuer_id to the group's
+  # canonical member — GOOG/GOOGL both -> ISS:US-XNAS-GOOG is the flagship case.
+  # security_id/listing_key are NEVER touched: this is an issuer-axis correction only,
+  # not a security re-identification. lib/dataos/identity.IssuerMaster is the ONE
+  # canonical reader (securities_of_issuer / issuer_of_security), current-identity
+  # only — no historical issuer lineage (CIK evidence is a current-registrant
+  # observation).
+  #
+  # ISSUER GROUP ALLOWLIST (V4-D2B1 FIX 5, 2026-08-19): a shared CIK is NECESSARY but
+  # not SUFFICIENT evidence to group two-plus securities into a new multi-member
+  # issuer for the first time — an SEC registrant CIK can be a sponsor/trust for
+  # ETPs, so blind CIK-grouping risks collapsing unrelated products under one issuer
+  # (this corrects the original §1 sentence "ETFs/trusts group to the fund's own
+  # CIK", which is not a general property). The era stage
+  # (scripts/build_security_master.py::apply_issuer_correction) forms a NEW
+  # multi-member group ONLY when its CIK is listed in
+  # config/issuer_group_allowlist.yml; an unlisted CIK's would-be group members are
+  # typed EVIDENCE_CONFLICT instead (recorded, never executed — spec §2), with a
+  # ::warning naming the CIK and members. Adoption of an ALREADY-established group is
+  # unaffected. This is a documentary/governance gate, not a competing identity
+  # surface, so it is not listed under `surfaces:` below.
   models_lifecycle: false
 
 surfaces:
@@ -261,6 +289,37 @@ surfaces:
       per-security identity; unifying the 13F view to the master would split every consensus
       count. Product decision.
     consumers: "the 13F institutional-holdings consensus lane"
+
+  - path: collectors/sec_capital_structure.py
+    claims: "one issuer's own capital-structure discovery row (share classes, filings), CIK-anchored"
+    id_convention: 'issuer_id: f"sec:cik:{cik.zfill(10)}" (line ~1436)'
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      A DIFFERENT namespace answering a DIFFERENT question from the Data OS master's
+      issuer axis (V4-D2B1, 2026-08-19): this is a raw SEC-filer-CIK key for a
+      capital-structure discovery pipeline, minted independent of and earlier than
+      the master's own issuer_semantic_correction_v1 era. Both are ultimately
+      CIK-anchored (a real point of AGREEMENT worth registering — a future
+      convergence would join on the bare CIK, never on the string prefix), but
+      unifying the namespaces now would rewrite a committed collector's own key
+      space — a migration, not a census. Registering the divergence, not resolving it.
+    consumers: "the capital-structure discovery lane"
+
+  - path: tests/fixtures/company_intelligence/golden_corpus_issuers.v1.json
+    also: engine/company_intelligence/identity.py
+    claims: "issuer identity for the company-intelligence golden-corpus test fixture"
+    id_convention: 'issuer_id: "iss_<16-hex-digest>" (fixture); company_id_for_cik(cik) -> "cik:<10-digit>" (module, a THIRD spelling)'
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      A synthetic hash-keyed namespace scoped to one test corpus
+      (tests/test_company_intelligence_golden_corpus.py), never read outside it and
+      never written by any production collector. engine/company_intelligence/identity.py
+      carries a THIRD, CIK-anchored convention ("cik:0000320193") that the fixture
+      itself does not use — both are disclosed here as one entry because both are
+      scoped to the company_intelligence lane and out of D2B1's authorized scope
+      (Prophet/Fusion/company-intelligence internals were explicitly FORBIDDEN
+      touching). Neither is the Data OS master; neither should be read as one.
+    consumers: "tests/test_company_intelligence_golden_corpus*.py; engine/company_intelligence/*"
 
   # --------------------------------------------------------------- RETIRE (3)
   - path: collectors/china_universe.py

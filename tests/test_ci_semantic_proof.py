@@ -608,3 +608,150 @@ def test_reconcile_cli_plan_failure_keeps_independently_bound_identity(
     assert loaded.evidence["status"] == "failure"
     assert loaded.evidence["authority_changed"] is True
     assert loaded.evidence["infrastructure"][0]["outcome"] == "planner_configuration_failure"
+
+
+def _two_job_main_plan() -> dict:
+    """Main-role plan with a sibling job, mirroring a real ci.yml pack."""
+    document = _plan(role="main")
+    document["eligible_jobs"] = ["job-a", "job-b"]
+    document["legacy_job_count"] = 2
+    document["eligible_job_count"] = 2
+    document["packs"] = [
+        {
+            "index": index,
+            "weight": 0 if index < 5 else 1,
+            "jobs": [] if index < 5 else ["job-a", "job-b"],
+        }
+        for index in range(6)
+    ]
+    document["semantic_jobs"] = [
+        document["semantic_jobs"][0],
+        {
+            "logical_job_id": "job-b",
+            "pack_index": 5,
+            "job_exec_sha256": JOB_SHA,
+            "steps": [{"proof_id": "proof-a", "step_spec_sha256": STEP_SHA}],
+        },
+    ]
+    document["plan_sha256"] = proof.authoritative_plan_sha256(document)
+    return document
+
+
+def _sibling_job(steps: list[dict]) -> dict:
+    return {
+        "logical_job_id": "job-b",
+        "job_exec_sha256": JOB_SHA,
+        "infrastructure": {"outcome": "passed"},
+        "steps": steps,
+    }
+
+
+def _passing_step(proof_id: str, spec: str) -> dict:
+    return {
+        "proof_id": proof_id,
+        "step_spec_sha256": spec,
+        "outcome": "passed",
+        "failure_signature": None,
+    }
+
+
+def _two_job_main_fragment(plan: dict, *, dark_outcome: str) -> dict:
+    """job-a: one real failure then a unit that never ran behind it; job-b clean.
+
+    This is the production shape of main run 32235791079 pack-2
+    (``qledger-cluster-honest-ci``: one ``failed`` followed by six
+    ``not_run_prior_failure`` units) beside any of its 192 clean siblings.
+    """
+    fragment = _fragment(role="main", plan=plan)
+    fragment["jobs"][0]["steps"][0].update(
+        {"outcome": "failed", "failure_signature": _signature()}
+    )
+    fragment["jobs"][0]["steps"][1]["outcome"] = dark_outcome
+    fragment["jobs"].append(_sibling_job([_passing_step("proof-a", STEP_SHA)]))
+    return fragment
+
+
+@pytest.mark.parametrize(
+    "dark_outcome", ["not_run_prior_failure", "timed_out", "infrastructure_blocked"]
+)
+def test_dark_main_unit_does_not_void_sibling_job_evidence(dark_outcome: str) -> None:
+    """Regression: main run 32235791079 collapsed to ``jobs: []`` on one dark unit.
+
+    ``ship_loop_guard._recent_main_semantic_evidence()`` reads only the aggregate
+    and ``find_descendant_pass_witness()`` walks ``evidence["jobs"]``, so an empty
+    jobs list pins every session in the fleet.  Whatever the classifier decides
+    about the dark unit, the run must stay readable and the clean sibling must
+    keep its evidence.
+    """
+    plan = _two_job_main_plan()
+    evidence = proof.reconcile_evidence(
+        plan, [_two_job_main_fragment(plan, dark_outcome=dark_outcome)]
+    )
+    # Representable, so the CLI never swaps it for the empty-jobs planner failure.
+    assert proof.semantic_gate_verdict(evidence).clear is False
+    jobs = {job["logical_job_id"]: job for job in evidence["jobs"]}
+    assert set(jobs) == {"job-a", "job-b"}
+    # The red job stays fully fail-closed: neither unit is a pass.
+    assert proof.red_semantic_units(evidence) == frozenset(
+        {("job-a", "proof-a"), ("job-a", "proof-b")}
+    )
+    # The clean sibling survives intact — this is the evidence the fleet needs.
+    assert jobs["job-b"]["infrastructure"] == {"outcome": "passed"}
+    assert jobs["job-b"]["steps"][0]["classification"] == "passed"
+
+
+def test_sibling_job_pass_still_mints_a_descendant_witness_through_a_dark_unit() -> None:
+    plan = _two_job_main_plan()
+    evidence = proof.reconcile_evidence(
+        plan, [_two_job_main_fragment(plan, dark_outcome="not_run_prior_failure")]
+    )
+    witness = proof.find_descendant_pass_witness(
+        "job-b",
+        "proof-a",
+        BASE,
+        [evidence],
+        lambda ancestor, descendant: True,
+        old_step_spec_sha=STEP_SHA,
+    )
+    assert witness is not None and witness.tested_tree_sha == TREE
+    # The red job remains unwitnessable — widening evidence never admits a pass.
+    for red_proof in ("proof-a", "proof-b"):
+        assert (
+            proof.find_descendant_pass_witness(
+                "job-a", red_proof, BASE, [evidence], lambda *_: True
+            )
+            is None
+        )
+
+
+def test_unrepresentable_unit_is_confined_to_its_job_not_the_whole_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Defense in depth: a future classifier fault costs one job, not the run.
+
+    The rogue detector fires on a unit that would otherwise be a clean PASS, so
+    this also pins that confinement is fail-closed — an unrepresentable unit is
+    demoted to blocked/unknown, never kept as a pass.
+    """
+    plan = _two_job_main_plan()
+    fragment = _fragment(role="main", plan=plan)
+    fragment["jobs"].append(_sibling_job([_passing_step("proof-a", STEP_SHA)]))
+
+    def _rogue(job_id: str, step: dict, role: str) -> str | None:
+        if job_id == "job-a" and step.get("proof_id") == "proof-b":
+            return "synthetic classifier fault for job-a/proof-b"
+        return None
+
+    monkeypatch.setattr(proof, "_step_representation_error", _rogue)
+    evidence = proof.reconcile_evidence(plan, [fragment])
+    jobs = {job["logical_job_id"]: job for job in evidence["jobs"]}
+    assert jobs["job-a"]["infrastructure"]["outcome"] == "planner_configuration_failure"
+    assert "job-a/proof-b" in jobs["job-a"]["infrastructure"]["detail"]
+    confined = {step["proof_id"]: step for step in jobs["job-a"]["steps"]}["proof-b"]
+    assert confined["outcome"] == "infrastructure_blocked"
+    assert confined["classification"] == "unknown"
+    # job-a/proof-a was clean and keeps its PASS; the sibling job is untouched.
+    assert {s["proof_id"]: s for s in jobs["job-a"]["steps"]}["proof-a"]["classification"] == "passed"
+    assert jobs["job-b"]["infrastructure"] == {"outcome": "passed"}
+    assert jobs["job-b"]["steps"][0]["classification"] == "passed"
+    assert proof.semantic_gate_verdict(evidence).clear is False

@@ -1,7 +1,7 @@
 {
   "schema": "china_radar_ic.v1",
-  "as_of": "2026-08-18",
-  "generated_at": "2026-08-18T10:25:28.042185+00:00",
+  "as_of": "2026-08-19",
+  "generated_at": "2026-08-19T10:04:08.125623+00:00",
   "n_events": 28,
   "n_matured": 25,
   "ic_all": 0.1055,
@@ -17,7 +17,7 @@
         "positive": {
           "n": 16,
           "dir_accuracy": 0.375,
-          "mean_signed_fwd_ret": -0.0163
+          "mean_signed_fwd_ret": -0.0169
         },
         "negative": {
           "n": 9,
