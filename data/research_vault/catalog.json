@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T07:29:23.827849+00:00",
-  "count": 1391,
+  "generated_at": "2026-08-19T08:22:33.584741+00:00",
+  "count": 1394,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -204,6 +204,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bxpip7nnu9d-3d5f9e",
+      "title": "BofA August Global Fund Manager Survey The Noes Have It",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:38:05Z",
+      "summary_points": [
+        "**FMS Cash Level Triggers Sell Signal**: BoFA FMS cash at 3.5% (6th lowest since 1998), below 4.0% threshold, signaling \"sell\" for global equities under contrarian conditions.",
+        "**Equity Allocation at 56% Overweight**: Highest since Nov 2021 with 14 consecutive months of overweight, indicating extreme positioning and elevated risk to corrections.",
+        "**AI Bubble as Top Tail Risk**: 32% of FMS investors cite \"AI bubble\" as #1 tail risk (down from 45% in July), reflecting heightened concern over tech overvaluation and potential volatility.",
+        "**Crowded Trade Shift in Semiconductors**: \"Long global semiconductors\" (53% of FMS investors) down sharply from 82% in August, signaling potential sector reversal and reduced overcrowding.",
+        "**Fed Policy Expectations Divergence**: 72% anticipate no Fed hikes before November midterms, but Jackson Hole sentiment leans hawkish (31% vs 7% dovish), creating conflicting rate outlooks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-acunejlmxsi-cd901e",
       "title": "BofA Securities Equity Client Flows 7th week of equity inflows as S&P hits a new high",
       "institution": "Bank of America",
@@ -221,6 +242,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tgq4omcw1hu-105398",
+      "title": "Equity Vol Insights Vol collapses but are stocks less risky",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:38:03Z",
+      "summary_points": [
+        "**US Single-Stock Volatility Collapse**: VIX at 14.25 (low) driven by easing semis bubble dynamics/FOMO and de-leveraging; AI spot-up dynamics risk volatility spikes requiring portfolio preparedness.",
+        "**Taiwan BRI Extreme Bubble Risk**: Taiwan equity themes show highest BRI (Exhibit 9) and largest weekly BRI jump (Exhibit 10), signaling severe overvaluation in tech-focused equities.",
+        "**Tech Sector Bubble Concentration**: ANBN, NTAP, HPE, DELL rank highest in S&P 500 BRI; tech sector dominates bubble-like price action risk (BRI >0.8 affecting 25 SPX stocks).",
+        "**EU Equity Upside Constrained**: EU equities rebounded but face limits from flat call skew, geopolitical risks (US-Iran), energy prices; recommend limited upside call spreads or SX5E puts for protection.",
+        "**GFSI Stress Shift**: Commodities subcomponents (Crude/Gold IV) drove GFSI decline to -0.21 (22nd percentile); Japan remains most stressed region with EM stress lower."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
@@ -1447,6 +1489,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o59tegtorkk-c225f1",
+      "title": "ING Think rates spark xxxxxxxxx",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:45:27Z",
+      "summary_points": [
+        "**Treasuries**: Long-end vulnerability from higher real yields, fiscal supply pressure, and yen spillovers despite reduced Fed hike expectations - **ECB/UK**: September ECB hike pricing amid Middle East tensions and energy disruption; UK labour/CPI data critical for BoE hawkish trajectory - **Bunds**: ECB September hike priced with geopolitical energy risks (Middle East tensions/gas prices) and drought-driven supply shocks elevating inflation risks - **Gilts**: Sterling markets pricing 50bp BoE tightening until 2026; CPI/unemployment data this week pivotal for year-end rate outlook"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
