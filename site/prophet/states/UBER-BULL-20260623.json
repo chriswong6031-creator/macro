@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UBER-BULL-20260623",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 36.1,
+  "management_confidence": 35.2,
   "raw_confidence": 34.2,
-  "delta_vs_base": -23.9,
+  "delta_vs_base": -24.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.029,
     "dist_to_t1_r": 1.471,
     "dist_to_t2_r": 2.971,
-    "horizon_pct_used": 93.3,
+    "horizon_pct_used": 95.6,
     "p1": 0.0195,
     "p2": 0.0097,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 42,
-  "tau": 0.9333
+  "days_elapsed": 43,
+  "tau": 0.9556
 }

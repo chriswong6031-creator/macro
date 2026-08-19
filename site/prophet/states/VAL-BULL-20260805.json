@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "VAL-BULL-20260805",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.9,
-  "raw_confidence": 61.3,
-  "delta_vs_base": 2.9,
+  "management_confidence": 61.7,
+  "raw_confidence": 60.2,
+  "delta_vs_base": 1.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 5.6,
-    "pace": 89.0,
+    "pace": 84.3,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.054,
     "dist_to_t1_r": 1.446,
     "dist_to_t2_r": 2.946,
-    "horizon_pct_used": 17.8,
+    "horizon_pct_used": 20.0,
     "p1": 0.0358,
     "p2": 0.0179,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 9,
+  "tau": 0.2
 }
