@@ -395,22 +395,43 @@ ARTIFACT_MANIFEST = [
      "as_of_field": "as_of",
      "consumers": ["bot:china_book"],
      "note": "Prophet China board; CN calendar has more holidays → wider cadence"},
+    # 1.2.0 -> 1.3.0 (CA-TRUTH, masterplan §5.0): one canonical board — the artifact
+    # is now written from the SAME object build_canada_library.main() returns and
+    # canada.html.j2 renders (no second compute_canada_standouts() re-derive, no
+    # post-Branch-B re-sort). Five new top-level honesty stamps registered PRE-
+    # GRADUATION in optional_fields (mirrors the hk_prophet_v1 / us_prophet_v1
+    # pattern above: the contract lands one render before the artifact is rebuilt
+    # with them; they graduate to schema_fields once a committed render proves the
+    # builder emits them unconditionally): board_definition (the selection-instrument
+    # stamp, "ca_prophet_branch_b_v1"), authority ("screen" — never "official_pick"),
+    # selection_status ("accruing"), official_pick_authority (always False — board
+    # MEMBERSHIP does not imply a validated official pick), legacy_buy_key_semantics
+    # ("ripe_list_screen" — the `buy` key is a screen projection, not a scored list).
+    # `watch` is likewise new-unconditional (attached to the canonical board
+    # alongside `buy`) and registered here for the same pre-graduation reason.
     {"artifact": "site/factordata/canada_standouts.json",
      "kind": "board",
-     "schema_version": "1.2.0",
+     "schema_version": "1.3.0",
      "schema_fields": [
          "as_of", "branch", "buy", "confluence", "eligible",
          "laggards", "rank_basis", "universe",
      ],
      "optional_fields": [
-         # dispersion_regime — build_canada_library.py:1136 `if disp_regime:` (only when
+         # dispersion_regime — build_canada_library.py:1158 `if disp_regime:` (only when
          # the selection-regime dispersion dial computes). sector_concentration —
          # build_canada_library.py:700 `if _sc:` (only when >60% of the board clusters in
          # one sector). Both are conditional-by-design: present on concentrated/regime-on
          # nights, absent otherwise. Kept OUT of schema_fields so the drift lane does not
          # flap red↔green with the tape (were wrongly required in 1.1.0 / #3289 — that lane
          # went red on the first diversified-board nightly after).
-         "dispersion_regime", "sector_concentration",
+         # board_definition / authority / selection_status / official_pick_authority /
+         # legacy_buy_key_semantics / watch (2026-08-19, CA-TRUTH) — see the note above;
+         # all six are pre-graduation (unconditional-once-rendered, but not yet proven
+         # on a committed artifact).
+         # (List order is alphabetical — test_contract_drift asserts it sorted.)
+         "authority", "board_definition", "dispersion_regime",
+         "legacy_buy_key_semantics", "official_pick_authority",
+         "sector_concentration", "selection_status", "watch",
      ],
      "schema_item_fields": [
          "align_tier", "alpha", "alpha_entry", "board_pos", "conviction", "dir",
@@ -422,10 +443,17 @@ ARTIFACT_MANIFEST = [
      "expected_max_age_td": 2,
      "as_of_field": "as_of",
      "consumers": ["bot:canada_book"],
-     "note": ("Prophet Canada board. dispersion_regime + sector_concentration are "
-              "conditional (optional_fields) — bot:canada_book must treat both as "
-              "may-be-absent, unchanged from prior behaviour (they were always emitted "
-              "conditionally; 1.2.0 only corrects the contract classification)")},
+     "note": ("Prophet Canada board — one canonical Branch-B ripe-list SCREEN, not a "
+              "scored official-pick list (authority='screen', selection_status="
+              "'accruing', official_pick_authority=False). `buy` is a projection of "
+              "the canonical board (legacy_buy_key_semantics='ripe_list_screen'); "
+              "membership does NOT imply official-pick authority. dispersion_regime + "
+              "sector_concentration stay conditional (optional_fields) — "
+              "bot:canada_book must treat both as may-be-absent, unchanged from prior "
+              "behaviour. bot:canada_book is a stale manifest declaration with no live "
+              "reader in macro/Mastermind/terminal as of this census (CA-TRUTH); "
+              "nothing depends on `buy` row order, so the canonical-board switch is "
+              "additive-compatible")},
     {"artifact": "site/data/portfolio_ctx.json",
      "kind": "context",
      # 1.1.0 (PSI-W2, 2026-08-07): MINOR — one top-level field ADDED (`market`), every

@@ -686,7 +686,7 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
         return [{"en": "Board ledger (no ranked names to log)", "zh": "榜单账本（无可记录个股）",
                  "status": "SKIP", "rows": 0, "last": "—"}]
     asof = _board_asof(latest)
-    from scripts.build_canada_library import _ENTRY_STATE
+    from scripts.build_canada_library import _ENTRY_STATE, CA_BOARD_DEFINITION
     calls = []
     for r in rows:
         es = r.get("entry_signal") or {}
@@ -719,6 +719,9 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
             # (The watch strip below carries no verdict, so its rows stay None.)
             "anchor_era": sig.get("anchor_era"),
             "sq_anchor_era": sig.get("sq_anchor_era"),
+            # CA-TRUTH (masterplan §5.0): the selection instrument that produced this
+            # board_pos — every row is Branch-B, so every row stamps the same value.
+            "board_definition": CA_BOARD_DEFINITION,
         })
     # W0.2 Stage C (§5.2 move 2): the CA WATCH strip was never appended — its
     # strong-but-blocked rows are exactly the near-miss cohort the rejection
@@ -740,6 +743,7 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
                                          if w.get("watch_reason") == "knife" else None),
             "block_reason": w.get("block_reason"),
             "knife_demoted": (w.get("watch_reason") == "knife"),
+            "board_definition": CA_BOARD_DEFINITION,
         })
     health: list[dict] = []
     try:
@@ -1428,28 +1432,23 @@ def main() -> int:
             vm["alpha"] = None
 
         # build the per-ticker stock library NOW (records carry ladder + alpha) and
-        # capture the cross-sectional alpha-led "Top setups" ranking for canada.html.
+        # capture the CANONICAL Canada Prophet board (CA-TRUTH, masterplan §5.0):
+        # build_canada_library.main() computes + orders + writes canada_standouts.json
+        # ONCE and returns that SAME object — the page must render it verbatim, never
+        # re-derive or re-rank it (a second standouts-enrich pass used to run here,
+        # producing a page object that could silently diverge from the artifact).
         setups = None
         try:
             from scripts import build_canada_library
-            setups = build_canada_library.main(alpha=alpha)
+            setups = build_canada_library.main(alpha=alpha, overlay=(latest.get("overlay") or {}))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada stock library build failed (%s); skipping", e)
         vm["setups"] = setups
 
-        # enrich the alpha-led setups shortlist into "Standout individual stocks" cards
-        # AND apply the BRANCH-B ripe-list contract order (C7 verdict: all momentum
-        # trials ACCRUE → composite suppressed, board = grouped ripe-list, rank pill).
-        try:
-            from scripts.build_canada_library import compute_canada_standouts
-            vm["setups"] = compute_canada_standouts(setups, overlay=latest.get("overlay") or {})
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("canada standouts enrich failed (%s); using raw setups", e)
-
         # ── top_setups: top-5 buy rows for the glance card ───────────────────
-        # MUST run AFTER vm["setups"] is assigned + standouts-enriched above
-        # (the first cut ran before it → vm.get("setups") was None → the card
-        # said "No active setups" while 10 buys existed). Never fatal.
+        # MUST run AFTER vm["setups"] is assigned above (the first cut ran before it
+        # → vm.get("setups") was None → the card said "No active setups" while 10
+        # buys existed). Never fatal.
         try:
             _su = vm.get("setups") or {}
             _buys = list((_su.get("buy") or []))

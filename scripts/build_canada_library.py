@@ -35,7 +35,7 @@ from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing 
 from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
-from engine.setups import CA_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score  # noqa: E402
+from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alpha/alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -45,6 +45,15 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("canada_library")
 
 TSX_INDEX = "^GSPTSE"   # cap-weighted TSX market proxy for the residual-alpha leg
+
+# CA-TRUTH (masterplan §5.0): the single canonical Canada Prophet board is the
+# Branch-B ripe-list order compute_canada_standouts() applies — a SCREEN, not a
+# validated official-pick authority. board_definition is the selection-instrument
+# stamp threaded onto every board_ledger row (mirrors hk_prophet_v1/us_prophet_v1);
+# authority/selection_status/official_pick_authority are the artifact-level honesty
+# stamps that say plainly this board is accruing evidence, not a scored pick list.
+CA_BOARD_DEFINITION = "ca_prophet_branch_b_v1"
+CA_BOARD_AUTHORITY = "screen"
 
 
 # ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
@@ -690,8 +699,8 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
         _w8g_r["days_since_signal"] = _w8g_days_since(_tk) if _tk else None
 
     # BRANCH B: group (entry_open > setting_up) then rank within group by the momentum
-    # SCREEN z. Replaces the entry_open_first composite sort — the composite is NOT the
-    # order under the zero-GO branch (masterplan §4.1 / §5.0).
+    # SCREEN z. Replaces the old open-entry-first composite sort — the composite is
+    # NOT the order under the zero-GO branch (masterplan §4.1 / §5.0).
     setups["buy"] = _branch_b_order(setups["buy"], overlay)
     setups["branch"] = "B"          # honest marker: ripe-list contract, composite suppressed
     setups["rank_basis"] = "momentum_screen_accruing"
@@ -767,7 +776,54 @@ def _setup_score(rec: dict) -> tuple[float, dict] | None:
     return setup_score(rec, alpha_weight=CA_ALPHA_WEIGHT)
 
 
-def main(alpha: dict | None = None) -> dict | None:
+def _build_canonical_board(cand: list, as_of, align_map: dict, sig_verdict: dict,
+                           profiles: dict, entry_sig: dict, risk_sig: dict,
+                           eligible: int, disp_regime: dict | None,
+                           overlay: dict | None) -> dict:
+    """Build the ONE canonical Canada Prophet board (CA-TRUTH, masterplan §5.0):
+    Branch-B ripe-list order (compute_canada_standouts -> _branch_b_order), enriched
+    with the per-row signal/conviction/entry_signal/risk_sizing stamps (order-
+    neutral) + the watch strip, then stamped with the board-level authority fields.
+
+    NO sort of any kind may run after compute_canada_standouts() returns — that IS
+    the canonical order. This is the single place main() builds the board; the SAME
+    object it returns is both written to canada_standouts.json and returned to the
+    caller (build_canada.py), so the artifact, the page, and the forward ledger can
+    never structurally disagree."""
+    board = compute_canada_standouts(
+        rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
+                    align_map=align_map),
+        overlay=overlay)
+    for r in board["buy"] + board.get("laggards", []):
+        t = r.get("ticker")
+        r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
+        if r.get("conviction") is None and profiles.get(t):
+            r["conviction"] = profiles[t]
+        if entry_sig.get(t):
+            r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+        if risk_sig.get(t):
+            r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+    board["watch"] = _build_watch(cand, board["buy"], align_map, profiles)
+    board["eligible"] = eligible          # how many passed the alignment gate
+    board["universe"] = len(cand)
+    if disp_regime:                      # selection-regime gross dial (board + bot)
+        board["dispersion_regime"] = disp_regime
+    # board-level authority stamps: this is a SCREEN (accruing evidence), never a
+    # scored official-pick list — membership does NOT imply official-pick authority.
+    board["board_definition"] = CA_BOARD_DEFINITION
+    board["authority"] = CA_BOARD_AUTHORITY
+    board["selection_status"] = "accruing"
+    board["official_pick_authority"] = False
+    board["legacy_buy_key_semantics"] = "ripe_list_screen"
+    return board
+
+
+def main(alpha: dict | None = None, overlay: dict | None = None) -> dict | None:
+    """Build the per-ticker CA library + write the canonical Canada Prophet board
+    (site/factordata/canada_standouts.json). Returns that canonical board dict (the
+    SAME object written to the artifact) — CA-TRUTH: one board, one order, one
+    return value; the caller (build_canada.py) must not re-derive or re-rank it.
+    Returns None when no candidate survives scoring (no artifact write)."""
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "canadastockdata"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -1082,6 +1138,7 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # cross-sectional alpha-led "Top setups" — selection (alpha) × timing (cycle)
     setups = None
+    board = None   # the CANONICAL board this function returns (CA-TRUTH)
     # BOTTOMING-ALIGNMENT gate (mirrors the US/CN/HK fix): the buy shortlist is gated on
     # multi-timeframe alignment (weekly not-falling + 3-day nearing a bullish cross + daily
     # just-crossed/about-to) so a mid-weekly-bear falling knife is kept off the strip;
@@ -1112,46 +1169,24 @@ def main(alpha: dict | None = None) -> dict | None:
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
-        # WIDE "Standout individual stocks" board persisted as its own artifact, so a
-        # transient build failure leaves a stale-but-present file (mirrors us_standouts.json).
-        # Ranked by the validated alpha leg; enriched with price/off-high/sparkline + the
-        # Conviction profile; eligible = how many cleared the +0.5 alpha floor.
-        wide = compute_canada_standouts(
-            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
-                        align_map=align_map))
-        # COMBINE re-rank: keep the alpha/alignment inclusion, order WITHIN each alignment tier by
-        # the owner's weighted cascade blend (setup-score percentile lifted by the T1->T4 weight).
-        # Weightless names keep their rank. Eligibility/membership UNCHANGED.
-        import bisect as _bisect
-        _scores = sorted((r.get("setup") or 0.0) for r in wide["buy"])
-        _bn = len(_scores) or 1
-
-        def _combine_key(r):
-            w = (sig_verdict.get(r.get("ticker")) or {}).get("weight") or 0.0
-            pct = _bisect.bisect_right(_scores, r.get("setup") or 0.0) / _bn
-            return (0 if r.get("align_tier") == "aligned" else 1, -(pct + 0.5 * w))
-        wide["buy"] = sorted(wide["buy"], key=_combine_key)
-        for r in wide["buy"] + wide.get("laggards", []):
-            t = r.get("ticker")
-            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
-            if r.get("conviction") is None and profiles.get(t):
-                r["conviction"] = profiles[t]
-            if entry_sig.get(t):
-                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
-            if risk_sig.get(t):
-                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
-        wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
-        wide["eligible"] = eligible          # how many passed the alignment gate
-        wide["universe"] = len(cand)
-        if disp_regime:                      # selection-regime gross dial (board + bot)
-            wide["dispersion_regime"] = disp_regime
+        # CANONICAL "Standout individual stocks" board persisted as its own artifact
+        # (mirrors us_standouts.json), built ONCE by _build_canonical_board — this IS
+        # the object returned by main() and the object canada_standouts.json is
+        # written from (CA-TRUTH, masterplan §5.0). NO sort of any kind may run after
+        # it: compute_canada_standouts() already applied the Branch-B ripe-list order
+        # (_branch_b_order, stamping board_pos/group/lead_*) — that IS the canonical
+        # order. The former composite re-rank and the open-entry-first re-sort that
+        # used to run after it are gone, not moved.
+        board = _build_canonical_board(cand, as_of, align_map, sig_verdict, profiles,
+                                       entry_sig, risk_sig, eligible, disp_regime,
+                                       overlay)
         (site / "factordata" / "canada_standouts.json").write_text(
-            json.dumps(wide, separators=(",", ":"), default=str))
+            json.dumps(board, separators=(",", ":"), default=str))
         log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",
-                 len(wide["buy"]), eligible, len(cand))
+                 len(board["buy"]), eligible, len(cand))
     log.info("canada library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d setups",
              built, limited, failed, len(cand))
-    return setups
+    return board
 
 
 if __name__ == "__main__":
