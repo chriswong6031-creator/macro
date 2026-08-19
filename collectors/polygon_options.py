@@ -31,6 +31,7 @@ import pandas as pd
 import requests
 
 from collectors.base import Adapter, safe_exc_text
+from engine.options_universe import DEFAULT_ANCHORS
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -64,20 +65,44 @@ REASON_CODES = frozenset({
 AUTH_SHORT_CIRCUIT_PROBE = 5
 
 
-def _auth_probe_symbols(symbols: list[str]) -> list[str]:
-    """The auth short-circuit's probe set (AD-1C0 M9 ruling): a DETERMINISTIC
-    MIXED-CLASS sample — the first 3 symbols of the universe order (anchor/ETF-
-    heavy, since gex_symbols() puts config anchors first) PLUS the last 2
-    (basket/single-name-heavy, appended after the anchors), deduplicated
-    preserving order. An anchors-only probe (symbols[:5]) can never see past an
-    INDEX/ETF-scoped entitlement gap to a working single-name entitlement one
-    tier over — this mix can, at the same fixed cost. Falls back to the whole
-    universe when it has AUTH_SHORT_CIRCUIT_PROBE or fewer symbols (nothing
-    would be left to abort anyway)."""
+def _auth_probe_symbols(symbols: list[str], n_anchors: int | None = None) -> list[str]:
+    """The auth short-circuit's probe set (AD-1C0 M9 ruling, N3-amended): a
+    DETERMINISTIC MIXED-CLASS sample — the first 3 symbols of the universe
+    order (anchor/ETF-heavy, since gex_symbols() puts config anchors first)
+    PLUS a tail of 2 meant to be basket/single-name-heavy — deduplicated
+    preserving order. An anchors-only probe can never see past an INDEX/ETF-
+    scoped entitlement gap to a working single-name entitlement one tier over
+    — this mix can, at the same fixed cost.
+
+    `n_anchors` is the count of CONFIG anchors at the front of `symbols`
+    (gex_symbols() always puts them there, baskets_universe() appends single
+    names after) — the caller (PolygonOptions.snapshot()) passes the real
+    config-anchor count. The tail is the LAST 2 of the basket-appended
+    single-name subset `symbols[n_anchors:]` when it is nonempty. N3 (AD-1C0
+    review): with baskets OFF (or `n_anchors` unknown/covering the whole
+    universe), that subset is empty and `symbols[-2:]` would just be two more
+    anchors — degenerating the "mixed-class" probe back into an anchors-only
+    one. Falls back to positions 4-5 of the universe order in that case
+    (NVDA/AAPL in the shipped config anchors) — still a plausible single-name
+    pair, not a blind repeat of the ETF-heavy front.
+
+    `n_anchors=None` (the default, used by direct unit tests) preserves the
+    original last-2-of-the-whole-list behavior — equivalent to treating the
+    ENTIRE list as the single-name-eligible tail, since the caller hasn't told
+    us where any basket/anchor split actually is.
+
+    Falls back to the whole universe when it has AUTH_SHORT_CIRCUIT_PROBE or
+    fewer symbols (nothing would be left to abort anyway)."""
     if len(symbols) <= AUTH_SHORT_CIRCUIT_PROBE:
         return list(symbols)
+    head = symbols[:3]
+    if n_anchors is None:
+        single_name_subset = symbols
+    else:
+        single_name_subset = symbols[n_anchors:]
+    tail = single_name_subset[-2:] if single_name_subset else symbols[4:6]
     seen: list[str] = []
-    for s in (*symbols[:3], *symbols[-2:]):
+    for s in (*head, *tail):
         if s not in seen:
             seen.append(s)
     return seen
@@ -340,13 +365,21 @@ class PolygonOptions(Adapter):
         run — abort the remaining universe deterministically rather than spending
         its full retry budget on a foregone conclusion. A single success, or any
         non-auth failure, anywhere in the probe disables the short circuit.
+        The probe's `n_anchors` split (N3, AD-1C0 review) is read from THIS
+        client's own `self.cfg["gex"]["symbols"]` (falling back to
+        DEFAULT_ANCHORS, mirroring engine.options_universe.gex_symbols()'s own
+        fallback) — kept internal rather than a snapshot() parameter so the
+        signature (and every caller's `client.snapshot(symbols, asof)` call
+        site) never has to change.
 
         The census dict carries ``attempted_underlyings``, ``successful_underlyings``,
         ``failure_reasons`` ({code: count}), ``failure_examples`` ({code: [<=3 syms]})
         and ``aborted_early``; scripts/build_polygon_gex.accrue() adds the
         requested-universe denominator and coverage_pct on top.
         """
-        probe_syms = _auth_probe_symbols(symbols)
+        gx = self.cfg.get("gex") or {}
+        n_anchors = len(gx.get("symbols") or DEFAULT_ANCHORS)
+        probe_syms = _auth_probe_symbols(symbols, n_anchors=n_anchors)
         probe_set = set(probe_syms)
         rest_syms = [s for s in symbols if s not in probe_set]
         results = self._run_batch(probe_syms, asof)
