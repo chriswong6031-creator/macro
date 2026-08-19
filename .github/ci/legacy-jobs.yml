@@ -1012,12 +1012,17 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        # jinja2 added 2026-08-19 with the analyzer-i18n step below: that suite renders the
-        # REAL china.html.j2 turnover row (macro + row extracted from the shipped file, so it
-        # cannot silently drift from a hand-copied duplicate) through a bare jinja2 Environment.
-        # Nothing else widened — probed at RUN time the suite loads only jinja2/pandas/numpy
-        # /markupsafe; with pyarrow and pyyaml blocked it is still 63-passed.
-        run: pip install pytest pandas numpy markupsafe jinja2
+        # jinja2 + pyyaml added 2026-08-19 with the analyzer-i18n step below, and BOTH are
+        # needed at COLLECTION time, not merely at run time:
+        #   jinja2 — that suite renders the REAL china.html.j2 turnover row (macro + row
+        #     extracted from the shipped file, so it cannot silently drift from a hand-copied
+        #     duplicate) through a bare jinja2 Environment.
+        #   pyyaml — `from engine import cycles` pulls engine/technicals.py -> lib/config.py,
+        #     which does a module-scope `import yaml`. The two older suites in this job never
+        #     import engine.cycles, so this job's line had never needed it. Missing it is a
+        #     COLLECTION error (pytest exit 2), which fails the whole step rather than one
+        #     test — measured on this PR's first run (ci-pack-11, job 96210580631).
+        run: pip install pytest pandas numpy markupsafe jinja2 pyyaml
       - name: conviction profile honesty invariants + dossier reason codes
         run: python -m pytest tests/test_stock_score.py tests/test_stock_dossier.py -q
       # P1 unrun backfill 2026-08-19: tests/test_analyzer_i18n_percentile.py (#5980) was named
