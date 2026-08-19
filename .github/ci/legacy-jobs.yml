@@ -2863,6 +2863,12 @@ jobs:
       # cannot skip its way to a green on a pack runner.
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
+      # The merge-gate reliability report (#5938) is the W1-W4 program's progress
+      # metric, so its suite must run where CI-meta suites already live: this job
+      # owns them and installs the only deps needed (pytest + pyyaml). The suite is
+      # hermetic - gh is mocked, and a missing suite classifies unknown, never green.
+      - name: merge-gate reliability report contract
+        run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
       - name: transitional self-hosted runner policy and canary contracts
