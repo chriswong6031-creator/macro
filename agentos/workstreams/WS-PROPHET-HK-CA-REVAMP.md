@@ -26,7 +26,6 @@ owns_paths:
   - engine/hk_stock_signals.py
   - scripts/build_hk_library.py
   - tests/test_canada_build.py
-  - tests/test_canada_canonical_board.py
   - tests/test_board_ledger.py
   - research/PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md
 artifacts:
