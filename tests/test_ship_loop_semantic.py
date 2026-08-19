@@ -489,6 +489,335 @@ def test_ship_loop_binds_the_exact_ci_gate_base():
     assert GUARD._semantic_pr_base_sha(runs, HEAD, 10) is None
 
 
+# --- Authority-only freeze: the ONE bounded clearing path (2026-08-19) -------
+#
+# An authority-changing PR merged while main was red used to be UNCLEARABLE
+# FOREVER: the frozen head's own run is immutable, unit healing is disabled by
+# design, and the nonunit refusal returned before E1 was ever consulted. E1 —
+# a completed+success ci.yml run on a main DESCENDANT of the merge — executes
+# ON the merged authority, so it is proof of main under the new gate, never the
+# candidate-era evidence the fence forbids. These tests pin that E1 clears an
+# authority-ONLY freeze, that a classified own-regression is never blanketed,
+# that infrastructure ambiguity stays outside the path, and that the probe
+# fails closed.
+#
+# The evidence is built by the REAL emitter (`reconcile_evidence`) and judged
+# by the REAL gate (`semantic_gate_verdict`), never hand-shaped dicts: the
+# emitter records the authority freeze itself as an
+# `authority_self_excuse_refused` infrastructure row, so a hand-built
+# "authority true, infrastructure empty" fixture is a shape it cannot produce —
+# the first draft of these tests pinned exactly that unrealizable shape and
+# therefore could not catch the predicate reading the wrong fields (pre-ship
+# red team, 2026-08-19).
+
+from tests.test_ci_semantic_proof import (
+    _base_replay as _proof_base_replay,
+    _fragment as _proof_fragment,
+    _plan as _proof_plan,
+    _signature as _proof_signature,
+)
+
+
+def _authority_frozen_evidence(*, inherited: bool) -> dict:
+    """Real pr_head evidence for an authority-changing head with one red unit.
+
+    ``inherited=True`` is the MOTIVATING case: the base replay failed the same
+    way, so the unit classifies `inherited_base`, the emitter appends the
+    `authority_self_excuse_refused` infrastructure row, and the gate blocks
+    with ZERO blocking units. ``inherited=False`` is the case the clearing
+    must refuse: the base replay PASSED the same step, so the unit classifies
+    `pr_regression` — the head's own defect.
+    """
+    plan = _proof_plan(authority=True)
+    replay = (
+        _proof_base_replay(a_signature=_proof_signature())
+        if inherited
+        else _proof_base_replay(a_outcome="passed")
+    )
+    fragment = _proof_fragment(
+        a_outcome="failed",
+        a_signature=_proof_signature(),
+        replay=replay,
+        plan=plan,
+    )
+    return GUARD.semantic_proof.reconcile_evidence(plan, [fragment])
+
+
+def _authority_frozen_loaded(*, inherited: bool = True) -> SimpleNamespace:
+    return SimpleNamespace(
+        mode="semantic", evidence=_authority_frozen_evidence(inherited=inherited)
+    )
+
+
+def _frozen_head_runs() -> list[dict]:
+    return [
+        _check("ci-pack-7", "failure"),
+        _check("ci-gate", "failure", details=True),
+    ]
+
+
+def test_the_motivating_shape_is_realizable_and_authority_only() -> None:
+    """The emitter really produces the shape the clearing is scoped to."""
+    evidence = _authority_frozen_evidence(inherited=True)
+    assert evidence["authority_changed"] is True
+    assert [row["outcome"] for row in evidence["infrastructure"]] == [
+        "authority_self_excuse_refused"
+    ]
+    gate = GUARD.semantic_proof.semantic_gate_verdict(evidence)
+    assert gate.clear is False
+    assert gate.blocking == ()
+    assert GUARD._authority_freeze_is_sole_nonunit_blocker(
+        SimpleNamespace(mode="semantic", evidence=evidence), gate
+    ) is True
+
+
+def test_descendant_main_green_clears_an_authority_only_freeze(monkeypatch, tmp_path):
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: _frozen_head_runs())
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: _authority_frozen_loaded(inherited=True),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_recent_main_semantic_evidence",
+        lambda *_a: pytest.fail("an authority freeze attempted semantic unit healing"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_merged_content_green",
+        lambda _root, _owner, _repo, merge: {"id": 4242, "head_sha": WITNESS_TREE}
+        if merge == MERGE
+        else pytest.fail(merge),
+    )
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is True
+    assert "4242" in detail
+    assert "under the merged authority" in detail
+    assert WITNESS_TREE[:12] in detail
+    # The head's own frozen reds are disclosed as base-side, never re-litigated.
+    assert "ci-pack-7 (failure)" in detail
+
+
+def test_authority_freeze_never_blankets_a_classified_own_regression(
+    monkeypatch, tmp_path
+):
+    """A pr_regression under authority_changed is the head's OWN red.
+
+    The severity inversion the red team caught: the head that must stay
+    refused is exactly the one whose artifact carries NO self-excuse row and
+    no infrastructure — its blocking unit is the disqualifier."""
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: _frozen_head_runs())
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: _authority_frozen_loaded(inherited=False),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_merged_content_green",
+        lambda *_a: pytest.fail("an own-regression head consulted the E1 clearing"),
+    )
+    monkeypatch.setattr(GUARD, "_run", lambda *_a, **_k: "")
+    monkeypatch.setattr(GUARD, "_is_ancestor", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_recent_main_semantic_evidence", lambda *_a: [])
+    monkeypatch.setattr(
+        GUARD.semantic_proof,
+        "find_descendant_pass_witness",
+        lambda *_args, **_kwargs: None,
+    )
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "candidate-era proof" in detail
+    # The refusal must NOT carry the clearing lever: a head with its own
+    # classified regression has no descendant-baseline exit.
+    assert "gh workflow run ci.yml --ref main" not in detail
+
+
+def test_authority_only_freeze_names_the_baseline_lever_when_no_descendant_green(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: _frozen_head_runs())
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: _authority_frozen_loaded(inherited=True),
+    )
+    monkeypatch.setattr(GUARD, "_merged_content_green", lambda *_a: None)
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "authority_changed=true" in detail
+    # The block must name its own clearing lever instead of reading as forever.
+    assert "gh workflow run ci.yml --ref main" in detail
+    assert "main descendant" in detail
+
+
+def test_authority_freeze_probe_failure_fails_closed(monkeypatch, tmp_path):
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: _frozen_head_runs())
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: _authority_frozen_loaded(inherited=True),
+    )
+
+    def boom(*_a):
+        raise RuntimeError("api down")
+
+    monkeypatch.setattr(GUARD, "_merged_content_green", boom)
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "could not be probed" in detail
+    assert "api down" in detail
+
+
+def test_pending_checks_outrank_the_authority_freeze_clearing(monkeypatch, tmp_path):
+    runs = _frozen_head_runs() + [
+        {
+            "name": "fence-pack",
+            "status": "in_progress",
+            "conclusion": None,
+            "started_at": "2026-08-15T01:10:00Z",
+            "details_url": "",
+            "pull_requests": [],
+        }
+    ]
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: _authority_frozen_loaded(inherited=True),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_merged_content_green",
+        lambda *_a: {"id": 4242, "head_sha": WITNESS_TREE},
+    )
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert detail.startswith("CI still running")
+    assert "fence-pack" in detail
+
+
+def test_authority_freeze_with_infrastructure_never_consults_the_clearing(
+    monkeypatch, tmp_path
+):
+    """A foreign infrastructure row alongside the freeze keeps the refusal."""
+    evidence = _authority_frozen_evidence(inherited=True)
+    evidence["infrastructure"].append(
+        {"outcome": "missing_pack_fragment", "detail": "pack 5 emitted no fragment"}
+    )
+    loaded = SimpleNamespace(mode="semantic", evidence=evidence)
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: _frozen_head_runs())
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_head", lambda *_a, **_k: loaded)
+    monkeypatch.setattr(GUARD, "_semantic_gate", lambda _loaded: _gate(clear=False))
+    monkeypatch.setattr(
+        GUARD,
+        "_merged_content_green",
+        lambda *_a: pytest.fail("infrastructure ambiguity consulted the E1 clearing"),
+    )
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "cannot erase infrastructure" in detail
+
+
+def test_authority_freeze_predicate_fails_closed_on_unreadable_evidence():
+    frozen_gate = SimpleNamespace(
+        clear=False, blocking=(), inherited=(_unit(),), passed=(),
+        infrastructure_blocking=True,
+    )
+    unreadable = SimpleNamespace(mode="semantic", evidence=None)
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(unreadable, frozen_gate)
+        is False
+    )
+    benign = SimpleNamespace(mode="semantic", evidence={"authority_changed": False})
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(benign, frozen_gate) is False
+    )
+    frozen = _authority_frozen_loaded(inherited=True)
+    # A classified blocking unit disqualifies even a perfect freeze artifact.
+    blocking_gate = _gate(clear=False)
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(frozen, blocking_gate)
+        is False
+    )
+    # A gate missing the attribute entirely fails closed.
+    bare_gate = SimpleNamespace(clear=False)
+    assert GUARD._authority_freeze_is_sole_nonunit_blocker(frozen, bare_gate) is False
+    # A foreign infrastructure row disqualifies.
+    foreign = SimpleNamespace(mode="semantic", evidence=dict(frozen.evidence))
+    foreign.evidence["infrastructure"] = list(foreign.evidence["infrastructure"]) + [
+        {"outcome": "planner_configuration_failure", "detail": "boom"}
+    ]
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(foreign, frozen_gate) is False
+    )
+    # A failed job-level infrastructure outcome disqualifies.
+    job_infra = SimpleNamespace(mode="semantic", evidence=dict(frozen.evidence))
+    job_infra.evidence["jobs"] = [
+        {
+            "logical_job_id": "job-a",
+            "infrastructure": {"outcome": "dependency_failed"},
+        }
+    ]
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(job_infra, frozen_gate)
+        is False
+    )
+    # The realizable freeze-only shape is the ONE admitted shape.
+    assert (
+        GUARD._authority_freeze_is_sole_nonunit_blocker(frozen, frozen_gate) is True
+    )
+
+
 def test_ship_loop_uses_strict_shared_artifact_parser():
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w") as bundle:
