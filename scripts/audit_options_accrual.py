@@ -85,6 +85,26 @@ def _latest_chain_date(chains_dir: Path) -> date | None:
         return None
 
 
+def _latest_chain_health(data_root: Path, latest: date | None) -> dict | None:
+    """AD-1C0: the most recent health-receipt attempt for the latest stored
+    chain session, or None when no receipt exists (a legacy session, or the
+    sidecar is simply absent on this runner). Read-only; never raises into the
+    audit. Lives at data/polygon_gex_health/<session>.json — a SIBLING of
+    data/polygon_gex/, not nested inside it (see build_polygon_gex._health_dir
+    for why: a nested subdirectory there breaks an existing stray-file check)."""
+    if latest is None:
+        return None
+    receipt_path = data_root / "polygon_gex_health" / f"{latest.isoformat()}.json"
+    if not receipt_path.exists():
+        return None
+    try:
+        data = json.loads(receipt_path.read_text())
+        attempts = data.get("attempts") if isinstance(data, dict) else None
+        return attempts[-1] if attempts else None
+    except (OSError, ValueError, IndexError):
+        return None
+
+
 def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
     """Return {ok, fail_reasons, warnings, detail}."""
     data_root = config.data_dir()
@@ -126,6 +146,21 @@ def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
                 f"(exactly {age} NYSE session(s) behind last_session={last_td}) — "
                 "expected between the close and that night's accrual, but will trip "
                 "if tonight's accrual is missed"
+            )
+
+    # ── AD-1C0: surface the latest session's health-receipt verdict, if any ───
+    latest_health_entry = _latest_chain_health(data_root, latest)
+    if latest_health_entry is not None:
+        health = latest_health_entry.get("health")
+        detail["chains_latest_health"] = health
+        detail["chains_latest_decision"] = latest_health_entry.get("decision")
+        detail["chains_latest_coverage_pct"] = latest_health_entry.get("coverage_pct")
+        if health in ("partial", "failed"):
+            warn.append(
+                f"CHAINS {str(health).upper()}: latest chain session {latest} captured "
+                f"coverage_pct={latest_health_entry.get('coverage_pct')} "
+                f"(failure_reasons={latest_health_entry.get('failure_reasons')}) — see "
+                f"data/polygon_gex_health/{latest.isoformat()}.json for the full census"
             )
 
     # ── options-flow S3 creds ────────────────────────────────────────────────
