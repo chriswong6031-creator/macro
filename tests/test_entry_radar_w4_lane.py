@@ -886,25 +886,28 @@ def test_a_failing_r2_sink_degrades_to_a_warning_and_never_reaches_the_lane(
 
 
 def test_a_healthy_local_sink_proves_the_failure_test_is_not_vacuous(hermetic_spool):
-    """The control.  Same call, a sink that works: a key comes back and the object
-    lands under the injected directory — never under data/."""
+    """The control.  Same call, a sink that works: a key comes back and the
+    returned object lands under the injected hermetic_spool — outside repo data/.
+
+    W5 nightly reconciliation (W5 #5741) lawfully owns durable
+    ``data/entry_radar/**``; ``ledger_state.json`` on main is that writer, not a
+    W4 leak.  W4's invariant is narrower: an injected local sink writes the
+    returned spool object only under that sink, never into repo ``data/``.
+    """
     spool = NominationSpool(local_dir=hermetic_spool)
     key = spool_hot_tape([{"ticker": "AAPL", "kind": "gap", "change_pct": 5.0}],
                          source_asof=NOW, now=NOW, spool=spool)
     assert key == "live_flow/entry_radar_nominations/2026-08-14/140000-hot_tape.json"
-    assert (hermetic_spool / key).is_file()
     assert spool.written_keys == [key]
-    # NOT `assert not (ROOT / "data" / "entry_radar").exists()`. That asserted a
-    # directory this code cannot create: `local_spool_dir()` is documented "never a
-    # data/ path" and returns None unless $ENTRY_RADAR_SPOOL_DIR is set, and the module
-    # docstring names the nightly reconciler as "the only durable data/ writer". So the
-    # directory's EXISTENCE was never evidence about this call — it was a proxy that
-    # held only while the legitimate owner had not yet written. On 2026-08-18 the
-    # nightly committed data/entry_radar/ledger_state.json ("engine: regime update
-    # 2026-08-18", 01:25) and this control flipped red fleet-wide, blocking every PR
-    # on a lane that was behaving exactly as designed.
-    # The invariant that IS ours: this call's object did not land under data/.
-    assert not (ROOT / "data" / "entry_radar" / key).exists()
+    # Nightly W5 owns durable data/entry_radar/** (ledger_state.json). Do not
+    # assert that directory is absent — existence is not evidence about this call.
+    # W4 invariant: the injected hermetic sink wrote the object under that sink,
+    # never under repo data/.
+    spooled = (hermetic_spool / key).resolve()
+    data_root = (ROOT / "data").resolve()
+    assert spooled.is_file()
+    assert hermetic_spool.resolve() in spooled.parents
+    assert not spooled.is_relative_to(data_root)
 
 
 def test_an_exception_raised_by_put_itself_propagates_documented_finding(
