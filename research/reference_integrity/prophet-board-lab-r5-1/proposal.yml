@@ -1,15 +1,48 @@
-# Proposal ledger (RIG V1 §5-§6) — D-LAB-R5.1.
+# Proposal ledger (RIG V1 §5-§6) — D-LAB-R5.1, re-frozen after the R5.2 fix round.
 #
 # THE SHORT VERSION: five capabilities move from RETAIN to IMPROVE, because the
 # R5 verdict found them regressed or under-served; everything else is RETAIN,
 # and three of the board's own capabilities are BETTER SERVED than at R5 —
 # R5's mode deleted them and R5.1's does not. The authority delta is unchanged
 # and still carries two warranted:false claims. Nothing is REMOVED.
+#
+# ── R5.2 FIX ROUND (this SHA) ───────────────────────────────────────────────
+# The R5.1 product_regression critic returned BLOCK on PR51-1: `lab.observation_
+# class` was booked IMPROVE, `add.sticky_class_divider` was booked as an
+# addition, and `task.tell_live_from_history` minted BETTER on "the same
+# guarantee, one constant instead of 23" — all three against a sticky divider
+# that COULD NOT PIN, because `.lab-stream { overflow: hidden }` made the list a
+# scrollport. Measured by the critic at 390x844, 2,000px into the seed region:
+# four seed rows on screen, zero worded class labels.
+#
+# The mechanism is now real and BEHAVIOURALLY proven (D6c3 scrolls past the
+# divider at 1440 and 390 and reads its rect; M22 re-adds the overflow and is
+# caught only there). The dispositions below therefore KEEP their direction —
+# the capability is genuinely improved — but each one that rested on the pin now
+# NAMES what was false at f889d5eb35f3, so no reader has to diff two SHAs to
+# learn that a booked capability spent a revision inert. Seven cheap minors
+# (PR51-2/3/5/6/7/10/12/13) are folded in; DESIGN_NOTES.md §0b is the map.
+#
+# The visual_taste first pass (PASS_WITH_CONDITIONS, two further majors) folds
+# into the same round: R52-D1 (the constant VTL-408 targeted was still printing
+# on all 23 rails; the pin hardcoded top:0 against a production sticky nav; an
+# empty .lab-lead--adverse hook sat waiting to be filled), R52-D2 (at 390x844
+# the LAB mode returned ZERO complete observations above the fold), R52-D3
+# (missing theme x language corners and a 390 lead crop that showed only
+# chrome), plus VTL51-506 (the "Live" overload's residue) and VTL51-505 (a lead
+# aggregate). All taken; DESIGN_NOTES.md §0b.1 is the map.
+#
+# Nothing in R51-M1/M2/M3 was touched: D4b-D4f, D18-D18f and D19-D19g all still
+# pass and M7/M14/M15/M16 all still bite. R51-M1's ladder and C4's six on-screen
+# boards are both intact — the 390 fold was bought with demotions and a landing,
+# never by reopening either.
 schema: mastermind.rig_proposal.v1
 reference_id: prophet-board-lab-r5-1
 
 proposed_artifact:
-  frozen_sha: f889d5eb35f3080cf43136ad58bb780b1152c2dc
+  # R5.2 re-freeze. The R5.1 SHA (f889d5eb35f3080cf43136ad58bb780b1152c2dc) and what each
+  # first-pass critic found against it are recorded in manifest.yml `sha_lineage`.
+  frozen_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
   paths:
     - mockups/refs/prophet_lab/index.html
     - mockups/refs/prophet_lab/lab.css
@@ -44,7 +77,10 @@ proposed_artifact:
     - {path: mockups/refs/prophet_lab/crops/27-board-flush-390-zh.png,       viewport: mobile,  theme: dark,  locale: zh}
     - {path: mockups/refs/prophet_lab/crops/30-seeds-only-dark-en.png,       viewport: desktop, theme: dark,  locale: en}
     - {path: mockups/refs/prophet_lab/crops/31-seeds-only-light-zh.png,      viewport: desktop, theme: light, locale: zh}
-    - {path: mockups/refs/prophet_lab/crops/32-live-only-dark-en.png,        viewport: desktop, theme: dark,  locale: en}
+    # R5.2 / PR51-13: `32-live-only-dark-en.png` is DELETED. It shot the same URL
+    # as `35-lead-symmetry-dark-en.png` and was byte-identical to it (md5
+    # 9df1a63e...), so the set claimed a view it did not hold. 35 keeps the slot
+    # because it also ships the full-page frame.
     - {path: mockups/refs/prophet_lab/crops/33-live-only-light-en.png,       viewport: desktop, theme: light, locale: en}
     - {path: mockups/refs/prophet_lab/crops/34-seeds-only-390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
     - {path: mockups/refs/prophet_lab/crops/35-lead-symmetry-dark-en.png,    viewport: desktop, theme: dark,  locale: en}
@@ -59,7 +95,28 @@ proposed_artifact:
     - {path: mockups/refs/prophet_lab/crops/46-lab-down-dark-en.png,         viewport: desktop, theme: dark,  locale: en}
     - {path: mockups/refs/prophet_lab/crops/47-lab-down-light-zh.png,        viewport: desktop, theme: light, locale: zh}
     - {path: mockups/refs/prophet_lab/crops/48-lab-down-390-dark-en.png,     viewport: mobile,  theme: dark,  locale: en}
+    # R5.2 / R52-D3 — the missing theme x language corners. Until now the two
+    # states carrying the unknown-vs-zero distinction were only ever shot
+    # dark-EN and light-ZH, so theme and language moved together and neither
+    # could be judged on its own.
+    - {path: mockups/refs/prophet_lab/crops/49-lab-down-light-en.png,        viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/4a-lab-down-dark-zh.png,         viewport: desktop, theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/4b-lab-empty-light-en.png,       viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/4c-lab-empty-dark-zh.png,        viewport: desktop, theme: dark,  locale: zh}
     - {path: mockups/refs/prophet_lab/crops/50-roundtrip-live-after-lab.png, viewport: desktop, theme: dark,  locale: en}
+    # R5.2 / PR51-1 — THE PIN, SHOT WHERE THE CLAIM LIVES. Every R5.1 crop framed
+    # the divider at the crossing, the one scroll position where a sticky element
+    # and a static one are indistinguishable. These are taken 1,200px into the
+    # seed region and the capture RAISES if the mark is not at top 0 with seed
+    # rows on screen, so a crop of an unpinned divider cannot be produced.
+    - {path: mockups/refs/prophet_lab/crops/51-seed-region-pinned-dark-en.png,     viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/52-seed-region-pinned-light-zh.png,    viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/53-seed-region-pinned-390-dark-en.png, viewport: mobile,  theme: dark,  locale: en}
+    # R5.2 / R52-D3 — a 390 crop that CONTAINS a signed lead. The shot named for
+    # the lead symmetry at the design floor had been photographing only chrome,
+    # because nothing but the preamble was above the fold. This one scrolls the
+    # ADVERSE chip whole into frame and the capture raises if it is not there.
+    - {path: mockups/refs/prophet_lab/crops/54-lead-adverse-390-dark-en.png,       viewport: mobile,  theme: dark,  locale: en}
 
 dispositions:
   # ── the board. All RETAIN, and three of them are BETTER SERVED than at R5:
@@ -93,19 +150,126 @@ dispositions:
   - {id: section.candidates,      disposition: RETAIN, target: "unchanged in BOTH modes (D4d) — R5 removed it on mode entry"}
   - {id: section.groups,          disposition: RETAIN, target: "unchanged in BOTH modes (D4d)"}
   - {id: section.evidence_record, disposition: RETAIN, target: "unchanged in BOTH modes (D4d) — the surface an operator would use to judge a sighting is no longer removed in the same gesture that shows it"}
-  - {id: xc.bilingual,            disposition: IMPROVE, target: "aria-labels now bind to the language like the visible copy (C11); the EN glance vocabulary is as plain as the ZH (C15); the copy-law scan covers both languages across all six boards and both modes (C3)", rationale: "R5 shipped English-only assistive labels and an EN enum-shorthand where the ZH had the plain word — inverted bilingual parity (VTL-403/VTL-405, VTC-403)"}
+  - id: xc.bilingual
+    disposition: IMPROVE
+    target: >
+      aria-labels now bind to the language like the visible copy (C11); the EN glance vocabulary is
+      as plain as the ZH (C15); the copy-law scan covers both languages across all six boards and
+      both modes (C3); and the ZH lead pair carries the sign as legibly as the EN pair does.
+    rationale: >
+      R5 shipped English-only assistive labels and an EN enum-shorthand where the ZH had the plain
+      word — inverted bilingual parity (VTL-403/VTL-405, VTC-403).
+    r52_correction: >
+      PR51-7 — the VTL-403 symmetry law makes the three measured outcomes identically quiet, so the
+      WORD carries the entire sign. EN got that free (subject and verb both flip); the R5.1 ZH pair
+      did not — 「比 Prophet 早 N 天看到」 against 「Prophet 早 N 天」 shared the polarity character
+      早 and the numeral. The adverse case is now 「Prophet 领先我们 N 天」, sharing no character with
+      早. PR51-5 also repaired the ZH leak guard itself: D17b probed "Live sighting" and
+      "Seed · history", strings the same revision had retired, so the check could not fail. Probes
+      are current vocabulary and D17c now asserts each is PRESENT in EN before its absence in ZH is
+      credited.
+    r52_correction_2: >
+      VTL51-506 — the residue of the "Live" overload. VTL-405 de-overloaded it once by making the
+      observation class a PHRASE rather than the bare word; the phrase still contained the word in
+      both languages, so the page carried LIVE (mode), "Seen live" (row class) and "Seen live"
+      (filter) — 实时 / 实时观测 / 实时观测. The class is now "Seen first-hand" / 「第一手观测」,
+      which shares nothing with the mode word in either language. Taken rather than recorded as
+      accepted residue because a clean de-collision existed AND it is more accurate: the axis this
+      class measures is provenance, not timing, and the opposite of "From history" is "seen
+      first-hand", never "live". The divider and the baseline copy drop "live" with it.
   - {id: xc.light_dark,           disposition: RETAIN, target: "unchanged; every new state is captured in both themes"}
-  - {id: xc.mobile_390,           disposition: IMPROVE, target: "all six frozen boards are on screen at 390 with no scroller (D20); the Lab's own controls clear the 40px touch floor (D20c); the rail no longer breaks 'not a sighting' mid-phrase", rationale: "R5 hid three of six product-contract boards behind an unaffordanced scroller that the page-level overflow checks were structurally blind to (VTL-411/VTC-401)"}
+  - id: xc.mobile_390
+    disposition: IMPROVE
+    target: >
+      All six frozen boards are on screen at 390 with no scroller (D20) and at 1000, just above the
+      breakpoint R5.1 retired (D20d); the Lab's own controls clear the 40px touch floor (D20c); the
+      rail no longer breaks "not a sighting" mid-phrase; and the class label survives deep scroll at
+      390 rather than only at the top of the region (D6c3).
+    rationale: >
+      R5 hid three of six product-contract boards behind an unaffordanced scroller that the
+      page-level overflow checks were structurally blind to (VTL-411/VTC-401).
+    r52_correction: >
+      PR51-2 — R5.1 scoped the wrap to `max-width: 980px` on the claim that "above 980w all six fit
+      on one line anyway". Measured, the strip clears 981w by 22px, and the pill widths are a
+      function of the COUNTS, which this surface does not control: a three-digit count on any board
+      reopens VTL-411 in a band no check looked at. The wrap is unconditional at R5.2 — identical
+      behaviour with no threshold to be wrong about — and D20d pins the previously dark band.
+      R52-D2 — and the deeper 390 defect: the LAB mode returned ZERO complete observations above the
+      844px fold. R5.1 disclosed that as the unavoidable bill for R51-M1 and C4, which was the right
+      thing to do and the wrong place to stop. Measured: the first row began at 1,009px and stands
+      294px tall, so it had to start by 550px; the ladder (295px) and the six wrapped selectors
+      (137px) account for 432px, so compression cannot reach 550 while both stand — deleting the
+      Lab's ENTIRE preamble still leaves the row 181px past the fold, and would cost Law 1 its
+      stance line. Three preamble lines therefore demote to landings that already existed or were
+      made for them (the board subtitle, printed verbatim on every pill's tip; the overlap footnote,
+      onto those same tips; the lead total, into the split chip's LENS) and the region is LANDED on
+      flip. Neither R51-M1 nor C4 is reopened: the ladder is where it was, all six boards are still
+      on screen, and D24 now requires one complete observation above the fold in both languages.
   - {id: xc.lens_receipts,        disposition: RETAIN, target: "unchanged; every machine identity still lives on a receipt, now proven across 14 views"}
   # ── the Lab, as R5 established it ───────────────────────────────────────
   - {id: lab.mode_control,        disposition: IMPROVE, target: "the mode now scopes to the principal grid region and the Lab renders inside a bounded, labelled region with an explicit end rule (D4b-D4f)", rationale: "VTL-401 — a page-level mode deleted three baseline capabilities, two of them core; the ruling's own remedy is separation, not deletion"}
   - {id: lab.six_boards,          disposition: RETAIN, target: "the same six frozen ids, unchanged; now all reachable at 390 (D9/D9b/D20) and carrying an overlap disclosure (VTL-406)"}
   - {id: lab.observation_spine,   disposition: RETAIN, target: "unchanged — a preserved strength both critics named"}
-  - {id: lab.observation_class,   disposition: IMPROVE, target: "the divider is now sticky, so the class label is present wherever it applies instead of being repeated on 23 rows; four structural channels remain on the row (D6c/D6c1/D6c2/D6e/D6f/D6h)", rationale: "VTL-408 — 23 repeats of a constant below a divider that had already established the fact. The mid-scroll worry that justified them is answered by making the divider sticky rather than by keeping the repeats"}
+  - id: lab.observation_class
+    disposition: IMPROVE
+    target: >
+      The divider PINS — proven by scrolling past it, not by reading its rule — so the class label
+      is present wherever it applies instead of being repeated on 23 rows, and it carries the
+      hatched-dashed seed treatment the withdrawn chip used. Four structural channels remain on the
+      row: dashed spine, hollow node, the "signal date / not a sighting" rail, and the "Lead not
+      measurable" slot (D6c/D6c1/D6c2/D6c3/D6e/D6f/D6h).
+    rationale: >
+      VTL-408 — 23 repeats of a constant below a divider that had already established the fact. The
+      mid-scroll worry that justified them is answered by pinning the divider rather than by keeping
+      the repeats.
+    r52_correction: >
+      AT f889d5eb35f3 THIS DISPOSITION WAS NOT EARNED. The divider declared `position: sticky` inside
+      `.lab-stream { overflow: hidden }`, which makes the list a scrollport and the pin inert: the
+      R5.1 critic measured four seed rows on screen at 390x844 with zero worded class labels, 2,000px
+      into the region. The chips had been withdrawn against a mechanism that never fired, and the
+      only check on it read the CSS declaration, which stayed true throughout. R5.2 moves the corner
+      clip to the list's end members, splits the divider so only the constant pins (the lesson is
+      stated once at the crossing and scrolls away), and replaces the declaration check with D6c3,
+      which scrolls 1,200px past the divider at 1440 and 390 and asserts rect.top clamps to 0 while
+      seed rows are on screen. M22 re-adds the overflow and is caught ONLY by D6c3. The disposition
+      stays IMPROVE because the capability is now genuinely served; it is recorded here rather than
+      quietly re-asserted because a reader must not have to diff two SHAs to learn it was inert.
+    r52_correction_2: >
+      R52-D1, the other half of the same finding. Withdrawing the chip closed only ONE of the
+      constant's two homes: every seed row kept "signal date / not a sighting" in the rail, so the
+      class assertion still printed 23 times and Law 4 was relocated rather than closed. The rail is
+      now "signal date" alone. The line that survives is doing a different job and the distinction
+      is the whole argument: "signal date" and "first seen" are UNIT LABELS — they say what the
+      number directly above them is, they DIFFER between adjacent rows, and without them the stream
+      prints two kinds of timestamp in one column with nothing saying which is which (the ratified
+      self-labelling-token pattern, doctrine §3; a table would spend one header cell on it and this
+      stream cannot, because the two kinds alternate). "not a sighting" was the other thing: an
+      identical assertion of class membership, which the pinned divider now carries once. D6i pins
+      all three halves — the assertion appears exactly once, no rail makes one, and the two rails
+      differ — and M23 puts the per-row constant back and is caught by D6i2. Also here: the pin is
+      header-aware (--lab-mark-top measured from the sticky chrome above the grid, D6c4, M25) rather
+      than hardcoded to a top:0 that assumes no page header, and the empty `.lab-lead--adverse { }`
+      hook is deleted — an empty rule under a comment addressed to future editors is a labelled slot
+      for exactly the asymmetry VTL-403 blocked on, and D19c's computed-colour comparison is what
+      actually holds the law.
   - {id: lab.expert_chips,        disposition: RETAIN, target: "unchanged; identities still never merged (D8/D7c)"}
   - {id: lab.prophet_comparison,  disposition: RETAIN, target: "unchanged; still quotes the ruled lifecycle lexicon"}
   - {id: lab.measured_lead,       disposition: IMPROVE, target: "signed and symmetric: five branches, one ink for all measured outcomes, the null idiom reserved for genuine absences, Math.abs removed (D19-D19g)", rationale: "VTL-403 — the only self-referential metric on the surface rendered one-sidedly, and an adverse magnitude was structurally unprintable"}
-  - {id: lab.degraded_states,     disposition: IMPROVE, target: "unavailable gains retry and keeps the last known-good stamp; its pill counts are unknown marks, never zeros (D18*/D23*)", rationale: "VTL-402 and VTL-409 — the error state denied the reader the one fact that says how stale their last read was, and asserted counts it had never received"}
+  - id: lab.degraded_states
+    disposition: IMPROVE
+    target: >
+      Unavailable gains retry and keeps the last known-good stamp; its pill counts are unknown
+      marks, never zeros (D18*/D23*). The empty state now distinguishes "nothing anywhere" from
+      "nothing on this board" and directs the reader accordingly.
+    rationale: >
+      VTL-402 and VTL-409 — the error state denied the reader the one fact that says how stale their
+      last read was, and asserted counts it had never received.
+    r52_correction: >
+      PR51-6 — the empty state's CTA said "try another board" in both cases. Under a globally empty
+      feed the surface had just printed six confident zeros, so it was sending the reader to check
+      six things it had itself declared empty: a dead end offered as a next step, and a direct
+      contradiction of the pill row one line above. The two facts now get two sentences, the same
+      split VTL-402 forced at the pill row.
   - {id: lab.authority_disclosure, disposition: RETAIN, target: "unchanged in substance; merged with the stance line into one sentence (VTL-412), receipt unchanged (D11/D11b)"}
 
 additions:
@@ -116,8 +280,42 @@ additions:
     what: "An explicit unknown mark at every count position when the feed is not answering, with the line that makes the glyph a statement."
     evidence: "crops 46-48; verify D18-D18f"
   - id: add.sticky_class_divider
-    what: "The baseline divider pins while the rows it governs are on screen, replacing 23 per-row constants."
-    evidence: "crops 30/31/34; verify D6c"
+    what: >
+      The baseline divider pins while the rows it governs are on screen, carrying the date, the
+      class name in the seed treatment and one governing sentence, and replacing 23 per-row
+      constants. The explanation of WHY no row below can carry a lead is a separate, non-pinning
+      member stated once where the stream crosses the date.
+    evidence: "crops 51/52/53 (shot 1,200px INTO the seed region), 30/31/34; verify D6c + D6c3; mutations M18, M22"
+    r52_correction: >
+      At f889d5eb35f3 this addition did not exist in behaviour — only in CSS. `.lab-stream`'s
+      `overflow: hidden` made the pin inert and every crop framed the divider at the crossing, the
+      one scroll position at which a pinned and an unpinned divider look identical. Both halves are
+      repaired: the pin is real, and crops 51-53 are taken where the claim lives, with capture.py
+      raising if the mark is not at top 0 with seed rows on screen.
+  - id: add.lead_aggregate
+    what: >
+      One line beside the row count totalling the lead across the rows on screen — "Lead on 5:
+      3 earlier · 1 same day · 1 later" / 「已测 5 条：更早 3 · 同日 1 · 更晚 1」. Computed from the
+      FILTERED set like the split, counting only measured rows, and printing all three outcomes even
+      at zero so it cannot become one-sided by omission. Demotes into the split chip's LENS at 390.
+    evidence: "crops 10-13, 35/36; verify D17c[same day]"
+    note: >
+      VTL51-505. The lead is the one thing this surface measures about ITSELF, and reading it meant
+      counting chips down 4,681px of stream. Taken rather than declined because the VTL-403 symmetry
+      law makes every lead chip deliberately quiet — which is right on the row and leaves the
+      aggregate unreadable without a total.
+  - id: add.region_landing
+    what: >
+      On a deliberate mode flip, the Lab region is scrolled to the top of the viewport when — and
+      only when — the first observation would otherwise fall below the fold; flipping back to LIVE
+      restores the scroll position the reader flipped from.
+    evidence: "crops 14-17, 27, 34, 42, 45, 48; verify D24/D24b/D24c; mutations M24, M26"
+    note: >
+      R52-D2. Recorded as an ADDITION rather than folded silently into xc.mobile_390 because it is
+      new BEHAVIOUR on a control, not a layout change, and it sits next to a standing operator veto
+      on viewport hijacking. Three properties keep it a navigation: it fires only on a deliberate
+      flip (never on load, board change or filter change), the control the reader just pressed
+      re-mounts into what lands at the top (D24b), and the return trip is undone (D24c).
   - id: add.error_retry
     what: "A retry control on the unavailable state, beside the escape hatch."
     evidence: "crops 46-48; verify D23"
@@ -146,18 +344,47 @@ user_tasks:
      verdict: EQUIVALENT}
   - {id: task.anonymous_reader, task: "Use the page without an operator entitlement", critical: true,
      production: "The tier gate; no Lab exists", proposal: "Identical; zero lab-* nodes inside #board (D3/D3b)", verdict: EQUIVALENT}
-  - {id: task.inspect_early_candidates, task: "See exact early-entry candidates before Prophet has written a plan", critical: true,
-     production: "NOT POSSIBLE", proposal: "Six plain-word boards over the canonical Radar output, newest-first, chart-first rows, with the rendered count stated", verdict: BETTER}
-  - {id: task.tell_live_from_history, task: "Tell a genuinely live sighting apart from a historical seed", critical: true,
-     production: "NOT POSSIBLE",
-     proposal: "Four structural channels on the row plus a STICKY dated divider that is present wherever it applies; a seed can never print a clock time or a measured lead",
-     verdict: BETTER, notes: "The five-channel encoding both R5 critics praised, with the repeated chip traded for a sticky label — the same guarantee, one constant instead of 23."}
+  - id: task.inspect_early_candidates
+    task: "See exact early-entry candidates before Prophet has written a plan"
+    critical: true
+    production: "NOT POSSIBLE"
+    proposal: >
+      Six plain-word boards over the canonical Radar output, newest-first, chart-first rows, with
+      the rendered count stated — and at the 390 design floor, one COMPLETE observation in view on
+      arrival rather than a screenful of preamble (D24).
+    verdict: BETTER
+    notes: >
+      R5.2 / R52-D2. At f889d5eb35f3 this task was served at 1440 and only nominally at 390: the LAB
+      mode returned zero complete observations above the fold, so the mobile reader saw the ladder,
+      the band, six selectors and a filter row, and had to scroll before the surface answered its
+      own question. R5.1 disclosed that honestly as the bill for R51-M1 and C4 — but disclosure is
+      not service. Fixed by demoting three duplicate preamble lines to landings and landing the
+      region on flip, with neither frozen structure reopened.
+  - id: task.tell_live_from_history
+    task: "Tell a genuinely live sighting apart from a historical seed"
+    critical: true
+    production: "NOT POSSIBLE"
+    proposal: >
+      Four structural channels on the row — dashed spine, hollow node, the "signal date / not a
+      sighting" rail, the "Lead not measurable" slot — plus a dated divider that PINS while the rows
+      it governs are on screen and carries the class name in the seed treatment. A seed can never
+      print a clock time or a measured lead.
+    verdict: BETTER
+    notes: >
+      The encoding both R5 critics praised, with the repeated chip traded for a pinned label — the
+      same guarantee, one constant instead of 23. R5.2: THAT SENTENCE WAS FALSE AT f889d5eb35f3 and
+      is the reason the R5.1 critic returned BLOCK. The pin was inert (`.lab-stream` was a
+      scrollport), so deep in the seed region the reader had the four row channels and no class
+      NOUN at all — a strictly weaker encoding than the chips that had been removed to pay for it.
+      The BETTER is re-minted here against a measurement, not a declaration: D6c3 scrolls 1,200px
+      past the divider at 1440 and 390 and reads rect.top = 0px with seed rows on screen, and crops
+      51-53 photograph it. Read this verdict as binding only on those receipts.
   - {id: task.compare_to_prophet, task: "See how a candidate compares to current Prophet state", critical: true,
      production: "NOT POSSIBLE", proposal: "A per-row Prophet band quoting the ruled lifecycle word and the plan-open date", verdict: BETTER}
   - {id: task.learn_how_early_or_late, task: "Learn how early — or how LATE — the Lab was against Prophet", critical: true,
      production: "NOT POSSIBLE",
      proposal: "Five branches, one ink: favourable, same-day and adverse magnitudes all render as measurements; only genuine absences use the null idiom",
-     verdict: BETTER, notes: "At R5 this task was only half-servable: you could learn how early, never how late (VTL-403). Recorded as a distinct task because the verdict's finding was that the two halves were not equally served."}
+     verdict: BETTER, notes: "At R5 this task was only half-servable: you could learn how early, never how late (VTL-403). Recorded as a distinct task because the verdict's finding was that the two halves were not equally served. R5.2 adds the two things that made it readable rather than merely present: a one-line total beside the count (VTL51-505 — the symmetry law makes every chip deliberately quiet, which is right on the row and left the aggregate uncountable across 4,681px of stream), and a ZH adverse phrasing whose sign survives a glance (PR51-7). The 390 receipt is real now too: crop 54 contains the adverse chip whole in frame, where 37 had shown only chrome."}
   - {id: task.know_lab_feed_health, task: "Know whether the Lab is showing me current observations", critical: false,
      production: "NOT POSSIBLE",
      proposal: "A pulsing/resting feed token, a behind band with the exact silence, a spine gap marker, a retry, and the last known-good stamp even when the feed is down",
@@ -238,6 +465,16 @@ information_economics:
       removals: 23 seed chips (VTL-408) and one of the two synonymous disclaimer lines (VTL-412).
       The additions: a "Showing N of M" line, a board-overlap line, and — only when the feed is
       down — an unknown-disclosure line. The band above the pills went from three lines to two.
+    - >
+      R5.2 spends ONE line back at the divider, and spends it on the axis that was under-served.
+      The divider is now two members: a PINNED one carrying the date, the class name and one
+      governing sentence (~8 EN words), and a non-pinned one carrying the lesson (~30 words) stated
+      once where the stream crosses the date. R5.1's divider was one 25-word sentence that was
+      supposed to pin; pinning it would have spent roughly 12% of a 390 viewport permanently
+      re-teaching a rule the reader had already read on the way past it. The split is the same
+      demotion the sort basis takes at 390 — the constant stays, the explanation lands somewhere
+      rather than repeating. Net against R5.1 as SHIPPED (an inert divider): +1 line of fixed
+      viewport at 390, in exchange for the class noun existing at all below the fold.
     - >
       The unknown-disclosure line is spent deliberately and only in the state that needs it. It is
       the sentence that turns an em dash from a glyph into a statement, which is the whole of
