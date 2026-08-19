@@ -46,14 +46,31 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/
+          # site/qledger: a --full-history collect runs the same grade_qledger step the
+          # nightly does and rewrites the TRACKED site/qledger/track_record.json (#1139
+          # un-ignored it), so it is staged here for the same reason daily.yml stages it.
+          # Left unstaged it blocked the rebase with "cannot pull with rebase: You have
+          # unstaged changes" and killed EVERY attempt — measured 2026-08-19 on runs
+          # 32227070347 and 32227948390 (both only=symbol_directory): five identical
+          # failures, one ::warning, a SUCCESS conclusion, and a 19-file/1127-insertion
+          # commit stranded on the runner ("you are leaving 1 commit behind"). That is
+          # the same sentinel staging-gap that lost daily's 07-03/07-04 collections.
+          #
+          # Staging is NOT the durable half — --autostash on the rebase below is. collect
+          # also regenerates docs/CLAIM_ACCOUNTABILITY.md and docs/GRADING_CLOSURE.md,
+          # which no lane publishes (the nightly stages neither, deliberately), and any
+          # future grader writing outside data/+site/qledger/ would re-open the hole.
+          git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no backfill changes to commit"; exit 0; fi
           git commit -m "data: backfill $(date -u +%F)"
           # best-effort push: daily now runs in its own lane and may push concurrently,
           # so retry rebase+push instead of a single fragile push that would error out
           # the moment it lost a race. Prefer our freshly-collected data on conflict.
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          for i in 1 2 3 4 5; do
+          # macOS runners have no GNU timeout; bound the push like every other lane.
+          PUSH_ALARM=420
+          push_retry_init "backfill data"
+          while push_attempt; do
             # Append-only base freshness (2026-08-18 lost update, DSC-OVERLAPPING-DAILY-
             # COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS): a --full-history backfill is the
             # longest-running writer of data/government_revenue/, so origin/main has
@@ -61,11 +78,24 @@ jobs:
             # replace the nightly's appended evidence rows with this run's.
             git fetch origin main || true
             # Non-zero ONLY when the fence proved a loss and then could not withhold it.
-            if ! push_append_only_fence origin/main; then sleep $((i * 7)); continue; fi
-            if git pull --rebase -X theirs origin main && git push; then
-              echo "pushed backfill on attempt $i"; exit 0
+            if ! push_append_only_fence origin/main; then push_backoff; continue; fi
+            # push_autostash_ok is load-bearing, not decoration: `git pull --rebase
+            # --autostash` EXITS 0 when the rebase succeeds but the autostash RE-APPLY
+            # conflicts, leaving conflict markers in the tree (d29e4dd44d / #4167).
+            if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then
+                echo "pushed backfill on attempt $PUSH_ATTEMPT"
+                push_won
+                exit 0
+              fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "backfill push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push backfill after 5 attempts (non-fatal)"
+          push_lost
+          # RED, not a ::warning. Until 2026-08-19 this tail was a warning + exit 0, so a
+          # backfill that published NOTHING concluded SUCCESS and the loss was invisible
+          # to everything that reads the job conclusion. This is the last step of the only
+          # job, so failing here suppresses no delivery tail.
+          echo "::error title=backfill NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the backfill commit exists only on the runner and is discarded by the next clean checkout; re-run this workflow"
+          exit 1

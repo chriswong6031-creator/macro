@@ -1704,3 +1704,165 @@ def test_re_anchoring_lanes_declare_their_publish_target():
     assert not missing, "re-anchored lanes that can never publish:\n  " + "\n  ".join(missing)
     # Fail-closed: a broken detector must not read as a clean audit.
     assert checked >= 3, f"expected the 3 metabolism journal lanes, detected {checked}"
+
+
+# ---------------------------------------------------------------------------
+# 9. backfill.yml — the staging gap that made a silent no-publish look GREEN
+#
+# Measured 2026-08-19, runs 32227070347 and 32227948390 (both `only=symbol_directory`):
+# the step staged `data/` only, but a --full-history collect also rewrites three TRACKED
+# files OUTSIDE data/ — docs/CLAIM_ACCOUNTABILITY.md, docs/GRADING_CLOSURE.md and
+# site/qledger/track_record.json. All five `git pull --rebase -X theirs origin main`
+# attempts died on
+#
+#     error: cannot pull with rebase: You have unstaged changes.
+#
+# and the loop ended on a ::warning + exit 0, so the job concluded SUCCESS while
+# publishing nothing and the 19-file commit stayed on the runner. Same sentinel
+# staging-gap that lost daily's 07-03/07-04 collections; daily was fixed, backfill was not.
+# ---------------------------------------------------------------------------
+
+BACKFILL_STEP = "commit"
+
+
+def _backfill_commit_step() -> dict:
+    doc = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "backfill.yml").read_text())
+    return next(
+        s for s in doc["jobs"]["backfill"]["steps"] if s.get("name") == BACKFILL_STEP
+    )
+
+
+def test_backfill_lane_stages_qledger_and_autostashes_the_rest():
+    run = _backfill_commit_step()["run"]
+    assert "git add data/ site/qledger/" in run, (
+        "the qledger grader rewrites the tracked site/qledger/track_record.json on every "
+        "collect — staging data/ alone strands it and blocks the rebase"
+    )
+    loop = run[run.index('push_retry_init "backfill data"') :]
+    assert "while push_attempt; do" in loop
+    assert "git pull --rebase --autostash -X theirs origin main" in loop, (
+        "--autostash is the durable half: collect also rewrites docs/CLAIM_ACCOUNTABILITY.md "
+        "and docs/GRADING_CLOSURE.md, which no lane stages"
+    )
+    # the conflicted-autostash containment must guard the success branch (#4167)
+    assert "&& push_autostash_ok" in loop
+    # the fence must survive, and must still run between the fetch and the rebase
+    assert "push_append_only_fence origin/main" in loop
+    assert loop.index("push_append_only_fence") < loop.index("git pull --rebase")
+    assert "push_do" in loop and "push_abort_rebase" in loop and "push_backoff" in loop
+
+
+def test_backfill_push_loss_is_red_not_a_warning():
+    """A backfill that publishes nothing must not conclude SUCCESS."""
+    run = _backfill_commit_step()["run"]
+    tail = run[run.index("push_lost") :]
+    assert "::error title=backfill NOT pushed" in tail
+    assert "::warning::could not push backfill" not in run
+    assert tail.rstrip().endswith("exit 1")
+
+
+def _backfill_fixture(tmp_path: Path, always_reject: bool = False):
+    """A bare origin + a lane clone holding a fresh backfill collection, the three
+    tracked non-data/ files the collect step rewrites, and a racing commit on main."""
+    bare = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+
+    def git(repo, *a):
+        return subprocess.run(["git", "-C", str(repo), *a], check=True,
+                              capture_output=True, text=True)
+
+    seed = tmp_path / "seed"
+    _init_repo(seed)
+    for rel, body in (
+        ("data/symbol_directory/directory.json", '{"rows": 1}'),
+        ("data/government_revenue/receipts.jsonl", '{"id": "nightly-1"}\n'),
+        ("docs/CLAIM_ACCOUNTABILITY.md", "# committed accountability\n"),
+        ("docs/GRADING_CLOSURE.md", "# committed closure\n"),
+        ("site/qledger/track_record.json", '{"as_of": "old"}'),
+    ):
+        target = seed / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body)
+    git(seed, "add", "."); git(seed, "commit", "-qm", "seed")
+    git(seed, "push", "-q", str(bare), "main")
+
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "clone", "-q", str(bare), str(lane)], check=True)
+    git(lane, "config", "user.email", "t@t"); git(lane, "config", "user.name", "t")
+
+    # what the --full-history collect wrote: the data this run exists to publish ...
+    (lane / "data" / "symbol_directory" / "directory.json").write_text('{"rows": 4213}')
+    # ... plus the three tracked side-effects outside data/ that wedged the rebase.
+    (lane / "docs" / "CLAIM_ACCOUNTABILITY.md").write_text("# regenerated accountability\n")
+    (lane / "docs" / "GRADING_CLOSURE.md").write_text("# regenerated closure\n")
+    (lane / "site" / "qledger" / "track_record.json").write_text('{"as_of": "fresh"}')
+
+    # a racing lane lands on main first, so the first push is stale
+    other = tmp_path / "other"
+    subprocess.run(["git", "clone", "-q", str(bare), str(other)], check=True)
+    git(other, "config", "user.email", "t@t"); git(other, "config", "user.name", "t")
+    (other / "other.txt").write_text("marketing-publish outbox run")
+    git(other, "add", "."); git(other, "commit", "-qm", "other lane")
+    git(other, "push", "-q", "origin", "main")
+
+    stub = tmp_path / "bin"
+    stub.mkdir()
+    for name in ("python", "python3"):
+        (stub / name).write_text("#!/usr/bin/env bash\nexit 0\n")
+        (stub / name).chmod(0o755)
+    if always_reject:
+        real_git = subprocess.run(["which", "git"], capture_output=True, text=True).stdout.strip()
+        (stub / "git").write_text(textwrap.dedent(f"""\
+            #!/usr/bin/env bash
+            if [ "$1" = "push" ]; then
+              echo " ! [remote rejected] main -> main (cannot lock ref 'refs/heads/main')" >&2
+              exit 1
+            fi
+            exec {real_git} "$@"
+            """))
+        (stub / "git").chmod(0o755)
+    return bare, lane, stub
+
+
+def _run_backfill(block: str, lane: Path, stub: Path, summary: Path):
+    env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}",
+           "GITHUB_WORKSPACE": str(REPO_ROOT), "GITHUB_STEP_SUMMARY": str(summary),
+           "GITHUB_ACTIONS": "true"}
+    return subprocess.run(["bash", "-eo", "pipefail", "-c", "sleep() { :; }\n" + block],
+                          cwd=str(lane), capture_output=True, text=True, env=env)
+
+
+def test_backfill_lane_block_publishes_over_a_racing_commit(tmp_path):
+    """The shipped block, verbatim: the pre-fix version died five times on 'cannot pull
+    with rebase: You have unstaged changes' and still exited 0."""
+    block = _lane_block("backfill.yml", BACKFILL_STEP, {})
+    bare, lane, stub = _backfill_fixture(tmp_path)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_backfill(block, lane, stub, summary)
+    combined = r.stdout + r.stderr
+    assert "cannot pull with rebase" not in combined, combined
+    assert r.returncode == 0, combined
+
+    assert _git_output(bare, "show", "main:data/symbol_directory/directory.json") == '{"rows": 4213}', (
+        "the backfill never landed — this is the silent no-publish the fix exists to stop"
+    )
+    assert _git_output(bare, "show", "main:site/qledger/track_record.json") == '{"as_of": "fresh"}'
+    assert "other.txt" in _git_output(bare, "ls-tree", "-r", "--name-only", "main"), (
+        "the racing lane's commit was clobbered"
+    )
+    # the two docs the nightly deliberately never stages must stay unpublished; --autostash
+    # carries them past the rebase without ever entering the commit.
+    assert _git_output(bare, "show", "main:docs/CLAIM_ACCOUNTABILITY.md") == "# committed accountability"
+    assert _git_output(bare, "show", "main:docs/GRADING_CLOSURE.md") == "# committed closure"
+
+
+def test_backfill_lane_block_fails_the_job_when_the_push_never_lands(tmp_path):
+    """The measured failure mode: nothing published, job concluded SUCCESS, loss invisible."""
+    block = _lane_block("backfill.yml", BACKFILL_STEP, {})
+    bare, lane, stub = _backfill_fixture(tmp_path, always_reject=True)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_backfill(block, lane, stub, summary)
+    combined = r.stdout + r.stderr
+    assert r.returncode == 1, f"a backfill that published nothing concluded green:\n{combined}"
+    assert "::error title=backfill NOT pushed" in combined
+    assert "data/symbol_directory" not in _git_output(bare, "show", "--stat", "main")
