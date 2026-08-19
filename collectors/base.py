@@ -28,18 +28,41 @@ CIRCUIT_BREAKER_FAILS = 3  # consecutive run failures -> mark dead, skip
 # straight into a log line or a committed file, even one that otherwise takes
 # care to log a query-stripped URL separately.
 #
-# Widened per the AD-1C0 adversarial review (2026-08-19) — the enumerated leak
-# shapes a single "name=value" regex missed: a quoted JSON body value
-# ("apiKey":"…"), an `Authorization: Bearer …` header repr, a URL-encoded
-# assignment (name%3Dvalue), a bare "name value" mention with no `=` at all, and
-# a vendor secret embedded as a URL PATH SEGMENT with no adjacent keyword at all
-# (Stripe-style sk_live_…/pk_test_… prefixes). Several passes, most specific
-# first; each is independently idempotent so their order does not matter for
-# correctness, only for keeping the output readable.
-_CRED_PARAM_NAMES = r'(?:api[_-]?key|apikey|access[_-]?key|token|secret|password|key)'
+# Widened per the AD-1C0 adversarial review (2026-08-19, two rounds) — the
+# enumerated leak shapes a single "name=value" regex missed: a quoted JSON
+# body value ("apiKey":"…" AND 'apiKey':'…', either quote style — N4(i)), a
+# header-name credential repr (X-API-Key / Api-Key / X-Auth-Token — N4(ii)),
+# an `Authorization: Bearer …` header repr, a URL-encoded assignment
+# (name%3Dvalue), a bare "name value" mention with no `=` at all, a
+# basic-auth netloc (://user:pass@ — N4(iii)), and a vendor secret embedded as
+# a URL PATH SEGMENT with no adjacent keyword at all (Stripe-style
+# sk_live_…/pk_test_… prefixes). Several passes, most specific first; each is
+# independently idempotent so their order does not matter for correctness,
+# only for keeping the output readable.
+#
+# DOCUMENTED RESIDUAL (N4): an OPAQUE path-token secret with NEITHER a
+# recognizable vendor prefix (sk_/pk_) NOR any adjacent credential keyword —
+# e.g. a bare vendor API key value dropped directly into a URL path segment
+# with no "key=" or "/api-key/" context at all — cannot be redacted here
+# without a rule general enough to mangle ordinary URL path segments (release
+# tags, hashes, slugs...) that are not secrets. The mitigation is upstream:
+# collectors never embed the API key in a URL PATH (only as a query param,
+# which the passes below and _QUERY_TAIL_RE's catch-all both cover), so this
+# residual is a defense-in-depth gap for a shape none of THIS repo's vendor
+# clients currently produce, not an open path for the key this PR protects.
+_CRED_PARAM_NAMES = (
+    r'(?:x[_-])?(?:api[_-]?key|apikey|access[_-]?key|auth[_-]?token|token|'
+    r'secret|password|key)'
+)
+# Header-name credential reprs (N4-ii): the alternation above already covers
+# hyphenated X-Api-Key / X-Auth-Token forms via the optional `x[_-]` prefix
+# and `[_-]` separators — reused by both _CRED_JSON_RE and _CRED_ASSIGN_RE
+# below rather than a separate pattern.
 
-# "apiKey": "value" (JSON body, any of the credential names, case-insensitive).
-_CRED_JSON_RE = re.compile(rf'(?i)("(?:{_CRED_PARAM_NAMES})"\s*:\s*)"[^"]*"')
+# "apiKey": "value" / 'apiKey': 'value' (JSON/dict-repr body, EITHER quote
+# style for the key and independently for the value, case-insensitive).
+_CRED_JSON_RE = re.compile(
+    rf'''(?i)((['"])(?:{_CRED_PARAM_NAMES})\2\s*:\s*)(['"])[^'"]*\3''')
 # Authorization: Bearer <token>
 _BEARER_RE = re.compile(r'(?i)\b(Bearer\s+)\S+')
 # name=value / name%3Dvalue (url-encoded '=') — query string or bare mention.
@@ -54,6 +77,10 @@ _CRED_ASSIGN_RE = re.compile(
 _CRED_SPACED_RE = re.compile(
     r'(?i)\b((?:api[_-]?key|apikey|access[_-]?key|token|secret|password)\s+)'
     r'[^\s&"\')}]+')
+# Basic-auth netloc (N4-iii): scheme://user:pass@host -> scheme://REDACTED@host.
+# Redacts the WHOLE user:pass pair (not just the password) — no legitimate log
+# line needs either half once a credential is present in the URL at all.
+_BASIC_AUTH_RE = re.compile(r'(?i)(://)[^\s/@]+:[^\s/@]+@')
 # Common vendor secret-token prefixes that leak with NO adjacent keyword at all
 # (e.g. a URL path segment like /api/v1/sk_live_XXXX/chain).
 _TOKEN_PREFIX_RE = re.compile(r'(?i)\b(?:sk|pk)_[A-Za-z0-9_]{4,}')
@@ -66,10 +93,11 @@ def redact_secrets(text: str) -> str:
     traceback, ...). safe_exc_text() is the exception-typed convenience wrapper;
     this is the reusable text-level primitive (M5: also applied to FetchResult.
     error and its traceback, which land in the TRACKED data/run_status.json)."""
-    text = _CRED_JSON_RE.sub(lambda m: f'{m.group(1)}"REDACTED"', text)
+    text = _CRED_JSON_RE.sub(lambda m: f"{m.group(1)}{m.group(3)}REDACTED{m.group(3)}", text)
     text = _BEARER_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
     text = _CRED_ASSIGN_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
     text = _CRED_SPACED_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
+    text = _BASIC_AUTH_RE.sub(lambda m: f"{m.group(1)}REDACTED@", text)
     text = _TOKEN_PREFIX_RE.sub("REDACTED", text)
     text = _QUERY_TAIL_RE.sub("?REDACTED", text)
     return text
