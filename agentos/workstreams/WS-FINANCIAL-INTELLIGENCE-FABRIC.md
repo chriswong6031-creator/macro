@@ -39,9 +39,12 @@ decisions:
   - DEC:FIF-ENTITY-ID-IS-NOT-CIK
   - DEC:FIF-REVISION-ROOT-PRIOR-REVISED
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
+  - DEC:FIF-1-V1-FROZEN
 next_action: >
-  Sol freeze-reviews amended PR #5889. Do not merge. Do not create FIF-1R4.
-  Do not start FIF-2. FIF-1 stays BUILT_NOT_ACCEPTED until that review.
+  FIF-1 is DONE and financial_intelligence_packet.v1 is FROZEN on main
+  (PR #5889, f4183edade53603fad7a97f702eb4c6e5eabff5d). FIF-2 is UNLOCKED
+  and NOT_STARTED. Do not reopen accepted packet semantics. Do not create
+  FIF-1R4. A later session may start FIF-2 from the masterplan.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -68,7 +71,8 @@ do_not_redo:
   - Do not create a second semantic model, query kernel, or metric registry.
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
   - Do not debug or replace the attested-history Wave 0B credential path.
-  - Do not start FIF-2 until FIF-1 is accepted.
+  - Do not reopen frozen financial_intelligence_packet.v1 semantics; FIF-1 is DONE (DEC:FIF-1-V1-FROZEN).
+  - FIF-2 is UNLOCKED / NOT_STARTED; the landing session did not implement it.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
   - Do not silently add unrequested metrics to the user cells array.
@@ -84,18 +88,17 @@ waves:
     next_action: Masterplan and FIF-1 handoff remain the program source of truth.
   - id: FIF-1
     title: Golden financial_intelligence_packet.v1 hermetic vertical slice
-    status: in_progress
+    status: done
     depends_on: [FIF-0]
+    pr: 5889
     next_action: >
-      Sol freeze-reviews amended #5889 after the 63/64 wire-bound correction:
-      PACKET_MAX_REVISION_LINEAGE_DEPTH = 63, revision_hop.maximum = 63,
-      lineage_occurrence_ids.maxItems = 64. v1 freeze waits on that review.
-      Do not start FIF-2. Do not create FIF-1R4.
+      FROZEN on main at f4183edade53603fad7a97f702eb4c6e5eabff5d.
+      packet_id fip_18e2f725f6ba20678d0612bb. Do not reopen. Do not create FIF-1R4.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
     depends_on: [FIF-1]
-    next_action: STOPPED. Wait for FIF-1 Sol freeze acceptance. Do not start FIF-2.
+    next_action: UNLOCKED / NOT_STARTED. Do not start in the FIF-1 landing session.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -156,7 +159,9 @@ contract closure. #5837 merged those R2 foundations prematurely on
 2026-08-17. Sol's source review accepted the R2 architecture but rejected
 v1 freeze over against-input numeric proof, mixed multi-hop revision
 semantics, accidental entity_id==CIK law, and unbounded reconvergent graph
-validation. FIF-1R3 amends PR #5889 to close Sol's remaining identity, cutoff-governance,
-lineage-revision, and whole-packet verification defects. FIF-1 stays in
-progress / BUILT_NOT_ACCEPTED until Sol freeze-accepts. FIF-2 is still stopped.
-Do not create FIF-1R4.
+validation. FIF-1R3 closed those defects on PR #5889. Sol freeze-reviewed accepted head
+`e2a584496b08e68ca6054954142050db9e2c587b` as PASS / ACCEPTED_FOR_LANDING.
+#5889 squash-merged as `f4183edade53603fad7a97f702eb4c6e5eabff5d`.
+`financial_intelligence_packet.v1` is FROZEN. FIF-1 is DONE. FIF-2 is
+UNLOCKED / NOT_STARTED. Do not create FIF-1R4. Do not reopen accepted
+packet semantics.
