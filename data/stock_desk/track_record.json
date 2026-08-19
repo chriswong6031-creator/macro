@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-18",
-  "scored_total": 121,
-  "open": 78,
+  "as_of": "2026-08-19",
+  "scored_total": 123,
+  "open": 74,
   "unscored_neutral": 156,
   "overall": {
-    "n": 121,
-    "hits": 83,
+    "n": 123,
+    "hits": 85,
     "misses": 38,
-    "hit_rate": 0.686,
-    "dir_accuracy": 0.421
+    "hit_rate": 0.691,
+    "dir_accuracy": 0.423
   },
   "by_lean": {
     "constructive": {
-      "n": 72,
-      "hits": 47,
+      "n": 74,
+      "hits": 49,
       "misses": 25,
-      "hit_rate": 0.653,
-      "dir_accuracy": 0.375
+      "hit_rate": 0.662,
+      "dir_accuracy": 0.378
     },
     "neutral": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 101,
-      "hits": 67,
+      "n": 103,
+      "hits": 69,
       "misses": 34,
-      "hit_rate": 0.663,
-      "dir_accuracy": 0.386
+      "hit_rate": 0.67,
+      "dir_accuracy": 0.388
     },
     "medium": {
       "n": 18,
@@ -64,8 +64,26 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "121 leans scored, hit-rate 0.686 (directional accuracy 0.421). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "123 leans scored, hit-rate 0.691 (directional accuracy 0.423). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
   "recent": [
+    {
+      "id": "2026-06-23-BRC-2",
+      "ticker": "BRC",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0402,
+      "check_by": "2026-08-18"
+    },
+    {
+      "id": "2026-07-21-ROST-1",
+      "ticker": "ROST",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0232,
+      "check_by": "2026-08-18"
+    },
     {
       "id": "2026-07-27-WBS-3",
       "ticker": "WBS",
@@ -155,24 +173,6 @@
       "outcome": "miss",
       "realized": -0.0579,
       "check_by": "2026-08-13"
-    },
-    {
-      "id": "2026-07-09-IVZ-5",
-      "ticker": "IVZ",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0963,
-      "check_by": "2026-08-13"
-    },
-    {
-      "id": "2026-07-15-TGT-1",
-      "ticker": "TGT",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0902,
-      "check_by": "2026-08-12"
     }
   ]
 }

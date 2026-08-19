@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-18",
-  "generated_at_utc": "2026-08-18T10:25:29.276274+00:00",
+  "asof": "2026-08-19",
+  "generated_at_utc": "2026-08-19T10:04:09.396931+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -14,18 +14,6 @@
       "impact": "high",
       "source_class": "feed",
       "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-18",
-      "window_end": null,
-      "etype": "HK_UNEMP",
-      "label_en": "HK unemployment",
-      "label_zh": "香港失业率",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
       "approx": false
     },
     {

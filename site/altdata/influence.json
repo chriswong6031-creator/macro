@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-19T04:01:48.815653+00:00",
+  "generated_utc": "2026-08-19T08:23:00.891750+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1129,11 +1129,10 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.1,
+      "alt_score": 3,
+      "alt_weighted": 0.8,
       "alt_channels": [
         "affiliation",
-        "github_momentum",
         "retail_buzz",
         "stocktwits_bull"
       ],
@@ -1207,11 +1206,10 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.8,
+      "alt_score": 4,
+      "alt_weighted": 1.55,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "gov_grant",
         "patent_cluster",
         "stocktwits_bull"
@@ -1289,12 +1287,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
       "alt_channels": [
         "affiliation",
-        "stocktwits_bull",
-        "trump"
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1341,39 +1338,13 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.05,
+      "alt_score": 2,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
-        "analyst_upgrade_cluster",
         "special_situation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.85,
-      "alt_channels": [
-        "affiliation",
-        "analyst_upgrade_cluster"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 651076825
-      }
     },
     {
       "ticker": "UBER",
@@ -1388,13 +1359,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.25,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "special_situation",
-        "stocktwits_bull"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
@@ -1617,6 +1587,30 @@
         "affiliation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 651076825
+      }
     },
     {
       "ticker": "CVI",

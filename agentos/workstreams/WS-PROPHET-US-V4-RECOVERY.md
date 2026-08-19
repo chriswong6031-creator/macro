@@ -302,9 +302,12 @@ next_action: >
   contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
   routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
   sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
-  (Chairman 2026-08-18): LAB-0 records merged; next = parallel R-LAB-1 (Radar W4.1,
-  under WS:LIVE-ENTRY-RADAR), D-LAB-R5 RIG, P-LAB-API fixtures — per
-  research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.
+  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
+  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
+  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
+  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
+  its two-pass critic cycle + verdict OWED. Next session: execute
+  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
 ---
 
 ## Context

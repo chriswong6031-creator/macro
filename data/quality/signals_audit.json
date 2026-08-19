@@ -1,7 +1,7 @@
 {
- "asof": "2026-08-13",
+ "asof": "2026-08-18",
  "files_checked": 242,
- "n_markers": 56628,
+ "n_markers": 56636,
  "errors": [
   "site/signals/AMZN.json: markers[175]: `reasons[0]` is 'veto: bearish divergence' but `reason` is 'failed next-bar hold' \u2014 the exhaustive account must open on the first-match label it accompanies",
   "data/signal_archive/mtf_signals_latest.json: signal AMZN.last: markers[0]: `reasons[0]` is 'veto: bearish divergence' but `reason` is 'failed next-bar hold' \u2014 the exhaustive account must open on the first-match label it accompanies"

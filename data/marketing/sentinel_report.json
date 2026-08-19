@@ -1,37 +1,60 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-18T14:49:17Z",
-  "as_of": "2026-08-18",
+  "produced_at": "2026-08-19T10:42:33Z",
+  "as_of": "2026-08-19",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 15,
+    "items": 16,
     "passed": 15,
-    "quarantined": 0,
-    "quarantined_policy": 0,
+    "quarantined": 1,
+    "quarantined_policy": 1,
     "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
-  "reasons_histogram": {},
-  "quarantined": [],
+  "reasons_histogram": {
+    "near_dup": 1
+  },
+  "quarantined": [
+    {
+      "id": "post-theme-005",
+      "account": "kelly",
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$ENVX",
+      "headline": "Electric Vehicles selling off, -3.0% avg on Tuesday",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-theme-004"
+      ]
+    }
+  ],
   "passed": [
     {
-      "id": "post-flagship-020",
+      "id": "post-flagship-014",
       "account": "flagship",
-      "slot": "D1-S20",
-      "type": "macro",
-      "cashtag": "",
+      "slot": "D1-S14",
+      "type": "chart",
+      "cashtag": "$URG",
       "headline": ""
     },
     {
-      "id": "post-flagship-034",
+      "id": "post-flagship-033",
       "account": "flagship",
-      "slot": "D1-S34",
+      "slot": "D1-S33",
       "type": "receipt",
-      "cashtag": "$HD",
+      "cashtag": "$AGNT",
+      "headline": "$AGNT sits 8.9% below 4.66, the price where the most shares changed hands in six months."
+    },
+    {
+      "id": "post-flagship-042",
+      "account": "flagship",
+      "slot": "D1-S42",
+      "type": "watchlist",
+      "cashtag": "$TEM",
       "headline": ""
     },
     {
@@ -39,15 +62,23 @@
       "account": "flagship",
       "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$UAVS",
-      "headline": "Agriculture & FoodTech selling off, -1.1% avg on Monday"
+      "cashtag": "$AMKR",
+      "headline": "Semiconductors selling off, -5.8% avg on Tuesday"
     },
     {
-      "id": "post-housepick-004",
-      "account": "flagship",
-      "slot": "D1-S23",
-      "type": "watchlist",
-      "cashtag": "$BGC",
+      "id": "post-founder-016",
+      "account": "founder",
+      "slot": "D1-S16",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Claims are averaging 199k a week, 12.7% below a year ago."
+    },
+    {
+      "id": "post-founder-042",
+      "account": "founder",
+      "slot": "D1-S42",
+      "type": "signal",
+      "cashtag": "$SWX",
       "headline": ""
     },
     {
@@ -55,94 +86,78 @@
       "account": "founder",
       "slot": "D1-S19",
       "type": "insider",
-      "cashtag": "$CDNL",
+      "cashtag": "$MLAB",
       "headline": ""
     },
     {
-      "id": "post-meagan-013",
+      "id": "post-meagan-028",
       "account": "meagan",
-      "slot": "D1-S13",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Jobless claims are averaging 199k a week this month, 12.7% below a year ago."
+      "slot": "D1-S28",
+      "type": "receipt",
+      "cashtag": "$RBLX",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-033",
+      "account": "meagan",
+      "slot": "D1-S33",
+      "type": "watchlist",
+      "cashtag": "$MC",
+      "headline": ""
     },
     {
       "id": "post-theme-004",
       "account": "meagan",
       "slot": "D1-S5",
       "type": "theme_list",
-      "cashtag": "$BALY",
-      "headline": "Digital Entertainment selling off, -2.2% avg on Monday"
-    },
-    {
-      "id": "post-insider-003",
-      "account": "meagan",
-      "slot": "D1-S6",
-      "type": "insider",
-      "cashtag": "$MLAB",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-012",
-      "account": "sophia",
-      "slot": "D1-S12",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
+      "cashtag": "$BIDU",
+      "headline": "Artificial Intelligence selling off, -2.2% avg on Tuesday"
     },
     {
       "id": "post-sophia-023",
       "account": "sophia",
       "slot": "D1-S23",
       "type": "chart",
-      "cashtag": "$TMUS",
+      "cashtag": "$MPWR",
       "headline": ""
     },
     {
-      "id": "post-kelly-012",
+      "id": "post-kelly-050",
       "account": "kelly",
-      "slot": "D1-S12",
-      "type": "macro",
-      "cashtag": "",
+      "slot": "D1-S50",
+      "type": "chart",
+      "cashtag": "$EIX",
       "headline": ""
     },
     {
-      "id": "post-theme-005",
-      "account": "kelly",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$ENVX",
-      "headline": "Electric Vehicles selling off, -1.2% avg on Monday"
-    },
-    {
-      "id": "post-cici-003",
+      "id": "post-cici-013",
       "account": "cici",
-      "slot": "D1-S3",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
+      "slot": "D1-S13",
+      "type": "chart",
+      "cashtag": "$OZK",
+      "headline": "While New York slept, $OZK crept back to 52.2, within a whisper of its August high."
     },
     {
       "id": "post-theme-006",
       "account": "cici",
       "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$AUID",
-      "headline": "Biometrics selling off, -2.5% avg on Monday"
+      "cashtag": "$VIAV",
+      "headline": "Hardware selling off, -3.2% avg on Tuesday"
     },
     {
       "id": "post-housepick-003",
       "account": "mastermind_news",
       "slot": "D1-S1",
       "type": "watchlist",
-      "cashtag": "$CVX",
+      "cashtag": "$GILD",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 93,
-      "hits": 0,
+      "pairs_checked": 102,
+      "hits": 1,
       "shared_media_hits": 0
     },
     "cadence": {
@@ -198,7 +213,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-18",
+      "as_of": "2026-08-19",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -214,7 +229,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 25,
+          "age_days": 26,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -327,7 +342,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 22,
+          "age_days": 23,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -349,7 +364,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 21,
+          "age_days": 22,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -371,7 +386,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 21,
+          "age_days": 22,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -393,7 +408,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 21,
+          "age_days": 22,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -415,7 +430,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 21,
+          "age_days": 22,
           "tier": "graduated",
           "enabled": true,
           "caps": {
@@ -437,7 +452,7 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 16,
+          "age_days": 17,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
