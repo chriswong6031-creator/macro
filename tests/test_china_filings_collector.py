@@ -115,13 +115,42 @@ class TestCategorize:
 # --------------------------------------------------------------------------- #
 
 class TestClassifyKind:
-    def test_letter_is_default(self):
-        # Plain inquiry letter title → 'letter'
-        assert cf.classify_kind("关于问询函的相关说明") == "letter"
+    def test_exchange_issued_inquiry_is_a_letter(self):
+        # A genuine exchange-issued inquiry, or the company's receipt of one.
+        assert cf.classify_kind("关于收到上海证券交易所问询函的公告") == "letter"
+        assert cf.classify_kind("关于对某公司有关股价波动事项的问询函") == "letter"
 
     def test_empty_title_is_letter(self):
         # Empty title falls back to 'letter' (inquiry family default)
         assert cf.classify_kind("") == "letter"
+
+    def test_reply_side_explanations_are_not_letters(self):
+        """A 说明/意见 filed in ANSWER to an inquiry is not an inquiry.
+
+        Regression this catches: `letter` used to be the fall-through for the
+        whole family, so 100 of 140 stored "letters" were reply-side filings and
+        the desk published them as unanswered regulatory questions (PR #5975).
+        """
+        for title in (
+            "关于问询函的相关说明",
+            "天健会计师事务所关于某公司审核问询函中有关财务事项的说明",
+            "某公司独立董事关于年度报告信息披露监管问询函所涉事项的独立董事意见",
+            "北京市某律师事务所关于《问询函》相关问题的专项法律意见",
+            "董事会审计委员会关于公司问询函所涉问题的相关意见",
+        ):
+            assert cf.classify_kind(title) == "reply_side", title
+
+    def test_deferral_notice_is_not_a_reply(self):
+        """延期回复 announces the reply is POSTPONED — the inverse of a reply.
+
+        Regression this catches: it contains 回复, and all 41 such notices in the
+        store were classified `reply`, so the filing saying no reply had been made
+        would mark the inquiry answered.
+        """
+        for verb in ("延期", "延长", "推迟", "顺延"):
+            assert cf.classify_kind(f"关于{verb}回复《关于某公司重组的问询函》的公告") == "deferral", verb
+        # A genuine inquiry whose SUBJECT concerns a postponement stays a letter.
+        assert cf.classify_kind("关于收到上海证券交易所《关于某公司延期复牌事项的问询函》的公告") == "letter"
 
     def test_reply_huihan(self):
         assert cf.classify_kind("关于收到上交所问询函的回函公告") == "reply"
@@ -232,10 +261,19 @@ class TestParseAnnouncement:
 
     def test_inquiry_letter_has_kind_letter(self):
         ann = dict(_SAMPLE_ANN)
-        ann["announcementTitle"] = "收到上交所关注函的说明"
+        # A receipt announcement — not a 说明, which is reply-side (see
+        # TestClassifyKind.test_reply_side_explanations_are_not_letters).
+        ann["announcementTitle"] = "收到上交所关注函的公告"
         row = cf._parse_announcement(ann, "sse", "2024-01-15T09:00:00+00:00")
         assert row["category"] == "inquiry_letter"
         assert row["kind"] == "letter"
+
+    def test_inquiry_reply_side_has_kind_reply_side(self):
+        ann = dict(_SAMPLE_ANN)
+        ann["announcementTitle"] = "收到上交所关注函的说明"
+        row = cf._parse_announcement(ann, "sse", "2024-01-15T09:00:00+00:00")
+        assert row["category"] == "inquiry_letter"
+        assert row["kind"] == "reply_side"
 
     def test_inquiry_letter_has_kind_reply(self):
         ann = dict(_SAMPLE_ANN)
