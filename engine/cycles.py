@@ -1651,7 +1651,8 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         points.append("Prior cycle topped early (a tiring-trend hint)")
         points_zh.append("上一周期见顶偏早（趋势走弱的暗示）")
 
-    return {"state": state, "label": disp["label"], "action": disp["action"],
+    return {"state": state, "label": disp["label"], "label_zh": disp.get("label_zh"),
+            "action": disp["action"],
             "dir": disp["dir"], "score": int(np.clip(score, -100, 100)),
             "why": why, "next": nxt, "weekly_ok": weekly_ok,
             "regime": reg, "regime_label": REGIME_DISPLAY[reg]["label"],

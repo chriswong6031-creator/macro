@@ -802,6 +802,45 @@ def _verify_plan_digest(plan: Mapping[str, Any]) -> None:
         )
 
 
+_ATTRIBUTED_CLASSIFICATIONS = {
+    "inherited_base",
+    "pr_regression",
+    "pr_ci_contract_change",
+    "main_failure",
+}
+
+
+def _step_representation_error(
+    job_id: str, step: Mapping[str, Any], role: str
+) -> str | None:
+    """Mirror the evidence step invariants so one bad unit cannot void a run.
+
+    ``_validate_evidence`` refuses the whole document, and the CLI then replaces
+    it with an empty-``jobs`` planner failure.  Every passing sibling job loses
+    its evidence that way, so no session can mint a descendant PASS for anything
+    in the run.  Detecting the same faults here lets the aggregate keep the jobs
+    it can classify and charge the fault to the one job it concerns.
+    """
+    proof_id = step.get("proof_id")
+    outcome = step.get("outcome")
+    classification = step.get("classification")
+    if outcome not in _STEP_OUTCOMES:
+        return f"invalid outcome for {job_id}/{proof_id}"
+    if classification not in _CLASSIFICATIONS:
+        return f"invalid classification for {job_id}/{proof_id}"
+    if (outcome == "passed") != (classification == "passed"):
+        return f"evidence outcome/classification mismatch for {job_id}/{proof_id}"
+    if classification in _ATTRIBUTED_CLASSIFICATIONS and outcome != "failed":
+        return f"evidence classification requires a failure for {job_id}/{proof_id}"
+    if role == "main" and classification not in {"passed", "main_failure", "unknown"}:
+        return f"main evidence contains a PR-only classification for {job_id}/{proof_id}"
+    if role == "pr_head" and classification == "main_failure":
+        return f"PR evidence contains a main-only classification for {job_id}/{proof_id}"
+    if outcome == "passed" and step.get("failure_signature") is not None:
+        return f"passed semantic proof carries a failure signature for {job_id}/{proof_id}"
+    return None
+
+
 def _blocked_step(expected: Mapping[str, Any], detail: str) -> dict[str, Any]:
     return {
         "proof_id": expected["proof_id"],
@@ -1032,6 +1071,27 @@ def reconcile_evidence(
             }
         )
 
+    # Confine an unrepresentable unit to its own job.  The fault stays fully
+    # fail-closed there (blocked/unknown step plus a job-level infrastructure
+    # failure), and the jobs the classifier could represent survive instead of
+    # the run collapsing to an empty jobs list.
+    for job in jobs_out:
+        job_id = job["logical_job_id"]
+        faults: list[str] = []
+        for position, step in enumerate(job["steps"]):
+            error = _step_representation_error(job_id, step, identity["role"])
+            if error is None:
+                continue
+            faults.append(error)
+            item = expected.get((job_id, step.get("proof_id")))
+            if item is not None:
+                job["steps"][position] = _blocked_step(item, error)
+        if faults:
+            job["infrastructure"] = {
+                "outcome": "planner_configuration_failure",
+                "detail": _bounded_text("; ".join(faults)),
+            }
+
     semantic_blocking = any(
         step["classification"] not in {"passed", "inherited_base"}
         for job in jobs_out
@@ -1070,6 +1130,10 @@ def reconcile_evidence(
         "infrastructure": infrastructure,
     }
     evidence["evidence_sha256"] = canonical_sha256(evidence)
+    # Never hand back a document the consumers will refuse: an artifact that
+    # fails here becomes the CLI's bounded planner failure, which is the same
+    # fail-closed outcome as today rather than a silently invalid aggregate.
+    _validate_evidence(evidence)
     return evidence
 
 

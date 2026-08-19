@@ -111,8 +111,14 @@ def test_every_company_node_gets_a_row(nodes, company_nodes, master_inputs, etf_
         assert row["join_method"] in ir.JOIN_METHODS
         assert row["source_receipts"]
         if row["resolution_state"] == "RESOLVED":
-            assert row["issuer_id"] and row["security_id"] and row["listing_key"]
+            assert row["security_id"] and row["listing_key"]
             assert row["refusal_reason"] is None
+            # V4-D2B1 FIX 8 (m3): issuer_id is copied ONLY when the master's own
+            # issuer_state for this security is RESOLVED — a RESOLVED sidecar row is
+            # lawful with a null issuer_id when the master itself has no CIK
+            # evidence yet (NO_ISSUER_EVIDENCE), so this is deliberately NOT
+            # asserted non-null here (co:us:AEP is the live example, see
+            # tests/test_dataos_security_master.py's NO_ISSUER_EVIDENCE fixtures).
         else:
             assert row["issuer_id"] is None and row["security_id"] is None \
                 and row["listing_key"] is None
@@ -125,15 +131,43 @@ def test_every_company_node_gets_a_row(nodes, company_nodes, master_inputs, etf_
 
 class TestSection6HostileCases:
     def test_goog_and_googl_resolve_distinctly(self, master_inputs, etf_symbols):
+        """V4-D2B1 FLIP (2026-08-19): the master's issuer axis now groups securities
+        by identical SEC registrant CIK evidence, and GOOG/GOOGL share one — CIK
+        1652044, Alphabet Inc. — so they now share ONE issuer_id
+        (ISS:US-XNAS-GOOG, spec §2 tie-break rule 4) while remaining two DISTINCT
+        securities. This is the regression D2B1 exists to make possible: pre-D2B1,
+        this test asserted the two issuer_ids differed — the "no cross-share-class
+        issuer axis" limitation the frozen contract's own §6 documented at the time.
+        config/share_class_equiv.yml is still NEVER consulted (see the sibling test
+        below) — this is the Data OS master's own CIK evidence, not a 13F collapse.
+        """
         goog = _resolve("co:us:GOOG", master_inputs, etf_symbols)
         googl = _resolve("co:us:GOOGL", master_inputs, etf_symbols)
         assert goog["resolution_state"] == googl["resolution_state"] == "RESOLVED"
         assert goog["security_id"] == "SEC:US-XNAS-GOOG"
         assert googl["security_id"] == "SEC:US-XNAS-GOOGL"
         assert goog["security_id"] != googl["security_id"]
-        # No cross-share-class issuer axis — the master's own limitation, disclosed
-        # rather than manufactured. config/share_class_equiv.yml is NEVER consulted.
-        assert goog["issuer_id"] != googl["issuer_id"]
+        # SAME issuer now (V4-D2B1) — still distinct security_id (mint-once/§D2).
+        assert goog["issuer_id"] == googl["issuer_id"] == "ISS:US-XNAS-GOOG"
+
+    def test_aep_resolves_with_a_null_issuer_id_because_the_master_has_no_evidence(
+        self, master_inputs, etf_symbols,
+    ):
+        """V4-D2B1 FIX 8 (m3): AEP is a measured NO_ISSUER_EVIDENCE row in the
+        committed master (its ticker missed the 08-18 CIK map) — the sidecar's
+        RESOLVED state and security_id/listing_key are UNAFFECTED (exact
+        security/listing identity never depended on the issuer axis), but issuer_id
+        must be null because the master itself has no CIK evidence backing it."""
+        master_row = master_inputs.master_by_code.get("AEP")
+        assert master_row is not None, "AEP must be a resolvable master row for this probe"
+        row = _resolve("co:us:AEP", master_inputs, etf_symbols)
+        assert row["resolution_state"] == "RESOLVED"
+        assert row["security_id"] == "SEC:US-XNAS-AEP"
+        assert row["listing_key"] == "US-XNAS-AEP"
+        assert row["issuer_id"] is None, (
+            "the master's issuer_state for AEP is NO_ISSUER_EVIDENCE — issuer_id must "
+            "be null in the sidecar, never the legacy master value"
+        )
 
     def test_share_class_equiv_is_never_consulted(self):
         """Structural proof: the resolver's only inputs are the master + alias table +
@@ -630,18 +664,40 @@ def test_every_resolved_security_id_exists_in_the_master(company_nodes, master_i
 # ---------------------------------------------------------------------------
 
 def test_the_committed_bake_is_reproducible_from_the_committed_inputs(nodes):
-    baked = pd.read_parquet(BAKED_IDRES_PATH)
+    # The store is deliberately append-only, keyed on (node_id, computed_at): one row
+    # per node PER MATERIALIZED GENERATION (engine/theme_graph/store.py). Comparing the
+    # raw artifact would mix an older generation's rows in with the newest once a
+    # second bake has landed, so collapse to the store's own "current view" first —
+    # the same reader every production consumer uses.
+    current_view = store.read_identity_resolution(latest=True)
+    assert not current_view.empty
+
+    # Even the per-node "current view" can carry one stale row: a node whose latest
+    # committed row predates the newest bake (e.g. it was not part of that run, or the
+    # graph grew a node after the run). That is a legitimate state for the store — it is
+    # NOT a legitimate state for THIS check, whose whole point is "does the newest
+    # generation reproduce from today's committed master". So scope the reproducibility
+    # comparison to the newest generation's own cohort (max computed_at), not the whole
+    # current view. An older generation legitimately may not reproduce from today's
+    # inputs — that is expected, not a defect.
+    newest_computed_at = current_view["computed_at"].max()
+    baked = current_view[current_view["computed_at"] == newest_computed_at].reset_index(drop=True)
     assert not baked.empty
     resolution_asof = str(baked["resolution_asof"].iloc[0])
     engine_version = str(baked["engine_version"].iloc[0])
     assert (baked["resolution_asof"].astype(str) == resolution_asof).all(), (
-        "the committed bake must be a single generation for this comparison to be valid")
+        "the newest generation's own cohort must be a single generation for this "
+        "comparison to be valid")
     assert (baked["engine_version"].astype(str) == engine_version).all()
 
     fresh_rows = ir.derive_rows(
         nodes.to_dict("records"), resolution_asof=resolution_asof,
         computed_at="reproducibility-check", engine_version=engine_version)
     fresh = pd.DataFrame(fresh_rows).reindex(columns=list(store.IDENTITY_RESOLUTION_COLUMNS))
+    # Scope fresh the same way: a node the graph grew AFTER this generation was baked
+    # was never resolved at this resolution_asof by the committed run, so it cannot be
+    # part of a check for whether that run reproduces.
+    fresh = fresh[fresh["node_id"].astype(str).isin(baked["node_id"].astype(str))]
 
     baked_sorted = baked.sort_values("node_id", kind="stable").reset_index(drop=True)
     fresh_sorted = fresh.sort_values("node_id", kind="stable").reset_index(drop=True)

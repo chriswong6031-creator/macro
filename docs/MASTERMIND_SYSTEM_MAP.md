@@ -66,6 +66,7 @@ Mastermind
 │  ├─ Fundamental Forensics (intelligence_program; building)
 │  ├─ Global Market Intelligence Theme Graph (data_plane; building)
 │  ├─ Government Revenue Foresight (intelligence_program; operating)
+│  ├─ Grey Deer Risk Intelligence & Capital Protection (decision_engine; building)
 │  ├─ Group Reads (intelligence_program; operating)
 │  ├─ International Risk Intelligence (intelligence_program; operating)
 │  ├─ Long-Hold Thesis Intelligence (intelligence_program; operating)
@@ -1112,6 +1113,55 @@ Build point-in-time government contract, revenue, and catalyst evidence with cor
 **Implementation anchors:** `macro:engine/government_revenue`, `macro:data/government_revenue`
 
 **Product surfaces:** `macro-dashboard`
+
+#### Grey Deer Risk Intelligence & Capital Protection (`grey-deer-risk-intelligence`)
+
+- **Kind:** `decision_engine`
+- **Lifecycle:** `building`
+- **Scope:** `project`
+- **Repositories:** `macro`, `mastermind`, `terminal`
+
+Produce canonical market hazard/repair truth and bounded protection-policy contracts without replacing domain sensors or downstream portfolio authority.
+
+**Strategic role.** Convert fragmented risk observations into one coherent, PIT-honest market protection nervous system across Macro, Prophet, Terminal and Portfolio.
+
+**Owns**
+
+- Canonical Risk Envelope projection
+- Market-hazard episode composition
+- Scope-bounded market protection policy contracts
+- Cross-product risk-state semantics
+
+**Does not own**
+
+- Raw Prophet ranking or admission
+- Terminal quote/chart state
+- Portfolio position sizing/settlement/execution
+- LLM signal origination
+
+**Derived operational footprint**
+
+- Synapse owners: none
+- Lobe owners: none
+- Synapse artifacts: **0**; tier mix: none
+- Lobe charters: **0**
+- Information domains: none declared
+
+**Relationships**
+
+- `consumes_from` → `market-regime-risk` (`conceptual`; authority transfer: none)
+- `consumes_from` → `neural-web` (`conceptual`; authority transfer: none)
+- `consumes_from` → `policy-transmission-intelligence` (`conceptual`; authority transfer: none)
+- `consumes_from` → `rates-inflation-command` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `prophet` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `market-timing-intelligence` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `cross-repo-contract-governance` (`conceptual`; authority transfer: none)
+
+**Canonical docs:** `macro:research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md`, `macro:research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md`
+
+**Implementation anchors:** `macro:research/grey_deer`
+
+**Product surfaces:** —
 
 #### Group Reads (`group-reads`)
 
@@ -2585,6 +2635,13 @@ A plain relationship is conceptual and makes no runtime or authority-transfer cl
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `fundamental-forensics` | — | none | — |
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `thematic-intelligence` | — | none | — |
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `prophet` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `market-regime-risk` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `neural-web` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `policy-transmission-intelligence` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `rates-inflation-command` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `prophet` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `market-timing-intelligence` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `cross-repo-contract-governance` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `thematic-intelligence` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `gmi-theme-graph` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `neural-web` | — | none | — |
@@ -2861,6 +2918,14 @@ These are non-binding semantic posture summaries, not a second authority system.
 - **Explicit authority sources:** none; this posture asserts no independent runtime authority
 - **Operational registry checks:** `macro:config/synapse.yml`, `macro:config/lobe_charters.yml`
 - **Repository guardrails:** `macro:CLAUDE.md`
+
+### Grey Deer Risk Intelligence & Capital Protection (`grey-deer-risk-intelligence`)
+
+- **Semantic posture:** `deterministic_control`
+- **Non-binding summary:** Envelope itself owns no rank/size/execute authority. Individually registered policies may later carry bounded subtract-only authority after their own gate.
+- **Explicit authority sources:** `macro:research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md`, `macro:research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md`
+- **Operational registry checks:** none
+- **Repository guardrails:** `macro:CLAUDE.md`, `mastermind:AGENTS.md`, `mastermind:config/authority_map.yml`, `terminal:terminal/AGENTS.md`
 
 ### Group Reads (`group-reads`)
 
@@ -3588,7 +3653,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `6d8d5d4e515f260ff748d9ed76df1fe5601e59734161a8a21b121b7ec6601da9` |
+| `config/mastermind_programs.yml` | `d5a1b5242fa64ab99fc8bfa44753cb4c54cb3d005f3f7157a49e138b938d30c4` |
 | `config/synapse.yml` | `da3be868d9beb2ddb53b2e74b9d4b2f125e14a2e0fc6adace3e884b8ce22ce4d` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.

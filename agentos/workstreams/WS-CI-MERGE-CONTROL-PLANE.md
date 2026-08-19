@@ -56,9 +56,34 @@ waves:
       ProofFreshness remain the governing contract. PR 5591 remains historical
       W-REWRITE archaeology only; completing this wave does not commission or
       complete W-REWRITE or any CI-speed/scoping wave.
+  - id: W-GATE-SPLIT
+    title: Merge gate tests code against fixtures; data receipts post-nightly
+    status: in_progress
+    note: >
+      Root cause DSC:MERGE-GATE-IS-GATED-ON-MOVING-DATA (main green 44%
+      because 130-by-heuristic / 74-by-judgment of 194 merge-gate jobs assert
+      on the nightly-rewritten tree). W1 merged 2026-08-19 as PR 5954: every
+      legacy job declares gate: code | data (120/74; judgment pass over every
+      named suite; decisive discriminator = git authorship of the asserted
+      file). W2 MERGED 2026-08-19 10:58Z as PR 5969: ci.yml plans/packs --gate code everywhere
+      (baselines prove exactly what the gate runs; the planner fallback is
+      gated too), gate: data jobs run in .github/workflows/data-health.yml
+      after a SUCCESSFUL nightly, failure feeds one standing data-health
+      issue; W4 reachability + no-empty-pack guards ship with it. Opus
+      pre-PR review fixed 2 blockers + 4 majors in the lane (repo resolution,
+      label ensure, needs-result-not-artifact-presence, literal concurrency
+      group, nightly-conclusion gate, fail-closed lookup).
 next_action: >
-  STOP the W-SEMANTIC-PROOF wave. Keep W-REWRITE and CI-speed/scoping as
-  separately commissioned work; do not begin either from this completion.
+  W-GATE-SPLIT: PR 5969 merged; qledger clock heal PR 5972 merged (the
+  nightly had committed a registrar-local write-once clock; now
+  gitignored). Proof runs dispatched 11:01Z: main baseline 32245502253
+  on the code-only gate, and a hand-dispatched data-health.yml run
+  32245526648 to prove the issue plumbing. Then W3
+  to prove the issue plumbing, verify the first post-nightly firing, then W3
+  at >=72h - trailing-100 green rate above 90% via
+  scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs
+  merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE
+  remains separately commissioned.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"

@@ -90,8 +90,11 @@ def _read_tsv(zf: zipfile.ZipFile, name: str, usecols: list[str]) -> pd.DataFram
     if not fn:
         return pd.DataFrame()
     with zf.open(fn) as fh:
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
         df = pd.read_csv(fh, sep="\t", dtype=str, usecols=lambda c: c.upper() in
-                         {u.upper() for u in usecols}, on_bad_lines="skip")
+                         {u.upper() for u in usecols}, on_bad_lines="skip",
+                         keep_default_na=False, na_values=[""])
     df.columns = [c.upper() for c in df.columns]
     return df
 

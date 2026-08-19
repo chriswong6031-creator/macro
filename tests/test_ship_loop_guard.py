@@ -10,6 +10,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -921,6 +922,18 @@ def _clear_token_cache(monkeypatch):
     monkeypatch.setattr(GUARD, "_TOKEN_CACHE", None, raising=False)
     for key in ("GH_TOKEN", "GITHUB_TOKEN"):
         monkeypatch.delenv(key, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _clear_index_lock_cache():
+    """The worktree gitdir is memoised per root so the second sweep is free.
+
+    One hook process only ever judges one tree; this module reuses a single
+    imported guard across every test, so the memo is dropped between them.
+    """
+    GUARD._INDEX_LOCK_CACHE.clear()
+    yield
+    GUARD._INDEX_LOCK_CACHE.clear()
 
 
 @pytest.fixture(autouse=True)
@@ -4626,3 +4639,348 @@ def test_unrelated_tmp_repo_is_not_a_source_mismatch(monkeypatch, tmp_path, caps
     payload = {"cwd": str(other), "hook_event_name": "Stop"}
     assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is False
     assert capsys.readouterr().out == ""
+
+
+# --------------------------------------------------------------------------
+# A slow `git status` must not become a WEDGED checkout (observed 2026-08-19):
+# 161s wall at 10% CPU on a full worktree, a 90s budget, a SIGKILLed git, and a
+# zero-byte `index.lock` left in the worktree gitdir by the very guard that was
+# only reading the tree.
+# --------------------------------------------------------------------------
+
+
+def _sleeper(marker: Path | None) -> str:
+    """A child that sleeps; with a marker it records the signal that ended it."""
+    if marker is None:
+        return (
+            "import signal, time\n"
+            "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+            "time.sleep(30)\n"
+        )
+    return (
+        "import signal, sys, time\n"
+        "def _bye(signum, _frame):\n"
+        f"    open({str(marker)!r}, 'w').write(str(signum))\n"
+        "    sys.exit(0)\n"
+        "signal.signal(signal.SIGTERM, _bye)\n"
+        "time.sleep(30)\n"
+    )
+
+
+def test_a_timed_out_child_is_asked_to_leave_before_it_is_shot(tmp_path):
+    """SIGKILL is the reason a timed-out status orphaned a lock at all.
+
+    git installs a SIGTERM handler precisely so its lock files are unlinked on
+    the way out; SIGKILL cannot be caught, so the lock outlives its owner and
+    every later git in that tree fails on it. The marker is proof the child was
+    signalled rather than shot — it can only be written from inside a handler.
+    """
+    marker = tmp_path / "signal.txt"
+    # 3s, not 1s: the child has to finish interpreter startup and install its
+    # handler before the budget expires, and a 4-core runner under fleet load is
+    # exactly where a tight budget would turn this into a flake.
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._run(tmp_path, sys.executable, "-c", _sleeper(marker), timeout=3)
+    assert marker.exists(), "the child was shot before it could handle a signal"
+    assert marker.read_text() == str(int(signal.SIGTERM))
+
+
+def test_a_child_that_ignores_sigterm_is_still_killed(monkeypatch, tmp_path):
+    """The grace period is a courtesy, not a hostage clause.
+
+    The child sleeps 30s and ignores SIGTERM, so anything that waits for it to
+    leave voluntarily blows the hook's own wall. Escalation has to be certain.
+    """
+    monkeypatch.setattr(GUARD, "GIT_TERM_GRACE_SECONDS", 1)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._run(tmp_path, sys.executable, "-c", _sleeper(None), timeout=1)
+    assert time.monotonic() - started < 10
+
+
+def _timeout_always(_root, *args, timeout):
+    raise subprocess.TimeoutExpired(list(args), timeout)
+
+
+def test_a_status_timeout_is_retried_once_on_the_index_the_first_pass_warmed(
+    monkeypatch, tmp_path
+):
+    """161s cold, 13s warm: the first run PAYS FOR the second (2026-08-19).
+
+    Failing on the first timeout threw that warm-up away and filed `guard_error`
+    against a tree that was one cheap re-run from answering.
+    """
+    budgets: list[int] = []
+    swept: list[Path] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        assert args[:2] == ("git", "status")
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return "?? warm.txt\n"
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda root: swept.append(root))
+
+    assert GUARD._status_output(tmp_path) == "?? warm.txt\n"
+    assert budgets == [
+        GUARD.STATUS_TIMEOUT_SECONDS,
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS,
+    ]
+    assert budgets[1] > budgets[0], "the retry must get a LONGER budget, not the same one"
+    assert swept == [tmp_path], "the retry must not trip over our own wreckage"
+
+
+def test_a_status_that_cannot_answer_twice_still_fails_closed(monkeypatch, tmp_path):
+    """The retry buys a second chance to ANSWER, never permission to skip.
+
+    Both timeout paths sweep, because a lock this guard orphaned outlives the
+    process that made it: the second sweep is for the NEXT invocation, which
+    would otherwise inherit a tree this one wedged.
+    """
+    swept: list[Path] = []
+    monkeypatch.setattr(GUARD, "_run_raw", _timeout_always)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda root: swept.append(root))
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._fingerprint(tmp_path)
+    assert swept == [tmp_path, tmp_path]
+
+
+def test_an_unanswerable_status_reaches_stop_as_a_block(monkeypatch, tmp_path, capsys):
+    """Fail-closed end to end: an unresolvable dirty check still refuses Stop."""
+    repo = _repo(tmp_path)
+    state_path = GUARD._state_path(repo, {"session_id": "status-timeout"})
+    GUARD._save(
+        state_path,
+        {
+            "root": str(repo),
+            "start_head": _git(repo, "rev-parse", "HEAD"),
+            "baseline": {},
+            "last_blocker": "",
+            "blocker_count": 0,
+            "total_blocks": 0,
+            "external_blocks": 0,
+        },
+    )
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: state_path)
+    monkeypatch.setattr(GUARD, "_run_raw", _timeout_always)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    payload = {"hook_event_name": "Stop", "session_id": "status-timeout"}
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        type("S", (), {"read": staticmethod(lambda: json.dumps(payload))})(),
+    )
+    monkeypatch.setattr(GUARD.json, "load", lambda _stream: payload)
+    GUARD.main()
+
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["decision"] == "block"
+    assert "guard_error" in emitted["reason"]
+
+
+def test_the_whole_pathological_status_path_fits_the_hooks_own_wall():
+    """A budget past the harness's wall is a budget that cannot conclude.
+
+    `.claude/settings.json` owns the wall and the HARNESS enforces it: a hook
+    cancelled mid-flight emits no decision at all, so overrunning it trades a
+    block for a silently skipped Stop evaluation — a fail-OPEN, strictly worse
+    than the block it was trying to file.
+
+    The sum is the WHOLE worst path, not just the two status attempts: the sweeps
+    and every SIGTERM grace are on it too, and leaving them out is how a budget
+    that looks like it fits does not. Pinned here because the numbers live in a
+    different file from the wall and nothing else would notice them drifting.
+    """
+    settings = json.loads(
+        (ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
+    )
+    walls = [
+        int(hook["timeout"])
+        for entry in settings["hooks"]["Stop"]
+        for hook in entry["hooks"]
+        if "ship_loop_guard.py" in hook.get("command", "")
+    ]
+    assert walls, "the Stop hook must still be the ship loop guard"
+
+    grace = GUARD.GIT_TERM_GRACE_SECONDS
+    probe = GUARD.SWEEP_PROBE_TIMEOUT_SECONDS
+    first_sweep = probe + grace + probe  # resolve the gitdir, then lsof
+    later_sweep = probe  # the gitdir is cached by then, so lsof only
+    worst = (
+        GUARD.STATUS_TIMEOUT_SECONDS
+        + grace
+        + first_sweep
+        + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
+        + grace
+        + later_sweep
+    )
+    assert worst <= min(walls), (
+        "the pathological status path must still reach its own guard_error block: "
+        f"{worst}s of a {min(walls)}s wall"
+    )
+    assert GUARD.STATUS_RETRY_TIMEOUT_SECONDS > GUARD.STATUS_TIMEOUT_SECONDS
+
+
+def _orphaned_lock(repo: Path) -> Path:
+    """The zero-byte `index.lock` a SIGKILLed git leaves in the worktree gitdir."""
+    lock = Path(GUARD._run(repo, "git", "rev-parse", "--absolute-git-dir")) / "index.lock"
+    lock.write_bytes(b"")
+    return lock
+
+
+@pytest.mark.skipif(
+    shutil.which("lsof") is None, reason="the unheld half of the check needs lsof"
+)
+def test_the_sweep_removes_a_zero_byte_lock_this_guard_orphaned(tmp_path):
+    """The damage is measured in `git add`, not `git status`.
+
+    A stale lock leaves `status` working — it simply declines to write the
+    refreshed index — so the wedge is invisible until the session tries to
+    COMMIT, which is the very next thing the ship loop asks of it.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    (repo / "shipped.txt").write_text("work\n", encoding="utf-8")
+    with pytest.raises(subprocess.CalledProcessError):
+        _git(repo, "add", "shipped.txt")
+
+    assert GUARD._sweep_stale_index_lock(repo) == lock
+    assert not lock.exists()
+    _git(repo, "add", "shipped.txt")
+    assert "A  shipped.txt" in _git(repo, "status", "--porcelain")
+
+
+def test_the_sweep_keeps_a_lock_that_predates_this_process(monkeypatch, tmp_path):
+    """Only OUR killed git's lock is ours to remove.
+
+    Moving the guard's start AHEAD of the lock is how a pre-existing lock looks
+    from inside the sweep — the operator's, a sibling session's, or one from an
+    earlier crash nobody has diagnosed yet.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    monkeypatch.setattr(GUARD, "_GUARD_STARTED_AT", time.time() + 60)
+    assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_keeps_a_lock_a_live_process_still_holds(tmp_path):
+    """Zero-byte AND newer than the guard, so only `lsof` separates this one.
+
+    A git that has just created its lock and not yet written the new index looks
+    exactly like our wreckage on disk. Deleting it is silent index corruption in
+    a tree somebody is using.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    with lock.open("w"):
+        assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_keeps_a_lock_git_has_written_an_index_into(tmp_path):
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    lock.write_bytes(b"DIRC")
+    assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_never_reaches_past_a_worktree_into_the_clone(tmp_path):
+    """A linked worktree has its OWN index; the primary's lock is never ours.
+
+    `--git-common-dir` — the question `_git_common_dir` asks for delegation —
+    would point every session in the clone at the primary checkout's lock file.
+    """
+    repo = _repo(tmp_path)
+    linked = tmp_path / "linked"
+    _git(repo, "worktree", "add", "-b", "claude/linked", str(linked))
+
+    resolved = GUARD._worktree_index_lock(linked)
+    assert resolved is not None
+    assert resolved.resolve() == (
+        repo / ".git" / "worktrees" / "linked" / "index.lock"
+    ).resolve()
+    assert resolved.resolve() != (repo / ".git" / "index.lock").resolve()
+
+
+@pytest.mark.parametrize(
+    "returncode, stdout, stderr, held",
+    [
+        (1, "", "", False),  # the ONLY free answer: quiet on every channel
+        (0, "COMMAND  PID  USER  FD  TYPE\ngit  4242  chriswong  4w  REG\n", "", True),
+        (1, "", "lsof: status error on /x/index.lock: Permission denied\n", True),
+        (2, "", "", True),  # an exit code lsof does not document
+    ],
+)
+def test_only_a_silent_lsof_proves_a_lock_is_free(
+    monkeypatch, returncode, stdout, stderr, held
+):
+    """`lsof` exits 1 for "nobody has it" AND for its own errors.
+
+    Reading the exit code alone would let a malformed invocation — a `--` an old
+    build does not take, an unreadable path — certify a LIVE git's lock as free,
+    and the sweep would then delete the index out from under it.
+    """
+    monkeypatch.setattr(
+        GUARD.subprocess,
+        "run",
+        lambda *_a, **_k: subprocess.CompletedProcess((), returncode, stdout, stderr),
+    )
+    assert GUARD._lock_is_held(Path("/nonexistent/index.lock")) is held
+
+
+def test_an_lsof_that_cannot_run_at_all_reads_as_held(monkeypatch):
+    """Linux runners need not ship `lsof`; absence is not evidence of absence."""
+
+    def absent(*_a, **_k):
+        raise FileNotFoundError("lsof")
+
+    monkeypatch.setattr(GUARD.subprocess, "run", absent)
+    assert GUARD._lock_is_held(Path("/nonexistent/index.lock")) is True
+
+
+def test_the_gitdir_probe_is_paid_once_not_once_per_sweep(monkeypatch, tmp_path):
+    """The second sweep runs past a SECOND blown budget, with no room to spare.
+
+    Re-resolving the gitdir there is how the pathological path would overrun the
+    wall `test_the_whole_pathological_status_path_fits_the_hooks_own_wall` pins.
+    """
+    repo = _repo(tmp_path)
+    probes: list[tuple] = []
+    real_run = GUARD._run
+
+    def counting_run(root, *args, **kwargs):
+        if "rev-parse" in args:
+            probes.append(args)
+        return real_run(root, *args, **kwargs)
+
+    monkeypatch.setattr(GUARD, "_run", counting_run)
+    first = GUARD._worktree_index_lock(repo)
+    second = GUARD._worktree_index_lock(repo)
+    assert first == second is not None
+    assert len(probes) == 1, "the gitdir must be resolved once per root, not per sweep"
+
+
+def test_an_unresolvable_gitdir_is_remembered_as_unresolvable(monkeypatch, tmp_path):
+    """Caching the FAILURE matters as much as caching the answer.
+
+    A tree whose git cannot answer is the same tree on the second sweep, and the
+    retry path has no budget to ask again.
+    """
+    calls: list[int] = []
+
+    def refuse(_root, *_args, **_kwargs):
+        calls.append(1)
+        raise RuntimeError("git is unreadable")
+
+    monkeypatch.setattr(GUARD, "_run", refuse)
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert len(calls) == 1
+    assert GUARD._sweep_stale_index_lock(tmp_path) is None

@@ -22,13 +22,18 @@ per-user isolation is enforced by RLS. See `ACCOUNTS_SETUP.md`.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
 from lib import config
 
-# The literal token emitted by templates/theme.js; kept in sync with that file.
+# The literal tokens emitted by templates/theme.js; kept in sync with that file.
+# Both are comment-prefixed literals, so an UNBAKED theme.js is still valid JS
+# that degrades to a disabled account system / an unversioned bundle request
+# rather than a syntax error taking the whole shared script down.
 SUPABASE_TOKEN = "/*__SUPABASE_CFG__*/null"
+MM_BRAIN_VER_TOKEN = "/*__MM_BRAIN_VER__*/''"
 
 
 def project_ref(url: str) -> str:
@@ -88,9 +93,34 @@ def bake_theme_js(text: str) -> str:
     return text.replace(SUPABASE_TOKEN, supabase_cfg_json())
 
 
+def mm_brain_version(src: Path) -> str:
+    """The content hash ``theme.js`` must use when it requests ``mm_brain.js``.
+
+    ``src`` is any path in ``templates/``; the bundle is read as its sibling.
+
+    This is deliberately the SAME function ``scripts.optimize_assets`` applies to
+    every ``.js``/``.css`` reference it stamps into HTML — ``sha256(bytes)[:8]``.
+    Sharing the derivation is the whole point: the ~3,500 pages that carry a
+    page-authored ``<script src="../../mm_brain.js?v=…">`` and the pages whose
+    launcher requests the bundle dynamically must land on ONE cache key, or a
+    reader who crosses between them pays for the same 232 KB twice — and once
+    ``mm_brain.js`` moves onto the edge's immutable matcher, a URL that disagreed
+    with the stamped one would pin that reader to stale bytes for a year.
+
+    Returns ``""`` when the bundle cannot be read, which leaves theme.js's
+    placeholder at its unbaked ``''`` and makes the request unversioned: correct,
+    just uncached. A missing sibling is a local/custom build, never production.
+    """
+    try:
+        return hashlib.sha256(src.with_name("mm_brain.js").read_bytes()).hexdigest()[:8]
+    except OSError:
+        return ""
+
+
 def emit_theme_js(src: Path) -> str:
     """Build the exact ``theme.js`` bytes served by production."""
     text = bake_theme_js(src.read_text())
+    text = text.replace(MM_BRAIN_VER_TOKEN, json.dumps(mm_brain_version(src)))
     overlay_src = src.with_name("terminal_overlay.js")
     if overlay_src.exists():
         text = f"{text.rstrip()}\n\n{overlay_src.read_text().lstrip()}"

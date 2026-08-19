@@ -362,3 +362,93 @@ def test_identity_resolution_same_security_duplicates_appear_in_the_census(
     out = capsys.readouterr().out
     assert "SEC:US-XNYS-DUP" in out
     assert "co:us:AAA" in out and "co:us:BBB" in out
+
+
+# ---------------------------------------------------------------------------
+# 6. V4-D2B1 FIX 8 (m3) — issuer_id lawful iff the master's issuer_state is RESOLVED
+# ---------------------------------------------------------------------------
+
+def _write_master(root: Path, rows: list[dict]) -> None:
+    """A minimal committed ``security_master.parquet`` at ``root.parent/reference``
+    — the same path :func:`scripts.check_theme_graph_contracts.audit` reads
+    (``store_dir.parent / "reference" / "security_master.parquet"``)."""
+    ref = root.parent / "reference"
+    ref.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(ref / "security_master.parquet", index=False)
+
+
+def test_identity_resolution_null_issuer_ok_when_master_says_no_issuer_evidence(
+    tmp_path, breaks,
+):
+    """FIX 8 legalizes a null sidecar issuer_id whenever the master's OWN
+    issuer_state for that security is anything OTHER than RESOLVED —
+    NO_ISSUER_EVIDENCE (a legacy/new row with no CIK evidence yet) is the common
+    case, and must NOT breach."""
+    root = _write_store(tmp_path / "idres_null_issuer_ok")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNYS-AEP", issuer_id=None, listing_key="US-XNYS-AEP",
+        refusal_reason=None, source_receipts='{"security_id":"SEC:US-XNYS-AEP"}',
+    )])
+    _write_master(root, [{
+        "security_id": "SEC:US-XNYS-AEP", "issuer_id": "ISS:US-XNYS-AEP",
+        "issuer_state": "NO_ISSUER_EVIDENCE", "listing_key": "US-XNYS-AEP",
+        "country": "US", "mic": "XNYS", "inception_code": "AEP",
+    }])
+    assert _breaches(root, breaks) == []
+
+
+def test_identity_resolution_null_issuer_breaches_when_master_says_resolved(
+    tmp_path, breaks,
+):
+    """The other half of FIX 8: a null sidecar issuer_id is NOT lawful once the
+    master itself has CIK evidence (RESOLVED) — that combination is a bridge defect
+    (dropped real evidence), not an honest disclosure, and must breach."""
+    root = _write_store(tmp_path / "idres_null_issuer_breach")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNAS-GOOG", issuer_id=None, listing_key="US-XNAS-GOOG",
+        refusal_reason=None, source_receipts='{"security_id":"SEC:US-XNAS-GOOG"}',
+    )])
+    _write_master(root, [{
+        "security_id": "SEC:US-XNAS-GOOG", "issuer_id": "ISS:US-XNAS-GOOG",
+        "issuer_state": "RESOLVED", "listing_key": "US-XNAS-GOOG",
+        "country": "US", "mic": "XNAS", "inception_code": "GOOG",
+    }])
+    assert any("state<->ids biconditional" in x for x in _breaches(root, breaks))
+
+
+def test_identity_resolution_null_issuer_breaches_when_master_absent(tmp_path, breaks):
+    """Fail-closed (the third FIX 6 case): with no master to consult at all, a null
+    issuer_id on a RESOLVED sidecar row falls back to the strict pre-D2B1 rule
+    (issuer_id must be present) and breaches."""
+    root = _write_store(tmp_path / "idres_null_issuer_no_master")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNYS-NOMASTER", issuer_id=None,
+        listing_key="US-XNYS-NOMASTER", refusal_reason=None,
+        source_receipts='{"security_id":"SEC:US-XNYS-NOMASTER"}',
+    )])
+    # No data/reference/security_master.parquet written at all.
+    assert any("state<->ids biconditional" in x for x in _breaches(root, breaks))
+
+
+def test_identity_resolution_non_null_issuer_breaches_when_master_not_resolved(
+    tmp_path, breaks,
+):
+    """The mirror mutation control: a NON-null sidecar issuer_id whose master row is
+    NOT RESOLVED (e.g. EVIDENCE_CONFLICT) must also breach — the bridge would be
+    smuggling a disputed/unevidenced value in as if it were confirmed identity."""
+    root = _write_store(tmp_path / "idres_nonnull_issuer_breach")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNAS-DISPUTED", issuer_id="ISS:US-XNAS-DISPUTED",
+        listing_key="US-XNAS-DISPUTED", refusal_reason=None,
+        source_receipts='{"security_id":"SEC:US-XNAS-DISPUTED"}',
+    )])
+    _write_master(root, [{
+        "security_id": "SEC:US-XNAS-DISPUTED", "issuer_id": "ISS:US-XNAS-DISPUTED",
+        "issuer_state": "EVIDENCE_CONFLICT", "listing_key": "US-XNAS-DISPUTED",
+        "country": "US", "mic": "XNAS", "inception_code": "DISPUTED",
+    }])
+    assert any("state<->ids biconditional" in x for x in _breaches(root, breaks))

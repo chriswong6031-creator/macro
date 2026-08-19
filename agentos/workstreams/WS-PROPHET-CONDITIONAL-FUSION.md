@@ -39,8 +39,10 @@ decisions:
   - DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-REGISTRY-QUESTION
   - DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY
   - DEC:W3-PROSPECTIVE-SAMPLE-IGNORES-GENERIC-BACKFILL
+  - DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS
 discoveries:
   - DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER
+  - DSC:PROPHET-BOARD-ASOF-IS-ECONOMIC-SESSION-ID
 landmines:
   - "A NIGHTLY CAN PUBLISH TO THE SITE AND NOT TO GIT. On 2026-08-16 run 31913143619
     the `publish` job deployed a canonical us_prophet_v3 board (Pages, 06:12:24Z) while
@@ -144,14 +146,16 @@ waves:
     depends_on: [w2b]
     title: "PR-3 — forward race instrumentation, split PR-3A..3D. Charter:
       research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
-      outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
-      until PR-3D live-accepts instrumentation on a natural us_prophet_ledgers
-      run. PR-3A (#5813) semantics+prereg. PR-3B (#5829) outcome-blind LOFO +
-      member census. PR-3C (#5839) durable paired ledger + wiring. PR-3D is
-      production commissioning + durable session_missing/provenance fence +
-      lawful pre-floor status surface. Do not mark this wave done until the
-      PASS PATH or an honest named gap."
-    status: todo
+      outcome read): research/prophet_fusion/W3_RACE_PREREG.md. PR-3A (#5813)
+      semantics+prereg. PR-3B (#5829) outcome-blind LOFO + member census.
+      PR-3C (#5839) durable paired ledger + wiring. PR-3D (#5890) liveness
+      fence + status surface. PR-3D-R1 (#5921) same-stamp revision + atomic
+      persist + 2026-08-17 session bootstrap
+      (DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS). Production accepted on
+      natural us_prophet_ledgers run 32207351396 job 96015772372 / commit
+      7e4e5c134560. No comparative read."
+    status: done
+    pr: "#5921"
   - id: w4
     depends_on: [w3]
     title: "PR-4 — C3 date-grouped ranker (depth-gated)"
@@ -170,17 +174,12 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  PR-3D (this wave) closes W3 instrumentation: durable session_missing receipts,
-  terminal provenance fence vs #5878, lawful pre-floor status surface, and live
-  three-lane acceptance. w3 stays todo until a natural us_prophet_ledgers run
-  proves the path or an honest named gap is recorded. Do not read forward
-  C1-vs-shadow outcomes. Do not implement C2/C3/C4/C5 or Prophet V4. Durable
-  paired-race matured H=10 N remains 0 until the first post-#5769 candidates
-  stamp matures. Committed board as_of 2026-08-17 already carries 65 v3+shadow
-  buy rows and a prophet_fusion.w3_structural.v1 receipt; grades have never
-  landed on main, so the first lawful liveness is unmatured. #5742 remains
-  external availability debt. Canonical five-leg nulls on v3 are correct (#5769).
-  STILL OPEN from w1: the §13.0 live-accrual closure.
+  Automatic W3 accrual on the natural us_prophet_ledgers lane. Do not start
+  PR-3E. Do not start C2/C3/C4/C5 or Prophet V4. Do not read C1-vs-shadow
+  outcomes. Durable paired-race N=2 unmatured (stamps 2026-08-17 and
+  2026-08-18); matured H=10 N=0. First lawful comparison remains PENDING
+  until 20 matured H=10 sessions. Leave the frozen 2026-08-17 W3 parts
+  byte-identical.
 ---
 
 ## Context

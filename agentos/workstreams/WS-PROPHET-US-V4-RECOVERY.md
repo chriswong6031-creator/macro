@@ -35,6 +35,7 @@ depends_on:
   - WS:EVAL-OS-MEASUREMENT-LAW
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
+  - DEC:PROPHET-LAB-B5A-RECUT
 landmines:
   - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
     0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
@@ -91,6 +92,7 @@ do_not_redo:
   - "Do not synthesize the missed Aug-14 session from later knowledge — exact
     reconstruction from Aug-14-knowable data or an explicit unrecoverable receipt."
 artifacts:
+  - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md
   - research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md
   - research/prophet_v4/FABLE_HANDOFF_PROPHET_US_V4_0A_2026-08-17.md
   - research/prophet_v4/CURRENT_STATE_2026-08-17.md
@@ -160,9 +162,24 @@ waves:
     depends_on: [b2, b3]
     title: "V4-B4 — deterministic buyability/chase firewall (prophet.entry_availability/v1)"
     status: todo
-  - id: b5
+  - id: b5a
+    depends_on: [0a]
+    title: "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission
+      2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only
+      LIVE|LAB observational surface: read-only projection of canonical Radar output
+      (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet
+      authority — read/filter/join/decorate only; no B3/B4 dependency. Contract:
+      research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes:
+      R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh
+      independent RIG R5 — note R4 reference is committed but carries NO approval.yml;
+      R4 was a closure pass, 10 blocking findings in
+      research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md),
+      P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6."
+    status: in_progress
+  - id: b5b
     depends_on: [b3, b4]
-    title: "V4-B5 — Early Entry Desk MVP (TURN WATCH finally visible)"
+    title: "V4-B5B — authoritative Early Entry Desk MVP (TURN WATCH finally visible;
+      retains B3/B4 deps; adopts B5A plumbing instead of rebuilding — LAB-0 recut)"
     status: todo
   - id: b6
     depends_on: [b2]
@@ -184,8 +201,9 @@ waves:
     title: "V4-C2 — us_prophet_v3_legacy_shadow (activates at cutover)"
     status: todo
   - id: c3
-    depends_on: [b5]
-    title: "V4-C3 — operator decision instrumentation"
+    depends_on: [b5b]
+    title: "V4-C3 — operator decision instrumentation (keys on the authoritative desk
+      b5b per LAB-0 ruling 14)"
     status: todo
   - id: d1
     depends_on: [0a]
@@ -208,7 +226,15 @@ waves:
       config/identity_seams.yml); the bridge projection is the seam. Child D2A
       (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader +
       guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md)
-      is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C
+      MERGED 2026-08-18 (#5894). Child D2B1 (issuer authority hardening: economic
+      issuer axis via SEC-CIK evidence — GOOG/GOOGL, FOX/FOXA, NWS/NWSA one issuer
+      each; era issuer_semantic_correction_v1 with durable migration receipts; typed
+      issuer_state refusals; reference.issuer_master + issuer_migrations datasets;
+      receipt authority decomposition; nightly refresh seam in daily.yml collect;
+      frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md)
+      shipped as #5965 — live-refresh production proof gated on the first
+      post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868
+      NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
       (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
       authorized yet — Sol reviews after each child returns."
     status: in_progress
@@ -283,7 +309,13 @@ next_action: >
   D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
   contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
   routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
-  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first.
+  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
+  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
+  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
+  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
+  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
+  its two-pass critic cycle + verdict OWED. Next session: execute
+  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
 ---
 
 ## Context

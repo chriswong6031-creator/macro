@@ -223,6 +223,18 @@ def test_is_non_equity_holding() -> None:
     assert not is_non_equity_holding("NVDA", "NVIDIA CORP")
     assert not is_non_equity_holding("000720 KS", "HYUNDAI ENGINEERING & CONST")
     assert not is_non_equity_holding("FF", "FutureFuel Corp")   # 'future' substring not flagged
+    # 'NA' is ambiguous, not an unconditional sentinel: it is both the legacy
+    # missing-value literal AND a live listing (Nano Labs Ltd on Nasdaq, National
+    # Bank of Canada on TSX). Name-corroborated like the currency-code branch.
+    assert not is_non_equity_holding("NA", "Nano Labs Ltd")
+    assert not is_non_equity_holding("NA", "NATIONAL BANK OF CANADA")
+    assert is_non_equity_holding("NA", "")             # blank name: nothing to corroborate
+    assert is_non_equity_holding("NA", float("nan"))   # nm normalizes to ""
+    assert is_non_equity_holding("NA", "USD Cash")     # name corroborates non-equity
+    # but 'NAN'/'NONE'/'NULL' — pandas-residue sentinels — stay unconditional
+    assert is_non_equity_holding("NAN", "Nano Labs Ltd")
+    assert is_non_equity_holding("NONE", "None Inc")
+    assert is_non_equity_holding("NULL", "Null Co")
     # VanEck files its cash sleeve with the marker in the TICKER and no name at
     # all, so neither the ticker set nor the name patterns can see it (§6b R1).
     # The currency codes here are deliberately outside _CURRENCY_CODES: the rule

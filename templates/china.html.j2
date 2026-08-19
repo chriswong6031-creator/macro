@@ -2579,7 +2579,7 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
             </div>
             <div class="cnx-kv"><span class="k">{{ t('Band','区间') }}</span><span class="v">{{ t(I.turnover.band, {'apathy':'清淡','normal':'正常','active':'活跃','mania':'狂热'}.get(I.turnover.band,'')) }}</span></div>
             {% if I.turnover.pctile is defined and I.turnover.pctile is not none %}
-            <div class="cnx-kv"><span class="k">{{ t('Turnover heat','成交热度') }}</span><span class="v {{ 'cnx-tt-up' if (I.turnover.pctile|int) >= 80 else '' }}">{{ t(I.turnover.pctile|string ~ t('th percentile','th百分位'), I.turnover.pctile|string ~ '第百分位') }}{{ t(' — near record froth',' — 接近历史极值') if (I.turnover.pctile|int) >= 95 else (t(' — elevated',' — 偏高') if (I.turnover.pctile|int) >= 80 else '') }}</span></div>
+            <div class="cnx-kv"><span class="k">{{ t('Turnover heat','成交热度') }}</span><span class="v {{ 'cnx-tt-up' if (I.turnover.pctile|int) >= 80 else '' }}">{{ t_pctile(I.turnover.pctile) }}{{ t(' — near record froth',' — 接近历史极值') if (I.turnover.pctile|int) >= 95 else (t(' — elevated',' — 偏高') if (I.turnover.pctile|int) >= 80 else '') }}</span></div>
             {% endif %}
             {% if I.flows and I.flows.limit %}
             <div class="cnx-kv"><span class="k">{{ t('Limit-up / down','涨停 / 跌停') }}</span><span class="v cnx-tt-up">{{ I.flows.limit.zt }}</span> / <span class="cnx-tt-dn">{{ I.flows.limit.dt }}</span></div>

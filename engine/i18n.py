@@ -18,13 +18,66 @@ markup that is safe under autoescape (build_vector) and inert without it
 """
 from __future__ import annotations
 
+import re
+
 from markupsafe import Markup
+
+# Detects the dual-language twin markup t()/td() emit. Used to make twin-inside-
+# twin nesting structurally impossible (see `t()` below) — a caller that passes
+# the OUTPUT of a prior t()/td() call as an argument to another t()/td() call
+# produces a twin with a full nested twin baked into one of its own legs
+# (templates/china.html.j2:2582 shipped exactly this: the turnover-percentile
+# call's English argument was `pctile ~ t('th percentile', 'th百分位')`).
+_TWIN_MARKUP = re.compile(r'class="l-(?:en|zh)"')
 
 
 def t(en: str, zh: str | None = None) -> Markup:
-    """Inline dual-language span. `zh` falls back to `en` when omitted."""
+    """Inline dual-language span. `zh` falls back to `en` when omitted.
+
+    Guarded against nesting: an `en`/`zh` argument that already contains
+    l-en/l-zh span markup means a t()/td() call's rendered output was passed
+    straight into another t()/td() call — the classic "twin inside a twin"
+    defect — so this raises instead of silently baking the nested markup into
+    one leg of the outer twin. Compose the plain string FIRST, then wrap the
+    finished string in ONE t()/td() call.
+    """
     zh = en if zh is None else zh
+    for _leg, _val in (("en", en), ("zh", zh)):
+        if isinstance(_val, str) and _TWIN_MARKUP.search(_val):
+            raise ValueError(
+                f"t({_leg}=...) received an argument that already contains "
+                "dual-language span markup (l-en/l-zh) -- a t()/td() call's "
+                "output was nested inside another t()/td() call. Compose the "
+                "plain string first, then wrap it in ONE t()/td() call. "
+                f"offending {_leg!r} argument: {_val!r}"
+            )
     return Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(en, zh)
+
+
+# Canonical English ordinal suffix for a percentile RANK (1st/2nd/3rd/4th/…, with
+# the 11th/12th/13th exception). Correct for every non-negative integer, incl. the
+# teens exception that the ad hoc hardcoded "th" callers kept getting wrong.
+def _ordinal_suffix(n: int) -> str:
+    tens = n % 100
+    if 11 <= tens <= 13:
+        return "th"
+    ones = n % 10
+    return {1: "st", 2: "nd", 3: "rd"}.get(ones, "th")
+
+
+def t_pctile(n: float | int) -> Markup:
+    """Canonical single twin for a percentile RANK — the ONE place that composes
+    "Nth percentile" / "第N百分位" so no call site hand-rolls the ordinal suffix or
+    the Chinese word order again. EN: number + correct ordinal suffix + the word
+    "percentile" (82nd percentile). ZH: the ordinal marker FIRST, then the number,
+    then the percentile word (第82百分位) — the house form used by the `rrx-ev-p`
+    Risk Radar evidence chip (templates/_risk_radar_card.html.j2 rr_pctile()).
+
+    Returns ONE correct twin, never a nested one: pass the raw number here, never
+    the output of another t()/td() call.
+    """
+    n_int = int(round(float(n)))
+    return t(f"{n_int}{_ordinal_suffix(n_int)} percentile", f"第{n_int}百分位")
 
 
 # Tokens that must keep their casing when a machine slug is prettified.
