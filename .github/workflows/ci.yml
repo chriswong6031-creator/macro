@@ -4315,7 +4315,35 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          # PINNED to an exact patch release, not the floating "3.12".
+          #
+          # engine/capital_structure/document_terms.py seals its parser behind
+          # _PARSER_V1_1_0_RUNTIME_ALLOWLIST, whose key includes sys.version_info
+          # AND the SHA-256 of specific stdlib source files. A CPython patch bump
+          # therefore produces a fingerprint the allowlist does not carry, and the
+          # parser fails closed with "document-term parser runtime fingerprint is
+          # not released" — 22 tests in tests/test_capital_structure_document_terms.py
+          # at once, on every PR whose pack happens to include
+          # capital-structure-intelligence.
+          #
+          # That is exactly what happened on 2026-08-19: the hosted tool cache moved
+          # 3.12.13 -> 3.12.14, `python-version: "3.12"` resolved to
+          # /opt/hostedtoolcache/Python/3.12.14/x64, and ci-pack-8 went red on two
+          # independent PR heads (#5737 entry-radar mockups, #5903 prophet-fusion
+          # test pins) with an identical failure that neither PR's files could
+          # possibly cause.
+          #
+          # The self-hosted lanes never broke, because they run Homebrew CPython
+          # 3.12.13 — which IS released. So the floating pin was making hosted CI
+          # test a runtime PRODUCTION DOES NOT USE, and the seal correctly refused
+          # it. Pinning restores CI/production parity; it does not weaken the seal.
+          #
+          # To move this pin, first add the target release to the allowlist in
+          # engine/capital_structure/document_terms.py (a review act owned by the
+          # Capital Structure Intelligence lane, with provenance recorded the way
+          # the existing 3.12.13 entry records its actions/python-versions archive
+          # SHA-256), THEN bump here. tests/test_ci_pack.py enforces that order.
+          python-version: "3.12.13"
       - id: identity
         name: bind the exact tested tree and base
         shell: bash
@@ -4605,7 +4633,35 @@ jobs:
           fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          # PINNED to an exact patch release, not the floating "3.12".
+          #
+          # engine/capital_structure/document_terms.py seals its parser behind
+          # _PARSER_V1_1_0_RUNTIME_ALLOWLIST, whose key includes sys.version_info
+          # AND the SHA-256 of specific stdlib source files. A CPython patch bump
+          # therefore produces a fingerprint the allowlist does not carry, and the
+          # parser fails closed with "document-term parser runtime fingerprint is
+          # not released" — 22 tests in tests/test_capital_structure_document_terms.py
+          # at once, on every PR whose pack happens to include
+          # capital-structure-intelligence.
+          #
+          # That is exactly what happened on 2026-08-19: the hosted tool cache moved
+          # 3.12.13 -> 3.12.14, `python-version: "3.12"` resolved to
+          # /opt/hostedtoolcache/Python/3.12.14/x64, and ci-pack-8 went red on two
+          # independent PR heads (#5737 entry-radar mockups, #5903 prophet-fusion
+          # test pins) with an identical failure that neither PR's files could
+          # possibly cause.
+          #
+          # The self-hosted lanes never broke, because they run Homebrew CPython
+          # 3.12.13 — which IS released. So the floating pin was making hosted CI
+          # test a runtime PRODUCTION DOES NOT USE, and the seal correctly refused
+          # it. Pinning restores CI/production parity; it does not weaken the seal.
+          #
+          # To move this pin, first add the target release to the allowlist in
+          # engine/capital_structure/document_terms.py (a review act owned by the
+          # Capital Structure Intelligence lane, with provenance recorded the way
+          # the existing 3.12.13 entry records its actions/python-versions archive
+          # SHA-256), THEN bump here. tests/test_ci_pack.py enforces that order.
+          python-version: "3.12.13"
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
