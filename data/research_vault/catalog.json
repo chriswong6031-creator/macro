@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T05:26:47.275182+00:00",
-  "count": 1385,
+  "generated_at": "2026-08-19T06:23:08.082172+00:00",
+  "count": 1388,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -225,6 +225,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-u1kg4g2n1zq-0468a7",
+      "title": "Crude oil",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:19Z",
+      "summary_points": [
+        "**Demand Revisions**: IEA/OPEC/EIA jointly revise 2024-2025 oil demand growth upward by 0.94-0.92mbpd, signaling sustained strength from emerging markets.",
+        "**Supply-Demand Divergence**: IEA forecasts 2024 undersupply versus EIA's surplus view, creating critical pricing uncertainty ahead of projected demand peak at 105.7mbpd in 2027.",
+        "**Emerging Markets Catalyst**: Urbanization, rapid population growth, and low per capita consumption in emerging economies are primary drivers of structural crude oil demand growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-scile3ernj8-ef72c1",
       "title": "Daily US",
       "institution": "UBS",
@@ -238,6 +257,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xtravguo3hi-b8816c",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:31:57Z",
+      "summary_points": [
+        "**US Yield Term Premium Shift**: 30-Year Yield at 5.31% (20-yr high), driven by fiscal deficits/inflation, signaling term premium shift amid deficit concerns.",
+        "**Euro Healthcare Defensive Play**: Sector trading below 10-yr P/E (16.5x), resilient fundamentals, mid-single-digit earnings growth expected, valuation gap narrowing via pipeline execution.",
+        "**China Macro Slowdown**: Industrial output +4.5% y/y (prev: 5.3%), retail sales below consensus, new home prices falling; constraints: extreme weather, weak demand, fading trade-in subsidies, property downturn.",
+        "**Sector Allocation Signals**: Consumer discretionary (Attractive) vs.",
+        "staples (Neutral); financials (banks Attractive, insurance Neutral); track UK unemployment, German ZEW, US housing starts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hnnq6vqoe0r-f24322",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:31:52Z",
+      "summary_points": [
+        "**China Macro Slippage**: Industrial output +4.5% yoy (vs 5.3% prev), retail sales +0.6% (miss), fixed asset investment -6.7% in 7 months; driven by weak domestic demand, fading trade subsidies, property downturn; policy easing expected to support recovery.",
+        "**Fed Pause Imminent**: Payrolls decline, inflation moderation, retail sales drop weaken near-term hike case; extended pause to provide tailwind for risk assets into year-end.",
+        "**US Economic Resilience**: Credit card data and lower-income spending growth offset July retail sales dip; earnings expectations improving amid less restrictive monetary policy.",
+        "**Japan AI Supply Chain**: Semiconductor/component makers favored due to AI positioning and geopolitical/energy-inflation tailwinds (financials, machinery, construction); Nikkei +37.5% YTD."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
