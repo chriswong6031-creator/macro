@@ -2675,6 +2675,17 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
 # ---------------------------------------------------------------------------
 
 CURATED_EXCLUSIVE = {
+    # 2026-08-19 wave 5. #6027 moved #5984's three dossier suites into
+    # conviction-profile — the right call, because their #6023 home
+    # (unrun-publish-ops) is `gate: data`, which ci.yml never plans, so they
+    # were named by a run: step and still dark on every PR. But those suites
+    # import scripts/build_ticker_pages.py and check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the job inherited whole-tree
+    # fallback claims and newly matched templates/index.html — 128 > the 127
+    # ceiling below. Curated rather than paid for: its 59 concrete owned files
+    # plus the two templates build_ticker_pages loads by name. Probe returns
+    # to 127; weight and pack ceilings unmoved.
+    "conviction-profile",
     "unrun-government-revenue-grader",
     "biocatalyst-worker",
     "biocatalyst-serving",
