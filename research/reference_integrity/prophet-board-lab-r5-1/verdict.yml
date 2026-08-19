@@ -104,9 +104,11 @@ blocking_findings:
   - id: PR52-3
     ruling: "REVISION REQUIRED — focus restores to the re-mounted mode control inside sc.onload on LAB->LIVE; a check pins it."
 
-verdict: REVISE
+verdict: APPROVE_WITH_CONDITIONS
 
 conditions:
+  - id: AUTH-CLAIMS-SCOPED
+    text: "auth.lab_observation_exists and auth.measured_lead remain warranted:false and are adjudicated APPROVE_AHEAD_OF_PRODUCER_SCOPED (R5 verdict, restated here): approval warrants composition and disclosure only; the claims bind fail-closed via C6/C7 until the Radar producer exists. Neither claim is certified by this cycle's approval."
   - id: R53-SCOPE
     text: "R5.3 is the final composition-touching round barring new law breaches: exactly the six blocking rulings above plus the takeable minors (PR52-6 .lab-agg check+mutation; PR52-7 exclusion clause in the landing; PR52-8 D21c real assertion; VTL52-606 pinned-strip date clause; VTL52-607 meta-strip separators; VTL52-608 criterion wording; PR52-10 divider spine idiom — designer's judgment on the last three, decline with a reason) and the editorial baseline.yml re-stamps (:70, :117-118). New frozen SHA, honest dispositions, scoped delta re-check by BOTH C12 seats, and the visual seat's deferred rationale-reveal amendment pass completes then."
   - id: R53-CARRIED
@@ -130,3 +132,23 @@ production_migration_blockers_preserved:
   - "C8 stands (R4 composition dual-critic pass in flight, parallel to R5.3)."
   - "DA-002 remains OPEN in production theme.css; any fix is a DS-PR outside MP-1 scope."
   - "MP-1's own laws (stocks-mode-only, candidates separate, non-US parity, server-side withholding, no theme.css change) restated as binding on P-MP1-SHELL."
+
+# ── R5.3 approval addendum (2026-08-19) ──────────────────────────────────────
+r53_approval_addendum:
+  what_happened: >
+    The REVISE verdict above was executed as R5.3 (frozen SHA dcbea7cd1fe7, branch
+    head c535c8c57784): all six blocking rulings RESOLVED, every takeable minor
+    taken, baseline re-stamps done. BOTH C12 seats then ran scoped delta re-checks
+    at the new SHA with independent live instrumentation and returned
+    APPROVAL-READY; the visual seat also completed its deferred rationale-reveal
+    amendment pass, closing the full C12 two-pass shape on both legs. The
+    blocking_findings and R53-* conditions above are historical record of the
+    cycle; their resolution receipts live in the reviews' r53_delta_recheck
+    sections.
+  verdict_now: APPROVE_WITH_CONDITIONS
+  conditions_carried_forward:
+    - "C6-LIVE-FORWARD-FAILS-CLOSED and C7-REBAKE-TAKES-ITS-OWN-SHA (from the R5 verdict) bind P-LAB-API and the post-producer rebake unchanged; auth.lab_observation_exists and auth.measured_lead remain warranted:false until the producer exists."
+    - "C8 status: the R4-composition dual-critic pass COMPLETED in its own cycle (research/reference_integrity/prophet-board-5514-r4-composition/); P-MP1-SHELL gates on that cycle's C8-A/C8-B conditions, not on this reference."
+    - "LANDING ADOPTION (both seats, restated): the LAB-entry landing is approved as reference-only choreography; P-LAB-UI adoption requires the sticky-chrome offset (now implemented in the reference), its own acceptance check under the real site nav, and its own adjudication against the standing viewport veto (MPDS:320-321)."
+    - "POST-MERGE CLEANUPS (nits, non-gating): PR53-1 (board-pill tap does not hold the LENS — descriptive landing only), PR53-2 (lab.css scope-policy sentence), VTL53-701 (D6i4 .lab-tl carve-out / c===n hatches), one opportunistic uninterrupted 34-mutation pass, per-run check coverage recorded in continuity.yml."
+  approval_receipt: approval.yml

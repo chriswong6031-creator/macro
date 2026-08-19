@@ -222,7 +222,14 @@ predecessors:
       # ── conditions that bind LATER waves, or this cycle's own process ────
       - id: C2-LEAD-SIGN-GUARD
         kind: condition
-        disposition: CARRIED_BLOCK
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds P-LAB-API / P-LAB-UI (the sign guard is already implemented and reviewed in the API; the UI inherits it). A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
         note: >
           Discharged for the REFERENCE (see R51-M3: Math.abs removed, sign is the branch, D19f
           pins it), but the condition's own text binds P-LAB-API and P-LAB-UI, which do not exist
@@ -233,7 +240,14 @@ predecessors:
 
       - id: C6-LIVE-FORWARD-FAILS-CLOSED
         kind: condition
-        disposition: CARRIED_BLOCK
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds P-LAB-API (implemented there as baseline_coverage_verified fail-closed, twice reviewed) and every later consumer. A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
         note: >
           Binds P-LAB-API, not this artifact. auth.lab_observation_exists and auth.measured_lead
           remain warranted:false at this SHA — Radar's live transport (R-LAB-1 / W4.1) has not
@@ -243,7 +257,14 @@ predecessors:
 
       - id: C7-REBAKE-TAKES-ITS-OWN-SHA
         kind: condition
-        disposition: CARRIED_BLOCK
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds the post-R-LAB-1 fixture rebake. A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
         note: >
           Binds the post-producer refresh. No rebake has occurred: the Lab fixture at this SHA is
           still synthetic on the Lab plane and real on the Prophet/identity plane, exactly as at
@@ -252,14 +273,26 @@ predecessors:
 
       - id: C8-R4-COMPOSITION-UNREVIEWED
         kind: condition
-        disposition: CARRIED_BLOCK
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-5514-r4-composition/verdict.yml
+        source: snapshot
+        linkage: >
+          Genuine replacement, not extinguishment: the debt this row recorded was "no critic pass
+          exists for R4's composition". That pass now exists as its own complete RIG cycle — two
+          fresh seats, two-pass shape, receipts + authority verdict in the superseding packet —
+          and THAT verdict's own conditions (C8-A MP-1 amendment, C8-B R4.2 repair) now carry the
+          P-MP1-SHELL gate this row used to carry. The gate moved to the record that can actually
+          discharge it.
         note: >
-          Unchanged and unchangeable by this cycle. R4's COMPOSITION has still never had a RIG §6
-          dual-critic pass; the R5 verdict adjudicated its ten RESOLVED_BY_CHANGE rows as factual
-          closure claims only. This artifact continues to load R4 unmodified (empty diff,
-          re-verified at this SHA), so approving R5.1 would still not supply R4 a critic pass.
-          P-MP1-SHELL stays blocked until R4's composition gets one or a design authority records
-          an explicit override naming this condition.
+          DISCHARGED 2026-08-19 by its own dedicated cycle, not by this artifact: R4's
+          composition received its first RIG §6 dual-critic pass (two fresh opus seats, full
+          two-pass quarantine shape, live/payload receipts; both verdicts SOUND-WITH-BLOCKERS,
+          composition ratified sound at its vintage). The pass's own verdict (REVISE with
+          conditions C8-A MP-1 amendment + C8-B R4.2 repair) now carries the P-MP1-SHELL gate —
+          the debt this row recorded (no critic pass exists) no longer describes the world.
+          Source is snapshot: the composition packet rides PR #5990, armed and unmerged at this
+          writing; the linkage expires into on_disk when it lands. This artifact still loads R4
+          unmodified (empty diff re-verified at this SHA).
 
       - id: C9-PREDECESSOR-AMENDMENT-RULE
         kind: condition
@@ -277,7 +310,14 @@ predecessors:
 
       - id: C12-SECOND-CRITIC-QUARANTINE
         kind: condition
-        disposition: CARRIED_BLOCK
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both C12 seats ran the full RIG §6 two-pass shape against the shipping SHA (see the
+          note below and the two receipts' quarantine audits + delta sections); the verdict and
+          approval in this packet stand on those receipts.
+        changed_files:
+          - research/reference_integrity/prophet-board-lab-r5-1/reviews/product_regression.yml
+          - research/reference_integrity/prophet-board-lab-r5-1/reviews/visual_taste.yml
         note: >
           THIS CYCLE'S OWN OBLIGATION, and this author cannot discharge it. The condition requires
           the R5.1 cycle to complete the proper §6 two-pass shape: both critics' first passes
@@ -286,11 +326,14 @@ predecessors:
           are deliberately kept separate from the artifact directory's runtime files so a critic
           can be quarantined against them exactly as the R5 visual-taste critic was. It clears
           when two independent critics have run against the CURRENT frozen SHA in that shape, not
-          before. R5.2 note: the first passes have now run and both raised findings (product
-          regression BLOCK, visual taste PASS_WITH_CONDITIONS); this round answers them, which
-          re-freezes the artifact and therefore stales those receipts by construction (RIG §3). The
-          condition stays CARRIED_BLOCK: it is discharged by the two-pass shape completing against
-          the SHA that ships, and this author is disqualified from any of it.
+          before. DISCHARGED 2026-08-19 at the shipping SHA dcbea7cd: both C12 seats completed
+          the full shape — quarantined first passes frozen (product at f40ae70a, visual as a
+          disclosed two-run continuation), rationale revealed only after each freeze, genuine
+          amendment passes (amendments moved in both directions on both legs), and scoped delta
+          re-checks at dcbea7cd with independent live instrumentation. Receipts:
+          reviews/product_regression.yml and reviews/visual_taste.yml in this packet, each
+          carrying its own quarantine audit and r53_delta_recheck section. Neither seat authored
+          any artifact byte; the author participated in none of it.
 
 # ── R5.2 — findings raised by this reference's OWN first-pass critics ────────
 # Answered before the verdict, in one round, at a new frozen SHA. Every row

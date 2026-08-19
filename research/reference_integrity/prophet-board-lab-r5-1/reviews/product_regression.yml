@@ -3,8 +3,9 @@
 # by the adjudicating session from the critic's amended return packet.
 schema: mastermind.rig_review.v1
 reference_id: prophet-board-lab-r5-1
-artifact_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
 lane: product_regression
+role: product_regression
 verdict: PASS_WITH_CONDITIONS
 
 identity:
@@ -23,7 +24,11 @@ rationale_note: >
   and proposal.yml / continuity.yml / README.md plus PR #5940's body at branch head
   e9b6f125afdfe0102415f3a231438bcc2da4cae3.
 
+first_pass:
+  frozen_at: "2026-08-19"
+  verdict: PASS_WITH_CONDITIONS
 quarantine:
+  rationale_received_after_first_pass: true
   held_during_first_pass: true
   attestation: >
     DESIGN_NOTES.md was deleted from the extraction before any read; proposal.yml,
@@ -121,3 +126,23 @@ second_pass:
     rulings_changed: []
   verdict: PASS_WITH_CONDITIONS
   net: "4 majors, 3 minors, 3 nits. 2 withdrawals and 1 downgrade on revealed evidence; 2 findings strengthened by it."
+
+r53_delta_recheck:
+  artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+  branch_head: c535c8c577849b2a85768326c6fcdd4c17d832b4
+  seat_verdict: "APPROVAL-READY (maps to PASS_WITH_CONDITIONS in the receipt enum; open items are nits only)"
+  resolved_verified_live:
+    - "PR52-1: #harness{display:contents} gives the bar travel — chrome=1 barTop 0 (was -2637/-4572) at 1440+390, markTop==barBottom, bound==barH; D6c4 asserts abs(barTop)<=1, D6c4b/D6c4c split the modes; M27/M25"
+    - "PR52-2: scrollTo(bandTop - off): chrome=1 390 y=388, segTop 84 > barBottom 72, whole=1, reversible to 0; D24/D24b at chrome=1; M33"
+    - "PR52-3: ArrowLeft -> af=live inStamp=true isBody=false y=0 (preventScroll); click path too; D25/M31"
+    - "PR52-4: overlap clause on the 390 glance tier EN+ZH with pills==6 (D27/M32); .lab-split tap opens+holds under coarse pointer, dismissible, dotted affordance, exclusion clause present (D28/D28b/D28c/D28d, M30); board.js empty diff verified independently"
+    - "PR52-6/7/8: D26/D26b(two-sided)/D26c + M28; exclusion clause in the 390 landing; D21c full string equality EN+ZH"
+    - "PR52-10: divider spine solid-above/dashed-below at the midline (lab.css:653-657)"
+  harness_provenance_ruling: >
+    SUFFICES — ~25 load-bearing assertions independently reproduced at the frozen SHA on a
+    different driver; mutation_test.py fails closed on a dirty baseline; the interruption is a
+    host property, disclosed. Limit stated: 162/162 and 34/34 not independently executed
+    (playwright absent). Non-blocking condition: one opportunistic uninterrupted pass post-merge.
+  new_defect_sweep: "CLEAN (LIVE composition unmoved; 12-combination 390 h-scroll sweep silent; LENS hover path uncontested, one .lens-pop ever; .harness-styled-from-lab.css deviation ACCEPTED as the lesser violation vs editing frozen board.css)"
+  open_nits: [PR53-1 board-pill tap does not hold the LENS (descriptive .lab-sub only), PR53-2 lab.css:5-6 scope policy unamended for :849/:851, PR52-5b commission-hygiene process note]
+  rulings_restated_unchanged: [lab0_s65_landing lawful reference-only, baseline_staleness editorial]

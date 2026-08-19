@@ -42,7 +42,7 @@ reference_id: prophet-board-lab-r5-1
 proposed_artifact:
   # R5.2 re-freeze. The R5.1 SHA (f889d5eb35f3080cf43136ad58bb780b1152c2dc) and what each
   # first-pass critic found against it are recorded in manifest.yml `sha_lineage`.
-  frozen_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+  frozen_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3  # re-frozen at R5.3; lineage in manifest.yml
   paths:
     - mockups/refs/prophet_lab/index.html
     - mockups/refs/prophet_lab/lab.css

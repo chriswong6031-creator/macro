@@ -4,7 +4,7 @@
 schema: mastermind.rig_review.v1
 reference_id: prophet-board-lab-r5-1
 role: visual_taste
-artifact_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
 reviewer:
   identity: fresh C12 visual/taste seat — D-LAB-R5.2 cycle, no prior contact with this artifact
   role: visual_taste_critic
@@ -16,8 +16,11 @@ reviewer:
     instance that inherited those checkpoints as a first-pass record, re-opened the
     artifact from the frozen SHA, and independently re-derived every finding it
     carries forward. No run-1 conclusion is asserted here on run-1 authority alone.
+first_pass:
+  frozen_at: "2026-08-19"
+  verdict: PASS_WITH_CONDITIONS
 quarantine:
-  rationale_received_after_first_pass: false
+  rationale_received_after_first_pass: true
   note: >-
     No rationale document was read in either run. DESIGN_NOTES.md was present in the
     run-2 extraction and was deleted unread before any crop was opened. The single
@@ -171,4 +174,24 @@ strengths:
   - VTL-401 grid scope holds in every quadrant opened (30/35/36/4c), and capture.py:184-234 refuses to emit a crop where it does not.
   - The mobile fold is met by landing, not compression — crop 14 shows a complete AA observation (y~400-718) inside 844.
   - "The 390 mode flip reads as navigation, not hijack: the pressed control moves ~56px (03 y~86 -> 14 y~30) while ~430px passes beneath it."
-second_pass: null
+second_pass:
+  rationale_read: "mockups/refs/prophet_lab/DESIGN_NOTES.md @ dcbea7cd (SS0c R5.3 dispositions), opened only after every delta verdict was written"
+  amendments:
+    - {id: AMD-1, action: withdrawn, note: "forming ZH nit (aggregate 'Prophet 更早' vs chip 'Prophet 领先我们') withdrawn before filing — answered by D26b's pre-existing rule requiring the aggregate NOT to speak the row chip's phrase; load-bearing divergence, not drift"}
+    - {id: AMD-2, action: upheld, note: "no finding weakened or overturned by the revealed rationale"}
+  verdict: PASS_WITH_CONDITIONS
+r53_delta_recheck:
+  artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+  seat_verdict: "APPROVAL-READY (maps to PASS_WITH_CONDITIONS; open item is one non-blocking minor)"
+  conditions_closed:
+    - "VTL52-601 CLOSED: crops 35/36 — 'Lead measured on 5 rows: we were earlier on 3 · same day on 1 · Prophet earlier on 1' / ZH twin; subject carries the sign; D26 family + M28"
+    - "VTL52-602 CLOSED: crops 51/30 — em-dash null-idiom seed slots; statement merged into the pinned strip; class survives on three structural channels; D6i4 census + M29"
+    - "VTL52-603 CLOSED: crops 14/17 — overlap clause on the 390 glance tier in both languages; D27 + M32"
+    - "VTL52-604 CLOSED better than asked: dotted .lab-auth affordance on the carriers; real page.tap under has_touch=True; D28/D28b/D28c + M30"
+    - "VTL52-605 CLOSED: crops 56/57 photograph the open popover at 390 EN+ZH carrying the demoted aggregate AND the exclusion clause (D28d)"
+    - "VTL52-606/607/608 CLOSED (Aug 8 / and earlier gutter; hairline marker per statement; criterion repaired to label-vs-claim); PR52-10 CONFIRMED (spine solid->dashed at the midline)"
+    - "VTL52-609 NOT_IN_SCOPE ACCEPTED — consistent with its filed severity (minor, evidentiary); substance carried forward in continuity.yml"
+  new_findings:
+    - {id: VTL53-701, severity: minor, blocking: false, title: "D6i4 keeps two escape hatches (the .lab-tl carve-out — the exact cell the R5.2 constant lived in — plus the c===n requirement)", cure: "drop the carve-out and let D6i3's differ-by-class assertion exempt, or relax to c>=n-1"}
+  strengths: "every condition closed at the level raised (crop+gate+restoring mutation); touch path added over the existing .lens-pop with frozen board.js untouched; declines named and handed forward; the fold goal holds in ZH too (crop 17)"
+
