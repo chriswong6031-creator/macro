@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T12:20:57.488138+00:00",
-  "count": 1406,
+  "generated_at": "2026-08-19T13:35:38.413075+00:00",
+  "count": 1409,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-tzvx7zjggp7-09e00e",
+      "title": "GS Blekos Marketcolour 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T11:27:31Z",
+      "summary_points": [
+        "**Momentum Divergence & High Beta Sell-Offs**: 3m vs 12m momentum pairs diverging (software largest in 3m long leg), High Beta Momentum >20 one-day 5% sell-offs YTD (rare event), signaling shifting market leadership.",
+        "**AI Token Costs & Derivatives Sentiment**: AI token costs down -49% (Chinese models alternative to US peers), ETF+index options Put/Call Ratio at 112% (YTD high), delta favoring ETF+index (+53%) indicating hedging behavior.",
+        "**Geberit's 2026 EPS upgrade**: Q2 beat with organic sales growth 8.8% ahead of expectations, driven by Europe's improved market environment (slight growth expected this year), signaling regional performance divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-1dhpuvkzmk9-cd3352",
       "title": "GS Duttenhoefer Daily 19 Aug 2026",
       "institution": "S&T",
@@ -117,6 +136,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vshyxhvnp0h-05bdfb",
+      "title": "GS Crook GS Morning 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T11:27:27Z",
+      "summary_points": [
+        "**US Treasury Supply Shift**: Net duration supply for 2026 at ~$550mm/bp (↓ from 2025’s $750mm/bp), driven by lower reinvestment demand, reducing yield curve pressure.",
+        "**French Election Volatility**: FX markets price lower election premium vs 2017; EURUSD volatility tied to OAT fiscal concerns, with trade structure (Buy EURUSD FVA vs Sell USDCHF FVA) capturing RV vol premium.",
+        "**Riksbank Hawkish Surprise**: Core inflation at 0.6% yoy (vs forecast) and headline at 0.7% (above consensus), signaling potential rate hikes and elevating EURUSD FVA screen pressure (8m/1y/2y rates red)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mpcilhoxeqd-387755",
+      "title": "Prime Insights and Analytics Chart Pack August 2026 Marquee",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T11:26:46Z",
+      "summary_points": [
+        "**US Equity Rotation**: Largest 3-week US equity buy since March 2020 (2nd largest in decade), driven by TMT/semiconductors and Financials (Capital Markets), with single stocks (60%) and Macro Products (40%) as key drivers.",
+        "**Asia Allocation Shift**: China net bought at lowest 5-year levels despite regional net selling (DM Asia, Japan, Korea, Taiwan); China equity allocation near 5-year lows amid buying.",
+        "**Leverage Dynamics**: Gross leverage stable at 301.8% (48th percentile 1-yr), net leverage up 1.5 pts to 79% (79th percentile 3-yr), signaling rising net exposure risk.",
+        "**Sector Alpha Drivers**: TMT L/S (+5.9% MTD) and Health Care L/S (+5.5% MTD) led performance; Fundamental L/S alpha driven by Volatility, Long Crowdedness, and Medium-Term Momentum.",
+        "**Regional Flow Imbalance**: North America net bought (overweight vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
       "language": "en",
       "needs_metadata": false
     },
