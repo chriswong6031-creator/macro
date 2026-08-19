@@ -338,37 +338,100 @@ def test_biopharmcatalyst_jv_snapshot_is_distinct_from_the_benchmark() -> None:
     benchmark = sources["biopharmcatalyst_benchmark"]
     snapshot = sources["biopharmcatalyst_jv_snapshot"]
 
-    assert "finite_jv_snapshot_seed" in registry["license_classes"]
+    assert "licensed_finite_snapshot" in registry["license_classes"]
+    assert "finite_jv_snapshot_seed" not in registry["license_classes"]
     assert snapshot["source_id"] == "biopharmcatalyst_jv_snapshot"
     assert snapshot["source_id"] != benchmark["source_id"]
-    assert snapshot["license_class"] == "finite_jv_snapshot_seed"
+    assert snapshot["license_class"] == "licensed_finite_snapshot"
     assert snapshot["license_class"] != benchmark["license_class"]
-    assert snapshot["production_ingest_allowed"] is False
-    assert snapshot["raw_archive"] == "operator_held_never_git"
-    assert snapshot["public_projection"] == "blocked"
     assert snapshot["producer"] is None
 
+    # Benchmark meaning is unchanged and still forbids proprietary row import.
     assert set(benchmark["permitted_uses"]) == {
         "behavioral_parity_review",
         "public_feature_inventory",
         "clean_room_acceptance_benchmark",
     }
     assert "proprietary_historical_row_import" in benchmark["prohibited_uses"]
-    assert set(snapshot["permitted_uses"]) == {
-        "schema_and_clock_census",
-        "reconstruction_matching",
-        "coverage_scoring",
+    assert benchmark["public_projection"] == "blocked"
+
+
+def test_jv_finite_snapshot_use_is_allowed_while_continuous_feed_stays_forbidden() -> None:
+    registry = _load_yaml(SOURCE_REGISTRY)
+    snapshot = registry["sources"]["biopharmcatalyst_jv_snapshot"]
+    license_class = registry["license_classes"]["licensed_finite_snapshot"]
+
+    # production_ingest_allowed remains the continuous-producer gate.
+    assert snapshot["production_ingest_allowed"] is False
+    assert snapshot["continuous_feed_rights"] == {
+        "continuous_bpc_api": "forbidden",
+        "authenticated_page_scraping": "forbidden",
     }
     assert {
-        "production_data_feed",
         "continuous_bpc_api",
-        "proprietary_historical_row_import",
-        "proprietary_row_commit",
+        "authenticated_page_scraping",
         "export_time_as_pre_event_feature",
+        "prophet_or_trade_authority",
     } <= set(snapshot["prohibited_uses"])
-    assert snapshot["seed_inventory"]["workbook_sha256"] == (
+    assert "proprietary_historical_row_import" not in snapshot["prohibited_uses"]
+    assert "proprietary_row_commit" not in snapshot["prohibited_uses"]
+
+    # Finite licensed snapshot capabilities — storage, repo, product, research.
+    assert snapshot["public_projection"] == "allowed_licensed_snapshot"
+    assert snapshot["raw_archive"] == "licensed_private"
+    assert license_class["source_fact_projection"] == "allowed_licensed_snapshot"
+    assert license_class["derived_model_training"] == (
+        "allowed_research_not_prophet_authority"
+    )
+    caps = snapshot["finite_snapshot_capabilities"]
+    assert caps["licensed_snapshot_import_storage"] == "allowed"
+    assert caps["repository_normalization"] == "allowed"
+    assert caps["product_projection"] == "allowed"
+    assert caps["research_use"] == "allowed"
+    assert caps["pattern_and_signal_development"] == "allowed"
+    assert caps["prophet_or_trade_authority"] == "forbidden"
+    assert {
+        "licensed_snapshot_import_storage",
+        "repository_normalization",
+        "product_projection",
+        "research_use",
+        "pattern_and_signal_development",
+    } <= set(snapshot["permitted_uses"])
+
+
+def test_jv_temporal_leakage_and_prophet_authority_remain_forbidden() -> None:
+    snapshot = _load_yaml(SOURCE_REGISTRY)["sources"]["biopharmcatalyst_jv_snapshot"]
+    caps = snapshot["finite_snapshot_capabilities"]
+    assert "export_time_as_pre_event_feature" in snapshot["prohibited_uses"]
+    assert caps["export_time_as_pre_event_feature"] == "forbidden"
+    assert caps["export_time_as_capture_observation"] == (
+        "allowed_from_capture_time_onward"
+    )
+    assert caps["prophet_or_trade_authority"] == "forbidden"
+    assert "prophet_or_trade_authority" in snapshot["prohibited_uses"]
+
+
+def test_jv_seed_inventory_pins_surviving_workbook_and_four_csv_hashes() -> None:
+    snapshot = _load_yaml(SOURCE_REGISTRY)["sources"]["biopharmcatalyst_jv_snapshot"]
+    inventory = snapshot["seed_inventory"]
+    assert inventory["predecessor_workbooks"] == "not_recovered_on_disk"
+    assert inventory["surviving_workbook_sha256"] == (
         "946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535"
     )
+    assert inventory["csv_sha256"] == {
+        "all_companies": (
+            "a08afff0430c06138997f6b8a3e28fee63bb742eecdb4ea936c8bea99f225ee0"
+        ),
+        "historical_fda": (
+            "f3852d34aad9b65d95e31db807f9509cfb84770eb91998533cb3687cea3d9002"
+        ),
+        "mergers_acquisitions": (
+            "aa33b6dea553b982b32621a3ee759d20283c25b1e6d267289f6e7d38e5afb3fd"
+        ),
+        "hedge_funds": (
+            "fbb968bae5f4f5f6a33f21ee6c02db4450f26cf19aa765ae6e2a6e7212164640"
+        ),
+    }
 
 
 def test_non_biocatalyst_sources_remain_disabled_or_adapter_owned() -> None:

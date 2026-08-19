@@ -1,47 +1,46 @@
 ---
 key: BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE
 question: >
-  Which single first vertical should follow the RECON-0 freeze — Drugs@FDA
-  approved-event reconstruction, device/CDRH, forward PDUFA NLP, IPO filter,
-  or conference calendar?
+  Is a hermetic Drugs@FDA matcher against JV Historical FDA Approved rows the
+  program-completion vertical, and is CI replay of a pinned ZIP production proof?
 answer: >
-  RECON-1 = hermetic Drugs@FDA approved-event reconstruction ledger against JV
-  Historical FDA clean Approved rows after unshift. Live ZIP ingest stays blocked.
-  Soak untouched. No new model. No PDUFA dates from this collector.
+  PROPOSED pending Sol. No. A hermetic Drugs@FDA matcher may remain a recommended
+  calibration / reconstruction component inside continuous source reconstruction.
+  It is not "done for the program." CI replay of a pinned ZIP is not production
+  proof and must not be described as an independently useful completed production
+  vertical. Program completion means (1) the licensed snapshot corpus is onboarded
+  and useful, (2) independent source producers can continuously regenerate the
+  targeted data families, (3) owner-plane projections are wired to website/machine
+  consumers, and (4) research can use the data under PIT rules. A future
+  real-input → real-consumer proof is specified in freeze §11. Do not start this
+  matcher, device/CDRH, PDUFA NLP, or snapshot ingestion from PR #5909.
 rationale: >
-  The Drugs@FDA collector is already fully implemented and dark
-  (rights_state review_required_before_b4). regulatory.py already emits
-  fda_regulatory_event.v1 / fda_application_dossier.v1 over an approved-product
-  corpus. The JV Historical FDA CSV is the only snapshot where a primary FDA
-  source can honestly reproduce a dated event (Approved + date) after repairing
-  the 28.1% left-shift. Every alternative fails a different gate: PDUFA has no
-  official calendar and pdufa_date is a forbidden collector claim; device has
-  no producer and no applicant→issuer join; conference is net-new; IPO is
-  already live (filter only, not a first vertical); earnings collides with
-  WS:EARNINGS-INTELLIGENCE-OS.
+  The Drugs@FDA collector is already fully implemented and dark, so a hermetic
+  matcher is a cheap calibration component. Treating that component as program
+  completion, or treating the unit-test ZIP as production proof, was the freeze
+  defect Sol rejected. Live ZIP ingest stays blocked until a separate rights
+  advance. Soak untouched. No new model. No PDUFA dates from this collector.
+  Fable is not the final architecture decision-maker.
 alternatives:
-  - option: Forward PDUFA 8-K NLP as first vertical
+  - option: Treat hermetic ZIP replay as the completed first production vertical
     why_not: >
-      Source hole (teardown §12.3). Forbidden on Drugs@FDA. Would require a new
-      corporate-plane consumer and an NLP stack. Wrong first proof.
-  - option: Device/CDRH pack first
+      CI replay of a pinned fixture is calibration. It does not prove real source
+      input reaching a real website or machine consumer.
+  - option: Commission RECON-1 immediately after this freeze merges
     why_not: >
-      Producer does not exist; openFDA biocatalyst producer is a stub; device
-      applicant→issuer identity is unbuilt. Larger than a reconstruction ledger.
-  - option: IPO biopharma filter first
+      Sol instructed STOP. Do not start RECON-1, device/CDRH, PDUFA NLP, or
+      snapshot ingestion from this PR. The next concepts are licensed snapshot
+      onboarding and continuous source reconstruction, not a matcher-only wave.
+  - option: Forward PDUFA 8-K NLP or device/CDRH as this PR's implementation
     why_not: >
-      Highest existing coverage, but it does not prove the reconstruction-ledger
-      pattern the JV dump exists to drive. Do it as backlog item 2, not the
-      first vertical.
-  - option: LoA/LoP model recreation
-    why_not: >
-      MODEL_RECREATED. Operator forbade a new model in RECON-0.
+      Out of this PR. Architecture sequencing lives in freeze §10; it is not
+      authorization to implement those waves here.
 evidence:
   - "config/biocatalyst_sources.yml drugs_at_fda producer collectors.biocatalyst.drugs_at_fda, production_ingest_allowed false, prohibited_claims includes pdufa_date"
   - "engine/biocatalyst/regulatory.py fda_application_dossier.v1 coverage_note: not pending/PDUFA/IND/CRL completeness"
   - "collectors/biocatalyst/ has clinicaltrials_* and drugs_at_fda.py; no openfda_regulatory.py"
-  - "research/BIOCATALYST_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md: there is no official complete forward PDUFA calendar"
-  - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §11"
+  - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §10–§11"
+  - "PR #5909 Sol REQUEST CHANGES 2026-08-19"
 affects:
   - "WS:BPC-JV-RECON"
   - "biocatalyst"
@@ -56,15 +55,14 @@ review_by: 2026-08-22
 
 ## Grounds
 
-RECON-0's job was to pick exactly one first vertical that is a real producer →
-evidence → fact → consumer path. Drugs@FDA is the only path where the producer
-and the contract already exist and the JV seed contains a matchable primary
-fact. Sol review can still pick a different vertical; this decision is the
-recommendation on the freeze, not a rights unlock.
+RECON-0's job is the reconstruction spec, not a production vertical. Drugs@FDA
+remains the best calibration component because the producer and contract already
+exist and the JV Historical FDA CSV contains a matchable Approved+date fact after
+unshift. That does not make ZIP replay a live proof, and it does not complete
+the program. This record is a proposed ruling pending Sol, not Fable-final.
 
 ## What would reopen this
 
-Sol choosing device/CDRH or PDUFA NLP on the needs_ceo question, or a rights
-review that still leaves Drugs@FDA dark *and* forbids even hermetic fixture
-replay (not the current rights_state — replay is already how the collector is
-tested).
+Sol rejecting the calibration-component demotion, advancing drugs_at_fda
+rights_state for live ZIP ingest, or commissioning snapshot onboarding as the
+next implementation PR (expected) rather than the matcher.

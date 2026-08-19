@@ -1,60 +1,86 @@
 # BPC-RECON-0 — JV snapshot archaeology and source-system reconstruction freeze
 
-Status: **AWAITING SOL REVIEW**. Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model.
+Status: **AWAITING SOL REVIEW** (amended 2026-08-19 after Sol REQUEST CHANGES on #5909). Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR.
 
-Date: 2026-08-18  
+Date: 2026-08-18; rights amendment 2026-08-19  
 Workstream: `WS:BPC-JV-RECON`  
 Program: `biocatalyst` (`authority_class: context_only`)  
 Session: `claude/bpc-recon-0` at `macro-main/.claude/worktrees/bpc-recon-0`
 
-This document is the reconstruction spec. It tells the next implementation PR exactly which BioPharmCatalyst (BPC) snapshot columns are primary-source facts Mastermind can rebuild, which are export-time overlays that must never become historical features, and which stay BPC editorial or model output. Authorized snapshots are the only BPC evidence used here. BPC's continuous private API is unavailable by partnership design and was not inspected.
+Architectural DECs in this freeze are **proposed rulings pending Sol**. They are not Fable-final. The JV permission premise is Chairman-confirmed (`DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN`).
+
+This document is the reconstruction spec. It tells later PRs which BioPharmCatalyst (BPC) snapshot columns are primary-source facts Mastermind can rebuild, which are export-time overlays that must never become historical pre-event features, and which stay BPC editorial or model output. Authorized snapshots are the only BPC evidence used here. BPC's continuous private API is unavailable by partnership design and was not inspected.
+
+**Program completion** is not a hermetic Drugs@FDA matcher. The program is done when (1) the licensed snapshot corpus is onboarded and useful, (2) the necessary independent source producers can continuously regenerate the targeted data families, (3) owner-plane projections are wired to website/machine consumers, and (4) research can use the data under PIT rules. That work is split into two later concepts — **licensed snapshot onboarding** and **continuous source reconstruction** — and is **not built in this PR**.
 
 ---
 
 ## 0. Verdict
 
-Mastermind can independently reconstruct the **approved-drug event spine** and the **earnings / IPO calendars**. It cannot reconstruct a live BPC-class product from these snapshots without new producers (device/CDRH, conference calendar, issuer-disclosed PDUFA NLP) and without a rights unlock on the already-written Drugs@FDA collector.
+Mastermind can independently reconstruct the **approved-drug event spine** and the **earnings / IPO calendars**. It cannot reconstruct a live BPC-class product from these snapshots without new producers (device/CDRH, conference calendar, issuer-disclosed PDUFA NLP) and without a rights unlock on the already-written Drugs@FDA **continuous** collector.
 
-**First vertical (this freeze's only implementation recommendation): RECON-1 — Drugs@FDA approved-event reconstruction ledger.** Hermetic replay of the existing dark collector against the JV Historical FDA **Approved** rows after unshift. Live ZIP ingest stays blocked. The CT.gov B1S2c / `b2_history_canary` soak is not touched.
+A hermetic Drugs@FDA matcher against JV Historical FDA **Approved** rows remains a recommended **calibration / reconstruction component**. CI replay of a pinned ZIP is **not** production proof and is **not** an independently useful completed production vertical. A later real-input → real-consumer proof is specified in §11.
+
+Accepted as foundation (Sol 2026-08-19): source archaeology, temporal poison list, owner-plane census, Historical FDA left-shift, options/W1A ruling, event-plane composition direction, source-reconstruction map.
 
 Three rights facts that bound every later PR:
 
-1. Keep `biopharmcatalyst_benchmark` verbatim. This freeze adds a **separate** source identity, `biopharmcatalyst_jv_snapshot`, for finite authorized-seed matching only (`DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK`).
-2. Catalyst events share `company_identity.v1` and `company_event.v1` lifecycle / publication clocks. They do **not** reuse fiscal `event_workspace.v1` ids (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`).
+1. Keep `biopharmcatalyst_benchmark` verbatim. Add a **separate** source identity, `biopharmcatalyst_jv_snapshot`, with **finite-snapshot rights** distinct from **continuous-feed rights** (`DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK`, `DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN`).
+2. Catalyst events share `company_identity.v1` and `company_event.v1` lifecycle / publication clocks. They do **not** reuse fiscal `event_workspace.v1` ids. Ticker + date + drug/device is a `jv_reconciliation_match_key`, never canonical event identity (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`).
 3. `pdufa_date` remains a forbidden claim on Drugs@FDA. Forward PDUFA is an issuer-disclosure problem owned by the corporate plane, not a second SEC ingest.
 
 ---
 
 ## 1. Evidence boundary
 
-Operator dump (local, 2026-08-17 00:51–01:20). **Do not commit row dumps.** Hashes belong in this freeze; importing proprietary rows as a production feed is the existing `proprietary_historical_row_import` prohibition.
+### 1.1 Four-workbook census (required by Sol 2026-08-19)
+
+The original supply was four Excel workbooks in a 3→6→8→9-sheet sequence, plus four CSVs. This amendment hashed every locatable workbook and tested whether the sequence is strict supersession.
+
+**Search protocol (2026-08-19):** Spotlight `BioPharmCatalyst*`; content search for sheet name `Device Catalysts`; all `Downloads/New Folder With Items*`; `Mastermind/BioPharmCatalyst_Tables.xlsx`; Trash; recent `.xlsx` mtime 2026-08-01..19; Mail/Slack/Cursor attachment paths.
+
+**Result:** exactly **one** distinct workbook byte-identity is recoverable. Two filesystem copies, same SHA256, nine sheets. The 3-sheet, 6-sheet, and 8-sheet predecessors are **not on disk**. Supersession vs unique-predecessor-rows **cannot be proven**. The surviving 9-sheet workbook is designated the **canonical surviving capture**, not a proven exact superset. Predecessor captures remain an open recovery item (`DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK`).
+
+| Capture | Sheets | Bytes | SHA256 | Status |
+|---|---:|---:|---|---|
+| W1 (3-sheet predecessor) | 3 | — | — | **not recovered** |
+| W2 (6-sheet predecessor) | 6 | — | — | **not recovered** |
+| W3 (8-sheet predecessor) | 8 | — | — | **not recovered** |
+| W4 canonical surviving | 9 | 353,040 | `946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535` | recovered; two copies (Downloads dump + untracked Mastermind duplicate) |
+
+W4 facts, re-read: nine visible sheets, no hidden sheets. Dates are DD/MM/YYYY, usually with an `ET` timezone label rather than a time. Earnings Calendar carries `HH:MMAM ET`.
+
+### 1.2 Four additional CSVs (kept; hashes unchanged)
 
 | File | Bytes | SHA256 |
 |---|---:|---|
-| `BioPharmCatalyst_Tables.xlsx` | 353,040 | `946c5f725ebfd3b71d254f229e006ba055a868a1d5d02d3344a74efb3882b535` |
 | `BioPharmCatalyst_All_Companies_Sorted_By_Ticker.csv` | 86,364 | `a08afff0430c06138997f6b8a3e28fee63bb742eecdb4ea936c8bea99f225ee0` |
 | `biopharmcatalyst_historical_fda_all_verified_2009_2026.csv` | 5,630,777 | `f3852d34aad9b65d95e31db807f9509cfb84770eb91998533cb3687cea3d9002` |
 | `biopharmcatalyst_mergers_acquisitions.csv` | 268,490 | `aa33b6dea553b982b32621a3ee759d20283c25b1e6d267289f6e7d38e5afb3fd` |
 | `biopharmcatalyst_hedge_funds.csv` | 63,192 | `fbb968bae5f4f5f6a33f21ee6c02db4450f26cf19aa765ae6e2a6e7212164640` |
 
-Workbook facts, re-read this session: nine visible sheets, no hidden sheets. Dates are DD/MM/YYYY, usually with an `ET` timezone label rather than a time. Earnings Calendar carries `HH:MMAM ET`. Duplicate xlsx also sits untracked at `Mastermind/BioPharmCatalyst_Tables.xlsx`; the Downloads dump is the hashed evidence.
+**Historical FDA correction:** 4,404 / 15,700 rows (28.1%) are left-shifted (`DSC:BPC-HISTORICAL-FDA-CSV-LEFT-SHIFT`). Later onboarding must preserve the **raw** CSV (this SHA256) and a **deterministic repaired** form as separate artifacts. Do not overwrite the raw bytes with the unshifted table.
 
-The "nine datasets" are the nine xlsx sheets. The four CSVs are extra authorized snapshots and are specified below. Untracked `scraped_*.json` / `scraped_biopharmcatalyst_*.csv` under occupied checkouts are **out of scope** and are not evidence.
+This PR does **not** ingest snapshot rows. Licensed snapshot onboarding is a later wave. Untracked `scraped_*.json` / `scraped_biopharmcatalyst_*.csv` under occupied checkouts are **out of scope** and are not evidence.
 
-Unique tickers across all eleven sources: **1,907**. Largest overlap: Earnings ∩ Historical FDA = 358.
+Unique tickers across the surviving eleven sources (9 sheets + 4 CSVs): **1,907**. Largest overlap: Earnings ∩ Historical FDA = 358.
 
 ---
 
 ## 2. Rights split
 
-| Identity | What it is | What it may do | What it may not do |
+Chairman confirms (2026-08-19) the supplied BPC datasets are authorized for Mastermind storage/use, website/product incorporation, repository incorporation, and research / pattern / signal-development programs. The restriction is that Mastermind does **not** receive continuing BPC API access. Research permission is **not** Prophet or trade authority.
+
+`production_ingest_allowed` on this registry is the **continuous live-producer** gate (`scripts/biocatalyst_worker.py`). It stays `false` on the JV snapshot identity. Finite-snapshot import/storage is a **separate** capability block and is allowed.
+
+| Identity | What it is | Finite snapshot | Continuous feed |
 |---|---|---|---|
-| `biopharmcatalyst_benchmark` | Historical clean-room policy. **Unchanged.** | Behavioral parity review, public feature inventory, clean-room acceptance benchmark | Production feed, authenticated scraping, asset/code copy, proprietary historical row import |
-| `biopharmcatalyst_jv_snapshot` | **New.** Finite authorized seeds (this dump). `production_ingest_allowed: false` | Schema/clock census, reconstruction matching, coverage scoring | Production feed, continuous BPC API, committing BPC rows, joining export-time fields onto historical event rows as pre-event features |
+| `biopharmcatalyst_benchmark` | Historical clean-room policy. **Unchanged.** | Not a JV snapshot. Permitted: behavioral parity, public feature inventory, clean-room benchmark. `proprietary_historical_row_import` still prohibited **here**. | Authenticated scraping, production feed, asset/code copy prohibited |
+| `biopharmcatalyst_jv_snapshot` | **New.** Licensed finite snapshots (this corpus). `license_class: licensed_finite_snapshot` | **Allowed:** import/storage, repo normalization, product projection, research/pattern/signal development | **Forbidden:** continuous BPC API, authenticated BPC scraping. `production_ingest_allowed: false` |
 
-`license_class: finite_jv_snapshot_seed` is added beside `benchmark_only`. Projection, bulk redistribution, and model training stay blocked. Raw bytes stay operator-held, never git.
+Export-time fields remain forbidden as historical pre-event features. They **may** be used as correctly time-stamped snapshot observations in research from their actual capture time onward (§3).
 
-Do not silently rewrite the benchmark YAML. Tests in this PR pin both the old meaning and the new distinct id.
+Do not silently rewrite the benchmark YAML. Tests pin (a) the old benchmark meaning, (b) the distinct JV id, (c) finite-snapshot use allowed, (d) continuous API/scraping and temporal leakage forbidden.
 
 ---
 
@@ -64,7 +90,9 @@ Two clocks exist in every snapshot. Mixing them is the failure mode this freeze 
 
 **Event-clock** — a fact as-of a named historical date (catalyst date, offer date, JPM window, earnings print). Reconstruct from a date-keyed primary source or from dated daily OHLCV. Label dated OHLCV as **non-W1A**: Market Memory W1A is a go-forward `operational_pit` store and cannot backfill past catalyst PIT (`DSC:BPC-W1A-CANNOT-BACKFILL-CATALYST-PIT`; `WS:MARKET-MEMORY-W2C`).
 
-**Export-time** — the market/options overlay as of dump capture (~2026-08-17). Never a pre-event feature on a 2009–2026 historical row.
+**Export-time / snapshot-capture** — the market/options overlay as of dump capture (~2026-08-17 00:51–01:20 local). Never a pre-event feature on a 2009–2026 historical row.
+
+**Complement (research from capture time onward):** those same fields **may** be used as correctly time-stamped snapshot observations in research from their actual capture timestamp forward. They are observations of 2026-08-17, not of the catalyst date.
 
 ### Poison (never join onto historical event rows as pre-event features)
 
@@ -88,6 +116,8 @@ Equity bid/ask (a Catalyst Impact cousin of P8 on the **underlying**) is **NONE*
 
 Price at Catalyst Date, Catalyst Price Movement, IPO price, Price after first day, JPM Price at Start / End / Change.
 
+Snapshot Price / mcap / IV / OI / EM / volume as **2026-08-17 capture observations** (research from that timestamp onward; never back-joined to earlier events).
+
 ---
 
 ## 4. Reconstruction ledger states
@@ -99,7 +129,7 @@ Every reconstructable fact in a later matcher emits one of:
 | `JV_SNAPSHOT_SEED` | Present in the authorized dump; not yet reproduced |
 | `REPRODUCED_PRIMARY` | Independent primary source emitted the same fact (date-keyed, receipt-backed) |
 | `MASTERMIND_DERIVED` | Mastermind computed it from primary facts (dated OHLCV return, expected-move formula on a **historical** IV if one exists) |
-| `MODEL_RECREATED` | A Mastermind model would have to be built to approximate a BPC model (LoA/LoP). Out of scope for RECON-0/1 |
+| `MODEL_RECREATED` | A Mastermind model would have to be built to approximate a BPC model (LoA/LoP). Out of scope for this PR; no new model until Sol asks |
 | `UNEXPLAINED` | Seed fact with no primary owner and no honest derivation |
 
 Coverage scores below count **primary-source facts only**. Model, community-vote, and BPC editorial prose are excluded from the denominator.
@@ -184,7 +214,7 @@ JV overlay sheet. Stage / drug / indication / catalyst date are event-clock; eve
 | Ticker, Drug, Indication, Stage, Catalyst Date, Catalyst | identity / event / editorial | CT.gov current-state + record-history canary may confirm **trial stage** for some names; PDUFA clocks are not Drugs@FDA |
 | Price, Options | export | poison P1/P10 |
 | Expiration Date, Call or Put, Days to Expiration, Strike, IV, EM $/%/up/down, Bid, Ask, Last, OI | export | `WS:ADVANCED-DATA-OPTIONS` — Polygon EOD chain, nightly; EM formula `gex_model.expected_move`; option NBBO DARK; **poison P7–P9** |
-| Likelihood of Approval, Likelihood of Progressing | model | BPC; 122/124 numeric. `MODEL_RECREATED` only — **no new model in RECON-0/1** |
+| Likelihood of Approval, Likelihood of Progressing | model | BPC; 122/124 numeric. `MODEL_RECREATED` only — **no new model in this PR** |
 | Bullish or Bearish | community | HTML blob |
 
 ### 5.8 Conferences (150 × 16)
@@ -234,7 +264,7 @@ Do not start a parallel earnings producer. `WS:EARNINGS-INTELLIGENCE-OS` E2 owns
 
 ### 5.12 Mergers & acquisitions CSV (1,433 × 13)
 
-No Mastermind owner. `engine/capital_structure/` plus `biocatalyst_pit_adapter.py` is **lifecycle / share count**, not deal intelligence. `acquirer_company` embeds ticker + “Add to portfolio”. Entire sheet stays `JV_SNAPSHOT_SEED` / `UNEXPLAINED` until a dedicated M&A plane exists. Not RECON-1.
+No Mastermind owner. `engine/capital_structure/` plus `biocatalyst_pit_adapter.py` is **lifecycle / share count**, not deal intelligence. `acquirer_company` embeds ticker + “Add to portfolio”. Entire sheet stays `JV_SNAPSHOT_SEED` / `UNEXPLAINED` until a dedicated M&A plane exists. Later Concept B; not this PR.
 
 ### 5.13 Hedge funds CSV (594 rows / 38 funds × 9)
 
@@ -265,7 +295,7 @@ Do not duplicate an owner plane that already exists.
 | Options IV / OI / EM | nightly EOD | `engine/options_hub.py`, `engine/gex_model.py` |
 | Market Memory W1A | go-forward only | cannot supply PIT prices for past events |
 
-**Missing (net-new, not RECON-1):** device/CDRH producer + device-applicant→issuer join; conference calendar producer; M&A deal intelligence; forward PDUFA NLP on the corporate plane; FDA AdCom scraper.
+**Missing (net-new; later Concept B, not this PR):** device/CDRH producer + device-applicant→issuer join; conference calendar producer; M&A deal intelligence; forward PDUFA NLP on the corporate plane; FDA AdCom scraper.
 
 `engine/earnings_narrative/biocatalyst_transcript_adapter.py` is a reader wrapper, `persistence_authorized: False`.
 
@@ -273,12 +303,13 @@ Do not duplicate an owner plane that already exists.
 
 ## 7. Entity and event model
 
-Compose; do not fork a second event bus.
+Compose; do not fork a second event bus. **Proposed pending Sol.**
 
 - **Issuer** = `company_identity.v1` (CIK). Ticker is a PIT alias.
 - **Asset / product** = FDA application / device 510(k)|PMA|De Novo identifier where one exists; otherwise an explicit `unidentified_asset` coverage class. Do not invent ticker-as-drug.
-- **Catalyst event** shares identity, lifecycle (`observed_at`, `source_available_at`), and publication discipline with `company_event.v1`.
-- **Do not** stuff PDUFA / device / conference / IPO into `evt_…_{year}fy_action`. That id function requires a fiscal period (`events.py:102`, `canonical_event_id`). A later PR may extend `EVENT_TYPES` and generalize the id function. Until then, reconstruction matching keys (ticker + date + drug/device name) are the join, not a new bus.
+- **Canonical events** prefer **source-native IDs** (NCT, Drugs@FDA ApplNo, CDRH 510(k)/PMA number, SEC accession, Nasdaq IPO deal id) and the existing owner event plane (`company_event.v1` envelope: identity, lifecycle, `observed_at`, `source_available_at`).
+- **`jv_reconciliation_match_key`** = ticker + date + drug/device name. This is a **reconciliation key against the JV snapshot**, never canonical event identity. Do not mint `evt_…` ids from this triple.
+- **Do not** stuff PDUFA / device / conference / IPO into `evt_…_{year}fy_action`. That id function requires a fiscal period (`events.py:102`, `canonical_event_id`). A later PR may extend `EVENT_TYPES` and generalize the id function under Sol review.
 - `event_workspace.v1` stays earnings: fiscal period, facts/deltas/guidance/claims. Catalysts do not inherit those keys.
 
 Authority remains `context_only`. All prophet flags stay false. `DNR:KILL-PHASE3-START-WEIGHT` is untouched.
@@ -292,13 +323,13 @@ producer (primary, Mastermind-owned)
   → immutable evidence (pinned ZIP / filing / page receipt)
   → normalized fact (existing contracts: fda_regulatory_event.v1, company_event.v1, …)
   → entity join (company_identity.v1; reviewed sponsor map only where attested)
-  → reconstruction matcher (JV seed, operator-held, never git)
+  → jv_reconciliation_match_key (ticker + date + drug/device; never canonical id)
   → reconstruction_ledger.jsonl (states in §4)
   → product projection (existing app/biocatalyst.py context cards)
-  → research consumer (coverage report; not Prophet)
+  → research consumer (PIT-safe; not Prophet)
 ```
 
-Export-time overlays (quotes, IV, OI, EM, P/B) attach only to **as-of-now** product views, never to historical matcher rows.
+Licensed snapshot onboarding (separate later concept) lands the corpus under `biopharmcatalyst_jv_snapshot` finite-snapshot rights, then the continuous producers above regenerate the targeted families. Export-time overlays attach only to **as-of-now** product views and to research observations timestamped at capture, never to historical matcher rows as pre-event features.
 
 ---
 
@@ -326,59 +357,64 @@ Calibrated, not row-exact. “Existing infra” includes dark-but-implemented co
 
 ---
 
-## 10. Ranked backlog
+## 10. Two later concepts (not this PR)
 
-Ordered by user value × missing coverage × research value × implementation leverage. One first vertical only.
+Architecture sequencing, **not** authorization to implement these waves in #5909.
 
-| Rank | Item | Why this order |
-|---|---|---|
-| **1. RECON-1** | Drugs@FDA approved-event spine vs JV Historical FDA clean Approved rows | Collector already written; contract `fda_regulatory_event.v1` exists; hermetic tests possible; soak untouched; rights stay dark |
-| 2 | IPO biopharma filter + dated first-day close | High existing coverage; small wiring; poison current return |
-| 3 | Earnings calendar consume-existing (no new producer) | Already live; do not collide with E2 |
-| 4 | Device/CDRH pack + applicant→issuer identity | Largest missing plane; identity is the hard part |
-| 5 | Forward PDUFA as corporate-plane 8-K monitoring | Source hole; forbidden on Drugs@FDA; NLP + exact-wording confidence |
-| 6 | Conference producer (8-K 7.01 + bounded agenda pages) | Net-new; no organizer API |
-| 7 | Historical FDA unshift + CRL/Phase as 8-K editorial, not FDA | After RECON-1 matcher exists |
-| 8 | Dated OHLCV overlay for price-at-catalyst / JPM window | `MASTERMIND_DERIVED`, non-W1A labeled; depends on matched event dates |
-| 9 | 13F overlap vs hedge-fund snapshot | Research consumer, not a BPC clone |
-| 10 | M&A deal plane | No owner; large; not catalyst-critical |
-| — | LoA/LoP / community vote | `MODEL_RECREATED`; **no new model in this program until Sol asks** |
-| — | Equity NBBO / ThetaData undark | Out of BioCatalyst scope; `WS:ADVANCED-DATA-OPTIONS` |
+### Concept A — Licensed snapshot onboarding
+
+Onboard the Chairman-authorized corpus under `biopharmcatalyst_jv_snapshot` finite-snapshot rights: storage, repo normalization, product projection, research use. Preserve raw Historical FDA bytes and a deterministic repaired form as **separate** artifacts. Recover or explicitly close the missing 3/6/8-sheet predecessors. This is not a continuous BPC producer.
+
+### Concept B — Continuous source reconstruction
+
+Independent Mastermind-owned producers that regenerate targeted data families, wired to website/machine consumers, with PIT-safe research. Durable sequence (not a build order for this PR):
+
+1. Licensed snapshot corpus (Concept A)
+2. Approved-drug spine (Drugs@FDA continuous, after rights; calibration matcher is a component, not the proof)
+3. CDRH / device spine + applicant→issuer identity
+4. Issuer-disclosed PDUFA / revision intelligence (corporate plane)
+5. AdCom
+6. Conference events
+7. Existing Earnings / IPO adapters (consume, do not duplicate)
+8. Market / options overlays (capture-time observations; never historical pre-event)
+9. M&A
+10. Institutional context
+11. Historical event-study / PIT research
+12. Prospective research ledger
+
+Hermetic Drugs@FDA ZIP replay is a **calibration component** inside item 2. It is not production proof.
 
 ---
 
-## 11. RECON-1 — first vertical specification
+## 11. Drugs@FDA calibration component (proposed, not program-done)
 
-`DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE`
+`DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE` is a **proposed** Sol ruling, not Fable-final, and **not** “done for the program.”
 
-**Not done unless** all of the following land in a later implementation PR (not this freeze PR):
+Recommended later component: hermetic replay of the existing dark collector against JV Historical FDA **Approved** rows after unshift, joined by `jv_reconciliation_match_key`, emitting reconstruction-ledger states. Soak untouched. `production_ingest_allowed` on Drugs@FDA stays false until a separate rights advance.
 
-1. **Producer** — existing `collectors.biocatalyst.drugs_at_fda` over a **pinned ZIP fixture** already used by tests. Do not flip `production_ingest_allowed`. Do not call the live archive URL from production.
-2. **Immutable evidence** — exact `archive_sha256` receipt + table manifest (already the collector's identity rule).
-3. **Normalized fact** — `engine/biocatalyst/regulatory.py` `fda_regulatory_event.v1` / `fda_application_dossier.v1`. No new event bus.
-4. **Join** — ticker via existing identity / reviewed sponsor map only where attested; unmatched rows stay `unidentified_issuer`, never guessed.
-5. **Real consumer** — context-only reconstruction report consumed by existing `app/biocatalyst.py` (or a sibling context card). `authority_class: context_only`. Zero Prophet flags.
-6. **Matcher** — operator-held Historical FDA CSV (this dump's SHA256). Unshift 28.1% shifted rows first. Restrict to `stage=Approved` after unshift. Match drug name + date ±1 calendar day + ticker when identity exists. Emit `reconstruction_ledger.jsonl` with the five states in §4.
-7. **Tests** — hermetic. A shifted-row fixture must fail until unshifted. An export-time Price/IV column must be rejected if offered as a pre-event feature.
-8. **Production proof** — CI replay of the pinned archive. Live Drugs@FDA ZIP ingest remains blocked until Sol advances `rights_state`.
+**CI replay of a pinned ZIP is not production proof.** A future real-input → real-consumer proof must, in a later PR:
 
-**Out of RECON-1:** PDUFA NLP, device pack, LoA model, soak/env changes, committing BPC rows, W1A backfill, `event_workspace.v1` reuse, `biopharmcatalyst_benchmark` edits.
+1. ingest a real Drugs@FDA source release (once rights allow) or a dated operator-held archive that is the actual production input, not only the unit-test fixture;
+2. emit `fda_regulatory_event.v1` facts into the owner plane;
+3. reconcile against the licensed JV Approved rows via `jv_reconciliation_match_key` (never as canonical ids);
+4. project to a live website or machine consumer (`app/biocatalyst.py` or successor) with `context_only` authority;
+5. show a PIT-safe research read that refuses export-time Price/IV as pre-event features.
 
-**Why not the alternatives:** forward PDUFA is a source hole plus a forbidden collector claim; device is unbuilt plus identity; conference is net-new; IPO is already live (filter only); earnings collides with E2.
+Until that chain exists, the matcher is calibration, not a completed production vertical. **Do not start it in this PR.**
 
 ---
 
 ## 12. Questions for Sol (`needs_ceo`)
 
-Primary (blocks the next build session):
+Primary (this amendment):
 
-1. **Approve RECON-1 as specified in §11** (hermetic Drugs@FDA approved spine, rights stay dark, soak untouched), versus starting with device/CDRH or PDUFA NLP instead?
+1. **Accept this amended freeze** — Chairman finite-snapshot rights encoded; continuous API still forbidden; program-done definition in the header; two-concept roadmap; Drugs@FDA matcher demoted to calibration; predecessor workbooks recorded as unrecovered.
 
-Secondary (do not block the freeze; answer before RECON-1 merges):
+Secondary (do not start implementation from this PR):
 
-2. Confirm `biopharmcatalyst_jv_snapshot` as a distinct finite-seed identity — operator-held rows, never git, never a production feed. Default: **yes**, landed as architecture in this PR.
-3. Confirm catalyst events must not reuse fiscal `event_workspace.v1` ids. Default: **yes** (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`).
-4. Advance `drugs_at_fda` `rights_state` to allow live ZIP ingest? Recommendation: **not in RECON-1**. Replay first.
+2. Confirm `jv_reconciliation_match_key` vs source-native canonical ids (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`).
+3. Advance `drugs_at_fda` `rights_state` for live ZIP ingest? Recommendation: **not until Concept B, and not as this PR's proof.**
+4. Recover the 3/6/8-sheet predecessor workbooks, or close them as lost.
 
 ---
 
@@ -387,22 +423,24 @@ Secondary (do not block the freeze; answer before RECON-1 merges):
 - Occupied `macro-main` / `Macro Dashboard` checkouts may contain unauthorized `scraped_*.json` BPC artifacts. They are not this freeze's evidence. Do not census, commit, or cite them.
 - `macro-main` is a linked worktree of `Macro Dashboard/.git`. Never delete or relocate that folder.
 - Sibling `biocatalyst-p0-*` worktrees own the soak/product path. Open PRs to be aware of: #5821 (BCI architecture docs), #5901 (Capital Structure V2 freeze).
-- `scripts/biocatalyst_worker.py` is `canary_poll` only.
-- GitHub annotations must start the line; not relevant to this docs PR except if a later producer logs inside Actions.
-- A write into a sparse worktree's omitted `data/` **truncates** committed artifacts. RECON-1 must not `git add -A` under `data/`.
-- Disarming `merge-on-green` is never silent; this freeze PR **must not be armed** — it waits on Sol.
+- `scripts/biocatalyst_worker.py` is `canary_poll` only. `production_ingest_allowed` there means continuous producer.
+- A write into a sparse worktree's omitted `data/` **truncates** committed artifacts. Snapshot onboarding must not `git add -A` under `data/` on a sparse tree.
+- Disarming `merge-on-green` is never silent; this freeze PR **must not be armed** — it waits on Sol. A sibling session already had to restore that hold after a blanket arming sweep.
 
 ### Do not redo
 
-- Re-hash this dump (hashes in §1, re-verified 2026-08-18).
+- Re-hash the surviving W4 workbook and four CSVs (hashes in §1).
 - Re-count the Historical FDA 28.1% left-shift.
 - Re-litigate `biopharmcatalyst_benchmark` permitted/prohibited uses.
-- Propose stuffing PDUFA into `evt_…_fy_action`.
-- Build LoA/LoP or a community-vote scraper as the first vertical.
+- Treat the missing 3/6/8 workbooks as proven supersets of W4 — they were not recovered, so supersession is unproven.
+- Propose stuffing PDUFA into `evt_…_fy_action`, or using ticker+date+drug as canonical event identity.
+- Build LoA/LoP or a community-vote scraper.
 - Duplicate SEC ingest inside biocatalyst.
 - Touch `b2_history_canary` allowlist, `BIOCATALYST_HISTORY_ENABLED`, or the soak window.
 - Treat Market Memory W1A as a historical PIT price source for past catalysts.
 - Treat `collectors.biocatalyst.openfda_regulatory` as implemented.
+- Describe CI ZIP replay as production proof.
+- Start RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR.
 
 ---
 
@@ -410,9 +448,9 @@ Secondary (do not block the freeze; answer before RECON-1 merges):
 
 In the same research PR as this freeze, and still not a runtime:
 
-- `license_class: finite_jv_snapshot_seed`
-- source row `biopharmcatalyst_jv_snapshot` with `production_ingest_allowed: false`
-- tests that the benchmark YAML meaning is unchanged and the new id is distinct
-- Agent OS: `WS:BPC-JV-RECON`, three DECs, three DSCs, one handoff
+- `license_class: licensed_finite_snapshot` (replaces the withdrawn `finite_jv_snapshot_seed` matching-only class)
+- source row `biopharmcatalyst_jv_snapshot` with `production_ingest_allowed: false` (continuous-producer gate) **and** explicit finite-snapshot capabilities allowed
+- tests that the benchmark YAML meaning is unchanged; finite licensed snapshot use is allowed; continuous BPC API/scraping and temporal leakage remain forbidden
+- Agent OS: `WS:BPC-JV-RECON` completion law; Chairman rights DEC; other DECs marked proposed pending Sol; predecessor-workbook DSC
 
-No producers. No collectors. No soak YAML edits other than the new source key.
+No producers. No collectors. No snapshot row ingest. No soak YAML edits other than the JV source key.
