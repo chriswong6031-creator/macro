@@ -3,7 +3,7 @@
 **Reconciled by:** FABLE-00 (COO seat), 2026-08-19 — against PASS-0 (#5910), the c0 Wave-0 census adjudication (#5933), the completed GROK-G0 census (this PR), and current `origin/main`.  
 **Repository:** `mastermindx-market-intelligence/macro` · **Workstream:** `WS:CHINA-ALPHA-INTELLIGENCE` · **Decision record:** `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`  
 **Status:** ARCHITECTURE FREEZE / EXECUTION PLAN — no production authority change by this document.  
-**Supersedes:** the 2026-08-17 draft `research/CHINA_INTELLIGENCE_INSTITUTIONAL_ALPHA_MASTERPLAN_2026-08-17.md` (rewritten in place on the same PR vehicle, #5822; the draft's two-axis architecture, collapsed `china_intelligence_state.v2` object, 8-shelf naming, and 15-wave roadmap are superseded). Its surviving repo archaeology and China-source detail: `research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md`.
+**Supersedes:** the 2026-08-17 draft `research/CHINA_INTELLIGENCE_INSTITUTIONAL_ALPHA_MASTERPLAN_2026-08-17.md` (rewritten on the commissioned #5822 vehicle branch; renaming that branch into the fleet `claude/*` namespace closed #5822 as a GitHub side effect, so the identical content and commit lineage landed as its documented successor **#5953** — closure recorded on #5822 itself. The draft's two-axis architecture, collapsed `china_intelligence_state.v2` object, 8-shelf naming, and 15-wave roadmap are superseded). Its surviving repo archaeology and China-source detail: `research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md`.
 
 ## §0-bis. FABLE-00 reconciliation record (2026-08-19)
 
@@ -219,7 +219,10 @@ The 2026-08-17 draft predated the merged PASS-0 integration, the census
 findings and their conditions, the GMI→DataOS bridge, the boring-baseline
 ruling, the four-model architecture, and the final rank arena. Per Sol's
 direction it was NOT merged as-is: THIS document is the rewrite, landed on the
-same PR vehicle (#5822), with the draft's surviving archaeology preserved at
+commissioned vehicle branch. Renaming that branch into the fleet `claude/*`
+namespace closed #5822 as a GitHub side effect; the identical content and
+lineage landed as documented successor #5953 (closure comment on #5822). The
+draft's surviving archaeology is preserved at
 `research/china_alpha_intelligence/PRESERVED_ARCHAEOLOGY_FROM_2026-08-17_DRAFT.md`.
 No second China masterplan exists.
 
@@ -859,7 +862,9 @@ No separate page merely because a dataset exists.
 Mission (executed):
 - GROK-G0 completed (`research/alpha_intelligence/censuses/G0/`);
 - FABLE-00 adjudicated A0/B0/D0/E0/F0 (inheriting c0 #5933) + G0 (c0g, this PR) — §0-bis;
-- #5822 rewritten into this canonical masterplan on its own vehicle;
+- #5822 rewritten into this canonical masterplan on its vehicle branch
+  (landed as documented successor #5953 after the branch's claude/* rename
+  closed #5822);
 - AgentOS updated (`WS:CHINA-ALPHA-INTELLIGENCE` minted;
   `WS:ALPHA-INTELLIGENCE-INTEGRATION` wave c0g closed;
   `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`);
@@ -1031,7 +1036,8 @@ Do not block P1 on a universal Evidence Mesh runtime store.
 
 - G0 census present — ✅ `research/alpha_intelligence/censuses/G0/` (this PR);
 - FABLE-00 reconciliation committed — ✅ §0-bis (this PR);
-- #5822 rewritten into the canonical final plan — ✅ this document, same vehicle;
+- #5822 rewritten into the canonical final plan — ✅ this document, same
+  vehicle branch (successor PR #5953; closure documented on #5822);
 - AgentOS points to one canonical plan — ✅ `WS:CHINA-ALPHA-INTELLIGENCE`
   artifacts + `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`;
 - first P1 handoff names exact current repo pin, data clocks, storage owner,

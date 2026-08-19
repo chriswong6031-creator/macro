@@ -63,11 +63,11 @@ waves:
   - id: g0
     title: GROK-G0 post-event reinterpretation census (Wave-0 completion, estate c0g input)
     status: done
-    pr: 5822
+    pr: [5822, 5953]
   - id: pr0a
     title: PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS
     status: done
-    pr: 5822
+    pr: [5822, 5953]
   - id: pr0b
     title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively
     status: todo
@@ -123,9 +123,10 @@ artifacts:
 # China Alpha Intelligence — execution workstream
 
 The canonical program authority is `research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md`
-(rewritten from the #5822 draft on its own PR vehicle; Sol final 8-turn
-synthesis 2026-08-19 reconciled by FABLE-00 against PASS-0, the c0 census
-adjudication, and the completed G0 census). Architecture questions are settled
+(rewritten from the #5822 draft on its own vehicle branch, landed as
+documented successor #5953; Sol final 8-turn synthesis 2026-08-19 reconciled
+by FABLE-00 against PASS-0, the c0 census adjudication, and the completed G0
+census). Architecture questions are settled
 there and in `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`; this record
 tracks execution.
 

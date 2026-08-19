@@ -8,9 +8,12 @@ answer: >
   Sol's final 8-turn China architecture synthesis (2026-08-19, Chairman-delivered)
   is adopted as the canonical China program architecture, reconciled by FABLE-00
   against PASS-0, the c0 Wave-0 census adjudication, and the completed G0 census
-  (wave c0g). The #5822 draft is REWRITTEN IN PLACE on its own PR vehicle into
+  (wave c0g). The #5822 draft is REWRITTEN on its own vehicle branch into
   research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md — one canonical plan, no
-  second masterplan store, old prose superseded. Frozen boundaries: four-model
+  second masterplan store, old prose superseded. (Execution note: renaming the
+  vehicle branch into the fleet claude/* namespace closed #5822 as a GitHub
+  side effect; the identical content and commit lineage landed as documented
+  successor PR #5953, with the closure recorded on #5822 itself.) Frozen boundaries: four-model
   architecture (Reality / Professional Belief / Market Recognition /
   Prophet-Path — never collapsed into one score); cn_prophet_v4 remains live
   champion with the new China rank arena shadow-only (C1–C5 challenger ladder);

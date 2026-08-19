@@ -1,15 +1,16 @@
 ---
 workstream: WS:CHINA-ALPHA-INTELLIGENCE
-session: claude/china-alpha-fable00
+session: claude/china-alpha-masterplan-2026-08-19
 model: fable
 ended_because: complete
 mission: >
   FABLE-00 China Alpha Intelligence reconciliation (Sol final 8-turn synthesis,
   operator-delivered 2026-08-19): complete the missing GROK-G0 census,
   adjudicate all six Wave-0 censuses for the China program, rewrite/supersede
-  the #5822 draft into one canonical China masterplan on the same PR vehicle,
-  mint the China execution workstream, and emit the first builder commissions.
-  No builder code, no runtime change.
+  the #5822 draft into one canonical China masterplan on its own vehicle
+  branch (landed as documented successor #5953 after the branch's claude/*
+  rename closed #5822), mint the China execution workstream, and emit the
+  first builder commissions. No builder code, no runtime change.
 state_before: >
   Sol's final masterplan and the FABLE handoff pack existed only as
   operator-delivered files. PR #5822 sat as an open 1,284-line draft with a
@@ -103,7 +104,7 @@ danger_areas:
   - "Sparse worktrees: never git add a data/ diff; a write into an omitted tree truncates the committed artifact."
   - "engine/company_intelligence/events.py EVENT_STATES is a closed enum — a G-wave frontier is a derived view; editing the enum trips authority_changed fleet law."
   - "Beat/miss verdicts are contract-forbidden without a licensed consensus basis (event_workspace.py:272-278) — no China or US reinterpretation state may mint one."
-prs: [5822]
+prs: [5822, 5953]
 decisions:
   - DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE
 ---
