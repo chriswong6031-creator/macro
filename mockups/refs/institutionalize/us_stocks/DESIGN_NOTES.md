@@ -827,6 +827,26 @@ composition changed.** Every item below cites the finding it closes.
 | 9 | **pv_cau ruling** | Answered — see below. |
 | 10 | **b8 / n1 rulings** | §6 Q2 and §6 Q5 refreshed. |
 
+### The migration obligation the newer-plan link creates
+
+MP-1 §10 mandates the capability and §7 specifies the URL contract, but neither says **how a link
+reaches a specific card**, which is why the R3/R4 artifact could ship a fragment nothing read and
+still look packet-compliant. The reference now implements it, so the obligation is concrete and
+must be stated rather than inferred:
+
+> **Production owes the same mechanism on the same contract.** A resolved-episode card's forward
+> link must carry a query parameter naming the plan (here `?focus=<id>`), and the board it lands
+> on must (a) clear any lifecycle filter that would exclude the target, (b) reveal it if the
+> initial grid cap is hiding it, (c) mark it, and (d) say what it did, in the reader's vocabulary
+> — **ticker, never the plan id**. A link that renders the unfiltered board and leaves the reader
+> to find the row is not the capability.
+
+That is a packet line, not a reference line: **C8-A owns adding it to MP-1 §7/§10.** Recorded here
+because the reference is where it was proven, and because P-B2's alternative disposition — an
+honest disabled affordance plus a stated production obligation — is only the right answer when the
+mechanism *cannot* be built. It could, so it was; the disabled affordance survives as the branch
+for a `newer` id with no row behind it, which is a different failure and still has to be told.
+
 ### The DA-001 guard is now a class, not two strings
 
 `verify_r4.py` R8 and R27 each pinned one literal. That is two guards, not a guard, and the
