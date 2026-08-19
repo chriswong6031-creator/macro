@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T00:33:49.405261+00:00",
-  "count": 1371,
+  "generated_at": "2026-08-19T02:10:41.593193+00:00",
+  "count": 1376,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-cq6mru0v5yk-a55ba3",
+      "title": "JPM Software Industry Thoughts and Rank Order AI Disruption Concerns Present Compelling Opportunities in Relation to Both Growth and Inexpensive Valuation",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T00:28:00Z",
+      "summary_points": [
+        "**AI Cost Structure Disruption**: Maintenance costs (80% vs 20% deployment) and token cost pressures are underappreciated disruption drivers impacting budget decisions and valuation.",
+        "**Sector Valuation Discount**: Software sector trades at ~4x EV/Revenue (vs.",
+        "~20x pandemic highs), signaling limited optimism and creating a critical re-rating opportunity.",
+        "**Infrastructure vs Application Divergence**: Infrastructure software outperformed application software (YTD: +18% vs -12%), with infrastructure shares rising 18% vs application software’s 11% decline in 2025.",
+        "**Microsoft Monetization Edge**: MSFT leads with balanced Applications/AI infrastructure portfolio, monetizing Azure capacity for third parties and leveraging cash-generative Apps to fund AI with lower capital needs than hyperscalers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mcabbrod7vc-fd53d9",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 18",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T00:26:03Z",
+      "summary_points": [
+        "**US Market Selloff Drivers**: Momentum/AI exposure (memory, semis, big tech) drove selloff; seasonality, low volume, and lack of catalysts outweighed bond yield concerns amid mixed housing data (July Housing Starts miss, Building Permits rise).",
+        "**Geopolitical & Yield Risks**: US/Iran tensions (Hormuz attacks, no talks) keep WTI elevated at $85.12; US 10-Year Yields at decade highs drive tech sell-off as yields rise (WSJ).",
+        "**Key Catalysts**: FOMC Minutes (2pm ET) dominate Fed policy expectations; Anthropic’s $65B ARR (vs.",
+        "$75-80B implied) fuels momentum reversal and AI sector volatility.",
+        "**Retail Earnings Focus**: LOW faces short positioning with Q2 miss/cut expected; TJX has lighter positioning (exit rate focus); TGT crowded long with margin pressure amid inflation/costs scrutiny."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-6j6rp1q7ei8-ced6b2",
       "title": "GS CHART OF THE DAY Momentum Leadership Shifting 18 Aug 2026",
       "institution": "S&T",
@@ -96,6 +138,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ov4md82weal-dcff44",
+      "title": "GS US Equities Color UNWINDY 18 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T00:14:08Z",
+      "summary_points": [
+        "**Yield Spike**: US 30yr yields at 5.3% (highest since June 2007), driving equity selloffs and global yield uncertainty.",
+        "**Volatility Surge**: VIX +441bps amid crushed volatility (fixed strike vols down 30bps) and abnormal gamma positioning.",
+        "**Derivatives Distortion**: SPX daily straddle ~2x with floating strike vol down beyond 2m space, signaling extreme technical dislocation.",
+        "**Implied Move**: S&P implied move 0.47% for tomorrow, reflecting near-term risk pricing from technicals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
@@ -361,6 +423,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zsaxsyipxo9-d1913a",
+      "title": "USA Empire Manufacturing Well Above Expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:42Z",
+      "summary_points": [
+        "**Empire Manufacturing Index Surge**: Index hits 20.6 (+5.0pt), highest since Dec 2021, with prices paid at 58.6 (vs.",
+        "expected 57.7), signaling persistent supply chain stress and elevated inflation uncertainty despite softening new orders/shipments.",
+        "**Forward Business Conditions**: 6-month-ahead index rises +4.2pt to 32.1, indicating sustained manufacturing strength and critical for equity/credit positioning amid mixed current components.",
+        "**Price Diffusion Divergence**: Narrowing current/expected prices gap post-2021 (sharp 2021 spike in prices paid) reflects reduced inflation uncertainty, directly impacting Fed policy expectations and sector rotation decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ctokjwlcaqu-30779e",
       "title": "Trade Update Closing our short THB INR for a small gain, as RBI brings forward FCNR(B) deadline",
       "institution": "Goldman Sachs",
@@ -398,6 +480,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qwupv1bwxcp-178331",
+      "title": "LATAM Today August 17, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:37Z",
+      "summary_points": [
+        "**Argentina Fiscal & Trade Dynamics**: Trade surplus forecast at US$2.0bn (energy-driven, Middle East conflict boosting exports to US$10bn surplus), primary surplus at 0.6% GDP (June), fiscal restraint policy.",
+        "**Brazil GDP Weakness & Fiscal Policy Impact**: June real GDP (IBC-Br) at -0.64% mom sa (vs.",
+        "0.50% consensus), dragged by industry (-1.4% mom sa) and services (-0.5% mom sa); median primary fiscal balance remains red (-0.50%/-0.40%/-0.22% of GDP) through 2028.",
+        "**Chile Current Account Deficit**: Q2 2026 forecast $4.0bn deficit (down from $1.9bn surplus Q1), driven by higher oil prices and soft non-mining exports; trade deficit US$0.9bn June (12-mo rolling near record-high US$16.8bn)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
