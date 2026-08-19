@@ -4185,6 +4185,34 @@ jobs:
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976-class): the token-
+      # segmentation unit tests for THIS job's own checker were named by no run:
+      # step. `_token_segments`/`_matches_around_tokens` are the stdlib fallback
+      # `check_template_site_sync.py` uses when PyYAML cannot reproduce the bake
+      # (pages.yml, a DEPLOY GATE) — it walks N tokens -> N+1 invariant segments,
+      # and this suite is what proved the generalization from one token
+      # (Supabase) to two (mm_brain.js's content hash, added by #5976) still
+      # accepts the real committed pair and still rejects a one-sided edit. Rides
+      # this step's own venv (pytest + pyyaml, already above) and this job's full
+      # checkout (it reads templates/theme.js AND site/theme.js). Ordered right
+      # after the checker it tests, before the unrelated chat-nav/asset-stamp
+      # steps below, so a regression here is not masked behind them.
+      - name: template-site-sync token-segmentation unit tests (N-token fallback)
+        run: python -m pytest tests/test_template_site_sync_tokens.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976): theme.js's lazy
+      # assistant launcher (#mmb-boot stub) — the RESOLUTION guard (every
+      # dynamically injected same-origin child asset must resolve from
+      # _mmSharedAssetRoot, not a document-relative literal; this is the exact
+      # class of the 2026-08-19 ~4,600-page /stocks/ 404) and the EAGERNESS guard
+      # (the bundle loads on activation, not at DOMContentLoaded), plus the drift
+      # guard comparing #mmb-boot's geometry to mm_brain.js's real #mmb-launch.
+      # Static analysis of templates/theme.js + templates/mm_brain.js only — no
+      # network, no render, no site/ read — so it needs nothing past this job's
+      # existing pytest install. Joins this job because it is the templates/**
+      # plain-copy-asset home and the sibling suite immediately above already
+      # reads templates/theme.js for the same PR's change.
+      - name: chat launcher stub — shared-asset-root resolution + lazy activation + drift guard
+        run: python -m pytest tests/test_chat_launcher_stub.py -q
       # The other half of plain-copy integrity: byte-matching its site copy says
       # nothing about whether chat.html's HEADER still matches the shared partial.
       # It did not — 12 live pages missing, 17 removed pages still linked — because
@@ -10186,6 +10214,27 @@ jobs:
         run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5942 sibling): the
+      # NA-ticker pandas-sentinel guard. pandas decodes the bare strings
+      # NA/NULL/NONE/NAN/N-A/NaN to NaN by default, and 'NA' is a live ticker on
+      # both sides (Nano Labs Ltd, Nasdaq; National Bank of Canada, TSX) — every
+      # read_csv/read_excel over a ticker column silently dropped those rows
+      # with adapter status still `ok`. Pins the keep_default_na=False +
+      # na_values=[""] guard (an AST call-site census) across all 18 parse sites
+      # in the nine collector files this fixed, including etf_holdings.py's 9 —
+      # the largest single chunk, and the reason this suite rides the ETF lane
+      # rather than a collectors-generic one: "etf fund registry" and "etf flow
+      # decomposition" above already exercise the same sponsor-parsing surface.
+      # Also covers the is_non_equity_holding() truth table (collectors/
+      # holdings.py) that Part B of the fix depends on, and the documented
+      # regression a BARE keep_default_na=False would reintroduce (numeric
+      # columns silently turning to dtype str). Pure pandas/ast — no network, no
+      # xlsx bytes (the read_excel(header=None) sponsor sites are proven via the
+      # downstream frame shape instead, same as test_corp_bond_holdings.py does
+      # for openpyxl elsewhere) — so it costs this job's venv nothing beyond the
+      # pandas/numpy already on the install line above.
+      - name: NA-ticker pandas-sentinel guard — 18 parse sites + is_non_equity_holding truth table
+        run: python -m pytest tests/test_collectors_na_sentinel.py -q
 
   # ── RED-ON-ARRIVAL SWEEP, BATCH B (2026-07-27) ─────────────────────────────
   # The template-surface share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on
