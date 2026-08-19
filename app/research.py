@@ -128,39 +128,98 @@ _CATALOG_TTL = 60.0  # seconds (masterplan §9)
 _CATALOG_LOCK = threading.Lock()
 
 
-def _load_catalog() -> dict:
-    """Fetch catalog.json from the private bucket, TTL-cached, stale on refresh fail.
+def _cached_good() -> dict | None:
+    """The last catalog that PASSED validation, or None. Never a synthetic empty."""
+    with _CATALOG_LOCK:
+        hit = _CATALOG_CACHE.get(_CATALOG_KEY)
+    return hit[0] if hit is not None else None
 
-    Returns the parsed dict. On a refresh failure with a prior copy → last copy +
-    ``{"stale": True}``. Raises HTTPException(503) only if never fetched. Uses the
-    W1 ``catalog.load`` (which itself degrades a corrupt/missing catalog to empty).
+
+def _with_health(catalog: dict, reason: str = "") -> dict:
+    """Attach the freshness projection to a shallow copy of ``catalog``.
+
+    ``catalog_health`` is the explicit block (state/generated_at/age_seconds/
+    reason); ``stale`` is retained as the pre-Wave-4 boolean so an un-updated
+    client keeps working. Both are DERIVED from the document's own producer clock
+    on every call — nothing is persisted, so there is no second health store to
+    fall out of sync with the catalog (freeze §A).
+    """
+    out = dict(catalog)
+    try:
+        state = catalog_mod.health(catalog, reason=reason)
+    except catalog_mod.CatalogUnavailable as exc:
+        # A cached copy always validated on the way in, so this is unreachable in
+        # practice; fail toward "not live" rather than inventing a fresh label.
+        state = {"state": catalog_mod.STATE_STALE, "generated_at": "",
+                 "age_seconds": None, "reason": exc.reason}
+    out["catalog_health"] = state
+    out["stale"] = state["state"] != catalog_mod.STATE_FRESH
+    return out
+
+
+def _load_catalog() -> dict:
+    """Authoritative catalog + its freshness verdict; 503 when nothing is valid.
+
+    Fail-CLOSED read (``catalog.read_strict``) behind the 60s TTL cache. The cache
+    holds only documents that PASSED validation, so a corrupt or missing object can
+    never be served as an empty-but-healthy vault (Defect 3), and a successful read
+    of an arbitrarily old object can never be labelled live (Defect 1) — age is
+    recomputed from ``generated_at`` on every call, including cache hits, so a
+    cached copy ages into ``stale`` on its own.
+
+    Degradation ladder, in order:
+      1. fresh/old-but-valid authoritative read → serve it, health says which;
+      2. read failed (missing / corrupt / store outage) but a validated copy is
+         cached → serve that copy as STALE, carrying the failure ``reason``;
+      3. no valid copy has ever been seen → HTTPException(503).
     """
     now = time.monotonic()
     with _CATALOG_LOCK:
         hit = _CATALOG_CACHE.get(_CATALOG_KEY)
         if hit is not None and (now - hit[1]) < _CATALOG_TTL:
-            return hit[0]
+            return _with_health(hit[0])
 
     store = _build_store()
     if store is None:
-        with _CATALOG_LOCK:
-            hit = _CATALOG_CACHE.get(_CATALOG_KEY)
-        if hit is not None:
-            return {**hit[0], "stale": True}
+        cached = _cached_good()
+        if cached is not None:
+            return _with_health(cached, reason="store_unavailable")
         raise HTTPException(503, "research catalog unavailable (no store configured)")
 
     try:
-        cat = catalog_mod.load(store)  # never raises; empty on miss/corrupt
-    except Exception:  # noqa: BLE001 — belt-and-suspenders; load already degrades
-        with _CATALOG_LOCK:
-            hit = _CATALOG_CACHE.get(_CATALOG_KEY)
-        if hit is not None:
-            return {**hit[0], "stale": True}
+        cat = catalog_mod.read_strict(store)
+    except catalog_mod.CatalogUnavailable as exc:
+        log.warning("research_vault: catalog unavailable (%s) — %s", exc.reason, exc.detail)
+        cached = _cached_good()
+        if cached is not None:
+            return _with_health(cached, reason=exc.reason)
+        raise HTTPException(503, f"research catalog unavailable ({exc.reason})") from None
+    except Exception as exc:  # noqa: BLE001 — belt: read_strict already classifies
+        log.warning("research_vault: catalog read raised (%s)", exc)
+        cached = _cached_good()
+        if cached is not None:
+            return _with_health(cached, reason="store_error")
         raise HTTPException(503, "research catalog unavailable") from None
 
     with _CATALOG_LOCK:
         _CATALOG_CACHE[_CATALOG_KEY] = (cat, now)
-    return cat
+    return _with_health(cat)
+
+
+def _catalog_ids() -> set[str]:
+    """The ids the CURRENT catalog admits — the universal visibility set.
+
+    Every user-visible surface is restricted to this set, for every tier. The
+    corpus is published BEFORE the catalog (freeze §A), so between those two puts
+    the corpus can legitimately hold a row the catalog has not admitted yet; that
+    row must stay invisible until the catalog publishes. Raises the same 503 as
+    :func:`_load_catalog` when visibility cannot be established at all — refusing
+    to answer is correct, because with no catalog we cannot prove ANY id is public.
+    """
+    return {
+        str((item or {}).get("id") or "")
+        for item in (_load_catalog().get("items") or [])
+    }
 
 
 def _catalog_has(doc_id: str) -> bool:
@@ -466,17 +525,36 @@ def research_search(
     limit: int = Query(_SEARCH_LIMIT_DEFAULT),
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    """FTS search over the corpus, restricted to preview IDs unless caller is Pro.
+    """FTS search over the corpus, restricted to CATALOG-ADMITTED ids for every tier.
 
     Input is clamped (limit ≤ 50) and malformed queries degrade to an empty result.
-    Anonymous, free, and Essential callers can receive hits only for the three
-    public preview reports; an authenticated Pro can search the complete corpus.
+
+    Two nested visibility gates, in order:
+
+      1. **catalog admission — universal.** The catalog is the visibility commit
+         (freeze §A) and the corpus is published BEFORE it, so a corpus row whose
+         catalog publish has not landed yet is legitimately AHEAD of the public
+         inventory. Every result, Pro included, is filtered to the ids the current
+         catalog admits; before Wave 4 only the non-Pro branch did this, so a Pro
+         search could surface a report that the vault had not admitted and whose
+         PDF may not exist. If visibility cannot be established at all (no valid
+         catalog anywhere) the route reports ``available: False`` rather than
+         answering from the corpus alone.
+      2. **tier preview — non-Pro only.** Anonymous, free, and Essential callers
+         are then narrowed further to the three public preview reports.
     """
     try:
         lim = int(limit)
     except (TypeError, ValueError):
         lim = _SEARCH_LIMIT_DEFAULT
     lim = max(1, min(_SEARCH_LIMIT_MAX, lim))
+
+    # Establish the admitted id set BEFORE touching the corpus: with no valid
+    # catalog there is no id we can prove is public, so there is nothing to search.
+    try:
+        admitted = _catalog_ids()
+    except HTTPException:
+        return {"items": [], "count": 0, "available": False}
 
     conn = _corpus_conn()
     if conn is None:
@@ -500,6 +578,10 @@ def research_search(
         except Exception:  # noqa: BLE001
             pass
 
+    # Gate 1 — catalog admission, applied to EVERY tier (see the docstring).
+    items = [item for item in items if str((item or {}).get("id") or "") in admitted]
+
+    # Gate 2 — the non-Pro preview narrowing, applied on top.
     if not _can_view(_optional_tier(authorization)):
         preview_ids = {
             str((item or {}).get("id") or "")

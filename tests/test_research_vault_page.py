@@ -300,9 +300,60 @@ def test_boot_waits_for_authoritative_catalog_before_ingesting_bake():
         "the render-time catalog must not be painted as current before the live API"
     )
     assert "CATALOG_SOURCE === 'loading') hydrateFromBake();" in js
-    assert "ingest(j, j.stale ? 'snapshot' : 'live');" in js
-    assert "Saved snapshot · live update unavailable" in js
+    # ...and the bake fallback itself now goes through the same validate-and-pick
+    # path as the live copy, so an undatable snapshot cannot paint at all.
+    assert ("function hydrateFromBake() { return paintChoice("
+            "pickCatalog(null, bakedCatalog())); }") in js
+    assert "return paintChoice(pickCatalog(j, bakedCatalog()));" in js
     assert "shell.setAttribute('aria-busy', 'true')" in body
+
+
+# --- Wave 4 PR A: the status line may only claim what the clock supports -----
+# "Updated hourly" is a claim about the PRODUCER, and before Wave 4 the client
+# made it whenever the API request had not thrown — so an arbitrarily old catalog
+# read as live. Freshness now comes from generated_at, and every non-fresh outcome
+# states the data is saved AND prints the clock it was generated on.
+
+def test_live_label_is_gated_on_a_fresh_producer_clock():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "var FRESH_MAX_AGE_MS = 2 * 60 * 60 * 1000;" in js
+    assert "var FUTURE_TOLERANCE_MS = 5 * 60 * 1000;" in js
+    # The ONLY guard on the live label is source==live AND inside the window.
+    assert ("CATALOG_FRESH = source === 'live' && isFresh(" in js)
+    assert "} else if (CATALOG_FRESH) {" in js
+    live = js.index("} else if (CATALOG_FRESH) {")
+    assert js.index("'This week · Updated hourly'") > live, (
+        "the hourly label must sit inside the freshness branch"
+    )
+    # Every other outcome shows the real generation time rather than an adjective.
+    assert "'Saved snapshot · live update delayed'" in js
+    assert "' · updated ' + when" in js
+    assert "'已保存快照 · 实时更新延迟'" in js
+
+
+def test_unavailable_catalog_is_not_painted_as_an_empty_vault():
+    """A read failure and a zero-report vault are different facts."""
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "if (!choice) { ingest({ items: [] }, 'unavailable'); return false; }" in js
+    assert "if (CATALOG_SOURCE === 'unavailable') {" in js
+    unavailable = js.index("if (CATALOG_SOURCE === 'unavailable') {")
+    onboarding = js.index("'Institutional research is being onboarded'")
+    assert unavailable < onboarding, (
+        "the unavailable branch must precede the honest-empty branch, or a failed "
+        "read renders as 'we hold no reports yet' — a claim we cannot support"
+    )
+    assert "'Live research is temporarily unavailable'" in js
+    # An undatable bake is discarded rather than painted.
+    assert "return validCatalog(parsed) ? parsed : null;" in js
+
+
+def test_snapshot_never_displaces_a_live_copy_carrying_more_reports():
+    """The bake is a 3-item public preview; 'newer' must not cost a Pro 1,400 rows."""
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "if (b.at > a.at && b.n >= a.n) return b;" in js
+    # And the bake really is the truncated preview this guard assumes.
+    assert "_preview_items" in (bld.ROOT / "scripts" / "build_research_vault.py").read_text(
+        encoding="utf-8")
 
 
 def test_catalog_refresh_is_no_store_and_newest_request_wins():

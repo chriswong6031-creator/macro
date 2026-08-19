@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import ast
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -1009,3 +1009,226 @@ def test_router_wiring_fails_startup_loudly_instead_of_swallowing_importerror() 
         "level so a wiring error fails startup instead of dropping all three "
         "paid routes"
     )
+
+
+# ===========================================================================
+# Wave 4 PR A — the catalog serving tier is truthful about its own freshness
+# ===========================================================================
+# Defect 1: a successful read of an arbitrarily OLD object was reported healthy,
+# because the only staleness signal was "did the refresh throw".
+# Defect 3: catalog.load() degrades a missing/corrupt catalog to empty(), and the
+# API could not tell that apart from a vault that legitimately holds zero reports.
+
+
+def _republish(store, items, *, age_hours: float = 0.0):
+    """Publish a catalog whose producer clock is ``age_hours`` in the past."""
+    cat = catalog_mod.empty()
+    for item in items:
+        catalog_mod.upsert_item(cat, item)
+    stamp = datetime.now(timezone.utc) - timedelta(hours=age_hours)
+    catalog_mod.write(store, cat, now=stamp)
+    return cat
+
+
+def _seeded_store(client):
+    import app.research as research_mod
+    return research_mod._build_store()
+
+
+def _bust_cache():
+    """Drop everything — no TTL entry AND no last-known-good copy."""
+    import app.research as research_mod
+    research_mod._CATALOG_CACHE.clear()
+
+
+def _age_cache():
+    """Expire the 60s TTL while KEEPING the last-known-good copy.
+
+    The one cache entry serves both roles by design: it is the TTL hit that
+    skips a refetch, and it is the validated copy the degradation ladder falls
+    back to. A test that wants to force a refresh must age it, not clear it —
+    clearing also destroys the fallback the refresh failure is supposed to find.
+    """
+    import app.research as research_mod
+    with research_mod._CATALOG_LOCK:
+        for key, (cat, _ts) in list(research_mod._CATALOG_CACHE.items()):
+            research_mod._CATALOG_CACHE[key] = (cat, 0.0)
+
+
+def test_catalog_health_reports_fresh_for_a_recent_publish(client):
+    c, _ = client
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 200
+    health = r.json()["catalog_health"]
+    assert health["state"] == "fresh"
+    assert health["reason"] == ""
+    assert health["age_seconds"] < 300
+    assert not r.json().get("stale")
+
+
+def test_old_catalog_is_stale_even_though_the_read_succeeded(client):
+    """Defect 1, pinned: nothing threw, and the answer is still not 'live'.
+
+    Before Wave 4 this response carried no ``stale`` flag at all, so the browser
+    printed 'This week · Updated hourly' over a three-hour-old catalog.
+    """
+    c, _ = client
+    _republish(_seeded_store(client), [{"id": _DOC_ID, "title": _DOC_TITLE}], age_hours=3)
+    _bust_cache()
+
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["catalog_health"]["state"] == "stale"
+    assert body["catalog_health"]["reason"] == "age_exceeded"
+    assert body["catalog_health"]["age_seconds"] >= 3 * 3600
+    assert body["stale"] is True          # retained for pre-Wave-4 clients
+    assert body["items"], "a stale catalog is still usable as last-known data"
+
+
+def test_two_hour_old_catalog_is_still_fresh_at_the_boundary(client):
+    c, _ = client
+    _republish(_seeded_store(client), [{"id": _DOC_ID, "title": _DOC_TITLE}],
+               age_hours=1.98)
+    _bust_cache()
+    assert c.get("/api/research/catalog").json()["catalog_health"]["state"] == "fresh"
+
+
+def test_legitimate_empty_vault_serves_as_a_fresh_empty_catalog(client):
+    """A vault that genuinely holds zero reports is honest, not an outage."""
+    c, _ = client
+    _republish(_seeded_store(client), [])
+    _bust_cache()
+
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["catalog_health"]["state"] == "fresh"
+    assert body["count"] == 0
+    assert body["items"] == []
+    assert not body.get("stale")
+
+
+def test_corrupt_catalog_with_no_known_good_copy_is_503_not_an_empty_vault(client):
+    """Defect 3, pinned: corruption must never render as '0 reports · updated hourly'."""
+    c, _ = client
+    store = _seeded_store(client)
+    store.put_bytes(catalog_mod.CATALOG_KEY, b"{{{ truncated", "application/json")
+    _bust_cache()
+
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 503
+    assert "malformed_json" in r.json().get("detail", "")
+
+
+def test_missing_catalog_with_no_known_good_copy_is_503(client):
+    c, _ = client
+    store = _seeded_store(client)
+    (Path(store.root) / catalog_mod.CATALOG_KEY).unlink()
+    _bust_cache()
+
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 503
+    assert "missing" in r.json().get("detail", "")
+
+
+def test_corrupt_catalog_falls_back_to_the_cached_known_good_copy_as_stale(client):
+    """With a validated copy in hand we serve it — labelled stale, with the reason."""
+    c, _ = client
+    assert c.get("/api/research/catalog").status_code == 200   # warm a known-good copy
+
+    store = _seeded_store(client)
+    store.put_bytes(catalog_mod.CATALOG_KEY, b"not json", "application/json")
+    _age_cache()           # expire the TTL, but keep the last-known-good entry
+
+    r = c.get("/api/research/catalog")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["catalog_health"]["state"] == "stale"
+    assert body["catalog_health"]["reason"] == "malformed_json"
+    assert [it["id"] for it in body["items"]] == [_DOC_ID]
+
+
+def test_store_outage_falls_back_to_cached_copy_with_a_store_error_reason(client,
+                                                                         monkeypatch):
+    import app.research as research_mod
+
+    c, _ = client
+    assert c.get("/api/research/catalog").status_code == 200   # warm the cache
+
+    class BrokenStore:
+        def get_bytes_strict(self, key):
+            raise ConnectionError("R2 unreachable")
+
+    monkeypatch.setattr(research_mod, "_build_store", lambda: BrokenStore())
+    _age_cache()
+
+    body = c.get("/api/research/catalog").json()
+    assert body["catalog_health"]["state"] == "stale"
+    assert body["catalog_health"]["reason"] == "store_error"
+    assert [it["id"] for it in body["items"]] == [_DOC_ID]
+
+
+def test_a_synthetic_empty_catalog_is_never_cached_as_known_good(client):
+    """The cache must only ever hold documents that PASSED validation."""
+    import app.research as research_mod
+
+    c, _ = client
+    store = _seeded_store(client)
+    store.put_bytes(catalog_mod.CATALOG_KEY, b"[]", "application/json")
+    _bust_cache()
+
+    assert c.get("/api/research/catalog").status_code == 503
+    assert research_mod._CATALOG_CACHE == {}, (
+        "a rejected read must not seed the last-known-good cache, or the next "
+        "request would serve the corruption as a stale-but-real catalog"
+    )
+
+
+# ── the universal visibility invariant ─────────────────────────────────────
+
+def test_pro_search_cannot_surface_a_corpus_row_the_catalog_has_not_admitted(client):
+    """The corpus publishes BEFORE the catalog, so it can run legitimately ahead.
+
+    Before Wave 4 only the non-Pro branch filtered on catalog membership, so a Pro
+    search could return a report the vault had not admitted — and whose canonical
+    PDF may not exist yet.
+    """
+    c, ctl = client
+    ctl["tier"] = "pro"
+
+    store = _seeded_store(client)
+    corpus_path = Path(store.root) / "_ahead_corpus.sqlite"
+    conn = corpus_mod.open_db(corpus_path)
+    for doc_id in (_DOC_ID, "corpus-ahead-not-yet-admitted"):
+        corpus_mod.upsert(
+            conn,
+            {"id": doc_id, "title": "Datacenter Pipeline", "institution": "Bernstein",
+             "side": "sell", "published_at": "2026-07-21T14:00:00Z",
+             "summary_points": ["pipeline"]},
+            "hyperscaler capacity dominates the credible datacenter pipeline",
+        )
+    conn.close()
+    store.put_bytes("research_vault/corpus.sqlite", corpus_path.read_bytes(),
+                    "application/octet-stream")
+    corpus_mod.reset_cache()
+    _bust_cache()
+
+    body = c.get("/api/research/search?q=datacenter", headers=_AUTH).json()
+    ids = {it["id"] for it in body["items"]}
+    assert _DOC_ID in ids, "the catalog-admitted report must still be searchable"
+    assert "corpus-ahead-not-yet-admitted" not in ids, (
+        "a corpus row absent from the catalog is not yet user-visible"
+    )
+
+
+def test_search_reports_unavailable_when_visibility_cannot_be_established(client):
+    """No valid catalog anywhere → we cannot prove ANY id is public → refuse."""
+    c, ctl = client
+    ctl["tier"] = "pro"
+    store = _seeded_store(client)
+    store.put_bytes(catalog_mod.CATALOG_KEY, b"{oh no", "application/json")
+    _bust_cache()
+
+    body = c.get("/api/research/search?q=datacenter", headers=_AUTH).json()
+    assert body == {"items": [], "count": 0, "available": False}
