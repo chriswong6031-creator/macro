@@ -39,8 +39,18 @@ on:
 # is off the render path so there is no shared-pool reason to prefer a fresh
 # run over letting an in-flight one finish (CLAUDE.md — never cancel or
 # manually re-run an in-progress lane merely to unblock something else).
+#
+# The group is the LITERAL name, not suffixed by `github.event_name`. This
+# workflow has three independent triggers (workflow_run, workflow_dispatch,
+# schedule); an event-suffixed group would put each trigger in its own
+# concurrency group, so a schedule firing while a workflow_run-triggered run
+# is still in flight would run concurrently with it instead of queuing behind
+# it — two `report` jobs racing to open the same standing issue. daily.yml's
+# concurrency is deliberately event-split for an unrelated reason (cron must
+# never serialize against a manual dispatch); this lane has the opposite
+# requirement; one lane, one queue.
 concurrency:
-  group: data-health-${{ github.event_name }}
+  group: data-health
   cancel-in-progress: false
 
 permissions:
@@ -50,6 +60,15 @@ permissions:
 jobs:
   data-pack:
     name: data-pack-${{ matrix.pack }}
+    # Only run against data the nightly actually finished writing.
+    # `types: [completed]` fires on failure/cancelled too, not only success,
+    # and daily.yml has a deliberate DST no-op cron that also completes
+    # without writing anything — asserting `gate: data` jobs against a tree
+    # the nightly did NOT advance would misattribute a stale-data red to this
+    # lane. workflow_dispatch and the schedule fallback are unconditional:
+    # both are an operator/backstop choice to check the CURRENT tree, whatever
+    # advanced it last.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     # NEVER self-hosted. This lane is deliberately off the render/nightly
     # pool (CLAUDE.md — render budget is law); it runs on GitHub's hosted
     # capacity exactly like ci.yml's merge-gate packs.
@@ -77,6 +96,14 @@ jobs:
           # `gate: data` jobs (e.g. capital-structure-intelligence) exercise
           # that same parser, so this lane needs the identical pin.
           python-version: "3.12.13"
+      - uses: actions/setup-node@v4
+        with:
+          # Matches ci.yml's pack job exactly, so this lane honors the same
+          # RUNNER_CONTRACT (ci-pack/ubuntu-latest/python-3.12/node-20/v1)
+          # run_ci_pack.py's semantic digest pins every legacy job to — a
+          # `gate: data` job whose steps assume Node 20 must see the same
+          # infrastructure here as it would have on the merge gate.
+          node-version: "20"
       - name: install isolated pack runner
         run: |
           python -m venv "$RUNNER_TEMP/data-health-runner"
@@ -95,7 +122,10 @@ jobs:
       # drops a small marker artifact instead; the artifact system needs no
       # extra token permission (it is a separate signed-URL upload, not a
       # `permissions:` scope), which keeps this workflow's token to exactly
-      # `issues: write, contents: read`.
+      # `issues: write, contents: read`. This marker is a NAMING aid only —
+      # the report job's pass/fail decision is `needs.data-pack.result`, not
+      # marker presence, so a pack that is cancelled/timed-out before this
+      # step runs still reds the report (see the report job below).
       - name: record this pack's failure marker
         if: failure()
         run: |
@@ -103,7 +133,7 @@ jobs:
           echo "data-pack-${{ matrix.pack }}" > "$RUNNER_TEMP/data-health-failures/pack-${{ matrix.pack }}.txt"
       - name: upload failure marker
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: data-health-fail-${{ matrix.pack }}
           path: ${{ runner.temp }}/data-health-failures/pack-${{ matrix.pack }}.txt
@@ -116,11 +146,13 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      # No artifact is uploaded when every pack passes, so a pattern download
-      # here legitimately finds nothing on the green path; do not fail the
-      # report job over an empty match.
+      # No artifact is uploaded when every pack passes (or when every pack
+      # was skipped by the nightly-success gate above), so a pattern download
+      # here legitimately finds nothing; do not fail the report job over an
+      # empty match. This download only supplies WHICH packs to name in the
+      # issue body — the pass/fail DECISION below never reads it.
       - name: download any failure markers
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         continue-on-error: true
         with:
           pattern: data-health-fail-*
@@ -129,19 +161,65 @@ jobs:
       - name: file or update the standing data-health issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No checkout happens in this job, so `gh` cannot infer the repo
+          # from a local .git — every `gh` call here needs it explicit
+          # (house pattern: merge-on-green.yml's sweep step).
+          GH_REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # The AUTHORITATIVE pass/fail signal. Artifact presence only tells
+          # us WHICH packs to name; it must never be the thing that decides
+          # green vs red. A pack that is cancelled, times out, or fails to
+          # upload its marker would otherwise read as "no failures found" and
+          # this job would publish a false green — "absence of red is not a
+          # pass" (#4779). `needs.data-pack.result` is GitHub's own aggregate
+          # across the whole matrix: "success" only when every instance
+          # succeeded, "skipped" when the nightly-success gate skipped every
+          # instance, anything else ("failure"/"cancelled") otherwise.
+          PACK_RESULT: ${{ needs.data-pack.result }}
         run: |
           set -euo pipefail
           ISSUE_TITLE="data-health: failing data receipts"
+
+          # The nightly-success gate on data-pack means "skipped" is a normal
+          # no-op (the nightly itself did not succeed, so this lane correctly
+          # did not assert against its tree) — not a data-health finding.
+          # Report nothing rather than opening an issue about a lane that
+          # never ran.
+          if [ "$PACK_RESULT" = "skipped" ]; then
+            echo "data-pack was skipped (nightly did not report success); nothing to report"
+            exit 0
+          fi
+
+          # Ensure the label exists before it is ever referenced — the first
+          # failure on a fresh repo must not die on a missing label (house
+          # pattern: scripts/prophet_rescue.py ensure_label). --force makes
+          # this idempotent (updates color/description rather than erroring)
+          # on every later run.
+          gh label create data-health --color BFD4F2 \
+            --description "failing gate: data receipts" --force || true
+
           FAILED_DIR="$RUNNER_TEMP/data-health-failures"
           FAILED_PACKS=""
           if [ -d "$FAILED_DIR" ]; then
             FAILED_PACKS=$(cat "$FAILED_DIR"/*.txt 2>/dev/null | sort -u | paste -sd', ' - || true)
           fi
-          EXISTING=$(gh issue list --label data-health --state open --json number,title \
-            --jq ".[] | select(.title==\"$ISSUE_TITLE\") | .number" | head -n1 || true)
-          if [ -n "$FAILED_PACKS" ]; then
-            BODY="data-health lane failed for: ${FAILED_PACKS}."$'\n\n'"Run: ${RUN_URL}"
+
+          # Fail CLOSED on a lookup error: a swallowed API error must never
+          # read as "no issue exists", or a transient `gh` failure mints a
+          # duplicate standing issue every time it happens.
+          if ! EXISTING_JSON=$(gh issue list --label data-health --state open --json number,title); then
+            echo "::error title=data-health-issue-lookup::gh issue list failed; refusing to guess whether a standing issue exists" >&2
+            exit 1
+          fi
+          EXISTING=$(printf '%s' "$EXISTING_JSON" | jq -r --arg t "$ISSUE_TITLE" '.[] | select(.title==$t) | .number' | head -n1)
+
+          if [ "$PACK_RESULT" != "success" ]; then
+            if [ -n "$FAILED_PACKS" ]; then
+              SUMMARY="data-health lane ${PACK_RESULT} — failing pack(s): ${FAILED_PACKS}."
+            else
+              SUMMARY="data-health lane ${PACK_RESULT} — no per-pack marker was recovered (a cancelled or timed-out pack does not always upload one)."
+            fi
+            BODY="${SUMMARY}"$'\n\n'"Run: ${RUN_URL}"
             if [ -n "$EXISTING" ]; then
               gh issue comment "$EXISTING" --body "$BODY"
             else

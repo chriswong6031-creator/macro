@@ -3214,6 +3214,20 @@ def _run_ci_pack_invocation_blocks(text: str) -> list[str]:
     return blocks
 
 
+# Workflows allowed to invoke run_ci_pack.py WITHOUT an explicit --gate, each
+# with a reason a reviewer can check. This is a NAMED exception list, not a
+# way to silence the guard — adding an entry here must be a deliberate,
+# reasoned call, the same way GATE_VALUES itself is deliberate.
+GATE_REACHABILITY_ALLOWLIST: dict[str, str] = {
+    "selfhosted-ci-canary.yml": (
+        "deliberate full-suite parity/contamination canary: it exists to "
+        "compare self-hosted runner output against the hosted baseline over "
+        "the COMPLETE manifest, so narrowing it to one gate would defeat its "
+        "purpose"
+    ),
+}
+
+
 def test_no_data_gated_job_is_reachable_from_ci_gate() -> None:
     """Every merge-gate invocation of run_ci_pack.py passes `--gate code`.
 
@@ -3224,6 +3238,13 @@ def test_no_data_gated_job_is_reachable_from_ci_gate() -> None:
     job stays reachable from the merge gate despite the split. Symmetrically,
     data-health.yml's own invocation must pass `--gate data`, or the new lane
     silently re-runs (or worse, never runs) the wrong half of the manifest.
+
+    Widened (Opus review of commit 18e0f878) to enumerate EVERY workflow file
+    repo-wide, not just ci.yml and data-health.yml: a run_ci_pack.py call
+    anywhere without an explicit --gate is exactly the kind of silent
+    reachability hole this guard exists to catch, whichever workflow it is
+    added to later. `GATE_REACHABILITY_ALLOWLIST` is the one permitted
+    exception, and it is named and reasoned, not blanket.
     """
     ci_text = WORKFLOW.read_text()
     ci_blocks = _run_ci_pack_invocation_blocks(ci_text)
@@ -3262,3 +3283,46 @@ def test_no_data_gated_job_is_reachable_from_ci_gate() -> None:
             "must stay on GitHub-hosted runners, never self-hosted "
             "(CLAUDE.md — render/nightly compute stays off this pool)"
         )
+
+    # Repo-wide sweep: any OTHER workflow (present or future) that invokes
+    # run_ci_pack.py must carry an explicit --gate, unless it is named in
+    # GATE_REACHABILITY_ALLOWLIST above.
+    workflows_dir = ROOT / ".github" / "workflows"
+    gate_flag_re = re.compile(r"--gate\s+(?:code|data)\b")
+    for workflow_path in sorted(workflows_dir.glob("*.yml")):
+        name = workflow_path.name
+        if name in {"ci.yml", "data-health.yml"}:
+            continue  # already fully covered above
+        blocks = _run_ci_pack_invocation_blocks(workflow_path.read_text())
+        if not blocks:
+            continue
+        if name in GATE_REACHABILITY_ALLOWLIST:
+            continue
+        for block in blocks:
+            assert gate_flag_re.search(block), (
+                f"{name} invokes run_ci_pack.py without an explicit --gate — "
+                "either pass --gate code/data or add a NAMED, reasoned entry "
+                f"to GATE_REACHABILITY_ALLOWLIST:\n{block}"
+            )
+
+
+def test_no_empty_pack_in_the_code_gate_partition() -> None:
+    """An empty ci-pack-N under the code gate would vanish from main's baseline.
+
+    ci-gate's base-inherited-red refresh resolves a PR's failing check NAMES
+    against main's own newest concluded ci.yml run by NAME (CLAUDE.md
+    "green proof against a stale base"; #5037). A pack index with zero jobs
+    still has to exist and publish a name on main's baseline, or a PR whose
+    plan happens to land work on that index has no baseline check of the same
+    name to compare against, and any red there becomes permanently
+    unrefreshable. The load-bearing property is "no pack is empty" — not any
+    particular per-pack job count, which shifts as the manifest grows.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST, gate="code")
+    packs = PACK.partition_jobs(jobs, 12)
+    empty = [index for index, pack in enumerate(packs) if not pack]
+    assert not empty, (
+        f"pack index(es) {empty} are empty under --gate code with --pack-count "
+        "12 — an empty pack's name would vanish from main's ci.yml baseline "
+        "and any PR whose plan lands work there could never refresh a red"
+    )
