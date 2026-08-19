@@ -204,4 +204,4 @@ improvise the lane.
 - #5953: disposition comment only (§5.3). Not armed, not blocked by this seat.
 - The G0 census content reaches origin/main only when #5955/#5943 merge; until
   then this packet's citations to their content reference the PR heads
-  (#5955 @ `5938ac1a5414`, #5943 @ `fd0e8b33e103`).
+  (#5955 @ `5938ac1a5414`; #5943 @ `fd0e8b33e103` as audited — AMENDED 2026-08-19: #5943 head is now `60df496462a2`, a single reference-hygiene commit made on Sol's post-revision instruction via the China FABLE-00 seat. Verified delta: 29+/27− canonicity/status lines across 9 files — US G0 pointers re-aimed at canonical #5955 + this packet, stale "#5822 OPEN"/"#5953 owns US G0" rows corrected, GQ7 marked RESOLVED per the §4 DEC. No CN-G0 finding, contract, identity conclusion, or owner routing changed; this adjudication stands unchanged over the new head).
