@@ -7829,6 +7829,12 @@ jobs:
         run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
+      # D2 Identity Atlas: projector + graph-delta pins + the node-harness test
+      # that renders the shipped dossier JS factory against the COMMITTED
+      # identity-atlas artifact (needs node, present on these runners for the
+      # dossier-UI suite above).
+      - name: D2 identity atlas — projector, hostile tests, committed-artifact UI render
+        run: python -m pytest tests/test_government_revenue_identity_atlas.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
         run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_sam_gov_radar_leg.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
       # The 2026-08-03 backfill wired the builder/fence/UI/collector suites but
