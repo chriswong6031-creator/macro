@@ -74,6 +74,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 8 |
 | options-dislocation | 1 |
 | options-flow | 1 |
+| options-intelligence | 1 |
 | options-intelligence-program | 19 |
 | options-nw-entry-intelligence | 3 |
 | options-prophet-shadow | 1 |
@@ -114,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 375 |
+| display | 376 |
 | infrastructure | 162 |
 | scored | 5 |
 | shadow | 101 |
@@ -123,7 +124,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 603 |
+| git | 604 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 18 |
@@ -897,6 +898,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | options-flow-signing-gate | `data/options_flow/signing_gate.json` | json | on-demand | infrastructure | 2 | 0 |
+
+### options-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-intel-brief | `site/options_intel_brief.json` | json | daily-engine | display | 2 | 0 |
 
 ### options-intelligence-program
 

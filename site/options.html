@@ -53,7 +53,7 @@
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=54439ad9">
 <link rel="stylesheet" href="illus.css?v=cbe6a0b4">
-<link rel="stylesheet" href="assets/css/cc66f21c.css?v=cc66f21c">
+<link rel="stylesheet" href="assets/css/a7339d13.css?v=a7339d13">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -340,7 +340,7 @@
         </div>
         <div class="oew-stamp-row">
           <span class="k"><span class="l-en">Data quality</span><span class="l-zh">数据质量</span></span>
-          <span class="v" data-tip-en="Not everything reported for this close: the leader boards are from an earlier session; the index levels were last measured 2026-08-18, not 2026-08-13. Every affected section says so where it sits." data-tip-zh="本次收盘并非所有数据都已送达：领头股榜单来自更早的场次；指数水位的最近测算日期为 2026-08-18，而非 2026-08-13。受影响的板块会在原处说明。"><span class="l-en">Partial</span><span class="l-zh">部分</span></span>
+          <span class="v" data-tip-en="Not everything reported for this close: the leader boards are from an earlier session; the index levels were last measured 2026-08-18, not 2026-08-13; the options intelligence brief is dated 2026-08-12, not 2026-08-13. Every affected section says so where it sits." data-tip-zh="本次收盘并非所有数据都已送达：领头股榜单来自更早的场次；指数水位的最近测算日期为 2026-08-18，而非 2026-08-13；期权情报简报日期为 2026-08-12，而非 2026-08-13。受影响的板块会在原处说明。"><span class="l-en">Partial</span><span class="l-zh">部分</span></span>
         </div>
       </div>
     </div>
@@ -444,6 +444,49 @@
 
 <!-- ══════════════════ MODE 1 · DAILY BRIEF (baked inline) ══════════════════ -->
 <section class="oew-mode active" id="mode-brief" role="tabpanel" aria-labelledby="tab-brief">
+
+  <!-- ══ AD-1 · OPTIONS INTELLIGENCE BRIEF (contracts/options/OPTIONS_INTEL_BRIEF_V1.md) ══
+       PASS-THROUGH ONLY: every score/order/state/text below is copied verbatim from
+       site/options_intel_brief.json via scripts/build_options_command.py's `aib`
+       context (build_aib()/`_aib_card()`).  No ranking, ordering or scoring happens
+       in this template. -->
+  <div class="oew-panel oew-aib" id="aib">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title"><span class="l-en">Options Intelligence Brief</span><span class="l-zh">期权情报简报</span></h2>
+      <span class="oew-ph-sub"><span class="l-en">ranked priorities, event and crowding reads, and one quiet control</span><span class="l-zh">优先级排序、事件与拥挤读数，以及一个平静对照</span></span>
+      <div class="oew-ph-right">
+        <span class="oew-aib-honesty"><span class="l-en">Research priority · not a probability or trade signal</span><span class="l-zh">研究优先级 · 非概率或交易信号</span></span>
+        <span class="oew-help" tabindex="0" role="button"
+          data-tip-en="Ranked by evidence strength and confidence — never a probability, an edge, or a buy/sell signal. Two independent facts (open-interest positioning and skew change) must agree before a card gets a direction; Prophet context is display-only and never changes this ranking."
+          data-tip-zh="按证据强度与置信度排序——绝非概率、优势或买卖信号。未平仓合约仓位与偏度变化两个独立事实须一致，卡片才会给出方向；Prophet 参考仅供展示，不影响本排序。">?</span>
+      </div>
+    </div>
+    
+    <div class="oew-aib-stamps">
+      <span class="mono"><span class="l-en">Settled</span><span class="l-zh">已结算</span> 2026-08-12</span>
+      <span class="mono"><span class="l-en">Positions counted</span><span class="l-zh">持仓统计于</span> 2026-08-13</span>
+      
+      <span class="oew-aib-pending mono"><span class="l-en">Newer session</span><span class="l-zh">更新交易日</span> 2026-08-13 <span class="l-en">awaiting position counts</span><span class="l-zh">等待持仓统计</span></span>
+      
+      <span class="oew-aib-elig mono">0/372 <span class="l-en">names eligible</span><span class="l-zh">名称符合条件</span></span>
+    </div>
+    
+    <div class="oew-pbody">
+      
+      <div class="oew-aib-degraded">
+        <p><span class="l-en">Source data is stale — holding the last good session.</span><span class="l-zh">数据源过期——保留最近有效交易日。</span></p>
+      </div>
+      
+    </div>
+    <div class="oew-pfoot">
+      <span class="oew-stance st-watch"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察—勿追高</span></span>
+      <span><span class="l-en">Hypotheses to research, ranked by evidence — none is a trade on its own.</span><span class="l-zh">按证据排序的研究假设——均非独立交易信号。</span></span>
+      
+      
+      <span class="oew-asof mono" data-tip-en="Receipt d2b01d4f03fe" data-tip-zh="回执 d2b01d4f03fe">2026-08-12</span>
+      
+    </div>
+  </div>
 
   <div class="oew-panel">
     <div class="oew-phead">

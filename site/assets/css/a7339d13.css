@@ -198,6 +198,104 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-banner .ico{color:var(--ink-warn, var(--warn));font-weight:900;flex:none}
 .oew-empty{font-size:12.5px;color:var(--ink-2);line-height:1.5}
 
+/* ── BRIEF: AD-1 · OPTIONS INTELLIGENCE BRIEF ─────────────────────────────
+   contracts/options/OPTIONS_INTEL_BRIEF_V1.md.  scripts/build_options_command.py
+   is a PASS-THROUGH adapter (zero scoring here); state hues bind to the
+   EXISTING --up/--down/--info/--warn ink tokens only — no new palette. */
+.oew-aib-stamps{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center;
+  padding:8px var(--s4);border-bottom:1px solid var(--hair);font-size:10.5px;color:var(--muted)}
+.oew-aib-pending{color:var(--oew-stamp)}
+.oew-aib-elig{margin-left:auto}
+.oew-aib-honesty{font-size:10px;color:var(--ink-2);font-weight:600;white-space:nowrap}
+.oew-aib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--s3)}
+@media (max-width:700px){.oew-aib-grid{grid-template-columns:1fr}}
+.oew-aib-card{border:1px solid var(--hair);border-left:3px solid var(--hair);border-radius:var(--r-ctl);
+  background:var(--tile);padding:var(--s3);display:flex;flex-direction:column;gap:7px;min-width:0}
+.oew-aib-card.is-up{border-left-color:var(--ink-up, var(--up))}
+.oew-aib-card.is-down{border-left-color:var(--ink-down, var(--down))}
+.oew-aib-card.is-vol{border-left-color:var(--ink-info, var(--info))}
+.oew-aib-card.is-risk{border-left-color:var(--ink-warn, var(--warn))}
+.oew-aib-top{display:flex;align-items:baseline;gap:7px}
+.oew-aib-rank{font-size:10px;color:var(--muted)}
+.oew-aib-sym{font-size:14px;font-weight:700}
+.oew-aib-state{margin-left:auto;font-size:11.5px;font-weight:650;text-align:right}
+.oew-aib-card.is-up .oew-aib-state{color:var(--ink-up, var(--up))}
+.oew-aib-card.is-down .oew-aib-state{color:var(--ink-down, var(--down))}
+.oew-aib-card.is-vol .oew-aib-state{color:var(--ink-info, var(--info))}
+.oew-aib-card.is-risk .oew-aib-state{color:var(--ink-warn, var(--warn))}
+.oew-aib-legs{display:flex;align-items:center;gap:8px;font-size:11px;cursor:help;flex-wrap:wrap}
+.oew-aib-legs .leg{display:inline-flex;align-items:center;gap:3px;font-weight:700}
+.oew-aib-legs .leg.up{color:var(--ink-up, var(--up))}
+.oew-aib-legs .leg.down{color:var(--ink-down, var(--down))}
+.oew-aib-legs .leg.flat{color:var(--muted)}
+.oew-aib-legverdict{margin-left:auto;font-size:10px;color:var(--ink-2)}
+.oew-aib-meter{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-2)}
+.oew-aib-meter .lbl{color:var(--muted)}
+.oew-aib-band{margin-left:auto;font-size:10px;font-weight:700}
+.oew-aib-band.band-tentative{color:var(--muted)}
+.oew-aib-band.band-moderate{color:var(--ink-2)}
+.oew-aib-band.band-firm{color:var(--text)}
+.oew-aib-why{font-size:12px;color:var(--ink-2);line-height:1.4;margin:0}
+.oew-aib-facts{display:flex;gap:var(--s3);flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+.oew-aib-chips{display:flex;gap:6px;flex-wrap:wrap}
+.oew-aib-prophet,.oew-aib-crowd{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);
+  border:1px solid var(--hair);background:var(--panel);color:var(--ink-2);cursor:help}
+.oew-aib-crowd{border-color:color-mix(in srgb,var(--warn) 45%,var(--hair));color:var(--ink-warn, var(--warn))}
+.oew-aib-detail{border-top:1px solid var(--hair);margin-top:2px;padding-top:6px}
+.oew-aib-detail summary{font-size:10.5px;color:var(--ink-2);cursor:pointer;font-weight:600}
+.oew-aib-detail summary:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+.oew-aib-detailbody{margin-top:6px;display:flex;flex-direction:column;gap:7px}
+.oew-aib-dline{display:flex;flex-direction:column;gap:2px;font-size:11px}
+.oew-aib-dline .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.oew-aib-dline .v{color:var(--ink-2);line-height:1.4}
+.oew-aib-empty,.oew-aib-degraded{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.oew-aib-empty-lead{margin:0 0 4px}
+.oew-aib-empty-sub{margin:0;color:var(--muted);font-size:11px}
+.oew-aib-more{margin-left:auto;font-size:10.5px;color:var(--muted)}
+
+/* ── AD-1 B5 band 2 · directional watch: a CONTINUATION of the ranked grid, so it
+      reuses .oew-tkchip verbatim (incl. its data-goto jump) and adds only the
+      machine-supplied rank + direction word.  The keyline, not a box, is what
+      says "same list, below the cut". */
+.oew-aib-watch{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  margin-top:var(--s3);padding-left:var(--s3);border-left:2px solid var(--hair)}
+.oew-aib-wlbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);flex:none;cursor:help}
+.oew-aib-wchip{display:inline-flex;align-items:baseline;gap:5px}
+.oew-aib-wchip .rk{font-size:9.5px;font-weight:600;color:var(--muted)}
+.oew-aib-wchip .dir{font-size:10.5px;font-weight:700}
+.oew-aib-wchip.is-up .dir{color:var(--ink-up, var(--up))}
+.oew-aib-wchip.is-down .dir{color:var(--ink-down, var(--down))}
+.oew-aib-wnull{font-size:11.5px;color:var(--ink-2);margin-top:var(--s3)}
+
+/* ── AD-1 B5 band 3 · evidence rail.  Two lanes, .oew-rg surface reused; the 860px
+      breakpoint is the page's existing .oew-rail value, not a new one. */
+.oew-aib-rail{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);margin-top:var(--s4)}
+@media (max-width:860px){.oew-aib-rail{grid-template-columns:1fr}}
+.oew-aib-rgbody{display:flex;flex-direction:column;gap:7px}
+.oew-aib-rghead{display:flex;align-items:baseline;gap:6px;margin-bottom:7px}
+.oew-aib-rrow{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-size:11.5px;min-width:0}
+.oew-aib-rsym{font-family:var(--font-mono);font-size:11.5px;font-weight:700;flex:none}
+.oew-aib-rline{color:var(--ink-2);min-width:0;overflow-wrap:anywhere;line-height:1.4}
+.oew-aib-rmeta{margin-left:auto;flex:none;font-family:var(--font-mono);font-size:10px;color:var(--muted)}
+.oew-aib-rref{font-size:9.5px;color:var(--muted);flex:none}
+.oew-aib-rempty{font-size:11.5px;color:var(--muted);line-height:1.45}
+.oew-aib-rmore{font-size:10px;color:var(--muted)}
+
+/* ── AD-1 B5 band 4 · the control line.  Deliberately NOT a card, NOT a chip and
+      NOT clickable — it must never read as a seventh opportunity. */
+.oew-aib-control{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  margin-top:var(--s4);padding-top:10px;border-top:1px solid var(--hair);
+  font-size:11.5px;color:var(--muted);line-height:1.45}
+.oew-aib-ctlk{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-2);cursor:help}
+.oew-aib-ctlsym{flex:none;font-family:var(--font-mono);font-weight:700;color:var(--ink-2)}
+
+/* ── AD-1 B5 Prophet separation: AD evidence chips sit left, the external echo sits
+      far right with a dashed edge.  Dashed = "context, not our evidence" with no
+      new token and no extra word.  (Amends .oew-aib-prophet above.) */
+.oew-aib-chips .oew-aib-prophet{margin-left:auto;border-style:dashed}
+
 /* ── BRIEF: what-changed chips ── */
 .oew-chips{display:flex;gap:var(--s2);flex-wrap:wrap}
 .oew-chg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;

@@ -7177,6 +7177,7 @@ jobs:
     scope: exclusive
     paths:
       - "config/**"
+      - "contracts/options/OPTIONS_INTEL_BRIEF_V1.md"
       - "data/**"
       - "engine/*"
       - "engine/government_revenue/**"
@@ -7189,6 +7190,7 @@ jobs:
       - "scripts/build_market_structure.py"
       - "scripts/build_market_structure_page.py"
       - "scripts/build_options_command.py"
+      - "scripts/build_options_intel_brief.py"
       - "scripts/build_options_screener.py"
       - "scripts/validate_gex.py"
       - "site/altdata/**"
@@ -7201,6 +7203,8 @@ jobs:
       - "site/leaderradar/**"
       - "site/neuralwebdata/**"
       - "site/options.html"
+      - "site/options_intel_brief.json"
+      - "site/prophet/index.json"
       - "templates/options.html.j2"
       - "tests/test_build_flow_leaders.py"
       - "tests/test_build_market_structure_page.py"
@@ -7210,6 +7214,8 @@ jobs:
       - "tests/test_market_structure.py"
       - "tests/test_market_structure_nw.py"
       - "tests/test_options_gap_discipline.py"
+      - "tests/test_options_intel_brief.py"
+      - "tests/test_options_intel_brief_ui.py"
       - "tests/test_support_map.py"
       - "tools/index.html"
     timeout-minutes: 15
@@ -7242,7 +7248,13 @@ jobs:
       - name: options-screener builder suite (denominator pins)
         run: python -m pytest tests/test_build_options_screener.py tests/test_options_gap_discipline.py -q
       - name: options workspace suite (OEU M-CMD — 4 modes, close-line honesty, payload law)
-        run: python -m pytest tests/test_build_options_command.py -q
+        # AD-1 joins this step (not a new job — the manifest is at the narrow-diff
+        # ceiling and a step is the masking unit): the intel-brief engine/producer
+        # contract suite plus the Workspace consumer/parity suite ride with the
+        # workspace they render into. tests/test_options_intel_brief.py includes the
+        # data-feasibility law test, which reads the committed data/polygon_gex store
+        # present on a full CI checkout.
+        run: python -m pytest tests/test_build_options_command.py tests/test_options_intel_brief.py tests/test_options_intel_brief_ui.py -q
       - name: neural-web support-map suite (real-synapse census bands)
         run: python -m pytest tests/test_support_map.py -q
 
