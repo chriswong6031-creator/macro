@@ -873,3 +873,78 @@ def test_main_non_failed_outcomes_map_to_unknown_not_main_failure(outcome: str) 
     assert step["classification"] == "unknown"
     verdict = proof.semantic_gate_verdict(evidence)
     assert verdict.clear is False
+
+
+def _main_evidence(tree: str) -> dict:
+    document = _reconcile(_fragment())
+    document["role"] = "main"
+    document["event"] = "workflow_dispatch"
+    document["tested_tree_sha"] = tree
+    document["subject_head_sha"] = tree
+    document["base_sha"] = tree
+    document["evidence_sha256"] = proof.canonical_sha256(
+        {key: value for key, value in document.items() if key != "evidence_sha256"}
+    )
+    return document
+
+
+def test_main_inventory_reads_only_ancestry_valid_main_artifacts() -> None:
+    """Role and ancestry both filter, and the inventory is a union over runs."""
+    descendant_one = _main_evidence("a" * 40)
+    descendant_two = _main_evidence("b" * 40)
+    other_job = copy.deepcopy(descendant_two)
+    other_job["jobs"][0]["logical_job_id"] = "job-z"
+    other_job["evidence_sha256"] = proof.canonical_sha256(
+        {key: value for key, value in other_job.items() if key != "evidence_sha256"}
+    )
+    stranger = _main_evidence("c" * 40)
+    pr_side = _reconcile(_fragment())
+
+    def is_ancestor(_ancestor: str, descendant: str) -> bool:
+        return descendant in {"a" * 40, "b" * 40}
+
+    inventory = proof.main_role_job_inventory(
+        "d" * 40, [descendant_one, other_job, stranger, pr_side], is_ancestor
+    )
+    # `pr_side` is not main-role; `stranger` is main but not a descendant.
+    assert inventory.artifacts == 3
+    assert inventory.descendant_artifacts == 2
+    assert inventory.job_ids == frozenset({"job-a", "job-z"})
+
+
+def test_unclearable_units_retire_only_on_a_readable_inventory() -> None:
+    """The trap and the fail-closed reading, in one place.
+
+    A `gate: data` job frozen on a pre-split pull-request head is absent from
+    every main artifact, so no descendant PASS can exist for it; a thin or
+    empty inventory answers "unknown" and changes nothing.
+    """
+    unit = proof.SemanticUnit(
+        logical_job_id="house-law-registry",
+        proof_id="registry-contract",
+        classification="unknown",
+        outcome="failed",
+        pack_index=9,
+        step_spec_sha256=STEP_SHA,
+        job_exec_sha256=JOB_SHA,
+        failure_signature=None,
+        detail=None,
+        base_sha=BASE,
+        head_sha=HEAD,
+    )
+    readable = proof.MainRoleInventory(frozenset({"job-a", "job-b"}), 5, 4)
+    assert proof.unclearable_units([unit], readable) == (unit,)
+    assert "main-eligible=no" in proof.format_main_eligibility(unit, readable)
+
+    eligible = proof.MainRoleInventory(
+        frozenset({"house-law-registry"}), 5, 4
+    )
+    assert proof.unclearable_units([unit], eligible) == ()
+    assert "main-eligible=yes" in proof.format_main_eligibility(unit, eligible)
+
+    thin = proof.MainRoleInventory(frozenset({"job-a"}), 3, 1)
+    assert proof.unclearable_units([unit], thin) == ()
+    assert "main-eligible=unknown" in proof.format_main_eligibility(unit, thin)
+
+    empty = proof.MainRoleInventory(frozenset(), 4, 4)
+    assert proof.unclearable_units([unit], empty) == ()

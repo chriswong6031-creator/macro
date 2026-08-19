@@ -43,7 +43,7 @@ artifacts:
   - research/grey_deer/GREY_DEER_WAVE_GRAPH_AND_PR_ACCEPTANCE_MATRIX_2026-08-19.md
   - research/grey_deer/GD1_GROK_SCIENTIFIC_REPLAY_HANDOFF_2026-08-19.md
 landmines:
-  - "Open-PR collision fences (2026-08-19): #5925 entry_radar live_pack, #5929 radar transport, #5928 Prophet Lab API, #5954 CI legacy-jobs manifest, #5948 backfill workflow — no Grey Deer edits to those paths until resolved/reconciled."
+  - "Collision fence (Sol ruling 2026-08-19): #5925 entry_radar live_pack MERGED but its PRODUCTION PROOF is still outstanding — no Grey Deer edits to engine/entry_radar/** until the Radar owner accepts the proof. Fences for #5928/#5929/#5954/#5948 are RESOLVED (all merged) and removed."
   - "The CI control-plane program's operator grant does NOT extend to Grey Deer: never admin-merge a Grey Deer PR over red main on that precedent."
   - "site/riskdata/ sits under market-regime-risk's implementation roots in config/mastermind_programs.yml — Grey Deer owns only risk_envelope.json inside it; raw regime/market-state artifacts stay with market-regime-risk."
   - "Session worktrees are sparse: site/ and data/ writes require scripts/worktree_sparse.py opt-in before any GD-2+ build touches them."
@@ -64,33 +64,61 @@ waves:
     # (files + registry key + compile-context bundle).
   - id: GD-1A
     title: PIT prereg + source-clock census (Grok; hash-pinned before outcomes)
-    status: awaiting_ci
+    status: done
     pr: 5961
-    # Prereg-first commit-verified: 663fb02b500c ("freeze ... prereg before
-    # outcomes") precedes every outcome-bearing dossier commit on the branch.
-    # NOTE: the prereg predates the landed Sol freeze (#5963) — it remains the
-    # operative GD-H freeze for GD-1; changes under the landed freeze need a
-    # new prereg version.
+    # MERGED 2026-08-19T14:02:46Z, squash 7676a89d370c. Sol acceptance ruling
+    # 2026-08-19 closed GD-1A DONE. Prereg-first commit-verified: 663fb02b500c
+    # precedes every outcome-bearing dossier commit AND predates the landed
+    # freeze (#5963) — it remains GD-1's operative GD-H freeze; GD-H changes
+    # under the landed freeze need a new prereg version.
   - id: GD-1B
     title: Existing-organ replay + Prophet counterfactual (Grok)
-    status: awaiting_ci
+    status: done
     pr: 5961
     depends_on: [GD-1A]
-    # Artifacts land with #5961; the wave is NOT done at merge — the packet's
-    # adversarial acceptance review (independent reviewer + Fable final, Sol on
-    # architecture implications) is still owed on the dossier's conclusions.
+    # Sol acceptance ruling 2026-08-19: ACCEPTED_NO_PROMOTION — dossier
+    # accepted as research; NO construction cleared the preregistered
+    # design-era gate (prereg §10), so ZERO GD-5 promotions issue from GD-1.
+    # See DEC:GD1-ACCEPTED-NO-PROMOTION.
+  - id: GD-1C
+    title: leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)
+    status: todo
+    depends_on: [GD-1B]
+    # Sol-commissioned 2026-08-19; packet:
+    # research/grey_deer/commissions/GD-1C_LEADERSHIP_CRACK_DESIGN_ERA_COMMISSION_2026-08-19.md
+    # (fresh prereg; already-frozen GD-H1/GD-H2 only; episode-level effective N;
+    # current-membership reconstruction labeled def_current_cf; BLOCKED if PIT
+    # membership cannot be reconstructed for the primary test; August 2026 may
+    # not choose thresholds).
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
-    status: todo
+    status: in_progress
     depends_on: [GD-0A]
+    # Sol-commissioned 2026-08-19 as its own PR; packet:
+    # research/grey_deer/commissions/GD-2_SETTLED_ENVELOPE_COMMISSION_2026-08-19.md.
+    # Birth authority DESCRIPTIVE ONLY: no predictive probability, no
+    # ARMED/TRIGGERING lead claim, no Prophet restriction, no size/execution
+    # authority. The accepted GD-1 2026-08-18 dual-read (LC BROKEN + Market
+    # State RISK_ON 76 + Risk Radar calm 53.9) is a permanent regression
+    # fixture: the composer must carry disagreement, never blend it.
   - id: GD-3
     title: Live provisional envelope + pending escalation
     status: todo
     depends_on: [GD-2]
+    # Sol ruling 2026-08-19: do NOT start GD-3 implementation until GD-2 is
+    # accepted in production.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
-    status: todo
+    status: in_progress
     depends_on: [GD-0A]
+    # Sol-commissioned 2026-08-19 as its own PR; packet:
+    # research/grey_deer/commissions/GD-4A_CNHK_LEDGER_REPAIR_COMMISSION_2026-08-19.md.
+    # COLLECT_LANE=nightly ONLY on the exact settled forward-ledger advancement
+    # steps of the canonical Asia-close lane, never job-wide. Prospective
+    # resume only — the July–August gap is NOT backfilled into the canonical
+    # forward log. Done needs a real Asia-close production proof: exactly one
+    # current CN row + one current HK row, duplicate-date idempotence, zero
+    # intraday advancement.
   - id: GD-4B
     title: China Prophet board-health observation (display only)
     status: todo
@@ -102,15 +130,18 @@ waves:
   - id: GD-5A
     title: Long-end duration shock expert (shadow)
     status: todo
-    depends_on: [GD-1B]
+    depends_on: [GD-1C]
+    # Sol ruling 2026-08-19: GD-5A/B/C may not begin unless the applicable
+    # hypothesis clears the promotion gate (GD-1 promoted nothing; GD-1C is
+    # the prerequisite).
   - id: GD-5B
     title: Crowded-winner liquidation expert (shadow)
     status: todo
-    depends_on: [GD-1B]
+    depends_on: [GD-1C]
   - id: GD-5C
     title: Repair/re-entry expert (shadow)
     status: todo
-    depends_on: [GD-1B]
+    depends_on: [GD-1C]
   - id: GD-6A
     title: US Prophet market-eligibility sidecar (shadow)
     status: todo
@@ -144,11 +175,11 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  Merge #5961 (GD-1 artifacts + canonical-identity reconciliation); then run
-  the GD-1B adversarial acceptance review (independent reviewer + Fable final,
-  Sol on architecture implications); author the GD-2 build packet from the
-  2026-08-19 archaeology (settled-envelope seam, live seam, CN/HK ledger root
-  cause) reconciled against the freeze.
+  Execute the two Sol-commissioned build lanes as separate PRs (GD-2 settled
+  envelope, GD-4A CN/HK ledger repair — packets under
+  research/grey_deer/commissions/); relay the GD-1C research packet to the
+  Grok operator; GD-3 waits for GD-2 production acceptance; GD-5A/B/C wait for
+  GD-1C clearing the promotion gate.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
