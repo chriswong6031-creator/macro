@@ -38,9 +38,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+# Repo-root pin, the house idiom (scripts/build_regime_prior.py:28-29).
+# UNCONDITIONAL and top-level on purpose: a guarded `if str(_ROOT) not in sys.path`
+# is not a strong pin — it is not guaranteed to run, and a root already sitting
+# further down sys.path still loses to a foreign package ahead of it.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.risk_envelope import (  # noqa: E402
     SourceRead,
