@@ -748,6 +748,17 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Append-only base freshness (2026-08-18 lost update, DSC-OVERLAPPING-
+            # DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS): two collect jobs that OVERLAP
+            # each build data/government_revenue/ from the base each checked out, and
+            # `-X theirs` below then REPLACES the earlier run's appended rows with this
+            # run's instead of unioning them. Runs after the fetch and before the rebase
+            # because that is the only point where origin/main's version is known and
+            # this run's commit is still withholdable. No-op on an ordinary night.
+            # Non-zero ONLY when the fence proved a loss and then could not withhold it;
+            # publishing that tree is the corruption the fence exists to stop, so skip the
+            # attempt rather than fail open. Every other fence outcome returns 0.
+            if ! push_append_only_fence origin/main; then push_backoff; continue; fi
             if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then
                 echo "pushed market data on attempt $PUSH_ATTEMPT"
@@ -769,6 +780,14 @@ jobs:
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+          # Same append-only base fence as the main push loop above; a cancel-window
+          # salvage must not be the hole that publishes a stale-base ledger.
+          # A failed withhold ends the salvage: this step is a best-effort grace-window
+          # publish, and publishing a tree that drops evidence is worse than not salvaging.
+          push_append_only_fence origin/main || {
+            echo "::error title=append-only-base-fence::withhold failed — abandoning the salvage push rather than publishing a tree that drops evidence"
+            exit 0
+          }
           { perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; } || true
           perl -e 'alarm 120; exec @ARGV or die' -- git push \
             && echo "salvage push landed the collections" \
@@ -1380,11 +1399,22 @@ jobs:
   collect_tail:
     needs: [et_gate, collect]
     if: always() && needs.et_gate.outputs.run != 'false'
-    # theta-m1 ⊂ macstudio: custom runner label on mac-builder-1/2/3 only (added
-    # via the runners API 2026-07-26). The probe-only health-check below stays
-    # as defense in depth — if the label set or the Terminal host ever drifts,
-    # tape_flow still degrades to a warning + self-skip, never a second Terminal.
-    runs-on: [self-hosted, theta-m1]
+    # 2026-08-17 UNPIN (Prophet outage postmortem, research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md):
+    # this job was pinned `theta-m1` (mac-builder-1/2/3, the M1 host) while that
+    # host existed. The M1 runners were deregistered without the label moving, so
+    # from ~2026-08-15 this job could NEVER be scheduled — and a job queued on a
+    # label with no live runner holds the whole run open until GitHub's 24h
+    # queued-job kill, which holds this run's per-cron concurrency group, which
+    # pends the NEXT night's real slot: the nightly cascade that froze every
+    # Prophet board 08-14→08-17. macstudio always has live runners, and every
+    # store-coupled step below is probe-guarded by design: tape_flow degrades to
+    # warning + self-skip (never a second Terminal, #3644), and the W11 witness
+    # carries the keep-last-real law for store-less landings. RE-PIN RULE: when
+    # the M1 host returns (see .github/runner-policy.yml `m1-theta` canary), move
+    # this back to the store-bearing label in the same PR that graduates the
+    # canary — until then a self-skipped tape lane is the designed degraded mode,
+    # a 24h-hostage nightly is not.
+    runs-on: [self-hosted, macstudio]
     # Budget arithmetic (re-cut 2026-08-02 after the 5-night starvation cancel,
     # 07-29→08-02: shadow-importance outgrew its "~13-14m" estimate to 80-120m+
     # and the job died at the old 150m cap with every later step — earnings
@@ -6295,6 +6325,17 @@ jobs:
         # ZERO authority: no rank/gate/size/board/plan consumer, ever.
         if: always()
         run: python -m scripts.grade_us_prophet_candidates --nightly
+      - name: Prophet W3 paired-race ledger (measurement plumbing, ZERO authority)
+        # WS:PROPHET-CONDITIONAL-FUSION PR-3C. Accrues the already-produced C1 +
+        # v2-shadow paired observations, the one shared grader, and the PR-3B
+        # outcome-blind structural receipt into data/us_prophet_rank/w3/. Runs AFTER
+        # grade_us_prophet_candidates so tonight's H=10 marks are present, and BEFORE
+        # the ledger commit. No rank/gate/featured/plan authority. No comparative
+        # statistic. No second scorer or grader. No Pages backfill.
+        # Nightly-only (COLLECT_LANE=nightly). Idempotent keep-first; conflicting
+        # rewrite of a frozen key fails closed.
+        if: always()
+        run: python -m scripts.accrue_us_prophet_w3 --nightly
       - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
         # Prophet US trend-intelligence W0 (masterplan
         # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
@@ -6323,11 +6364,12 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Every path below is written ONLY by the four steps above (no other lane writes
+          # Every path below is written ONLY by the five steps above (no other lane writes
           # them), so the add list is exact rather than a broad `git add data/`: this job
           # must never carry another lane's stray runner-tree bytes to main.
           git add data/prophet_doors 2>/dev/null || true
           git add data/us_prophet_rank/grades 2>/dev/null || true
+          git add data/us_prophet_rank/w3 2>/dev/null || true
           git add data/prophet_miss_audit 2>/dev/null || true
           if git diff --cached --quiet; then echo "no prophet ledger changes"; exit 0; fi
           push_staged_heal data/ || exit 1

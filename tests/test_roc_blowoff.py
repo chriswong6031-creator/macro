@@ -48,7 +48,19 @@ from engine import us_board_rank as ubr       # noqa: E402
 BATTERY = ROOT / "research" / "prophet_us_audit" / "roc_extremes_battery.py"
 RESULTS = ROOT / "research" / "prophet_us_audit" / "roc_extremes_battery_results.json"
 DASHBOARD = ROOT / "templates" / "dashboard.html.j2"
+#: The nightly us-board card loop moved out of dashboard.html.j2 into this
+#: partial when the board gained its server-side tier split
+#: (docs/TIER_PREVIEW_PATTERN.md): the free shell and the /premiumdata/ payload
+#: render cards from ONE source so they cannot drift. Source-anchor checks below
+#: read the pair, because together they are the dashboard's card markup.
+US_BOARD_CARDS = ROOT / "templates" / "_us_board_cards.html.j2"
 STOCK_PAGE = ROOT / "templates" / "stock.html.j2"
+
+
+def _dashboard_src() -> str:
+    """dashboard.html.j2 plus the us-board card partial it includes."""
+    return (DASHBOARD.read_text(encoding="utf-8")
+            + US_BOARD_CARDS.read_text(encoding="utf-8"))
 
 
 def _battery():
@@ -312,7 +324,7 @@ class TestBuilderWiring:
         assert 'rec["blowoff"] = _bo' in src, "Loop A stamp removed"
         assert "_blowoff_map[ticker] = _bo_rec" in src, "staging hop removed"
         assert 'r["blowoff"] = _bo' in src, "board-row attach removed"
-        assert "n.get('blowoff')" in DASHBOARD.read_text(encoding="utf-8"), \
+        assert "n.get('blowoff')" in _dashboard_src(), \
             "the template reads a different key than the builder writes"
 
 

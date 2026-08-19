@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-14",
+  "as_of": "2026-08-18",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "ai_semis",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-08-14",
+      "as_of": "2026-08-18",
       "direction_en": "Trend extension watch",
       "direction_zh": "趋势延伸观察",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-08-14",
+          "as_of": "2026-08-18",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -47,7 +47,7 @@
             "zh": "趋势延伸观察"
           },
           "direction": "",
-          "value": 73.7,
+          "value": 63.9,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -63,143 +63,10 @@
       "scare": "bubble"
     },
     {
-      "family": "rates",
-      "driver": "real_rate_shock",
-      "pathway_role": "alternate",
-      "as_of": "2026-08-14",
-      "direction_en": "real yields falling — easing, gold & duration bid",
-      "direction_zh": "",
-      "confidence_ceiling": "context_only",
-      "coverage_score": null,
-      "coherence": "partial",
-      "stale_legs": [],
-      "nodes": [
-        {
-          "node_id": "driver_real_rate_shock",
-          "as_of": "2026-08-14",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "real_rate_shock",
-          "observation": {
-            "en": "real yields falling — easing, gold & duration bid",
-            "zh": ""
-          },
-          "direction": "",
-          "value": 0.56,
-          "z_or_percentile": null,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "trigger",
-          "evidence_refs": [
-            "market_drivers.primary"
-          ]
-        },
-        {
-          "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-08-14",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "Rising real 10y yields lift the discount rate → long-duration equities, REITs and other long-duration assets de-rate first.",
-            "zh": "实际10年期收益率上行抬高贴现率→长久期股票、REITs等长久期资产首先承压。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "same_day",
-          "pathway_role": "transmission_order_1",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order1"
-          ]
-        },
-        {
-          "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-08-14",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "Higher US real yields pull capital in → the dollar firms → gold, industrial commodities and EM are pressured.",
-            "zh": "美国实际收益率走高吸引资本流入→美元走强→黄金、工业商品与新兴市场受压。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "days_1_5",
-          "pathway_role": "transmission_order_2",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order2"
-          ]
-        },
-        {
-          "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-08-14",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "A firm dollar + soft commodities → energy/materials relative headwind and EM-revenue exporters de-rate; financials are the relative beneficiary as curves steepen.",
-            "zh": "强美元＋商品走软→能源/材料相对承压、新兴市场营收型出口商估值下修；曲线变陡时金融为相对受益者。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "weeks_1_4",
-          "pathway_role": "transmission_order_3",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order3"
-          ]
-        }
-      ],
-      "edges": [
-        {
-          "src_node": "driver_real_rate_shock",
-          "dst_node": "transmission_real_rate_order1",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "same_day",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order1"
-          ]
-        },
-        {
-          "src_node": "transmission_real_rate_order1",
-          "dst_node": "transmission_real_rate_order2",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "days_1_5",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order2"
-          ]
-        },
-        {
-          "src_node": "transmission_real_rate_order2",
-          "dst_node": "transmission_real_rate_order3",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "weeks_1_4",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.real_rate.order3"
-          ]
-        }
-      ],
-      "coverage_basis": "scare_trigger"
-    },
-    {
       "family": "china",
       "driver": "china_stimulus",
       "pathway_role": "alternate",
-      "as_of": "2026-08-14",
+      "as_of": "2026-08-18",
       "direction_en": "China risk-off — A-shares/HK & copper lead down",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -209,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_china_stimulus",
-          "as_of": "2026-08-14",
+          "as_of": "2026-08-18",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "china_stimulus",
@@ -218,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.36,
+          "value": 0.72,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

@@ -146,7 +146,10 @@ live run).
 ## §4 Deliberately out of scope
 
 - No daily.yml / build_prophet.py edits (§0.9).
-- **No Aug-11 backfill**: no origination event executed that night, and the 08-11/08-12
+- **No Aug-11 backfill** *(this scoping is SUPERSEDED as standing policy 2026-08-18 —
+  `DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT`; force majeure now backfills by
+  default and a missing origination event no longer refuses. Kept as the record of what
+  this PR did and why, at the time)*: no origination event executed that night, and the 08-11/08-12
   bars were never collected — there is no bake-time board to replay. The backfill
   charter (#5305, `research/PROPHET_OUTAGE_BACKFILL_2026_08.md`) authorizes replaying a
   real refused-origination event only; a later-reconstructed board is the contaminated-

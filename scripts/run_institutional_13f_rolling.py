@@ -29,11 +29,15 @@ from engine.institutional_census.rolling import (
     run_rolling_ingestion,
     safe_exception_fields,
 )
+from engine.institutional_census.sec_sources import SecSourceUnavailableError
 from engine.institutional_census.storage import build_institutional_13f_store
 
 DEFAULT_RECEIPT = Path("data/institutional_13f/receipts/rolling_latest.json")
 DEFAULT_USER_AGENT = "MastermindX institutional census research longr2512@gmail.com"
 HTTP_CHUNK_BYTES = 1024 * 1024
+# Statuses SEC serves while it is briefly unwell rather than to refuse the
+# request.  A 403/404 is an answer and must not be retried; these are not.
+TRANSIENT_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 
 def _utc_now() -> datetime:
@@ -67,8 +71,28 @@ class _RequestsSecFetch:
             or not (host == "sec.gov" or host.endswith(".sec.gov"))
         ):
             raise ValueError("rolling fetch is restricted to HTTPS SEC URLs")
+        try:
+            return self._get(url)
+        except requests.HTTPError as exc:
+            status = getattr(exc.response, "status_code", None)
+            if status in TRANSIENT_HTTP_STATUSES:
+                raise SecSourceUnavailableError(
+                    f"SEC returned a transient HTTP {status} for {url}"
+                ) from exc
+            raise
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            # Measured 2026-08-17: read timeouts were the *only* transient
+            # failure across 200 probe requests to the Atom surface.  They never
+            # reach the parser, so unless they are named here the scanner's
+            # retry and partial-result recovery can never see them.
+            raise SecSourceUnavailableError(
+                f"SEC request did not complete for {url}: {type(exc).__name__}"
+            ) from exc
+
+    def _get(self, url: str) -> bytes:
         chunks: list[bytes] = []
         observed = 0
+        announced_size: int | None = None
         with self._session.get(
             url,
             headers=self._headers,
@@ -99,6 +123,21 @@ class _RequestsSecFetch:
                         "SEC response exceeds the SEC response byte ceiling"
                     )
                 chunks.append(chunk)
+            # Content-Length describes the ENCODED (on-the-wire) body, so
+            # comparing it to `observed` (the bytes iter_content yields,
+            # already transparently decompressed by urllib3/requests) is only
+            # valid for identity-encoded responses. A content-coded response
+            # (e.g. gzip) is instead covered by the codec's own framing: a
+            # truncated gzip stream fails to decode and iter_content raises.
+            if (
+                announced_size is not None
+                and not response.headers.get("Content-Encoding")
+                and observed != announced_size
+            ):
+                raise RuntimeError(
+                    "SEC response truncated: "
+                    f"Content-Length={announced_size}, received={observed}"
+                )
         return b"".join(chunks)
 
     def close(self) -> None:
@@ -261,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"rolling receipt write failed: {safe['error']}\n")
         return 1
     sys.stdout.buffer.write(canonical_json_bytes(receipt))
-    return 0 if receipt.get("status") in {"ok", "no_changes"} else 1
+    return 0 if receipt.get("status") in {"ok", "no_changes", "bounded_backlog"} else 1
 
 
 if __name__ == "__main__":

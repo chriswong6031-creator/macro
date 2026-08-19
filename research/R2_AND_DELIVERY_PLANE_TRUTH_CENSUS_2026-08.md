@@ -28,14 +28,14 @@ premium product / private operations / vendor raw
   -> browser receives only its tier's bytes
 ```
 
-This census contains **105 non-overlapping delivery families** at the level needed to make that split. Their single required classifications are:
+This census contains **106 non-overlapping delivery families** at the level needed to make that split. Their single required classifications are:
 
 | Classification | Count | Meaning in this census |
 |---|---:|---|
 | `PUBLIC_FACT` | 5 | Candidate for an anonymous allowlist projection; source rights, delay and provenance still bind. |
 | `PREMIUM_PRODUCT` | 41 | Sellable differentiated output. Full objects require Essential or Pro delivery. |
 | `PRIVATE_OPERATIONAL` | 27 | Internal state, controls, models, telemetry or authority material. No customer tier receives the raw object. |
-| `VENDOR_RAW` | 11 | Raw/transformed upstream material. Private service/operator access only unless a separate licensed projection is proved. |
+| `VENDOR_RAW` | 12 | Raw/transformed upstream material. Private service/operator access only unless a separate licensed projection is proved. |
 | `UNRESOLVED` | 21 | Field, source-rights, mixed-schema, or unregistered-key audit is incomplete. It fails closed to private. |
 
 The counts are descriptive, not a blanket ACL rule. The JSON registry is normative for producer, source, publisher, consumer, browser exposure, Terminal/server consumer, URL, cache behavior, sensitivity, tier, safe schema, migration dependency and evidence for every row. `required_tier` means the minimum tier allowed to receive the **complete stored family**; any lower-tier view is a separate allowlisted object. Thus Anonymous receives about one approved preview, Free about three plus persistence, Essential the standard current product, and Pro the approved deeper history/research/export. No lower-tier response may carry a hidden paid remainder.

@@ -277,3 +277,130 @@ def test_migration_job_cannot_bypass_hosted_main_trust_gate(tmp_path: Path) -> N
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "R5" in result.stdout
+
+
+# ── label registry (R11/R12), added 2026-08-17 ────────────────────────────────
+# `fixture_tree` copies only five workflows and other tests depend on that exact
+# set, so R11/R12 cases that need a synthetic workflow write one directly into
+# the fixture's workflows dir instead of touching `fixture_tree` itself.
+
+
+def write_synthetic_workflow(workflows: Path, name: str, content: str) -> Path:
+    path = workflows / name
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def test_unregistered_runs_on_label_fails_r11(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    write_synthetic_workflow(
+        workflows,
+        "mystery.yml",
+        "on:\n  workflow_dispatch:\n"
+        "jobs:\n  mystery:\n"
+        "    runs-on: [self-hosted, mystery-label]\n"
+        "    steps:\n      - run: true\n",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R11" in result.stdout
+    assert "mystery-label" in result.stdout
+    assert "mystery.yml:mystery" in result.stdout
+
+
+def test_fromjson_expression_label_is_extracted_by_r11(tmp_path: Path) -> None:
+    """Dropping `ci-linux-canary` from the registry reds the REAL
+    selfhosted-ci-canary.yml `selfhosted-pack` job, whose `runs-on` is
+    `${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' ||
+    '["self-hosted","ci-linux"]') }}` — proving the extractor reaches into the
+    fromJSON ternary rather than only seeing plain lists, and that it does NOT
+    also invent a phantom label out of the `'1'` comparison operand next to it
+    (that would make this fixture red for an unrelated reason).
+    """
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(registry, lambda doc: doc["label_registry"].pop("ci-linux-canary"))
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R11" in result.stdout
+    assert "ci-linux-canary" in result.stdout
+    assert "selfhosted-ci-canary.yml:selfhosted-pack" in result.stdout
+    assert "'1'" not in result.stdout
+
+
+def test_scheduled_workflow_on_orphaned_label_without_waiver_fails_r12(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    write_synthetic_workflow(
+        workflows,
+        "orphan-cron.yml",
+        "on:\n  schedule:\n    - cron: '5 5 * * *'\n"
+        "jobs:\n  orphan:\n"
+        "    runs-on: [self-hosted, ci-linux]\n"
+        "    steps:\n      - run: true\n",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R12" in result.stdout
+    assert "ci-linux" in result.stdout
+    assert "orphan-cron.yml:orphan" in result.stdout
+
+
+def test_scheduled_orphaned_label_with_valid_waiver_does_not_fail_r12(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    write_synthetic_workflow(
+        workflows,
+        "orphan-cron.yml",
+        "on:\n  schedule:\n    - cron: '5 5 * * *'\n"
+        "jobs:\n  orphan:\n"
+        "    runs-on: [self-hosted, ci-linux]\n"
+        "    steps:\n      - run: true\n",
+    )
+    mutate_registry(
+        registry,
+        lambda doc: doc["label_registry"]["ci-linux"].__setitem__(
+            "scheduled_use_waiver",
+            {"since": "2026-08-17", "reason": "test waiver has both fields"},
+        ),
+    )
+    result = run_guard(root, registry, workflows)
+    assert "R12" not in result.stdout
+
+
+def test_scheduled_workflow_on_offline_label_does_not_fail_r12(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    write_synthetic_workflow(
+        workflows,
+        "offline-cron.yml",
+        "on:\n  schedule:\n    - cron: '5 5 * * *'\n"
+        "jobs:\n  offline:\n"
+        "    runs-on: [self-hosted, Linux, X64, render-linux]\n"
+        "    steps:\n      - run: true\n",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "R12" not in result.stdout
+
+
+def test_live_label_with_empty_carried_by_fails_r11_hygiene(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["label_registry"]["macstudio"].__setitem__("carried_by", []),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R11" in result.stdout
+    assert "macstudio" in result.stdout
+    assert "carried_by" in result.stdout
+
+
+def test_codex_registry_entry_keeps_its_scheduled_waiver() -> None:
+    """Deleting the waiver without restoring the host must red — this pins the
+    waiver's presence so that deletion is caught by `test_...without_waiver`-style
+    coverage rather than silently reopening the R12 hole R11/R12 exist to close.
+    """
+    document = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    codex = document["label_registry"]["codex"]
+    assert codex["status"] == "orphaned"
+    waiver = codex["scheduled_use_waiver"]
+    assert waiver["reason"]
+    assert waiver["since"]

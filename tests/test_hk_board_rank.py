@@ -69,6 +69,70 @@ def regenerate_g1_fixture() -> str:
 
 
 # --------------------------------------------------------------------------- #
+# frozen-window drift classifier (see TestG1FixtureIsNotStale)
+# --------------------------------------------------------------------------- #
+# The fixture stores closes rounded to 3 decimals, so 1e-3 is the finest difference
+# it can represent at all — the natural residual budget for "the same numbers,
+# uniformly rescaled and re-rounded".  It is a QUANTUM, not a fitted tolerance:
+# nothing about the observed drift went into choosing it.
+G1_CLOSE_QUANTUM = 1e-3
+# A cash dividend re-based at most ~10% of the tape in one go; beyond that the event
+# is a split or another corporate action, which rescales share counts too and must be
+# re-adjudicated rather than absorbed as routine.  Deliberately far tighter than
+# DEC:SI-LIVE-PLANE-BAND-IS-UNIFORMITY-NOT-LEVEL's [0.2, 5.0] gross-rescale bound,
+# which guards a different check that has an exact settled-volume clause beside it.
+G1_RESCALE_BAND = (0.90, 1.10)
+
+
+def rescale_diagnosis(frozen: list[float], live: list[float]) -> tuple[str, str | None]:
+    """Classify frozen->live close drift. Returns (kind, detail).
+
+    ``kind`` is one of:
+      ``identical``       — the windows match exactly.
+      ``suffix_rescale``  — every changed row runs to the END of the window and shares
+                            one factor inside the routine-dividend band.  That is the
+                            only shape ``HkClosesDeepAdapter``'s trailing ``2mo``
+                            re-fetch can produce, so it is re-basing, not revision.
+                            Every return INSIDE the re-based span and every return
+                            inside the untouched prefix survives it exactly; the one
+                            quantity it does move is the single return across the seam,
+                            which is the real cost recorded in
+                            DSC:HK-DEEP-PANEL-SPLICES-ADJUSTMENT-VINTAGES.
+      ``revision``        — anything else.  A rewrite of history that stops before the
+                            end of the window, a non-uniform move, or a factor outside
+                            the band cannot come from a trailing re-fetch.
+
+    Sequence lengths must already agree (the date assertion runs first).
+    """
+    if frozen == live:
+        return "identical", None
+    changed = [i for i, (f, l) in enumerate(zip(frozen, live)) if f != l]
+    first = changed[0]
+    # A trailing re-fetch re-bases a SUFFIX. Anything earlier is untouched by
+    # construction, so the first difference fixes where the suffix must begin.
+    tail_frozen, tail_live = frozen[first:], live[first:]
+    if any(value <= 0 for value in tail_frozen):
+        return "revision", "frozen window carries a non-positive close"
+    factor = statistics.median(l / f for f, l in zip(tail_frozen, tail_live))
+    low, high = G1_RESCALE_BAND
+    if not low <= factor <= high:
+        return "revision", (f"rows {first}..{len(frozen) - 1} moved x{factor:.6f}, "
+                            f"outside the routine-dividend band {G1_RESCALE_BAND} — "
+                            f"a corporate action, not a re-base")
+    worst_index, worst = first, 0.0
+    for index, (f, l) in enumerate(zip(tail_frozen, tail_live), start=first):
+        residual = abs(l - f * factor)
+        if residual > worst:
+            worst_index, worst = index, residual
+    if worst > G1_CLOSE_QUANTUM:
+        return "revision", (f"row {worst_index} sits {worst:.4f} off a uniform "
+                            f"x{factor:.6f} rescale (the fixture's own quantum is "
+                            f"{G1_CLOSE_QUANTUM}) — the move is not uniform")
+    return "suffix_rescale", (f"rows {first}..{len(frozen) - 1} of {len(frozen)} "
+                              f"re-based x{factor:.6f}")
+
+
+# --------------------------------------------------------------------------- #
 # fixtures
 # --------------------------------------------------------------------------- #
 @pytest.fixture(scope="module")
@@ -2108,6 +2172,44 @@ class TestG1FixtureIsNotStale:
             "over-engineering — it is not: " + str(sorted(lengths)))
 
     def test_source_panel_history_is_unchanged(self, board):
+        """The stale-fixture tripwire: bands the UNIFORMITY of a re-basing, not the LEVEL.
+
+        WHY THIS IS NO LONGER AN EQUALITY CHECK (2026-08-18, fleet red).  It asserted
+        ``closes == frozen["closes"]`` on vendor auto-adjusted prices, and that pin
+        cannot hold: ``HkClosesDeepAdapter`` downloads ``_INCREMENTAL_PERIOD = "2mo"``
+        with ``auto_adjust=True`` and merge-upserts the window onto the stored matrix,
+        so when a ticker goes ex-dividend ONLY its trailing ~2 months are re-based onto
+        the new anchor — every row older than the refresh window keeps the previous
+        adjustment vintage.  The equality therefore breaks on the first ex-date after
+        any freeze, on a schedule, and regenerating the fixture (which the old message
+        told you to do) re-arms the same trap for the next one.  Same defect family as
+        DEC:SI-LIVE-PLANE-BAND-IS-UNIFORMITY-NOT-LEVEL, whose generalizable half applies
+        here verbatim: band the invariant the conclusion depends on, not the raw level.
+
+        MEASURED, the run that reddened the fleet: 2359.HK moved on 30 of its 341 frozen
+        rows, starting 2026-06-18 — exactly ``2mo`` before the collection date — by a
+        uniform 0.997101, with every row within 4e-4 of that single factor (one 3dp
+        quantum is 1e-3).  The other 156 columns were byte-identical.  ``auto_adjust``
+        re-derives the whole elapsed history on every FUTURE ex-date, so the factor is
+        the dividend yield and the breakpoint is the refresh boundary.
+
+        WHY THE COLLECTOR'S OWN HEALER DOES NOT COVER IT.  ``collectors.breadth``
+        already knows this shape — ``_heal_store_seams`` exists because "the stored
+        PRE-window history stays on the old price basis" — but ``seam_suspects`` flags a
+        column only when a 1-day ratio leaves ``[_SEAM_LO, _SEAM_HI] = [0.60, 1.65]``.
+        That is a SPLIT detector; a 0.29% dividend re-basing sits ~200x inside the band
+        and passes untouched.  So the seam it leaves in the live panel is real and
+        permanent, not a fixture artifact: see
+        DSC:HK-DEEP-PANEL-SPLICES-ADJUSTMENT-VINTAGES.  Tolerating it HERE is not a
+        claim that the panel is clean — it is a refusal to let a test that cannot
+        distinguish the two block the fleet while the collector heal is owned elsewhere.
+
+        WHAT STILL FIRES, unchanged in strength: any date drift at all; a rewrite that
+        does not run to the end of the window (a genuine historical revision is not a
+        trailing re-base and cannot fake one); a change that is not uniform to within
+        the fixture's own 3dp quantum; and a factor outside the routine-dividend band,
+        so a split or a real corporate action is re-adjudicated rather than absorbed.
+        """
         pd = pytest.importorskip("pandas")
         src = Path(board["_source"])
         if not src.exists():                    # pragma: no cover — committed in-tree
@@ -2124,9 +2226,12 @@ class TestG1FixtureIsNotStale:
             assert dates == frozen["dates"], (
                 f"{ticker} historical dates drifted — regenerate the fixture: "
                 f"{regenerate_g1_fixture()}")
-            assert closes == frozen["closes"], (
-                f"{ticker} historical closes drifted — regenerate the fixture: "
-                f"{regenerate_g1_fixture()}")
+            kind, detail = rescale_diagnosis(frozen["closes"], closes)
+            assert kind != "revision", (
+                f"{ticker} historical closes were REVISED, not re-based ({detail}). "
+                f"This is the rewrite the tripwire exists to catch: re-adjudicate the "
+                f"panel before touching the fixture. If the source is genuinely correct "
+                f"now, regenerate with {regenerate_g1_fixture()}")
 
     def test_witness_verdicts_replay_from_the_live_panel(self, board):
         pd = pytest.importorskip("pandas")
@@ -2141,6 +2246,69 @@ class TestG1FixtureIsNotStale:
             frozen = board["verdicts"][ticker]
             for key in ("eligible", "ticks", "fresh_bars", "above200", "weekly_bull"):
                 assert live.get(key) == frozen[key], f"{ticker}.{key} drifted"
+
+
+class TestRescaleDiagnosis:
+    """The tripwire's own logic, pinned against synthetic windows.
+
+    This class is the reason replacing the equality check is not the same as
+    deleting a guard: every shape the old assertion caught is re-asserted here
+    against numbers that cannot drift, so the live-panel test above is free to
+    tolerate the one shape the collector is documented to produce.
+    """
+
+    def test_identical_windows_report_identical(self):
+        kind, detail = rescale_diagnosis([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+        assert (kind, detail) == ("identical", None)
+
+    def test_the_measured_2359_shape_is_a_re_base(self):
+        """The exact drift that reddened the fleet on 2026-08-18, to 3dp.
+
+        Frozen rows through 2026-06-17 untouched, everything from the ``2mo``
+        refresh boundary onward scaled by the dividend factor.
+        """
+        frozen = [125.2, 124.3, 122.5, 128.7, 132.8, 130.8, 158.6, 157.7, 160.7]
+        factor = 0.9971035
+        live = frozen[:3] + [round(v * factor, 3) for v in frozen[3:]]
+        kind, detail = rescale_diagnosis(frozen, live)
+        assert kind == "suffix_rescale", detail
+        assert "rows 3..8 of 9" in detail
+
+    def test_a_whole_window_rescale_is_the_empty_prefix_case(self):
+        """The SI precedent's shape — every row re-based — must also pass."""
+        frozen = [10.0, 11.0, 12.5, 13.0]
+        live = [round(v * 0.9976, 3) for v in frozen]
+        assert rescale_diagnosis(frozen, live)[0] == "suffix_rescale"
+
+    def test_a_rewrite_that_stops_before_the_end_is_a_revision(self):
+        """A trailing re-fetch cannot leave the newest rows alone — that is a rewrite."""
+        kind, detail = rescale_diagnosis([1.0, 2.0, 3.0, 4.0], [1.0, 2.5, 3.0, 4.0])
+        assert kind == "revision", detail
+        assert "not uniform" in detail
+
+    def test_a_non_uniform_suffix_is_a_revision(self):
+        kind, detail = rescale_diagnosis([1.0, 2.0, 3.0, 4.0], [1.0, 2.2, 3.3, 4.8])
+        assert kind == "revision", detail
+
+    def test_a_split_scale_factor_is_re_adjudicated_not_absorbed(self):
+        """Splits rescale share counts too; this check has no volume clause beside
+        it, so it must refuse rather than swallow one."""
+        kind, detail = rescale_diagnosis([100.0, 110.0, 120.0], [10.0, 11.0, 12.0])
+        assert kind == "revision", detail
+        assert "corporate action" in detail
+
+    def test_a_single_3dp_wobble_is_quantization_not_revision(self):
+        """The fixture stores 3dp; a one-quantum move is the grid, not a rewrite."""
+        assert rescale_diagnosis([10.0, 20.0, 30.0],
+                                 [10.0, 20.001, 30.0])[0] == "suffix_rescale"
+
+    def test_a_one_cent_restatement_of_a_cheap_name_still_fires(self):
+        """The band must not have bought tolerance at the cost of real sensitivity:
+        a single-row restatement well inside the dividend factor band is still a
+        revision, because it is not uniform with the rows after it."""
+        frozen = [4.81, 4.90, 5.05, 5.10]
+        live = [4.81, 4.91, 5.05, 5.10]
+        assert rescale_diagnosis(frozen, live)[0] == "revision"
 
 
 # --------------------------------------------------------------------------- #

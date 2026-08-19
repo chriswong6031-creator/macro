@@ -85,10 +85,16 @@ def test_prophet_ran_rows_go_through_the_same_cap_as_the_cards():
     them — an anonymous visitor could read the roster in plain text."""
     js = (ROOT / "templates" / "tier_preview.js").read_text()
     dash = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    # The ROW markup moved to templates/_us_ran_rows.html.j2 when the panel gained a
+    # server-side split (the client cap below is now the second of two gates, not
+    # the only one), so the emitter assertion follows it there. The CONTAINER is
+    # still emitted by dashboard.html.j2 and is what tier_preview.js selects on.
+    rows = (ROOT / "templates" / "_us_ran_rows.html.j2").read_text()
 
     # emitter side
     assert '<div class="pbr-l">' in dash
-    assert '<a class="pbr-r' in dash
+    assert '{% include "_us_ran_rows.html.j2" %}' in dash
+    assert '<a class="pbr-r' in rows
     # gate side — inside groups(), so it inherits applyGroup()'s cap/blur/hide path
     # rather than getting a second, drifting rule of its own.
     gfn = js[js.index("function groups()"):js.index("function surfaceFor(")]

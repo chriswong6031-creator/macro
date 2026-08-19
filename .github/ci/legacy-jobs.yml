@@ -389,7 +389,6 @@ jobs:
   conflict-markers:
     if: ${{ false }}
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers
-    # ('<<<<<<< ours' / '=======' / '>>>>>>> theirs') inside templates/dashboard.html.j2
     # and merged GREEN — Jinja parses marker lines as plain text, pytest never rendered
     # that block, and no other guard greps for them. This fails RED on any conflict-marker
     # line in templates/**, engine/**, scripts/**, or shipped site/** files. PRs use a
@@ -753,8 +752,15 @@ jobs:
       # reds instead of going quiet. Hermetic and dependency-free: StringIO streams
       # plus one tmp_path call into the real `_finalize_candidates` with an empty
       # candidate list. 15 tests in ~1.6s, no new wheel.
-      - name: entry-radar W1+W2+W3+W4+W5 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py -q
+      #
+      # W6 (PR-6, 2026-08-17) joins the SAME step: tests/test_entry_radar_w6_priority.py
+      # is the RP1 Research Priority adversarial battery (determinism, firewalls,
+      # stale/unavailable, multi-expert, live-seam recovery tape). Hermetic: W4
+      # synthetic pack + recovery tape, no data/, no site/, no network, no LLM.
+      # Unnamed suites never run in this manifest; leaving W6 off this line would
+      # ship the ranking path dark.
+      - name: entry-radar W1+W2+W3+W4+W5+W6 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence, RP1 Research Priority
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py tests/test_entry_radar_w6_priority.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
@@ -1074,7 +1080,17 @@ jobs:
         # closed over the real production import graph.
         run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
-        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
+        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py tests/test_us_board_gate.py -q
+      # The SAME Act-Now board, on its second host. test_us_board_gate above pins
+      # the us_stocks split; this pins sector_central.html, which rendered the
+      # identical include ungated (45 `.actitem` rows, anonymous, 2026-08-17)
+      # until #5846's gate made those rows one click away instead of gone.
+      # Runs HERE and only here on purpose: scripts/build_sector_central.py keeps
+      # every engine import inside a function, so unlike test_us_board_gate this
+      # suite needs no pandas/plotly pairing and nothing in it can skip on this
+      # job's venv line (the suite's own test_import_stays_light pins that).
+      - name: tier-preview split contract (sector_central act-now board)
+        run: python -m pytest tests/test_sector_central_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
         # Found unwired by the 2026-08-02 adversarial review of #4331: the suite
         # pins the public/anon split for the dashboard shells (site_access.yml
@@ -1598,6 +1614,10 @@ jobs:
       # tests/test_fundamental_forensics_financial_intelligence_packet_r2.py rides
       # the same step as the v1 packet suite (FIF-1R2): same assembler, same
       # jsonschema/decimal install, no new job.
+      # tests/test_fundamental_forensics_broad_sec.py and
+      # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
+      # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
+      # jsonschema/pyyaml/requests, already on this install line. No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1677,6 +1697,8 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
+          tests/test_fundamental_forensics_broad_sec.py
+          tests/test_filing_forensics_broad_sec_lane.py
           tests/test_context_api.py
           tests/test_finra_knowable.py
           tests/test_t0_indicator.py
@@ -1851,8 +1873,14 @@ jobs:
       # builder assertions intentionally require pandas + plotly. Pair the suite
       # with this lane's fat deps so those assertions execute instead of skip
       # everywhere.
+      # test_us_board_gate.py is the same split in the same shape for the
+      # us_stocks board, so it is paired the same way: tier-gate runs its
+      # jinja2-only shell/leak cases, and the splitter + payload-writer
+      # assertions (which import scripts.build_site, hence plotly) execute
+      # HERE. Those are the half that proves the withholding itself, so
+      # leaving them to skip would gate the markup and not the gate.
       - name: ETF tier-preview builder assertions (full page stack)
-        run: python -m pytest tests/test_theme_clinical.py tests/test_etfs_gate.py -q
+        run: python -m pytest tests/test_theme_clinical.py tests/test_etfs_gate.py tests/test_us_board_gate.py -q
       # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
       # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
       # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
@@ -2997,6 +3025,16 @@ jobs:
       # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
       - name: sparse session-worktree profile (config ↔ fallback, husk detector, hook wiring)
         run: python -m pytest tests/test_sparse_worktree_profile.py -q
+      # Same subject (scripts/worktree_sparse.py), same job, for the same reason
+      # the step above exists: #5531 landed its suite named by no run: step and
+      # pack-1 went red on every PR the moment it merged. This suite owns the
+      # lock preflight and the truncation repair — a `sparse-checkout add`/`full`
+      # SIGKILLed by its own subprocess timeout leaves a 0-byte file over a real
+      # committed artifact plus an orphaned index.lock, and the repair must never
+      # revert a session's uncommitted work while fixing it. stdlib + pytest;
+      # synthetic git repos under tmp_path, no data/ or site/ reads.
+      - name: sparse worktree add/full lock preflight + truncation repair (never worse than it started)
+        run: python -m pytest tests/test_worktree_sparse_add_lock_safety.py -q
       # VACUOUS guards: the same lie audit_unrun_tests.py catches, one layer down.
       # A suite that never runs is caught above; a guard that RUNS, walks a tree
       # that is not checked out, finds nothing and prints its affirmative OK is
@@ -3095,8 +3133,14 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyyaml
-      - name: nyse calendar rules + first-party imported-name resolution
-        run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
+      # tsx_calendar joins its NYSE sibling here (2026-08-17): same subject — an
+      # exchange calendar sitting under a freshness SLA — same stdlib-only, hermetic
+      # shape, and the same reason. It is the session reference
+      # scripts/check_nightly_liveness.py check D grades the Canadian board against,
+      # so its rule arithmetic must not be UNRUN the way test_nyse_calendar.py was
+      # until 2026-07-27.
+      - name: nyse + tsx calendar rules, first-party imported-name resolution
+        run: python -m pytest tests/test_nyse_calendar.py tests/test_tsx_calendar.py tests/test_first_party_import_names.py -q
       # SP1-B: restrict_to_nyse_sessions must refuse a weekend-contaminated
       # price index. Belongs HERE — the filter is session_rows + is_session,
       # which this job already owns. Hermetic (synthetic dates, no data/).
@@ -3185,7 +3229,23 @@ jobs:
     # and replays the incident against real git repos, then asserts the LANES still
     # source it — so deleting the policy from a workflow reds here too.
     #
-    # Triggers on: .github/workflows/**, scripts/ci/push_retry.sh, tests/test_push_retry.py.
+    # The same job now also covers the APPEND-ONLY BASE FENCE, which is the second
+    # policy every lane's push loop sources from push_retry.sh. `-X theirs` is right for
+    # the bulk market plane and catastrophic for an append-only ledger: on a file both
+    # sides appended to it REPLACES the other side's rows. Measured twice on
+    # data/government_revenue/ (2026-08-07 and 2026-08-18), the second orphaning a 26-row
+    # candidate_ledger.jsonl issuance batch and reddening ci-pack-6 through ci-gate for
+    # the whole fleet. The suite replays the real incident against real git repos and
+    # pins the property that keeps it quiet — it looks only at members THIS run's commits
+    # changed, because the 30-minute govrev-live lane appends to the same directory while
+    # the nightly collect job is still running.
+    #
+    # pandas + pyarrow are here for that suite only: the fence's identity check reads the
+    # committed parquet spine, and a stub would prove nothing about the real frames.
+    #
+    # Triggers on: .github/workflows/**, scripts/ci/push_retry.sh, tests/test_push_retry.py,
+    # scripts/ci/append_only_base_fence.py, config/append_only_artifacts.json,
+    # tests/test_append_only_base_fence.py.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -3193,9 +3253,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml pandas pyarrow
       - name: push-retry policy tests (classification, budgets, jitter, real git races)
         run: python -m pytest tests/test_push_retry.py -q
+      - name: append-only base fence (real-incident replay, withhold, quiet-night property)
+        run: python -m pytest tests/test_append_only_base_fence.py -q
 
   transmission-chains:
     if: ${{ false }}
@@ -7451,6 +7513,8 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
       - name: theme graph — crosswalk v3 additive integrity
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
+      - name: theme graph — V4-D2A identity-resolution bridge (hostile fixtures, two-clock law, reproducibility)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_identity_resolution.py -q
       - name: theme graph — W3A local-theme plane (hostile tests D-M, capability sidecar, rights gate)
         run: TZ=UTC python -m pytest tests/test_theme_graph_local_plane.py -q
       - name: theme graph — source-rights registry shape + F20 grandfather pin
@@ -8275,6 +8339,30 @@ jobs:
       # that greens one while reddening the other should fail in a single job.
       - name: reconstructed-origination disclosure (chip + receipt + footnote + record split, EN/ZH)
         run: python -m pytest tests/test_prophet_origination_disclosure.py -q
+      # Prophet PIT Replay Harness — general point-in-time session replay
+      # (research/PROPHET_PIT_REPLAY_HARNESS_V1.md; authority
+      # DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT). Wired in THIS job
+      # because it generalizes the two force-majeure lanes above it — same subject
+      # (a market's session reconstructed from a pinned vintage tree and staged for
+      # the market's own nightly to absorb), same import closure (pandas + the pip
+      # line already installed here), and the same reason those two share a job: a
+      # change to the shared truncation/fence/absorb machinery should fail in ONE
+      # job, not pass one lane's suite while reddening its sibling's. All three
+      # suites are fast, no network, no real board builds — synthetic frames and tmp
+      # git fixtures only; the real-repo `--resolve-only` integration checks (US
+      # 2026-08-14, CN/HK 2026-08-17, the US disclosed-gap/session-invalid refusals)
+      # are exercised directly against this checkout, not a network call.
+      - name: prophet PIT replay harness (truncate/overlay/fence, vintage resolution, disclosed-gap guard, registry, receipt idempotence, verify-collisions ordering)
+        run: python -m pytest tests/test_prophet_pit_replay.py -q
+      # US absorb hook (scripts/grade_us_board.py::absorb_pending_replays) — same
+      # subject/job as the harness above; wired together so a change to the
+      # pending/v1 schema or the harness's session ordering fails in one place.
+      - name: prophet PIT replay absorb — US (grade_us_board pending-replay hook, out-of-order append, schema validation)
+        run: python -m pytest tests/test_pit_replay_absorb.py -q
+      # CN/HK absorb hooks (engine/china_standout_track.py, engine/board_ledger.py)
+      # + the cn/hk MARKETS registry entries the harness resolves them through.
+      - name: prophet PIT replay absorb — CN/HK (china_standout_track + board_ledger pending-replay hooks, registry resolution)
+        run: python -m pytest tests/test_pit_replay_absorb_asia.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
@@ -8779,6 +8867,7 @@ jobs:
       - "engine/us_early_turn.py"
       - "engine/us_prophet_fusion.py"
       - "engine/us_prophet_grades.py"
+      - "engine/us_prophet_w3.py"
       - "engine/validation.py"
       - "engine/valuation.py"
       - "engine/velocity.py"
@@ -8862,6 +8951,7 @@ jobs:
       - "scripts/grade_bottom_calls.py"
       - "scripts/grade_us_board.py"
       - "scripts/grade_us_prophet_candidates.py"
+      - "scripts/accrue_us_prophet_w3.py"
       - "scripts/heal_stage_forward_ledger.py"
       - "scripts/measure_us_track_era_recompute.py"
       - "scripts/notify.py"
@@ -8945,6 +9035,7 @@ jobs:
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
       - "tests/test_us_prophet_fusion.py"
+      - "tests/test_us_prophet_w3.py"
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_accrual.py"
       - "tests/test_weinstein_stage.py"
@@ -9072,7 +9163,7 @@ jobs:
       # see the install-line comment above for why it had to join and why that is not a
       # canary-lane widening.
       - name: US context vector + full-population grades + miss-audit scorecards
-        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py tests/test_us_scan_tier.py -q
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_prophet_w3.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py tests/test_us_scan_tier.py -q
       - name: US entry-status full-population remeasurement
         run: python -m pytest tests/test_us_entry_status_remeasure.py -q
       # The candidate-pool lanes ride this job because they ride this STORE: the nine

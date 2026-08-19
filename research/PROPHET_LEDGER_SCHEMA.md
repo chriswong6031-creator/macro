@@ -428,3 +428,21 @@ authority.
 The strict contract is
 `contracts/options/prophet.option_mark_observation.v1.schema.json`; the frozen claim
 boundary is `research/options_estate/PROPHET_OPTION_MARK_OBSERVATIONS.md`.
+
+## Addendum 2026-08-18 — point-in-time replay rows are UNMARKED
+
+`agentos/decisions/DEC-FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT.md` (chairman,
+2026-08-18) makes backfilling an infrastructure-outage-lost Prophet session the
+**default**, superseding the earlier "no backfill" reading of the standing law stated
+at the top of this document. Rows reconstructed by `scripts/prophet_pit_replay.py`
+(design: `research/PROPHET_PIT_REPLAY_HARNESS_V1.md`) enter this ledger through the
+**normal nightly path** — the harness never writes `data/prophet/ledger.jsonl`
+directly; it stages plans and a per-market pending-entry file, and each market's own
+nightly absorbs them — and they carry **no `origination_mode` field, no disclosure
+flag, and no other marking**. The DEC explicitly declined a proposed
+`origination_disclosure` flag; a replayed row is indistinguishable from a
+live-originated one in this schema, and the accepted cost (graded forward-ledger
+statistics cannot separate the two populations) is recorded in the DEC, not here.
+This does not touch `us-board-frozen-alpha-2026-08` (`data/us_board_ledger/
+disclosed_gaps.json`) — that window is a data-correctness defect, `backfillable:
+false`, and stays outside the DEC's force-majeure default.

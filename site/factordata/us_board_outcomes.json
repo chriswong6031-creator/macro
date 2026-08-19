@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-13",
+ "as_of": "2026-08-17",
  "rows": [
   {
    "ticker": "CRSR",
@@ -37,6 +37,19 @@
    "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "QBTS",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 20.9,
+   "last_price": 16.21,
+   "pct_since": -22.4,
+   "days_on_board": 2,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
    "status": "stopped",
    "lane": "buy"
   },
@@ -89,6 +102,19 @@
    "days_on_board": 1,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "EU",
+   "sector": "Energy",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 1.31,
+   "last_price": 1.13,
+   "pct_since": -13.7,
+   "days_on_board": 3,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
    "status": "stopped",
    "lane": "buy"
   },
@@ -187,8 +213,8 @@
    "ticker": "PEGA",
    "sector": "Information Technology",
    "first_surfaced": "2026-07-29",
-   "surfaced_price": 30.03,
-   "last_price": 32.74,
+   "surfaced_price": 29.95,
+   "last_price": 32.66,
    "pct_since": 9.0,
    "days_on_board": 3,
    "exit_date": "2026-08-07",
@@ -600,19 +626,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "CELH",
-   "sector": "Consumer Staples",
-   "first_surfaced": "2026-07-30",
-   "surfaced_price": 29.21,
-   "last_price": 27.77,
-   "pct_since": -4.9,
-   "days_on_board": 2,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "TNDM",
    "sector": "Health Care",
    "first_surfaced": "2026-07-15",
@@ -642,8 +655,8 @@
    "ticker": "LLY",
    "sector": "Health Care",
    "first_surfaced": "2026-07-28",
-   "surfaced_price": 1210.02,
-   "last_price": 1154.97,
+   "surfaced_price": 1208.29,
+   "last_price": 1153.32,
    "pct_since": -4.5,
    "days_on_board": 2,
    "exit_date": "2026-07-30",
@@ -743,6 +756,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "SMPL",
+   "sector": "Consumer Staples",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 11.31,
+   "last_price": 10.84,
+   "pct_since": -4.2,
+   "days_on_board": 1,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "FMC",
    "sector": "Materials",
    "first_surfaced": "2026-07-21",
@@ -754,49 +780,24 @@
    "mark_date": "2026-07-24",
    "status": "stopped",
    "lane": "buy"
-  },
-  {
-   "ticker": "BMY",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-10",
-   "surfaced_price": 59.34,
-   "last_price": 56.95,
-   "pct_since": -4.0,
-   "days_on_board": 1,
-   "exit_date": "2026-07-14",
-   "mark_date": "2026-07-14",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "MSFT",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-20",
-   "surfaced_price": 397.75,
-   "last_price": 381.7,
-   "pct_since": -4.0,
-   "days_on_board": 2,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "stopped",
-   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 68,
-  "n_stopped": 66,
-  "n_flat": 305,
-  "n_total": 439,
+  "n_running": 69,
+  "n_stopped": 75,
+  "n_flat": 318,
+  "n_total": 462,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 3,
+  "n_skipped_no_price": 4,
   "skipped_no_price": [
    "ARWR",
    "FN",
+   "SITM",
    "U"
   ],
-  "win_rate": 0.155,
-  "avg_pct": 0.1,
+  "win_rate": 0.149,
+  "avg_pct": -0.0,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
    "mark": "close on the date the name left the buy board, not today's",

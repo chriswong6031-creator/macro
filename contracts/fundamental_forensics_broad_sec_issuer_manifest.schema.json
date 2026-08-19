@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json",
+  "title": "Filing Forensics broad SEC issuer source manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "manifest_id",
+    "cik",
+    "ticker",
+    "submissions_sha256",
+    "submissions_url",
+    "submissions_object_key",
+    "submissions_retrieved_at",
+    "companyfacts_sha256",
+    "companyfacts_url",
+    "companyfacts_object_key",
+    "companyfacts_retrieved_at",
+    "companyfacts_snapshot_kind",
+    "relevant_filings",
+    "withheld_filings",
+    "cumulative_relevant_accessions",
+    "previous_manifest_id",
+    "recorded_at",
+    "sec_accepted_at",
+    "filed_on"
+  ],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.broad_sec.issuer_manifest.v1"},
+    "manifest_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+    "ticker": {"type": "string", "minLength": 1},
+    "submissions_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "submissions_url": {"type": "string", "minLength": 20},
+    "submissions_object_key": {"type": "string"},
+    "submissions_retrieved_at": {"type": "string", "minLength": 20},
+    "companyfacts_sha256": {
+      "anyOf": [
+        {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "companyfacts_url": {"type": ["string", "null"]},
+    "companyfacts_object_key": {"type": ["string", "null"]},
+    "companyfacts_retrieved_at": {"type": ["string", "null"]},
+    "companyfacts_snapshot_kind": {"enum": ["current_observed", "not_fetched"]},
+    "relevant_filings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cik",
+          "ticker",
+          "accession_number",
+          "form",
+          "filing_date",
+          "report_date",
+          "acceptance_datetime",
+          "primary_document",
+          "is_xbrl",
+          "is_inline_xbrl"
+        ],
+        "properties": {
+          "cik": {"type": "string"},
+          "ticker": {"type": "string"},
+          "accession_number": {"type": "string"},
+          "form": {"type": "string"},
+          "filing_date": {"type": ["string", "null"]},
+          "report_date": {"type": ["string", "null"]},
+          "acceptance_datetime": {"type": ["string", "null"]},
+          "primary_document": {"type": ["string", "null"]},
+          "is_xbrl": {"type": ["boolean", "null"]},
+          "is_inline_xbrl": {"type": ["boolean", "null"]}
+        }
+      }
+    },
+    "withheld_filings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cik",
+          "ticker",
+          "accession_number",
+          "form",
+          "filing_date",
+          "report_date",
+          "acceptance_datetime",
+          "primary_document",
+          "is_xbrl",
+          "is_inline_xbrl",
+          "withheld_reason",
+          "withheld_cause"
+        ],
+        "properties": {
+          "cik": {"type": "string"},
+          "ticker": {"type": "string"},
+          "accession_number": {"type": ["string", "null"]},
+          "form": {"type": "string"},
+          "filing_date": {"type": ["string", "null"]},
+          "report_date": {"type": ["string", "null"]},
+          "acceptance_datetime": {"type": ["string", "null"]},
+          "primary_document": {"type": ["string", "null"]},
+          "is_xbrl": {"type": ["boolean", "null"]},
+          "is_inline_xbrl": {"type": ["boolean", "null"]},
+          "withheld_reason": {"type": "string"},
+          "withheld_cause": {"type": "string"}
+        }
+      }
+    },
+    "cumulative_relevant_accessions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "previous_manifest_id": {"type": ["string", "null"]},
+    "recorded_at": {"type": "string", "minLength": 20},
+    "sec_accepted_at": {"type": ["string", "null"]},
+    "filed_on": {"type": ["string", "null"]}
+  }
+}

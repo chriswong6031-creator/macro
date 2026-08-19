@@ -1,25 +1,46 @@
 {
   "schema": "special_sits_context.v1",
-  "asof": "2026-08-14",
-  "built": "2026-08-14T04:44:30Z",
+  "asof": "2026-08-18",
+  "built": "2026-08-18T10:23:59Z",
   "is_context_only": true,
   "disclaimer": "Context only — event tracking + display-tier setup ranking, never a signal or sizing input.",
   "counts": {
     "total": 1334,
-    "new_today": 51,
+    "new_today": 122,
     "grade_a": 0,
-    "grade_b": 2,
-    "with_arb": 23,
-    "cross_border": 574
+    "grade_b": 3,
+    "with_arb": 19,
+    "cross_border": 568
   },
   "top_setups": [
+    {
+      "ticker": "PPC",
+      "company": "PILGRIMS PRIDE CORP",
+      "category": "Acquisitions",
+      "stage": "announced",
+      "grade": "B",
+      "score": 60.0,
+      "tier": "T2",
+      "mc_musd": 6834.240158930592,
+      "date_filed": "2026-08-17",
+      "why": [
+        "Buy setup live",
+        "Deeply oversold (weeks)",
+        "On active buy list"
+      ],
+      "why_zh": [
+        "买点设置已触发",
+        "周线深度超卖",
+        "列于当前买入名单"
+      ]
+    },
     {
       "ticker": "UCB",
       "company": "United Community Bank",
       "category": "Divestitures",
       "stage": "",
       "grade": "B",
-      "score": 63.0,
+      "score": 58.0,
       "tier": "T1",
       "mc_musd": 3900.0,
       "date_filed": "2026-06-21",
@@ -96,13 +117,34 @@
       ]
     },
     {
+      "ticker": "BORR",
+      "company": "Borr Drilling Ltd",
+      "category": "Acquisitions",
+      "stage": "announced",
+      "grade": "C",
+      "score": 47.0,
+      "tier": "T1",
+      "mc_musd": null,
+      "date_filed": "2026-08-13",
+      "why": [
+        "Buy setup live",
+        "Deeply oversold (weeks)",
+        "EDGAR filing confirmed"
+      ],
+      "why_zh": [
+        "买点设置已触发",
+        "周线深度超卖",
+        "EDGAR披露已确认"
+      ]
+    },
+    {
       "ticker": "ECHO",
       "company": "EchoStar CORP",
       "category": "Restructuring",
       "stage": "filed",
       "grade": "C",
-      "score": 47.0,
-      "tier": "T2",
+      "score": 44.0,
+      "tier": "T1",
       "mc_musd": null,
       "date_filed": "2026-08-03",
       "why": [
@@ -111,27 +153,6 @@
       ],
       "why_zh": [
         "买点设置已触发",
-        "EDGAR披露已确认"
-      ]
-    },
-    {
-      "ticker": "UNIT",
-      "company": "Uniti Group Inc.",
-      "category": "Issuer Tenders",
-      "stage": "live",
-      "grade": "C",
-      "score": 43.0,
-      "tier": null,
-      "mc_musd": 2290.8599910736084,
-      "date_filed": "2026-07-31",
-      "why": [
-        "Deeply oversold (weeks)",
-        "Strong history for this event type",
-        "EDGAR filing confirmed"
-      ],
-      "why_zh": [
-        "周线深度超卖",
-        "此类事件历史表现强",
         "EDGAR披露已确认"
       ]
     },
@@ -176,15 +197,15 @@
       ]
     },
     {
-      "ticker": "BSBR",
-      "company": "Banco Santander (Brasil) S.A.",
-      "category": "Tender Offers",
-      "stage": "announced",
+      "ticker": "BBUC",
+      "company": "Brookfield Business Corporation",
+      "category": "Divestitures",
+      "stage": "",
       "grade": "C",
       "score": 40.0,
       "tier": null,
-      "mc_musd": null,
-      "date_filed": "2026-07-31",
+      "mc_musd": 9700.0,
+      "date_filed": "2026-06-21",
       "why": [
         "Deeply oversold (weeks)",
         "Strong history for this event type",
@@ -195,443 +216,1155 @@
         "此类事件历史表现强",
         "EDGAR披露已确认"
       ]
-    },
-    {
-      "ticker": "YUM",
-      "company": "Yum! Brands, Inc.",
-      "category": "Divestitures",
-      "stage": "",
-      "grade": "C",
-      "score": 40.0,
-      "tier": null,
-      "mc_musd": 41900.0,
-      "date_filed": "2026-06-21",
-      "why": [
-        "Sector in favor",
-        "Strong history for this event type",
-        "EDGAR filing confirmed"
-      ],
-      "why_zh": [
-        "板块获看好",
-        "此类事件历史表现强",
-        "EDGAR披露已确认"
-      ]
     }
   ],
   "changes": {
     "items": [
       {
         "kind": "new",
-        "ticker": "ACB",
-        "category": "Tender Offers",
-        "from": null,
-        "to": "initiated"
-      },
-      {
-        "kind": "new",
-        "ticker": "ALYAF",
+        "ticker": "OPTT",
         "category": "Strategic Reviews",
         "from": null,
         "to": "initiated"
       },
       {
         "kind": "new",
-        "ticker": "ICE",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "initiated"
-      },
-      {
-        "kind": "new",
-        "ticker": "AMPWF",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "initiated"
-      },
-      {
-        "kind": "new",
-        "ticker": "nan",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "initiated"
-      },
-      {
-        "kind": "new",
-        "ticker": "UGP",
-        "category": "Spin-Offs",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "MPLT",
-        "category": "Spin-Offs",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "AACBU",
+        "ticker": "WATR",
         "category": "SPACs",
         "from": null,
         "to": "de-SPAC"
       },
       {
         "kind": "new",
-        "ticker": "ATEKW",
+        "ticker": "ALISR",
         "category": "SPACs",
         "from": null,
         "to": "de-SPAC"
       },
       {
         "kind": "new",
-        "ticker": "EURKU",
-        "category": "SPACs",
-        "from": null,
-        "to": "de-SPAC"
-      },
-      {
-        "kind": "new",
-        "ticker": "MRCOU",
-        "category": "SPACs",
-        "from": null,
-        "to": "de-SPAC"
-      },
-      {
-        "kind": "new",
-        "ticker": "SUZ",
+        "ticker": "CSAN",
         "category": "Restructuring",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "PTCT",
+        "ticker": "NIVFW",
         "category": "Restructuring",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "SGMOQ",
-        "category": "Restructuring",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "nan",
+        "ticker": "B",
         "category": "Other",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "BSP",
+        "ticker": "CSAN",
         "category": "Other",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "APPF",
+        "ticker": "DOGZ",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "PUSA",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CHRS",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "DYNR",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "XAGEW",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NARA",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SEII",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SCTH",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "MOS",
+        "category": "Issuer Tenders",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "SORA",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "SSYS",
+        "ticker": "AVAL",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "RILYT",
+        "ticker": "VMAR",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "SMTC",
-        "category": "Divestitures",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "SNDA",
+        "ticker": "BHR-PD",
         "category": "Divestitures",
         "from": null,
         "to": "closed"
       },
       {
         "kind": "new",
-        "ticker": "WBI",
+        "ticker": "GHI",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "LIDRW",
+        "ticker": "LMNR",
+        "category": "Divestitures",
+        "from": null,
+        "to": "terminated"
+      },
+      {
+        "kind": "new",
+        "ticker": "UFI",
+        "category": "Divestitures",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "AVB",
         "category": "Delistings",
         "from": null,
         "to": "live"
       },
       {
         "kind": "new",
-        "ticker": "BW-PA",
+        "ticker": "DRMAW",
         "category": "Delistings",
         "from": null,
         "to": "live"
       },
       {
         "kind": "new",
-        "ticker": "FER",
+        "ticker": "AKAN",
         "category": "Delistings",
         "from": null,
         "to": "notice"
       },
       {
         "kind": "new",
-        "ticker": "BKSY-WT",
+        "ticker": "FTRK",
         "category": "Delistings",
         "from": null,
         "to": "notice"
       },
       {
         "kind": "new",
-        "ticker": "CIRCW",
+        "ticker": "UOKAF",
         "category": "Delistings",
         "from": null,
         "to": "notice"
       },
       {
         "kind": "new",
-        "ticker": "NCRA",
+        "ticker": "CSAI",
         "category": "Delistings",
         "from": null,
         "to": "notice"
       },
       {
         "kind": "new",
-        "ticker": "KVUE",
+        "ticker": "HLXC",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "NXL",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "TALK",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "HTB",
         "category": "Deal Terminations",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "DAAQU",
+        "ticker": "AVB",
+        "category": "Deal Terminations",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NVDA",
+        "category": "Deal Terminations",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "UCL",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ALM",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "MVIS",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "BIRK",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CIB",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HLNCF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "KMDA",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NRRWF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "PUKPF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SLAIY",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "VIV",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "XP",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ZTOEF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ZHIHF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "WAMFF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CHRS",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "DRMAW",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "GLXZ",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NXXT",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "BETRW",
+        "category": "Activist Campaigns",
+        "from": null,
+        "to": "proxy-fight"
+      },
+      {
+        "kind": "terminal",
+        "ticker": "nan",
+        "category": "Acquisitions",
+        "from": "registered",
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "DGNX",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HCHL",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "OGC",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "KAZR",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "TOPS",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "terminated"
+      },
+      {
+        "kind": "new",
+        "ticker": "BKH",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "BRBS",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "DCGO",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "FULC",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HTB",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "MAIR",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NIMUD",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "PPC",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "PLUR",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "TTMI",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "UHS",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "WYFI",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "XRN-PB",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "SHPH",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "AEHR",
+        "category": "Divestitures",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SHC",
+        "category": "Divestitures",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "LGO",
+        "category": "Strategic Reviews",
+        "from": null,
+        "to": "initiated"
+      },
+      {
+        "kind": "new",
+        "ticker": "CSR",
+        "category": "Strategic Reviews",
+        "from": null,
+        "to": "initiated"
+      },
+      {
+        "kind": "new",
+        "ticker": "KB",
+        "category": "Spin-Offs",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "RUBI",
+        "category": "Spin-Offs",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "LBSR",
+        "category": "Spin-Offs",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CGCFU",
+        "category": "SPACs",
+        "from": null,
+        "to": "de-SPAC"
+      },
+      {
+        "kind": "new",
+        "ticker": "APACR",
+        "category": "SPACs",
+        "from": null,
+        "to": "de-SPAC"
+      },
+      {
+        "kind": "new",
+        "ticker": "TBCV",
+        "category": "SPACs",
+        "from": null,
+        "to": "de-SPAC"
+      },
+      {
+        "kind": "new",
+        "ticker": "MVIS",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "PRIF-PL",
+        "category": "Issuer Tenders",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "UTSI",
+        "category": "Divestitures",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NGTF",
+        "category": "Divestitures",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "PLMUF",
+        "category": "Delistings",
+        "from": null,
+        "to": "completed"
+      },
+      {
+        "kind": "new",
+        "ticker": "HBCYF",
+        "category": "Delistings",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "IPCXU",
+        "category": "Delistings",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "MYSEW",
+        "category": "Delistings",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "DTCKF",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "FRSPF",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "ATNM",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "ADGM",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "OPTU",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "REED",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "SES-WT",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "TEAD",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "WKSP",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "DSX-WT",
         "category": "Deal Terminations",
         "from": null,
         "to": "terminated"
       },
       {
         "kind": "new",
-        "ticker": "WRLD",
+        "ticker": "BBUC",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "COLL",
+        "ticker": "EMBJ",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "ELPC",
+        "ticker": "MLCO",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "LITB",
+        "ticker": "SHG",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "MDXH",
+        "ticker": "TSMWF",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "NRSCF",
+        "ticker": "IFED",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "DLO",
+        "ticker": "XZO",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "ABXL",
+        "ticker": "BEATW",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "BKYI",
+        "ticker": "RFAIR",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "ITW",
-        "category": "Capital Returns",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "MSGY",
+        "ticker": "NTB",
         "category": "Acquisitions",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "SAIHW",
+        "ticker": "GFRWF",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "WOK",
         "category": "Acquisitions",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "BANR",
+        "ticker": "CORZR",
         "category": "Acquisitions",
         "from": null,
         "to": "announced"
       },
       {
-        "kind": "new",
-        "ticker": "GNL-PD",
+        "kind": "stage",
+        "ticker": "CRNX",
         "category": "Acquisitions",
-        "from": null,
-        "to": "closed"
-      },
-      {
-        "kind": "new",
-        "ticker": "HCWC",
-        "category": "Acquisitions",
-        "from": null,
+        "from": "vote-scheduled",
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "PH",
+        "ticker": "TMRC",
         "category": "Acquisitions",
         "from": null,
         "to": "closed"
       },
       {
         "kind": "new",
-        "ticker": "RKLB",
+        "ticker": "SPCX",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "WU",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CBAN",
         "category": "Acquisitions",
         "from": null,
         "to": "registered"
       },
       {
         "kind": "new",
-        "ticker": "IPCO.TO",
-        "category": "Capital Returns",
+        "ticker": "EFTY",
+        "category": "Acquisitions",
         "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "grade_down",
-        "ticker": "KRRO",
-        "category": "Other",
-        "from": "C",
-        "to": null
-      },
-      {
-        "kind": "grade_down",
-        "ticker": "PSKY",
-        "category": "Restructuring",
-        "from": "C",
-        "to": null
+        "to": "registered"
       },
       {
         "kind": "new",
-        "ticker": "NSA",
-        "category": "Delistings",
+        "ticker": "ANGX",
+        "category": "Acquisitions",
         "from": null,
-        "to": "completed"
-      },
-      {
-        "kind": "new",
-        "ticker": "NFBK",
-        "category": "Delistings",
-        "from": null,
-        "to": "completed"
+        "to": "registered"
       },
       {
         "kind": "grade_up",
-        "ticker": "LUNR",
+        "ticker": "BORR",
         "category": "Acquisitions",
         "from": null,
         "to": "C"
       },
       {
-        "kind": "grade_up",
-        "ticker": "UNIT",
-        "category": "Issuer Tenders",
-        "from": null,
-        "to": "C"
-      },
-      {
-        "kind": "new",
-        "ticker": "KORE",
-        "category": "Delistings",
-        "from": null,
-        "to": "completed"
-      },
-      {
         "kind": "terminal",
-        "ticker": "NCRA",
+        "ticker": "PAL",
         "category": "Acquisitions",
         "from": "announced",
         "to": "closed"
       },
       {
+        "kind": "terminal",
+        "ticker": "AFBI",
+        "category": "Delistings",
+        "from": "live",
+        "to": "completed"
+      },
+      {
+        "kind": "stage",
+        "ticker": "BGI",
+        "category": "Delistings",
+        "from": "notice",
+        "to": "live"
+      },
+      {
+        "kind": "terminal",
+        "ticker": "EA",
+        "category": "Delistings",
+        "from": "live",
+        "to": "completed"
+      },
+      {
+        "kind": "stage",
+        "ticker": "WILC",
+        "category": "Delistings",
+        "from": "notice",
+        "to": "live"
+      },
+      {
+        "kind": "stage",
+        "ticker": "BBBY-WT",
+        "category": "Delistings",
+        "from": "notice",
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "LGMK",
+        "category": "Going-Private",
+        "from": null,
+        "to": "live"
+      },
+      {
         "kind": "grade_up",
-        "ticker": "UCB",
+        "ticker": "BBUC",
         "category": "Divestitures",
         "from": null,
-        "to": "B"
+        "to": "C"
       },
       {
         "kind": "grade_down",
-        "ticker": "WBD",
-        "category": "Acquisitions",
-        "from": "B",
+        "ticker": "YUM",
+        "category": "Divestitures",
+        "from": "C",
         "to": null
       }
     ],
-    "n": 58
+    "n": 133
   },
   "prev_state": {
-    "asof": "2026-08-13",
+    "asof": "2026-08-14",
     "by_key": {
+      "ACB|Tender Offers": {
+        "stage": "initiated",
+        "grade": null
+      },
+      "ALYAF|Strategic Reviews": {
+        "stage": "initiated",
+        "grade": null
+      },
+      "ICE|Strategic Reviews": {
+        "stage": "initiated",
+        "grade": null
+      },
+      "AMPWF|Strategic Reviews": {
+        "stage": "initiated",
+        "grade": null
+      },
+      "nan|Strategic Reviews": {
+        "stage": "initiated",
+        "grade": null
+      },
+      "UGP|Spin-Offs": {
+        "stage": "announced",
+        "grade": null
+      },
+      "MPLT|Spin-Offs": {
+        "stage": "announced",
+        "grade": null
+      },
+      "nan|SPACs": {
+        "stage": "de-SPAC",
+        "grade": null
+      },
+      "AACBU|SPACs": {
+        "stage": "de-SPAC",
+        "grade": null
+      },
+      "ATEKW|SPACs": {
+        "stage": "de-SPAC",
+        "grade": null
+      },
+      "EURKU|SPACs": {
+        "stage": "de-SPAC",
+        "grade": null
+      },
+      "MRCOU|SPACs": {
+        "stage": "de-SPAC",
+        "grade": null
+      },
+      "SUZ|Restructuring": {
+        "stage": "announced",
+        "grade": null
+      },
+      "PTCT|Restructuring": {
+        "stage": "announced",
+        "grade": null
+      },
+      "SGMOQ|Restructuring": {
+        "stage": "announced",
+        "grade": null
+      },
+      "nan|Other": {
+        "stage": "announced",
+        "grade": null
+      },
+      "BSP|Other": {
+        "stage": "announced",
+        "grade": null
+      },
+      "nan|Issuer Tenders": {
+        "stage": "live",
+        "grade": null
+      },
+      "APPF|Divestitures": {
+        "stage": "announced",
+        "grade": null
+      },
+      "SSYS|Divestitures": {
+        "stage": "announced",
+        "grade": null
+      },
+      "RILYT|Divestitures": {
+        "stage": "announced",
+        "grade": null
+      },
+      "SMTC|Divestitures": {
+        "stage": "announced",
+        "grade": null
+      },
+      "SNDA|Divestitures": {
+        "stage": "closed",
+        "grade": null
+      },
+      "WBI|Divestitures": {
+        "stage": "announced",
+        "grade": null
+      },
+      "nan|Delistings": {
+        "stage": "live",
+        "grade": null
+      },
+      "LIDRW|Delistings": {
+        "stage": "live",
+        "grade": null
+      },
+      "BW-PA|Delistings": {
+        "stage": "live",
+        "grade": null
+      },
+      "FER|Delistings": {
+        "stage": "notice",
+        "grade": null
+      },
+      "BKSY-WT|Delistings": {
+        "stage": "notice",
+        "grade": null
+      },
+      "CIRCW|Delistings": {
+        "stage": "notice",
+        "grade": null
+      },
+      "NCRA|Delistings": {
+        "stage": "notice",
+        "grade": null
+      },
+      "KVUE|Deal Terminations": {
+        "stage": "announced",
+        "grade": null
+      },
+      "DAAQU|Deal Terminations": {
+        "stage": "terminated",
+        "grade": null
+      },
+      "WRLD|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "COLL|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "ELPC|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "LITB|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "MDXH|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "NRSCF|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "DLO|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "ABXL|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "BKYI|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "ITW|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "nan|Acquisitions": {
+        "stage": "registered",
+        "grade": null
+      },
+      "BORR|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
+      "MSGY|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
+      "SAIHW|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
+      "BANR|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
+      "GNL-PD|Acquisitions": {
+        "stage": "closed",
+        "grade": null
+      },
+      "HCWC|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
+      "PH|Acquisitions": {
+        "stage": "closed",
+        "grade": null
+      },
+      "RKLB|Acquisitions": {
+        "stage": "registered",
+        "grade": null
+      },
       "ITHUF|Strategic Reviews": {
         "stage": "initiated",
         "grade": null
@@ -653,10 +1386,6 @@
         "grade": null
       },
       "PLCIU|SPACs": {
-        "stage": "de-SPAC",
-        "grade": null
-      },
-      "nan|SPACs": {
         "stage": "de-SPAC",
         "grade": null
       },
@@ -690,10 +1419,6 @@
       },
       "POAS|Other": {
         "stage": "announced",
-        "grade": null
-      },
-      "nan|Issuer Tenders": {
-        "stage": "live",
         "grade": null
       },
       "TECH|Divestitures": {
@@ -780,10 +1505,6 @@
         "stage": "initiated",
         "grade": null
       },
-      "nan|Acquisitions": {
-        "stage": "registered",
-        "grade": null
-      },
       "CDLR|Acquisitions": {
         "stage": "announced",
         "grade": null
@@ -852,10 +1573,6 @@
         "stage": "announced",
         "grade": null
       },
-      "nan|Delistings": {
-        "stage": "live",
-        "grade": null
-      },
       "PAIYY|Delistings": {
         "stage": "completed",
         "grade": null
@@ -920,6 +1637,10 @@
         "stage": "announced",
         "grade": null
       },
+      "ITMSF|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
       "NFG|Acquisitions": {
         "stage": "announced",
         "grade": null
@@ -929,6 +1650,10 @@
         "grade": null
       },
       "AUUD|Acquisitions": {
+        "stage": "vote-scheduled",
+        "grade": null
+      },
+      "MCFN|Acquisitions": {
         "stage": "vote-scheduled",
         "grade": null
       },
@@ -1096,6 +1821,10 @@
         "stage": "announced",
         "grade": null
       },
+      "IPCO.TO|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
       "LGCL|Capital Returns": {
         "stage": "announced",
         "grade": null
@@ -1165,6 +1894,10 @@
         "grade": null
       },
       "HASI|Acquisitions": {
+        "stage": "registered",
+        "grade": null
+      },
+      "PUSA|Acquisitions": {
         "stage": "registered",
         "grade": null
       },
@@ -1554,7 +2287,7 @@
       },
       "KRRO|Other": {
         "stage": "announced",
-        "grade": "C"
+        "grade": null
       },
       "LAC|Other": {
         "stage": "announced",
@@ -1984,6 +2717,10 @@
         "stage": "announced",
         "grade": null
       },
+      "EIPAF|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
       "HBCYF|Capital Returns": {
         "stage": "announced",
         "grade": null
@@ -2102,7 +2839,11 @@
       },
       "PSKY|Restructuring": {
         "stage": "announced",
-        "grade": "C"
+        "grade": null
+      },
+      "MRNOW|Other": {
+        "stage": "announced",
+        "grade": null
       },
       "RBSPF|Other": {
         "stage": "announced",
@@ -2432,6 +3173,10 @@
         "stage": "de-SPAC",
         "grade": null
       },
+      "BAK|Restructuring": {
+        "stage": "announced",
+        "grade": null
+      },
       "VIV|Restructuring": {
         "stage": "announced",
         "grade": null
@@ -2538,6 +3283,14 @@
       },
       "VVOS|Divestitures": {
         "stage": "announced",
+        "grade": null
+      },
+      "NSA|Delistings": {
+        "stage": "completed",
+        "grade": null
+      },
+      "NFBK|Delistings": {
+        "stage": "completed",
         "grade": null
       },
       "SNBRQ|Delistings": {
@@ -2714,7 +3467,7 @@
       },
       "LUNR|Acquisitions": {
         "stage": "announced",
-        "grade": null
+        "grade": "C"
       },
       "LGMK|Acquisitions": {
         "stage": "announced",
@@ -2838,7 +3591,7 @@
       },
       "UNIT|Issuer Tenders": {
         "stage": "live",
-        "grade": null
+        "grade": "C"
       },
       "PGIM|Issuer Tenders": {
         "stage": "live",
@@ -2866,6 +3619,10 @@
       },
       "VASO|Divestitures": {
         "stage": "closed",
+        "grade": null
+      },
+      "KORE|Delistings": {
+        "stage": "completed",
         "grade": null
       },
       "STRS|Delistings": {
@@ -3044,6 +3801,10 @@
         "stage": "announced",
         "grade": null
       },
+      "ORLA|Acquisitions": {
+        "stage": "announced",
+        "grade": null
+      },
       "RUBI|Acquisitions": {
         "stage": "announced",
         "grade": null
@@ -3081,7 +3842,7 @@
         "grade": null
       },
       "NCRA|Acquisitions": {
-        "stage": "announced",
+        "stage": "closed",
         "grade": null
       },
       "ONAR|Acquisitions": {
@@ -3272,6 +4033,10 @@
         "stage": "announced",
         "grade": null
       },
+      "LLOBF|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
       "MZHOF|Capital Returns": {
         "stage": "announced",
         "grade": null
@@ -3293,6 +4058,10 @@
         "grade": null
       },
       "DLB|Capital Returns": {
+        "stage": "announced",
+        "grade": null
+      },
+      "NWSLL|Capital Returns": {
         "stage": "announced",
         "grade": null
       },
@@ -3372,164 +4141,8 @@
         "stage": "announced",
         "grade": null
       },
-      "GFL|Strategic Reviews": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CHDN|Strategic Reviews": {
-        "stage": "initiated",
-        "grade": null
-      },
-      "SNYR|Strategic Reviews": {
-        "stage": "initiated",
-        "grade": null
-      },
-      "FLEX|Spin-Offs": {
-        "stage": "announced",
-        "grade": null
-      },
-      "BCARU|SPACs": {
-        "stage": "de-SPAC",
-        "grade": null
-      },
-      "IPCXU|SPACs": {
-        "stage": "de-SPAC",
-        "grade": null
-      },
-      "WSTNU|SPACs": {
-        "stage": "de-SPAC",
-        "grade": null
-      },
-      "BAK|Restructuring": {
-        "stage": "announced",
-        "grade": null
-      },
-      "REEAF|Restructuring": {
-        "stage": "announced",
-        "grade": null
-      },
-      "LRHC|Restructuring": {
-        "stage": "announced",
-        "grade": null
-      },
-      "SCL|Restructuring": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CNL|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "DETX|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MRNOW|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "SPRC|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "TNK|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "IFED|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "VIVO|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "ARAY|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CBZ|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "HCWB|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "HODO|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "OSTX|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "ONCO|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "GCTK|Other": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CBZ|Going-Private": {
-        "stage": "live",
-        "grade": null
-      },
-      "WNW|Divestitures": {
-        "stage": "announced",
-        "grade": null
-      },
-      "NOTVQ|Delistings": {
-        "stage": "completed",
-        "grade": null
-      },
-      "CELU|Delistings": {
-        "stage": "notice",
-        "grade": null
-      },
-      "FOXXW|Delistings": {
-        "stage": "notice",
-        "grade": null
-      },
-      "LVWR-WT|Delistings": {
-        "stage": "notice",
-        "grade": null
-      },
-      "LOOP|Delistings": {
-        "stage": "notice",
-        "grade": null
-      },
-      "WORX|Delistings": {
-        "stage": "notice",
-        "grade": null
-      },
       "AAUC|Deal Terminations": {
         "stage": "announced",
-        "grade": null
-      },
-      "TNMWF|Deal Terminations": {
-        "stage": "terminated",
-        "grade": null
-      },
-      "DAICW|Deal Terminations": {
-        "stage": "terminated",
-        "grade": null
-      },
-      "CYCUW|Deal Terminations": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MRDN|Deal Terminations": {
-        "stage": "terminated",
-        "grade": null
-      },
-      "NVVE|Deal Terminations": {
-        "stage": "terminated",
-        "grade": null
-      },
-      "PETVW|Deal Terminations": {
-        "stage": "terminated",
         "grade": null
       },
       "GRMN|Capital Returns": {
@@ -3542,142 +4155,6 @@
       },
       "MPC|Capital Returns": {
         "stage": "announced",
-        "grade": null
-      },
-      "BCLYF|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "BDRX|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "EIPAF|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "FER|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "KGCRF|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "LLOBF|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "ZTOEF|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CMG|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "CTBI|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MEDS|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "HWH|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "KFFB|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "LBRX|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "NWSLL|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "PEB-PH|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "QTWO|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "TYL|Capital Returns": {
-        "stage": "announced",
-        "grade": null
-      },
-      "AIIR|Acquisitions": {
-        "stage": "terminated",
-        "grade": null
-      },
-      "BORR|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "GMM|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "ITMSF|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "ORLA|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "AXTA|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MDXG|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MOBXW|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "MDRR|Acquisitions": {
-        "stage": "closed",
-        "grade": null
-      },
-      "PCOR|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "PBFS|Acquisitions": {
-        "stage": "closed",
-        "grade": null
-      },
-      "PCSA|Acquisitions": {
-        "stage": "closed",
-        "grade": null
-      },
-      "SYBX|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "SMTI|Acquisitions": {
-        "stage": "announced",
-        "grade": null
-      },
-      "TIPT|Acquisitions": {
-        "stage": "closed",
-        "grade": null
-      },
-      "PUSA|Acquisitions": {
-        "stage": "registered",
-        "grade": null
-      },
-      "MCFN|Acquisitions": {
-        "stage": "vote-scheduled",
         "grade": null
       },
       "VBNK|Strategic Reviews": {
@@ -5218,7 +5695,7 @@
       },
       "UCB|Divestitures": {
         "stage": "",
-        "grade": null
+        "grade": "B"
       },
       "002407.SZ|Divestitures": {
         "stage": "",
@@ -5970,7 +6447,7 @@
       },
       "WBD|Acquisitions": {
         "stage": "",
-        "grade": "B"
+        "grade": null
       },
       "NEE|Acquisitions": {
         "stage": "",
@@ -6019,6 +6496,526 @@
     }
   },
   "_current_by_key": {
+    "OPTT|Strategic Reviews": {
+      "stage": "initiated",
+      "grade": null
+    },
+    "WATR|SPACs": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "ALISR|SPACs": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "CSAN|Restructuring": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NIVFW|Restructuring": {
+      "stage": "announced",
+      "grade": null
+    },
+    "nan|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "B|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CSAN|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DOGZ|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "PUSA|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CHRS|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DYNR|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "XAGEW|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NARA|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SEII|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SCTH|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "nan|Issuer Tenders": {
+      "stage": "live",
+      "grade": null
+    },
+    "MOS|Issuer Tenders": {
+      "stage": "live",
+      "grade": null
+    },
+    "SORA|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "AVAL|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "VMAR|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BHR-PD|Divestitures": {
+      "stage": "closed",
+      "grade": null
+    },
+    "GHI|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "LMNR|Divestitures": {
+      "stage": "terminated",
+      "grade": null
+    },
+    "UFI|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "nan|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "AVB|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "DRMAW|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "AKAN|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "FTRK|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "UOKAF|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "CSAI|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "HLXC|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "NXL|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "TALK|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "HTB|Deal Terminations": {
+      "stage": "announced",
+      "grade": null
+    },
+    "AVB|Deal Terminations": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NVDA|Deal Terminations": {
+      "stage": "announced",
+      "grade": null
+    },
+    "UCL|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ALM|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "MVIS|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BBVXF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BIRK|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CIB|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "HLNCF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "KMDA|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NRRWF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "PUKPF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SLAIY|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "VIV|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "XP|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ZTOEF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ZHIHF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "WAMFF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CHRS|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DRMAW|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "GLXZ|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NXXT|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BETRW|Activist Campaigns": {
+      "stage": "proxy-fight",
+      "grade": null
+    },
+    "nan|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "DGNX|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "HCHL|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "OGC|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "KAZR|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TOPS|Acquisitions": {
+      "stage": "terminated",
+      "grade": null
+    },
+    "BKH|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BRBS|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DCGO|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "FULC|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "HTB|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "MAIR|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NIMUD|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "PPC|Acquisitions": {
+      "stage": "announced",
+      "grade": "B"
+    },
+    "PLUR|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TTMI|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "UHS|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "WYFI|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "XRN-PB|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "SHPH|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "AEHR|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SHC|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "LGO|Strategic Reviews": {
+      "stage": "initiated",
+      "grade": null
+    },
+    "CSR|Strategic Reviews": {
+      "stage": "initiated",
+      "grade": null
+    },
+    "nan|Spin-Offs": {
+      "stage": "registered",
+      "grade": null
+    },
+    "KB|Spin-Offs": {
+      "stage": "announced",
+      "grade": null
+    },
+    "RUBI|Spin-Offs": {
+      "stage": "announced",
+      "grade": null
+    },
+    "LBSR|Spin-Offs": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CGCFU|SPACs": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "APACR|SPACs": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "TBCV|SPACs": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "MVIS|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "PRIF-PL|Issuer Tenders": {
+      "stage": "live",
+      "grade": null
+    },
+    "UTSI|Divestitures": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NGTF|Divestitures": {
+      "stage": "closed",
+      "grade": null
+    },
+    "PLMUF|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
+    "HBCYF|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "IPCXU|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "MYSEW|Delistings": {
+      "stage": "live",
+      "grade": null
+    },
+    "DTCKF|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "FRSPF|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "ATNM|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "ADGM|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "OPTU|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "REED|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "SES-WT|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "TEAD|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "WKSP|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "DSX-WT|Deal Terminations": {
+      "stage": "terminated",
+      "grade": null
+    },
+    "ABEV|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BBUC|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "EMBJ|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "MLCO|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SHG|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TSMWF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "IFED|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "XZO|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BEATW|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "RFAIR|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NTB|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "GFRWF|Acquisitions": {
+      "stage": "live",
+      "grade": null
+    },
+    "WOK|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CORZR|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CRNX|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TMRC|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "SPCX|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "WU|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "CBAN|Acquisitions": {
+      "stage": "registered",
+      "grade": null
+    },
+    "EFTY|Acquisitions": {
+      "stage": "registered",
+      "grade": null
+    },
+    "AMZN|Acquisitions": {
+      "stage": "registered",
+      "grade": null
+    },
+    "ANGX|Acquisitions": {
+      "stage": "registered",
+      "grade": null
+    },
     "ACB|Tender Offers": {
       "stage": "initiated",
       "grade": null
@@ -6079,16 +7076,8 @@
       "stage": "announced",
       "grade": null
     },
-    "nan|Other": {
-      "stage": "announced",
-      "grade": null
-    },
     "BSP|Other": {
       "stage": "announced",
-      "grade": null
-    },
-    "nan|Issuer Tenders": {
-      "stage": "live",
       "grade": null
     },
     "APPF|Divestitures": {
@@ -6113,10 +7102,6 @@
     },
     "WBI|Divestitures": {
       "stage": "announced",
-      "grade": null
-    },
-    "nan|Delistings": {
-      "stage": "live",
       "grade": null
     },
     "LIDRW|Delistings": {
@@ -6191,13 +7176,9 @@
       "stage": "announced",
       "grade": null
     },
-    "nan|Acquisitions": {
-      "stage": "registered",
-      "grade": null
-    },
     "BORR|Acquisitions": {
       "stage": "announced",
-      "grade": null
+      "grade": "C"
     },
     "MSGY|Acquisitions": {
       "stage": "announced",
@@ -6439,6 +7420,10 @@
       "stage": "completed",
       "grade": null
     },
+    "APOS|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
     "MNTSW|Delistings": {
       "stage": "live",
       "grade": null
@@ -6487,6 +7472,10 @@
       "stage": "announced",
       "grade": null
     },
+    "AVXL|Activist Campaigns": {
+      "stage": "proxy-fight",
+      "grade": null
+    },
     "ABTS|Acquisitions": {
       "stage": "announced",
       "grade": null
@@ -6519,8 +7508,16 @@
       "stage": "vote-scheduled",
       "grade": null
     },
+    "PAYO|Acquisitions": {
+      "stage": "vote-scheduled",
+      "grade": null
+    },
     "TBPH|Acquisitions": {
       "stage": "announced",
+      "grade": null
+    },
+    "VRME|Acquisitions": {
+      "stage": "terminated",
       "grade": null
     },
     "LRHC|Strategic Reviews": {
@@ -6623,11 +7620,31 @@
       "stage": "closed",
       "grade": null
     },
+    "ELSE|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
+    "GLP-PB|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
     "MSBB|Delistings": {
       "stage": "completed",
       "grade": null
     },
+    "LPRO|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
     "PNXP|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
+    "STRS|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
+    "SKYT|Delistings": {
       "stage": "completed",
       "grade": null
     },
@@ -6728,7 +7745,7 @@
       "grade": null
     },
     "PAL|Acquisitions": {
-      "stage": "announced",
+      "stage": "closed",
       "grade": null
     },
     "TYFG|Acquisitions": {
@@ -6741,6 +7758,10 @@
     },
     "YHC|Acquisitions": {
       "stage": "closed",
+      "grade": null
+    },
+    "ATAI|Acquisitions": {
+      "stage": "vote-scheduled",
       "grade": null
     },
     "NHICW|Acquisitions": {
@@ -6916,7 +7937,7 @@
       "grade": null
     },
     "AFBI|Delistings": {
-      "stage": "live",
+      "stage": "completed",
       "grade": null
     },
     "LLOBF|Delistings": {
@@ -6924,7 +7945,7 @@
       "grade": null
     },
     "BGI|Delistings": {
-      "stage": "notice",
+      "stage": "live",
       "grade": null
     },
     "AIXI|Delistings": {
@@ -6999,7 +8020,15 @@
       "stage": "announced",
       "grade": null
     },
+    "LLOBF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "PBR-A|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "PKX|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -7203,6 +8232,10 @@
       "stage": "terminated",
       "grade": null
     },
+    "AVNS|Delistings": {
+      "stage": "completed",
+      "grade": null
+    },
     "AXIA-PC|Delistings": {
       "stage": "notice",
       "grade": null
@@ -7260,6 +8293,10 @@
       "grade": null
     },
     "AUGO|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "BCDRF|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -7507,6 +8544,10 @@
       "stage": "announced",
       "grade": null
     },
+    "ETSY|Divestitures": {
+      "stage": "closed",
+      "grade": null
+    },
     "EXPE|Divestitures": {
       "stage": "announced",
       "grade": null
@@ -7548,6 +8589,10 @@
       "grade": null
     },
     "DXLG|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
+    "GNPX|Delistings": {
       "stage": "notice",
       "grade": null
     },
@@ -7636,6 +8681,10 @@
       "grade": null
     },
     "EC|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "EQX|Acquisitions": {
       "stage": "announced",
       "grade": null
     },
@@ -7824,15 +8873,15 @@
       "grade": null
     },
     "EA|Delistings": {
-      "stage": "live",
+      "stage": "completed",
       "grade": null
     },
     "WILC|Delistings": {
-      "stage": "notice",
+      "stage": "live",
       "grade": null
     },
     "BBBY-WT|Delistings": {
-      "stage": "notice",
+      "stage": "live",
       "grade": null
     },
     "SDOT|Delistings": {
@@ -7967,6 +9016,10 @@
       "stage": "announced",
       "grade": null
     },
+    "CYCUW|Acquisitions": {
+      "stage": "terminated",
+      "grade": null
+    },
     "MEDS|Acquisitions": {
       "stage": "announced",
       "grade": null
@@ -8071,6 +9124,10 @@
       "stage": "announced",
       "grade": null
     },
+    "TCKRF|Other": {
+      "stage": "announced",
+      "grade": null
+    },
     "AUTL|Other": {
       "stage": "announced",
       "grade": null
@@ -8092,6 +9149,10 @@
       "grade": null
     },
     "BOW|Going-Private": {
+      "stage": "live",
+      "grade": null
+    },
+    "LGMK|Going-Private": {
       "stage": "live",
       "grade": null
     },
@@ -8227,6 +9288,10 @@
       "stage": "announced",
       "grade": null
     },
+    "MZHOF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "BYAH|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -8251,6 +9316,10 @@
       "stage": "announced",
       "grade": null
     },
+    "VSOGF|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "VIVO|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -8268,6 +9337,10 @@
       "grade": null
     },
     "GME-WT|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NWSLL|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -8331,10 +9404,6 @@
       "stage": "announced",
       "grade": "C"
     },
-    "LGMK|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
     "SMTK|Acquisitions": {
       "stage": "announced",
       "grade": null
@@ -8359,10 +9428,6 @@
       "stage": "announced",
       "grade": null
     },
-    "BSBR|Tender Offers": {
-      "stage": "announced",
-      "grade": "C"
-    },
     "FULC|Strategic Reviews": {
       "stage": "announced",
       "grade": null
@@ -8375,204 +9440,8 @@
       "stage": "announced",
       "grade": null
     },
-    "PAYP|Strategic Reviews": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PLMUF|Strategic Reviews": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "SEER|Strategic Reviews": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "CCJ|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "DAAQU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "MTAKU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "COLAR|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "SID|Restructuring": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PPENF|Restructuring": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BTOG|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ECXWW|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "GNTA|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "NRRWF|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "SEED|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ABCP|Other": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "CODX|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "CRTO|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "GDC|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ANSCW|Liquidations": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "UNIT|Issuer Tenders": {
-      "stage": "live",
-      "grade": "C"
-    },
-    "PGIM|Issuer Tenders": {
-      "stage": "live",
-      "grade": null
-    },
-    "PERFF|Going-Private": {
-      "stage": "live",
-      "grade": null
-    },
-    "AXIA-PC|Divestitures": {
-      "stage": "announced",
-      "grade": null
-    },
-    "HBCYF|Divestitures": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "CNNE|Divestitures": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PSQH-WT|Divestitures": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VASO|Divestitures": {
-      "stage": "closed",
-      "grade": null
-    },
-    "KORE|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "STRS|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "APOS|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "ELSE|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "CHAI|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "GLMD|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "UFG|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "YXT|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "COLAR|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "CNTX|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "DCGO|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "HUMAW|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "MIRA|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "PDSB|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "SKYT|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "TRAW|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "UPXI|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "BIAFW|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
     "EBAY|Deal Terminations": {
       "stage": "announced",
-      "grade": null
-    },
-    "BACCU|Deal Terminations": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "NIXX|Deal Terminations": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "TMGI|Deal Terminations": {
-      "stage": "terminated",
-      "grade": null
-    },
-    "ATYR|Deal Terminations": {
-      "stage": "terminated",
       "grade": null
     },
     "LDOS|Capital Returns": {
@@ -8595,404 +9464,12 @@
       "stage": "announced",
       "grade": null
     },
-    "nan|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "EGO|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "RBSPF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "TU|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VALE|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "WFF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ZBAO|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "IESC|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "MRAI|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "WETH|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "CZWI|Activist Campaigns": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "AVXL|Activist Campaigns": {
-      "stage": "proxy-fight",
-      "grade": null
-    },
-    "AUC|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BLDP|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "SBS|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "EQX|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "NIVFW|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ORLA|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "RUBI|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "UPC|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "AVB|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "CDTTW|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "CYCUW|Acquisitions": {
-      "stage": "terminated",
-      "grade": null
-    },
-    "DFLIW|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "EQR|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "IONQ-WT|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "JSPRW|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "NCRA|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "ONAR|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PLNH|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "NVACW|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "QCOM|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ALOT|Acquisitions": {
-      "stage": "vote-scheduled",
-      "grade": null
-    },
-    "CRNX|Acquisitions": {
-      "stage": "vote-scheduled",
-      "grade": null
-    },
-    "PAYO|Acquisitions": {
-      "stage": "vote-scheduled",
-      "grade": null
-    },
-    "AMZN|Acquisitions": {
-      "stage": "registered",
-      "grade": null
-    },
-    "VRME|Acquisitions": {
-      "stage": "terminated",
-      "grade": null
-    },
-    "BCDRF|Tender Offers": {
-      "stage": "announced",
-      "grade": null
-    },
-    "TCX|Strategic Reviews": {
-      "stage": "initiated",
-      "grade": null
-    },
-    "nan|Spin-Offs": {
-      "stage": "registered",
-      "grade": null
-    },
-    "BRTMU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "BBDO|Rights Offerings": {
-      "stage": "live",
-      "grade": null
-    },
-    "ZNB|Rights Offerings": {
-      "stage": "announced",
-      "grade": null
-    },
-    "WBQNL|Restructuring": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BTAFF|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "LLOBF|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "TCKRF|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "GSCCF|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "CRBD|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "DVLT|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VYNE|Other": {
-      "stage": "announced",
-      "grade": null
-    },
-    "GIL|Divestitures": {
-      "stage": "announced",
-      "grade": null
-    },
-    "WALDW|Divestitures": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ETSY|Divestitures": {
-      "stage": "closed",
-      "grade": null
-    },
-    "GTES|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "MYCB|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "GLP-PB|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "AVNS|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "CRIS|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "DTSQU|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "FLUX|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "GNPX|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "KVACW|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "LFT-PA|Delistings": {
-      "stage": "notice",
-      "grade": null
-    },
-    "LPRO|Delistings": {
-      "stage": "completed",
-      "grade": null
-    },
-    "VWAVW|Deal Terminations": {
-      "stage": "terminated",
-      "grade": null
-    },
     "WMT|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
     "ELD.TO|Capital Returns": {
       "stage": "announced",
-      "grade": null
-    },
-    "ABEV|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "AKO-B|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BBVXF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BCDRF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "BTAFF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "FRFFF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "HIHO|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "LLOBF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "MZHOF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PKX|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VODPF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VSOGF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "CPBI|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "DLB|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "NWSLL|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "TFSL|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "PN|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VODPF|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "YYAI|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "EXE|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "EQH-PC|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "GPI|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "ICE|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "MGRX|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "MKTX|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "SDOT|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "VREOF|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "QNCX|Acquisitions": {
-      "stage": "closed",
-      "grade": null
-    },
-    "ZDPY|Acquisitions": {
-      "stage": "vote-scheduled",
-      "grade": null
-    },
-    "ATAI|Acquisitions": {
-      "stage": "vote-scheduled",
-      "grade": null
-    },
-    "BFC|Acquisitions": {
-      "stage": "registered",
-      "grade": null
-    },
-    "HLX|Acquisitions": {
-      "stage": "registered",
       "grade": null
     },
     "CNMD|Strategic Reviews": {
@@ -10573,7 +11050,7 @@
     },
     "BBUC|Divestitures": {
       "stage": "",
-      "grade": null
+      "grade": "C"
     },
     "VOGL.NS|Divestitures": {
       "stage": "",
@@ -10593,7 +11070,7 @@
     },
     "YUM|Divestitures": {
       "stage": "",
-      "grade": "C"
+      "grade": null
     },
     "SGOB.PA|Divestitures": {
       "stage": "",
@@ -11361,36 +11838,36 @@
       "ticker": "FREVS",
       "company": "FIRST REAL ESTATE INVESTMENT TRUST OF NEW JERSEY, INC.",
       "gross_spread_pct": 28.71,
-      "annualized_pct": 581.6,
-      "days_to_close": 48
+      "annualized_pct": 752.0,
+      "days_to_close": 43
     },
     {
       "ticker": "ACA",
       "company": "Arcosa, Inc.",
-      "gross_spread_pct": 3.48,
-      "annualized_pct": 29.7,
-      "days_to_close": 48
+      "gross_spread_pct": 3.44,
+      "annualized_pct": 33.3,
+      "days_to_close": 43
     },
     {
       "ticker": "TARS",
       "company": "Tarsus Pharmaceuticals, Inc.",
       "gross_spread_pct": 5.57,
-      "annualized_pct": 28.5,
-      "days_to_close": 79
-    },
-    {
-      "ticker": "ALOT",
-      "company": "AstroNova, Inc.",
-      "gross_spread_pct": 2.29,
-      "annualized_pct": 6.1,
-      "days_to_close": 140
+      "annualized_pct": 30.7,
+      "days_to_close": 74
     },
     {
       "ticker": "CZR",
       "company": "Caesars Entertainment, Inc.",
       "gross_spread_pct": 4.52,
       "annualized_pct": 5.2,
-      "days_to_close": 321
+      "days_to_close": 316
+    },
+    {
+      "ticker": "TECH",
+      "company": "BIO-TECHNE Corp",
+      "gross_spread_pct": 0.84,
+      "annualized_pct": 2.3,
+      "days_to_close": 135
     }
   ]
 }

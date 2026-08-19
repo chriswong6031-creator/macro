@@ -1,16 +1,16 @@
 {
   "schema": "master_brain_track_record.v1",
-  "as_of": "2026-08-13",
-  "scored_total": 7,
-  "open": 5,
+  "as_of": "2026-08-18",
+  "scored_total": 8,
+  "open": 4,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 7,
-    "hits": 6,
+    "n": 8,
+    "hits": 7,
     "misses": 1,
-    "hit_rate": 0.857,
-    "dir_accuracy": 0.571
+    "hit_rate": 0.875,
+    "dir_accuracy": 0.625
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": 1.0
     },
     "low": {
-      "n": 5,
-      "hits": 4,
+      "n": 6,
+      "hits": 5,
       "misses": 1,
-      "hit_rate": 0.8,
-      "dir_accuracy": 0.4
+      "hit_rate": 0.833,
+      "dir_accuracy": 0.5
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 7,
-      "hits": 6,
+      "n": 8,
+      "hits": 7,
       "misses": 1,
-      "hit_rate": 0.857,
-      "dir_accuracy": 0.571
+      "hit_rate": 0.875,
+      "dir_accuracy": 0.625
     },
     "level": {
       "n": 0,
@@ -53,15 +53,24 @@
   },
   "by_regime": {
     "Goldilocks": {
-      "n": 7,
-      "hits": 6,
+      "n": 8,
+      "hits": 7,
       "misses": 1,
-      "hit_rate": 0.857,
-      "dir_accuracy": 0.571
+      "hit_rate": 0.875,
+      "dir_accuracy": 0.625
     }
   },
-  "calibration_note": "7 leans scored, hit-rate 0.857 (directional accuracy 0.571). Sample is tiny \u2014 the brain's leans are accountability, not yet a validated edge. Chance alone would land a hit-rate near 0.8162 (directional accuracy near 0.452) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "8 leans scored, hit-rate 0.875 (directional accuracy 0.625). Sample is tiny \u2014 the brain's leans are accountability, not yet a validated edge. Chance alone would land a hit-rate near 0.8339 (directional accuracy near 0.4745) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
+    {
+      "id": "mb-2026-07-17-1",
+      "subject": "High-yield credit",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0437,
+      "check_by": "2026-08-14"
+    },
     {
       "id": "mb-2026-06-29-1",
       "subject": "US equities",
@@ -126,5 +135,5 @@
       "check_by": "2026-07-02"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 7 \u6761\uff0c\u547d\u4e2d\u7387 0.857\uff08\u65b9\u5411\u51c6\u786e\u7387 0.571\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5927\u8111\u7684\u5224\u65ad\u662f\u95ee\u8d23\uff0c\u5c1a\u975e\u9a8c\u8bc1\u8fc7\u7684\u4f18\u52bf\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8162 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.452\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 8 \u6761\uff0c\u547d\u4e2d\u7387 0.875\uff08\u65b9\u5411\u51c6\u786e\u7387 0.625\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5927\u8111\u7684\u5224\u65ad\u662f\u95ee\u8d23\uff0c\u5c1a\u975e\u9a8c\u8bc1\u8fc7\u7684\u4f18\u52bf\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8339 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4745\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
 }

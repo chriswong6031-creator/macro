@@ -56,6 +56,7 @@ MOVED = [
     ("scripts.emit_prophet_doors", "Prophet doors — accrue"),
     ("scripts.grade_prophet_doors", "Prophet doors — grade"),
     ("scripts.grade_us_prophet_candidates", "Prophet US full-population grades"),
+    ("scripts.accrue_us_prophet_w3", "Prophet W3 paired-race ledger"),
     ("scripts.run_prophet_miss_audit", "Prophet miss-audit"),
 ]
 
@@ -66,6 +67,7 @@ LANE_GATED = [
     "scripts.emit_prophet_doors",
     "scripts.grade_prophet_doors",
     "scripts.grade_us_prophet_candidates",
+    "scripts.accrue_us_prophet_w3",
 ]
 
 
@@ -193,6 +195,7 @@ class TestLedgerLaneGate:
         """
         from engine import prophet_doors
         from engine import us_prophet_grades as upg
+        from engine import us_prophet_w3 as w3
         from scripts import grade_prophet_doors as gpd
 
         monkeypatch.delenv("COLLECT_LANE", raising=False)
@@ -202,11 +205,29 @@ class TestLedgerLaneGate:
                 "ticker": "AAA"}
         grade = {"stamp_date": "2026-01-05", "ticker": "AAA",
                  "board_definition": "d", "horizon": 10, "fwd_ret": 0.1}
+        w3_row = {
+            "schema": w3.SCHEMA_PAIRED, "stamp_date": "2026-08-18", "ticker": "AAA",
+            "board_definition": w3.CANONICAL_BOARD, "selection_era": None,
+            "anchor_era": None, "stage": "live", "prophet_score": 1.0, "score_rank": 1,
+            "prophet_shadow_definition": w3.SHADOW_DEFINITION,
+            "prophet_shadow_score": 1.0, "prophet_shadow_score_rank": 1,
+            "horizon": 10, "excess_spy": 0.01, "benchmark": "SPY",
+            "fill_date": "2026-08-19", "mark_date": "2026-09-02",
+            "graded_asof": "2026-09-02", "source": "test",
+        }
 
         assert prophet_doors.append_flags([flag], root=tmp_path) == 0
         assert prophet_doors.write_status({"asof": "2026-08-06"}, root=tmp_path) is False
         assert gpd.append_grades([grade], root=tmp_path) == 0
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 0
+        assert w3.append_paired([w3_row], tmp_path)["written"] == 0
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 0
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is False
         assert not list((tmp_path / "data").rglob("*")), (
             "an off-lane run left bytes in data/ — the gate is not the sole writer path")
 
@@ -217,11 +238,20 @@ class TestLedgerLaneGate:
         assert prophet_doors.write_status({"asof": "2026-08-06"}, root=tmp_path) is True
         assert gpd.append_grades([grade], root=tmp_path) == 1
         assert upg.append_grades([grade], "2026-08-06", root=tmp_path) == 1
+        assert w3.append_paired([w3_row], tmp_path)["written"] == 1
+        assert w3.append_sessions([{
+            "stamp_date": "2026-08-18",
+            "liveness": w3.LIVENESS_MISSING,
+            "reason": "gap",
+        }], tmp_path)["written"] == 1
+        assert w3.write_status({"schema": w3.SCHEMA_STATUS, "commissioned": False},
+                               tmp_path) is True
 
     def test_the_stores_the_commit_stages_are_the_stores_the_modules_write(self, job):
         """The add list is derived from the modules, not copied from the workflow."""
         from engine import prophet_doors, prophet_miss_audit
         from engine import us_prophet_grades as upg
+        from engine import us_prophet_w3 as w3
         from scripts import grade_prophet_doors as gpd
 
         root = Path("/repo")
@@ -230,6 +260,7 @@ class TestLedgerLaneGate:
             prophet_doors.status_path(root),
             gpd.grades_path(root),
             upg._store_dir(root),
+            w3._store_dir(root),
             root / prophet_miss_audit.ARTIFACT_REL,
             root / prophet_miss_audit.FORWARD_LOG_REL,
         }

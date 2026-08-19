@@ -9,6 +9,13 @@ written to that exact head: the current-base verdict and a terminal failure for
 the other supported base.  They must never be the sole required authority; the
 organization required-workflow rule and its stable ``ci-authority`` job remain
 mandatory.
+
+Read-only GET calls (``get_pull``, ``list_pull_files``,
+``get_collaborator_permission``) are retried with bounded backoff on transient
+conditions only (timeouts, 429/408/5xx, and rate-limit-shaped 403s); the gate
+still fails closed on every non-transient or exhausted-retry outcome, and the
+published reject reason names the failure mode (rate limited, timeout,
+rejected, or unavailable) instead of one opaque string.
 """
 
 from __future__ import annotations
@@ -17,8 +24,11 @@ import argparse
 import hashlib
 import json
 import os
+import random
 import re
 import sys
+import time
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -51,6 +61,13 @@ MAX_AUTHORITY_PATHS_IN_RECEIPT = 20
 MAX_RECEIPT_PATH_CHARS = 160
 _SHA = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?")
 
+API_TIMEOUT_SECONDS = 20
+API_RETRY_ATTEMPTS = 4  # one initial attempt plus up to three retries
+API_RETRY_BASE_DELAY_SECONDS = 1.0
+API_RETRY_MAX_DELAY_SECONDS = 8.0
+API_RETRY_TOTAL_BUDGET_SECONDS = 45.0
+RETRYABLE_HTTP_STATUSES = frozenset({408, 429, 500, 502, 503, 504})
+
 
 class AuthorityContractError(ValueError):
     """The trusted workflow received an unusable event envelope."""
@@ -58,6 +75,21 @@ class AuthorityContractError(ValueError):
 
 class GitHubApiError(RuntimeError):
     """A GitHub API request did not produce bounded, usable evidence."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        kind: str = "unavailable",
+        status: int | None = None,
+        retryable: bool = False,
+        retry_after: float | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.kind = kind
+        self.status = status
+        self.retryable = retryable
+        self.retry_after = retry_after
 
 
 class AuthorityApi(Protocol):
@@ -316,6 +348,47 @@ def _receipt_path(path: str) -> str:
     return f"{prefix}...sha256:{digest}"
 
 
+_API_FAILURE_SUFFIX = {
+    "rate_limited": "rate_limited",
+    "timeout": "timeout",
+    "rejected": "api_rejected",
+}
+
+
+def _api_failure_reason(prefix: str, exc: BaseException) -> str:
+    """Name the failure MODE so triage does not restart from zero."""
+    kind = getattr(exc, "kind", "")
+    return f"{prefix}_{_API_FAILURE_SUFFIX.get(kind, 'api_unavailable')}"
+
+
+def _log_api_failure(stage: str, exc: BaseException) -> None:
+    """Surface the swallowed exception instead of discarding it silently.
+
+    A GitHub annotation MUST start at column 0 of a bare ``print`` — never go
+    through a logger, which prefixes the line and makes GitHub drop it (house
+    law, ``tests/test_gh_annotation_line_start.py``). The full traceback goes
+    to stderr for humans reading the job log.
+    """
+    status = getattr(exc, "status", None)
+    kind = getattr(exc, "kind", None)
+    cause = exc.__cause__
+    detail = f"{stage}: {type(exc).__name__}: {exc}"
+    if status is not None:
+        detail += f" (status={status})"
+    if kind:
+        detail += f" (kind={kind})"
+    if cause is not None:
+        detail += f" (cause={type(cause).__name__}: {cause})"
+    detail = " ".join(detail.split())
+    if len(detail) > 300:
+        detail = detail[:300]
+    print(f"::error title=ci-authority-api::{detail}", flush=True)
+    traceback_text = "".join(
+        traceback.format_exception(type(exc), exc, exc.__traceback__)
+    )
+    print(traceback_text, file=sys.stderr)
+
+
 def evaluate_pull_request_target(
     payload: object,
     expected_repository: str,
@@ -329,8 +402,9 @@ def evaluate_pull_request_target(
 
     try:
         current_response = api.get_pull(repository, number)
-    except Exception:
-        return _reject(decision, "current_pull_api_unavailable")
+    except Exception as exc:
+        _log_api_failure("current_pull", exc)
+        return _reject(decision, _api_failure_reason("current_pull", exc))
     identity = _current_pull_identity(current_response, target)
     if identity is None:
         return _reject(decision, "current_pull_identity_rejected")
@@ -343,8 +417,9 @@ def evaluate_pull_request_target(
         paths = _changed_paths(entries, changed_count)
     except (AuthorityContractError, AuthorityPathError):
         return _reject(decision, "changed_files_rejected")
-    except Exception:
-        return _reject(decision, "changed_files_api_unavailable")
+    except Exception as exc:
+        _log_api_failure("changed_files", exc)
+        return _reject(decision, _api_failure_reason("changed_files", exc))
 
     # The files endpoint is PR-number scoped rather than SHA scoped. Re-read the
     # PR after pagination so a push between the first identity GET and the last
@@ -352,8 +427,9 @@ def evaluate_pull_request_target(
     # versa). The new synchronize event will evaluate the new head independently.
     try:
         after_response = api.get_pull(repository, number)
-    except Exception:
-        return _reject(decision, "post_files_pull_api_unavailable")
+    except Exception as exc:
+        _log_api_failure("post_files_pull", exc)
+        return _reject(decision, _api_failure_reason("post_files_pull", exc))
     after_identity = _current_pull_identity(after_response, target)
     if (
         after_identity is None
@@ -381,8 +457,9 @@ def evaluate_pull_request_target(
         author_permission = api.get_collaborator_permission(
             repository, str(target["author"])
         )
-    except Exception:
-        return _reject(decision, "author_admin_permission_api_unavailable")
+    except Exception as exc:
+        _log_api_failure("author_admin_permission", exc)
+        return _reject(decision, _api_failure_reason("author_admin_permission", exc))
     if not _permission_proves_admin(author_permission, str(target["author"])):
         return _reject(decision, "same_repo_author_is_not_admin")
     decision["author_admin_verified"] = True
@@ -398,8 +475,9 @@ def evaluate_pull_request_target(
             actor_permission = api.get_collaborator_permission(
                 repository, str(target["actor"])
             )
-        except Exception:
-            return _reject(decision, "actor_admin_permission_api_unavailable")
+        except Exception as exc:
+            _log_api_failure("actor_admin_permission", exc)
+            return _reject(decision, _api_failure_reason("actor_admin_permission", exc))
     if not _permission_proves_admin(actor_permission, str(target["actor"])):
         return _reject(decision, "current_head_actor_is_not_admin")
 
@@ -598,16 +676,140 @@ def run_merge_group(
     return 0, decision, check
 
 
+def _retry_after_seconds(headers: Any) -> float | None:
+    """Read a server-provided retry hint, tolerating a missing header object.
+
+    ``urllib`` hands back an ``email.message.Message`` whose ``.get`` is
+    already case-insensitive, so no case-folding is required here.
+    """
+    if headers is None:
+        return None
+    retry_after = headers.get("Retry-After")
+    if retry_after is not None:
+        try:
+            seconds = float(int(str(retry_after).strip()))
+        except (TypeError, ValueError):
+            pass
+        else:
+            return seconds if seconds >= 0 else None
+    if headers.get("x-ratelimit-remaining") == "0":
+        reset = headers.get("x-ratelimit-reset")
+        try:
+            seconds = float(reset) - time.time()
+        except (TypeError, ValueError):
+            return None
+        return seconds if seconds >= 0 else None
+    return None
+
+
+def _api_failure_message(method: str, status: int | None) -> str:
+    if status is None:
+        return f"GitHub {method} request failed"
+    return f"GitHub {method} request failed (HTTP {status})"
+
+
+def _classify_api_exception(method: str, exc: BaseException) -> GitHubApiError:
+    """Turn a raw urllib failure into a fail-closed, retry-aware error.
+
+    Retryable means transient only: timeouts and 408/429/5xx are retried; a
+    403 is retried solely when the response itself says it is a rate limit
+    (header or body), never treated as a permission verdict by default; every
+    other 4xx (401, 403 without a rate-limit signal, 404, ...) is a genuine
+    rejection and must never be retried.
+    """
+    if isinstance(exc, urllib.error.HTTPError):
+        status = getattr(exc, "status", None) or getattr(exc, "code", None)
+        headers = getattr(exc, "headers", None)
+        retry_after = _retry_after_seconds(headers)
+        if status == 429:
+            return GitHubApiError(
+                _api_failure_message(method, status),
+                kind="rate_limited",
+                status=status,
+                retryable=True,
+                retry_after=retry_after,
+            )
+        if status == 403:
+            rate_limited = retry_after is not None
+            if not rate_limited:
+                try:
+                    body = exc.read(2048)
+                    text = body.decode("utf-8", errors="replace")
+                except Exception:
+                    text = ""
+                if "rate limit" in text.lower():
+                    rate_limited = True
+            if rate_limited:
+                return GitHubApiError(
+                    _api_failure_message(method, status),
+                    kind="rate_limited",
+                    status=status,
+                    retryable=True,
+                    retry_after=retry_after,
+                )
+            return GitHubApiError(
+                _api_failure_message(method, status),
+                kind="rejected",
+                status=status,
+                retryable=False,
+            )
+        if status == 408:
+            return GitHubApiError(
+                _api_failure_message(method, status),
+                kind="timeout",
+                status=status,
+                retryable=True,
+                retry_after=retry_after,
+            )
+        if status in RETRYABLE_HTTP_STATUSES:
+            return GitHubApiError(
+                _api_failure_message(method, status),
+                kind="unavailable",
+                status=status,
+                retryable=True,
+                retry_after=retry_after,
+            )
+        return GitHubApiError(
+            _api_failure_message(method, status),
+            kind="rejected",
+            status=status,
+            retryable=False,
+        )
+    if isinstance(exc, TimeoutError) or (
+        isinstance(exc, urllib.error.URLError)
+        and isinstance(exc.reason, TimeoutError)
+    ):
+        return GitHubApiError(
+            _api_failure_message(method, None), kind="timeout", retryable=True
+        )
+    return GitHubApiError(
+        _api_failure_message(method, None), kind="unavailable", retryable=True
+    )
+
+
 class GitHubApi:
     """Small REST client exposing only the calls required by this controller."""
 
-    def __init__(self, api_url: str, token: str) -> None:
+    def __init__(
+        self,
+        api_url: str,
+        token: str,
+        *,
+        sleep=time.sleep,
+        jitter=random.random,
+        retry_attempts: int = API_RETRY_ATTEMPTS,
+        retry_budget: float = API_RETRY_TOTAL_BUDGET_SECONDS,
+    ) -> None:
         if not api_url.startswith("https://"):
             raise GitHubApiError("GITHUB_API_URL must use https")
         if not token:
             raise GitHubApiError("GITHUB_TOKEN is absent")
         self.api_url = api_url.rstrip("/")
         self.token = token
+        self._sleep = sleep
+        self._jitter = jitter
+        self._retry_attempts = retry_attempts
+        self._retry_budget = retry_budget
 
     @staticmethod
     def _repo_path(repository: str) -> str:
@@ -620,7 +822,7 @@ class GitHubApi:
             urllib.parse.quote(name, safe=""),
         )
 
-    def _request_json(
+    def _attempt_json(
         self,
         method: str,
         path: str,
@@ -645,11 +847,13 @@ class GitHubApi:
             headers=headers,
         )
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:
+            with urllib.request.urlopen(
+                request, timeout=API_TIMEOUT_SECONDS
+            ) as response:
                 status = response.status
                 response_body = response.read(4_000_001)
         except (OSError, urllib.error.HTTPError, urllib.error.URLError) as exc:
-            raise GitHubApiError(f"GitHub {method} request failed") from exc
+            raise _classify_api_exception(method, exc) from exc
         if status != expected_status:
             raise GitHubApiError(
                 f"GitHub {method} returned HTTP {status}, expected {expected_status}"
@@ -660,6 +864,59 @@ class GitHubApi:
             return json.loads(response_body)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise GitHubApiError("GitHub response is not valid JSON") from exc
+
+    def _request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: Mapping[str, object] | None = None,
+        expected_status: int,
+    ) -> object:
+        """Retry a bounded number of times on transient GET failures only.
+
+        POST is never retried here: ``create_check`` is not idempotent, and a
+        retried POST that actually succeeded server-side would publish a
+        duplicate check run on the PR head.
+        """
+        remaining_budget = self._retry_budget
+        last_exc: GitHubApiError | None = None
+        for attempt in range(1, self._retry_attempts + 1):
+            try:
+                return self._attempt_json(
+                    method, path, payload=payload, expected_status=expected_status
+                )
+            except GitHubApiError as exc:
+                last_exc = exc
+                if (
+                    method != "GET"
+                    or not exc.retryable
+                    or attempt >= self._retry_attempts
+                ):
+                    raise
+                if exc.retry_after is not None:
+                    delay = (
+                        min(max(exc.retry_after, 0.0), API_RETRY_MAX_DELAY_SECONDS)
+                        + self._jitter() * API_RETRY_BASE_DELAY_SECONDS
+                    )
+                else:
+                    base = min(
+                        API_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1)),
+                        API_RETRY_MAX_DELAY_SECONDS,
+                    )
+                    delay = base * (0.5 + 0.5 * self._jitter())
+                if delay > remaining_budget:
+                    raise
+                print(
+                    f"::warning title=ci-authority-api-retry::"
+                    f"{method} {path} attempt {attempt} failed "
+                    f"({exc.kind}); retrying in {delay:.2f}s",
+                    flush=True,
+                )
+                self._sleep(delay)
+                remaining_budget -= delay
+        assert last_exc is not None  # pragma: no cover - loop always raises or returns
+        raise last_exc
 
     def get_pull(self, repository: str, number: int) -> object:
         return self._request_json(

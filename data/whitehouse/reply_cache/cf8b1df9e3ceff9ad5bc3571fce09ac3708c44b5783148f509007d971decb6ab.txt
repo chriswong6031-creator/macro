@@ -1,0 +1,71 @@
+{
+  "activate": true,
+  "importance": 78,
+  "banner_days": 2,
+  "tone": "mixed",
+  "banner_title": "Trump suspends Canada tariffs 3 days — dairy, auto, alcohol relief rally likely",
+  "banner_title_zh": "特朗普暂停对加关税3天——乳制品、汽车、酒类或迎喘息反弹",
+  "summary": "The White House is delaying by three days the effective date of additional duties on Canadian alcoholic beverages, dairy, and motor vehicles, signaling a negotiated de-escalation with Canada. The suspension buys time for a deal and relieves immediate tariff pressure on affected U.S. importers and Canadian exporters.",
+  "summary_zh": "白宫将对加拿大酒类、乳制品和汽车加征的额外关税生效日期推迟三天，释放美加谈判降温信号。此举为达成协议争取时间，并暂时缓解受影响美国进口商和加拿大出口商的关税压力。",
+  "analysis": "This proclamation postpones the effective date of three separate Section 338 retaliatory tariff packages—on Canadian alcohol, dairy, and motor vehicles—from August 19 to August 22, 2026. The original proclamations, issued July 20, found that Canada was discriminating against U.S. commerce in each category. The three-day suspension is explicitly framed as a response to Canada's stated commitment to remove the discriminatory measures, with senior officials recommending the pause because negotiations are progressing.\n\nThe market transmission here runs through several channels. First, U.S. importers of Canadian dairy, alcohol, and vehicles/parts face lower near-term landed costs than they would have under immediate implementation—a margin tailwind for distributors, retailers, and manufacturers using Canadian inputs. Second, the signal effect matters: a suspension tied to Canada's commitment to remove its own barriers suggests the broader U.S.–Canada trade friction may be de-escalating rather than escalating, which reduces the tail risk of a full-blown tariff spiral.\n\nThe key uncertainty is what happens on August 22. If a deal is announced, the suspension likely becomes permanent and the reflation/risk-on read solidifies. If talks stall and duties go live, the relief is transient and the sectors snap back to tariff-exposed pricing. The three-day window itself is unusually short, suggesting either high confidence in a near-term deal or a negotiating pressure tactic.",
+  "sectors": [
+    {
+      "name": "Automotive & auto parts",
+      "impact": "tailwind",
+      "rationale": "Delayed duties on Canadian vehicles and parts protect margins for U.S. importers, dealers, and manufacturers using Canadian components in the near term."
+    },
+    {
+      "name": "Beverage distribution & retail",
+      "impact": "tailwind",
+      "rationale": "Suspension of duties on Canadian alcoholic beverages avoids immediate cost increases for importers and distributors of Canadian beer, wine, and spirits."
+    },
+    {
+      "name": "Dairy & food processing",
+      "impact": "tailwind",
+      "rationale": "Postponed duties on Canadian dairy—especially cheese—relieve input cost pressure for processors and food manufacturers sourcing Canadian supply."
+    },
+    {
+      "name": "USMCA/Canada-exposed industrials",
+      "impact": "tailwind",
+      "rationale": "The negotiating signal reduces near-term risk of retaliatory escalation across broader Canada trade flows."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "STZ",
+      "direction": "benefit",
+      "rationale": "Constellation Brands is the largest U.S. importer of Canadian beer (Modelo, Corona in the U.S.) and would face direct margin pressure from duties on Canadian alcoholic beverages."
+    },
+    {
+      "symbol": "TAP",
+      "direction": "benefit",
+      "rationale": "Molson Coors has meaningful Canadian production and cross-border beer flows; delayed alcohol duties mitigate near-term cost risk."
+    },
+    {
+      "symbol": "GM",
+      "direction": "benefit",
+      "rationale": "General Motors has substantial Canadian manufacturing and cross-border parts flows; suspended motor vehicle duties protect its integrated North American supply chain costs."
+    },
+    {
+      "symbol": "F",
+      "direction": "benefit",
+      "rationale": "Ford maintains significant Canadian assembly and parts operations; delayed duties reduce near-term tariff exposure on Canadian imports."
+    },
+    {
+      "symbol": "MGA",
+      "direction": "benefit",
+      "rationale": "Magna International, a Canadian-based but US-listed auto supplier, faces direct exposure to cross-border parts tariffs; the suspension preserves its pricing."
+    },
+    {
+      "symbol": "LW",
+      "direction": "benefit",
+      "rationale": "Lamb Weston and other food processors sourcing dairy or ingredients with Canadian links benefit from the postponement of input cost increases."
+    },
+    {
+      "symbol": "SJM",
+      "direction": "benefit",
+      "rationale": "J.M. Smucker and other packaged-food names with dairy inputs see reduced near-term cost pressure from delayed Canadian dairy duties."
+    }
+  ],
+  "confidence": "medium"
+}

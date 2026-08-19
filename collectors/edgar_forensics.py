@@ -237,16 +237,18 @@ class SecForensicsCollector:
         if wait > 0:
             time.sleep(wait)
 
-    def _fetch_url(
+    def _download_json_bytes(
         self,
-        cik: int | str,
-        endpoint: str,
         url: str,
         *,
-        retrieved_at: str | None = None,
         max_response_bytes: int | None = None,
-        publish_latest: bool = True,
-    ) -> RetrievalReceipt:
+    ) -> tuple[bytes, dict[str, str | None]]:
+        """Stream one canonical SEC JSON body with the existing retry/pacing loop.
+
+        Returns exact decoded bytes plus transport headers.  Callers that must
+        not write the Wave-2 raw tree (broad-SEC CAS admission) use this hook
+        instead of ``fetch``.  Persistence stays with ``_fetch_url``.
+        """
         limit = self.max_response_bytes
         if max_response_bytes is not None:
             limit = _byte_limit(max_response_bytes, field="max_response_bytes")
@@ -299,17 +301,11 @@ class SecForensicsCollector:
                 _close_response(response)
                 # Reject non-JSON bodies before they enter the immutable source plane.
                 json.loads(content)
-                return persist_response(
-                    self.raw_root,
-                    cik=cik,
-                    endpoint=endpoint,
-                    url=url,
-                    content=content,
-                    retrieved_at=retrieved_at or _utc_now(),
-                    etag=etag,
-                    last_modified=last_modified,
-                    publish_latest=publish_latest,
-                )
+                return content, {
+                    "url": url,
+                    "http_etag": etag if isinstance(etag, str) else None,
+                    "http_last_modified": last_modified if isinstance(last_modified, str) else None,
+                }
             except SecResponseTooLarge:
                 raise
             except (requests.RequestException, json.JSONDecodeError) as exc:
@@ -322,6 +318,44 @@ class SecForensicsCollector:
             except RuntimeError:
                 raise
         raise RuntimeError(f"SEC fetch failed after retries for {url}: {last_error}")
+
+    def _fetch_url(
+        self,
+        cik: int | str,
+        endpoint: str,
+        url: str,
+        *,
+        retrieved_at: str | None = None,
+        max_response_bytes: int | None = None,
+        publish_latest: bool = True,
+    ) -> RetrievalReceipt:
+        content, headers = self._download_json_bytes(
+            url, max_response_bytes=max_response_bytes
+        )
+        return persist_response(
+            self.raw_root,
+            cik=cik,
+            endpoint=endpoint,
+            url=url,
+            content=content,
+            retrieved_at=retrieved_at or _utc_now(),
+            etag=headers.get("http_etag"),
+            last_modified=headers.get("http_last_modified"),
+            publish_latest=publish_latest,
+        )
+
+    def retrieve_current(
+        self,
+        cik: int | str,
+        endpoint: str,
+        *,
+        max_response_bytes: int | None = None,
+    ) -> tuple[bytes, dict[str, str | None]]:
+        """Fetch one current closed-set SEC JSON body without Wave-2 persistence."""
+        return self._download_json_bytes(
+            endpoint_url(cik, endpoint),
+            max_response_bytes=max_response_bytes,
+        )
 
     def fetch(
         self,

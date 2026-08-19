@@ -89,15 +89,29 @@ waves:
     # Code path #5741/#5780. 0 control_match_unavailable on both panels.
   - id: W5.1
     title: Persist control-pool diagnostics on the existing W5 summary surface
-    status: in_progress
+    status: done
     pr: 5833
     depends_on: [W5]
-    # Serialization-only. Matching, CONTROL_K, M3, M14, NC-2, looks, and W6/W7
-    # are untouched. First real histograms wait for the next natural W5/W7 dump.
+    # DONE at ACTUAL merge: PR #5833 MERGED 2026-08-17T12:49:55Z (squash
+    # 4cebae78d323326dac79aed14b951fc2cfe37740). Serialization-only n_cell /
+    # k histograms / overlap_share on existing W5 summary tables. Matching,
+    # CONTROL_K, M3, M14, NC-2, looks untouched. Restored here after the W6
+    # #5834 squash clobbered this wave row; do not drop it again when editing
+    # the shared workstream file. Handoff:
+    # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-17-w5.1.md (suffixed; the
+    # dated 2026-08-17.md addendum is the compiler-visible continuation).
   - id: W6
     title: PR-6 deterministic Research Priority (ACCRUING)
-    status: todo
+    status: in_progress
+    pr: [5834, 5845]
     depends_on: [W5]
+    # In progress: RP1 shipped on main as #5834 squash 39985e14, then Sol
+    # review blockers required a methodological correction (unit-invariant
+    # submeasure percentiles, canonical priority_value, name-snapshot
+    # population, real-input receipt, C3 seam + pinned hashes). Follow-up
+    # PR #5845 is the Sol re-review head (ranking-law PASSES; bounded
+    # snapshot_conflict / receipt-wording / W5.1-memory follow-up). NOT done.
+    # Do not start W7.
   - id: W7
     title: PR-7 outcome-calibrated Opportunity model (gated on honest sample)
     status: todo
@@ -123,7 +137,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W8 is in commissioning on PR #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9). W5.1 (#5833, control-pool diagnostics on the W5 summary surface) is in-flight instrumentation and must not delay W6. Parallel next fresh commissioning remains W6 (Research Priority). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
+next_action: Sol final-reviews PR #5845 bounded follow-up (snapshot_conflict firewall, real-substrate-smoke receipt wording, W5.1 memory). Ranking-law correction PASSES; do not redesign the score. W5.1 merged as #5833. Do not mark W6 done. Do not start W7 or W9. W8 UI reference remains #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9).
 ---
 
 ## Context

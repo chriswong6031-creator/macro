@@ -1,0 +1,247 @@
+{
+  "as_of": "2026-08-18",
+  "coverage": {
+    "end": "2026-08-18",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-07 to 2026-08-18; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-07"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-18",
+      "events": []
+    },
+    {
+      "date": "2026-08-17",
+      "events": [
+        {
+          "date": "2026-08-17",
+          "id": "cev-regime_flip-ad3dc732fc9d",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-17#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q2 Reflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-0e79a325181d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcfi5bg14vs-8d1ece",
+          "tickers": [],
+          "title": "S&T: MS Nick Savone Global Reflections 15 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-16",
+      "events": []
+    },
+    {
+      "date": "2026-08-14",
+      "events": []
+    },
+    {
+      "date": "2026-08-13",
+      "events": [
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-2f224a033fcb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-i3beom5skfx-38d370",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing Aug 13",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-7df46c597a12",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-97w8woj8a3k-626676",
+          "tickers": [],
+          "title": "Goldman Sachs: GS TMT SPEC SALES – Adyen topline good enough",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-a8943ef5539e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bbr0h5reosm-8ac386",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Morning Briefing: Futs higher; APAC Tech improves; US Retail returns; CPI post mortem; Stay Bullish",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-d9c35d7bc86d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+          "tickers": [],
+          "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "events": []
+    },
+    {
+      "date": "2026-08-11",
+      "events": [
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-2b1f0ed9a35c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vko7e4zekvn-09bb9d",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing Aug 11",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-9bcacbdd5d30",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nal7r2gm25q-0e6c2a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Afternoon Briefing Aug 10",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-de5823d063e8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gbjaregqbxy-f1fd18",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research | Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "events": [
+        {
+          "date": "2026-08-10",
+          "id": "cev-regime_flip-3df289330159",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-10#regime_china",
+          "tickers": [],
+          "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-0589c0b9136b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bofolrubwr5-0a382a",
+          "tickers": [],
+          "title": "Other: TDAGeneric NAM",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-b2e3d2c73fe8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iabsklnuj34-921c53",
+          "tickers": [],
+          "title": "Nomura: Charlie McElligott Equities Update",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-bc00499ab68b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ozycb5rdqy2-4f6534",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing 2026 08 10",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-09",
+      "events": [
+        {
+          "date": "2026-08-09",
+          "id": "cev-research_vault-6172555846c3",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-qizqgapurqm-a2313f",
+          "tickers": [],
+          "title": "Other: MRB Asset Allocation The Beginning Of The End August 7 2026",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-09",
+          "id": "cev-research_vault-cd5880e886d4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-rijqwshec0p-9a8050",
+          "tickers": [],
+          "title": "Other: Investment Traffic Lights EN",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "events": [
+        {
+          "date": "2026-08-07",
+          "id": "cev-research_vault-dc2d55b9105d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-igkggbrovm4-d91fe5",
+          "tickers": [],
+          "title": "Goldman Sachs: Fiserv Inc. (FISV) Key takeaways Another reset likely to push out the turnaround story",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-07",
+          "id": "cev-research_vault-f196bee89007",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcjktsbzuwe-b4ec6e",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Markets Comment A Few Follow Up Questions on Yen Intervention",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-07",
+          "id": "cev-research_vault-f35bfdbebf35",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-a4azjz2hgsd-f09120",
+          "tickers": [],
+          "title": "Goldman Sachs: AEJ Week Ahead China inflation and credit data, India inflation, and Singapore and Malaysia GDP",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-07",
+          "id": "cev-research_vault-ff334e4f6f42",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0091uhxpt4p-c93cc6",
+          "tickers": [],
+          "title": "PNC: PNC Economics Research Claims 6 August 2026",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

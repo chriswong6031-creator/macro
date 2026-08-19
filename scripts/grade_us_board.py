@@ -137,6 +137,10 @@ BOARD_PATH = "site/factordata/us_standouts.json"
 LEDGER_DIR = ROOT / "data" / "us_board_ledger"
 RETRO_PARQUET = LEDGER_DIR / "retro_grades.parquet"
 SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots.jsonl"
+#: scripts/prophet_pit_replay.py's US registry entry names this as its pending_dir
+#: (masterplan research/PROPHET_PIT_REPLAY_HARNESS_V1.md §0.4, §1). Absorbed by
+#: absorb_pending_replays() below, in the --nightly path only.
+PENDING_REPLAY_DIR = LEDGER_DIR / "pending_replay"
 TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track.json"
 OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 # TRD popup: the compact buy-lane episode ledger the Track-record dialog fetches.
@@ -1709,6 +1713,31 @@ def _assemble_track(*, df, board_dates, graded_dates, survivorship, n_excluded,
 # --------------------------------------------------------------------------- #
 # nightly snapshot
 # --------------------------------------------------------------------------- #
+def _snapshot_existing_as_of() -> set[str]:
+    """The set of ``as_of`` values already present in SNAPSHOTS_JSONL."""
+    existing: set[str] = set()
+    if SNAPSHOTS_JSONL.exists():
+        for line in SNAPSHOTS_JSONL.read_text().splitlines():
+            try:
+                existing.add(json.loads(line).get("as_of"))
+            except json.JSONDecodeError:
+                pass
+    return existing
+
+
+def _append_snapshot_row(row: dict) -> None:
+    """Append ONE pre-shaped, trimmed row to SNAPSHOTS_JSONL.
+
+    THE one append code path for this file — ``snapshot_today()`` and
+    ``absorb_pending_replays()`` both call it, so a lane that appends the wrong bytes
+    (wrong separators, no trailing newline) has exactly one place to fix rather than
+    two call sites that quietly drifted apart.
+    """
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    with SNAPSHOTS_JSONL.open("a") as f:
+        f.write(json.dumps(row, separators=(",", ":")) + "\n")
+
+
 def snapshot_today() -> str | None:
     """Append today's committed board (site/factordata/us_standouts.json working tree)
     to the append-only snapshot JSONL. Idempotent per as_of."""
@@ -1719,14 +1748,7 @@ def snapshot_today() -> str | None:
     as_of = d.get("as_of")
     if not as_of:
         return None
-    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
-    existing = set()
-    if SNAPSHOTS_JSONL.exists():
-        for line in SNAPSHOTS_JSONL.read_text().splitlines():
-            try:
-                existing.add(json.loads(line).get("as_of"))
-            except json.JSONDecodeError:
-                pass
+    existing = _snapshot_existing_as_of()
     if as_of in existing:
         return as_of  # already snapshotted
     # store a trimmed record (lanes + the fields the grader reads) to keep the file lean
@@ -1739,9 +1761,116 @@ def snapshot_today() -> str | None:
     for lane in LANES:
         if lane in d:
             trimmed[lane] = d[lane]
-    with SNAPSHOTS_JSONL.open("a") as f:
-        f.write(json.dumps(trimmed, separators=(",", ":")) + "\n")
+    _append_snapshot_row(trimmed)
     return as_of
+
+
+def absorb_pending_replays(*, quiet: bool = False) -> dict:
+    """Absorb ``PENDING_REPLAY_DIR/*.json`` (schema ``pit_replay.pending/v1``, written
+    by ``scripts/prophet_pit_replay.py``) into ``snapshots.jsonl``, through the SAME
+    append path ``snapshot_today()`` uses, then delete each fully-absorbed pending
+    file.
+
+    Runs in the ``--nightly`` path, BEFORE ``collect_boards()``: once a replayed
+    session's row lands in ``snapshots.jsonl`` here, ``collect_boards()`` /
+    ``grade_boards()`` / ``_merge_into_store()`` pick it up through the ORDINARY
+    nightly pipeline on this SAME run — no separate parquet-merge code is needed in
+    this hook (masterplan research/PROPHET_PIT_REPLAY_HARNESS_V1.md §0.4: "the
+    market's own nightly absorbs its pending dir through its own append + dedupe
+    machinery").
+
+    Absent/empty pending dir is an EXACT no-op: one ``is_dir()`` check, zero cost to
+    every normal nightly that never sees a pending file.
+
+    ORDER-SAFETY FINDING, RESOLVED AT THE READER (2026-08-18 orchestrator amendment):
+    ``scripts/check_surface_freshness.py::check_candidates_freshness`` used to read
+    this exact file in REVERSE line order and take the first ``as_of`` it finds as "the
+    board's newest date" — a genuine reader of this file's APPEND ORDER, the only one
+    found among the ~20 consumers grepped (see that function's own docstring/comment
+    for the fix). It now takes the MAX ``as_of`` over every parsed line, so this file's
+    append order is no longer load-bearing for that reader — appending a row OLDER than
+    the file's current tail (the shape a delayed replay produces, e.g. backfilling
+    2026-08-14 after 2026-08-17 has already snapshotted live) is a plain append, not a
+    corruption. Every OTHER consumer grepped (``collect_boards`` itself sorts by
+    ``as_of`` before returning; every other reader keys a dict by ``as_of`` or
+    explicitly sorts before use) was already order-safe. So an out-of-order row is
+    APPENDED, not refused — the same idempotent-per-``as_of`` rule as any other row —
+    and a ``::notice`` names the session so a delayed absorb is visible in the nightly
+    log rather than silent.
+    """
+    if not PENDING_REPLAY_DIR.is_dir():
+        return {"absorbed": 0, "refused": 0, "dir_present": False, "files": 0}
+    files = sorted(PENDING_REPLAY_DIR.glob("*.json"))
+    if not files:
+        return {"absorbed": 0, "refused": 0, "dir_present": True, "files": 0}
+
+    absorbed = 0
+    refused = 0
+    for path in files:
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001 - unreadable is disclosed, not fatal
+            print(f"::warning title=pit-replay-absorb-unreadable::{path.name} is not "
+                  f"readable JSON ({exc}); leaving it in place", flush=True)
+            refused += 1
+            continue
+        if doc.get("schema") != "pit_replay.pending/v1" or doc.get("market") != "us":
+            print(f"::warning title=pit-replay-absorb-schema::{path.name} does not "
+                  "carry schema=pit_replay.pending/v1 market=us; leaving it in place",
+                  flush=True)
+            refused += 1
+            continue
+
+        rows = doc.get("rows") or []
+        if not rows:
+            # Nothing to absorb (e.g. the US ledger half refused at replay time and
+            # only the plans half proceeded) — the pending file's only remaining job
+            # was to be discoverable, and an empty rows list has nothing left to do.
+            path.unlink()
+            absorbed += 1
+            continue
+
+        existing = _snapshot_existing_as_of()
+        dated_existing = sorted(x for x in existing if x)
+        current_max = dated_existing[-1] if dated_existing else None
+        ok = True
+        n_absorbed_here = 0
+        for row in rows:
+            as_of = row.get("as_of")
+            if not as_of:
+                print(f"::warning title=pit-replay-absorb-no-as-of::a row in "
+                      f"{path.name} carries no as_of; leaving the file in place",
+                      flush=True)
+                ok = False
+                break
+            if as_of in existing:
+                n_absorbed_here += 1
+                continue
+            if current_max is not None and as_of < current_max:
+                # Every known reader of this file is now order-safe (see the
+                # docstring above), so this is a disclosed APPEND, not a refusal —
+                # the row still lands, idempotent-per-as_of like any other.
+                print(f"::notice title=pit-replay-absorb-out-of-order::{path.name} "
+                      f"row as_of={as_of} is OLDER than the current "
+                      f"{SNAPSHOTS_JSONL.name} tail ({current_max}); absorbing it "
+                      "out of order (a delayed replay session) — every consumer of "
+                      "this file reads by as_of value, not by append position.",
+                      flush=True)
+            _append_snapshot_row(row)
+            existing.add(as_of)
+            current_max = as_of if current_max is None else max(current_max, as_of)
+            n_absorbed_here += 1
+        if ok and n_absorbed_here == len(rows):
+            path.unlink()
+            absorbed += 1
+        else:
+            refused += 1
+
+    if not quiet and files:
+        print(f"[pit_replay_absorb] {absorbed} absorbed, {refused} refused, of "
+              f"{len(files)} pending file(s)")
+    return {"absorbed": absorbed, "refused": refused, "dir_present": True,
+            "files": len(files)}
 
 
 # --------------------------------------------------------------------------- #
@@ -2900,6 +3029,10 @@ def main() -> None:
         snap_v2 = snapshot_v2_today()
         if not args.quiet:
             print(f"[v2_snapshot] as_of={snap_v2} → {V2_SNAPSHOTS_JSONL.name}")
+        # PIT replay absorb (research/PROPHET_PIT_REPLAY_HARNESS_V1.md §0.4): BEFORE
+        # collect_boards() so an absorbed session flows through the ordinary nightly
+        # pipeline on this same run. Absent/empty pending dir is an exact no-op.
+        absorb_pending_replays(quiet=args.quiet)
 
     names, etfs = _load_prices()
     _board_receipt: dict = {}

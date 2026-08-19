@@ -36,10 +36,13 @@ depends_on:
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
 landmines:
-  - "THE OUTAGE IS LIVE at 0A (2026-08-17): no Prophet checkpoint since 08-14T04:25:52Z;
-    run 31977372592 engine=failure undiagnosed; #5742 open; candidate store
-    data/us_prophet_rank/candidates/ + legacy-shadow parts stalled with it. V4-A1's
-    handoff carries the live state inline — do not trust older records."
+  - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
+    0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
+    sessions + operator own recovery (triage: push-freeze ruleset GH013, theta-m1
+    label pin, runner saturation; overlapping bakes at 23:56Z). The candidate store
+    data/us_prophet_rank/candidates/ + legacy-shadow parts remain stalled with it.
+    V4 does NOT implement — a1 is acceptance-by-adoption. Current deltas:
+    research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
   - "Prophet index top-level asof is WALL-CLOCK (DSC:PROPHET-ASOF-IS-WALL-CLOCK);
     freshness = source_asof + per-plan cohorts. Run conclusions decouple from Prophet
     delivery in both directions (DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET)."
@@ -51,8 +54,11 @@ landmines:
     writes us_standouts.json directly; prophet_bridge.select_candidates() is a
     downstream consumer that refuses buy_soon. FOUR stage derivations disagree on the
     page (CURRENT_STATE §8). One server contract is B3's job."
-  - "Tier gating is a DOM overlay — the full board ships in page source to anonymous
-    visitors (no premiumdata/us_stocks.json). Commercial leak until fixed."
+  - "PAID BOUNDARY (scoped, 0B): #5840 merged the ranked-board server-side split
+    (free shell + premium remainder; PROVEN_LIVE at the 0B pin — VPS premiumdata 401,
+    3-row anonymous shell, render receipt 5232c4c4). Per #5840's OWN scope, Act-Now,
+    .topsetups, ran, and theme-tape member names REMAIN DOM-gated — residual
+    commercial-boundary debt. Do not write 'all Prophet anonymous leakage fixed'."
   - "Vocabulary collisions: Radar G0/C1-C5 vs Fusion arena rungs C1-C5 vs
     prophet_arena C0-C7 execution policies vs audit C0-C4; two same-named 'arena'
     systems; _v2 paths are SCHEMA versions, not the v2 ranker era; two 'board history'
@@ -97,25 +103,43 @@ artifacts:
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
 waves:
   - id: 0a
-    title: "V4-0A — estate archaeology + architecture freeze (this packet)"
-    status: in_progress
+    title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
+      (squash ebce73b97288, 2026-08-17T13:18:55Z)."
+    status: done
     pr: 5832
   - id: 0b
     depends_on: [0a]
-    title: "V4-0B — AgentOS reconciliation (records only, no code)"
-    status: todo
+    title: "V4-0B — post-0A records reconciliation (records only; scope narrowed by
+      the 2026-08-17 Sol 0B handoff — no sibling record edits). Evidence:
+      research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
+    status: done
+    pr: 5847
   - id: a1
     depends_on: [0a]
-    title: "V4-A1 — Aug-14 + current-session settlement recovery"
+    title: "V4-A1 — owed-session settlement recovery. DO NOT SPAWN: implementation is
+      owned by the active Availability/outage sessions (incident receipt #5742);
+      V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md is the ACCEPTANCE CONTRACT Sol reviews
+      the sibling return against — never a command to launch a competing session."
     status: todo
+    next_action: >
+      Acceptance-by-adoption only: when the Availability/outage return arrives, map it
+      to the A1 gates and route to Sol for acceptance. A fresh board or a green run
+      alone does not close this wave.
   - id: a2
     depends_on: [a1]
     title: "V4-A2 — canonical settlement manifest (prophet.settlement_manifest/v1)"
     status: todo
+    next_action: >
+      ADOPT FIRST: before any spawn, map the accepted Availability/outage return onto
+      this capability; if the sibling durable fix already satisfies it, close by
+      reference — only the unresolved delta may become a V4 wave.
   - id: a3
     depends_on: [a1]
     title: "V4-A3 — atomic publication + split-brain fence"
     status: todo
+    next_action: >
+      ADOPT FIRST: same rule as a2 — map the sibling return (and #5840's premium-plane
+      split) before spawning; only the unresolved delta becomes a V4 wave.
   - id: a4
     depends_on: [a2, a3]
     title: "V4-A4 — availability fire-drill week"
@@ -146,7 +170,10 @@ waves:
     status: todo
   - id: b7
     depends_on: [b6]
-    title: "V4-B7 — Radar production UI + Prophet integration (closes Radar W9)"
+    title: "V4-B7 — Radar production UI + Prophet integration (executes Radar W9 under
+      Radar ownership). 0B note: Radar W6 code merged (#5834, research_priority.v1 —
+      ACCRUING attention ordering, commissioning owed, zero Prophet authority); W8
+      (#5737) still open/reference-only; W9 absent. b7 inherits Radar's W9 deps."
     status: todo
   - id: c1
     depends_on: [b1]
@@ -162,15 +189,41 @@ waves:
     status: todo
   - id: d1
     depends_on: [0a]
-    title: "V4-D1 — theme-source and identity census"
-    status: todo
+    title: "V4-D1 — theme-source and identity census. DONE 2026-08-18: master census
+      research/prophet_v4/D1_THEME_SOURCE_AND_IDENTITY_CENSUS_2026-08-18.md + 9
+      machine artifacts in research/prophet_v4/d1/. Headlines: C6 thematic gap =
+      2,368/3,253 (73%); graph company plane is ticker-string-keyed (D2's repair);
+      two live graph data defects (GOLD reused-ticker, IBIT ETF-as-company); Citrini
+      OPERATOR_HELD_ONLY; Theia DEC stands; 5 rights decisions routed."
+    status: done
+    pr: 5859
   - id: d2
     depends_on: [d1]
-    title: "V4-D2 — canonical ontology + probation mapping (with GMI lane)"
-    status: todo
+    title: "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the
+      GMI lane. RECUT by Sol 2026-08-18 into bounded child PRs D2A-D2E (one giant PR
+      rejected); Sol AMENDED the D1-generated handoff's Gate 1: exact
+      issuer/security/listing identity = the Mastermind Data OS identity spine
+      (lib/dataos/identity.py + data/reference master/aliases), NOT stock_identity;
+      GMI keeps its co:market:symbol#epoch topology ids (KNOWINGLY-DIFFERENT per
+      config/identity_seams.yml); the bridge projection is the seam. Child D2A
+      (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader +
+      guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md)
+      is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C
+      (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
+      authorized yet — Sol reviews after each child returns."
+    status: in_progress
   - id: d3
     depends_on: [d2]
-    title: "V4-D3 — ThemeState v1 (theme_state/v1; merge-order ruling with GMI W3B first)"
+    title: "V4-D3 — ThemeState consumption contract. Sol ADJUDICATED 2026-08-18
+      (D2A commission §19): D1's merge-order recommendation ACCEPTED — GMI is the
+      sole ThemeState owner and builds theme_state/v1 as W3B after d2 completes; d3
+      is the Prophet-side consumption/join wave and V4 never builds a second state
+      engine; engine/neuralweb/thematic_state.py is predecessor lineage W3B must
+      explicitly reconcile/consume/supersede; Finviz/THS-derived state stays
+      internal-only pending the routed rights decision. Future hard gate from D2A:
+      a membership may contribute to security/issuer ThemeState only when its GMI
+      node resolves through the exact identity bridge, or the feature explicitly
+      operates at local-theme/node grain."
     status: todo
   - id: d4
     depends_on: [d3]
@@ -178,11 +231,21 @@ waves:
     status: todo
   - id: d5
     depends_on: [d1]
-    title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1)"
+    title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
+      Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling
+      ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol
+      authorizes execution, but until d3 the theme_graph family status = ACCRUING,
+      measured fields = null, contribution = none; no provisional theme score, no
+      fake zero, no rank authority. Execution NOT authorized during D2A. Original
+      ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins;
+      SPARSE coverage band is the honest scan-tier default)."
     status: todo
   - id: d6
     depends_on: [d5]
-    title: "V4-D6 — earnings adapter (blocked externally on EIOS stable contract)"
+    title: "V4-D6 — earnings adapter. Premise updated 0B: EIOS E1P is LIVE for the
+      golden AAPL FY2026 Q3 event workspace (#5842) and E2 is unblocked — but ONE
+      golden event is not broad issuer coverage; d6 still waits on d5 and must not
+      infer coverage from it."
     status: todo
   - id: d7
     depends_on: [d5]
@@ -190,7 +253,9 @@ waves:
     status: todo
   - id: e1
     depends_on: [b4, c1, d5]
-    title: "V4-E1 — explainable deterministic V4 priority (extends Fusion registry post-3D)"
+    title: "V4-E1 — explainable deterministic V4 priority (extends Fusion registry
+      post-3D). 0B note: Fusion PR-3B AND PR-3C (#5839) are merged; PR-3D remains the
+      sibling acceptance boundary; V4 does not read/tune from the W3 forward race."
     status: todo
   - id: e2
     depends_on: [e1, b7, c2, a4]
@@ -213,10 +278,12 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  Merge the V4-0A packet PR; then spawn V4-A1 exactly per
-  research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md (one bounded session,
-  no auto-roll into A2+). V4-0B (AgentOS reconciliation) may run as its own
-  records-only session after 0A merges.
+  V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI
+  per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the
+  D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
+  contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
+  routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
+  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first.
 ---
 
 ## Context

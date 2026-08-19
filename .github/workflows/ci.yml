@@ -1216,6 +1216,11 @@ on:
       - "config/fundamental_forensics/wave2_targets.v1.json"
       - ".github/workflows/filing-forensics-sec.yml"
       - "tests/test_filing_forensics_sec_lane.py"
+      - "scripts/run_fundamental_forensics_broad_sec.py"
+      - ".github/workflows/filing-forensics-broad-sec.yml"
+      - "tests/test_filing_forensics_broad_sec_lane.py"
+      - "contracts/fundamental_forensics_broad_sec_run.schema.json"
+      - "contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json"
       # B4F is a controlled, one-shot AAPL bootstrap. Its runner and workflow
       # are both production-control surfaces: a test-only edit is covered by
       # the broad suite glob below, while an edit to the runner/workflow itself
@@ -1434,6 +1439,15 @@ on:
       # needed: .github/workflows/** covers the lanes, these cover the policy itself.
       - "scripts/ci/push_retry.sh"
       - "tests/test_push_retry.py"
+      # Append-only base fence: the second policy that loop sources. `-X theirs` on a
+      # file both sides appended to REPLACES the other side's rows — measured twice on
+      # data/government_revenue/ (2026-08-07, 2026-08-18), the second orphaning a 26-row
+      # candidate_ledger.jsonl issuance batch and reddening ci-pack-6 through ci-gate for
+      # the whole fleet. Same two-halves law: .github/workflows/** covers the lanes that
+      # call it, these cover the fence and its registry.
+      - "scripts/ci/append_only_base_fence.py"
+      - "config/append_only_artifacts.json"
+      - "tests/test_append_only_base_fence.py"
       # Publish-ops / worker / live-plane guards (unrun backfill 2026-08-03):
       # dead-asset refs, ticker links, autostash containment, checkout bound,
       # admin research tools, earnings worker, china board watch lane, live
@@ -1614,6 +1628,7 @@ on:
       # WorktreeCreate hook; this is the test half so a test-only edit still
       # starts the job that runs it.
       - "tests/test_sparse_worktree_profile.py"
+      - "tests/test_worktree_sparse_add_lock_safety.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -2774,6 +2789,12 @@ on:
       # job's own `run:` steps, so a PR editing only this suite still runs it.
       - "tests/test_etfs_gate.py"
       - "tests/test_public_dashboard_preview.py"
+      # us_stocks.html joined the tier-gate job with the board split (#5840) and
+      # its four adjacent panels. Same half as the two lines above: templates/**
+      # and scripts/build_site.py already trigger this job, so this line exists so
+      # a PR editing ONLY the suite still runs it — a guard the guarded change
+      # cannot trigger is not a guard.
+      - "tests/test_us_board_gate.py"
       # test_etf_board joined the unrun-scoring-engine job 2026-08-03 (it ran in
       # zero jobs before that; its subjects engine/** + templates/** already
       # trigger above — this line covers a PR editing only the suite itself).
@@ -2992,6 +3013,10 @@ on:
       # that let two builders import a `trading_dates_between` it never defined and
       # swallow the ImportError into a permanently-false stale gate.
       - "tests/test_nyse_calendar.py"
+      # tsx-calendar — the Canadian session reference under check D's board
+      # freshness budget. Same #3488 reason as its NYSE sibling above: lib/** already
+      # triggers on lib/tsx_calendar.py, but a test-only edit must reach its own guard.
+      - "tests/test_tsx_calendar.py"
       # first-party-import-names — the single-module sweep in
       # test_nyse_calendar_import_names.py was promoted repo-wide here. It resolves
       # EVERY `from lib|engine|scripts|collectors|app|admin|tests|tools|worker import

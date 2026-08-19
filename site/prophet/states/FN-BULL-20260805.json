@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FN-BULL-20260805",
-  "asof": "2026-08-13",
+  "asof": "2026-08-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 48.6,
-  "raw_confidence": 48.5,
-  "delta_vs_base": -11.4,
-  "recommended_action": "wait",
-  "human_state": "Awaiting Trigger",
+  "management_confidence": 46.8,
+  "raw_confidence": 45.8,
+  "delta_vs_base": -13.2,
+  "recommended_action": null,
+  "human_state": "Approaching Trigger",
   "components": {
     "validity": 32.1,
     "progress": 0.0,
-    "pace": 93.5,
+    "pace": 70.5,
     "retention": 50.0,
     "overlay": 55.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.431,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 13.3,
+    "horizon_pct_used": 24.4,
     "p1": -0.3795,
     "p2": -0.1897,
     "p3": null,
@@ -36,7 +36,7 @@
   "authority_tier": "display",
   "reliability": {
     "management_confidence": "display \u2014 no forward ledger has passed yet",
-    "recommended_action": "display \u2014 narrate, not authoritative order",
+    "recommended_action": "paused \u2014 no closing print since 2026-07-10; a stale price frame carries no current action authority",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
@@ -45,6 +45,14 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 6,
-  "tau": 0.1333
+  "days_elapsed": 11,
+  "tau": 0.2444,
+  "price_frame": {
+    "state": "stale",
+    "last_close_date": "2026-07-10",
+    "run_asof": "2026-08-18",
+    "lag": 27,
+    "lag_basis": "business_days",
+    "max_lag": 3
+  }
 }

@@ -4,7 +4,53 @@ on:
   schedule:
     # Fast lane while EDGAR is active: the operational checkpoint makes quiet
     # polls cheap and prevents repeat acquisition of already retained accessions.
-    - cron: "7,37 12-23 * * 1-5"
+    #
+    # CADENCE AND WINDOW ARE A RUNNER-BUDGET CONTRACT, not a freshness dial.
+    # `macstudio` is TWO physical hosts (mac-builder-5, mac-builder-light;
+    # runners API 2026-08-18) shared with the authoritative nightly daily.yml
+    # (22:30Z + 23:30Z), closing-bell (:05), close-pass (:25), earlyclose (:20),
+    # metabolism-cycle (:35, 150m cap, hourly) and smart-money-filings (:17).
+    # This lane used to fire at "7,37 12-23 * * 1-5" with a 180m cap and it
+    # starved that pool — see research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md
+    # (chipped follow-up 2). MEASURED over 86 runs, 2026-08-09..08-17:
+    #   * true job execution is 7-15 min ordinary, 47.8 min worst (2026-08-14,
+    #     the Q2 13F deadline, covering a 4h backlog) - never near 180m;
+    #   * runs sat QUEUED up to 116 min, so lifetime was mostly waiting;
+    #   * 20 of 86 runs (23%) were cancelled while pending and NEVER executed -
+    #     each new firing superseded the one still queued from the last.
+    #     That cancellation chain clustered in 21Z-23Z, i.e. the nightly runway.
+    # Two properties keep this cadence honest and must be preserved:
+    #   1. HOURLY, not half-hourly. The atom surface is
+    #      action=getcurrent&type=13F, and one poll reaches
+    #      min(--max-accessions 750, ATOM_EPHEMERAL_ENTRY_LIMIT 930) = 750
+    #      entries. `known_overlap` needs a FULL 100-entry page already
+    #      checkpointed, so the real budget is 700 NEW 13F filings between two
+    #      COMPLETED polls; at 701 the scan exits `ephemeral_limit`,
+    #      discovery.atom.complete goes False and the run FAILS. That is the
+    #      good failure mode - LOUD, never silent loss - and the daily/full
+    #      index lanes recover the accessions.
+    #      MEASURED 2026-08-14 (Q2 deadline, the heaviest 13F day of the
+    #      quarter): executed polls 3h46m apart across the 17:30 ET cutoff both
+    #      returned complete, so peak arrival is under ~200 filings/hour and an
+    #      hourly poll spends well under a third of the 700 budget. Safe
+    #      ceiling is ~2h at crush and ~4h ordinary; hourly keeps 2x margin.
+    #   2. HOURS 12-20 ONLY. Last firing 20:10Z under the 60m fast-lane cap
+    #      below cannot run past 21:10Z, so the pool is clear well before the
+    #      nightly. The old 22:07/22:37/23:07/23:37 firings polled across
+    #      daily.yml's own cron minutes for almost no return. Cost of the
+    #      narrower window: filings accepted after ~16:10 ET wait for the
+    #      06:17Z master-index backstop. Deliberate - this plane is
+    #      classification: context_only (config/institutional_13f.yml), feeds
+    #      neither Prophet nor the Neural Web, and its public summary is
+    #      completed_quarter_only, so nothing live reads sub-12h latency.
+    #      KNOWN AND ACCEPTED: the overnight gap widens from ~12.5h to ~16h,
+    #      of which the EDGAR-live part grows by the 19:50-22:00 ET tail (whose
+    #      submissions are already next-business-day dated) plus 06:00-08:10 ET.
+    #      On the ~4 deadline days a year where that could approach the 700
+    #      budget the run goes RED rather than losing filings, and the fix is a
+    #      workflow_dispatch with discovery_lane=daily, not a denser cron.
+    # :10 is a free minute in the macstudio map (:05 :17 :20 :25 :35 :45 taken).
+    - cron: "10 12-20 * * 1-5"
     # Previous US business-day master index backstop.
     - cron: "17 6 * * 2-6"
     # Current-quarter full index repair pass for missed/corrected discoveries.
@@ -32,7 +78,17 @@ jobs:
   discover_retain_publish:
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 180
+    # The FAST lane is capped at 60m; every other entry point keeps 180m.
+    # 60m is 1.25x the worst fast-lane execution ever observed (47.8 min,
+    # 2026-08-14 Q2 deadline) and the fast lane's work is bounded from above
+    # regardless of how wide the gap gets: the atom surface returns at most
+    # ATOM_EPHEMERAL_ENTRY_LIMIT (930) entries and the run retains at most
+    # --max-accessions 750, so a long gap cannot turn into an unbounded run.
+    # The daily master-index backstop, the Sunday full-quarter reconcile and
+    # every workflow_dispatch keep 180m - those walk a whole quarter index and
+    # have no such ceiling, so they must not inherit the fast lane's cap.
+    # github.event.schedule is empty for workflow_dispatch, so dispatch -> 180.
+    timeout-minutes: ${{ github.event.schedule == '10 12-20 * * 1-5' && 60 || 180 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -127,19 +183,27 @@ jobs:
           assert len(raw) <= 256 * 1024, "rolling receipt exceeded its operator bound"
           receipt = json.loads(raw)
           assert receipt["schema"] == "institutional_13f.rolling_receipt/v1"
-          assert receipt["status"] in {"ok", "no_changes"}
-          assert receipt["counts"]["failures"] == 0
-          assert receipt["discovery"]["atom"]["complete"] is True
-          assert receipt["discovery"]["backlog_accessions"] == 0
-          if os.environ["EXPECTED_LANE"] != "atom":
+          expected_lane = os.environ["EXPECTED_LANE"]
+          if expected_lane == "atom":
+              # The fast lane must never fall behind: a backlog here means the
+              # hourly cadence is no longer keeping up with EDGAR.
+              assert receipt["status"] in {"ok", "no_changes"}
+              assert receipt["discovery"]["backlog_accessions"] == 0
+          else:
+              # Master-index backstops legitimately saturate --max-accessions
+              # during the filing crush; the next scheduled run drains the rest.
+              assert receipt["status"] in {"ok", "no_changes", "bounded_backlog"}
               master = receipt["discovery"]["master_index"]
               assert master["supplied"] is True
               assert master["entries"] > 0
               assert master["sha256"]
+          assert receipt["counts"]["failures"] == 0
+          assert receipt["discovery"]["atom"]["complete"] is True
           print(
               f"status={receipt['status']} "
               f"published={receipt['counts']['new_filings_published']} "
-              f"requests={receipt['counts']['requests']}"
+              f"requests={receipt['counts']['requests']} "
+              f"backlog={receipt['discovery']['backlog_accessions']}"
           )
           PY
 

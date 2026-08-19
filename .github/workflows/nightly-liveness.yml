@@ -24,11 +24,17 @@ on:
     # 08:00Z is ~8.5-9.5h after the fire — comfortably past a healthy bake, so an
     # in-flight run at this hour is unusual but still only INDETERMINATE, never an
     # alarm. 14:00Z is the second look: it catches a bake that was still running at
-    # 08:00Z and then died. Both fire 7 days a week; the NYSE calendar anchor inside
-    # the check is what makes weekends and market holidays incapable of manufacturing
-    # a breach, so there is no weekday filter to keep in sync here.
+    # 08:00Z and then died — and it is the look where IN_FLIGHT_MAX_AGE (14h) turns
+    # an eternal in-flight run into a page (the 2026-08-16/17 hostage class).
+    # 20:00Z is the third look, added 2026-08-17: with only two looks, a run that
+    # crossed the age cap after 14:00Z waited ~18h for the next page; this bounds
+    # wedge-detection latency to ~6h and still costs three cheap ubuntu minutes a
+    # day. All fire 7 days a week; the NYSE calendar anchor inside the check is
+    # what makes weekends and market holidays incapable of manufacturing a breach,
+    # so there is no weekday filter to keep in sync here.
     - cron: "0 8 * * *"
     - cron: "0 14 * * *"
+    - cron: "0 20 * * *"
   workflow_dispatch:
 
 permissions:
@@ -48,8 +54,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Only what the check imports plus the artifact it reads. site/ is large and
-          # this lane must stay cheap enough to run twice a day forever.
+          # Only what the check imports plus the artifacts it reads. site/ is large and
+          # this lane must stay cheap enough to run twice a day forever, so the five
+          # market boards are listed FILE BY FILE rather than by directory: naming
+          # site/factordata would pull ~90 artifacts for the five we grade.
+          #
+          # THIS LIST IS LOAD-BEARING. A MARKET_BOARDS path that is missing here does
+          # not turn the lane red — it degrades that market to INDETERMINATE, which
+          # exits 0. A forgotten line is therefore a SILENTLY unwatched market, which
+          # is the exact failure this check was written for.
+          # tests/test_nightly_liveness.py::test_every_market_board_is_in_the_sparse_checkout
+          # pins the two lists together so the omission cannot ship.
           filter: blob:none
           sparse-checkout: |
             scripts
@@ -57,6 +72,11 @@ jobs:
             engine
             config
             site/prophet/index.json
+            site/factordata/us_standouts.json
+            site/factordata/china_standouts.json
+            site/factordata/hk_standouts.json
+            site/factordata/canada_standouts.json
+            site/factordata/intl_setups.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:

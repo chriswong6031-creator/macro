@@ -127,6 +127,31 @@ refresh and rewrite the cookie — the same fix as the onboarding wall (PR #3454
 `theme.js` is deferred, so `MDXAuth` does not exist while an inline page script
 runs: wait for its `mdx-auth` event with a timeout fallback.
 
+### A shared partial has more than one host (a trap worth remembering)
+
+Gating *a page* is not gating *the content*. `templates/_us_act_now_board.html.j2`
+is rendered on us_stocks.html by `scripts/build_site.py` **and** on
+sector_central.html by `scripts/build_sector_central.py`. PR #5846 gated the
+us_stocks host; the second host passed no `pgate`, so it kept rendering all five
+lanes in full and the gate moved the paid rows one click away instead of out of
+the bytes. Measured anonymously the same day: 45 `.actitem` rows still served,
+on a page that does not even load `tier_preview.js`.
+
+So, before calling a desk gated:
+
+    grep -rln "<partial>" scripts/ templates/
+
+Every host in that list needs its own split, and each needs its **own payload**
+when the hosts are built by different scripts at different times — two builders
+writing one `/premiumdata/<page>.json` means whichever ran last silently
+overwrites the other's rows. The row macros stay shared (one source, three
+shapes: full / gated shell / rows-only), which is what keeps the two gated hosts
+from drifting; only the split and the payload are per host.
+
+The same question applies to the artifact behind the page: if the rows also ship
+as JSON (`site/basketdata/action_board.json` here), confirm that URL's own class
+— a gated page beside an anonymously readable payload is theatre.
+
 ## What each preview tier actually sees today
 
 | Surface | Anonymous | Free | Insider | Pro |
@@ -181,6 +206,48 @@ masterplan adjudication A1.
 - `app/paywall.py` — `enforced_early()`
 - `tests/test_special_situations_gate.py`, `tests/test_paywall.py`
 - CI: the `tier-gate` job in `.github/workflows/ci.yml`
+
+Third application (a desk gated one panel at a time):
+
+- `templates/dashboard.html.j2` (mode `stocks`) — `us_stocks.html`. PR #5840 split
+  the ranked board (`us_standouts.buy`) out of the shell; the follow-up split the
+  four panels around it, which are fed by *different artifacts* and so were never
+  covered by the board's one-payload split.
+- `templates/_us_board_cards.html.j2`, `_us_setups_rows.html.j2`,
+  `_us_leader_rows.html.j2`, `_us_ran_rows.html.j2` — the extracted row partials.
+- `templates/_us_act_now_board.html.j2` and `templates/_theme_tape.html.j2` render
+  in THREE shapes from one set of macros (full · gated shell · rows-only/names-only
+  for the payload) rather than growing a partial, because the act-now board is a
+  **shared include** with a second host and the tape's lists sit inside nested
+  loops the payload has to walk in the same order anyway.
+- `scripts/build_site.py` — `_split_us_panels`, `_render_us_panel_payload`,
+  `_us_tape_locked_count`, `_US_ACTNOW_LANES`.
+- `tests/test_us_board_gate.py` (both halves: the import-light `tier-gate` lane
+  and the fat "full page stack" lane).
+
+Three things this application is worth remembering for:
+
+* **One payload, many panels.** The withheld panels ride the board's existing
+  `site/premiumdata/us_stocks.json` as extra `*_html` blocks rather than minting a
+  file each. The page already fetches it once post-auth, so hydration stays one
+  request and one code path — and one `403` keeps the whole page consistent
+  instead of half-restoring it.
+* **A shared include must stay ungated for its other hosts.** The act-now board is
+  rendered by `sector_central.html` too. Its gate is driven by a `pgate` the host
+  passes, so a host that passes nothing renders byte-identically. (See the caveat
+  below — the *other* host still serves that board anonymously.)
+* **Check for a second surface that names the same rows.** Gating the leaders
+  strip was almost theatre: the same page carries `#plv-names`, a ticker → company
+  name island built from `watch ∪ buy ∪ leaders ∪ laggards`, which re-published by
+  name every leader the strip withheld — 77 entries, measured anonymously. A label
+  island is display-only and easy to miss precisely because it is not a panel.
+  Grep for every emit that carries `name` before calling a desk gated.
+
+**Known caveat (open):** `#action-board` is also rendered on `sector_central.html`,
+which is anonymous-public and serves the same ~45 rows ungated. Gating the copy on
+`us_stocks.html` removes it from that page's bytes but does not make those rows
+unreachable. The Sector Intelligence page needs the same split (its own shell +
+payload) for the act-now board to be genuinely gated.
 
 Second application (multi-panel desk):
 

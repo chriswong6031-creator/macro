@@ -1,0 +1,18 @@
+{
+  "forward_rows_appended": 0,
+  "forward_rows_total": 0,
+  "live_forward_epoch": "2026-08-15T08:58:10Z",
+  "live_forward_rows": 0,
+  "live_forward_start": null,
+  "observed_spool_events": 0,
+  "qledger": {
+    "failed": 0,
+    "registered": 0,
+    "rejected": 0
+  },
+  "schema": "entry_radar.w5_ledger_state/v1",
+  "session": "2026-08-18",
+  "spool_dir": null,
+  "state": "WAITING_FOR_LIVE_SOURCE",
+  "updated_at": "2026-08-18T11:35:09.463483+00:00"
+}

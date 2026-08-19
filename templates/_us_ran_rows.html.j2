@@ -1,0 +1,58 @@
+{#- ── US recently-fired rows (.pbr-l) (docs/TIER_PREVIEW_PATTERN.md) ─────────────────────────
+   Extracted VERBATIM from the `_ran_rows` loop that used to live inline in
+   dashboard.html.j2 (:16190-16226). ONE source for both consumers so the free
+   shell and the paid payload can never drift apart:
+     · the shell {% with %}-binds `rows` to the PREVIEW slice and
+       {% include %}s this file at the loop's original location;
+     · scripts/build_site.py._write_us_payload renders it directly via
+       env.get_template("_us_ran_rows.html.j2").render(...) for the LOCKED remainder
+       that ships in site/premiumdata/us_stocks.json.
+   Carries NO tier logic — the split happens before this partial is called.
+
+   Params:
+     rows — the us_standouts.ran rows to render, already sliced by the caller.
+-#}
+{#- Local copy of dashboard.html.j2's `t` display macro (:7). Extracted partials
+   are self-contained by house convention (_us_board_cards.html.j2 header) — a
+   macro from the includer's scope is NOT visible when build_site renders this
+   file directly for the paid payload. -#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% for r in rows %}
+  {% set _rth = r.get('theme') %}
+  {# AGE UNITS: sessions_since, never ticks. `ticks` counts 3-day-grid buckets,
+     so it understates the real age ~3x (MSFT: ticks=4, sessions_since=9) — and
+     "fired 4d ago" on a name that fired nine sessions back is a wrong number,
+     which the doctrine treats exactly like a broken layout. The word is
+     "sessions" for the same reason: 9 sessions is ~13 calendar days, so "9d"
+     would be the same error wearing a different unit. #}
+  {% set _rsn = r.get('sessions_since') if r.get('sessions_since') is not none else r.get('ticks') %}
+  {# APPROXIMATE AGES ARE MARKED (B3). The engine stamps `anchor`: "marker" when
+     the row carries the buy-marker date the count was measured from, "approx"
+     when the count was worked back from the fresh-bar window instead. An
+     approximate figure printed like an exact one is a wrong number wearing the
+     right units, so it gets the ≈ glyph on the figure itself and the reason on
+     the row's hover — Tier 2, where the mechanics belong. TWO states only: a
+     missing `anchor` (any artifact older than the engine lane) reads as
+     "marker" and renders exactly as it does today. #}
+  {% set _rapx = r.get('anchor') == 'approx' %}
+  <a class="pbr-r{% if r.get('theme_confirmed') %} pbr-warm{% endif %}" href="stock.html#{{ r.get('ticker','') }}">
+    <span class="pbr-tk">{{ r.get('ticker','') }}</span>
+    <span class="pbr-nm">{{ r.get('name','') }}</span>
+    {% if _rth and _rth.get('name') %}<span class="pv-mk-i pv-mk-theme">{{ t(_rth.name, _rth.get('name_zh') or _rth.name) }}</span>{% endif %}
+    <span class="pbr-m"{% if _rapx %} data-tip-en="≈ means the exact date this signal fired was not recorded for this name, so the age is counted back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股信号触发的确切日期没有记录，此处的交易日数由近期K线倒推得出 — 可能相差一两个交易日。"{% endif %}>
+      {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% endif -%}
+      <span class="l-en">{% if r.get('pct_since') is not none %}since signal{% endif %}{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
+      <span class="l-zh">{% if r.get('pct_since') is not none %}信号后{% endif %}{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
+    </span>
+    {# The engine ships the theme-confirmed line itself (theme_note/_zh) so the
+       wording lives in ONE place; the literal below is the pre-migration fallback. #}
+    {% if r.get('theme_confirmed') %}
+    {# bull_days == 0 is the theme that turned TODAY, so it is tested for None,
+       not truthiness — the old guard dropped the age exactly when it was
+       freshest. Same rule as the themes-in-favour strip above. #}
+    <span class="pbr-wl"><span class="l-en">{{ r.get('theme_note') or 'Theme just confirmed — watch for the next entry' }}{% if _rth and _rth.get('bull_days') is not none %}{{ ' (turned today)' if _rth.bull_days == 0 else ' (turned ' ~ _rth.bull_days ~ 'd ago)' }}{% endif %}</span><span class="l-zh">{{ r.get('theme_note_zh') or r.get('theme_note') or '主题刚确认 — 关注下一个买点' }}{% if _rth and _rth.get('bull_days') is not none %}{{ '（今日转向）' if _rth.bull_days == 0 else '（' ~ _rth.bull_days ~ '天前转向）' }}{% endif %}</span></span>
+    {% endif %}
+  </a>
+{% endfor %}

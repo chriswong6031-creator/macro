@@ -131,6 +131,15 @@ def _parquet_files() -> list[Path]:
     return sorted(DATA.rglob("*.parquet")) if DATA.exists() else []
 
 
+#: Stores of RAW PRICE HISTORY. Their authority block rides on a covering manifest
+#: rather than on every price row, because these frames are byte-frozen against a
+#: registered digest over exactly [open, high, low, close, volume] -- adding
+#: authority columns would break the registration the file exists to preserve.
+#: The exemption is not a hole: every parquet under these dirs must still be
+#: covered by a zero-authority manifest (see the coverage test below).
+_RAW_PRICE_DIRS: frozenset[str] = frozenset({"ohlcv", "source"})
+
+
 def _walk_keys(obj, out: list[str]) -> None:
     if isinstance(obj, dict):
         for k, v in obj.items():
@@ -204,7 +213,13 @@ class TestNoExpertFitContent:
 
 class TestZeroAuthority:
     def test_every_json_artifact_carries_an_all_false_authority_block(self):
-        files = _json_files()
+        # ``source/`` holds raw immutable snapshots of external market data (the
+        # W1-A1 registered B prefix), not an Identity Atlas-computed artifact — the
+        # same reason the collected ``ohlcv/`` price parquets are excluded from the
+        # parquet half of this law below. Its provenance sidecar documents
+        # extraction receipts, not a ranking/sizing/gating decision, so it carries
+        # no authority block.
+        files = [p for p in _json_files() if p.parent.name != "source"]
         if not files:
             pytest.skip("no artifacts in this checkout")
         for p in files:
@@ -213,7 +228,7 @@ class TestZeroAuthority:
             assert is_zero_authority(payload), f"{p.name} lacks a complete all-false block"
 
     def test_every_parquet_artifact_carries_authority_columns(self):
-        files = [p for p in _parquet_files() if p.parent.name != "ohlcv"]
+        files = [p for p in _parquet_files() if p.parent.name not in _RAW_PRICE_DIRS]
         if not files:
             pytest.skip("no artifacts in this checkout")
         for p in files:
@@ -222,6 +237,27 @@ class TestZeroAuthority:
                 col = f"authority_{key}"
                 assert col in df.columns, f"{p.name} missing {col}"
                 assert not df[col].any(), f"{p.name}: {col} is not all-false"
+
+    def test_every_raw_price_parquet_is_covered_by_a_zero_authority_manifest(self):
+        # The _RAW_PRICE_DIRS exemption above skips per-row authority columns. It may
+        # never become a silent hole: an exempted parquet must still be covered by a
+        # zero-authority manifest -- a sibling manifest.json for a multi-name store, or
+        # a same-stem .json sidecar for a single frozen frame.
+        exempt = [p for p in _parquet_files() if p.parent.name in _RAW_PRICE_DIRS]
+        if not exempt:
+            pytest.skip("no raw price stores in this checkout")
+        for p in exempt:
+            manifest = p.parent / "manifest.json"
+            sidecar = p.with_suffix(".json")
+            covering = manifest if manifest.exists() else sidecar
+            assert covering.exists(), (
+                f"{p.name} is exempt from per-row authority columns but has no "
+                f"covering manifest ({manifest.name} or {sidecar.name})"
+            )
+            payload = json.loads(covering.read_text(encoding="utf-8"))
+            assert is_zero_authority(payload), (
+                f"{covering.name} does not carry a complete all-false block for {p.name}"
+            )
 
     def test_the_ohlcv_store_declares_authority_in_its_manifest(self):
         # The collected price parquets are raw history, so the block rides on the
@@ -1206,6 +1242,7 @@ REGISTRATION = ROOT / "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION
 RECEIPT = ROOT / amendment_builder.RECEIPT_RELATIVE_PATH
 RESULT_READY = RECEIPT.exists()
 PREREQUISITE_READY = (ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH).exists()
+SNAPSHOT_READY = (ROOT / amendment_builder.B_SNAPSHOT_RELATIVE_PATH).exists()
 
 SEALED_SHA256 = {
     "data/stock_identity/partition/partition_manifest_v1.json":
@@ -1387,9 +1424,11 @@ def test_ack_status_tail_records_the_curated_repair():
     assert "NO store file under 'B'" not in ack
 
 
-@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+@pytest.mark.skipif(
+    not (PREREQUISITE_READY and SNAPSHOT_READY),
+    reason="PR #5632 prerequisite or registered B snapshot not present",
+)
 def test_b_source_is_exactly_the_registered_curated_plane():
-    path = ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH
     frame = amendment_builder._validate_b_source()
     assert amendment_builder._ohlcv_prefix_sha256(frame) == (
         amendment_builder.B_SOURCE_PREFIX_SHA256
@@ -1399,6 +1438,128 @@ def test_b_source_is_exactly_the_registered_curated_plane():
     assert frame.index.max() == pd.Timestamp("2026-08-13")
     assert primary_planes(ROOT)["B"] == PLANE_BASKETS
     assert not (DATA / "ohlcv/B.parquet").exists()
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+def test_registered_b_prefix_snapshot_is_immutable_and_matches_registration():
+    snapshot_path = ROOT / amendment_builder.B_SNAPSHOT_RELATIVE_PATH
+    assert _w1a1_sha256(snapshot_path) == amendment_builder.B_SNAPSHOT_FILE_SHA256
+    frame = amendment_builder._load_registered_b_prefix()
+    assert amendment_builder._ohlcv_prefix_sha256(frame) == (
+        amendment_builder.B_SOURCE_PREFIX_SHA256
+    )
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+def test_live_b_plane_tripwire_tolerates_vendor_readjustment_and_fires_on_revision(
+    monkeypatch,
+):
+    registered = amendment_builder._load_registered_b_prefix()
+
+    noise = registered.copy()
+    noise[["open", "high", "low", "close"]] = (
+        noise[["open", "high", "low", "close"]] * (1 + 5e-7)
+    )
+    monkeypatch.setattr(
+        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: noise
+    )
+    amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+    revised = registered.copy()
+    revised.loc[revised.index[-1], "close"] = revised["close"].iloc[-1] * 1.01
+    monkeypatch.setattr(
+        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: revised
+    )
+    with pytest.raises(SystemExit, match="restated an individual price"):
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+_B_PRICES = ["open", "high", "low", "close"]
+
+
+def _b_live(monkeypatch, registered, mutate):
+    live = mutate(registered.copy())
+    monkeypatch.setattr(
+        amendment_builder, "load_symbol", lambda symbol, plane_id, repo_root: live
+    )
+
+
+def _b_rescale(frame, factor):
+    return frame.assign(**{c: frame[c] * factor for c in _B_PRICES})
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+@pytest.mark.parametrize(
+    ("label", "factor"),
+    (
+        # auto_adjust rescales the whole elapsed window on every FUTURE ex-dividend. That
+        # is return-preserving, so it must NOT fire — banding the price LEVEL instead of
+        # the uniformity would red the fleet on Barrick's next ordinary dividend.
+        ("routine ~$0.10 quarterly dividend", 0.9976),
+        ("small $0.02 dividend", 0.99951),
+        ("tiny $0.005 dividend", 0.999878),
+        ("deep re-adjustment", 0.85),
+    ),
+)
+def test_b_tripwire_passes_return_preserving_rescales(
+    monkeypatch, label, factor
+):
+    registered = amendment_builder._load_registered_b_prefix()
+    _b_live(monkeypatch, registered, lambda f: _b_rescale(f, factor))
+    amendment_builder._validate_live_b_plane_tracks_registration(registered)
+
+
+@pytest.mark.skipif(not SNAPSHOT_READY, reason="registered B snapshot not present")
+@pytest.mark.parametrize(
+    ("label", "mutate", "expected"),
+    (
+        (
+            # A real split rescales share counts as well as prices, so it is caught on the
+            # volume channel rather than by the price level.
+            "2:1 split",
+            lambda f: _b_rescale(f, 0.5).assign(volume=f["volume"] * 2.0),
+            "restated settled volume",
+        ),
+        (
+            # Below the old blanket 1e-2 volume tolerance, so this used to pass silently.
+            "settled volume restated +0.5%",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[10], f["volume"] * 1.005)
+            ),
+            "restated settled volume",
+        ),
+        (
+            "one-column restatement above the float32 grid",
+            lambda f: f.assign(
+                open=f["open"].mask(f.index == f.index[500], f["open"] * (1 + 2e-6))
+            ),
+            "restated an individual price",
+        ),
+        (
+            "segment restatement changes relative prices",
+            lambda f: pd.concat([_b_rescale(f.iloc[:800], 1.001), f.iloc[800:]]),
+            "NON-UNIFORMLY",
+        ),
+        (
+            "asof volume blowout",
+            lambda f: f.assign(
+                volume=f["volume"].mask(f.index == f.index[-1], f["volume"] * 1.5)
+            ),
+            "ASOF-session volume",
+        ),
+        (
+            "broken vendor frame",
+            lambda f: _b_rescale(f, 100.0),
+            "broken vendor frame",
+        ),
+    ),
+)
+def test_b_tripwire_fires_on_real_revisions(monkeypatch, label, mutate, expected):
+    registered = amendment_builder._load_registered_b_prefix()
+    _b_live(monkeypatch, registered, mutate)
+    with pytest.raises(SystemExit) as excinfo:
+        amendment_builder._validate_live_b_plane_tracks_registration(registered)
+    assert expected in str(excinfo.value), label
 
 
 @pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")

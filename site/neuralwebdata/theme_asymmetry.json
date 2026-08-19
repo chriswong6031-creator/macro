@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
-  "as_of": "2026-08-14",
-  "generated_at": "2026-08-14T05:48:48Z",
+  "as_of": "2026-08-18",
+  "generated_at": "2026-08-18T11:44:18Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -34,7 +34,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.414,
+          "value": 0.39,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -42,8 +42,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.90 → tightness=0.41",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.90，综合紧张度=0.41"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.78 → tightness=0.39",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.78，综合紧张度=0.39"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -56,11 +56,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.786); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.786）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.824); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.824）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.496,
+          "value": 0.481,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -68,11 +68,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=8.0%, avg_rs_pctile=0.89, avg_accel_z=2.10 → dislocation=0.50",
-          "note_zh": "最大回撤=8.0%，平均RS百分位=0.89，平均加速z值=2.10 → 错位=0.50"
+          "note_en": "max_drawdown_from_peak=6.8%, avg_rs_pctile=0.92, avg_accel_z=2.53 → dislocation=0.48",
+          "note_zh": "最大回撤=6.8%，平均RS百分位=0.92，平均加速z值=2.53 → 错位=0.48"
         },
         "entry_cleanliness": {
-          "value": 0.311,
+          "value": 0.252,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -81,20 +81,20 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.80, avg_overbought=0.63, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.31",
-          "note_zh": "平均入场质量=0.80，平均超买=0.63，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.31"
+          "note_en": "avg_clean_quality=0.70, avg_overbought=0.69, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.25",
+          "note_zh": "平均入场质量=0.70，平均超买=0.69，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.25"
         },
         "crowding_hazard": {
-          "value": 0.382,
-          "band": "low",
+          "value": 0.448,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.components.crowding",
             "divergence_log:quadrant",
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.38, div_log=quadrant=hidden-opportunity → crowding_hazard=0.38. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.38，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.38。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.45, div_log=quadrant=hidden-opportunity → crowding_hazard=0.45. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.45，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.45。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -104,11 +104,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=84, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=84，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=88, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=88，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.822,
+          "value": 0.777,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -116,8 +116,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=13.8%, universe_avg_corr=0.07 → orthogonality=0.82. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=13.8%，全局平均相关性=0.07 → 正交性=0.82。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=11.1%, universe_avg_corr=0.07 → orthogonality=0.78. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=11.1%，全局平均相关性=0.07 → 正交性=0.78。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -130,7 +130,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.315,
+          "value": 0.314,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -138,8 +138,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.50 → tightness=0.32",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.50，综合紧张度=0.32"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.51 → tightness=0.31",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.51，综合紧张度=0.31"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -156,19 +156,19 @@
           "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.964）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.699,
-          "band": "high",
+          "value": 0.605,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
             "baskets:theme_intel.accel_z",
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=24.9%, avg_rs_pctile=0.84, avg_accel_z=1.50 → dislocation=0.70",
-          "note_zh": "最大回撤=24.9%，平均RS百分位=0.84，平均加速z值=1.50 → 错位=0.70"
+          "note_en": "max_drawdown_from_peak=17.1%, avg_rs_pctile=0.91, avg_accel_z=1.85 → dislocation=0.61",
+          "note_zh": "最大回撤=17.1%，平均RS百分位=0.91，平均加速z值=1.85 → 错位=0.61"
         },
         "entry_cleanliness": {
-          "value": 0.202,
+          "value": 0.251,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -177,11 +177,11 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.65, avg_overbought=0.49, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.20",
-          "note_zh": "平均入场质量=0.65，平均超买=0.49，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.20"
+          "note_en": "avg_clean_quality=0.70, avg_overbought=0.70, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.25",
+          "note_zh": "平均入场质量=0.70，平均超买=0.70，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.25"
         },
         "crowding_hazard": {
-          "value": 0.412,
+          "value": 0.583,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -189,8 +189,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.41, div_log=quadrant=hidden-opportunity → crowding_hazard=0.41. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.41，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.41。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.58, div_log=quadrant=hidden-opportunity → crowding_hazard=0.58. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.58，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.58。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -200,11 +200,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=24, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=24，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.85,
+          "value": 1.0,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -212,8 +212,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=15.4%, universe_avg_corr=0.07 → orthogonality=0.85. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=15.4%，全局平均相关性=0.07 → 正交性=0.85。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=25.6%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=25.6%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -226,16 +226,16 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.297,
-          "band": "low",
+          "value": 0.401,
+          "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
             "foresight_cascade:tightness",
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.43 → tightness=0.30",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.43，综合紧张度=0.30"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.89 → tightness=0.40",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.89，综合紧张度=0.40"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -248,23 +248,23 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=1.0); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=1.0）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.833); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.833）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.662,
-          "band": "high",
+          "value": 0.643,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
             "baskets:theme_intel.accel_z",
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=21.9%, avg_rs_pctile=0.84, avg_accel_z=0.90 → dislocation=0.66",
-          "note_zh": "最大回撤=21.9%，平均RS百分位=0.84，平均加速z值=0.90 → 错位=0.66"
+          "note_en": "max_drawdown_from_peak=20.3%, avg_rs_pctile=0.88, avg_accel_z=1.54 → dislocation=0.64",
+          "note_zh": "最大回撤=20.3%，平均RS百分位=0.88，平均加速z值=1.54 → 错位=0.64"
         },
         "entry_cleanliness": {
-          "value": 0.201,
+          "value": 0.139,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -273,11 +273,11 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.65, avg_overbought=0.50, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.20",
-          "note_zh": "平均入场质量=0.65，平均超买=0.50，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.20"
+          "note_en": "avg_clean_quality=0.55, avg_overbought=0.57, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.14",
+          "note_zh": "平均入场质量=0.55，平均超买=0.57，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.14"
         },
         "crowding_hazard": {
-          "value": 0.502,
+          "value": 0.592,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -285,8 +285,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.40, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.50. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.40，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.50。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.49, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.59. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.49，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.59。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -296,11 +296,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=33, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=33，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.73,
+          "value": 0.732,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -308,8 +308,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=8.2%, universe_avg_corr=0.07 → orthogonality=0.73. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=8.2%，全局平均相关性=0.07 → 正交性=0.73。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=8.3%, universe_avg_corr=0.07 → orthogonality=0.73. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=8.3%，全局平均相关性=0.07 → 正交性=0.73。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -323,7 +323,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.502,
+          "value": 0.481,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -331,8 +331,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.05 → tightness=0.50",
-          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.05，综合紧张度=0.50"
+          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.02 → tightness=0.48",
+          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.02，综合紧张度=0.48"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -349,7 +349,7 @@
           "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.767）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.758,
+          "value": 0.719,
           "band": "high",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -357,11 +357,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=29.8%, avg_rs_pctile=0.60, avg_accel_z=1.17 → dislocation=0.76",
-          "note_zh": "最大回撤=29.8%，平均RS百分位=0.60，平均加速z值=1.17 → 错位=0.76"
+          "note_en": "max_drawdown_from_peak=26.6%, avg_rs_pctile=0.67, avg_accel_z=1.35 → dislocation=0.72",
+          "note_zh": "最大回撤=26.6%，平均RS百分位=0.67，平均加速z值=1.35 → 错位=0.72"
         },
         "entry_cleanliness": {
-          "value": 0.526,
+          "value": 0.549,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -370,8 +370,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.88, avg_overbought=0.16, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.53",
-          "note_zh": "平均入场质量=0.88，平均超买=0.16，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.53"
+          "note_en": "avg_clean_quality=0.88, avg_overbought=0.29, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.55",
+          "note_zh": "平均入场质量=0.88，平均超买=0.29，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.55"
         },
         "crowding_hazard": {
           "value": 0.25,
@@ -393,11 +393,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=24, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=24，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=27, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=27，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.411,
+          "value": 0.472,
           "band": "med",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -405,8 +405,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=-10.9%, universe_avg_corr=0.07 → orthogonality=0.41. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=-10.9%，全局平均相关性=0.07 → 正交性=0.41。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=-7.3%, universe_avg_corr=0.07 → orthogonality=0.47. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=-7.3%，全局平均相关性=0.07 → 正交性=0.47。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -420,7 +420,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.508,
+          "value": 0.503,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -428,8 +428,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.63 → tightness=0.51",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.63，综合紧张度=0.51"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.61 → tightness=0.50",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.61，综合紧张度=0.50"
         },
         "stale_consensus_gap": {
           "value": 0.85,
@@ -446,7 +446,7 @@
           "note_zh": "活动加速（ACCELERATING）但分析师修正滞后（水平=POSITIVE，广度=0.142）；成员分散：no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.246,
+          "value": 0.247,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -454,11 +454,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=36.4%, avg_rs_pctile=0.08, avg_accel_z=1.46 → dislocation=0.25",
-          "note_zh": "最大回撤=36.4%，平均RS百分位=0.08，平均加速z值=1.46 → 错位=0.25"
+          "note_en": "max_drawdown_from_peak=36.7%, avg_rs_pctile=0.08, avg_accel_z=1.49 → dislocation=0.25",
+          "note_zh": "最大回撤=36.7%，平均RS百分位=0.08，平均加速z值=1.49 → 错位=0.25"
         },
         "entry_cleanliness": {
-          "value": 0.445,
+          "value": 0.565,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -467,8 +467,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.78, avg_overbought=0.10, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.45",
-          "note_zh": "平均入场质量=0.78，平均超买=0.10，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.45"
+          "note_en": "avg_clean_quality=0.82, avg_overbought=0.07, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.57",
+          "note_zh": "平均入场质量=0.82，平均超买=0.07，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.57"
         },
         "crowding_hazard": {
           "value": 0.0,
@@ -494,7 +494,7 @@
           "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.429,
+          "value": 0.425,
           "band": "med",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -502,8 +502,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=-9.8%, universe_avg_corr=0.07 → orthogonality=0.43. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=-9.8%，全局平均相关性=0.07 → 正交性=0.43。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=-10.1%, universe_avg_corr=0.07 → orthogonality=0.42. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=-10.1%，全局平均相关性=0.07 → 正交性=0.42。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -516,16 +516,16 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.657,
-          "band": "high",
+          "value": 0.646,
+          "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
             "foresight_cascade:tightness",
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.03 → tightness=0.66",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.03，综合紧张度=0.66"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.02 → tightness=0.65",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.02，综合紧张度=0.65"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -538,11 +538,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.615); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.615）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.738); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.738）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.137,
+          "value": 0.135,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -550,11 +550,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=9.4%, avg_rs_pctile=0.30, avg_accel_z=0.81 → dislocation=0.14",
-          "note_zh": "最大回撤=9.4%，平均RS百分位=0.30，平均加速z值=0.81 → 错位=0.14"
+          "note_en": "max_drawdown_from_peak=8.6%, avg_rs_pctile=0.39, avg_accel_z=1.10 → dislocation=0.13",
+          "note_zh": "最大回撤=8.6%，平均RS百分位=0.39，平均加速z值=1.10 → 错位=0.13"
         },
         "entry_cleanliness": {
-          "value": 0.536,
+          "value": 0.486,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -563,8 +563,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.85, avg_overbought=0.05, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.54",
-          "note_zh": "平均入场质量=0.85，平均超买=0.05，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.54"
+          "note_en": "avg_clean_quality=0.75, avg_overbought=0.08, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.49",
+          "note_zh": "平均入场质量=0.75，平均超买=0.08，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.49"
         },
         "crowding_hazard": {
           "value": 0.0,
@@ -586,11 +586,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=15, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=15，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.5,
+          "value": 0.51,
           "band": "med",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -598,8 +598,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=-5.6%, universe_avg_corr=0.07 → orthogonality=0.50. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=-5.6%，全局平均相关性=0.07 → 正交性=0.50。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=-5.0%, universe_avg_corr=0.07 → orthogonality=0.51. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=-5.0%，全局平均相关性=0.07 → 正交性=0.51。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -612,7 +612,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.534,
+          "value": 0.585,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -620,8 +620,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.80 → tightness=0.53",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.80，综合紧张度=0.53"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.08 → tightness=0.58",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.08，综合紧张度=0.58"
         },
         "stale_consensus_gap": {
           "value": 0.15,
@@ -638,7 +638,7 @@
           "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.49）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.2,
+          "value": 0.264,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -646,11 +646,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=0.0%, avg_rs_pctile=1.00, avg_accel_z=-1.12 → dislocation=0.20",
-          "note_zh": "最大回撤=0.0%，平均RS百分位=1.00，平均加速z值=-1.12 → 错位=0.20"
+          "note_en": "max_drawdown_from_peak=6.3%, avg_rs_pctile=0.98, avg_accel_z=-1.71 → dislocation=0.26",
+          "note_zh": "最大回撤=6.3%，平均RS百分位=0.98，平均加速z值=-1.71 → 错位=0.26"
         },
         "entry_cleanliness": {
-          "value": 0.0,
+          "value": 0.024,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -659,11 +659,11 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.25, avg_overbought=1.05, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.00",
-          "note_zh": "平均入场质量=0.25，平均超买=1.05，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.00"
+          "note_en": "avg_clean_quality=0.50, avg_overbought=0.79, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.02",
+          "note_zh": "平均入场质量=0.50，平均超买=0.79，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.02"
         },
         "crowding_hazard": {
-          "value": 0.8,
+          "value": 0.75,
           "band": "high",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -671,8 +671,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.80, div_log=quadrant=hidden-opportunity → crowding_hazard=0.80. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.80，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.80。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.75, div_log=quadrant=hidden-opportunity → crowding_hazard=0.75. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.75，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.75。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -694,8 +694,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=47.9%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=47.9%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=34.5%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=34.5%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -708,7 +708,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.366,
+          "value": 0.368,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -716,8 +716,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.04 → tightness=0.37",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.04，综合紧张度=0.37"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.05 → tightness=0.37",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.05，综合紧张度=0.37"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -730,11 +730,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.325); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.325）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.403); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.403）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.127,
+          "value": 0.128,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -742,12 +742,12 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=6.9%, avg_rs_pctile=0.44, avg_accel_z=1.50 → dislocation=0.13",
-          "note_zh": "最大回撤=6.9%，平均RS百分位=0.44，平均加速z值=1.50 → 错位=0.13"
+          "note_en": "max_drawdown_from_peak=6.9%, avg_rs_pctile=0.48, avg_accel_z=1.32 → dislocation=0.13",
+          "note_zh": "最大回撤=6.9%，平均RS百分位=0.48，平均加速z值=1.32 → 错位=0.13"
         },
         "entry_cleanliness": {
-          "value": 0.635,
-          "band": "med",
+          "value": 0.707,
+          "band": "high",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
             "baskets:theme_intel.textures.overbought",
@@ -755,8 +755,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=1.00, avg_overbought=0.21, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.64",
-          "note_zh": "平均入场质量=1.00，平均超买=0.21，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.64"
+          "note_en": "avg_clean_quality=1.00, avg_overbought=0.18, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.71",
+          "note_zh": "平均入场质量=1.00，平均超买=0.18，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.71"
         },
         "crowding_hazard": {
           "value": 0.1,
@@ -778,11 +778,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=54, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=54，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=60, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=60，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.638,
+          "value": 0.632,
           "band": "med",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -790,8 +790,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=2.7%, universe_avg_corr=0.07 → orthogonality=0.64. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=2.7%，全局平均相关性=0.07 → 正交性=0.64。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=2.4%, universe_avg_corr=0.07 → orthogonality=0.63. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=2.4%，全局平均相关性=0.07 → 正交性=0.63。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -804,7 +804,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.149,
+          "value": 0.177,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -812,8 +812,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.64 → tightness=0.15",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.64，综合紧张度=0.15"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.75 → tightness=0.18",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.75，综合紧张度=0.18"
         },
         "stale_consensus_gap": {
           "value": 0.15,
@@ -826,11 +826,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.463); no gap. no_dispersion_data",
-          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.463）；无差距。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.464); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.464）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.4,
+          "value": 0.402,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -838,11 +838,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=0.0%, avg_rs_pctile=0.86, avg_accel_z=1.49 → dislocation=0.40",
-          "note_zh": "最大回撤=0.0%，平均RS百分位=0.86，平均加速z值=1.49 → 错位=0.40"
+          "note_en": "max_drawdown_from_peak=0.1%, avg_rs_pctile=0.91, avg_accel_z=2.18 → dislocation=0.40",
+          "note_zh": "最大回撤=0.1%，平均RS百分位=0.91，平均加速z值=2.18 → 错位=0.40"
         },
         "entry_cleanliness": {
-          "value": 0.021,
+          "value": 0.063,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -851,11 +851,11 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.55, avg_overbought=0.76, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.02",
-          "note_zh": "平均入场质量=0.55，平均超买=0.76，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.02"
+          "note_en": "avg_clean_quality=0.55, avg_overbought=0.82, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.06",
+          "note_zh": "平均入场质量=0.55，平均超买=0.82，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.06"
         },
         "crowding_hazard": {
-          "value": 0.162,
+          "value": 0.282,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -863,8 +863,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.16, div_log=quadrant=hidden-opportunity → crowding_hazard=0.16. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.16，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.16。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.28, div_log=quadrant=hidden-opportunity → crowding_hazard=0.28. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.28，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.28。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -874,11 +874,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=78, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=78，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=81, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=81，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.719,
+          "value": 0.71,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -886,8 +886,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=7.6%, universe_avg_corr=0.07 → orthogonality=0.72. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=7.6%，全局平均相关性=0.07 → 正交性=0.72。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=7.0%, universe_avg_corr=0.07 → orthogonality=0.71. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=7.0%，全局平均相关性=0.07 → 正交性=0.71。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -900,7 +900,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.251,
+          "value": 0.239,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -908,12 +908,12 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.34 → tightness=0.25",
-          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.34，综合紧张度=0.25"
+          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.30 → tightness=0.24",
+          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.30，综合紧张度=0.24"
         },
         "stale_consensus_gap": {
-          "value": 0.35,
-          "band": "med",
+          "value": 0.15,
+          "band": "low",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -922,11 +922,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.189); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.189）；差距收窄。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.492); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.492）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.237,
+          "value": 0.243,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -934,12 +934,12 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=3.7%, avg_rs_pctile=0.59, avg_accel_z=-1.30 → dislocation=0.24",
-          "note_zh": "最大回撤=3.7%，平均RS百分位=0.59，平均加速z值=-1.30 → 错位=0.24"
+          "note_en": "max_drawdown_from_peak=4.2%, avg_rs_pctile=0.60, avg_accel_z=-1.05 → dislocation=0.24",
+          "note_zh": "最大回撤=4.2%，平均RS百分位=0.60，平均加速z值=-1.05 → 错位=0.24"
         },
         "entry_cleanliness": {
-          "value": 0.346,
-          "band": "low",
+          "value": 0.415,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
             "baskets:theme_intel.textures.overbought",
@@ -947,8 +947,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.70, avg_overbought=0.18, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.35",
-          "note_zh": "平均入场质量=0.70，平均超买=0.18，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.35"
+          "note_en": "avg_clean_quality=0.70, avg_overbought=0.15, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.41",
+          "note_zh": "平均入场质量=0.70，平均超买=0.15，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.41"
         },
         "crowding_hazard": {
           "value": 0.0,
@@ -970,11 +970,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.77,
+          "value": 0.729,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -982,8 +982,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=10.6%, universe_avg_corr=0.07 → orthogonality=0.77. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=10.6%，全局平均相关性=0.07 → 正交性=0.77。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=8.2%, universe_avg_corr=0.07 → orthogonality=0.73. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=8.2%，全局平均相关性=0.07 → 正交性=0.73。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -996,7 +996,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.217,
+          "value": 0.205,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1004,8 +1004,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.87 → tightness=0.22",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.87，综合紧张度=0.22"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.82 → tightness=0.20",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.82，综合紧张度=0.20"
         },
         "stale_consensus_gap": {
           "value": 0.2,
@@ -1022,7 +1022,7 @@
           "note_zh": "活动未加速（FLAT_LOW）且修正滞后——一致疲软。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.134,
+          "value": 0.144,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -1030,12 +1030,12 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=8.4%, avg_rs_pctile=0.41, avg_accel_z=-1.04 → dislocation=0.13",
-          "note_zh": "最大回撤=8.4%，平均RS百分位=0.41，平均加速z值=-1.04 → 错位=0.13"
+          "note_en": "max_drawdown_from_peak=11.0%, avg_rs_pctile=0.28, avg_accel_z=-1.27 → dislocation=0.14",
+          "note_zh": "最大回撤=11.0%，平均RS百分位=0.28，平均加速z值=-1.27 → 错位=0.14"
         },
         "entry_cleanliness": {
-          "value": 0.228,
-          "band": "low",
+          "value": 0.437,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
             "baskets:theme_intel.textures.overbought",
@@ -1043,8 +1043,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.60, avg_overbought=0.24, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.23",
-          "note_zh": "平均入场质量=0.60，平均超买=0.24，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.23"
+          "note_en": "avg_clean_quality=0.70, avg_overbought=0.08, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.44",
+          "note_zh": "平均入场质量=0.70，平均超买=0.08，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.44"
         },
         "crowding_hazard": {
           "value": 0.1,
@@ -1066,11 +1066,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=20, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=20，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=22, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=22，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.734,
+          "value": 0.69,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -1078,8 +1078,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=8.5%, universe_avg_corr=0.07 → orthogonality=0.73. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=8.5%，全局平均相关性=0.07 → 正交性=0.73。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=5.8%, universe_avg_corr=0.07 → orthogonality=0.69. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=5.8%，全局平均相关性=0.07 → 正交性=0.69。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1092,7 +1092,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.84,
+          "value": 0.808,
           "band": "high",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1100,8 +1100,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.96 → tightness=0.84",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.96，综合紧张度=0.84"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.83 → tightness=0.81",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.83，综合紧张度=0.81"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -1114,11 +1114,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.633); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.633）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.82); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.82）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.796,
+          "value": 0.784,
           "band": "high",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -1126,11 +1126,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=33.0%, avg_rs_pctile=0.79, avg_accel_z=1.61 → dislocation=0.80",
-          "note_zh": "最大回撤=33.0%，平均RS百分位=0.79，平均加速z值=1.61 → 错位=0.80"
+          "note_en": "max_drawdown_from_peak=32.0%, avg_rs_pctile=0.81, avg_accel_z=1.62 → dislocation=0.78",
+          "note_zh": "最大回撤=32.0%，平均RS百分位=0.81，平均加速z值=1.62 → 错位=0.78"
         },
         "entry_cleanliness": {
-          "value": 0.323,
+          "value": 0.271,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -1139,20 +1139,20 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.80, avg_overbought=0.59, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.32",
-          "note_zh": "平均入场质量=0.80，平均超买=0.59，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.32"
+          "note_en": "avg_clean_quality=0.70, avg_overbought=0.63, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.27",
+          "note_zh": "平均入场质量=0.70，平均超买=0.63，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.27"
         },
         "crowding_hazard": {
-          "value": 0.4,
-          "band": "low",
+          "value": 0.415,
+          "band": "med",
           "inputs": [
             "baskets:theme_intel.components.crowding",
             "divergence_log:quadrant",
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.30, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.40. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.30，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.40。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.32, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.42. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.32，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.42。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -1162,11 +1162,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=16, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=16，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.262,
+          "value": 0.255,
           "band": "low",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -1174,8 +1174,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=-19.8%, universe_avg_corr=0.07 → orthogonality=0.26. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=-19.8%，全局平均相关性=0.07 → 正交性=0.26。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=-20.3%, universe_avg_corr=0.07 → orthogonality=0.26. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=-20.3%，全局平均相关性=0.07 → 正交性=0.26。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1188,7 +1188,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.182,
+          "value": 0.171,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1196,8 +1196,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.31 → tightness=0.18",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.31，综合紧张度=0.18"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.31 → tightness=0.17",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.31，综合紧张度=0.17"
         },
         "stale_consensus_gap": {
           "value": 0.2,
@@ -1214,7 +1214,7 @@
           "note_zh": "活动未加速（FLAT_LOW）且修正滞后——一致疲软。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.244,
+          "value": 0.239,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -1222,11 +1222,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=36.0%, avg_rs_pctile=0.33, avg_accel_z=1.08 → dislocation=0.24",
-          "note_zh": "最大回撤=36.0%，平均RS百分位=0.33，平均加速z值=1.08 → 错位=0.24"
+          "note_en": "max_drawdown_from_peak=34.8%, avg_rs_pctile=0.34, avg_accel_z=1.19 → dislocation=0.24",
+          "note_zh": "最大回撤=34.8%，平均RS百分位=0.34，平均加速z值=1.19 → 错位=0.24"
         },
         "entry_cleanliness": {
-          "value": 0.422,
+          "value": 0.626,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -1235,8 +1235,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.75, avg_overbought=0.09, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.42",
-          "note_zh": "平均入场质量=0.75，平均超买=0.09，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.42"
+          "note_en": "avg_clean_quality=0.90, avg_overbought=0.11, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.63",
+          "note_zh": "平均入场质量=0.90，平均超买=0.11，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.63"
         },
         "crowding_hazard": {
           "value": 0.0,
@@ -1258,11 +1258,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=10, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=10，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.218,
+          "value": 0.235,
           "band": "low",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -1270,8 +1270,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=-22.5%, universe_avg_corr=0.07 → orthogonality=0.22. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=-22.5%，全局平均相关性=0.07 → 正交性=0.22。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=-21.5%, universe_avg_corr=0.07 → orthogonality=0.24. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=-21.5%，全局平均相关性=0.07 → 正交性=0.24。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1284,7 +1284,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.239,
+          "value": 0.222,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1292,8 +1292,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.52 → tightness=0.24",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.52，综合紧张度=0.24"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.49 → tightness=0.22",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.49，综合紧张度=0.22"
         },
         "stale_consensus_gap": {
           "value": 0.15,
@@ -1310,7 +1310,7 @@
           "note_zh": "活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.381）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.415,
+          "value": 0.411,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -1318,11 +1318,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=1.3%, avg_rs_pctile=0.69, avg_accel_z=0.55 → dislocation=0.42",
-          "note_zh": "最大回撤=1.3%，平均RS百分位=0.69，平均加速z值=0.55 → 错位=0.42"
+          "note_en": "max_drawdown_from_peak=0.9%, avg_rs_pctile=0.78, avg_accel_z=1.18 → dislocation=0.41",
+          "note_zh": "最大回撤=0.9%，平均RS百分位=0.78，平均加速z值=1.18 → 错位=0.41"
         },
         "entry_cleanliness": {
-          "value": 0.586,
+          "value": 0.406,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -1331,8 +1331,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=1.00, avg_overbought=0.38, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.59",
-          "note_zh": "平均入场质量=1.00，平均超买=0.38，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.59"
+          "note_en": "avg_clean_quality=0.80, avg_overbought=0.51, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.41",
+          "note_zh": "平均入场质量=0.80，平均超买=0.51，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.41"
         },
         "crowding_hazard": {
           "value": 0.1,
@@ -1354,11 +1354,11 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=24, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=24，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=26, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=26，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.676,
+          "value": 0.704,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -1366,8 +1366,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=5.0%, universe_avg_corr=0.07 → orthogonality=0.68. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=5.0%，全局平均相关性=0.07 → 正交性=0.68。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=6.6%, universe_avg_corr=0.07 → orthogonality=0.70. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=6.6%，全局平均相关性=0.07 → 正交性=0.70。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1448,8 +1448,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=16, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=16，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.93,
@@ -1474,7 +1474,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.371,
+          "value": 0.39,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1482,12 +1482,12 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.75 → tightness=0.37",
-          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.75，综合紧张度=0.37"
+          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.82 → tightness=0.39",
+          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.82，综合紧张度=0.39"
         },
         "stale_consensus_gap": {
-          "value": 0.2,
-          "band": "low",
+          "value": 0.85,
+          "band": "high",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -1496,11 +1496,11 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (MIXED) and revisions lagging — aligned weakness. no_dispersion_data",
-          "note_zh": "活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"
+          "note_en": "activity accelerating (RISING) but revisions lagging (level=FLAT_LOW, breadth=0.042); member dispersion: no_dispersion_data",
+          "note_zh": "活动加速（RISING）但分析师修正滞后（水平=FLAT_LOW，广度=0.042）；成员分散：no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.303,
+          "value": 0.309,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -1508,8 +1508,8 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=10.3%, avg_rs_pctile=0.83, avg_accel_z=-0.73 → dislocation=0.30",
-          "note_zh": "最大回撤=10.3%，平均RS百分位=0.83，平均加速z值=-0.73 → 错位=0.30"
+          "note_en": "max_drawdown_from_peak=10.9%, avg_rs_pctile=0.82, avg_accel_z=-1.18 → dislocation=0.31",
+          "note_zh": "最大回撤=10.9%，平均RS百分位=0.82，平均加速z值=-1.18 → 错位=0.31"
         },
         "entry_cleanliness": {
           "value": 0.0,
@@ -1521,11 +1521,11 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.25, avg_overbought=0.42, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.00",
-          "note_zh": "平均入场质量=0.25，平均超买=0.42，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.00"
+          "note_en": "avg_clean_quality=0.25, avg_overbought=0.40, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00",
+          "note_zh": "平均入场质量=0.25，平均超买=0.40，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"
         },
         "crowding_hazard": {
-          "value": 0.382,
+          "value": 0.352,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -1533,8 +1533,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.38, div_log=no_div_log_entry → crowding_hazard=0.38. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.38，背离日志=no_div_log_entry → 拥挤风险=0.38。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.35, div_log=no_div_log_entry → crowding_hazard=0.35. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.35，背离日志=no_div_log_entry → 拥挤风险=0.35。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -1544,20 +1544,20 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=14, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=14，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=16, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=16，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.628,
-          "band": "med",
+          "value": 0.654,
+          "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
             "baskets:theme_intel.perf.60d.rel",
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=2.1%, universe_avg_corr=0.07 → orthogonality=0.63. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=2.1%，全局平均相关性=0.07 → 正交性=0.63。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=3.7%, universe_avg_corr=0.07 → orthogonality=0.65. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=3.7%，全局平均相关性=0.07 → 正交性=0.65。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1580,7 +1580,7 @@
           "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=null，综合紧张度=0.06"
         },
         "stale_consensus_gap": {
-          "value": 0.2,
+          "value": 0.15,
           "band": "low",
           "inputs": [
             "foresight_cascade:demand_band",
@@ -1590,8 +1590,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (FLAT_LOW) and revisions lagging — aligned weakness. no_dispersion_data",
-          "note_zh": "活动未加速（FLAT_LOW）且修正滞后——一致疲软。no_dispersion_data"
+          "note_en": "activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.316); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.316）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": null,
@@ -1638,8 +1638,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "watch_conditions=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "改判条件总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=22, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=22，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.93,
@@ -1751,19 +1751,22 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-08-13)",
     "divergence_log[robotics_automation]: stale (as_of=2026-08-08)",
     "divergence_log[ai_semiconductors]: stale (as_of=2026-08-05)",
+    "divergence_log[defense_aerospace]: stale (as_of=2026-08-13)",
+    "divergence_log[glp1_obesity]: stale (as_of=2026-08-13)",
+    "divergence_log[semicap_equipment]: stale (as_of=2026-08-13)",
     "divergence_log[fintech_payments]: stale (as_of=2026-08-04)",
     "divergence_log[memory_storage]: stale (as_of=2026-08-05)",
     "divergence_log[diagnostics_lifesci]: stale (as_of=2026-07-27)",
     "divergence_log[copper_steel_electrify]: stale (as_of=2026-08-02)",
     "divergence_log[space_satellite]: stale (as_of=2026-08-08)",
-    "divergence_log[data_center_power]: stale (as_of=2026-08-08)",
     "finnhub_recs: parquet absent — per-member revision dispersion unavailable"
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-14T05:48:48Z",
-  "inputs_hash": "sha256:440c42b622de77f11394722f48af842104996385d838d51989945a2f33f2bf81",
+  "produced_at": "2026-08-18T11:44:18Z",
+  "inputs_hash": "sha256:46240dc6bab7e1ed3ec4c8bcd44c41d48d24b07cc1918ebf9185700e6fd5695b",
   "tier": "display"
 }

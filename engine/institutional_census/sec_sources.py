@@ -47,10 +47,48 @@ ATOM_PAGE_SIZE = 100
 # EDGAR's current-filings listing is an ephemeral discovery surface.  The
 # scanner must hand completeness off to daily/full indexes after this boundary.
 ATOM_EPHEMERAL_ENTRY_LIMIT = 930
+# ``browse-edgar`` serves only these page sizes.  Any other ``count`` is rounded
+# DOWN to the largest of these that fits, so an unhonored request comes back
+# shorter than asked for even when the feed has plenty more to give.  Measured
+# against the live feed 2026-08-17: count=50 -> 40 entries, count=30 -> 20,
+# count=15 -> 10, count=101 -> 100.  The scanner must therefore only ever ask
+# for a size EDGAR honours; otherwise "shorter than requested" stops meaning
+# "the feed ran out".  EDGAR's floor page is 10, so an ``entry_limit`` that is
+# not a multiple of 10 scans up to nine raw entries past its boundary.
+ATOM_HONORED_PAGE_SIZES = (10, 20, 40, 80, 100)
+# ``browse-edgar`` intermittently fails a perfectly valid request.  It is
+# transient rather than parameter-dependent: the same URL succeeds seconds
+# later.  Measured read-only against the live surface on 2026-08-17 over 500
+# requests spread across the production page offsets: 8 failures (1.6%), ALL of
+# them transport-level read timeouts, and all 5 that were retried recovered on
+# the FIRST retry.  Successful-request latency was p50 1.6s / p95 11.7s / max
+# 25.7s against the probe's 30s read timeout, so these are the tail of a
+# heavy-tailed distribution rather than a surface that is down -- which is why
+# retrying works and why production's more generous 180s read timeout should see
+# a lower rate than 1.6%.  That probe window saw no HTML bodies, but the other
+# documented mode is an HTML "SEC.gov | File Unavailable" page served with an
+# HTTP 200.  Both modes must be retryable, which is why the transport
+# translation lives in the runner that owns requests while the body check lives
+# in the parser.  Three attempts leaves a residual page-loss rate near 4e-6 at
+# the measured rate, costing at most two extra requests on the ~9-page
+# production scan.  Each attempt re-enters the caller's ``fetch``, so
+# ``PacedFetch`` keeps owning the request rate and this budget adds no pacing of
+# its own.
+ATOM_FETCH_ATTEMPTS = 3
+ATOM_MAX_FETCH_ATTEMPTS = 5
 
 
 class SecSourceError(ValueError):
     """An SEC artifact violates the source contract required for parsing."""
+
+
+class SecSourceUnavailableError(SecSourceError):
+    """SEC served a transient error page in place of the requested artifact.
+
+    Separated from its parent so a *retryable* SEC outage is never confused with
+    a broken source contract: a malformed Atom body still raises the base error
+    and must stay loud, while this one is worth asking for again.
+    """
 
 
 @dataclass(frozen=True)
@@ -73,6 +111,11 @@ class AtomScanResult:
     pages_fetched: int
     complete: bool
     stop_reason: str
+    #: Extra page fetches spent recovering from transient SEC error pages.
+    fetch_retries: int = 0
+    #: Set when the scan stopped on an unrecoverable fetch, so the caller can
+    #: file the same receipt failure it would have filed for a raised error.
+    error: SecSourceError | None = None
 
 
 @dataclass(frozen=True)
@@ -963,6 +1006,26 @@ def _child_text(node: ET.Element | None, name: str) -> str | None:
     return _node_text(_child(node, name))
 
 
+_HTML_DOCUMENT_PREFIXES = ("<!doctype html", "<html")
+
+
+def _is_html_error_body(source: bytes | str) -> bool:
+    """True when a body is an HTML document rather than the XML that was asked for.
+
+    ``browse-edgar`` serves its outage page with an HTTP 200 and an
+    ``<!DOCTYPE html>`` body, so the status code cannot tell a brief SEC outage
+    from a healthy feed.  The document type is the only available signal, and
+    drawing it here is what keeps a genuinely malformed *Atom* body raising
+    loudly instead of being retried as an outage.
+    """
+
+    head = source[:512] if isinstance(source, str) else source[:512].decode(
+        "utf-8", "replace"
+    )
+    head = head.lstrip("\ufeff \t\r\n").lower()
+    return head.startswith(_HTML_DOCUMENT_PREFIXES)
+
+
 def parse_latest_filings_atom(source: bytes | str) -> tuple[FilingDiscovery, ...]:
     """Parse one SEC Latest Filings Atom page.
 
@@ -970,13 +1033,33 @@ def parse_latest_filings_atom(source: bytes | str) -> tuple[FilingDiscovery, ...
     the accession prefix is never treated as filer identity.
     """
 
+    entries, _raw_entries = _parse_atom_page(source)
+    return entries
+
+
+def _parse_atom_page(source: bytes | str) -> tuple[tuple[FilingDiscovery, ...], int]:
+    """Parse one Atom page into 13F entries *and* the raw entry count.
+
+    The two numbers are not interchangeable.  ``type=13F`` prefix-matches on
+    EDGAR, so the feed can serve 13F-family forms outside :data:`FORM_TYPES`
+    (``13FCONP`` is a live example), and those are dropped below.  Paging
+    decisions must be made on the raw count: a page filtered down to 99 of 100
+    raw entries has *not* run out of feed, and treating it as short would end
+    the scan while reporting it complete.
+    """
+
+    if _is_html_error_body(source):
+        raise SecSourceUnavailableError(
+            "SEC served an HTML error page instead of the Latest Filings Atom"
+        )
     try:
         root = ET.fromstring(_xml_source(source))
     except ET.ParseError as exc:
         raise SecSourceError(f"invalid Latest Filings Atom: {exc}") from exc
     namespace = {"atom": ATOM_NAMESPACE}
+    raw_page = root.findall("atom:entry", namespace)
     entries: list[FilingDiscovery] = []
-    for ordinal, entry in enumerate(root.findall("atom:entry", namespace), start=1):
+    for ordinal, entry in enumerate(raw_page, start=1):
         category = entry.find("atom:category", namespace)
         form = (
             _text(category.get("term") if category is not None else None) or ""
@@ -1049,7 +1132,7 @@ def parse_latest_filings_atom(source: bytes | str) -> tuple[FilingDiscovery, ...
                 source_ordinal=ordinal,
             )
         )
-    return tuple(entries)
+    return tuple(entries), len(raw_page)
 
 
 def _fetch_bytes(fetch: Callable[[str], Any], url: str) -> bytes:
@@ -1069,6 +1152,15 @@ def _fetch_bytes(fetch: Callable[[str], Any], url: str) -> bytes:
     raise TypeError("fetch must return bytes, str, mapping, or response-like object")
 
 
+def _atom_honored_count(count: int) -> int:
+    """Return the page size EDGAR will actually serve for ``count``."""
+
+    return next(
+        (size for size in reversed(ATOM_HONORED_PAGE_SIZES) if size <= count),
+        ATOM_HONORED_PAGE_SIZES[0],
+    )
+
+
 def _atom_page_url(base_url: str, *, start: int, count: int) -> str:
     parsed = urlparse(base_url)
     query = dict(parse_qsl(parsed.query, keep_blank_values=True))
@@ -1084,6 +1176,32 @@ def _atom_page_url(base_url: str, *, start: int, count: int) -> str:
     return urlunparse(parsed._replace(query=urlencode(query)))
 
 
+def _fetch_atom_page(
+    fetch: Callable[[str], Any],
+    url: str,
+    *,
+    attempts: int,
+) -> tuple[tuple[FilingDiscovery, ...], int, int]:
+    """Fetch and parse one Atom page, retrying only a transient SEC error page.
+
+    Returns the page's entries, its raw entry count, and the number of retries
+    spent.  Retries re-enter the caller's ``fetch``, so request pacing stays
+    with ``PacedFetch``; nothing here sleeps.  A malformed Atom body is a
+    contract violation, never an outage, so it propagates on the first attempt.
+    """
+
+    for retries in range(attempts - 1):
+        try:
+            entries, raw_entries = _parse_atom_page(_fetch_bytes(fetch, url))
+        except SecSourceUnavailableError:
+            continue
+        return entries, raw_entries, retries
+    # The last attempt is deliberately unguarded: a page that is still
+    # unavailable propagates, and the caller turns it into a partial result.
+    entries, raw_entries = _parse_atom_page(_fetch_bytes(fetch, url))
+    return entries, raw_entries, attempts - 1
+
+
 def scan_latest_filings_atom(
     fetch: Callable[[str], Any],
     *,
@@ -1092,8 +1210,22 @@ def scan_latest_filings_atom(
     entry_limit: int = ATOM_EPHEMERAL_ENTRY_LIMIT,
     known_accessions: Iterable[str] = (),
     overlap_before: str | None = None,
+    fetch_attempts: int = ATOM_FETCH_ATTEMPTS,
 ) -> AtomScanResult:
-    """Page the ephemeral Atom surface with a hard 930-entry safety boundary."""
+    """Page the ephemeral Atom surface with a hard 930-entry safety boundary.
+
+    ``page_size`` is rounded down to a size EDGAR honours
+    (:data:`ATOM_HONORED_PAGE_SIZES`), with 10 as the floor, so that a page
+    shorter than requested means the feed ran out rather than that EDGAR
+    trimmed the request.
+
+    A page that comes back as a transient SEC error page is re-fetched up to
+    ``fetch_attempts`` times.  If it still will not parse, the scan returns the
+    pages it already walked with ``complete=False`` and ``stop_reason``
+    ``"fetch_error"`` rather than discarding them: one bad page late in a scan
+    must not cost every discovery ahead of it, and ``complete=False`` still
+    declares the coverage gap to the caller.
+    """
 
     if page_size <= 0 or page_size > ATOM_PAGE_SIZE:
         raise ValueError(f"page_size must be between 1 and {ATOM_PAGE_SIZE}")
@@ -1101,33 +1233,78 @@ def scan_latest_filings_atom(
         raise ValueError(
             f"entry_limit must be between 1 and {ATOM_EPHEMERAL_ENTRY_LIMIT}"
         )
+    if (
+        isinstance(fetch_attempts, bool)
+        or not isinstance(fetch_attempts, int)
+        or fetch_attempts <= 0
+        or fetch_attempts > ATOM_MAX_FETCH_ATTEMPTS
+    ):
+        raise ValueError(
+            f"fetch_attempts must be between 1 and {ATOM_MAX_FETCH_ATTEMPTS}"
+        )
     known = {normalize_accession(value) for value in known_accessions}
     boundary = None
     if overlap_before:
         boundary = datetime.fromisoformat(overlap_before.replace("Z", "+00:00"))
         if boundary.tzinfo is None:
             boundary = boundary.replace(tzinfo=timezone.utc)
+    # INVARIANT for any stop reason added below: return complete=True ONLY when
+    # the feed is genuinely exhausted.  `complete` is the single thing standing
+    # between a truncated scan and `status: "ok"` — rolling.py computes
+    # `has_coverage_gap = not atom_complete or backlog or failures` — so a stop
+    # reason that guesses True turns a coverage gap into a silent green receipt.
     collected: list[FilingDiscovery] = []
     seen: set[str] = set()
     pages = 0
+    fetch_retries = 0
     start = 0
     while start < entry_limit:
-        count = min(page_size, entry_limit - start)
+        # Ask only for a page size EDGAR honours: it rounds an unhonored
+        # ``count`` down, and a page shorter than requested is the scanner's
+        # only signal that the feed ran out.
+        count = _atom_honored_count(min(page_size, entry_limit - start))
         url = _atom_page_url(base_url, start=start, count=count)
-        page = parse_latest_filings_atom(_fetch_bytes(fetch, url))
+        try:
+            page, raw_entries, retries = _fetch_atom_page(
+                fetch, url, attempts=fetch_attempts
+            )
+        except SecSourceUnavailableError as exc:
+            # Every page already walked survives.  Discarding them would trade a
+            # whole scan for one transient page, and ``complete=False`` still
+            # declares the gap that the discarding did.
+            return AtomScanResult(
+                tuple(collected),
+                pages,
+                False,
+                "fetch_error",
+                fetch_retries=fetch_retries + fetch_attempts - 1,
+                error=exc,
+            )
+        fetch_retries += retries
         pages += 1
-        if not page:
-            return AtomScanResult(tuple(collected), pages, True, "short_page")
+        if raw_entries == 0:
+            return AtomScanResult(
+                tuple(collected), pages, True, "short_page", fetch_retries=fetch_retries
+            )
         page_accessions = {entry.accession for entry in page}
         new_count = 0
-        for offset, entry in enumerate(page, start=start + 1):
+        for entry in page:
             if entry.accession in seen:
                 continue
             seen.add(entry.accession)
-            collected.append(replace(entry, source_ordinal=offset))
+            # ``entry.source_ordinal`` is the raw position within this page, so
+            # a dropped non-13F form never shifts the entries behind it.
+            collected.append(
+                replace(entry, source_ordinal=start + entry.source_ordinal)
+            )
             new_count += 1
-        if len(page) < count:
-            return AtomScanResult(tuple(collected), pages, True, "short_page")
+        # Completeness is a statement about the FEED, so it is decided on the
+        # raw entry count.  The form filter drops 13F-family forms outside
+        # FORM_TYPES and must never be able to end the scan.
+        if raw_entries < count:
+            return AtomScanResult(
+                tuple(collected), pages, True, "short_page", fetch_retries=fetch_retries
+            )
         if boundary and page_accessions and page_accessions.issubset(known):
             stamps = []
             for entry in page:
@@ -1138,11 +1315,23 @@ def scan_latest_filings_atom(
                     stamp = stamp.replace(tzinfo=timezone.utc)
                 stamps.append(stamp)
             if stamps and min(stamps) < boundary:
-                return AtomScanResult(tuple(collected), pages, True, "known_overlap")
-        if new_count == 0:
-            return AtomScanResult(tuple(collected), pages, False, "stalled")
-        start += count
-    return AtomScanResult(tuple(collected), pages, False, "ephemeral_limit")
+                return AtomScanResult(
+                    tuple(collected),
+                    pages,
+                    True,
+                    "known_overlap",
+                    fetch_retries=fetch_retries,
+                )
+        # A page whose every entry was filtered out is not a stall: there was
+        # nothing on it that could have been new.
+        if page and new_count == 0:
+            return AtomScanResult(
+                tuple(collected), pages, False, "stalled", fetch_retries=fetch_retries
+            )
+        start += raw_entries
+    return AtomScanResult(
+        tuple(collected), pages, False, "ephemeral_limit", fetch_retries=fetch_retries
+    )
 
 
 def parse_master_index(source: bytes | str) -> pd.DataFrame:
@@ -1573,9 +1762,15 @@ def parse_filing_package(
     for name, body in body_by_name.items():
         expected_size = descriptor_by_name[name].size
         if expected_size is not None and len(body) != expected_size:
-            raise SecSourceError(
-                f"filing document size mismatch for {name}: "
-                f"index={expected_size}, body={len(body)}"
+            # SEC's index.json `size` is advisory: it provably disagrees with
+            # SEC's own Content-Length and served bytes (block-rounded values
+            # observed in production). Transport truncation is gated
+            # authoritatively at fetch time against Content-Length.
+            print(
+                "::warning title=sec-index-size-mismatch::"
+                f"{index_url} {name}: index={expected_size}, "
+                f"body={len(body)}",
+                flush=True,
             )
 
     header_name = next(
@@ -1756,6 +1951,9 @@ def read_filing_package(
 
 __all__ = [
     "ATOM_EPHEMERAL_ENTRY_LIMIT",
+    "ATOM_FETCH_ATTEMPTS",
+    "ATOM_HONORED_PAGE_SIZES",
+    "ATOM_MAX_FETCH_ATTEMPTS",
     "ATOM_PAGE_SIZE",
     "BulkInvariantFinding",
     "BulkTables",
@@ -1767,6 +1965,7 @@ __all__ = [
     "LATEST_FILINGS_ATOM_URL",
     "REPORTED_BY_COLUMNS",
     "SecSourceError",
+    "SecSourceUnavailableError",
     "AtomScanResult",
     "iter_bulk_holding_chunks",
     "normalize_accession",

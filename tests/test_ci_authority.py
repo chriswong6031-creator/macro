@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import io
 import json
 import re
+import time
+import urllib.error
+import urllib.request
+from email.message import Message
 from pathlib import Path
 from typing import Any
 
@@ -740,3 +745,329 @@ def test_workflow_is_required_workflow_shaped_and_never_executes_candidate() -> 
     assert "ci-authority/main" in source
     assert "ci-authority/codex/merge-queue-pilot" in source
     assert "metadata-only retarget seam" in source
+
+
+# ---------------------------------------------------------------------------
+# Bounded retry-with-backoff on the GitHubApi REST client.
+#
+# The fence failed closed fleet-wide on 2026-08-17 (~3h, 4 branches) because a
+# single transient 504/429 killed a one-shot ``urlopen`` and a bare
+# ``except Exception:`` discarded the exception, leaving one opaque reason
+# string (``author_admin_permission_api_unavailable``) for every failure mode.
+# These tests exercise the retry loop, the classification of failure modes,
+# and the swallowed-exception annotation directly against ``GitHubApi`` via a
+# scripted fake for ``urllib.request.urlopen`` — no real network calls.
+# ---------------------------------------------------------------------------
+
+
+class _FakeHttpResponse:
+    """Minimal stand-in for the context manager ``urlopen`` returns on success."""
+
+    def __init__(self, status: int, body: bytes) -> None:
+        self.status = status
+        self._body = body
+
+    def read(self, _n: int = -1) -> bytes:
+        return self._body
+
+    def __enter__(self) -> "_FakeHttpResponse":
+        return self
+
+    def __exit__(self, *exc_info: object) -> bool:
+        return False
+
+
+class _ScriptedUrlopen:
+    """Monkeypatch target for ``urllib.request.urlopen`` with scripted outcomes.
+
+    Each scripted outcome is either a ``(status, body)`` pair (success) or a
+    ``BaseException`` instance to raise (transient or terminal failure).
+    """
+
+    def __init__(self, outcomes: list) -> None:
+        self._outcomes = list(outcomes)
+        self.calls = 0
+
+    def __call__(self, request: object, timeout: float | None = None) -> _FakeHttpResponse:
+        self.calls += 1
+        if not self._outcomes:
+            raise AssertionError("_ScriptedUrlopen ran out of scripted outcomes")
+        outcome = self._outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        status, body = outcome
+        return _FakeHttpResponse(status, body)
+
+
+def _http_error(
+    status: int,
+    *,
+    headers: dict[str, str] | None = None,
+    body: bytes = b"",
+) -> urllib.error.HTTPError:
+    message = Message()
+    for key, value in (headers or {}).items():
+        message[key] = value
+    return urllib.error.HTTPError(
+        "https://api.github.test/x", status, "err", message, io.BytesIO(body)
+    )
+
+
+_OK_PERMISSION_BODY = b'{"permission":"admin","user":{"login":"operator"}}'
+
+
+def _retry_api(monkeypatch: pytest.MonkeyPatch, outcomes: list, **kwargs: object):
+    """Build a ``GitHubApi`` wired to a scripted urlopen and a sleep recorder."""
+    scripted = _ScriptedUrlopen(outcomes)
+    monkeypatch.setattr(urllib.request, "urlopen", scripted)
+    sleeps: list[float] = []
+    kwargs.setdefault("sleep", sleeps.append)
+    kwargs.setdefault("jitter", lambda: 0.5)
+    api = AUTHORITY.GitHubApi("https://api.github.test", "token", **kwargs)
+    return api, scripted, sleeps
+
+
+def test_retry_then_succeed_on_transient_503(monkeypatch: pytest.MonkeyPatch) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [
+            _http_error(503),
+            _http_error(503),
+            (200, _OK_PERMISSION_BODY),
+        ],
+    )
+
+    result = api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert result == {"permission": "admin", "user": {"login": "operator"}}
+    assert scripted.calls == 3
+    assert len(sleeps) == 2
+    for delay in sleeps:
+        assert 0 < delay <= AUTHORITY.API_RETRY_MAX_DELAY_SECONDS + AUTHORITY.API_RETRY_BASE_DELAY_SECONDS
+
+
+def test_retry_exhausted_then_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [_http_error(503) for _ in range(AUTHORITY.API_RETRY_ATTEMPTS)],
+    )
+
+    with pytest.raises(AUTHORITY.GitHubApiError) as excinfo:
+        api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert scripted.calls == AUTHORITY.API_RETRY_ATTEMPTS
+    assert excinfo.value.kind == "unavailable"
+    assert len(sleeps) == AUTHORITY.API_RETRY_ATTEMPTS - 1
+
+
+@pytest.mark.parametrize("status", [401, 403, 404])
+def test_non_retryable_status_fails_immediately_without_retrying(
+    monkeypatch: pytest.MonkeyPatch, status: int
+) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [_http_error(status, body=b'{"message":"nope"}')],
+    )
+
+    with pytest.raises(AUTHORITY.GitHubApiError) as excinfo:
+        api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert scripted.calls == 1
+    assert sleeps == []
+    assert excinfo.value.kind == "rejected"
+    assert excinfo.value.retryable is False
+
+
+def test_429_with_retry_after_header_is_retried_and_honors_the_server_hint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [
+            _http_error(429, headers={"Retry-After": "2"}),
+            (200, _OK_PERMISSION_BODY),
+        ],
+    )
+
+    result = api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert result["permission"] == "admin"
+    assert scripted.calls == 2
+    assert len(sleeps) == 1
+    assert sleeps[0] >= 2.0
+    assert sleeps[0] <= AUTHORITY.API_RETRY_MAX_DELAY_SECONDS + AUTHORITY.API_RETRY_BASE_DELAY_SECONDS
+
+
+def test_403_with_ratelimit_remaining_zero_is_rate_limited_not_a_verdict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reset = str(int(time.time()) + 30)
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [
+            _http_error(
+                403,
+                headers={"x-ratelimit-remaining": "0", "x-ratelimit-reset": reset},
+            )
+            for _ in range(AUTHORITY.API_RETRY_ATTEMPTS)
+        ],
+    )
+
+    with pytest.raises(AUTHORITY.GitHubApiError) as excinfo:
+        api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert excinfo.value.kind == "rate_limited"
+    assert excinfo.value.retryable is True
+    assert scripted.calls == AUTHORITY.API_RETRY_ATTEMPTS
+    assert len(sleeps) == AUTHORITY.API_RETRY_ATTEMPTS - 1
+
+
+@pytest.mark.parametrize(
+    "make_exc",
+    [
+        lambda: TimeoutError("timed out"),
+        lambda: urllib.error.URLError(TimeoutError("timed out")),
+    ],
+    ids=["bare_timeout_error", "urlerror_wrapping_timeout"],
+)
+def test_timeout_is_classified_timeout_and_retried(
+    monkeypatch: pytest.MonkeyPatch, make_exc
+) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [make_exc(), (200, _OK_PERMISSION_BODY)],
+    )
+
+    result = api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert result["permission"] == "admin"
+    assert scripted.calls == 2
+    assert len(sleeps) == 1
+
+
+def test_post_is_never_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    api, scripted, sleeps = _retry_api(monkeypatch, [_http_error(503)])
+
+    with pytest.raises(AUTHORITY.GitHubApiError) as excinfo:
+        api.create_check(REPOSITORY, {"name": "ci-authority/main", "head_sha": HEAD})
+
+    assert scripted.calls == 1
+    assert sleeps == []
+    # A retried POST that had actually succeeded server-side would publish a
+    # duplicate check run on the PR head, so this must never retry regardless
+    # of the failure's classified retryability.
+    assert excinfo.value.kind == "unavailable"
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [None, {"Retry-After": "999999"}],
+    ids=["no_hint_default_backoff", "far_future_retry_after"],
+)
+def test_retry_never_sleeps_past_the_total_budget(
+    monkeypatch: pytest.MonkeyPatch, headers: dict[str, str] | None
+) -> None:
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [_http_error(503, headers=headers)],
+        retry_budget=0.3,
+    )
+
+    with pytest.raises(AUTHORITY.GitHubApiError):
+        api.get_pull(REPOSITORY, PR_NUMBER)
+
+    assert scripted.calls == 1
+    assert sleeps == []
+    assert sum(sleeps) <= AUTHORITY.API_RETRY_TOTAL_BUDGET_SECONDS
+
+
+@pytest.mark.parametrize(
+    "kind,expected_reason",
+    [
+        ("rate_limited", "author_admin_permission_rate_limited"),
+        ("timeout", "author_admin_permission_timeout"),
+        ("rejected", "author_admin_permission_api_rejected"),
+        ("unavailable", "author_admin_permission_api_unavailable"),
+    ],
+)
+def test_reject_reason_names_the_classified_failure_mode_end_to_end(
+    kind: str, expected_reason: str
+) -> None:
+    class KindFailingApi(FakeApi):
+        def get_collaborator_permission(self, repository: str, login: str) -> object:
+            self.calls.append(("permission", repository, login))
+            raise AUTHORITY.GitHubApiError("boom", kind=kind)
+
+    api = KindFailingApi([_file("scripts/run_ci_pack.py")])
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(), REPOSITORY, api
+    )
+
+    assert code == 1
+    assert decision["reason"] == expected_reason
+    assert check["status"] == "completed"
+    assert check["conclusion"] == "failure"
+    assert api.checks[-1] == check
+
+
+def test_existing_unclassified_exception_still_maps_to_api_unavailable() -> None:
+    """A bare exception with no ``kind`` attribute must still fail closed as before."""
+    api = FakeApi([_file("scripts/run_ci_pack.py")], fail="permission")
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(), REPOSITORY, api
+    )
+    assert code == 1
+    assert decision["reason"] == "author_admin_permission_api_unavailable"
+    assert check["conclusion"] == "failure"
+
+
+def test_swallowed_exception_annotation_starts_at_column_zero_on_one_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    try:
+        raise ValueError("root cause")
+    except ValueError as cause:
+        try:
+            raise AUTHORITY.GitHubApiError(
+                "GitHub GET request failed", kind="timeout", status=None
+            ) from cause
+        except AUTHORITY.GitHubApiError as raised:
+            AUTHORITY._log_api_failure("current_pull", raised)
+
+    captured = capsys.readouterr()
+    stdout_lines = [line for line in captured.out.splitlines() if line]
+    annotation_lines = [line for line in stdout_lines if line.startswith("::")]
+
+    assert annotation_lines, f"no line starting with '::' in stdout: {captured.out!r}"
+    assert len(annotation_lines) == 1
+    assert "\n" not in annotation_lines[0]
+    assert "current_pull" in annotation_lines[0]
+
+
+def test_retry_budget_is_consumed_cumulatively_across_attempts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The budget must SHRINK as it is spent, not be re-checked against the total.
+
+    With ``jitter=0.5`` the backoff is deterministic: 0.75s, then 1.5s, then
+    3.0s.  A 2.0s budget therefore affords exactly the first sleep (leaving
+    1.25s) and must refuse the second (1.5s > 1.25s).  Drop the running
+    subtraction and each delay is compared against the full 2.0s instead, so
+    a second and third sleep are wrongly allowed — this test is what separates
+    a real cumulative budget from a per-delay cap.
+    """
+    api, scripted, sleeps = _retry_api(
+        monkeypatch,
+        [_http_error(503) for _ in range(AUTHORITY.API_RETRY_ATTEMPTS)],
+        retry_budget=2.0,
+    )
+
+    with pytest.raises(AUTHORITY.GitHubApiError) as excinfo:
+        api.get_collaborator_permission(REPOSITORY, "operator")
+
+    assert scripted.calls == 2, "budget must stop the loop before the third attempt"
+    assert sleeps == [pytest.approx(0.75)]
+    assert sum(sleeps) <= 2.0
+    # Fail-closed: exhausting the budget rejects, it never returns a verdict.
+    assert excinfo.value.retryable is True
+    assert excinfo.value.kind == "unavailable"

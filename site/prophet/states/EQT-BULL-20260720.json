@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "EQT-BULL-20260720",
-  "asof": "2026-08-13",
+  "asof": "2026-08-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.8,
-  "raw_confidence": 63.6,
-  "delta_vs_base": 2.8,
+  "management_confidence": 54.7,
+  "raw_confidence": 50.9,
+  "delta_vs_base": -5.3,
   "recommended_action": "hold",
-  "human_state": "On Track",
+  "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 27.6,
-    "pace": 62.3,
+    "progress": 16.0,
+    "pace": 25.9,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.45,
-    "dist_to_t1_r": 1.05,
-    "dist_to_t2_r": 2.55,
-    "horizon_pct_used": 37.8,
-    "p1": 0.3001,
-    "p2": 0.1501,
+    "dist_to_stop_r": 1.219,
+    "dist_to_t1_r": 1.281,
+    "dist_to_t2_r": 2.781,
+    "horizon_pct_used": 48.9,
+    "p1": 0.1457,
+    "p2": 0.0729,
     "p3": null,
-    "move_r": 0.45,
+    "move_r": 0.219,
     "mfe_r": 0.45,
     "mae_r": -0.167
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-29",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 17,
-  "tau": 0.3778
+  "days_elapsed": 22,
+  "tau": 0.4889
 }

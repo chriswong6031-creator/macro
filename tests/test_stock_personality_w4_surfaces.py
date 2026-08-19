@@ -118,14 +118,20 @@ def test_dashboard_personality_chips_stay_retired():
     real placement guards for the new home. Positive controls prove we read
     the live template (selector-substring vacuity guard), not a stub.
     """
-    src = (config.ROOT / "templates" / "dashboard.html.j2").read_text()
+    # The board's card loop lives in _us_board_cards.html.j2 since the us_stocks
+    # tier split (docs/TIER_PREVIEW_PATTERN.md) — the shell and the /premiumdata/
+    # payload render cards from ONE source. Read the PAIR: the positive controls
+    # moved with the loop, and more importantly a revived chip would land in the
+    # partial, where a dashboard-only tombstone could never see it.
+    src = ((config.ROOT / "templates" / "dashboard.html.j2").read_text()
+           + (config.ROOT / "templates" / "_us_board_cards.html.j2").read_text())
     # Positive controls — live board markup that must be present today.
     assert 'id="us-stocktable-data"' in src, "positive control: W8-R6 serializer"
     assert "sector_stance" in src, "positive control: RLT-R6 fold"
     # The retired W4 surface: markup AND its orphan CSS stay gone.
     for _gone in ("nb-sp-chips", "nb-sp-chart", "nb-sp-mode"):
         assert _gone not in src, (
-            f"'{_gone}' reappeared in dashboard.html.j2 — the W4 dashboard chip "
+            f"'{_gone}' reappeared in the dashboard board markup — the W4 chip "
             "surface was retired by PR #3256; if chips are being revived, replace "
             "this tombstone with real placement guards."
         )

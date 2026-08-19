@@ -1,19 +1,27 @@
 {
-  "belief_time": "2026-08-15",
+  "belief_time": "2026-08-18",
   "capability_counts": {
     "measurement_candidate": 499,
     "semantic_only": 142
   },
-  "computed_at": "2026-08-15T02:32:47Z",
+  "computed_at": "2026-08-18T10:40:36Z",
   "counts": {
     "capability": 641,
     "edges": 8292,
     "edges_latest_belief": 8292,
     "evidence": 11,
+    "identity_resolution": 2806,
     "nodes": 3878
   },
   "engine_version": "theme_graph.v1",
   "era": "observed",
+  "identity_resolution_state_counts": {
+    "DEFERRED_IDENTITY_EXCEPTION": 2,
+    "ENTITY_TYPE_CONFLICT": 1,
+    "NOT_IN_MASTER": 1869,
+    "RESOLVED": 701,
+    "UNSUPPORTED_MARKET": 233
+  },
   "lane": "nightly",
   "local_plane": {
     "finviz": {
@@ -104,9 +112,10 @@
   },
   "rows_appended": {
     "capability": 641,
-    "edges": 2664,
-    "evidence": 2,
-    "nodes": 1171
+    "edges": 0,
+    "evidence": 0,
+    "identity_resolution": 2806,
+    "nodes": 0
   },
   "skipped_suites": {},
   "ths_unmapped_concept_count": 312,

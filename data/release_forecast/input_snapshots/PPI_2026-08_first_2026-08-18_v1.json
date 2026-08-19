@@ -1,0 +1,19 @@
+{
+  "prediction_id": "PPI:2026-08:first:2026-08-18:v1",
+  "asof": "2026-08-18",
+  "features": {
+    "ppi_hl_mom_lag1": -0.0019161248291599264,
+    "ppi_hl_mom_lag2": -0.6932683830291886,
+    "ppi_hl_mom_lag3": 0.7431499846641376,
+    "gasoline_mom": 2.8037383177570208,
+    "ppifes_mom_lag1": 0.29481285228185605
+  },
+  "legs": {
+    "gasoline_mom": "unrevised",
+    "ppi_hl_mom_lag1": "present",
+    "ppi_hl_mom_lag2": "present",
+    "ppi_hl_mom_lag3": "present",
+    "ppifes_mom_lag1": "present"
+  },
+  "inputs_hash": "285b3394a3f2652f72bd5407d6c949df30926766b688c8232b2e8b6c5e997055"
+}

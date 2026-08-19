@@ -233,6 +233,14 @@
         return;
       }
       if (stashed !== null) return;
+      /* SERVER-COLLAPSED (docs/TIER_PREVIEW_PATTERN.md, us_stocks adjacent-panel
+         gate): on a gated build the member names are not in this document at all
+         — the shell already ships the count and the names ride the paid payload.
+         Such a list has no .tt-n children, so counting them here would rewrite a
+         truthful "7 names" to "0 names"; and stashing that text would let this
+         function later RESTORE it over the names the payload just hydrated in.
+         Leave it entirely alone: nothing stashed, nothing to undo. */
+      if (!list.querySelector(".tt-n")) return;
       var n = 0;
       list.querySelectorAll(".tt-n").forEach(function (el) {
         if (el.classList.contains("tt-more")) {

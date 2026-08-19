@@ -22,6 +22,9 @@ blast_radius: user_facing
 ambiguity: scoped
 owns_paths:
   - engine/us_prophet_fusion.py
+  - engine/us_prophet_w3.py
+  - scripts/accrue_us_prophet_w3.py
+  - scripts/report_us_prophet_w3.py
   - scripts/us_prophet_fusion_compare.py
   - research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md
   - research/prophet_fusion/
@@ -35,6 +38,7 @@ decisions:
   - DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW
   - DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-REGISTRY-QUESTION
   - DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY
+  - DEC:W3-PROSPECTIVE-SAMPLE-IGNORES-GENERIC-BACKFILL
 discoveries:
   - DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER
 landmines:
@@ -85,8 +89,11 @@ do_not_redo:
   - "Do not copy prophet_shadow_* into canonical prophet_* columns on v3."
   - "Do not backfill the Pages-only v3 night; do not count retries of one as_of as
     independent sessions; do not stamp shadow on us_prophet_v2_fallback."
-  - "Do not read W3 forward outcomes before research/prophet_fusion/W3_RACE_PREREG.md
-    is frozen, and do not treat PIT-lawful short interest as estimable."
+  - "Do not read W3 forward outcomes before the 20 matured H=10 floor in
+      research/prophet_fusion/W3_RACE_PREREG.md. Do not treat PIT-lawful short
+      interest as estimable. Do not let #5878 generic backfill resurrect a W3
+      session_missing or degraded_or_unpaired receipt
+      (DEC:W3-PROSPECTIVE-SAMPLE-IGNORES-GENERIC-BACKFILL)."
   - "The two DNR row amendments LANDED in PR-0 (#5593):
     DNR:KILL-FUSED-COMPOSITE Amendment 3 and DNR:KILL-POSITIONING-FUSION Amendment 1,
     with compiled blocklists regenerated per masterplan §12 and §17 attack 13; do not
@@ -138,9 +145,12 @@ waves:
     title: "PR-3 — forward race instrumentation, split PR-3A..3D. Charter:
       research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
       outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
-      until PR-3D live-accepts instrumentation. PR-3A (#5813) is semantics+prereg.
-      PR-3B is outcome-blind LOFO + member census (no durable W3 store, no nightly
-      wiring)."
+      until PR-3D live-accepts instrumentation on a natural us_prophet_ledgers
+      run. PR-3A (#5813) semantics+prereg. PR-3B (#5829) outcome-blind LOFO +
+      member census. PR-3C (#5839) durable paired ledger + wiring. PR-3D is
+      production commissioning + durable session_missing/provenance fence +
+      lawful pre-floor status surface. Do not mark this wave done until the
+      PASS PATH or an honest named gap."
     status: todo
   - id: w4
     depends_on: [w3]
@@ -160,15 +170,17 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  PR-3B (this wave) lands exact outcome-blind LOFO plus the full member census on
-  the existing fusion receipt. After it merges, a FRESH session starts PR-3C only:
-  the durable paired forward ledger + us_prophet_ledgers wiring. Do not read
-  forward C1-vs-shadow outcomes. Do not create data/us_prophet_rank/w3 in this
-  wave. w2 is done (#5700) but real C2 commissioning is still data-gated. w2b
-  live-accepted. w3 stays todo until PR-3D. Durable paired-race N remains 0 until
-  the first post-#5769 candidates-store commit. #5742 is external availability
-  debt. Canonical five-leg nulls on v3 are correct (#5769). STILL OPEN from w1:
-  the §13.0 live-accrual closure.
+  PR-3D (this wave) closes W3 instrumentation: durable session_missing receipts,
+  terminal provenance fence vs #5878, lawful pre-floor status surface, and live
+  three-lane acceptance. w3 stays todo until a natural us_prophet_ledgers run
+  proves the path or an honest named gap is recorded. Do not read forward
+  C1-vs-shadow outcomes. Do not implement C2/C3/C4/C5 or Prophet V4. Durable
+  paired-race matured H=10 N remains 0 until the first post-#5769 candidates
+  stamp matures. Committed board as_of 2026-08-17 already carries 65 v3+shadow
+  buy rows and a prophet_fusion.w3_structural.v1 receipt; grades have never
+  landed on main, so the first lawful liveness is unmatured. #5742 remains
+  external availability debt. Canonical five-leg nulls on v3 are correct (#5769).
+  STILL OPEN from w1: the §13.0 live-accrual closure.
 ---
 
 ## Context

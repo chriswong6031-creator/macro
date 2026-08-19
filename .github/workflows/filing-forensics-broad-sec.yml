@@ -1,0 +1,88 @@
+name: filing-forensics-broad-sec
+# Filing Forensics FF-1 — incremental broad SEC source plane.
+#
+# Polls Submissions for every issuer in data/edgar/fundamentals.parquet, admits
+# exact SEC bytes into the private fundamental_forensics/broad-sec/v1/ prefix,
+# and fetches Company Facts only when an issuer's relevant 10-K/10-Q (and
+# existing 20-F/40-F) filing state changes.
+#
+# This lane is source truth only. It does not rebuild the workbench, run
+# detectors, or publish findings. A rerender cannot make the source current.
+#
+# FAILURE SEMANTICS. A red lane is visible. Partial issuer updates may persist,
+# but latest-complete does not advance. continue-on-error is forbidden.
+#
+# CONCURRENCY. Shares filing-forensics-sec with Wave-2 so the two lanes cannot
+# hammer data.sec.gov at once. cancel-in-progress is false: never kill a
+# mid-write evidence poll.
+on:
+  schedule:
+    # 03:15 UTC — after Wave-2's 02:30 acquire/project/sync window, still well
+    # before daily.yml's engine restore. The shared concurrency group serializes
+    # the two lanes if Wave-2 is still running.
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: incremental (default) or recovery. Schedule is always incremental.
+        required: false
+        default: incremental
+        type: choice
+        options:
+          - incremental
+          - recovery
+      recovery_from:
+        description: ISO-8601 Z stale broad-source vintage. Required for recovery.
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: filing-forensics-sec
+  cancel-in-progress: false
+
+jobs:
+  poll_broad_sec:
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: poll incremental broad SEC source plane (hard gate)
+        env:
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          # Schedule cannot enter recovery merely because a backlog exists.
+          # Recovery is an explicit workflow_dispatch choice.
+          MODE="incremental"
+          RECOVERY_FROM=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ github.event.inputs.mode || 'incremental' }}"
+            RECOVERY_FROM="${{ github.event.inputs.recovery_from || '' }}"
+          fi
+          SCRATCH="$HOME/.cache/mm-ff-broad-sec/scratch"
+          mkdir -p "$SCRATCH"
+          if [ "$MODE" = "recovery" ]; then
+            if [ -z "$RECOVERY_FROM" ]; then
+              echo "recovery mode requires recovery_from" >&2
+              exit 1
+            fi
+            set -- --mode recovery --recovery-from "$RECOVERY_FROM" --scratch-root "$SCRATCH"
+          else
+            set -- --mode incremental --scratch-root "$SCRATCH"
+          fi
+          python -m scripts.run_fundamental_forensics_broad_sec "$@"

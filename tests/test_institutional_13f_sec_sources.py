@@ -12,6 +12,9 @@ import pytest
 
 from engine.institutional_census.sec_sources import (
     ATOM_EPHEMERAL_ENTRY_LIMIT,
+    ATOM_FETCH_ATTEMPTS,
+    ATOM_HONORED_PAGE_SIZES,
+    ATOM_MAX_FETCH_ATTEMPTS,
     COVER_PAGE_COLUMNS,
     HOLDING_COLUMNS,
     INCLUDED_MANAGER_COLUMNS,
@@ -20,6 +23,7 @@ from engine.institutional_census.sec_sources import (
     SUMMARY_PAGE_COLUMNS,
     FilingDiscovery,
     SecSourceError,
+    SecSourceUnavailableError,
     iter_bulk_holding_chunks,
     parse_filing_index,
     parse_filing_package,
@@ -453,19 +457,31 @@ def test_atom_unicode_string_ignores_stale_byte_encoding_declaration() -> None:
     assert parse_latest_filings_atom(source)[0].company_name == "Société de Gestion"
 
 
-def _atom_page(start: int, count: int) -> bytes:
+def _atom_page(start: int, count: int, *, forms: dict[int, str] | None = None) -> bytes:
+    """Render ``count`` RAW entries; ``forms`` overrides the form of an offset."""
+
+    forms = forms or {}
     rows = []
-    for sequence in range(start + 1, start + count + 1):
+    for offset, sequence in enumerate(range(start + 1, start + count + 1)):
         accession = f"0000000001-26-{sequence:06d}"
         compact = accession.replace("-", "")
+        form = forms.get(offset, "13F-HR")
+        # Only the 13F forms the parser keeps carry a parseable title; EDGAR's
+        # other 13F-family titles are shaped differently and must be skipped on
+        # the category term alone.
+        title = (
+            f"{form} - Page Fixture ({2:010d}) (Filer)"
+            if form in {"13F-HR", "13F-HR/A", "13F-NT", "13F-NT/A"}
+            else f"{form} - Page Fixture"
+        )
         rows.append(
             f"""
             <entry>
-              <title>13F-HR - Page Fixture ({2:010d}) (Filer)</title>
+              <title>{title}</title>
               <link rel="alternate" href="https://www.sec.gov/Archives/edgar/data/2/{compact}/{accession}-index.htm"/>
               <summary type="html">Filed: 2026-08-07 AccNo: {accession}</summary>
               <updated>2026-08-07T17:00:00-04:00</updated>
-              <category term="13F-HR"/><id>{accession}</id>
+              <category term="{form}"/><id>{accession}</id>
             </entry>"""
         )
     return (
@@ -476,7 +492,168 @@ def _atom_page(start: int, count: int) -> bytes:
     ).encode()
 
 
+def _edgar_honored(count: int) -> int:
+    """Round ``count`` down the way the live browse-edgar surface does."""
+
+    return next(
+        (size for size in reversed(ATOM_HONORED_PAGE_SIZES) if size <= count),
+        ATOM_HONORED_PAGE_SIZES[0],
+    )
+
+
+def _deep_feed(
+    calls: list[tuple[int, int]],
+    *,
+    total: int | None = None,
+    forms: dict[int, str] | None = None,
+):
+    """A fake browse-edgar that rounds ``count`` down exactly like the real one.
+
+    ``total`` bounds the feed (``None`` means bottomless); ``forms`` overrides the
+    form of a raw offset on the first page.
+    """
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        calls.append((start, count))
+        served = _edgar_honored(count)
+        if total is not None:
+            served = max(0, min(served, total - start))
+        return _atom_page(start, served, forms=forms if start == 0 else None)
+
+    return fetch
+
+
 def test_atom_scanner_has_explicit_ephemeral_boundary() -> None:
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(_deep_feed(calls))
+    assert len(result.entries) == ATOM_EPHEMERAL_ENTRY_LIMIT == 930
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+    # The 930 boundary is not a multiple of the 100-entry page, so the tail is
+    # paged at sizes EDGAR actually serves rather than in one unhonored ask.
+    assert calls[-1] == (920, 10)
+    assert result.pages_fetched == len(calls) == 11
+    with pytest.raises(ValueError, match="entry_limit"):
+        scan_latest_filings_atom(_deep_feed([]), entry_limit=931)
+
+
+def test_atom_scanner_only_requests_page_sizes_edgar_honors() -> None:
+    """EDGAR rounds an unhonored ``count`` DOWN, which reads as a short page.
+
+    Measured against the live feed 2026-08-17: ``count=50`` serves 40 entries and
+    ``count=30`` serves 20.  Production runs ``--max-accessions 750``, so the tail
+    page used to ask for 50, receive 40, and call the truncated scan complete.
+    """
+
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(_deep_feed(calls), entry_limit=750)
+    assert [count for _start, count in calls if count not in ATOM_HONORED_PAGE_SIZES] == []
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+    assert len(result.entries) == 750
+    assert calls[-1] == (740, 10)
+
+
+def test_atom_scanner_form_filter_never_shortens_a_page() -> None:
+    """A full page carrying a non-``FORM_TYPES`` 13F form is not a short page.
+
+    ``type=13F`` prefix-matches on EDGAR (verified 2026-08-17: ``type=13F-H``
+    returns both ``13F-HR`` and ``13F-HR/A``), so the feed can serve 13F-family
+    forms outside ``FORM_TYPES`` — ``13FCONP`` is a live example.  Deciding the
+    page length after the filter ended the scan and still reported it complete.
+    """
+
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, forms={5: "13FCONP"}), entry_limit=200
+    )
+    assert not result.complete, "a filtered entry must not end the scan as complete"
+    assert result.stop_reason == "ephemeral_limit"
+    assert result.pages_fetched == 2
+    # 200 raw entries walked, minus the single 13FCONP the filter drops.
+    assert len(result.entries) == 199
+    assert {entry.form for entry in result.entries} == {"13F-HR"}
+
+
+def test_atom_scanner_filtered_entry_does_not_shift_later_ordinals() -> None:
+    calls: list[tuple[int, int]] = []
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, total=100, forms={5: "13FCONP"}), entry_limit=200
+    )
+    assert result.complete
+    assert result.stop_reason == "short_page"
+    ordinals = [entry.source_ordinal for entry in result.entries]
+    # Raw feed positions 1..100 with position 6 (offset 5) dropped by the filter.
+    assert ordinals == [value for value in range(1, 101) if value != 6]
+
+
+def test_atom_scanner_all_filtered_full_page_is_not_a_stall() -> None:
+    """A page with no 13F entries had nothing that *could* have been new."""
+
+    calls: list[tuple[int, int]] = []
+    forms = {offset: "13FCONP" for offset in range(100)}
+    result = scan_latest_filings_atom(
+        _deep_feed(calls, total=200, forms=forms), entry_limit=200
+    )
+    assert result.stop_reason != "stalled"
+    assert result.pages_fetched == 2
+    assert len(result.entries) == 100
+
+
+def test_atom_scanner_short_page_is_complete() -> None:
+    payload = (FIXTURES / "latest_filings.atom").read_bytes()
+    result = scan_latest_filings_atom(lambda _url: payload)
+    assert result.complete
+    assert result.stop_reason == "short_page"
+    assert result.pages_fetched == 1
+
+
+# SEC answers a brief outage with this, carrying an HTTP 200, so the document
+# type is the only thing separating "SEC is unwell" from "the feed is broken".
+UNAVAILABLE_HTML = (
+    b"<!DOCTYPE html>\n<html lang=\"en\"><head>"
+    b"<title>SEC.gov | File Unavailable</title></head>"
+    b"<body><h1>File Unavailable</h1></body></html>"
+)
+
+
+def _atom_fetcher(
+    unavailable_at: int, *, times: int | None = None
+) -> tuple[object, list[int]]:
+    """Serve normal pages, but fail the page at ``unavailable_at``.
+
+    ``times=None`` fails that page forever; an int fails only the first N
+    attempts so the retry can be observed recovering.
+    """
+
+    calls: list[int] = []
+
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        start = int(query["start"][0])
+        count = int(query["count"][0])
+        calls.append(start)
+        if start == unavailable_at and (
+            times is None or calls.count(start) <= times
+        ):
+            return UNAVAILABLE_HTML
+        return _atom_page(start, count)
+
+    return fetch, calls
+
+
+def test_atom_scanner_matches_the_live_production_page_ladder() -> None:
+    """Anchor the happy path to what the real feed served on 2026-08-17.
+
+    Observed against live EDGAR at 04:07Z with the production entry_limit of
+    750, when the feed was genuinely deeper than that: 9 pages, no unhonored
+    page size, and the tail walked 700->740->750 rather than stopping short.
+    A change that alters this ladder has changed what production discovers.
+    """
+
     calls: list[tuple[int, int]] = []
 
     def fetch(url: str) -> bytes:
@@ -486,22 +663,160 @@ def test_atom_scanner_has_explicit_ephemeral_boundary() -> None:
         calls.append((start, count))
         return _atom_page(start, count)
 
-    result = scan_latest_filings_atom(fetch)
-    assert len(result.entries) == ATOM_EPHEMERAL_ENTRY_LIMIT == 930
-    assert result.pages_fetched == 10
+    result = scan_latest_filings_atom(fetch, entry_limit=750)
+
+    assert calls == [
+        (0, 100),
+        (100, 100),
+        (200, 100),
+        (300, 100),
+        (400, 100),
+        (500, 100),
+        (600, 100),
+        (700, 40),
+        (740, 10),
+    ]
+    assert [count for _start, count in calls if count not in ATOM_HONORED_PAGE_SIZES] == []
+    assert result.pages_fetched == 9
+    assert len(result.entries) == 750
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 751))
     assert not result.complete
     assert result.stop_reason == "ephemeral_limit"
-    assert calls[-1] == (900, 30)
-    with pytest.raises(ValueError, match="entry_limit"):
-        scan_latest_filings_atom(fetch, entry_limit=931)
+    assert result.fetch_retries == 0
 
 
-def test_atom_scanner_short_page_is_complete() -> None:
-    payload = (FIXTURES / "latest_filings.atom").read_bytes()
-    result = scan_latest_filings_atom(lambda _url: payload)
-    assert result.complete
-    assert result.stop_reason == "short_page"
-    assert result.pages_fetched == 1
+def test_atom_scanner_advances_by_served_not_by_requested() -> None:
+    """The cursor must follow what EDGAR SERVED, against a hypothetical over-server.
+
+    Under-serving is caught by the ``raw_entries < count`` check.  Over-serving
+    is caught only here, and the two directions together are what make the pager
+    total over EDGAR's behaviour rather than correct for the one shape measured
+    on 2026-08-17.  This matters because "EDGAR never serves more than asked" is
+    an EMPIRICAL claim about a surface that already surprised us once: the bug
+    #5854 fixed came from assuming EDGAR honours ``count``, and it rounds down.
+
+    Measured against the shipped code with an EDGAR that ignores ``count`` and
+    always serves 100.  With ``start += count`` instead, the cursor lags what
+    was consumed, so the scan re-fetches an overlapping window and runs an extra
+    page.
+
+    Read the 800 below as relative advance behaviour, NOT as boundary respect.
+    ``entry_limit`` is enforced on ``start``, which only bounds the entry count
+    while EDGAR serves what it was asked for; under a hypothetical over-server
+    NEITHER variant holds the 750 line (shipped overshoots to 800, the lagging
+    cursor to 840).  The claim under test is that the shipped cursor tracks what
+    was served and therefore overshoots less, not that the boundary survives an
+    EDGAR that breaks its own count contract.
+    """
+
+    def over_serving(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        return _atom_page(int(query["start"][0]), 100)
+
+    result = scan_latest_filings_atom(over_serving, entry_limit=750)
+
+    # 8 pages of 100 reach the 750 boundary; a cursor advancing by the REQUESTED
+    # count would lag and spend a 9th page re-reading entries it already had.
+    assert result.pages_fetched == 8
+    assert len(result.entries) == 800
+    assert [entry.source_ordinal for entry in result.entries] == list(range(1, 801))
+    assert not result.complete
+    assert result.stop_reason == "ephemeral_limit"
+
+
+def test_atom_html_error_page_is_not_a_broken_contract() -> None:
+    """A transient outage page and a malformed feed must not be one error."""
+
+    with pytest.raises(SecSourceUnavailableError):
+        parse_latest_filings_atom(UNAVAILABLE_HTML)
+    # Malformed Atom stays a contract violation, so it can never be retried as
+    # though SEC were merely unwell.
+    with pytest.raises(SecSourceError) as caught:
+        parse_latest_filings_atom(
+            b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry>'
+        )
+    assert not isinstance(caught.value, SecSourceUnavailableError)
+
+
+def test_atom_scanner_retries_a_transient_page_and_keeps_scanning() -> None:
+    fetch, calls = _atom_fetcher(200, times=1)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    assert len(result.entries) == 400
+    assert result.fetch_retries == 1
+    assert calls.count(200) == 2, "the failed page must be asked for again"
+    assert result.pages_fetched == 4, "a retry is not another page"
+    assert [entry.source_ordinal for entry in result.entries[:3]] == [1, 2, 3]
+
+
+def test_atom_scanner_keeps_the_pages_it_walked_when_a_page_stays_unavailable() -> None:
+    """One transient page must not cost every discovery ahead of it."""
+
+    fetch, calls = _atom_fetcher(200)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    # The two good pages survive instead of being discarded with the third.
+    assert len(result.entries) == 200
+    assert result.pages_fetched == 2
+    assert calls.count(200) == ATOM_FETCH_ATTEMPTS
+    assert result.fetch_retries == ATOM_FETCH_ATTEMPTS - 1
+    # The gap is still declared: complete=False reds the run exactly as the
+    # discarded-everything path did.
+    assert not result.complete
+    assert result.stop_reason == "fetch_error"
+    assert isinstance(result.error, SecSourceUnavailableError)
+
+
+def test_atom_scanner_first_page_unavailable_yields_no_false_completeness() -> None:
+    fetch, _calls = _atom_fetcher(0)
+    result = scan_latest_filings_atom(fetch, entry_limit=400)
+
+    assert result.entries == ()
+    assert result.pages_fetched == 0
+    assert not result.complete
+    assert result.stop_reason == "fetch_error"
+
+
+def test_atom_scanner_never_retries_a_malformed_feed() -> None:
+    calls: list[str] = []
+
+    def fetch(url: str) -> bytes:
+        calls.append(url)
+        return b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry>'
+
+    with pytest.raises(SecSourceError) as caught:
+        scan_latest_filings_atom(fetch, entry_limit=100)
+    assert not isinstance(caught.value, SecSourceUnavailableError)
+    assert len(calls) == 1, "a broken contract must fail on the first attempt"
+
+
+def test_atom_scanner_fetch_attempts_is_bounded() -> None:
+    fetch, calls = _atom_fetcher(0)
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(fetch, fetch_attempts=0)
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(
+            fetch, fetch_attempts=ATOM_MAX_FETCH_ATTEMPTS + 1
+        )
+    with pytest.raises(ValueError, match="fetch_attempts"):
+        scan_latest_filings_atom(fetch, fetch_attempts=True)
+    assert calls == [], "validation must precede any request"
+
+    # attempts=1 disables the retry without disabling partial recovery.
+    fetch, calls = _atom_fetcher(200)
+    result = scan_latest_filings_atom(fetch, entry_limit=400, fetch_attempts=1)
+    assert calls.count(200) == 1
+    assert result.fetch_retries == 0
+    assert len(result.entries) == 200
+    assert result.stop_reason == "fetch_error"
+
+
+def test_atom_scanner_clean_scan_reports_no_retries() -> None:
+    def fetch(url: str) -> bytes:
+        query = parse_qs(urlparse(url).query)
+        return _atom_page(int(query["start"][0]), int(query["count"][0]))
+
+    assert scan_latest_filings_atom(fetch, entry_limit=200).fetch_retries == 0
 
 
 def test_daily_and_full_master_index_contract() -> None:
@@ -656,14 +971,32 @@ def test_filing_package_rejects_identity_and_completeness_drift() -> None:
             documents=incomplete,
         )
 
+
+def test_filing_package_tolerates_index_size_mismatch_and_warns(capsys) -> None:
+    """SEC's index.json ``size`` is advisory (it provably disagrees with SEC's
+    own Content-Length and served bytes for some documents, block-rounded to
+    4096B in production). A body/index size mismatch must not fail parsing --
+    transport truncation is gated authoritatively at fetch time -- but it must
+    still surface as a GitHub Actions ``::warning`` annotation."""
+    index = (FIXTURES / "filing_index.json").read_bytes()
+    documents = _filing_documents()
     wrong_size = dict(documents)
     wrong_size["information_table.xml"] += b"\n"
-    with pytest.raises(SecSourceError, match="size mismatch"):
-        parse_filing_package(
-            index_url=INDEX_URL,
-            index_source=index,
-            documents=wrong_size,
-        )
+
+    tables = parse_filing_package(
+        index_url=INDEX_URL,
+        index_source=index,
+        documents=wrong_size,
+    )
+
+    assert len(tables.holdings) == 2
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::")]
+    assert warning_lines, f"no line-leading annotation emitted; captured: {out!r}"
+    assert any(
+        "sec-index-size-mismatch" in line and "information_table.xml" in line
+        for line in warning_lines
+    )
 
 
 def test_filing_index_rejects_unsafe_member_name() -> None:

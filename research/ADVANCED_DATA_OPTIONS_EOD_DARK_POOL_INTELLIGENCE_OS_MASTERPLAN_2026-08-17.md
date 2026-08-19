@@ -466,6 +466,40 @@ Per feature and horizon, use empirically measured contribution when enough outco
 
 Heuristic mappings are permitted only in shadow and must be labeled heuristic.
 
+> **AD-0 data-feasibility amendment (2026-08-17, Sol delta review on #5838/#5830):**
+> deterministic heuristic ranking is explicitly authorized for AD-1 as **display-tier
+> research-priority authority only** — it orders human research attention on the Advanced
+> Data board. It is not probability, alpha, forecast, Prophet authority, gating, sizing,
+> or trade authority, and its outputs may never be described as "validated". Predictive
+> or probabilistic promotion of any Advanced Data scoring remains exclusively AD-6
+> (forward-outcome calibration) and AD-7 (bounded Prophet activation) territory. Every
+> frozen heuristic must additionally satisfy the **data-feasibility law** (AD-1 handoff
+> §5.4): no specification may require more historical depth, coverage, or fields than the
+> canonical producer store supplies at spec-freeze time, proven by a real-store census.
+> `LONG`/`SHORT` at this tier are directional research hypotheses (§6.2 vocabulary is
+> unchanged); no field lacking aggressor/open-close evidence may be described as observed
+> buying or selling, and front-facing copy uses upside/downside-evidence phrasing rather
+> than trade imperatives.
+
+> **AD-1P0 semantic-authority amendment (2026-08-18, Sol ruling;
+> `DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION`):** the
+> display-tier layer must keep six evidence classes SEPARATE — salience/intensity,
+> directional hypotheses, dealer mechanics, volatility, event premium, and crowding —
+> under the authority ladder (observed fact → qualified inference → display-tier
+> research-priority hypothesis → prospective outcome measurement → calibrated
+> forecast/asymmetry → bounded Prophet authority). Binding consequences: salience
+> (volume anomaly, persistence) has zero direction sign; GEX/dealer-mechanics context
+> (including `gex_confirm_verdict`, a long-thesis verifier) never originates equity
+> direction; open-interest change is an unsigned positioning hypothesis, never observed
+> buying/selling; machine direction requires two distinct qualifying hypothesis legs
+> (ΔOI lean + skew CHANGE) plus material salience; tick-rule flow is structurally barred
+> from direction while its production gate reports direction unreliable; event-premium
+> surfaces claim no historical mispricing before historical event conditioning exists;
+> heuristic strength is never presented as calibrated economic asymmetry (asymmetry/
+> probability/expected-edge fields stay null/UNCALIBRATED until AD-6); and Prophet
+> remains a display-only echo with zero rank authority inside AD-1 (first score-level
+> confluence is AD-5). Exact frozen formulas live in the AD-1 handoff §5.3 (v1.2).
+
 ## 8.3 Family caps
 
 Correlated features do not become independent votes merely because they are stored in different fields.

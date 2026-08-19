@@ -20,6 +20,8 @@ from typing import Any
 
 import pandas as pd
 
+from .award_events import agency_display_label, canonicalize_agency
+
 
 SCHEMA_VERSION = "government_procurement_workspace.v2"
 EVENT_CONTRACT = "government_procurement_event.v2"
@@ -315,7 +317,9 @@ def _validated_award_events(value: Any) -> tuple[list[dict[str, Any]], dict[str,
         # The workspace never owns the source event object.  In particular, a
         # later cap/sort/dedupe must not mutate the award-event projection that
         # may be shared with another governed consumer.
-        validated.append(copy.deepcopy(row))
+        copied = copy.deepcopy(row)
+        copied["agency"] = canonicalize_agency(copied.get("agency"))
+        validated.append(copied)
     accepted, dedupe = _dedupe_exact_event_ids(validated)
     if first_rejection_reason is None and dedupe["invalid_rows"]:
         first_rejection_reason = "event_id_or_canonical_form_is_unusable"
@@ -389,12 +393,8 @@ def _award_source_rail(event: dict[str, Any]) -> str | None:
 
 
 def _agency_name(event: dict[str, Any]) -> str | None:
-    """Read the shared workspace agency key and the award projector variant."""
-    agency = event.get("agency")
-    if not isinstance(agency, dict):
-        return None
-    value = agency.get("department_name") or agency.get("name")
-    return str(value) if value else None
+    """Read the canonical agency object in the frozen D1.1 label order."""
+    return agency_display_label(canonicalize_agency(event.get("agency")))
 
 
 def _coverage_breakdown(

@@ -14,10 +14,10 @@ class: research
 blast_radius: user_facing
 ambiguity: specified
 next_action: >
-  Heal the HTML-escaped SGML parser, redispatch company-intelligence.yml on
-  main, prove GET event_workspaces/manifest.json is 200 and
-  read_event_workspace returns available:true on all four AAPL aliases, then
-  stop. Do not start E2.
+  Implement E2 exactly as frozen; render the now-live AAPL FY2026 Q3
+  event_workspace.v1 through read_event_workspace in the existing Terminal
+  Company Intelligence workspace and Macro dossier glance. Do not re-read
+  the v1 score overlay for the glance and do not broaden scope into E3+.
 owns_paths:
   - research/earnings_intelligence/**
   - research/EARNINGS_INTELLIGENCE_E0_FREEZE_ARCHAEOLOGY_AND_EXPERIENCE_HANDOFF_2026-08-16.md
@@ -40,8 +40,9 @@ do_not_redo:
   - Listing-key dual-class events (GOOG/GOOGL) as two issuers.
   - Treat a production-shaped reader test as proof the R2 object exists.
   - Publish E1 test fixtures as production event_workspace truth.
-  - Start E2 before GET company_intelligence/event_workspaces/manifest.json is 200.
   - Parse EDGAR `-index-headers.html` without html.unescape.
+  - Re-read the closed v1 score overlay for the E2 glance.
+  - Broaden E2 into E3+, slides, Q&A ML, or a second publisher.
 landmines:
   - v1 CI requires claim_citations_pending == true; do not flip the v1 invariant.
   - public_wire completeness is forced transcript-only; changing it is a contract change.
@@ -60,14 +61,15 @@ waves:
     next_action: Implementation accepted; production object is E1P, not a second E1.
   - id: E1P
     title: Production activation of the AAPL FY2026 Q3 event_workspace nest
-    status: in_progress
+    status: done
     depends_on: [E1]
-    next_action: Unescape EDGAR index-headers.html, redispatch company-intelligence.yml, prove the public reader.
+    pr: 5841
+    next_action: Live on generation f709a0a6ec514282d5769e7d; E2 is unblocked.
   - id: E2
     title: Golden Event Workspace in existing Terminal + dossier
     status: todo
     depends_on: [E1P]
-    next_action: Execute research/earnings_intelligence/E2_IMPLEMENTATION_HANDOFF.md only after E1P live proof.
+    next_action: Execute research/earnings_intelligence/E2_IMPLEMENTATION_HANDOFF.md against the live public nest.
 ---
 
 E0 is research/design only. E1/E2 are the first vertical slice. Later waves E3–E15 live in the V2 masterplan and are out of this workstream's immediate next_action.

@@ -44,6 +44,33 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+#: Marker identifying the nightly's us-board ``pv_card`` call site.
+_NIGHTLY_CARD_MARKER = "'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',"
+
+
+def _nightly_card_call_site() -> Path:
+    """The ONE template holding the nightly's us-board ``pv_card`` call.
+
+    Resolved by search rather than hardcoded, because it has already moved once:
+    the call site left ``dashboard.html.j2`` for ``_us_board_cards.html.j2`` when
+    the us_stocks board gained its server-side tier split
+    (docs/TIER_PREVIEW_PATTERN.md — the free shell and the /premiumdata/ payload
+    render cards from one source so they cannot drift). A hardcoded path turns
+    the next such move into a confusing "literal missing" failure that reads like
+    the convention was deleted, instead of naming the relocation.
+
+    Exactly one owner is the property the two tests below exist to protect: a
+    second call site is a second URL/price convention, which is the drift the
+    evening board must never introduce.
+    """
+    owners = sorted(p for p in (ROOT / "templates").glob("*.j2")
+                    if _NIGHTLY_CARD_MARKER in p.read_text(encoding="utf-8"))
+    assert len(owners) == 1, (
+        "expected exactly ONE template to own the nightly's us-board pv_card "
+        f"call site; found {[p.name for p in owners]}"
+    )
+    return owners[0]
+
 import scripts.close_pass_mirror as M  # noqa: E402
 import scripts.close_pass_publish as P  # noqa: E402
 import scripts.close_pass_reconcile as RC  # noqa: E402
@@ -676,7 +703,7 @@ def test_the_card_href_is_the_nightlys_own_ticker_page_url():
     """Read out of the nightly's pv_card call site, never invented. A second URL
     convention would send the evening board's cards somewhere the morning
     board's cards do not go, and the reader would find it before we did."""
-    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    call_site = _nightly_card_call_site().read_text(encoding="utf-8")
     assert "'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us'," in call_site
     card = CB.board_state(_carded())["board"]["cards"][0]
     assert card["href"] == f"stock.html#{card['tk']}"
@@ -684,7 +711,7 @@ def test_the_card_href_is_the_nightlys_own_ticker_page_url():
 
 
 def test_the_price_is_formatted_as_the_nightly_formats_it():
-    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    call_site = _nightly_card_call_site().read_text(encoding="utf-8")
     assert "'price_txt': ('$' ~ ('%.2f'|format(n.price)))" in call_site
     assert CB.board_state(_carded())["board"]["cards"][0]["price_txt"] == "$187.46"
 
@@ -1499,7 +1526,7 @@ def _cron_field(spec: str, lo: int, hi: int) -> set[int]:
 @pytest.mark.parametrize("field,lo,hi,expected", [
     ("*/2", 0, 23, {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22}),   # codex-research
     ("13-23/2", 0, 23, {13, 15, 17, 19, 21, 23}),                  # smart-money-filings
-    ("7,37", 0, 59, {7, 37}),                                      # 13f-census
+    ("5,35", 0, 59, {5, 35}),                                      # live-breadth
     ("*", 0, 23, set(range(24))),
     ("25", 0, 59, {25}),
 ])
@@ -1508,11 +1535,23 @@ def test_the_cron_expander_reads_every_form_in_this_repo(field, lo, hi, expected
 
 
 def test_the_minute_avoids_the_other_crons_on_the_two_host_pool():
-    """MEASURED 2026-08-09: plain `macstudio` is TWO live physical hosts
-    (mac-builder-1/2, which also serve the `codex` and `theta-m1` labels), and
-    closing-bell holds one of them for the whole window every weekday. So the
-    minute is not cosmetic — it decides whether this lane starts or queues
-    behind another job on the one remaining slot.
+    """RE-MEASURED 2026-08-17 against `gh api repos/{owner}/{repo}/actions/runners`:
+    plain `macstudio` is TWO live hosts — mac-builder-5 (`macstudio,parked`) and
+    mac-builder-light (`macstudio,render-heavy`) — and closing-bell holds one of
+    them for the whole window every weekday. So the minute is not cosmetic; it
+    decides whether this lane starts or queues behind another job on the one
+    remaining slot.
+
+    SUPERSEDED MODEL, kept as the warning it earned. This test used to say the
+    pool was mac-builder-1/2 "which also serve the `codex` and `theta-m1`
+    labels". Those are the retired M1 host's runners, deregistered ~2026-08-15.
+    `codex` now has NO live runner at all, and `theta-m1` was restored onto
+    mac-builder-3 — which carries `macstudio-light`, NOT `macstudio`, so
+    theta-m1 jobs no longer contend with this lane. A stale pool model is not
+    cosmetic either: the same orphaned-label class froze every Prophet board
+    2026-08-14→17 (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md,
+    DSC:QUEUED-JOB-HOSTAGE-HOLDS-THE-NIGHTLY-CRON-GROUP). The checked-in model
+    this comment now defers to is `.github/runner-policy.yml` `label_registry`.
 
     Derived from the live workflow files rather than a hardcoded list, so a lane
     that later moves ONTO this minute reds here instead of silently contending.
@@ -1521,10 +1560,14 @@ def test_the_minute_avoids_the_other_crons_on_the_two_host_pool():
     """
     ours = {int(c.split()[0]) for c in _crons()}
     assert ours == {25}
-    #: The labels mac-builder-1/2 actually carry. EXACT match, never substring:
-    #: `macstudio-light` is a different host, and matching it would flag lanes
-    #: that share no capacity at all.
-    POOL = {"macstudio", "codex", "theta-m1"}
+    #: Labels that route onto a runner ALSO carrying `macstudio` — i.e. whose
+    #: jobs consume a slot this lane could otherwise have. EXACT match, never
+    #: substring: `macstudio-light` is a different host (mac-builder-3) and
+    #: matching it would flag lanes that share no capacity at all.
+    #: `render-heavy` → mac-builder-light and `parked` → mac-builder-5 are both
+    #: macstudio-carrying hosts; neither is on a cron today, so both are inert
+    #: now and load-bearing the moment one is.
+    POOL = {"macstudio", "render-heavy", "parked"}
     clashes: list[str] = []
     for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
         if path.name == "close-pass.yml":
@@ -1936,8 +1979,10 @@ def test_the_header_names_the_primary_and_keeps_the_old_reasoning():
     assert "BOUNDED BACKSTOP" in head
     assert "20:52" in head and "95 minutes" in head        # the measurement
     assert "DEC-LER-LIVE-LANE-VPS-5MIN-REST" in head
-    # Unchanged, and still the only definition of the window in this file.
-    assert "MEASURED POOL CAPACITY (2026-08-09)" in WORKFLOW_SRC
+    # Still the only definition of the window in this file — re-measured
+    # 2026-08-17 (label registry: .github/runner-policy.yml label_registry),
+    # not rewritten.
+    assert "MEASURED POOL CAPACITY (2026-08-09, pool re-measured 2026-08-17)" in WORKFLOW_SRC
     assert "SCHEDULE — DST pair, one window" in WORKFLOW_SRC
 
 
@@ -2039,11 +2084,42 @@ def test_the_installed_runner_is_plumbing_and_the_lane_is_the_policy():
     """The copy under Application Support is frozen at install time — which is
     fine, and is the same contract scripts/prophet_rescue_launchd.py carries:
     the wrapper is plumbing, the POLICY it launches always comes from
-    origin/main. Both vintages land in every receipt so drift is visible."""
+    origin/main."""
     runner = HOST_RUNNER.read_text(encoding="utf-8").replace("'", '"')
     assert '"reset", "--hard", "origin/main"' in runner
-    assert "runner_sha" in runner and "code_sha" in runner
+    assert "bootstrap" in runner and "code_sha" in runner
     assert "re-run this installer" in INSTALLER.read_text(encoding="utf-8").lower()
+
+
+def test_the_freeze_is_disclosed_every_run_because_merging_deploys_nothing():
+    """THE COST OF THE FREEZE IS PAID BY THE RECEIPT, not by a self-update.
+
+    Freezing the snapshot at install time is correct — a mid-day push to main
+    must not change what the clock executes mid-session — but it means a merged
+    fix is not a deployed fix, and on 2026-08-18 that gap was invisible in every
+    instrument the estate owns: PR #5862 merged as af416e4a1066 while the host
+    kept running the Aug-15 bytes, and its receipts read perfectly because
+    `code_sha` (the lane's HEAD) is reset to origin/main every single run.
+
+    So the runner GRADES its own executing bytes against origin/main's copy and
+    says so out loud, the report fails on it, and the installer still owns the
+    only act that deploys the file.
+    """
+    runner = HOST_RUNNER.read_text(encoding="utf-8")
+    # It reads origin/main's copy of ITSELF out of the lane the reset just made.
+    assert "compare_bootstrap_to_main" in runner and "RUNNER_REPO_REL" in runner
+    # ...and the finding carries the only remedy there is.
+    assert "bash scripts/install_closepass_launchd.sh" in runner
+    assert "::error" in runner.replace("f\"", "\"")
+    # The report is the second instrument, off the launchd log entirely.
+    report = (ROOT / "scripts" / "close_pass_slo_report.py").read_text(encoding="utf-8")
+    assert "bootstrap_verdict" in report and "install_closepass_launchd.sh" in report
+
+    installer = INSTALLER.read_text(encoding="utf-8")
+    # THE FREEZE ITSELF IS UNCHANGED: exactly one copy of the runner into the
+    # support dir, at install time, by the operator. Nothing else may deploy it.
+    assert installer.count('cp "$REPO_SRC/scripts/close_pass_host_runner.py"') == 1
+    assert "shasum -a 256" in installer          # says what the install moved
 
 
 def test_the_primary_and_the_backstop_publish_the_same_artifact_the_same_way():

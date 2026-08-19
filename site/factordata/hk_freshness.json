@@ -1,49 +1,46 @@
 {
-  "checked_at": "2026-08-17T14:23:18+00:00",
-  "expected_session": "2026-08-17",
+  "checked_at": "2026-08-18T21:40:23+00:00",
+  "expected_session": "2026-08-18",
   "stores": {
     "cache": {
-      "asof": "2026-08-14",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-08-18",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-08-14",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-08-18",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-08-14",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-08-18",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "regime": {
-      "asof": "2026-08-14",
-      "lag_days": 3,
-      "state": "stale"
+      "asof": "2026-08-18",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "southbound": {
-      "asof": "2026-08-13",
-      "lag_days": 4,
-      "state": "slow"
+      "asof": "2026-08-17",
+      "lag_days": 1,
+      "state": "fresh"
     }
   },
   "coherence": {
     "ok": true,
-    "standouts_asof": "2026-08-14",
-    "regime_date": "2026-08-14",
+    "standouts_asof": "2026-08-18",
+    "regime_date": "2026-08-18",
     "gap_sessions": 0,
     "note": null
   },
   "regression": {
     "ok": true,
-    "prev_cache_max": "2026-08-14",
-    "curr_cache_max": "2026-08-14",
+    "prev_cache_max": "2026-08-18",
+    "curr_cache_max": "2026-08-18",
     "note": null
   },
-  "verdict": "degraded",
-  "banner_message": {
-    "en": "Some background feeds are a step behind \u2014 prices and picks are current. (prices current as of 2026-08-14)",
-    "zh": "\u90e8\u5206\u540e\u53f0\u6570\u636e\u6765\u6e90\u7a0d\u6709\u6ede\u540e \u2014 \u4ef7\u683c\u548c\u9009\u80a1\u4ecd\u662f\u6700\u65b0\u7684\u3002\uff08\u4ef7\u683c\u622a\u81f3 2026-08-14 \u4e3a\u6700\u65b0\uff09"
-  }
+  "verdict": "ok",
+  "banner_message": null
 }

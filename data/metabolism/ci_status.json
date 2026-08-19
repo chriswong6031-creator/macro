@@ -1,14 +1,25 @@
 {
-  "ts": "2026-08-09T08:13:13+00:00",
-  "main_sha": "fd2394640d913754b55aaf6249c5a990b000b381",
+  "ts": "2026-08-19T03:24:10+00:00",
+  "main_sha": "e554e15b419ad8371e68b020a56cb2bad108de75",
   "red_required": [
     {
-      "name": "Supabase Preview",
-      "conclusion": "failure",
+      "name": "immune",
+      "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/93218304269"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206522892/job/95930755661"
+    },
+    {
+      "name": "project",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32206433331/job/95930509401"
     }
   ],
   "green": false,
-  "consecutive_failures": 2
+  "consecutive_failures": 5,
+  "sensed_shas": [
+    "e554e15b419ad8371e68b020a56cb2bad108de75",
+    "3d39073351bf5895ca6c439377851c24dd5c36e8"
+  ],
+  "heartbeat_degraded": false
 }

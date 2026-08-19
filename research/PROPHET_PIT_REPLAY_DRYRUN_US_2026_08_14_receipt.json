@@ -1,0 +1,242 @@
+{
+  "schema": "pit_replay.receipt/v1",
+  "authority": "DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT",
+  "masterplan": "research/PROPHET_PIT_REPLAY_HARNESS_V1.md",
+  "market": "us",
+  "session": "2026-08-14",
+  "dry_run": true,
+  "bake_slot_utc": "2026-08-14T22:30:00Z",
+  "vintage_sha": "54af649d5e1af4955f1464879f3afdbbaa330e13",
+  "vintage_committed_utc": "2026-08-14T15:23:34-07:00",
+  "vintage_ancestry": "ancestor_of_origin_main",
+  "live_price_source_commit": "ec62e4981c10d1ce7d6379cb9475747d49f790f1",
+  "overlay_totals": {
+    "written": 3594,
+    "sessions_added": 3594,
+    "unchanged": 8
+  },
+  "overlay_files": {
+    "_note": "trimmed for the committed proof: 3602 per-file rows in the live receipt; aux-panel + substitution rows kept verbatim",
+    "data/baskets/extras.parquet": {
+      "added_sessions": 1,
+      "added": [
+        "2026-08-14"
+      ],
+      "substituted": false,
+      "dropped_columns": [
+        "B"
+      ],
+      "note": "vintage rows kept byte-for-byte; only missing sessions appended"
+    },
+    "data/russell_breadth/_high_cache.parquet": {
+      "added_sessions": 1,
+      "added": [
+        "2026-08-14"
+      ],
+      "substituted": false,
+      "dropped_columns": [],
+      "note": "vintage rows kept byte-for-byte; only missing sessions appended"
+    },
+    "data/russell_breadth/_low_cache.parquet": {
+      "added_sessions": 1,
+      "added": [
+        "2026-08-14"
+      ],
+      "substituted": false,
+      "dropped_columns": [],
+      "note": "vintage rows kept byte-for-byte; only missing sessions appended"
+    },
+    "data/russell_breadth/_volume_cache.parquet": {
+      "added_sessions": 1,
+      "added": [
+        "2026-08-14"
+      ],
+      "substituted": false,
+      "dropped_columns": [],
+      "note": "vintage rows kept byte-for-byte; only missing sessions appended"
+    }
+  },
+  "skipped_identical": {
+    "data/stocks": 0,
+    "data/yahoo": 1526,
+    "data/baskets/ohlcv": 177
+  },
+  "aux_panel_source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/russell_breadth",
+  "fence": {
+    "files_scanned": 5305,
+    "ceiling": "2026-08-14",
+    "max_date_found": "2026-08-14",
+    "violations": 0,
+    "state_digest": "a55b3b66f7bd",
+    "unscannable": [],
+    "unscannable_count": 0,
+    "pass_ceiling": "2026-08-14",
+    "ahead_of_pass": [],
+    "ahead_of_pass_count": 0,
+    "ahead_of_pass_note": "round-the-clock instruments (FX crosses, crypto) whose bar for a later calendar date already existed in the pinned vintage at bake time. Not lookahead \u2014 the bake read exactly these \u2014 and never equities."
+  },
+  "control_through": "2026-08-13",
+  "harness_fidelity": {
+    "reference_as_of": "2026-08-13",
+    "reference_rank_by": "us_prophet_v2",
+    "reference_buy_rows": 69,
+    "rebuilt_buy_rows": 68,
+    "jaccard": 0.9855,
+    "exact_order_match": false,
+    "missing_from_rebuild": [
+      "EU"
+    ],
+    "extra_in_rebuild": [],
+    "floor": 0.85,
+    "passes_floor": true,
+    "measured": true,
+    "method": "the same tree, alpha rebuild (where applicable) and builder, run at the vintage's own committed session and scored against the board that vintage already ships",
+    "reference_sha256": "673f2abe3b5a9d41d1f3004ea759ed96bf9a0f6094f9576b4739d5d8e5a13445",
+    "waived": false
+  },
+  "board_identity": {
+    "sha256": "3e24689995613720716d179c418e2876f92cfde1df446c5d49f1528feb096ce9",
+    "as_of": "2026-08-14",
+    "rank_by": "us_prophet_v2",
+    "board_definition": "us_prophet_v2",
+    "price_through": "2026-08-14",
+    "required_rank_by": "us_prophet_v2",
+    "required_definition": "us_prophet_v2",
+    "size_bytes": 2043808,
+    "buy_rows": 70,
+    "panel": {
+      "through": "2026-08-14",
+      "through_raw": "2026-08-14",
+      "majority_through": "2026-08-14",
+      "members_at_through": 3035,
+      "members_total": 3041,
+      "mixed_vintage": false,
+      "off_majority_tickers": [
+        "BBBY",
+        "CTRA",
+        "CWEN-A",
+        "EA",
+        "STRS",
+        "TPH"
+      ]
+    },
+    "synthetic": true,
+    "synthetic_note": "No as_of=2026-08-14 board is published to site/factordata; this one was rebuilt inside a pinned vintage worktree from a price store truncated at the 2026-08-14 close and is deliberately NOT published."
+  },
+  "counts": {
+    "buy_rows": 70,
+    "admitted": 52,
+    "duplicate_id_blocked": 39,
+    "reorigination_blocked": 3,
+    "reorigination_blocked_rows": 3,
+    "eligible_after_skips": 10,
+    "minted": 6,
+    "collided": 2,
+    "chronology_refused": 4,
+    "still_refused": 1
+  },
+  "reconciliation": {
+    "admission_identity": {
+      "statement": "admitted == duplicate_id_blocked + reorigination_blocked_rows + eligible_after_skips",
+      "lhs": 52,
+      "rhs": 52,
+      "holds": true
+    },
+    "disposition_identity": {
+      "statement": "eligible_after_skips + reorigination_blocked == minted + collided + chronology_refused + still_refused",
+      "lhs": 13,
+      "rhs": 13,
+      "holds": true
+    }
+  },
+  "wall_clock_exposure": {
+    "measurable": true,
+    "admission_gate": {
+      "reads_wall_clock": false,
+      "anchor": "the board's own alpha stamp, then the price panel's own trading-day calendar",
+      "anchored_to": "2026-08-14",
+      "note": "the #5289/#5304 timezone lookahead is fixed on this path"
+    },
+    "residual_wall_clock_inputs": [
+      {
+        "site": "build_stock_library.main()'s days-to-next-earnings closure",
+        "reaches": "per-row earnings_days / days_to_earnings context \u2014 a size-down chip, not an admission test",
+        "status": "measured; every row whose value moved between the session and this run's date is named below"
+      },
+      {
+        "site": "_next_monthly_opex_days() -> gex_confirm.assess(opex_days=)",
+        "reaches": "pre-OPEX suppression",
+        "status": "not independently re-measured by this generalized harness for session=2026-08-14; named per masterplan \u00a72 as a residual channel for a future run to measure"
+      },
+      {
+        "site": "current_risk_overlay()'s FOMC leg -> stock_score verb veto",
+        "reaches": "T3 macro tax and the verb veto",
+        "status": "not independently re-measured by this generalized harness for session=2026-08-14; named per masterplan \u00a72 as a residual channel for a future run to measure"
+      }
+    ],
+    "residual_channel_note": "Named rather than assumed inert: a future run over a different session must re-check these two channels for that date pair rather than inherit the null this docstring's ancestor measured for its own night.",
+    "bake_session": "2026-08-14",
+    "run_date": "2026-08-18",
+    "timezone_half": "pinned \u2014 every vintage subprocess runs TZ=UTC",
+    "date_half": "not pinnable from outside the builder's closure; measured instead",
+    "calendar_names": 1983,
+    "rows_affected": [
+      {
+        "ticker": "SNPS",
+        "days_to_earnings_at_bake_date": 12.0,
+        "days_to_earnings_at_run_date": 8.0
+      },
+      {
+        "ticker": "PL",
+        "days_to_earnings_at_bake_date": 20.0,
+        "days_to_earnings_at_run_date": 16.0
+      },
+      {
+        "ticker": "IREN",
+        "days_to_earnings_at_bake_date": 13.0,
+        "days_to_earnings_at_run_date": 9.0
+      },
+      {
+        "ticker": "JBL",
+        "days_to_earnings_at_bake_date": 41.0,
+        "days_to_earnings_at_run_date": 37.0
+      }
+    ],
+    "rows_affected_count": 4
+  },
+  "snapshot_capture": {
+    "ok": true,
+    "row_as_of": "2026-08-14",
+    "row_rank_by": "us_prophet_v2",
+    "row_lane_sizes": {
+      "buy": 70,
+      "watch": 48,
+      "leaders": 14,
+      "ran": 12,
+      "laggards": 12
+    },
+    "row_sha256": "7f1d2bea31855f25e5fe8305b54979f616a75de13a43d5bd3f98edcce6e3e20e",
+    "_note": "full captured snapshot row elided for the committed proof (2.0MB); reproducible via the harness; sha256 pins it"
+  },
+  "ledger_capture": null,
+  "env_pins": {
+    "TZ": "UTC",
+    "RENDER_NO_DRIP": "1",
+    "HTTP_PROXY": "http://127.0.0.1:9",
+    "HTTPS_PROXY": "http://127.0.0.1:9",
+    "ALL_PROXY": "http://127.0.0.1:9",
+    "NO_PROXY": "",
+    "no_proxy": "",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "residual_network": [],
+  "pinned_stores": {
+    "registry": {
+      "dirs": [],
+      "exempt_files": []
+    },
+    "checks": []
+  },
+  "executed_at": "2026-08-18T11:55:33.687282+00:00",
+  "executing_commit": "9ff7bad19126c93bf5349d17fc996a053f8845d0"
+}

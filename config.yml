@@ -7143,6 +7143,56 @@ china_special_situations:
   preview_rows: 3
 
 # ---------------------------------------------------------------------------
+# us_board_gate — tier gate for the US Prophet stock board on us_stocks.html
+# (docs/TIER_PREVIEW_PATTERN.md). The board was server-rendering all rows into
+# #us-stocktable-data + the .nbgrid card grid while tier_preview.js only capped
+# them client-side — a view-source-readable anon leak of the whole ranked board.
+# Same mechanism as the special_situations desks above: the shell bakes only
+# `preview_rows` of us_standouts.buy (system order preserved, NOT resorted) plus
+# an upgrade wall; the withheld remainder ships as
+# site/premiumdata/us_stocks.json, which config/site_access.yml already enforces
+# under premium.enforced_early's /premiumdata/ prefix. Set gated:false to
+# re-open the whole board to anonymous/Free without touching code.
+us_board_gate:
+  gated: true
+  preview_rows: 3
+  # The four panels ADJACENT to the board on the same page — "More fresh
+  # triggers" (.topsetups), "Market leaders" (.topsetups.leaders-strip),
+  # "Recently fired" (.pbr-l), the Act-Now board (#action-board) and the theme
+  # tape's member lists (#theme-tape .tt-names). Each is fed by a DIFFERENT
+  # artifact than us_standouts.buy, so the board's split above never covered
+  # them and they stayed gated only by templates/tier_preview.js — a DOM overlay
+  # readable in view-source. Same split, same payload; separate switch so the
+  # board's gate and the panels' can be flipped independently.
+  panels: true
+  panel_preview_rows: 3
+
+# ---------------------------------------------------------------------------
+# sector_central_gate — the SAME Act-Now board, on its second host.
+# templates/_us_act_now_board.html.j2 is a shared include: build_site renders it
+# on us_stocks.html (gated by us_board_gate.panels above) and
+# scripts/build_sector_central.py renders it on sector_central.html from
+# site/basketdata/action_board.json (reader pattern). The us_stocks gate removed
+# those rows from THAT page's bytes and did nothing to this one, so the whole
+# board stayed one click away in full — 45 `.actitem` rows, anonymous, measured
+# on the live page 2026-08-17. Worse than the us_stocks pre-gate state, in fact:
+# templates/tier_preview.js is never loaded on sector_central.html, so this page
+# had no wall at all, not even the client-side overlay.
+#
+# Same mechanism as every other desk (docs/TIER_PREVIEW_PATTERN.md): the shell
+# bakes `preview_rows` rows per lane with honest full-board lane counts, and the
+# withheld remainder ships as site/premiumdata/sector_central.json — its OWN
+# payload, never us_stocks.json, because the two pages are built by different
+# scripts at different times from different generations of the artifact.
+#
+# Separate switch from us_board_gate on purpose: this page's board is fed by a
+# committed artifact one build behind, so it must be closeable (or re-openable)
+# without touching the us_stocks board's gate.
+sector_central_gate:
+  gated: true
+  preview_rows: 3
+
+# ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies
 # (engine/qual_extraction.py, W5 §2.4 / Appendix P5).
 # Wired to the 8-K lane in collectors/special_situations.py.

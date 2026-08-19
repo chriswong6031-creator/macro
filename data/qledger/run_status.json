@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-14T10:07:45.376293+00:00",
-  "as_of": "2026-08-14",
-  "n_open": 46716,
-  "n_graded_today": 370,
-  "n_blocked_by_coverage": 25689,
+  "generated_at": "2026-08-18T09:30:44.217257+00:00",
+  "as_of": "2026-08-18",
+  "n_open": 51694,
+  "n_graded_today": 3389,
+  "n_blocked_by_coverage": 27198,
   "n_ungradeable": 2,
-  "n_already_graded": 59929,
+  "n_already_graded": 63722,
   "clock_unresolvable_claims": {
     "n": 0,
     "by_reason": {},
@@ -14,26 +14,18 @@
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 0,
-    "n_families_approaching": 10,
+    "n_families_approaching": 2,
     "families_ready": [],
     "families_approaching": [
-      "cn_importance_v0@5d",
-      "cn_importance_v0@21d",
-      "cn_importance_v0_pit@5d",
-      "cn_importance_v0_pit@21d",
       "radar@5d",
-      "radar@21d",
-      "us_importance_v0@5d",
-      "us_importance_v0@21d",
-      "us_importance_v0_pit@5d",
-      "us_importance_v0_pit@21d"
+      "radar@21d"
     ],
     "grader_quiet_days": 0
   },
   "regime_stamp_backfill": {
-    "n_claims": 46717,
+    "n_claims": 51695,
     "n_backfilled": 0,
-    "n_unstamped": 5941,
-    "n_precoverage": 3777
+    "n_unstamped": 6073,
+    "n_precoverage": 3909
   }
 }

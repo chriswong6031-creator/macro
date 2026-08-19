@@ -894,7 +894,17 @@ def test_a_healthy_local_sink_proves_the_failure_test_is_not_vacuous(hermetic_sp
     assert key == "live_flow/entry_radar_nominations/2026-08-14/140000-hot_tape.json"
     assert (hermetic_spool / key).is_file()
     assert spool.written_keys == [key]
-    assert not (ROOT / "data" / "entry_radar").exists()
+    # NOT `assert not (ROOT / "data" / "entry_radar").exists()`. That asserted a
+    # directory this code cannot create: `local_spool_dir()` is documented "never a
+    # data/ path" and returns None unless $ENTRY_RADAR_SPOOL_DIR is set, and the module
+    # docstring names the nightly reconciler as "the only durable data/ writer". So the
+    # directory's EXISTENCE was never evidence about this call — it was a proxy that
+    # held only while the legitimate owner had not yet written. On 2026-08-18 the
+    # nightly committed data/entry_radar/ledger_state.json ("engine: regime update
+    # 2026-08-18", 01:25) and this control flipped red fleet-wide, blocking every PR
+    # on a lane that was behaving exactly as designed.
+    # The invariant that IS ours: this call's object did not land under data/.
+    assert not (ROOT / "data" / "entry_radar" / key).exists()
 
 
 def test_an_exception_raised_by_put_itself_propagates_documented_finding(

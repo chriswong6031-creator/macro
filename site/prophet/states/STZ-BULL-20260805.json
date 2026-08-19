@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STZ-BULL-20260805",
-  "asof": "2026-08-13",
+  "asof": "2026-08-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 67.7,
-  "raw_confidence": 70.9,
-  "delta_vs_base": 7.7,
+  "management_confidence": 55.2,
+  "raw_confidence": 49.4,
+  "delta_vs_base": -4.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 100.0,
-    "progress": 21.8,
-    "pace": 100.0,
+    "validity": 59.9,
+    "progress": 0.0,
+    "pace": 85.8,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.328,
-    "dist_to_t1_r": 1.172,
-    "dist_to_t2_r": 2.672,
-    "horizon_pct_used": 6.7,
-    "p1": 0.2188,
-    "p2": 0.1094,
+    "dist_to_stop_r": 0.684,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 17.8,
+    "p1": -0.2106,
+    "p2": -0.1053,
     "p3": null,
-    "move_r": 0.328,
+    "move_r": -0.316,
     "mfe_r": 0.328,
-    "mae_r": -0.001
+    "mae_r": -0.316
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 2.9500061035156193,
-  "_mae": -0.010000610351568184,
+  "_mae": -2.8400024414062557,
   "_max_p1": 0.21876203956363535,
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 8,
+  "tau": 0.1778
 }

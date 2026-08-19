@@ -12,6 +12,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from .sec_sources import (
         ATOM_EPHEMERAL_ENTRY_LIMIT,
+        ATOM_FETCH_ATTEMPTS,
+        ATOM_HONORED_PAGE_SIZES,
+        ATOM_MAX_FETCH_ATTEMPTS,
         ATOM_PAGE_SIZE,
         AtomScanResult,
         BulkInvariantFinding,
@@ -27,6 +30,7 @@ if TYPE_CHECKING:
         SUBMISSION_COLUMNS,
         SUMMARY_PAGE_COLUMNS,
         SecSourceError,
+        SecSourceUnavailableError,
         iter_bulk_holding_chunks,
         normalize_accession,
         normalize_cik,
@@ -44,6 +48,9 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ATOM_EPHEMERAL_ENTRY_LIMIT",
+    "ATOM_FETCH_ATTEMPTS",
+    "ATOM_HONORED_PAGE_SIZES",
+    "ATOM_MAX_FETCH_ATTEMPTS",
     "ATOM_PAGE_SIZE",
     "AtomScanResult",
     "BulkInvariantFinding",
@@ -59,6 +66,7 @@ __all__ = [
     "SUBMISSION_COLUMNS",
     "SUMMARY_PAGE_COLUMNS",
     "SecSourceError",
+    "SecSourceUnavailableError",
     "iter_bulk_holding_chunks",
     "parse_filing_index",
     "parse_filing_package",
