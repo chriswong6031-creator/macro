@@ -1332,6 +1332,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -1811,9 +1821,6 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
-          tests/test_prophet_lab.py
-          tests/test_prophet_lab_api.py
-          tests/test_prophet_lab_timeparse.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -1920,6 +1927,61 @@ jobs:
       # (tests/test_statement_tape.py) is inside the sweep, one step above.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+
+  prophet-lab:
+    if: ${{ false }}
+    gate: code
+    # LAB-0 §6 commissioning-prep review B1 (2026-08-19, PR #5995): these four
+    # suites (test_prophet_lab.py/_api.py/_timeparse.py/_commissioning.py) were
+    # wired into engine-render-guards, which is `gate: data` — and ci.yml's
+    # merge-gate ONLY ever invokes `run_ci_pack.py --gate code` (gate:data jobs
+    # run exclusively on the nightly data-health.yml lane, post-merge). Every
+    # Lab suite, INCLUDING #5928's already-merged ones, has therefore NEVER
+    # actually run inside a PR's own merge gate. All four are hermetic
+    # tmp_path/fixture tests over engine/prophet_lab/** (a pure projection
+    # package — no data/ or site/ read, LAB-0 §1) plus the app/prophet_lab.py
+    # transport layer, the engine/entry_radar/spool.py R2-read seam it now
+    # imports, and the scripts/prophet_lab_baseline.py CLI: the verdict is a
+    # function of the PR's tree only, squarely `gate: code`'s own definition
+    # (see the GATE_VALUES docstring in scripts/run_ci_pack.py). Split into its
+    # own job rather than reclassifying engine-render-guards wholesale — that
+    # job also carries suites that DO read real rendered site/**/data/**
+    # output and are correctly gate:data; narrowing that job's own gate is a
+    # separate, larger cleanup outside this PR's scope.
+    paths:
+      - "app/prophet_lab.py"
+      - "engine/prophet_lab/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      - "scripts/prophet_lab_baseline.py"
+      - "tests/test_prophet_lab.py"
+      - "tests/test_prophet_lab_api.py"
+      - "tests/test_prophet_lab_timeparse.py"
+      - "tests/test_prophet_lab_commissioning.py"
+      - "tests/fixtures/prophet_lab/**"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
+        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
+        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
+        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
+        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
+        # either deletes the R2 credential env vars or injects a fake client
+        # object directly — the real boto3 import is never reached.
+        run: pip install pytest pandas fastapi httpx pyyaml
+      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+        run: >
+          python -m pytest
+          tests/test_prophet_lab.py
+          tests/test_prophet_lab_api.py
+          tests/test_prophet_lab_timeparse.py
+          tests/test_prophet_lab_commissioning.py -q
 
   attested-history-guards:
     if: ${{ false }}
@@ -6023,6 +6085,16 @@ jobs:
       - "engine/earnings_narrative/**"
       - "engine/fundamental_forensics/**"
       - "engine/government_revenue/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/marketing/**"
       - "engine/metabolism/**"
       - "engine/neuralweb/**"
@@ -6308,6 +6380,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
@@ -10743,6 +10825,16 @@ jobs:
       - "engine/government_revenue/**"
       - "engine/marketing/**"
       - "engine/metabolism/**"
+      - "engine/entry_radar/__init__.py"
+      - "engine/entry_radar/contracts.py"
+      - "engine/entry_radar/spool.py"
+      # 2026-08-19 LAB-0 §6 commissioning-prep heal: engine/prophet_lab/sources.py
+      # (below) now imports engine.entry_radar.spool (the R2-first read seam,
+      # mirrors the Radar spool WRITER's own backend ladder) -- never the
+      # detector/scoring stack (live_ledger/challengers/detectors), which stays
+      # off limits and off this job's closure. spool.py itself only imports
+      # entry_radar/contracts.py (stdlib-only) and entry_radar/__init__.py, so
+      # exactly these three files, never engine/entry_radar/** broadly.
       - "engine/neuralweb/**"
       - "engine/press/**"
       - "engine/prophet_board_read.py"
