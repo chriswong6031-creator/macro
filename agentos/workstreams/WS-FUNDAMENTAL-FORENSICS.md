@@ -14,8 +14,9 @@ class: build
 blast_radius: user_facing
 ambiguity: specified
 blocked_by:
-  - "Production incremental 32116597760 cancelled at the 90-minute job budget on the 2837-issuer per-issuer census. FF-1 is not PROVEN_LIVE. July recovery has not started. Do not start FF-2."
-  - "FF-1P2R index-driven discovery is implemented on PR #5898 but not production-commissioned. Do not start July recovery from the build PR."
+  - "Production incremental 32116597760 cancelled at the 90-minute job budget on the 2837-issuer per-issuer census. FF-1 is not PROVEN_LIVE. Do not start FF-2."
+  - "FF-1P2R current-quarter index discovery on PR #5898 is BUILT_NOT_PROVEN, awaiting Sol review / production commissioning. #5898 does not perform production recovery."
+  - "FF-1R July recovery engine is NOT_BUILT. Live Q3 index candidates are 2560 rows / 2541 unique CIKs. Do not start FF-1R from this PR."
 discoveries:
   - DSC:FF-1-LIVE-UNIVERSE-EXCEEDS-2500
   - DSC:FF-1-PER-ISSUER-CENSUS-EXCEEDS-90M
@@ -24,6 +25,7 @@ discoveries:
 decisions:
   - DEC:FF-1-UNIVERSE-BIND-CAP-4000
   - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
+  - DEC:FF-1-RECOVERY-NOT-COMMISSIONED
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -50,6 +52,12 @@ waves:
     status: in_progress
     depends_on: [FF-0]
     pr: [5820, 5864, 5898]
+    next_action: FF-1P2R is BUILT_NOT_PROVEN on PR #5898; current-quarter discovery only; awaiting Sol review / production commissioning.
+  - id: FF-1R
+    title: July recovery engine
+    status: todo
+    depends_on: [FF-1]
+    next_action: NOT_BUILT. Starting fact from DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY — 2560 relevant rows / 2541 unique canonical CIKs with filed_on >= 2026-07-12. Do not start now.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -70,6 +78,8 @@ landmines:
   - "A cancelled 90-minute run may have admitted valid immutable objects with no latest-complete. Index baseline may become canonical while those objects remain. Reconcile issuer latest pointers only when an issuer is affected; do not infer emptiness from list_prefix."
   - "Index HTTP Last-Modified, archive_retrieved_at, and index_latest_filed_on are never sec_accepted_at. Acceptance comes only from per-issuer Submissions."
   - "Index state is quarter-scoped. Do not treat Q3 rows missing from a Q4 baseline as mass corrections."
+  - "index_latest is the latest fully processed discovery snapshot, not the latest archive downloaded. Unresolved PIT/unevaluable NEW index events must not advance it."
+  - "Previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT. Current-quarter rebuilt-index corrections are implemented; FF-1 is not globally correction-safe yet."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -80,14 +90,15 @@ do_not_redo:
   - "Do not write the full run receipt into latest-observation.json or latest-complete.json; those pointers are 16KiB."
   - "Do not relabel generated_at or public_summary generated_at as a build, composition, or publication clock."
   - "Do not treat PR #5820 merge as production proof. The first scheduled incremental failed universe_invalid."
-  - "Do not dispatch July recovery from the FF-1P2R build PR. Live Q3 index implies ~2541 recovery CIKs after 2026-07-12; report that to Sol first."
+  - "Do not dispatch July recovery from PR #5898. mode=recovery fail-closes with recovery_plan_required until FF-1R. Live Q3 index implies 2560 rows / 2541 unique CIKs after 2026-07-12."
+  - "Do not ship recovery that fetches Submissions for every pending CIK before selecting Company Facts. That 8→5→2 shape is not accepted architecture."
   - "Do not raise MAX_AFFECTED_ISSUERS or the Company Facts byte budget to finish recovery in one run."
   - "Do not raise timeout-minutes to finish the 2837-issuer census. Do not treat PR #5864 merge as production proof."
   - "Do not purge fundamental_forensics/broad-sec/v1/ after a cancelled run."
   - "Do not ingest companyfacts.zip. Do not change Wave-2."
   - "Do not authorize or freeze a submissions.zip compressed maximum. Live Content-Length was 1558585919. Sol rejected a 2 GiB bound."
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
-next_action: Return PR #5898 (index-driven discovery) to Sol unmerged. After merge, run one explicit production incremental baseline under 90 minutes before any July recovery. FF-1 remains blocked and not PROVEN_LIVE. FF-2 remains forbidden.
+next_action: Return PR #5898 to Sol unmerged. FF-1P2R is BUILT_NOT_PROVEN (current-quarter discovery). FF-1R is NOT_BUILT. Prior-quarter weekly reconciliation is NOT_BUILT. Do not merge, do not dispatch incremental or recovery, do not start FF-2.
 ---
 
 ## Context
@@ -104,4 +115,12 @@ The first scheduled incremental (run 32097495749) failed `universe_invalid`.
 The first incremental after the cap raise (run 32116597760) cancelled at the
 90-minute job timeout on the per-issuer census and emitted no receipt. The
 submissions.zip canary declared 1.45 GiB and was correctly stopped. FF-1 is
-not PROVEN_LIVE. July recovery has not started.
+not PROVEN_LIVE.
+
+#5898 owns current-quarter index-driven discovery only
+(`DEC:FF-1-RECOVERY-NOT-COMMISSIONED`). `mode=recovery` fail-closes with
+`recovery_plan_required` before any SEC call or Research R2 write. FF-1R
+(July recovery engine) is NOT_BUILT; the measured starting fact is 2560
+relevant rows / 2541 unique canonical CIKs with `filed_on >= 2026-07-12`.
+Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT.
+Do not mark FF-1 done. FF-2 remains forbidden.

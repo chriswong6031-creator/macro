@@ -22,6 +22,7 @@ from engine.fundamental_forensics.broad_sec_store import (
     BroadSecError,
     PollClocks,
     count_source_objects,
+    index_latest_key,
     issuer_latest_key,
     latest_complete_key,
     latest_observation_key,
@@ -29,6 +30,7 @@ from engine.fundamental_forensics.broad_sec_store import (
     object_key,
     recovery_continuation_pointer_key,
     run_broad_sec_poll,
+    PREFIX,
 )
 from engine.research_vault.r2_store import LocalStore
 from scripts.run_fundamental_forensics_broad_sec import main as broad_sec_main
@@ -511,7 +513,11 @@ def test_accession_after_selection_cutoff_is_not_admitted(tmp_path: Path) -> Non
         _clocks(POLL_3, cutoff="2026-08-15T00:00:00Z"),
         repo_root=repo,
     )
-    assert result.exit_code == 0
+    assert result.exit_code == 1
+    assert any(
+        item["reason_code"] == "edgar_index_event_not_causally_admitted"
+        for item in result.receipt["failures"]
+    )
     assert fake.facts_fetches == []
     assert count_source_objects(store) == objects_before + 1
     digest = sha256(fake.submissions[AAPL[1]]).hexdigest()
@@ -714,13 +720,8 @@ def test_cas_failure_does_not_move_complete_pointer(tmp_path: Path) -> None:
 def test_recovery_window_predating_recent_submissions_is_reason_coded(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
-    fake.submissions[AAPL[1]] = _submissions_bytes(
-        AAPL[1],
-        [_filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-07-20")],
-        files=[{"name": "CIK0000320193-submissions-001.json", "filingCount": 40}],
-    )
-    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000010")])
+    keys_before = store.list_prefix(PREFIX)
     result = _poll(
         store,
         universe,
@@ -730,10 +731,11 @@ def test_recovery_window_predating_recent_submissions_is_reason_coded(tmp_path: 
         mode="recovery",
     )
     assert result.exit_code == 1
-    assert any(
-        item["reason_code"] == "historical_submissions_required"
-        for item in result.receipt["failures"]
-    )
+    assert result.receipt["reason_code"] == "recovery_plan_required"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.facts_fetches == []
+    assert store.list_prefix(PREFIX) == keys_before
     assert store.get_bytes_strict(latest_complete_key()) is None
 
 
@@ -848,6 +850,15 @@ def test_cli_incremental_refuses_recovery_from() -> None:
     assert broad_sec_main(["--mode", "incremental", "--recovery-from", POLL_1]) == 1
 
 
+def test_cli_recovery_mode_fails_closed_with_recovery_plan_required(capsys: pytest.CaptureFixture[str]) -> None:
+    code = broad_sec_main(["--mode", "recovery", "--recovery-from", RECOVERY_FROM])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out.strip().splitlines()[-1])
+    assert code == 1
+    assert payload["reason_code"] == "recovery_plan_required"
+    assert broad_sec_main(["--mode", "recovery"]) == 1
+
+
 def test_broad_sec_suite_is_named_in_engine_render_guards() -> None:
     text = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
     match = re.search(
@@ -864,26 +875,8 @@ def test_broad_sec_suite_is_named_in_engine_render_guards() -> None:
 def test_empty_store_recovery_bootstraps_baseline_without_mass_companyfacts(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193), (MSFT[0], 789019)])
     fake = FakeSec()
-    fake.submissions[AAPL[1]] = _submissions_bytes(
-        AAPL[1],
-        [
-            _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15"),
-            _filing("0000320193-26-000040", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20"),
-        ],
-    )
-    fake.submissions[MSFT[1]] = _submissions_bytes(
-        MSFT[1],
-        [_filing("0000789019-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15")],
-    )
-    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "recovery")
-    fake.facts[MSFT[1]] = _facts_bytes(MSFT[1], "should-not-fetch")
-    fake.set_index(
-        [
-            _idx_row(AAPL[1], "10-Q", "2026-06-15", "0000320193-26-000010"),
-            _idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000040"),
-            _idx_row(MSFT[1], "10-Q", "2026-06-15", "0000789019-26-000010"),
-        ]
-    )
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000040")])
+    keys_before = store.list_prefix(PREFIX)
     result = _poll(
         store,
         universe,
@@ -892,21 +885,14 @@ def test_empty_store_recovery_bootstraps_baseline_without_mass_companyfacts(tmp_
         repo_root=repo,
         mode="recovery",
     )
-    assert result.exit_code == 0
-    assert fake.submissions_fetches == [AAPL[1]]
-    assert fake.facts_fetches == [AAPL[1]]
-    aapl = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
-    jsonschema.validate(aapl, MANIFEST_SCHEMA)
-    assert aapl["companyfacts_snapshot_kind"] == "current_observed"
-    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
-    assert "0000320193-26-000010" in aapl["cumulative_relevant_accessions"]
-
-    fake.facts_fetches.clear()
-    fake.submissions_fetches.clear()
-    incremental = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
-    assert incremental.exit_code == 0
-    assert fake.facts_fetches == []
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_plan_required"
+    assert fake.index_fetches == []
     assert fake.submissions_fetches == []
+    assert fake.facts_fetches == []
+    assert store.list_prefix(PREFIX) == keys_before
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
 
 
 def test_recent_window_removal_does_not_false_refresh_companyfacts(tmp_path: Path) -> None:
@@ -939,23 +925,11 @@ def test_recent_window_removal_does_not_false_refresh_companyfacts(tmp_path: Pat
 
 
 def test_recovery_converges_across_bounded_tranches(tmp_path: Path) -> None:
-    rows = [(f"T{index:02d}", 3200000 + index) for index in range(70)]
-    repo, universe, store = _layout(tmp_path, rows)
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
-    index_rows = []
-    for ticker, cik_int in rows:
-        cik = f"{cik_int:010d}"
-        fake.submissions[cik] = _submissions_bytes(
-            cik,
-            [
-                _filing(f"{cik}-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15"),
-                _filing(f"{cik}-26-000040", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20"),
-            ],
-        )
-        fake.facts[cik] = _facts_bytes(cik, ticker)
-        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
-    fake.set_index(index_rows)
-    first = _poll(
+    fake.set_index([])
+    keys_before = store.list_prefix(PREFIX)
+    result = _poll(
         store,
         universe,
         fake,
@@ -964,32 +938,14 @@ def test_recovery_converges_across_bounded_tranches(tmp_path: Path) -> None:
         mode="recovery",
         max_affected_issuers=64,
     )
-    assert first.exit_code == 1
-    assert first.receipt["coverage"]["companyfacts_fetched"] == 64
-    assert first.receipt["coverage"]["observed_issuers"] == 70
-    assert first.receipt["coverage"]["recovery_backlog"] == 6
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_plan_required"
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.facts_fetches == []
+    assert store.list_prefix(PREFIX) == keys_before
+    assert store.get_bytes_strict(recovery_continuation_pointer_key()) is None
     assert store.get_bytes_strict(latest_complete_key()) is None
-    assert store.get_bytes_strict(recovery_continuation_pointer_key()) is not None
-    first_fetched = list(fake.facts_fetches)
-
-    fake.facts_fetches.clear()
-    second = _poll(
-        store,
-        universe,
-        fake,
-        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
-        repo_root=repo,
-        mode="recovery",
-        max_affected_issuers=64,
-    )
-    assert second.exit_code == 0
-    assert second.receipt["status"] == "complete"
-    assert len(fake.facts_fetches) == 6
-    assert set(first_fetched).isdisjoint(set(fake.facts_fetches))
-    head, _ = _receipt_from_head(store, latest_complete_key())
-    assert head["run_id"] == second.receipt["run_id"]
-    continuation = _load_json(store, recovery_continuation_pointer_key())
-    assert continuation["pending_count"] == 0
 
 
 def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path) -> None:
@@ -1008,15 +964,19 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
         )
         fake.facts[cik] = _facts_bytes(cik, ticker)
         index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    index_before = _load_json(store, index_latest_key("2026-Q3"))
     fake.set_index(index_rows)
     first_body = fake.facts[AAPL[1]]
     result = _poll(
         store,
         universe,
         fake,
-        _clocks(POLL_1, recovery_from=RECOVERY_FROM),
+        _clocks(POLL_2),
         repo_root=repo,
-        mode="recovery",
         max_companyfacts_bytes_per_run=len(first_body) + 10,
     )
     assert result.exit_code == 1
@@ -1024,7 +984,8 @@ def test_companyfacts_byte_budget_stops_further_network_retrieval(tmp_path: Path
     assert len(fake.facts_fetches) == 2
     assert result.receipt["coverage"]["companyfacts_fetched"] == 1
     assert result.receipt["coverage"]["recovery_backlog"] >= 1
-    assert store.get_bytes_strict(latest_complete_key()) is None
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == index_before["snapshot_id"]
 
 
 def test_run_level_observation_receipt_covers_every_expected_issuer(tmp_path: Path) -> None:
@@ -1233,34 +1194,34 @@ def test_production_cli_samples_clocks_after_issuer_io(
 
 
 def test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path: Path) -> None:
-    rows = [(f"T{index:02d}", 3200000 + index) for index in range(70)]
-    repo, universe, store = _layout(tmp_path, rows)
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193), (MSFT[0], 789019)])
     fake = FakeSec()
-    index_rows = []
-    for ticker, cik_int in rows:
-        cik = f"{cik_int:010d}"
-        fake.submissions[cik] = _submissions_bytes(
-            cik,
-            [
-                _filing(f"{cik}-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-06-15"),
-                _filing(f"{cik}-26-000040", "10-Q", accepted=ACCEPT_RECOVERY, filed="2026-07-20"),
-            ],
-        )
-        fake.facts[cik] = _facts_bytes(cik, ticker)
-        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
-    fake.set_index(index_rows)
-    _poll(
-        store,
-        universe,
-        fake,
-        _clocks(POLL_1, recovery_from=RECOVERY_FROM),
-        repo_root=repo,
-        mode="recovery",
-        max_affected_issuers=64,
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    store.put_bytes_strict_conditional(
+        recovery_continuation_pointer_key(),
+        json.dumps(
+            {
+                "schema": "fundamental_forensics.broad_sec.recovery_continuation_head.v1",
+                "recovery_from": RECOVERY_FROM,
+                "universe_sha256": "planted",
+                "pending_count": 70,
+                "completed_count": 0,
+            }
+        ).encode(),
+        expected_version=None,
     )
+    fake.submissions_fetches.clear()
     fake.facts_fetches.clear()
+    fake.index_fetches.clear()
     incremental = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
-    assert incremental.exit_code == 1
+    assert incremental.receipt["mode"] == "incremental"
+    assert incremental.exit_code == 0
+    assert fake.submissions_fetches == []
     assert fake.facts_fetches == []
-    assert any(item["reason_code"] == "queue_overflow" for item in incremental.receipt["failures"])
-    assert store.get_bytes_strict(latest_complete_key()) is None
+    assert incremental.receipt["reason_code"] != "recovery_plan_required"
+
+
+def test_incremental_never_enters_recovery(tmp_path: Path) -> None:
+    test_incremental_does_not_silently_enter_recovery_on_backlog(tmp_path)

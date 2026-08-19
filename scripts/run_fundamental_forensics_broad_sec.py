@@ -1,10 +1,12 @@
 """Incremental broad SEC source-plane poll for Filing Forensics (FF-1).
 
 Scheduled invocation is incremental only. Recovery is an explicit
-workflow_dispatch path. Discovery uses the official EDGAR full-index master
-ZIP; per-issuer Submissions and Company Facts run only for affected
-canonical issuers. Partial polls persist successful issuer evidence but
-exit non-zero and do not advance the latest-complete census head.
+workflow_dispatch path that currently fail-closes with
+``recovery_plan_required`` until FF-1R is commissioned. Discovery uses the
+official EDGAR full-index master ZIP; per-issuer Submissions and Company
+Facts run only for affected canonical issuers. Partial polls persist
+successful issuer evidence but exit non-zero and do not advance the
+latest-complete census head.
 """
 from __future__ import annotations
 
@@ -62,8 +64,19 @@ def main(
     parser.add_argument("--user-agent", default=None)
     args = parser.parse_args(argv)
 
-    if args.mode == "recovery" and not args.recovery_from:
-        print("recovery mode requires --recovery-from", file=sys.stderr)
+    if args.mode == "recovery":
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "reason_code": "recovery_plan_required",
+                    "detail": (
+                        "Index-driven discovery is live, but large-scale recovery "
+                        "is not commissioned on this build."
+                    ),
+                }
+            )
+        )
         return 1
     if args.mode == "incremental" and args.recovery_from:
         print("incremental mode refuses --recovery-from", file=sys.stderr)

@@ -13,8 +13,10 @@ from engine.fundamental_forensics.broad_sec_store import (
     MAX_MASTER_INDEX_ZIP_BYTES,
     PREFIX,
     BroadSecError,
+    index_latest_key,
     issuer_latest_key,
     latest_complete_key,
+    latest_observation_key,
     object_key,
     parse_master_index_archive,
     previous_quarter_reconciliation_due,
@@ -22,6 +24,7 @@ from engine.fundamental_forensics.broad_sec_store import (
 from engine.research_vault.r2_store import LocalStore
 from tests.test_fundamental_forensics_broad_sec import (
     AAPL,
+    ACCEPT_LATE,
     ACCEPT_NEW,
     ACCEPT_Q,
     MSFT,
@@ -247,7 +250,7 @@ def test_removed_index_row_is_a_correction_candidate_and_preserves_lineage(tmp_p
     payload = _load_gzip_json(store, result.receipt["storage"]["observation_key"])
     row = payload["issuers"][0]
     assert row["correction_event_count"] == 1
-    assert row["reason_code"] == "edgar_index_correction_requires_reconciliation"
+    assert row["reason_code"] is None
     manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
     assert original["accession"] in manifest["cumulative_relevant_accessions"]
     assert later["accession"] in manifest["cumulative_relevant_accessions"]
@@ -386,23 +389,16 @@ def test_index_clocks_never_become_sec_accepted_at(tmp_path: Path) -> None:
     assert manifest["sec_accepted_at"] != manifest["submissions_retrieved_at"]
 
 
-def test_july_recovery_derives_only_canonical_relevant_ciks(tmp_path: Path) -> None:
-    rows = [(f"T{index:02d}", 3200000 + index) for index in range(12)]
-    repo, universe, store = _layout(tmp_path, rows)
+def test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
-    index_rows = []
-    for index, (ticker, cik_int) in enumerate(rows):
-        cik = f"{cik_int:010d}"
-        filed = "2026-07-20" if index < 3 else "2026-07-01"
-        accession = f"{cik}-26-000040" if index < 3 else f"{cik}-26-000010"
-        fake.submissions[cik] = _submissions_bytes(
-            cik,
-            [_filing(accession, "10-Q", accepted=ACCEPT_Q if index >= 3 else "2026-07-20T18:00:00Z", filed=filed)],
-        )
-        fake.facts[cik] = _facts_bytes(cik, ticker)
-        index_rows.append(_idx_row(cik, "10-Q", filed, accession))
-        index_rows.append(_idx_row(cik, "8-K", "2026-08-01", f"{cik}-26-000088"))
-    fake.set_index(index_rows)
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000040")])
+    fake.submissions[AAPL[1]] = _submissions_bytes(
+        AAPL[1],
+        [_filing("0000320193-26-000040", "10-Q", accepted=ACCEPT_Q, filed="2026-07-20")],
+    )
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    keys_before = store.list_prefix(PREFIX)
     result = _poll(
         store,
         universe,
@@ -411,70 +407,144 @@ def test_july_recovery_derives_only_canonical_relevant_ciks(tmp_path: Path) -> N
         repo_root=repo,
         mode="recovery",
     )
-    assert result.exit_code == 0
-    assert len(fake.submissions_fetches) == 3
-    assert set(fake.submissions_fetches) == {f"{3200000 + index:010d}" for index in range(3)}
-    assert set(fake.facts_fetches) == set(fake.submissions_fetches)
-    for index in range(3, 12):
-        assert store.get_bytes_strict(issuer_latest_key(f"{3200000 + index:010d}")) is None
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_plan_required"
+    _validate_run(result.receipt)
+    assert fake.index_fetches == []
+    assert fake.submissions_fetches == []
+    assert fake.facts_fetches == []
+    assert store.list_prefix(PREFIX) == keys_before
+    assert store.get_bytes_strict(latest_complete_key()) is None
+    assert store.get_bytes_strict(latest_observation_key()) is None
+    assert store.get_bytes_strict(index_latest_key("2026-Q3")) is None
+
+
+def test_july_recovery_derives_only_canonical_relevant_ciks(tmp_path: Path) -> None:
+    """July recovery execution is not commissioned on this build."""
+    test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path)
 
 
 def test_recovery_continuation_does_not_repoll_the_universe(tmp_path: Path) -> None:
-    rows = [(f"T{index:02d}", 3200000 + index) for index in range(8)]
-    repo, universe, store = _layout(tmp_path, rows)
+    """The 8→5→2 Submissions recovery shape is not accepted architecture."""
+    test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path)
+
+
+def test_pit_cutoff_index_event_is_not_consumed_and_retries(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
-    index_rows = []
-    for ticker, cik_int in rows:
-        cik = f"{cik_int:010d}"
-        fake.submissions[cik] = _submissions_bytes(
-            cik,
-            [_filing(f"{cik}-26-000040", "10-Q", accepted="2026-07-20T18:00:00Z", filed="2026-07-20")],
-        )
-        fake.facts[cik] = _facts_bytes(cik, ticker)
-        index_rows.append(_idx_row(cik, "10-Q", "2026-07-20", f"{cik}-26-000040"))
-    fake.set_index(index_rows)
-    first = _poll(
-        store,
-        universe,
-        fake,
-        _clocks(POLL_1, recovery_from=RECOVERY_FROM),
-        repo_root=repo,
-        mode="recovery",
-        max_affected_issuers=3,
+    accession = "0000320193-26-000099"
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    baseline_index = _load_json(store, index_latest_key("2026-Q3"))
+    baseline_complete = _load_json(store, latest_complete_key())
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-16", accession)])
+    fake.submissions[AAPL[1]] = _submissions_bytes(
+        AAPL[1],
+        [_filing(accession, "10-Q", accepted=ACCEPT_LATE, filed="2026-08-16")],
     )
-    assert first.exit_code == 1
-    assert first.receipt["coverage"]["companyfacts_fetched"] == 3
-    assert len(fake.submissions_fetches) == 8
-    first_facts = list(fake.facts_fetches)
-    fake.facts_fetches.clear()
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
     fake.submissions_fetches.clear()
-    second = _poll(
-        store,
-        universe,
-        fake,
-        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
-        repo_root=repo,
-        mode="recovery",
-        max_affected_issuers=3,
-    )
-    assert second.exit_code == 1
-    assert len(fake.submissions_fetches) == 5
-    assert len(fake.facts_fetches) == 3
-    assert set(first_facts).isdisjoint(set(fake.facts_fetches))
     fake.facts_fetches.clear()
-    fake.submissions_fetches.clear()
-    third = _poll(
+    run1 = _poll(
         store,
         universe,
         fake,
-        _clocks(POLL_3, recovery_from=RECOVERY_FROM),
+        _clocks(POLL_1, cutoff="2026-08-15T00:00:00Z"),
         repo_root=repo,
-        mode="recovery",
-        max_affected_issuers=3,
     )
-    assert third.exit_code == 0
-    assert len(fake.submissions_fetches) == 2
-    assert len(fake.facts_fetches) == 2
+    assert run1.exit_code != 0
+    assert fake.submissions_fetches == [AAPL[1]]
+    assert fake.facts_fetches == []
+    assert any(
+        item["reason_code"] == "edgar_index_event_not_causally_admitted"
+        for item in run1.receipt["failures"]
+    )
+    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == baseline_index["snapshot_id"]
+    assert _load_json(store, latest_complete_key())["run_id"] == baseline_complete["run_id"]
+    latest = store.get_bytes_strict(issuer_latest_key(AAPL[1]))
+    if latest is not None:
+        manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
+        accessions = [item["accession_number"] for item in manifest["relevant_filings"]]
+        assert accession not in accessions
+        assert accession not in manifest["cumulative_relevant_accessions"]
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    run2 = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert run2.exit_code == 0
+    assert fake.submissions_fetches == [AAPL[1]]
+    assert fake.facts_fetches == [AAPL[1]]
+    manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
+    accessions = [item["accession_number"] for item in manifest["relevant_filings"]]
+    assert accessions.count(accession) == 1
+    assert accession in manifest["cumulative_relevant_accessions"]
+    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] != baseline_index["snapshot_id"]
+    assert _load_json(store, latest_complete_key())["run_id"] == run2.receipt["run_id"]
+
+
+def test_unevaluable_acceptance_does_not_consume_index_event(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    accession = "0000320193-26-000077"
+    fake.set_index([])
+    baseline = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert baseline.exit_code == 0
+    baseline_index = _load_json(store, index_latest_key("2026-Q3"))
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", accession)])
+    fake.submissions[AAPL[1]] = _submissions_bytes(
+        AAPL[1],
+        [_filing(accession, "10-Q", accepted=None, filed="2026-08-12")],
+    )
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code != 0
+    assert fake.submissions_fetches == [AAPL[1]]
+    assert fake.facts_fetches == []
+    assert any(
+        item["reason_code"] == "edgar_index_event_not_causally_admitted"
+        for item in result.receipt["failures"]
+    )
+    assert _load_json(store, index_latest_key("2026-Q3"))["snapshot_id"] == baseline_index["snapshot_id"]
+    assert store.get_bytes_strict(latest_complete_key()) is not None
+    assert _load_json(store, latest_complete_key())["run_id"] == baseline.receipt["run_id"]
+
+
+def test_baseline_removed_index_accession_stays_in_cumulative_lineage(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    original = _filing("0000320193-26-000010", "10-Q", accepted=ACCEPT_Q, filed="2026-07-15")
+    later = _filing("0000320193-26-000044", "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")
+    fake.set_index(
+        [
+            _idx_row(AAPL[1], "10-Q", "2026-07-15", original["accession"]),
+            _idx_row(AAPL[1], "10-Q", "2026-08-12", later["accession"]),
+        ]
+    )
+    first = _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo)
+    assert first.exit_code == 0
+    assert first.receipt["index"]["baseline"] is True
+    assert fake.submissions_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
+    prior_index = _load_json(store, index_latest_key("2026-Q3"))
+    snapshot_bytes = store.get_bytes_strict(prior_index["snapshot_key"])
+    assert snapshot_bytes is not None
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", later["accession"])])
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], [later])
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1])
+    fake.submissions_fetches.clear()
+    fake.facts_fetches.clear()
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert result.exit_code == 0
+    assert fake.submissions_fetches == [AAPL[1]]
+    assert result.receipt["index"]["correction_events"] == 1
+    payload = _load_gzip_json(store, result.receipt["storage"]["observation_key"])
+    assert payload["issuers"][0]["correction_event_count"] == 1
+    manifest = _load_json(store, _load_json(store, issuer_latest_key(AAPL[1]))["manifest_key"])
+    assert original["accession"] in manifest["cumulative_relevant_accessions"]
+    assert later["accession"] in manifest["cumulative_relevant_accessions"]
+    assert store.get_bytes_strict(prior_index["snapshot_key"]) == snapshot_bytes
 
 
 def test_quarter_rollover_does_not_treat_prior_quarter_rows_as_mass_corrections(tmp_path: Path) -> None:

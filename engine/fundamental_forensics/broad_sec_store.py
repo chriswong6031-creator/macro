@@ -114,6 +114,8 @@ REASON_CODES = frozenset(
         "edgar_index_cik_mismatch",
         "edgar_index_gap",
         "edgar_index_correction_requires_reconciliation",
+        "edgar_index_event_not_causally_admitted",
+        "recovery_plan_required",
     }
 )
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
@@ -293,11 +295,13 @@ def previous_quarter_reconciliation_due(
     poll_started_at: str,
     last_reconciled_at: str | None = None,
 ) -> bool:
-    """Frozen seam: weekly previous-quarter reconciliation is not executed here.
+    """SPEC_ONLY / NOT_BUILT: weekly previous-quarter reconciliation.
 
-    Cadence is ``PREVIOUS_QUARTER_RECONCILIATION_CADENCE`` ('weekly').  This PR
-    does not scan historical quarters nightly.  Return False until Sol
-    authorizes implementing the weekly previous-quarter GET.
+    Current-quarter rebuilt-index corrections are implemented in this discovery
+    plane. Previous-quarter weekly crawling is not built and is required before
+    FF-1 can be called globally correction-safe. Cadence remains
+    ``PREVIOUS_QUARTER_RECONCILIATION_CADENCE`` ('weekly'). This function
+    returns False until that engine is commissioned (FF-1R / final closure).
     """
     del poll_started_at, last_reconciled_at
     return False
@@ -1052,8 +1056,10 @@ def _load_continuation(
     if index_snapshot_sha256 is not None:
         bound = pointer.get("index_snapshot_sha256")
         if bound is not None and bound != index_snapshot_sha256:
-            # Bound backlog stays; a newer index does not recreate 2837 work.
-            pass
+            raise BroadSecError(
+                "edgar_index_invalid",
+                "recovery continuation index_snapshot_sha256 mismatch",
+            )
     object_ref = pointer.get("object_key")
     digest = pointer.get("sha256")
     if not isinstance(object_ref, str) or not isinstance(digest, str):
@@ -1129,8 +1135,51 @@ def run_broad_sec_poll(
 ) -> PollResult:
     if mode not in {"incremental", "recovery"}:
         raise ValueError("mode must be incremental or recovery")
-    if mode == "recovery" and not clocks.recovery_from:
-        raise BroadSecError("universe_invalid", "recovery requires recovery_from")
+    if mode == "recovery":
+        clocks.poll_completed_at = clocks.poll_completed_at or now()
+        clocks.recorded_at = clocks.recorded_at or now()
+        run_id = _build_run_id(
+            mode=mode,
+            poll_started_at=clocks.poll_started_at,
+            universe_sha="recovery_not_commissioned",
+        )
+        receipt = _empty_receipt(
+            run_id=run_id,
+            mode=mode,
+            status="failed",
+            reason_code="recovery_plan_required",
+            clocks=clocks,
+            universe=None,
+            coverage={
+                "expected_issuers": 0,
+                "observed_issuers": 0,
+                "failed_issuers": 0,
+                "companyfacts_fetched": 0,
+                "companyfacts_skipped_unchanged": 0,
+                "companyfacts_bytes_fetched": 0,
+                "companyfacts_deferred": 0,
+                "recovery_backlog": 0,
+            },
+            change_summary={
+                "new_relevant_accessions": 0,
+                "affected_issuers": 0,
+                "objects_admitted": 0,
+                "manifests_admitted": 0,
+            },
+            latest_relevant_sec_accepted_at=None,
+            failures=[
+                {
+                    "ticker": "",
+                    "cik": "",
+                    "reason_code": "recovery_plan_required",
+                    "detail": (
+                        "Index-driven discovery is live, but large-scale recovery "
+                        "is not commissioned on this build."
+                    ),
+                }
+            ],
+        )
+        return PollResult(receipt=receipt, exit_code=1)
     if mode == "incremental" and clocks.recovery_from:
         raise BroadSecError("universe_invalid", "incremental mode cannot carry a recovery window")
     if fetch_master_index is None:
@@ -1294,14 +1343,6 @@ def run_broad_sec_poll(
         removed_by_cik.setdefault(row["cik"], []).append(row)
 
     continuation = None
-    continuation_pointer = _read_json(
-        store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES
-    )
-    outstanding_backlog = (
-        continuation_pointer is not None
-        and continuation_pointer.get("universe_sha256") == universe.content_sha256
-        and int(continuation_pointer.get("pending_count") or 0) > 0
-    )
     if mode == "recovery" and clocks.recovery_from:
         continuation = _load_continuation(
             store,
@@ -1435,6 +1476,26 @@ def run_broad_sec_poll(
                     needs_facts = False
             else:
                 needs_facts = bool(new_accessions)
+            withheld_by_acc = {
+                row["accession_number"]: row
+                for row in withheld
+                if isinstance(row.get("accession_number"), str)
+            }
+            unresolved_new: list[tuple[str, str]] = []
+            for row in new_by_cik.get(issuer.cik, []):
+                acc = row["accession"]
+                if acc in set(current_accessions):
+                    continue
+                withheld_row = withheld_by_acc.get(acc)
+                cause = (
+                    str(withheld_row.get("withheld_cause") or "unevaluable")
+                    if withheld_row is not None
+                    else "missing_from_submissions"
+                )
+                unresolved_new.append((acc, cause))
+            if unresolved_new:
+                needs_facts = False
+                observation["reason_code"] = "edgar_index_event_not_causally_admitted"
             change_summary["new_relevant_accessions"] += len(
                 recovery_delta if mode == "recovery" else new_accessions
             )
@@ -1448,8 +1509,6 @@ def run_broad_sec_poll(
                     "submissions_fetched": True,
                 }
             )
-            if removed_by_cik.get(issuer.cik):
-                observation["reason_code"] = "edgar_index_correction_requires_reconciliation"
             prepared.append(
                 {
                     "issuer": issuer,
@@ -1464,6 +1523,7 @@ def run_broad_sec_poll(
                     "needs_facts": needs_facts,
                     "observation": observation,
                     "index_removed": removed_by_cik.get(issuer.cik, []),
+                    "unresolved_new": unresolved_new,
                 }
             )
             del url
@@ -1479,15 +1539,29 @@ def run_broad_sec_poll(
             failures.append(IssuerFailure(issuer.ticker, issuer.cik, reason, str(exc)))
             coverage["failed_issuers"] += 1
 
+    for item in prepared:
+        unresolved = item.get("unresolved_new") or []
+        if not unresolved:
+            continue
+        issuer = item["issuer"]
+        causes = ", ".join(f"{acc}:{cause}" for acc, cause in unresolved)
+        failures.append(
+            IssuerFailure(
+                issuer.ticker,
+                issuer.cik,
+                "edgar_index_event_not_causally_admitted",
+                f"{issuer.ticker} index event(s) not causally admitted ({causes})",
+            )
+        )
+        coverage["failed_issuers"] += 1
+
     facts_candidates = [item for item in prepared if item["needs_facts"]]
     facts_candidates.sort(key=lambda item: (item["issuer"].ticker, item["issuer"].cik))
     change_summary["affected_issuers"] = len(facts_candidates)
     overflow = False
     selected: list[dict[str, Any]] = []
     deferred: list[dict[str, Any]] = []
-    if mode == "incremental" and (
-        len(facts_candidates) > max_affected_issuers or outstanding_backlog
-    ):
+    if mode == "incremental" and len(facts_candidates) > max_affected_issuers:
         overflow = True
         deferred = list(facts_candidates)
         failures.append(
@@ -1496,9 +1570,7 @@ def run_broad_sec_poll(
                 "",
                 "queue_overflow",
                 (
-                    f"{len(facts_candidates)} issuers need Company Facts; "
                     f"incremental cap is {max_affected_issuers}"
-                    + ("; recovery continuation is outstanding" if outstanding_backlog else "")
                 ),
             )
         )
@@ -1519,11 +1591,6 @@ def run_broad_sec_poll(
     selected_ciks = {item["issuer"].cik for item in selected}
     coverage["companyfacts_deferred"] = len(deferred)
     coverage["recovery_backlog"] = len(deferred)
-    if mode == "incremental" and outstanding_backlog:
-        coverage["recovery_backlog"] = max(
-            coverage["recovery_backlog"],
-            int(continuation_pointer.get("pending_count") or 0),
-        )
 
     _progress(on_progress, "companyfacts", candidates=len(facts_candidates), selected=len(selected))
     facts_bytes = 0
@@ -1631,22 +1698,24 @@ def run_broad_sec_poll(
                 source_accepts.append(prior_manifest.get("sec_accepted_at"))
                 continue
 
-            cumulative = list(dict.fromkeys([*item["prior_ledger"], *item["new_accessions"]]))
-            if not cumulative:
-                cumulative = [
-                    row["accession_number"]
-                    for row in item["admitted"]
-                    if isinstance(row.get("accession_number"), str)
-                ]
-            else:
-                for acc in item["admitted"]:
-                    number = acc.get("accession_number")
-                    if isinstance(number, str) and number not in cumulative:
-                        cumulative.append(number)
-                for removed in item["index_removed"]:
-                    accession = removed.get("accession")
-                    if isinstance(accession, str) and accession not in cumulative:
-                        cumulative.append(accession)
+            cumulative: list[str] = []
+            seen: dict[str, None] = {}
+
+            def _remember(accession: str) -> None:
+                if accession not in seen:
+                    seen[accession] = None
+                    cumulative.append(accession)
+
+            for acc in item["prior_ledger"]:
+                _remember(acc)
+            for acc in item["admitted"]:
+                number = acc.get("accession_number")
+                if isinstance(number, str):
+                    _remember(number)
+            for removed in item["index_removed"]:
+                accession = removed.get("accession")
+                if isinstance(accession, str):
+                    _remember(accession)
             previous_id = prior_manifest["manifest_id"] if prior_manifest else None
             manifest = {
                 "schema": MANIFEST_SCHEMA,
@@ -1917,7 +1986,7 @@ def run_broad_sec_poll(
             _put_pointer(store, latest_complete_key(), _compact_head(
                 receipt, observation_key=observation_key, observation_sha256=observation_sha
             ))
-        if index_pointer is not None and (census_complete or mode == "recovery"):
+        if index_pointer is not None and census_complete:
             existing_index = _read_json(
                 store, index_latest_key(identity["quarter_id"]), maximum_bytes=POINTER_MAX_BYTES
             )

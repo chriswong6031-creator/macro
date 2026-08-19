@@ -71,6 +71,8 @@ jobs:
           # Recovery is an explicit workflow_dispatch choice.
           MODE="incremental"
           RECOVERY_FROM=""
+          # Recovery remains a dispatch option so the contract does not vanish,
+          # but mode=recovery fail-closes until FF-1R is commissioned.
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             MODE="${{ github.event.inputs.mode || 'incremental' }}"
             RECOVERY_FROM="${{ github.event.inputs.recovery_from || '' }}"

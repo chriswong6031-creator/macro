@@ -36,7 +36,7 @@ engine/capital_structure/source_store.py	24	SEC_OBJECT_PREFIX = "capital_structu
 engine/capital_structure/source_store.py	187	or isinstance(max_byte_length, bool)
 engine/earnings_narrative/private_publication.py	33	PRIVATE_PREFIX = "earnings_wire_private/v1"
 engine/fundamental_forensics/attested_history_store.py	1	"""Read-only store for the DEDICATED attested-history bucket.
-engine/fundamental_forensics/broad_sec_store.py	50	PREFIX = "fundamental_forensics/broad-sec/v1"
+engine/fundamental_forensics/broad_sec_store.py	55	PREFIX = "fundamental_forensics/broad-sec/v1"
 engine/fundamental_forensics/disclosure_bundle.py	56	DISCLOSURE_BUNDLE_PREFIX = "fundamental_forensics/disclosures/v1"
 engine/fundamental_forensics/private_state.py	25	STATE_KEY = "fundamental_forensics/state.json.gz"
 engine/fundamental_forensics/query_snapshots.py	57	QUERY_SNAPSHOT_PREFIX = "fundamental_forensics/query-snapshots/v1"

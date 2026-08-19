@@ -51,7 +51,9 @@
         "edgar_index_member_missing",
         "edgar_index_cik_mismatch",
         "edgar_index_gap",
-        "edgar_index_correction_requires_reconciliation"
+        "edgar_index_correction_requires_reconciliation",
+        "edgar_index_event_not_causally_admitted",
+        "recovery_plan_required"
       ]
     },
     "poll_started_at": {"type": "string", "minLength": 20},
