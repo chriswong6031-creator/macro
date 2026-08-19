@@ -172,6 +172,8 @@ AGENT_WORKTREE_ROOTS = (
     ".claire/worktrees/",
     ".codex/worktrees/",
     ".codex-worktrees/",
+    ".cursor/worktrees/",
+    ".grok/worktrees/",
 )
 # `subprocess.run(timeout=...)` shoots a straggler with SIGKILL, which git cannot
 # catch — so the `index.lock` git's own lockfile machinery would have unlinked on
@@ -1381,6 +1383,61 @@ def _semantic_authority_refusal(number: Any) -> str:
     )
 
 
+#: The emitter records the authority freeze ITSELF as an infrastructure row:
+#: `ci_semantic_proof.reconcile_evidence` appends this outcome on every pr_head
+#: artifact where `authority_changed` is true and any unit classified
+#: `inherited_base` (the motivating shape — an authority-changing PR merged
+#: while main was red). An infrastructure list holding NOTHING ELSE therefore
+#: IS the freeze, not ambiguity. Getting this wrong inverts the gate: the
+#: first draft of the predicate below required `infrastructure` empty and
+#: `gate.infrastructure_blocking` false, which made the clearing DEAD for the
+#: motivating case and OPEN for a head carrying its own classified
+#: `pr_regression` — caught by the pre-ship red team, 2026-08-19.
+_AUTHORITY_SELF_EXCUSE_OUTCOME = "authority_self_excuse_refused"
+
+
+def _authority_freeze_is_sole_nonunit_blocker(loaded: Any, gate: Any) -> bool:
+    """True when frozen semantic evidence blocks ONLY on the authority freeze.
+
+    This predicate scopes the ONE bounded clearing path an authority freeze has
+    (see `_check_ci`). It answers True exactly when every non-clear signal in
+    the artifact is the freeze itself: `authority_changed=true`, every
+    top-level infrastructure row is the emitter's own self-excuse refusal,
+    every job's infrastructure passed, and — decisive — the gate exposes ZERO
+    classified blocking units. A `pr_regression`/`unknown` unit is the head's
+    OWN red and must never be blanketed by a descendant baseline; those heads
+    keep the ordinary frozen refusal. Fail CLOSED on every unreadable shape.
+    (`gate.infrastructure_blocking` is deliberately NOT consulted: it is true
+    in the motivating case purely because of the self-excuse row.)
+    """
+    evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return False
+    if evidence.get("authority_changed") is not True:
+        return False
+    infrastructure = evidence.get("infrastructure")
+    if not isinstance(infrastructure, list):
+        return False
+    if any(
+        not isinstance(row, dict)
+        or row.get("outcome") != _AUTHORITY_SELF_EXCUSE_OUTCOME
+        for row in infrastructure
+    ):
+        return False
+    jobs = evidence.get("jobs")
+    if not isinstance(jobs, list):
+        return False
+    for job in jobs:
+        if not isinstance(job, dict):
+            return False
+        job_infrastructure = job.get("infrastructure")
+        if not isinstance(job_infrastructure, dict):
+            return False
+        if str(job_infrastructure.get("outcome", "passed")) != "passed":
+            return False
+    return not getattr(gate, "blocking", True)
+
+
 def _head_can_advertise_semantic_evidence(runs: list[dict[str, Any]]) -> bool:
     return any(
         str(run.get("name") or "") == "ci-gate"
@@ -2138,7 +2195,11 @@ def _check_ci(
     the point: E1 is the OPERATOR'S DELIBERATE UNBLOCK LEVER — dispatch ci.yml on
     main once the base-side cause is healed and every pinned session clears at
     once. This mirrors `_render_status` accepting a dispatched render on a
-    descendant.
+    descendant. Since 2026-08-19, E1 is also the ONE clearing path for a frozen
+    semantic `authority_changed=true` head whose only nonunit blocker is the
+    authority freeze itself: the descendant run executes ON the merged authority,
+    so it is proof of main under the new gate rather than the candidate-era
+    evidence the fence forbids. Infrastructure ambiguity stays outside it.
 
     E2, base-side-red confirmation (per check name, `failure` conclusions only):
     the SAME name concluded `failure` on at least TWO INDEPENDENT concurrent
@@ -2307,13 +2368,76 @@ def _check_ci(
     if gate is not None:
         semantic_resolved = bool(gate.clear)
         witness_notes: list[str] = []
+        unclearable_notes: list[str] = []
         unresolved_units: list[Any] = []
+        # None until the artifact window is actually read. Every consumer below
+        # treats None as "inventory unknown", which keeps the fail-closed
+        # reading when the witness search itself raised.
+        inventory: Any = None
         if not gate.clear:
             if _semantic_has_nonunit_blocker(loaded, gate):
-                return False, (
+                refusal = (
                     "Failing semantic CI on the frozen merged head: "
                     f"{_semantic_nonunit_refusal(loaded)}. Descendant unit healing "
                     "cannot erase infrastructure or authority ambiguity."
+                )
+                if not _authority_freeze_is_sole_nonunit_blocker(loaded, gate):
+                    return False, refusal
+                # An authority-only freeze has exactly ONE clearing path, and it
+                # is E1 above, not anything semantic: a completed+success ci.yml
+                # run on a main DESCENDANT of this merge. That run executes ON the
+                # merged authority, so it is proof of main under the new gate —
+                # the post-merge transposition of the pre-merge standard "an
+                # authority-changing PR needs main itself green" — and it uses
+                # none of the candidate-era classification machinery the fence
+                # exists to distrust. Before 2026-08-19 this branch returned the
+                # refusal unconditionally, which made an authority-changing PR
+                # merged while main was red UNCLEARABLE FOREVER (its own run is
+                # frozen at merge; unit healing is disabled here by design): a
+                # session that performed an operator-granted main-red-repair
+                # merge (#5954/#5969/#6002) re-blocked on every Stop for the rest
+                # of its life and could only exit by re-filing the same
+                # `SHIP LOOP BLOCKED:` report dozens of times. E1 was already
+                # doctrine on the legacy path below ("the OPERATOR'S DELIBERATE
+                # UNBLOCK LEVER ... clears EVERY bad conclusion") — advertising
+                # semantic evidence must not make a head strictly less clearable
+                # than having none. Fail-closed: an unanswerable probe keeps the
+                # refusal, and pending checks still outrank a clearing.
+                try:
+                    green = _merged_content_green(root, owner, repo, merge_sha)
+                except Exception as exc:  # noqa: BLE001 — unanswerable keeps the freeze
+                    return False, (
+                        f"{refusal} The one clearing path — a full ci.yml run "
+                        "concluding success on a main descendant of this merge — "
+                        f"could not be probed: {str(exc)[:200].strip()}."
+                    )
+                if green is None:
+                    return False, (
+                        f"{refusal} This authority-only freeze clears through "
+                        "exactly one lever: a completed ci.yml run concluding "
+                        "SUCCESS on branch=main whose head is a main descendant of "
+                        "this merge (proof of main under the merged authority "
+                        "itself, never candidate-era evidence). Preflight for an "
+                        "in-flight baseline (`gh run list --workflow ci.yml "
+                        "--branch main --json databaseId,status --jq "
+                        "'[.[]|select(.status!=\"completed\")]'`) and WATCH it "
+                        "(`gh run watch <id> --interval 60`) rather than "
+                        "re-dispatching over it; dispatch `gh workflow run ci.yml "
+                        "--ref main` only over a clear field. The next Stop "
+                        "re-reads the result."
+                    )
+                if pending:
+                    return False, "CI still running: " + ", ".join(pending[:8])
+                return True, (
+                    "Ignored frozen authority_changed semantic evidence on the "
+                    f"merged head: full ci.yml run {green.get('id')} concluded "
+                    "success on main descendant "
+                    f"{str(green.get('head_sha') or '')[:12]}, proving the merged "
+                    "content green under the merged authority (E1). The head's "
+                    "red — "
+                    + ", ".join(f"{name} ({conclusion})" for name, conclusion in bad[:8])
+                    + " — stays pinned to the frozen pull_request merge ref "
+                    "(base-side)."
                 )
             if not gate.blocking:
                 return False, (
@@ -2338,6 +2462,12 @@ def _check_ci(
                         ancestry_cache[key] = _is_ancestor(root, ancestor, descendant)
                     return ancestry_cache[key]
 
+                inventory = semantic_proof.main_role_job_inventory(
+                    merge_sha,
+                    candidates,
+                    ancestry_witness,
+                    max_candidates=SEMANTIC_RUN_LOOKBACK,
+                )
                 for unit in gate.blocking:
                     witness = semantic_proof.find_descendant_pass_witness(
                         unit.logical_job_id,
@@ -2362,6 +2492,52 @@ def _check_ci(
                         "contract_changed="
                         f"{str(bool(getattr(witness, 'contract_changed', False))).lower()})"
                     )
+                # THE PERMANENT-TRAP FENCE (2026-08-19, PR #5936).
+                #
+                # `find_descendant_pass_witness` clears a frozen blocking unit
+                # only with a main-role PASS naming the same `logical_job_id`.
+                # But semantic ELIGIBILITY is role-dependent: `ci.yml` plans the
+                # merge gate `--gate code`, while the 74 `gate: data` jobs moved
+                # to `data-health.yml` (W2, research/
+                # CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md), a lane
+                # that emits no main-role semantic evidence at all. A head
+                # planned before that split froze blocking units for jobs main
+                # will never name again, so the witness search could not
+                # succeed on any future run — measured on #5936's head run
+                # 32223270543 (`house-law-registry`, `signal-contract`) against
+                # seven consecutive post-merge main runs plus an hour-long
+                # ancestry watcher. A job that can never clear must never block:
+                # the session was pinned by the guard's own bookkeeping, not by
+                # anything wrong with its work.
+                #
+                # Fail-closed in both directions. The inventory is read from the
+                # SAME bounded artifacts the witness search already fetched (no
+                # extra API calls, no second source of truth), it counts only
+                # ancestry-valid main artifacts, and with fewer than
+                # `MIN_INVENTORY_ARTIFACTS` of them it answers "unknown" and
+                # every unit stays blocking exactly as before. Retirement is
+                # never silent: the excluded units are named in the release
+                # note, so a genuinely broken job cannot vanish from the record.
+                retired = semantic_proof.unclearable_units(
+                    unresolved_units, inventory
+                )
+                if retired:
+                    retired_ids = {id(unit) for unit in retired}
+                    unresolved_units = [
+                        unit
+                        for unit in unresolved_units
+                        if id(unit) not in retired_ids
+                    ]
+                    for unit in retired:
+                        unclearable_notes.append(
+                            f"{unit.logical_job_id}/{unit.proof_id} retired as "
+                            "structurally unclearable: "
+                            + semantic_proof.format_main_eligibility(
+                                unit, inventory
+                            )
+                            + " — no main-role run plans this logical job, so no "
+                            "descendant PASS can ever exist for it"
+                        )
                 semantic_resolved = not unresolved_units
             except Exception as exc:
                 unresolved_units = list(gate.blocking)
@@ -2371,7 +2547,22 @@ def _check_ci(
                 )
 
         if not semantic_resolved:
-            detail = "; ".join(_semantic_unit_details(unresolved_units or gate.blocking))
+            blocked_units = list(unresolved_units or gate.blocking)
+            detail = "; ".join(_semantic_unit_details(blocked_units))
+            # Whether waiting is even capable of helping is the one fact a
+            # pinned session cannot derive on its own, so state it per unit:
+            # `main-eligible=yes` means a later main run can still emit the PASS
+            # that clears this, `unknown` means the inventory was unreadable.
+            eligibility = [
+                f"{unit.logical_job_id}/{unit.proof_id}: "
+                + semantic_proof.format_main_eligibility(unit, inventory)
+                for unit in blocked_units[:8]
+                if inventory is not None
+            ]
+            if eligibility:
+                detail += "; " + "; ".join(eligibility)
+            if unclearable_notes:
+                detail += "; " + "; ".join(unclearable_notes)
             if semantic_notes:
                 detail += "; " + "; ".join(semantic_notes)
             return False, (
@@ -2385,12 +2576,17 @@ def _check_ci(
         # exact semantic units, even when its own overall workflow stayed red.
         def semantic_transport(entry: tuple[str, str]) -> bool:
             name = entry[0]
+            # A retirement supersedes the frozen `ci-gate` for the same reason
+            # a descendant PASS does: the units that reddened it are no longer
+            # a live verdict on this head. Leaving `ci-gate` behind would keep
+            # the exact trap this fence removes, one name further down.
             return bool(re.fullmatch(r"ci-pack-\d+", name)) or (
-                bool(witness_notes) and name == "ci-gate"
+                bool(witness_notes or unclearable_notes) and name == "ci-gate"
             )
 
         bad = [entry for entry in bad if not semantic_transport(entry)]
         semantic_notes.extend(witness_notes)
+        semantic_notes.extend(unclearable_notes)
         if not bad:
             if pending:
                 return False, "CI still running: " + ", ".join(pending[:8])
@@ -3291,6 +3487,7 @@ def _block(
     payload: dict[str, Any],
     code: str,
     reason: str,
+    exit_key: str = "",
 ) -> None:
     """Block Stop, except when a reported blocker has ping-ponged past the ceiling.
 
@@ -3325,7 +3522,32 @@ def _block(
     all. There is deliberately no valve for `unmerged` or `ci_failed_unmerged`: a
     session owns its pull request until the merge lands, and the internal ceiling
     is the only thing that can end that wait early.
+
+    A RATIFIED ladder exit is REMEMBERED for the exact frozen state it excused
+    (2026-08-19, operator complaint). ``exit_key`` names one evaluated state —
+    today only `ci_failed` on a merged head, keyed
+    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>``. The reason
+    digest is load-bearing, not decoration: a merged head's check SET is not
+    immutable (a `gh run rerun` or a late-attaching cron can bind a different
+    red to the same shas), so the shas alone would let one ratified report
+    cover an unbounded family of later, unrelated CI states. Digesting the
+    block reason pins the memory to the exact evidence the report answered —
+    any different red produces a different reason, a different key, and a fresh
+    block, which is the fail-closed direction. Without the memory, a long-lived
+    session re-blocked on every subsequent Stop and had to re-file the SAME
+    `SHIP LOOP BLOCKED:` report dozens of times (measured on the 2026-08-19
+    authority-frozen main-red-repair session). The memory records an exit key
+    ONLY at the moment an escape actually fires — which itself required the
+    full evidence report on a re-entrant Stop — and a later block carrying a
+    remembered key passes through without bumping any counter. A DIFFERENT key
+    (new PR, new merge, new evidence) never matches, internal codes never carry
+    a key, and an unratified block records nothing, so no ladder widens: the
+    report is demanded once per frozen state instead of once per Stop.
     """
+    exits = state.get("ladder_exits")
+    remembered = [str(item) for item in exits] if isinstance(exits, list) else []
+    if exit_key and exit_key in remembered:
+        return
     previous = state.get("last_blocker")
     count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
     state["last_blocker"] = code
@@ -3360,6 +3582,11 @@ def _block(
     external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
     any_code_escape = count >= 10 or total_blocks >= 15
     if reported and (external_escape or any_code_escape):
+        if exit_key:
+            # Bounded: the list only ever holds frozen merged-head identities,
+            # and a session mints at most a handful of merges.
+            state["ladder_exits"] = (remembered + [exit_key])[-20:]
+            _save(path, state)
         return
     # The escape hint is only inviting when an escape is plausibly one attempt away:
     # an external code (its ceiling is low), or an internal code already near the
@@ -3703,7 +3930,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _remember_proof(path, state, "ci", ci_key, {"reason": ci_reason})
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
-        _block(path, state, payload, code, ci_reason)
+        # Only the merged-head red carries an exit key, and the key binds the
+        # exact evidence text: one ratified ladder exit covers later Stops on
+        # the IDENTICAL frozen state only. A different red on the same head
+        # (rerun, late cron) yields a different reason and re-blocks.
+        # `render_pending` states evolve and never carry a key.
+        reason_digest = hashlib.sha256(ci_reason.encode("utf-8")).hexdigest()[:12]
+        _block(
+            path,
+            state,
+            payload,
+            code,
+            ci_reason,
+            exit_key=(
+                f"{code}:{ci_key}:{reason_digest}" if code == "ci_failed" else ""
+            ),
+        )
         return
     if _proof(state, "origin_main", merge_sha) is None:
         try:

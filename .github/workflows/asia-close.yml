@@ -324,6 +324,17 @@ jobs:
           CN_LANE: asia   # explicit asia-lane gate: the ONLY lane that may persist the board ledger
                           # (this job runs after the A-share close and commits data/). Render lanes
                           # leave CN_LANE unset/non-asia so china_standout_track.append_board refuses.
+          COLLECT_LANE: nightly   # GD-4A (2026-08-19): arms engine.risk_radar_intl_audit.
+                          # ledger_lane_armed() so THIS settled-close run is the one that
+                          # advances data/risk_radar_intl/cn_forward_log.jsonl (snapshot_and_grade
+                          # + the bounded tuner). Scoped to this step only — build_china is a
+                          # standalone step running exactly one command (python -m
+                          # scripts.build_china) and its only ledger_lane_armed() caller is the
+                          # CN risk-radar audit (verified 2026-08-19: no market_state_audit /
+                          # risk_radar_audit / ignition_audit / opex_risk / event_window /
+                          # top_maturation import in scripts/build_china.py), so arming this
+                          # step's env does not un-gate any other writer. Job-wide arming is
+                          # deliberately avoided — see the line-667 comment below.
         run: |
           set +e
           # Job-start marker for the library rebuild step's skip-if-fresh check below
@@ -520,7 +531,17 @@ jobs:
             COLLECT_LANE=nightly brun rotation_events_cn "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
           }
           cl_hk() {
-            brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
+            # GD-4A (2026-08-19): hk_forward_log.jsonl advancer — asia-close IS the HK
+            # risk-radar forward-ledger nightly (only settled-HKEX lane that commits
+            # data/). engine/risk_radar_intl_audit.py's ledger_lane_armed() self-gates on
+            # COLLECT_LANE=nightly, so arm it for THIS module only — the inline
+            # `VAR=val brun ...` form reaches the python child and does NOT leak to later
+            # brun calls (verified; same idiom as CN_SLEEVE_LANE / the ignition arm below).
+            # scripts/build_hk.py's only ledger_lane_armed() caller is the HK risk-radar
+            # audit (verified 2026-08-19: no market_state_audit / risk_radar_audit /
+            # ignition_audit / opex_risk / event_window / top_maturation import in that
+            # module), so this arms exactly the HK risk-radar ledger + its bounded tuner.
+            COLLECT_LANE=nightly brun hk "build hong kong / hang seng (build_hk)"             scripts.build_hk
             # hk_ignition.jsonl advancer: asia-close IS the HK ignition forward-ledger nightly
             # (only fresh-HKEX lane that commits data/). engine/ignition_audit.py writers
             # self-gate on COLLECT_LANE=nightly, so arm it for THIS module only — the inline

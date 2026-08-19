@@ -213,16 +213,22 @@ itself a linked worktree of the occupied primary — a SessionStart hook keyed
 only on `git-dir != common-dir` would sparsify that 3.8 GiB tree on every
 Cursor chat.
 
-**Cursor CLI + Grok mechanism (shipped 2026-08-15).** Cursor CLI / Agents
-Window runs `.cursor/worktrees.json` `setup-worktree-unix` after it creates
-the worktree. Grok Build runs `.grok/hooks/sparse-worktree.json` on
-`SessionStart` (unknown Claude events such as `WorktreeCreate` are skipped).
-Both call `python3 scripts/worktree_sparse.py auto`, so they share the
-post-checkout thinning, session-root refusal, and "do not re-apply over an
-existing sparse selection" rule. Grok project hooks need one-time
-`/hooks-trust`. `--worktree` / `-w` still bases on current HEAD unless the
-session passes `--ref origin/main` (Grok) or `--worktree-base origin/main`
-(Cursor).
+**Cursor CLI + Grok mechanism (shipped 2026-08-15; AionUi mint 2026-08-18).**
+Cursor CLI / Agents Window runs `.cursor/worktrees.json` `setup-worktree-unix`
+after it creates the worktree. Grok Build runs
+`.grok/hooks/session_start_sparse.py` on `SessionStart` (unknown Claude events
+such as `WorktreeCreate` are skipped). When the session already sits in a
+linked session worktree the hook calls `python3 scripts/worktree_sparse.py
+auto`, sharing the post-checkout thinning, session-root refusal, and "do not
+re-apply over an existing sparse selection" rule. AionUi launches Grok in an
+empty `~/.aionui/conversations/.../grok-temp-*` directory that is not a git
+worktree, so the project hook never loads; the always-trusted
+`~/.grok/hooks/` copy of the same script mints a sparse tree under
+`.grok/worktrees/<name>/` with `git worktree add --no-checkout` (Claude's
+pre-checkout shape) and writes `.session-worktree` in the temp dir. Grok
+project hooks still need one-time `/hooks-trust`. `--worktree` / `-w` still
+bases on current HEAD unless the session passes `--ref origin/main` (Grok) or
+`--worktree-base origin/main` (Cursor).
 
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
