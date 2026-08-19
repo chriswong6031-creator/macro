@@ -10,17 +10,12 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
-      "asof": "2026-08-18",
-      "lag_days": 1,
-      "state": "fresh"
-    },
     "BABA": {
       "asof": "2026-08-18",
       "lag_days": 1,
       "state": "fresh"
     },
-    "KWEB": {
+    "JD": {
       "asof": "2026-08-18",
       "lag_days": 1,
       "state": "fresh"
@@ -31,6 +26,11 @@
       "state": "fresh"
     },
     "TCOM": {
+      "asof": "2026-08-18",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "KWEB": {
       "asof": "2026-08-18",
       "lag_days": 1,
       "state": "fresh"
