@@ -13,7 +13,17 @@
 {% if stale %}<meta name="robots" content="noindex">{% endif %}
 <meta name="description" content="{{ meta_desc }}">
 <link rel="canonical" href="{{ canonical_url }}">
-<meta property="og:title" content="{{ ticker }} — {{ name }}: signals &amp; factor profile">
+{# Machine-readable identity assertion, audited by scripts/check_stock_dossier_integrity.py
+   against the canonical rendered universe. The guard reads THESE rather than scraping
+   the page, because the dossier's own "Financials" section heading makes prose
+   unreadable as a sector claim. mm:desc-provenance is the auditable linkage for the
+   third-party business description; absent means no description is published. #}
+{% if identity %}<meta name="mm:ticker" content="{{ identity.ticker }}">
+<meta name="mm:issuer" content="{{ identity.issuer }}">
+<meta name="mm:sector" content="{{ identity.sector }}">
+{% if identity.sector_conflict %}<meta name="mm:sector-conflict" content="{{ identity.sector_conflict }}">
+{% endif %}{% if identity.desc_provenance %}<meta name="mm:desc-provenance" content="{{ identity.desc_provenance }}">
+{% endif %}{% endif %}<meta property="og:title" content="{{ ticker }} — {{ name }}: signals &amp; factor profile">
 <meta property="og:description" content="{{ meta_desc }}">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:type" content="website">

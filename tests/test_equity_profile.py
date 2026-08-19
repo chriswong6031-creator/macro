@@ -78,16 +78,22 @@ def test_match_score_prefers_full_name():
     assert EP._match_score("ACM Research", "ACM Research, Inc.") == 3
     # all distinctive tokens present (incl. fused) but not the exact core
     assert EP._match_score("EagleBank", "Eagle Bancorp, Inc.") >= 2
-    assert EP._match_score("AST Research", "ACM Research, Inc.") == 2  # shares "research"
+    # "research" is an industry descriptor, not a brand — it must not anchor a match
+    # on its own. It used to, which made the unrelated "AST Research" score 2 for
+    # ACM Research; the real page still matches on its full core below.
+    assert EP._match_score("AST Research", "ACM Research, Inc.") == 0
     # only SOME of a multi-word distinctive name -> the wrong-sibling smell
     assert EP._match_score("Antero Resources", "Antero Midstream") == 1
     assert EP._match_score("Apollo Global Management",
                            "Apollo Commercial Real Estate Finance") == 1
     # unrelated
     assert EP._match_score("Arginine", "Argan, Inc.") == 0
-    # _name_relevant is the score>=1 view
-    assert EP._name_relevant("Antero Resources", "Antero Midstream")
+    # _name_relevant is now the score>=2 view: a score-1 partial is a DIFFERENT
+    # company (Antero Resources is not Antero Midstream), and letting it into the
+    # candidate pool is how a real company's blurb reaches another's ticker.
+    assert not EP._name_relevant("Antero Resources", "Antero Midstream")
     assert not EP._name_relevant("Arginine", "Argan, Inc.")
+    assert EP._name_relevant("Microsoft", "Microsoft", "MICROSOFT CORP")
 
 
 def test_looks_company_keyword_gate():
@@ -207,27 +213,31 @@ def test_fetch_retries_only_eligible_description_gaps():
     def iso(days):
         return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
+    V = float(EP.RESOLVER_VERSION)
     existing = pd.DataFrame(
         {
-            # ticker:        description,    as_of,        desc_tries, sic_description
-            "GOOD":         ["Good co desc", iso(1),       float("nan"), "Apples"],
-            "RETRY_OK":     [None,           iso(5),       2.0,          "Widgets"],
-            "RETRY_FAIL":   [None,           iso(5),       2.0,          "Gadgets"],
-            "TOO_SOON":     [None,           iso(1),       1.0,          "Sprockets"],
-            "EXHAUSTED":    [None,           iso(10),      float(EP.MAX_DESC_TRIES), "Cogs"],
-            "STALE_REGRESS":["Keep me",      iso(200),     float("nan"), "Bolts"],
+            # ticker:        description,    as_of,   desc_tries, sic_description, resolver_version
+            "GOOD":         ["Good co desc", iso(1),  float("nan"), "Apples",    V],
+            "RETRY_OK":     [None,           iso(5),  2.0,          "Widgets",   V],
+            "RETRY_FAIL":   [None,           iso(5),  2.0,          "Gadgets",   V],
+            "TOO_SOON":     [None,           iso(1),  1.0,          "Sprockets", V],
+            "EXHAUSTED":    [None,           iso(10), float(EP.MAX_DESC_TRIES), "Cogs", V],
+            "STALE_REGRESS":["Keep me",      iso(200), float("nan"), "Bolts",    V],
         },
-        index=["description", "as_of", "desc_tries", "sic_description"],
+        index=["description", "as_of", "desc_tries", "sic_description",
+               "desc_resolver_version"],
     ).T
     existing.index.name = "ticker"
 
-    # Wikipedia succeeds for everyone EXCEPT names carrying FAIL/REGRESS in them
-    # Returns (extract, title): title is reused by the offshore-attention collector.
-    def wiki(*names):
+    # Wikipedia succeeds for everyone EXCEPT names carrying FAIL/REGRESS in them.
+    # Returns (extract, title, strength): title is reused by the offshore-attention
+    # collector; strength is the acceptance class recorded for provenance.
+    def wiki(*names, sic_description=None, **kw):
         nm = " ".join(str(n) for n in names if n)
         if "FAIL" in nm or "REGRESS" in nm:
-            return None, None
-        return f"{names[0]} is a company.", str(names[0]).replace(" ", "_")
+            return None, None, None
+        return (f"{names[0]} is a company.", str(names[0]).replace(" ", "_"),
+                EP.STRENGTH_EXACT)
 
     out = _fetch_with_stubs(existing, wiki)
 
@@ -249,6 +259,262 @@ def test_fetch_retries_only_eligible_description_gaps():
     # a good blurb is untouched; a stale refresh that fails must NOT erase it
     assert out.loc["GOOD", "description"] == "Good co desc"
     assert out.loc["STALE_REGRESS", "description"] == "Keep me"
+
+
+# --- entity-acceptance: the wrong-company class ------------------------------
+def _page(title, description="", extract="", type_="standard"):
+    return {"type": type_, "title": title, "description": description, "extract": extract}
+
+
+def test_industry_families_read_both_vocabularies():
+    # SEC SIC text and Wikipedia prose, reduced to the same coarse families
+    assert "real_estate" in EP._industry_families("Real Estate Investment Trusts")
+    assert "food_service" in EP._industry_families("Redwood is a restaurant in Portland")
+    assert "finance" in EP._industry_families("State Commercial Banks")
+    # no evidence is NOT a contradiction
+    assert EP._industry_families("") == frozenset()
+    assert EP._industry_agrees(None, "American technology company", "") is None
+    assert EP._industry_agrees("Services-Prepackaged Software", "", "") is None
+    # word-boundary matched: no substring false positives
+    assert "finance" not in EP._industry_families("a riverbank in Ohio")
+
+
+def test_industry_adjacency_prevents_false_contradiction():
+    # SEC's 1970s taxonomy vs modern prose, same issuer — must NOT contradict
+    assert EP._industry_agrees("Electronic Computers",
+                               "American multinational technology company", "") is True
+    assert EP._industry_agrees("Fire, Marine & Casualty Insurance",
+                               "American financial services company", "") is True
+    # adjacency is one hop only: retail~food_service and food_service~hospitality
+    # must never chain real_estate to food_service
+    assert EP._industry_agrees("Real Estate Investment Trusts",
+                               "Restaurant in Portland, Oregon", "") is False
+
+
+def test_accept_rejects_the_published_rwt_restaurant():
+    """The defect this version exists for: RWT / Redwood Trust Inc was published
+    with the blurb of a Portland restaurant, because "Trust" is a stop word and the
+    lone surviving token "redwood" is carried by the restaurant's page."""
+    restaurant = _page("Redwood (restaurant)", "Restaurant in Portland, Oregon",
+                       "Redwood is a restaurant in Portland, Oregon, United States. "
+                       "Established in 2013, it operates in the Montavilla neighborhood.")
+    ok, strength = EP._accept_page(restaurant, "Real Estate Investment Trusts",
+                                   "Redwood Trust Inc", "REDWOOD TRUST INC")
+    assert not ok, "a restaurant must never be published as a mortgage REIT"
+    assert strength == EP.STRENGTH_WEAK          # one token agreed, and it is a namesake
+    # the real issuer page is accepted on its full core name
+    real = _page("Redwood Trust", "American real estate investment trust",
+                 "Redwood Trust, Inc. is a specialty finance company and REIT.")
+    ok, strength = EP._accept_page(real, "Real Estate Investment Trusts",
+                                   "Redwood Trust Inc")
+    assert ok and strength == EP.STRENGTH_EXACT
+
+
+def test_accept_rejects_wrong_sibling():
+    sibling = _page("Antero Resources", "American energy company",
+                    "Antero Resources Corporation is an American oil and natural gas company.")
+    ok, strength = EP._accept_page(sibling, "Crude Petroleum & Natural Gas",
+                                   "Antero Midstream Corporation")
+    assert not ok and strength == EP.STRENGTH_NONE
+    # ... even though the industries agree perfectly. Name is the identity test;
+    # industry only ever CORROBORATES, it can never substitute for the name.
+    assert EP._industry_agrees("Crude Petroleum & Natural Gas",
+                               "American energy company", "") is True
+
+
+def test_accept_rejects_similar_named_subsidiary():
+    # a real, legitimate, differently-named affiliate is still the wrong entity
+    affiliate = _page("Apollo Commercial Real Estate Finance",
+                      "American real estate investment trust",
+                      "ARI is a REIT that originates commercial mortgages.")
+    ok, _ = EP._accept_page(affiliate, "Investment Advice", "Apollo Global Management")
+    assert not ok
+
+
+def test_accept_rejects_place_case_person_and_disambiguation():
+    town = _page("Knife River, Minnesota", "Unincorporated community in Minnesota",
+                 "Knife River is an unincorporated community in Lake County.")
+    assert not EP._accept_page(town, "Concrete Products", "Knife River Corporation")[0]
+    case = _page("Altria Group v. Good", "Legal case",
+                 "Altria Group v. Good is a United States Supreme Court case.")
+    assert not EP._accept_page(case, "Cigarettes", "Altria Group Inc")[0]
+    person = _page("Jean Michel Schlumberger", "French jewellery designer",
+                   "Jean Michel Schlumberger was a major French jewellery designer.")
+    assert not EP._accept_page(person, "Oil & Gas Field Services, NEC",
+                               "Schlumberger Limited")[0]
+    ambiguous = _page("AZZ", "Topics referred to by the same term", "", type_="disambiguation")
+    assert not EP._accept_page(ambiguous, "Fabricated Metal Products", "AZZ, Inc.")[0]
+
+
+def test_accept_same_brand_unrelated_organisation_is_withheld():
+    """A same-named organisation that is a perfectly real business, but not THIS
+    issuer. Organisation-type evidence alone must never be enough."""
+    other = _page("Sonic (restaurant chain)", "American fast food chain",
+                  "Sonic Drive-In is an American drive-in fast-food chain.")
+    ok, _ = EP._accept_page(other, "Semiconductors & Related Devices",
+                            "Sonic Automotive Inc")
+    assert not ok
+
+
+def test_accept_fused_token_company_with_first_party_corroboration():
+    """The legitimate single-token case: "Eagle Bancorp" -> "EagleBank". One token
+    agreed, so it is WEAK — publishable only because the SEC's own industry text
+    for the ticker corroborates what the page says it is."""
+    bank = _page("EagleBank", "American bank",
+                 "EagleBank is an American bank headquartered in Bethesda, Maryland.")
+    ok, strength = EP._accept_page(bank, "State Commercial Banks", "Eagle Bancorp, Inc.")
+    assert ok and strength == EP.STRENGTH_WEAK
+    # strip the first-party corroboration and the SAME page is withheld
+    assert not EP._accept_page(bank, None, "Eagle Bancorp, Inc.")[0]
+    # ... and an industry that genuinely contradicts also withholds it
+    assert not EP._accept_page(bank, "Crude Petroleum & Natural Gas",
+                               "Eagle Bancorp, Inc.")[0]
+    # NB finance~real_estate is deliberately ADJACENT (mortgage REITs are finance
+    # companies), so a REIT SIC does not contradict a bank page — that is the
+    # forgiving direction, and it is why RWT is caught on food_service, not on this.
+
+
+def test_accept_exact_match_is_never_vetoed_by_industry():
+    """A full-name match outranks industry corroboration: SEC calls Apple
+    "Electronic Computers" while Wikipedia calls it a technology company, and a
+    coarse taxonomy mismatch must never withhold a correctly-identified issuer."""
+    apple = _page("Apple Inc.", "American multinational technology company",
+                  "Apple Inc. is an American multinational technology company.")
+    ok, strength = EP._accept_page(apple, "Electronic Computers", "Apple Inc.")
+    assert ok and strength == EP.STRENGTH_EXACT
+
+
+def test_accept_issuer_with_no_safe_page_yields_nothing():
+    """Fail-closed is a SUCCESSFUL outcome: no blurb beats another firm's blurb."""
+    for page in (_page("Argan (disambiguation)", "", "", type_="disambiguation"),
+                 _page("Arginine", "Amino acid", "Arginine is an amino acid."),
+                 _page("Sugar Land, Texas", "City in Texas", "Sugar Land is a city.")):
+        assert not EP._accept_page(page, "Services-Engineering Services", "Argan, Inc.")[0]
+
+
+def test_resolution_strength_grades_and_records_provenance():
+    S = EP._resolution_strength
+    assert S("Microsoft", "Microsoft", "MICROSOFT CORP") == EP.STRENGTH_EXACT
+    assert S("Redwood (restaurant)", "Redwood Trust Inc") == EP.STRENGTH_WEAK
+    assert S("EagleBank", "Eagle Bancorp, Inc.") == EP.STRENGTH_WEAK
+    assert S("Antero Resources", "Antero Midstream") == EP.STRENGTH_NONE
+    # >= 2 distinctive tokens all present, no namesake parenthetical
+    assert S("Chipotle Mexican Grill", "Chipotle Mexican Grill, Inc.") == EP.STRENGTH_EXACT
+    # a corporate parenthetical corroborates rather than demotes
+    assert S("Sonic (company)", "Sonic Corp") == EP.STRENGTH_EXACT
+
+
+def test_parenthetical_qualifier_is_not_corroboration():
+    """"(company)" says "the company one" and corroborates. "(benefits company)"
+    says "the BENEFITS one" — Wikipedia distinguishing one namesake from another,
+    which is the opposite. Accepting any-word-corporate made a private Chicago
+    insurer an EXACT match for Trustmark Corp, a Mississippi bank."""
+    F = EP._foreign_parenthetical
+    assert not F("Sonic (company)", "Sonic Corp")
+    assert not F("Aon (corporation)", "Aon plc")
+    assert F("Trustmark (benefits company)", "Trustmark Corp")
+    assert F("Redwood (restaurant)", "Redwood Trust Inc")
+    assert F("Tidewater (marine services)", "Tidewater Inc")
+    assert not F("Apple Inc.", "Apple Inc.")           # no parenthetical at all
+
+
+def test_location_contradiction_is_first_party_and_conservative():
+    LC = EP._location_contradicts
+    # the collision this exists for: SEC files TRMK at Jackson, MS
+    assert LC("JACKSON, MS", "", "Trustmark ranks #69 among Chicago's largest "
+                                 "privately held companies in Illinois.")
+    # same state named -> no contradiction
+    assert not LC("HOUSTON, TX", "", "headquartered in Houston, Texas, U.S.")
+    assert not LC("BETHESDA, MD", "", "an American bank headquartered in Bethesda, Maryland.")
+    # silence is not contradiction
+    assert not LC("JACKSON, MS", "", "A company that makes widgets.")
+    assert not LC(None, "", "headquartered in Illinois")
+    assert not LC("LONDON, X0", "", "headquartered in Illinois")   # non-US filing address
+    # the city matching is enough even when the state is not named
+    assert not LC("SCHAUMBURG, IL", "", "based in Schaumburg. Incorporated in Delaware.")
+
+
+def test_name_collision_needs_the_geographic_tie_breaker():
+    """Two real companies, one name, adjacent industries: neither the name test nor
+    the coarse industry test can separate them, so the SEC's own filing address
+    decides — but ONLY because Wikipedia disambiguated the title."""
+    page = _page("Trustmark (benefits company)", "Insurance company",
+                 "Trustmark is an insurance company. It ranks #69 among Chicago's "
+                 "largest privately held companies in Illinois.")
+    assert not EP._accept_page(page, "National Commercial Banks",
+                               "Trustmark Corp", hq="JACKSON, MS")[0]
+    # the SAME page with a matching filing address is not withheld on location
+    assert EP._accept_page(page, "National Commercial Banks",
+                           "Trustmark Corp", hq="CHICAGO, IL")[0]
+    # and a correctly-resolved disambiguated title survives (SEC files Tidewater's
+    # marine business under Water Transportation; the page says petroleum services)
+    tidewater = _page("Tidewater (marine services)", "American petroleum service company",
+                      "Tidewater, Inc. is a publicly traded international petroleum "
+                      "service company headquartered in Houston, Texas.")
+    assert EP._accept_page(tidewater, "Water Transportation",
+                           "Tidewater Inc", hq="HOUSTON, TX")[0]
+
+
+def test_no_llm_in_the_resolution_path():
+    """Entity linkage is deterministic by contract — never an LLM judgement.
+
+    Structural, not textual: it reads the module's actual imports and string
+    literals, so prose ABOUT the rule (this file says "no LLM" in several places)
+    can never trip it, and an import that really did appear could never hide in a
+    comment."""
+    import ast
+
+    src = (Path(__file__).resolve().parent.parent
+           / "collectors" / "equity_profile.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+
+    imported: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    banned_mods = {"openai", "anthropic", "deepseek", "cohere", "google",
+                   "transformers", "litellm", "langchain"}
+    assert not (imported & banned_mods), f"resolver imports an LLM client: {imported & banned_mods}"
+
+    # every outbound host is one of the two declared keyless sources
+    hosts = {s.value for s in ast.walk(tree)
+             if isinstance(s, ast.Constant) and isinstance(s.value, str)
+             and s.value.startswith("http")}
+    for url in hosts:
+        assert ("wikipedia.org" in url or "data.sec.gov" in url), f"unexpected source {url!r}"
+
+
+def test_stale_resolver_rows_are_eligible_for_corrective_refresh():
+    """A blurb accepted by an OLDER rule must not wait out REFRESH_DAYS for its own
+    correction — it is re-adjudicated on the next pass."""
+    def iso(days):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    existing = pd.DataFrame(
+        {   # ticker:      description,        as_of,  desc_tries, resolver_version
+            "OLD_RULE":   ["Wrong-entity text", iso(2), 0.0, float(EP.RESOLVER_VERSION - 1)],
+            "CURRENT":    ["Right text",        iso(2), 0.0, float(EP.RESOLVER_VERSION)],
+        },
+        index=["description", "as_of", "desc_tries", "desc_resolver_version"],
+    ).T
+    existing.index.name = "ticker"
+
+    seen: list[str] = []
+
+    def wiki(*names, sic_description=None, **kw):
+        seen.append(str(names[0]))
+        return None, None, None            # Wikipedia refuses everything this pass
+
+    out = _fetch_with_stubs(existing, wiki)
+    # the stale-rule row was re-adjudicated; the current-rule row was left alone
+    assert any("OLD_RULE" in s for s in seen)
+    assert not any("CURRENT" in s for s in seen)
+    # and because the refetch found nothing acceptable, the old text is GONE rather
+    # than silently carried forward — fail-closed beats a stale wrong entity
+    assert EP._cell(out.loc["OLD_RULE", "description"]) is None
+    assert out.loc["CURRENT", "description"] == "Right text"
 
 
 def _run():

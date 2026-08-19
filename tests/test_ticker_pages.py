@@ -44,8 +44,14 @@ from scripts.build_ticker_pages import (  # noqa: E402
     _build_earnings,
     _build_ladder,
     _build_meta,
+    _build_peers,
+    _sector_canonical,
+    _sector_disagreement,
+    _sector_key,
+    _sector_known,
     _build_stats,
     _day_change,
+    _humanize_number,
     _range52,
 )
 
@@ -2561,3 +2567,206 @@ def test_linked_rows_fill_the_five_row_cap_first() -> None:
         f"expected the five linkable baskets in curation order, got {ids}"
     )
     assert all(r["linked"] for r in themes["baskets"])
+
+
+# ---------------------------------------------------------------------------
+# Non-finite-number leakage: _humanize_number / _build_peers
+# ---------------------------------------------------------------------------
+# 69 of 2066 generated site/stocks/*.html pages rendered the literal "$nanM" /
+# "$nan" because both formatters below treated a float NaN as a present value
+# (NaN is truthy in Python). Both now route through lib.numeric.finite().
+
+
+def test_humanize_number_table() -> None:
+    cases = [
+        (float("nan"), ""),
+        (float("inf"), ""),
+        (float("-inf"), ""),
+        (None, ""),
+        (0, "$0"),
+        (0.0, "$0"),
+        (-5, "-$5.00"),
+        (500, "$500.00"),
+        (1_500, "$1.5K"),
+        (-1_500, "-$1.5K"),
+        (2_500_000, "$2.5M"),
+        (3_500_000_000, "$3.5B"),
+        (4_500_000_000_000, "$4.5T"),
+    ]
+    for value, expected in cases:
+        got = _humanize_number(value)
+        assert got == expected, f"_humanize_number({value!r}) = {got!r}, want {expected!r}"
+
+
+def test_humanize_number_never_emits_nan_substring() -> None:
+    for bad in (float("nan"), float("inf"), float("-inf")):
+        out = _humanize_number(bad)
+        assert "nan" not in out.lower() and "inf" not in out.lower(), (
+            f"_humanize_number({bad!r}) leaked a non-finite sentinel: {out!r}"
+        )
+
+
+def _factors_row(sector: str, mktcap_bn, name: str) -> dict:
+    return {"sector": sector, "mktcap_bn": mktcap_bn, "name": name}
+
+
+def test_build_peers_nan_cap_never_renders_nan_substring() -> None:
+    """A peer with a NaN market cap must not present a size claim (empty mktcap),
+    and no card in the grid may ever render the substring 'nan'."""
+    factors_map = {
+        "SELF": _factors_row("Financials", 10.0, "Self Co"),
+        "NANPEER": _factors_row("Financials", float("nan"), "Nan Peer Inc."),
+        "GOODPEER": _factors_row("Financials", 12.0, "Good Peer Inc."),
+    }
+    peers = _build_peers("SELF", "Financials", factors_map, {}, None)
+    assert peers is not None
+    by_ticker = {p["ticker"]: p for p in peers}
+    # The NaN-cap candidate is excluded by the candidate filter (finite() gate),
+    # so it must not appear in the grid at all — but even if a future change
+    # relaxed that filter, no row's mktcap may ever contain "nan".
+    assert "NANPEER" not in by_ticker, (
+        "a NaN-mktcap_bn peer was admitted as a candidate; the finite() filter regressed"
+    )
+    for row in peers:
+        assert "nan" not in row["mktcap"].lower(), (
+            f"peer row {row['ticker']!r} leaked a non-finite mktcap: {row['mktcap']!r}"
+        )
+    assert by_ticker["GOODPEER"]["mktcap"] == "$12B"
+
+
+def test_build_peers_nan_self_cap_falls_back_to_hint() -> None:
+    """A NaN self mktcap_bn must not be treated as present — finite(), not
+    truthiness, decides whether the hint is used instead."""
+    factors_map = {
+        "SELF": _factors_row("Financials", float("nan"), "Self Co"),
+        "GOODPEER": _factors_row("Financials", 12.0, "Good Peer Inc."),
+    }
+    # With no usable self cap (NaN row, no hint), proximity sort falls back to
+    # biggest-sector-names — this must not raise on the NaN and must not crash
+    # comparing NaN in the sort key.
+    peers = _build_peers("SELF", "Financials", factors_map, {}, None, self_cap_hint=None)
+    assert peers is not None
+    assert peers[0]["ticker"] == "GOODPEER"
+
+    # With a finite hint, the NaN factors-row cap must not shadow it.
+    peers_hinted = _build_peers("SELF", "Financials", factors_map, {}, None, self_cap_hint=11.0)
+    assert peers_hinted is not None
+
+
+# --- sector precedence + peer eligibility ------------------------------------
+# engine/factor_exposure writes ("<ticker>", "—") for any symbol missing from its
+# name/sector map. "—" is truthy, so a dossier read it as a real sector: RWT printed
+# "Redwood Trust Inc · —" while the stock hub, built the same night from the wider
+# coverage universe, listed RWT as Real Estate — and the peer rail matched the 30
+# OTHER symbols carrying "—", presenting ARI/AVB/AVNS/BRBR/CABO/CLB as peers.
+
+from lib.numeric import finite  # noqa: E402
+
+
+def test_sector_known_rejects_every_unknown_sentinel() -> None:
+    for sentinel in ("—", "–", "-", "--", "", "   ", "n/a", "N/A", "na", "none",
+                     "None", "nan", "NaN", "null", "unknown", "Unknown", "other", "?"):
+        assert _sector_known(sentinel) == "", f"{sentinel!r} must read as unknown"
+    assert _sector_known(None) == ""
+    for real in ("Real Estate", "Financials", "Energy", "Health Care"):
+        assert _sector_known(real) == real
+
+
+def test_sector_key_folds_vendor_vocabularies() -> None:
+    """One sector, three vendor spellings — they must compare equal or the peer
+    rail silently splits a sector into disjoint buckets."""
+    assert _sector_key("Financials") == _sector_key("Financial") == _sector_key("Financial Services")
+    assert _sector_key("Information Technology") == _sector_key("Technology")
+    assert _sector_key("Consumer Discretionary") == _sector_key("Consumer Cyclical")
+    assert _sector_key("Materials") == _sector_key("Basic Materials")
+    assert _sector_key("Real Estate") != _sector_key("Energy")
+    assert _sector_key("—") == ""
+
+
+def test_sector_canonical_never_lets_a_narrower_source_erase_a_known_fact() -> None:
+    """The exact RWT defect: coverage knows Real Estate, the optional profile plane
+    carries the unknown sentinel. The known fact must win."""
+    assert _sector_canonical("Real Estate", "—") == "Real Estate"
+    assert _sector_canonical("Real Estate", None) == "Real Estate"
+    assert _sector_canonical("Real Estate", "") == "Real Estate"
+    # ... and the optional plane still FILLS a gap the canonical one has
+    assert _sector_canonical("—", "Financials") == "Financials"
+    assert _sector_canonical(None, "Health Care") == "Health Care"
+    # both unknown stays unknown — never invented
+    assert _sector_canonical("—", None) == ""
+    assert _sector_canonical(None, None) == ""
+    # coverage wins a genuine conflict (it is the wider, canonical plane)
+    assert _sector_canonical("Real Estate", "Energy") == "Real Estate"
+
+
+def test_sector_disagreement_is_recorded_not_silently_resolved() -> None:
+    assert _sector_disagreement("Real Estate", "Energy") == "Real Estate vs Energy"
+    # a pure vocabulary difference is NOT a disagreement
+    assert _sector_disagreement("Financials", "Financial Services") == ""
+    assert _sector_disagreement("Technology", "Information Technology") == ""
+    # a missing source is not a disagreement either
+    assert _sector_disagreement("Real Estate", "—") == ""
+    assert _sector_disagreement("Real Estate", None) == ""
+    assert _sector_disagreement(None, None) == ""
+
+
+def test_build_peers_requires_a_canonical_target_sector() -> None:
+    """No canonical sector for the target -> NO rail. Missing peers are acceptable;
+    six unrelated companies labelled "Peers" are not."""
+    factors_map = {
+        "SELF": _factors_row("—", float("nan"), "SELF"),
+        "UNREL1": _factors_row("—", float("nan"), "Unrelated One"),
+        "UNREL2": _factors_row("—", 25.0, "Unrelated Two"),
+    }
+    assert _build_peers("SELF", "—", factors_map, {}, None) is None
+    assert _build_peers("SELF", "", factors_map, {}, None) is None
+    assert _build_peers("SELF", None, factors_map, {}, None) is None
+
+
+def test_build_peers_excludes_unknown_sector_peers() -> None:
+    """A peer whose own sector is the unknown sentinel is not a same-sector name."""
+    factors_map = {
+        "SELF": _factors_row("Real Estate", 5.0, "Self REIT"),
+        "REALPEER": _factors_row("Real Estate", 5.2, "Real Peer REIT"),
+        "NOSECTOR": _factors_row("—", 5.1, "Unknown Sector Co"),
+    }
+    peers = _build_peers("SELF", "Real Estate", factors_map, {}, None, self_cap_hint=5.0)
+    tickers = {p["ticker"] for p in (peers or [])}
+    assert "REALPEER" in tickers
+    assert "NOSECTOR" not in tickers
+
+
+def test_build_peers_matches_across_sector_vocabularies() -> None:
+    """A peer tagged in another vendor's vocabulary is the SAME sector and must
+    still qualify — the eligibility rule is normalised equality, not string ==."""
+    factors_map = {
+        "SELF": _factors_row("Financials", 10.0, "Self Bank"),
+        "ALIASPEER": _factors_row("Financial Services", 11.0, "Alias Peer Bank"),
+        "OTHER": _factors_row("Energy", 10.5, "Some Driller"),
+    }
+    peers = _build_peers("SELF", "Financials", factors_map, {}, None, self_cap_hint=10.0)
+    tickers = {p["ticker"] for p in (peers or [])}
+    assert "ALIASPEER" in tickers
+    assert "OTHER" not in tickers
+
+
+def test_build_peers_every_rendered_peer_satisfies_the_declared_rule() -> None:
+    """The whole contract at once: same canonical sector AND a finite cap."""
+    factors_map = {
+        "SELF": _factors_row("Health Care", 8.0, "Self Health"),
+        "OK1": _factors_row("Health Care", 8.5, "Peer One"),
+        "OK2": _factors_row("Healthcare", 7.5, "Peer Two"),
+        "BADSECTOR": _factors_row("Utilities", 8.1, "Wrong Sector"),
+        "BADCAP": _factors_row("Health Care", float("nan"), "No Cap"),
+        "INFCAP": _factors_row("Health Care", float("inf"), "Inf Cap"),
+        "NOSEC": _factors_row("—", 8.2, "No Sector"),
+    }
+    peers = _build_peers("SELF", "Health Care", factors_map, {}, None, self_cap_hint=8.0)
+    assert peers, "a valid target with real same-sector peers must produce a rail"
+    for row in peers:
+        src = factors_map[row["ticker"]]
+        assert _sector_key(src["sector"]) == _sector_key("Health Care")
+        assert finite(src["mktcap_bn"]) is not None
+        assert "nan" not in row["mktcap"].lower()
+        assert "inf" not in row["mktcap"].lower()
+    assert {p["ticker"] for p in peers} == {"OK1", "OK2"}

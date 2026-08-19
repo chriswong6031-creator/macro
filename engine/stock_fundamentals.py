@@ -359,7 +359,13 @@ def _load_profiles() -> dict[str, dict]:
         df = pd.read_parquet(p)
     except Exception:  # noqa: BLE001
         return {}
-    cols = [c for c in ("description", "sic_description", "exchange", "hq") if c in df.columns]
+    # desc_* are the CORRECTION RECEIPTS written by collectors/equity_profile.py:
+    # which article was accepted, how strongly it matched, under which resolver
+    # version, and when. They travel with the blurb so the rendered page can assert
+    # its own provenance and the estate guard can refuse an unlinked description.
+    cols = [c for c in ("description", "sic_description", "exchange", "hq",
+                        "wiki_title", "desc_strength", "desc_resolver_version",
+                        "desc_fetched_at") if c in df.columns]
     out: dict[str, dict] = {}
     for t, row in df.iterrows():
         out[str(t)] = {c: (row[c] if pd.notna(row[c]) else None) for c in cols}
@@ -1611,6 +1617,11 @@ def _profile(t, f, fac, M, arche, prof_row=None) -> dict:
         "sic_description": pr.get("sic_description"),
         "exchange": pr.get("exchange"),
         "hq": pr.get("hq"),
+        # provenance for the published blurb (None when there is no blurb)
+        "wiki_title": pr.get("wiki_title"),
+        "desc_strength": pr.get("desc_strength"),
+        "desc_resolver_version": pr.get("desc_resolver_version"),
+        "desc_fetched_at": pr.get("desc_fetched_at"),
     }
 
 
