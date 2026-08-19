@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T14:15:40.920628+00:00",
-  "count": 1411,
+  "generated_at": "2026-08-19T14:25:12.663121+00:00",
+  "count": 1412,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -23,6 +23,7 @@
     "Cantor",
     "Citadel",
     "Citi",
+    "Curvature",
     "Danske",
     "Deutsche Bank",
     "DoubleLine",
@@ -1885,6 +1886,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h9ugwjy5hyk-212864",
+      "title": "RMC",
+      "institution": "Curvature",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:37:04Z",
+      "summary_points": [
+        "**RRP Volume Collapse**: RRP volume down to $250M (vs.",
+        "$2.55T in Dec 2022), signaling imminent participant exit and potential liquidity disruption.",
+        "**Repo Rate Tightening**: Fed Funds/EFFR at 3.692 and 10Y Specials at 3.64 reflect sustained short-term rate pressure and persistent funding costs.",
+        "**GC/Fed Funds Spread Negative**: Negative and volatile GC/Fed Funds spread indicates GC rates below Fed Funds, signaling acute liquidity concerns or policy divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
