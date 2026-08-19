@@ -20,26 +20,66 @@ log = logging.getLogger(__name__)
 
 CIRCUIT_BREAKER_FAILS = 3  # consecutive run failures -> mark dead, skip
 
-# Preventive hardening: redact query strings/credential parameters from retried-
-# request log lines. `requests`' default HTTPError/ConnectionError text embeds the
-# FULL request URL — query string and all — via `raise_for_status()` and friends,
-# so a bare `str(exc)` interpolation carries any `apiKey=`/`api_key=` value straight
-# into the log stream even on a line that otherwise takes care to log a query-
-# stripped URL separately. Two passes: redact a credential-looking assignment
-# wherever it appears (covers non-URL renderings too), then flatten any remaining
-# URL query tail so nothing else in it survives either.
-_CREDENTIAL_PARAM_RE = re.compile(
-    r'(api[_-]?key|token|secret)=[^&\s"\')]+', re.IGNORECASE)
+# Preventive hardening: redact secrets from retried-request log lines AND from
+# FetchResult.error (which is serialized into the TRACKED data/run_status.json —
+# see run_adapter below). `requests`' default HTTPError/ConnectionError text
+# embeds the FULL request URL — query string and all — via `raise_for_status()`
+# and friends, so a bare `str(exc)` interpolation carries any credential value
+# straight into a log line or a committed file, even one that otherwise takes
+# care to log a query-stripped URL separately.
+#
+# Widened per the AD-1C0 adversarial review (2026-08-19) — the enumerated leak
+# shapes a single "name=value" regex missed: a quoted JSON body value
+# ("apiKey":"…"), an `Authorization: Bearer …` header repr, a URL-encoded
+# assignment (name%3Dvalue), a bare "name value" mention with no `=` at all, and
+# a vendor secret embedded as a URL PATH SEGMENT with no adjacent keyword at all
+# (Stripe-style sk_live_…/pk_test_… prefixes). Several passes, most specific
+# first; each is independently idempotent so their order does not matter for
+# correctness, only for keeping the output readable.
+_CRED_PARAM_NAMES = r'(?:api[_-]?key|apikey|access[_-]?key|token|secret|password|key)'
+
+# "apiKey": "value" (JSON body, any of the credential names, case-insensitive).
+_CRED_JSON_RE = re.compile(rf'(?i)("(?:{_CRED_PARAM_NAMES})"\s*:\s*)"[^"]*"')
+# Authorization: Bearer <token>
+_BEARER_RE = re.compile(r'(?i)\b(Bearer\s+)\S+')
+# name=value / name%3Dvalue (url-encoded '=') — query string or bare mention.
+# Deliberately NO leading \b: a url-encoded '?' (%3F) immediately preceding the
+# param name (e.g. "...%3FapiKey%3D...") glues the trailing 'F' of %3F straight
+# onto 'apiKey' with no word-boundary between them, and that exact shape is how
+# a URL-encoded assignment actually renders once its '?' is also encoded.
+_CRED_ASSIGN_RE = re.compile(
+    rf'(?i)({_CRED_PARAM_NAMES}\s*(?:=|%3[dD])\s*)[^\s&"\'%)}}]+')
+# name value (space-separated free-text mention) — bare "key" excluded here,
+# too generic a word to redact on adjacency alone outside an assignment shape.
+_CRED_SPACED_RE = re.compile(
+    r'(?i)\b((?:api[_-]?key|apikey|access[_-]?key|token|secret|password)\s+)'
+    r'[^\s&"\')}]+')
+# Common vendor secret-token prefixes that leak with NO adjacent keyword at all
+# (e.g. a URL path segment like /api/v1/sk_live_XXXX/chain).
+_TOKEN_PREFIX_RE = re.compile(r'(?i)\b(?:sk|pk)_[A-Za-z0-9_]{4,}')
+# Whatever is left of a URL query string after the above — final catch-all.
 _QUERY_TAIL_RE = re.compile(r'\?[^\s"\')]+')
 
 
-def safe_exc_text(exc: BaseException) -> str:
-    """Render `exc` for logging with secrets stripped — never log a raw exception
-    that may have travelled through a keyed vendor URL."""
-    text = str(exc)
-    text = _CREDENTIAL_PARAM_RE.sub(lambda m: f"{m.group(1)}=REDACTED", text)
+def redact_secrets(text: str) -> str:
+    """Strip secrets from an arbitrary string (an exception's str(), a formatted
+    traceback, ...). safe_exc_text() is the exception-typed convenience wrapper;
+    this is the reusable text-level primitive (M5: also applied to FetchResult.
+    error and its traceback, which land in the TRACKED data/run_status.json)."""
+    text = _CRED_JSON_RE.sub(lambda m: f'{m.group(1)}"REDACTED"', text)
+    text = _BEARER_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
+    text = _CRED_ASSIGN_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
+    text = _CRED_SPACED_RE.sub(lambda m: f"{m.group(1)}REDACTED", text)
+    text = _TOKEN_PREFIX_RE.sub("REDACTED", text)
     text = _QUERY_TAIL_RE.sub("?REDACTED", text)
     return text
+
+
+def safe_exc_text(exc: BaseException) -> str:
+    """Render `exc` for logging (or for a tracked-file field) with secrets
+    stripped — never surface a raw exception that may have travelled through a
+    keyed vendor URL, header, or JSON body."""
+    return redact_secrets(str(exc))
 
 # An open breaker is HALF-OPEN, not permanently dead: after this long it lets ONE
 # probe through. A success closes it; a failure re-opens it for another window.
@@ -546,11 +586,18 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
         # attribute-safe or one duck-typing gap crashes the whole collect pass.
         expected = getattr(adapter, "expected_failure", None)
         if expected:
-            log.info("adapter %s blocked (known): %s", adapter.name, e)
+            log.info("adapter %s blocked (known): %s", adapter.name, safe_exc_text(e))
             res = FetchResult(adapter.name, "blocked", error=expected)
         else:
-            log.error("adapter %s failed: %s\n%s", adapter.name, e, traceback.format_exc(limit=3))
-            res = FetchResult(adapter.name, "failed", error=f"{type(e).__name__}: {e}")
+            # M5 (AD-1C0 review): FetchResult.error lands in the TRACKED
+            # data/run_status.json via collect.py's asdict(r) — a raw credential
+            # in a vendor URL/header/JSON body must never reach a committed file,
+            # not just a log line. Both the logged traceback AND the persisted
+            # `error` field are sanitized.
+            tb = redact_secrets(traceback.format_exc(limit=3))
+            log.error("adapter %s failed: %s\n%s", adapter.name, safe_exc_text(e), tb)
+            res = FetchResult(adapter.name, "failed",
+                              error=f"{type(e).__name__}: {safe_exc_text(e)}")
     if half_open:
         res.probed_at = datetime.now(timezone.utc).isoformat()
     return res
