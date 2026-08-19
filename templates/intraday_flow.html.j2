@@ -521,6 +521,7 @@ var pulseState = {};   // ticker -> {vwap, vol_durability, higher_lows, cum_vol,
 var flowState = {};    // ticker -> {ncp(~soft net CALL premium), net_all(~soft calls+puts),
                        //            flow_dur, badges[], session_tier, call_share}
 var flowAsof = null, flowRTH = false;
+var quotesStatus = 'connecting', pulseStatus = 'connecting', flowStatus = 'connecting';
 
 // ── View state ─────────────────────────────────────────────────────────────
 var sortCol = 'rvol', sortDir = -1;
@@ -633,6 +634,34 @@ function dealerOf(leader) {
   return oe.dealer || null;
 }
 
+// ── Quote price extractor (null-safe) ─────────────────────────────────────
+function quotePx(quote) {
+  if (!quote || quote.price == null) return null;
+  var n = Number(quote.price);
+  return Number.isFinite(n) ? n : null;
+}
+function boardHasPrice() {
+  for (var i = 0; i < leaders.length; i++) {
+    if (quotePx(quoteState[leaders[i].ticker]) != null) return true;
+  }
+  return false;
+}
+function boardHasPulse() {
+  for (var i = 0; i < leaders.length; i++) {
+    var p = pulseState[leaders[i].ticker];
+    if (p && typeof p === 'object') return true;
+  }
+  return false;
+}
+function feedWord(status, zh) {
+  if (zh) {
+    if (status === 'live') return '已接入';
+    if (status === 'unavailable') return '不可用';
+    return '连接中';
+  }
+  return status === 'live' ? 'live' : (status === 'unavailable' ? 'unavailable' : 'connecting');
+}
+
 // ── Stance (mirror engine/intraday_flow.stance — deterministic precedence) ─
 function computeStance(leader, quote, pulse, flow, conf) {
   var legs = conf.legs;
@@ -657,10 +686,11 @@ function computeStance(leader, quote, pulse, flow, conf) {
   if (intoCeiling && vwapDelta != null && vwapDelta > 0) extendedUp = true;
   var pinWatch = false;
   if (d && d.opex_days != null && d.opex_days <= 5 && d.regime === 'long') {
-    var wu = d.call_wall != null && quote.price ? Math.abs((d.call_wall - quote.price)/quote.price)*100 : null;
-    var wd = d.put_wall != null && quote.price ? Math.abs((d.put_wall - quote.price)/quote.price)*100 : null;
-    var mu = d.magnet_up != null && quote.price ? Math.abs((d.magnet_up - quote.price)/quote.price)*100 : null;
-    var md = d.magnet_down != null && quote.price ? Math.abs((d.magnet_down - quote.price)/quote.price)*100 : null;
+    var px = quotePx(quote);
+    var wu = d.call_wall != null && px != null ? Math.abs((d.call_wall - px)/px)*100 : null;
+    var wd = d.put_wall != null && px != null ? Math.abs((d.put_wall - px)/px)*100 : null;
+    var mu = d.magnet_up != null && px != null ? Math.abs((d.magnet_up - px)/px)*100 : null;
+    var md = d.magnet_down != null && px != null ? Math.abs((d.magnet_down - px)/px)*100 : null;
     var near = [wu,wd,mu,md].filter(function(x){ return x != null; });
     if (near.length && Math.min.apply(null, near) <= 1.0) pinWatch = true;
   }
@@ -726,23 +756,49 @@ function rangeWords(rp) {
 var quotesInflight = false;
 function fetchQuotes() {
   if (quotesInflight) return; quotesInflight = true;
-  fetch(snapUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
-    quotesInflight = false;
+  fetch(snapUrl(), {cache:'no-cache'}).then(function(r){
+    if (!r.ok) throw new Error('quotes '+r.status);
+    return r.json();
+  }).then(function(data){
     var q = data.quotes || {};
-    Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
+    Object.keys(q).forEach(function(tk){ if (q[tk] && typeof q[tk] === 'object') quoteState[tk] = q[tk]; });
+    quotesStatus = boardHasPrice() ? 'live' : 'unavailable';
+    quotesInflight = false;
+    updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ quotesInflight = false; });
+  }).catch(function(err){
+    if (quotesInflight) {
+      quotesInflight = false;
+      quotesStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 
 // ── Fetch: flow pulse (5min) ───────────────────────────────────────────────
 var pulseInflight = false;
 function fetchPulse() {
   if (pulseInflight) return; pulseInflight = true;
-  fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
+  fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){
+    if (!r.ok) throw new Error('pulse '+r.status);
+    return r.json();
+  }).then(function(data){
+    (data.tickers || []).forEach(function(t){ if (t && t.ticker) pulseState[t.ticker] = t; });
+    pulseStatus = boardHasPulse() ? 'live' : 'unavailable';
     pulseInflight = false;
-    (data.tickers || []).forEach(function(t){ pulseState[t.ticker] = t; });
+    updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ pulseInflight = false; });
+  }).catch(function(err){
+    if (pulseInflight) {
+      pulseInflight = false;
+      pulseStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 
 // ── Fetch: source-stamped options flow (R2; poll floor is not freshness) ────
@@ -759,14 +815,13 @@ function fetchFlow() {
   var tideUrl = r2Url('live_flow/tide_current.json');
   var enrichUrl = r2Url('live_flow/enrich_current.json');
   var metaUrl = r2Url('live_flow/meta.json');
-  if (!tideUrl) { updateFlowStamp(null); return; }
+  if (!tideUrl) { flowStatus = 'unavailable'; updateFlowStamp(null); return; }
   flowInflight = true;
   Promise.all([
     fetch(tideUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
     fetch(enrichUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
     fetch(metaUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
   ]).then(function(res){
-    flowInflight = false;
     var tide = res[0], enrich = res[1], meta = res[2];
     var metaIsV2 = !!(meta && meta.schema === 'live_flow.meta/v2');
     var asof = metaIsV2 ? (meta.asof || null) : null;
@@ -813,6 +868,8 @@ function fetchFlow() {
       }
     }
     flowMeta = meta; flowAsof = asof; flowRTH = isMarketHours();
+    flowStatus = (tide || enrich || meta) ? 'live' : 'unavailable';
+    flowInflight = false;
     updateFlowStamp(asof, meta);
     // Deepen the board's own names — the per-root payload is the only source of the
     // call-only series the lean and L5 need, and flowState is read for leaders only.
@@ -825,7 +882,15 @@ function fetchFlow() {
       });
     }
     scheduleRender();
-  }).catch(function(){ flowInflight = false; });
+  }).catch(function(err){
+    if (flowInflight) {
+      flowInflight = false;
+      flowStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 function bestTier(a, b) {
   var rank = { below_medium:0, medium:1, high:2, strong:3, elite:4 };
@@ -872,13 +937,19 @@ function updateFlowStamp(asof, meta) {
   var tapeZh = rth
     ? (asof ? '资金带 来源截至 '+asof : '资金带 来源时间不可用')
     : (asof ? '资金带 非交易时段 · 上一交易时段来源截至 '+asof : '资金带 非交易时段 · 来源时间不可用');
-  stamp.innerHTML = lz('Base: '+base+' · '+tapeEn, '基础：'+base+' · '+tapeZh);
+  var baseReady = leaders.length > 0 && base && base !== '—';
+  var srcEn = (baseReady ? 'BASE ready' : 'BASE unavailable')+' · quotes '+feedWord(quotesStatus,false)+' · tape '+feedWord(pulseStatus,false)+' · options '+feedWord(flowStatus,false);
+  var srcZh = (baseReady ? 'BASE就绪' : 'BASE不可用')+' · 行情 '+feedWord(quotesStatus,true)+' · 实时带 '+feedWord(pulseStatus,true)+' · 期权流 '+feedWord(flowStatus,true);
+  stamp.innerHTML = lz('Base: '+base+' · '+tapeEn+' · '+srcEn, '基础：'+base+' · '+tapeZh+' · '+srcZh);
 }
 
 // ══ compute-once pipeline (shared by hero, spotlight, board) ═══════════════
 function computeAll() {
   return leaders.map(function(l){
-    var q = quoteState[l.ticker] || null, p = pulseState[l.ticker] || null, f = flowState[l.ticker] || null;
+    var rawQ = quoteState[l.ticker], rawP = pulseState[l.ticker], rawF = flowState[l.ticker];
+    var q = rawQ && typeof rawQ === 'object' ? rawQ : null;
+    var p = rawP && typeof rawP === 'object' ? rawP : null;
+    var f = rawF && typeof rawF === 'object' ? rawF : null;
     var conf = computeLegs(l, q, p, f);
     var st = computeStance(l, q, p, f, conf);
     return { l:l, q:q, p:p, f:f, conf:conf, st:st,
@@ -1381,7 +1452,8 @@ document.querySelectorAll('.stance-card[data-stance]').forEach(function(card){
 var groupToggle = document.getElementById('group-toggle');
 function setGroupToggle(on){ groupByStance = on; if (groupToggle) groupToggle.classList.toggle('active', on); }
 if (groupToggle) groupToggle.addEventListener('click', function(){ setGroupToggle(!groupByStance); applyView(); });
-document.getElementById('leaders-body').addEventListener('click', function(e){
+var _lb = document.getElementById('leaders-body');
+if (_lb) _lb.addEventListener('click', function(e){
   var exp = e.target.closest ? e.target.closest('.expander') : null;
   if (!exp) return;
   var tk = exp.getAttribute('data-exp');
@@ -1408,9 +1480,9 @@ function startPolling() {
   setInterval(function(){ if (isMarketHours()) fetchFlow(); }, 3*60*1000);
 }
 setGroupToggle(true);
-render();
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startPolling);
 else startPolling();
+render();
 
 })();
 </script>
