@@ -362,13 +362,13 @@
         tr('Legal issuer','法律发行主体'),
         issuer&&issuer.state==='reviewed'?'reviewed':'unresolved',
         issuer&&issuer.state==='reviewed'?text(issuer.canonical_name,text(record.ticker)):tr('Not asserted','未作断言'),
-        issuer&&issuer.state==='reviewed'?stateWord(issuer.review_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有申报证据为这些收款方指明发行主体。')
+        issuer&&issuer.state==='reviewed'?stateWord(issuer.review_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有披露证据为这些收款方指明发行主体。')
       ));
       hops.push(hop(
         tr('Legal entities','法律实体'),
         rows.length?'reviewed':'unresolved',
         rows.length?(isZh()?(rows.length+' 个已核验法律实体'):(rows.length+' reviewed legal '+(rows.length===1?'entity':'entities'))):tr('No reviewed legal entity','没有已核验的法律实体'),
-        rows.length?tr('Named in the company’s own filing','由公司自身申报文件列明'):tr('Nothing is minted where the filing is silent','申报文件未提及之处不作推定')
+        rows.length?tr('Named in the company’s own filing','由公司自身披露文件列明'):tr('Nothing is minted where the filing is silent','披露文件未提及之处不作推定')
       ));
       hops.push(hop(
         tr('Recipient identifiers','收款方标识'),
@@ -413,8 +413,8 @@
       lines.push(tr('first known at: ','首次获知：')+text(entity.known_at));
       var code=evidenceCode(entity);if(code)lines.push(code);
       rows.forEach(function(row){var extra=evidenceCode(row);if(extra)lines.push(text(row.value)+'\n'+extra)});
-      var summary=rows.length?tr('Show identifiers, dates and receipts','显示标识、日期与凭证'):tr('Show dates and the filing receipt','显示日期与申报凭证');
-      return'<details class="atlas-receipt"><summary>'+esc(summary)+'</summary><div class="atlas-receipt-body">'+identifierRows(entity)+'<div class="atlas-code">'+esc(lines.join('\n'))+'</div>'+evidenceLinks(entity,tr('Open filing source','打开申报来源'))+arr(entity.identifiers).filter(obj).map(function(row){return evidenceLinks(row,tr('Open award record','打开授标记录'))}).join('')+'</div></details>';
+      var summary=rows.length?tr('Show identifiers, dates and receipts','显示标识、日期与凭证'):tr('Show dates and the filing receipt','显示日期与披露凭证');
+      return'<details class="atlas-receipt"><summary>'+esc(summary)+'</summary><div class="atlas-receipt-body">'+identifierRows(entity)+'<div class="atlas-code">'+esc(lines.join('\n'))+'</div>'+evidenceLinks(entity,tr('Open filing source','打开披露来源'))+arr(entity.identifiers).filter(obj).map(function(row){return evidenceLinks(row,tr('Open award record','打开授标记录'))}).join('')+'</div></details>';
     }
     function entityCards(record){
       var rows=entities(record);
@@ -460,14 +460,14 @@
       var head=loc(event,'headline');if(head)return head;
       if(event.event_type==='listing_terminated')return tr('The listing ended.','该股票终止上市。');
       if(event.event_type==='spin_off')return tr('A business separated into its own listed company.','一项业务分拆为独立上市公司。');
-      if(event.event_type==='name_change')return tr('The trade name changed; the filing entity did not.','商号变更；申报主体未变。');
+      if(event.event_type==='name_change')return tr('The trade name changed; the filing entity did not.','商号变更；披露主体未变。');
       return tr('A corporate change is on record.','已记录一项公司变更。');
     }
     function historyCards(record){
       var rows=arr(record.listing_events).filter(obj).concat(arr(record.separation_events).filter(obj));
       if(!rows.length)return'';
       return'<div class="atlas-sub">'+esc(tr('Corporate history on record','在册公司历史'))+'</div><div class="atlas-history">'+rows.map(function(event){
-        return'<div class="atlas-event"><time>'+esc(date(event.effective_at))+'</time><div><span>'+esc(eventWords(event))+'</span>'+evidenceLinks(event,tr('Open the filing','打开申报文件'))+'</div></div>';
+        return'<div class="atlas-event"><time>'+esc(date(event.effective_at))+'</time><div><span>'+esc(eventWords(event))+'</span>'+evidenceLinks(event,tr('Open the filing','打开披露文件'))+'</div></div>';
       }).join('')+'</div>';
     }
     function remainingGaps(record){
