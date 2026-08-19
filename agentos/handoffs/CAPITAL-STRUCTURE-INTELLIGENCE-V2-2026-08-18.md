@@ -1,46 +1,43 @@
 ---
 workstream: "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2"
-session: claude/cs-intel-v2-masterplan
+session: cursor-grok-4.6/cs-intel-v2-masterplan
 model: local
 ended_because: complete
 mission: >
-  Recover the Capital Structure Intelligence product thesis, audit current
-  main and the live estate, refresh competitor and primary-source regulatory
-  research, and freeze V2 architecture plus ordered waves. Docs and Agent OS
-  only. Do not start Wave 1. Do not drain the historical backlog.
+  Sol AMEND of PR #5901: rebase onto current origin/main, replace W1
+  push-time file merge with the existing whole-generation append-only fence,
+  harden evidence identity to occurrence+bytes, repair Grok vs Fable
+  provenance, return the same W0 PR green, and stop. No W1 production code.
 state_before: >
-  PR 5792 had closed the ingestion freeze. Sol had audited main at
-  a49e448d024f641d48ebc3fa9c54bdcc4ddbd76a. No WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2
-  record existed. Production retained filings but latest filing date was still
-  2026-07-31. No V2 masterplan existed.
+  PR #5901 was frozen at ec62e498 with identity dual-read hashing a declared
+  subset, keep-first wording, and CS-owned content-aware merge of
+  source_manifest.jsonl. Sol reviewed against 71fbb0c, verdict AMEND. Origin
+  main has since advanced to ad1aa0a4. Agent OS records attributed the freeze
+  to coo-fable. Handoff model was already local (schema has no grok).
 changed:
   - path: research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
-    what: Canonical V2 masterplan, capability ledger, identity and publication rulings, live-tail split, six-question ontology, real-data compositions, Wave 1 handoff.
-  - path: config/mastermind_programs.yml
-    what: Point capital-structure-intelligence canonical_docs at the V2 masterplan, contract, and 2026-08-01 teardown instead of STOCK_FUNDAMENTALS_PLAN.md.
-  - path: agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md
-    what: New workstream awaiting Sol/Chairman review; W0 in progress; W1-W7 todo.
+    what: Sol AMEND — occurrence+bytes evidence_id, whole-generation fence, current-main re-audit, W1 handoff rewritten.
+  - path: agentos/decisions/DEC-CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES.md
+    what: New identity ruling; supersedes DEC:CS-V2-IDENTITY-DUAL-READ.
+  - path: agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md
+    what: New publication ruling; supersedes DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR while restating Git selector.
   - path: agentos/decisions/DEC-CS-V2-IDENTITY-DUAL-READ.md
-    what: Forward-only dual-read identity; no historical ID rewrite; no merge=union.
+    what: Marked superseded; proposer provenance corrected to cursor-grok-4.6.
   - path: agentos/decisions/DEC-CS-V2-GIT-REMAINS-GENERATION-SELECTOR.md
-    what: Git stays compiled-generation selector; R2 stays evidence store; no new publication plane.
-  - path: agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md
-    what: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL; compiler age is not horizon.
+    what: Marked superseded; Git-selector answer restated by successor.
   - path: agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md
-    what: Authorization vs eligibility vs remaining capacity vs economic supply vs funding need vs observed issuance.
-  - path: agentos/discoveries/DSC-CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS.md
-    what: manifest_id hashes retrieval clocks; DNR sibling; sequential remint masked.
+    what: Provenance repaired; Sol-accepted, not reopened.
+  - path: agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md
+    what: Provenance repaired; Sol-accepted, not reopened.
   - path: agentos/discoveries/DSC-CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE.md
-    what: source_manifest.jsonl unspecified merge plus CS -X theirs lost-update.
-  - path: agentos/discoveries/DSC-CS-THROUGHPUT-HEALTHY-HORIZON-STALE.md
-    what: Dated 2026-08-18 proof that health ok does not mean current filings.
-  - path: agentos/discoveries/DSC-CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY.md
-    what: Candidate-term and registration-lifecycle compilers exist and are not in daily.yml.
-  - path: agentos/discoveries/DSC-CS-EVENT-EDGES-NEAR-ZERO.md
-    what: Freeze generation has 600 event versions and 1 edge.
+    what: so_what retargeted from file merge to whole-generation fence.
+  - path: agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md
+    what: W1 retitled; needs_ceo retargeted to AMEND acceptance; owner remains coo-fable.
+  - path: agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-18.md
+    what: Continuation of the same-day W0 handoff after Sol AMEND.
 decisions:
-  - DEC:CS-V2-IDENTITY-DUAL-READ
-  - DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR
+  - DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES
+  - DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE
   - DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
 discoveries:
@@ -50,57 +47,63 @@ discoveries:
   - DSC:CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY
   - DSC:CS-EVENT-EDGES-NEAR-ZERO
 verified:
-  - claim: Freeze SHA origin/main is ec62e4981c10d1ce7d6379cb9475747d49f790f1 after fetch and fast-forward.
+  - claim: origin/main after fetch is ad1aa0a4ab3db659c3ac76834b2c07f5ff7b6ddc.
     command: git fetch origin && git rev-parse origin/main
-    result: ec62e4981c10d1ce7d6379cb9475747d49f790f1
-  - claim: Capital Structure producer paths are unchanged from Sol SHA a49e448d to freeze SHA.
-    command: git diff --stat a49e448d024f641d48ebc3fa9c54bdcc4ddbd76a..ec62e4981c10d1ce7d6379cb9475747d49f790f1 -- collectors/sec_capital_structure.py engine/capital_structure scripts/ app/capital_structure.py data/capital_structure .github/workflows/daily.yml .github/runner-policy.yml engine/research_vault/r2_store.py config/house_law_checks.yml config/sector_intelligence_ownership.yml
-    result: empty diff
-  - claim: Freeze generation latest filing date is 2026-07-31 with 200 selected, 200 retained, 19018 pending, health verdict ok.
-    command: python3 -c "import json; from pathlib import Path; h=json.loads(Path('data/capital_structure/health.json').read_text()); print(h['latest_source_filing_date'], h['counters']['selected'], h['counters']['verified_retained_sources'], h['backlog']['pending'], h['verdict'])"
-    result: 2026-07-31 200 200 19018 ok
-  - claim: Projection has 426 issuers, freshness fresh on compiler age, eight unavailable capabilities, and 1 event edge in telemetry.
-    command: python3 -c "import json; from pathlib import Path; p=json.loads(Path('data/capital_structure/projection.json').read_text()); t=json.loads(Path('data/capital_structure/telemetry.json').read_text()); print(len(p['records']), p['coverage']['freshness'], p['unavailable'], t['counts']['event_edges'], t['counts']['event_versions'])"
-    result: 426 fresh eight unavailable caps; event_edges 1; event_versions 600
+    result: ad1aa0a4ab3db659c3ac76834b2c07f5ff7b6ddc
+  - claim: 71fbb0c is an ancestor of origin/main; the only first-parent since 71fbb0c is a press-wire tick.
+    command: git log --oneline 71fbb0c68b63322d97c30aac0776ab7c83205642..origin/main
+    result: ad1aa0a4ab3d press-wire tick; data/marketing/press_wire only
+  - claim: PR branch rebased cleanly onto origin/main (3 commits, no conflicts).
+    command: git -C .claude/worktrees/cs-intel-v2-masterplan rebase origin/main
+    result: Successfully rebased; HEAD 2a9657a then amended in this session
+  - claim: source_manifest.jsonl is not in config/append_only_artifacts.json; only government-revenue is enrolled.
+    command: git show origin/main:config/append_only_artifacts.json
+    result: families[0].key = government-revenue; no capital-structure family
+  - claim: CS job push has no append-only fence; collect unstages CS paths then fences only collect artifacts.
+    command: rg -n "push_append_only_fence|data/capital_structure" .github/workflows/daily.yml
+    result: unstage at 649; fence at 761/787 in collect; CS add 1303; CS -X theirs 1332
   - claim: manifest_id_for hashes the full body minus manifest_id.
     command: sed -n '136,141p' engine/capital_structure/source_identity.py
-    result: body = dict(record); body.pop("manifest_id"); sha256(canonical_manifest_bytes(body))
-  - claim: source_manifest.jsonl is absent from .gitattributes.
-    command: rg capital_structure .gitattributes
-    result: no matches
-  - claim: instrument and registration-lifecycle compilers are not in daily.yml.
-    command: rg compile_capital_structure_instrument\|compile_capital_structure_registration .github/workflows/daily.yml
-    result: no matches
+    result: body.pop("manifest_id"); sha256(canonical_manifest_bytes(body))
+  - claim: Handoff schema model enum has no grok; local is the truthful existing value for a Cursor Grok session.
+    command: git show origin/main:agentos/schema/handoff.schema.yml
+    result: "enum: [fable, opus, sonnet, haiku, codex, local]"
 unverified:
-  - claim: Required CI packs and fences conclude green on this docs PR head.
+  - claim: Required CI packs and fences conclude green on the amended head.
     what_would_verify: gh pr checks after push; wait for concluded packs; do not merge
   - claim: DilutionTracker.com primary site still HTTP 500 after this session.
-    what_would_verify: curl -I https://dilutiontracker.com on a later date; KB was live 2026-08-18
+    what_would_verify: curl -I https://dilutiontracker.com on a later date
 unresolved:
-  - Sol/Chairman architecture acceptance of the V2 freeze
+  - Sol/Chairman acceptance of this amended W0 freeze (needs_ceo on the workstream)
   - Operator choice among the three remaining global collect-concurrency options in DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE
-  - Whether Git remains generation selector after operator review (this freeze says yes until that ruling)
   - Nasdaq Rule 5635 post-2020 amendments vs the 2018/2020 SEC SRO order text used in the masterplan
 next_actions:
-  - Open this research PR, drive CI green, leave merge-on-green off, do not squash-merge
-  - Hand the PR to Sol/Chairman for architecture review
-  - Do not start Wave 1 identity implementation
+  - Push the rebased amended branch to PR #5901, drive CI green, leave merge-on-green off, do not squash-merge
+  - Hand the PR back to Sol for architecture acceptance
+  - Do not start Wave 1 production code
   - Do not raise MAX_FILINGS or drain historical backlog as a substitute for live-tail
 do_not_redo:
   - Reopen PR 5792 ingestion freeze without new evidence
   - et_gate mutex for concurrent collect
   - Rewrite historical manifest_id strings
   - merge=union on source_manifest.jsonl
+  - Push-time content-aware merge of source_manifest.jsonl
+  - Attribute this W0 research to Fable
   - BioCatalyst-specific capital ledger
   - Opaque Capital Structure score
   - Encode Release 33-11418 as current law
   - Second SEC collector or share-count truth plane
+  - Reopen six-question ontology, live-tail split, Git-selector boundary, BioCatalyst PIT seam, prophet_authority=false
 danger_areas:
-  - Sparse worktrees truncate data/capital_structure writes; this worktree is full checkout
+  - Sparse worktrees truncate data/capital_structure writes
   - Live row counts in health.json will move; treat them as dated observations
-  - Dual-read identity if implemented carelessly will rewrite PIT receipts
-  - CS push -X theirs can clobber the JSONL; do not "fix" that with merge=union
+  - Subset-hashing v2 manifest_id against a row that still carries clocks trips validate_manifest_ledger
+  - Calling the append-only fence from collect cannot protect CS; collect unstages those paths
+  - Mixing a merged manifest with an unmerged compiled generation is a silent product lie
 ---
 
-W0 architecture freeze is written and awaiting Sol/Chairman. Wave 1 is specified
-in masterplan section 19 and is not started. prophet_authority remains false.
+W0 architecture freeze amended after Sol review. Executor of this research
+and AMEND is Cursor Grok 4.6 (`model: local` because the Agent OS handoff
+enum has no grok). COO Fable remains the program-owner seat, not the
+proposer of these rulings. Wave 1 is specified in masterplan section 19 and
+is not started. prophet_authority remains false. Do not merge.

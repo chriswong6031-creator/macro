@@ -43,10 +43,13 @@ affects:
   - "scripts/check_capital_structure_health.py"
 confidence: high
 reversibility: easy
-decided_by: coo-fable
+decided_by: cursor-grok-4.6
 decided_at: 2026-08-18
 review_by: 2026-08-25
 ---
 
-Wave 2 implements the split. Wave 1 must land first so live-tail re-observation
-does not remint evidence identities.
+Proposed by the Cursor Grok 4.6 W0 session, not Fable. Sol accepted the
+LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL split in the 2026-08-18 AMEND
+review of PR #5901; it is not reopened. Program owner remains COO Fable.
+Wave 2 implements the split. Wave 1 must land first so live-tail
+re-observation does not remint evidence identities.

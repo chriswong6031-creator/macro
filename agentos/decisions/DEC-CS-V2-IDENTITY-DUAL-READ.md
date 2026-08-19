@@ -55,10 +55,13 @@ affects:
   - "data/capital_structure/source_manifest.jsonl"
 confidence: high
 reversibility: costly
-decided_by: coo-fable
+decided_by: cursor-grok-4.6
 decided_at: 2026-08-18
 review_by: 2026-08-25
+superseded_by: DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES
 ---
 
-Architecture ruling only. Wave 1 implements it after Sol/Chairman accept W0.
-Do not patch identity in the masterplan PR.
+SUPERSEDED 2026-08-18 by Sol AMEND of PR #5901. Proposed by Cursor Grok 4.6,
+not Fable. The dual-read / no-rewrite / no-merge=union core survives. The
+frozen v2 hash subset, vague keep-first, and push-time content-aware merge of
+source_manifest.jsonl do not. See `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES`.
