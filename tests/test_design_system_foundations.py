@@ -236,10 +236,32 @@ def test_the_cap_is_structurally_confined_to_ladder_cells(theme):
         ".mx-cap's base rule must be scoped to .mx-cell — an unscoped cap re-opens the "
         "repealed card-cap contract"
     )
-    content = re.search(r"^([^\n{]*\.mx-cap[^\n{]*)\{[^}]*content\s*:", css, re.M)
-    assert content and ".mx-cell" in content.group(1), (
-        'the rule giving .mx-cap its content:"" must also be .mx-cell-scoped, or an '
-        "out-of-ladder cap still paints"
+    # EVERY rule that gives some .mx-cap a box, not just the first one found. The
+    # weight modifiers are inert unscoped only because they declare no content of
+    # their own; two of them (--delivering, --invalidated) DO declare it for their
+    # second mark, and those shipped unscoped in this PR's first pass — a first-match
+    # re.search found the base rule, reported green, and never looked at them.
+    # Judged per comma-part: the shared `content` rule legitimately pairs a scoped
+    # `.mx-cell > .mx-cap::before` with an unscoped `.mx-mark::before`, because
+    # .mx-mark is a different primitive that is SUPPOSED to live outside a ladder.
+    # Only the parts naming .mx-cap owe the scope.
+    # Walk EVERY rule. The pattern deliberately carries no `}`/`^` anchor: an anchored
+    # version consumes the closing brace of each match, so the very next rule has
+    # nothing left to anchor on and is skipped — which is how a first draft of this
+    # guard passed a mutation that reverted .mx-cap--delivering::after to unscoped.
+    leaks = []
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", css, re.S):
+        selector, body = m.group(1).strip(), m.group(2)
+        if ".mx-cap" not in selector or not re.search(r"(?:^|;)\s*content\s*:", body):
+            continue
+        unscoped = [p.strip() for p in selector.split(",")
+                    if ".mx-cap" in p and ".mx-cell" not in p]
+        if unscoped:
+            leaks.extend(unscoped)
+    assert not leaks, (
+        "these .mx-cap rules declare content:\"\" without .mx-cell scope, so a cap "
+        f"emitted outside a ladder cell paints a stray box: {leaks}. Scope each as "
+        "`.mx-cell > …` — the containment law is carried by the selector, not by prose."
     )
 
 
@@ -252,15 +274,33 @@ def test_the_two_ladder_forms_are_disjoint(theme):
     exclude the board form explicitly.
     """
     css = _strip_comments(theme)
-    # Only the rules whose key selector the board form actually renders can collide:
-    # its children are `button.mx-cell` / `div.mx-cell`. `.mx-lad-total` is a bar-only
-    # part (the board ladder's total sits out of the device, per the R4 composition),
-    # so a rule keyed on it cannot reach a board cell and is left alone.
-    leaks = [m.group(0).strip()
-             for m in re.finditer(r"^\.mx-ladder\s+(?:button|\.mx-cell)[^\n{]*\{", css, re.M)]
+    # Every selector in the file, not just the ones anchored at column 0. The first
+    # version of this guard anchored on `^\.mx-ladder`, which a prefixed rule walks
+    # straight past: `html[data-theme="light"] .mx-ladder button {…}` is (0,2,2) and
+    # BEATS `.mx-ladder--board .mx-cell` (0,2,0), so the exact collision the guard
+    # exists to prevent could ship under a theme prefix and still report green.
+    # :where() forms are included too — zero specificity does not mean zero reach.
+    descendant = re.compile(
+        r"\.mx-ladder(?!--board)(?!:not\(\s*\.mx-ladder--board\s*\))[\w:()\[\]\"'=-]*"
+        r"[\s>+~]+[^,{]*?(?:\bbutton\b|\.mx-cell)"
+    )
+    leaks = []
+    for m in re.finditer(r"(?:^|\}|\{)\s*([^{}]+?)\{", css, re.S):
+        selector = m.group(1).strip()
+        if selector.startswith("@") or "\n\n" in selector:
+            continue
+        for part in re.split(r",(?![^()]*\))", selector):
+            for inner in re.findall(r":where\(([^()]*)\)", part) or [part]:
+                for sub in inner.split(","):
+                    if descendant.search(sub):
+                        leaks.append(selector)
+                        break
     assert not leaks, (
-        f"these bar-form rules also match the board form: {leaks} — add "
-        ":not(.mx-ladder--board), or scope the rule to the form it belongs to"
+        "these rules reach a board child through the BAR form's selector: "
+        f"{sorted(set(leaks))} — an element carrying both classes would inherit half "
+        "of each form. Add :not(.mx-ladder--board), or scope the rule to the form it "
+        "belongs to. Specificity is not a defence: a prefixed bar rule out-specifies "
+        "`.mx-ladder--board .mx-cell`."
     )
 
 

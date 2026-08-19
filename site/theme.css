@@ -86,7 +86,12 @@
      family, visibly not the same colour. Derived FROM --up rather than hand-picked
      so the zh flip stays structural: 红涨绿跌 needs no second table below, and a
      future --up nudge carries the stance with it instead of silently re-colliding.
-     Deepening toward --text also RAISES contrast on both planes (measured by
+     Deepening toward --text also RAISES contrast for BUY on both planes, on all four
+     of its consumers, in all four quadrants. It does not do so uniformly: Near, which
+     is now mixed toward --muted rather than carrying its own hue, regresses on the
+     two DARK quadrants — 8 pairs, worst -0.94 (en/dark .pv-znl 8.12 -> 7.18) — and
+     every one of them still clears AA by a margin. Do not restate this as a blanket
+     improvement; the measured plane is what governs (measured by
      tests/test_prophet_verb_ink_contrast.py, all 5 verbs x 4 consumers x 4
      theme/lang quadrants; re-measure with mockups/refs/prophet_verb_ink/probe_pv_ink.py).
      Separation, CIELAB dE, raw token / text ink, all eight readings 0.00 before:
@@ -226,13 +231,19 @@ html[data-theme="light"][data-lang="zh"] {
   --up: #cf4040; --down: #1f9a55;
   --q1: #c12f2f;
   --q3: #1f8b41;
-  /* No --pv-buy/--pv-near line here, deliberately. The C8-C retune left exactly
-     ONE declaration of each per theme plane, and the zh block no longer competes
-     for them, so this quadrant resolves the light formula over the flipped --up
-     above with no source-order hazard left to pin. Restating the formula here
-     would re-create the drift it used to guard against — two copies that a later
-     palette edit can desynchronise — rather than prevent it. --pv-avoid is the
-     one stance token still carrying literals, so it keeps its zh line above. */
+  /* No --pv-buy/--pv-near line here, deliberately — and this is a TRADE, not a
+     free win. The reference restates both tokens in this quadrant precisely for
+     source-order safety (its VTC-311 note). C8-C takes the other side: the retune
+     left exactly ONE declaration of each per theme plane and the zh block no
+     longer competes for them, so restating here would mean two copies of one
+     formula that a later palette edit can desynchronise — the drift the
+     restatement was guarding against, re-created in a new place. The hazard is
+     therefore not GONE, it is pinned somewhere else: by
+     test_stance_is_never_the_direction_ink[zh-light], which resolves this exact
+     quadrant through the real cascade and fails if source order ever hands it the
+     wrong --up. If that guard is deleted, restate the two formulas here.
+     --pv-avoid is the one stance token still carrying literals, so it keeps its
+     zh line above. */
 }
 /* ---- odo-needle: shared light-mode odometer pointer -------------------------
    Dark mode's white blade + coloured hub already reads beautifully. The country
@@ -366,13 +377,15 @@ html[data-theme="light"][data-lang="zh"] {
 
    Systematic note, so a future palette edit does not re-open this: what is weak in
    dark is the HUE #e06464, not the verb. zh used to bind that same raw red straight
-   to --pv-buy (红涨), which put the thinnest margin on the whole dark plane — 4.57
-   on .pv-trg — on the Buy card of every Chinese board. C8-C's stance retune moved
-   that off the raw hue (zh dark --pv-buy now resolves #de7a7b, .pv-trg 5.21), so
-   the dark plane's thinnest margin is no longer a Buy at all; it is zh/dark Near
-   at 4.69 on the chip tint. Pinned by tests/test_prophet_verb_ink_contrast.py,
-   which measures all 5 verbs x 4 consumers x 4 theme/lang combos, so none of this
-   can drift silently.
+   to --pv-buy (红涨), which put the thinnest margin of any RETUNED verb on the dark
+   plane — 4.57 on .pv-trg — on the Buy card of every Chinese board. C8-C's stance
+   retune moved that off the raw hue (zh dark --pv-buy now resolves #de7a7b, .pv-trg
+   5.21); the thinnest margin among the tokens this PR moves is now zh/dark Near at
+   4.69 on the chip tint. That is NOT the plane's overall minimum and never was:
+   .pv-hold sits lower at 4.61 on both dark quadrants (4.58 light), it carries no
+   rung and no token change, and it is untouched here — see the .pv-hold note below.
+   Pinned by tests/test_prophet_verb_ink_contrast.py, which measures all 5 verbs
+   x 4 consumers x 4 theme/lang combos, so none of this can drift silently.
    .pv-hold has no rung here at all: it binds --pvh-ink straight to --pv-hold in
    _prophet_card.html.j2 (4.58 light / 4.61 dark — passing on every consumer). */
 :root {
@@ -1984,22 +1997,31 @@ html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--mu
    lifecycle-derived.
 
    FORM RIDER (C8-C): the two ladder forms are DISJOINT, not cascaded. Every rule
-   in this bar block excludes .mx-ladder--board (the archetype-B grid ladder that
-   lands below) so an element carrying both classes cannot inherit half of one
-   form — `:last-child` and `[aria-pressed]` here out-specify a bare `.mx-cell`
-   and would otherwise strip the terminal cell's rule and double-mark selection. */
+   below that can reach a board child — this block's, and the shared focus-visible
+   rule at the end of the section — excludes .mx-ladder--board, so an element
+   carrying both classes cannot inherit half of one form. `:last-child` and
+   `[aria-pressed]` here out-specify a bare `.mx-cell` and would otherwise strip
+   the terminal cell's dashed rule and double-mark selection. The exclusion is
+   written on the .mx-lad-total rules too even though the board ladder emits no
+   total cell (its headline sits out of the device): "cannot reach it today" is a
+   markup fact that a later edit can repeal, and the guard that enforces this is
+   cheaper to keep absolute than to teach which children are safe.
+   Because the board form can no longer match any of them, it also needs no
+   counter-resets — a `border:none` there would only mask a future accidental
+   removal of a :not() qualifier. Guarded by
+   test_the_two_ladder_forms_are_disjoint. */
 .mx-ladder:not(.mx-ladder--board) { display:flex; align-items:stretch; gap:0;
   border:1px solid var(--line); border-radius:var(--r-btn,10px); overflow:hidden; }
-.mx-ladder .mx-lad-total { padding:8px 14px; font-weight:800; font-size:var(--fs-md);
-  border-right:1px solid var(--line); background:var(--panel2); }
-.mx-ladder .mx-lad-total small { display:block; font-size:var(--fs-micro);
-  font-weight:600; color:var(--muted); }
+.mx-ladder:not(.mx-ladder--board) .mx-lad-total { padding:8px 14px; font-weight:800;
+  font-size:var(--fs-md); border-right:1px solid var(--line); background:var(--panel2); }
+.mx-ladder:not(.mx-ladder--board) .mx-lad-total small { display:block;
+  font-size:var(--fs-micro); font-weight:600; color:var(--muted); }
 /* The display:block above ties the language toggle on specificity — both land at
    (0,2,1) — and this file's toggle sits EARLIER (see "language visibility
    toggle"), so source order hands the tie to the rule above and BOTH language
    labels printed in the total cell under zh. Restore the toggle explicitly. */
-html:not([data-lang="zh"]) .mx-ladder .mx-lad-total small.l-zh,
-html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
+html:not([data-lang="zh"]) .mx-ladder:not(.mx-ladder--board) .mx-lad-total small.l-zh,
+html[data-lang="zh"] .mx-ladder:not(.mx-ladder--board) .mx-lad-total small.l-en { display:none; }
 .mx-ladder:not(.mx-ladder--board) button { appearance:none; background:none; border:none;
   border-right:1px solid var(--line); padding:8px 12px;
   font:600 var(--fs-sm)/1.2 var(--font-ui); color:var(--muted); cursor:pointer; }
@@ -2041,8 +2063,7 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
    six labels across without ellipsis at the widths this ladder actually runs at.
    ───────────────────────────────────────────────────────────────────────────── */
 .mx-ladder--board { display:grid; align-items:stretch; gap:0;
-  grid-template-columns:repeat(6, minmax(0, 1fr)) 15px minmax(0, .9fr);
-  border:none; border-radius:0; overflow:visible; }
+  grid-template-columns:repeat(6, minmax(0, 1fr)) 15px minmax(0, .9fr); }
 
 /* The live enclosure: cells 1-6 share one recessed band, so "these six sum to the
    headline" is a visual fact rather than a caption. */
@@ -2134,7 +2155,10 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
    existed, the one difference a holder cares about most had no visual difference
    at all.) */
 .mx-cap--delivering::before { background:currentColor; }
-.mx-cap--delivering::after { content:""; position:absolute; right:0; top:0;
+/* .mx-cell-scoped like the base rule: this ::after declares its own content, so an
+   unscoped copy would paint a stray currentColor bar outside a ladder and falsify
+   the containment law the base rule establishes. */
+.mx-cell > .mx-cap--delivering::after { content:""; position:absolute; right:0; top:0;
   width:22%; height:6px; background:currentColor; }
 .mx-mark--delivering::before { top:2.5px; height:3px; background:currentColor; }
 .mx-mark--delivering::after { content:""; position:absolute; right:0; top:0;
@@ -2147,7 +2171,8 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
 .mx-cap--invalidated::before { top:1px; bottom:0; background:transparent;
   border-top:1px solid color-mix(in srgb, currentColor 60%, transparent);
   border-bottom:1px solid color-mix(in srgb, currentColor 60%, transparent); }
-.mx-cap--invalidated::after { content:""; position:absolute; left:0; right:0; top:1.5px;
+/* .mx-cell-scoped for the same reason as Delivering's ::after above. */
+.mx-cell > .mx-cap--invalidated::after { content:""; position:absolute; left:0; right:0; top:1.5px;
   height:1px; background:repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 10px); }
 .mx-mark--invalidated::before { top:2.5px; height:3px; background:transparent;
   border:1px solid color-mix(in srgb, currentColor 62%, transparent); }
@@ -2182,8 +2207,12 @@ html[data-theme="light"] .mx-ladder--board .mx-cell { background:var(--panel); }
   .mx-ladder--board .mx-ladder-termnote { grid-column:4; text-align:left; padding:4px 2px 0; }
 }
 
-/* keyboard affordance for the two interactive primitives landed here */
-:where(.mx-chg-row, .mx-ladder button):focus-visible {
+/* keyboard affordance for the two interactive primitives landed here. Qualified
+   like the rest of the bar block: the board form ships its own focus ring
+   (--ink-link, offset 2, z-index 3) and :where() contributes NO specificity, so
+   an unqualified rule here would be a second focus declaration whose precedence
+   rests on source order alone. */
+:where(.mx-chg-row, .mx-ladder:not(.mx-ladder--board) button):focus-visible {
   outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
 
 /* ── TOUCH FLOOR for the estate's inherited small controls (MPDS §14, ≥40x40) ──
