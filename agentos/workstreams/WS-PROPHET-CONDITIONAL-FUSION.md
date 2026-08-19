@@ -146,16 +146,16 @@ waves:
     depends_on: [w2b]
     title: "PR-3 — forward race instrumentation, split PR-3A..3D. Charter:
       research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
-      outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
-      until PR-3D live-accepts instrumentation on a natural us_prophet_ledgers
-      run. PR-3A (#5813) semantics+prereg. PR-3B (#5829) outcome-blind LOFO +
-      member census. PR-3C (#5839) durable paired ledger + wiring. PR-3D is
-      production commissioning + durable session_missing/provenance fence +
-      lawful pre-floor status surface. PR-3D-R1 repairs same-stamp revision
-      refusal + atomic multi-grain persist + bootstrap of 2026-08-17 sessions
-      from frozen W3 parts (DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS).
-      Do not mark this wave done until the PASS PATH or an honest named gap."
-    status: todo
+      outcome read): research/prophet_fusion/W3_RACE_PREREG.md. PR-3A (#5813)
+      semantics+prereg. PR-3B (#5829) outcome-blind LOFO + member census.
+      PR-3C (#5839) durable paired ledger + wiring. PR-3D (#5890) liveness
+      fence + status surface. PR-3D-R1 (#5921) same-stamp revision + atomic
+      persist + 2026-08-17 session bootstrap
+      (DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS). Production accepted on
+      natural us_prophet_ledgers run 32207351396 job 96015772372 / commit
+      7e4e5c134560. No comparative read."
+    status: done
+    pr: "#5921"
   - id: w4
     depends_on: [w3]
     title: "PR-4 — C3 date-grouped ranker (depth-gated)"
@@ -174,13 +174,12 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  PR-3D-R1 (this wave) repairs same-stamp revision handling and commissions
-  PR-3D sessions/status from the already-prospective 2026-08-17 W3 parts.
-  w3 stays todo until a NATURAL us_prophet_ledgers run proves: frozen 08-17
-  blobs unchanged, sessions.jsonl on main, status commissioned with paired N=1
-  unmatured, same-stamp revised receipt refused not rewritten, no comparison
-  read. Do not start PR-3E, C2-C5, or Prophet V4. Do not rewrite the 2026-08-17
-  W3 evidence. Do not read C1-vs-shadow outcomes.
+  Automatic W3 accrual on the natural us_prophet_ledgers lane. Do not start
+  PR-3E. Do not start C2/C3/C4/C5 or Prophet V4. Do not read C1-vs-shadow
+  outcomes. Durable paired-race N=2 unmatured (stamps 2026-08-17 and
+  2026-08-18); matured H=10 N=0. First lawful comparison remains PENDING
+  until 20 matured H=10 sessions. Leave the frozen 2026-08-17 W3 parts
+  byte-identical.
 ---
 
 ## Context
