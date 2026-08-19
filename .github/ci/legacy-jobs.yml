@@ -4199,6 +4199,34 @@ jobs:
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976-class): the token-
+      # segmentation unit tests for THIS job's own checker were named by no run:
+      # step. `_token_segments`/`_matches_around_tokens` are the stdlib fallback
+      # `check_template_site_sync.py` uses when PyYAML cannot reproduce the bake
+      # (pages.yml, a DEPLOY GATE) — it walks N tokens -> N+1 invariant segments,
+      # and this suite is what proved the generalization from one token
+      # (Supabase) to two (mm_brain.js's content hash, added by #5976) still
+      # accepts the real committed pair and still rejects a one-sided edit. Rides
+      # this step's own venv (pytest + pyyaml, already above) and this job's full
+      # checkout (it reads templates/theme.js AND site/theme.js). Ordered right
+      # after the checker it tests, before the unrelated chat-nav/asset-stamp
+      # steps below, so a regression here is not masked behind them.
+      - name: template-site-sync token-segmentation unit tests (N-token fallback)
+        run: python -m pytest tests/test_template_site_sync_tokens.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976): theme.js's lazy
+      # assistant launcher (#mmb-boot stub) — the RESOLUTION guard (every
+      # dynamically injected same-origin child asset must resolve from
+      # _mmSharedAssetRoot, not a document-relative literal; this is the exact
+      # class of the 2026-08-19 ~4,600-page /stocks/ 404) and the EAGERNESS guard
+      # (the bundle loads on activation, not at DOMContentLoaded), plus the drift
+      # guard comparing #mmb-boot's geometry to mm_brain.js's real #mmb-launch.
+      # Static analysis of templates/theme.js + templates/mm_brain.js only — no
+      # network, no render, no site/ read — so it needs nothing past this job's
+      # existing pytest install. Joins this job because it is the templates/**
+      # plain-copy-asset home and the sibling suite immediately above already
+      # reads templates/theme.js for the same PR's change.
+      - name: chat launcher stub — shared-asset-root resolution + lazy activation + drift guard
+        run: python -m pytest tests/test_chat_launcher_stub.py -q
       # The other half of plain-copy integrity: byte-matching its site copy says
       # nothing about whether chat.html's HEADER still matches the shared partial.
       # It did not — 12 live pages missing, 17 removed pages still linked — because
@@ -9764,6 +9792,32 @@ jobs:
         run: python -m pytest tests/test_collector_freshness_disclosure.py -q
       - name: off-render Yahoo universe backfill contract
         run: python -m pytest tests/test_yahoo_universe_backfill.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5942 sibling): the
+      # NA-ticker pandas-sentinel guard. pandas decodes the bare strings
+      # NA/NULL/NONE/NAN/N-A/NaN to NaN by default, and 'NA' is a live ticker on
+      # both sides (Nano Labs Ltd, Nasdaq; National Bank of Canada, TSX) — every
+      # read_csv/read_excel over a ticker column silently dropped those rows
+      # with adapter status still `ok`. Pins the keep_default_na=False +
+      # na_values=[""] guard (an AST call-site census — pure ast.parse, no
+      # import) across all 18 parse sites in the nine collector files this
+      # fixed, plus the is_non_equity_holding() truth table (collectors/
+      # holdings.py, Part B of the fix) and the documented regression a BARE
+      # keep_default_na=False would reintroduce (numeric columns silently
+      # turning to dtype str).
+      #
+      # Lives HERE, not on the ETF lane its subject reads closest to
+      # (unrun-scoring-engine), for the same reason test_collector_freshness_
+      # disclosure sits in THIS job two steps up: one of its behavioural
+      # round-trips imports collectors.canada_universe (_to_ticker), and that
+      # module's `import yfinance as yf` is module-scope — it ERRORS at
+      # collection under the shared unrun-* install (verified: this exact
+      # placement in unrun-scoring-engine failed CI on PR #5985 with
+      # `ModuleNotFoundError: No module named 'yfinance'`, even though it
+      # passed locally where yfinance happened to already be installed). This
+      # lane already declares the yfinance wheel and already owns a
+      # yfinance-import-at-collection suite, so it costs nothing new.
+      - name: NA-ticker pandas-sentinel guard — 18 parse sites + is_non_equity_holding truth table
+        run: python -m pytest tests/test_collectors_na_sentinel.py -q
 
   unrun-brain-gateway:
     # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
