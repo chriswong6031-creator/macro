@@ -31,13 +31,20 @@ NIGHTLY IS THE SOLE ADVANCER. Every write gates on
 
 APPEND-ONLY / IDEMPOTENT
 ------------------------
-Observation identity is the economic/session grain
-``(stamp_date, ticker, horizon)``, never a GitHub run id. Same-session retry
-of an identical payload is a no-op. A conflicting rewrite of a frozen key
-raises :class:`W3ConflictError` and prints both fingerprints. Unmatured H=10
-is recorded with a pending (null) outcome — never fabricated as 0. Filling a
-pending outcome when the identity fingerprint is unchanged is maturation, not
-a rewrite. Null / missing / degraded is never coerced to zero or a tie.
+``stamp_date`` is the economic session grain, never a GitHub run id and never
+a Prophet publication version. The first durably committed *complete* W3
+observation (nonempty paired + family + coverage) for a stamp is canonical.
+Same-session retry of an identical payload is a no-op. A later publication
+carrying the same stamp whose identity differs is
+``SAME_STAMP_REVISION_REFUSED``: frozen bytes are not rewritten, honest-N
+does not increment, no second session is created, and the refusal is loud
+telemetry rather than a crash. Identity mismatch while constructing a
+brand-new (incomplete) first observation still raises
+:class:`W3ConflictError`. Unmatured H=10 is recorded with a pending (null)
+outcome — never fabricated as 0. Filling a pending outcome when the identity
+fingerprint is unchanged is maturation, not a rewrite. No float tolerance,
+averaging, or latest-wins. Null / missing / degraded is never coerced to
+zero or a tie.
 """
 from __future__ import annotations
 
@@ -62,6 +69,8 @@ SCHEMA_FAMILY = "us.prophet_w3_family/v1"
 SCHEMA_COVERAGE = "us.prophet_w3_coverage/v1"
 SCHEMA_STATUS = "us.prophet_w3_status/v1"
 SCHEMA_SESSION = "us.prophet_w3_session/v1"
+SCHEMA_REVISION = "us.prophet_w3_revision/v1"
+KIND_REVISION_REFUSED = "SAME_STAMP_REVISION_REFUSED"
 STRUCTURAL_SCHEMA = "prophet_fusion.w3_structural.v1"
 HONEST_N_FLOOR = 20
 
@@ -273,8 +282,163 @@ def _print_conflict(exc: W3ConflictError) -> None:
     )
 
 
+def _print_revision(record: Mapping[str, Any]) -> None:
+    """Loud, nonfatal telemetry. Keep-first already held; this is the receipt."""
+    key = record.get("key")
+    print(
+        f"::warning title=w3-same-stamp-revision-refused::"
+        f"{record.get('grain')} stamp={record.get('stamp_date')} key={key} "
+        f"existing={record.get('existing_fingerprint')} "
+        f"incoming={record.get('incoming_fingerprint')}",
+        flush=True,
+    )
+    print(json.dumps(dict(record), sort_keys=True, default=str), flush=True)
+
+
 def _outcome_pending(row: Mapping[str, Any]) -> bool:
     return _coerce_null(row.get("excess_spy")) is None
+
+
+def _read_part(grain: str, stamp_date: str, root: Any = None) -> pd.DataFrame:
+    path = _part_path(grain, stamp_date, root)
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_parquet(path)
+
+
+def stamp_observation_complete(root: Any, stamp_date: str) -> bool:
+    """Complete = nonempty paired + family + coverage parts. Sessions may be absent."""
+    stamp = str(stamp_date)[:10]
+    if len(stamp) != 10:
+        return False
+    paired = _read_part("paired", stamp, root)
+    family = _read_part("family", stamp, root)
+    coverage = _read_part("coverage", stamp, root)
+    return (not paired.empty) and (not family.empty) and (not coverage.empty)
+
+
+def list_complete_stamps(root: Any = None) -> list[str]:
+    store = _store_dir(root) / "paired"
+    if not store.exists():
+        return []
+    stamps: list[str] = []
+    for part in sorted(store.glob("*/*.parquet")):
+        stamp = part.stem
+        if len(stamp) == 10 and stamp_observation_complete(root, stamp):
+            stamps.append(stamp)
+    return stamps
+
+
+def grain_fingerprint(frame: pd.DataFrame | None,
+                      key: Iterable[str],
+                      identity: Iterable[str]) -> str:
+    if frame is None or frame.empty:
+        return hashlib.sha256(b"[]").hexdigest()
+    rows = sorted(frame.to_dict(orient="records"), key=lambda row: _row_key(row, key))
+    payload = [
+        {"key": [str(x) for x in _row_key(row, key)],
+         "fp": fingerprint(row, identity)}
+        for row in rows
+    ]
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def observation_fingerprints(root: Any, stamp_date: str) -> dict[str, str]:
+    stamp = str(stamp_date)[:10]
+    fps = {
+        "paired_fingerprint": grain_fingerprint(
+            _read_part("paired", stamp, root), PAIRED_KEY, PAIRED_IDENTITY),
+        "family_fingerprint": grain_fingerprint(
+            _read_part("family", stamp, root), FAMILY_KEY, FAMILY_IDENTITY),
+        "coverage_fingerprint": grain_fingerprint(
+            _read_part("coverage", stamp, root), COVERAGE_KEY, COVERAGE_IDENTITY),
+    }
+    blob = json.dumps(fps, sort_keys=True, separators=(",", ":"))
+    fps["observation_fingerprint"] = hashlib.sha256(blob.encode("utf-8")).hexdigest()
+    return fps
+
+
+def _changed_identity_fields(
+    existing: Mapping[str, Any],
+    incoming: Mapping[str, Any],
+    identity: Iterable[str],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for field in identity:
+        a = _canon_value(existing.get(field))
+        b = _canon_value(incoming.get(field))
+        if a != b:
+            out.append({"field": field, "existing": a, "incoming": b})
+    return out
+
+
+def _revision_record(
+    *,
+    grain: str,
+    key: tuple,
+    existing: Mapping[str, Any] | None,
+    incoming: Mapping[str, Any] | None,
+    identity: Iterable[str],
+) -> dict[str, Any]:
+    existing = existing or {}
+    incoming = incoming or {}
+    stamp = str(key[0])[:10] if key else None
+    return {
+        "schema": SCHEMA_REVISION,
+        "kind": KIND_REVISION_REFUSED,
+        "stamp_date": stamp,
+        "grain": grain,
+        "key": [str(x) for x in key],
+        "existing_fingerprint": fingerprint(existing, identity) if existing else "",
+        "incoming_fingerprint": fingerprint(incoming, identity) if incoming else "",
+        "changed_fields": _changed_identity_fields(existing, incoming, identity),
+    }
+
+
+def bootstrap_session_record(stamp_date: str, root: Any = None) -> dict[str, Any] | None:
+    """Session receipt from frozen W3 parts. None if the stamp is not complete."""
+    stamp = str(stamp_date)[:10]
+    if not stamp_observation_complete(root, stamp):
+        return None
+    paired = _read_part("paired", stamp, root)
+    n_paired = int(len(paired))
+    n_pending = int(sum(1 for row in paired.to_dict(orient="records")
+                        if _outcome_pending(row)))
+    rec = _session_liveness(
+        stamp, in_candidates=True, n_v3_buy=n_paired,
+        n_paired=n_paired, n_pending=n_pending, degraded=False)
+    rec["source"] = "frozen_w3_parts"
+    rec["structural_schema"] = STRUCTURAL_SCHEMA
+    rec.update(observation_fingerprints(root, stamp))
+    return rec
+
+
+def _frames_same(prior: pd.DataFrame, merged: pd.DataFrame, key: tuple[str, ...]) -> bool:
+    if prior.empty and merged.empty:
+        return True
+    if prior.empty or merged.empty:
+        return False
+    if len(prior) != len(merged) or list(prior.columns) != list(merged.columns):
+        return False
+    left = prior.sort_values(list(key), kind="mergesort").reset_index(drop=True)
+    right = merged.sort_values(list(key), kind="mergesort").reset_index(drop=True)
+    return left.equals(right)
+
+
+def _empty_grain_stats() -> dict[str, int]:
+    return {"written": 0, "identical": 0, "matured": 0, "stamps": 0,
+            "revisions_refused": 0}
+
+
+def _group_by_stamp(rows: list[dict]) -> dict[str, list[dict]]:
+    grouped: dict[str, list[dict]] = {}
+    for row in rows:
+        stamp = str(row.get("stamp_date") or "")[:10]
+        if len(stamp) != 10:
+            continue
+        grouped.setdefault(stamp, []).append(row)
+    return grouped
 
 
 def _merge_keep_first(
@@ -285,33 +449,51 @@ def _merge_keep_first(
     identity: tuple[str, ...],
     grain: str,
     allow_outcome_fill: bool,
-) -> tuple[pd.DataFrame, int, int]:
-    """Keep-first merge. Returns (frame, n_identical, n_matured).
+    on_identity_conflict: str = "raise",
+    refuse_new_keys: bool = False,
+) -> tuple[pd.DataFrame, int, int, list[dict[str, Any]]]:
+    """Keep-first merge. Returns (frame, n_identical, n_matured, revisions).
 
     Identical payload → no-op row. Identity match + pending→filled (paired only)
-    → maturation. Identity mismatch → :class:`W3ConflictError`.
+    → maturation. Identity mismatch on an incomplete stamp →
+    :class:`W3ConflictError`. Identity mismatch on a complete frozen stamp →
+    SAME_STAMP_REVISION_REFUSED (frozen row kept).
     """
+    revisions: list[dict[str, Any]] = []
     if incoming.empty:
-        return prior, 0, 0
+        return prior, 0, 0, revisions
     if prior.empty:
-        return incoming.copy(), 0, 0
+        return incoming.copy(), 0, 0, revisions
 
     prior_rows = prior.to_dict(orient="records")
     by_key: dict[tuple, dict] = {_row_key(row, key): dict(row) for row in prior_rows}
+    prior_keys = set(by_key)
+    incoming_keys: set[tuple] = set()
     identical = 0
     matured = 0
     changed = False
     for raw in incoming.to_dict(orient="records"):
         row = dict(raw)
         item_key = _row_key(row, key)
+        incoming_keys.add(item_key)
         existing = by_key.get(item_key)
         if existing is None:
+            if refuse_new_keys:
+                revisions.append(_revision_record(
+                    grain=grain, key=item_key, existing={}, incoming=row,
+                    identity=identity))
+                continue
             by_key[item_key] = row
             changed = True
             continue
         existing_fp = fingerprint(existing, identity)
         incoming_fp = fingerprint(row, identity)
         if existing_fp != incoming_fp:
+            if on_identity_conflict == "refuse":
+                revisions.append(_revision_record(
+                    grain=grain, key=item_key, existing=existing, incoming=row,
+                    identity=identity))
+                continue
             exc = W3ConflictError(grain, item_key, existing_fp, incoming_fp,
                                   existing, row)
             _print_conflict(exc)
@@ -339,10 +521,26 @@ def _merge_keep_first(
                 _print_conflict(exc)
                 raise exc
         identical += 1
+    if refuse_new_keys and (prior_keys - incoming_keys):
+        stamp = str(next(iter(prior_keys))[0])[:10]
+        revisions.append({
+            "schema": SCHEMA_REVISION,
+            "kind": KIND_REVISION_REFUSED,
+            "stamp_date": stamp,
+            "grain": grain,
+            "key": [stamp, "*omitted_keys*"],
+            "existing_fingerprint": grain_fingerprint(prior, key, identity),
+            "incoming_fingerprint": grain_fingerprint(incoming, key, identity),
+            "changed_fields": [{
+                "field": "_omitted_keys",
+                "existing": [[str(x) for x in k] for k in sorted(prior_keys - incoming_keys)],
+                "incoming": None,
+            }],
+        })
     if not changed:
-        return prior, identical, matured
+        return prior, identical, matured, revisions
     merged = pd.DataFrame(list(by_key.values()))
-    return merged, identical, matured
+    return merged, identical, matured, revisions
 
 
 def _write_part(path: Path, frame: pd.DataFrame) -> None:
@@ -387,12 +585,13 @@ def _append_grain(
     identity: tuple[str, ...],
     allow_outcome_fill: bool,
     root: Any = None,
-) -> dict[str, int]:
+) -> dict[str, Any]:
+    empty = {**_empty_grain_stats(), "revisions": []}
     if not ledger_lane.nightly_advance_enabled():
         log.info("us_prophet_w3 %s append gated — not the US nightly lane", grain)
-        return {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        return empty
     if not rows:
-        return {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        return empty
 
     incoming = pd.DataFrame(rows)
     incoming = incoming.sort_values(list(key), kind="mergesort").reset_index(drop=True)
@@ -400,24 +599,24 @@ def _append_grain(
     identical = 0
     matured = 0
     stamps = 0
+    revisions: list[dict[str, Any]] = []
     for stamp, group in incoming.groupby(incoming["stamp_date"].map(lambda v: str(v)[:10]),
                                          sort=True):
         path = _part_path(grain, str(stamp), root)
         prior = pd.read_parquet(path) if path.exists() else pd.DataFrame()
-        merged, n_ident, n_mat = _merge_keep_first(
+        complete = stamp_observation_complete(root, str(stamp))
+        merged, n_ident, n_mat, rev = _merge_keep_first(
             prior, group.reset_index(drop=True),
             key=key, identity=identity, grain=grain,
-            allow_outcome_fill=allow_outcome_fill)
+            allow_outcome_fill=allow_outcome_fill,
+            on_identity_conflict="refuse" if complete else "raise",
+            refuse_new_keys=complete)
         identical += n_ident
         matured += n_mat
+        revisions.extend(rev)
         if prior.empty and merged.empty:
             continue
-        if (not prior.empty and len(prior) == len(merged)
-                and list(prior.columns) == list(merged.columns)
-                and prior.sort_values(list(key), kind="mergesort")
-                .reset_index(drop=True)
-                .equals(merged.sort_values(list(key), kind="mergesort")
-                        .reset_index(drop=True))):
+        if _frames_same(prior, merged, key):
             identical += max(0, len(group) - n_ident)
             continue
         merged = merged.sort_values(list(key), kind="mergesort").reset_index(drop=True)
@@ -425,7 +624,71 @@ def _append_grain(
         written += int(len(merged) - (0 if prior.empty else len(prior))) + n_mat
         stamps += 1
     return {"written": written, "identical": identical, "matured": matured,
-            "stamps": stamps}
+            "stamps": stamps, "revisions_refused": len(revisions),
+            "revisions": revisions}
+
+
+def _commit_stamp_grains(
+    stamp: str,
+    frames: Mapping[str, pd.DataFrame],
+    root: Any,
+) -> None:
+    """Write paired+family+coverage together. Roll back this stamp's new files on failure."""
+    items = [
+        (_part_path("paired", stamp, root), frames["paired"], PAIRED_KEY),
+        (_part_path("family", stamp, root), frames["family"], FAMILY_KEY),
+        (_part_path("coverage", stamp, root), frames["coverage"], COVERAGE_KEY),
+    ]
+    preexisting = {path: path.exists() for path, _, _ in items}
+    written: list[Path] = []
+    try:
+        for path, frame, key in items:
+            frame = frame.sort_values(list(key), kind="mergesort").reset_index(drop=True)
+            _write_part(path, frame)
+            written.append(path)
+    except Exception:
+        for path in written:
+            if not preexisting[path]:
+                path.unlink(missing_ok=True)
+        raise
+
+
+def _preflight_new_stamp(
+    stamp: str,
+    paired_rows: list[dict],
+    family_rows: list[dict],
+    coverage_rows: list[dict],
+    root: Any,
+) -> tuple[dict[str, pd.DataFrame], dict[str, dict[str, int]]]:
+    """Merge all grains in memory. Raises before any write on identity conflict."""
+    specs = (
+        ("paired", PAIRED_KEY, PAIRED_IDENTITY, True, paired_rows),
+        ("family", FAMILY_KEY, FAMILY_IDENTITY, False, family_rows),
+        ("coverage", COVERAGE_KEY, COVERAGE_IDENTITY, False, coverage_rows),
+    )
+    frames: dict[str, pd.DataFrame] = {}
+    stats: dict[str, dict[str, int]] = {}
+    for grain, key, identity, allow_fill, rows in specs:
+        prior = _read_part(grain, stamp, root)
+        incoming = pd.DataFrame(rows) if rows else pd.DataFrame()
+        if not incoming.empty:
+            incoming = incoming.sort_values(list(key), kind="mergesort").reset_index(drop=True)
+        merged, n_ident, n_mat, revisions = _merge_keep_first(
+            prior, incoming, key=key, identity=identity, grain=grain,
+            allow_outcome_fill=allow_fill, on_identity_conflict="raise",
+            refuse_new_keys=False)
+        if revisions:
+            raise W3IntegrityError(
+                f"internal: revision records in fail-closed preflight for {grain} {stamp}")
+        frames[grain] = merged
+        written = 0
+        if not _frames_same(prior, merged, key):
+            written = int(len(merged) - (0 if prior.empty else len(prior))) + n_mat
+        stats[grain] = {
+            "written": written, "identical": n_ident, "matured": n_mat,
+            "stamps": 1 if written else 0, "revisions_refused": 0,
+        }
+    return frames, stats
 
 
 def append_paired(rows: list[dict], root: Any = None) -> dict[str, int]:
@@ -923,6 +1186,10 @@ def sessions_by_stamp(root: Any = None) -> dict[str, dict[str, Any]]:
     """Current disposition per stamp_date. Keep-first, then lawful maturation only."""
     by: dict[str, dict[str, Any]] = {}
     for row in load_sessions(root):
+        if str(row.get("schema") or "") == SCHEMA_REVISION:
+            continue
+        if str(row.get("liveness") or "") not in LIVENESS_STATES:
+            continue
         stamp = str(row.get("stamp_date") or "")[:10]
         if len(stamp) != 10:
             continue
@@ -1000,6 +1267,37 @@ def append_sessions(records: Iterable[Mapping[str, Any]], root: Any = None) -> d
             "refused": refused}
 
 
+def load_revisions(root: Any = None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in load_sessions(root):
+        if str(row.get("schema") or "") != SCHEMA_REVISION:
+            continue
+        if str(row.get("kind") or "") != KIND_REVISION_REFUSED:
+            continue
+        rows.append(dict(row))
+    return rows
+
+
+def append_revisions(records: Iterable[Mapping[str, Any]], root: Any = None) -> int:
+    """Append-only same-stamp revision telemetry in the existing sessions.jsonl plane."""
+    if not ledger_lane.nightly_advance_enabled():
+        return 0
+    incoming = [dict(row) for row in records]
+    if not incoming:
+        return 0
+    path = sessions_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    written = 0
+    with path.open("a", encoding="utf-8") as handle:
+        for raw in incoming:
+            rec = dict(raw)
+            rec["schema"] = SCHEMA_REVISION
+            rec["kind"] = KIND_REVISION_REFUSED
+            handle.write(json.dumps(rec, sort_keys=True, default=str) + "\n")
+            written += 1
+    return written
+
+
 def resolve_board_as_of(root: Any = None) -> str | None:
     """Committed board as_of is the observation identity. Never wall-clock / run id."""
     standouts = _repo_root(root) / STANDOUTS_REL
@@ -1068,6 +1366,17 @@ def build_status_surface(root: Any = None, *,
         ],
         "n_missing": len(missing),
         "n_degraded_or_unpaired": len(degraded),
+        "same_stamp_revisions_refused": [
+            {
+                "stamp_date": r.get("stamp_date"),
+                "grain": r.get("grain"),
+                "key": r.get("key"),
+                "existing_fingerprint": r.get("existing_fingerprint"),
+                "incoming_fingerprint": r.get("incoming_fingerprint"),
+                "changed_fields": r.get("changed_fields") or [],
+            }
+            for r in load_revisions(root)
+        ],
         "structural": {
             "schema": STRUCTURAL_SCHEMA,
             "outcome_blind": True,
@@ -1088,6 +1397,8 @@ def build_status_surface(root: Any = None, *,
             "coverage": run_doc.get("coverage") or {},
             "sessions_written": run_doc.get("sessions_written") or {},
             "reconstruction_refused": list(run_doc.get("reconstruction_refused") or []),
+            "same_stamp_revisions_refused": list(
+                run_doc.get("same_stamp_revisions_refused") or []),
             "failures": list(run_doc.get("failures") or []),
             "board_as_of": run_doc.get("board_as_of"),
             "require_stamp": run_doc.get("require_stamp"),
@@ -1123,6 +1434,13 @@ def render_status_text(payload: Mapping[str, Any]) -> str:
     lines.append(f"first lawful comparison read: {payload.get('first_lawful_comparison_read')}")
     lines.append(f"prereg honest-N floor: {payload.get('honest_n_floor')}")
     lines.append(f"W3 authority: {payload.get('authority')}")
+    revisions = payload.get("same_stamp_revisions_refused") or []
+    lines.append(f"same-stamp revisions refused: {len(revisions)}")
+    for item in revisions:
+        lines.append(
+            f"  refused {item.get('stamp_date')} {item.get('grain')} "
+            f"key={item.get('key')} existing={item.get('existing_fingerprint')} "
+            f"incoming={item.get('incoming_fingerprint')}")
     structural = payload.get("structural") or {}
     lines.append(
         f"structural (outcome-blind): family_rows={structural.get('n_family_rows', 0)} "
@@ -1151,6 +1469,11 @@ def _receipt_for_stamp(
     return load_committed_structural_receipt(stamp, root)
 
 
+def _accumulate_grain_stats(target: dict[str, Any], extra: Mapping[str, Any]) -> None:
+    for key in ("written", "identical", "matured", "stamps", "revisions_refused"):
+        target[key] = int(target.get(key, 0)) + int(extra.get(key, 0))
+
+
 def _persist_run(doc: dict[str, Any], *,
                  session_records: list[dict[str, Any]],
                  paired_rows: list[dict],
@@ -1158,28 +1481,124 @@ def _persist_run(doc: dict[str, Any], *,
                  coverage_rows: list[dict],
                  root: Any,
                  dry_run: bool) -> None:
-    """Write grains + gap receipts BEFORE any fail-closed raise so commit can land them."""
+    """Preflight then commit complete observations; persist gap receipts before raises."""
     current = sessions_by_stamp(root)
+    complete_at_start = set(list_complete_stamps(root))
     matured = {stamp for stamp, rec in current.items()
                if rec.get("liveness") == LIVENESS_PAIRED_ACCRUED}
     matured.update(s["stamp_date"] for s in session_records
-                   if s.get("liveness") == LIVENESS_PAIRED_ACCRUED)
-    # Terminal history still counts as matured only if already paired_accrued.
+                   if s.get("liveness") == LIVENESS_PAIRED_ACCRUED
+                   and s["stamp_date"] in complete_at_start)
     doc["honest_n_matured_h10_sessions"] = len(matured)
     doc["sessions"] = session_records
     doc["n_paired_rows"] = len(paired_rows)
     doc["n_family_rows"] = len(family_rows)
     doc["n_coverage_rows"] = len(coverage_rows)
+    doc.setdefault("same_stamp_revisions_refused", [])
     if dry_run:
-        doc["paired"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
-        doc["family"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
-        doc["coverage"] = {"written": 0, "identical": 0, "matured": 0, "stamps": 0}
+        doc["paired"] = _empty_grain_stats()
+        doc["family"] = _empty_grain_stats()
+        doc["coverage"] = _empty_grain_stats()
         doc["sessions_written"] = {"written": 0, "identical": 0, "matured": 0, "refused": 0}
         return
-    doc["paired"] = append_paired(paired_rows, root)
-    doc["family"] = append_family(family_rows, root)
-    doc["coverage"] = append_coverage(coverage_rows, root)
-    doc["sessions_written"] = append_sessions(session_records, root)
+
+    paired_by = _group_by_stamp(paired_rows)
+    family_by = _group_by_stamp(family_rows)
+    coverage_by = _group_by_stamp(coverage_rows)
+    session_by = {
+        str(rec.get("stamp_date") or "")[:10]: rec
+        for rec in session_records
+        if len(str(rec.get("stamp_date") or "")[:10]) == 10
+    }
+
+    paired_stats = _empty_grain_stats()
+    family_stats = _empty_grain_stats()
+    coverage_stats = _empty_grain_stats()
+    revisions: list[dict[str, Any]] = []
+
+    for stamp in sorted(complete_at_start):
+        for rows, append_fn, stats in (
+            (paired_by.pop(stamp, []), append_paired, paired_stats),
+            (family_by.pop(stamp, []), append_family, family_stats),
+            (coverage_by.pop(stamp, []), append_coverage, coverage_stats),
+        ):
+            extra = append_fn(rows, root)
+            _accumulate_grain_stats(stats, extra)
+            revisions.extend(extra.get("revisions") or [])
+
+    remaining = sorted(set(paired_by) | set(family_by) | set(coverage_by))
+    for stamp in remaining:
+        sess = session_by.get(stamp) or {}
+        if sess.get("liveness") in TERMINAL_LIVENESS:
+            continue
+        p_rows = paired_by.get(stamp, [])
+        f_rows = family_by.get(stamp, [])
+        c_rows = coverage_by.get(stamp, [])
+        frames, grain_stats = _preflight_new_stamp(stamp, p_rows, f_rows, c_rows, root)
+        if (frames["paired"].empty or frames["family"].empty
+                or frames["coverage"].empty):
+            # Brand-new observation is all-or-nothing. Do not land a partial.
+            continue
+        _commit_stamp_grains(stamp, frames, root)
+        _accumulate_grain_stats(paired_stats, grain_stats["paired"])
+        _accumulate_grain_stats(family_stats, grain_stats["family"])
+        _accumulate_grain_stats(coverage_stats, grain_stats["coverage"])
+
+    if revisions:
+        for record in revisions:
+            _print_revision(record)
+        append_revisions(revisions, root)
+    doc["same_stamp_revisions_refused"] = revisions
+    paired_stats["revisions_refused"] = sum(
+        1 for r in revisions if r.get("grain") == "paired")
+    family_stats["revisions_refused"] = sum(
+        1 for r in revisions if r.get("grain") == "family")
+    coverage_stats["revisions_refused"] = sum(
+        1 for r in revisions if r.get("grain") == "coverage")
+
+    final_sessions: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for rec in session_records:
+        stamp = str(rec.get("stamp_date") or "")[:10]
+        if rec.get("liveness") in TERMINAL_LIVENESS and stamp not in seen:
+            final_sessions.append(rec)
+            seen.add(stamp)
+    for stamp in list_complete_stamps(root):
+        if stamp in seen:
+            continue
+        rec = bootstrap_session_record(stamp, root)
+        if rec is None:
+            continue
+        incoming = session_by.get(stamp)
+        if incoming:
+            rec["n_v3_buy_rows"] = incoming.get("n_v3_buy_rows", rec.get("n_paired"))
+            if incoming.get("board_as_of"):
+                rec["board_as_of"] = incoming["board_as_of"]
+            rec["source"] = incoming.get("source", rec.get("source"))
+            rec["structural_schema"] = incoming.get(
+                "structural_schema", rec.get("structural_schema"))
+        rec["bootstrap"] = stamp in complete_at_start and stamp not in current
+        rec.update(observation_fingerprints(root, stamp))
+        final_sessions.append(rec)
+        seen.add(stamp)
+
+    doc["paired"] = paired_stats
+    doc["family"] = family_stats
+    doc["coverage"] = coverage_stats
+    doc["sessions"] = final_sessions or session_records
+    persisted = sessions_by_stamp(root)
+    projected = dict(persisted)
+    for rec in final_sessions:
+        stamp = rec["stamp_date"]
+        prior = projected.get(stamp)
+        if prior is None or (
+                str(prior.get("liveness")), rec.get("liveness")
+        ) in LAWFUL_LIVENESS_TRANSITION:
+            projected[stamp] = rec
+    doc["honest_n_matured_h10_sessions"] = sum(
+        1 for rec in projected.values()
+        if rec.get("liveness") == LIVENESS_PAIRED_ACCRUED)
+    doc["sessions_written"] = append_sessions(final_sessions, root)
     write_status(build_status_surface(root, run_doc=doc), root)
 
 
@@ -1411,5 +1830,6 @@ def summary_line(doc: Mapping[str, Any]) -> str:
         f"matured_fill={paired.get('matured', 0)} "
         f"sessions={len(doc.get('sessions') or [])} "
         f"honest_n_matured_h10={doc.get('honest_n_matured_h10_sessions', 0)} "
+        f"revisions_refused={len(doc.get('same_stamp_revisions_refused') or [])} "
         f"(comparison forbidden)"
     )
