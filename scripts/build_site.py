@@ -2206,14 +2206,29 @@ def action_board(sector_timing: dict, notable: list[dict],
     bi = basket_items or {}
     # FIX 3 — pass more counts from basket_items through to the VM
     _bi_more = bi.get("more") or {}
-    return {"buy_now": (bi.get("buy_now") or []) + buy_now,
-            "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
-            "on_the_run": (bi.get("on_the_run") or []) + on_the_run,
-            "take_profits": (bi.get("take_profits") or []) + take_profits,
-            "hold": (bi.get("hold") or []) + hold,
-            "avoid": (bi.get("avoid") or []) + avoid,
+    _ab_buy_now = (bi.get("buy_now") or []) + buy_now
+    _ab_buy_soon = (bi.get("buy_soon") or []) + buy_soon
+    _ab_on_the_run = (bi.get("on_the_run") or []) + on_the_run
+    _ab_take_profits = (bi.get("take_profits") or []) + take_profits
+    _ab_hold = (bi.get("hold") or []) + hold
+    _ab_avoid = (bi.get("avoid") or []) + avoid
+    return {"buy_now": _ab_buy_now,
+            "buy_soon": _ab_buy_soon,
+            "on_the_run": _ab_on_the_run,
+            "take_profits": _ab_take_profits,
+            "hold": _ab_hold,
+            "avoid": _ab_avoid,
             "more": _bi_more,
-            "notable": notable_clean[:CAP]}
+            "notable": notable_clean[:CAP],
+            # P-MP1-SHELL §8 "Groups header total" — a single published total across every
+            # lane this board buckets rows into (the six urgency lanes the five rendered
+            # .actcol columns fold from — take_profits/avoid share the "stand aside" column).
+            # Computed ONCE here, at the same place the lanes themselves are assembled, so
+            # the template quotes this field rather than re-deriving a count from row
+            # iteration (the estate's count law — see lifecycle_counts for the sibling
+            # device this mirrors).
+            "total": (len(_ab_buy_now) + len(_ab_buy_soon) + len(_ab_on_the_run)
+                      + len(_ab_take_profits) + len(_ab_hold) + len(_ab_avoid))}
 
 
 def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
@@ -5488,6 +5503,24 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_board_outcomes.json unreadable (%s)", e)
 
+    # PROPHET BOARD LIFECYCLE LADDER (P-MP1-SHELL, MP-1-prophet-board.md §8, §8a).
+    # The plan book (site/prophet/index.json, published by build_prophet.py / PR-0(c))
+    # carries per-row `lifecycle_state` + the `lifecycle_counts` block the ladder quotes
+    # verbatim (ruling §6 count law: every rendered quantity of setups quotes this block
+    # or a difference of its values — never re-derived from row iteration). This is a
+    # READ of an already-published artifact; build_prophet.py / engine/us_board_rank.py
+    # are untouched (MP-1 §7/§9 — engine judgment is out of this packet's scope).
+    # Fail-soft like every other board load above: an absent/unreadable artifact leaves
+    # `us_prophet_book` None and the Setups region falls back to its loading/empty state
+    # rather than raising the build.
+    us_prophet_book = None
+    _pbk = site / "prophet" / "index.json"
+    if _pbk.exists():
+        try:
+            us_prophet_book = json.loads(_pbk.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("prophet/index.json unreadable (%s)", e)
+
     # THEME TAPE (W2) — the hottest themes reconciled against the board above, so a
     # heating theme the board is SILENT on still prints a line saying so. Pure
     # presentation join (engine/theme_tape.py): reads two already-published
@@ -6254,6 +6287,7 @@ def main() -> int:
         action_board=_ab,
         top_setups=top_setups,
         us_standouts=us_standouts,
+        us_prophet_book=us_prophet_book,
         us_prophet_refusals=us_prophet_refusals,
         theme_tape=theme_tape,
         us_board_outcomes=us_board_outcomes,
