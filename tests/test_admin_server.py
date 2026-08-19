@@ -3,6 +3,7 @@ import json
 import re
 import sys
 import threading
+import time
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
@@ -10,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from admin import analytics_first_party as fp
 from admin.server import Handler, _clear_response_cache, _host_only, _int_param
 
 
@@ -330,6 +332,152 @@ def test_body_size_cap():
     h2.rfile = io.BytesIO(payload)
     result2 = h2._body()
     assert result2 == {"key": "value"}
+
+
+# ---- persistent-connection framing (2026-08-19) -----------------------------
+# The console now speaks HTTP/1.1, so every API call reuses one connection instead
+# of paying a fresh handshake and worker thread. That makes response FRAMING
+# load-bearing in a way it was not while every connection closed after its body.
+
+def test_admin_speaks_http_11():
+    assert Handler.protocol_version == "HTTP/1.1"
+
+
+def test_idle_connections_cannot_pin_a_thread_forever():
+    assert Handler.timeout, (
+        "a keep-alive handler with no socket timeout leaks a ThreadingHTTPServer "
+        "worker per idle connection"
+    )
+
+
+class _RecordingHandler(Handler):
+    """Capture what _json_body puts on the wire without opening a socket."""
+
+    def __init__(self):                       # bypass BaseHTTPRequestHandler setup
+        self.sent_headers = []
+        self.written = b""
+        self.code = None
+        self._response_cache_key = None
+
+    def send_response(self, code, *a):
+        self.code = code
+
+    def send_header(self, key, value):
+        self.sent_headers.append((key, value))
+
+    def end_headers(self):
+        pass
+
+    @property
+    def wfile(self):
+        outer = self
+
+        class _W:
+            def write(self, b):
+                outer.written += b
+        return _W()
+
+
+def test_no_content_responses_carry_no_body():
+    """204/304 must send neither a body nor a Content-Length.
+
+    /favicon.ico answers 204. On the old close-after-body connection a stray body
+    was invisible; on a persistent one the client reads it as the head of the NEXT
+    response — which is how a perfectly healthy endpoint starts returning
+    unparseable JSON to the panel that asked for it.
+    """
+    for code in (204, 304):
+        h = _RecordingHandler()
+        h._json_body(b'{"ignored": true}', code=code)
+        assert h.written == b"", f"{code} wrote a body"
+        assert not any(k.lower() == "content-length" for k, _ in h.sent_headers), \
+            f"{code} sent a Content-Length"
+
+
+def test_ordinary_responses_still_carry_body_and_length():
+    h = _RecordingHandler()
+    h._json_body(b'{"a": 1}', code=200)
+    assert h.written == b'{"a": 1}'
+    assert ("Content-Length", "8") in h.sent_headers
+
+
+# ---- analytics fan-out (2026-08-19) -----------------------------------------
+# Each analytics surface used to issue its statements in SEQUENCE — the default tab
+# fired six — so a panel paid the SUM of its round trips. They now go out as one
+# wave under a whole-surface deadline, which is what keeps a slow panel returning a
+# JSON error instead of the CDN edge's HTML error page.
+
+def _analytics_configured():
+    """_guard short-circuits on an unconfigured reader, before the machinery under
+    test runs. Returns a restore callable (no fixture — this file's __main__ runner
+    calls tests with no arguments)."""
+    original = fp.status
+    fp.status = lambda: {"configured": True, "project_ref": "test",
+                         "reason": None, "setup_steps": []}
+    return lambda: setattr(fp, "status", original)
+
+
+def test_analytics_parallel_runs_thunks_concurrently():
+    barrier = threading.Barrier(3, timeout=5)
+
+    def wait():
+        barrier.wait()          # only returns if all three are in flight at once
+        return "done"
+
+    assert fp._parallel(a=wait, b=wait, c=wait) == {
+        "a": "done", "b": "done", "c": "done"}
+
+
+def test_analytics_deadline_reaches_the_worker_threads():
+    """ThreadPoolExecutor does not propagate contextvars on its own.
+
+    Without the per-thunk context copy every fan-out query would silently fall back
+    to its own full timeout and the whole-surface budget would bound nothing.
+    """
+    restore = _analytics_configured()
+    try:
+        seen = []
+
+        def probe():
+            seen.append(fp._remaining_budget())
+            return 1
+
+        fp._guard(lambda: (fp._parallel(a=probe, b=probe), {})[1])
+        assert len(seen) == 2
+        assert all(v is not None and v > 0 for v in seen), \
+            f"deadline did not reach the worker threads: {seen}"
+    finally:
+        restore()
+
+
+def test_analytics_query_refuses_once_the_budget_is_spent():
+    """An exhausted budget raises — so _guard renders JSON — rather than dialing out."""
+    original_pat = fp.settings.supabase_pat
+    fp.settings.supabase_pat = lambda: "sbp_test"
+    token = fp._DEADLINE.set(time.monotonic() - 1.0)     # already past
+    try:
+        fp._query("select 1")
+    except TimeoutError as exc:
+        assert "budget" in str(exc)
+    else:
+        raise AssertionError("expected TimeoutError on an exhausted budget")
+    finally:
+        fp._DEADLINE.reset(token)
+        fp.settings.supabase_pat = original_pat
+
+
+def test_analytics_guard_still_returns_json_shaped_errors():
+    """Whatever fails underneath, the SPA envelope stays {ok: False, error: ...}."""
+    restore = _analytics_configured()
+    try:
+        def boom():
+            raise RuntimeError("upstream exploded")
+
+        out = fp._guard(boom)
+        assert out["ok"] is False
+        assert "upstream exploded" in out["error"]
+    finally:
+        restore()
 
 
 if __name__ == "__main__":
