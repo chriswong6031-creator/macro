@@ -79,7 +79,7 @@ danger_areas:
   - "Radar live-transport plane: #5929 (armed) and #5925 (unarmed) collide on engine/entry_radar/live_pack.py — Radar owner's matter; F-lane reads only."
   - "engine/altdata_models.py Quiver 13F kernel carries ReportPeriod look-ahead — routed to its owner; a K2-B builder must not grow or silently inherit it."
   - "F0's forward_rows_total=0 data-basis finding expires when #5929 lands and the Radar spool starts accruing — K4 re-reads it."
-prs: [5931]
+prs: [5933]
 decisions:
   - DEC:ALPHA-INTEL-FABLE-A-CONTRACT-FIRST-DISPATCH
 ---
