@@ -5028,6 +5028,19 @@
       "regime_bucket": "Q2"
     },
     {
+      "subject": "GDDY",
+      "as_of": "2026-07-17",
+      "direction": -1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
       "subject": "HOOD",
       "as_of": "2026-07-17",
       "direction": -1,
@@ -11212,6 +11225,58 @@
       "regime_bucket": "Q2"
     },
     {
+      "subject": "CB",
+      "as_of": "2026-08-17",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "GL",
+      "as_of": "2026-08-17",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "IVZ",
+      "as_of": "2026-08-17",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "PM",
+      "as_of": "2026-08-17",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
       "subject": "TMUS",
       "as_of": "2026-08-18",
       "direction": 1,
@@ -11769,6 +11834,19 @@
         "us_board"
       ],
       "regime_bucket": "Q2"
+    },
+    {
+      "subject": "ROST",
+      "as_of": "2026-08-18",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "desk:stock_desk",
+        "track_record"
+      ],
+      "regime_bucket": "Q2"
     }
   ],
   "redundancy_discount": {
@@ -11780,6 +11858,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-08-19T08:20:26Z",
+  "produced_at": "2026-08-19T16:45:47Z",
   "authority_check": []
 }

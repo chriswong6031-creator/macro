@@ -14,3 +14,4 @@
 {"key":"XLE::2026-08-13","node":"XLE","asof":"2026-08-13","tape_onset_unconfirmed":true,"registered_at":"2026-08-18T08:17:30.410120+00:00","fwd_smoothed_onset_5d":null,"fwd_confirmed_10d":null,"outcome_mature":false}
 {"key":"XLE::2026-08-17","node":"XLE","asof":"2026-08-17","tape_onset_unconfirmed":true,"registered_at":"2026-08-18T11:39:39.457974+00:00","fwd_smoothed_onset_5d":null,"fwd_confirmed_10d":null,"outcome_mature":false}
 {"key":"XLU::2026-08-17","node":"XLU","asof":"2026-08-17","tape_onset_unconfirmed":true,"registered_at":"2026-08-18T11:39:39.457974+00:00","fwd_smoothed_onset_5d":null,"fwd_confirmed_10d":null,"outcome_mature":false}
+{"key":"XLE::2026-08-18","node":"XLE","asof":"2026-08-18","tape_onset_unconfirmed":true,"registered_at":"2026-08-19T17:01:25.394483+00:00","fwd_smoothed_onset_5d":null,"fwd_confirmed_10d":null,"outcome_mature":false}

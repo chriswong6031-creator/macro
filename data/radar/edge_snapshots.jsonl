@@ -10522,3 +10522,4 @@
 {"date":"2026-08-18","kind":"ticker","subject":"FRT","ticker":"FRT","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-18","kind":"ticker","subject":"WY","ticker":"WY","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-08-18","kind":"ticker","subject":"IRM","ticker":"IRM","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-08-18","kind":"ticker","subject":"AMZN","ticker":"AMZN","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"signal"}

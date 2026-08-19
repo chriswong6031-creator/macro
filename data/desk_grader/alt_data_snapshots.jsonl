@@ -2321,3 +2321,4 @@
 {"date":"2026-08-19","ticker":"QBTS","departed":true,"left_desk":"2026-08-19","last_rank":null,"last_score":17}
 {"date":"2026-08-19","ticker":"SPGI","departed":true,"left_desk":"2026-08-19","last_rank":null,"last_score":22}
 {"date":"2026-08-19","ticker":"T","departed":true,"left_desk":"2026-08-19","last_rank":24,"last_score":34}
+{"date":"2026-08-19","ticker":"CRM","rank":30,"score":30,"lean":1,"broken":false}

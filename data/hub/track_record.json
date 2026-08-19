@@ -1,12 +1,12 @@
 {
   "schema": "intel_hub.track_record.v1",
   "as_of": "2026-08-19",
-  "generated_at": "2026-08-19T08:25:46.646909+00:00",
+  "generated_at": "2026-08-19T16:51:22.455580+00:00",
   "is_context_only": true,
-  "n_snapshots": 178430,
+  "n_snapshots": 178462,
   "horizons": {
     "5": {
-      "n_matured": 59035,
+      "n_matured": 59046,
       "opportunity_ic_pooled": 0.0354,
       "opportunity_ic_daily": {
         "mean_ic": 0.0158,
@@ -34,7 +34,7 @@
           "hit_rate": 0.487
         },
         "building": {
-          "n": 44998,
+          "n": 45009,
           "mean_fwd_rel": 0.1225,
           "hit_rate": null
         },
@@ -102,13 +102,13 @@
       },
       "coverage": {
         "n_eligible": 174647,
-        "n_matured": 59035,
-        "coverage_pct": 33.8,
+        "n_matured": 59046,
+        "coverage_pct": 33.81,
         "below_floor": true
       }
     },
     "10": {
-      "n_matured": 55201,
+      "n_matured": 55209,
       "opportunity_ic_pooled": -0.0008,
       "opportunity_ic_daily": {
         "mean_ic": 0.0146,
@@ -136,7 +136,7 @@
           "hit_rate": 0.423
         },
         "building": {
-          "n": 42057,
+          "n": 42065,
           "mean_fwd_rel": 0.0642,
           "hit_rate": null
         },
@@ -204,8 +204,8 @@
       },
       "coverage": {
         "n_eligible": 172645,
-        "n_matured": 55201,
-        "coverage_pct": 31.97,
+        "n_matured": 55209,
+        "coverage_pct": 31.98,
         "below_floor": true
       }
     },
@@ -360,14 +360,14 @@
   "coverage_pct": {
     "5": {
       "n_eligible": 174647,
-      "n_matured": 59035,
-      "coverage_pct": 33.8,
+      "n_matured": 59046,
+      "coverage_pct": 33.81,
       "below_floor": true
     },
     "10": {
       "n_eligible": 172645,
-      "n_matured": 55201,
-      "coverage_pct": 31.97,
+      "n_matured": 55209,
+      "coverage_pct": 31.98,
       "below_floor": true
     },
     "21": {

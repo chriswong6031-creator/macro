@@ -17,10 +17,10 @@
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.8,
+      "absorption_pctile": 0.68,
       "n_markets": 6,
-      "absorption_ratio": 0.398,
-      "mean_abs_corr": 0.26,
+      "absorption_ratio": 0.383,
+      "mean_abs_corr": 0.243,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -131,7 +131,7 @@
         0.406,
         0.392,
         0.396,
-        0.398
+        0.383
       ],
       "spark_asof": "2026-08-21"
     },
@@ -235,41 +235,41 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.295,
-          "t": 4.643,
+          "r": 0.3,
+          "t": 4.67,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.318,
-          "t": 4.401,
+          "r": 0.315,
+          "t": 4.35,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.282,
-          "t": 4.117,
+          "r": 0.28,
+          "t": 4.095,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.245,
-          "t": 3.501,
+          "r": 0.244,
+          "t": 3.486,
           "q": 0.0187
         },
         {
           "leader": "Crypto",
           "follower": "China",
           "lag": 1,
-          "r": 0.2,
-          "t": 3.102,
-          "q": 0.057
+          "r": 0.197,
+          "t": 3.057,
+          "q": 0.066
         }
       ],
       "stable": false,
@@ -296,8 +296,17 @@
     "confirm": {
       "verdict": "diverge",
       "agree_pct": 50,
-      "n_blind_flags": 1,
+      "n_blind_flags": 2,
       "flags_top": [
+        {
+          "key": "credit",
+          "en": "High-yield credit widening from tight \u2014 credit risk-appetite turning (partly-leading via the EBP family, but often coincident with equity stress).",
+          "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u4ece\u504f\u7d27\u8d70\u9614 \u2014 \u4fe1\u7528\u98ce\u9669\u504f\u597d\u8f6c\u5411\uff08\u7ecfEBP\u5177\u90e8\u5206\u9886\u5148\u6027\uff0c\u4f46\u5e38\u4e0e\u80a1\u7968\u538b\u529b\u540c\u6b65\uff09\u3002",
+          "severity": "medium",
+          "owner": "bonds",
+          "lead": "leading",
+          "equity_blind": true
+        },
         {
           "key": "usd_positioning",
           "en": "USD spec positioning crowded long (91.0th pctile) \u2014 a contrarian fragility/crowding gauge, not a timing signal (lagged, unmeasured).",
@@ -308,7 +317,7 @@
           "equity_blind": true
         }
       ],
-      "asof": "2026-08-17"
+      "asof": "2026-08-18"
     },
     "dollar": {
       "usd_dir": "flat",
@@ -332,11 +341,11 @@
       "fx_stress": {
         "dominant": null,
         "top_key": "em_crisis_capital_flight",
-        "top_val": 25.7
+        "top_val": 26.3
       }
     },
     "shadow": {
-      "pressure_pctile": 0.8,
+      "pressure_pctile": 0.68,
       "incumbent_state": "calm",
       "shadow_state": "calm",
       "escalated": false

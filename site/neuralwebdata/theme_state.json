@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
   "as_of": "2026-08-19",
-  "generated_at": "2026-08-19T08:40:00Z",
+  "generated_at": "2026-08-19T17:03:56Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -438,16 +438,16 @@
           "basket_id": "nuclear_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.935,
-          "salience": 2.935,
+          "divergence": 2.922,
+          "salience": 2.922,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "uranium_miners",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.638,
-          "salience": 2.638,
+          "divergence": 2.615,
+          "salience": 2.615,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -513,8 +513,8 @@
           "basket_id": "power_grid",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 1.833,
-          "salience": 1.833,
+          "divergence": 1.822,
+          "salience": 1.822,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -652,8 +652,8 @@
           "basket_id": "defense",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 0.227,
-          "salience": 0.227,
+          "divergence": 0.216,
+          "salience": 0.216,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -974,8 +974,8 @@
           "basket_id": "space_economy",
           "state": "POSITIVE_DIVERGENCE",
           "lifecycle": "emerging",
-          "divergence": 4.045,
-          "salience": 4.045,
+          "divergence": 4.03,
+          "salience": 4.03,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -1402,7 +1402,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-19T08:40:00Z",
-  "inputs_hash": "sha256:5e49cee21a66b535646e1555da89bf243792347d99f217809f50f77be5e0ba39",
+  "produced_at": "2026-08-19T17:03:57Z",
+  "inputs_hash": "sha256:ac462babe5e2bb272876204c584d867bc08744d0fe6ef1d1518564f7af07ed72",
   "tier": "display"
 }

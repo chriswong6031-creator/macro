@@ -39,10 +39,10 @@
   "family": "pss_af1_finra_absorption_witness_prospective",
   "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
   "gate_open": true,
-  "generated_utc": "2026-08-19T06:05:01.766622+00:00",
+  "generated_utc": "2026-08-19T15:14:03.429243+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 1,
+    "appended_today": 0,
     "earliest_action": "2026-08-18",
     "events": 1,
     "flow_witness": 0,
@@ -62,13 +62,11 @@
   "program_id": "PSS-AF1",
   "registration_ok": true,
   "scan_census": {
-    "derived_events": 1,
-    "eligible_future_cr1_leader_sources": 1,
+    "derived_events": 0,
+    "eligible_future_cr1_leader_sources": 0,
     "finra_latest_session": "2026-08-18",
     "finra_rows_through_as_of": 82354,
-    "reasons": {
-      "group_low_activity_diagnostic": 1
-    }
+    "reasons": {}
   },
   "schema": "personality_flow_absorption.state/v1",
   "status": "prospective_accrual_only"

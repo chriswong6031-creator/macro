@@ -2,7 +2,7 @@
   "schema": "macro_snapshot.v1.2",
   "asof": "2026-08-19",
   "oldest_component_asof": "2026-08-17",
-  "macro_context_id": "b3220d4c3ac4fa8e",
+  "macro_context_id": "5d0b7e2fe4703eed",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -19,7 +19,7 @@
       "us_gamma_regime": "long",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "collapsing (de-risk)",
+      "us_vrp_state": "normal",
       "cross_asset_verdict": "diverge"
     },
     "market": {
@@ -104,10 +104,10 @@
     "data/forex/latest.json": "2026-08-19",
     "data/bonds/bond_health.json": "2026-08-18",
     "data/commodity/latest.json": "2026-08-18",
-    "data/china_regime/latest.json": "2026-08-18",
-    "data/hk_regime/latest.json": "2026-08-18",
+    "data/china_regime/latest.json": "2026-08-19",
+    "data/hk_regime/latest.json": "2026-08-19",
     "data/canada_regime/latest.json": "2026-08-18",
-    "data/dispersion/regime.json": "2026-08-18",
+    "data/dispersion/regime.json": "2026-08-19",
     "data/intl_regime/AU_history.parquet": "2026-08-19",
     "data/intl_regime/EZ_history.parquet": "2026-08-17",
     "data/intl_regime/GB_history.parquet": "2026-08-18",

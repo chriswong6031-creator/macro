@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "data_session": "2026-08-18",
   "state": "warming",
   "k_count": 1,
@@ -77,8 +77,8 @@
       "lit": true,
       "fresh": true,
       "since": "2026-08-18",
-      "detail_en": "20d log-RS slope=0.0072 (positive); turned positive 0bd ago",
-      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0072\uff08\u6b63\u5411\uff09\uff1b0\u65e5\u524d\u8f6c\u6b63",
+      "detail_en": "20d log-RS slope=0.0072 (positive); turned positive 1bd ago",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0072\uff08\u6b63\u5411\uff09\uff1b1\u65e5\u524d\u8f6c\u6b63",
       "source": "yahoo/RSP,SPY"
     },
     {
@@ -309,7 +309,7 @@
     "n_qualifying": 30,
     "null": false,
     "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-    "as_of": "2026-08-18"
+    "as_of": "2026-08-19"
   },
   "narrow_top": {
     "basket_id": "memory_storage",
@@ -319,9 +319,9 @@
     "streak_sessions": 4
   },
   "radar_xref": {
-    "state": "watch",
+    "state": "calm",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.54
+  "_timing_s": 2.94
 }

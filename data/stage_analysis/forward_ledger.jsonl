@@ -911,3 +911,4 @@
 {"date": "2026-08-18", "ticker": "GENC", "sga_score": 45, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
 {"date": "2026-08-18", "ticker": "PESI", "sga_score": 45, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": -0.5, "performance": 2.5, "session_source": "stage_source_asof"}
 {"date": "2026-08-18", "ticker": "SAFT", "sga_score": 45, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-18", "ticker": "SJM", "sga_score": 45, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 6.666666666666667, "session_source": "stage_source_asof"}
