@@ -130,7 +130,10 @@ class EtfHoldingsAdapter(Adapter):
         url = spec.get("url") or SSGA_XLSX.format(fund=ticker.lower())
         r = self.http_get(url, retries=self.retries, timeout=60,
                           headers={"User-Agent": "Mozilla/5.0 (research)"})
-        raw = pd.read_excel(io.BytesIO(r.content), header=None)
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        raw = pd.read_excel(io.BytesIO(r.content), header=None,
+                            keep_default_na=False, na_values=[""])
         hdr = raw.index[raw.iloc[:, 0].astype(str).str.strip() == "Name"]
         if not len(hdr):
             raise ValueError("holdings header row not found")
@@ -323,7 +326,8 @@ class EtfHoldingsAdapter(Adapter):
         r = self._ua_get(url, timeout=45)
         if r.content[:2] != b"PK":  # wrong slug soft-404s to a ~277KB HTML page
             raise ValueError(f"vaneck {ticker}: not an XLSX (soft-404? {len(r.content)}B)")
-        raw = pd.read_excel(io.BytesIO(r.content), header=None)
+        raw = pd.read_excel(io.BytesIO(r.content), header=None,
+                            keep_default_na=False, na_values=[""])
         hdr = self._xlsx_header_row(raw, need=("ticker",), any_of=("share",))
         if hdr is None:
             raise ValueError(f"vaneck {ticker}: header row not found")
@@ -551,7 +555,8 @@ class EtfHoldingsAdapter(Adapter):
             if r.content[:2] != b"PK":
                 last_err = ValueError("not xlsx")
                 continue
-            raw = pd.read_excel(io.BytesIO(r.content), header=None)
+            raw = pd.read_excel(io.BytesIO(r.content), header=None,
+                                keep_default_na=False, na_values=[""])
             hdr = self._xlsx_header_row(raw, need=("ticker",), any_of=("share", "weight"))
             if hdr is None:
                 last_err = ValueError("header not found")

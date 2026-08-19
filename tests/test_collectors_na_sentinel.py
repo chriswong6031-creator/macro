@@ -9,9 +9,12 @@ numeric column, since blank cells no longer decode to NaN either — verified on
 pandas 3.0.5 in this tree, see test_bare_keep_default_na_is_a_regression below).
 
 Three layers are covered:
-  1. A static AST guard over the 9 owned collector files, pinning both the total
-     read_csv/read_excel call count and the guarded-call count per file, so a
-     newly-added unguarded parse site fails the test.
+  1. A static AST guard over the 9 owned collector files (18 parse sites total —
+     15 from the original audit + 3 read_excel(header=None) sponsor sites in
+     etf_holdings.py that the original census missed because it grepped
+     read_csv only: _fetch_ssga, _fetch_vaneck, _fetch_defiance), pinning both
+     the total read_csv/read_excel call count and the guarded-call count per
+     file, so a newly-added unguarded parse site fails the test.
   2. Behavioural round-trips proving the motivating exemplar (NA / Nano Labs /
      National Bank of Canada) survives parsing with the real kwargs.
   3. The is_non_equity_holding() truth table for the downstream sentinel fix in
@@ -29,11 +32,17 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 # (relpath, total read_csv/read_excel calls in file, calls carrying BOTH
-# keep_default_na and na_values). The gap between total and guarded is the
-# known LOW-SKIP read_excel(header=None) raw dumps in etf_holdings.py (recon'd
-# out of the frozen 15-site list — see the MISSION packet).
+# keep_default_na and na_values). etf_holdings.py is 9/9: all nine parse sites
+# in this file are guarded, including the three read_excel(header=None)
+# sponsor sites (_fetch_ssga, _fetch_vaneck, _fetch_defiance) that carry the
+# identical defect one level removed — they slice raw.iloc[hdr+1:] and hand the
+# frame to _normalize, which does df["ticker"].astype(str).str.strip(), so an
+# NA cell still becomes the literal "nan" without the guard. header=None itself
+# is untouched: _xlsx_header_row / the "Name" probe / the "As of" scan all key
+# off str(cell) comparisons, and na_values=[""] does not change how a genuinely
+# blank Excel cell decodes, so header detection is unaffected.
 _SITES = [
-    ("collectors/etf_holdings.py", 9, 6),
+    ("collectors/etf_holdings.py", 9, 9),
     ("collectors/holdings.py", 2, 2),
     ("collectors/canada_universe.py", 1, 1),
     ("collectors/intl_universe.py", 1, 1),
@@ -130,6 +139,42 @@ def test_ishares_xic_na_ticker_survives_and_weight_stays_numeric() -> None:
     w = pd.to_numeric(df[wcol], errors="coerce")
     assert w.notna().all()                       # no numeric row was coerced to NaN
     assert w.iloc[0] == 4.2
+
+
+def test_xlsx_sponsor_pattern_na_ticker_survives_header_detection_unaffected() -> None:
+    """The three read_excel(header=None) sponsor sites (_fetch_ssga, _fetch_vaneck,
+    _fetch_defiance) hand the raw sheet to a 'Name'/_xlsx_header_row probe, then
+    slice raw.iloc[hdr+1:] into _normalize. Builds the raw frame the SAME shape
+    read_excel(..., keep_default_na=False, na_values=[""]) produces — string
+    cells (including a literal 'NA') stay literal, genuinely blank Excel cells
+    still decode to NaN because they were never text — and threads it through
+    the real header-detection + normalize code. openpyxl is not installed in
+    this test environment (existing tests/test_corp_bond_holdings.py errors at
+    collection for the same reason), so this exercises the downstream logic
+    directly rather than via actual xlsx bytes. Proves both halves of the
+    addendum's safety claim: header detection is unaffected (still keys on
+    str(cell) == 'Ticker'/'Weight'), and the NA / Nano Labs row survives."""
+    import numpy as np
+    from collectors.etf_holdings import EtfHoldingsAdapter
+    raw = pd.DataFrame([
+        ["Fund XYZ Holdings", None, None, None],
+        ["As of", "01/15/2026", None, None],
+        ["Ticker", "Name", "Weight (%)", "Shares"],
+        ["NA", "Nano Labs Ltd", 1.2, 500],
+        ["AAPL", "Apple Inc", 8.0, 2000],
+        [np.nan, np.nan, np.nan, np.nan],   # genuinely blank trailing row -> still NaN
+    ])
+    hdr = EtfHoldingsAdapter._xlsx_header_row(raw, need=("ticker",), any_of=("share",))
+    assert hdr == 2                          # header detection unaffected by the guard
+    df = raw.iloc[hdr + 1:].copy()
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in raw.iloc[hdr]]
+    out = EtfHoldingsAdapter._normalize(df, "XYZ", "2026-01-15",
+                                        wcol="weight_(%)", scol="shares")
+    assert "NA" in list(out["ticker"])
+    row = out[out["ticker"] == "NA"].iloc[0]
+    assert row["name"] == "Nano Labs Ltd"
+    assert row["shares"] == 500
+    assert "AAPL" in list(out["ticker"])     # blank trailing row correctly dropped
 
 
 def test_etf_normalize_retains_na_ticker_nano_labs() -> None:
