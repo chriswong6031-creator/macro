@@ -735,25 +735,33 @@ function rangeWords(rp) {
 var quotesInflight = false;
 function fetchQuotes() {
   if (quotesInflight) return; quotesInflight = true;
-  fetch(snapUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
+  fetch(snapUrl(), {cache:'no-cache'}).then(function(r){
+    if (!r.ok) throw new Error('quotes '+r.status);
+    return r.json();
+  }).then(function(data){
     quotesInflight = false;
     var q = data.quotes || {};
     Object.keys(q).forEach(function(tk){ if (q[tk] && typeof q[tk] === 'object') quoteState[tk] = q[tk]; });
     quotesStatus = 'live';
+    updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ quotesInflight = false; quotesStatus = 'unavailable'; });
+  }).catch(function(){ quotesInflight = false; quotesStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
 }
 
 // ── Fetch: flow pulse (5min) ───────────────────────────────────────────────
 var pulseInflight = false;
 function fetchPulse() {
   if (pulseInflight) return; pulseInflight = true;
-  fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
+  fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){
+    if (!r.ok) throw new Error('pulse '+r.status);
+    return r.json();
+  }).then(function(data){
     pulseInflight = false;
     (data.tickers || []).forEach(function(t){ if (t && t.ticker) pulseState[t.ticker] = t; });
     pulseStatus = 'live';
+    updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ pulseInflight = false; pulseStatus = 'unavailable'; });
+  }).catch(function(){ pulseInflight = false; pulseStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
 }
 
 // ── Fetch: source-stamped options flow (R2; poll floor is not freshness) ────
@@ -770,7 +778,7 @@ function fetchFlow() {
   var tideUrl = r2Url('live_flow/tide_current.json');
   var enrichUrl = r2Url('live_flow/enrich_current.json');
   var metaUrl = r2Url('live_flow/meta.json');
-  if (!tideUrl) { updateFlowStamp(null); return; }
+  if (!tideUrl) { flowStatus = 'unavailable'; updateFlowStamp(null); return; }
   flowInflight = true;
   Promise.all([
     fetch(tideUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
@@ -824,7 +832,7 @@ function fetchFlow() {
       }
     }
     flowMeta = meta; flowAsof = asof; flowRTH = isMarketHours();
-    flowStatus = 'live';
+    flowStatus = (tide || enrich || meta) ? 'live' : 'unavailable';
     updateFlowStamp(asof, meta);
     // Deepen the board's own names — the per-root payload is the only source of the
     // call-only series the lean and L5 need, and flowState is read for leaders only.
@@ -837,7 +845,7 @@ function fetchFlow() {
       });
     }
     scheduleRender();
-  }).catch(function(){ flowInflight = false; flowStatus = 'unavailable'; });
+  }).catch(function(){ flowInflight = false; flowStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
 }
 function bestTier(a, b) {
   var rank = { below_medium:0, medium:1, high:2, strong:3, elite:4 };
