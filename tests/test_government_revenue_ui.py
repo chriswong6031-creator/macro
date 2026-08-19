@@ -1678,3 +1678,91 @@ def test_discovery_timing_never_reads_the_hardcoded_flag_alone() -> None:
     """Pin the defect: the cell must not branch on ``is_late_discovery`` at the call site."""
     assert "discoveryTiming(e.change,award)" in TEMPLATE
     assert "award.is_late_discovery?" not in TEMPLATE
+
+
+# --------------------------------------------------------------------------------------
+# D2 Identity Atlas — page-level guards. The runtime/state contracts live in
+# tests/test_government_revenue_dossier_ui.py; these pin what the SHIPPED page must
+# carry so the section can never be half-wired into the company inspector.
+# --------------------------------------------------------------------------------------
+DOSSIER_UI_JS = (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+PARITY_CSS_TEXT = (ROOT / "templates" / "government-revenue-parity.css").read_text(encoding="utf-8")
+
+
+def test_identity_atlas_ships_on_the_company_inspector() -> None:
+    """The page must carry the factory, the host and its state inks.
+
+    Asserted against templates/, not the committed site/ page: government_revenue.html
+    is a render-lane OUTPUT (a .j2 render, not a plain-copy pair), so it carries the
+    previous bake's bytes until the next render — pinning it here would fail on a
+    correct PR and pass on a stale one.
+    """
+    for marker in (
+        'data-sync src="government-revenue-dossiers.js"',
+        "createGovernmentRevenueIdentityAtlas",
+        'id="identityAtlas"',
+        "Identity Atlas",
+        "身份图谱",
+    ):
+        assert marker in TEMPLATE, marker
+    assert "government-revenue-data/identity_atlas.json" in DOSSIER_UI_JS
+
+    # Exactly one Atlas host — a second would race the first for the same ticker and
+    # render two different paths for one company.
+    assert TEMPLATE.count('id="identityAtlas"') == 1
+
+    # The section is a sibling of the award book inside the company inspector — not a
+    # new page, not a new nav entry, not a new header family.
+    assert "identityAtlasSection()+dossierBookSection()" in TEMPLATE
+    assert TEMPLATE.count('{% include "_site_nav.html.j2" %}') == 1
+    assert "identity_atlas.html" not in TEMPLATE
+
+    # State inks the rail needs, declared once in the page's own CSS home.
+    assert ".truth.conflict{color:var(--gr-bad)}" in TEMPLATE
+    assert ".truth.historic{color:var(--gr-muted)}" in TEMPLATE
+    assert ".atlas-hop.break:after{border-left-style:dashed" in PARITY_CSS_TEXT
+
+
+def test_identity_atlas_copy_is_bilingual_and_stays_out_of_title_attributes() -> None:
+    """House law: EN/ZH twins for every added string; no translated text in title=."""
+    implementation = TEMPLATE + DOSSIER_UI_JS
+    for english, chinese in (
+        ("Identity Atlas", "身份图谱"),
+        ("Tracing the identity path", "正在追踪身份路径"),
+        ("Reviewed issuer path", "已核验发行人路径"),
+        ("Identity unresolved", "身份未解析"),
+        ("Listing terminated", "上市已终止"),
+        ("Conflict on record", "记录存在冲突"),
+        ("Identity path locked", "身份路径已锁定"),
+        ("Watch — don’t chase", "观察，不要追高"),
+        ("Stand aside", "暂不参与"),
+    ):
+        assert english in implementation, english
+        assert chinese in implementation, chinese
+
+    for chunk in re.findall(r'title="[^"]*"', implementation):
+        assert not re.search(r"[一-鿿]", chunk), chunk
+
+    # Falsifier / refutation vocabulary is never front-facing (operator 2026-07-27).
+    for banned in ("falsifier", "refuted", "refutation", "Refutation", "证伪"):
+        assert banned not in implementation, banned
+
+
+def test_identity_atlas_never_states_a_trade_instruction() -> None:
+    """Display/context only: a stance, never an order (DESIGN_DOCTRINE Law 1 + D2 §3)."""
+    atlas_source = DOSSIER_UI_JS.split("createGovernmentRevenueIdentityAtlas")[1].split(
+        "global.createGovernmentRevenueBudget"
+    )[0]
+    assert "It cannot rank a company, size a position or trigger a trade." in atlas_source
+    for banned in (
+        "Buy now",
+        "price target",
+        "target price",
+        "win probability",
+        "bidder score",
+        "expected revenue",
+    ):
+        assert banned not in atlas_source, banned
+    # The Atlas has no authority fields of its own and never mints a candidate.
+    for banned in ("can_rank", "can_size", "can_gate", "grc1-", "candidate_ledger"):
+        assert banned not in atlas_source, banned

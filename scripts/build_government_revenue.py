@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -66,6 +67,11 @@ from engine.government_revenue.idv_bridge import (  # noqa: E402
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     is_valid_recipient_resolution_coverage,
     load_recipient_entity_graph,
+)
+from engine.government_revenue.identity_atlas import (  # noqa: E402
+    IDENTITY_ATLAS_CONTRACT,
+    build_identity_atlas_payload,
+    is_valid_identity_atlas_payload,
 )
 from engine.government_revenue.metrics import (  # noqa: E402
     AWARD_ACTION_VERSIONS_FILENAME,
@@ -842,6 +848,35 @@ def _write_idv_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
     return canonical, site
 
 
+def _write_identity_atlas_twins(root: Path, atlas_raw: str) -> tuple[Path, Path]:
+    """Publish the D2 Identity Atlas — display/context only, no writes elsewhere."""
+    canonical = root / "data" / "government_revenue" / "identity_atlas.json"
+    site = root / "site" / "government-revenue-data" / "identity-atlas.json"
+    _atomic_write_text(canonical, atlas_raw)
+    _atomic_write_text(site, atlas_raw)
+    return canonical, site
+
+
+def _load_optional_canonical_identity_atlas(root: Path) -> tuple[str, dict] | None:
+    """Read one committed Identity Atlas without recomputing a source generation."""
+    canonical = root / "data" / "government_revenue" / "identity_atlas.json"
+    site = root / "site" / "government-revenue-data" / "identity-atlas.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public Identity Atlas exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        atlas = json.loads(raw)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical Identity Atlas is invalid") from exc
+    if not is_valid_identity_atlas_payload(atlas):
+        raise ValueError("canonical Identity Atlas failed schema/content-id admission")
+    if _canonical_json(atlas) != raw:
+        raise ValueError("canonical Identity Atlas bytes are non-canonical")
+    return raw, atlas
+
+
 def _load_optional_canonical_budget_graph(root: Path, dossier: dict) -> tuple[str, dict] | None:
     """Read a precomputed optional graph without reconstructing raw sources."""
     canonical = root / "data" / "government_revenue" / "budget_program_graph.json"
@@ -998,6 +1033,20 @@ def build(
         as_of=payload.get("as_of"),
         dossier=dossier,
     )
+    # D2 Identity Atlas: display/context only, read-only over the reviewed
+    # graph/SI snapshot/mapping backlog/dossier observations/curated PIT file.
+    # It never opens dossiers.json, workspace.json, or a candidate ledger for
+    # writing -- its write path is limited to identity_atlas.json.
+    identity_atlas_generated_at = (
+        payload.get("generated_at")
+        or payload.get("known_at")
+        or datetime.now(timezone.utc).isoformat()
+    )
+    identity_atlas = build_identity_atlas_payload(
+        root=root, generated_at=identity_atlas_generated_at
+    )
+    if not is_valid_identity_atlas_payload(identity_atlas):
+        raise ValueError("government revenue identity atlas returned an invalid schema")
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
@@ -1017,6 +1066,7 @@ def build(
     _write_dossier_twins(root, dossier_raw)
     _write_subaward_dossier_twins(root, _canonical_json(subaward_dossier))
     _write_idv_dossier_twins(root, _canonical_json(idv_dossier))
+    _write_identity_atlas_twins(root, _canonical_json(identity_atlas))
     if budget_graph is not None:
         _write_budget_program_graph_twins(root, _canonical_json(budget_graph))
     else:
@@ -1122,9 +1172,15 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         optional_budget_graph = _load_optional_canonical_budget_graph(root, dossier)
         if optional_budget_graph is not None:
             _write_budget_program_graph_twins(root, optional_budget_graph[0])
+        optional_identity_atlas = _load_optional_canonical_identity_atlas(root)
+        if optional_identity_atlas is not None:
+            _write_identity_atlas_twins(root, optional_identity_atlas[0])
     elif (canonical_dir / "subaward_dossiers.json").exists():
         raise ValueError("canonical subaward dossier exists without a prime dossier")
-    elif any((canonical_dir / name).exists() for name in ("idv_dossiers.json", "budget_program_graph.json")):
+    elif any(
+        (canonical_dir / name).exists()
+        for name in ("idv_dossiers.json", "budget_program_graph.json", "identity_atlas.json")
+    ):
         raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
     candidate_projection = _candidate_projection(
         root,

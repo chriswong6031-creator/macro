@@ -212,6 +212,320 @@
     return{loadCompany:loadCompany,invalidate:function(){epoch++;leaveAwardView(session);session=null;shellMode(false)}};
   };
 
+  /* Identity Atlas — the reviewed path from an exact award recipient up to a listed
+   * issuer, point in time. It is the identity rail ONLY: it carries no award, event,
+   * action or amount, so it structurally cannot leak attribution onto an unlinked
+   * event. Cookie plane (government-revenue-data/identity_atlas.json), fetched once
+   * per session and indexed by ticker; a 401/403 degrades to the same members-only
+   * teaser the workspace and candidate ledger already use. Every hop that is not
+   * reviewed renders as a broken link in the rail rather than a minted one. */
+  global.createGovernmentRevenueIdentityAtlas=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
+    var isZh=typeof api.zh==='function'?api.zh:function(){return false};
+    var ATLAS_PATH='government-revenue-data/identity_atlas.json';
+    var pending=null,index=null,header=null,loadState='idle',ticker='',epoch=0;
+
+    function failure(code){var error=new Error(code);error.code=code;return error}
+    function tone(host,name){if(!host||!host.classList||typeof host.classList.remove!=='function')return;host.classList.remove('is-unresolved','is-historic');if(name)host.classList.add(name)}
+    /* Localized field pick: the projector may ship `<base>`, `<base>_en` and `<base>_zh`.
+     * A zh reader never falls through to an English state name while a zh twin exists. */
+    function loc(row,base){
+      row=obj(row)?row:{};
+      var native=isZh()?row[base+'_zh']:row[base+'_en'],plain=row[base],other=isZh()?row[base+'_en']:row[base+'_zh'];
+      if(native!=null&&native!=='')return String(native);
+      if(plain!=null&&plain!=='')return String(plain);
+      if(other!=null&&other!=='')return String(other);
+      return'';
+    }
+    function relationshipWord(value){
+      if(value==='issuer_legal_entity')return tr('Issuer of record','登记发行主体');
+      if(value==='wholly_owned')return tr('Wholly owned','全资持有');
+      if(value==='majority_owned')return tr('Majority owned','多数持有');
+      if(value==='joint_venture')return tr('Joint venture','合资企业');
+      return tr('Relationship on file','档案所载关系');
+    }
+    function stateWord(value){
+      if(value==='reviewed')return tr('Reviewed','已核验');
+      if(value==='observed')return tr('Observed','已观测');
+      if(value==='mapping_needed')return tr('Link pending','关联待核');
+      if(value==='evidence_conflict')return tr('Conflict on record','记录存在冲突');
+      if(value==='not_asserted')return tr('Not asserted','未作断言');
+      return tr('State unclear','状态未知');
+    }
+    function stateChip(value){return value==='reviewed'?'reviewed':value==='observed'?'observed':value==='evidence_conflict'?'conflict':value==='not_asserted'?'historic':'derived'}
+    function gapWords(gap){
+      if(typeof gap==='string')return gap;
+      var direct=loc(gap,'text');if(direct)return direct;
+      var code=text(gap&&gap.code,'');
+      if(code==='no_reviewed_issuer_path')return tr('no reviewed exact recipient, legal entity and issuer path exists','没有已核验的精确收款方、法律实体与发行人路径');
+      if(code==='mapping_backlog')return tr('some recipient names in the discovery sample are still unmapped','发现样本中仍有部分收款方名称尚未映射');
+      if(code==='identifier_conflict')return tr('an observed recipient identifier sits outside the reviewed path','有已观测的收款方标识不在已核验路径之内');
+      if(code==='listing_terminated')return tr('there is no live listing behind this record','该记录背后已无在市股票');
+      return'';
+    }
+    function reasonWords(row){
+      var direct=loc(row,'reason');if(direct)return direct;
+      return tr('No reason was recorded for this identifier.','该标识未记录原因。');
+    }
+    function evidenceList(row){var value=obj(row)?row.evidence:null;return Array.isArray(value)?value.filter(obj):obj(value)?[value]:[]}
+    function evidenceLinks(row,label){
+      return evidenceList(row).map(function(item){
+        var url=safeUrl(item.url);if(!url)return'';
+        return'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(text(item.publisher,label||tr('Open source record','打开来源记录')))+'</b><span>↗</span></a>';
+      }).join('');
+    }
+    function evidenceCode(row){
+      return evidenceList(row).map(function(item){
+        return tr('publisher: ','发布方：')+text(item.publisher)+'\n'+tr('record: ','记录：')+text(item.evidence_id)+'\nsha256: '+text(item.sha256);
+      }).join('\n\n');
+    }
+
+    function security(record){return obj(record.public_security)?record.public_security:{}}
+    function securityState(record){return text(security(record).state,'')}
+    function entities(record){return arr(record.entities).filter(obj)}
+    function unresolved(record){return arr(record.unresolved_identifiers).filter(obj)}
+    function reviewedIdCount(record){var total=0;entities(record).forEach(function(entity){total+=arr(entity.identifiers).filter(obj).length});return total}
+    function hasConflict(record){return unresolved(record).some(function(row){return row.state==='evidence_conflict'})}
+    function isHistoric(record){return securityState(record)==='listing_terminated'}
+    function endDate(record){var events=arr(record.listing_events).filter(obj);return date(security(record).last_date||(events[0]||{}).effective_at)}
+
+    function securityWords(record){
+      var state=securityState(record);
+      if(state==='verified_live')return tr('verified','已核验');
+      if(state==='listing_terminated')return isZh()?('上市已于 '+endDate(record)+' 终止'):('listing ended '+endDate(record));
+      if(state==='not_in_si_universe')return tr('not in the covered listing universe','不在已覆盖的上市范围内');
+      return tr('unconfirmed','未确认');
+    }
+    function recipientWords(record){
+      var reviewed=reviewedIdCount(record),open=unresolved(record).length;
+      if(!reviewed)return tr('unresolved','未解析');
+      if(open)return isZh()?('已核验，另有 '+open+' 项未解析'):('reviewed, '+open+' still unresolved');
+      return tr('reviewed','已核验');
+    }
+    function attributionWords(record){return record.issuer_attribution==='reviewed'?tr('reviewed','已核验'):tr('not asserted','未作断言')}
+    /* The one-sentence read. Composed, never stored, so the three hops always agree
+     * with the rail underneath and a zh reader gets a native sentence. */
+    function readLine(record){
+      var parts=[
+        tr('Public security: ','上市证券：')+securityWords(record),
+        tr('Government recipient attribution: ','政府收款方归属：')+recipientWords(record),
+        tr('Exact issuer attribution: ','精确发行人归属：')+attributionWords(record)
+      ];
+      var lead=gapWords(arr(record.gaps)[0]),out=parts.join(' · ')+(lead?' — '+lead:'');
+      return/[.。]$/.test(out)?out:out+(isZh()?'。':'.');
+    }
+    function stance(record){
+      if(isHistoric(record))return[tr('Ignore','忽略'),tr('This listing has ended. Read what follows as history — there is no live issuer behind it.','该股票已终止上市。以下内容仅为历史 — 其背后已无在市发行人。')];
+      if(record.issuer_attribution!=='reviewed')return[tr('Stand aside','暂不参与'),tr('No reviewed path ties an exact recipient to this issuer. Treat award totals under this name as unattributed.','没有已核验的路径将精确收款方与该发行人相连。请将该名称下的授标金额视为未归属。')];
+      if(unresolved(record).length)return[tr('Watch — don’t chase','观察，不要追高'),tr('The reviewed path holds for the identifiers below; the unresolved ones are not part of it. Read the award tape against the reviewed path only.','下方标识的已核验路径成立；未解析项不在其中。请仅依据已核验路径阅读授标脉搏。')];
+      return[tr('Watch — don’t chase','观察，不要追高'),tr('The path from award recipient to this issuer is reviewed. Read the award tape against it — a reviewed path is not a buy signal.','从授标收款方到该发行人的路径已核验。可据此阅读授标脉搏 — 已核验路径不是买入信号。')];
+    }
+    function chips(record){
+      var out=[];
+      if(record.issuer_attribution==='reviewed')out.push(['reviewed',tr('Reviewed issuer path','已核验发行人路径')]);
+      else out.push(['historic',tr('Identity unresolved','身份未解析')]);
+      if(unresolved(record).some(function(row){return row.state!=='evidence_conflict'}))out.push(['derived',tr('Link pending','关联待核')]);
+      if(hasConflict(record))out.push(['conflict',tr('Conflict on record','记录存在冲突')]);
+      if(isHistoric(record))out.push(['historic',tr('Listing terminated','上市已终止')]);
+      return'<div class="atlas-chips">'+out.map(function(pair){return'<span class="truth '+pair[0]+'">'+esc(pair[1])+'</span>'}).join('')+'</div>';
+    }
+
+    /* The rail. Four rungs, top to bottom; a rung whose successor is not reviewed
+     * carries a dashed connector, so the break in the chain is visible before a
+     * word is read. */
+    function hop(rung,tone,fact,note){return{rung:rung,tone:tone,fact:fact,note:note}}
+    function chain(record){
+      var state=securityState(record),issuer=obj(record.legal_issuer)?record.legal_issuer:null,rows=entities(record),reviewed=reviewedIdCount(record),open=unresolved(record).length;
+      var hops=[];
+      hops.push(hop(
+        tr('Public security','上市证券'),
+        state==='verified_live'?'reviewed':state==='listing_terminated'?'historic':'unresolved',
+        text(record.company_name,text(record.ticker))+' · '+text(record.ticker),
+        state==='verified_live'?(isZh()?('行情更新至 '+date(security(record).last_date)):('tape through '+date(security(record).last_date)))
+          :state==='listing_terminated'?(isZh()?('最后交易日 '+endDate(record)):('last traded '+endDate(record)))
+          :tr('No covered listing record','没有已覆盖的上市记录')
+      ));
+      hops.push(hop(
+        tr('Legal issuer','法律发行主体'),
+        issuer&&issuer.verification_state==='reviewed'?'reviewed':'unresolved',
+        issuer?text(issuer.canonical_name,text(record.ticker)):tr('Not asserted','未作断言'),
+        issuer?stateWord(issuer.verification_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有申报证据为这些收款方指明发行主体。')
+      ));
+      hops.push(hop(
+        tr('Legal entities','法律实体'),
+        rows.length?'reviewed':'unresolved',
+        rows.length?(isZh()?(rows.length+' 个已核验法律实体'):(rows.length+' reviewed legal '+(rows.length===1?'entity':'entities'))):tr('No reviewed legal entity','没有已核验的法律实体'),
+        rows.length?tr('Named in the company’s own filing','由公司自身申报文件列明'):tr('Nothing is minted where the filing is silent','申报文件未提及之处不作推定')
+      ));
+      hops.push(hop(
+        tr('Recipient identifiers','收款方标识'),
+        reviewed?'reviewed':hasConflict(record)?'conflict':'unresolved',
+        reviewed?(isZh()?(reviewed+' 个精确收款方标识已核验'):(reviewed+' exact recipient '+(reviewed===1?'identifier':'identifiers')+' reviewed')):tr('No reviewed recipient identifier','没有已核验的收款方标识'),
+        open?(isZh()?(open+' 项仍未解析，见下方'):(open+' still unresolved, listed below')):reviewed?tr('Every observed identifier sits on the reviewed path','每个已观测标识均位于已核验路径上'):tr('No recipient identifier is on record for this company','该公司没有在册的收款方标识')
+      ));
+      return'<ol class="atlas-chain">'+hops.map(function(row,i){
+        var next=hops[i+1],broken=next&&next.tone!=='reviewed'&&next.tone!=='historic';
+        return'<li class="atlas-hop '+row.tone+(broken?' break':'')+'"><i class="atlas-node" aria-hidden="true"></i><span class="atlas-rung">'+esc(row.rung)+'</span><strong class="atlas-fact">'+esc(row.fact)+'</strong><span class="atlas-note">'+esc(row.note)+'</span></li>';
+      }).join('')+'</ol>';
+    }
+
+    function sharePhrase(entity){
+      var share=n(entity.economic_share);
+      if(share==null)return'';
+      if(entity.relationship==='wholly_owned'&&share===1)return'';
+      return isZh()?(Math.round(share*1000)/10+'% 经济权益'):(Math.round(share*1000)/10+'% economic share');
+    }
+    function validityPhrase(entity){
+      var from=entity.valid_from?date(entity.valid_from):'',to=entity.valid_to?date(entity.valid_to):'';
+      if(!from&&!to)return tr('No validity interval on record','档案未记录有效区间');
+      if(from&&to)return isZh()?(from+' 至 '+to+' 在册'):('on record '+from+' to '+to);
+      if(from)return isZh()?('自 '+from+' 起在册'):('on record since '+from);
+      return isZh()?('至 '+to+' 止'):('on record until '+to);
+    }
+    function identifierCount(entity){
+      var rows=arr(entity.identifiers).filter(obj);
+      if(!rows.length)return tr('No award recipient identifier observed for this entity yet','尚未观测到该实体的授标收款方标识');
+      return isZh()?('持有 '+rows.length+' 个精确收款方标识'):('Holds '+rows.length+' exact recipient '+(rows.length===1?'identifier':'identifiers'));
+    }
+    function identifierRows(entity){
+      return arr(entity.identifiers).filter(obj).map(function(row){
+        return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(stateWord(row.state))+'</b></div>';
+      }).join('');
+    }
+    function entityReceipt(entity){
+      var rows=arr(entity.identifiers).filter(obj),lines=[];
+      if(rows.length)lines.push(tr('identifier namespace: ','标识命名空间：')+text((rows[0]||{}).namespace));
+      lines.push(tr('valid from: ','有效自：')+text(entity.valid_from));
+      lines.push(tr('valid to: ','有效至：')+text(entity.valid_to,tr('open','未终止')));
+      lines.push(tr('first known at: ','首次获知：')+text(entity.known_at));
+      var code=evidenceCode(entity);if(code)lines.push(code);
+      rows.forEach(function(row){var extra=evidenceCode(row);if(extra)lines.push(text(row.value)+'\n'+extra)});
+      var summary=rows.length?tr('Show identifiers, dates and receipts','显示标识、日期与凭证'):tr('Show dates and the filing receipt','显示日期与申报凭证');
+      return'<details class="atlas-receipt"><summary>'+esc(summary)+'</summary><div class="atlas-receipt-body">'+identifierRows(entity)+'<div class="atlas-code">'+esc(lines.join('\n'))+'</div>'+evidenceLinks(entity,tr('Open filing source','打开申报来源'))+arr(entity.identifiers).filter(obj).map(function(row){return evidenceLinks(row,tr('Open award record','打开授标记录'))}).join('')+'</div></details>';
+    }
+    function entityCards(record){
+      var rows=entities(record);
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Legal entities on record','在册法律实体'))+'</div><div class="atlas-entities">'+rows.map(function(entity){
+        var meta=[relationshipWord(entity.relationship),sharePhrase(entity),validityPhrase(entity)].filter(Boolean).join(' · ');
+        return'<article class="atlas-entity '+esc(stateChip(entity.verification_state))+'"><div class="atlas-entity-top"><div><strong class="atlas-entity-name">'+esc(text(entity.canonical_name))+'</strong><span class="atlas-entity-meta">'+esc(meta)+'</span></div><span class="truth '+esc(stateChip(entity.verification_state))+'">'+esc(stateWord(entity.verification_state))+'</span></div><span class="atlas-entity-meta">'+esc(identifierCount(entity))+'</span>'+entityReceipt(entity)+'</article>';
+      }).join('')+'</div>';
+    }
+    /* Identifiers blocked for the SAME recorded reason are ONE card, not N copies of
+     * one sentence (GE ships five). A constant belongs once, and the count is the
+     * fact the reader needs; the individual identifiers stay one expand away. */
+    function unresolvedGroups(record){
+      var order=[],byKey={};
+      unresolved(record).forEach(function(row){
+        var key=text(row.state,'')+' '+reasonWords(row);
+        if(!byKey[key]){byKey[key]={state:row.state,reason:reasonWords(row),rows:[],links:[],seen:{}};order.push(key)}
+        var group=byKey[key];group.rows.push(row);
+        evidenceList(row).forEach(function(item){var url=safeUrl(item.url);if(url&&!group.seen[url]){group.seen[url]=true;group.links.push(item)}});
+      });
+      return order.map(function(key){return byKey[key]});
+    }
+    function groupHeadline(group){
+      var rows=group.rows,first=rows[0]||{},name=text(first.observed_name,'');
+      if(rows.length===1)return text(first.observed_name,tr('Recipient name not reported','未报告收款方名称'));
+      var same=rows.every(function(row){return text(row.observed_name,'')===name});
+      if(same&&name)return isZh()?(rows.length+' 个收款方登记均显示「'+name+'」'):(rows.length+' recipient registrations named “'+name+'”');
+      var names=rows.map(function(row){return text(row.observed_name,'')}).filter(Boolean);
+      if(names.length&&names.length<=3)return names.join(' · ');
+      return isZh()?(rows.length+' 个收款方标识'):(rows.length+' recipient identifiers');
+    }
+    function unresolvedCards(record){
+      var groups=unresolvedGroups(record);
+      if(!groups.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Where the trail stops','线索中断之处'))+'</div><div class="atlas-unresolved">'+groups.map(function(group){
+        var conflict=group.state==='evidence_conflict',lines=group.rows.map(function(row){
+          return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(text(row.namespace))+'</b></div>';
+        }).join(''),code=group.rows.map(function(row){return text(row.value)+'\n'+evidenceCode(row)}).join('\n\n');
+        return'<div class="atlas-gap'+(conflict?' conflict':'')+'"><div class="atlas-gap-top"><strong>'+esc(groupHeadline(group))+'</strong><span class="truth '+esc(stateChip(group.state))+'">'+esc(stateWord(group.state))+'</span></div><span>'+esc(group.reason)+'</span>'+group.links.map(function(item){var url=safeUrl(item.url);return'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(text(item.publisher,tr('Open source record','打开来源记录')))+'</b><span>↗</span></a>'}).join('')+'<details class="atlas-receipt"><summary>'+esc(group.rows.length===1?tr('Show the identifier and its receipts','显示该标识及其凭证'):tr('Show every identifier and its receipts','显示全部标识及其凭证'))+'</summary><div class="atlas-receipt-body">'+lines+'<div class="atlas-code">'+esc(code.trim())+'</div></div></details></div>';
+      }).join('')+'</div>';
+    }
+    function eventWords(event){
+      var head=loc(event,'headline');if(head)return head;
+      if(event.event_type==='listing_terminated')return tr('The listing ended.','该股票终止上市。');
+      if(event.event_type==='spin_off')return tr('A business separated into its own listed company.','一项业务分拆为独立上市公司。');
+      if(event.event_type==='name_change')return tr('The trade name changed; the filing entity did not.','商号变更；申报主体未变。');
+      return tr('A corporate change is on record.','已记录一项公司变更。');
+    }
+    function historyCards(record){
+      var rows=arr(record.listing_events).filter(obj).concat(arr(record.separation_events).filter(obj));
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Corporate history on record','在册公司历史'))+'</div><div class="atlas-history">'+rows.map(function(event){
+        return'<div class="atlas-event"><time>'+esc(date(event.effective_at))+'</time><div><span>'+esc(eventWords(event))+'</span>'+evidenceLinks(event,tr('Open the filing','打开申报文件'))+'</div></div>';
+      }).join('')+'</div>';
+    }
+    function remainingGaps(record){
+      var rows=arr(record.gaps).slice(1).map(gapWords).filter(Boolean);
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Still unresolved','仍未解析'))+'</div><ul class="atlas-open">'+rows.map(function(row){return'<li>'+esc(row)+'</li>'}).join('')+'</ul>';
+    }
+    function cutReceipt(){
+      var head=obj(header)?header:{};
+      return'<details class="atlas-receipt"><summary>'+esc(tr('Show the evidence cut behind this path','显示该路径背后的证据截点'))+'</summary><div class="atlas-receipt-body"><div class="atlas-code">'+esc('graph_id: '+text(head.graph_id)+'\ngraph_digest: '+text(head.graph_digest)+'\nsi_asof: '+text(head.si_asof)+'\ncontract: '+text(head.contract)+'\nschema_version: '+text(head.schema_version))+'</div></div></details>';
+    }
+
+    function question(){return'<p class="atlas-question">'+esc(tr('Who the government actually paid, and how that reaches this ticker.','政府实际付款给谁，以及这如何连到该股票代码。'))+'</p>'}
+    function recordHtml(record){
+      var verdict=stance(record);
+      return question()+chips(record)+chain(record)+
+        '<p class="atlas-read">'+esc(readLine(record))+'</p>'+
+        '<div class="stance"><b>'+esc(verdict[0])+'</b><span>'+esc(verdict[1])+'</span></div>'+
+        entityCards(record)+unresolvedCards(record)+historyCards(record)+remainingGaps(record)+
+        '<div class="atlas-asof">'+esc(isZh()?('身份记录截至 '+date((header||{}).generated_at)):('Identity record as of '+date((header||{}).generated_at)))+'</div>'+
+        cutReceipt()+
+        '<div class="limit-copy">'+esc(tr('Identity paths only — no award, event or amount is attributed here. It cannot rank a company, size a position or trigger a trade.','仅为身份路径 — 此处不归属任何授标、事件或金额。不得为公司排序、调整仓位或触发交易。'))+'</div>';
+    }
+    function loadingHtml(){return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Tracing the identity path','正在追踪身份路径'))+'</b><span>'+esc(tr('Loading the reviewed recipient, entity and ownership record…','正在加载已核验的收款方、实体与所有权记录…'))+'</span></span><span class="dossier-count">•••</span></div>'}
+    function lockedHtml(){return question()+'<div class="dossier-empty"><strong>'+esc(tr('Identity path locked','身份路径已锁定'))+'</strong><p>'+esc(tr('The reviewed recipient-to-issuer path is part of a membership. Award history below stays open and is not issuer proof.','已核验的收款方至发行人路径包含在会员权益中。下方授标历史保持开放，且不构成发行人证明。'))+'</p><div class="candidate-empty-meta"><a class="tool-btn" href="plans.html">'+esc(tr('View membership plans','查看会员方案'))+'</a></div></div>'}
+    function errorHtml(){return'<div class="dossier-error"><strong>'+esc(tr('Identity path unavailable','身份路径不可用'))+'</strong><br>'+esc(tr('The identity record could not be verified. Award history below remains available and is not issuer proof.','身份记录无法完成核验。下方授标历史仍然可用，且不构成发行人证明。'))+'</div>'}
+    function absentHtml(){return question()+'<div class="dossier-empty"><strong>'+esc(tr('No identity record for this company','该公司暂无身份记录'))+'</strong><p>'+esc(tr('The reviewed identity record covers a bounded set of issuers in this evidence cut. Nothing is inferred for the others.','已核验的身份记录仅覆盖本证据截点内的有限发行人集合。对其他公司不作任何推断。'))+'</p></div>'}
+
+    function render(){
+      var host=hostFor();if(!host)return;
+      if(loadState==='loading'||loadState==='idle'){tone(host,null);host.innerHTML=loadingHtml();return}
+      if(loadState==='locked'){tone(host,'is-unresolved');host.innerHTML=lockedHtml();return}
+      if(loadState!=='ok'){tone(host,'is-unresolved');host.innerHTML=errorHtml();return}
+      var record=index&&index[ticker];
+      if(!obj(record)){tone(host,null);host.innerHTML=absentHtml();return}
+      tone(host,isHistoric(record)?'is-historic':record.issuer_attribution==='reviewed'?null:'is-unresolved');
+      host.innerHTML=recordHtml(record);
+    }
+    function ensure(){
+      if(pending)return pending;
+      if(typeof global.fetch!=='function'){loadState='unavailable';return Promise.resolve(false)}
+      loadState='loading';
+      pending=global.fetch(ATLAS_PATH,{credentials:'same-origin'}).then(function(response){
+        if(response.status===401||response.status===403)throw failure('locked');
+        if(!response.ok)throw failure('unavailable');
+        return response.json();
+      }).then(function(value){
+        if(!obj(value)||value.contract!=='government_revenue_identity_atlas.v1'||!/^1\./.test(text(value.schema_version,'')))throw failure('invalid');
+        header=value;index={};
+        arr(value.issuers).filter(obj).forEach(function(row){var key=text(row.ticker,'').toUpperCase();if(key&&!index[key])index[key]=row});
+        loadState='ok';return true;
+      }).catch(function(error){header=null;index=null;loadState=(error&&error.code)||'unavailable';return false});
+      return pending;
+    }
+    function loadCompany(value){
+      var ticket=++epoch;ticker=text(value,'').toUpperCase();
+      if(!hostFor())return;
+      if(loadState==='ok'||loadState==='locked')render();else{loadState=loadState==='idle'?'loading':loadState;render()}
+      ensure().then(function(){if(ticket===epoch)render()});
+    }
+    /* A member who signs in after the page loaded gets the path without a reload:
+     * only the locked arm is retried, so a healthy cache is never refetched. */
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();if(loadState!=='locked')return;pending=null;loadState='idle';if(ticker){var ticket=++epoch;render();ensure().then(function(){if(ticket===epoch)render()})}}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+    return{loadCompany:loadCompany,invalidate:function(){epoch++;ticker=''},state:function(){return loadState}};
+  };
+
   global.createGovernmentRevenueBudget=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var contentId=null,detailEpoch=0,loadEpoch=0,detailCache={},loadState='loading',listing=null;

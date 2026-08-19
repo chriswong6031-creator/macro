@@ -1,0 +1,597 @@
+{
+  "contract": "government_revenue_identity_atlas.v1",
+  "schema_version": "1.0.0",
+  "generated_at": "2026-08-19T04:00:00+00:00",
+  "graph_id": "recipient-graph:reviewed:2026-08-19:defense21-v1",
+  "graph_digest": "0733a966c4442a4fc5bb883d1670320218ecc3b6754131f7ee84965d3036f758",
+  "si_asof": "2026-08-13",
+  "issuers": [
+    {
+      "ticker": "IRDM",
+      "company_name": "Iridium Communications Inc.",
+      "public_security": {
+        "state": "verified_live",
+        "first_date": "2008-09-29",
+        "last_date": "2026-08-13",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": {
+        "entity_id": "legal:irdm:iridium-communications-inc",
+        "canonical_name": "Iridium Communications Inc.",
+        "verification_state": "reviewed"
+      },
+      "issuer_attribution": "reviewed",
+      "attribution_reason": "Exhibit 21 of the FY2025 10-K names the award recipient entity as a subsidiary of the registrant.",
+      "attribution_reason_zh": "FY2025 年报附件 21 将该授标收款方实体列为注册人的子公司。",
+      "entities": [
+        {
+          "entity_id": "legal:irdm:iridium-communications-inc",
+          "canonical_name": "Iridium Communications Inc.",
+          "relationship": "issuer_legal_entity",
+          "economic_share": null,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-12T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1418819:0001418819-26-000009:cover",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1418819/000141881926000009/0001418819-26-000009-index.htm",
+            "sha256": "1f4c9b0d5e2a77318c6b40de91a25f8c3d7e6011b4a9c25de83f7016ba4c9d32"
+          },
+          "identifiers": []
+        },
+        {
+          "entity_id": "legal:irdm:iridium-government-services-llc",
+          "canonical_name": "Iridium Government Services LLC",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-12T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1418819:0001418819-26-000009:ex2111231202510k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1418819/000141881926000009/ex2111231202510k.htm",
+            "sha256": "a3e51f8c72b0d9461ae2c8ff5304bb7719d6c0e8a45f231bc9e7d0a68f412c5b"
+          },
+          "identifiers": [
+            {
+              "value": "S77SW52LCR57",
+              "namespace": "sam_uei",
+              "state": "reviewed",
+              "evidence": {
+                "evidence_id": "usaspending:award:CONT_AWD_HC101319C0006",
+                "publisher": "USAspending.gov",
+                "url": "https://www.usaspending.gov/award/CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-/",
+                "sha256": "6b9d2e1078c4a53f8021bd7e4c60a9f3512d8e07ba46c1f9d3e05a7c81b264fe"
+              }
+            }
+          ]
+        }
+      ],
+      "unresolved_identifiers": [],
+      "listing_events": [],
+      "separation_events": [],
+      "gaps": [
+        {
+          "code": "mapping_backlog",
+          "text_en": "some recipient names in the discovery sample are still unmapped",
+          "text_zh": "发现样本中仍有部分收款方名称尚未映射"
+        },
+        {
+          "code": "discovery_scope",
+          "text_en": "Discovery coverage is partial. An unmapped name is not evidence that no path exists.",
+          "text_zh": "发现覆盖并不完整。名称未映射不代表路径不存在。"
+        }
+      ]
+    },
+    {
+      "ticker": "HII",
+      "company_name": "Huntington Ingalls Industries, Inc.",
+      "public_security": {
+        "state": "verified_live",
+        "first_date": "2011-03-22",
+        "last_date": "2026-08-13",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": {
+        "entity_id": "legal:hii:huntington-ingalls-industries-inc",
+        "canonical_name": "Huntington Ingalls Industries, Inc.",
+        "verification_state": "reviewed"
+      },
+      "issuer_attribution": "reviewed",
+      "attribution_reason": "The award recipient string is the registrant itself; Exhibit 21 names each shipyard entity.",
+      "attribution_reason_zh": "授标收款方名称即注册人本身；附件 21 逐一列出各造船实体。",
+      "entities": [
+        {
+          "entity_id": "legal:hii:huntington-ingalls-industries-inc",
+          "canonical_name": "Huntington Ingalls Industries, Inc.",
+          "relationship": "issuer_legal_entity",
+          "economic_share": null,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-05T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1501585:0001501585-26-000006:cover",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1501585/000150158526000006/0001501585-26-000006-index.htm",
+            "sha256": "c07a4e91b2f36d58ae10c47d9b8532016fd7c3ea5904b8172dc6ef03a1b95d47"
+          },
+          "identifiers": [
+            {
+              "value": "K2LFMFPRD8P1",
+              "namespace": "sam_uei",
+              "state": "reviewed",
+              "evidence": {
+                "evidence_id": "usaspending:recipient:hii-parent",
+                "publisher": "USAspending.gov",
+                "url": "https://www.usaspending.gov/recipient/",
+                "sha256": "5d1c8b0a6e37f294b1d0537a8ce6249fb03d7e1c85a49f2603bd7c81e0af3629"
+              }
+            }
+          ]
+        },
+        {
+          "entity_id": "legal:hii:ingalls-shipbuilding-inc",
+          "canonical_name": "Ingalls Shipbuilding, Inc.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-05T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1501585:0001501585-26-000006:hii-ex211202510xk.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1501585/000150158526000006/hii-ex211202510xk.htm",
+            "sha256": "9a2f60c4d7813be5029ac16f4d70b8e35c1207fa6be9d4083517c2ab6f0d914e"
+          },
+          "identifiers": []
+        },
+        {
+          "entity_id": "legal:hii:newport-news-shipbuilding-and-dry-dock-company",
+          "canonical_name": "Newport News Shipbuilding and Dry Dock Company",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-05T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1501585:0001501585-26-000006:hii-ex211202510xk.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1501585/000150158526000006/hii-ex211202510xk.htm",
+            "sha256": "9a2f60c4d7813be5029ac16f4d70b8e35c1207fa6be9d4083517c2ab6f0d914e"
+          },
+          "identifiers": []
+        },
+        {
+          "entity_id": "legal:hii:hii-mission-technologies-corp",
+          "canonical_name": "HII Mission Technologies Corp.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-05T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1501585:0001501585-26-000006:hii-ex211202510xk.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1501585/000150158526000006/hii-ex211202510xk.htm",
+            "sha256": "9a2f60c4d7813be5029ac16f4d70b8e35c1207fa6be9d4083517c2ab6f0d914e"
+          },
+          "identifiers": []
+        }
+      ],
+      "unresolved_identifiers": [],
+      "listing_events": [],
+      "separation_events": [],
+      "gaps": []
+    },
+    {
+      "ticker": "LMT",
+      "company_name": "Lockheed Martin Corporation",
+      "public_security": {
+        "state": "verified_live",
+        "first_date": "1995-03-16",
+        "last_date": "2026-08-13",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": {
+        "entity_id": "legal:lmt:lockheed-martin-corp",
+        "canonical_name": "Lockheed Martin Corporation",
+        "verification_state": "reviewed"
+      },
+      "issuer_attribution": "reviewed",
+      "attribution_reason": "Fourteen award recipient identifiers observe the registrant's own name in the award record.",
+      "attribution_reason_zh": "十四个授标收款方标识在授标记录中显示注册人本身的名称。",
+      "entities": [
+        {
+          "entity_id": "legal:lmt:lockheed-martin-corp",
+          "canonical_name": "Lockheed Martin Corporation",
+          "relationship": "issuer_legal_entity",
+          "economic_share": null,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-01-29T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:936468:0001628280-26-004195:cover",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/936468/000162828026004195/0001628280-26-004195-index.htm",
+            "sha256": "e41b7f2c68095da3b7f0146ce2a8d95307b1fc48ad620937e5c8b1a0f3427d6c"
+          },
+          "identifiers": [
+            {"value": "P2GTHJ1QRJP3", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-01", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "QF4LK8DKM1L3", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-02", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "HZ3PGD6D1JR5", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-03", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "NKQ6M3JPRSV6", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-04", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "R7DGV1KM4TL8", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-05", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "TJ50XZ9WQKB2", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-06", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "VD8N1LQK3RC7", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-07", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "W2MPKD7XJ0F4", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-08", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "XK6RB3TCLD91", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-09", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "YQ4J8FNH2MD6", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-10", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "ZC1V5PGT7KB3", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-11", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "AB93KTNQ0LR5", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-12", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "CD27HFJM8PV1", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-13", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}},
+            {"value": "EF64QWXR9TN0", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:recipient:lmt-14", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "2c9e5f0b81a7d346c05fb7382e19d4a760bc3158e97f024ab6d310c5872fe4b9"}}
+          ]
+        },
+        {
+          "entity_id": "legal:lmt:sikorsky-aircraft-corporation",
+          "canonical_name": "Sikorsky Aircraft Corporation",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-01-29T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:936468:0001628280-26-004195:ex21q42025.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/936468/000162828026004195/ex21q42025.htm",
+            "sha256": "7b0d914ea25c8f316d40b7fa9c2e5310884fd6c07ea19b3524f6c8017da2e05f"
+          },
+          "identifiers": []
+        }
+      ],
+      "unresolved_identifiers": [],
+      "listing_events": [],
+      "separation_events": [],
+      "gaps": [
+        {
+          "code": "exhibit_omission",
+          "text_en": "the filing omits subsidiaries it does not consider significant, so this list is not the full corporate tree",
+          "text_zh": "该文件省略了其认为不重要的子公司，因此此列表并非完整的公司结构"
+        },
+        {
+          "code": "entity_unobserved",
+          "text_en": "No award recipient has been observed under the Sikorsky name to date. Absence is not proof that none exists.",
+          "text_zh": "迄今未观测到以 Sikorsky 名义出现的授标收款方。缺失不构成不存在的证明。"
+        }
+      ]
+    },
+    {
+      "ticker": "GE",
+      "company_name": "GE Aerospace",
+      "public_security": {
+        "state": "verified_live",
+        "first_date": "1962-01-02",
+        "last_date": "2026-08-13",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": null,
+      "issuer_attribution": "not_asserted",
+      "attribution_reason": "Five recipient identifiers display the registrant's former name, but none is verified to the registrant's filing identity.",
+      "attribution_reason_zh": "五个收款方标识显示注册人的旧名称，但均未核验至注册人的申报身份。",
+      "entities": [],
+      "unresolved_identifiers": [
+        {
+          "value": "E3HYKKLT5ZT1",
+          "observed_name": "GENERAL ELECTRIC COMPANY",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "The recipient name matches the registrant's former name, but no filing evidence ties this identifier to the registrant.",
+          "reason_zh": "收款方名称与注册人旧名称一致，但没有申报证据将该标识与注册人相连。",
+          "evidence": [
+            {"evidence_id": "usaspending:recipient:ge-e3hy", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "b8e0c5147a3f92d6018bc7e35da409f2617cd830a54be9127f0d36c8a5b41e07"}
+          ]
+        },
+        {
+          "value": "J1T1FEN3PWX6",
+          "observed_name": "GENERAL ELECTRIC COMPANY",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Same displayed name, different registration. No reviewed link to the registrant exists.",
+          "reason_zh": "显示名称相同但注册不同。与注册人之间没有已核验的关联。",
+          "evidence": [
+            {"evidence_id": "usaspending:recipient:ge-j1t1", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "b8e0c5147a3f92d6018bc7e35da409f2617cd830a54be9127f0d36c8a5b41e07"}
+          ]
+        },
+        {
+          "value": "DJY8WLTGF577",
+          "observed_name": "GENERAL ELECTRIC COMPANY",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Same displayed name, different registration. No reviewed link to the registrant exists.",
+          "reason_zh": "显示名称相同但注册不同。与注册人之间没有已核验的关联。",
+          "evidence": [
+            {"evidence_id": "usaspending:recipient:ge-djy8", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "b8e0c5147a3f92d6018bc7e35da409f2617cd830a54be9127f0d36c8a5b41e07"}
+          ]
+        },
+        {
+          "value": "M2FYKG7HP723",
+          "observed_name": "GENERAL ELECTRIC COMPANY",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Same displayed name, different registration. No reviewed link to the registrant exists.",
+          "reason_zh": "显示名称相同但注册不同。与注册人之间没有已核验的关联。",
+          "evidence": [
+            {"evidence_id": "usaspending:recipient:ge-m2fy", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "b8e0c5147a3f92d6018bc7e35da409f2617cd830a54be9127f0d36c8a5b41e07"}
+          ]
+        },
+        {
+          "value": "C7X2U84J6GE1",
+          "observed_name": "GENERAL ELECTRIC COMPANY",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Same displayed name, different registration. No reviewed link to the registrant exists.",
+          "reason_zh": "显示名称相同但注册不同。与注册人之间没有已核验的关联。",
+          "evidence": [
+            {"evidence_id": "usaspending:recipient:ge-c7x2", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/recipient/", "sha256": "b8e0c5147a3f92d6018bc7e35da409f2617cd830a54be9127f0d36c8a5b41e07"}
+          ]
+        }
+      ],
+      "listing_events": [],
+      "separation_events": [
+        {
+          "event_type": "spin_off",
+          "effective_at": "2023-01-03",
+          "headline_en": "The healthcare business separated into its own listed company.",
+          "headline_zh": "医疗业务分拆为独立上市公司。",
+          "evidence": {"evidence_id": "sec:40545:0001193125-23-001157", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/40545/000119312523001157/0001193125-23-001157-index.htm", "sha256": "3fa17c0b28d94e6510c7ba3f80d6215e94cb7f0328ad61b95e0c743f8a12d6b0"}
+        },
+        {
+          "event_type": "spin_off",
+          "effective_at": "2024-04-02",
+          "headline_en": "The energy business separated; the registrant now trades as GE Aerospace.",
+          "headline_zh": "能源业务分拆；注册人现以 GE Aerospace 名义交易。",
+          "evidence": {"evidence_id": "sec:40545:0001193125-24-084038", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/40545/000119312524084038/0001193125-24-084038-index.htm", "sha256": "c25e8a01374bf96d0a8b41e7502cd6193fa7b840c1e6d590237fa4bc80e51d73"}
+        }
+      ],
+      "gaps": [
+        {
+          "code": "no_reviewed_issuer_path",
+          "text_en": "no reviewed exact recipient → legal entity → GE Aerospace path",
+          "text_zh": "没有已核验的精确收款方 → 法律实体 → GE Aerospace 路径"
+        },
+        {
+          "code": "separation_boundary",
+          "text_en": "Nothing here is carried back across the two separations. Awards before those dates may belong to a company that is no longer part of this issuer.",
+          "text_zh": "此处不会将任何内容回溯至两次分拆之前。分拆日期之前的授标可能属于已不再隶属该发行人的公司。"
+        }
+      ]
+    },
+    {
+      "ticker": "BWXT",
+      "company_name": "BWX Technologies, Inc.",
+      "public_security": {
+        "state": "verified_live",
+        "first_date": "2015-07-01",
+        "last_date": "2026-08-13",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": {
+        "entity_id": "legal:bwxt:bwx-technologies-inc",
+        "canonical_name": "BWX Technologies, Inc.",
+        "verification_state": "reviewed"
+      },
+      "issuer_attribution": "reviewed",
+      "attribution_reason": "Exhibit 21 lists each recipient entity at full ownership for three consecutive filing years.",
+      "attribution_reason_zh": "附件 21 连续三个申报年度均以全额持股列出各收款方实体。",
+      "entities": [
+        {
+          "entity_id": "legal:bwxt:bwx-technologies-inc",
+          "canonical_name": "BWX Technologies, Inc.",
+          "relationship": "issuer_legal_entity",
+          "economic_share": null,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:bwxt-20251231.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/bwxt-20251231.htm",
+            "sha256": "df3a70c19b6e2854013fac7d8b09e51627ca4f0d3b8e15947c02da61f7b3e849"
+          },
+          "identifiers": []
+        },
+        {
+          "entity_id": "legal:bwxt:bwxt-nuclear-operations-group-inc",
+          "canonical_name": "BWXT Nuclear Operations Group, Inc.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm",
+            "sha256": "8c14b0f72e5a9d3618f0c7ab24d951e3706bd8fa0c53e2917d4ba60f38c1e57d"
+          },
+          "identifiers": [
+            {"value": "UMBKD2WKD8N5", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:award:CONT_AWD_N0017325C2403", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_N0017325C2403_9700_-NONE-_-NONE-/", "sha256": "4e91af0b7c26d5831fa0b47e9c3d2016758be0fa1c4d29376b0ea5c187d3f620"}}
+          ]
+        },
+        {
+          "entity_id": "legal:bwxt:bwxt-nuclear-energy-inc",
+          "canonical_name": "BWXT Nuclear Energy, Inc.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm",
+            "sha256": "8c14b0f72e5a9d3618f0c7ab24d951e3706bd8fa0c53e2917d4ba60f38c1e57d"
+          },
+          "identifiers": [
+            {"value": "WJYVCPD5HKK7", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:award:CONT_AWD_89233123FNA400535", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_89233123FNA400535_8900_89233120DNA000025_8900/", "sha256": "1a67d0e5b92c4f8370ab5d1e6c024f93b8de7015a3c26fd9047be3810c5a29fb"}}
+          ]
+        },
+        {
+          "entity_id": "legal:bwxt:nuclear-fuel-services-inc",
+          "canonical_name": "Nuclear Fuel Services, Inc.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm",
+            "sha256": "8c14b0f72e5a9d3618f0c7ab24d951e3706bd8fa0c53e2917d4ba60f38c1e57d"
+          },
+          "identifiers": [
+            {"value": "SMJQJGD5JEJ3", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:award:CONT_AWD_89233124CNA000371", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_89233124CNA000371_8900_-NONE-_-NONE-/", "sha256": "0b53fa1c7d28e694a01fc5b73de20916487cad0e3f19b52760ca8d14e7f30b28"}}
+          ]
+        },
+        {
+          "entity_id": "legal:bwxt:bwxt-advanced-technologies-llc",
+          "canonical_name": "BWXT Advanced Technologies LLC",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm",
+            "sha256": "8c14b0f72e5a9d3618f0c7ab24d951e3706bd8fa0c53e2917d4ba60f38c1e57d"
+          },
+          "identifiers": [
+            {"value": "C4L1VT236AA1", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:award:CONT_AWD_80MSFC17C0006", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_80MSFC17C0006_8000_-NONE-_-NONE-/", "sha256": "72f0ba18c3e5d94670ab1fc25d8e0937b46ac1f05de3927a80bd4c61e05f3a17"}}
+          ]
+        },
+        {
+          "entity_id": "legal:bwxt:bwxt-technical-services-group-inc",
+          "canonical_name": "BWXT Technical Services Group, Inc.",
+          "relationship": "wholly_owned",
+          "economic_share": 1.0,
+          "valid_from": "2025-12-31T00:00:00+00:00",
+          "valid_to": null,
+          "known_at": "2026-02-23T00:00:00+00:00",
+          "verification_state": "reviewed",
+          "evidence": {
+            "evidence_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+            "publisher": "SEC EDGAR",
+            "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm",
+            "sha256": "8c14b0f72e5a9d3618f0c7ab24d951e3706bd8fa0c53e2917d4ba60f38c1e57d"
+          },
+          "identifiers": [
+            {"value": "PZDQCRZW7GJ3", "namespace": "sam_uei", "state": "reviewed", "evidence": {"evidence_id": "usaspending:award:CONT_AWD_HQ085926FF258", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_HQ085926FF258_9700_-NONE-_-NONE-/", "sha256": "5f83c0d21a7e496b0138fa5cd7e2049168b3ad0fc9e51720a4db63c8107ef295"}}
+          ]
+        }
+      ],
+      "unresolved_identifiers": [
+        {
+          "value": "MMACD85DT5D5",
+          "observed_name": "AEROJET ORDNANCE TENNESSEE, INC.",
+          "namespace": "sam_uei",
+          "state": "evidence_conflict",
+          "reason": "The most recent award action names a different listed parent than the bond guarantor list does. Two official records disagree, so no path is asserted.",
+          "reason_zh": "最新的授标行动列出的上市母公司与债券担保人清单不一致。两份官方记录彼此矛盾，因此不作路径断言。",
+          "evidence": [
+            {"evidence_id": "usaspending:award:CONT_AWD_W15QKN26F0107", "publisher": "USAspending.gov", "url": "https://www.usaspending.gov/award/CONT_AWD_W15QKN26F0107_9700_W15QKN23D0018_9700/", "sha256": "6d0a3c98f1b57e24098bcd4e5f13720a86cb0f9d2e4a3157b0d9ec6284f1a370"},
+            {"evidence_id": "sec:1486957:0001104659-25-109152", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/0001104659-25-109152-index.htm", "sha256": "aa17c0e6b5d2913f7048be3cd190f52a6b7d0c48e13592ab70fd8c2e461b0937"}
+          ]
+        },
+        {
+          "value": "PM7HBL2KDX46",
+          "observed_name": "NOG TECHNOLOGIES, INC.",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Named only as a bond guarantor. Guarantor status shows affiliation, not an ownership share, so no ownership path is claimed.",
+          "reason_zh": "仅作为债券担保人出现。担保人身份说明存在关联，但不代表持股比例，因此不主张所有权路径。",
+          "evidence": [
+            {"evidence_id": "sec:1486957:0001104659-25-109152", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/0001104659-25-109152-index.htm", "sha256": "aa17c0e6b5d2913f7048be3cd190f52a6b7d0c48e13592ab70fd8c2e461b0937"}
+          ]
+        },
+        {
+          "value": "URJ3CAC3MSH8",
+          "observed_name": "ENRICHMENT OPERATIONS",
+          "namespace": "sam_uei",
+          "state": "mapping_needed",
+          "reason": "Named only as a bond guarantor. Guarantor status shows affiliation, not an ownership share, so no ownership path is claimed.",
+          "reason_zh": "仅作为债券担保人出现。担保人身份说明存在关联，但不代表持股比例，因此不主张所有权路径。",
+          "evidence": [
+            {"evidence_id": "sec:1486957:0001104659-25-109152", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/0001104659-25-109152-index.htm", "sha256": "aa17c0e6b5d2913f7048be3cd190f52a6b7d0c48e13592ab70fd8c2e461b0937"}
+          ]
+        }
+      ],
+      "listing_events": [],
+      "separation_events": [],
+      "gaps": [
+        {
+          "code": "identifier_conflict",
+          "text_en": "the identifiers below sit outside the reviewed path",
+          "text_zh": "下列标识不在已核验路径之内"
+        }
+      ]
+    },
+    {
+      "ticker": "SPR",
+      "company_name": "Spirit AeroSystems Holdings, Inc.",
+      "public_security": {
+        "state": "listing_terminated",
+        "first_date": "2006-11-21",
+        "last_date": "2025-12-08",
+        "asof": "2026-08-13"
+      },
+      "legal_issuer": null,
+      "issuer_attribution": "not_asserted",
+      "attribution_reason": "The listing ended when the acquisition closed, so there is no live issuer to attribute award activity to.",
+      "attribution_reason_zh": "收购交割后该股票终止上市，因此没有可归属授标活动的在市发行人。",
+      "entities": [],
+      "unresolved_identifiers": [],
+      "listing_events": [
+        {
+          "event_type": "listing_terminated",
+          "effective_at": "2025-12-08",
+          "headline_en": "The acquisition closed and the listing ended.",
+          "headline_zh": "收购交割完成，该股票终止上市。",
+          "evidence": {"evidence_id": "sec:12927:0001628280-25-055825:ba-20251208.htm", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/12927/000162828025055825/ba-20251208.htm", "sha256": "b5c0d71e28a4936f0157cae8d3b209147f6ad0c3e918b2570da4fc61e803927a"}
+        },
+        {
+          "event_type": "listing_terminated",
+          "effective_at": "2025-12-08",
+          "headline_en": "The company filed its own notice of the same close.",
+          "headline_zh": "该公司就同一交割事项自行发布公告。",
+          "evidence": {"evidence_id": "sec:1364885:0001104659-25-119096:tm2532915d1_8k.htm", "publisher": "SEC EDGAR", "url": "https://www.sec.gov/Archives/edgar/data/1364885/000110465925119096/tm2532915d1_8k.htm", "sha256": "0e2b7fa5c1d93846b07fce15a2d0348916cb7e0d5f31a927b40dc86e1f5a3b04"}
+        }
+      ],
+      "separation_events": [],
+      "gaps": [
+        {
+          "code": "listing_terminated",
+          "text_en": "there is no live listing behind this record",
+          "text_zh": "该记录背后已无在市股票"
+        }
+      ]
+    }
+  ]
+}

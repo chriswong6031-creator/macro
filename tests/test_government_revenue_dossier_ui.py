@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import textwrap
@@ -641,3 +642,457 @@ def test_budget_graph_absence_is_projection_missing_not_empty_valid(tmp_path: Pa
     assert out["state"] == "projection_missing"
     assert out["published"][-1]["status"] == "projection_missing"
     assert out["published"][-1]["rows"] == 0
+
+
+# --------------------------------------------------------------------------------------
+# D2 Identity Atlas — the reviewed path from an exact award recipient up to a listed
+# issuer. Its whole product job is to state an UNRESOLVED hop plainly instead of minting
+# one, so these tests pin the honest states (not_asserted, conflict, listing_terminated)
+# as hard as they pin the reviewed one.
+# --------------------------------------------------------------------------------------
+ATLAS_FIXTURE_PATH = ROOT / "tests" / "fixtures" / "government_revenue" / "identity_atlas_pilot.json"
+ATLAS_FIXTURE = json.loads(ATLAS_FIXTURE_PATH.read_text(encoding="utf-8"))
+PARITY_CSS = (ROOT / "templates" / "government-revenue-parity.css").read_text(encoding="utf-8")
+
+# The frozen unresolved sentence (D2 execution spec §6 / §0 gate 5). The Atlas composes
+# it from public_security + attribution + the first gap, so this one string is the whole
+# GE contract: verified security, unresolved recipient, not-asserted issuer.
+GE_UNRESOLVED_COPY = (
+    "Public security: verified · Government recipient attribution: unresolved · "
+    "Exact issuer attribution: not asserted — no reviewed exact recipient → legal "
+    "entity → GE Aerospace path."
+)
+
+
+def _atlas_node_script(body: str, responder: str) -> str:
+    """Harness: the real factory, the real fixture, a stubbed cookie-plane fetch."""
+    scaffold = """
+        var window=globalThis, fetchCalls=[];
+        var ATLAS=__ATLAS__;
+        window.fetch=function(url){fetchCalls.push(String(url));return __RESPONDER__};
+        __DOSSIER_JS__
+        function obj(x){return !!x&&typeof x==='object'&&!Array.isArray(x)}
+        function arr(x){return Array.isArray(x)?x:[]}
+        function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+        function text(x,fb){return x==null||x===''?(fb==null?'\\u2014':fb):String(x)}
+        function n(x){if(x==null||x===''||typeof x==='boolean')return null;var v=Number(x);return Number.isFinite(v)?v:null}
+        function date(x){return String(x||'\\u2014').slice(0,10)}
+        function tr(en,cn){return LANG==='zh'?cn:en}
+        function zhOn(){return LANG==='zh'}
+        function safeUrl(x){try{var u=new URL(String(x||''),'https://example.invalid/');return u.protocol==='https:'?u.href:''}catch(e){return''}}
+        function host(){var h={innerHTML:'',classes:{}};h.classList={add:function(k){h.classes[k]=true},remove:function(){for(var i=0;i<arguments.length;i++)delete h.classes[arguments[i]]}};return h}
+        function mount(ticker){var h=host();var ui=window.createGovernmentRevenueIdentityAtlas({obj:obj,arr:arr,esc:esc,text:text,n:n,date:date,tr:tr,zh:zhOn,safeUrl:safeUrl,host:function(){return h}});ui.loadCompany(ticker);return{host:h,ui:ui}}
+        __BODY__
+    """
+    return (
+        textwrap.dedent(scaffold)
+        .replace("__ATLAS__", json.dumps(ATLAS_FIXTURE))
+        .replace("__RESPONDER__", responder)
+        .replace("__DOSSIER_JS__", DOSSIER_JS)
+        .replace("__BODY__", textwrap.dedent(body))
+    )
+
+
+def _run_atlas(tmp_path: Path, name: str, body: str, responder: str) -> dict:
+    path = tmp_path / name
+    path.write_text(_atlas_node_script(body, responder), encoding="utf-8")
+    result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout)
+
+
+OK_RESPONDER = "Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(ATLAS)}})"
+
+
+def test_identity_atlas_mounts_on_both_company_inspector_paths_only() -> None:
+    """One host, both company paths, no new page / nav / header family."""
+    assert TEMPLATE.count('id="identityAtlas"') == 1
+    assert TEMPLATE.count("identityAtlasSection()") == 3  # definition + 2 call sites
+    assert "createGovernmentRevenueIdentityAtlas" in TEMPLATE
+    assert "global.createGovernmentRevenueIdentityAtlas=function(api)" in DOSSIER_JS
+
+    # Both company inspector paths mount it, and both hand it the same ticker they hand
+    # the award book — an Atlas that loads on one path only is the D2 acceptance gap.
+    assert "atlasUI.loadCompany(atlasTicker)" in TEMPLATE
+    assert "dossierUI.loadCompany(ticker);atlasUI.loadCompany(ticker);" in TEMPLATE
+    assert TEMPLATE.count("identityAtlasSection()+dossierBookSection()") == 2
+    # Identity is read before the award tape, never after it.
+    assert "dossierBookSection()+identityAtlasSection()" not in TEMPLATE
+    # Leaving a company inspector must not leave a stale path behind.
+    assert TEMPLATE.count("atlasUI.invalidate()") == 3
+
+    # Cookie plane, not the bearer plane: no Authorization header is ever attached.
+    assert "government-revenue-data/identity_atlas.json" in DOSSIER_JS
+    atlas_source = DOSSIER_JS.split("createGovernmentRevenueIdentityAtlas")[1].split(
+        "global.createGovernmentRevenueBudget"
+    )[0]
+    assert "credentials:'same-origin'" in atlas_source
+    assert "withAuth(" not in atlas_source
+    assert "government_revenue_identity_atlas.v1" in atlas_source
+
+    # No third page header family, no new nav entry, no viewport hijack.
+    assert TEMPLATE.count('{% include "_site_nav.html.j2" %}') == 1
+    assert "_public_nav" not in TEMPLATE
+    for banned in ("scrollIntoView", "identity_atlas.html", "identityAtlas.html"):
+        assert banned not in TEMPLATE + DOSSIER_JS, banned
+
+
+def test_identity_atlas_state_inks_and_broken_rail_are_declared() -> None:
+    """The rail's break is the section's honesty device — it has to exist in CSS."""
+    assert ".truth.conflict{color:var(--gr-bad)}" in TEMPLATE
+    assert ".truth.historic{color:var(--gr-muted)}" in TEMPLATE
+    # A hop whose successor is not reviewed carries a DASHED connector, and an
+    # unresolved node is hollow. Without these two rules an unresolved hop paints
+    # exactly like a reviewed one and the section silently overclaims.
+    assert ".atlas-hop.break:after{border-left-style:dashed" in PARITY_CSS
+    assert (
+        ".atlas-hop.unresolved .atlas-node{border-style:dashed;background:transparent"
+        in PARITY_CSS
+    )
+    assert ".atlas-hop.historic .atlas-node:after{" in PARITY_CSS
+    # Light is a design target, not a token swap (doctrine §5.8): opaque tinted panel
+    # with genuinely white cards, or the dark-first "raised card" inverts into a smudge.
+    assert 'html[data-theme="light"] .identity-atlas{background:' in PARITY_CSS
+    assert 'html[data-theme="light"] .atlas-entity,' in PARITY_CSS
+    # zh drops tracking on the caps rungs (design system §13).
+    assert 'html[data-lang="zh"] .atlas-rung' in PARITY_CSS
+    # Mobile is a deliberate reduction, not the desktop stack squeezed.
+    assert ".atlas-id{grid-template-columns:minmax(0,1fr)}" in PARITY_CSS
+
+
+@needs_node
+def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> None:
+    # ONE factory for the whole session, exactly as the page builds it, walked across
+    # every pilot the way a reader clicks from company to company.
+    body = """
+        var LANG='en';
+        var current=host();
+        var ui=window.createGovernmentRevenueIdentityAtlas({obj:obj,arr:arr,esc:esc,text:text,n:n,date:date,tr:tr,zh:zhOn,safeUrl:safeUrl,host:function(){return current}});
+        var list=['IRDM','HII','LMT','GE','BWXT','SPR','NOC'],out={fetchCalls:null,html:{},classes:{}},i=0;
+        function step(){
+          if(i>=list.length){out.fetchCalls=fetchCalls;process.stdout.write(JSON.stringify(out));return}
+          var ticker=list[i++];current=host();ui.loadCompany(ticker);
+          setTimeout(function(){out.html[ticker]=current.innerHTML;out.classes[ticker]=Object.keys(current.classes);step()},20);
+        }
+        step();
+    """
+    out = _run_atlas(tmp_path, "atlas_states.js", body, OK_RESPONDER)
+
+    # Fetched ONCE per session no matter how many issuers are inspected.
+    assert out["fetchCalls"] == ["government-revenue-data/identity_atlas.json"]
+
+    irdm = out["html"]["IRDM"]
+    for marker in (
+        "Reviewed issuer path",
+        "Public security",
+        "Legal issuer",
+        "Legal entities",
+        "Recipient identifiers",
+        "Iridium Government Services LLC",
+        "Wholly owned",
+        "on record since 2025-12-3",
+        "Watch — don’t chase",
+        "Show identifiers, dates and receipts",
+    ):
+        assert marker in irdm, marker
+    assert "atlas-hop reviewed" in irdm
+    assert "atlas-hop unresolved" not in irdm
+    # Technicals are demoted: the UEI, its sha256 and the known_at clock live inside the
+    # receipt expand, never in the always-visible tier.
+    head, _, receipts = irdm.partition('<details class="atlas-receipt">')
+    assert "S77SW52LCR57" not in head
+    assert "S77SW52LCR57" in receipts
+    assert "sha256" not in head and "sha256" in receipts
+    assert "known at" not in head and "known_at" not in head
+
+    # GE: verified security, unresolved recipient, issuer NOT asserted — verbatim.
+    ge = out["html"]["GE"]
+    assert GE_UNRESOLVED_COPY in ge
+    assert "Stand aside" in ge
+    assert "Identity unresolved" in ge
+    assert "atlas-hop unresolved" in ge
+    assert "atlas-hop reviewed break" in ge  # the security hop, then the break
+    assert "atlas-entity" not in ge  # nothing is minted where the filing is silent
+    assert "Reviewed issuer path" not in ge
+    # Five identically-blocked registrations are ONE card plus its count, never five
+    # copies of one sentence (doctrine Law 4 — a constant never repeats per row).
+    assert "4 recipient registrations named “GENERAL ELECTRIC COMPANY”" in ge
+    assert ge.count('<div class="atlas-gap">') == 2
+    # The separation boundary is stated, and nothing is carried back across it.
+    assert "The energy business separated" in ge
+
+    # BWXT: five reviewed chains AND three unresolved, one an explicit conflict.
+    bwxt = out["html"]["BWXT"]
+    assert "Reviewed issuer path" in bwxt
+    assert "Conflict on record" in bwxt
+    assert "Link pending" in bwxt
+    assert "AEROJET ORDNANCE TENNESSEE, INC." in bwxt
+    assert "atlas-gap conflict" in bwxt
+    assert "Two official records disagree" in bwxt
+    assert "reviewed, 3 still unresolved" in bwxt
+    assert bwxt.count('class="atlas-entity ') == 6
+
+    # SPR: historical, never live.
+    spr = out["html"]["SPR"]
+    assert "Listing terminated" in spr
+    assert "listing ended 2025-12-0" in spr
+    assert "Ignore" in spr
+    assert "This listing has ended" in spr
+    assert "atlas-hop historic" in spr
+    assert "is-historic" in out["classes"]["SPR"]
+    assert "Reviewed issuer path" not in spr
+    assert "verified_live" not in spr
+
+    # LMT: fourteen identifiers kept distinct, Sikorsky filing-known but unobserved.
+    lmt = out["html"]["LMT"]
+    assert "Holds 14 exact recipient identifiers" in lmt
+    assert "Sikorsky Aircraft Corporation" in lmt
+    assert "No award recipient identifier observed for this entity yet" in lmt
+    assert "the filing omits subsidiaries it does not consider significant" in lmt
+    assert "Absence is not proof that none exists." in lmt
+
+    # HII: every reviewed shipyard entity renders, none merged away.
+    hii = out["html"]["HII"]
+    for name in (
+        "Ingalls Shipbuilding, Inc.",
+        "Newport News Shipbuilding and Dry Dock Company",
+        "HII Mission Technologies Corp.",
+    ):
+        assert name in hii, name
+
+    # A company with no atlas record says so; it never borrows another issuer's path.
+    absent = out["html"]["NOC"]
+    assert "No identity record for this company" in absent
+    assert "Reviewed issuer path" not in absent
+
+    # STRUCTURAL: the Atlas carries identity only, so it cannot leak attribution onto an
+    # unlinked event (spec §5 test 4). Two separate checks, because an award-record URL
+    # is a legitimate identity RECEIPT (the page where a UEI was observed) while an award
+    # NAME, action or amount would be an attribution the Atlas is forbidden to make.
+    everything = "".join(out["html"].values())
+    at_rest = re.sub(r"<details.*?</details>", " ", everything, flags=re.S)
+    visible = re.sub(r"<[^>]*>", " ", at_rest)  # drops every attribute, hrefs included
+    for banned in (
+        "award_key",
+        "generated_award_id",
+        "CONT_AWD",
+        "obligat",
+        "piid",
+        "action_date",
+        "$",
+    ):
+        assert banned not in visible, banned
+    # Never anywhere, expanded or not: an event impact row, a dollar amount, or a
+    # named award. The Atlas has no fields for them by construction.
+    for banned in ("listed_company_impacts", "federal_action_obligation", "$", "award_key"):
+        assert banned not in everything, banned
+
+
+@needs_node
+def test_identity_atlas_escapes_hostile_source_text(tmp_path: Path) -> None:
+    body = """
+        var LANG='en';
+        ATLAS.issuers[0].company_name='<img src=x onerror=alert(1)>';
+        ATLAS.issuers[0].entities[1].canonical_name='<script>alert(2)</script>';
+        ATLAS.issuers[3].unresolved_identifiers[0].observed_name='<b>GE</b>';
+        ATLAS.issuers[0].entities[1].evidence.url='javascript:alert(3)';
+        var a=mount('IRDM'),b=mount('GE');
+        setTimeout(function(){process.stdout.write(JSON.stringify({irdm:a.host.innerHTML,ge:b.host.innerHTML}))},40);
+    """
+    out = _run_atlas(tmp_path, "atlas_escape.js", body, OK_RESPONDER)
+    assert "&lt;img src=x onerror=alert(1)&gt;" in out["irdm"]
+    assert "<img src=x" not in out["irdm"]
+    assert "<script>alert(2)</script>" not in out["irdm"]
+    assert "&lt;b&gt;GE&lt;/b&gt;" in out["ge"]
+    assert "javascript:" not in out["irdm"]
+
+
+@needs_node
+def test_identity_atlas_locked_degrades_to_the_membership_teaser(tmp_path: Path) -> None:
+    """401 on the cookie plane is a product state, not an outage and not empty data."""
+    body = """
+        var LANG='en';
+        var view=mount('IRDM');
+        setTimeout(function(){process.stdout.write(JSON.stringify({html:view.host.innerHTML,state:view.ui.state(),calls:fetchCalls.length}))},40);
+    """
+    locked = _run_atlas(
+        tmp_path,
+        "atlas_locked.js",
+        body,
+        "Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({})}})",
+    )
+    assert locked["state"] == "locked"
+    assert "Identity path locked" in locked["html"]
+    assert "part of a membership" in locked["html"]
+    assert '<a class="tool-btn" href="plans.html">' in locked["html"]
+    assert "View membership plans" in locked["html"]
+    # The teaser still says what stays open — never a bare lock.
+    assert "Award history below stays open and is not issuer proof." in locked["html"]
+    # A locked lane never claims a reviewed path, and never reads as an outage.
+    assert "Reviewed issuer path" not in locked["html"]
+    assert "unavailable" not in locked["html"]
+
+    unavailable = _run_atlas(
+        tmp_path,
+        "atlas_unavailable.js",
+        body,
+        "Promise.resolve({ok:false,status:503,json:function(){return Promise.resolve({})}})",
+    )
+    assert unavailable["state"] == "unavailable"
+    assert "Identity path unavailable" in unavailable["html"]
+    assert "Award history below remains available" in unavailable["html"]
+    assert "part of a membership" not in unavailable["html"]
+
+    # A wrong contract is refused rather than half-rendered.
+    invalid = _run_atlas(
+        tmp_path,
+        "atlas_invalid.js",
+        body,
+        "Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve("
+        "{contract:'something_else.v1',schema_version:'1.0.0',issuers:ATLAS.issuers})}})",
+    )
+    assert invalid["state"] == "invalid"
+    assert "Iridium" not in invalid["html"]
+
+
+@needs_node
+def test_identity_atlas_speaks_chinese_without_english_state_names(tmp_path: Path) -> None:
+    body = """
+        var LANG='zh';
+        var ge=mount('GE'),spr=mount('SPR'),irdm=mount('IRDM');
+        setTimeout(function(){process.stdout.write(JSON.stringify({ge:ge.host.innerHTML,spr:spr.host.innerHTML,irdm:irdm.host.innerHTML}))},40);
+    """
+    out = _run_atlas(tmp_path, "atlas_zh.js", body, OK_RESPONDER)
+    for marker in ("身份未解析", "暂不参与", "未作断言", "上市证券", "收款方标识", "GE Aerospace 路径"):
+        assert marker in out["ge"], marker
+    for marker in ("上市已终止", "忽略", "在册公司历史"):
+        assert marker in out["spr"], marker
+    for marker in ("已核验发行人路径", "观察，不要追高", "全资持有", "显示标识、日期与凭证"):
+        assert marker in out["irdm"], marker
+    # No English state name is dropped into zh copy (doctrine §5.5).
+    joined = out["ge"] + out["spr"] + out["irdm"]
+    for leaked in (
+        "Reviewed issuer path",
+        "Link pending",
+        "Identity unresolved",
+        "Listing terminated",
+        "Conflict on record",
+        "not asserted",
+        "Stand aside",
+        "Watch —",
+        "mapping_needed",
+        "verified_live",
+        "issuer_legal_entity",
+    ):
+        assert leaked not in joined, leaked
+
+
+def test_identity_atlas_copy_is_bilingual_and_never_speaks_of_refutation() -> None:
+    """Every string the Atlas adds ships an EN and a native-shaped ZH twin."""
+    atlas_source = DOSSIER_JS.split("createGovernmentRevenueIdentityAtlas")[1].split(
+        "global.createGovernmentRevenueBudget"
+    )[0]
+    implementation = TEMPLATE + atlas_source
+    for english, chinese in (
+        ("Identity Atlas", "身份图谱"),
+        ("Tracing the identity path", "正在追踪身份路径"),
+        (
+            "Who the government actually paid, and how that reaches this ticker.",
+            "政府实际付款给谁，以及这如何连到该股票代码。",
+        ),
+        ("Reviewed issuer path", "已核验发行人路径"),
+        ("Link pending", "关联待核"),
+        ("Identity unresolved", "身份未解析"),
+        ("Conflict on record", "记录存在冲突"),
+        ("Listing terminated", "上市已终止"),
+        ("Public security", "上市证券"),
+        ("Legal issuer", "法律发行主体"),
+        ("Legal entities", "法律实体"),
+        ("Recipient identifiers", "收款方标识"),
+        ("Not asserted", "未作断言"),
+        ("Where the trail stops", "线索中断之处"),
+        ("Legal entities on record", "在册法律实体"),
+        ("Corporate history on record", "在册公司历史"),
+        ("Still unresolved", "仍未解析"),
+        ("Identity path locked", "身份路径已锁定"),
+        ("Identity path unavailable", "身份路径不可用"),
+        ("View membership plans", "查看会员方案"),
+        ("Show identifiers, dates and receipts", "显示标识、日期与凭证"),
+        ("Show the evidence cut behind this path", "显示该路径背后的证据截点"),
+        ("Stand aside", "暂不参与"),
+        ("Ignore", "忽略"),
+        ("Watch — don’t chase", "观察，不要追高"),
+    ):
+        assert english in implementation, english
+        assert chinese in implementation, chinese
+
+    # Falsifier / refutation vocabulary is never front-facing (operator 2026-07-27).
+    for banned in ("falsifier", "refuted", "refutation", "Refutation", "证伪", "falsified"):
+        assert banned not in implementation, banned
+
+    # No translated text in title= (CI-guarded law).
+    for chunk in re.findall(r'title="[^"]*"', implementation):
+        assert not re.search(r"[一-鿿]", chunk), chunk
+
+    # Glance-tier vocabulary: no internal state names, raw slugs or graph IDs outside the
+    # receipt expands (doctrine Law 2). Everything machine-shaped lives behind
+    # `entityReceipt` / `cutReceipt` and their `atlas-code` slabs.
+    glance = atlas_source.split("function entityReceipt")[0]
+    for banned in (
+        "display tier",
+        "display-tier",
+        "context_only",
+        "curated_fuzzy_name",
+        "grc1-",
+        "grmb1-",
+        "defense21",
+        "central:",
+        "graph_digest",
+    ):
+        assert banned not in glance, banned
+
+    # Display/context only: the Atlas states its own boundary and claims no authority.
+    assert "It cannot rank a company, size a position or trigger a trade." in atlas_source
+    assert "不得为公司排序、调整仓位或触发交易。" in atlas_source
+    # No trade instruction ever — the stance vocabulary is the doctrine's, no more.
+    for banned in ("Buy now", "Sell", "target price", "price target", "win probability"):
+        assert banned not in atlas_source, banned
+
+
+def test_identity_atlas_fixture_covers_the_six_pilot_states() -> None:
+    """The fixture IS the acceptance surface — keep all six states in it."""
+    assert ATLAS_FIXTURE["contract"] == "government_revenue_identity_atlas.v1"
+    for key in ("schema_version", "generated_at", "graph_id", "graph_digest", "si_asof"):
+        assert ATLAS_FIXTURE[key], key
+    records = {row["ticker"]: row for row in ATLAS_FIXTURE["issuers"]}
+    assert set(records) == {"IRDM", "HII", "LMT", "GE", "BWXT", "SPR"}
+
+    assert records["IRDM"]["issuer_attribution"] == "reviewed"
+    assert records["HII"]["issuer_attribution"] == "reviewed"
+    assert sum(len(e["identifiers"]) for e in records["LMT"]["entities"]) == 14
+    assert records["GE"]["issuer_attribution"] == "not_asserted"
+    assert records["GE"]["entities"] == []
+    assert len(records["GE"]["unresolved_identifiers"]) == 5
+    assert len(records["GE"]["separation_events"]) == 2
+    assert len(records["BWXT"]["entities"]) == 6
+    assert len(records["BWXT"]["unresolved_identifiers"]) == 3
+    assert [
+        row["state"] for row in records["BWXT"]["unresolved_identifiers"]
+    ].count("evidence_conflict") == 1
+    assert records["SPR"]["public_security"]["state"] == "listing_terminated"
+    assert records["SPR"]["issuer_attribution"] == "not_asserted"
+    assert records["SPR"]["listing_events"][0]["effective_at"] == "2025-12-08"
+
+    # Every evidence citation is a real https receipt — no bare, unciteable assertion.
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            if "url" in node and "sha256" in node:
+                assert str(node["url"]).startswith("https://"), node["url"]
+                assert len(str(node["sha256"])) == 64, node.get("evidence_id")
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(ATLAS_FIXTURE)
