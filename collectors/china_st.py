@@ -36,11 +36,20 @@ _ST_OUT      = config.data_dir() / "china_st" / "st_snapshot.parquet"
 _HIST_OUT    = config.data_dir() / "china_st" / "st_history.parquet"
 _GW_OUT      = config.data_dir() / "china_st" / "goodwill.parquet"
 
-_PUSH2_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+# push2.eastmoney.com/api/qt/clist/get was retired upstream and now returns a hard
+# 502 for every parameter shape — that is what froze this plane at 2026-07-06. The
+# repo's own source probe already classified it dead on 2026-07-25
+# (scripts/probe_china_sources.py, cls="dead", expect 502); this collector was
+# never moved across. push2delay is the same vendor and the same API contract
+# (identical f-code fields), serving delayed quotes — correct for a risk-warning
+# BOARD MEMBERSHIP list, which is a daily-granularity disclosure, not a live tape.
+_PUSH2_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 _ST_PARAMS = {
     "cb": "jQuery",
     "pn": "1",
-    "pz": "500",
+    # Server caps a page at 100 rows regardless of what pz asks for; ask for what
+    # we can actually get and let the paging loop below measure the real page size.
+    "pz": "100",
     "po": "1",
     "np": "1",
     "ut": "bd1d9ddb04089700cf9c27f6f7426281",
@@ -64,6 +73,9 @@ _FIELD_MAP = {
     "f10": "turnover_rate",
     "f18": "prev_close",
 }
+
+
+_MAX_PAGES = 50  # runaway guard; the ST board is ~200 names, so ~2 pages in practice
 
 
 def _col(cols: list[str], *needles: str) -> str | None:
@@ -112,8 +124,12 @@ def _fetch_st_board() -> pd.DataFrame | None:
                     "price":  _num(item.get("f2")),
                     "pct_chg": _num(item.get("f3")),
                 })
-            total = (data.get("data") or {}).get("total") or 0
-            if page * 500 >= int(total):
+            # Page against what the server ACTUALLY returned, not against the pz we
+            # asked for. The old `page * 500 >= total` test assumed a 500-row page
+            # while the server caps at 100, so it broke after page 1 and silently
+            # captured 100 of 207 ST names as if that were the whole board.
+            total = int((data.get("data") or {}).get("total") or 0)
+            if not total or len(rows) >= total or page >= _MAX_PAGES:
                 break
             page += 1
             time.sleep(0.8)
@@ -122,6 +138,17 @@ def _fetch_st_board() -> pd.DataFrame | None:
             break
 
     if not rows:
+        # A retired endpoint used to fail exactly like a quiet market: no rows, one
+        # debug-level warning, no snapshot, and a plane that silently froze for six
+        # weeks. Emit a real Actions annotation so the next outage is visible on the
+        # run summary the day it starts. Bare print + flush: a logger prefix would
+        # push '::warning' off the line start and GitHub would drop it.
+        print(
+            "::warning title=china-st-board-empty::"
+            f"ST board fetch returned no rows from {_PUSH2_URL} — "
+            "the risk-warning plane will not advance today.",
+            flush=True,
+        )
         return None
     return pd.DataFrame(rows)
 
