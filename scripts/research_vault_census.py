@@ -34,7 +34,7 @@ output, never something a census performs.
 
 Usage:
     python -m scripts.research_vault_census                     # live R2
-    python -m scripts.research_vault_census --local /tmp/rv     # a local store
+    python -m scripts.research_vault_census --local /tmp/rv --repo-dir /tmp/rv-repo
     python -m scripts.research_vault_census --json out.json     # machine-readable
 
 Exit 0 when the census completed (mismatches are REPORTED, not failures — an
@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sqlite3
 import sys
 import tempfile
@@ -55,7 +56,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 log = logging.getLogger("research_vault_census")
 
-_REPO_MIRROR = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "catalog.json"
+_REPO_SNAPSHOT_DIR = Path(__file__).resolve().parent.parent / "data" / "research_vault"
+
+
+def _mirror_path(override: str | None = None) -> Path:
+    """The repo mirror to compare against — SAME override as the ingest CLI.
+
+    Must travel with ``--local``. Auditing a scratch store while comparing against
+    the real committed mirror prints a nonsense lag ("4-item store is 5,881s
+    behind a 1,402-row mirror") and could raise a false freeze-§B alarm. Mirrors
+    scripts/ingest_research._repo_snapshot_dir so one env var configures both.
+    """
+    raw = override or os.environ.get("RESEARCH_REPO_SNAPSHOT_DIR", "")
+    base = Path(raw).expanduser() if raw else _REPO_SNAPSHOT_DIR
+    return base / "catalog.json"
+
 
 # How many example ids to print per mismatch bucket. The full sets go to --json.
 _SAMPLE = 12
@@ -142,11 +157,11 @@ def _corpus_ids(store) -> tuple[set[str], int]:
     return {r for r in rows if r}, len(rows)
 
 
-def _mirror_meta() -> dict:
-    if not _REPO_MIRROR.is_file():
+def _mirror_meta(mirror: Path) -> dict:
+    if not mirror.is_file():
         return {"present": False}
     try:
-        obj = json.loads(_REPO_MIRROR.read_text(encoding="utf-8"))
+        obj = json.loads(mirror.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         return {"present": True, "error": str(exc)}
     items = obj.get("items") or []
@@ -169,6 +184,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Research Vault id-set census (read-only)")
     ap.add_argument("--local", metavar="DIR", help="census a local store instead of R2")
     ap.add_argument("--json", metavar="PATH", help="write the full report as JSON")
+    ap.add_argument("--repo-dir", metavar="DIR",
+                    help="compare against the repo mirror under DIR instead of "
+                         "data/research_vault. Pair this with --local; env: "
+                         "RESEARCH_REPO_SNAPSHOT_DIR")
     a = ap.parse_args()
 
     from engine.research_vault import catalog as catalog_mod
@@ -193,7 +212,7 @@ def main() -> int:
     pdf_ids = _vault_pdf_ids(store)
     receipt_ids, receipt_sources = _receipted(store)
     corpus_ids, corpus_rows = _corpus_ids(store)
-    mirror = _mirror_meta()
+    mirror = _mirror_meta(_mirror_path(a.repo_dir))
 
     catalog_minus_pdf = catalog_ids - pdf_ids
     receipt_minus_catalog = receipt_ids - catalog_ids

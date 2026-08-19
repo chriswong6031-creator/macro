@@ -94,8 +94,10 @@ cleanly with an empty item list.
    tests truncated `data/research_vault/catalog.json` from 1,402 rows to 1,
    because a subprocess `--local` run snapshotted its two-document scratch vault
    over the real file. Fixed by `--repo-dir` / `RESEARCH_REPO_SNAPSHOT_DIR`; a
-   store override now travels with a snapshot override. **Never run the ingest
-   CLI against a scratch store without `--repo-dir`.**
+   store override now travels with a snapshot override — on **both** the ingest
+   CLI and the census. **Never point either at a scratch store without also
+   passing `--repo-dir`**: for the census the symptom is quieter but just as
+   wrong, a nonsense mirror lag that can raise a false freeze-§B alarm.
 2. **`ci-authority/codex/merge-queue-pilot` is FAILURE on every open PR**
    (`context_reason: inactive_base_context` — the check is scoped to base ref
    `codex/merge-queue-pilot`, not `main`). Verified across 12 concurrent PRs.

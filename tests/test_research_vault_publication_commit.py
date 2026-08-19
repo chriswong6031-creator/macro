@@ -561,7 +561,10 @@ def test_census_reports_every_mismatch_direction_and_never_mutates(tmp_path,
     before = {k: store.get_bytes(k) for k in store.list_prefix("")}
 
     out = tmp_path / "census.json"
+    # --repo-dir travels with --local: comparing a scratch store against the REAL
+    # committed mirror prints a nonsense lag and can raise a false freeze-§B alarm.
     monkeypatch.setattr(sys, "argv", ["census", "--local", str(store.root),
+                                      "--repo-dir", str(tmp_path / "no_mirror"),
                                       "--json", str(out)])
     monkeypatch.setattr("engine.research_vault.r2_store.build_store",
                         lambda local_dir=None: store)
@@ -576,6 +579,10 @@ def test_census_reports_every_mismatch_direction_and_never_mutates(tmp_path,
     # The receipt's source key is what makes a stranded row deterministically
     # recoverable instead of a guess.
     assert report["recovery_sources"]["desk-000001"] == "research_inbox/d1.pdf"
+    assert report["repo_mirror"] == {"present": False}, (
+        "an absent --repo-dir mirror must read as absent, never fall back to the "
+        "real committed one"
+    )
 
     after = {k: store.get_bytes(k) for k in store.list_prefix("")}
     assert after == before, "the census must not mutate a single object"
