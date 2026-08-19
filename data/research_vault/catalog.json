@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T03:37:05.698092+00:00",
-  "count": 1379,
+  "generated_at": "2026-08-19T04:55:32.263968+00:00",
+  "count": 1384,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -566,6 +566,65 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-unaooukoknv-c93138",
+      "title": "Canada Economics Comment Headline and Core Surprise to the Upside on Energy Prices and World Cup Effects",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:28Z",
+      "summary_points": [
+        "**Core Inflation Anchored Near 2%**: BoC's preferred core measures (CPI-Trim, CPI-Median) near 2% on year-over-year and three-month annualized bases, confirming persistent inflation control without immediate policy urgency.",
+        "**BoC Rate Hold Until 2026**: Policy stance confirmed—rates held at 2.25% with no expected hike until 2026, driven by core inflation stability and absence of acceleration.",
+        "**Temporary Drivers Overstated**: Energy prices and World Cup-related categories caused headline CPI surprise (+3.0% yoy), but core goods/services inflation (unchanged services, slight goods rise) shows no structural shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-stcsrwclhsp-5c83df",
+      "title": "Brazil Weaker Than Expected June Real GDP Growth (Ramos)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:27Z",
+      "summary_points": [
+        "**June GDP Miss**: Real GDP declined 0.64% mom sa (vs consensus -0.50%), driven by industry weakness; non-farm GDP fell 0.91% mom sa.",
+        "**Q2 Growth Deceleration**: Real GDP growth slowed to 0.18% qoq sa in Q2 2026 (vs 1.23% qoq sa in Q1 2026), signaling weakening momentum.",
+        "**Q3 Carryover Risk**: Negative sequential growth of -0.42% qoq sa for Q3 2026 with annual growth at 1.3%, indicating potential further slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zhoxdsnkeox-d24ca0",
+      "title": "UK—Labour Market Quantities Slightly Weaker Than Expected",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:24Z",
+      "summary_points": [
+        "**Labor Market Weakness**: Payroll employment fell -13k (vs.",
+        "expected unchanged), vacancies edged down to 707k, signaling deteriorating labor conditions beyond official data.",
+        "**Private Pay Growth Deceleration**: Private sector pay growth slowed to 2.8% YoY (from 2.9%), reinforcing easing inflation pressures.",
+        "**Payroll-LFS Discrepancy**: Payroll shows 0.1% three-month contraction vs.",
+        "LFS's 0.2% expansion, indicating labor market weakness underestimated by volatile short-term LFS data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-t81thnxmgss-dfaf9a",
       "title": "Trade Update Closing our short THB INR for a small gain, as RBI brings forward FCNR(B) deadline",
       "institution": "Goldman Sachs",
@@ -582,6 +641,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lndxcxpgsya-6d04c5",
+      "title": "TIC Data Rebound in Purchases of US Equities in June",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:18Z",
+      "summary_points": [
+        "**Accelerating Foreign Outflows**: Net sales of US Treasuries/corporate stocks by private investors and EM Asia ex-China/Japan (late 2025/early 2026) signal capital flight, weakening foreign demand and impacting US asset valuations.",
+        "**Valuation-Adjusted Holdings Divergence**: Euro Area/UK show sustained growth in valuation-adjusted holdings (robust demand), while Japan/Brazil exhibit volatility and declines, indicating regional risk exposure.",
+        "**Geopolitical Sensitivity in Saudi Holdings**: Sharp volatility in Saudi Arabia’s valuation-adjusted holdings reflects oil market dynamics or regional tensions, requiring active monitoring for portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fuw10f586pp-de60ad",
+      "title": "LATAM Today August 18, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:16Z",
+      "summary_points": [
+        "**Ecuador CPI Distortion**: New basket (13 categories, base 2025-26) distorts inflation: headline -0.09% mom (vs +1.39% yoy), core -1.06% mom (vs 1.25% yoy), services weight up to 43.80%.",
+        "**Electricity Price Shock**: Electricity prices +29.1% mom due to subsidy normalization, driving services inflation +0.71% mom and creating market distortions.",
+        "**Core Inflation Shift**: Core inflation (ex food/energy) fell 1.06% mom driven by fuel reweighting (gasoline +7.7% mom, diesel +1.4% mom), annual core at 1.25% yoy.",
+        "**Colombia GDP Momentum**: Q2 2026 GDP forecast at 3.4% yoy (+1.3% qoq sa), led by public admin, retail, manufacturing, and election-related payments (June ISE +3.6% yoy)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
