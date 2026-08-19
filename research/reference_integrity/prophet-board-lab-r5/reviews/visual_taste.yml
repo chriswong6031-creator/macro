@@ -1,0 +1,326 @@
+# Critic receipt (RIG V1 §6) — independent visual-taste review of the D-LAB-R5
+# Prophet Operator Lab reference candidate. The author did not write this file.
+# Committed verbatim by the commissioning session from the critic's return packet.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-lab-r5
+role: visual_taste
+artifact_sha: 6ee8f34480ce3299b4692a3e732c6a5c75d9782a
+reviewer:
+  identity: independent RIG visual-taste critic — quarantined two-run continuation, distinct from the
+    product_regression critic
+  role: visual_taste_critic
+  model: opus
+  independent_of_author: true
+  continuity: 'two harness runs, one commissioned role. Run 1 produced findings 1-20 as a first-pass
+    record before its harness stopped; run 2 inherited them verbatim, completed the finding-13 code
+    path, covered the unexamined crops, falsified two candidates against the R4 parent, and consolidated.
+    Both runs held the same quarantine. There is no second pass: the rationale was never received.'
+quarantine:
+  rationale_received_after_first_pass: false
+  rationale_note: 'The rationale was WITHHELD THROUGHOUT both runs. No DESIGN_NOTES.md, no proposal.yml,
+    no README.md, no continuity.yml, no blocker re-census, no PR or commit prose was read at any point
+    by either run. This packet is therefore first-pass only and carries no second_pass section; any
+    later amendment against the revealed rationale is a separate act by a separate cycle.'
+  first_pass_inputs:
+  - mockups/refs/prophet_lab/index.html
+  - mockups/refs/prophet_lab/lab.css (all 478+ lines; control sizing, lead treatment, selector, media
+    block read line-exact)
+  - mockups/refs/prophet_lab/lab.js (mode control, band, selectors, meta, row, lead, stateBlock,
+    repaintLive paths)
+  - mockups/refs/prophet_lab/lab-data.js (lead-value and cls distribution census only)
+  - mockups/refs/prophet_lab/crops/ (see coverage.crops_reviewed)
+  - docs/DESIGN_DOCTRINE.md
+  - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md (§9.12 error law line 407/550; touch floor line 645)
+  - mockups/design_system/specimen.html
+  - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md (origin/main; §1/§4/§5/§6.5)
+  - mockups/refs/institutionalize/us_stocks/board.css (R4 parent, control sizing comparison)
+  - mockups/refs/institutionalize/us_stocks/crops/05-mobile390-dark-en.png (R4 parent)
+  - mockups/refs/institutionalize/us_stocks/crops/25-filter-delivering-zero.png (R4 parent)
+  - research/reference_integrity/prophet-board-5514-r3/reviews/visual_taste.yml (schema shape only)
+  not_opened:
+  - mockups/refs/prophet_lab/DESIGN_NOTES.md
+  - research/reference_integrity/prophet-board-lab-r5/proposal.yml
+  - research/reference_integrity/prophet-board-lab-r5/README.md
+  - research/reference_integrity/prophet-board-lab-r5/continuity.yml
+  - research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md
+  - mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md (excluded by the review standard)
+  - PR #5931 body, review threads, and all commit messages
+first_pass:
+  frozen_at: '2026-08-19'
+  # The critic's stated verdict was REVISE (3 majors, fixable); the review-receipt
+  # enum is BLOCK/PASS/PASS_WITH_CONDITIONS, so REVISE maps to BLOCK — the artifact
+  # is not passable as-is this cycle. The authority verdict.yml carries REVISE.
+  verdict: BLOCK
+  coverage:
+    crops_reviewed:
+    - 01-live-desktop-dark-en.png, 01-live-desktop-dark-en--full.png
+    - 02-live-desktop-light-zh.png, 03-live-mobile390-dark-en.png
+    - 04-live-no-operator-dark-en.png, 04-live-no-operator-dark-en--full.png
+    - 10-lab-desktop-dark-en.png, 10-lab-desktop-dark-en--full.png (+ y860 / y1720 bands)
+    - 11-lab-desktop-light-en.png, 12-lab-desktop-dark-zh.png, 13-lab-desktop-light-zh.png
+    - 14-lab-mobile390-dark-en.png, 16-lab-mobile390-dark-zh.png
+    - 20-board-earliest-mark.png, 21-board-flush.png, 22-board-turning-up.png
+    - 23-board-all-readings.png, 24-board-marked-turning.png, 25-board-all-early.png
+    - 26-board-all-readings-zh.png, 27-board-flush-390-zh.png
+    - 30-seeds-only-dark-en.png, 31-seeds-only-light-zh.png, 32-live-only-dark-en.png
+    - 34-seeds-only-390-dark-en.png
+    - 40-lab-empty-dark-en.png, 41-lab-empty-light-zh.png, 42-lab-empty-390-dark-en.png
+    - 43-lab-behind-dark-en.png, 45-lab-behind-390-dark-en.png
+    - 46-lab-down-dark-en.png, 47-lab-down-light-zh.png, 48-lab-down-390-dark-en.png
+    - 50-roundtrip-live-after-lab.png
+    - 'R4 parent: crops/05-mobile390-dark-en.png, crops/25-filter-delivering-zero.png'
+    crops_not_reviewed:
+    - 05-live-no-operator-light-zh.png
+    - 15-lab-mobile390-light-en.png
+    - 17-lab-mobile390-light-zh.png (+ --full)
+    - 33-live-only-light-en.png
+    - 44-lab-behind-light-zh.png
+    - 'rationale: all five are theme/locale re-cuts of states whose dark-EN and one alternate-quadrant
+      counterpart were both reviewed; every finding below is already receipted in >=2 quadrants'
+    source_files_read:
+    - mockups/refs/prophet_lab/lab.js:1-620 (mode control, band, selectors, meta, row, lead,
+      stateBlock, gapHead, plane, repaintLive)
+    - mockups/refs/prophet_lab/lab.css:1-478 (tokens, seg, selector, meta, lead, states, 560w block)
+    - mockups/refs/prophet_lab/index.html
+    - mockups/refs/institutionalize/us_stocks/board.css:400-402 (R4 control sizing)
+    computed_checks:
+    - 'control heights from the cascade: .lab-seg button = 10.5px/1 + 7+7 padding = 24.5px;
+      .bh-stamp .lab-seg button = 9.5 + 5+5 = 19.5px; .lab-cls-filter button = 11 + 5+5 + 2 borders
+      = 23px; .lab-sel button = 12 + 8+8 + 2 borders = 30px. All < the 40px floor.'
+    - 'R4 parent control height: board.css:400-402 font-size 12px, padding 4px 9px, line-height 1
+      = 20px; no min-height anywhere in board.css -> sub-40 targets are INHERITED, not introduced.'
+    - 'payload census (lab-data.js): 29 rows = 6 cls=live_forward + 23 cls=seed; lead values =
+      26x null, 1x 3, 1x 2, 1x 1 -> every non-null lead in the reference is favourable to the Lab.'
+    - 'board-count reconciliation: 14+6+9+27+7 = 63 board memberships over 29 rows (~2.2 each);
+      every board meta split reconciles to its pill count and to the 6/23 payload split.'
+    - 'down vs empty DOM equivalence: selectors() takes no state argument and no feed class reaches
+      .lab-sel/.lab-n, so the emitted pill row is byte-identical in both states.'
+    falsified_and_dropped:
+    - 'candidate: "at 390 the ticker renders BELOW the chart, so identity follows data." DROPPED —
+      R4 parent crops/05-mobile390-dark-en.png does the same. This is inherited house idiom, not an
+      R5 regression.'
+    - 'candidate: touch targets as a major. DOWNGRADED to minor on the R4 board.css:400-402
+      measurement above — R5 propagates a platform-level gap rather than creating one.'
+  overall_read: 'The central device is excellent and I want to say so before the findings: the
+    seed-versus-live separation is carried by five independent encodings at once, so a retrospective
+    seed cannot masquerade as a live sighting under any single-channel failure, and the Aug 8
+    divider is a real signature. The stale state is designed rather than flagged. The reserved hue
+    is used correctly with no new tokens. Where the artifact fails is at the two places a
+    zero-authority observation surface can least afford to fail — the quantities it prints and the
+    ink it prints them in. Six board pills assert a literal 0 from a feed that is not answering,
+    inside a design that has explicitly taught the reader that 0 means a real zero, and R4 had
+    already solved exactly this at the count-cell level. The only quantified comparison the Lab
+    ever draws against its parent system renders in accent ink when it flatters the Lab and in the
+    muted dashed null idiom when it does not — and Math.abs() on the lead means an adverse
+    magnitude is not merely absent from tonight''s payload but structurally unprintable. Separately
+    the mode swallows the whole page rather than the grid the contract scopes it to. None of this
+    is deep: three code sites and one token swap address all three majors.'
+  findings:
+  - id: VTL-401
+    severity: major
+    title: LAB mode is a full-page takeover, not a grid swap — three baseline capabilities, two of
+      them core, do not survive the mode
+    evidence: '01-live-desktop-dark-en--full.png carries the page subtitle, CANDIDATES (70 screened
+      tonight), GROUPS (8 themes in favour), EVIDENCE & RECORD and the footer link band.
+      10-lab-desktop-dark-en--full.png ends at the last Lab row (CRWV, Jul 26) — all five absent.
+      Baseline lists section.candidates (core), section.evidence_record (core), section.groups
+      (supporting) as surviving capabilities. LAB-0 §6.5 scopes the controller to "the principal
+      Prophet grid". 50-roundtrip-live-after-lab.png confirms full restoration on return
+      (lab.js:512-522 re-derives by re-executing board.js rather than restoring a snapshot).'
+    adjudication: 'CONTRACT BREACH, not a defensible reading. "The principal Prophet grid" is a
+      narrowing clause naming one region of a page that demonstrably has others; a page-level mode
+      would not have been written as "grid". The authority-hygiene defence (do not mix a
+      zero-authority stream with plan-book-feeding CANDIDATES) is real but argues for separation,
+      not deletion, and is not the argument the contract makes. Major rather than blocker because
+      the round trip restores everything, so the capability survives the artifact even though it
+      does not survive the mode.'
+    why_it_matters: 'A reference that becomes law teaches every follower surface that entering an
+      observation mode is allowed to delete two core sections of the page. The operator who flips
+      to LAB to check an early sighting loses the evidence and record surfaces they would use to
+      judge it, in the same gesture.'
+  - id: VTL-402
+    severity: major
+    title: The six board pills render literal 0 from an unavailable feed, in a design that has
+      explicitly taught the reader that 0 means a real zero
+    evidence: 'lab.js:237 — "var n = (C.feed === ''down'' || C.feed === ''empty'') ? 0 :
+      b.rows.length;" with the same conflation at lab.js:131 ("if (C.feed === ''down'' || C.feed
+      === ''empty'') return [];"). No feed-state class reaches .lab-sel or .lab-n (lab.css:133-152
+      has no zero or degraded variant; selectors() at lab.js:233-245 takes no state argument), so
+      the emitted pill-row DOM is byte-identical in both states. Rendered in all four quadrants:
+      46-lab-down-dark-en.png vs 40-lab-empty-dark-en.png, and 47-lab-down-light-zh.png vs
+      41-lab-empty-light-zh.png, differ only in the feed chip and the callout copy; both print
+      "Earliest mark 0 ... All early signs 0". Also 48-lab-down-390-dark-en.png /
+      42-lab-empty-390-dark-en.png. The artifact''s own empty copy, lab.js:423 and crop 40: "The
+      feed is reporting and it is reporting nothing. That is a real zero, not a gap."'
+    parent_behavior: 'R4 solved this at the count-cell level:
+      mockups/refs/institutionalize/us_stocks/crops/25-filter-delivering-zero.png reads "Nothing is
+      in Delivering right now / The cell is empty today, not missing: a plan lands here when at or
+      past the first target", and mutes a true-zero cell against the live ones.'
+    why_it_matters: 'This is the exact failure mode the "nulls printed, not hidden" law exists to
+      prevent — a null printed AS A ZERO. It is worse than an unlabelled zero because the reader
+      has been explicitly trained one state over to treat these zeros as trustworthy. At the pill
+      row, "we do not know" and "there are genuinely none" are pixel-identical, and it is a
+      regression against the very reference R5 layers onto.'
+  - id: VTL-403
+    severity: major
+    title: The lead metric is asymmetric by construction — favourable outcomes get a magnitude in
+      accent ink, adverse outcomes get a category in the null idiom
+    evidence: '(1) EMPHASIS. lab.css:339-344 gives .lab-lead — only ever "Seen N days before
+      Prophet" — color var(--lab-ink), background var(--lab-wash), solid --lab-rule border, weight
+      750, integer at 800 12px mono. lab.css:346-348 gives .lab-lead--none color var(--muted),
+      transparent background, DASHED border, weight 600. In 25-board-all-early.png the right rail
+      above the divider reads: Nothing to compare yet (muted), Nothing to compare yet (muted), No
+      lead — Prophet was first (muted), then Seen 1 day / Seen 2 days / Seen 3 days before Prophet
+      — three saturated accent chips that are the only chromatic ink in the right column. Same in
+      light+ZH: 26-board-all-readings-zh.png. (2) CONFLATION. lab.js:391-397 routes "No lead —
+      Prophet was first" into lab-lead--none, the ABSENCE treatment, though lab.js:394''s own
+      tooltip calls it "a real result and it is shown as it is" — sharing one idiom with the
+      genuinely unmeasurable retrospective_seed case (lab.js:398-404). (3) SIGN. lab.js:379 "var d
+      = Math.abs(r.lead);" is evaluated BEFORE the Prophet-was-first branch, so a signed -2 would
+      print "Seen 2 days before Prophet" in accent ink; the only guard is the generator''s
+      convention of writing null for adverse cases. Payload: 26x null, 3x favourable (3, 2, 1), 0
+      adverse magnitudes.'
+    why_it_matters: 'The artifact reasons correctly at lab.js:374-376 that "an empty slot would
+      read as zero lead, which is a claim nobody made", then renders a real adverse measurement in
+      the absence idiom. The aggregate glance of the flagship board is a column of blue credit
+      badges. On a surface whose entire premise is "Observation only — nothing here ranks, sizes,
+      or changes a plan", the one number it does print about itself is one-sided: you learn exactly
+      how early the Lab was and never how late.'
+  - id: VTL-404
+    severity: minor
+    title: The LIVE|LAB control relocates, resizes and re-captions between the two states of its
+      own toggle
+    evidence: 'Two mount points — lab.js:171-172 inserts into .bh-stamp with an OPERATOR VIEW
+      caption in LIVE; lab.js:163-165 re-mounts into .lab-modebar in LAB with the caption dropped
+      for the LAB · READ-ONLY eyebrow. lab.css:63 shrinks the LIVE instance to 9.5px font / 5px
+      padding (19.5px) against lab.css:84-87 (10.5px / 7px = 24.5px). Rendered:
+      50-roundtrip-live-after-lab.png places it at y~28 top-right of the h1 row;
+      20/25-board-*.png place it at y~91 inside the Lab band — a 63px drop plus a 25% size change.'
+    adjudication: 'DOWNGRADED from candidate-major. The relocation is deliberate and reasoned
+      (lab.js:142-152: the LIVE mount costs the production board zero vertical space — a legitimate
+      tradeoff explicitly argued in the source), nothing is lost, and the control stays in the same
+      visual quadrant in both states. Residue: the 19.5px LIVE instance is the smallest interactive
+      control on the page and is the entry point to the entire feature.'
+  - id: VTL-405
+    severity: minor
+    title: '"Live" is overloaded three ways within ~250px, and the EN glance copy is less plain
+      than the ZH'
+    evidence: 'Mode button LIVE, row chip "Live sighting", count "6 live", filter "Live only" —
+      all visible together in 10-lab-desktop-dark-en.png and 20-board-earliest-mark.png. ZH repeats
+      it: 实时 is both the mode toggle and 仅实时 (12, 13, 26). Separately EN prints "23 seeds" /
+      "Seeds only" — a shortening of the internal enum retrospective_seed — where ZH prints the
+      plainer 回溯 23 / 仅回溯.'
+    why_it_matters: 'Inverted bilingual parity: the English is the jargon and the Chinese is the
+      plain word, which is backwards from the doctrine''s banned-vocabulary rule on untranslated
+      internal state names.'
+  - id: VTL-406
+    severity: minor
+    title: Six counted pills form a heavily non-disjoint set rendered in a partition idiom, with
+      two near-duplicate labels
+    evidence: '14+6+9+27+7 = 63 board memberships across 29 rows (~2.2 each), with "All early signs
+      29" as the union — verified against the payload (6 live_forward + 23 seed = 29) and against
+      every board meta line (20: 3 live · 11 seeds = 14; 21: 1·5 = 6; 22: 3·6 = 9; 23: 5·22 = 27;
+      24: 2·5 = 7; 25: 6·23 = 29). "Turning up 9" and "Turning up — all readings 27" sit adjacent,
+      differ only by a suffix and 3x in count; the disambiguating sub-line (lab.js:252) appears
+      only after selection and the tooltip carrying it (lab.js:239-241) has no touch equivalent.'
+    why_it_matters: 'An adjacent row of counted pills reads pre-attentively as a partition. The
+      counts are individually honest and internally consistent — a real credit — but the row as a
+      composition invites a sum that means nothing, and the primary navigation cannot be read
+      without selecting each item to discover what it is.'
+  - id: VTL-407
+    severity: minor
+    title: No statement anywhere of how many rows are rendered, and the counts do not respond to
+      the class filter
+    evidence: 'lab.js:249-250 computes the live/seed split from `all`, not from the filtered
+      `rows`, so 32-live-only-dark-en.png shows the selected pill reading "All early signs 29"
+      above 6 rendered rows with no on-screen integer equal to what is on screen. Separately all 29
+      rows dump at once (10-lab-desktop-dark-en--full.png, 3543px). R4 states it three ways:
+      "Showing 40 of 159" + "Show 15 more" / "Show all 159" (01-live-desktop-dark-en--full.png),
+      "SETUPS 0 in Delivering" under filter, and "Showing 6 that carry no plan yet · 70 screened"
+      (R4 crops/25-filter-delivering-zero.png).'
+  - id: VTL-408
+    severity: minor
+    title: Per-row constants repeated 23 times below the divider
+    evidence: '23 identical "Seed · history, not a sighting" chips and 23 identical "Lead not
+      measurable" boxes below the "Aug 8 · Continuous live watching began here" divider —
+      10-y860.png, 10-y1720.png, and visible in 21-board-flush.png / 24-board-marked-turning.png.
+      DESIGN_DOCTRINE Law 4 bans per-row repetition of a constant.'
+    why_it_matters: 'The divider already establishes the fact for everything below it, so the
+      repetition buys nothing and spends the row''s densest region. The seed/live encoding is
+      strong enough that the chips are the most droppable of the five channels.'
+  - id: VTL-409
+    severity: minor
+    title: The designed error state has no retry and drops the last-known-good timestamp
+    evidence: 'MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:407 and :550 — "error names what failed AND what
+      still works, with retry". lab.js:410-418 offers only "Back to Live". Additionally
+      lab.js:179-182 returns early from feedStamp() before the as-of is appended, so the
+      unavailable state is the only state that does not print "last pass 15:04 ET · Aug 14" —
+      46-lab-down-dark-en.png and 47-lab-down-light-zh.png against 40 / 41.'
+    why_it_matters: 'The user is told the feed is down and denied the one fact that says how stale
+      their last read was. Minor because what-still-works IS named ("Prophet''s live board is
+      unaffected") and the escape hatch works.'
+  - id: VTL-410
+    severity: minor
+    title: Every interactive control is below the >=40x40 touch floor and the mobile block raises
+      none
+    evidence: 'lab.css:84-87 .lab-seg button = 24.5px; lab.css:63 .bh-stamp .lab-seg button =
+      19.5px; lab.css:166-169 .lab-cls-filter button = 23px (including its 1px borders);
+      lab.css:137-142 .lab-sel button = 30px. MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:645 — "Touch
+      targets >=40x40 effective". The @media (max-width:560px) block (lab.css:448-475) touches only
+      margins, font-sizes and gutters — no padding or min-height on any control.'
+    adjudication: 'DOWNGRADED from the first pass. Falsified against the parent: R4''s own controls
+      are font-size 12px / padding 4px 9px / line-height 1 = ~20px (board.css:400-402) with no
+      min-height anywhere, so R5 inherits and propagates a platform-level gap rather than creating
+      one. The part that IS R5''s own choice: .lab-sel button at 30px is a NEW primary navigation
+      control introduced at a touch breakpoint, and it is the one that clips (VTL-411).'
+  - id: VTL-411
+    severity: minor
+    title: The board strip clips hard at 390 with no affordance, and it is the target of the empty
+      state's own call to action
+    evidence: '14, 16, 34, 45, 48 and 27-board-flush-390-zh.png all cut the 3rd/4th pill dead at
+      the viewport edge. lab.css:133-135 provides overflow-x:auto and a 4px webkit scrollbar thumb
+      — invisible at rest on touch. 42-lab-empty-390-dark-en.png shows the empty state instructing
+      "try another board" while the board selector is visibly truncated mid-pill.'
+  - id: VTL-412
+    severity: minor
+    title: Three stacked disclaimer lines above the pills, two of them near-synonymous
+    evidence: 'lab.js:200-214 emits purpose / stance / authority in sequence. Lines 2-3 ("Watch —
+      don''t chase. Nothing here is a Prophet call." and "Observation only — nothing here ranks,
+      sizes, or changes a plan.") both assert absence of authority, costing three lines above the
+      first observation on every board and in every state (20-27, 40-48).'
+  - id: VTL-413
+    severity: minor
+    title: At 390 the seed chip forces a chip-row wrap and the time rail breaks mid-phrase
+    evidence: '34-seeds-only-390-dark-en.png — "crossed up" pushed to a second chip line, and the
+      rail reading "Aug 7 / signal date / not a / sighting" over four lines, the break falling
+      inside the phrase the design most needs read as a unit.'
+  preserved_strengths:
+  - 'The seed/live distinction is carried by FIVE independent encodings at once — solid vs dashed
+    spine, filled vs hollow node, "first seen / 09:52 ET" vs "signal date / not a sighting" rail
+    (lab.js:286-294), solid vs dashed chip border, and measured lead vs "Lead not measurable". A
+    retrospective seed cannot masquerade as a live sighting under any single-channel failure. The
+    "Aug 8 · Continuous live watching began here" divider is a genuine signature device. Crops
+    20-25, 43.'
+  - 'The reserved-hue slot is used correctly: lab.css:37-42 binds --lab-acc: var(--prov) /
+    --lab-ink: var(--prov-ink) with derived rule/spine/wash mixes. No new hue, no hex literal, no
+    token invented.'
+  - 'The stale state is designed rather than flagged: 43-lab-behind-dark-en.png /
+    45-lab-behind-390-dark-en.png carry a --warn callout with the exact age ("11:36 ET, 3h 28m
+    ago", lab.js:221-228), a "nothing since 11:36 ET" cap on the spine head (lab.js:437-442), and a
+    de-pulsed FEED BEHIND chip (lab.css:125-126). Stale LAB is unmistakably still LAB. The comment
+    at lab.js:217-220 correctly refuses to reuse production''s behind-the-tape banner because it
+    describes a different producer — that is the kind of distinction most references lose.'
+  - 'No reserved gap when the operator affordance is absent: 04-live-no-operator-dark-en.png — the
+    freshness cluster re-flows to the same right edge, no hole, no ghost, no placeholder.'
+  - 'The ZH direction flip is correct and the lifecycle lexicon is quoted rather than restated: 12
+    / 13 / 26 render +2.28% red and -1.15% green, 入场 / 就绪 appear verbatim from the ruled lexicon
+    (lab.js:71 LEX), and "No chart yet / 暂无图表" prints its own absence instead of collapsing the
+    cell.'
+  - 'An honest adverse result exists in the vocabulary at all: "No lead — Prophet was first"
+    (lab.js:391-397, crops 20 and 25) is a real self-critical string most systems would simply
+    omit. VTL-403 is a finding about its TREATMENT, not its existence — the writing is right and
+    the ink is wrong.'
+  - 'Internal count consistency is exact: every board meta split reconciles to its pill count and
+    both reconcile to the payload''s 6 live_forward / 23 seed. Verified across all six boards
+    (20-25). Whatever else is wrong with the pill row, its arithmetic is not.'
+second_pass: null
