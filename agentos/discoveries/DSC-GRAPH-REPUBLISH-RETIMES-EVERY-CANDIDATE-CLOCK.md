@@ -37,4 +37,13 @@ so_what: >
   never re-stamp the suppression/correction manifests, never bridge the
   frozen-clock red with a re-mint (a re-mint moves the clock FORWARD), and
   sequence the merge behind the next govrev freeze commit on main.
+kind: constraint
+scope:
+  - engine/government_revenue/candidates.py
+  - scripts/build_government_revenue_candidates.py
+  - config/government_revenue/candidate_historical_suppressions.v1.json
+  - config/government_revenue/candidate_issuance_corrections.v1.json
+verified_at: 2026-08-19
+verified_by: "measured on PR 5932: 64/64 candidate rows known_at == graph_known_at; manifest re-stamp attempt redded 7 quarantine tests; row-level discriminator + incident-class test in tests/test_government_revenue_candidates.py"
+confidence: verified
 ---

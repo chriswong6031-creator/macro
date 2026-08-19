@@ -45,8 +45,16 @@ evidence:
   - data/government_revenue/recipient_entity_graph.json (defense21-v1, digest 93171ba0e6f7…)
   - research/defense_intelligence/D2_IDENTITY_ATLAS_EXECUTION_SPEC.md §2/§4
   - PR 5932 review trail (two-round opus adversarial review)
-reversibility: >
-  Revert PR 5932 to restore defense19-v1; the refusals are re-openable by a
-  later reviewed manifest with better evidence (SAM entity registration,
-  post-acquisition Ex.21).
+affects:
+  - data/government_revenue/recipient_entity_graph.json
+  - engine/government_revenue/identity_atlas.py
+  - scripts/mint_defense21_recipient_graph.py
+confidence: high
+reversibility: easy
+decided_by: coo-fable
+decided_at: 2026-08-19
+notes: >
+  Reversal path: revert PR 5932 to restore defense19-v1; the refusals are
+  re-openable by a later reviewed manifest with better evidence (SAM entity
+  registration, post-acquisition Ex.21).
 ---
