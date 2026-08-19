@@ -6,7 +6,7 @@ question: >
   company_event.v1 without inheriting the earnings workspace keys? Is
   ticker + date + drug/device canonical event identity?
 answer: >
-  PROPOSED pending Sol. Compose with company_identity.v1 and company_event.v1
+  Accepted. Compose with company_identity.v1 and company_event.v1
   lifecycle / publication clocks (observed_at, source_available_at). Do not
   reuse fiscal event_workspace.v1 ids or earnings payload keys for catalysts.
   Canonical events must prefer source-native IDs (NCT, Drugs@FDA ApplNo, CDRH
@@ -23,7 +23,7 @@ rationale: >
   semantics onto the same id function. Sharing identity and lifecycle is the
   composition the operator asked for; sharing the earnings id is not. Using the
   JV triple as a canonical id would mint Mastermind events from a snapshot
-  join key. Fable is not the final architecture decision-maker.
+  join key. Sol accepted this ruling on 2026-08-19 (PR #5909).
 alternatives:
   - option: Reuse evt_cik{10}_{year}fy_action for all non-earnings catalysts
     why_not: >
@@ -49,6 +49,7 @@ evidence:
   - "engine/company_intelligence/contracts.py event_map claim_citations_pending is not True fails"
   - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §7"
   - "PR #5909 Sol REQUEST CHANGES 2026-08-19 jv_reconciliation_match_key"
+  - "PR #5909 Sol FINAL ACCEPTANCE 2026-08-19"
 affects:
   - "WS:BPC-JV-RECON"
   - "WS:EARNINGS-INTELLIGENCE-OS"
@@ -56,9 +57,8 @@ affects:
   - "engine/company_intelligence/events.py"
 confidence: high
 reversibility: costly
-decided_by: coo-fable
-decided_at: 2026-08-18
-review_by: 2026-08-22
+decided_by: ceo-sol
+decided_at: 2026-08-19
 ---
 
 ## Grounds
@@ -67,8 +67,8 @@ The operator required composition with event_workspace.v1 rather than a second
 event system. The load-bearing read is that the *workspace* is earnings-specific
 while the *event envelope* (identity, lifecycle, publication clocks) is the
 shareable layer. Composition happens at the envelope, not at the fiscal id.
-The JV triple is a matcher key only. This record is a proposed ruling pending
-Sol, not Fable-final architecture.
+The JV triple is a matcher key only. This record is Sol-accepted architecture
+(`decided_by: ceo-sol`).
 
 ## What would reopen this
 

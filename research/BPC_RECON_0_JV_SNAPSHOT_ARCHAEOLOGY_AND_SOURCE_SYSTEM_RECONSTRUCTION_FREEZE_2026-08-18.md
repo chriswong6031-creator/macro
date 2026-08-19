@@ -1,13 +1,13 @@
 # BPC-RECON-0 — JV snapshot archaeology and source-system reconstruction freeze
 
-Status: **AWAITING SOL ACCEPTANCE** (architecture accepted 2026-08-19; one corpus-state correction applied the same day). Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON.
+Status: **ARCHITECTURE ACCEPTED** (Sol 2026-08-19). RECON-0 complete pending merge of PR #5909. Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON.
 
-Date: 2026-08-18; rights amendment 2026-08-19; corpus-state correction 2026-08-19  
+Date: 2026-08-18; rights amendment 2026-08-19; corpus-state correction 2026-08-19; Sol acceptance writeback 2026-08-19  
 Workstream: `WS:BPC-JV-RECON`  
 Program: `biocatalyst` (`authority_class: context_only`)  
 Session: `claude/bpc-recon-0` at `macro-main/.claude/worktrees/bpc-recon-0`
 
-Architectural DECs in this freeze are **proposed rulings pending Sol**. They are not Fable-final. The JV permission premise is Chairman-confirmed (`DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN`).
+Architectural DECs in this freeze are **accepted** (`DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK`, `DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`, `DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE`; `decided_by: ceo-sol`, `decided_at: 2026-08-19`). The JV permission premise remains Chairman-confirmed (`DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN`; `decided_by: chairman`).
 
 This document is the reconstruction spec. It tells later PRs which BioPharmCatalyst (BPC) snapshot columns are primary-source facts Mastermind can rebuild, which are export-time overlays that must never become historical pre-event features, and which stay BPC editorial or model output. Authorized snapshots are the only BPC evidence used here. BPC's continuous private API is unavailable by partnership design and was not inspected.
 
@@ -320,7 +320,7 @@ Do not duplicate an owner plane that already exists.
 
 ## 7. Entity and event model
 
-Compose; do not fork a second event bus. **Proposed pending Sol.**
+Compose; do not fork a second event bus. **Accepted** (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`, `decided_by: ceo-sol`).
 
 - **Issuer** = `company_identity.v1` (CIK). Ticker is a PIT alias.
 - **Asset / product** = FDA application / device 510(k)|PMA|De Novo identifier where one exists; otherwise an explicit `unidentified_asset` coverage class. Do not invent ticker-as-drug.
@@ -403,9 +403,9 @@ Hermetic Drugs@FDA ZIP replay is a **calibration component** inside item 2. It i
 
 ---
 
-## 11. Drugs@FDA calibration component (proposed, not program-done)
+## 11. Drugs@FDA calibration component (accepted, not program-done)
 
-`DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE` is a **proposed** Sol ruling, not Fable-final, and **not** “done for the program.”
+`DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE` is **accepted** (`decided_by: ceo-sol`, 2026-08-19) and is **not** “done for the program.”
 
 Recommended later component: hermetic replay of the existing dark collector against JV Historical FDA **Approved** rows after unshift, joined by `jv_reconciliation_match_key`, emitting reconstruction-ledger states. Soak untouched. `production_ingest_allowed` on Drugs@FDA stays false until a separate rights advance.
 
@@ -421,18 +421,11 @@ Until that chain exists, the matcher is calibration, not a completed production 
 
 ---
 
-## 12. Questions for Sol (`needs_ceo`)
+## 12. Sol acceptance (resolved)
 
-Sol accepted the rights architecture, completion law, two-track roadmap, temporal poison rules, reconciliation-key ruling, source-owner map, and authority boundaries (2026-08-19). One remaining corpus-state correction is applied in §1.1 of this amendment.
+Sol accepted the architecture and the corpus-state correction on 2026-08-19 (PR #5909). RECON-0 is complete pending merge. After merge, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin SNAPSHOT-ONBOARD, CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from this PR.
 
-Primary (this correction):
-
-1. **Accept this freeze** with the three-layer workbook truth: local operator state = W4 bytes only; global corpus state = W1/W2/W3/W4 exist in the Chairman's File Library; relationship = `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. W1→W4 are not four temporal vintages unless a later census proves time-varying common-sheet content.
-
-Secondary (do not start implementation from this PR):
-
-2. Confirm `jv_reconciliation_match_key` vs source-native canonical ids (`DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE`) — already accepted as foundation.
-3. Advance `drugs_at_fda` `rights_state` for live ZIP ingest? Recommendation: **not until Concept B, and not as this PR's proof.**
+Accepted corpus laws remain: local filesystem had W4 only; W1/W2/W3/W4 exist globally in the Chairman's File Library; relationship is `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`; no predecessor hashes invented; W1→W4 are not temporal vintages without deterministic proof; export-time market/options fields cannot become historical pre-event features; finite JV snapshot rights remain separate from continuous BPC feed rights.
 
 ---
 
@@ -443,7 +436,7 @@ Secondary (do not start implementation from this PR):
 - Sibling `biocatalyst-p0-*` worktrees own the soak/product path. Open PRs to be aware of: #5821 (BCI architecture docs), #5901 (Capital Structure V2 freeze).
 - `scripts/biocatalyst_worker.py` is `canary_poll` only. `production_ingest_allowed` there means continuous producer.
 - A write into a sparse worktree's omitted `data/` **truncates** committed artifacts. Snapshot onboarding must not `git add -A` under `data/` on a sparse tree.
-- Disarming `merge-on-green` is never silent; this freeze PR **must not be armed** — it waits on Sol. A sibling session already had to restore that hold after a blanket arming sweep.
+- Disarming `merge-on-green` is never silent; this freeze PR **must not be armed**. Sol has accepted; keep `merge-on-green` off. Merge is a later session act after CI, not this writeback.
 
 ### Do not redo
 
@@ -471,6 +464,6 @@ In the same research PR as this freeze, and still not a runtime:
 - `license_class: licensed_finite_snapshot` (replaces the withdrawn `finite_jv_snapshot_seed` matching-only class)
 - source row `biopharmcatalyst_jv_snapshot` with `production_ingest_allowed: false` (continuous-producer gate) **and** explicit finite-snapshot capabilities allowed
 - tests that the benchmark YAML meaning is unchanged; finite licensed snapshot use is allowed; continuous BPC API/scraping and temporal leakage remain forbidden
-- Agent OS: `WS:BPC-JV-RECON` completion law; Chairman rights DEC; other DECs marked proposed pending Sol; predecessor-workbook DSC bounded to local operator state (File Library members still exist)
+- Agent OS: `WS:BPC-JV-RECON` active, RECON-0 done pending merge; Chairman rights DEC unchanged; architectural DECs Sol-accepted (`decided_by: ceo-sol`); predecessor-workbook DSC bounded to local operator state (File Library members still exist)
 
 No producers. No collectors. No snapshot row ingest. No soak YAML edits other than the JV source key.

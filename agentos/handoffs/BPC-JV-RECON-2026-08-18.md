@@ -4,31 +4,27 @@ session: claude/bpc-recon-0
 model: fable
 ended_because: complete
 mission: >
-  Apply Sol's one remaining factual correction on PR #5909 before architecture
-  acceptance. Keep the same PR. Bound DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK
-  to local operator state; record File Library membership of W1–W4; set
-  relationship UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS; add SNAPSHOT-ONBOARD
-  census obligation. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON. Do not
-  reopen architecture.
+  Durable Sol acceptance writeback on PR #5909. Finalize architectural DECs
+  as decided_by ceo-sol; leave Chairman rights DEC unchanged; set WS:BPC-JV-RECON
+  active with RECON-0 done. Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON,
+  Drugs@FDA, device/CDRH, PDUFA, or any runtime work. Do not reopen architecture.
 state_before: >
-  Sol accepted rights architecture, completion law, two-track roadmap, poison
-  rules, reconciliation key, source-owner map, and authority. Freeze still
-  treated W1–W3 as unrecovered / not on disk globally, and designated W4 the
-  canonical surviving capture. DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK
-  had been promoted past its local-search bound.
+  Sol accepted the corpus-state correction. Freeze, workstream, and three
+  architectural DECs still said proposed / awaiting Sol review. RECON-0 was
+  awaiting_ci with a needs_ceo block.
 changed:
-  - path: agentos/discoveries/DSC-BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK.md
-    what: Local-only claim retained; File Library membership of W1–W4 recorded; relationship UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS; temporal law added.
-  - path: research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
-    what: §1.1 three-layer census; SNAPSHOT-ONBOARD census protocol; W4 not a proven superset; W1→W4 not vintages.
+  - path: agentos/decisions/DEC-BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK.md
+    what: Accepted ruling; decided_by ceo-sol; decided_at 2026-08-19; PROPOSED pending Sol removed. Substance unchanged.
+  - path: agentos/decisions/DEC-BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE.md
+    what: Accepted ruling; decided_by ceo-sol; decided_at 2026-08-19; jv_reconciliation_match_key substance unchanged.
+  - path: agentos/decisions/DEC-BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE.md
+    what: Accepted ruling; decided_by ceo-sol; decided_at 2026-08-19; matcher remains calibration, not program completion.
   - path: agentos/workstreams/WS-BPC-JV-RECON.md
-    what: needs_ceo is the corpus-state correction; SNAPSHOT-ONBOARD next_action is census-when-bytes, do not start from #5909.
-  - path: config/biocatalyst_sources.yml
-    what: Replaced predecessor_workbooks not_recovered_on_disk with local/global/relationship/temporal fields and File Library members with sha256 null.
-  - path: tests/test_biocatalyst_source_registry.py
-    what: Pins local W4 hash, File Library membership without invented hashes, and UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS.
+    what: status active; RECON-0 done; SNAPSHOT-ONBOARD/CONTINUOUS-RECON todo; RECON-1 dropped; needs_ceo removed; next_action return to Sol after merge.
+  - path: research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
+    what: Status ARCHITECTURE ACCEPTED / RECON-0 complete pending merge; §12 needs_ceo replaced with acceptance record.
   - path: agentos/handoffs/BPC-JV-RECON-2026-08-18.md
-    what: Handoff rewritten for the corpus-state correction.
+    what: Handoff rewritten for Sol acceptance writeback.
 prs: [5909]
 verified:
   - claim: "Local operator copies of W4 still hash to the pinned SHA256."
@@ -39,13 +35,11 @@ verified:
     result: "local_operator_state w4_bytes_only_hash_verified; global_corpus_state all_four_exist_in_chairman_file_library; relationship_state UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS; four members sha256 None"
   - claim: "AgentOS records validate (0 errors)."
     command: "python3 scripts/agentos.py validate"
-    result: "234 records (27 workstreams, 76 decisions, 62 discoveries, 69 handoffs) — 0 error(s), 13 warning(s); warnings are unrelated phantom-owns-path / active-but-complete"
+    result: "235 records (28 workstreams, 76 decisions, 62 discoveries, 69 handoffs) — 0 error(s), 13 warning(s); warnings are unrelated phantom-owns-path / active-but-complete"
   - claim: "Source-registry tests pin local vs global workbook state."
     command: "python3 -m pytest tests/test_biocatalyst_source_registry.py -q"
     result: "16 passed"
 unverified:
-  - claim: "Sol accepts this remaining corpus-state correction and therefore the freeze."
-    what_would_verify: "Sol reply on WS:BPC-JV-RECON needs_ceo / PR #5909. Until then do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON."
   - claim: "W4 is a superset of W1–W3 with identical common-sheet content."
     what_would_verify: "SNAPSHOT-ONBOARD census of the four File Library bytes (SHA-256, sheet set, dimensions, content hashes, pair class). Not run in this PR."
   - claim: "File Library W4 bytes equal the locally hashed W4 SHA256."
@@ -61,14 +55,13 @@ discoveries:
   - "DSC:BPC-W1A-CANNOT-BACKFILL-CATALYST-PIT"
   - "DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK"
 unresolved:
-  - "Sol ruling on the remaining corpus-state correction (accept vs further wording vs hold)."
   - "UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS — whether W4 is a superset of W1–W3 with identical common-sheet content."
   - "Whether drugs_at_fda rights_state advances beyond review_required_before_b4 (not requested in this PR)."
   - "Device-applicant to issuer join remains unbuilt; not started."
 next_actions:
-  - "Wait for Sol review of the corpus-state correction on PR #5909. Do not arm merge-on-green. Do not squash-merge."
-  - "Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR."
-  - "On Sol PASS of the freeze only: a later session may commission SNAPSHOT-ONBOARD from a fresh origin/main worktree, with the four File Library bytes, and run the census protocol."
+  - "After #5909 merges, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin it from this PR."
+  - "Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from this PR."
+  - "Keep merge-on-green off on #5909."
 do_not_redo:
   - "Do not re-hash the locally verified W4 workbook and four CSVs; freeze §1 hashes stand."
   - "Do not re-count the Historical FDA 28.1% left-shift (4404/15700)."
@@ -97,19 +90,21 @@ danger_areas:
 
 ## §0 State — what is true right now
 
-Sol accepted the RECON-0 architecture except one corpus-state fact. That fact
-is now corrected on the same PR #5909: local operator state is W4 bytes only;
-global corpus state is W1/W2/W3/W4 exist in the Chairman's File Library;
-relationship is `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`; W1→W4 are not
-four temporal vintages unless a later census proves otherwise. No producer
-ran. SNAPSHOT-ONBOARD and CONTINUOUS-RECON were not started. The next move is
-Sol's acceptance of this correction.
+Sol accepted the RECON-0 architecture and the corpus-state correction
+(2026-08-19). Architectural DECs are `decided_by: ceo-sol`. Chairman rights
+DEC is unchanged (`decided_by: chairman`). `WS:BPC-JV-RECON` is active;
+RECON-0 is done pending merge of PR #5909; SNAPSHOT-ONBOARD and
+CONTINUOUS-RECON remain todo; matcher-only RECON-1 stays dropped. Local
+operator state had W4 only; W1/W2/W3/W4 exist in the Chairman's File Library;
+relationship is `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. No producer ran.
+The next move after merge is returning to Sol to commission the first bounded
+SNAPSHOT-ONBOARD vertical.
 
 ## §1 What is LEFT — in order
 
-1. Sol answers `needs_ceo` on `WS:BPC-JV-RECON` (accept this corpus-state correction vs further wording vs hold).
-2. Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR.
-3. Do not merge this freeze PR until Sol has accepted the correction. Do not arm `merge-on-green`.
+1. Merge PR #5909 after CI/fences conclude. Keep `merge-on-green` off.
+2. After merge, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical.
+3. Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from this PR.
 
 ## §2 What will bite you
 
@@ -126,9 +121,9 @@ unauthorized `scraped_*.json` files — they are not this freeze's evidence.
 ## §3 What was decided and found
 
 - `DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN` — Chairman authority; storage/product/repo/research allowed; no continuing API; not Prophet. Accepted by Sol.
-- `DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK` — distinct id; matching-only withdrawn; proposed pending Sol; architecture accepted.
-- `DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE` — `jv_reconciliation_match_key`; architecture accepted.
-- `DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE` — calibration component; ZIP replay is not production proof; architecture accepted.
+- `DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK` — distinct id; matching-only withdrawn; accepted (`decided_by: ceo-sol`, 2026-08-19).
+- `DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE` — `jv_reconciliation_match_key`; accepted (`decided_by: ceo-sol`, 2026-08-19).
+- `DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE` — calibration component; ZIP replay is not production proof; accepted (`decided_by: ceo-sol`, 2026-08-19).
 - `DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK` — local W4 only; File Library still holds W1–W4; relationship unresolved.
 - `DSC:BPC-HISTORICAL-FDA-CSV-LEFT-SHIFT` — unshift 4404 rows; keep raw vs repaired.
 - `DSC:BPC-OPENFDA-PRODUCER-IS-STUB` — device/openFDA work is net-new.
@@ -139,5 +134,5 @@ unauthorized `scraped_*.json` files — they are not this freeze's evidence.
 No runtime collector, no soak change, no Prophet flag, no LoA model, no live
 Drugs@FDA ZIP ingest, no snapshot row ingest in this PR, no BPC continuous API,
 no second event bus, no duplicate SEC ingest, no replacement PR, no start of
-SNAPSHOT-ONBOARD or CONTINUOUS-RECON, no merge of this PR before Sol acceptance
-of the corpus-state correction.
+SNAPSHOT-ONBOARD or CONTINUOUS-RECON, no `merge-on-green` on #5909. RECON-0 is
+complete pending merge.

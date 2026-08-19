@@ -4,7 +4,7 @@ question: >
   Is a hermetic Drugs@FDA matcher against JV Historical FDA Approved rows the
   program-completion vertical, and is CI replay of a pinned ZIP production proof?
 answer: >
-  PROPOSED pending Sol. No. A hermetic Drugs@FDA matcher may remain a recommended
+  Accepted. No. A hermetic Drugs@FDA matcher may remain a recommended
   calibration / reconstruction component inside continuous source reconstruction.
   It is not "done for the program." CI replay of a pinned ZIP is not production
   proof and must not be described as an independently useful completed production
@@ -20,7 +20,7 @@ rationale: >
   completion, or treating the unit-test ZIP as production proof, was the freeze
   defect Sol rejected. Live ZIP ingest stays blocked until a separate rights
   advance. Soak untouched. No new model. No PDUFA dates from this collector.
-  Fable is not the final architecture decision-maker.
+  Sol accepted this ruling on 2026-08-19 (PR #5909).
 alternatives:
   - option: Treat hermetic ZIP replay as the completed first production vertical
     why_not: >
@@ -41,6 +41,7 @@ evidence:
   - "collectors/biocatalyst/ has clinicaltrials_* and drugs_at_fda.py; no openfda_regulatory.py"
   - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §10–§11"
   - "PR #5909 Sol REQUEST CHANGES 2026-08-19"
+  - "PR #5909 Sol FINAL ACCEPTANCE 2026-08-19"
 affects:
   - "WS:BPC-JV-RECON"
   - "biocatalyst"
@@ -48,9 +49,8 @@ affects:
   - "engine/biocatalyst/regulatory.py"
 confidence: high
 reversibility: easy
-decided_by: coo-fable
-decided_at: 2026-08-18
-review_by: 2026-08-22
+decided_by: ceo-sol
+decided_at: 2026-08-19
 ---
 
 ## Grounds
@@ -59,7 +59,7 @@ RECON-0's job is the reconstruction spec, not a production vertical. Drugs@FDA
 remains the best calibration component because the producer and contract already
 exist and the JV Historical FDA CSV contains a matchable Approved+date fact after
 unshift. That does not make ZIP replay a live proof, and it does not complete
-the program. This record is a proposed ruling pending Sol, not Fable-final.
+the program. This record is Sol-accepted architecture (`decided_by: ceo-sol`).
 
 ## What would reopen this
 
