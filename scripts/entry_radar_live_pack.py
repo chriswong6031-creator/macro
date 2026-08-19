@@ -228,6 +228,45 @@ def slice_lanes(tickers: list[str], *, as_of: date, slice_dir: Path | None,
     return lanes, runs
 
 
+def confirmed_lane_pack_rows(lanes: dict[str, Any], tickers: list[str],
+                             *, slice_dir: Path | None) -> dict[str, dict[str, Any]]:
+    """Reshape :func:`slice_lanes`'s per-ticker aggregate into the pack's
+    ``{ticker: {g0: {...}, c5: {...}}}`` shape (W4.1).
+
+    ``live_pack.confirmed_lanes_snapshot`` is the NORMALIZER — it fills in any
+    ticker this function does not name (or a row it does not recognise) with
+    the honest ``slice_store_unconfigured`` default; this function only
+    translates the slice adapter's own aggregate into rows that normalizer can
+    recognise as ``available``.
+    """
+    per_name = lanes.get("per_name") or {}
+    out: dict[str, dict[str, Any]] = {}
+    for ticker in tickers:
+        row = per_name.get(ticker)
+        if row is None:
+            # slice_dir unset, or this ticker's slice was never looked at at
+            # all — the top-level lanes reason (or the module default) applies.
+            reason = (lanes.get("g0") or {}).get("reason") or _SLICE_UNCONFIGURED
+            unavailable = {"availability": "unavailable", "reason": reason}
+            out[ticker] = {"g0": dict(unavailable), "c5": dict(unavailable)}
+            continue
+        if not row.get("available"):
+            unavailable = {"availability": "unavailable", "reason": row.get("reason")}
+            if row.get("detail"):
+                unavailable["detail"] = row["detail"]
+            out[ticker] = {"g0": dict(unavailable), "c5": dict(unavailable)}
+            continue
+        out[ticker] = {
+            "g0": {"availability": "available",
+                   "grey_events": row.get("g0_grey_events"),
+                   "watch_events": row.get("g0_watch_events")},
+            "c5": {"availability": "available",
+                   "candidates": row.get("c5_candidates"),
+                   "episodes": row.get("c5_episodes")},
+        }
+    return out
+
+
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
@@ -323,9 +362,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         print(line, flush=True)
 
     # --- 2. freeze the substrate + invert the thresholds ---------------------
+    # The confirmed-bar G0/C5 lanes are read FIRST (from the same tickers
+    # `build_pack` will independently derive via `probe_set_snapshot`, a pure
+    # function of `probe_set`) so the v2 pack can carry them in `confirmed_lanes`
+    # — and therefore inside its own `pack_hash` — from the moment it exists,
+    # rather than as a value bolted on after the identity was already computed.
+    snapshot_tickers = list(lp.probe_set_snapshot(probe_set).get("tickers") or [])
+    slice_dir_raw = os.environ.get(_SLICE_DIR_ENV, "").strip()
+    slice_dir = Path(slice_dir_raw) if slice_dir_raw else None
+    lanes, c5_runs = slice_lanes(snapshot_tickers, as_of=as_of, slice_dir=slice_dir)
+    confirmed_lanes = confirmed_lane_pack_rows(lanes, snapshot_tickers,
+                                               slice_dir=slice_dir)
+
     pack = lp.build_pack(probe_set=probe_set, store_reader=store_reader(root),
                          as_of=as_of, built_at=iso(now) or "",
-                         vintage=f"store@{as_of.isoformat()}")
+                         vintage=f"store@{as_of.isoformat()}",
+                         confirmed_lanes=confirmed_lanes)
     newest = max((row.last_confirmed for row in pack.names
                   if row.last_confirmed), default=None)
     print(f"entry-radar-pack as_of={pack.as_of} next_session={pack.next_session} "
@@ -354,14 +406,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
               "published with proof_failed=true and the RTH evaluator must refuse the "
               "whole cycle (fail closed)", flush=True)
 
-    # --- 4. clock overlay + the confirmed-bar lanes --------------------------
+    # --- 4. clock overlay + the confirmed-bar lanes' ledger events -----------
+    # `lanes`/`c5_runs` were already computed above (step 2) so the pack could
+    # carry `confirmed_lanes`; this step applies the C5 detector RUNS (episodes/
+    # events) those slices produced to the ledger — a different consumption of
+    # the same `slice_lanes()` call, not a second read of the slice store.
     ledger = ll.LiveEpisodeLedger.load(state) if state is not None \
         else ll.LiveEpisodeLedger(None)
     confirmed_k = {row.ticker: row.confirmed_k for row in pack.names}
-    slice_dir_raw = os.environ.get(_SLICE_DIR_ENV, "").strip()
-    slice_dir = Path(slice_dir_raw) if slice_dir_raw else None
-    lanes, c5_runs = slice_lanes(list(pack.probe_set.get("tickers") or []),
-                                 as_of=as_of, slice_dir=slice_dir)
 
     deltas = [ll.apply_session_clocks(ledger, as_of_session=pack.as_of,
                                       confirmed_k_by_name=confirmed_k)]

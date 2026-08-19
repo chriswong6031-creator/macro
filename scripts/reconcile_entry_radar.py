@@ -241,17 +241,59 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> bool:
 # --------------------------------------------------------------------------- #
 # intake — spool events
 # --------------------------------------------------------------------------- #
+#: The W4 pass-envelope schema (``live_ledger.SCHEMA_ENTRY_RADAR_EVENTS``,
+#: ``live_ledger.build_event_payload()``).  Named here rather than imported at
+#: module scope so this script keeps zero top-level ``engine.entry_radar``
+#: imports (``live_ledger`` pulls in pandas); :func:`read_spool_events` asserts
+#: the two strings agree the one time it matters, at read time.
+ENVELOPE_SCHEMA = "entry_radar.events/v1"
+
+
 def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
     """Every ``mastermind.entry_event.v1`` record in the spool, in stable order.
 
-    JSONL and single-object JSON files are both accepted (the spool writes one
-    object per pass; a JSONL batch is the natural W4 shape).  A torn or foreign
-    record is COUNTED-BY-OMISSION and annotated, never repaired: a reconciler
-    that guesses at a malformed event is a reconciler that can invent one.
+    Two spool object shapes are accepted, because the REAL W4 producer and this
+    reader's original off-schema assumption disagreed (W4.1 — every envelope W4
+    has ever spooled was previously counted-by-omission as "off-schema", so
+    this reconciler's live-forward accrual was structurally unreachable from
+    the real producer regardless of what the spool held):
+
+      * **the real W4 shape** — one ``entry_radar.events/v1`` PASS ENVELOPE
+        (``live_ledger.build_event_payload()``: ``schema``/``pass_ts``/
+        ``pass_id``/``pack``/``transitions``/``events``/``health``).  ``events``
+        is UNWRAPPED; each inner event is a bare ``mastermind.entry_event.v1``
+        dict (the frozen field list, no ``schema`` key of its own — W2's
+        ``EntryEvent.to_dict()`` never emits one) and is VALIDATED against that
+        contract via ``EntryEvent.from_dict`` before it is trusted — a torn or
+        foreign inner record is counted-by-omission exactly like a torn spool
+        file always was.  Each surviving event's transport-plane ``observed_at``
+        is set to the EARLIEST envelope ``pass_ts`` across the whole spool that
+        carried its ``event_id`` (§4's "first envelope to carry it" rule) — a
+        field the immutable store never has, added to the RETURNED COPY only;
+        the append-only ``mastermind.entry_event.v1`` record itself is never
+        touched, here or anywhere upstream of this function;
+      * **a bare event record**, with an optional ``{"record": {...}}`` wrapper —
+        kept for a producer (or a test fixture) that spools one event directly
+        with no pass envelope at all.  Nothing about accepting the real envelope
+        shape narrows what this reader already accepted.
+
+    JSONL and single-object JSON files are both read (one object per line, or
+    one array).  A torn or foreign record is COUNTED-BY-OMISSION and annotated,
+    never repaired: a reconciler that guesses at a malformed event is a
+    reconciler that can invent one.
     """
     if directory is None or not directory.is_dir():
         return []
+    from engine.entry_radar.entry_events import (  # noqa: PLC0415 — lazy, see module note
+        EntryEvent,
+        EntryEventError,
+    )
+
     out: list[dict[str, Any]] = []
+    # event_id -> earliest envelope pass_ts seen for it, across every file in
+    # the spool (not just one) — first-observation is a property of the whole
+    # spool, not of whichever file happened to be read first.
+    first_pass_ts: dict[str, str] = {}
     bad = 0
     for path in sorted(directory.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in (".json", ".jsonl"):
@@ -265,18 +307,76 @@ def read_spool_events(directory: Path | None) -> list[dict[str, Any]]:
             if not isinstance(raw, dict):
                 bad += 1
                 continue
-            if str(raw.get("schema") or "") not in ("", SPOOL_EVENT_SCHEMA):
+            schema = str(raw.get("schema") or "")
+            if schema == ENVELOPE_SCHEMA:
+                pass_ts = str(raw.get("pass_ts") or "")
+                events = raw.get("events")
+                if not isinstance(events, list):
+                    bad += 1
+                    continue
+                for event_raw in events:
+                    if not isinstance(event_raw, dict):
+                        bad += 1
+                        continue
+                    try:
+                        EntryEvent.from_dict(event_raw)
+                    except (EntryEventError, TypeError, ValueError, KeyError):
+                        bad += 1
+                        continue
+                    record = dict(event_raw)
+                    record.setdefault("_spool_path", str(path))
+                    eid = str(record.get("event_id") or "")
+                    _note_earliest_pass_ts(first_pass_ts, eid, pass_ts)
+                    out.append(record)
+                continue
+            if schema not in ("", SPOOL_EVENT_SCHEMA):
                 bad += 1
                 continue
             record = raw.get("record") if isinstance(raw.get("record"), dict) else raw
             record = dict(record)
             record.setdefault("_spool_path", str(path))
             out.append(record)
+
+    # The envelope carries the transport clock; the event itself never does
+    # (EVENT_FIELDS has no `observed_at`).  Stamping it onto the RETURNED COPY
+    # here — never onto anything `EntryEventStore`/`EntryEvent` owns — is the
+    # "derived at the consumption plane, not written into the immutable event"
+    # rule (contract §18 A5.8 / LAB-0 §4).
+    for record in out:
+        eid = str(record.get("event_id") or "")
+        stamped = first_pass_ts.get(eid)
+        if stamped and not record.get("observed_at"):
+            record["observed_at"] = stamped
+
     if bad:
         print(f"::warning title=entry-radar-reconcile::{bad} spool record(s) were "
-              "unreadable or off-schema and were SKIPPED (never repaired, never "
-              "guessed) — they are absent from tonight's count", flush=True)
+              "unreadable, off-schema or a torn inner event and were SKIPPED "
+              "(never repaired, never guessed) — they are absent from tonight's "
+              "count", flush=True)
     return out
+
+
+def _note_earliest_pass_ts(candidates: dict[str, str], event_id: str,
+                           pass_ts: str) -> None:
+    """Record ``pass_ts`` for ``event_id`` iff it is earlier than any seen so far.
+
+    Comparison is by PARSED instant, not string order — ``pass_ts`` is always
+    the house ``...Z`` form in practice, but a reconciler that only worked on
+    one exact string shape is a reconciler one format drift away from silently
+    picking the wrong "earliest".  An unparseable candidate is skipped, not
+    guessed.
+    """
+    if not event_id or not pass_ts:
+        return
+    prior = candidates.get(event_id)
+    if prior is None:
+        candidates[event_id] = pass_ts
+        return
+    try:
+        if _parse_iso(pass_ts) < _parse_iso(prior):
+            candidates[event_id] = pass_ts
+    except ValueError:
+        pass
 
 
 def _iter_json_objects(text: str) -> Iterable[Any]:
