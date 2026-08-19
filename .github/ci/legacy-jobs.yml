@@ -1765,10 +1765,16 @@ jobs:
       # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
       # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
       # jsonschema/pyyaml/requests, already on this install line. No new job.
+      # tests/test_canada_canonical_board.py (CA-TRUTH, PR #5926) rides next to
+      # test_canada_build.py: same Canada-builder subject, same pandas/pyarrow
+      # install this step already owns (it also imports engine.board_ledger,
+      # already exercised by tests/test_board_ledger.py further down this same
+      # step). No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
-          tests/test_canada_build.py tests/test_commodity_signals.py
+          tests/test_canada_build.py tests/test_canada_canonical_board.py
+          tests/test_commodity_signals.py
           tests/test_commodity_index.py
           tests/test_commodity_confluence.py
           tests/test_commodity_cycle_state.py
