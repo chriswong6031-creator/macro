@@ -489,7 +489,8 @@
           </g>
         </svg>
         <div class="gauge-value {{ _vix_state }}">
-          {% if _vix and _vix.regime %}{{ td(_vix.regime) }}{% else %}—{% endif %}
+          {# vix_monitor() already carries a curated bilingual twin — render bare, never re-wrap #}
+          {% if _vix and _vix.regime %}{{ _vix.regime }}{% else %}—{% endif %}
           {{ help('VIX percentile (0=lowest ever, 100=highest ever). Regime bands: calm <16, normal 16-20, stressed 20-28, crisis >28. Technical detail in VIX section below.', 'VIX百分位（0=历史最低，100=历史最高）。区间：平静<16，正常16-20，受压20-28，危机>28。技术细节见下方VIX板块。') }}
         </div>
       </div>
@@ -889,9 +890,9 @@
   <div class="sub" style="margin-bottom:8px">
     <span style="font-size:24px;font-weight:700;font-family:var(--num)">{{ '%.2f'|format(vix.last) }}</span>
     <span class="{{ 'pos' if vix.chg < 0 else ('neg' if vix.chg > 0 else 'muted') }}" style="margin-left:6px">{{ '%+.2f'|format(vix.chg) }} ({{ '%+.1f'|format(vix.pct) }}%)</span>
-    <span class="badge" style="margin-left:8px">{{ td(vix.regime) }}</span>
+    <span class="badge" style="margin-left:8px">{{ vix.regime }}</span>
     {% if vix.ratio is not none %}
-    <div class="muted sm" style="margin-top:4px">{{ t('Term structure:','期限结构:') }} <b>{{ '%.2f'|format(vix.ratio) }}</b> — {{ td(vix.rword) if vix.rword else '' }}</div>
+    <div class="muted sm" style="margin-top:4px">{{ t('Term structure:','期限结构:') }} <b>{{ '%.2f'|format(vix.ratio) }}</b> — {{ vix.rword if vix.rword else '' }}</div>
     {% endif %}
   </div>
   {# SVG legend chips (bilingual, outside SVG) #}
