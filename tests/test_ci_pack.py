@@ -14,6 +14,15 @@ from pathlib import Path
 import pytest
 
 from scripts.ci_scope_dependencies import suite_dependency_closure
+# Plain package import (not the importlib-from-path PACK below) so this test and
+# scripts/check_contract_delta.py's own import of the same names resolve to the
+# identical `scripts.run_ci_pack` module object — see
+# test_curated_exclusive_closure_findings_is_the_shared_implementation in
+# tests/test_contract_delta.py, which pins that identity.
+from scripts.run_ci_pack import (
+    curated_exclusive_closure_findings,
+    inferred_as_if_not_exclusive,
+)
 import yaml
 
 
@@ -2165,11 +2174,20 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
     # invariant this file defends is that CI does not fan back out (86 VMs, one
-    # per legacy suite), so a FOURTH job here is the regression — while the exact
-    # ci-plan/ci-gate shape belongs to tests/test_ci_plan_workflow.py, which owns
-    # it positively. Two suites asserting the same equality would only mean two
-    # places to edit, and the weaker one would win.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "ci-gate"}
+    # per legacy suite), so a job-per-legacy-suite regression here is the thing
+    # this guards against — while the exact ci-plan/ci-gate shape belongs to
+    # tests/test_ci_plan_workflow.py, which owns it positively. Two suites
+    # asserting the same equality would only mean two places to edit, and the
+    # weaker one would win.
+    #
+    # `contract-delta` (2026-08-19) joined the allowed set deliberately: it is
+    # one small, purposeful, path-independent job — same shape as ci-plan/
+    # ci-pack/ci-gate, not a per-suite fan-out job — that re-derives two
+    # CI-contract finding classes ci-pack's own path scoping cannot reach (see
+    # scripts/check_contract_delta.py's module docstring). Adding it here is
+    # the same class of change as ci-plan/ci-gate joining originally; it does
+    # not reopen the 86-VM fan-out this test exists to prevent.
+    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
@@ -2727,11 +2745,13 @@ CURATED_EXCLUSIVE = {
 
 
 def _inferred_as_if_not_exclusive() -> dict[str, PACK.LegacyJob]:
-    """What inference WOULD derive for the curated jobs, exclusivity aside."""
-    jobs = [PACK.replace(job, exclusive=False)
-            for job in PACK.load_legacy_jobs(MANIFEST)]
-    inferred, _ = PACK.infer_job_scopes(jobs)
-    return {job.job_id: job for job in inferred}
+    """What inference WOULD derive for the curated jobs, exclusivity aside.
+
+    Thin wrapper over the shared ``scripts.run_ci_pack.inferred_as_if_not_exclusive``
+    — kept so the other call sites below need no change; the computation itself now
+    lives in exactly one place (see the import block above).
+    """
+    return inferred_as_if_not_exclusive(MANIFEST)
 
 
 def test_the_curated_exclusive_set_is_actually_declared() -> None:
@@ -2748,17 +2768,14 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
     when its own dependency changes, and reports green forever. The manifest's
     load-time coverage audit only reaches the paths a job's COMMANDS name; the
     transitive import closure is one layer deeper and is checked here.
+
+    The computation itself is ``scripts.run_ci_pack.curated_exclusive_closure_findings``
+    — the same function ``scripts/check_contract_delta.py`` calls for the head side
+    of its PR-vs-base delta, so this test and that gate can never quietly diverge on
+    what "covered" means.
     """
-    would_infer = _inferred_as_if_not_exclusive()
-    declared = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
-                if job.exclusive}
-    misses: dict[str, list[str]] = {}
-    for job_id, job in sorted(declared.items()):
-        closure = [p for p in would_infer[job_id].paths if "*" not in p]
-        assert closure, f"{job_id} derives no closure — curation cannot be checked"
-        uncovered = [p for p in closure if not PACK._matches_any(job.paths, p)]
-        if uncovered:
-            misses[job_id] = uncovered[:8]
+    misses_full = curated_exclusive_closure_findings(MANIFEST)
+    misses = {job_id: list(paths[:8]) for job_id, paths in misses_full.items()}
     assert not misses, (
         "curated exclusive scope(s) no longer cover their own import closure:\n  "
         + "\n  ".join(f"{k}: {v}" for k, v in misses.items())
