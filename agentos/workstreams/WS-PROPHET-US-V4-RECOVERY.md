@@ -226,7 +226,15 @@ waves:
       config/identity_seams.yml); the bridge projection is the seam. Child D2A
       (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader +
       guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md)
-      is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C
+      MERGED 2026-08-18 (#5894). Child D2B1 (issuer authority hardening: economic
+      issuer axis via SEC-CIK evidence — GOOG/GOOGL, FOX/FOXA, NWS/NWSA one issuer
+      each; era issuer_semantic_correction_v1 with durable migration receipts; typed
+      issuer_state refusals; reference.issuer_master + issuer_migrations datasets;
+      receipt authority decomposition; nightly refresh seam in daily.yml collect;
+      frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md)
+      shipped as #5965 — live-refresh production proof gated on the first
+      post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868
+      NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
       (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
       authorized yet — Sol reviews after each child returns."
     status: in_progress

@@ -525,6 +525,22 @@ jobs:
         run: |
           python -m scripts.check_ohlc_basis_coherence \
             || echo "::warning::check_ohlc_basis_coherence exited non-zero (see the ::error annotations above; heal with scripts/heal_breadth_split_seams.py)"
+      # V4-D2B1 live-refresh seam (§7): the Data OS security-master issuer axis has no
+      # scheduled producer of its own (reference.security_master stays frequency:
+      # on_demand) — this is the ONE place it gets a nightly chance to advance.
+      # Fail-closed inside the builder itself (scripts/build_security_master.py
+      # run_nightly_refresh): refuses non-fatally on a missing/unreadable identity
+      # input, is a byte-stable no-op when nothing advanced, and only re-stamps
+      # generated_at when inputs genuinely changed — a source failure here can never
+      # produce a falsely fresh identity generation. Always exits 0; the house
+      # `|| echo "::warning..."` is belt-and-suspenders for a hard crash outside that
+      # function (e.g. an import error), never load-bearing for the refresh logic
+      # itself.
+      - name: security master — issuer axis nightly refresh (V4-D2B1)
+        continue-on-error: true
+        run: |
+          python3 scripts/build_security_master.py --nightly \
+            || echo "::warning::build_security_master.py --nightly exited non-zero (unexpected — the function itself always returns 0; see the traceback above)"
       # Marked AFTER the coherence tripwire above so the tripwire's runtime is not
       # billed to the market-commit-push band it is measuring.
       - name: timings band — market-commit-push (W2)
