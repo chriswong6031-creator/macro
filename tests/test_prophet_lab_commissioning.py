@@ -28,6 +28,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 import scripts.prophet_lab_baseline as baseline_cli
 from engine.entry_radar import spool as radar_spool
 from engine.prophet_lab import LabRoots, build_lab_response
@@ -326,7 +328,7 @@ def test_baseline_cli_write_mints_a_schema_valid_marker(tmp_path: Path) -> None:
 
     rc = baseline_cli.main([
         "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
-        "--as-of", "2026-08-19T11:00:00Z", "--write",
+        "--as-of", "2026-08-19T11:00:00Z", "--write", "--i-know-this-is-rehearsal",
     ])
 
     assert rc == 0
@@ -351,12 +353,14 @@ def test_baseline_cli_refuses_an_as_of_that_does_not_strictly_postdate_the_lates
     rc = baseline_cli.main([
         "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
         "--as-of", "2026-08-19T10:00:00Z",  # equal to the latest pass -- not STRICTLY after
-        "--write",
+        "--write", "--i-know-this-is-rehearsal",
     ])
 
     assert rc == 1
     assert not baseline_path.exists()
-    assert "REFUSING" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "REFUSING" in err
+    assert "not strictly after the latest" in err
 
 
 def test_baseline_cli_refuses_a_naive_as_of_override(tmp_path: Path, capsys) -> None:
@@ -369,12 +373,14 @@ def test_baseline_cli_refuses_a_naive_as_of_override(tmp_path: Path, capsys) -> 
     rc = baseline_cli.main([
         "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
         "--as-of", "2026-08-19T12:00:00",  # naive -- no offset, must be refused
-        "--write",
+        "--write", "--i-know-this-is-rehearsal",
     ])
 
     assert rc == 1
     assert not baseline_path.exists()
-    assert "REFUSING" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "REFUSING" in err
+    assert "does not parse to a tz-aware ISO-8601 instant" in err
 
 
 def test_naive_baseline_marker_written_directly_is_rejected_by_the_reader(
@@ -421,7 +427,7 @@ def test_e2e_commissioning_chain_seed_then_baseline_then_live_forward(tmp_path: 
     t1 = "2026-08-19T09:30:00Z"
     rc = baseline_cli.main([
         "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
-        "--as-of", t1, "--write",
+        "--as-of", t1, "--write", "--i-know-this-is-rehearsal",
     ])
     assert rc == 0
 
@@ -464,3 +470,473 @@ def test_e2e_baseline_minted_with_no_spooled_pass_leaves_the_cli_refusing(
     roots = LabRoots(observation_baseline_path=baseline_path)
     payload = build_lab_response(roots)
     assert payload["health"]["observation_baseline_present"] is False
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 (2026-08-19) — B2: R2 client BUILD failure must never read
+# as "R2 unconfigured".
+# ---------------------------------------------------------------------------
+def test_resolve_radar_spool_client_build_failure_is_a_visible_r2_error(monkeypatch) -> None:
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+
+    result = sources_mod.resolve_radar_spool(None)
+
+    assert result.backend == "r2"
+    assert result.dir_exists is False
+    assert result.error == "r2_client_build_failed"
+    assert result.envelopes == []
+
+
+def test_resolve_radar_spool_client_build_failure_falls_back_to_local_but_stays_visible(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+
+    result = sources_mod.resolve_radar_spool(spool)
+
+    assert result.backend == "local"
+    assert result.error == "r2_client_build_failed"
+    assert len(result.envelopes) == 1
+
+
+def test_health_block_surfaces_r2_client_build_failure(monkeypatch) -> None:
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+
+    payload = build_lab_response(LabRoots())
+    health = payload["health"]
+
+    assert health["radar_spool_source"] == "r2"
+    assert health["radar_spool_error"] == "r2_client_build_failed"
+    assert payload["boards"][BOARD_G0] == []
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — B3: an errored (even fallback-salvaged) read must never
+# contribute to baseline-coverage verification -- LAB-0 §4 frozen violation
+# risk otherwise (a partial local set could look "verified" purely because
+# the evidence that would have disproven it was never read).
+# ---------------------------------------------------------------------------
+def test_response_forces_coverage_unverified_when_r2_errored_even_with_local_fallback_data(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    spool = tmp_path / "spool"
+    # This LOCAL fallback envelope's pass_ts (09:00Z) is BEFORE
+    # baseline_started_at (09:30Z) -- taken alone, it would VERIFY coverage.
+    # It must not be trusted to, because it only exists because R2 (the
+    # configured PRIMARY backend) failed and this is a partial substitute.
+    env = _envelope(pass_ts="2026-08-19T09:00:00Z", pass_id="p0",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T08:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="090000-p0", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+    baseline_path.parent.mkdir(parents=True)
+    baseline_path.write_text(json.dumps({
+        "schema": sources_mod.BASELINE_SCHEMA,
+        "baseline_started_at": "2026-08-19T09:30:00Z",
+    }), encoding="utf-8")
+
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: _ExplodingListR2())
+
+    roots = LabRoots(radar_spool_dir=spool, observation_baseline_path=baseline_path)
+    payload = build_lab_response(roots)
+
+    assert payload["health"]["radar_spool_source"] == "local"
+    assert "radar_spool_error" in payload["health"]
+    # THE property under test: coverage must be FORCED unverified, never
+    # derived from the partial fallback set, even though that set alone
+    # would otherwise satisfy baseline_coverage_verified's own check.
+    assert payload["generation"]["baseline_coverage_verified"] is False
+    g0_rows = {row["ticker"]: row for row in payload["boards"][BOARD_G0]}
+    assert g0_rows["AAA"]["observation_class"] == OBSERVATION_RETROSPECTIVE_SEED
+    assert g0_rows["AAA"]["evidence_eligible"] is False
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — S2: list_r2_keys pagination hardening.
+# ---------------------------------------------------------------------------
+class _BadPaginationR2:
+    def list_objects_v2(self, **kwargs):  # noqa: ARG002
+        return {"Contents": [{"Key": "a.json"}], "IsTruncated": True}  # no token
+
+
+class _LoopingR2:
+    def list_objects_v2(self, **kwargs):  # noqa: ARG002
+        return {"Contents": [], "IsTruncated": True, "NextContinuationToken": "same-token"}
+
+
+def test_list_r2_keys_raises_when_truncated_with_no_usable_token() -> None:
+    with pytest.raises(RuntimeError, match="no usable NextContinuationToken"):
+        radar_spool.list_r2_keys(_BadPaginationR2(), "prefix/")
+
+
+def test_list_r2_keys_raises_on_a_repeated_continuation_token() -> None:
+    with pytest.raises(RuntimeError, match="same"):
+        radar_spool.list_r2_keys(_LoopingR2(), "prefix/")
+
+
+def test_list_r2_keys_paginates_correctly_across_multiple_pages() -> None:
+    pages = [
+        {"Contents": [{"Key": "a.json"}], "IsTruncated": True, "NextContinuationToken": "t1"},
+        {"Contents": [{"Key": "b.json"}], "IsTruncated": False},
+    ]
+    calls: list[dict] = []
+
+    class _PagedR2:
+        def list_objects_v2(self, **kwargs):
+            calls.append(kwargs)
+            return pages[len(calls) - 1]
+
+    keys = radar_spool.list_r2_keys(_PagedR2(), "prefix/")
+
+    assert keys == ["a.json", "b.json"]
+    assert "ContinuationToken" not in calls[0]
+    assert calls[1].get("ContinuationToken") == "t1"
+
+
+def test_truncation_failure_surfaces_through_resolve_radar_spool_as_a_visible_error() -> None:
+    result = sources_mod.resolve_radar_spool(None, s3=_BadPaginationR2())
+    assert result.backend == "r2"
+    assert result.error is not None
+    assert "no usable NextContinuationToken" in result.error
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — S3: the local reader must not be polluted by Radar's OWN
+# sibling nomination spool sharing the same local root in production.
+# ---------------------------------------------------------------------------
+def test_resolve_radar_spool_ignores_nomination_objects_sharing_the_local_root(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "shared_spool_root"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(root, session="2026-08-19", stamp="100000-p1", envelope=env)
+    # A legitimate NOMINATION object at Radar's real sibling prefix -- same
+    # local root, different schema (mastermind.entry_probe_nomination_spool.v1).
+    nom_dir = root / "live_flow" / "entry_radar_nominations" / "2026-08-19"
+    nom_dir.mkdir(parents=True)
+    (nom_dir / "100500-hot_tape.json").write_text(json.dumps({
+        "schema": "mastermind.entry_probe_nomination_spool.v1",
+        "nominations": [],
+    }), encoding="utf-8")
+
+    result = sources_mod.resolve_radar_spool(root)
+
+    assert result.backend == "local"
+    assert len(result.envelopes) == 1
+    # The nomination object must never even be WALKED -- envelopes_skipped
+    # must stay a genuine signal, never permanently polluted by a sibling
+    # spool family sharing the same root.
+    assert result.envelopes_skipped == 0
+    assert result.files_seen == 1
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — S4: an R2 list that succeeds with zero keys still
+# discloses exactly what was queried, so an operator can check it.
+# ---------------------------------------------------------------------------
+def test_resolve_radar_spool_r2_empty_success_discloses_bucket_and_prefix(monkeypatch) -> None:
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    s3 = _FakeR2({})
+
+    result = sources_mod.resolve_radar_spool(None, s3=s3)
+
+    assert result.backend == "r2"
+    assert result.envelopes == []
+    assert result.error is None
+    assert result.bucket == "test-bucket"
+    assert result.prefix == sources_mod.RADAR_EVENT_SPOOL_PREFIX
+
+
+def test_health_block_discloses_bucket_and_prefix_when_r2_resolves(monkeypatch) -> None:
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    s3 = _FakeR2({})
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: s3)
+
+    payload = build_lab_response(LabRoots())
+
+    assert payload["health"]["radar_spool_bucket"] == "test-bucket"
+    assert payload["health"]["radar_spool_prefix_queried"] == sources_mod.RADAR_EVENT_SPOOL_PREFIX
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — per-object GET failure counting (distinct from a total
+# LIST failure): a partial read is visible via envelopes_skipped, not .error.
+# ---------------------------------------------------------------------------
+class _PartialGetFailureR2:
+    def __init__(self, objects: dict[str, bytes], bad_keys: set[str]) -> None:
+        self.objects = objects
+        self.bad_keys = bad_keys
+
+    def list_objects_v2(self, **kwargs):
+        prefix = kwargs.get("Prefix", "")
+        keys = sorted(k for k in self.objects if k.startswith(prefix))
+        return {"Contents": [{"Key": k} for k in keys], "IsTruncated": False}
+
+    def get_object(self, **kwargs):
+        key = kwargs["Key"]
+        if key in self.bad_keys:
+            raise RuntimeError(f"GetObject denied for {key}")
+        return {"Body": _Body(self.objects[key])}
+
+
+def test_resolve_radar_spool_counts_per_object_get_failures_as_skipped_not_as_error() -> None:
+    prefix = sources_mod.RADAR_EVENT_SPOOL_PREFIX
+    good = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                     events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    good_key = f"{prefix}/2026-08-19/100000-p1.json"
+    bad_key = f"{prefix}/2026-08-19/100500-p2.json"
+    s3 = _PartialGetFailureR2(
+        {good_key: json.dumps(good).encode("utf-8"), bad_key: b"irrelevant"},
+        bad_keys={bad_key},
+    )
+
+    result = sources_mod.resolve_radar_spool(None, s3=s3)
+
+    assert result.backend == "r2"
+    assert result.error is None  # a per-object failure is NOT a list failure
+    assert len(result.envelopes) == 1
+    assert result.envelopes_skipped == 1
+    assert result.files_seen == 2
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — S5: never silently overwrite an existing valid marker.
+# ---------------------------------------------------------------------------
+def test_baseline_cli_refuses_to_overwrite_an_existing_valid_marker_without_remint(
+    tmp_path: Path, capsys,
+) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+    baseline_path.parent.mkdir(parents=True)
+    baseline_path.write_text(json.dumps({
+        "schema": sources_mod.BASELINE_SCHEMA,
+        "baseline_started_at": "2026-08-19T05:00:00Z",
+    }), encoding="utf-8")
+    original = baseline_path.read_text(encoding="utf-8")
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path), "--write",
+    ])
+
+    assert rc == 1
+    assert baseline_path.read_text(encoding="utf-8") == original  # untouched
+    err = capsys.readouterr().err
+    assert "REFUSING" in err
+    assert "--remint" in err
+
+
+def test_baseline_cli_remint_overwrites_an_existing_valid_marker(tmp_path: Path) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+    baseline_path.parent.mkdir(parents=True)
+    baseline_path.write_text(json.dumps({
+        "schema": sources_mod.BASELINE_SCHEMA,
+        "baseline_started_at": "2026-08-19T05:00:00Z",
+    }), encoding="utf-8")
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T11:00:00Z", "--write",
+        "--i-know-this-is-rehearsal", "--remint",
+    ])
+
+    assert rc == 0
+    marker = json.loads(baseline_path.read_text(encoding="utf-8"))
+    assert marker["baseline_started_at"] == "2026-08-19T11:00:00.000000Z"
+
+
+def test_baseline_cli_dry_run_does_not_need_remint_even_with_an_existing_marker(
+    tmp_path: Path,
+) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+    baseline_path.parent.mkdir(parents=True)
+    baseline_path.write_text(json.dumps({
+        "schema": sources_mod.BASELINE_SCHEMA,
+        "baseline_started_at": "2026-08-19T05:00:00Z",
+    }), encoding="utf-8")
+
+    rc = baseline_cli.main(["--spool-dir", str(spool), "--baseline-path", str(baseline_path)])
+
+    assert rc == 0  # a dry run never touches the file, so no gate needed
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — S7: --as-of + --write requires --i-know-this-is-rehearsal.
+# ---------------------------------------------------------------------------
+def test_baseline_cli_as_of_plus_write_without_rehearsal_flag_is_refused(
+    tmp_path: Path, capsys,
+) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T11:00:00Z", "--write",
+    ])
+
+    assert rc == 1
+    assert not baseline_path.exists()
+    err = capsys.readouterr().err
+    assert "REFUSING" in err
+    assert "--i-know-this-is-rehearsal" in err
+
+
+def test_baseline_cli_as_of_without_write_needs_no_rehearsal_flag(tmp_path: Path) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T11:00:00Z",  # dry run -- no --write
+    ])
+
+    assert rc == 0  # a dry run never mints, so no production-corruption risk
+
+
+# ---------------------------------------------------------------------------
+# Review round 2 — N1: skew disclosure/refusal (negative and implausible),
+# and the post-write re-read consistency hard-fail.
+# ---------------------------------------------------------------------------
+def test_baseline_cli_prints_and_refuses_a_zero_skew(tmp_path: Path, capsys) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:00:00Z",  # exactly equal -- zero skew
+    ])
+
+    assert rc == 1
+    out = capsys.readouterr()
+    assert "now - latest_pass skew:" in out.out
+    assert "CLOCK SKEW" in out.err
+
+
+def test_baseline_cli_refuses_an_implausibly_large_skew(tmp_path: Path, capsys) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-09-19T10:00:00Z",  # a month later -- implausible
+        "--write", "--i-know-this-is-rehearsal",
+    ])
+
+    assert rc == 1
+    assert not baseline_path.exists()
+    err = capsys.readouterr().err
+    assert "REFUSING" in err
+    assert "implausibly large" in err
+
+
+def test_baseline_cli_prints_a_plausible_positive_skew_and_succeeds(
+    tmp_path: Path, capsys,
+) -> None:
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:05:00Z",  # 5 minutes later -- the pack cadence
+        "--write", "--i-know-this-is-rehearsal",
+    ])
+
+    assert rc == 0
+    assert "now - latest_pass skew: 0:05:00" in capsys.readouterr().out
+
+
+def test_baseline_cli_post_write_recheck_hard_fails_and_removes_the_marker_on_a_race(
+    tmp_path: Path, capsys, monkeypatch,
+) -> None:
+    """N1: simulate the spool advancing DURING the write window -- a
+    post-write re-read shows a pass at or after the just-minted
+    baseline_started_at, so the CLI must remove the marker and hard-fail
+    rather than leave a marker whose ordering guarantee is already stale."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    real_resolve = sources_mod.resolve_radar_spool
+    calls = {"n": 0}
+
+    def _racy_resolve(local_dir, **kwargs):
+        calls["n"] += 1
+        result = real_resolve(local_dir, **kwargs)
+        if calls["n"] >= 2:
+            # Simulate a NEW pass landing after the CLI's own read/write,
+            # with a pass_ts AT the just-minted baseline_started_at.
+            race_env = _envelope(
+                pass_ts="2026-08-19T10:05:00Z", pass_id="p2",
+                events=[_g0_event("evt-race", "BBB", signal_ts="2026-08-19T10:04:00Z")],
+            )
+            from dataclasses import replace as _replace
+            result = _replace(result, envelopes=[*result.envelopes, race_env])
+        return result
+
+    monkeypatch.setattr(baseline_cli.sources, "resolve_radar_spool", _racy_resolve)
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:05:00Z", "--write", "--i-know-this-is-rehearsal",
+    ])
+
+    assert rc == 1
+    assert not baseline_path.exists()  # removed after the hard-fail
+    err = capsys.readouterr().err
+    assert "HARD-FAIL" in err
+    assert "removed" in err.lower() or "Removed" in err
+
+
+def test_baseline_cli_post_write_recheck_passes_when_the_spool_is_quiet(
+    tmp_path: Path,
+) -> None:
+    """The control: no race -> the marker survives the post-write re-read."""
+    spool = tmp_path / "spool"
+    env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
+                    events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
+    _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
+    baseline_path = tmp_path / "state" / "observation_baseline.json"
+
+    rc = baseline_cli.main([
+        "--spool-dir", str(spool), "--baseline-path", str(baseline_path),
+        "--as-of", "2026-08-19T10:05:00Z", "--write", "--i-know-this-is-rehearsal",
+    ])
+
+    assert rc == 0
+    assert baseline_path.exists()

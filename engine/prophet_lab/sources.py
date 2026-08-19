@@ -83,6 +83,14 @@ class SpoolReadResult:
     — that is the R2-failed-but-a-local-fallback-succeeded case; the failure
     stays visible in the health block even though a board could still be
     built from the fallback data.
+
+    ``bucket``/``prefix`` (review S4) -- set on an R2 read (success OR
+    failure) to the exact bucket/prefix that was queried. A LIST that
+    succeeds with zero keys is legitimately ambiguous ("no passes yet" vs.
+    "pointed at the wrong bucket/prefix") and cannot be fully disambiguated
+    from inside this reader -- but naming what was actually queried lets an
+    operator check it against the writer's own config in one glance, which
+    is the health block's job whenever a result cannot self-certify.
     """
 
     configured: bool
@@ -92,6 +100,8 @@ class SpoolReadResult:
     envelopes_skipped: int = 0
     backend: str = "unconfigured"
     error: str | None = None
+    bucket: str | None = None
+    prefix: str | None = None
 
     @property
     def readable(self) -> bool:
@@ -185,6 +195,7 @@ def _read_radar_envelopes_from_r2(
     (S7's existing visibility guarantee), so a second special case is not
     needed for that path.
     """
+    resolved_bucket = bucket or radar_spool.r2_bucket_name()
     try:
         keys = radar_spool.list_r2_keys(s3, prefix, bucket=bucket)
     except Exception as exc:  # noqa: BLE001 — must surface, never raise into the API's 500 path
@@ -195,6 +206,7 @@ def _read_radar_envelopes_from_r2(
         return SpoolReadResult(
             configured=True, dir_exists=False, backend="r2",
             error=f"r2_list_failed: {type(exc).__name__}: {exc}",
+            bucket=resolved_bucket, prefix=prefix,
         )
     out: list[dict[str, Any]] = []
     bad = 0
@@ -221,7 +233,28 @@ def _read_radar_envelopes_from_r2(
     return SpoolReadResult(
         configured=True, dir_exists=True, envelopes=out,
         files_seen=files_seen, envelopes_skipped=bad, backend="r2",
+        bucket=resolved_bucket, prefix=prefix,
     )
+
+
+def _scoped_local_dir(local_dir: Path | str | None, prefix: str) -> Path | None:
+    """``local_dir/prefix``, or ``None`` when ``local_dir`` itself is ``None``.
+
+    Review S3 (day-2 commissioning-prep): production's local root
+    (``$ENTRY_RADAR_SPOOL_DIR``) is the SAME directory Radar's nomination
+    spool writes under too, at a SIBLING prefix
+    (``live_flow/entry_radar_nominations/**`` — a different schema,
+    ``mastermind.entry_probe_nomination_spool.v1``). :func:`read_radar_envelopes`
+    itself stays an unscoped, fully injectable-root reader (zero change, zero
+    risk to its own direct unit tests) — the SCOPING happens here, one layer
+    up, by handing it an already-narrowed root. Without this, every legitimate
+    nomination object under that shared local root would be walked, fail the
+    ``entry_radar.events/v1`` schema check, and count in
+    ``envelopes_skipped`` forever — permanent, meaningless pollution of a
+    counter whose whole purpose (S4/S7) is to make a REAL schema drift
+    visible.
+    """
+    return Path(local_dir) / prefix if local_dir is not None else None
 
 
 def resolve_radar_spool(
@@ -245,25 +278,52 @@ def resolve_radar_spool(
     Ladder:
 
     1. R2 credentials present (or an ``s3`` object is injected) -> read R2.
-       On success, ``backend="r2"``. On a LIST failure, fail closed: if a
+       On success, ``backend="r2"``. On a LIST failure, or a CLIENT BUILD
+       failure (review B2: credentials present but
+       :func:`engine.entry_radar.spool.r2_client_for_read` returns ``None`` —
+       e.g. boto3 absent, a malformed endpoint — must never silently read as
+       "R2 was never configured"), fail closed with a named ``.error``: if a
        local dir is ALSO configured, fall back to it (mirroring the
        writer's own R2-then-local behavior) but keep the R2 failure VISIBLE
        via ``.error`` even though the fallback succeeded; with no local dir
        configured, return the R2 failure directly (``backend="r2"``,
-       ``dir_exists=False``, ``.error`` set) — never silently empty.
+       ``dir_exists=False``, ``.error`` set) — never silently empty. Review
+       B3: the caller (``response.py``) must treat ANY ``.error`` here as
+       disqualifying baseline-coverage verification, even when a local
+       fallback produced real envelopes — a partial/wrong-source read must
+       never be trusted to prove continuous coverage.
     2. No R2 (no credentials, no injected client) -> :func:`read_radar_envelopes`
        against ``local_dir`` (``backend in ("local", "unconfigured")``).
     """
     client = s3
+    client_build_failed = False
     if client is None and radar_spool.r2_credentials_present():
         client = radar_spool.r2_client_for_read()
+        client_build_failed = client is None
+
     if client is not None:
         result = _read_radar_envelopes_from_r2(client, prefix)
         if result.error and local_dir is not None:
-            fallback = read_radar_envelopes(local_dir)
+            fallback = read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
             return replace(fallback, backend="local", error=result.error)
         return result
-    return read_radar_envelopes(local_dir)
+
+    if client_build_failed:
+        # Review B2: credentials were present (this is a REAL R2 deployment)
+        # but the client itself could not be built -- a configuration defect,
+        # not "R2 unconfigured". Never fall through to a silent local/
+        # unconfigured read with no error.
+        error = "r2_client_build_failed"
+        if local_dir is not None:
+            fallback = read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
+            return replace(fallback, backend="local", error=error)
+        return SpoolReadResult(
+            configured=True, dir_exists=False, backend="r2", error=error,
+            bucket=radar_spool.r2_bucket_name(), prefix=prefix,
+        )
+
+    # No R2 credentials at all -- the ordinary local-dev/CI/local-backend case.
+    return read_radar_envelopes(_scoped_local_dir(local_dir, prefix))
 
 
 def extract_events(

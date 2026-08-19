@@ -206,6 +206,13 @@ def r2_bucket_name() -> str:
     return _bucket()
 
 
+#: Defensive ceiling on pagination pages (review S2). A real event spool will
+#: never approach this — reaching it means the backend is behaving
+#: pathologically (e.g. echoing a stale token forever) and continuing to
+#: page would spin rather than surface a fact the caller can act on.
+_MAX_LIST_PAGES = 10_000
+
+
 def list_r2_keys(s3: Any, prefix: str, *, bucket: str | None = None) -> list[str]:
     """Every object key under ``prefix``, paginated via ``list_objects_v2``.
 
@@ -217,10 +224,19 @@ def list_r2_keys(s3: Any, prefix: str, *, bucket: str | None = None) -> list[str
     double only needs to implement ``list_objects_v2`` itself, matching the
     plain-method fakes already used against this module's write side
     (``tests/test_entry_radar_w4_lane.py``'s ``ExplodingR2``).
+
+    Review S2: ``IsTruncated=True`` with no usable ``NextContinuationToken``
+    used to silently stop pagination — the newest objects (the ones a later
+    page would have held) were dropped with no error, the exact same
+    silent-partial-read failure mode this function exists to prevent for a
+    LIST call that fails outright. Now RAISES instead. A repeated token (the
+    backend echoing the same cursor forever) and a page count past
+    :data:`_MAX_LIST_PAGES` both raise too, rather than spin.
     """
     keys: list[str] = []
     token: str | None = None
-    while True:
+    seen_tokens: set[str] = set()
+    for _ in range(_MAX_LIST_PAGES):
         kwargs: dict[str, Any] = {"Bucket": bucket or _bucket(), "Prefix": prefix}
         if token:
             kwargs["ContinuationToken"] = token
@@ -229,11 +245,27 @@ def list_r2_keys(s3: Any, prefix: str, *, bucket: str | None = None) -> list[str
             key = obj.get("Key")
             if key:
                 keys.append(key)
-        if resp.get("IsTruncated") and resp.get("NextContinuationToken"):
-            token = resp["NextContinuationToken"]
-            continue
-        break
-    return keys
+        if not resp.get("IsTruncated"):
+            return keys
+        next_token = resp.get("NextContinuationToken")
+        if not next_token:
+            raise RuntimeError(
+                f"list_objects_v2 under {prefix!r} reported IsTruncated=True with "
+                "no usable NextContinuationToken -- newer objects would be "
+                "silently dropped; refusing to treat this as a complete listing"
+            )
+        if next_token in seen_tokens:
+            raise RuntimeError(
+                f"list_objects_v2 under {prefix!r} returned the same "
+                f"NextContinuationToken twice ({next_token!r}) -- refusing an "
+                "infinite pagination loop"
+            )
+        seen_tokens.add(next_token)
+        token = next_token
+    raise RuntimeError(
+        f"list_objects_v2 under {prefix!r} did not terminate within "
+        f"{_MAX_LIST_PAGES} pages"
+    )
 
 
 def get_r2_object_bytes(s3: Any, key: str, *, bucket: str | None = None) -> bytes:

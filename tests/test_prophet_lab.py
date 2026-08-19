@@ -113,6 +113,14 @@ def roots(tmp_path: Path) -> LabRoots:
     _write_ledger(state_dir)
     return LabRoots(
         radar_spool_dir=FIXTURES / "radar_spool",
+        # Review S3: resolve_radar_spool now scopes the local read to
+        # radar_spool_dir/radar_spool_prefix (production correctness fix —
+        # the real local root also holds Radar's nomination spool at a
+        # sibling prefix). This fixture tree's own subdirectory is
+        # deliberately NOT the real prefix (ci-pack-9 census-guard dodge,
+        # see the module docstring above), so every test reading through
+        # this fixture must say so explicitly here, once.
+        radar_spool_prefix="live_flow/lab_events",
         radar_state_dir=state_dir,
         prophet_index_path=FIXTURES / "prophet_index" / "index.json",
         enrichment_library_root=FIXTURES / "stockdata",
@@ -748,7 +756,10 @@ def test_health_block_surfaces_skipped_envelopes_not_just_a_zero(
         '{"schema": "entry_radar.events/v2", "pass_ts": "2026-08-19T09:00:00Z"}',
         encoding="utf-8",
     )
-    drifted_roots = replace(roots, radar_spool_dir=drifted_spool)
+    drifted_roots = replace(
+        roots, radar_spool_dir=drifted_spool,
+        radar_spool_prefix="live_flow/entry_radar_events",  # this fixture uses the real prefix
+    )
     payload = build_lab_response(drifted_roots)
     health = payload["health"]
     assert health["radar_spool_readable"] is True
@@ -1453,6 +1464,7 @@ def test_full_width_entry_event_round_trips_through_the_reader(
     full_width_roots = replace(
         roots,
         radar_spool_dir=tmp_path / "full_width_spool",
+        radar_spool_prefix="live_flow/entry_radar_events",  # this fixture uses the real prefix
         radar_state_dir=tmp_path / "full_width_state",
     )
     payload = build_lab_response(full_width_roots)
