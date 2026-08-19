@@ -534,3 +534,60 @@ def test_committed_mirror_is_not_written_by_the_cli_tests():
         f"the committed mirror holds {obj.get('count')} rows — a test wrote its "
         f"scratch vault over the real catalog (use --repo-dir)"
     )
+
+
+# ===========================================================================
+# the correction-audit census (read-only)
+# ===========================================================================
+
+def test_census_reports_every_mismatch_direction_and_never_mutates(tmp_path,
+                                                                    canned_pdftotext,
+                                                                    monkeypatch):
+    """The audit must CLASSIFY mismatches, not force the sets equal — and it must
+    be provably read-only, because it runs against the live production vault."""
+    import scripts.research_vault_census as census
+
+    store = _store(tmp_path)
+    for n in range(3):
+        _seed_pdf(store, f"research_inbox/d{n}.pdf", _sidecar(f"desk-00000{n}"))
+    ingest_mod.run(store, tmp_path / "corpus.sqlite")
+
+    # Manufacture one of each direction.
+    (Path(store.root) / "research_vault" / "desk-000000.pdf").unlink()
+    cat = catalog_mod.read_strict(store, check_future_clock=False, check_items=False)
+    cat["items"] = [it for it in cat["items"] if it["id"] != "desk-000001"]
+    catalog_mod.publish(store, cat)
+
+    before = {k: store.get_bytes(k) for k in store.list_prefix("")}
+
+    out = tmp_path / "census.json"
+    monkeypatch.setattr(sys, "argv", ["census", "--local", str(store.root),
+                                      "--json", str(out)])
+    monkeypatch.setattr("engine.research_vault.r2_store.build_store",
+                        lambda local_dir=None: store)
+    assert census.main() == 0
+
+    report = json.loads(out.read_text())
+    mm = report["mismatches"]
+    assert mm["catalog_minus_pdf"] == ["desk-000000"]
+    assert mm["receipt_minus_catalog"] == ["desk-000001"]
+    assert mm["corpus_minus_catalog"] == ["desk-000001"]
+    assert mm["pdf_minus_catalog"] == ["desk-000001"]
+    # The receipt's source key is what makes a stranded row deterministically
+    # recoverable instead of a guess.
+    assert report["recovery_sources"]["desk-000001"] == "research_inbox/d1.pdf"
+
+    after = {k: store.get_bytes(k) for k in store.list_prefix("")}
+    assert after == before, "the census must not mutate a single object"
+
+
+def test_census_refuses_rather_than_auditing_an_unreadable_catalog(tmp_path,
+                                                                   monkeypatch):
+    import scripts.research_vault_census as census
+
+    store = _store(tmp_path)
+    store.put_bytes(catalog_mod.CATALOG_KEY, b"{broken", "application/json")
+    monkeypatch.setattr(sys, "argv", ["census", "--local", str(store.root)])
+    monkeypatch.setattr("engine.research_vault.r2_store.build_store",
+                        lambda local_dir=None: store)
+    assert census.main() == 1
