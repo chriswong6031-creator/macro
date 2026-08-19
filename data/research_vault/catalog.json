@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T06:23:08.082172+00:00",
-  "count": 1388,
+  "generated_at": "2026-08-19T07:29:23.827849+00:00",
+  "count": 1391,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -780,6 +780,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-sxz3bngdqtf-68149b",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 18, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:13Z",
+      "summary_points": [
+        "**China AI Industrialization**: Go Global 3.0 policy drives global tech flows and geopolitical positioning (geopolitical/policy theme).",
+        "**Scribe Therapeutics**: PCSK9 epigenetic silencer addresses adherence issues (fundamental catalyst for biotech).",
+        "**Targa Resources**: Permian gas growth surprises, price target raised to $299 (fundamental growth catalyst).",
+        "**Vale Copper Pressure**: Copper projects insufficient to offset iron ore earnings risk (fundamentals/risk factor).",
+        "**China Insurance Tax Policy**: Offshore insurance tax introduces regulatory risk (policy risk)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7d3kbqswapn-84db6c",
       "title": "Global Markets Daily Europe’s Fixed Maturity Funds — A Fading Marginal Tailwind for EUR Credit",
       "institution": "Goldman Sachs",
@@ -1426,6 +1447,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iempznprdlb-c66639",
+      "title": "ING Think yen why bessent backs himself for successful intervention",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T23:45:20Z",
+      "summary_points": [
+        "**Yen Undervaluation & BEER Model**: Yen ~20% undervalued vs dollar per BEER model (excludes short-term drivers), with USD/JPY persistently overvalued vs long-term fundamentals (e.g., \"highly overvalued\" in 2025 per chart).",
+        "**Banxico Intervention Mechanics**: Banxico’s 2023 $7.5bn short forward unwinding (peso-supportive) maintained USD/MXN near 17.00—demonstrating successful interplay of fundamentals (currency policy), technicals (price stability), and flows (forward book unwinding).",
+        "**US-Japan Intervention Dependencies**: US-Japan FX intervention success hinges on BoJ rate hikes (75% Sept chance), Fed cycle alignment, and Japan’s growth strategy (JPY30tr by 2040), combining geopolitics (US-Japan alliance), policies (BoJ rates), and flows (currency intervention)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -2214,6 +2254,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fa3vcg553zo-8c54c7",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 17, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T11:59:11Z",
+      "summary_points": [
+        "**Macro Policy Shift**: Global dovish stance confirmed (no rate hikes), critical for rate-sensitive assets and valuation models.",
+        "**US-China Geopolitics & AI Fundamentals**: Drone tariffs impact MSCI China; Q2 corporate AI adoption drives growth catalysts amid policy shifts.",
+        "**EM Flow Rebound**: Korea’s KOSPI +1.1% w/w on foreign inflows; Taiwan’s TAIEX +4% led by ex-TSMC tech, signaling sector-specific flow dynamics.",
+        "**German Utilities Risk**: Draft allowed returns proposal poses profitability threat; RWE noted for optionality but sector faces policy uncertainty headwinds.",
+        "**HUTCHMED Clinical Milestone**: Phase 3 SAFFRON study meets PFS/OS endpoints, pivotal for biotech sector positioning and near-term momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
       "language": "en",
       "needs_metadata": false
     },
