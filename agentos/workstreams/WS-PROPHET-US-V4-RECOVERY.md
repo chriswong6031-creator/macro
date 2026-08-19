@@ -24,6 +24,11 @@ owns_paths:
   - engine/us_turn_watch.py
   - scripts/build_turn_watch.py
   - site/turn_watch/
+  - app/prophet_lab.py
+  - engine/prophet_lab/
+  - tests/test_prophet_lab.py
+  - tests/test_prophet_lab_api.py
+  - tests/fixtures/prophet_lab/
 depends_on:
   - WS:PROPHET-US-AVAILABILITY
   - WS:LIVE-ENTRY-RADAR

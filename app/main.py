@@ -2028,6 +2028,15 @@ app.include_router(forensics_router)
 from app.biocatalyst import router as biocatalyst_router  # noqa: E402
 app.include_router(biocatalyst_router)
 
+# Prophet Operator Lab (LAB-0 / V4-B5A): authenticated, read-only projection of
+# canonical Radar live output + Prophet plan data into six frozen Lab boards.
+# Zero ranking/gating/sizing/plan-origination/signal-origination/Prophet-
+# mutation authority (all-false authority block on every response). This is a
+# paid product contract, so router wiring errors fail startup loudly, same as
+# BioCatalyst above.
+from app.prophet_lab import router as prophet_lab_router  # noqa: E402
+app.include_router(prophet_lab_router)
+
 # Capital Structure observed filing-state desk.  This is an authenticated
 # artifact-serving boundary: it reads the verified projection only and does not
 # calculate financing terms, capacity, runway, or probability in the API tier.

@@ -1,0 +1,80 @@
+{
+  "schema": "entry_radar.events/v1",
+  "pass_ts": "2026-08-18T09:30:00Z",
+  "pass_id": "entry_radar_pack",
+  "pack": {"as_of": "2026-08-17", "pack_hash": "fixture-pack-hash-1"},
+  "transitions": [],
+  "events": [
+    {
+      "event_id": "evt-g0-aaa-1",
+      "producer": "radar.entry_radar",
+      "detector_id": "G0_GREY_DOT@1",
+      "ticker": "AAA",
+      "family": "grey_dot",
+      "subtype": null,
+      "signal_ts": "2026-08-17T20:00:00Z",
+      "signal_known_ts": null,
+      "bar_state": "confirmed",
+      "final": true,
+      "quality": null,
+      "authority": {"decision_authority": false}
+    },
+    {
+      "event_id": "evt-c2a-eee-1",
+      "producer": "radar.entry_radar",
+      "detector_id": "C2_1D_TURN@1",
+      "ticker": "EEE",
+      "family": "radar_1d_turn",
+      "subtype": "c2a_kd_cross",
+      "signal_ts": "2026-08-17T20:05:00Z",
+      "signal_known_ts": null,
+      "bar_state": "confirmed",
+      "final": true,
+      "quality": null,
+      "authority": {"decision_authority": false}
+    },
+    {
+      "event_id": "evt-c3-fff-1",
+      "producer": "radar.entry_radar",
+      "detector_id": "C3_1D_4H_RECOVERY@1",
+      "ticker": "FFF",
+      "family": "radar_1d_4h_recovery",
+      "subtype": "confirmed_4h_hist_trough",
+      "signal_ts": "2026-08-17T20:10:00Z",
+      "signal_known_ts": null,
+      "bar_state": "confirmed",
+      "final": true,
+      "quality": null,
+      "authority": {"decision_authority": false}
+    },
+    {
+      "event_id": "evt-c5-ggg-1",
+      "producer": "radar.entry_radar",
+      "detector_id": "C5_BOTTOM_WATCH@1",
+      "ticker": "GGG",
+      "family": "washout_early_watch",
+      "subtype": "watch",
+      "signal_ts": "2026-08-17T20:15:00Z",
+      "signal_known_ts": null,
+      "bar_state": "confirmed",
+      "final": true,
+      "quality": null,
+      "authority": {"decision_authority": false}
+    },
+    {
+      "event_id": "evt-c1-hhh-1",
+      "producer": "radar.entry_radar",
+      "detector_id": "C1_1D_LIVE_WASHOUT@1",
+      "ticker": "HHH",
+      "family": "radar_1d_live_washout",
+      "subtype": "live_k_lt_20",
+      "signal_ts": "2026-08-17T20:20:00Z",
+      "signal_known_ts": null,
+      "bar_state": "confirmed",
+      "final": true,
+      "quality": null,
+      "authority": {"decision_authority": false}
+    }
+  ],
+  "health": {}
+}
