@@ -122,6 +122,9 @@ SYMBOL_DIR_SNAPSHOTS = ROOT / "data" / "symbol_directory" / "snapshots"
 #: Weekly SEC registrant map (V4-D2B1 §1) — read-only, collector-owned
 #: (``data/symbol_directory/**`` is never written by this script).
 CIK_MAP_DIR = ROOT / "data" / "symbol_directory" / "cik_map"
+#: Operator-ratified CIKs allowed to form a NEW multi-member issuer group (V4-D2B1
+#: FIX 5 / M3) — see :func:`_load_issuer_group_allowlist`.
+ISSUER_GROUP_ALLOWLIST_PATH = ROOT / "config" / "issuer_group_allowlist.yml"
 
 #: The exact column order written to each artifact.  These are the ``schema:`` keys of
 #: ``reference.security_master`` / ``reference.vendor_aliases`` in
@@ -460,6 +463,14 @@ def _as_iso(value: date | None) -> str | None:
     return value.isoformat() if value is not None else None
 
 
+def _relpath(path: Path) -> str:
+    """``path`` relative to :data:`ROOT` as a string, or the absolute path unchanged
+    when it is not under ROOT at all (a test monkeypatching e.g. ``CIK_MAP_DIR`` at a
+    ``tmp_path`` outside the checkout) — same guard as :func:`run_nightly_refresh`'s
+    ``missing`` list, so a receipt key never raises on a path outside the repo."""
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
+
 def _class_notation_variants(symbol: str) -> tuple[str, ...]:
     """``BRK-B`` -> ``('BRK-B', 'BRK.B')``.
 
@@ -553,30 +564,46 @@ def load_directory() -> tuple[dict[str, str], str | None, Path | None]:
     return mapping, newest.stem, newest
 
 
-def load_cik_map() -> tuple[dict[str, tuple[str, str]], str | None, Path | None]:
+def load_cik_map() -> tuple[dict[str, tuple[str, str]], str | None, Path | None, frozenset[str]]:
     """``({current symbol: (zero-padded 10-digit CIK, SEC registrant title)}, snapshot
-    date, path)`` from the NEWEST weekly ``data/symbol_directory/cik_map/*.parquet``
-    (V4-D2B1 §1).  Newest by FILENAME stem, never by mtime — same reasoning as
-    :func:`load_directory`: this repo's file mtimes are observer-stamped.
+    date, path, ambiguous_tickers)`` from the NEWEST weekly
+    ``data/symbol_directory/cik_map/*.parquet`` (V4-D2B1 §1).  Newest by FILENAME
+    stem, never by mtime — same reasoning as :func:`load_directory`: this repo's
+    file mtimes are observer-stamped.
 
-    Ticker is a unique key on the source (measured 2026-08-18: 10,398 rows, 7,998
-    CIKs, zero ticker->multi-CIK); the ``if t not in mapping`` guard is defensive only.
+    Ticker is a unique key on the MEASURED source (2026-08-18: 10,398 rows, 7,998
+    CIKs, zero ticker->multi-CIK), but V4-D2B1 FIX 7 (m1) stops trusting that as an
+    invariant: a ticker seen with MORE THAN ONE DISTINCT CIK in the same snapshot is
+    REMOVED from ``mapping`` entirely (never a silent first-wins pick) and named in
+    ``ambiguous_tickers`` instead, so a security whose evidence join hits it can be
+    typed ``AMBIGUOUS`` — reserved, fail-closed, spec §3 — rather than silently
+    resolving (or missing evidence) on whichever row happened to be read first.
     """
     import pandas as pd
 
     if not CIK_MAP_DIR.is_dir():
-        return {}, None, None
+        return {}, None, None, frozenset()
     files = sorted(p for p in CIK_MAP_DIR.glob("*.parquet"))
     if not files:
-        return {}, None, None
+        return {}, None, None, frozenset()
     newest = files[-1]
     frame = pd.read_parquet(newest)
     mapping: dict[str, tuple[str, str]] = {}
+    ambiguous: set[str] = set()
     for ticker, cik, title in zip(frame["ticker"], frame["cik"], frame["title"]):
         t = str(ticker).strip().upper()
-        if t not in mapping:
-            mapping[t] = (f"{int(cik):010d}", str(title))
-    return mapping, newest.stem, newest
+        c = f"{int(cik):010d}"
+        if t in ambiguous:
+            continue
+        existing = mapping.get(t)
+        if existing is None:
+            mapping[t] = (c, str(title))
+        elif existing[0] != c:
+            # A SECOND, DIFFERENT CIK for a ticker already seen — the ticker is
+            # ambiguous on this snapshot; remove it rather than keep the first CIK.
+            ambiguous.add(t)
+            del mapping[t]
+    return mapping, newest.stem, newest, frozenset(ambiguous)
 
 
 def load_config_maps() -> tuple[dict[str, str], dict[str, str]]:
@@ -1066,37 +1093,80 @@ def _pick_canonical_member(members: list[dict]) -> dict:
     return min(candidates, key=lambda m: m["listing_key"])
 
 
+def _load_issuer_group_allowlist(path: Path = ISSUER_GROUP_ALLOWLIST_PATH) -> frozenset[str]:
+    """CIKs ratified to form a NEW multi-member issuer group (V4-D2B1 FIX 5 / M3).
+
+    A shared SEC registrant CIK is NECESSARY evidence for grouping (spec §1) but not
+    SUFFICIENT on its own to form a group for the FIRST time: the registrant may be a
+    sponsor/trust rather than the fund for an ETP, so blind CIK-grouping risks
+    collapsing unrelated products under one issuer.  :data:`ISSUER_GROUP_ALLOWLIST_PATH`
+    is the operator ratification — only a CIK listed there may form a brand-new
+    multi-member group in :func:`apply_issuer_correction`.  Adoption of an ALREADY
+    established group (mint-once, spec §2) is unaffected: the review happened when
+    that group first formed.  Missing/empty file -> no CIK is pre-ratified (fail
+    closed, matching every other identity-authority default in this module).
+    """
+    if not path.exists():
+        return frozenset()
+    import yaml  # local: this module stays importable without a yaml dependency otherwise
+
+    payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return frozenset(
+        str(g["cik"]).strip() for g in (payload.get("groups") or []) if g.get("cik")
+    )
+
+
 def apply_issuer_correction(
     rows: list[dict], cik_map: dict[str, tuple[str, str]], snapshot_date: str | None,
-    now: str,
+    now: str, allowlist: frozenset[str] | None = None,
+    ambiguous_tickers: frozenset[str] = frozenset(),
 ) -> tuple[list[dict], list[dict]]:
     """The one authorized issuer-identity correction era (spec §4), run over the FULL
     accumulated master row set (existing + freshly minted this run) EVERY build.
 
     IDEMPOTENT BY CONSTRUCTION — mint-once for the issuer axis, the same law as
-    ``security_id`` itself.  A row is "pending" (not yet migrated by this era) iff its
-    ``issuer_state`` is falsy — exactly what a pre-D2B1 committed row (the column did
-    not exist; :func:`_read_existing` fills it ``None``) or a brand-new mint
-    (:func:`mint_master_rows` sets it ``None``) looks like.  Once a row's
-    ``issuer_state`` is stamped, this function never revisits it: a later run whose
-    seeds are unchanged sees an EMPTY pending set and returns ``(rows, [])`` — a
-    byte-stable no-op.  A CIK group that later grows to include an already-RESOLVED
-    member ADOPTS that member's existing ``issuer_id`` rather than re-running the
-    tie-break ("the id is never re-derived because membership grew", spec §2).
+    ``security_id`` itself, EXTENDED (V4-D2B1 FIX 1 / B1) to also RE-EXAMINE a row
+    whose ``issuer_state`` is already ``NO_ISSUER_EVIDENCE``: without this, a row
+    stamped unevidenced on one run could never self-heal when a LATER weekly CIK map
+    finally covers its ticker — the contract's own promised self-heal (spec §11 "FI/
+    FISV ... self-heals on a later map") was unreachable.  ``RESOLVED``,
+    ``DEFERRED_IDENTITY_EXCEPTION`` and ``EVIDENCE_CONFLICT`` rows stay mint-once —
+    never revisited: a later run whose seeds are unchanged sees the SAME pending set
+    (only the unstamped + NO_ISSUER_EVIDENCE rows) and, if none of them can change
+    outcome, returns byte-stable rows.  A CIK group that later grows to include an
+    already-RESOLVED member ADOPTS that member's existing ``issuer_id`` rather than
+    re-running the tie-break ("the id is never re-derived because membership grew",
+    spec §2).
 
-    Per-row outcome (spec §3 state semantics):
+    Per-row outcome (spec §3 state semantics, FIX 1 evidence-hit split):
       * inception_code names a fail-closed identity exception (``B``/``GOLD`` today)
         -> ``DEFERRED_IDENTITY_EXCEPTION``, excluded from grouping entirely, issuer_id
         UNCHANGED (the legacy value, if any, is retained — never cleared).
       * the evidence join (:func:`_evidence_join_key`) misses the CIK map -> state
-        ``NO_ISSUER_EVIDENCE``, issuer_id UNCHANGED (legacy value retained for a
-        pre-era row; stays ``None`` for a brand-new row — never a fresh per-listing
-        mint, the abolished fallback).  Self-heals on a later map.
-      * the join hits -> grouped by CIK; every member of a group RESOLVED, issuer_id
+        stays/becomes ``NO_ISSUER_EVIDENCE``, issuer_id UNCHANGED (legacy value
+        retained for a pre-era row; stays ``None`` for a brand-new row — never a fresh
+        per-listing mint, the abolished fallback).  Byte-stable when nothing changed.
+      * the join hits and the row's OWN committed issuer_id (if any) agrees with, or
+        is silent on (null), the CIK group's canonical id -> ``RESOLVED``, issuer_id
         set to the group's canonical id (adopted from an existing evidenced group, or
-        freshly tie-broken).  For the vast majority of rows the group has exactly one
-        member, so the canonical id IS the row's own pre-existing value — no visible
-        change, only the evidentiary status becomes explicit (spec §2).
+        freshly tie-broken — gated by the allowlist below when the group is BRAND NEW
+        and has more than one member).  For the vast majority of rows the group has
+        exactly one member, so the canonical id IS the row's own pre-existing value —
+        no visible change, only the evidentiary status becomes explicit (spec §2).
+      * the join hits but DISAGREES with a row's own already-committed non-null
+        issuer_id (a re-examined ``NO_ISSUER_EVIDENCE`` row whose legacy value points
+        at a different group than the fresh evidence would) -> ``EVIDENCE_CONFLICT``,
+        issuer_id left UNCHANGED — recorded, never executed (frozen contract §2: a
+        committed assignment never rewrites; only a future authorized era executes).
+      * the join would form a BRAND-NEW multi-member group (no member already carries
+        a committed canonical id for this CIK) whose CIK is NOT in
+        :func:`_load_issuer_group_allowlist` (V4-D2B1 FIX 5 / M3: a shared CIK is
+        necessary but not sufficient evidence — an SEC registrant may be a
+        sponsor/trust for an ETP) -> every would-be member ``EVIDENCE_CONFLICT``
+        instead of a group, issuer_id UNCHANGED, and a bare ``::warning`` names the
+        CIK and members.  Adoption of an ALREADY-established group and every
+        single-member group are UNGATED — the review already happened, or there was
+        never a grouping decision to make.
 
     Returns ``(rows, migration_rows)``.  ``rows`` is the SAME objects, mutated in
     place (every element is also referenced by the caller's ``out`` dict).
@@ -1107,10 +1177,20 @@ def apply_issuer_correction(
     """
     existed_before = {r["listing_key"] for r in rows if r.get("_existed_before")}
     exceptions = _exception_by_inception_code()
+    allowed_ciks = allowlist if allowlist is not None else _load_issuer_group_allowlist()
 
-    pending = [r for r in rows if not r.get("issuer_state")]
+    # FIX 1 (B1): re-examine unstamped rows AND rows already NO_ISSUER_EVIDENCE — the
+    # only two states a not-yet-settled row can carry.  Captured BEFORE either loop
+    # below mutates issuer_state, so a row's PRIOR state is still readable here.
+    pending = [
+        r for r in rows
+        if not r.get("issuer_state") or r.get("issuer_state") == "NO_ISSUER_EVIDENCE"
+    ]
     if not pending:
         return rows, []
+    reexamined_ids = {
+        r["security_id"] for r in pending if r.get("issuer_state") == "NO_ISSUER_EVIDENCE"
+    }
 
     # Adoption index: a CIK already carrying a RESOLVED canonical id (from an earlier
     # era run, or from a different pending group processed earlier in THIS loop —
@@ -1130,6 +1210,16 @@ def apply_issuer_correction(
             r["issuer_evidence_snapshot"] = None
             continue
         join_key = _evidence_join_key(code)
+        if join_key in ambiguous_tickers:
+            # FIX 7 (m1): the ticker maps to MORE THAN ONE distinct CIK on the
+            # source snapshot — load_cik_map() already removed it from cik_map, so
+            # this must be checked explicitly rather than read as a plain miss
+            # (NO_ISSUER_EVIDENCE would silently misreport "no evidence" for a
+            # ticker that has TOO MUCH, conflicting evidence).
+            r["issuer_state"] = "AMBIGUOUS"
+            r["issuer_cik"] = None
+            r["issuer_evidence_snapshot"] = None
+            continue
         evidence = cik_map.get(join_key)
         if evidence is None:
             r["issuer_state"] = "NO_ISSUER_EVIDENCE"
@@ -1142,11 +1232,36 @@ def apply_issuer_correction(
     migrations: list[dict] = []
     for cik, members in sorted(groups.items()):
         existing_issuer = cik_to_existing_issuer.get(cik)
+        is_new_multi_member_group = existing_issuer is None and len(members) > 1
+        if is_new_multi_member_group and cik not in allowed_ciks:
+            # FIX 5 (M3, latent): refuse to form the group — record, never execute.
+            member_ids = sorted(r["security_id"] for r in members)
+            print(
+                f"::warning title=security-master-issuer-allowlist::CIK {cik} would "
+                f"form a new {len(members)}-member issuer group "
+                f"({', '.join(member_ids)}) not in config/issuer_group_allowlist.yml "
+                "— refusing to group; recording EVIDENCE_CONFLICT for review",
+                flush=True,
+            )
+            for r in members:
+                r["issuer_state"] = "EVIDENCE_CONFLICT"
+                r["issuer_cik"] = cik
+                r["issuer_evidence_snapshot"] = snapshot_date
+                # issuer_id UNCHANGED — recorded, never executed (frozen contract §2).
+            continue
         canonical_issuer_id = existing_issuer or issuer_id(
             parse_listing_key(_pick_canonical_member(members)["listing_key"])
         )
         for r in members:
             old_issuer = r["issuer_id"]
+            if (r["security_id"] in reexamined_ids and old_issuer is not None
+                    and old_issuer != canonical_issuer_id):
+                # FIX 1(b): a re-examined row's own committed value disagrees with
+                # where fresh evidence would group it — recorded, never executed.
+                r["issuer_state"] = "EVIDENCE_CONFLICT"
+                r["issuer_cik"] = cik
+                r["issuer_evidence_snapshot"] = snapshot_date
+                continue
             r["issuer_state"] = "RESOLVED"
             r["issuer_cik"] = cik
             r["issuer_evidence_snapshot"] = snapshot_date
@@ -1353,13 +1468,32 @@ def _multi_security_issuer_groups(master_rows: list[dict]) -> list[dict]:
     ]
 
 
-def build(out_dir: Path, dry_run: bool = False) -> dict:
-    """Do the whole build and return the receipt payload (written unless ``dry_run``)."""
+def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = False) -> dict:
+    """Do the whole build and return the receipt payload (written unless ``dry_run``).
+
+    ``allow_missing_evidence`` (V4-D2B1 FIX 2 / B2 manual-path hardening): a missing or
+    empty ``CIK_MAP_DIR`` — no weekly evidence snapshot has ever landed — refuses with
+    :class:`IdentityError` UNLESS this is set.  Without this guard, a manual run on a
+    bare checkout (no ``data/symbol_directory/cik_map/`` at all) would silently mint
+    EVERY row ``NO_ISSUER_EVIDENCE``, which is exactly the false-freshness escape §7
+    law (a) already closes for the nightly seam — the CLI path needed the same fence,
+    because a human blind to the missing rail could commit that output as if it were a
+    normal build.  Passing this flag is an explicit, printed (see :func:`main`)
+    admission that no CIK evidence exists yet — the correct state on a genuinely bare
+    checkout before the first weekly map lands.
+    """
     universe = load_universe()
     delisted = load_delisted()
     directory, snapshot_date, snapshot_path = load_directory()
     fixups, migrations = load_config_maps()
-    cik_map, cik_snapshot_date, cik_map_path = load_cik_map()
+    cik_map, cik_snapshot_date, cik_map_path, ambiguous_tickers = load_cik_map()
+    if cik_map_path is None and not allow_missing_evidence:
+        raise IdentityError(
+            "data/symbol_directory/cik_map has no snapshot — refusing to mint issuer "
+            "evidence blind (every row would silently become NO_ISSUER_EVIDENCE). "
+            "Pass allow_missing_evidence=True (CLI: --allow-missing-evidence) to build "
+            "anyway, e.g. on a bare checkout before the first weekly CIK map lands."
+        )
 
     resolutions = resolve_universe(universe, delisted, directory, snapshot_date)
     resolved = [r for r in resolutions if r.listing_key is not None]
@@ -1380,7 +1514,7 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
         now,
     )
     master_rows, fresh_issuer_migrations = apply_issuer_correction(
-        master_rows, cik_map, cik_snapshot_date, now
+        master_rows, cik_map, cik_snapshot_date, now, ambiguous_tickers=ambiguous_tickers
     )
 
     fresh_aliases = build_alias_rows(resolutions, ids)
@@ -1408,13 +1542,24 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
         "producer": "scripts/build_security_master.py",
         "code_version": _git_sha(),
         "generated_at": now,
+        # V4-D2B1 FIX 2 (B2 n2): every identity rail is ALWAYS named here, even when
+        # absent (value null) — a dropped key silently reads as "not an input", which
+        # is exactly the shape that let the listing-snapshots rail go uncovered by the
+        # nightly preflight (only the 5 seed files + the CIK rail were named/checked).
+        # Keyed on the RAIL'S OWN DIRECTORY (stable across which file is newest), not
+        # the newest file's path, so the key never depends on which snapshot exists.
         "inputs": {
-            str(path.relative_to(ROOT)): _sha256(path)
-            for path in (
-                CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML, TICKER_ALIASES_PY,
-                *( [snapshot_path] if snapshot_path is not None else [] ),
-                *( [cik_map_path] if cik_map_path is not None else [] ),
-            )
+            **{
+                str(path.relative_to(ROOT)): _sha256(path)
+                for path in (CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML,
+                            TICKER_ALIASES_PY)
+            },
+            _relpath(SYMBOL_DIR_SNAPSHOTS): (
+                _sha256(snapshot_path) if snapshot_path is not None else None
+            ),
+            _relpath(CIK_MAP_DIR): (
+                _sha256(cik_map_path) if cik_map_path is not None else None
+            ),
         },
         "symbol_directory_snapshot": snapshot_date,
         "cik_map_snapshot": cik_snapshot_date,
@@ -1478,6 +1623,10 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
             "state_counts": _issuer_state_counts(master_rows),
             "multi_security_groups": _multi_security_issuer_groups(master_rows),
             "migrations_this_run": len(fresh_issuer_migrations),
+            # V4-D2B1 FIX 9 (n3): the ALL-TIME count, alongside the per-run count —
+            # "migrations_this_run: 0" alone reads as "no migrations ever happened",
+            # which is false on every run after the era's first.
+            "era_migrations_total": len(issuer_migration_rows),
             "evidence_snapshot": cik_snapshot_date,
         },
     }
@@ -1504,6 +1653,25 @@ _NIGHTLY_ARTIFACT_NAMES = (MASTER_NAME, ALIASES_NAME, ISSUER_MASTER_NAME, ISSUER
 
 def _read_bytes_if_exists(path: Path) -> bytes | None:
     return path.read_bytes() if path.exists() else None
+
+
+def _identity_rail_unreadable(directory: Path) -> bool:
+    """True iff ``directory`` cannot supply a readable newest-snapshot parquet.
+
+    Shared preflight test for BOTH silently-degrading identity rails
+    (:data:`CIK_MAP_DIR`, :data:`SYMBOL_DIR_SNAPSHOTS`) — see :func:`run_nightly_refresh`.
+    """
+    if not directory.is_dir():
+        return True
+    files = sorted(p for p in directory.glob("*.parquet"))
+    if not files:
+        return True
+    try:
+        import pandas as pd
+        pd.read_parquet(files[-1])
+    except Exception:  # noqa: BLE001 — an unreadable snapshot refuses, never half-runs
+        return True
+    return False
 
 
 def _restore_artifacts(out_dir: Path, before: dict[str, bytes | None],
@@ -1542,13 +1710,19 @@ def run_nightly_refresh(out_dir: Path) -> int:
     restored to its prior bytes.  Non-fatal throughout: this function always returns
     0 — a nightly step must never fail the collect job over an identity refresh.
 
-    Law (a) covers TWO distinct identity inputs, both refused pre-flight (never left
-    to ``build()``): the ``required`` seed/config files above, and the ``CIK_MAP_DIR``
-    evidence rail below (escape #11) — ``load_cik_map()`` itself silently degrades to
-    an empty mapping when that directory is missing/empty/unreadable (correct for the
-    one-shot ``build()``/``main()`` CLI path, where "no CIK evidence yet" is a valid
-    state to mint from), which would otherwise let the nightly regenerate a falsely
-    fresh artifact where every issuer axis value quietly goes NO_ISSUER_EVIDENCE.
+    Law (a) covers THREE distinct identity inputs, all refused pre-flight (never left
+    to ``build()``): the ``required`` seed/config files above, the ``CIK_MAP_DIR``
+    evidence rail (escape #11), and the ``SYMBOL_DIR_SNAPSHOTS`` listing rail (V4-D2B1
+    FIX 2 / B2/n2).  ``load_cik_map()``/``load_directory()`` both silently degrade to
+    an empty mapping when their directory is missing/empty/unreadable (correct for the
+    one-shot ``build()``/``main()`` CLI path, where "no evidence yet" is a valid state
+    to mint from — hardened for THAT path too, see ``allow_missing_evidence`` on
+    :func:`build`), which would otherwise let the nightly regenerate a falsely fresh
+    artifact: an empty CIK map mints every row ``NO_ISSUER_EVIDENCE``, and an empty
+    listing-snapshots dir starves ``resolve_universe`` of any venue evidence at all,
+    collapsing coverage toward zero while still returning a clean receipt with no
+    ``notes`` and a success ``::notice`` — the false-freshness escape this law exists
+    to close, on either rail.
     """
     required = (CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML, TICKER_ALIASES_PY)
     missing = [
@@ -1563,6 +1737,19 @@ def run_nightly_refresh(out_dir: Path) -> int:
         )
         return 0
 
+    # V4-D2B1 FIX 2 (B2/n2): the listing-snapshots rail was not covered by the
+    # cik_map fence commit ed49d19083d0 landed — an empty/missing snapshots dir made
+    # load_directory() silently return ({}, None, None), so a nightly run over it
+    # would resolve almost nothing (coverage collapses toward zero) yet still stamp a
+    # fresh generation and a success ::notice. Same law as the cik_map rail below.
+    if _identity_rail_unreadable(SYMBOL_DIR_SNAPSHOTS):
+        print(
+            "::warning title=security-master-nightly::identity input missing: "
+            "symbol_directory snapshots — refusing to regenerate; last-good "
+            "artifacts retained", flush=True,
+        )
+        return 0
+
     # V4-D2B1 escape #11: load_cik_map() silently degrades to an empty mapping when
     # CIK_MAP_DIR is missing/empty/unreadable (the manual `build()` path treats that
     # as "no CIK evidence yet", not a failure — every row just mints NO_ISSUER_EVIDENCE
@@ -1570,20 +1757,7 @@ def run_nightly_refresh(out_dir: Path) -> int:
     # lane this widens into an escape: the same silent degrade there was a fail-CLOSED
     # violation of law (a) — a missing evidence rail must refuse, never regenerate a
     # falsely-fresh artifact where every issuer axis value quietly goes NO_ISSUER_EVIDENCE.
-    cik_map_unreadable = False
-    if not CIK_MAP_DIR.is_dir():
-        cik_map_unreadable = True
-    else:
-        cik_map_files = sorted(p for p in CIK_MAP_DIR.glob("*.parquet"))
-        if not cik_map_files:
-            cik_map_unreadable = True
-        else:
-            try:
-                import pandas as pd
-                pd.read_parquet(cik_map_files[-1])
-            except Exception:  # noqa: BLE001 — an unreadable snapshot refuses, never half-runs
-                cik_map_unreadable = True
-    if cik_map_unreadable:
+    if _identity_rail_unreadable(CIK_MAP_DIR):
         print(
             "::warning title=security-master-nightly::identity input missing: "
             "cik_map — refusing to regenerate; last-good artifacts retained",
@@ -1597,6 +1771,11 @@ def run_nightly_refresh(out_dir: Path) -> int:
     try:
         receipt = build(out_dir, dry_run=False)
     except Exception as exc:  # noqa: BLE001 — any read/parse failure refuses, never half-writes
+        # FIX 4 (M2): a mid-build failure can leave PARTIAL writes on disk (build()
+        # writes master -> aliases -> issuer_master -> issuer_migrations -> receipt in
+        # sequence, and any of those can raise) — restore ALL artifacts to last-good
+        # rather than leaving a torn mix of new-and-old bytes.
+        _restore_artifacts(out_dir, before, before_receipt)
         print(
             f"::warning title=security-master-nightly::build failed reading identity "
             f"inputs ({exc}) — keeping last-good artifacts, generated_at not "
@@ -1688,12 +1867,29 @@ def main(argv: list[str] | None = None) -> int:
             "inputs genuinely changed. Always exits 0. Ignores --dry-run/--report."
         ),
     )
+    parser.add_argument(
+        "--allow-missing-evidence", action="store_true",
+        help=(
+            "V4-D2B1 FIX 2 (B2 manual-path hardening): opt out of the refusal that "
+            "otherwise raises when data/symbol_directory/cik_map has no snapshot — "
+            "build anyway, minting every row NO_ISSUER_EVIDENCE. Prints a warning. "
+            "Ignored under --nightly (the nightly seam has its own, always-refusing "
+            "preflight and never reaches this flag)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.nightly:
         return run_nightly_refresh(Path(args.out))
 
-    receipt = build(Path(args.out), dry_run=args.dry_run)
+    if args.allow_missing_evidence:
+        print(
+            "::warning title=security-master-manual::--allow-missing-evidence set — "
+            "building without CIK issuer evidence; every row will mint "
+            "NO_ISSUER_EVIDENCE", flush=True,
+        )
+    receipt = build(Path(args.out), dry_run=args.dry_run,
+                    allow_missing_evidence=args.allow_missing_evidence)
     _report(receipt, verbose=args.report)
     # A NOTE IS A FAILURE, not a warning (adversarial review, 2026-08-13).  `notes`
     # carries exactly two things, and neither may pass: a rename the repo's own maps

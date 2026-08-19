@@ -62,6 +62,20 @@ master:
   # canonical reader (securities_of_issuer / issuer_of_security), current-identity
   # only — no historical issuer lineage (CIK evidence is a current-registrant
   # observation).
+  #
+  # ISSUER GROUP ALLOWLIST (V4-D2B1 FIX 5, 2026-08-19): a shared CIK is NECESSARY but
+  # not SUFFICIENT evidence to group two-plus securities into a new multi-member
+  # issuer for the first time — an SEC registrant CIK can be a sponsor/trust for
+  # ETPs, so blind CIK-grouping risks collapsing unrelated products under one issuer
+  # (this corrects the original §1 sentence "ETFs/trusts group to the fund's own
+  # CIK", which is not a general property). The era stage
+  # (scripts/build_security_master.py::apply_issuer_correction) forms a NEW
+  # multi-member group ONLY when its CIK is listed in
+  # config/issuer_group_allowlist.yml; an unlisted CIK's would-be group members are
+  # typed EVIDENCE_CONFLICT instead (recorded, never executed — spec §2), with a
+  # ::warning naming the CIK and members. Adoption of an ALREADY-established group is
+  # unaffected. This is a documentary/governance gate, not a competing identity
+  # surface, so it is not listed under `surfaces:` below.
   models_lifecycle: false
 
 surfaces:

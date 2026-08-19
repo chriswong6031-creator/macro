@@ -557,6 +557,75 @@ def test_the_issuer_axis_is_registered_in_the_dataset_registry() -> None:
     assert load_registry().get("reference.issuer_migrations").status is DatasetStatus.PRODUCED
 
 
+# ── V4-D2B1 FIX 7 (m1) — a ticker seen with 2+ distinct CIKs is AMBIGUOUS, never
+# a silent first-wins resolution ─────────────────────────────────────────────────
+def test_load_cik_map_removes_a_ticker_seen_with_two_distinct_ciks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ticker appearing twice with DIFFERENT CIKs on the same snapshot must be
+    dropped from ``mapping`` entirely (never a silent first-wins pick) and named in
+    the returned ``ambiguous_tickers`` set instead."""
+    cik_map_dir = tmp_path / "cik_map"
+    cik_map_dir.mkdir()
+    pd.DataFrame([
+        {"ticker": "DUP", "cik": 1, "title": "Company One"},
+        {"ticker": "DUP", "cik": 2, "title": "Company Two"},
+        {"ticker": "CLEAN", "cik": 3, "title": "Company Three"},
+    ]).to_parquet(cik_map_dir / "2026-08-19.parquet", index=False)
+    monkeypatch.setattr(BUILD, "CIK_MAP_DIR", cik_map_dir)
+
+    mapping, snapshot_date, path, ambiguous = BUILD.load_cik_map()
+    assert snapshot_date == "2026-08-19"
+    assert "DUP" not in mapping, "an ambiguous ticker must never resolve first-wins"
+    assert ambiguous == frozenset({"DUP"})
+    assert mapping["CLEAN"] == ("0000000003", "Company Three")
+
+
+def test_a_repeated_identical_cik_is_not_ambiguous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ticker repeated with the SAME CIK (e.g. a duplicated source row) is not an
+    ambiguity — only a DIFFERING second CIK removes the ticker."""
+    cik_map_dir = tmp_path / "cik_map"
+    cik_map_dir.mkdir()
+    pd.DataFrame([
+        {"ticker": "SAME", "cik": 5, "title": "Company Five"},
+        {"ticker": "SAME", "cik": 5, "title": "Company Five"},
+    ]).to_parquet(cik_map_dir / "2026-08-19.parquet", index=False)
+    monkeypatch.setattr(BUILD, "CIK_MAP_DIR", cik_map_dir)
+
+    mapping, _snap, _path, ambiguous = BUILD.load_cik_map()
+    assert ambiguous == frozenset()
+    assert mapping["SAME"] == ("0000000005", "Company Five")
+
+
+def test_an_ambiguous_ticker_types_its_security_ambiguous_not_a_silent_miss() -> None:
+    """FIX 7: a security whose evidence join key hits the ambiguous set must be typed
+    ``AMBIGUOUS`` (spec §3, reserved/fail-closed) — never silently read as a plain
+    evidence-miss (``NO_ISSUER_EVIDENCE``), which would misreport "no evidence" for a
+    ticker that actually has TOO MUCH, conflicting evidence."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-DUP", "issuer_id": "ISS:US-XNAS-DUP",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-DUP", "mic": "XNAS", "inception_code": "DUP"},
+    ]
+    # DUP is intentionally ABSENT from cik_map (load_cik_map would have removed it) —
+    # the ambiguous_tickers set is the ONLY signal apply_issuer_correction sees.
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, {}, "2026-08-19", now, ambiguous_tickers=frozenset({"DUP"}))
+    assert out_rows[0]["issuer_state"] == "AMBIGUOUS"
+    assert out_rows[0]["issuer_id"] == "ISS:US-XNAS-DUP", "legacy value retained, never cleared"
+    assert out_rows[0]["issuer_cik"] is None
+    assert migrations == []
+
+    # Mint-once: a second pass never re-examines an AMBIGUOUS row.
+    again_rows, again_migrations = BUILD.apply_issuer_correction(
+        out_rows, {}, "2026-08-19", now, ambiguous_tickers=frozenset({"DUP"}))
+    assert again_rows == out_rows
+    assert again_migrations == []
+
+
 # ── V4-D2B1: pure functions over fixtures ───────────────────────────────────────
 def test_current_symbol_walks_the_same_chain_forward(monkeypatch: pytest.MonkeyPatch) -> None:
     """The forward mirror of :func:`BUILD._inception_code` — same rename records,
@@ -586,8 +655,15 @@ def test_pick_canonical_member_applies_rule_4_on_a_tie(monkeypatch: pytest.Monke
 
 
 def test_apply_issuer_correction_groups_by_cik_and_is_idempotent() -> None:
-    """Pure-function proof over a hand-built fixture — the whole era in miniature."""
+    """Pure-function proof over a hand-built fixture — the whole era in miniature.
+
+    ``allowlist`` is passed explicitly (FIX 5 / M3): this test's synthetic CIK
+    "0000000001" is not in the real config/issuer_group_allowlist.yml, and this test
+    is about grouping mechanics/idempotency, not the allowlist gate — that gate has
+    its own dedicated tests below.
+    """
     now = "2026-08-19T00:00:00"
+    allowlist = frozenset({"0000000001"})
     rows = [
         {"security_id": "SEC:US-XNAS-AAA", "issuer_id": "ISS:US-XNAS-AAA",
          "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
@@ -602,7 +678,8 @@ def test_apply_issuer_correction_groups_by_cik_and_is_idempotent() -> None:
     cik_map = {"AAA": ("0000000001", "Test Co A"), "BBB": ("0000000001", "Test Co A")}
     # CCC has no evidence at all — NO_ISSUER_EVIDENCE, legacy value retained.
 
-    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-15", now)
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, cik_map, "2026-08-15", now, allowlist=allowlist)
     by_id = {r["security_id"]: r for r in out_rows}
     assert by_id["SEC:US-XNAS-AAA"]["issuer_state"] == "RESOLVED"
     assert by_id["SEC:US-XNAS-BBB"]["issuer_state"] == "RESOLVED"
@@ -615,8 +692,8 @@ def test_apply_issuer_correction_groups_by_cik_and_is_idempotent() -> None:
 
     # Idempotent: a second pass over the SAME (now-stamped) rows is a byte-stable
     # no-op — every row's issuer_state is already set, so `pending` is empty.
-    again_rows, again_migrations = BUILD.apply_issuer_correction(out_rows, cik_map,
-                                                                  "2026-08-15", now)
+    again_rows, again_migrations = BUILD.apply_issuer_correction(
+        out_rows, cik_map, "2026-08-15", now, allowlist=allowlist)
     assert again_rows == out_rows
     assert again_migrations == []
 
@@ -636,7 +713,10 @@ def test_apply_issuer_correction_records_a_migration_only_for_a_preexisting_row(
          "listing_key": "US-XNAS-NEW", "mic": "XNAS", "inception_code": "NEW"},
     ]
     cik_map = {"OLD": ("0000000009", "Shared Co"), "NEW": ("0000000009", "Shared Co")}
-    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-15", now)
+    # A new 2-member group — needs an explicit allowlist (FIX 5), unrelated to what
+    # this test actually proves (migration-receipt mechanics).
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, cik_map, "2026-08-15", now, allowlist=frozenset({"0000000009"}))
     assert len(migrations) == 1
     assert migrations[0]["security_id"] == "SEC:US-XNAS-OLD"
     assert migrations[0]["old_issuer_id"] == "ISS:US-XNAS-OLD"
@@ -717,6 +797,204 @@ def test_deferred_exception_rows_are_excluded_from_grouping_even_with_matching_c
     assert out_rows[0]["issuer_state"] == "DEFERRED_IDENTITY_EXCEPTION"
     assert out_rows[0]["issuer_id"] == "ISS:US-XNYS-GOLD", "never repointed to Gold.com's CIK"
     assert migrations == []
+
+
+# ── V4-D2B1 FIX 1 (B1/M5) — NO_ISSUER_EVIDENCE rows are RE-EXAMINED every build ──
+def _no_issuer_evidence_row(security_id: str, code: str, legacy_issuer_id: str | None,
+                            *, mic: str = "XNAS") -> dict:
+    listing_key = f"US-{mic}-{code}"
+    return {
+        "security_id": security_id, "issuer_id": legacy_issuer_id,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": listing_key, "mic": mic,
+        "inception_code": code,
+    }
+
+
+def test_a_later_map_carrying_a_previously_unevidenced_ticker_heals_it_to_resolved() -> None:
+    """B1 probe (a): a row stamped NO_ISSUER_EVIDENCE on a prior run is RE-EXAMINED
+    when the NEXT map finally covers its ticker, and heals to RESOLVED with the SAME
+    issuer_id value (own listing key — no other security shares the CIK)."""
+    now = "2026-08-19T00:00:00"
+    rows = [_no_issuer_evidence_row("SEC:US-XNAS-AEP", "AEP", "ISS:US-XNAS-AEP")]
+    cik_map = {"AEP": ("0000004904", "AMERICAN ELECTRIC POWER CO INC")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-25", now)
+    row = out_rows[0]
+    assert row["issuer_state"] == "RESOLVED"
+    assert row["issuer_id"] == "ISS:US-XNAS-AEP", "SAME value — no other master row shares the CIK"
+    assert row["issuer_cik"] == "0000004904"
+    assert row["issuer_evidence_snapshot"] == "2026-08-25"
+    # AEP was already NO_ISSUER_EVIDENCE (not _existed_before-marked here, but the
+    # value did not change) — no migration row either way.
+    assert migrations == []
+
+    # Idempotent: re-running with the SAME map is byte-stable — RESOLVED is mint-once.
+    again_rows, again_migrations = BUILD.apply_issuer_correction(out_rows, cik_map,
+                                                                  "2026-08-25", now)
+    assert again_rows == out_rows
+    assert again_migrations == []
+
+
+def test_a_later_map_grouping_a_legacy_row_into_another_group_yields_evidence_conflict() -> None:
+    """B1 probe (b): fresh evidence groups a re-examined row with a DIFFERENT,
+    already-committed canonical issuer than the row's own legacy value — the value
+    must NOT be rewritten (frozen contract §2: recorded, never executed)."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        # Already committed RESOLVED — the established canonical group.
+        {"security_id": "SEC:US-XNAS-FIRST", "issuer_id": "ISS:US-XNAS-FIRST",
+         "issuer_state": "RESOLVED", "issuer_cik": "0000000042",
+         "issuer_evidence_snapshot": "2026-08-01",
+         "listing_key": "US-XNAS-FIRST", "mic": "XNAS", "inception_code": "FIRST"},
+        # A legacy NO_ISSUER_EVIDENCE row whose OWN value disagrees with that group.
+        _no_issuer_evidence_row("SEC:US-XNAS-LEGACY", "LEGACY", "ISS:US-XNAS-LEGACY"),
+    ]
+    cik_map = {"LEGACY": ("0000000042", "Shared Co")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-25", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    legacy = by_id["SEC:US-XNAS-LEGACY"]
+    assert legacy["issuer_state"] == "EVIDENCE_CONFLICT"
+    assert legacy["issuer_id"] == "ISS:US-XNAS-LEGACY", "value never rewritten"
+    assert legacy["issuer_cik"] == "0000000042", "the DISAGREEING evidence CIK is stamped"
+    assert legacy["issuer_evidence_snapshot"] == "2026-08-25"
+    assert by_id["SEC:US-XNAS-FIRST"]["issuer_id"] == "ISS:US-XNAS-FIRST", "unaffected"
+    assert migrations == []
+
+    # Mint-once for EVIDENCE_CONFLICT too: a second pass never re-examines it.
+    again_rows, again_migrations = BUILD.apply_issuer_correction(out_rows, cik_map,
+                                                                  "2026-08-25", now)
+    assert again_rows == out_rows
+    assert again_migrations == []
+
+
+def test_a_null_issuer_new_row_heals_to_a_minted_value_on_re_examination() -> None:
+    """B1 probe (a) variant: a brand-new post-era row (issuer_id NULL, never minted)
+    that missed evidence on its own run heals on a LATER map — adopting an existing
+    committed group's canonical id when the CIK matches one."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-ESTABLISHED", "issuer_id": "ISS:US-XNAS-ESTABLISHED",
+         "issuer_state": "RESOLVED", "issuer_cik": "0000000077",
+         "issuer_evidence_snapshot": "2026-08-01",
+         "listing_key": "US-XNAS-ESTABLISHED", "mic": "XNAS", "inception_code": "ESTABLISHED"},
+        _no_issuer_evidence_row("SEC:US-XNAS-NEWMISS", "NEWMISS", None),
+    ]
+    cik_map = {"NEWMISS": ("0000000077", "Shared Co")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-25", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    healed = by_id["SEC:US-XNAS-NEWMISS"]
+    assert healed["issuer_state"] == "RESOLVED"
+    assert healed["issuer_id"] == "ISS:US-XNAS-ESTABLISHED", "adopts the existing group's id"
+    # No prior stored value (issuer_id was None) — not a migration.
+    assert migrations == []
+
+
+def test_apply_issuer_correction_is_byte_stable_over_a_mixed_pending_set() -> None:
+    """Idempotency across the FULL FIX 1 surface in one pass: an unstamped row, a
+    healed NO_ISSUER_EVIDENCE row, a still-missing NO_ISSUER_EVIDENCE row, and an
+    EVIDENCE_CONFLICT row must ALL be stable on a second run over the same map."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-FIRST", "issuer_id": "ISS:US-XNAS-FIRST",
+         "issuer_state": "RESOLVED", "issuer_cik": "0000000042",
+         "issuer_evidence_snapshot": "2026-08-01",
+         "listing_key": "US-XNAS-FIRST", "mic": "XNAS", "inception_code": "FIRST"},
+        _no_issuer_evidence_row("SEC:US-XNAS-HEALS", "HEALS", "ISS:US-XNAS-HEALS"),
+        _no_issuer_evidence_row("SEC:US-XNAS-STILLMISS", "STILLMISS", "ISS:US-XNAS-STILLMISS"),
+        _no_issuer_evidence_row("SEC:US-XNAS-CONFLICTS", "CONFLICTS", "ISS:US-XNAS-CONFLICTS"),
+    ]
+    cik_map = {
+        "HEALS": ("0000000099", "Solo Co"),
+        "CONFLICTS": ("0000000042", "Shared Co"),
+        # STILLMISS carries no entry — evidence-miss.
+    }
+    out_rows, _m = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-25", now)
+    again_rows, again_migrations = BUILD.apply_issuer_correction(out_rows, cik_map,
+                                                                  "2026-08-25", now)
+    assert again_rows == out_rows
+    assert again_migrations == []
+
+
+# ── V4-D2B1 FIX 5 (M3, latent) — issuer group allowlist gate ─────────────────────
+def test_unallowlisted_cik_never_forms_a_new_multi_member_group(capsys) -> None:
+    """A shared CIK is necessary but not sufficient evidence to group NEW securities
+    for the first time (an SEC registrant can be a sponsor/trust for an ETP) —
+    without a ratified config/issuer_group_allowlist.yml row, the era must refuse to
+    group and record EVIDENCE_CONFLICT instead, never silently collapsing."""
+    now = "2026-08-19T00:00:00"
+    rows = [
+        {"security_id": "SEC:US-XNAS-QQA", "issuer_id": "ISS:US-XNAS-QQA",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-QQA", "mic": "XNAS", "inception_code": "QQA"},
+        {"security_id": "SEC:US-XNAS-QQB", "issuer_id": "ISS:US-XNAS-QQB",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-QQB", "mic": "XNAS", "inception_code": "QQB"},
+    ]
+    cik_map = {"QQA": ("0009999999", "Sponsor Trust"), "QQB": ("0009999999", "Sponsor Trust")}
+    # allowlist=frozenset() (explicit, empty) — proves the refusal regardless of what
+    # the real committed config/issuer_group_allowlist.yml happens to carry.
+    out_rows, migrations = BUILD.apply_issuer_correction(
+        rows, cik_map, "2026-08-19", now, allowlist=frozenset())
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-QQA"]["issuer_state"] == "EVIDENCE_CONFLICT"
+    assert by_id["SEC:US-XNAS-QQB"]["issuer_state"] == "EVIDENCE_CONFLICT"
+    assert by_id["SEC:US-XNAS-QQA"]["issuer_id"] == "ISS:US-XNAS-QQA", "value never rewritten"
+    assert by_id["SEC:US-XNAS-QQB"]["issuer_id"] == "ISS:US-XNAS-QQB"
+    assert by_id["SEC:US-XNAS-QQA"]["issuer_cik"] == "0009999999"
+    assert migrations == []
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::warning")]
+    assert warning_lines, out
+    assert "0009999999" in warning_lines[0]
+
+
+def test_allowlisted_cik_still_forms_a_new_multi_member_group() -> None:
+    """The gate must not block a CIK that IS ratified — proven against a REAL
+    allowlisted CIK (GOOG/GOOGL's, from the committed config/issuer_group_allowlist.yml,
+    loaded via the default ``allowlist=None`` path) with two brand-new fixture rows."""
+    now = "2026-08-19T00:00:00"
+    real_goog_cik = "0001652044"
+    assert real_goog_cik in BUILD._load_issuer_group_allowlist(), (
+        "this test needs the real committed allowlist to carry the GOOG/GOOGL CIK"
+    )
+    rows = [
+        {"security_id": "SEC:US-XNAS-ZZA", "issuer_id": "ISS:US-XNAS-ZZA",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-ZZA", "mic": "XNAS", "inception_code": "ZZA"},
+        {"security_id": "SEC:US-XNAS-ZZB", "issuer_id": "ISS:US-XNAS-ZZB",
+         "issuer_state": None, "issuer_cik": None, "issuer_evidence_snapshot": None,
+         "listing_key": "US-XNAS-ZZB", "mic": "XNAS", "inception_code": "ZZB"},
+    ]
+    cik_map = {"ZZA": (real_goog_cik, "Alphabet Inc."), "ZZB": (real_goog_cik, "Alphabet Inc.")}
+    out_rows, migrations = BUILD.apply_issuer_correction(rows, cik_map, "2026-08-19", now)
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-ZZA"]["issuer_state"] == "RESOLVED"
+    assert by_id["SEC:US-XNAS-ZZB"]["issuer_state"] == "RESOLVED"
+    assert by_id["SEC:US-XNAS-ZZA"]["issuer_id"] == by_id["SEC:US-XNAS-ZZB"]["issuer_id"]
+
+
+def test_allowlist_never_gates_adoption_of_an_already_established_group() -> None:
+    """A CIK NOT in the allowlist must still allow a NEW member to ADOPT an
+    ALREADY-established group (mint-once, spec §2) — the review happened when that
+    group first formed; only forming a BRAND-NEW multi-member group is gated."""
+    now = "2026-08-19T00:00:00"
+    already_resolved = {
+        "security_id": "SEC:US-XNAS-ANCHOR", "issuer_id": "ISS:US-XNAS-ANCHOR",
+        "issuer_state": "RESOLVED", "issuer_cik": "0009999998",
+        "issuer_evidence_snapshot": "2026-08-01",
+        "listing_key": "US-XNAS-ANCHOR", "mic": "XNAS", "inception_code": "ANCHOR",
+    }
+    new_member = {
+        "security_id": "SEC:US-XNAS-JOINER", "issuer_id": None, "issuer_state": None,
+        "issuer_cik": None, "issuer_evidence_snapshot": None,
+        "listing_key": "US-XNAS-JOINER", "mic": "XNAS", "inception_code": "JOINER",
+    }
+    cik_map = {"JOINER": ("0009999998", "Anchor Co")}
+    out_rows, _m = BUILD.apply_issuer_correction(
+        [already_resolved, new_member], cik_map, "2026-08-19", now, allowlist=frozenset())
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-JOINER"]["issuer_state"] == "RESOLVED"
+    assert by_id["SEC:US-XNAS-JOINER"]["issuer_id"] == "ISS:US-XNAS-ANCHOR"
 
 
 def test_the_master_grain_is_one_row_per_security(master: pd.DataFrame) -> None:
@@ -1265,6 +1543,134 @@ def test_nightly_refuses_on_a_missing_cik_map_evidence_rail(
     assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt, (
         "generated_at must NOT be re-stamped when the CIK evidence rail is missing"
     )
+
+
+# ── V4-D2B1 FIX 2 (B2/n2) — listing-snapshots rail preflight ────────────────────
+def test_nightly_refuses_on_a_missing_symbol_directory_snapshot_rail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    """The B2 probe: ``load_directory()`` silently degrades to ``({}, None, None)``
+    when ``SYMBOL_DIR_SNAPSHOTS`` is missing/empty — pre-FIX-2 the nightly's required
+    rails covered the 5 seed files + the CIK rail but NOT this one, so a nightly run
+    over an empty snapshots dir would resolve almost nothing yet still stamp a fresh
+    generation and a success ``::notice``. Same pattern as the CIK-map probe above:
+    establish a last-good baseline, then point SYMBOL_DIR_SNAPSHOTS at a directory
+    that does not exist and prove the refresh REFUSES, byte-identical artifacts.
+    """
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {name: (tmp_path / name).read_bytes() for name in BUILD._NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+
+    capsys.readouterr()  # drop the baseline run's own ::notice
+    monkeypatch.setattr(BUILD, "SYMBOL_DIR_SNAPSHOTS", tmp_path / "no-such-snapshots-dir")
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::warning")]
+    assert warning_lines, out
+    assert "symbol_directory" in warning_lines[0] or "snapshot" in warning_lines[0]
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], name
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt, (
+        "generated_at must NOT be re-stamped when the listing-snapshots rail is missing"
+    )
+
+
+def test_nightly_receipt_names_every_rail_even_when_absent(tmp_path: Path) -> None:
+    """FIX 2 (n2): receipt['inputs'] must ALWAYS name every rail key — including the
+    listing-snapshots and cik_map directories — never silently drop one because its
+    newest file happened to be absent. Proven against the real committed inputs
+    (both rails present here), and pinned by name so a future silent-drop regression
+    is caught even though this fixture cannot exercise the null-value branch without
+    monkeypatching (that shape is covered by the two refusal tests above/below —
+    a refused nightly run never reaches receipt construction at all)."""
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    receipt = json.loads((tmp_path / BUILD.RECEIPT_NAME).read_text())
+    inputs = receipt["inputs"]
+    assert "data/symbol_directory/snapshots" in inputs
+    assert "data/symbol_directory/cik_map" in inputs
+    assert inputs["data/symbol_directory/snapshots"] is not None
+    assert inputs["data/symbol_directory/cik_map"] is not None
+
+
+# ── V4-D2B1 FIX 2 (B2) — manual build() path hardening ──────────────────────────
+def test_manual_build_raises_without_the_flag_on_a_missing_cik_map(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The B1-amplifier this closes: a manual run on a bare checkout (no
+    data/symbol_directory/cik_map at all) would otherwise silently stamp every row
+    NO_ISSUER_EVIDENCE. build() now raises IdentityError unless the caller explicitly
+    opts out."""
+    monkeypatch.setattr(BUILD, "CIK_MAP_DIR", tmp_path / "no-such-cik-map-dir")
+    with pytest.raises(IdentityError, match="cik_map"):
+        BUILD.build(tmp_path / "out", dry_run=True)
+
+    # The escape hatch works and is explicit.
+    receipt = BUILD.build(tmp_path / "out", dry_run=True, allow_missing_evidence=True)
+    assert receipt["cik_map_snapshot"] is None
+
+
+def test_main_allow_missing_evidence_flag_wires_through_with_a_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    monkeypatch.setattr(BUILD, "CIK_MAP_DIR", tmp_path / "no-such-cik-map-dir")
+    rc = BUILD.main(["--out", str(tmp_path / "out"), "--dry-run", "--allow-missing-evidence"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert any(line.startswith("::warning") and "allow-missing-evidence" in line
+               for line in out.splitlines()), out
+
+    # Without the flag, main() propagates the raise (no swallow).
+    with pytest.raises(IdentityError):
+        BUILD.main(["--out", str(tmp_path / "out2"), "--dry-run"])
+
+
+# ── V4-D2B1 FIX 4 (M2) — mid-build failure restores ALL artifacts ───────────────
+def test_nightly_restores_artifacts_on_a_mid_build_write_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    """A failure INSIDE build(), after the FIRST artifact write but before the rest,
+    must not leave a torn state: every artifact including the receipt is restored to
+    last-good. The first ``_write_parquet`` call (MASTER_NAME) is made to write
+    GENUINELY DIFFERENT bytes than the pristine baseline (proving the restore below
+    reverts real content, not a no-op), then the SECOND call (ALIASES_NAME) raises.
+    """
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {name: (tmp_path / name).read_bytes() for name in BUILD._NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+    capsys.readouterr()
+
+    real_write = BUILD._write_parquet
+    calls = {"n": 0}
+
+    def flaky_write(rows, columns, path, dtypes):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            mutated = [dict(r) for r in rows]
+            if mutated:
+                mutated[0] = {**mutated[0], "ingested_at": "1999-01-01T00:00:00"}
+            return real_write(mutated, columns, path, dtypes)
+        if calls["n"] == 2:
+            raise RuntimeError("injected mid-build failure")
+        return real_write(rows, columns, path, dtypes)
+
+    monkeypatch.setattr(BUILD, "_write_parquet", flaky_write)
+
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "::warning" in out
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], name
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt
+
+
+# ── V4-D2B1 FIX 9 (n3) — era_migrations_total alongside migrations_this_run ─────
+def test_receipt_carries_era_migrations_total_alongside_this_run(receipt: dict,
+                                                                  issuer_migrations: pd.DataFrame
+                                                                  ) -> None:
+    """"migrations_this_run: 0" alone cannot be read as "no migrations ever" — the
+    receipt must also carry the ALL-TIME count."""
+    assert receipt["issuer"]["era_migrations_total"] == len(issuer_migrations)
+    assert receipt["issuer"]["era_migrations_total"] >= receipt["issuer"]["migrations_this_run"]
 
 
 def test_an_unresolved_name_mints_nothing() -> None:
