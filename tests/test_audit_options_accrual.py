@@ -317,3 +317,74 @@ def test_m12_a_partial_receipt_still_warns(tmp_path, monkeypatch):
     result = aoa.audit()
     assert result["detail"]["chains_latest_health"] == "partial"
     assert any("PARTIAL" in w for w in result["warnings"])
+
+
+# ═══════════════ AD-1C0 round 2: N6 + N8 ═════════════════════════════════════
+
+def test_n6_unknown_receipt_corrupt_health_gets_its_own_warning(tmp_path, monkeypatch):
+    """N6 (AD-1C0 round 2): B3's recovery state (health="unknown_receipt_corrupt")
+    used to be silent here — neither the "partial"/"failed" warning branch nor
+    any other one covered it, even though "unknown" health from a corrupted-
+    and-recovered receipt is exactly the kind of gap a dead-man's-switch
+    tripwire exists to name."""
+    last_td = date(2026, 7, 8)
+    monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
+                        lambda ref=None: last_td)
+    _make_chains_dir(tmp_path, ["2026-07-08"])
+    _write_receipt(tmp_path, "2026-07-08", [{
+        "capture_instant": "2026-07-08T21:00:00+00:00",
+        "requested_underlyings": None, "attempted_underlyings": None,
+        "successful_underlyings": None, "coverage_pct": None,
+        "failure_reasons": {}, "failure_examples": {}, "aborted_early": False,
+        "decision": "receipt_recovered", "health": "unknown_receipt_corrupt",
+        "prior_receipt_corrupt": True,
+    }])
+    import scripts.audit_options_accrual as aoa
+    monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
+    result = aoa.audit()
+    assert result["detail"]["chains_latest_health"] == "unknown_receipt_corrupt"
+    assert any("UNKNOWN" in w and "2026-07-08" in w for w in result["warnings"]), (
+        result["warnings"])
+
+
+def test_n8_a_stray_non_date_json_sibling_does_not_disable_m4(tmp_path, monkeypatch):
+    """N8 (AD-1C0 round 2): the pre-fix _latest_receipt_date took ONLY the
+    lexically-last *.json path and returned None outright when THAT ONE
+    failed to parse as a date — a stray sibling file (sorting after every
+    real date-stamped receipt) silently disabled M4's freshness cross-check
+    entirely. A capital-letter stray sorts after any "YYYY-MM-DD.json" name
+    (ASCII digits < uppercase letters)."""
+    last_td = date(2026, 7, 9)
+    monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
+                        lambda ref=None: last_td)
+    _make_chains_dir(tmp_path, ["2026-07-08"])
+    _write_receipt(tmp_path, "2026-07-09",
+                   [_receipt_entry("nothing_captured", "failed", successful=0,
+                                   coverage_pct=0.0)])
+    # a stray non-date sibling that sorts AFTER every real receipt filename
+    (tmp_path / "polygon_gex_health" / "ZZZ_backup_notes.json").write_text("{}")
+
+    import scripts.audit_options_accrual as aoa
+    monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
+    result = aoa.audit()
+    assert result["detail"]["health_latest_receipt_session"] == "2026-07-09", (
+        "the stray file must not mask the real latest receipt date")
+    assert any("SESSION FAILED" in f and "2026-07-09" in f for f in result["fail_reasons"])
+
+
+def test_n8_a_stray_non_date_parquet_sibling_does_not_disable_freshness(tmp_path, monkeypatch):
+    """The same N8 fix applied to _latest_chain_date (the parquet side) —
+    consistency: a stray non-date parquet sibling must not mask the real
+    latest chain date either."""
+    last_td = date(2026, 7, 8)
+    monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
+                        lambda ref=None: last_td)
+    _make_chains_dir(tmp_path, ["2026-07-08"])
+    pd.DataFrame({"x": [1]}).to_parquet(
+        tmp_path / "polygon_gex" / "chains" / "zzz_backup.parquet")
+
+    import scripts.audit_options_accrual as aoa
+    monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
+    result = aoa.audit()
+    assert result["detail"]["chains_latest_date"] == "2026-07-08"
+    assert result["ok"]

@@ -47,6 +47,24 @@ def _mock_baskets(monkeypatch, members=("PLACEHOLDER",)):
     monkeypatch.setattr(eou, "baskets_universe", lambda: list(members))
 
 
+def _patch_include_baskets(monkeypatch, value: bool):
+    """N1: override polygon.gex.include_baskets for one test without touching
+    the real (lru_cache'd) config.load() result in place — shallow-copies just
+    the nested dicts on the path being changed."""
+    real_load = config.load
+
+    def _patched():
+        c = dict(real_load())
+        polygon = dict(c["polygon"])
+        gx = dict(polygon["gex"])
+        gx["include_baskets"] = value
+        polygon["gex"] = gx
+        c["polygon"] = polygon
+        return c
+
+    monkeypatch.setattr(config, "load", _patched)
+
+
 def _contract(strike, exp, ctype, oi, iv=0.25, gamma=0.01):
     out = {"details": {"strike_price": strike, "expiration_date": exp,
                        "contract_type": ctype, "ticker": f"O:X{ctype[0].upper()}{strike}"},
@@ -226,11 +244,12 @@ def test_accrue_writes_raw_and_summary(tmp_path, monkeypatch):
     back = pd.read_parquet(raw_file)
     assert set(back["underlying"]) == {"SPY", "QQQ"}
 
-    # AD-1C0: the health-receipt sidecar is written next to the chain, and the
-    # first ever attempt for a fresh session is always "wrote".
+    # AD-1C0: the health-receipt sidecar is written next to the chain. B3
+    # trigger-2's write-ahead sequence means a real write is TWO entries — a
+    # "write_pending" appended before to_parquet, then the final "wrote".
     receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
-    assert len(receipt["attempts"]) == 1
-    assert receipt["attempts"][0]["decision"] == "wrote"
+    assert [a["decision"] for a in receipt["attempts"]] == ["write_pending", "wrote"]
+    assert receipt["attempts"][-1]["decision"] == "wrote"
 
     summ = pd.read_parquet(tmp_path / "polygon_gex" / "summary_SPY.parquet")
     assert len(summ) == 1
@@ -482,7 +501,15 @@ class TestAuthShortCircuit:
     def _client(self):
         client = PolygonOptions()
         client.key = "TESTKEY"
-        client.cfg = {**client.cfg, "workers": 1}   # serial: deterministic call order
+        # workers=1: serial, deterministic call order. gex.symbols=["ANCHOR0"]
+        # (n_anchors=1): snapshot() now reads its probe's n_anchors split from
+        # THIS config (N3), so pin it small — any n_anchors from 0 up to
+        # len(symbols)-2 yields the identical last-2 tail these tests were
+        # already written against, since symbols[n_anchors:][-2:] ==
+        # symbols[-2:] for any such split. Tests that specifically exercise
+        # the n_anchors split override this per-test.
+        client.cfg = {**client.cfg, "workers": 1,
+                     "gex": {**client.cfg["gex"], "symbols": ["ANCHOR0"]}}
         return client
 
     def test_probe_set_is_first_3_plus_last_2(self):
@@ -582,6 +609,45 @@ class TestAuthShortCircuit:
             "even though every front anchor 403'd")
         assert census["attempted_underlyings"] == len(symbols)
 
+    # ── N3 (AD-1C0 round 2): the probe must not degenerate to all-ETF when
+    # baskets are off ──────────────────────────────────────────────────────
+
+    def test_probe_tail_uses_the_single_name_subset_when_nonempty(self):
+        symbols = ["SPY", "QQQ", "IWM", "DIA", "NVDA"] + [f"STK{i}" for i in range(20)]
+        # n_anchors=5 -> single_name_subset is the 20 STK basket tickers.
+        assert _auth_probe_symbols(symbols, n_anchors=5) == symbols[:3] + symbols[-2:]
+
+    def test_probe_tail_falls_back_to_positions_4_5_when_baskets_off(self):
+        symbols = ["SPY", "QQQ", "IWM", "DIA", "NVDA", "AAPL", "TSLA", "AMD"]
+        # n_anchors == len(symbols) -> baskets off, no single-name subset at all.
+        assert _auth_probe_symbols(symbols, n_anchors=len(symbols)) == (
+            symbols[:3] + symbols[4:6])
+        assert _auth_probe_symbols(symbols, n_anchors=len(symbols)) == (
+            ["SPY", "QQQ", "IWM", "NVDA", "AAPL"])
+
+    def test_baskets_off_etf_scoped_403_does_not_abort(self, monkeypatch):
+        """The integration path: with baskets OFF, PolygonOptions.snapshot()
+        reads n_anchors from client.cfg["gex"]["symbols"] itself — n_anchors
+        == len(symbols) here (no baskets appended) — so the probe tail must
+        fall back to positions 4-5 (NVDA/AAPL) rather than re-picking more
+        ETF anchors from the true tail of the (anchors-only) universe."""
+        client = self._client()
+        anchors = ["SPY", "QQQ", "IWM", "DIA", "NVDA", "AAPL", "TSLA", "AMD"]
+        client.cfg = {**client.cfg, "gex": {**client.cfg["gex"], "symbols": anchors}}
+        symbols = list(anchors)   # baskets off: the resolved universe IS the anchors
+
+        def fake_one_chain(sym, asof):
+            if sym in ("SPY", "QQQ", "IWM"):        # ETF-scoped 403 (the front 3)
+                return None, "auth_or_entitlement_failure"
+            return pd.DataFrame({"underlying": [sym], "K": [1.0]}), None
+
+        monkeypatch.setattr(client, "_one_chain", fake_one_chain)
+        raw, census = client.snapshot(symbols, ASOF.date())
+        assert census["aborted_early"] is False, (
+            "positions 4-5 (NVDA/AAPL) succeeding must disable the short "
+            "circuit even with baskets off and the front 3 ETFs 403ing")
+        assert census["attempted_underlyings"] == len(symbols)
+
 
 # ═══════════════ collectors/base.py secret sanitizer ═════════════════════════════
 
@@ -595,36 +661,68 @@ def test_safe_exc_text_redacts_api_key_and_query_tail():
     assert "?apiKey=SECRETVALUE123&limit=250" not in out
 
 
-# M6 (AD-1C0 adversarial review) — repro case D: every enumerated leak shape the
-# original single "name=value" regex missed. Acceptance = every row passes with
-# only the synthetic value surviving detection, never the secret itself.
+# M6/N4/N5 (AD-1C0 adversarial review, round 2) — repro case D plus the
+# reviewer's follow-up leak shapes. N5 ruling: sanitizer test theater — one
+# sk_-prefixed value covered 7/8 original rows through the TOKEN-PREFIX pass
+# alone, silently NOT exercising the shape-specific passes each row claims to
+# test. Every row below uses a secret value with NO sk_/pk_ prefix — so it can
+# ONLY be caught by the pass that shape actually targets — EXCEPT
+# "key_in_path_segment", which deliberately KEEPS the prefixed value: it is
+# the one shape (a bare path segment, no adjacent keyword at all) that only
+# _TOKEN_PREFIX_RE can catch, and it is what keeps that pass under live test
+# coverage. Flip-verified by hand (see the packet): deleting _CRED_JSON_RE
+# fails double_quoted_json_body/single_quoted_json_body/header_name_credential;
+# deleting _BEARER_RE fails bearer_header_repr.
+_NONPREFIXED_SECRET = "hunter2SECRETVALUE"
+_PREFIXED_SECRET = "sk_live_TOPSECRET"
+
 _LEAK_CASES = {
     "bearer_header_repr":
-        "401 Unauthorized: {'Authorization': 'Bearer sk_live_TOPSECRET'}",
-    "key_in_path_segment":
-        "403 Client Error for url: https://vendor.example/api/v1/"
-        "sk_live_TOPSECRET/chain",
+        f"401 Unauthorized: {{'Authorization': 'Bearer {_NONPREFIXED_SECRET}'}}",
+    "key_in_path_segment":                                        # pins _TOKEN_PREFIX_RE
+        f"403 Client Error for url: https://vendor.example/api/v1/"
+        f"{_PREFIXED_SECRET}/chain",
     "url_encoded_assignment":
-        "403 for url: https://x/y%3FapiKey%3Dsk_live_TOPSECRET",
+        f"403 for url: https://x/y%3FapiKey%3D{_NONPREFIXED_SECRET}",
     "alt_param_name_access_key":
-        "403 for url: https://x/y?access_key=sk_live_TOPSECRET",
+        f"403 for url: https://x/y?access_key={_NONPREFIXED_SECRET}",
     "alt_param_name_bare_key":
-        "403 for url: https://x/y?key=sk_live_TOPSECRET",
+        f"403 for url: https://x/y?key={_NONPREFIXED_SECRET}",
     "password_param":
-        "403 for url: https://x/y?password=sk_live_TOPSECRET",
+        f"403 for url: https://x/y?password={_NONPREFIXED_SECRET}",
     "space_separated_mention":
-        "auth failed with api_key sk_live_TOPSECRET",
+        f"auth failed with api_key {_NONPREFIXED_SECRET}",
     "double_quoted_json_body":
-        '{"error":"bad token","apiKey":"sk_live_TOPSECRET"}',
+        f'{{"error":"bad token","apiKey":"{_NONPREFIXED_SECRET}"}}',
+    "single_quoted_json_body":                                    # N4(i)
+        f"{{'error':'bad token','apiKey':'{_NONPREFIXED_SECRET}'}}",
+    "header_name_credential":                                     # N4(ii)
+        f"Headers: {{'X-API-Key': '{_NONPREFIXED_SECRET}'}}",
+    "basic_auth_netloc":                                          # N4(iii)
+        f"Connection failed: https://user:{_NONPREFIXED_SECRET}@vendor.example/api",
 }
+
+_LEAK_SECRETS = {name: (_PREFIXED_SECRET if name == "key_in_path_segment"
+                        else _NONPREFIXED_SECRET)
+                 for name in _LEAK_CASES}
 
 
 class TestSanitizerLeakShapes:
     @pytest.mark.parametrize("case", sorted(_LEAK_CASES), ids=sorted(_LEAK_CASES))
     def test_every_repro_d_row_is_redacted(self, case):
+        secret = _LEAK_SECRETS[case]
         out = safe_exc_text(requests.HTTPError(_LEAK_CASES[case]))
-        assert "sk_live_TOPSECRET" not in out, (case, out)
-        assert "TOPSECRET" not in out, (case, out)
+        assert secret not in out, (case, out)
+
+    def test_only_one_row_relies_on_the_token_prefix_pass(self):
+        """N5 sanity check: every OTHER row's secret value must not itself
+        start with sk_/pk_ — otherwise a row claiming to test its own
+        shape-specific pass could silently pass via _TOKEN_PREFIX_RE instead,
+        exactly the theater N5 found."""
+        for case, secret in _LEAK_SECRETS.items():
+            if case == "key_in_path_segment":
+                continue
+            assert not secret.startswith(("sk_", "pk_")), (case, secret)
 
     def test_redact_secrets_is_the_reusable_string_level_primitive(self):
         # safe_exc_text(exc) is a thin wrapper over redact_secrets(str(exc)) —
@@ -1017,9 +1115,11 @@ class TestFirstWriterQualityRule:
         assert res3["status"] == "already_present"
 
         receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
-        assert len(receipt["attempts"]) == 3
+        # B3 trigger-2 write-ahead: the real write is TWO entries
+        # (write_pending, then wrote); the two no-op re-runs are one each.
+        assert len(receipt["attempts"]) == 4
         assert [a["decision"] for a in receipt["attempts"]] == [
-            "wrote", "skipped_already_healthy", "skipped_already_healthy"]
+            "write_pending", "wrote", "skipped_already_healthy", "skipped_already_healthy"]
 
     def test_health_receipt_write_is_atomic_no_stray_tmp_files(self, tmp_path, monkeypatch):
         import scripts.build_polygon_gex as bpg
@@ -1412,6 +1512,234 @@ class TestB3CorruptReceiptRecovery:
         assert receipt["attempts"][0]["decision"] == "skipped_already_healthy"
         assert not any(".corrupt-" in p.name for p in
                        (tmp_path / "polygon_gex_health").iterdir())
+
+    def test_n7_concurrent_recovery_adopts_the_race_winner_instead_of_clobbering(
+            self, tmp_path, monkeypatch):
+        """N7 (AD-1C0 round 2): if path.replace(corrupt_aside) fails with
+        FileNotFoundError, another recoverer most likely already won the race
+        — renamed `path` aside and wrote its own fresh receipt there — between
+        our failed read and this rename attempt. _recover_corrupt_receipt must
+        RE-READ `path` and, if it now parses, ADOPT that content instead of
+        clobbering the winner with a duplicate recovery entry."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        health_dir = tmp_path / "polygon_gex_health"
+        health_dir.mkdir(parents=True)
+        receipt_path = health_dir / "2026-06-15.json"
+        receipt_path.write_text('{"session": "2026-06-15", "attemp')   # torn JSON
+
+        winner_attempts = [{
+            "capture_instant": "2026-06-15T20:00:00+00:00",
+            "requested_underlyings": 10, "attempted_underlyings": 10,
+            "successful_underlyings": 10, "coverage_pct": 1.0,
+            "failure_reasons": {}, "failure_examples": {}, "aborted_early": False,
+            "decision": "receipt_recovered", "health": "unknown_receipt_corrupt",
+            "prior_receipt_corrupt": True,
+        }]
+
+        real_replace = Path.replace
+
+        def _race_then_fail(self, target):
+            if self.name == "2026-06-15.json":
+                # Simulate a concurrent recoverer: it wins the race right
+                # here, writing its own fresh valid receipt at `path` — our
+                # rename then fails because the source inode it expected is
+                # gone (already replaced by the winner in a real race; here
+                # we just overwrite `path` directly to force the same
+                # observable state).
+                receipt_path.write_text(
+                    json.dumps({"session": "2026-06-15", "attempts": winner_attempts}))
+                raise FileNotFoundError("simulated concurrent-recovery race")
+            return real_replace(self, target)
+
+        monkeypatch.setattr(Path, "replace", _race_then_fail)
+
+        from scripts.build_polygon_gex import _CorruptReceipt, _recover_corrupt_receipt
+        try:
+            bpg._read_receipt(date(2026, 6, 15))
+            raise AssertionError("expected _CorruptReceipt")
+        except _CorruptReceipt as e:
+            result = _recover_corrupt_receipt(date(2026, 6, 15), e, SAME_DAY_NOW)
+
+        assert result == winner_attempts, (
+            "must adopt the race winner's attempts, not overwrite them")
+        final = json.loads(receipt_path.read_text())
+        assert final["attempts"] == winner_attempts, (
+            "the winner's receipt must survive completely untouched")
+        # no NEW corrupt-aside file was created by the loser
+        asides = [p for p in health_dir.iterdir() if ".corrupt-" in p.name]
+        assert not asides, asides
+
+
+class TestB3WriteAheadReceipt:
+    """B3 trigger-2 ruling (AD-1C0 round 2): a write-ahead receipt entry
+    (decision "write_pending", carrying the FULL census/health BEFORE
+    to_parquet) makes both crash windows around the parquet write
+    self-describing instead of silently reading as legacy-healthy."""
+
+    def test_crash_before_the_parquet_write_leaves_no_trace_next_run_writes_fresh(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY"])
+        # Simulate: a prior run appended write_pending then crashed BEFORE
+        # to_parquet — a receipt exists, but there is NO chain parquet at all.
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("write_pending", "partial", 40, 0.40, requested=100)])
+        assert not (tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet").exists()
+
+        raw = _raw(("SPY",))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY"])))
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok", (
+            "a dangling write_pending with NO parquet must not block the next "
+            "run — path.exists() gates the whole immutable-skip lookup, and "
+            "there is no path yet")
+        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
+        assert set(back["underlying"]) == {"SPY"}
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        # the stale dangling entry stays in history; this run appends its OWN
+        # pending+wrote pair after it.
+        assert [a["decision"] for a in receipt["attempts"]][-2:] == ["write_pending", "wrote"]
+
+    def test_crash_after_the_parquet_write_reads_the_pending_entrys_own_health(
+            self, tmp_path, monkeypatch):
+        """The parquet WAS written (a 40% partial capture), but the FINAL
+        decision entry never landed — the receipt's trailing entry is still
+        "write_pending". The store must read as PARTIAL (the pending entry's
+        own health), never fall through to a legacy "healthy" default."""
+        import scripts.build_polygon_gex as bpg
+        from scripts.build_polygon_gex import _read_receipt, _stored_health
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(100)])
+        # A 40-of-100 chain WAS actually written to disk...
+        _write_chain_file(tmp_path, "2026-06-15", symbols=tuple(f"U{i}" for i in range(40)))
+        # ...but the receipt's trailing entry is still write_pending (the
+        # finalize-entry append never landed).
+        _write_receipt_file(tmp_path, "2026-06-15",
+                            [_entry("write_pending", "partial", 40, 0.40, requested=100)])
+
+        attempts = _read_receipt(date(2026, 6, 15))
+        assert _stored_health(attempts) == "partial", (
+            "a trailing write_pending backed by a REAL parquet must read as "
+            "ITS OWN health, never a legacy-healthy default — a 40% capture "
+            "is not healthy")
+
+        # ... and because it reads as partial, a strictly-better capture may
+        # still replace it under the ordinary first-writer quality rule.
+        new_raw = _raw(tuple(f"U{i}" for i in range(70)))
+        all_syms = [f"U{i}" for i in range(100)]
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(new_raw, census=_census(new_raw, all_syms)))
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok"
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "replaced_partial"
+        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
+        assert back["underlying"].nunique() == 70
+
+
+class TestN1ForceBypassesUniverseGates:
+    """N1 ruling (AD-1C0 round 2): baskets OFF is a documented operator
+    revert — never a silent collapse — so the shrink tripwire must be scoped
+    to include_baskets=true only, and --force must bypass BOTH universe gates
+    entirely (the wedge it exists to escape)."""
+
+    def test_a_documented_baskets_off_revert_proceeds_despite_a_large_prior_chain(
+            self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _patch_include_baskets(monkeypatch, False)
+        # A large PRIOR session (300 names) is on disk — under the OLD
+        # unconditional shrink check this would have permanently wedged any
+        # future include_baskets:false revert.
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(300)))
+        anchors10 = [f"U{i}" for i in range(10)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: anchors10)
+        raw = _raw(tuple(anchors10))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, anchors10)))
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok", res
+        back = pd.read_parquet(tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet")
+        assert back["underlying"].nunique() == 10
+
+    def test_an_include_baskets_true_collapse_is_still_refused(self, tmp_path, monkeypatch):
+        """Contrast case: with include_baskets TRUE, the identical shrink
+        scenario must still be refused — this is the genuine collapse the
+        tripwire exists to catch."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(300)))
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(10)])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "failed"
+        assert res["census"]["failure_reasons"] == {"universe_resolution_failed": 1}
+
+    def test_force_overrides_the_universe_gate_with_decision_forced(self, tmp_path, monkeypatch):
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _write_empty_membership(tmp_path)             # a membership-degraded scenario
+        monkeypatch.setattr(eou, "baskets_universe", lambda: [])
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: ["SPY", "QQQ", "IWM"])
+        raw = _raw(("SPY", "QQQ", "IWM"))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, ["SPY", "QQQ", "IWM"])))
+
+        res = bpg.accrue(date(2026, 6, 15), force=True, _now=SAME_DAY_NOW)
+        assert res["status"] == "ok", res
+        receipt = json.loads((tmp_path / "polygon_gex_health" / "2026-06-15.json").read_text())
+        assert receipt["attempts"][-1]["decision"] == "forced"
+
+
+class TestN2ReceiptAwareShrinkReference:
+    def test_a_partial_night_s_receipt_still_arms_the_tripwire(self, tmp_path, monkeypatch):
+        """N2 ruling (AD-1C0 round 2): a prior night that only captured a
+        PARTIAL chain (20 of 375) must not disarm the reference — the
+        receipt's own requested_underlyings (375) is still a valid witness of
+        how big the universe used to be, even though the chain parquet itself
+        only has 20 names."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        # Prior night: chain captured only 20 (a genuine partial), but the
+        # receipt recorded what was actually REQUESTED that night: 375.
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(20)))
+        _write_receipt_file(tmp_path, "2026-06-12",
+                            [_entry("wrote", "partial", 20, 20 / 375, requested=375)])
+
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: [f"U{i}" for i in range(10)])
+        monkeypatch.setattr(bpg, "PolygonOptions", lambda: _NoFetchClient())
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "failed"
+        assert res["census"]["failure_reasons"] == {"universe_resolution_failed": 1}
+        assert not (tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet").exists()
+
+    def test_a_legacy_chain_with_no_receipt_falls_back_to_the_captured_count(
+            self, tmp_path, monkeypatch):
+        """A prior session's chain with NO receipt at all (legacy) uses only
+        its captured underlying count — unchanged prior behavior."""
+        import scripts.build_polygon_gex as bpg
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        _mock_baskets(monkeypatch)
+        _write_chain_file(tmp_path, "2026-06-12", symbols=tuple(f"U{i}" for i in range(12)))
+        universe10 = [f"U{i}" for i in range(10)]
+        monkeypatch.setattr(eou, "gex_symbols", lambda gx_cfg: universe10)
+        raw = _raw(tuple(universe10))
+        monkeypatch.setattr(bpg, "PolygonOptions",
+                            lambda: _FakeClient(raw, census=_census(raw, universe10)))
+
+        res = bpg.accrue(date(2026, 6, 15), _now=SAME_DAY_NOW)
+        assert res["status"] == "ok", (
+            "12 captured (no receipt) vs 10 resolved is a mild 1.2x trim, "
+            "well under the 3x tripwire")
 
 
 class TestM14UnknownReasonCoercion:
