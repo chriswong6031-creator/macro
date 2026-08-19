@@ -37,6 +37,11 @@ on:
         required: false
         default: false
         type: boolean
+      run_census:
+        description: "Run the READ-ONLY Research Vault id-set census (catalog/PDF/corpus/receipts) after the ingest"
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "0 * * * *"   # top of every hour — mirrors btc-live.yml
 
@@ -142,9 +147,16 @@ jobs:
           python -m scripts.build_fundamental_forensics --publish-private
       - name: research vault ingest (hourly)
         id: ingest
+        # `set +e` + exit 0 keeps the SALVAGE step below reachable — it must run
+        # even when the plane failed, so whatever WAS published still reaches git.
+        # The captured rc is re-emitted by the final step, which is what actually
+        # reds the lane. Before Wave 4 the rc was captured and then never used, so
+        # an hour in which ingestion accomplished nothing concluded green.
+        # --require-store: on the scheduled run, "no store configured" means the R2
+        # secrets did not reach the runner, not "nothing to do".
         run: |
           set +e
-          python -m scripts.ingest_research
+          python -m scripts.ingest_research --require-store
           echo "rc=$?" >> "$GITHUB_OUTPUT"
           exit 0
       # Salvage-push the repo snapshots regardless of the ingest step's rc
@@ -174,3 +186,36 @@ jobs:
             echo "push attempt $i failed; retrying"; sleep $((i*3))
           done
           echo "::warning::could not push research_vault catalog after 5 attempts (non-fatal)"
+      # READ-ONLY correction audit (Wave 4). Manual only: it lists every object in
+      # the vault, which is far too expensive for the hourly cadence. Runs BEFORE
+      # the failure step so a census is still taken on an hour whose ingest failed
+      # — that is exactly the hour whose id sets an operator wants to see.
+      - name: research vault id-set census (read-only)
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.run_census }}
+        run: |
+          python -m scripts.research_vault_census --json "$RUNNER_TEMP/rv_census.json"
+      - name: upload census report
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.run_census }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-vault-census
+          path: ${{ runner.temp }}/rv_census.json
+          if-no-files-found: warn
+      # The rc the ingest step captured is only meaningful HERE, after salvage has
+      # had its chance to run. A publication-plane failure must conclude the lane
+      # RED: a green hourly run whose ingest published nothing is the state that
+      # made every other defect in this wave invisible for as long as it lasted.
+      # Per-document failures do not reach this point — the CLI exits 0 on those.
+      - name: fail the lane if ingestion failed
+        if: always()
+        run: |
+          rc="${{ steps.ingest.outputs.rc }}"
+          if [ -z "$rc" ]; then
+            echo "::error title=research-ingest::the ingest step recorded no exit code — it did not run to completion"
+            exit 1
+          fi
+          if [ "$rc" != "0" ]; then
+            echo "::error title=research-ingest::research vault ingestion FAILED (rc=$rc); the salvage push above ran regardless. See the ingest step's annotations for the specific plane failure."
+            exit 1
+          fi
+          echo "research vault ingestion completed (rc=0)"
