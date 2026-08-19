@@ -1,0 +1,480 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROPHET OPERATOR LAB — the R5 layer. ADDITIVE ONLY.
+
+   board.css (the frozen R4 reference) is loaded first and is not modified,
+   overridden or shadowed by anything below. Every selector here is `.lab-*`
+   or `html[data-mode="lab"]`-scoped, so with the Lab absent the page is the
+   R4 board byte-for-byte — which is what "flip back and production is exactly
+   itself" has to mean in CSS, not just in JS.
+
+   ── TOKEN POLICY ────────────────────────────────────────────────────────
+   No new :root family, no new palette, no hex literal. `--lab-*` are page-
+   local DERIVATIONS bound to theme tokens at one scope root — the compliant
+   `--pv-*` / `--ms-*` pattern (MASTER_PRODUCT_DESIGN_SYSTEM_V1 §2).
+
+   ── THE HUE DECISION ────────────────────────────────────────────────────
+   The reserved-hue law (design system §1) allows colour only where it means
+   direction, health, wayfinding, epistemic tier, or lock. The Lab is an
+   epistemic tier — read-only projection with zero authority — so it takes
+   `--prov`, the system's own word for exactly that, and nothing else:
+
+     * NO stance hue on any Lab row. Stance ink is Prophet's vocabulary; a
+       Lab observation states no stance, and borrowing the ink would make an
+       observation read as a call.
+     * NO violet. Violet is lock-only (packet §0).
+     * The spark is ACHROMATIC here. On the Prophet card the spark takes the
+       stance hue by the shipped recolour law; a Lab row has no stance, so it
+       paints in muted ink. Direction ink survives in exactly one place — the
+       signed live change — which is the same place R4 confines it to.
+
+   Everything separating a live sighting from a retrospective seed is
+   therefore STRUCTURAL (spine geometry, node fill, dash, hatch, contrast) and
+   survives every theme × language quadrant without a second palette.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── scope root: every --lab-* token is bound here, once ─────────────────── */
+body {
+  --lab-acc: var(--prov);
+  --lab-ink: var(--prov-ink);
+  --lab-rule: color-mix(in srgb, var(--lab-acc) 40%, var(--line));
+  --lab-spine: color-mix(in srgb, var(--lab-acc) 55%, var(--line));
+  --lab-wash: color-mix(in srgb, var(--lab-acc) 6%, transparent);
+  --lab-seed-ink: var(--muted);
+  --lab-gut: 96px;                       /* the spine gutter */
+  --lab-chart: 348px;                    /* chart first — the primary evidence
+                                            gets the second-widest column */
+  --lab-pro: 286px;
+}
+
+/* ═══════════════ 1. THE MODE CONTROL ═══════════════════════════════════
+   Quiet at rest, loud when engaged. At rest it is a small right-aligned
+   toggle on a production board that most sessions never touch; engaged, the
+   whole plane announces itself (§2). A control that shouted in LIVE would be
+   advertising a mode the reader is not in.
+
+   Toggles never move on hover (design system §7). The bar is `position` only
+   — no transform, no lift. */
+/* LIVE: the control lives inline in the page's existing status cluster, so it
+   costs the production board no vertical space at all. */
+.lab-opv {
+  font: 700 9.5px/1 var(--font-ui); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin-left: 4px;
+}
+.bh-stamp .lab-seg button { padding: 5px 12px; font-size: 9.5px; }
+
+/* LAB: the control re-mounts at the head of the Lab plane, where the 2px
+   accent rule and the mode eyebrow make the state unmistakable. */
+.lab-modebar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 0 0; border-top: 2px solid var(--lab-acc);
+}
+.lab-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 800 10px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--lab-ink);
+}
+.lab-eyebrow .dtp-dot { background: currentColor; }
+
+.lab-seg {
+  margin-left: auto; display: inline-flex; align-items: stretch;
+  border: 1px solid var(--line); border-radius: 999px; overflow: hidden;
+  background: var(--panel);
+}
+.lab-seg button {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font: 800 10.5px/1 var(--font-ui); letter-spacing: .09em; text-transform: uppercase;
+  color: var(--muted); padding: 7px 15px; transition: color .12s ease, background .12s ease;
+}
+.lab-seg button:hover { color: var(--text); }
+.lab-seg button[aria-checked="true"] { color: var(--panel); background: var(--text); }
+.lab-seg button[data-mode="lab"][aria-checked="true"] {
+  color: var(--panel); background: var(--lab-acc);
+}
+html[data-theme="light"] .lab-seg button[aria-checked="true"] { color: #fff; }
+.lab-seg button:focus-visible {
+  outline: 2px solid var(--ink-link, var(--link)); outline-offset: -3px;
+}
+/* ═══════════════ 2. THE LAB BAND — header of the Lab plane ═════════════ */
+.lab-band { margin: 2px 0 0; }
+.lab-band-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+.lab-purpose { margin: 0; font-size: 13px; color: var(--text); line-height: 1.5; max-width: 62ch; }
+.lab-stance { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--text); }
+/* Law 1 — the panel answers "so what do I do", even when the answer is watch.
+   The authority disclosure sits with it because on this surface the stance and
+   the authority are one thought. */
+.lab-auth {
+  margin: 6px 0 0; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--muted); cursor: help;
+  border-bottom: 1px dotted color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.lab-auth::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  border: 1.5px solid var(--lab-ink); flex: none;
+}
+.lab-stamp { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lab-feed {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 700 10px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--lab-ink);
+  background: var(--lab-wash); border: 1px solid var(--lab-rule);
+  border-radius: 999px; padding: 4px 9px;
+}
+/* Motion is a status channel: live data pulses, settled data rests
+   (design system §7 / theme.css:1754). Only a reporting feed pulses. */
+.lab-feed .dtp-dot { background: currentColor; animation: lab-pulse 2.4s ease-in-out infinite; }
+.lab-feed--rest { color: var(--muted); background: transparent; border-color: var(--line); }
+.lab-feed--rest .dtp-dot { animation: none; opacity: .5; }
+@keyframes lab-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+
+/* ═══════════════ 3. BOARD SELECTORS ═══════════════════════════════════
+   Plain words at the glance tier; the exact detector and expert identities
+   live on the LENS receipt (DESIGN_DOCTRINE §2 Law 2 — no raw slug at
+   Tier 1). The chips are a control strip, not tabs: they never move. */
+.lab-sel-wrap { margin: 14px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.lab-sel-wrap::-webkit-scrollbar { height: 4px; }
+.lab-sel-wrap::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.lab-sel { display: flex; gap: 7px; padding-bottom: 3px; }
+.lab-sel button {
+  appearance: none; cursor: pointer; white-space: nowrap; flex: none;
+  display: inline-flex; align-items: baseline; gap: 7px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--muted); font: 650 12px/1 var(--font-ui); padding: 8px 13px;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
+}
+.lab-sel button:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
+.lab-sel button[aria-pressed="true"] {
+  color: var(--lab-ink); background: var(--lab-wash);
+  border-color: var(--lab-rule); font-weight: 750;
+}
+.lab-sel button:focus-visible { outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px; }
+.lab-sel .lab-n {
+  font: 700 11px/1 var(--font-mono); font-variant-numeric: tabular-nums;
+  color: inherit; opacity: .8;
+}
+
+/* ═══════════════ 4. META LINE — what this board is, and how it is sorted */
+.lab-meta {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin: 12px 0 0; padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.lab-sub { font-size: 12.5px; color: var(--text); }
+.lab-basis { font-size: 11px; color: var(--muted); }
+.lab-split { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help; }
+.lab-split b { color: var(--text); font-weight: 800; }
+.lab-cls-filter { margin-left: auto; display: inline-flex; gap: 3px; }
+.lab-cls-filter button {
+  appearance: none; cursor: pointer; border: 1px solid transparent; background: transparent;
+  color: var(--muted); font: 650 11px/1 var(--font-ui); padding: 5px 9px; border-radius: 999px;
+}
+.lab-cls-filter button[aria-pressed="true"] {
+  color: var(--text); border-color: var(--line);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.lab-cls-filter button:focus-visible { outline: 2px solid var(--ink-link, var(--link)); outline-offset: 1px; }
+
+/* ═══════════════ 5. THE OBSERVATION SPINE — the signature ══════════════
+   The Lab's whole job is "what fired, on what, WHEN, and is that a real
+   sighting". So time is the structure, not a field: one newest-first stream
+   hung off a continuous vertical spine, and the class distinction is carried
+   by the spine itself —
+
+     live sighting     solid spine · filled node · a CLOCK TIME
+     retrospective seed dashed spine · hollow node · a DATE, and a label
+                        saying the sighting time does not exist
+
+   A seed cannot fill the time slot, because `signal_known_ts` was never
+   supplied and LAB-0 §4 forbids reconstructing it. The absence is printed
+   rather than padded — the honesty is structural, not a badge bolted on.
+
+   The rows also carry a form the Prophet card never uses: Prophet is a grid
+   of tiles, the Lab is a stream of wide rows. Different population, different
+   noun, different form (the R4 Candidates precedent). A Lab row cannot be
+   mistaken for a Prophet card at any zoom. */
+/* The stream is ONE PANEL (surface hierarchy §3: a panel is the unit of one
+   answer, and this panel answers "what fired early, and when"). Rows are
+   members of a set inside it, separated by hairlines — not nine rival cards.
+   This is also what makes the light theme a design rather than a token swap:
+   white plane on the deeper canvas, so the log sits ON the page instead of
+   dissolving into it (doctrine §5.8, the panel≈bg flatness bug). */
+.lab-stream {
+  margin: 0; padding: 0; list-style: none;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+.lab-row {
+  position: relative;
+  display: grid; align-items: start;
+  grid-template-columns: var(--lab-gut) var(--lab-chart) minmax(0, 1fr) var(--lab-pro);
+  grid-template-areas: "when chart id pro";
+  border-bottom: 1px solid var(--line);
+}
+.lab-row:last-child { border-bottom: 0; }
+/* the whole row is a link to the name, so it gets the table's row-hover tint;
+   the row itself never lifts — only clickable CONTAINERS lift (§7) */
+.lab-row:hover { background: color-mix(in srgb, var(--text) 3.5%, transparent); }
+
+/* ── the spine cell. Its right border IS the spine, so the row itself carries
+      NO vertical padding — padding lives on the content cells. Otherwise the
+      row's own padding opens a gap in the line at every boundary and the
+      "continuous spine" is a broken ladder of dashes. The cells are contiguous
+      and separated by hairlines, so the line runs unbroken down the list and a
+      seed row simply changes its own segment's character. ───────────────── */
+.lab-chart, .lab-id, .lab-pro { padding-top: 14px; padding-bottom: 14px; }
+.lab-when {
+  grid-area: when; position: relative; min-width: 0;
+  padding: 14px 16px 14px 0; text-align: right;
+  border-right: 2px solid var(--lab-spine);
+  align-self: stretch;
+}
+/* same width, different character: the spine never jogs, it changes state */
+.lab-row--seed .lab-when { border-right-style: dashed; border-right-color: var(--line); }
+.lab-t {
+  display: block; font: 700 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.lab-tz { font-style: normal; font-size: 8.5px; font-weight: 600; color: var(--muted); margin-left: 3px; letter-spacing: .04em; }
+.lab-row--seed .lab-t { color: var(--lab-seed-ink); font-weight: 600; }
+.lab-tl { display: block; margin-top: 3px; font-size: 9.5px; line-height: 1.35; color: var(--muted); }
+.lab-node {
+  position: absolute; right: -6.5px; top: 18px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--lab-acc); box-shadow: 0 0 0 3px var(--panel);
+}
+.lab-row--seed .lab-node {
+  width: 9px; height: 9px; right: -5.5px; top: 19px;
+  background: var(--panel); border: 1.5px solid var(--muted); box-shadow: 0 0 0 2px var(--panel);
+}
+
+/* ── chart cell. Achromatic by decision (see the hue note at the top). ── */
+.lab-chart { grid-area: chart; min-width: 0; padding: 0 18px; }
+.lab-spark { position: relative; border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--muted) 3%, transparent); }
+.lab-spark svg { display: block; width: 100%; height: 72px; }
+.lab-spark svg * { stroke: var(--lab-chart-ink, color-mix(in srgb, var(--text) 52%, var(--muted))) !important; }
+.lab-spark svg [fill]:not([fill="none"]) {
+  fill: var(--lab-chart-ink, color-mix(in srgb, var(--text) 52%, var(--muted))) !important; stroke: none !important;
+}
+.lab-row--seed .lab-spark { --lab-chart-ink: color-mix(in srgb, var(--muted) 78%, transparent); }
+/* the printed null, at the SAME height as a drawn chart — R4's VTC-301 law,
+   inherited deliberately rather than re-litigated */
+.lab-nochart {
+  height: 72px; border-radius: 9px;
+  background: color-mix(in srgb, var(--muted) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px;
+}
+.lab-nochart span { font-size: 10px; font-weight: 600; color: var(--muted); opacity: .72; }
+.lab-q { display: flex; align-items: baseline; gap: 7px; margin-top: 6px; }
+.lab-q .nb-px {
+  font: 700 11px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); margin: 0;
+}
+.lab-q .nb-chg {
+  font: 700 11px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); margin: 0;
+}
+.lab-q .nb-chg.up { color: var(--ink-up, var(--up)); }
+.lab-q .nb-chg.down { color: var(--ink-down, var(--down)); }
+
+/* ── identity + the exact readings ─────────────────────────────────────── */
+.lab-id { grid-area: id; min-width: 0; padding-right: 18px; }
+.lab-idw { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.lab-open { color: inherit; text-decoration: none; display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.lab-tk { font: 800 14px/1.2 var(--font-mono); letter-spacing: .01em; flex: none; }
+.lab-nm { font-size: 12px; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lab-row:hover .lab-tk { text-decoration: underline; text-underline-offset: 2px; }
+.lab-sec { margin-top: 2px; font-size: 10px; color: var(--muted); }
+.lab-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+
+/* observation class — the one disclosure that may never be missed */
+.lab-cls {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  font: 750 10px/1.35 var(--font-ui); letter-spacing: .02em;
+  padding: 3px 9px; border-radius: 999px; cursor: help;
+}
+.lab-cls--live {
+  color: var(--lab-ink); background: var(--lab-wash); border: 1px solid var(--lab-rule);
+}
+.lab-cls--live::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+/* The seed chip is hatched and dashed on purpose: at a glance, before any word
+   is read, it is visibly a different KIND of thing from a live sighting. */
+.lab-cls--seed {
+  color: var(--lab-seed-ink); border: 1px dashed color-mix(in srgb, var(--muted) 62%, transparent);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--muted) 13%, transparent) 0 2px,
+    transparent 2px 6px);
+}
+/* the exact readings — one chip per expert, identities never merged
+   (DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED) */
+.lab-ex {
+  display: inline-flex; align-items: center; flex: none; cursor: help;
+  font: 600 10.5px/1.35 var(--font-ui);
+  color: color-mix(in srgb, var(--text) 82%, var(--muted));
+  background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 8px;
+}
+.lab-row--seed .lab-ex { color: var(--muted); background: transparent; }
+.lab-ex:focus-visible, .lab-cls:focus-visible { outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px; }
+
+/* ── Prophet comparison — a DIFFERENT producer's answer, so it sits on its
+      own recessed plane behind a rule. It is quoted, never restated: the
+      lifecycle word is R4's ruled lexicon verbatim, weight-only, never hued. */
+.lab-pro {
+  grid-area: pro; min-width: 0; padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+.lab-pro-eb {
+  font: 800 9px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.lab-pro-state { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
+.lab-pro-state--none { color: var(--muted); font-weight: 600; }
+.lab-pro-when { margin-top: 2px; font-size: 10.5px; color: var(--muted); }
+/* THE LEAD. Only a true live-forward observation may ever carry a measured
+   number (LAB-0 §4). Every other case prints WHY there is no number — a blank
+   slot would read as "zero lead", which is a claim nobody made. */
+.lab-lead {
+  margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
+  font: 750 11px/1.35 var(--font-ui); color: var(--lab-ink);
+  background: var(--lab-wash); border: 1px solid var(--lab-rule);
+  border-radius: 6px; padding: 4px 9px;
+}
+.lab-lead b { font: 800 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lab-lead--none {
+  color: var(--muted); background: transparent; font-weight: 600;
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); cursor: help;
+}
+
+/* ═══════════════ 6. LAB STATES — empty · behind · unavailable ══════════
+   Each one stays visibly LAB. There is no silent LIVE fallback under a LAB
+   label: when the Lab has nothing to show, it says so in the Lab's own voice
+   and names what still works (LAB-0 §6.5, design system §11.1 Empty/Error). */
+.lab-note {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 12px 0 0; padding: 10px 13px; border-radius: 10px;
+  font-size: 12px; line-height: 1.5;
+  border: 1px solid var(--lab-rule); background: var(--lab-wash); color: var(--text);
+}
+.lab-note::before { content: "\25D4"; flex: none; color: var(--lab-ink); font-size: 12px; line-height: 1.45; }
+.lab-note b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.lab-note--warn { border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, transparent); }
+.lab-note--warn::before { content: "\26A0"; color: var(--ink-warn, var(--warn)); }
+
+/* ── THE BASELINE MARKER — where continuous live watching began.
+      The live/seed split is a function of one date, so the date is drawn on
+      the spine. Above it the spine is solid and rows are sightings; below it
+      the spine is dashed and rows are history. The reader is never asked to
+      infer the rule from a badge. ─────────────────────────────────────────── */
+.lab-mark {
+  display: grid; align-items: center;
+  grid-template-columns: var(--lab-gut) minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.lab-mark-when {
+  padding: 10px 16px 10px 0; text-align: right;
+  border-right: 2px solid var(--lab-spine);
+  align-self: stretch; display: flex; align-items: center; justify-content: flex-end;
+  font: 700 11px/1.2 var(--font-mono); color: var(--lab-ink);
+}
+.lab-mark-l {
+  padding: 10px 0 10px 18px; font-size: 11px; line-height: 1.45; color: var(--muted);
+  align-self: stretch; display: flex; align-items: center;
+}
+@media (max-width: 560px) { .lab-mark-l { padding-left: 13px } .lab-mark-when { padding-right: 10px } }
+
+/* the spine's own way of saying "and nothing since": a dashed head segment
+   above the newest node, labelled. An absence of observations is a fact about
+   the feed, so it is drawn on the instrument that measures it. */
+.lab-gap {
+  display: grid; grid-template-columns: var(--lab-gut) minmax(0, 1fr);
+  align-items: center; min-height: 44px;
+}
+.lab-gap-rail { height: 100%; border-right: 1.5px dashed var(--line); }
+.lab-gap-l { padding-left: 18px; font-size: 10.5px; color: var(--muted); }
+
+.lab-state { margin: 18px 0 0; }
+.lab-state .mx-empty { border-color: var(--lab-rule); background: var(--lab-wash); }
+.lab-state-act {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 7px;
+  appearance: none; cursor: pointer; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); color: var(--text); font: 700 11.5px/1 var(--font-ui); padding: 8px 14px;
+}
+.lab-state-act:hover { border-color: color-mix(in srgb, var(--text) 36%, var(--line)); }
+.lab-state-act:focus-visible { outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px; }
+
+/* ═══════════════ 7. LIVE ⇄ LAB TRANSITION ═════════════════════════════
+   One 140ms fade on the board region, once per flip. Nothing else animates:
+   the mode change is the event, and a second effect would compete with it. */
+html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: lab-in .14s ease both; }
+@keyframes lab-in { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-feed .dtp-dot { animation: none !important; }
+  html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: none !important; }
+  .lab-seg button, .lab-sel button { transition: none !important; }
+  /* pseudo-element effects are named explicitly — a reduced-motion block that
+     does not name them ships dead sweeps (house memory law) */
+  .lab-note::before, .lab-cls--live::before, .lab-auth::before { animation: none !important; }
+}
+
+/* ═══════════════ 8. RESPONSIVE — 390w is the design floor ═════════════
+   Deliberate re-composition, not a squeeze. The spine SURVIVES to mobile
+   (it is the signature and it carries the honesty distinction); the chart,
+   identity and Prophet answer stack inside one gutter, in that order — the
+   same reading order as desktop left-to-right. */
+@media (max-width: 1180px) {
+  body { --lab-chart: 240px; --lab-pro: 240px; }
+}
+@media (max-width: 980px) {
+  .lab-row {
+    grid-template-columns: var(--lab-gut) minmax(0, 1fr);
+    grid-template-areas: "when chart" "when id" "when pro";
+    row-gap: 10px;
+  }
+  /* stacked: the three content cells share one column, so vertical padding is
+     re-apportioned across the stack instead of applied three times */
+  .lab-chart { padding: 14px 0 0 18px; max-width: 380px; }
+  .lab-id { padding: 0 0 0 18px; }
+  .lab-pro {
+    padding: 10px 0 14px 18px; border-left: 0;
+    border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+    margin-left: 18px;
+  }
+  .lab-pro-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+}
+@media (max-width: 560px) {
+  body { --lab-gut: 62px; }
+  /* Mobile reduction (§15): a deliberate re-composition, not a squeeze. The
+     band tightens so the first observation reaches the fold; the sort-basis
+     sentence demotes to the count chip's LENS; nothing is silently removed. */
+  .lab-band { margin-top: 12px; }
+  .lab-purpose { font-size: 12.5px; }
+  .lab-stance { font-size: 12.5px; margin-top: 3px; }
+  .lab-auth { font-size: 11px; margin-top: 5px; }
+  .lab-sel-wrap { margin-top: 11px; }
+  .lab-meta { margin-top: 10px; padding-bottom: 8px; gap: 8px; }
+  .lab-sub { font-size: 12px; }
+  .lab-basis { display: none; }
+  .lab-when { padding-right: 10px; }
+  .lab-t { font-size: 12px; }
+  .lab-tl { font-size: 9px; }
+  .lab-chart, .lab-id, .lab-pro { padding-left: 13px; }
+  .lab-pro { margin-left: 13px; }
+  .lab-mark-l { padding-left: 13px; }
+  .lab-gap-l { padding-left: 13px; }
+  .lab-seg { margin-left: 0; }
+  .lab-modebar { gap: 8px; }
+  .lab-cls-filter { margin-left: 0; }
+  .lab-stamp { margin-left: 0; }
+}
+
+/* ═══════════════ 9. LIVE MODE IS UNTOUCHED ════════════════════════════
+   In LIVE the Lab plane is not merely hidden — lab.js removes it and repaints
+   the board from board.js, so nothing of the Lab can survive as a stale
+   snapshot. The only Lab bytes that remain on a LIVE page are the mode
+   control itself. */
+html[data-mode="live"] .lab-band,
+html[data-mode="live"] .lab-plane { display: none; }
