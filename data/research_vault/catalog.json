@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T02:10:41.593193+00:00",
-  "count": 1376,
+  "generated_at": "2026-08-19T03:37:05.698092+00:00",
+  "count": 1379,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -500,6 +500,68 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tgkhwkhqmsb-8ed5bd",
+      "title": "GOAL Kickstart Summer data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:37Z",
+      "summary_points": [
+        "**S&P 500 Valuation & Credit Spreads**: S&P 500 at 20.0x (59th percentile) signals relative expensiveness vs.",
+        "10y history, while US HY credit spreads at 267bp indicate elevated risk premium, demanding caution in equity allocation.",
+        "**Gold-VIX Hedge Opportunity**: Strong negative correlation (-0.74) between Gold and VIX, with current percentile (0.13) showing active hedging potential amid elevated equity volatility.",
+        "**EM Equity-Bond Divergence**: EM Equity shows strong inflows (YTD), but EM Bonds exhibit negative weekly flows (-0.4% AUM), signaling imminent rotation risk and underperformance in EM fixed income.",
+        "**Monetary Policy-TIPS Yield Link**: Inverse correlation between PC2 (monetary policy factor) and US 10-yr TIPS yield (1y z-score, inverted), critical for bond positioning amid Fed tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gj8h50uqyms-858c9c",
+      "title": "Global Markets Comment Market Stress Monitor — 17 August 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:34Z",
+      "summary_points": [
+        "**European Credit Stress**: EUR 10y Swap Spreads at 90-100% percentile signals severe credit stress in Europe, driven by geopolitical tensions and policy tightening.",
+        "**Japanese Equity Illiquidity**: R3000 Single Stock Liquidity Index at 90-100% percentile indicates extreme illiquidity in Japanese equities, heightening volatility risk.",
+        "**JPY Basis Surge**: JPY 1y OIS XCCY Basis surge (2024-2026) signals potential BoJ policy shift (e.g., ending yield curve control) and carry trade unwinding.",
+        "**EM Cross Currency Basis Spike**: 12-month cross currency basis vs USD spikes, indicating currency stress (USD strength, EM currency weakness), critical for EM portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jrepgcbs7sc-3e5c43",
+      "title": "Global Markets Analyst Finding Factors in FX Markets",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T16:25:30Z",
+      "summary_points": [
+        "**National Debt Factor**: Low debt/GDP currencies consistently outperform, critical for fundamental currency allocation decisions (Exhibit 3).",
+        "**NIIP as Carry Hedge**: High NIIP currencies (e.g., USD) offer risk-off/low-yielding traits via home-bias repatriation, enabling carry trade hedging during capital retreatment.",
+        "**Blended Factor Performance**: Carry/Risk-On and Carry/Mean Reversion blends outperform constituents (e.g., 40pp higher returns), enhancing vol-adjusted returns in procyclical regimes.",
+        "**Concentrated Weighting**: Strategic concentration (vs.",
+        "linear weights) boosts average annualized returns and Sharpe ratios across National Debt, Carry, Mean Reversion, and Equity Risk factors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
