@@ -9776,6 +9776,32 @@ jobs:
         run: python -m pytest tests/test_collector_freshness_disclosure.py -q
       - name: off-render Yahoo universe backfill contract
         run: python -m pytest tests/test_yahoo_universe_backfill.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5942 sibling): the
+      # NA-ticker pandas-sentinel guard. pandas decodes the bare strings
+      # NA/NULL/NONE/NAN/N-A/NaN to NaN by default, and 'NA' is a live ticker on
+      # both sides (Nano Labs Ltd, Nasdaq; National Bank of Canada, TSX) — every
+      # read_csv/read_excel over a ticker column silently dropped those rows
+      # with adapter status still `ok`. Pins the keep_default_na=False +
+      # na_values=[""] guard (an AST call-site census — pure ast.parse, no
+      # import) across all 18 parse sites in the nine collector files this
+      # fixed, plus the is_non_equity_holding() truth table (collectors/
+      # holdings.py, Part B of the fix) and the documented regression a BARE
+      # keep_default_na=False would reintroduce (numeric columns silently
+      # turning to dtype str).
+      #
+      # Lives HERE, not on the ETF lane its subject reads closest to
+      # (unrun-scoring-engine), for the same reason test_collector_freshness_
+      # disclosure sits in THIS job two steps up: one of its behavioural
+      # round-trips imports collectors.canada_universe (_to_ticker), and that
+      # module's `import yfinance as yf` is module-scope — it ERRORS at
+      # collection under the shared unrun-* install (verified: this exact
+      # placement in unrun-scoring-engine failed CI on PR #5985 with
+      # `ModuleNotFoundError: No module named 'yfinance'`, even though it
+      # passed locally where yfinance happened to already be installed). This
+      # lane already declares the yfinance wheel and already owns a
+      # yfinance-import-at-collection suite, so it costs nothing new.
+      - name: NA-ticker pandas-sentinel guard — 18 parse sites + is_non_equity_holding truth table
+        run: python -m pytest tests/test_collectors_na_sentinel.py -q
 
   unrun-brain-gateway:
     # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
@@ -10214,27 +10240,6 @@ jobs:
         run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
-      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5942 sibling): the
-      # NA-ticker pandas-sentinel guard. pandas decodes the bare strings
-      # NA/NULL/NONE/NAN/N-A/NaN to NaN by default, and 'NA' is a live ticker on
-      # both sides (Nano Labs Ltd, Nasdaq; National Bank of Canada, TSX) — every
-      # read_csv/read_excel over a ticker column silently dropped those rows
-      # with adapter status still `ok`. Pins the keep_default_na=False +
-      # na_values=[""] guard (an AST call-site census) across all 18 parse sites
-      # in the nine collector files this fixed, including etf_holdings.py's 9 —
-      # the largest single chunk, and the reason this suite rides the ETF lane
-      # rather than a collectors-generic one: "etf fund registry" and "etf flow
-      # decomposition" above already exercise the same sponsor-parsing surface.
-      # Also covers the is_non_equity_holding() truth table (collectors/
-      # holdings.py) that Part B of the fix depends on, and the documented
-      # regression a BARE keep_default_na=False would reintroduce (numeric
-      # columns silently turning to dtype str). Pure pandas/ast — no network, no
-      # xlsx bytes (the read_excel(header=None) sponsor sites are proven via the
-      # downstream frame shape instead, same as test_corp_bond_holdings.py does
-      # for openpyxl elsewhere) — so it costs this job's venv nothing beyond the
-      # pandas/numpy already on the install line above.
-      - name: NA-ticker pandas-sentinel guard — 18 parse sites + is_non_equity_holding truth table
-        run: python -m pytest tests/test_collectors_na_sentinel.py -q
 
   # ── RED-ON-ARRIVAL SWEEP, BATCH B (2026-07-27) ─────────────────────────────
   # The template-surface share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on
