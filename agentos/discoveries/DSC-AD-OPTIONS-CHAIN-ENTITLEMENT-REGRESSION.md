@@ -29,8 +29,15 @@ so_what: >
   with --ignore-staleness. After AD-1C0, an auth outage is visible as
   auth_or_entitlement_failure in the accrual census/health receipts and short-circuits
   after a 5-symbol mixed-class probe instead of sweeping the universe.
-confidence: high
-observed_at: 2026-08-19
+kind: constraint
+verified_at: 2026-08-19
+verified_by: >
+  python3 scripts/massive_entitlement_probe.py (RestProber primitives, 2026-08-19) —
+  8-probe table across both vendor domains with the same key; the production adapter
+  path collectors/polygon_options.py:167 on AAPL/SPY; and `gh api
+  repos/{owner}/{repo}/actions/jobs/95560690668/logs` (run 32077948964).
+scope: [macro]
+confidence: verified
 workstream: "WS:ADVANCED-DATA-OPTIONS"
 evidence:
   - "Live differential census 2026-08-19 (session 25dc7757 census packet): 8-probe table, both domains x {AAPL stock, AAPL chain, SPY chain, news}"

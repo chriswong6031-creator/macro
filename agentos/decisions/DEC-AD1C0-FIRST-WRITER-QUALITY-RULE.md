@@ -48,7 +48,7 @@ evidence:
   - "tests/test_polygon_gex.py first-writer decision matrix + TestW1VerifiedWriteAhead + TestC1TwoFieldVerificationMatch"
   - "scripts/build_polygon_gex.py docstring lineage: M7 2026-07-29, session re-scope 2026-08-06, AD-1C0 2026-08-19"
 confidence: high
-reversibility: moderate
+reversibility: costly
 decided_by: fable-orchestrator
 decided_at: 2026-08-19
 ---
