@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T17:26:09.546037+00:00",
-  "count": 1420,
+  "generated_at": "2026-08-19T18:17:33.516969+00:00",
+  "count": 1423,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,26 @@
   ],
   "items": [
     {
+      "id": "marketdesk-1zhddag3sng-0b314e",
+      "title": "Budget Blues",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-19T16:49:06Z",
+      "summary_points": [
+        "**Fiscal Deficit Acceleration**: $170bn tariff revenue loss and corporate tax cuts worsen deficit, with customs duties only partially offsetting shortfall.",
+        "**10Y Treasury Yield Targeting 5%**: Steepening curve pressures as Treasury targets 5% (5.4% intermediate, 6% 2027), driven by revenue shortfall and lack of Fed coupon buying.",
+        "**Fed Bill Allocation Shift**: Fed expanding bill holdings to 20-25% of UST (current ~20% of GDP), critical for debt financing amid fiscal deficit deterioration.",
+        "**UST Repricing Risk to Growth**: Rising term yields repricing risk assets (equities, housing, corporate debt), halting growth; asset valuations vulnerable as Achilles heel amid weak real growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-itifvoltrre-aae341",
       "title": "TJX Cos. (TJX) F2Q27 First Take 2Q adj",
       "institution": "Goldman Sachs",
@@ -99,6 +119,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-djcsnghw2rh-95fb1d",
+      "title": "SK Hynix Inc. (000660)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:22Z",
+      "summary_points": [
+        "**Buyback Execution & Policy Shift**: 3.3% share buyback/cancellation (W40tn) announced Aug 19, driven by undervaluation; shareholder return target updated to 50%+ of 3-year cumulative FCF (vs.",
+        "50%), reflecting confidence in memory upcycle and cash flow generation.",
+        "**Goldman Sachs EPS & Target Surge**: Raised 2026E-2028E EPS by 4-10% due to buybacks; 12m target W3,500,000 (42% above current price), signaling aggressive growth expectations amid AI memory demand.",
+        "**HBM Leadership & AI Demand Thesis**: SK Hynix leads HBM market, 2nd-largest DRAM/NAND supplier; AI-driven server memory demand to outpace supply in 2026, supporting Buy rating and sustained growth trajectory.",
+        "**Key Risk Exposure**: Memory supply/demand deterioration, weaker PC/server demand, Samsung’s HBM progress, and lower AI capex impacting HBM revenue/profit—critical for portfolio risk assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -141,6 +182,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o9e0iwtnerx-2d08ea",
+      "title": "Global Markets Daily Is Point of Sale Lending a Consumer Leverage Blind Spot",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:16Z",
+      "summary_points": [
+        "**Borrower Concentration Risk**: Younger (18–29) and lower-income (<$25k) borrowers dominate BNPL usage (30–40%) and delinquency (30–40% of users), indicating systemic credit risk in vulnerable segments.",
+        "**Loan Stacking Vulnerability**: ~33% of BNPL borrowers hold simultaneous loans across multiple lenders, creating unreported credit blind spots that amplify default risk and systemic exposure.",
+        "**ABS Market Dynamics**: $5B point-of-sale ABS market with D90+ rates at 70bp and wider spreads than credit card ABS, threatened by rising delinquency (2021–2025) and fading OBBA tax-refund tailwinds.",
+        "**Policy-Driven Cashflow Risk**: Fading OBBA tax-refund tailwinds and weak real income growth for bottom quintile signal cashflow risks for lower-income consumers, directly impacting ABS credit quality."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
