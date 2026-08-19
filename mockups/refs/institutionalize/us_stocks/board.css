@@ -284,12 +284,19 @@ a { color: inherit; }
    construction: currentColor / --muted only — no --up/--down/--q* hue ever
    touches a lifecycle mark, so the grammar is byte-identical under the zh flip.
 
-   ONE definition serves two sizes:
-     .mx-cap  — full-bleed 3px cap at the top of a ladder cell AND at the top of
-                a card. Identical geometry in both places, which is what makes
-                the ladder and the grid read as one population.
+   ONE definition serves two sizes, in two DIFFERENT places:
+     .mx-cap  — full-bleed 3px cap at the top of a LADDER CELL. Ladder only.
+                The card's top cap was removed at #5514 v1 (DESIGN_NOTES §1
+                "Removed from #5514 v1") so the cap would stop competing with
+                the chart for the card's head; that removal is law and the cap
+                is emitted from ladder() alone.
      .mx-mark — the same six weights at inline scale (26px), for the card's
                 lifecycle fact column, the table, and the absence line.
+   So the ladder-to-card link is carried by the INLINE MARK, not by a shared
+   cap: the same six weights appear on both surfaces, at the two scales each
+   surface can afford. Identical grammar, deliberately non-identical geometry.
+   (Guarded: verify_r4.py R29a asserts .mx-cap is emitted only inside .mx-cell,
+   so this sentence cannot drift back into describing a repealed contract.)
    ─────────────────────────────────────────────────────────────────────────── */
 .mx-cap {
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -630,6 +637,13 @@ html[data-theme="light"] .pvcard.pv-featured {
 }
 .pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pv-ind { font-size: 9.5px; color: var(--muted); opacity: .85; }
+/* V-B3: an UNTRANSLATED sector on a zh card is marked as such — a dotted rule
+   under a hoverable term — so it reads as a disclosed gap, not as copy that
+   was left in English by accident. Zero rows tonight; the branch is real. */
+.pv-ind--raw {
+  border-bottom: 1px dotted color-mix(in srgb, var(--muted) 70%, transparent);
+  cursor: help;
+}
 /* PRIORITY — readiness rank within tonight's set. Deliberately quiet: visible
    for scanning, never louder than ticker, stance or price. Never hued: it is
    not a win probability and must not read as a quality colour. */
@@ -662,8 +676,42 @@ html[data-theme="light"] .pvcard.pv-featured {
   border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius: 4px;
   font-size: 9px; font-weight: 650; color: var(--muted); white-space: nowrap;
 }
-.pv-newer { font-size: 10px; font-weight: 650; color: var(--ink-link); text-decoration: none; }
+/* P-B2: the newer-plan link RESOLVES now. It used to emit `#id=<plan>` — a
+   fragment nothing on this page ever read, aimed at a card the Resolved
+   partition had already filtered out of the DOM, so it was dead in every
+   state. It is now `?focus=<plan>`, the same query-string mechanism the ladder
+   filters use, and the board it lands on unfilters, expands and marks the
+   target card (board.js applyFocus). Ordinary <a href>: middle-click, copy
+   link and open-in-new-tab all behave. */
+.pv-newer {
+  margin-left: auto; font-size: 10px; font-weight: 650;
+  color: var(--ink-link); text-decoration: none;
+}
 .pv-newer:hover { text-decoration: underline; }
+.pv-newer:focus-visible { outline: 2px solid var(--ink-link); outline-offset: 2px; border-radius: 3px; }
+/* the honest disabled form: the capability is still NAMED, it is visibly not a
+   link, and its receipt says why. Never a live-looking link that goes nowhere. */
+.pv-newer--off {
+  color: var(--muted); cursor: help;
+  border-bottom: 1px dotted color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+/* the arrival mark. A ring, never a wash — the same colour-budget rule the
+   Featured aura obeys — and it is the FOCUS ring token, not a stance hue,
+   because "this is the card you asked for" is navigation, not a verdict. */
+.pvcard.pv-landed {
+  border-color: color-mix(in srgb, var(--ink-link) 62%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink-link) 34%, transparent);
+}
+.pv-landnote {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ink-link) 34%, var(--line));
+  background: color-mix(in srgb, var(--info) 6%, var(--panel));
+  font-size: 11.5px; color: var(--muted); line-height: 1.5;
+}
+.pv-landnote b { color: var(--text); font-weight: 700; }
+.pv-landnote a { color: var(--ink-link); font-weight: 650; }
 
 /* ── zone footer: the price AREA that matters, not an execution instruction ── */
 .pv-zn {
@@ -825,6 +873,87 @@ html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .
 .mx-empty b { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
 .mx-empty-why { font-size: 12px; color: var(--muted); line-height: 1.55; }
 
+/* ═══════════ LOADING + ERROR — the specimen's canonical components ════════
+   R4.2 / V-B4. Both existed in mockups/design_system/specimen.html the whole
+   time (:112-113 .skel, :114-116 .mx-error, used at :450-459) and were absent
+   here because §6 Q5 declared the specimen non-existent off a sparse-tree ls
+   (N1). Tokens are the specimen's, re-expressed against this sheet's radii.
+
+   THREE STATES, THREE DIFFERENT FACTS, AND THEY MUST NOT LOOK ALIKE:
+     .pv-ghost  — WITHHELD.  Real content behind a blur, because it exists and
+                  you are not entitled to it (the anonymous tier gate).
+     .skel      — NOT ARRIVED YET.  No blur, a moving shimmer, true geometry.
+                  Motion is the whole distinction: withheld content is static,
+                  arriving content is not.
+     .mx-error  — DID NOT ARRIVE.  Motion stops; the failure is named in words
+                  and carries a control, because a stalled shimmer is a lie. */
+/* The skeleton is always a RECESS relative to whatever it sits on — mixed off
+   --text rather than off a fixed panel — so it reads the same way in both
+   themes instead of being a light block in one and a dark block in the other.
+   The sweep is the only moving thing on the page in this state. */
+.skel {
+  border-radius: 6px; display: block;
+  background: linear-gradient(90deg,
+              color-mix(in srgb, var(--text) 7%, var(--panel2)) 25%,
+              color-mix(in srgb, var(--text) 15%, var(--panel2)) 45%,
+              color-mix(in srgb, var(--text) 7%, var(--panel2)) 65%);
+  background-size: 200% 100%; animation: skel 1.25s linear infinite;
+}
+@keyframes skel { to { background-position: -200% 0; } }
+
+/* the loading card carries the SHIPPED card's geometry — 74px hero, the same
+   body padding, the same zone footer rule — so the grid does not reflow when
+   the payload lands. A skeleton that is not the true size is a second layout. */
+.pv-skcard {
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden;
+}
+.sk-chart { height: 74px; border-radius: 11px 11px 0 0; }
+.sk-bd { padding: 10px 10px 11px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.sk-bd .skel { height: 10px; }
+.sk-bd .skel:nth-child(1) { height: 13px; width: 46%; }
+.sk-bd .skel:nth-child(2) { width: 30%; }
+.sk-bd .skel:nth-child(3) { width: 66%; }
+.sk-bd .skel:nth-child(4) { width: 40%; margin-top: auto; }
+.sk-zn {
+  border-top: 1px solid var(--line); padding: 7px 10px 8px;
+  background: color-mix(in srgb, var(--panel) 55%, var(--bg));
+}
+.sk-zn .skel { height: 9px; width: 58%; }
+/* the ladder under load: the seven cell WORDS are ruled constants and render
+   normally — only the counts are unknown, so only the counts are skeletons.
+   NOT an em dash: on this surface the dash is already law for "published and
+   absent" (ruling §6 fn.1), and one glyph may not carry two facts. This is a
+   declared divergence from MP-1 §10's "ladder cells show dashes" — see
+   DESIGN_NOTES §9. */
+.sk-n { height: 18px; width: 26px; }
+.sk-head { height: 30px; width: 62px; }
+
+.mx-error {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--warn) 34%, var(--line));
+  border-radius: 12px; padding: 12px 14px;
+  background: color-mix(in srgb, var(--warn) 6%, var(--panel));
+  font-size: 12.5px; line-height: 1.55; color: var(--muted);
+}
+.mx-error b { color: var(--ink-warn, var(--warn)); font-weight: 700; }
+/* NEW control, so it is minted at the MPDS §14 floor (>=40px) rather than
+   inheriting the estate's sub-floor buttons — those are the DS-PR's to raise,
+   but nothing new here is allowed to add to that debt. */
+.mx-error-retry {
+  margin-left: auto; flex: none; min-height: 40px; padding: 0 18px;
+  border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px;
+  font-weight: 700; color: var(--text); background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
+}
+.mx-error-retry:hover { background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
+.mx-error-retry:focus-visible { outline: 2px solid var(--ink-link); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .mx-error { flex-wrap: wrap; }
+  .mx-error-retry { margin-left: 0; width: 100%; }
+}
+
 /* ═══════════════════ LENS (Tier-2 receipts) ════════════════════════════ */
 .lens-pop {
   position: fixed; z-index: 999; width: min(300px, calc(100vw - 24px));
@@ -908,7 +1037,30 @@ html[data-chrome="0"] .harness { display: none; }
 
 /* ═══════════════ R3 ADDITIONS ══════════════════════════════════════════ */
 
-/* ── A. the caution carrier (_prophet_card.html.j2:307-318, verbatim) ───── */
+/* ── A. the caution carrier — SHIPPED CSS, verified ─────────────────────────
+   Source: templates/_prophet_card.html.j2:308-320 (the R3 comment cited
+   :307-318, which is off by one at both ends — corrected here under the C8
+   pv_cau ruling's shipped-CSS check). Measured declaration-by-declaration
+   against production at origin/main: .pv-cau 2/2, .pv-cau-btn 13/13 (source
+   ORDER differs — `font-family:inherit` sits earlier here because this element
+   is a <span> outside a form context; computed result identical), .pv-cau-pop
+   17/17, .pv-cau-hd 7/7, .pv-cau-row 6/6, .pv-cau-row::before 9/9, and the
+   :hover/:focus-within reveal 1/1 — all identical.
+
+   TWO declared deltas, neither of them a size:
+     · production also ships `.pv-cau-row + .pv-cau-row { margin-top:7px }`,
+       which this reference does NOT carry. Named rather than silently added,
+       because the C8 ruling scopes this pass to answering the question, not to
+       re-cutting a shipped primitive. The consequence is a tighter row rhythm
+       inside the hover popover; it is on the DS-PR list with the target below.
+     · the `position:relative; z-index:2` raise at :628 is reference-side
+       architecture (PRC-301's stretched card anchor), not a production rule.
+
+   CLASSIFICATION (C8 pv_cau ruling): the pill is SHIPPED, so its 19px touch
+   target is INHERITED ESTATE DEBT, not reference-minted. It joins K5's DS-PR
+   list with the other sub-40px estate controls (MPDS §14) and MP-1 §5 records
+   it as an inherited primitive. Not raised here: a reference that unilaterally
+   re-cuts a shipped component stops being a faithful reference. */
 .pv-cau { position: relative; display: inline-flex; }
 .pv-cau-btn {
   display: inline-flex; align-items: center; gap: 3px;
@@ -1080,6 +1232,15 @@ html[data-theme="light"] .mx-cell { background: #fff; }
 .trd-sep { color: var(--line); }
 .trd-stat { font-weight: 650; }
 .trd-stat b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+/* P-B6: the interval rides the SAME line as the figure, in the same type size,
+   one weight quieter. Not a footnote, not a sub-line, not a hover: a per-trade
+   average whose interval crosses zero is not a fact at glance tier unless the
+   crossing is at glance tier too. Quiet, because the point estimate is still
+   the headline — but never absent. */
+.trd-band {
+  font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .trk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 9px; }
 .trk-i {

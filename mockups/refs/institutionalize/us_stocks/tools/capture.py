@@ -46,11 +46,22 @@ SHOTS = [
     ("25-filter-delivering-zero", DESKTOP, "theme=dark&lang=en&state=paid&life=delivering"),
     ("26-filter-overtime-zero",   DESKTOP, "theme=dark&lang=en&state=paid&life=overtime"),
     ("27-filter-resolved",        DESKTOP, "theme=dark&lang=en&state=paid&life=resolved"),
+    # ── R4.2 / P-K19: the watch key present-and-EMPTY. The frozen fixture has
+    #    the key absent (an em dash); production publishes it empty from
+    #    2026-08-18 (a literal 0, six published cells, no disclosure line).
+    #    Same counts, the other reading — the fixture is not re-baked.
+    ("28-watch-present-zero",     DESKTOP, "theme=dark&lang=en&state=paid&watch=present"),
+    ("29-watch-present-zero-zh",  DESKTOP, "theme=light&lang=zh&state=paid&watch=present"),
     # ── §12.11: multi-episode ──────────────────────────────────────────────
     ("30-multi-episode-en",       DESKTOP, "theme=dark&lang=en&state=episodes"),
     ("31-multi-episode-zh",       DESKTOP, "theme=light&lang=zh&state=episodes"),
     ("32-multi-episode-resolved", DESKTOP, "theme=dark&lang=en&state=episodes&life=resolved"),
     ("33-multi-episode-390-en",   MOBILE,  "theme=dark&lang=en&state=episodes"),
+    # ── R4.2 / P-B2: where the newer-plan link LANDS. The capability was dead
+    #    in every state before this round, so it had no picture; a link that
+    #    resolves has to be evidenced by the view it resolves to.
+    ("34-newer-plan-landing",     DESKTOP, "theme=dark&lang=en&state=paid&focus=FBRT-BULL-20260805"),
+    ("35-newer-plan-landing-zh",  DESKTOP, "theme=light&lang=zh&state=paid&focus=ARES-BULL-20260722"),
     # ── §12.12: anonymous / locked ─────────────────────────────────────────
     ("40-anon-locked-dark-en",    DESKTOP, "theme=dark&lang=en&state=anon"),
     ("41-anon-locked-light-zh",   DESKTOP, "theme=light&lang=zh&state=anon"),
@@ -58,6 +69,16 @@ SHOTS = [
     # ── other required states ──────────────────────────────────────────────
     ("50-empty-dark-en",          DESKTOP, "theme=dark&lang=en&state=empty"),
     ("51-empty-light-zh",         DESKTOP, "theme=light&lang=zh&state=empty"),
+    # ── R4.2 / V-B4: the two canonical components the specimen ships and this
+    #    reference did not carry. Empty / loading / error are ONE family and
+    #    are photographed together, because what they have to prove is that a
+    #    reader can tell them apart.
+    ("52-loading-dark-en",        DESKTOP, "theme=dark&lang=en&state=loading"),
+    ("53-loading-light-zh",       DESKTOP, "theme=light&lang=zh&state=loading"),
+    ("54-loading-390-dark-en",    MOBILE,  "theme=dark&lang=en&state=loading"),
+    ("55-error-dark-en",          DESKTOP, "theme=dark&lang=en&state=error"),
+    ("56-error-light-zh",         DESKTOP, "theme=light&lang=zh&state=error"),
+    ("57-error-390-dark-en",      MOBILE,  "theme=dark&lang=en&state=error"),
     ("60-table-invalidated",      DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated&view=table"),
     ("61-table-resolved-zh",      DESKTOP, "theme=light&lang=zh&state=paid&life=resolved&view=table"),
     # ── §12: the three-way card adjudication (its own page) ────────────────
@@ -93,8 +114,29 @@ FULL_PAGE = {
     "04-desktop-light-zh", "05-mobile390-dark-en", "06-mobile390-dark-zh",
     "10-fallback-dark-en", "30-multi-episode-en", "40-anon-locked-dark-en",
     "50-empty-dark-en",
+    # R4.2: the new states are judged on the WHOLE page — loading and error both
+    # make a claim about what is unaffected below them, and an above-fold crop
+    # cannot show whether that claim is true.
+    "28-watch-present-zero", "34-newer-plan-landing",
+    "52-loading-dark-en", "55-error-dark-en",
     "70-compare-dark-en", "71-compare-light-en", "72-compare-dark-zh", "73-compare-light-zh",
 }
+
+
+# R4.2: the loading skeleton is the first ANIMATED thing in the crop set, and an
+# animation makes a screenshot non-reproducible — every re-capture would land at
+# a different sweep phase and churn bytes that mean nothing. Pinned to a fixed
+# phase (not disabled: a paused sweep is the same paint, frozen), so a crop diff
+# still means a design change.
+# Pausing a RUNNING animation is not reproducible — the phase depends on when
+# the style landed. The animation is removed and the sweep pinned to an explicit
+# mid-travel position instead, which is one exact frame of the same paint.
+FREEZE_CSS = ("*, *::before, *::after { animation: none !important }"
+              ".skel { background-position: -100% 0 !important }")
+
+
+def freeze(page):
+    page.add_style_tag(content=FREEZE_CSS)
 
 
 def main():
@@ -110,6 +152,7 @@ def main():
                    else f"{BASE}/?{q}&chrome=0")
             page.goto(url, wait_until="networkidle")
             page.wait_for_timeout(220)
+            freeze(page)
 
             # a horizontal page scroll is an acceptance failure, not a nit
             over = page.evaluate(
@@ -131,6 +174,7 @@ def main():
                                     device_scale_factor=1)
             page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
             page.wait_for_timeout(220)
+            freeze(page)
             el = page.query_selector(sel)
             if el is None:
                 # FAIL LOUD. A missing control must not quietly yield a crop of
