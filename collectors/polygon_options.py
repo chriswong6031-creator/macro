@@ -39,6 +39,12 @@ log = logging.getLogger(__name__)
 # to a bare None now returns one of these instead, so an all-symbol failure can
 # never again surface as a reasonless empty snapshot. Kept as a module-level
 # constant so tests and scripts/build_polygon_gex.py can validate against it.
+# "Sol's list is 'at least'" (Fable ruling, B2, 2026-08-19) — the set is closed
+# for per-symbol roots inside _one_chain(), but a run-LEVEL failure root (one
+# that aborts the whole accrual before any symbol is even attempted) is a
+# legitimate, documented amendment: universe_resolution_failed (B2 — a degraded
+# basket-membership resolution, caught in scripts.build_polygon_gex.accrue()
+# before client.snapshot() is ever called).
 REASON_CODES = frozenset({
     "no_spot",                     # spot() returned None (200-OK, no usable price)
     "auth_or_entitlement_failure", # HTTP 401/403 (vendor NOT_AUTHORIZED)
@@ -47,14 +53,34 @@ REASON_CODES = frozenset({
     "raw_chain_empty",             # vendor 200 with zero results
     "parse_or_filter_empty",       # nonempty raw emptied by the strike/expiry/OI filter
     "other_failure",               # anything else (catch-all)
+    "universe_resolution_failed",  # B2: include_baskets=true but 0 basket members resolved
 })
 
-# If the first this-many attempted underlyings ALL come back
+# If the probe set (see _auth_probe_symbols) ALL come back
 # auth_or_entitlement_failure with zero successes, the key is almost certainly
 # de-entitled for the whole run — abort the remaining universe rather than paying
 # its full retry budget on a foregone conclusion (measured: ~1,125 requests / ~13
 # min at the pre-fix universe size, all 403).
 AUTH_SHORT_CIRCUIT_PROBE = 5
+
+
+def _auth_probe_symbols(symbols: list[str]) -> list[str]:
+    """The auth short-circuit's probe set (AD-1C0 M9 ruling): a DETERMINISTIC
+    MIXED-CLASS sample — the first 3 symbols of the universe order (anchor/ETF-
+    heavy, since gex_symbols() puts config anchors first) PLUS the last 2
+    (basket/single-name-heavy, appended after the anchors), deduplicated
+    preserving order. An anchors-only probe (symbols[:5]) can never see past an
+    INDEX/ETF-scoped entitlement gap to a working single-name entitlement one
+    tier over — this mix can, at the same fixed cost. Falls back to the whole
+    universe when it has AUTH_SHORT_CIRCUIT_PROBE or fewer symbols (nothing
+    would be left to abort anyway)."""
+    if len(symbols) <= AUTH_SHORT_CIRCUIT_PROBE:
+        return list(symbols)
+    seen: list[str] = []
+    for s in (*symbols[:3], *symbols[-2:]):
+        if s not in seen:
+            seen.append(s)
+    return seen
 
 
 def _classify_exception(exc: Exception) -> str:
@@ -262,9 +288,21 @@ class PolygonOptions(Adapter):
             log.warning("polygon: empty chain for %s", sym)
             return None, "raw_chain_empty"
         gx = self.cfg["gex"]
-        ch = parse_chain(results, sym, s, asof,
-                         window_pct=float(gx["strike_window_pct"]),
-                         max_expiry_days=int(gx["max_expiry_days"]))
+        # B1 (AD-1C0 review): parse_chain used to run OUTSIDE this classified
+        # try/except. One malformed vendor contract (a string strike, a bad
+        # expiry token, a non-numeric OI) raised out of parse_chain and crashed
+        # the WHOLE snapshot through ex.map — a single bad symbol took down every
+        # other symbol's already-fetched result with it. Classified exactly like
+        # the fetch failures above: a parse defect is a per-symbol failure, not a
+        # run-ending one, and other_failure is an acceptable bucket for it.
+        try:
+            ch = parse_chain(results, sym, s, asof,
+                             window_pct=float(gx["strike_window_pct"]),
+                             max_expiry_days=int(gx["max_expiry_days"]))
+        except Exception as e:  # noqa: BLE001 — classified, not swallowed blind
+            reason = _classify_exception(e)
+            log.warning("polygon: %s parse failed (%s): %s", sym, reason, safe_exc_text(e))
+            return None, reason
         if ch.empty:
             log.warning("polygon: parse/filter emptied chain for %s (%d raw contracts)",
                         sym, len(results))
@@ -296,31 +334,33 @@ class PolygonOptions(Adapter):
         dropped from the frame; the census records every failure by REASON so an
         all-symbol failure is never reasonless again (AD-1C0).
 
-        AUTH SHORT CIRCUIT: if the first AUTH_SHORT_CIRCUIT_PROBE attempted
-        underlyings ALL classify auth_or_entitlement_failure with zero successes,
-        the vendor key is almost certainly de-entitled for the whole run — abort
-        the remaining universe deterministically rather than spending its full
-        retry budget on a foregone conclusion. A single success, or any non-auth
-        failure, among the probe disables the short circuit.
+        AUTH SHORT CIRCUIT: if the deterministic mixed-class probe set (see
+        _auth_probe_symbols) ALL classify auth_or_entitlement_failure with zero
+        successes, the vendor key is almost certainly de-entitled for the whole
+        run — abort the remaining universe deterministically rather than spending
+        its full retry budget on a foregone conclusion. A single success, or any
+        non-auth failure, anywhere in the probe disables the short circuit.
 
         The census dict carries ``attempted_underlyings``, ``successful_underlyings``,
         ``failure_reasons`` ({code: count}), ``failure_examples`` ({code: [<=3 syms]})
         and ``aborted_early``; scripts/build_polygon_gex.accrue() adds the
         requested-universe denominator and coverage_pct on top.
         """
-        probe_n = min(AUTH_SHORT_CIRCUIT_PROBE, len(symbols))
-        results = self._run_batch(symbols[:probe_n], asof)
+        probe_syms = _auth_probe_symbols(symbols)
+        probe_set = set(probe_syms)
+        rest_syms = [s for s in symbols if s not in probe_set]
+        results = self._run_batch(probe_syms, asof)
         aborted = False
-        if (probe_n == AUTH_SHORT_CIRCUIT_PROBE
+        if (len(symbols) > AUTH_SHORT_CIRCUIT_PROBE
                 and all(reason == "auth_or_entitlement_failure" for _s, _d, reason in results)
                 and not any(df is not None for _s, df, _r in results)):
             aborted = True
             log.warning(
-                "polygon: first %d underlyings all auth_or_entitlement_failure — "
+                "polygon: probe set %s all auth_or_entitlement_failure — "
                 "aborting the remaining %d (vendor key likely de-entitled this run)",
-                probe_n, len(symbols) - probe_n)
+                probe_syms, len(rest_syms))
         else:
-            results = results + self._run_batch(symbols[probe_n:], asof)
+            results = results + self._run_batch(rest_syms, asof)
 
         frames = [df for _s, df, _r in results if df is not None]
         raw = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
