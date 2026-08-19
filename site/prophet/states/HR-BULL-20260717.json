@@ -4,29 +4,29 @@
   "asof": "2026-08-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 43.0,
-  "raw_confidence": 42.1,
-  "delta_vs_base": -17.0,
+  "management_confidence": 42.6,
+  "raw_confidence": 42.0,
+  "delta_vs_base": -17.4,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 48.3,
+    "validity": 47.5,
     "progress": 0.0,
     "pace": 2.5,
     "retention": 50.0,
-    "overlay": 55.0
+    "overlay": 58.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.583,
+    "dist_to_stop_r": 0.576,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 71.1,
-    "p1": -0.2777,
-    "p2": -0.1388,
+    "p1": -0.2828,
+    "p2": -0.1414,
     "p3": null,
-    "move_r": -0.417,
+    "move_r": -0.424,
     "mfe_r": 0.0,
-    "mae_r": -0.417
+    "mae_r": -0.424
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,7 +40,7 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -2.170000381469727,
+  "_mae": -2.209999389648438,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,

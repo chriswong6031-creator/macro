@@ -35,3 +35,6 @@
 {"date":"2026-08-18","key":"commmetalsbattery","name":"Battery","theme":"Commodities Metals","state":"turn_up","since":"2026-08-12","score":0.186,"n_members":11,"breadth":0.364,"dd_from_peak":-18.64,"up_from_trough":31.02}
 {"date":"2026-08-18","key":"commmetalsrareearth","name":"Rare Earth","theme":"Commodities Metals","state":"turn_up","since":"2026-08-07","score":0.287,"n_members":8,"breadth":0.25,"dd_from_peak":-13.24,"up_from_trough":27.42}
 {"date":"2026-08-18","key":"evsbatteries","name":"Batteries","theme":"Electric Vehicles","state":"turn_up","since":"2026-08-12","score":0.091,"n_members":11,"breadth":0.455,"dd_from_peak":-29.89,"up_from_trough":5.93}
+{"date":"2026-08-19","key":"commmetalsbattery","name":"Battery","theme":"Commodities Metals","state":"turn_up","since":"2026-08-12","score":0.234,"n_members":11,"breadth":0.364,"dd_from_peak":-18.11,"up_from_trough":27.11}
+{"date":"2026-08-19","key":"evsbatteries","name":"Batteries","theme":"Electric Vehicles","state":"turn_up","since":"2026-08-12","score":0.076,"n_members":11,"breadth":0.273,"dd_from_peak":-32.42,"up_from_trough":1.09}
+{"date":"2026-08-19","key":"cybersecurityidentityiam","name":"Identity IAM","theme":"Cybersecurity","state":"turn_down","since":"2026-08-19","score":0.659,"n_members":6,"breadth":1.0,"dd_from_peak":-4.41,"up_from_trough":51.15}
