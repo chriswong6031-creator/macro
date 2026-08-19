@@ -1,0 +1,152 @@
+name: data-health
+
+# W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md.
+#
+# The merge gate (ci.yml) now packs only `gate: code` legacy jobs — jobs
+# whose verdict is a pure function of the pull request's tree. The other 74
+# legacy jobs declare `gate: data`: their verdict can flip on a nightly/wire
+# data commit alone, with no code change at all, which is why main was green
+# only 44% of the time before this split (W1: research/
+# CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md §0/§4). Moving those
+# jobs off the merge gate does not delete the receipt they produce — this
+# lane still runs every `gate: data` job and still surfaces a red to a human,
+# it just does so AFTER the nightly writes the data tree those jobs assert
+# against, instead of blocking every pull request on data the PR never
+# touched.
+#
+# Triggered by the nightly (`workflow_run` on `daily` completing) so the pack
+# runs against freshly-written data, plus a manual `workflow_dispatch` and a
+# `schedule` fallback sweep in case the `workflow_run` trigger is ever missed
+# (a `workflow_run` event never fires for a workflow that itself failed to
+# start, so the schedule is the backstop, not a duplicate).
+#
+# GitHub-hosted runners only, deliberately (CLAUDE.md — render/nightly compute
+# stays off this pool; self-hosted capacity is reserved for the render path).
+
+on:
+  workflow_run:
+    workflows: ["daily"]
+    types: [completed]
+  workflow_dispatch: {}
+  schedule:
+    # 13:30 UTC: after the nightly's usual completion window, well clear of
+    # the render lanes documented in CLAUDE.md. A fallback sweep only — the
+    # `workflow_run` trigger above is the normal path.
+    - cron: "30 13 * * *"
+
+# One lane at a time, never cancelled mid-run: a cancelled pack would leave a
+# false "still investigating" impression on the standing issue, and this lane
+# is off the render path so there is no shared-pool reason to prefer a fresh
+# run over letting an in-flight one finish (CLAUDE.md — never cancel or
+# manually re-run an in-progress lane merely to unblock something else).
+concurrency:
+  group: data-health-${{ github.event_name }}
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  data-pack:
+    name: data-pack-${{ matrix.pack }}
+    # NEVER self-hosted. This lane is deliberately off the render/nightly
+    # pool (CLAUDE.md — render budget is law); it runs on GitHub's hosted
+    # capacity exactly like ci.yml's merge-gate packs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      # Sibling packs must finish so every data-gated job gets a chance to
+      # report, the same reasoning ci.yml's ci-pack matrix documents for the
+      # merge gate: one red pack must not cancel the other five.
+      fail-fast: false
+      matrix:
+        pack: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          filter: blob:none
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          # Pinned to the exact patch release ci.yml's pack job pins, for the
+          # same reason: engine/capital_structure/document_terms.py seals its
+          # parser behind a runtime fingerprint allowlist that a floating
+          # "3.12" can silently drift off of (2026-08-19, ci-pack-8). Several
+          # `gate: data` jobs (e.g. capital-structure-intelligence) exercise
+          # that same parser, so this lane needs the identical pin.
+          python-version: "3.12.13"
+      - name: install isolated pack runner
+        run: |
+          python -m venv "$RUNNER_TEMP/data-health-runner"
+          "$RUNNER_TEMP/data-health-runner/bin/pip" install pyyaml
+      - name: run this pack's data-gated legacy jobs
+        run: |
+          "$RUNNER_TEMP/data-health-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --gate data \
+            --pack-index ${{ matrix.pack }} \
+            --pack-count 6 \
+            --execute
+      # A matrix job's aggregate `needs.<job>.result` tells the report job
+      # WHETHER anything failed but not WHICH pack — GitHub does not publish
+      # per-matrix-instance detail to a downstream job. Each failing instance
+      # drops a small marker artifact instead; the artifact system needs no
+      # extra token permission (it is a separate signed-URL upload, not a
+      # `permissions:` scope), which keeps this workflow's token to exactly
+      # `issues: write, contents: read`.
+      - name: record this pack's failure marker
+        if: failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/data-health-failures"
+          echo "data-pack-${{ matrix.pack }}" > "$RUNNER_TEMP/data-health-failures/pack-${{ matrix.pack }}.txt"
+      - name: upload failure marker
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-health-fail-${{ matrix.pack }}
+          path: ${{ runner.temp }}/data-health-failures/pack-${{ matrix.pack }}.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  report:
+    name: report
+    needs: data-pack
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # No artifact is uploaded when every pack passes, so a pattern download
+      # here legitimately finds nothing on the green path; do not fail the
+      # report job over an empty match.
+      - name: download any failure markers
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: data-health-fail-*
+          path: ${{ runner.temp }}/data-health-failures
+          merge-multiple: true
+      - name: file or update the standing data-health issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          ISSUE_TITLE="data-health: failing data receipts"
+          FAILED_DIR="$RUNNER_TEMP/data-health-failures"
+          FAILED_PACKS=""
+          if [ -d "$FAILED_DIR" ]; then
+            FAILED_PACKS=$(cat "$FAILED_DIR"/*.txt 2>/dev/null | sort -u | paste -sd', ' - || true)
+          fi
+          EXISTING=$(gh issue list --label data-health --state open --json number,title \
+            --jq ".[] | select(.title==\"$ISSUE_TITLE\") | .number" | head -n1 || true)
+          if [ -n "$FAILED_PACKS" ]; then
+            BODY="data-health lane failed for: ${FAILED_PACKS}."$'\n\n'"Run: ${RUN_URL}"
+            if [ -n "$EXISTING" ]; then
+              gh issue comment "$EXISTING" --body "$BODY"
+            else
+              gh issue create --title "$ISSUE_TITLE" --label data-health --body "$BODY"
+            fi
+          elif [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "data-health lane is green — every gate: data pack passed."$'\n\n'"Run: ${RUN_URL}"
+          fi
