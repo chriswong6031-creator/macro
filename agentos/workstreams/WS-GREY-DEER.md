@@ -24,8 +24,9 @@ waves:
     title: Point-in-time event replay + preregistered hypothesis adjudication
     status: in_progress
     next_action: >
-      Hash and commit GD1_PREREG_2026-08-19.md before opening any August 2026
-      outcome column. Then build the source-clock ledger and organ replay.
+      Land the dossier PR. Independent reviewer pass is in flight. Do not
+      start GD-2 until Fable accepts the continuation handoff. No live
+      authority.
   - id: GD-2
     title: Descriptive envelope from GD-1 evidence
     status: todo
@@ -57,8 +58,13 @@ waves:
     depends_on: [GD-1]
     next_action: Do not start.
 next_action: >
-  Commit the GD-1 prereg freeze, then reconstruct clocks and organs without
-  mixing current definitions into historical frames.
+  After the dossier PR merges, the only research next step is a labeled
+  truncate-and-recompute of leadership_crack.v1 on the design era
+  (≤2026-07-31) for GD-H1. Do not start GD-2/5 without Fable.
+discoveries:
+  - DSC:GREY-DEER-ARCHITECTURE-FREEZE-ABSENT
+  - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
+  - DSC:GD1-EWY-IS-NOT-KOSPI-CASH
 do_not_redo:
   - Do not invent a Grey Deer architecture freeze to replace the missing Sol document.
   - Do not retune thresholds after opening August 2026 outcomes.
@@ -66,6 +72,8 @@ do_not_redo:
   - Do not rename a daily yield difference "auction tail".
   - Do not rebuild Prophet boards with Grey Deer inputs.
   - Do not grant live Prophet/Portfolio authority from a replay.
+  - Do not treat EWY as the KOSPI cash clock (DSC:GD1-EWY-IS-NOT-KOSPI-CASH).
+  - Do not historically test GD-H1 from the 15-row LC emission log.
 landmines:
   - Latest-revised FRED in a historical decision frame is a look-ahead leak (TDS §0).
   - A later-written organ JSON is recomputed history, not proof of emission at t.
