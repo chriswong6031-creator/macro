@@ -1,0 +1,174 @@
+# Critic receipt (RIG V1 §6, C12 cycle) — independent visual_taste review of D-LAB-R5.2
+# at the frozen SHA. The author did not write this file. Committed verbatim by the
+# adjudicating session from the critic's return packet.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-lab-r5-1
+role: visual_taste
+artifact_sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+reviewer:
+  identity: fresh C12 visual/taste seat — D-LAB-R5.2 cycle, no prior contact with this artifact
+  role: visual_taste_critic
+  model: opus
+  independent_of_author: true
+  continuity: >-
+    TWO-RUN CONTINUATION, disclosed. Run 1 of this seat was reaped by the harness
+    mid-pass and left two verbatim checkpoints, no file receipt. Run 2 is a fresh
+    instance that inherited those checkpoints as a first-pass record, re-opened the
+    artifact from the frozen SHA, and independently re-derived every finding it
+    carries forward. No run-1 conclusion is asserted here on run-1 authority alone.
+quarantine:
+  rationale_received_after_first_pass: false
+  note: >-
+    No rationale document was read in either run. DESIGN_NOTES.md was present in the
+    run-2 extraction and was deleted unread before any crop was opened. The single
+    quarantine leak is disclosed under deviations in the session record: a
+    git log --oneline printed the R5.2 commit SUBJECT line (named the pin, carried no
+    rationale); it originated no finding.
+  audit_run_1:
+    inputs_per_checkpoint:
+      - crops 51, 52, 53, 54, 10, 11, 14, 30, 35, 49, 4a, 4b, 4c (per checkpoint text)
+      - lab.css (incl. 708-711), lab.js (incl. 348, 602)
+    not_opened: [DESIGN_NOTES.md, proposal.yml, continuity.yml, README.md, PR/commit prose]
+    caveat: run-1 file list is reconstructed from its own checkpoints; not independently verifiable
+  audit_run_2:
+    crops_opened:
+      - 51-seed-region-pinned-dark-en.png
+      - 52-seed-region-pinned-light-zh.png
+      - 53-seed-region-pinned-390-dark-en.png
+      - 54-lead-adverse-390-dark-en.png
+      - 35-lead-symmetry-dark-en.png
+      - 36-lead-symmetry-light-zh.png
+      - 30-seeds-only-dark-en.png
+      - 14-lab-mobile390-dark-en.png
+      - 37-lead-symmetry-390-dark-en.png
+      - 03-live-mobile390-dark-en.png
+      - 50-roundtrip-live-after-lab.png
+      - 4c-lab-empty-dark-zh.png
+    source_files_read:
+      - mockups/refs/prophet_lab/lab.css (lines 138-151, 243-271, 640-732)
+      - mockups/refs/prophet_lab/lab.js (lines 66-70, 262-310, 311-393, 395-542, 544-627, 820-929)
+      - mockups/refs/prophet_lab/index.html (all 53 lines)
+      - mockups/refs/prophet_lab/tools/capture.py (lines 126-245, 346-380)
+      - mockups/refs/prophet_lab/tools/verify.py (lines 225-275, 390-418)
+      - mockups/refs/institutionalize/us_stocks/board.js (LENS block, 1281-1310)
+    review_standard_read:
+      - docs/DESIGN_DOCTRINE.md §2 Laws 1-5 (origin/main)
+      - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §5 one-integer law, §7-8 receipts + caveat exception (origin/main)
+    not_opened:
+      - mockups/refs/prophet_lab/DESIGN_NOTES.md   # extracted then deleted unread
+      - proposal.yml
+      - continuity.yml
+      - README.md
+      - PR #5940 body and comments
+      - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md  # NOT read — named gap
+      - baseline.yml / manifest.yml                # not located under the artifact path
+verdict: PASS_WITH_CONDITIONS
+conditions: [VTL52-601, VTL52-602, VTL52-603, VTL52-604, VTL52-605]
+overall_read: >-
+  R5.2 closes the three things it aimed at — the pin is real and carries the class
+  fact at all three photographed quadrants, the lead symmetry law now reads as a
+  shape distinction rather than an ink one in four quadrants, and the mobile fold is
+  reached by landing rather than by squeezing type. What it does not close is the
+  pattern it keeps re-opening: a constant printed once at the top and then 23 more
+  times down the stream, now surviving in the lead slot with both acceptance gates
+  drawn around it. Against that sits one genuinely new ambiguity the round created
+  — an unsubjected aggregate whose "3 earlier" shares a word, a numeral and a
+  viewport with a row chip meaning the opposite — and a mobile reduction that moved
+  a ratified caveat off the glance tier onto a Tier-2 landing with no visible
+  affordance, no touch path, and no crop anywhere in 63 files showing it open.
+  None of that is a false claim to a user. All of it is cheap to fix.
+findings:
+  - id: VTL52-601
+    severity: major
+    title: >-
+      The lead aggregate has no subject and no unit, and its "3 earlier" collides with
+      "Prophet was 3 days earlier" in the same viewport
+    evidence: >-
+      35-lead-symmetry-dark-en.png y~469 "Lead on 5: 3 earlier · 1 same day · 1 later"
+      vs y~821 "Prophet was 3 days earlier". lab.js:348 + lab.js:351 vs lab.js:602.
+      Strip counts rows, chip counts days; both bare "3". Subject exists only in the
+      LENS body (lab.js:371). ZH clean on the word (36-lead-symmetry-light-zh.png:
+      更早 3 vs Prophet 领先我们 3 天), not on the numeral.
+    law: DESIGN_DOCTRINE Law 3; the round's own VTL-405 rule at lab.js:379-383
+    cure: >-
+      Give the aggregate its subject and unit on Tier 1 — e.g. "Lead measured on 5 rows:
+      we were earlier on 3 · same day 1 · Prophet earlier on 1".
+  - id: VTL52-602
+    severity: major
+    title: '"Lead not measurable" is a per-row constant printed 23 times below a divider that states it once'
+    evidence: >-
+      30-seeds-only-dark-en.png y~580-596 divider body "…no row below can carry a lead";
+      identical chips at y~697, y~806 and 8 per viewport in 51-seed-region-pinned-dark-en.png
+      and 52-seed-region-pinned-light-zh.png. lab.js:486 names the slot as a class channel;
+      lab.js:424-426 requires the class assertion exactly once. Gates: verify.py:254-267
+      counts only .lab-cls--seed; verify.py:268-269 only seed .lab-tl rails; verify.py:242
+      D6g mandates 30/30 filled slots.
+    law: DESIGN_DOCTRINE Law 4 (per-row repetition of a constant)
+    cure: >-
+      Em dash in the seed lead slot (no blank, D6g intact) + one clause on the PINNED strip;
+      widen D6i's selector to any repeated identical string in the stream.
+  - id: VTL52-603
+    severity: major
+    title: The overlap caveat leaves the glance tier at <=560 while the six pill integers stay
+    evidence: >-
+      14-lab-mobile390-dark-en.png pills y~188-295 read 14/6/10/28/7/30 above
+      "Showing all 30 · 7 seen first-hand · 23 from history" y~335, sum 65 vs population 30,
+      with "28" two chips from "30" and no on-screen reconciliation. lab.css:709.
+    law: MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:386-389 caveat exception; §5 one-integer law
+    cure: Keep .lab-overlap visible at <=560, or fold the clause into .lab-showing.
+  - id: VTL52-604
+    severity: major
+    title: The <=560 landings have no visible affordance and no touch path
+    evidence: >-
+      .lab-auth (lab.css:143-147) establishes dotted-underline + cursor:help as the
+      artifact's LENS idiom, visible in 14-lab-mobile390-dark-en.png y~112-126.
+      .lab-split (lab.css:246) and .lab-agg (lab.css:266) carry cursor:help only — flat
+      muted text at 390 in crops 14 and 37 (y~335). board.js:1300-1309: mouseover/focusin
+      only, no tap handler, no dismiss.
+    law: MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §8 (demotion is for mechanics, never for honesty)
+    cure: Apply the .lab-auth affordance to .lab-split; add a tap-to-open/dismiss path to the LENS.
+  - id: VTL52-605
+    severity: major
+    title: No crop in the 63-file set photographs a LENS popover, at any viewport or quadrant
+    evidence: >-
+      tools/capture.py contains no hover/focus step that opens a tip, and the LAB path
+      explicitly parks the cursor to close one before shooting (capture.py:198-204).
+      Every R5.2 demotion claim (lab.css:684-707) is therefore visually unreceipted.
+    cure: Add one 390 crop with the split-chip LENS open, EN and ZH.
+  - id: VTL52-606
+    severity: minor
+    title: The pinned strip keeps "Aug 8" but not the sentence that explains it
+    evidence: >-
+      30-seeds-only-dark-en.png shows the date explained only by the divider BODY
+      ("Continuous watching began Aug 8…", y~580), which does not pin;
+      51 shows Aug 8 pinned above Aug 2 / Aug 1 / Jul 31, 53 above Aug 6 / Aug 6 / Aug 5.
+    cure: Pin "from Aug 8 back", or drop the bare date in the pinned state.
+  - id: VTL52-607
+    severity: minor
+    title: The meta strip runs five statements together with whitespace as the only separator
+    evidence: 35-lead-symmetry-dark-en.png y~469; 36-lead-symmetry-light-zh.png y~473 (11px muted).
+    law: DESIGN_DOCTRINE Law 4 (merge, never stack)
+  - id: VTL52-608
+    severity: nit
+    title: The round's own keep/remove criterion does not discriminate the PROPHET eyebrow
+    evidence: >-
+      lab.js:414-416 keeps a rail because it "differs between adjacent rows";
+      the PROPHET eyebrow (lab.js:526) is identical on all 30 rows and was kept
+      (x8 in crop 51, x8 in crop 52).
+    cure: Repair the criterion's wording, not the eyebrow.
+  - id: VTL52-609
+    severity: minor
+    title: The anti-hijack return leg is proven only at 40px, and only at a viewport where landing never fires
+    evidence: >-
+      verify.py:405-417 starts at scrollY=40; its own comment at :402-404 records that a
+      120px start measured nothing. 50-roundtrip-live-after-lab.png is 1440x900, where
+      lab.js:918 guarantees landRegion returns early.
+strengths:
+  - The pin is real and carries the chip AND the sentence at 1440-dark-EN, 1440-light-ZH and 390-dark-EN (51/52/53); lab.js:877-887 measures sticky chrome rather than hardcoding top:0.
+  - VTL-403 symmetry is now a shape distinction, not an ink one — solid measurement box vs dashed null box, held in 35/36/54/51.
+  - The ZH adverse rewrite to 领先 (lab.js:586-603) removes a real glance-level 早/早 collision.
+  - "Unknown-is-not-zero survives: 4c shows real 0s with an empty state that refuses to say 'try another board' (PR51-6), trichotomy coded at lab.js:285."
+  - VTL-401 grid scope holds in every quadrant opened (30/35/36/4c), and capture.py:184-234 refuses to emit a crop where it does not.
+  - The mobile fold is met by landing, not compression — crop 14 shows a complete AA observation (y~400-718) inside 844.
+  - "The 390 mode flip reads as navigation, not hijack: the pressed control moves ~56px (03 y~86 -> 14 y~30) while ~430px passes beneath it."
+second_pass: null

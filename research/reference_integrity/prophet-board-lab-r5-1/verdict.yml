@@ -1,0 +1,132 @@
+# Design-authority verdict packet — D-LAB-R5.1/R5.2 cycle, Prophet Operator Lab
+# reference frozen at f40ae70ac989 (sha_lineage: f889d5eb R5.1 -> f40ae70a R5.2, see
+# manifest.yml). Issued over both C12 critic receipts (reviews/), the artifact's own
+# harness, live browser probes by both critics, and the authority's adjudication.
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-lab-r5-1
+
+authority:
+  identity: "Fable main loop — Prophet Operator Lab program orchestrator (Chairman commissions 2026-08-18/19), C12 adjudication session (design authority per factory §1; not the artifact author — every artifact byte was produced by commissioned designer spawns, none of which participates in this verdict)"
+  role: design_authority
+
+process_attestation:
+  c12_shape: >
+    The product_regression seat completed the FULL two-pass shape: quarantined first
+    pass frozen, rationale revealed by the commissioning session, genuine amendment
+    pass (2 withdrawals, 1 downgrade, 2 strengthenings — evidence the reveal was
+    adjudicated, not deferred to). The visual_taste seat is a disclosed two-run
+    continuation (run 1 reaped by the harness after two verbatim checkpoints; run 2
+    re-derived every carried finding independently) whose first pass held quarantine;
+    its rationale-reveal amendment pass is DEFERRED to the next round's delta
+    re-check because this verdict is REVISE — the approval cycle must complete it.
+  seat_independence: >
+    Both seats are fresh — distinct from each other, from both R5 critics, from both
+    R5.1 critics, and from every designer who authored artifact bytes. Both
+    independently stood up live browser instrumentation (raw CDP; playwright absent)
+    rather than trusting the harness's self-reported counts.
+  cross_seat_concurrence: >
+    The mobile honesty breach (product PR52-4 / visual VTL52-603+604) was reached
+    independently by both seats on their own receipts. The LAB-entry landing was
+    ruled lawful by the product seat under §6.5 and the standing viewport veto, and
+    "reads as navigation, not hijack" by the visual seat on crop evidence.
+
+packet:
+  materially_improved: >
+    Over R5.1: the pinned class divider is now real (both critics verified the pin
+    live at 1440 and 390; the R5.1 blocker's mechanism is genuinely repaired and
+    behaviourally checked by D6c3), the lead law is pixel-symmetric (adverse, tie
+    and favourable chips share one palette; sign carried by wording, magnitude
+    printable both directions), unknown-vs-zero is a real trichotomy with a designed
+    explainer, the mobile fold holds one complete observation via a lawful landing,
+    and the ZH adverse phrasing no longer collides at the glance tier (领先 vs 更早).
+  materially_worsened: >
+    One new ambiguity the round itself created: the unsubjected lead aggregate whose
+    "3 earlier" shares a word, a numeral and a viewport with a row chip meaning the
+    opposite (VTL52-601). And the harness discipline the round preached was not
+    applied to its own chrome=1 axis: the false premise "the harness bar is a real
+    sticky element, so the divider pins BELOW it" is stated three times and booked
+    as a RESOLVED_BY_CHANGE disposition while measurement shows the bar never pins
+    (PR52-1).
+  disappeared: >
+    Nothing disappears from LIVE; in LAB the R51-M1 floor holds (subtitle, ladder,
+    CANDIDATES, GROUPS, EVIDENCE, footer all survive — both critics verified in
+    every quadrant opened). At <=560 the overlap caveat leaves the glance tier while
+    the six pill integers stay (VTL52-603/PR52-4) — a placement breach of the
+    ratified caveat exception, one of this verdict's revision requirements.
+  behavior_harder: >
+    Keyboard operation regressed in one measurable way: LAB->LIVE drops focus to
+    <body>, forcing a full re-tab to the page's only control (PR52-3). Touch readers
+    at <=560 cannot open the LENS landings the demotions rely on (no tap handler,
+    no visible affordance — PR52-4/VTL52-604), and no crop in the set photographs a
+    LENS open anywhere (VTL52-605).
+  stronger_claims: >
+    The artifact still visually claims a live-forward observation plane and measured
+    leads that no producer yet emits; both remain warranted:false in proposal.yml
+    with fivefold disclosure, adjudicated APPROVE_AHEAD_OF_PRODUCER_SCOPED in the R5
+    verdict with fail-closed conditions C6/C7 (implemented in P-LAB-API). The new
+    auth.plan_book_dating row is warranted:true and its scoping was checked and
+    holds (product seat, PR52-8 withdrawal... recorded as PR52-5-family analysis).
+  intent_vs_convenience: >
+    Deliberate and argued: the divider split along the tier line, the region landing
+    grounded in measured 390 arithmetic, the stable crop-filename policy (which
+    withdrew a critic finding once its rationale was revealed), honest r52_correction
+    entries on re-booked dispositions. Convenience standing in for intent: the
+    chrome=1 pin premise asserted rather than measured, D6c4/D21c/D19f written as
+    declaration- or substring-checks where behavioural ones were available, and the
+    x23 "Lead not measurable" constant surviving with gates drawn around it.
+  production_preferable_for: >
+    Production remains preferable for every non-operator user until the shell
+    migrates: no mode can remove sections, row-count discipline is native, and no
+    unproduced live-forward claims exist there. LIVE mode remains byte-equivalent to
+    the R4 board; the operator affordance costs production nothing.
+  strongest_argument_against: >
+    This is the fourth round on one reference. Both C12 seats returned
+    PASS_WITH_CONDITIONS and neither found a false claim to a user or a broken core
+    interaction — an authority could defensibly mint APPROVE_WITH_CONDITIONS today.
+    This verdict declines because three of the conditions are not forward-ridable:
+    a thrice-stated false premise underpinning a booked disposition (certifying it
+    would launder records — the exact ground of the R5.1 escalation), a ratified-law
+    placement breach on the mobile honesty surface (two seats independently), and a
+    Law-4 breach the harness was scoped around. All are hours-scale; R5.3 is scoped
+    as the final composition-touching round barring new law breaches.
+
+blocking_findings:
+  - id: PR52-1
+    ruling: "REVISION REQUIRED — make the chrome=1 seam real (give the harness bar a parent with travel or mark a genuinely pinning container), make D6c4 assert barTop not barH, correct the three false statements (lab.js, DESIGN_NOTES, continuity r52 rows), add a chrome=1 deep-scroll crop. Receipt: reviews/product_regression.yml PR52-1."
+  - id: VTL52-601
+    ruling: "REVISION REQUIRED — the lead aggregate gains its subject and unit on Tier 1; the 'earlier' word/numeral collision with the adverse chip is resolved in both languages. Receipt: reviews/visual_taste.yml VTL52-601."
+  - id: VTL52-602
+    ruling: "REVISION REQUIRED — the x23 'Lead not measurable' constant is reduced per Law 4 (em-dash slot + one clause on the PINNED strip is the critics' convergent cure); D6g stays satisfied (no blank slots) and D6i widens to catch any repeated identical string. Receipt: reviews/visual_taste.yml VTL52-602."
+  - id: VTL52-603-PR52-4
+    ruling: "REVISION REQUIRED — the overlap caveat returns to the glance tier at <=560 (or folds into .lab-showing), AND the LENS gains a touch path with the artifact's own dotted-underline affordance on the landing carriers; one open-LENS crop at 390 in EN and ZH (closes VTL52-604/605). Receipts: both reviews, independently."
+  - id: PR52-2
+    ruling: "REVISION REQUIRED — landRegion offsets its scroll target by the measured sticky-chrome height; D24/D24b run at chrome=1 as well as chrome=0."
+  - id: PR52-3
+    ruling: "REVISION REQUIRED — focus restores to the re-mounted mode control inside sc.onload on LAB->LIVE; a check pins it."
+
+verdict: REVISE
+
+conditions:
+  - id: R53-SCOPE
+    text: "R5.3 is the final composition-touching round barring new law breaches: exactly the six blocking rulings above plus the takeable minors (PR52-6 .lab-agg check+mutation; PR52-7 exclusion clause in the landing; PR52-8 D21c real assertion; VTL52-606 pinned-strip date clause; VTL52-607 meta-strip separators; VTL52-608 criterion wording; PR52-10 divider spine idiom — designer's judgment on the last three, decline with a reason) and the editorial baseline.yml re-stamps (:70, :117-118). New frozen SHA, honest dispositions, scoped delta re-check by BOTH C12 seats, and the visual seat's deferred rationale-reveal amendment pass completes then."
+  - id: R53-CARRIED
+    text: "Carried unchanged from the R5 verdict and binding on later waves: C6 (live-forward fails closed without an envelope-derived first_observed_at), C7 (rebake takes its own SHA + scoped re-check), C8 (R4 composition needs its own dual-critic pass or a named override before P-MP1-SHELL — that pass is running in parallel with R5.3), C12 (completed for the product seat this cycle; visual seat completes at R5.3)."
+  - id: R53-LANDING-ADOPTION
+    text: "The LAB-entry landing is approved as reference-only choreography (both seats). If P-LAB-UI adopts it: sticky-chrome offset on the scroll target (PR52-2's fix) + its own acceptance check under the real site nav + its own adjudication against the standing viewport veto (MPDS:320-321)."
+
+preserved_strengths:
+  - "The pinned divider is real and carries chip + sentence at all three photographed quadrants; sticky chrome is measured, not hardcoded (both critics, independently, live)."
+  - "Lead symmetry is a shape distinction with zero ink asymmetry across four quadrants; adverse magnitudes printable; ZH 领先 rewrite closes the glance collision."
+  - "Unknown-is-not-zero trichotomy with a designed explainer in every quadrant; grid scope holds everywhere; the mobile fold is met by landing, not compression."
+  - "The artifact's receipts are honest and reproducible: the product seat reproduced continuity.yml's own probe numbers to the pixel under a different browser driver."
+  - "The landing reads as navigation, not hijack (visual seat), and is lawful under §6.5 and the standing veto (product seat, clause-by-clause)."
+
+authority_spot_verification:
+  - "manifest.yml at branch head e9b6f125afdf verified by the authority: frozen_sha f40ae70ac989 at :26 (checked before the reveal was sent), sha_lineage block present at :32-36 — the basis for routing PR52-5 to withdrawal."
+  - "Both receipts committed verbatim from the critics' packets; the authority edited neither."
+  - "The R5.2 designer's claimed harness results (125/125, 26/26) remain UNEXECUTED by any critic (playwright absent on critic hosts); both seats re-implemented the load-bearing checks over raw CDP instead. The R5.3 round must paste fresh harness tails and the delta re-check should spot-execute at least the changed checks."
+
+production_migration_blockers_preserved:
+  - "C8 stands (R4 composition dual-critic pass in flight, parallel to R5.3)."
+  - "DA-002 remains OPEN in production theme.css; any fix is a DS-PR outside MP-1 scope."
+  - "MP-1's own laws (stocks-mode-only, candidates separate, non-US parity, server-side withholding, no theme.css change) restated as binding on P-MP1-SHELL."
