@@ -164,12 +164,19 @@ def main():                                                    # noqa: C901
               // constant below a divider that already said it). What replaces
               // it is the STICKY divider, so the label is present wherever it
               // applies. The check moves with the design: the divider must
-              // exist, be sticky, and carry a visible non-trivial label.
+              // exist, be sticky, and carry a visible class BADGE — not merely
+              // a long string. R5.2 / PR51-1 added the badge requirement,
+              // because "innerText is long enough" would have been satisfied by
+              // the explanatory sentence alone, and the sentence is exactly the
+              // part that is allowed to scroll away.
               markStickyLabelled: (() => {
                   const m = document.querySelector('.lab-mark');
                   if (!m || m.offsetParent === null) return false;
+                  const chip = m.querySelector('.lab-cls--seed');
                   return getComputedStyle(m).position === 'sticky'
-                      && m.innerText.trim().length > 20;
+                      && !!chip && chip.offsetParent !== null
+                      && chip.innerText.trim().length > 3
+                      && m.innerText.trim().length > 12;
               })(),
               // the four structural channels that remain ON the seed row
               seedsWithAbsenceRail: seeds.filter(r => {
@@ -234,6 +241,181 @@ def main():                                                    # noqa: C901
         # "zero lead", which is a claim nobody made.
         ck("D6g lead-slot-always-filled", seed["leadSlots"] == seed["rows"],
            f"{seed['leadSlots']} slots / {seed['rows']} rows")
+
+        # ── D6i · R5.2 / R52-D1 — THE CLASS ASSERTION IS PRINTED ONCE ─────
+        #    VTL-408 removed the 23 per-row seed chips as a Law 4 violation, and
+        #    R5.1 then kept printing "signal date / NOT A SIGHTING" on the same
+        #    23 rows — so the constant survived the fix meant to remove it and
+        #    only the chip changed. The rails now carry a UNIT LABEL ("signal
+        #    date" / "first seen"), which differs by row class and says what the
+        #    number above it is; the CLASS ASSERTION lives once, on the divider.
+        #    Two halves, because either alone is gameable: the assertion appears
+        #    exactly once in the stream, AND no row rail makes one.
+        once = pg.evaluate("""() => {
+            const stream = document.querySelector('.lab-stream');
+            const rails = [...document.querySelectorAll('.lab-row--seed .lab-tl')];
+            const claim = /not a sighting|非观测记录|from history|回溯记录/i;
+            return {
+              badges: stream ? stream.querySelectorAll('.lab-cls--seed').length : -1,
+              railsAsserting: rails.filter(n => claim.test(n.innerText)).length,
+              rails: rails.length,
+              railText: rails.length ? rails[0].innerText.trim() : '',
+              liveRail: (document.querySelector('.lab-row--live .lab-tl')||{}).innerText || ''
+            };
+        }""")
+        ck("D6i class-assertion-printed-exactly-once", once["badges"] == 1,
+           f"{once['badges']} class badges in the stream — a constant belongs once (Law 4)")
+        ck("D6i2 no-row-rail-asserts-its-class", once["railsAsserting"] == 0,
+           f"{once['railsAsserting']} of {once['rails']} seed rails repeat the class assertion")
+        ck("D6i3 rails-are-unit-labels-that-differ-by-class",
+           once["railText"] and once["liveRail"]
+           and once["railText"].split("\n")[0] != once["liveRail"].split("\n")[0],
+           f"seed rail {once['railText'].splitlines()[:1]} vs live rail "
+           f"{once['liveRail'].splitlines()[:1]}")
+
+        # ── D6c3 · BEHAVIOURAL — the divider actually PINS, deep in the region
+        #    it governs. This is the check R5.1 needed and did not have.
+        #
+        #    R5.1 asserted `position: sticky` and shipped it inside
+        #    `.lab-stream { overflow: hidden }`. Any overflow other than
+        #    `visible` makes an element a scrollport, and a sticky child pins to
+        #    its nearest scrollport — here, a list that can never scroll. So the
+        #    pin was inert everywhere it mattered while `getComputedStyle(m)
+        #    .position === 'sticky'` kept returning true. Measured on the R5.1
+        #    artifact: at 1440 the mark sat 716px ABOVE the viewport with nine
+        #    seed rows on screen and no worded class label anywhere on it.
+        #
+        #    A declaration cannot be trusted to describe a layout. This scrolls
+        #    1,200px past the divider and reads its rect, so the whole defect
+        #    class fails here: a scrollport ancestor, a changed `position`, a
+        #    `top` that never resolves, a divider that stops being rendered.
+        for vw, vh in ((1440, 900), (390, 844)):
+            pgs = b.new_page(viewport={"width": vw, "height": vh})
+            pgs.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+            enter_lab(pgs)
+            rest = pgs.evaluate("""() => {
+                const m = document.querySelector('.lab-mark');
+                return m ? Math.round(m.getBoundingClientRect().top + window.scrollY) : null;
+            }""")
+            if rest is None:
+                ck(f"D6c3 divider-pins-in-the-seed-region[{vw}]", False, "no .lab-mark rendered")
+                pgs.close()
+                continue
+            pgs.evaluate(f"() => window.scrollTo(0, {rest} + 1200)")
+            pgs.wait_for_timeout(260)
+            deep = pgs.evaluate("""() => {
+                const m = document.querySelector('.lab-mark');
+                const h = window.innerHeight;
+                const on = q => [...document.querySelectorAll(q)].filter(n => {
+                    const r = n.getBoundingClientRect();
+                    return r.bottom > 0 && r.top < h;
+                }).length;
+                const r = m.getBoundingClientRect();
+                return {top: Math.round(r.top), seeds: on('.lab-row--seed'),
+                        onScreen: r.bottom > 0 && r.top < h,
+                        label: m.innerText.trim().replace(/\\s+/g, ' '),
+                        y: Math.round(window.scrollY)};
+            }""")
+            ck(f"D6c3 divider-pins-in-the-seed-region[{vw}]",
+               deep["seeds"] > 0 and deep["onScreen"] and abs(deep["top"]) <= 2
+               and len(deep["label"]) > 12,
+               f"scrolled to {deep['y']}px (divider rests at {rest}px); mark top "
+               f"{deep['top']}px; {deep['seeds']} seed rows on screen; "
+               f"label {deep['label'][:64]!r}")
+            pgs.close()
+
+        # ── D6c4 · R5.2 / R52-D1 — the pin CLEARS the sticky chrome above it ─
+        #    `top: 0` is only correct on a route with no page header, and the
+        #    production route ships the shared site nav. The controller measures
+        #    the sticky chrome and binds --lab-mark-top, so the same component
+        #    is right in both cases. This mockup's harness bar IS a sticky top:0
+        #    element, so ?chrome=1 and ?chrome=0 are two different correct
+        #    answers and both are asserted — a hardcoded 0 fails the first, a
+        #    hardcoded header height fails the second.
+        pgh = b.new_page(viewport={"width": 1440, "height": 900})
+        pgh.goto(f"{BASE}/?chrome=1", wait_until="networkidle")
+        enter_lab(pgh)
+        chrome = pgh.evaluate("""() => {
+            const bar = document.querySelector('.harness');
+            const m = document.querySelector('.lab-mark');
+            const restY = Math.round(m.getBoundingClientRect().top + window.scrollY);
+            window.scrollTo(0, restY + 1200);
+            return new Promise(r => setTimeout(() => r({
+                barH: bar ? Math.round(bar.getBoundingClientRect().height) : 0,
+                barSticky: bar ? getComputedStyle(bar).position : null,
+                markTop: Math.round(document.querySelector('.lab-mark').getBoundingClientRect().top),
+                bound: getComputedStyle(document.documentElement)
+                        .getPropertyValue('--lab-mark-top').trim()
+            }), 220));
+        }""")
+        ck("D6c4 pin-clears-the-sticky-chrome-above-it",
+           chrome["barSticky"] == "sticky" and chrome["barH"] > 0
+           and abs(chrome["markTop"] - chrome["barH"]) <= 2,
+           f"harness bar {chrome['barH']}px ({chrome['barSticky']}), mark pinned at "
+           f"{chrome['markTop']}px, --lab-mark-top={chrome['bound']!r} — a hardcoded "
+           f"top:0 would slide the divider under the page header")
+        pgh.close()
+
+        # ── D24 · R5.2 / R52-D2 — one COMPLETE observation above the 390 fold ─
+        #    R5.1 returned none: the first row began at 1,009px and stands 294px
+        #    tall in an 844px viewport. The ladder (R51-M1) and the six wrapped
+        #    selectors (C4) are frozen and account for 432px of that, so the
+        #    remedy is the Lab's own preamble plus LANDING the region on flip —
+        #    which is why this check drives the real control instead of loading
+        #    a URL: the landing only happens on a deliberate mode flip, exactly
+        #    as the product behaves.
+        for lg in ("en", "zh"):
+            pgf = b.new_page(viewport={"width": 390, "height": 844})
+            pgf.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
+            enter_lab(pgf)
+            fold = pgf.evaluate("""() => {
+                const vh = window.innerHeight, y = window.scrollY;
+                const whole = [...document.querySelectorAll('.lab-row')].filter(n => {
+                    const r = n.getBoundingClientRect();
+                    return r.top >= -1 && r.bottom <= vh + 1;
+                });
+                const seg = document.querySelector('.lab-seg');
+                const first = document.querySelector('.lab-row');
+                return {
+                  whole: whole.length,
+                  firstH: first ? Math.round(first.getBoundingClientRect().height) : null,
+                  firstTop: first ? Math.round(first.getBoundingClientRect().top) : null,
+                  controlVisible: seg ? (() => { const r = seg.getBoundingClientRect();
+                      return r.bottom > 0 && r.top < vh; })() : false,
+                  y: Math.round(y)
+                };
+            }""")
+            ck(f"D24 one-whole-observation-above-the-390-fold[{lg}]", fold["whole"] >= 1,
+               f"{fold['whole']} complete rows in view; first row top {fold['firstTop']}px "
+               f"h {fold['firstH']}px at scrollY {fold['y']}")
+            # landing may not cost the reader the control they just pressed
+            ck(f"D24b mode-control-stays-in-view-after-landing[{lg}]", fold["controlVisible"],
+               "the flip must not scroll its own control off screen")
+            pgf.close()
+
+        # ── D24c · the landing is REVERSIBLE — LAB->LIVE restores the scroll ──
+        #    An excursion that moves the page has to put it back, or "flip back
+        #    to Live" silently costs the reader their place in the plan book.
+        #    The start position is 40px and not something larger for a reason
+        #    that is about the PRODUCT, not the test: at 390 the LIVE mode
+        #    control sits in the page status cluster at ~47-68px, so a reader
+        #    can only press it while the page is near the top. (A first pass at
+        #    120px measured nothing — the driver scrolls a click target into
+        #    view, so the flip started from 0 and "restored" 0 correctly.)
+        pgr = b.new_page(viewport={"width": 390, "height": 844})
+        pgr.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        pgr.evaluate("() => window.scrollTo(0, 40)")
+        pgr.wait_for_timeout(150)
+        before_y = pgr.evaluate("() => Math.round(window.scrollY)")
+        pgr.click(LAB_SEG)
+        pgr.wait_for_timeout(400)
+        lab_y = pgr.evaluate("() => Math.round(window.scrollY)")
+        pgr.click(LIVE_SEG)
+        pgr.wait_for_timeout(800)
+        after_y = pgr.evaluate("() => Math.round(window.scrollY)")
+        ck("D24c landing-is-reversible", lab_y > before_y and abs(after_y - before_y) <= 2,
+           f"scrollY {before_y} -> LAB {lab_y} -> LIVE {after_y}")
+        pgr.close()
 
         # ── D7 · plain words at the glance tier; exact identity on the
         #        receipt. Both halves, because deleting the slug would also
@@ -509,6 +691,33 @@ def main():                                                    # noqa: C901
            f"min height {sel['minH']}px")
         pg4.close()
 
+        # ── D20d · R5.2 / PR51-2 — and JUST ABOVE the retired breakpoint ──
+        #    R5.1 scoped the wrap to max-width:980px on the claim that "above
+        #    980w all six fit on one line anyway". They clear 981w by 22px, and
+        #    the pill widths grow with the COUNTS, which this surface does not
+        #    control — so the claim was a measurement of one fixture, not a
+        #    property of the layout, and the checks only ever looked at 390.
+        #    The wrap is unconditional now; this pins the band that was dark.
+        pg4b = b.new_page(viewport={"width": 1000, "height": 900})
+        pg4b.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        enter_lab(pg4b)
+        sel2 = pg4b.evaluate("""() => {
+            const bs = [...document.querySelectorAll('[data-lab-board]')];
+            const w = document.documentElement.clientWidth;
+            return {
+              n: bs.length,
+              offscreen: bs.filter(b => { const r = b.getBoundingClientRect();
+                  return r.width === 0 || r.right > w + 1 || r.left < -1; })
+                  .map(b => b.getAttribute('data-lab-board')),
+              clipped: bs.filter(b => { const p = b.parentElement.parentElement;
+                  return p.scrollWidth > p.clientWidth + 1; }).length
+            };
+        }""")
+        ck("D20d all-six-boards-onscreen-at-1000",
+           sel2["n"] == 6 and not sel2["offscreen"] and sel2["clipped"] == 0,
+           f"offscreen: {sel2['offscreen']}, clipped: {sel2['clipped']}")
+        pg4b.close()
+
         # ── D23 · VTL-409 — the error state retries and dates itself ──────
         pg5 = b.new_page(viewport={"width": 1440, "height": 900})
         pg5.goto(f"{BASE}/?chrome=0&feed=down", wait_until="networkidle")
@@ -614,15 +823,32 @@ def main():                                                    # noqa: C901
             pg.close()
 
         # ── D17 · bilingual parity: both languages ship, neither leaks ────
+        #    R5.2 / PR51-5 — THE PROBES WERE DEAD STRINGS. R5.1 scanned the ZH
+        #    view for "Live sighting" and "Seed · history", both retired by
+        #    VTL-405/VTL-408 in the same revision. A leak test looking for words
+        #    the EN page no longer prints cannot fail, and it had been reporting
+        #    green over an unguarded surface. Two repairs: the probes are current
+        #    vocabulary, and each one is asserted PRESENT in EN before its
+        #    absence in ZH is credited — so the next time the vocabulary moves,
+        #    the check fails loudly instead of quietly ceasing to measure. This
+        #    is the same rot class the R4 README told this cycle to re-check.
+        EN_PROBES = ["Seen first-hand", "From history", "Not on the board",
+                     "Lead not measurable", "Nothing below this line was seen first-hand",
+                     "same day"]
         for lg, probe in (("en", "Watch"), ("zh", "观察")):
             pg = b.new_page(viewport={"width": 1440, "height": 900})
             pg.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
             enter_lab(pg)
             txt = pg.evaluate("() => document.getElementById('board').innerText")
             ck(f"D17 renders[{lg}]", probe in txt)
-            if lg == "zh":
+            if lg == "en":
+                # anti-vacuity: a probe the EN surface never prints proves nothing
+                for en_only in EN_PROBES:
+                    ck(f"D17c probe-is-live-vocabulary[{en_only}]", en_only in txt,
+                       "a retired probe makes the ZH leak test vacuous")
+            else:
                 # no raw EN state token dropped into ZH copy
-                for en_only in ["Live sighting", "Seed · history", "Not on the board"]:
+                for en_only in EN_PROBES:
                     ck(f"D17b no-en-leak-in-zh[{en_only}]", en_only not in txt)
             pg.close()
 

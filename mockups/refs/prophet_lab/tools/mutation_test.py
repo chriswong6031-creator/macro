@@ -75,9 +75,22 @@ MUTATIONS = [
      '    var setups = document.getElementById("setups");\n    if (setups) setups.innerHTML = plane();',
      "D4d"),
     ("M18 make the class divider non-sticky", CSS,
-     r'  position: sticky; top: 0; z-index: 4;\n  background: var\(--panel\);',
+     r'  position: sticky; top: var\(--lab-mark-top, 0px\); z-index: 4;\n'
+     r'  background: var\(--panel\);',
      '  position: static; z-index: 4;\n  background: var(--panel);',
      "D6c"),
+    # R5.2 / PR51-1 — THE DEFECT THAT ACTUALLY SHIPPED, as a mutation. M18
+    # attacks the declaration; this attacks the layout the declaration lives in,
+    # which is how the capability was inert for a whole cycle while M18 passed.
+    # It is caught ONLY by the behavioural check, which is the point.
+    ("M22 clip the stream with overflow, re-inerting the pin (PR51-1)", CSS,
+     r'\.lab-stream \{\n  margin: 0; padding: 0; list-style: none;\n'
+     r'  background: var\(--panel\); border: 1px solid var\(--line\);\n'
+     r'  border-radius: 14px;\n  box-shadow: var\(--card-shadow\);\n\}',
+     '.lab-stream {\n  margin: 0; padding: 0; list-style: none;\n'
+     '  background: var(--panel); border: 1px solid var(--line);\n'
+     '  border-radius: 14px; overflow: hidden;\n  box-shadow: var(--card-shadow);\n}',
+     "D6c3"),
     ("M8  restore LIVE from a snapshot instead of re-deriving it", JS,
      r'sc\.src = "\.\./institutionalize/us_stocks/board\.js\?repaint=" \+ \(\+\+C\.repaints\);',
      'sc.src = "../institutionalize/us_stocks/board.js?repaint=" + C.repaints;',
@@ -140,11 +153,50 @@ MUTATIONS = [
       '    }\n    var sc = document.createElement("script");'],
      "D22"),
     ("M19 put the six boards back behind an unaffordanced scroller (VTL-411)", CSS,
-     r'@media \(max-width: 980px\) \{\n  \.lab-sel-wrap \{ overflow-x: visible; \}\n'
-     r'  \.lab-sel \{ flex-wrap: wrap; row-gap: 7px; \}',
-     '@media (max-width: 980px) {\n  .lab-sel-wrap { overflow-x: auto; }\n'
-     '  .lab-sel { flex-wrap: nowrap; row-gap: 7px; }',
+     r'\.lab-sel-wrap \{ margin: 14px 0 0; \}\n'
+     r'\.lab-sel \{ display: flex; flex-wrap: wrap; gap: 7px; row-gap: 7px; padding-bottom: 3px; \}',
+     '.lab-sel-wrap { margin: 14px 0 0; overflow-x: auto; }\n'
+     '.lab-sel { display: flex; flex-wrap: nowrap; gap: 7px; row-gap: 7px; padding-bottom: 3px; }',
      "D20"),
+
+    # ══ R5.2 mutations — PR51-3: D4b and D4c were unattacked ════════════════
+    # VTL-401 was the R5 verdict's first major, and R5.1 shipped six checks for
+    # it with a mutation aimed at exactly one (M7 → D4d). D4b and D4c were
+    # therefore asserted, never proven to bite — the same "a guard that has
+    # stopped measuring still reports green" trap the harness exists for.
+    ("M20 make LAB hide the ladder again (VTL-401)", JS,
+     r'    var setups = document\.getElementById\("setups"\);\n    if \(setups\) setups\.innerHTML = plane\(\);',
+     '    var _l = document.querySelector(".ladder-block"); if (_l) _l.style.display = "none";\n'
+     '    var setups = document.getElementById("setups");\n    if (setups) setups.innerHTML = plane();',
+     "D4b"),
+    ("M21 make LAB hide the page header again (VTL-401)", JS,
+     r'    var setups = document\.getElementById\("setups"\);\n    if \(setups\) setups\.innerHTML = plane\(\);',
+     '    var _p = document.querySelector(".bh-purpose"); if (_p) _p.style.display = "none";\n'
+     '    var setups = document.getElementById("setups");\n    if (setups) setups.innerHTML = plane();',
+     "D4c"),
+
+    # ── R5.2 / R52-D1 · R52-D2 ──────────────────────────────────────────────
+    # The constant VTL-408 removed as a chip and R5.1 kept printing as a rail.
+    ("M23 repeat the class assertion on all 23 rails again (R52-D1)", JS,
+     r'      h \+= \'<span class="lab-tl">\' \+ t\("signal date", "信号日期"\) \+ "</span>";',
+     '      h += \'<span class="lab-tl">\' + t("signal date<br>not a sighting", '
+     '"信号日期<br>非观测记录") + "</span>";',
+     "D6i2"),
+    # `top: 0` is right only on a route with no page header. This is the defect
+    # in the shape a follower surface would actually ship it: still sticky,
+    # still pinning, just pinning underneath the site nav where nobody sees it.
+    ("M25 hardcode the pin to top:0, ignoring the page header (R52-D1)", CSS,
+     r'  position: sticky; top: var\(--lab-mark-top, 0px\); z-index: 4;',
+     '  position: sticky; top: 0; z-index: 4;',
+     "D6c4"),
+    ("M24 stop landing the region on flip (R52-D2)", JS,
+     r'  function landRegion\(\) \{\n    var band = ',
+     '  function landRegion() {\n    if (true) return;\n    var band = ',
+     "D24"),
+    ("M26 keep the landing but never undo it (R52-D2)", JS,
+     r'      if \(C\.preLabScrollY != null\) \{\n        var y = C\.preLabScrollY;',
+     '      if (false) {\n        var y = C.preLabScrollY;',
+     "D24c"),
 ]
 
 

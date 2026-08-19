@@ -45,7 +45,8 @@
     labSelection: BOARD_IDS.indexOf(qs.get("board")) >= 0 ? qs.get("board") : "lab-all-early-v1",
     labClass: ["all", "live", "seed"].indexOf(qs.get("cls")) >= 0 ? qs.get("cls") : "all",
     feed: ["ok", "stale", "down", "empty"].indexOf(qs.get("feed")) >= 0 ? qs.get("feed") : "ok",
-    repaints: 0
+    repaints: 0,
+    preLabScrollY: null      /* R52-D2: scroll position to restore on LAB -> LIVE */
   };
 
   /* OPERATOR-ONLY. The Lab is an authenticated operator surface: an anonymous
@@ -271,6 +272,12 @@
     var h = '<div class="lab-sel-wrap' + (unk ? " lab-sel-wrap--unk" : "") +
             '"><div class="lab-sel" role="group" aria-label="' +
             esc(lang() === "zh" ? "实验台板块" : "Lab boards") + '">';
+    /* R5.2 / R52-D2 — the overlap fact is a footnote ABOUT this pill row, so it
+       rides on every pill's own tip. That is what lets the visible line demote
+       at 390 without the fact going anywhere: a Tier-2 landing that already has
+       to stand alone per pill, rather than a sentence that simply disappears. */
+    var ovEn = " Boards overlap — one name can appear on several, so these counts do not add up to a total.";
+    var ovZh = "各板块互有重叠 —— 同一只股票可能出现在多个板块中，因此这些数字不能相加。";
     L.boards.forEach(function (b) {
       var on = b.id === C.labSelection;
       /* three distinct facts, three distinct glyphs: an em dash when we hold no
@@ -278,7 +285,7 @@
       var n = unk ? "&mdash;" : (C.feed === "empty" ? "0" : String(b.rows.length));
       h += '<button type="button" data-lab-board="' + b.id + '" aria-pressed="' + on + '"' +
            tip(lang() === "zh" ? b.zh : b.en, b.zh,
-               (lang() === "zh" ? b.sub_zh : b.sub_en), b.sub_zh,
+               (lang() === "zh" ? b.sub_zh + ovZh : b.sub_en + ovEn), b.sub_zh + ovZh,
                b.rc_en, b.rc_zh) + ">" +
            t(b.en, b.zh) + '<span class="lab-n' + (unk ? " lab-n--unk" : "") + '"' +
            (unk ? ' aria-label="' + esc(lang() === "zh" ? "数量未知" : "count unknown") + '"' : "") +
@@ -329,12 +336,43 @@
        stream and a reader must know which one ordered the row they are on.
        At 390w the sentence is DEMOTED to this chip's LENS rather than cut —
        demotion with a landing, never silent removal (§15). */
+    /* ── R5.2 / VTL51-505 — THE LEAD, TOTALLED ────────────────────────────
+       The lead is the one thing this surface measures about itself, and until
+       now reading it meant counting chips down 4,681px of stream. Counted from
+       the FILTERED set, like the split; all three outcomes always print, even
+       at zero, so the line cannot become one-sided by omission the way the R5
+       lead chip did (VTL-403). */
+    var early = 0, sameDay = 0, late = 0;
+    rows.forEach(function (x) {
+      if (x.cls !== "live_forward" || x.lead == null) return;
+      if (x.lead > 0) early++; else if (x.lead < 0) late++; else sameDay++;
+    });
+    var measured = early + sameDay + late;
+    var aggEn = "<b>" + early + "</b> earlier &middot; <b>" + sameDay + "</b> same day &middot; <b>" +
+                late + "</b> later";
+    var aggZh = "更早 <b>" + early + "</b> &middot; 同日 <b>" + sameDay + "</b> &middot; 更晚 <b>" +
+                late + "</b>";
     h += '<span class="lab-split"' + tip(
       "How this stream is ordered", "本时间流的排序方式",
-      "Newest first. A row we saw live is placed by the moment we first saw it; a row from history is placed by the signal's own date, because no sighting time exists for it.",
-      "按时间倒序。实时观测到的记录按首次看到的时刻排列；回溯记录按信号自身的日期排列，因为它没有观测时刻。") + ">" + t(
-      "<b>" + lf + "</b> seen live &middot; <b>" + sd + "</b> from history",
-      "实时观测 <b>" + lf + "</b> &middot; 回溯 <b>" + sd + "</b>") + "</span>";
+      "Newest first. A row we saw first-hand is placed by the moment we first saw it; a row from history is placed by the signal's own date, because no sighting time exists for it." +
+        (measured ? " Lead measured on " + measured + " of these rows: " + early +
+          " earlier than Prophet, " + sameDay + " same day, " + late + " later." : ""),
+      "按时间倒序。第一手观测的记录按首次看到的时刻排列；回溯记录按信号自身的日期排列，因为它没有观测时刻。" +
+        (measured ? "其中 " + measured + " 条测得提前量：比 Prophet 更早 " + early + " 条，同日 " +
+          sameDay + " 条，更晚 " + late + " 条。" : "")) + ">" + t(
+      "<b>" + lf + "</b> seen first-hand &middot; <b>" + sd + "</b> from history",
+      "第一手观测 <b>" + lf + "</b> &middot; 回溯 <b>" + sd + "</b>") + "</span>";
+    /* At 390 this line demotes into the LENS above — the landing is the sentence
+       appended to the split tip, not a deletion (§15, and .lab-basis's own
+       precedent one line down). */
+    if (measured) {
+      h += '<span class="lab-agg"' + tip(
+        "How early, and how late", "提前与落后的合计",
+        "Across the rows on screen, this is how our first sighting compared with the date Prophet opened its plan. Rows from history are not counted — no sighting time exists for them — and neither are rows Prophet has no plan on.",
+        "在当前显示的记录中，这是我们的首次观测与 Prophet 开启计划日期的比较结果。回溯记录不计入（它们没有观测时刻），Prophet 尚无计划的记录也不计入。") +
+        ">" + t("Lead on <b>" + measured + "</b>: " + aggEn,
+                "已测 <b>" + measured + "</b> 条：" + aggZh) + "</span>";
+    }
     h += '<span class="lab-basis">' + t(
       "Newest first &mdash; by first sighting where there is one, otherwise by the signal&rsquo;s own date.",
       "按时间倒序 —— 有首次观测时间的用该时间，否则用信号自身的日期。") + "</span>";
@@ -345,7 +383,7 @@
        a phrase, never the bare word. */
     h += '<span class="lab-cls-filter" role="group" aria-label="' +
          esc(lang() === "zh" ? "观测类别" : "Observation class") + '">';
-    [["all", "All", "全部"], ["live", "Seen live", "实时观测"], ["seed", "From history", "回溯"]]
+    [["all", "All", "全部"], ["live", "Seen first-hand", "第一手观测"], ["seed", "From history", "回溯"]]
       .forEach(function (o) {
         h += '<button type="button" data-lab-cls="' + o[0] + '" aria-pressed="' +
              (C.labClass === o[0]) + '">' + t(o[1], o[2]) + "</button>";
@@ -364,10 +402,32 @@
        the feed supplied one. A seed cannot: `signal_known_ts` was never
        supplied and LAB-0 §4 forbids reconstructing it, so the slot prints the
        signal's own date and says, in the label, that this is not a sighting. */
+    /* ── R5.2 / R52-D1 — THE RAIL IS A UNIT LABEL, NOT A CLASS ASSERTION ────
+       R5.1 withdrew the 23 per-row seed chips under Law 4 and then kept
+       printing "signal date / not a sighting" on all 23 rows, so the constant
+       VTL-408 targeted survived the fix that was supposed to remove it. The
+       second line was the constant: `not a sighting` asserts CLASS MEMBERSHIP,
+       identically, on every row it appears on, and that assertion is exactly
+       what the pinned divider now carries once.
+
+       The first line stays, and the distinction is the whole argument. `signal
+       date` and `first seen` are UNIT LABELS: they say what the number directly
+       above them is, they DIFFER between adjacent rows, and without them the
+       stream prints two kinds of timestamp in one column with nothing saying
+       which is which. That is the ratified self-labelling-token pattern
+       (doctrine §3, "the state token IS the label"), and it is the closest
+       thing a single interleaved stream has to a column header — a table would
+       spend one header cell on it, and this stream cannot, because the two
+       kinds alternate. Deleting them too would not be honesty, it would be an
+       unlabelled number.
+
+       D6i pins the split: the class assertion must appear EXACTLY ONCE in the
+       stream, and no row rail may make one. M23 puts the per-row constant back
+       and is caught there. */
     h += '<div class="lab-when"><span class="lab-node" aria-hidden="true"></span>';
     if (seed) {
       h += '<b class="lab-t">' + t(r.sig.en, r.sig.zh) + "</b>";
-      h += '<span class="lab-tl">' + t("signal date<br>not a sighting", "信号日期<br>非观测记录") + "</span>";
+      h += '<span class="lab-tl">' + t("signal date", "信号日期") + "</span>";
     } else {
       h += '<b class="lab-t">' + esc(r.first.hm) + '<i class="lab-tz">ET</i></b>';
       h += '<span class="lab-tl">' + t("first seen<br>" + r.first.day.en,
@@ -409,24 +469,45 @@
 
        It is not simply deleted, because the reason it existed is real: a reader
        deep in the seed region, mid-scroll at 390w, cannot see a divider that is
-       2,000px above them. So the DIVIDER ITSELF is now sticky — it pins to the
-       top of the viewport for exactly as long as any seed row is on screen, so
-       the label is present whenever it applies and printed once instead of 23
-       times. The signature device does the work the repetition was doing.
+       2,000px above them. So the DIVIDER ITSELF pins — for exactly as long as
+       any seed row is on screen — and carries the class name in the seed
+       treatment, so the label is present whenever it applies and printed once
+       instead of 23 times. The signature device does the work the repetition
+       was doing.
+
+       R5.2 / PR51-1: at R5.1 that paragraph was true of the intent and false of
+       the artifact — `.lab-stream`'s `overflow: hidden` made the pin inert, so
+       the chips were withdrawn against a mechanism that never fired. The clip
+       moved off the list and D6c3 now proves the pin by scrolling past it.
 
        Four independent channels still separate the classes ON the row: dashed
        spine, hollow node, the "signal date / not a sighting" rail, and the
        "Lead not measurable" slot. The live rows keep their chip — there are
        seven of them, above the divider, and it is not a constant there. */
+    /* ── R5.2 / VTL51-506 — "LIVE" NOW MEANS THE MODE, IN BOTH LANGUAGES ────
+       VTL-405 de-overloaded "Live" once, at R5.1, by making the observation
+       class a PHRASE ("Seen live" / 实时观测) instead of the bare word. The
+       residue is that the phrase still contained the word, in both languages, so
+       the page carried LIVE (mode), "Seen live" (row class) and "Seen live"
+       (filter) — 实时 / 实时观测 / 实时观测 — and a reader had to infer from
+       position which "live" was which.
+
+       The class is now "Seen first-hand" / 「第一手观测」, which shares nothing
+       with the mode word in either language. It is not a rename for its own
+       sake: the axis this class actually measures is PROVENANCE, not timing —
+       did we watch it arrive, or are we reading it back out of the record — and
+       "first-hand" is the plain word for that. It also makes the pair
+       internally consistent, because the opposite of "From history" is "seen
+       first-hand", while the opposite of "From history" was never "live". */
     if (!seed) {
       h += '<span class="lab-cls lab-cls--live"' + tip(
-        "Seen live", "实时观测",
+        "Seen first-hand", "第一手观测",
         "The feed carried this for the first time at " + r.first.hm + " ET on " + r.first.day.en +
-        ". It is a new observation, not history — so it is the only kind of row that can show a lead.",
-        "数据源在 " + r.first.day.zh + " 美东 " + r.first.hm + " 首次带来这条记录。它是新的观测，不是历史 —— 因此只有这类行可以显示提前量。",
+        ". We watched it arrive rather than reading it back out of the record — so it is the only kind of row that can show a lead.",
+        "数据源在 " + r.first.day.zh + " 美东 " + r.first.hm + " 首次带来这条记录。我们是看着它到达的，而不是从历史记录中回读 —— 因此只有这类行可以显示提前量。",
         "observation_class = live_forward · first_observed_at derived from the live pack envelope pass_ts at the consumption plane; the immutable event is never mutated (LAB-0 §4).",
         "observation_class = live_forward · first_observed_at 由消费层的 live pack envelope pass_ts 推导；不可变事件本身从不被改写（LAB-0 §4）。") + ">" +
-        t("Seen live", "实时观测") + "</span>";
+        t("Seen first-hand", "第一手观测") + "</span>";
     }
     /* one chip per expert — identities are never merged into "3 signals"
        (DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED) */
@@ -502,6 +583,16 @@
          treatment, because "how late were we" is exactly as much a result as
          "how early were we" and the surface may not print only one of them */
       var b = -r.lead;
+      /* R5.2 / PR51-7 — THE ZH SIGN HAS TO SURVIVE A GLANCE, and it did not.
+         The two ZH outcomes were 「比 Prophet 早 N 天看到」 and 「Prophet 早 N
+         天」: same polarity character 早, same numeral, distinguished only by
+         word order and one 比. In a column of quiet identically-inked chips —
+         which is exactly what the VTL-403 symmetry law makes them — the reader
+         scans for the WORD, and the word was the same. The EN pair does not
+         have this problem because it flips the subject AND the verb.
+         The adverse ZH now uses 领先 ("was ahead of"), which shares no
+         character with 早, names Prophet as the subject and 我们 as the
+         reference, and reads as a measurement rather than a fragment. */
       return '<span class="lab-lead lab-lead--measured lab-lead--adverse"' + tip(
         "Measured, and against us", "已测得，且结果不利",
         "Prophet opened its plan " + b + " day" + (b === 1 ? "" : "s") +
@@ -509,7 +600,7 @@
         "在我们看到这条记录之前 " + b + " 天，Prophet 已经开启了计划。这是一个真实测得的、对实验台不利的结果，如实呈现。") +
         ">" + t(
         "Prophet was <b>" + b + "</b> day" + (b === 1 ? "" : "s") + " earlier",
-        "Prophet 早 <b>" + b + "</b> 天") + "</span>";
+        "Prophet 领先我们 <b>" + b + "</b> 天") + "</span>";
     }
     if (measurable) {
       return '<span class="lab-lead lab-lead--measured"' + tip(
@@ -554,11 +645,27 @@
       h += "</div>";
       return h + "</div></div>";
     }
-    h += '<div class="mx-empty"><b>' + t(
-      "Nothing early on this board right now", "该板目前没有早期候选") + "</b>";
-    h += '<div class="mx-empty-why">' + t(
-      "The feed is reporting and it is reporting nothing. That is a real zero, not a gap &mdash; try another board, or check back after the next pass.",
-      "数据源正常，且确实没有内容。这是真实的零，不是数据缺失 —— 可以换一个板块查看，或等下一次采集后再来。") + "</div>";
+    /* ── R5.2 / PR51-6 — THE EMPTY STATE MAY NOT CONTRADICT ITS OWN PILLS ────
+       R5.1 said "try another board" in every empty case. Under `feed=empty`
+       that is advice the reader can already see is useless: all six pills read
+       a confident 0, so the surface was telling them to go and check six things
+       it had just told them were zero. An empty screen is an invitation to act,
+       and an invitation to a dead end is worse than none.
+
+       So the two facts get two sentences, the same way unknown and zero do at
+       the pill row (VTL-402). Nothing anywhere: say so, and point at the next
+       pass, which is the only thing that can change it. Nothing on THIS board
+       while the feed reports: point at the counts above, which already say
+       which boards do have rows — a direction the reader can act on. */
+    var allEmpty = C.feed === "empty";
+    h += '<div class="mx-empty"><b>' + (allEmpty
+      ? t("Nothing early on any board right now", "各板目前都没有早期候选")
+      : t("Nothing early on this board right now", "该板目前没有早期候选")) + "</b>";
+    h += '<div class="mx-empty-why">' + (allEmpty
+      ? t("The feed is reporting and it is reporting nothing &mdash; every board reads 0. That is a real zero, not a gap. Check back after the next pass.",
+          "数据源正常，且确实没有内容 —— 各板块数量均为 0。这是真实的零，不是数据缺失。可等下一次采集后再来。")
+      : t("The feed is reporting and it is reporting nothing for this board. That is a real zero, not a gap &mdash; the counts above show which boards do have rows.",
+          "数据源正常，且该板块确实没有内容。这是真实的零，不是数据缺失 —— 上方各板块的数量显示哪些板块有记录。")) + "</div>";
     return h + "</div></div>";
   }
 
@@ -570,18 +677,44 @@
       "实验台观测到此结束 —— 以下均为 Prophet 自身的计划簿。") + "</span></div>";
   }
 
-  /* THE BASELINE MARKER, now doing two jobs (R5.1 / VTL-408).
-     It still marks where continuous live watching began, drawn where the stream
-     actually crosses that date. It is also STICKY: it pins to the top of the
-     viewport for as long as any row below it is on screen, so the sentence that
-     licenses the whole seed treatment is visible wherever it applies — which is
-     what the 23 deleted per-row chips were buying, bought once. */
+  /* THE BASELINE MARKER, now doing two jobs (R5.1 / VTL-408) and split into two
+     members to do them honestly (R5.2 / PR51-1).
+
+     `.lab-mark` is the STICKY half and carries only the constant: the date, the
+     class name in the seed treatment, and the one fact that governs every row
+     under it. It is what a reader 2,000px deep needs and all they need, so it
+     is the only part that is allowed to occupy the viewport permanently.
+
+     `.lab-mark-why` is the lesson — why a row below this line can never carry a
+     lead. It is stated once, where the stream actually crosses the date, and it
+     scrolls away. Re-printing an explanation at every scroll position is the
+     same defect as printing it on 23 rows, one axis over.
+
+     The class badge wears `.lab-cls--seed`, the hatched-dashed treatment the
+     withdrawn per-row chip used. R5.1 left that idiom with zero references; it
+     now has exactly one, in the place that stays on screen while it applies. */
   function baselineMark() {
-    return '<li class="lab-mark" role="separator"><div class="lab-mark-when">' +
-      t(L.baseline.en, L.baseline.zh) + "</div>" +
-      '<div class="lab-mark-l"><b>' + t("From history", "回溯记录") + "</b>" + t(
-        " &mdash; below this line we were not yet watching, so no row carries a lead. Live watching began " + L.baseline.en + ".",
-        " —— 此线以下我们尚未开始实时观测，因此均无提前量。实时观测始于 " + L.baseline.zh + "。") + "</div></li>";
+    var h = '<li class="lab-mark" role="separator"><div class="lab-mark-when">' +
+      t(L.baseline.en, L.baseline.zh) + "</div><div class=\"lab-mark-l\">";
+    h += '<span class="lab-cls lab-cls--seed"' + tip(
+      "From history", "回溯记录",
+      "These rows were already in our records before continuous watching began on " +
+        L.baseline.en + ". We are reading them back, not seeing them arrive.",
+      "在 " + L.baseline.zh + " 开始持续观测之前，这些记录就已存在于我们的数据中。我们是在回读它们，而不是看着它们到达。",
+      "observation_class = retrospective_seed for every row below this marker (LAB-0 §4).",
+      "此标记以下每一行的 observation_class = retrospective_seed（LAB-0 §4）。") + ">" +
+      t("From history", "回溯记录") + "</span>";
+    h += '<span class="lab-mark-rule">' + t(
+      "Nothing below this line was seen first-hand.",
+      "此线以下均非第一手观测。") + "</span></div></li>";
+    h += '<li class="lab-mark-why"><div class="lab-mark-why-rail"></div>' +
+      '<div class="lab-mark-why-l">' + t(
+        "Continuous watching began " + L.baseline.en +
+          ". The signals below it were already in our records by then, so no first-sighting time exists for them and no row below can carry a lead.",
+        "持续观测始于 " + L.baseline.zh +
+          "。此线以下的信号在那之前就已存在于我们的数据中，因此没有首次观测时刻，下方任何一行都无法给出提前量。") +
+      "</div></li>";
+    return h;
   }
 
   /* the spine's own way of saying "and nothing since" */
@@ -674,6 +807,7 @@
     var setups = document.getElementById("setups");
     if (setups) setups.innerHTML = plane();
     syncSeg();
+    syncMarkOffset();
   }
 
   function paintLive() {
@@ -689,7 +823,26 @@
     if (b) b.innerHTML = "";
     var sc = document.createElement("script");
     sc.src = "../institutionalize/us_stocks/board.js?repaint=" + (++C.repaints);
-    sc.onload = function () { mountModebar(); syncSeg(); harnessStamp(); };
+    sc.onload = function () {
+      mountModebar(); syncSeg(); harnessStamp();
+      /* R5.2 / R52-D2: the return trip undoes the landing. An excursion that
+         moved the page has to put it back, or "flip back to Live" costs the
+         reader their place in the plan book. */
+      if (C.preLabScrollY != null) {
+        var y = C.preLabScrollY;
+        C.preLabScrollY = null;
+        /* two frames, because the restore has to happen AFTER layout. Emptying
+           #board collapses the document and the browser clamps scrollY to 0; a
+           scrollTo issued in the same tick as the repaint is measured against
+           the pre-layout height and clamps to 0 as well. Measured: restoring on
+           `onload` alone left the page at 0 every time. */
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(function () {
+            window.scrollTo({ top: y, behavior: "auto" });
+          });
+        });
+      }
+    };
     document.body.appendChild(sc);
   }
 
@@ -698,9 +851,73 @@
      make the repaint counter lie about how the board on screen was produced.
      The counter is evidence (D15d), so it may only count real re-derivations. */
   function apply(initial) {
-    if (C.desiredMode === "lab") paintLab();
-    else if (initial) { root.setAttribute("data-mode", "live"); harnessStamp(); }
+    if (C.desiredMode === "lab") {
+      /* remember where the reader was BEFORE the excursion, so the return trip
+         puts the page back rather than stranding them in the plan book */
+      if (!initial) C.preLabScrollY = Math.round(window.scrollY);
+      paintLab();
+      if (!initial) landRegion();
+    } else if (initial) { root.setAttribute("data-mode", "live"); harnessStamp(); }
     else paintLive();
+  }
+
+  /* ── R5.2 / R52-D1 — THE PIN CLEARS WHATEVER STICKY CHROME IS ABOVE IT ────
+     `top: 0` encodes "this route has no page header", and the production route
+     ships the shared site nav. Rather than hardcode either answer, the
+     controller MEASURES the sticky chrome above the grid once per paint and
+     binds `--lab-mark-top`, so one component is correct on a page with a header
+     and on one without.
+
+     This mockup exercises the seam rather than dodging it: its own harness bar
+     is a real `position: sticky; top: 0` element, so with `?chrome=1` the
+     divider pins BELOW it and with `?chrome=0` it pins at 0 — two different
+     correct answers from one rule. D6c4 asserts both. Production adds its
+     header to the selector list (or marks it `data-lab-sticky-chrome`) and
+     changes nothing else. */
+  function syncMarkOffset() {
+    var top = 0;
+    document.querySelectorAll(".harness, [data-lab-sticky-chrome]").forEach(function (n) {
+      var cs = window.getComputedStyle(n);
+      if (cs.position !== "sticky" && cs.position !== "fixed") return;
+      var rect = n.getBoundingClientRect();
+      /* only chrome that actually sits AT the top of the viewport displaces the
+         pin; a sticky element further down the page does not */
+      if (rect.height > 0 && rect.top <= 1) top = Math.max(top, Math.round(rect.height));
+    });
+    root.style.setProperty("--lab-mark-top", top + "px");
+  }
+
+  /* ── R5.2 / R52-D2 — LANDING THE REGION, AND WHY THIS IS NOT A HIJACK ─────
+     Measured at 390x844: the first observation began at 1,009px and stands
+     294px tall, so nothing complete was above the fold. The two structures
+     ahead of it are frozen (the ladder by R51-M1, the six selectors by C4) and
+     account for 432px, so compression alone cannot reach the 550px a complete
+     row needs — the region has to be LANDED.
+
+     The rule is self-scoping rather than breakpoint-scoped: land only when the
+     first observation would otherwise fall below the fold. At 1440 that is
+     never true and nothing moves; at 390 it is always true and the region
+     arrives at the top of the screen.
+
+     Three properties keep this a navigation and not a viewport hijack, which is
+     a standing operator veto:
+       * it fires ONLY on a deliberate mode flip — never on load, never on a
+         board or filter change, never ambiently;
+       * the control the reader just pressed re-mounts into the Lab modebar,
+         which is exactly what lands at the top, so their eye does not lose it;
+       * flipping back to LIVE restores the scroll position they flipped FROM,
+         so the excursion leaves the page where it found it.
+     The scroll is instant, so there is no motion to suppress under
+     prefers-reduced-motion. */
+  function landRegion() {
+    var band = document.querySelector(".lab-plane .lab-modebar");
+    var first = document.querySelector(".lab-row") || document.querySelector(".lab-state");
+    if (!band || !first) return;
+    var bandTop = band.getBoundingClientRect().top + window.scrollY;
+    var firstBottom = first.getBoundingClientRect().bottom + window.scrollY;
+    if (firstBottom <= window.scrollY + window.innerHeight) return;   /* already reachable */
+    if (bandTop <= window.scrollY) return;                            /* already at or above */
+    window.scrollTo({ top: Math.round(bandTop), behavior: "auto" });
   }
 
   function syncSeg() {
@@ -779,7 +996,12 @@
       grp("Mode", "mode", [["live", "Live"], ["lab", "Lab"]]) +
       grp("Operator", "op", [["1", "Yes"], ["0", "No"]]) +
       grp("Lab board", "board", L.boards.map(function (b) { return [b.id, b.en]; })) +
-      grp("Class", "cls", [["all", "All"], ["live", "Live only"], ["seed", "Seeds only"]]) +
+      /* R5.2 / PR51-10 — the harness speaks the surface's vocabulary. "Live
+         only" / "Seeds only" were the pre-VTL-405 words: "Live" now means the
+         MODE and nothing else, and "seeds" was the enum shorthand C15 removed.
+         A harness that keeps the retired words re-teaches them to every
+         reviewer who drives the mockup. */
+      grp("Class", "cls", [["all", "All"], ["live", "Seen first-hand"], ["seed", "From history"]]) +
       grp("Lab feed", "feed", [["ok", "Reporting"], ["stale", "Behind"],
                                ["empty", "Empty"], ["down", "Unavailable"]]));
     harnessStamp();

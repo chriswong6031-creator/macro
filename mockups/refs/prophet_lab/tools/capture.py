@@ -67,7 +67,13 @@ LAB_SHOTS = [
     # looked at on its own, not only next to a live row that flatters it
     ("30-seeds-only-dark-en",     DESKTOP, "theme=dark&lang=en&cls=seed"),
     ("31-seeds-only-light-zh",    DESKTOP, "theme=light&lang=zh&cls=seed"),
-    ("32-live-only-dark-en",      DESKTOP, "theme=dark&lang=en&cls=live"),
+    # R5.2 / PR51-13 — `32-live-only-dark-en` is GONE. It shot
+    # `theme=dark&lang=en&cls=live`, which is byte-for-byte the shot `35`
+    # already takes, so the crop set claimed one more view than it held and two
+    # files carried one piece of evidence under two names. 35 keeps the slot
+    # because it also ships the full-page frame; the seen-live class in
+    # isolation and the lead symmetry are the same view, and saying so once is
+    # the honest count.
     ("33-live-only-light-en",     DESKTOP, "theme=light&lang=en&cls=live"),
     ("34-seeds-only-390-dark-en", MOBILE,  "theme=dark&lang=en&cls=seed"),
     # ── R5.1 evidence: the three majors and the elevated conditions ────────
@@ -87,6 +93,27 @@ LAB_SHOTS = [
     ("46-lab-down-dark-en",       DESKTOP, "theme=dark&lang=en&feed=down"),
     ("47-lab-down-light-zh",      DESKTOP, "theme=light&lang=zh&feed=down"),
     ("48-lab-down-390-dark-en",   MOBILE,  "theme=dark&lang=en&feed=down"),
+    # ── R5.2 / R52-D3 — THE MISSING QUADRANTS ──────────────────────────────
+    #    The two states carrying the VTL-402 unknown-vs-zero distinction were
+    #    only ever shot dark-EN and light-ZH, so the theme and the language
+    #    moved together and neither could be judged on its own. These are the
+    #    other two corners: light-EN and dark-ZH, for both `down` and `empty`.
+    ("49-lab-down-light-en",      DESKTOP, "theme=light&lang=en&feed=down"),
+    ("4a-lab-down-dark-zh",       DESKTOP, "theme=dark&lang=zh&feed=down"),
+    ("4b-lab-empty-light-en",     DESKTOP, "theme=light&lang=en&feed=empty"),
+    ("4c-lab-empty-dark-zh",      DESKTOP, "theme=dark&lang=zh&feed=empty"),
+]
+
+# ── R5.2 / PR51-1 — THE PINNED DIVIDER, SHOT WHERE THE CLAIM LIVES ─────────
+# Every R5.1 crop framed the divider at the crossing, which is the one scroll
+# position at which a sticky element and a static one are indistinguishable.
+# The claim the artifact makes for it is about the position 1,200px later, so
+# that is where these are taken. Each asserts the pin before it shoots: a crop
+# of a divider that scrolled away would be a picture of the R5.1 defect.
+SCROLL_SHOTS = [
+    ("51-seed-region-pinned-dark-en",      DESKTOP, "theme=dark&lang=en"),
+    ("52-seed-region-pinned-light-zh",     DESKTOP, "theme=light&lang=zh"),
+    ("53-seed-region-pinned-390-dark-en",  MOBILE,  "theme=dark&lang=en"),
 ]
 
 FULL_PAGE = {
@@ -168,6 +195,13 @@ def main():
             before = page.evaluate(SURV)
             el.click()
             page.wait_for_timeout(320)
+            # R5.2: the flip LANDS the region at 390 (R52-D2), and the virtual
+            # cursor stays where it clicked — so content scrolls under it and
+            # opens a LENS popover across the crop. Park it in the top-right
+            # corner, which after landing is the mode bar's own padding at every
+            # width and carries no tip, then let any popover close.
+            page.mouse.move(w - 4, 4)
+            page.wait_for_timeout(140)
             st = page.evaluate("""() => {
                 const vis = q => [...document.querySelectorAll(q)]
                                   .filter(n => n.offsetParent !== null).length;
@@ -201,6 +235,118 @@ def main():
             files += shoot(page, name, made, w, h,
                            f"  rows={st['rows']} seeds={st['seeds']}")
             page.close()
+
+        # ── the pinned divider, deep in the region it governs ──────────────
+        for name, (w, h), q in SCROLL_SHOTS:
+            page = browser.new_page(viewport={"width": w, "height": h},
+                                    device_scale_factor=1)
+            page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
+            page.wait_for_timeout(200)
+            el = page.query_selector(LAB_SEG)
+            if el is None:
+                raise SystemExit(f"::error title=capture::{name}: {LAB_SEG} not found")
+            el.click()
+            page.wait_for_timeout(320)
+            # the virtual cursor stays where it clicked, so a scroll drags fresh
+            # content under it and opens a LENS popover over the evidence. Park
+            # it in the top-right corner, which no tip-bearing node occupies at
+            # either width, and let any open popover close.
+            page.mouse.move(w - 4, 4)
+            page.wait_for_timeout(120)
+            rest = page.evaluate("""() => {
+                const m = document.querySelector('.lab-mark');
+                return m ? Math.round(m.getBoundingClientRect().top + window.scrollY) : null;
+            }""")
+            if rest is None:
+                raise SystemExit(f"::error title=capture::{name}: no .lab-mark to photograph")
+            page.evaluate(f"() => window.scrollTo(0, {rest} + 1200)")
+            page.wait_for_timeout(280)
+            st = page.evaluate("""() => {
+                const m = document.querySelector('.lab-mark');
+                const vh = window.innerHeight;
+                const on = q => [...document.querySelectorAll(q)].filter(n => {
+                    const r = n.getBoundingClientRect();
+                    return r.bottom > 0 && r.top < vh;
+                }).length;
+                const r = m.getBoundingClientRect();
+                return {top: Math.round(r.top), seeds: on('.lab-row--seed'),
+                        live: on('.lab-row--live'), y: Math.round(window.scrollY)};
+            }""")
+            if abs(st["top"]) > 2 or st["seeds"] < 1:
+                raise SystemExit(
+                    f"::error title=capture::{name}: the divider did not pin — mark top "
+                    f"{st['top']}px with {st['seeds']} seed rows on screen at scrollY "
+                    f"{st['y']}. Refusing to photograph an unpinned divider (PR51-1).")
+            files += shoot(page, name, made, w, h,
+                           f"  scrollY={st['y']} mark top={st['top']}px "
+                           f"seeds on screen={st['seeds']}")
+            page.close()
+
+        # ── R5.2 / R52-D3 — a 390 crop that actually CONTAINS a signed lead ──
+        #    `37-lead-symmetry-390` was named for the lead and photographed only
+        #    chrome: at 390 nothing but the preamble was above the fold, so the
+        #    M3 evidence at the design floor showed none of what it claimed. The
+        #    landing fixes the fold, and this shot additionally scrolls the
+        #    ADVERSE chip into view — the branch R5 could not render at all —
+        #    and refuses to shoot if it is not on screen.
+        page = browser.new_page(viewport={"width": 390, "height": 844},
+                                device_scale_factor=1)
+        page.goto(f"{BASE}/?theme=dark&lang=en&cls=live&chrome=0", wait_until="networkidle")
+        page.wait_for_timeout(200)
+        el = page.query_selector(LAB_SEG)
+        if el is None:
+            raise SystemExit("::error title=capture::54: mode control missing")
+        el.click()
+        page.wait_for_timeout(320)
+        page.mouse.move(386, 4)
+        page.wait_for_timeout(120)
+        adv = page.evaluate("""() => {
+            const a = document.querySelector('.lab-lead--adverse');
+            if (!a) return null;
+            const r = a.getBoundingClientRect();
+            /* park the adverse chip in the lower third, so the row it belongs
+               to is on screen with it rather than cropped to a floating chip */
+            window.scrollTo(0, Math.round(r.top + window.scrollY - window.innerHeight * 0.62));
+            return true;
+        }""")
+        if not adv:
+            raise SystemExit(
+                "::error title=capture::54: no .lab-lead--adverse in the fixture — the "
+                "adverse branch is the one VTL-403 found unrenderable; refusing to ship "
+                "a lead crop without it")
+        page.wait_for_timeout(260)
+        st = page.evaluate("""() => {
+            const vh = window.innerHeight;
+            const vis = q => [...document.querySelectorAll(q)].filter(n => {
+                const r = n.getBoundingClientRect();
+                return r.top >= 0 && r.bottom <= vh;
+            });
+            /* the adverse chip must be WHOLE in frame; a second measured chip
+               only has to be legible, because at 390 a row is ~300px tall and
+               the fold holds about two and a half of them */
+            const partial = q => [...document.querySelectorAll(q)].filter(n => {
+                const r = n.getBoundingClientRect();
+                return r.bottom > 0 && r.top < vh;
+            });
+            return {adverse: vis('.lab-lead--adverse').length,
+                    measured: partial('.lab-lead--measured').length,
+                    y: Math.round(window.scrollY)};
+        }""")
+        # The bar is the ADVERSE chip whole in frame — that is the branch R5
+        # could not render and the reason this crop exists. A second measured
+        # chip is reported, not required: at 390 a row stands ~322px and the
+        # adverse row's neighbours can both be "nothing to compare yet", so
+        # demanding two would make the check a fact about the fixture's row
+        # order rather than about the design.
+        if st["adverse"] < 1:
+            raise SystemExit(
+                f"::error title=capture::54: the adverse lead chip is not whole in frame "
+                f"— {st}. This crop exists to show the signed lead at the design floor "
+                "(R52-D3); refusing to emit one that does not.")
+        files += shoot(page, "54-lead-adverse-390-dark-en", made, 390, 844,
+                       f"  scrollY={st['y']} adverse chips in frame={st['adverse']} "
+                       f"measured chips in frame={st['measured']}")
+        page.close()
 
         # ── the round trip. LAB → LIVE must RE-DERIVE the live board, not
         #    restore a snapshot, and must leave nothing of the Lab behind. ──

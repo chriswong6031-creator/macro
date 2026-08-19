@@ -176,21 +176,25 @@ html[data-mode="live"] .lab-ladhint { display: none; }
    level overflow checks were structurally blind to it, because the inner
    scroller keeps documentElement.scrollWidth clean.
 
-   The fix removes the mechanism rather than decorating it: below 980w the pills
-   WRAP, so all six are on screen with no gesture to discover and nothing to
-   afford. It costs one extra row of vertical space and buys back a product
-   contract. Above 980w all six fit on one line anyway. */
-.lab-sel-wrap { margin: 14px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
-.lab-sel-wrap::-webkit-scrollbar { height: 4px; }
-.lab-sel-wrap::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
-.lab-sel { display: flex; gap: 7px; padding-bottom: 3px; }
-@media (max-width: 980px) {
-  .lab-sel-wrap { overflow-x: visible; }
-  .lab-sel { flex-wrap: wrap; row-gap: 7px; }
-  .lab-sel button { flex: 0 1 auto; }
-}
+   The fix removes the mechanism rather than decorating it: the pills WRAP, so
+   all six are on screen with no gesture to discover and nothing to afford. It
+   costs a row of vertical space only when they do not fit, and buys back a
+   product contract.
+
+   R5.2 / PR51-2 — THE WRAP IS UNCONDITIONAL, because the breakpoint version of
+   it rested on a false premise. R5.1 scoped the wrap to `max-width: 980px` and
+   asserted "above 980w all six fit on one line anyway"; measured, the strip
+   clears 981w by 22px, and the pill widths are a function of the COUNTS, which
+   the Lab does not control — a three-digit count on any board reopens exactly
+   the defect VTL-411 blocked on, in a band the check never looked at. A width
+   the layout merely happens to survive today is not a guarantee. Wrapping at
+   every width is the same behaviour with no threshold to be wrong about: at
+   1440 nothing wraps and nothing changed, and the promise no longer depends on
+   an integer staying short. D20d pins a width just above the old breakpoint. */
+.lab-sel-wrap { margin: 14px 0 0; }
+.lab-sel { display: flex; flex-wrap: wrap; gap: 7px; row-gap: 7px; padding-bottom: 3px; }
 .lab-sel button {
-  appearance: none; cursor: pointer; white-space: nowrap; flex: none;
+  appearance: none; cursor: pointer; white-space: nowrap; flex: 0 1 auto;
   display: inline-flex; align-items: baseline; gap: 7px;
   border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
   color: var(--muted); font: 650 12px/1 var(--font-ui); padding: 8px 13px;
@@ -241,6 +245,27 @@ html[data-mode="live"] .lab-ladhint { display: none; }
 .lab-basis { font-size: 11px; color: var(--muted); }
 .lab-split { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help; }
 .lab-split b { color: var(--text); font-weight: 800; }
+/* ── R5.2 / VTL51-505 — THE LEAD, TOTALLED ONCE ──────────────────────────────
+   The lead is the one number this surface prints about ITSELF, and reading it
+   used to mean counting chips down 4,681px of stream. One line beside the count
+   says what that column adds up to.
+
+   Built to be un-gameable in the direction VTL-403 cared about: it counts only
+   MEASURED rows, it is computed from the FILTERED set like the split beside it,
+   and whenever it prints at all it prints ALL THREE outcomes — a board whose
+   five measurements all went against us reads "0 earlier · 0 same day · 5
+   later", never a quiet omission. When nothing on screen is measurable it is
+   absent entirely rather than printing a row of zeros, because every row then
+   says "Lead not measurable" for itself and the line would only add noise.
+   `earlier` and
+   `later` sit adjacent in one parallel construction, which is exactly why a
+   two-glyph ZH opposition (更早 / 更晚) is legible HERE and was not on the row
+   chips (PR51-7): there the two outcomes are separated by hundreds of pixels
+   and the reader never sees them side by side. */
+.lab-agg {
+  font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help;
+}
+.lab-agg b { color: var(--text); font-weight: 800; }
 .lab-cls-filter { margin-left: auto; display: inline-flex; gap: 3px; }
 .lab-cls-filter button {
   appearance: none; cursor: pointer; border: 1px solid transparent; background: transparent;
@@ -279,9 +304,26 @@ html[data-mode="live"] .lab-ladhint { display: none; }
 .lab-stream {
   margin: 0; padding: 0; list-style: none;
   background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; overflow: hidden;
+  border-radius: 14px;
   box-shadow: var(--card-shadow);
 }
+/* ── R5.2 / PR51-1 — THE CLIP MOVED OFF THE LIST, AND THAT IS THE WHOLE FIX.
+      R5.1 clipped this plane's rounded corners with `overflow: hidden` here.
+      That one declaration silently disabled the sticky divider 200 lines below
+      it: any `overflow` other than `visible` makes an element a SCROLLPORT, and
+      `position: sticky` pins to its nearest scrollport ancestor — which was
+      this list, a box that can never scroll. So the divider was inert wherever
+      it mattered, and the artifact booked a capability on a mechanism that had
+      never once fired (measured: at 1440 the mark sat 716px above the viewport
+      with nine seed rows on screen).
+
+      The corners are now clipped by the END MEMBERS' own radius. Nothing else
+      in this list paints outside its own box: the only backgrounds are the row
+      hover tint and the divider's panel fill, and both are on the members.
+      `verify.py` D6c3 is BEHAVIOURAL for this reason — it scrolls past the
+      divider and reads its rect, so a declaration that cannot fire fails. ── */
+.lab-stream > :first-child { border-top-left-radius: 13px; border-top-right-radius: 13px; }
+.lab-stream > :last-child { border-bottom-left-radius: 13px; border-bottom-right-radius: 13px; }
 .lab-row {
   position: relative;
   display: grid; align-items: start;
@@ -376,8 +418,15 @@ html[data-mode="live"] .lab-ladhint { display: none; }
 .lab-cls--live::before {
   content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 }
-/* The seed chip is hatched and dashed on purpose: at a glance, before any word
-   is read, it is visibly a different KIND of thing from a live sighting. */
+/* The seed treatment is hatched and dashed on purpose: at a glance, before any
+   word is read, it is visibly a different KIND of thing from a live sighting.
+
+   R5.2 / PR51-1 — IT HAS EXACTLY ONE HOME NOW: the pinned divider's class
+   badge. R5.1 withdrew the per-row repeat (VTL-408) and left this rule with
+   zero references — a dead treatment for the one distinction the surface
+   exists to carry. Rather than delete the idiom, the divider wears it, so the
+   hatched-dashed language still names the class and now does so once, from a
+   position that stays on screen for exactly as long as the class applies. */
 .lab-cls--seed {
   color: var(--lab-seed-ink); border: 1px dashed color-mix(in srgb, var(--muted) 62%, transparent);
   background-color: transparent;
@@ -443,9 +492,19 @@ html[data-mode="live"] .lab-ladhint { display: none; }
   border: 1px solid var(--line);
 }
 .lab-lead--measured b { color: var(--text); }
-/* NO colour, weight or background is declared here. Adverse and favourable are
-   the same object; only the sentence changes. */
-.lab-lead--adverse { }
+/* R5.2 / R52-D1 — THE EMPTY `.lab-lead--adverse { }` RULE IS GONE.
+   R5.1 shipped it deliberately, reasoning that an explicit empty block would
+   stop a future edit from making one side louder. It does the opposite: an
+   empty rule under a comment addressed to future editors is a labelled slot,
+   and the cheapest way for a follower surface to reintroduce the asymmetry
+   VTL-403 blocked on is to fill the hook already sitting there inviting it.
+   There is now no rule for the adverse case at all — the class exists ONLY to
+   carry a different word order and its own receipt in lab.js.
+   What actually holds the law is D19c, which compares the COMPUTED colour of
+   the favourable and adverse chips: it fails whether the divergence arrives
+   through this selector, a follower stylesheet, or an inline style — none of
+   which an empty rule here could ever have prevented. M16 re-amplifies one
+   side and is caught there. */
 /* the absence idiom — dashed, muted, and reserved for things that were never
    measured at all */
 .lab-lead--none {
@@ -474,19 +533,36 @@ html[data-mode="live"] .lab-ladhint { display: none; }
       the spine is dashed and rows are history. The reader is never asked to
       infer the rule from a badge. ─────────────────────────────────────────── */
 /* R5.1 / VTL-408 — THE DIVIDER IS STICKY, AND THAT IS WHY THE 23 PER-ROW
-   CHIPS COULD GO. It pins to the top of the viewport for exactly as long as any
-   row below it is on screen, so the sentence that licenses the whole seed
-   treatment is present wherever it applies — printed once instead of 23 times.
-   The signature device absorbs the job the repetition was doing. */
+   CHIPS COULD GO. It pins for exactly as long as the rows it governs are on
+   screen, so the class the whole seed treatment turns on is present wherever it
+   applies — stated once instead of 23 times.
+
+   R5.2 / PR51-1 — TWO CORRECTIONS, ONE STRUCTURAL AND ONE EDITORIAL.
+
+   Structural: the R5.1 declaration never fired, because `.lab-stream` carried
+   `overflow: hidden` and a sticky child pins to its nearest scrollport, not to
+   the viewport. The clip moved to the list's end members (§5) and the pin is
+   real; D6c3 now reads the rect after a scroll rather than reading the rule.
+
+   Editorial: what pins is the CONSTANT, not the lesson. R5.1's divider was one
+   25-word sentence, and pinning that at 390 would have spent ~12% of the
+   viewport permanently to re-teach a rule the reader learned when they crossed
+   it. So the device splits along the tier line the doctrine already draws: the
+   class name and the one fact that governs every row below it PIN (`.lab-mark`);
+   the explanation of WHY no row below can carry a lead is stated once at the
+   crossing and scrolls away with it (`.lab-mark-why`). Demotion with a landing,
+   which is the same rule §15 applies to the sort basis at 390.
+
+   `--lab-mark-top` is the production seam: a route whose site header is itself
+   sticky binds the offset once here instead of forking the component. */
 .lab-mark {
   display: grid; align-items: center;
   grid-template-columns: var(--lab-gut) minmax(0, 1fr);
   border-bottom: 1px solid var(--line);
-  position: sticky; top: 0; z-index: 4;
+  position: sticky; top: var(--lab-mark-top, 0px); z-index: 4;
   background: var(--panel);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--lab-acc) 30%, transparent);
 }
-.lab-mark-l b { color: var(--lab-ink); font-weight: 800; }
 .lab-mark-when {
   padding: 10px 16px 10px 0; text-align: right;
   border-right: 2px solid var(--lab-spine);
@@ -494,10 +570,30 @@ html[data-mode="live"] .lab-ladhint { display: none; }
   font: 700 11px/1.2 var(--font-mono); color: var(--lab-ink);
 }
 .lab-mark-l {
-  padding: 10px 0 10px 18px; font-size: 11px; line-height: 1.45; color: var(--muted);
-  align-self: stretch; display: flex; align-items: center;
+  padding: 9px 14px 9px 18px; font-size: 11px; line-height: 1.4; color: var(--muted);
+  align-self: stretch; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
 }
-@media (max-width: 560px) { .lab-mark-l { padding-left: 13px } .lab-mark-when { padding-right: 10px } }
+.lab-mark-rule { min-width: 0; }
+/* the lesson, stated where the stream crosses the date and nowhere else. It is
+   a member of the list so the spine runs through it, and it is DELIBERATELY not
+   sticky: a rule you have already read does not need re-printing at every
+   scroll position, only its consequence does. */
+.lab-mark-why {
+  display: grid; align-items: stretch;
+  grid-template-columns: var(--lab-gut) minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--muted) 3%, transparent);
+}
+.lab-mark-why-rail { border-right: 2px dashed var(--line); }
+.lab-mark-why-l {
+  padding: 9px 18px 11px; font-size: 10.5px; line-height: 1.5; color: var(--muted);
+  max-width: 72ch;
+}
+@media (max-width: 560px) {
+  .lab-mark-l { padding-left: 13px }
+  .lab-mark-when { padding-right: 10px }
+  .lab-mark-why-l { padding-left: 13px }
+}
 
 /* the spine's own way of saying "and nothing since": a dashed head segment
    above the newest node, labelled. An absence of observations is a fact about
@@ -585,7 +681,33 @@ html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: lab-i
   .lab-auth { font-size: 11px; margin-top: 5px; }
   .lab-sel-wrap { margin-top: 11px; }
   .lab-meta { margin-top: 10px; padding-bottom: 8px; gap: 8px; }
-  .lab-sub { font-size: 12px; }
+  /* ── R5.2 / R52-D2 — THE MOBILE PREAMBLE, DEMOTED WITH LANDINGS ───────────
+     Measured at 390x844 on the R5.1 artifact: the LAB view returned ZERO
+     complete observations above the fold. The first row began at 1,009px and
+     stands 294px tall, so it had to start by 550px. Two of the structures in
+     front of it are frozen by the R5 verdict — the ladder (295px, R51-M1) and
+     the six wrapped selectors (137px, C4) — so 432px of that budget is not this
+     round's to spend, and no amount of compression reaches 550 while they stand.
+     What IS this round's is the Lab's own preamble, where three lines were
+     already printed somewhere else:
+
+       .lab-sub     — the board subtitle, printed VERBATIM as the body of every
+                      selector pill's own LENS tip. Two copies of one sentence,
+                      12px apart. Hiding it here removes a duplicate, not a
+                      fact, and the landing already existed.
+       .lab-overlap — "boards overlap and do not sum" is a footnote ABOUT the
+                      pill row, so it demotes into the pill tips, which is the
+                      only place a reader ever needs it.
+       .lab-agg     — the lead total demotes into the split chip's LENS, the
+                      same demotion .lab-basis already takes here.
+
+     Nothing is silently removed and nothing is compressed into denser jargon —
+     the doctrine's demotion rule applied to the three lines that had a home to
+     go to. The rest of the gap is closed by LANDING the region (lab.js), which
+     is the only lever left once the ladder and the selectors are fixed. */
+  .lab-sub { display: none; }
+  .lab-overlap { display: none; }
+  .lab-agg { display: none; }
   .lab-basis { display: none; }
   .lab-when { padding-right: 10px; }
   .lab-t { font-size: 12px; }
