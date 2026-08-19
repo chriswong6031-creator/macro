@@ -404,6 +404,77 @@ def test_resolution_strength_grades_and_records_provenance():
     assert S("Sonic (company)", "Sonic Corp") == EP.STRENGTH_EXACT
 
 
+def test_exact_is_directional_a_title_may_drop_words_never_add_them():
+    """EXACT is the one strength nothing may veto, so it must mean "the same name".
+
+    Which side carries the extra word decides what the extra word means. The title
+    DROPPING an industry descriptor is just the common short name ("Shift4 Payments,
+    Inc." is titled "Shift4"). The title ADDING one names something NARROWER than
+    the issuer — a subsidiary, a brand or a product line — and those are real
+    published mistakes, not hypotheticals: all three below are live in the cache."""
+    S = EP._resolution_strength
+    # title drops a descriptor -> same company
+    assert S("Shift4", "Shift4 Payments, Inc.") == EP.STRENGTH_EXACT
+    assert S("Dow Inc.", "DOW INC.") == EP.STRENGTH_EXACT
+    # title ADDS one -> a different, narrower entity; must be vetoable
+    for title, name in (
+        ("PriceSmart Foods", "PRICESMART INC"),        # a BC supermarket chain
+        ("Texas Instruments Power", "TEXAS INSTRUMENTS INC"),  # a transistor series
+        ("Lincoln Financial Media", "Lincoln Financial"),      # a defunct broadcaster
+        ("Del Monte Foods", "Del Monte Corporation"),
+    ):
+        assert S(title, name) != EP.STRENGTH_EXACT, f"{title!r} must not be EXACT for {name!r}"
+
+
+def test_exact_requires_token_alignment_not_raw_substring():
+    """A short acronym core has no word boundary in a fused comparison, so it sits
+    inside unrelated words: "ATI" lives inside "AmericATIonal". Matching by TOKEN
+    closes the whole class."""
+    S = EP._resolution_strength
+    for title, name in (
+        ("American International Group", "ATI INC"),
+        ("MGM Resorts International", "ATI INC"),
+        ("United Airlines", "RLI CORP"),
+        ("CF Industries", "IES Holdings, Inc."),
+        ("Bio-Rad Laboratories", "IES Holdings, Inc."),
+        ("Air Products", "CTS CORP"),
+        ("H&R Block", "Block, Inc."),
+        ("CRH plc", "RH"),
+        ("U.S. Bancorp", "Bancorp, Inc."),
+    ):
+        assert S(title, name) != EP.STRENGTH_EXACT, f"{title!r} must not be EXACT for {name!r}"
+
+
+def test_exact_survives_accents_and_leading_articles():
+    """Folding matters: without it "Estée" loses its "é" and a correctly resolved
+    issuer is demoted to a marginal match that then needs corroboration to publish."""
+    S = EP._resolution_strength
+    assert S("Estée Lauder Companies", "Estée Lauder Companies (The)") == EP.STRENGTH_EXACT
+    assert S("Estee Lauder Companies", "Estée Lauder Companies (The)") == EP.STRENGTH_EXACT
+    assert S("The Hershey Company", "Hershey Company (The)") == EP.STRENGTH_EXACT
+    assert EP._norm("Estée Lauder") == EP._norm("Estee Lauder") == "esteelauder"
+
+
+def test_clean_name_strips_backslash_registration_tags():
+    """SEC entity names carry the state tag in both slash directions."""
+    bs = chr(92)
+    assert EP._clean_name(f"RUSH ENTERPRISES INC {bs}TX{bs}") == "Rush Enterprises Inc"
+    assert EP._clean_name(f"UNIVERSAL CORP {bs}VA{bs}") == "Universal Corp"
+    # the forward-slash forms already handled must not regress
+    assert EP._clean_name("ENTERGY CORP /DE/") == "Entergy Corp"
+    assert EP._clean_name("KEYCORP /NEW/") == "Keycorp"
+    assert EP._clean_name("AMETEK INC/") == "Ametek Inc"
+
+
+def test_retail_and_auto_are_adjacent_industries():
+    """A vehicle dealership is filed as retail and describes itself as automotive —
+    reading that as a contradiction withdrew a correctly-resolved issuer (RUSHA)."""
+    assert EP._industry_agrees(
+        "Retail-Auto Dealers & Gasoline Stations", "",
+        "Rush Enterprises is an American commercial vehicle dealership "
+        "headquartered in New Braunfels, Texas.") is True
+
+
 def test_parenthetical_qualifier_is_not_corroboration():
     """"(company)" says "the company one" and corroborates. "(benefits company)"
     says "the BENEFITS one" — Wikipedia distinguishing one namesake from another,

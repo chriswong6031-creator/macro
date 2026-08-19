@@ -28,6 +28,7 @@ import json
 import logging
 import re
 import time
+import unicodedata
 from datetime import datetime, timezone
 from urllib.parse import quote
 
@@ -77,6 +78,14 @@ _CORE_SUFFIX = {"corp", "corporation", "inc", "incorporated", "co", "cos",
 _NAME_STOP = _CORE_SUFFIX | {"the", "of", "and", "for", "group", "trust",
                              "international", "american", "global", "new",
                              "class", "cl"}
+# NB: directional words ("northern", "western", "pacific") are deliberately NOT
+# stop words. Demoting them looks right — "Northern Oil & Gas" should not read as
+# "Northern Trust" — but measured on the live cache it TRADES one collision for a
+# worse one: with both demoted, "Western Union" and "Union Pacific" reduce to the
+# same single token "union" and grade EXACT, which is the one strength nothing can
+# veto. Issuers whose distinctive name is a single common word (Northern, Union,
+# Universal, First Bancorp of PR vs of NC) are a genuine name-collision class that
+# name evidence alone cannot settle; see the wave note rather than widening this set.
 # Industry/descriptor words too generic to anchor a name match on their own — else
 # "CVR Energy" matches "Cove Energy plc" on the shared "energy". A distinctive
 # token (a brand) still anchors; an exact name still matches via core-substring.
@@ -384,6 +393,9 @@ _FAMILY_ADJACENT: tuple[frozenset[str], ...] = tuple(frozenset(p) for p in (
     ("energy", "utilities"), ("energy", "mining"), ("energy", "industrial"),
     ("mining", "industrial"), ("mining", "chemicals"), ("industrial", "aerospace"),
     ("industrial", "auto"), ("industrial", "construction"), ("industrial", "chemicals"),
+    # a vehicle dealership is filed as retail and describes itself as automotive
+    # (measured on RUSHA: SIC "Retail-Auto Dealers & Gasoline Stations")
+    ("retail", "auto"),
     # automotive suppliers describe themselves as electronics/technology firms
     # (measured on GNTX: SIC "Motor Vehicle Parts", page "electronics and
     # technology company") — both are true of the same issuer
@@ -450,7 +462,8 @@ def _clean_name(name: str) -> str:
     m = re.match(r"^(.*?)[,\s]*\(the\)\s*$", n, re.I)
     if m:
         n = "The " + m.group(1).strip()
-    n = re.sub(r"\s*/[A-Za-z .&]{1,8}/?\s*$", "", n).strip()  # " /DE/", " /NEW/"
+    # " /DE/", " /NEW/" and the backslash form " \\TX\\" (RUSH ENTERPRISES INC \\TX\\)
+    n = re.sub(r"\s*[/\\][A-Za-z .&]{1,8}[/\\]?\s*$", "", n).strip()
     n = n.rstrip("/ ").strip()                                # "AMETEK INC/"
     letters = re.sub(r"[^A-Za-z]", "", n)
     if len(n) > 4 and letters and letters.isupper():
@@ -482,7 +495,14 @@ def _search_terms(*names: str) -> list[str]:
 
 
 def _norm(s: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+    """Comparison form: accents folded, then everything but [a-z0-9] dropped.
+
+    Folding matters — without it "Estée" loses its "é" entirely and becomes "este",
+    so "Estée Lauder" and "Estee Lauder" stop being the same string and a correctly
+    resolved issuer is demoted to a marginal match."""
+    folded = unicodedata.normalize("NFKD", str(s).lower())
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]", "", folded)
 
 
 def _cell(v):
@@ -586,6 +606,17 @@ def _foreign_parenthetical(title: str, *names: str) -> bool:
     return not (_norm(inner) and _norm(inner) in joined)
 
 
+def _toks(s: str) -> list[str]:
+    """Word tokens, Unicode-aware and accent-folded — "Estée Lauder" is two tokens
+    ("estee", "lauder"), not four, and compares equal to an unaccented spelling.
+    Folding must happen at the TOKEN level too, not only in `_norm`: Wikipedia and
+    the SEC disagree about accents constantly, and a token-level mismatch reads as
+    "the title added a distinctive word", which is the wrong-entity signal."""
+    folded = unicodedata.normalize("NFKD", str(s or "").lower())
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    return re.findall(r"\w+", folded, re.UNICODE)
+
+
 def _core_equivalent(title: str, *names: str) -> bool:
     """Is the candidate's core name the SAME name as the issuer's, rather than
     merely containing it as a substring?
@@ -593,30 +624,50 @@ def _core_equivalent(title: str, *names: str) -> bool:
     `_match_score`'s full-match test is bare substring containment, so a short
     issuer core sits happily inside a longer unrelated title: "Cactus, Inc." (an
     oilfield equipment maker) scored a full match against "Cactus Club Cafe", a
-    Canadian restaurant chain. Containment counts only when the longer side adds
-    nothing distinctive — corporate forms and stop words only."""
+    Canadian restaurant chain, and — with no word boundary at all — "ATI INC"
+    matched inside "Americ-ati-onal"... i.e. "American International Group".
+
+    So the comparison is by TOKEN, and it is DIRECTIONAL, which is the part that
+    matters. Which side carries the extra word decides what the extra word means:
+
+      the ISSUER carries it, the title drops it  -> the article simply uses the
+          common short name. "Shift4 Payments, Inc." is titled "Shift4"; an
+          industry descriptor here is not a different company.
+      the TITLE carries it, the issuer lacks it  -> the article is about something
+          NARROWER than the issuer: a subsidiary, a brand, or a product line.
+          "PriceSmart" vs "PriceSmart Foods" (a BC supermarket chain owned by the
+          Jim Pattison Group), "Lincoln Financial" vs "Lincoln Financial Media" (a
+          defunct broadcaster), "Texas Instruments" vs "Texas Instruments Power" (a
+          transistor series). Only a bare corporate form may be added.
+
+    Getting this backwards is expensive: EXACT is the one strength that no
+    industry, geographic or offline check may veto, so anything wrongly graded
+    EXACT is published with no further test at all."""
     tcore = _title_core(title)
-    a = _norm(tcore)
-    if not a:
+    t_toks = _toks(tcore)
+    if not t_toks:
         return False
+    t_set = set(t_toks)
     for nm in names:
-        b = _norm(_core_name(nm or ""))
-        if not b:
+        ncore = _core_name(nm or "")
+        n_toks = _toks(ncore)
+        if not n_toks:
             continue
-        if a == b:
+        # fused/punctuation-only difference: "Exxon Mobil" == "ExxonMobil"
+        if _norm(tcore) == _norm(ncore):
             return True
-        if a not in b and b not in a:
+        n_set = set(n_toks)
+        shared = t_set & n_set
+        # the agreement must rest on a BRAND, never on shared filler
+        if not any(w not in _NAME_STOP and w not in _GENERIC_TOK for w in shared):
             continue
-        long_s, short_s = (tcore, nm) if len(a) > len(b) else (nm, tcore)
-        long_t = set(re.sub(r"[^a-z0-9]", " ", str(long_s).lower()).split())
-        short_t = set(re.sub(r"[^a-z0-9]", " ", str(short_s).lower()).split())
-        # An industry descriptor is exactly what legitimately differs between a
-        # legal name and an article title ("Shift4 Payments, Inc." -> "Shift4"), so
-        # it is not "something distinctive added". A brand word is ("Cactus" ->
-        # "Cactus Club Cafe", "Box" -> "Boxed").
-        extra = {w for w in (long_t - short_t) if len(w) >= 4}
-        if all(w in _NAME_STOP or w in _GENERIC_TOK for w in extra):
-            return True
+        issuer_only = n_set - t_set
+        title_only = t_set - n_set
+        if not all(w in _NAME_STOP or w in _GENERIC_TOK for w in issuer_only):
+            continue
+        if not all(w in _NAME_STOP for w in title_only):
+            continue
+        return True
     return False
 
 
@@ -632,7 +683,11 @@ def _resolution_strength(title: str, *names: str) -> str:
     score = _match_score(title, *names)
     if score < 2:
         return STRENGTH_NONE
-    if (score >= 3 and not _foreign_parenthetical(title, *names)
+    # `_core_equivalent` — not the raw substring score — is the authority on
+    # "same name". _match_score's core test has no word boundary and no direction,
+    # so it both over-grants (ATI inside "AmericATIonal") and under-grants (a
+    # leading "The" defeats the containment for "Estée Lauder Companies (The)").
+    if (not _foreign_parenthetical(title, *names)
             and _core_equivalent(title, *names)):
         return STRENGTH_EXACT
     # how many distinctive tokens actually carried the match?
