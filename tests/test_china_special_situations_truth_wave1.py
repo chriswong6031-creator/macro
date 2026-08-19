@@ -490,6 +490,90 @@ def _reply_title(issuer: str, topic: str) -> str:
     return f"{issuer}关于深圳证券交易所《关于{issuer}{topic}》的回复公告"
 
 
+def test_inquiry_doc_role_classifies_reply_side_and_deferral():
+    """Pure-function sanity for the document-role predicate.
+
+    `kind` alone cannot carry this: collectors.china_filings.classify_kind
+    defaults to "letter", so reply-side filings are stored as letters, and a
+    延期回复 notice is stored as a reply.
+    """
+    from engine.china_special_situations import _inquiry_doc_role
+
+    assert _inquiry_doc_role("关于收到深圳证券交易所《关于甲公司年报的问询函》的公告") == "letter"
+    # Reply-side organ/adviser forms — 意见 is matched broadly on purpose.
+    for t in ("甲公司独立董事关于年度报告信息披露监管问询函所涉事项的独立董事意见",
+              "天健会计师事务所关于甲公司审核问询函中有关财务事项的说明",
+              "北京市炜衡律师事务所关于《问询函》相关问题的专项法律意见",
+              "董事会审计委员会关于公司问询函所涉问题的相关意见",
+              "甲公司关于问询函的回复公告"):
+        assert _inquiry_doc_role(t) == "reply_side", t
+    # A deferral says the reply has NOT been filed.
+    assert _inquiry_doc_role("关于延期回复《关于甲公司重大资产重组的问询函》的公告") == "deferral"
+
+
+def test_inquiry_reply_side_doc_stored_as_letter_is_not_an_open_inquiry(tmp_path, monkeypatch):
+    """A reply-side filing stored with kind='letter' must NOT be published as an
+    unanswered inquiry — and must instead count as reply evidence.
+
+    Regression this catches: trusting `kind` alone. classify_kind defaults to
+    "letter", so on the real store 100 of 140 "letters" are 说明/意见/回复
+    filings; counting them as letters asserts open regulatory questions that were
+    never asked, while simultaneously discarding the reply evidence they carry.
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    issuer = "甲证科技"
+    today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
+    rows = [
+        _filings_row("600111", issuer, _letter_title(issuer, _TOPIC_ANNUAL_REPORT),
+                     today, kind="letter", announcement_id="l1"),
+        # Stored kind='letter' by the collector's default, but plainly reply-side,
+        # and it names the SAME inquiry thread as the letter above.
+        _filings_row("600111", issuer,
+                     f"{issuer}独立董事关于深圳证券交易所《关于{issuer}{_TOPIC_ANNUAL_REPORT}》所涉事项的独立董事意见",
+                     today, kind="letter", announcement_id="l2"),
+    ]
+    _make_parquet(data_dir / "china_filings" / "filings.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    inq = snap["inquiry"]
+    # THE regression-catching assertions: the 独立董事意见 is not a letter …
+    assert inq["n_letters"] == 1, inq["letters"]
+    assert all("意见" not in ltr["title"] for ltr in inq["letters"])
+    # … and it DOES answer the genuine letter it names.
+    assert inq["n_replied"] == 1
+    assert inq["letters"][0]["reply_state"] == "replied"
+
+
+def test_inquiry_deferral_notice_does_not_mark_a_letter_replied(tmp_path, monkeypatch):
+    """A 延期回复 notice must NOT resolve its inquiry to 'replied'.
+
+    Regression this catches: 延期回复 contains 回复 and every such notice in the
+    real store is stored kind='reply', so a naive reply-side test would let the
+    filing that announces the reply is POSTPONED mark the inquiry answered.
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    issuer = "乙证科技"
+    today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
+    rows = [
+        _filings_row("600222", issuer, _letter_title(issuer, _TOPIC_RESTRUCTURE),
+                     today, kind="letter", announcement_id="l1"),
+        _filings_row("600222", issuer,
+                     f"{issuer}关于延期回复深圳证券交易所《关于{issuer}{_TOPIC_RESTRUCTURE}》的公告",
+                     today, kind="reply", announcement_id="d1"),
+    ]
+    _make_parquet(data_dir / "china_filings" / "filings.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    inq = snap["inquiry"]
+    assert inq["n_letters"] == 1, inq["letters"]
+    # THE regression-catching assertion: a postponement is not an answer.
+    assert inq["letters"][0]["reply_state"] == "open"
+    assert inq["letters"][0]["has_reply"] is False
+    assert inq["n_open"] == 1
+
+
 def test_inquiry_thread_keys_extracted_from_book_quoted_title():
     """Pure-function sanity: a 《》-quoted inquiry name produces a non-empty,
     normalised key.
@@ -611,13 +695,19 @@ def test_inquiry_letter_naming_no_inquiry_is_undetermined(tmp_path, monkeypatch)
     issuer = "国投中鲁"
     today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
     rows = [
-        _filings_row("600962", issuer, f"{issuer}关于问询函的说明", today,
+        # A genuine receipt whose title is too bare to name WHICH inquiry: the
+        # extracted span normalises to under the minimum key length, so no thread
+        # identity exists. (It must not contain a reply-side token such as 说明 or
+        # 意见, or it would be a reply-side filing rather than a letter at all.)
+        _filings_row("600962", issuer, "关于收到问询函的公告", today,
                      kind="letter", announcement_id="l1"),
     ]
     _make_parquet(data_dir / "china_filings" / "filings.parquet", rows)
 
     from engine import china_special_situations as css
     snap = css.scan()
+    import sys
+    print("DEBUG inquiry block:", snap["inquiry"], file=sys.stderr)
     letters = snap["inquiry"]["letters"]
     assert len(letters) == 1
     # THE regression-catching assertion.
@@ -631,7 +721,10 @@ def test_inquiry_duplicate_reply_and_attachment_rows_no_double_count(tmp_path, m
     counting.
     """
     data_dir = _wire(tmp_path, monkeypatch)
-    issuer = "重复回复公司"
+    # Issuer name must not itself contain a reply-side token (回复/意见/说明…) —
+    # the letter title embeds the issuer, so such a name would make the LETTER
+    # read as a reply-side filing.
+    issuer = "双证科技"
     today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
     rows = [
         _filings_row("600700", issuer, _letter_title(issuer, _TOPIC_FUND_USE), today,
@@ -697,16 +790,18 @@ def test_inquiry_population_counts_exceed_display_slice(tmp_path, monkeypatch):
     rows = []
     for i in range(5):
         code = f"U{i:03d}"
-        rows.append(_filings_row(code, f"未命名公司{i}", "关于收到问询函的说明", today,
+        # Bare receipt: a real letter, but names no identifiable inquiry.
+        rows.append(_filings_row(code, f"未命名公司{i}", "关于收到问询函的公告", today,
                                  kind="letter", announcement_id=f"und{i}"))
     for i, topic in enumerate(open_topics):
         code = f"O{i:03d}"
-        issuer = f"待回复公司{i}"
+        # Issuer names deliberately free of reply-side tokens (see above).
+        issuer = f"开放科技{i}"
         rows.append(_filings_row(code, issuer, _letter_title(issuer, topic), today,
                                  kind="letter", announcement_id=f"open{i}"))
     for i, topic in enumerate(replied_topics):
         code = f"R{i:03d}"
-        issuer = f"已回复公司{i}"
+        issuer = f"回应科技{i}"
         rows.append(_filings_row(code, issuer, _letter_title(issuer, topic), today,
                                  kind="letter", announcement_id=f"rep_l{i}"))
         rows.append(_filings_row(code, issuer, _reply_title(issuer, topic), today,
@@ -734,13 +829,12 @@ def test_inquiry_hero_notable_never_headlines_an_undetermined_letter():
     from engine import china_special_situations as css
 
     blocks = {
-        "unlocks": {"events": []},
-        "inquiry": {"letters": [
-            {"reply_state": "undetermined", "secCode": "600000", "secName": "Undetermined Co",
-             "has_reply": False},
+        "unlocks": {"status": "ok", "events": []},
+        "inquiry": {"status": "ok", "letters": [
+            {"reply_state": "undetermined", "secCode": "600000", "secName": "Undetermined Co", "has_reply": False},
         ]},
-        "st": {"additions": []},
-        "pledge": {"top": [], "n_high": 0},
+        "st": {"status": "ok", "additions": []},
+        "pledge": {"status": "ok", "top": [], "n_high": 0},
     }
     hero = css._build_hero(blocks)
     # THE regression-catching assertion.
@@ -753,12 +847,12 @@ def test_inquiry_hero_notable_headlines_a_genuinely_open_letter():
     from engine import china_special_situations as css
 
     blocks = {
-        "unlocks": {"events": []},
-        "inquiry": {"letters": [
+        "unlocks": {"status": "ok", "events": []},
+        "inquiry": {"status": "ok", "letters": [
             {"reply_state": "open", "secCode": "600000", "secName": "Open Co", "has_reply": False},
         ]},
-        "st": {"additions": []},
-        "pledge": {"top": [], "n_high": 0},
+        "st": {"status": "ok", "additions": []},
+        "pledge": {"status": "ok", "top": [], "n_high": 0},
     }
     hero = css._build_hero(blocks)
     assert hero["notable"] is not None

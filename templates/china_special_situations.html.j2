@@ -423,13 +423,21 @@
             rather than leaving a small per-plane chip to carry the whole caveat. #}
         {%- if hero and hero.freshness and not hero.freshness.all_fresh %}
         {%- set _fr = hero.freshness %}
+        {#- A plane can be unreadable WITHOUT being stale (no data at all), in which
+            case there is no last-known date to cite — the two clauses are separate. #}
         <p class="ssx-coverage">
           <span class="l-en">⏱ {{ _fr.n_fresh }} of {{ _fr.n_planes }} planes are current.
+            {%- if _fr.stale_labels %}
             {% for lb in _fr.stale_labels %}{{ lb.en }}{% if not loop.last %}, {% endif %}{% endfor %}
-            — last known reading from {{ _fr.oldest_stale_asof }}, not counted in the tally.</span>
+            — last known reading from {{ _fr.oldest_stale_asof }}, not counted in the tally.
+            {%- endif %}
+            {%- if _fr.n_unreadable %} {{ _fr.n_unreadable }} not reporting.{% endif %}</span>
           <span class="l-zh">⏱ {{ _fr.n_planes }} 条数据线中 {{ _fr.n_fresh }} 条为最新。
+            {%- if _fr.stale_labels %}
             {% for lb in _fr.stale_labels %}{{ lb.zh }}{% if not loop.last %}、{% endif %}{% endfor %}
-            ——显示 {{ _fr.oldest_stale_asof }} 的最后观测值，未计入上方统计。</span>
+            ——显示 {{ _fr.oldest_stale_asof }} 的最后观测值，未计入上方统计。
+            {%- endif %}
+            {%- if _fr.n_unreadable %} 另有 {{ _fr.n_unreadable }} 条暂无数据。{% endif %}</span>
         </p>
         {%- endif %}
         {%- if hero and hero.notable %}
@@ -462,14 +470,16 @@
         strongest copy on the page contradicting the smallest chip on the page. #}
     {%- set _fr = (hero.freshness if hero else None) %}
     {%- if _fr and not _fr.all_fresh %}
-    <span class="l-en">{{ _fr.n_fresh }} of {{ _fr.n_planes }} planes above are current;
+    <span class="l-en">{{ _fr.n_fresh }} of {{ _fr.n_planes }} planes above are current
+      {%- if _fr.stale_labels %};
       {% for lb in _fr.stale_labels %}{{ lb.en }}{% if not loop.last %}, {% endif %}{% endfor %}
-      — last known reading from {{ _fr.oldest_stale_asof }}. Every plane's state and counts are free. The
+      — last known reading from {{ _fr.oldest_stale_asof }}{% endif %}. Every plane's state and counts are free. The
       <b>names</b> behind them are the members' half: you get the {{ gate.n_preview }} closest in time,
       Essential gets all {{ gate.locked + gate.n_preview }}.</span>
-    <span class="l-zh">上方 {{ _fr.n_planes }} 条线中有 {{ _fr.n_fresh }} 条为最新；
+    <span class="l-zh">上方 {{ _fr.n_planes }} 条线中有 {{ _fr.n_fresh }} 条为最新
+      {%- if _fr.stale_labels %}；
       {% for lb in _fr.stale_labels %}{{ lb.zh }}{% if not loop.last %}、{% endif %}{% endfor %}
-      显示的是 {{ _fr.oldest_stale_asof }} 的最后观测值。各条线的状态与计数均免费开放。其背后的<b>个股名单</b>面向会员：
+      显示的是 {{ _fr.oldest_stale_asof }} 的最后观测值{% endif %}。各条线的状态与计数均免费开放。其背后的<b>个股名单</b>面向会员：
       你可以看到时间上最近的 {{ gate.n_preview }} 条，Essential 可查看全部 {{ gate.locked + gate.n_preview }} 条。</span>
     {%- else %}
     <span class="l-en">Every plane above is live and complete — this is the whole overhang read. The
@@ -670,11 +680,13 @@
       {%- for r in gw.annual_rows %}
       <div class="ssx-pills" style="margin-top:8px">
         <span class="ssx-pill"><span style="color:var(--ink-3)">{{ t('Period', '报告期') }}</span><b>{{ r.period or '—' }}</b></span>
+        {#- r.get(): a payload written before the typed contract has none of these
+            keys, and an Undefined would slip past the `is none` test in the macro. #}
         {%- for _f, _lbl in _money_fields %}
-        <span class="ssx-pill"><span style="color:var(--ink-3)">{{ _lbl }}</span><b>{{ gw_cny(r[_f]) }}</b></span>
+        <span class="ssx-pill"><span style="color:var(--ink-3)">{{ _lbl }}</span><b>{{ gw_cny(r.get(_f)) }}</b></span>
         {%- endfor %}
         {%- for _f, _lbl in _pct_fields %}
-        <span class="ssx-pill"><span style="color:var(--ink-3)">{{ _lbl }}</span><b>{{ gw_pct(r[_f]) }}</b></span>
+        <span class="ssx-pill"><span style="color:var(--ink-3)">{{ _lbl }}</span><b>{{ gw_pct(r.get(_f)) }}</b></span>
         {%- endfor %}
       </div>
       {%- endfor %}

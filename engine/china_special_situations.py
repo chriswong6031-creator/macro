@@ -213,6 +213,48 @@ def _inquiry_thread_keys(title: str, issuer_name: str = "") -> list[str]:
     return sorted(keys)
 
 
+# Document role within the inquiry family, derived from the title.
+#
+# The stored `kind` cannot carry this on its own: collectors.china_filings.
+# classify_kind defaults to "letter" for anything lacking 回函/回复/答复/复函/
+# 专项说明/核查意见, so 100 of the 140 stored "letter" rows are actually
+# reply-side filings (会计师事务所…说明, 独立董事…独立意见, 律师…法律意见书).
+# Counting those as open inquiries makes the plane assert unanswered regulatory
+# questions that were never asked of the company — and simultaneously discards
+# them as the reply evidence they really are. `kind` is baked into the parquet and
+# only the nightly may advance it, so the engine derives the role at read time.
+#
+# 延期回复 ("we are deferring our reply") is the trap in the other direction: it
+# contains 回复 and is stored kind="reply" for all 41 such notices, so it would
+# otherwise mark an inquiry answered by the very filing that says it is not.
+_INQ_DEFERRAL_RE = re.compile(r"延期")
+# 意见 is deliberately broad rather than an enumeration of 核查意见/独立意见/
+# 法律意见书: the reply side invents new organ and adviser forms constantly
+# (独立董事意见, 董事会审计委员会…相关意见, 评估机构…发表意见, 专项法律意见), and
+# an enumeration silently re-admits each new one as a fake open inquiry. Measured
+# against the full store, broadening to 意见 excludes 18 further reply-side rows
+# and leaves 22 survivors that are genuine "关于收到…问询函的公告" receipts or the
+# exchange's own "关于对…的问询函" — no exchange-issued letter was lost.
+_INQ_REPLY_SIDE_RE = re.compile(r"(?:回复|回函|复函|答复|意见|说明)")
+
+
+def _inquiry_doc_role(title: Any) -> str:
+    """Role of one inquiry-family filing: letter | reply_side | deferral.
+
+    'letter'     — an exchange-issued inquiry (or the company's receipt of one)
+    'reply_side' — a reply, or a professional/organ filing made in answer to one
+    'deferral'   — a notice that the reply is being POSTPONED; evidence of the
+                   opposite of a reply, so it answers nothing and asks nothing.
+    Pure function.
+    """
+    text = str(title or "")
+    if _INQ_DEFERRAL_RE.search(text):
+        return "deferral"
+    if _INQ_REPLY_SIDE_RE.search(text):
+        return "reply_side"
+    return "letter"
+
+
 def _resolve_reply_state(
     sec_code: str,
     title: Any,
@@ -579,16 +621,22 @@ def _inquiry_block() -> dict | None:
             # different inquiry entirely. Replies AND attachments both count as
             # reply-side evidence: a third-party 核查意见 filed against an inquiry
             # is filed because that inquiry is being answered.
+            df_filt["_role"] = df_filt["title"].apply(_inquiry_doc_role)
             reply_threads: set[tuple[str, str]] = set()
-            for _, rr in df_filt[df_filt["kind"] != "letter"].iterrows():
+            _is_evidence = (
+                (df_filt["kind"] != "letter") | (df_filt["_role"] == "reply_side")
+            ) & (df_filt["_role"] != "deferral")
+            for _, rr in df_filt[_is_evidence].iterrows():
                 _code = str(rr.get("sec_code") or "")
                 for _k in _inquiry_thread_keys(rr.get("title"), rr.get("sec_name")):
                     reply_threads.add((_code, _k))
 
-            # Letters only
-            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-                "_date_str", ascending=False, na_position="last"
-            )
+            # Exchange-issued letters only: `kind` alone would admit reply-side
+            # filings (see _inquiry_doc_role), which would then be published as
+            # unanswered inquiries.
+            letters = df_filt[
+                (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
+            ].sort_values("_date_str", ascending=False, na_position="last")
 
             # Resolve reply state for the WHOLE letter population first, so the
             # counts below describe the population and not the display slice.
@@ -655,18 +703,22 @@ def _inquiry_block() -> dict | None:
             else:
                 df_filt = df.copy()
 
-            # Same thread-identity contract as the filings path above.
+            # Same thread-identity and document-role contract as the filings path.
+            df_filt["_role"] = df_filt["announcementTitle"].apply(_inquiry_doc_role)
             reply_threads: set[tuple[str, str]] = set()
-            for _, rr in df_filt[df_filt["kind"] != "letter"].iterrows():
+            _is_evidence = (
+                (df_filt["kind"] != "letter") | (df_filt["_role"] == "reply_side")
+            ) & (df_filt["_role"] != "deferral")
+            for _, rr in df_filt[_is_evidence].iterrows():
                 _code = str(rr.get("secCode") or "")
                 for _k in _inquiry_thread_keys(
                     rr.get("announcementTitle"), rr.get("secName")
                 ):
                     reply_threads.add((_code, _k))
 
-            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-                "announcementTime", ascending=False, na_position="last"
-            )
+            letters = df_filt[
+                (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
+            ].sort_values("announcementTime", ascending=False, na_position="last")
 
             states = [
                 _resolve_reply_state(
@@ -1163,7 +1215,20 @@ def _build_hero(blocks: dict) -> dict:
     # Most notable = soonest large unlock, else an unreplied letter, else new ST,
     # else heavy pledge — the single item a watcher would look at first.
     notable = None
-    u = blocks.get("unlocks") or {}
+
+    def _current(key: str) -> dict:
+        """A plane's block only if its reading is current.
+
+        `notable` asserts "look at this now", which no frozen observation can
+        support — so every candidate source is gated, not just ST.
+        """
+        blk = blocks.get(key) or {}
+        status = blk.get("status") if isinstance(blk, dict) else None
+        if status in _PLANE_UNREADABLE or status in _PLANE_STALE:
+            return {}
+        return blk
+
+    u = _current("unlocks")
     large = [e for e in (u.get("events") or []) if e.get("large_flag")]
     if large:
         large.sort(key=lambda e: (e.get("days_to") if e.get("days_to") is not None else 1e9))
@@ -1175,7 +1240,7 @@ def _build_hero(blocks: dict) -> dict:
             "days_to": e.get("days_to"),
         }
     if notable is None:
-        inq = blocks.get("inquiry") or {}
+        inq = _current("inquiry")
         # Only a letter we positively established as OPEN may be headlined as
         # unanswered; an 'undetermined' letter is not evidence of an open question.
         unreplied = [l for l in (inq.get("letters") or [])
@@ -1186,19 +1251,15 @@ def _build_hero(blocks: dict) -> dict:
                        "en": "an exchange inquiry letter with no reply filed",
                        "zh": "一封未见回复的交易所问询函", "days_to": None}
     if notable is None:
-        st = blocks.get("st") or {}
+        st = _current("st")
         adds = st.get("additions") or []
-        # A stale plane may not supply the single item the hero points at — that
-        # headline asserts "look at this now", which a frozen observation cannot.
-        if st.get("status") in _PLANE_STALE or st.get("status") in _PLANE_UNREADABLE:
-            adds = []
         if adds:
             a = adds[0]
             notable = {"icon": "🚨", "ticker": a.get("ticker", ""), "name": a.get("name", ""),
                        "en": "newly flagged for risk-warning", "zh": "新增风险警示",
                        "days_to": None}
     if notable is None:
-        pl = blocks.get("pledge") or {}
+        pl = _current("pledge")
         tops = pl.get("top") or []
         if tops and (pl.get("n_high") or 0):
             t = tops[0]
