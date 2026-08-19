@@ -64,8 +64,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 _SKIP_SUFFIXES = (".j2",)
-# Keep in sync with lib/site_assets.SUPABASE_TOKEN (asserted when lib is importable).
+# Keep in sync with lib/site_assets (asserted when lib is importable). EVERY bake
+# token theme.js carries must be listed: the stdlib fallback below compares the
+# INVARIANT text around them, so a token this list does not know about reads as a
+# real divergence and refuses the publish (pages.yml) on a perfectly healthy tree.
 _THEME_TOKEN = "/*__SUPABASE_CFG__*/null"
+_MM_BRAIN_VER_TOKEN = "/*__MM_BRAIN_VER__*/''"
+_THEME_TOKENS = (_THEME_TOKEN, _MM_BRAIN_VER_TOKEN)
 # OUR ?v= stamp shape, as written by lib.pages.optimize_assets_text: an 8-hex
 # sha256 prefix and nothing else. A hand-written query (?v=3, ?foo=bar) is not
 # ours and is deliberately not audited here — same rule the stamper applies.
@@ -77,12 +82,55 @@ def _bake_theme(tpl: Path) -> str | None:
     try:
         from lib import site_assets
         assert site_assets.SUPABASE_TOKEN == _THEME_TOKEN, "SUPABASE_TOKEN drifted"
+        assert site_assets.MM_BRAIN_VER_TOKEN == _MM_BRAIN_VER_TOKEN, "MM_BRAIN_VER_TOKEN drifted"
         return site_assets.emit_theme_js(tpl)
     except AssertionError:
         raise
     except Exception as e:  # noqa: BLE001 — stdlib-only context (pages.yml publish)
         print(f"WARNING: theme.js bake unavailable ({e}) — using token-split compare")
         return None
+
+
+def _token_segments(text: str, tokens: tuple[str, ...]) -> list[str]:
+    """``text`` split on every bake token, in the order the tokens appear.
+
+    The result is the INVARIANT text: the parts the bake never rewrites. N tokens
+    yield N+1 segments (any of them possibly empty).
+    """
+    segs: list[str] = []
+    rest = text
+    while True:
+        hits = [(rest.find(t), t) for t in tokens]
+        hits = [(i, t) for i, t in hits if i >= 0]
+        if not hits:
+            segs.append(rest)
+            return segs
+        i, tok = min(hits)
+        segs.append(rest[:i])
+        rest = rest[i + len(tok):]
+
+
+def _matches_around_tokens(site_text: str, segs: list[str]) -> bool:
+    """Whether ``site_text`` is ``segs`` in order with anything at the token slots.
+
+    The stdlib-only stand-in for a real bake comparison (pages.yml publish has no
+    PyYAML, so ``emit_theme_js`` cannot run there). Deliberately weaker than the
+    byte compare it replaces — it cannot know what the bake WOULD have produced,
+    only that everything the bake does not touch is untouched. It is a publish
+    backstop, never the PR gate; ci.yml runs the exact compare.
+    """
+    if len(segs) == 1:
+        return site_text == segs[0]
+    if not site_text.startswith(segs[0]):
+        return False
+    pos = len(segs[0])
+    for seg in segs[1:-1]:
+        if seg:
+            j = site_text.find(seg, pos)
+            if j < 0:
+                return False
+            pos = j + len(seg)
+    return site_text.endswith(segs[-1]) and len(site_text) >= pos + len(segs[-1])
 
 
 def _stamp_audit(text: str, site_dir: Path) -> tuple[int, int]:
@@ -176,16 +224,14 @@ def check(root: Path, fix: bool = False) -> list[str]:
                 expected = baked.encode("utf-8")
                 ok = site_bytes == expected
             else:
-                # stdlib fallback: everything around the baked token must match.
+                # stdlib fallback: everything around the baked tokens must match.
                 expected = None  # cannot reproduce the bake here — report-only
                 site_text = site_bytes.decode("utf-8", errors="replace")
-                head, sep, tail = tpl_text.partition(_THEME_TOKEN)
+                segs = _token_segments(tpl_text, _THEME_TOKENS)
                 overlay = tpl.with_name("terminal_overlay.js")
                 if overlay.is_file():
-                    tail = f"{tail.rstrip()}\n\n{overlay.read_text().lstrip()}"
-                ok = (site_text == tpl_text) if not sep else (
-                    site_text.startswith(head) and site_text.endswith(tail)
-                    and len(site_text) >= len(head) + len(tail))
+                    segs[-1] = f"{segs[-1].rstrip()}\n\n{overlay.read_text().lstrip()}"
+                ok = _matches_around_tokens(site_text, segs)
         else:
             ok = site_bytes == tpl_bytes
         if ok:

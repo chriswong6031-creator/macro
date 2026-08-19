@@ -5004,20 +5004,255 @@
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
   window.addEventListener('load', function () { themeCharts(); wrapTables(); });
 
-  /* ---- floating chat launcher ------------------------------------------------
+  /* ---- floating chat launcher — a boot stub that loads the assistant ON INTENT
      Bottom-right glass pill (above the back-to-top FAB at z-index:960). Hidden
-     on chat.html itself, on admin.* subdomains, and on print. Carries ?symbol=
-     when window.MDXActiveSymbol is set by the host page. Responds to langchange
-     so the label switches without a page reload. */
+     on chat.html itself, on admin.* subdomains, and on print. Carries the page's
+     active symbol into the widget. Responds to langchange so the label switches
+     without a page reload.
+
+     Two defects this replaces, both measured on production 2026-08-19 at
+     theme.js?v=948020b9:
+
+       · `s.src = 'mm_brain.js'` resolved against the DOCUMENT, not against
+         theme.js. On every nested page whose renderer emitted no direct
+         <script> tag — /stocks/AAPL.html and ~4,600 siblings — that requested
+         /stocks/mm_brain.js, which 404s (there is exactly ONE mm_brain.js, at
+         the site root, and no <base>). The assistant simply did not exist on
+         those routes: window.MMBrain false, #mmb-root absent. This is the same
+         nested-estate trap account.js hit at line 448, and the fix is the same
+         one: resolve from _mmSharedAssetRoot, which is derived from theme.js's
+         OWN script URL and therefore already carries the correct depth.
+
+       · where it DID resolve (the ~256 root pages), it downloaded and mounted
+         232 KB / ~70 KB gzip of bundle at DOMContentLoaded whether the reader
+         ever opened the chat or not — ~71 KB of injected CSS, the full chat
+         DOM, the listener set, the auth binding.
+
+     So theme.js now owns the launcher's RESTING state and nothing else: one
+     accessible pill, mirroring #mmb-launch (tests/test_chat_launcher_stub.py
+     pins the two geometries together so they cannot drift). The bundle is
+     fetched on the first real activation — click, Enter, Space — coalesced so
+     racing activations produce one request and one mount. Pages that carry
+     card-level Explain buttons are the one exception; see _mmExplainable. */
+
+  /* Baked from templates/mm_brain.js's own bytes by lib.site_assets.emit_theme_js
+     — the SAME sha256[:8] that scripts.optimize_assets stamps onto the direct
+     <script> tags, so this dynamic request and a page-authored one share ONE
+     cache key. An unbaked build (local/custom, serving templates/ raw) leaves
+     it '' and simply requests the unversioned URL. */
+  var MM_BRAIN_VER = "f74045d8";
+  /* The hosts mm_brain.js decorates with per-card "Ask the Brain" buttons. */
+  var MMB_EXPLAIN_SEL = '.sx[id^="sx-"] .mx5-card-face, .sx[id^="sx-"] .sxg-face';
+  var _mmBrainScript = null, _mmBrainWaiters = [], _mmBootEl = null, _mmBootWarmed = false;
+
+  function _mmBrainSrc() {
+    var q = MM_BRAIN_VER ? '?v=' + MM_BRAIN_VER : '';
+    try { return new URL('mm_brain.js' + q, _mmSharedAssetRoot || location.href).href; }
+    catch (e) { return 'mm_brain.js' + q; }
+  }
+  function _mmBrainFlush(ok) {
+    var q = _mmBrainWaiters.slice(); _mmBrainWaiters.length = 0;
+    q.forEach(function (fn) { try { fn(ok); } catch (e) {} });
+  }
+  /* One request, one mount, however many activations race — the same waiter-list
+     idiom loadTerminalOverlay() uses above. A failed load clears the handle so the
+     launcher stays retryable rather than dying silently on one bad response. */
+  function loadBrain(done) {
+    if (window.MMBrain && window.MMBrain.mounted) { if (done) done(true); return; }
+    if (done) _mmBrainWaiters.push(done);
+    if (_mmBrainScript) return;
+    _mmBrainScript = document.createElement('script');
+    _mmBrainScript.src = _mmBrainSrc();
+    _mmBrainScript.async = true;
+    _mmBrainScript.onload = function () {
+      var ok = !!(window.MMBrain && window.MMBrain.mounted);
+      if (!ok) _mmBrainScript = null;
+      _mmBrainFlush(ok);
+    };
+    _mmBrainScript.onerror = function () { _mmBrainScript = null; _mmBrainFlush(false); };
+    (document.body || document.documentElement).appendChild(_mmBrainScript);
+  }
+
+  /* The stub's resting appearance. Mirrors mm_brain.js's #mmb-launch block —
+     same geometry, same tokens, same two devices (themed drop-glow + travelling
+     rim arc), so the pill the reader clicks and the pill that replaces it are the
+     same control rather than a placeholder that jumps. Scoped to #mmb-boot, never
+     #mmb-root/#mmb-launch: the ids must not collide while both are briefly alive. */
+  var MMB_BOOT_CSS = '' +
+    '#mmb-boot{--mmb-info:#5b9bf0;--mmb-violet:#8b5cf6;--mmb-text:#e6eaf0;--mmb-muted:#8b93a1;' +
+      '--mmb-panel:#181b21;--mmb-ink:#fff;' +
+      '--mmb-line:color-mix(in srgb,var(--mmb-ink) 9%,transparent);--mmb-glow:#5b7bf0;' +
+      '--mmb-fab-bg:color-mix(in srgb,var(--mmb-panel) 82%,transparent);' +
+      '--mmb-fab-brd:var(--mmb-line);' +
+      '--mmb-fab-glow:0 12px 40px -12px rgba(0,0,0,.6),' +
+        '0 0 26px -8px color-mix(in srgb,var(--mmb-info) 40%,transparent),' +
+        '0 0 0 1px color-mix(in srgb,var(--mmb-info) 12%,transparent);' +
+      '--mmb-fab-glow-h:0 18px 52px -14px rgba(0,0,0,.7),' +
+        '0 0 36px -8px color-mix(in srgb,var(--mmb-info) 60%,transparent),' +
+        '0 0 0 1px color-mix(in srgb,var(--mmb-info) 26%,transparent);' +
+      '--mmb-rim-w:1.25px;--mmb-rim-o:.85;' +
+      '--mmb-font:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}' +
+    'html[data-theme="light"] #mmb-boot{--mmb-info:#285fff;--mmb-violet:#6d3fd8;' +
+      '--mmb-text:#1c2430;--mmb-muted:#5d6b7e;--mmb-panel:#ffffff;' +
+      '--mmb-fab-bg:linear-gradient(180deg,rgba(255,255,255,.97),' +
+        'color-mix(in srgb,var(--mmb-info) 11%,rgba(255,255,255,.9)));' +
+      '--mmb-fab-brd:color-mix(in srgb,var(--mmb-info) 24%,transparent);' +
+      '--mmb-fab-glow:0 14px 34px -14px rgba(24,52,140,.40),0 6px 16px -8px rgba(24,52,140,.26),' +
+        '0 0 24px -6px color-mix(in srgb,var(--mmb-info) 38%,transparent),inset 0 1px 0 #fff;' +
+      '--mmb-fab-glow-h:0 20px 46px -14px rgba(24,52,140,.48),0 8px 20px -8px rgba(24,52,140,.32),' +
+        '0 0 36px -6px color-mix(in srgb,var(--mmb-info) 56%,transparent),inset 0 1px 0 #fff;' +
+      '--mmb-rim-w:1.75px;--mmb-rim-o:1}' +
+    '#mmb-boot *{box-sizing:border-box}' +
+    /* GEOMETRY-MIRROR #mmb-launch — pinned by tests/test_chat_launcher_stub.py */
+    '#mmb-boot{position:fixed;right:22px;bottom:22px;z-index:2147483000;display:flex;align-items:center;gap:10px;' +
+      'padding:8px 16px 8px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--mmb-fab-brd);font-family:var(--mmb-font);' +
+      'background:var(--mmb-fab-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);' +
+      'box-shadow:var(--mmb-fab-glow);' +
+      'transition:transform .18s ease,box-shadow .18s ease}' +
+    '#mmb-boot:hover{transform:translateY(-2px);box-shadow:var(--mmb-fab-glow-h)}' +
+    /* the handover: fade the stub out rather than yanking it from under the cursor */
+    '#mmb-boot.mmb-hide{opacity:0;pointer-events:none;visibility:hidden;transform:translateY(8px)}' +
+    '@supports ((-webkit-mask-composite:xor) or (mask-composite:exclude)){' +
+      '#mmb-boot::before{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;' +
+        'padding:var(--mmb-rim-w);opacity:var(--mmb-rim-o);' +
+        'background:conic-gradient(from var(--mmb-ang),transparent 0 46%,' +
+          'var(--mmb-violet) 66%,var(--mmb-info) 82%,transparent 92%);' +
+        '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);' +
+        '-webkit-mask-composite:xor;' +
+        'mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;' +
+        'animation:mmb-rim 5.2s linear infinite}' +
+      '#mmb-boot:hover::before{animation-duration:2.4s;opacity:1}}' +
+    '#mmb-boot:focus-visible{outline:2px solid var(--mmb-info);outline-offset:2px}' +
+    '#mmb-boot:focus-visible::after{content:"";position:absolute;inset:-4px;border-radius:inherit;pointer-events:none;' +
+      'box-shadow:0 0 0 1.5px rgba(255,255,255,.92),0 0 0 3px rgba(6,10,20,.55)}' +
+    '#mmb-boot .mmb-orb{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;' +
+      'background:radial-gradient(circle at 32% 28%,color-mix(in srgb,#a78bfa 92%,#fff),#416aec 60%,#0b1030 100%);' +
+      'box-shadow:inset 0 1px 3px color-mix(in srgb,#fff 45%,transparent),0 0 18px -2px color-mix(in srgb,var(--mmb-glow) 80%,transparent);' +
+      'animation:mmb-breathe 4.6s ease-in-out infinite}' +
+    '#mmb-boot .mmb-orb::after{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;' +
+      'background:radial-gradient(circle,color-mix(in srgb,#6b8cf0 34%,transparent),transparent 70%);animation:mmb-breathe 4.6s ease-in-out infinite}' +
+    '#mmb-boot .mmb-orb svg{width:19px;height:19px;fill:#fff;opacity:.96;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}' +
+    '#mmb-boot .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text);white-space:nowrap}' +
+    '#mmb-boot .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}' +
+    '#mmb-boot .lt{display:flex;flex-direction:column}' +
+    '@media(max-width:700px){' +
+      '#mmb-boot{right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:8px;gap:0}' +
+      '#mmb-boot .lt{display:none}}' +
+    /* PSEUDOS INCLUDED — a kill block naming only the element leaves ::before spinning */
+    '@media(prefers-reduced-motion:reduce){#mmb-boot .mmb-orb,#mmb-boot .mmb-orb::after,' +
+      '#mmb-boot::before,#mmb-boot:hover::before{animation:none}}' +
+    '@media print{#mmb-boot{display:none!important}}';
+  /* @property/@keyframes cannot be nested and are re-declared idempotently; both
+     names are mm_brain.js's, so a later mount redefining them is a no-op. */
+  var MMB_BOOT_AT = '@property --mmb-ang{syntax:"<angle>";initial-value:0deg;inherits:false}' +
+    '@keyframes mmb-rim{to{--mmb-ang:360deg}}' +
+    '@keyframes mmb-breathe{0%,100%{transform:scale(1);opacity:.96}50%{transform:scale(1.07);opacity:1}}';
+
+  var MMB_ORB_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path d="M12 2l2.3 6.1L20.5 10l-6.2 1.9L12 18l-1.7-6.1L4 10l6.2-1.9z"/></svg>';
+  function _mmBootLabels() {
+    return curLang() === 'zh'
+      ? { aria: '问操盘大脑', ll: '问操盘大脑', lk: '大脑 · 你的桌面副驾' }
+      : { aria: 'Ask Mastermind', ll: 'Ask Mastermind', lk: 'Brain · your desk copilot' };
+  }
+  function _mmBootRelabel() {
+    if (!_mmBootEl) return;
+    var t = _mmBootLabels();
+    _mmBootEl.setAttribute('aria-label', t.aria);
+    var ll = _mmBootEl.querySelector('.ll'), lk = _mmBootEl.querySelector('.lk');
+    if (ll) ll.textContent = t.ll;
+    if (lk) lk.textContent = t.lk;
+  }
+  /* Hand over to the real launcher. mm_brain.js mounts its own #mmb-launch DURING
+     script execution, so by the time onload runs the replacement is already on the
+     page, at the same coordinates, wearing the same geometry — detaching the stub
+     in that same tick is an invisible swap. Do NOT fade it out: a 200ms ghost
+     fading on top of the identical pill underneath is the only way to make the
+     handover visible. */
+  function _mmBootRetire() {
+    if (!_mmBootEl) return;
+    var el = _mmBootEl; _mmBootEl = null;
+    if (el.parentNode) el.parentNode.removeChild(el);
+    document.removeEventListener('langchange', _mmBootRelabel);
+  }
+  /* Load + mount, then retire the stub. `open` asks for the panel too — the reader
+     activated the launcher, so the click must land on an open chat, not merely on a
+     swapped pill. */
+  function _mmBrainMount(open) {
+    loadBrain(function (ok) {
+      if (!ok) {                       // stay a usable, retryable launcher
+        if (_mmBootEl) _mmBootEl.removeAttribute('aria-busy');
+        return;
+      }
+      _mmBootRetire();
+      if (open) { try { window.MMBrain.open(); } catch (e) {} }
+    });
+  }
+  /* Hover/focus warms the CACHE only — never the bundle's execution. A <script>
+     would mount the widget, and hovering a launcher is not activating it; a
+     rel=preload fetches the identical URL so the click that follows is a cache
+     hit with nothing parsed in between. */
+  function _mmBrainWarm() {
+    if (_mmBrainScript || _mmBootWarmed || (window.MMBrain && window.MMBrain.mounted)) return;
+    _mmBootWarmed = true;
+    try {
+      var l = document.createElement('link');
+      l.rel = 'preload'; l.as = 'script'; l.href = _mmBrainSrc();
+      document.head.appendChild(l);
+    } catch (e) {}
+  }
+  function _mmBootActivate() {
+    if (!_mmBootEl) return;
+    _mmBootEl.setAttribute('aria-busy', 'true');
+    _mmBrainMount(true);
+  }
+  function _mmMountBootLauncher() {
+    var st = document.createElement('style');
+    st.id = 'mmb-boot-css';
+    st.textContent = MMB_BOOT_AT + MMB_BOOT_CSS;
+    document.head.appendChild(st);
+    var t = _mmBootLabels();
+    /* A div rather than a <button> for the same reason #mmb-launch is one — the
+       pill collapses to a bare orb on phones and carries its own layout — so it is
+       given a button's manners by hand: role + tab stop, Enter/Space wired below. */
+    var el = document.createElement('div');
+    el.id = 'mmb-boot';
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-expanded', 'false');
+    el.setAttribute('aria-label', t.aria);
+    el.innerHTML = '<div class="mmb-orb">' + MMB_ORB_SVG + '</div>' +
+      '<div class="lt"><span class="ll"></span><span class="lk"></span></div>';
+    el.querySelector('.ll').textContent = t.ll;
+    el.querySelector('.lk').textContent = t.lk;
+    el.addEventListener('click', _mmBootActivate);
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault(); _mmBootActivate();
+      }
+    });
+    /* Warm the cache on hover/focus so the click that follows opens instantly.
+       Fetch only — nothing is parsed or mounted until the activation itself. */
+    el.addEventListener('pointerenter', _mmBrainWarm);
+    el.addEventListener('focus', _mmBrainWarm);
+    (document.body || document.documentElement).appendChild(el);
+    _mmBootEl = el;
+    document.addEventListener('langchange', _mmBootRelabel);
+  }
+
   function initChatLauncher() {
     var h = location.hostname || '';
     // suppress on the admin subdomain, on the standalone chat.html, and in print.
     if (h.split('.')[0] === 'admin') return;
     if (/\/chat\.html([?#]|$)/.test(location.pathname + location.search + location.hash)) return;
+    // a page-authored <script src=mm_brain.js> already mounted the real widget —
+    // reuse it, make no second request, and never stack a stub on top of it.
     if (window.MMBrain || document.getElementById('mmb-root')) return;
+    if (_mmBootEl || document.getElementById('mmb-boot')) return;      // idempotent
     // The unified Mastermind Brain widget mounts its OWN bottom-right launcher + an
     // expandable overlay and wires the /api/brain gateway. Bridge the site's active
-    // symbol global into the widget's page context.
+    // symbol global into the widget's page context. This MUST be set before the
+    // bundle executes — mm_brain.js reads MM_BRAIN_CFG once, at IIFE entry.
     window.MM_BRAIN_CFG = window.MM_BRAIN_CFG || {
       anchor: 'br',
       symbol: function () {
@@ -5025,9 +5260,23 @@
             || (typeof window.ACTIVE_SYMBOL === 'string' && window.ACTIVE_SYMBOL) || '';
       }
     };
-    var s = document.createElement('script');
-    s.src = 'mm_brain.js'; s.defer = true;
-    (document.body || document.documentElement).appendChild(s);
+    _mmMountBootLauncher();
+    /* mm_brain.js also injects a per-card "Ask the Brain" button onto every
+       .sx[id^=sx-] card face, and those buttons are part of the page at rest —
+       a reader is meant to SEE them without opening the chat first. Exactly two
+       pages in the estate carry such cards (macro.html, stock_seasonality.html,
+       measured 2026-08-19), so those two load the bundle at idle after `load`
+       instead of on intent: off the first-paint path, affordance preserved.
+       Every other page in the estate stays strictly on-demand. */
+    if (document.querySelector(MMB_EXPLAIN_SEL)) {
+      var idle = function () {
+        var mount = function () { _mmBrainMount(false); };   // mount, retire the stub, do NOT open
+        if (window.requestIdleCallback) window.requestIdleCallback(mount, { timeout: 4000 });
+        else setTimeout(mount, 1200);
+      };
+      if (document.readyState === 'complete') idle();
+      else window.addEventListener('load', idle);
+    }
   }
 })();
 
