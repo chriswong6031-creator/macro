@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-19T22:41:14.352390+00:00",
+  "as_of": "2026-08-19T23:35:27.036644+00:00",
   "posts_seen": 7,
   "seen_total": 124,
-  "evaluated": 1,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-19-president-trumps-trade-agenda-is-rebuilding-the-american-auto-industry",
-      "importance": 78,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
