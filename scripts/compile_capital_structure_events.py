@@ -37,6 +37,7 @@ from engine.capital_structure import (
     link_registration_graph,
     route_form,
 )  # noqa: E402
+from engine.capital_structure.event_spine import compute_event_id  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     SOURCE_LEDGER_FILENAME,
     read_source_ledger,
@@ -567,9 +568,8 @@ def _validate_event_source_lineage(
 
 
 def _validate_event_identity(event: Mapping[str, Any], *, label: str) -> None:
-    body = copy.deepcopy(dict(event))
-    event_id = str(body.pop("event_id", ""))
-    expected = "event:cs:" + hashlib.sha256(_canonical_json(body)).hexdigest()[:24]
+    event_id = str(event.get("event_id") or "")
+    expected = compute_event_id(event)
     if event_id != expected:
         raise ValueError(f"{label} event_id digest mismatch: {event_id!r} != {expected!r}")
 
@@ -774,6 +774,7 @@ def _semantic_event_body(event: Mapping[str, Any]) -> bytes:
         for item in evidence_list:
             if isinstance(item, dict):
                 item.pop("manifest_id", None)
+                item.pop("span_id", None)
     return _canonical_json(body)
 
 
