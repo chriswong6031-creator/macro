@@ -1012,9 +1012,37 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy markupsafe
+        # jinja2 + pyyaml added 2026-08-19 with the analyzer-i18n step below, and BOTH are
+        # needed at COLLECTION time, not merely at run time:
+        #   jinja2 — that suite renders the REAL china.html.j2 turnover row (macro + row
+        #     extracted from the shipped file, so it cannot silently drift from a hand-copied
+        #     duplicate) through a bare jinja2 Environment.
+        #   pyyaml — `from engine import cycles` pulls engine/technicals.py -> lib/config.py,
+        #     which does a module-scope `import yaml`. The two older suites in this job never
+        #     import engine.cycles, so this job's line had never needed it. Missing it is a
+        #     COLLECTION error (pytest exit 2), which fails the whole step rather than one
+        #     test — measured on this PR's first run (ci-pack-11, job 96210580631).
+        run: pip install pytest pandas numpy markupsafe jinja2 pyyaml
       - name: conviction profile honesty invariants + dossier reason codes
         run: python -m pytest tests/test_stock_score.py tests/test_stock_dossier.py -q
+      # P1 unrun backfill 2026-08-19: tests/test_analyzer_i18n_percentile.py (#5980) was named
+      # by no `run:` step in any workflow, so scripts/audit_unrun_tests.py reds the whole
+      # fleet's full-manifest runs on it. Same defect class as #5952 / #5985, discovered while
+      # landing the latter. THIS JOB OWNS THE SUBJECT: #5980's fix is the analyzer display-twin
+      # contract across engine/stock_score.py (the new bucket_display twin) and
+      # engine/stock_view.py (state_label_zh on BOTH timing paths, including the no-conviction
+      # fallback that would have kept the bug if only the main branch were fixed) — the two
+      # modules this job already exercises via test_stock_score/test_stock_dossier — plus
+      # engine/cycles.py's ladder_state() propagating STATE_DISPLAY's label_zh and
+      # engine/i18n.py's t_pctile() helper + the t() nesting guard. The defect it pins is
+      # invisible at runtime: `B(t.state_label, t.state_label)` renders perfectly in both
+      # languages, it just renders ENGLISH in Chinese mode, so nothing raises when it
+      # regresses. Appended LAST and as its OWN step (not folded into the step above) because
+      # a step is the masking unit — run_ci_pack.py returns on the first non-zero step — and
+      # the conviction/dossier honesty invariants are the older, higher-signal failure a
+      # reader should see first.
+      - name: analyzer display twins + china turnover percentile i18n (#5980)
+        run: python -m pytest tests/test_analyzer_i18n_percentile.py -q
 
   chronicle-suite:
     if: ${{ false }}
@@ -10211,6 +10239,33 @@ jobs:
       # install line above — plus PIL transitively, which blocking leaves 42-passed.
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
         run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_prompt_quality.py tests/test_earnings_score_quality.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py tests/test_stocks_hub.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): #5984 (the
+      # "$nanM" dossier identity/truth fix) landed three suites named by ZERO
+      # run: steps, so they collected and never ran — dark tests, which are worse
+      # than no tests because they read as coverage.
+      #
+      # They belong to THIS job because it already owns the dossier render lane
+      # (tests/test_ticker_pages.py + tests/test_ticker_dossier_render_lane.py in
+      # the step above): test_dossier_numeric_contract pins lib.numeric.finite, the
+      # single normalization contract whose absence let a truthy float NaN render
+      # "$nanM" on 69 of 2066 published pages; test_check_stock_dossier_integrity
+      # pins the post-render estate guard that catches that leak; and
+      # test_dossier_identity_end_to_end drives the REAL context builder and the
+      # REAL template and asserts on the rendered HTML, which is the outcome the
+      # unit suites only approach one mechanism at a time.
+      #
+      # Given its OWN step rather than appended to the sweep above: that step is
+      # already 31 files wide, and run_ci_pack.py returns on the first non-zero
+      # step, so a red anywhere in it would mask these three entirely — the exact
+      # darkness this wiring exists to end. No dependency widened: measured
+      # 61 passed / 0 skipped in a clean venv holding EXACTLY this job's existing
+      # install line.
+      - name: dossier numeric contract, estate machine-sentinel guard, and identity end-to-end
+        run: >
+          python -m pytest
+          tests/test_dossier_numeric_contract.py
+          tests/test_check_stock_dossier_integrity.py
+          tests/test_dossier_identity_end_to_end.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
@@ -10390,6 +10445,37 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
+      # Special Situations desk's four truth contracts, shipped by #5975 and
+      # extended by #5996, were named by no run: step in any workflow. Engine and
+      # templates are FROZEN there — this suite only pins the already-shipped
+      # contract so a regression cannot return silently: goodwill units live in
+      # the field name and are never re-derived from magnitude (the defect printed
+      # '-51245300029.70%'), unlock n_large_30d/7d are counted over the full
+      # forward population BEFORE the _MAX_ROWS display slice (a display cap is
+      # not a statistic), inquiry reply state resolves per (issuer, named thread)
+      # and an unnamed thread is 'undetermined', and a stale-but-readable plane
+      # keeps its last reading on screen while dropping out of the hero's
+      # aggregate tallies and the "board is complete" copy.
+      #
+      # Lives HERE, not next to its sibling tests/test_china_special_situations_
+      # gate.py in tier-gate, for two independent reasons. (1) DEPENDENCIES: this
+      # suite writes its fixtures with DataFrame.to_parquet, and tier-gate's
+      # install line carries no pyarrow — the exact class of failure PR #5985 hit
+      # in CI (green locally, `ModuleNotFoundError` in the job, because the local
+      # environment happened to own a wheel the job's install line does not).
+      # Verified the other way here: a clean venv holding EXACTLY this job's
+      # install line (pytest pandas numpy pyarrow pyyaml jinja2 plotly requests
+      # beautifulsoup4 openpyxl scikit-learn) runs it 45 passed. (2) GATE: it is
+      # hermetic — every fixture is a tmp_path parquet behind a monkeypatched
+      # lib.config, and the render side loads templates/ only, no data/ and no
+      # site/ read — so it belongs on a `gate: code` job that the merge gate
+      # actually plans, not on tier-gate's `gate: data` lane. Ordered next to the
+      # other CN template-render contract above and ahead of the unrelated US
+      # board step, so a red here is not dark behind a failure it has nothing to
+      # do with.
+      - name: China Special Situations desk — goodwill units, unlock population, inquiry identity, stale-plane authority
+        run: python -m pytest tests/test_china_special_situations_truth_wave1.py -q
       - name: US board W9-A producer field + cohort math
         run: python -m pytest tests/test_w4_us_board.py -q
 

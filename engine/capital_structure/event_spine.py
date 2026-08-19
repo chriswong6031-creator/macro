@@ -37,6 +37,12 @@ PARSER_VERSION = "capital-structure-event-spine/1.0"
 EVENT_SCHEMA = "capital_structure.event.v1"
 EDGE_SCHEMA = "capital_structure.event_edge.v1"
 REVIEW_SCHEMA = "capital_structure.review_item.v1"
+EVENT_ID_PREFIX = "event:cs:"
+# Format 1 (implicit, historical): hash the full event body minus event_id.
+# Format 2 (post-W1, when source.evidence_ids are present): hash semantic
+# state + evidence_ids + the correction-chain discriminator, excluding
+# clock-contaminated manifest receipts and point_in_time wall clocks.
+EVENT_IDENTITY_FORMAT = 2
 
 CLASSIFIED = "classified"
 DEFERRED_MISSING_DOCUMENT = "deferred_missing_document"
@@ -328,6 +334,51 @@ def _canonical_json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
+def event_identity_preimage(event: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the post-W1 event-version identity body.
+
+    Provenance fields stay on the event; they do not determine identity.
+    Excluded: ``event_id``, ``source.manifest_ids``, ``evidence[].manifest_id``,
+    and ``point_in_time`` clocks. Kept: ``version.identity_format``,
+    ``version.correction_version``, and ``version.correction_of`` so an
+    A→B→A semantic sequence cannot collapse the later A onto the original A.
+    """
+    body = copy.deepcopy(dict(event))
+    body.pop("event_id", None)
+    body.pop("point_in_time", None)
+    source = body.get("source")
+    if isinstance(source, dict):
+        source.pop("manifest_ids", None)
+    evidence_list = body.get("evidence")
+    if isinstance(evidence_list, list):
+        for item in evidence_list:
+            if isinstance(item, dict):
+                item.pop("manifest_id", None)
+                # span_id currently binds manifest_id in make_stable_span; it is a
+                # receipt, not economic evidence. text_sha256 remains.
+                item.pop("span_id", None)
+    return body
+
+
+def compute_event_id(event: Mapping[str, Any]) -> str:
+    """Return the ``event_id`` required by this record's identity format.
+
+    Historical rows omit ``version.identity_format`` and keep validating as
+    a hash of the full body minus ``event_id``. Post-W1 rows stamp
+    ``identity_format: 2`` and hash :func:`event_identity_preimage`.
+    """
+    version = event.get("version") or {}
+    fmt = version.get("identity_format")
+    if fmt not in (None, 1, EVENT_IDENTITY_FORMAT):
+        raise ValueError(f"unsupported event identity_format: {fmt!r}")
+    if fmt == EVENT_IDENTITY_FORMAT:
+        digest_src = event_identity_preimage(event)
+    else:
+        digest_src = copy.deepcopy(dict(event))
+        digest_src.pop("event_id", None)
+    return EVENT_ID_PREFIX + hashlib.sha256(_canonical_json(digest_src)).hexdigest()[:24]
+
+
 def build_event_version(
     observation: Mapping[str, Any],
     spans: Sequence[Mapping[str, Any]],
@@ -371,15 +422,19 @@ def build_event_version(
         raise ValueError("deferred classification requires defer_reason")
     if not classification_state.startswith("deferred_"):
         defer_reason = None
-    # W1: use canonical first_known_at when available so a later re-observation
-    # cannot move the published PIT boundary backward.  Fall back to first_seen_at
-    # for historical v1 events that predate evidence identity.
+    # Original event versions freeze PIT at canonical first_known_at so a later
+    # re-observation cannot move the published boundary backward. Correction
+    # versions use first_seen_at (compiler produced_at) as the later
+    # parser/state-availability clock — not a rewrite of first_known_at.
     raw_first_known = observation.get("first_known_at")
     raw_first_seen = observation.get("first_seen_at")
-    first_seen = _iso(
-        raw_first_known if raw_first_known else raw_first_seen,
-        "first_seen_at",
-    )
+    if correction_version > 1:
+        first_seen = _iso(raw_first_seen, "first_seen_at")
+    else:
+        first_seen = _iso(
+            raw_first_known if raw_first_known else raw_first_seen,
+            "first_seen_at",
+        )
     accepted = _iso(observation.get("accepted_at"), "accepted_at", nullable=True)
     cik_raw = observation.get("cik")
     cik = str(cik_raw).lstrip("0") or "0" if cik_raw is not None and str(cik_raw) else None
@@ -482,9 +537,9 @@ def build_event_version(
         event["filing"]["file_number_provenance"] = copy.deepcopy(
             dict(file_number_provenance)
         )
-    identity_body = copy.deepcopy(event)
-    identity_body.pop("event_id")
-    event["event_id"] = "event:cs:" + hashlib.sha256(_canonical_json(identity_body)).hexdigest()[:24]
+    if evidence_ids:
+        event["version"]["identity_format"] = EVENT_IDENTITY_FORMAT
+    event["event_id"] = compute_event_id(event)
     return event
 
 

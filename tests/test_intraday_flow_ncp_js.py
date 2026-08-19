@@ -181,6 +181,7 @@ def _run(
         var window = {DATA_BASE: 'https://data.example.test/'};
         var FETCHED = [];
         function render() {}
+        function scheduleRender() {}
         function updateFlowStamp() {}
         globalThis.fetch = function (url) {
           FETCHED.push(url);
@@ -469,6 +470,229 @@ def test_template_and_site_copies_agree():
     these regions are Jinja-free, so the two must be byte-identical or the live page and the
     source disagree."""
     assert _flow_js(TEMPLATE) == _flow_js(SITE)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 5. Boot regression — RTH first render with empty quote/pulse/flow state
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Regions needed for computeAll + computeStance (Jinja-free; no network calls).
+# dealerOf sits between computeLegs and computeStance; computeAll comes after the
+# stamp and format helpers.
+BOOT_REGIONS = (
+    ("var STANCE_META", "function snapUrl"),           # STANCE_META
+    ("function snapUrl", "function computeLegs"),      # url/ET helpers, derived metrics
+    ("function computeLegs", "function dealerOf"),     # computeLegs (incl. L5)
+    ("function dealerOf", "function fmtNum"),          # dealerOf, quotePx, computeStance
+    ("function computeAll", "function laneCounts"),    # computeAll
+)
+
+
+def _boot_js(path: Path) -> str:
+    src = path.read_text(encoding="utf-8")
+    return "\n".join(_region(src, a, b) for a, b in BOOT_REGIONS)
+
+
+# Production-shaped AAPL fixture matching the verified crash context:
+# opex_days=2, regime='long', call_wall=320, put_wall=290, magnet_up=320,
+# magnet_down=315 — pin-watch branch fires unless quote is absent/null.
+AAPL_LEADER = {
+    "ticker": "AAPL",
+    "options_entry": {
+        "dealer": {
+            "regime": "long",
+            "opex_days": 2,
+            "call_wall": 320,
+            "put_wall": 290,
+            "magnet_up": 320,
+            "magnet_down": 315,
+            "call_wall_hard": False,
+            "call_wall_dist_sigma": None,
+            "expected_move_daily_pct": None,
+        },
+        "evidence_quality": None,
+    },
+    "vol_squeeze": {"coiled": False},
+    "adv20_shares": 60_000_000,
+    "vol_share_curve": [],
+}
+
+VALID_LANE_KEYS = {"act", "get_ready", "in_favour", "take_profits", "watch", "stand_aside"}
+
+
+def _boot_run(
+    path: Path,
+    *,
+    market_hours: bool,
+    leader: dict,
+    quoteState: dict,  # noqa: N803
+    pulseState: dict,  # noqa: N803
+    flowState: dict,   # noqa: N803
+) -> dict:
+    """Execute computeAll() in a minimal harness; return rows + per-row stance/conf."""
+    # _etMinutes stub: 630 = 10:30 ET (well inside RTH 565–965)
+    et_minutes = 630 if market_hours else 300   # 10:30 or 05:00 ET
+    script = textwrap.dedent(
+        """
+        var DUR_MIN = %(dur_min)s, RVOL_CONFIRM = 1.30, WASHOUT_LB = 10;
+        var quoteState = %(quoteState)s;
+        var pulseState = %(pulseState)s;
+        var flowState  = %(flowState)s;
+        var quotesStatus = 'connecting', pulseStatus = 'connecting', flowStatus = 'connecting';
+        var leaders = %(leaders)s;
+        var LEADERS_BY_TK = {};
+        leaders.forEach(function(l){ LEADERS_BY_TK[l.ticker] = l; });
+        function _etMinutes(){ return %(et_minutes)s; }
+        var window = {};
+        function document_stub() { return { getElementById: function(){ return null; } }; }
+        var document = document_stub();
+        %(js)s
+        var rows = computeAll();
+        var q0 = quoteState[leaders[0].ticker] || null;
+        var out = { quotePx: quotePx(q0), rows: rows.map(function(r){
+          return {
+            ticker: r.l.ticker,
+            stKey:  r.st.key,
+            conf_legs: r.conf.legs,
+            conf_K:    r.conf.K,
+          };
+        }) };
+        process.stdout.write(JSON.stringify(out));
+        """
+    ) % {
+        "dur_min": json.dumps(DUR_MIN),
+        "quoteState": json.dumps(quoteState),
+        "pulseState": json.dumps(pulseState),
+        "flowState": json.dumps(flowState),
+        "leaders": json.dumps([leader]),
+        "et_minutes": et_minutes,
+        "js": _boot_js(path),
+    }
+    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    assert res.returncode == 0, (
+        f"node exited {res.returncode}:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
+    )
+    assert res.stdout.strip(), f"no stdout; stderr:\n{res.stderr}"
+    return json.loads(res.stdout)
+
+
+@needs_node
+@PAGES
+def test_boot_empty_state_rth_no_throw(path):
+    """First render during RTH with all state empty must not throw — this is the crash.
+
+    AAPL's dealer has opex_days=2 and regime='long', which arms the pin-watch branch.
+    Old code: quote.price on null quote → TypeError. New code: quotePx(null) → null → skip.
+    """
+    out = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={},
+        pulseState={},
+        flowState={},
+    )
+    assert len(out["rows"]) >= 1, "computeAll must return at least one row"
+    row = out["rows"][0]
+    assert row["ticker"] == "AAPL"
+    assert row["stKey"] in VALID_LANE_KEYS, f"stance key {row['stKey']!r} is not a valid lane"
+
+
+@needs_node
+@PAGES
+def test_boot_empty_state_rth_l5_is_unknown_not_false(path):
+    """L5 (Options leaning in) must be null/None when flow is absent, not false.
+
+    False means 'known-negative'; null means 'no evidence'. Collapsing unknown evidence
+    to false would block the act gate for a name whose options tape simply hasn't loaded.
+    """
+    out = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={},
+        pulseState={},
+        flowState={},
+    )
+    row = out["rows"][0]
+    legs = row["conf_legs"]
+    assert legs[4] is None, (
+        f"L5 must be null (unknown) when flow is absent, got {legs[4]!r}"
+    )
+
+
+@needs_node
+@PAGES
+def test_boot_empty_state_rth_quote_px_null(path):
+    """Missing quote must yield quotePx === null so pin-watch cannot invent a distance.
+
+    take_profits is independently unreachable without a quote (aboveVwap is false),
+    so this asserts the pin-watch *input* rather than a downstream lane that cannot
+    fire either way.
+    """
+    out = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={},
+        pulseState={},
+        flowState={},
+    )
+    assert out["quotePx"] is None
+    assert out["rows"][0]["stKey"] != "take_profits"
+
+
+@needs_node
+@PAGES
+def test_boot_quote_arrives_no_throw(path):
+    """Second computeAll call with a real quote must not throw and may update stance."""
+    # First pass: empty state (proves fix).
+    out_empty = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={},
+        pulseState={},
+        flowState={},
+    )
+    assert out_empty["rows"][0]["ticker"] == "AAPL"
+
+    # Second pass: quote present (price well away from walls → pinWatch false → no crash).
+    out_quoted = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={"AAPL": {"price": 180.0, "changePct": 1.5, "vol": 10_000_000,
+                              "hi": 182.0, "lo": 178.0}},
+        pulseState={},
+        flowState={},
+    )
+    row = out_quoted["rows"][0]
+    assert row["ticker"] == "AAPL"
+    assert row["stKey"] in VALID_LANE_KEYS
+
+
+@needs_node
+@PAGES
+def test_boot_quote_near_pin_take_profits(path):
+    """Price within 1% of call_wall plus a VWAP below it must land take_profits.
+
+    Positive control that pin-watch still fires when evidence exists (call_wall=320,
+    price=321 → ~0.31%). Empty-state tests prove the null path; this proves the live path.
+    """
+    out = _boot_run(
+        path,
+        market_hours=True,
+        leader=AAPL_LEADER,
+        quoteState={"AAPL": {"price": 321.0, "changePct": 0.5, "vol": 5_000_000,
+                              "hi": 322.0, "lo": 319.0}},
+        pulseState={"AAPL": {"vwap": 300.0, "bars_today": 20, "vol_durability": 0.5,
+                              "rvol_tod": 1.0}},
+        flowState={},
+    )
+    row = out["rows"][0]
+    assert row["ticker"] == "AAPL"
+    assert row["stKey"] == "take_profits"
 
 
 def test_the_net_total_sources_are_still_net_totals():

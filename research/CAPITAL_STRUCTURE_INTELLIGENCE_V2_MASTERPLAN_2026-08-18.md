@@ -431,7 +431,7 @@ Sol AMEND (2026-08-18): keep forward-only dual-read and no historical rewrite. D
 2. Dual-read: v1 manifests continue to validate under the current full-body `manifest_id_for`. V2 introduces a derived `evidence_id` over immutable source occurrence + retained bytes: `key_format`, `source_system`, `submission_accession`, occurrence (`submission` or `{parent_content_sha256, byte_start, byte_end}`), `content_sha256`.
 3. **Exclude** from evidence identity: retrieval/run clocks, file-number interpretation, ticker/aliases, parser state/version, normalized issuer mapping, `document_role`, `document_version`, physical storage namespace, `source_id`. Those may remain on the manifest as interpretation. A parser correction **must not remint** `evidence_id`.
 4. Distinct source occurrences **must not collapse**: same bytes in two accessions stay two evidence ids; same bytes in two SGML sequences in one accession stay two evidence ids. Complete submission and each child document are distinct, with children carrying parent coordinates.
-5. Canonical `first_known_at` is frozen at first **Git publication** of that `evidence_id`. Per-attempt `attempted_at` and verified-retention `retained_available_at` are observation clocks. A delayed/competing observation with an earlier local timestamp **cannot** move a published PIT boundary backward.
+5. Canonical `first_known_at` is the **verified-retention clock** of the first observation of that `evidence_id` whose generation later became canonical. Git publication is the freeze event, not the timestamp (`DEC:CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK`). Per-attempt `attempted_at` and verified-retention `retained_available_at` are observation clocks. A delayed/competing observation with an earlier local timestamp **cannot** move a published PIT boundary backward.
 6. Observation plane: start from existing `retrieval_attempts`. Add fields only if the current contract cannot represent successful re-observation of children. Do not mint a second observation artifact by convenience.
 7. Do **not** add `merge=union` to `data/capital_structure/source_manifest.jsonl`. Do **not** content-aware-merge that file at push time. Publication is `DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE`.
 8. Drop the unconditional durable W1 gate “concurrent merge = 1 evidence + 2 observations.” Mandatory proof: one canonical `evidence_id`, no duplicate economic event, no stale generation clobber.
@@ -887,7 +887,7 @@ Same as §1. Identity: `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES` (supersede
 ### 19.5 Exact scope
 
 1. Derived `evidence_id` over occurrence + bytes. Dual-read validator: v1 `manifest_id_for` unchanged; `evidence_id` projected from row bytes. Do not subset-hash `manifest_id`.
-2. Persist canonical `first_known_at` at first Git publication of that `evidence_id`. Later observations do not move it backward.
+2. Persist canonical `first_known_at` as the verified-retention clock of the first observation whose generation later became canonical. Git publication freezes that value; later observations do not move it backward. Do not call the stored timestamp a Git commit time (`DEC:CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK`).
 3. Reuse `retrieval_attempts`. Add `observed_evidence_ids` and `retained_available_at` only as needed to represent successful re-observation, including children. No second observation artifact unless those additions fail.
 4. Enroll a `capital-structure` family in `config/append_only_artifacts.json`. Member at minimum: `source_manifest.jsonl` `jsonl_prefix`. `withhold_paths`: `data/capital_structure`, `site/capital-structure-data`. Call `push_append_only_fence` from the **capital_structure** job push loop before `-X theirs`.
 5. Hostile fixtures listed in the identity DEC.
@@ -921,12 +921,12 @@ Same as §1. Identity: `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES` (supersede
 
 - Carry `evidence_id` (and child parent coordinates) on v2 rows so the key is checkable without R2. Do not invalidate v1 rows.
 - Do not put retrieval clocks, file-number interpretation, ticker/aliases, parser version, issuer mapping, or storage namespace into the `evidence_id` preimage.
-- Event compiler: historical `event_id`s unchanged; new events bind to stable `evidence_id` going forward.
+- Event compiler: historical `event_id`s unchanged (identity format 1, full-body hash). Post-W1 events stamp `version.identity_format: 2` and derive event-version identity from semantic state + `evidence_ids` + the correction chain, excluding `source.manifest_ids`, `evidence[].manifest_id`, and `point_in_time` clocks. Independent fresh compiles of the same occurrence+bytes+interpretation must share that post-W1 `event_id`.
 - Queue receipt / health: evidence vs revision vs observation counts.
 
 ### 19.9 Time / null / correction
 
-Four clocks, never collapsed: evidence identity (no clock); `attempted_at`; `retained_available_at`; canonical `first_known_at` frozen at first Git publication.
+Four clocks, never collapsed: evidence identity (no clock); `attempted_at`; `retained_available_at`; canonical `first_known_at` (verified-retention clock frozen when that observation's generation becomes canonical — not a Git commit timestamp).
 Corrections remain the event-spine path; W1 does not invent a new correction store.
 Missing occurrence/byte fields fail closed (no evidence id), they do not mint a clocked id.
 

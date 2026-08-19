@@ -1,154 +1,93 @@
 ---
 workstream: WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2
-session: claude/cs-v2-w1-evidence-identity
+session: claude/cs-v2-w1a-identity-correction
 model: sonnet
-ended_because: complete
+ended_because: ci_handoff
 mission: >
-  Implement Capital Structure V2 Wave 1 remaining production wiring and
-  mandatory hostile tests: wire collector, event compiler, ingestion health,
-  and tests so repeated or concurrent observation of the same SEC
-  occurrence+bytes cannot create two economic evidence identities or duplicate
-  Capital Structure events, and a stale overlapping CS generation cannot
-  overwrite a newer coherent generation.
+  W1A correction on merged #5959: make post-W1 event-version identity
+  clock-independent, forbid new legacy:{source_id} child occurrence writes,
+  adjudicate re-observation at bundle level, and document first_known_at as
+  the verified-retention clock frozen at canonical publication. Do not start W2.
 state_before: >
-  Core evidence_id functions (source_identity.py), schemas, CS append-only
-  family (config/append_only_artifacts.json), and daily.yml CS push-loop fence
-  call already existed. Collector, event compiler, ingestion health, and hostile
-  tests were not yet wired with W1 identity semantics. W0 was accepted by
-  Sol/Chairman.
+  W1 merged as #5959 / b7004b132509. Sol verdict: merged but not accepted.
+  build_event_version still hashed the full event body including
+  source.manifest_ids and PIT clocks. _manifest_record fell back to
+  legacy:{source_id} when child byte coordinates were absent. Re-observation
+  short-circuited on the complete row. Schema called first_known_at a Git
+  publication timestamp while the collector stored retrieved_at.
 changed:
-  - path: collectors/sec_capital_structure.py
-    what: >
-      Stamp new complete-submission and child manifests with evidence_id,
-      evidence_key_format=1, evidence_occurrence, first_known_at BEFORE calling
-      manifest_id_for. parse_submission binds byte_start/byte_end from
-      document_inner_spans(raw). Re-observation detection (same evidence_id +
-      same content_sha256 → no new manifest revision). Attempt columns
-      observed_evidence_ids and retained_available_at added. _read_table
-      tolerates old parquets missing the new columns. re_observed counter
-      propagated into health.
-  - path: engine/capital_structure/ingestion_health.py
-    what: >
-      decide_verdict third progress term: re_observed>0 counts as progressed.
-      build_ingestion_run accepts re_observed/unique_evidence_count/
-      manifest_revision_count/observation_count; counters.re_observed always
-      emitted (default 0).
   - path: engine/capital_structure/event_spine.py
     what: >
-      build_event_version reads evidence_ids from observation and attaches to
-      source_block when present. Uses first_known_at from observation for
-      point_in_time.first_seen_at/system_available_at/available_at so a later
-      observation cannot move the published PIT boundary backward.
+      Added identity_format 2. Post-W1 events with evidence_ids hash
+      event_identity_preimage (semantic state + evidence_ids + correction
+      chain) excluding manifest_ids and point_in_time clocks. Historical
+      events omit identity_format and keep the full-body hash.
   - path: scripts/compile_capital_structure_events.py
+    what: _validate_event_identity dual-reads via compute_event_id.
+  - path: contracts/capital_structure_event.schema.json
+    what: Optional version.identity_format const 2.
+  - path: engine/capital_structure/source_identity.py
     what: >
-      _semantic_event_body pops source.manifest_ids and evidence[].manifest_id
-      so clock-contaminated fields do not drive economic identity comparison.
-      _project_evidence_ids_into_event projects evidence_ids into historical
-      events for first-W1-compile comparison. compile_manifest_records collects
-      evidence_ids from manifest rows via evidence_id_from_manifest and passes
-      canonical first_known_at through observation dict.
+      ChildOccurrenceUnbound, writable_child_occurrence, interpretation_fingerprint,
+      classify_bundle_against_published. Read-side legacy:{source_id} projection
+      unchanged for historical v1 children.
+  - path: collectors/sec_capital_structure.py
+    what: >
+      New child writes require parent byte coordinates or raise
+      ChildOccurrenceUnbound. Re-observation is bundle-level via
+      classify_bundle_against_published and evidence_id_from_manifest.
+  - path: contracts/capital_structure_source_manifest.schema.json
+    what: first_known_at description is verified-retention clock, not Git commit time.
+  - path: agentos/decisions/DEC-CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK.md
+    what: Clock adjudication for first_known_at.
+  - path: tests/test_capital_structure_event_spine.py
+    what: Independent post-W1 event_id, correction, A→B→A, historical format-1 hash.
   - path: tests/test_capital_structure_evidence_identity.py
-    what: >
-      NEW — 25 hostile tests covering all required scenarios: clock isolation,
-      identity separation, re-observation idempotency, correction generation,
-      PIT semantics, fence withhold, #5792 fail-closed regression.
-  - path: tests/fixtures/capital_structure/evidence_identity/two_document_submission.txt
-    what: >
-      NEW — SGML fixture with SEC-DOCUMENT envelope and two DOCUMENT blocks for
-      document_inner_spans test coverage.
-  - path: tests/test_append_only_base_fence.py
-    what: >
-      Added test_registry_loads_and_declares_capital_structure_family and
-      test_cs_stale_generation_withholds_whole_family_not_one_file.
-  - path: tests/test_daily_capital_structure_job.py
-    what: >
-      Added test_cs_push_loop_calls_append_only_fence and
-      test_cs_push_fence_is_after_fetch_before_rebase.
-  - path: agentos/workstreams/WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2.md
-    what: W0 wave → done; W1 wave → in_progress with branch + next_action.
-  - path: agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-19.md
-    what: this handoff
+    what: Independent compile, no new legacy child ID, bundle re-observation cases.
 verified:
-  - claim: all required tests pass
+  - claim: W1 hostile suite plus W1A regressions pass locally
     command: >
-      python3.12 -m pytest tests/test_capital_structure_evidence_identity.py
-      tests/test_capital_structure_source_identity.py
-      tests/test_capital_structure_ingestion_health.py
-      tests/test_append_only_base_fence.py
-      tests/test_daily_capital_structure_job.py
-      tests/test_capital_structure_event_spine.py
+      python3.12 -m pytest tests/test_capital_structure_event_spine.py
+      tests/test_capital_structure_evidence_identity.py
       tests/test_capital_structure_compiler.py
+      tests/test_capital_structure_legacy_compat.py
       tests/test_sec_capital_structure.py
-      tests/test_capital_structure_contracts.py -q
-    result: 212 passed, 3 warnings in 124.27s (0 failures)
-  - claim: evidence_id_for rejects unexpected kwargs
-    command: "python3.12 -c \"from engine.capital_structure.source_identity import evidence_id_for, EvidenceIdentityError; import pytest; pytest.raises((TypeError, EvidenceIdentityError))\""
-    result: confirmed by test_evidence_id_for_rejects_unexpected_kwargs passing
-  - claim: manifest_id_for is byte-identical for historical-shaped records
-    command: engine/capital_structure/source_identity.py not edited; manifest_id_for unchanged
-    result: confirmed by tests/test_capital_structure_source_identity.py 25 passed
-  - claim: no W2 code introduced
-    command: git diff --stat HEAD origin/main -- collectors/ engine/ scripts/ | grep -E "LIVE_TAIL|RECOVERY|BACKFILL"
-    result: no matches
+      tests/test_capital_structure_ingestion_health.py
+      tests/test_capital_structure_pit.py
+      tests/test_capital_structure_graph.py
+      tests/test_capital_structure_contracts.py
+      tests/test_capital_structure_source_identity.py
+      tests/test_daily_capital_structure_job.py
+      tests/test_append_only_base_fence.py -q
+    result: 249 passed
+  - claim: agentos records validate
+    command: python3.12 scripts/agentos.py validate
+    result: 0 error(s)
 unverified:
-  - claim: production nightly will not regress on real SEC data
-    what_would_verify: first nightly run after W1 merge; re_observed counter in health output
-  - claim: parse_submission byte binding is correct on all live SEC submission variants
-    what_would_verify: nightly collector error rate monitoring after deploy
+  - claim: Natural post-W1A scheduled CS job production proof
+    what_would_verify: First daily capital_structure job after W1A merge; no second dispatch
 unresolved:
-  - "W1 PR not yet merged. CI must conclude green before squash-merge."
-  - "Production proof pending: first nightly run with W1 code is the live verification."
+  - Sol acceptance of W1A; do not merge until accepted
+  - Production proof on the natural CS path after merge
+  - W2 live-tail still not started
 next_actions:
-  - "Open PR from branch claude/cs-v2-w1-evidence-identity; add merge-on-green label."
-  - "Wait for CI to conclude (not pending) — all packs must be green or spurious-only."
-  - "After squash-merge: verify nightly runs cleanly and health output includes re_observed=0 (no re-observations on first clean night) or re_observed>0 (concurrent race detected and handled)."
-  - "Do not start W2 before merge is verified live."
+  - Make attributable CI green on the W1A PR
+  - Hand to Sol; do not start W2
+  - After merge, prove the natural scheduled CS path
 do_not_redo:
-  - "Do not rewrite historical evidence_occurrences or manifest_ids: legacy children project as legacy:{source_id} and that string must remain unchanged."
-  - "Do not make evidence_id / first_known_at / evidence_occurrence required in schemas — that invalidates the full v1 historical ledger."
-  - "Do not start W2 (LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL) before W1 is squash-merged and the first nightly has run."
-  - "Do not change manifest_id_for — it hashes the full body minus manifest_id and that spec is frozen."
+  - Reopen W0 architecture
+  - Start W2 live-tail / MAX_FILINGS / work-class split
+  - Rewrite historical manifest_id or event_id bytes
+  - Mint legacy:{source_id} as a new child occurrence key
+  - Hash source.manifest_ids or PIT clocks into post-W1 event identity
+  - Shortcut re-observation on the complete row alone
 danger_areas:
-  - "_project_evidence_ids_into_event is O(n manifests) per prior event on first W1 compile. For large ledgers this could be slow at compile time. Acceptable for batch; cache if W2 requires real-time compile."
-  - "parse_submission now calls document_inner_spans(raw) on every complete submission fetch. Malformed SEC content causes fail-closed. Monitor collector error rates after deploy."
-  - "Re-observation detection is O(n ledger rows) per fetch. Acceptable at current scale; profile before W2 backfill lane."
+  - Dual-read event identity: historical format 1 vs post-W1 format 2
+  - ChildOccurrenceUnbound must defer the bundle, not invent an ID
+  - classify_bundle_against_published must use evidence_id_from_manifest for v1 rows
+prs: [6012]
+decisions:
+  - DEC:CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK
 ---
 
-# W1 Evidence Identity — session handoff 2026-08-19
-
-Cold-stranger summary: Wave 1 production wiring is complete and all 212 required
-tests pass. The branch is `claude/cs-v2-w1-evidence-identity` and needs a PR opened,
-CI, and squash-merge before W2 may start.
-
-## What changed and why
-
-The core problem W1 solves: `manifest_id_for` hashes retrieval clocks
-(`retrieved_at`, `first_seen_at`), so two observations of the same SEC filing at
-different wall times produce different manifest IDs. Without W1, the event compiler
-treated these as different economic events and would generate spurious correction
-events for every re-observation.
-
-**Collector**: now stamps each new manifest with `evidence_id` (stable
-occurrence+bytes hash), `evidence_key_format=1`, `evidence_occurrence`, and
-`first_known_at` BEFORE computing `manifest_id_for`. Re-observation detection
-checks whether any existing ledger row projects to the same `evidence_id` and
-`content_sha256`; if so, it records the attempt but does NOT append a new manifest
-revision. The `re_observed` counter flows into ingestion health as a third progress
-term.
-
-**Ingestion health**: `decide_verdict` now accepts `re_observed>0` as progress so
-a clean idempotent night (all already-retained, all re-observed) does not false-fail
-the #5792 guard.
-
-**Event spine**: `build_event_version` reads `evidence_ids` from the observation
-dict and attaches them to `source` when present. It also reads `first_known_at`
-from the observation so PIT timestamps are frozen to the canonical first-known time,
-not the latest retrieval clock.
-
-**Compiler**: `_semantic_event_body` now pops `source.manifest_ids` and
-`evidence[].manifest_id` before comparing events for correction detection. This
-means two compilations of the same accession with different manifest IDs (different
-clocks, same bytes) produce the same semantic body and no spurious correction is
-generated. `_project_evidence_ids_into_event` back-fills evidence_ids into
-historical events that predate W1, so the first W1 nightly compile does not mint
-a correction for every historical accession.
+W1A is a corrective wave on merged #5959. Hand to Sol. Do not start W2.

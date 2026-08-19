@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T21:15:19.855485+00:00",
-  "count": 1423,
+  "generated_at": "2026-08-19T22:13:15.279666+00:00",
+  "count": 1426,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,45 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-x1qsmzcdhao-2506b0",
+      "title": "Citi Getting long 20y after today’s buyback announcement Aug 19",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T19:30:24Z",
+      "summary_points": [
+        "**Treasury buyback expansion**: Long-end buybacks (10y-20y/20y-30y) raised to ≥$4bn/operation (from $2bn), totaling ≥$14bn quarterly to suppress yields; signals potential 20y/30y supply reduction in November, supporting long 20y positioning amid cooling inflation.",
+        "**20y/30y auction size risk**: Treasury’s \"evaluate potential future changes\" language suggests possible 20y/30y auction size reduction at November refunding, signaling caution on long-end supply beyond 7y if yields remain elevated.",
+        "**3m30y spread trade**: Buy 3m30y OTM payers, sell 2x notional 3m30y 17bp OTM payers for short upper-right vol; profitable if 30y rate stays between 4.483%-4.823% (current peak unlikely due to Treasury support)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pfagzv89jop-af1dde",
+      "title": "Barclays US Rates Research The Treasury is watching",
+      "institution": "Barclays",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T19:19:12Z",
+      "summary_points": [
+        "**Treasury doubles long-end buybacks**: $4bn/operation (vs $2bn) for 20-30y sectors to boost liquidity, reducing duration supply; financed via bill issuance, signaling yield pressure response without auction size hikes.",
+        "**Supply reduction impact**: ~$16bn extra quarterly purchases (15% of long-end supply), ~$100bn annual supply reduction in 10y terms; Japan’s experience warns against temporary cuts as unsustainable (yields rebounded 100bp post-2025).",
+        "**Treasury's Debt Reduction & Market Signaling**: $100bn one-time 10y debt reduction (0.3% GDP) lowers long-end term premium by ~3bp; ongoing reduction implies ~10bp lower term premium, with Treasury signaling readiness to increase buybacks ($4bn+/op) on yield rises.",
+        "**Long-end Treasury buyback imbalance**: 20-30y offers (2026: 13.6) exceed maximum buy capacity (11.5) by 21%, signaling potential liquidity constraints or market distortion critical for fixed income positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-1zhddag3sng-0b314e",
       "title": "Budget Blues",
@@ -202,6 +241,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-monmjaa8d5i-3084a2",
+      "title": "Global Economics Comment Is AI Impacting Global Labor Markets",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T16:15:15Z",
+      "summary_points": [
+        "**AI Adoption Disparities**: Developed markets (France/US/Netherlands/UK) lead at 15–20% AI adoption vs.",
+        "EMs (10–15%) and laggards (Italy/Japan/New Zealand), creating divergent labor market pressures across regions.",
+        "**Quantified Hiring Drag**: 10% occupational AI exposure correlates with 0.1pp annual headcount drag in France/US/Canada (Revelio Labs), confined to high-exposure sectors (call centers, consulting, advertising) but negligible elsewhere.",
+        "**Entry-Level Vulnerability**: Entry-level workers face significantly sharper AI-driven hiring headwinds globally (Exhibit 6), with steeper declines in employment (US: 39% below trend, Canada: 33%) versus non-entry roles.",
+        "**Sector-Specific Contractions**: Call centers show severe US contraction (-35% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },

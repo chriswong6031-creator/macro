@@ -39,15 +39,19 @@ from engine.capital_structure.ingestion_health import (  # noqa: E402
     decide_verdict,
 )
 from engine.capital_structure.source_identity import (  # noqa: E402
+    ChildOccurrenceUnbound,
     EvidenceIdentityError,
     ManifestIdentityError,
     child_occurrence,
+    classify_bundle_against_published,
     document_inner_spans,
     evidence_id_for,
     evidence_id_from_manifest,
+    interpretation_fingerprint,
     manifest_id_for,
     published_first_known_at,
     validate_manifest_identity,
+    writable_child_occurrence,
 )
 from scripts.ci import append_only_base_fence as fence  # noqa: E402
 from scripts.compile_capital_structure_events import (  # noqa: E402
@@ -864,3 +868,256 @@ def test_two_document_fixture_spans_are_correct():
         assert 0 < s < e <= len(raw)
         inner = raw[s:e]
         assert b"<TYPE>" in inner, "inner span must contain DOCUMENT content"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W1A.1 Independent post-W1 event identity is clock-independent
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_independent_compiles_share_post_w1_event_id_with_empty_existing():
+    acc = "0001234567-26-000080"
+    early = _make_minimal_bundle(
+        acc, first_seen_at="2026-08-01T10:00:03Z", first_known_at="2026-08-01T10:00:03Z",
+    )
+    late = _make_minimal_bundle(
+        acc, first_seen_at="2026-08-19T18:00:03Z", first_known_at="2026-08-19T18:00:03Z",
+    )
+    result_early = compile_manifest_records(
+        manifests=early, existing_events=[], existing_edges=[],
+    )
+    result_late = compile_manifest_records(
+        manifests=late, existing_events=[], existing_edges=[],
+    )
+    assert result_early["events"] and result_late["events"]
+    early_event = result_early["events"][0]
+    late_event = result_late["events"][0]
+    assert early_event["event_id"] == late_event["event_id"]
+    assert early_event["source"]["manifest_ids"] != late_event["source"]["manifest_ids"]
+    assert early_event["version"].get("identity_format") == 2
+    assert late_event["version"].get("identity_format") == 2
+
+
+def test_compile_interpretation_correction_mints_distinct_event_version():
+    acc = "0001234567-26-000081"
+    original = _make_minimal_bundle(
+        acc, file_number="333-100001", first_known_at="2026-08-01T10:00:03Z",
+    )
+    first = compile_manifest_records(
+        manifests=original, existing_events=[], existing_edges=[],
+        generated_at="2026-08-01T12:00:00Z",
+    )
+    corrected = _make_minimal_bundle(
+        acc, file_number="333-200002", first_known_at="2026-08-01T10:00:03Z",
+    )
+    complete = next(
+        row for row in corrected
+        if row["document"]["document_role"] == "complete_submission"
+    )
+    for row in corrected:
+        row["document"]["document_version"] = 2
+    complete["manifest_id"] = manifest_id_for(complete)
+    for row in corrected:
+        if row is not complete:
+            row["document"]["parent_manifest_id"] = complete["manifest_id"]
+        row["manifest_id"] = manifest_id_for(row)
+    second = compile_manifest_records(
+        manifests=original + corrected,
+        existing_events=first["events"],
+        existing_edges=[],
+        generated_at="2026-08-03T12:00:00Z",
+    )
+    assert len(second["events"]) == 2
+    assert second["events"][1]["event_id"] != second["events"][0]["event_id"]
+    assert second["events"][1]["version"]["correction_of"] == second["events"][0]["event_id"]
+    assert second["events"][1]["version"]["identity_format"] == 2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W1A.2 New writes never mint legacy:{source_id} child occurrence
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_writable_child_occurrence_refuses_unbound_coordinates():
+    with pytest.raises(ChildOccurrenceUnbound, match="legacy"):
+        writable_child_occurrence(
+            parent_content_sha256=None, byte_start=None, byte_end=None,
+        )
+    occ = writable_child_occurrence(
+        parent_content_sha256=_parent_sha(),
+        byte_start=_spans()[0][0],
+        byte_end=_spans()[0][1],
+    )
+    assert occ["parent_content_sha256"] == _parent_sha()
+
+
+def test_malformed_fresh_submission_cannot_mint_legacy_child_occurrence():
+    from collectors.sec_capital_structure import (
+        DocumentInspection,
+        SecCapitalStructureAdapter,
+        parse_submission,
+    )
+    from engine.capital_structure.source_store import SourceReceipt, STORE_ID_DEDICATED_R2
+
+    malformed = _raw().replace(b"</DOCUMENT>", b"</DOC>", 1)
+    bundle = parse_submission(malformed)
+    assert bundle.documents, "malformed fixture must still yield DOCUMENT blocks"
+    assert all(doc.byte_start is None and doc.byte_end is None for doc in bundle.documents)
+
+    child = bundle.documents[0]
+    digest = sha256(child.raw).hexdigest()
+    receipt = SourceReceipt(
+        object_key=f"capital_structure/sec/sha256/{digest[:2]}/{digest}",
+        sha256=digest, byte_length=len(child.raw), media_type="text/plain",
+        backend="r2", store_id=STORE_ID_DEDICATED_R2,
+    )
+    discovery = {
+        "accession": "0001234567-26-099001",
+        "cik": "1234567",
+        "ticker": "TST",
+        "company_name": "Test Issuer",
+        "form": "S-3",
+        "filing_date": "2026-08-01",
+        "canonical_url": "https://www.sec.gov/Archives/test.txt",
+    }
+    with pytest.raises(ChildOccurrenceUnbound, match="legacy"):
+        SecCapitalStructureAdapter._manifest_record(
+            discovery=discovery, bundle=bundle,
+            source_id="0001234567-26-099001:1:forms3.htm",
+            canonical_url=discovery["canonical_url"],
+            document_name="forms3.htm", document_type="S-3",
+            document_role="primary", sequence="1", raw=child.raw,
+            receipt=receipt,
+            inspection=DocumentInspection("text/plain", "eligible", "clean"),
+            retrieved_at="2026-08-01T12:36:00+00:00",
+            first_seen_at="2026-08-01T12:36:00+00:00", document_version=1,
+            parent_manifest_id="manifest:cs:" + "a" * 64,
+        )
+
+    later = parse_submission(_raw())
+    bound = later.documents[0]
+    assert bound.byte_start is not None and bound.byte_end is not None
+    later_occ = writable_child_occurrence(
+        parent_content_sha256=sha256(_raw()).hexdigest(),
+        byte_start=bound.byte_start,
+        byte_end=bound.byte_end,
+    )
+    later_eid = evidence_id_for(
+        source_system="sec_edgar",
+        submission_accession="0001234567-26-099001",
+        occurrence=later_occ,
+        content_sha256=sha256(bound.raw).hexdigest(),
+    )
+    assert not later_eid.startswith("legacy:")
+    unbound_id = f"legacy:0001234567-26-099001:1:forms3.htm"
+    assert later_eid != unbound_id
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W1A.3 Bundle-level re-observation, not a complete-row shortcut
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _stamp_evidence(record: dict, occurrence: Any) -> dict:
+    filing = record.get("filing") or {}
+    document = record.get("document") or {}
+    record["evidence_occurrence"] = occurrence
+    record["evidence_key_format"] = 1
+    record["evidence_id"] = evidence_id_for(
+        source_system=str(record.get("source_system") or "sec_edgar"),
+        submission_accession=str(filing.get("accession") or ""),
+        occurrence=occurrence,
+        content_sha256=str(document.get("content_sha256") or ""),
+    )
+    record["manifest_id"] = manifest_id_for(record)
+    return record
+
+
+def test_historical_v1_complete_reobserved_unchanged_is_not_a_new_revision():
+    acc = "0001234567-26-000090"
+    v1 = _make_manifest_record(acc, "complete_submission", first_seen_at="2026-01-01T00:00:00Z")
+    assert "evidence_id" not in v1
+    w1 = _make_manifest_record(
+        acc, "complete_submission", first_seen_at="2026-08-19T18:00:00Z",
+        first_known_at="2026-08-19T18:00:00Z",
+    )
+    w1 = _stamp_evidence(w1, "submission")
+    assert evidence_id_from_manifest(v1) == w1["evidence_id"]
+    decision = classify_bundle_against_published([w1], [v1])
+    assert decision["status"] == "re_observed"
+    assert decision["append"] == []
+
+
+def test_complete_unchanged_child_interpretation_change_is_bundle_revision():
+    acc = "0001234567-26-000091"
+    parent_sha = _parent_sha()
+    child_occ = _child_occ(0)
+    complete = _stamp_evidence(
+        _make_manifest_record(acc, "complete_submission", first_known_at="2026-08-01T10:00:00Z"),
+        "submission",
+    )
+    child = _make_manifest_record(
+        acc, "primary", parent_manifest_id=complete["manifest_id"],
+        first_known_at="2026-08-01T10:00:00Z",
+    )
+    child["document"]["content_sha256"] = sha256(_raw()[_spans()[0][0]:_spans()[0][1]]).hexdigest()
+    child = _stamp_evidence(child, child_occ)
+    published = [complete, child]
+
+    candidate_complete = _stamp_evidence(
+        _make_manifest_record(
+            acc, "complete_submission", first_seen_at="2026-08-19T18:00:00Z",
+            first_known_at="2026-08-01T10:00:00Z",
+        ),
+        "submission",
+    )
+    candidate_child = _make_manifest_record(
+        acc, "primary", parent_manifest_id=complete["manifest_id"],
+        first_seen_at="2026-08-19T18:00:00Z",
+        first_known_at="2026-08-01T10:00:00Z",
+    )
+    candidate_child["document"]["content_sha256"] = child["document"]["content_sha256"]
+    candidate_child["parser"]["parser_version"] = "sec-submission-sgml/1.1.0"
+    candidate_child = _stamp_evidence(candidate_child, child_occ)
+
+    decision = classify_bundle_against_published(
+        [candidate_complete, candidate_child], published,
+    )
+    assert decision["status"] == "revision"
+    assert [row["evidence_id"] for row in decision["append"]] == [candidate_child["evidence_id"]]
+    assert interpretation_fingerprint(candidate_complete) == interpretation_fingerprint(complete)
+
+
+def test_complete_and_children_unchanged_is_one_verified_reobservation():
+    acc = "0001234567-26-000092"
+    child_occ = _child_occ(0)
+    complete = _stamp_evidence(
+        _make_manifest_record(acc, "complete_submission", first_known_at="2026-08-01T10:00:00Z"),
+        "submission",
+    )
+    child = _make_manifest_record(
+        acc, "primary", parent_manifest_id=complete["manifest_id"],
+        first_known_at="2026-08-01T10:00:00Z",
+    )
+    child["document"]["content_sha256"] = sha256(_raw()[_spans()[0][0]:_spans()[0][1]]).hexdigest()
+    child = _stamp_evidence(child, child_occ)
+    published = [complete, child]
+
+    later_complete = _stamp_evidence(
+        _make_manifest_record(
+            acc, "complete_submission", first_seen_at="2026-08-19T18:00:00Z",
+            first_known_at="2026-08-01T10:00:00Z",
+        ),
+        "submission",
+    )
+    later_child = _make_manifest_record(
+        acc, "primary", parent_manifest_id=complete["manifest_id"],
+        first_seen_at="2026-08-19T18:00:00Z",
+        first_known_at="2026-08-01T10:00:00Z",
+    )
+    later_child["document"]["content_sha256"] = child["document"]["content_sha256"]
+    later_child = _stamp_evidence(later_child, child_occ)
+
+    decision = classify_bundle_against_published(
+        [later_complete, later_child], published,
+    )
+    assert decision["status"] == "re_observed"
+    assert decision["append"] == []
+    assert len(decision["unchanged"]) == 2

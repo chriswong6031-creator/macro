@@ -490,6 +490,7 @@ def test_changed_evidence_emits_correction_at_produced_time_then_reruns_idempote
         "immutable_record": True,
         "correction_version": 2,
         "correction_of": original["event_id"],
+        "identity_format": 2,
     }
     assert correction["point_in_time"]["available_at"] == "2026-08-03T12:00:00Z"
     assert any(edge["relationship"] == "supersedes" for edge in corrected["edges"])
