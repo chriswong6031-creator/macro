@@ -71,11 +71,18 @@ landmines:
     production_ingest_allowed is the continuous-producer gate. Do not flip it
     true to "allow snapshot import."
   - >-
+    The active launch SLO manifest is soak_scheduled and hash-binds
+    predecessor config/biocatalyst_sources.yml. Do not insert
+    biopharmcatalyst_jv_snapshot into that live registry, re-hash the
+    manifest, or add machine-enforced JV source-registry tests during soak
+    (DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK).
+  - >-
     DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK is a local-environment
     statement only. Do not promote it into a global lost/unrecovered claim.
 decisions:
   - "DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN"
   - "DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK"
+  - "DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK"
   - "DEC:BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE"
   - "DEC:BPC-RECON-1-DRUGSATFDA-APPROVED-SPINE"
 discoveries:
@@ -113,21 +120,26 @@ do_not_redo:
   - >-
     Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH,
     PDUFA NLP, or snapshot ingestion from PR #5909.
+  - >-
+    Do not mutate the soak-bound predecessor source registry or add
+    machine-enforced JV source-registry tests during the active soak. Runtime
+    registration waits for the post-soak successor registry / successor
+    launch-manifest transition.
 next_action: >
   After #5909 merges, return to Sol for commissioning of the first bounded
   SNAPSHOT-ONBOARD vertical. Do not begin it from this PR.
 artifacts:
   - research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
-  - config/biocatalyst_sources.yml
 ---
 
 ## Context
 
-RECON-0 is Sol-accepted architecture, complete pending merge of PR #5909.
-The program continues (`status: active`). SNAPSHOT-ONBOARD and CONTINUOUS-RECON
-remain todo. The matcher-only RECON-1 wave stays dropped. Local operator state
-had W4 only; W1/W2/W3/W4 exist in the Chairman's File Library; relationship is
-`UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`. Do not start SNAPSHOT-ONBOARD,
-CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime
-implementation from this PR. After merge, return to Sol to commission the first
-bounded SNAPSHOT-ONBOARD vertical.
+RECON-0 is Sol-accepted architecture, soak-safe pending merge of PR #5909.
+Canonical identity `biopharmcatalyst_jv_snapshot` is frozen; live registry
+insertion is deferred until the post-soak successor source-registry /
+successor launch-manifest transition. The program continues (`status: active`).
+SNAPSHOT-ONBOARD and CONTINUOUS-RECON remain todo. The matcher-only RECON-1
+wave stays dropped. Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON,
+Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from
+this PR. After merge, return to Sol to commission the first bounded
+SNAPSHOT-ONBOARD vertical.

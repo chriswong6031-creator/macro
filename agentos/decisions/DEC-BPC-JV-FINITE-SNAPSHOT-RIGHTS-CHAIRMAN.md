@@ -38,9 +38,8 @@ alternatives:
       biocatalyst remains context_only.
 evidence:
   - "Sol REQUEST CHANGES on PR #5909, 2026-08-19, recording Chairman confirmation of JV dataset rights"
-  - "config/biocatalyst_sources.yml biopharmcatalyst_jv_snapshot license_class licensed_finite_snapshot, production_ingest_allowed false, finite_snapshot_capabilities allowed, continuous_feed_rights forbidden"
-  - "tests/test_biocatalyst_source_registry.py::test_jv_finite_snapshot_use_is_allowed_while_continuous_feed_stays_forbidden"
-  - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §2"
+  - "research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md §2 — finite-snapshot rights frozen; runtime registry insertion deferred"
+  - "DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK"
 affects:
   - "WS:BPC-JV-RECON"
   - "biocatalyst"

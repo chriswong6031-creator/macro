@@ -1,6 +1,6 @@
 # BPC-RECON-0 — JV snapshot archaeology and source-system reconstruction freeze
 
-Status: **ARCHITECTURE ACCEPTED** (Sol 2026-08-19). RECON-0 complete pending merge of PR #5909. Architecture freeze only. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON.
+Status: **ARCHITECTURE ACCEPTED** (Sol 2026-08-19). Soak-safe freeze. RECON-0 complete pending merge of PR #5909. Canonical identity frozen; runtime registry insertion deferred. No runtime producer, no soak change, no Prophet authority, no new model, no snapshot ingestion in this PR. Do not start SNAPSHOT-ONBOARD or CONTINUOUS-RECON.
 
 Date: 2026-08-18; rights amendment 2026-08-19; corpus-state correction 2026-08-19; Sol acceptance writeback 2026-08-19  
 Workstream: `WS:BPC-JV-RECON`  
@@ -88,16 +88,18 @@ Unique tickers across the locally hashed eleven sources (9-sheet W4 + 4 CSVs): *
 
 Chairman confirms (2026-08-19) the supplied BPC datasets are authorized for Mastermind storage/use, website/product incorporation, repository incorporation, and research / pattern / signal-development programs. The restriction is that Mastermind does **not** receive continuing BPC API access. Research permission is **not** Prophet or trade authority.
 
-`production_ingest_allowed` on this registry is the **continuous live-producer** gate (`scripts/biocatalyst_worker.py`). It stays `false` on the JV snapshot identity. Finite-snapshot import/storage is a **separate** capability block and is allowed.
+`production_ingest_allowed` is the **continuous live-producer** gate (`scripts/biocatalyst_worker.py`). It stays `false` on the canonical JV snapshot identity when that identity is later registered. Finite-snapshot import/storage is a **separate** capability block and is allowed. **Canonical source identity is frozen now; runtime registry insertion is deferred** (`DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK`). The live `config/biocatalyst_sources.yml` remains the soak-bound predecessor and does **not** yet contain `biopharmcatalyst_jv_snapshot`.
 
 | Identity | What it is | Finite snapshot | Continuous feed |
 |---|---|---|---|
-| `biopharmcatalyst_benchmark` | Historical clean-room policy. **Unchanged.** | Not a JV snapshot. Permitted: behavioral parity, public feature inventory, clean-room benchmark. `proprietary_historical_row_import` still prohibited **here**. | Authenticated scraping, production feed, asset/code copy prohibited |
-| `biopharmcatalyst_jv_snapshot` | **New.** Licensed finite snapshots (this corpus). `license_class: licensed_finite_snapshot` | **Allowed:** import/storage, repo normalization, product projection, research/pattern/signal development | **Forbidden:** continuous BPC API, authenticated BPC scraping. `production_ingest_allowed: false` |
+| `biopharmcatalyst_benchmark` | Historical clean-room policy. **Unchanged** in the live soak-bound registry. | Not a JV snapshot. Permitted: behavioral parity, public feature inventory, clean-room benchmark. `proprietary_historical_row_import` still prohibited **here**. | Authenticated scraping, production feed, asset/code copy prohibited |
+| `biopharmcatalyst_jv_snapshot` | **Canonical future identity, frozen now.** Licensed finite snapshots (this corpus). `license_class: licensed_finite_snapshot`. Not present in the live soak-bound registry. | **Allowed:** import/storage, repo normalization, product projection, research/pattern/signal development | **Forbidden:** continuous BPC API, authenticated BPC scraping. `production_ingest_allowed: false` |
 
 Export-time fields remain forbidden as historical pre-event features. They **may** be used as correctly time-stamped snapshot observations in research from their actual capture time onward (§3).
 
-Do not silently rewrite the benchmark YAML. Tests pin (a) the old benchmark meaning, (b) the distinct JV id, (c) finite-snapshot use allowed, (d) continuous API/scraping and temporal leakage forbidden.
+Do not silently rewrite the benchmark YAML. Pre-existing tests pin the old benchmark meaning. Machine-enforced JV identity tests must **not** land during the active soak; they travel with the post-soak successor source-registry / successor launch-manifest transition.
+
+**Sequencing law:** `biopharmcatalyst_jv_snapshot` runtime registration and its machine-enforced source-registry tests must land through the post-soak successor source-registry / successor launch-manifest transition. They may not mutate the hash-bound predecessor registry during the active soak. Do not update or re-hash `config/biocatalyst_launch_slo_manifest.yml`, change its `source_registry_sha256`, alter the 2026-08-12→2026-08-26 soak, chase launch fixtures onto a new source, or weaken the verifier to hash only launch-critical sources.
 
 ---
 
@@ -423,7 +425,7 @@ Until that chain exists, the matcher is calibration, not a completed production 
 
 ## 12. Sol acceptance (resolved)
 
-Sol accepted the architecture and the corpus-state correction on 2026-08-19 (PR #5909). RECON-0 is complete pending merge. After merge, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin SNAPSHOT-ONBOARD, CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from this PR.
+Sol accepted the architecture and the corpus-state correction on 2026-08-19 (PR #5909). Sol's CI ruling the same day makes this freeze soak-safe: canonical identity frozen now; runtime registry insertion deferred to the post-soak successor source-registry / successor launch-manifest transition. After merge, return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical. Do not begin SNAPSHOT-ONBOARD, CONTINUOUS-RECON, Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from this PR.
 
 Accepted corpus laws remain: local filesystem had W4 only; W1/W2/W3/W4 exist globally in the Chairman's File Library; relationship is `UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS`; no predecessor hashes invented; W1→W4 are not temporal vintages without deterministic proof; export-time market/options fields cannot become historical pre-event features; finite JV snapshot rights remain separate from continuous BPC feed rights.
 
@@ -435,6 +437,7 @@ Accepted corpus laws remain: local filesystem had W4 only; W1/W2/W3/W4 exist glo
 - `macro-main` is a linked worktree of `Macro Dashboard/.git`. Never delete or relocate that folder.
 - Sibling `biocatalyst-p0-*` worktrees own the soak/product path. Open PRs to be aware of: #5821 (BCI architecture docs), #5901 (Capital Structure V2 freeze).
 - `scripts/biocatalyst_worker.py` is `canary_poll` only. `production_ingest_allowed` there means continuous producer.
+- The active `config/biocatalyst_launch_slo_manifest.yml` is `state: soak_scheduled` and binds predecessor `source_registry_sha256`. Do not mutate `config/biocatalyst_sources.yml` during this soak.
 - A write into a sparse worktree's omitted `data/` **truncates** committed artifacts. Snapshot onboarding must not `git add -A` under `data/` on a sparse tree.
 - Disarming `merge-on-green` is never silent; this freeze PR **must not be armed**. Sol has accepted; keep `merge-on-green` off. Merge is a later session act after CI, not this writeback.
 
@@ -454,16 +457,18 @@ Accepted corpus laws remain: local filesystem had W4 only; W1/W2/W3/W4 exist glo
 - Treat `collectors.biocatalyst.openfda_regulatory` as implemented.
 - Describe CI ZIP replay as production proof.
 - Start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH, PDUFA NLP, or snapshot ingestion from this PR.
+- Mutate `config/biocatalyst_sources.yml` or add machine-enforced JV source-registry tests during the active soak. Runtime registration waits for the post-soak successor registry / successor launch-manifest transition (`DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK`).
+- Update or re-hash the active launch manifest, change its `source_registry_sha256`, alter the 2026-08-12→2026-08-26 soak, or weaken the SLO verifier.
 
 ---
 
 ## 14. This PR's architecture land
 
-In the same research PR as this freeze, and still not a runtime:
+Soak-safe architecture freeze. Still not a runtime. Canonical identity frozen; runtime registry insertion deferred.
 
-- `license_class: licensed_finite_snapshot` (replaces the withdrawn `finite_jv_snapshot_seed` matching-only class)
-- source row `biopharmcatalyst_jv_snapshot` with `production_ingest_allowed: false` (continuous-producer gate) **and** explicit finite-snapshot capabilities allowed
-- tests that the benchmark YAML meaning is unchanged; finite licensed snapshot use is allowed; continuous BPC API/scraping and temporal leakage remain forbidden
+- Canonical future identity `biopharmcatalyst_jv_snapshot` with `license_class: licensed_finite_snapshot` (replaces the withdrawn `finite_jv_snapshot_seed` matching-only class) — frozen in this freeze and in `DEC:BPC-JV-SNAPSHOT-IS-NOT-BENCHMARK`, **not** inserted into the live soak-bound `config/biocatalyst_sources.yml`
+- Finite-snapshot capabilities allowed; continuous BPC API/scraping forbidden; `production_ingest_allowed` remains the continuous-producer gate (`DEC:BPC-JV-FINITE-SNAPSHOT-RIGHTS-CHAIRMAN`)
+- Sequencing: runtime registration and machine-enforced source-registry tests land only through the post-soak successor source-registry / successor launch-manifest transition (`DEC:BPC-JV-SNAPSHOT-RUNTIME-REGISTRY-POST-SOAK`)
 - Agent OS: `WS:BPC-JV-RECON` active, RECON-0 done pending merge; Chairman rights DEC unchanged; architectural DECs Sol-accepted (`decided_by: ceo-sol`); predecessor-workbook DSC bounded to local operator state (File Library members still exist)
 
-No producers. No collectors. No snapshot row ingest. No soak YAML edits other than the JV source key.
+No producers. No collectors. No snapshot row ingest. No soak YAML edits. No mutation of the hash-bound predecessor source registry.
