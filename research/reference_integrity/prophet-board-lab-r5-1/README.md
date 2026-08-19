@@ -5,7 +5,7 @@ verdict; it does not close the cycle. `verdict.yml` (**REVISE**) requires a scop
 by both C12 seats, and the visual seat's deferred rationale-reveal amendment pass completes then.
 This session authored the artifact and is disqualified from all of it.
 
-Artifact: `mockups/refs/prophet_lab/`, frozen at **`ffc0df3eeb604b099dd75b9737f9cd8cd8d57761`**
+Artifact: `mockups/refs/prophet_lab/`, frozen at **`6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c`**
 (R5.3). Every earlier SHA and what each critic found against it are in `manifest.yml` →
 `sha_lineage`; both C12 receipts were taken against R5.2's `f40ae70ac989` and are stale against
 this SHA by construction (RIG §3).

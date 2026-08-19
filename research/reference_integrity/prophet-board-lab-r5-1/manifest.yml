@@ -23,7 +23,7 @@ author:
 # artifact set rather than an edit to prophet-board-lab-r5.
 reference_files:
   - path: mockups/refs/prophet_lab
-    frozen_sha: ffc0df3eeb604b099dd75b9737f9cd8cd8d57761
+    frozen_sha: 6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c
 
 # SHA lineage within this reference id. A fix round re-freezes the artifact, so
 # receipts taken against an earlier SHA are stale by construction (RIG §3) — the
@@ -51,7 +51,7 @@ sha_lineage:
       REVISE over six blocking rulings (verdict.yml). Their receipts are STALE against the current
       SHA by construction (RIG §3) — which is why R53-SCOPE requires a scoped delta re-check
       rather than treating R5.3's own claims as closure.
-  - sha: ffc0df3eeb604b099dd75b9737f9cd8cd8d57761
+  - sha: 6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c
     round: R5.3
     note: >
       Final composition-touching round, scoped by verdict.yml condition R53-SCOPE. Closes all six

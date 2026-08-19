@@ -562,7 +562,7 @@ fix_rounds:
       C12 authority verdict REVISE over both seats' PASS_WITH_CONDITIONS receipts, against
       f40ae70ac98936b5c565a7a55ddd108cb70ae7fa. Six blocking rulings + takeable minors + editorial
       baseline re-stamps. Scoped by condition R53-SCOPE as the final composition-touching round.
-    frozen_at: ffc0df3eeb604b099dd75b9737f9cd8cd8d57761
+    frozen_at: 6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c
     harness: >
       verify.py 162/162; mutation_test.py 34/34 caught, distinct killers, no shared sole catcher;
       capture.py 49 views / 66 files, all re-shot. Two mutations were re-pointed rather than left
@@ -766,8 +766,13 @@ fix_rounds:
           evidence one step earlier), and CSS has no selector for "first on its line". Keyed to the
           statement, a wrapped statement
           carries its own marker with it and nothing can be orphaned. D29 stayed, inverted: every
-          visible statement is keyed and no control is, at 1440/1280/1180/1000/860/768/640/561/560/
-          390. M34 removes the markers.
+          visible statement is keyed and no control is. Its width ladder was ALSO trimmed with the
+          device, from the ten-width sweep to both sides of every breakpoint (1440/1181/1180/981/
+          980/561/560/390): the sweep existed to catch a wrap-POSITION defect, and a per-statement
+          marker has none — the only thing width still changes is which members are visible, which
+          is a function of the breakpoints alone. Said rather than silently narrowed, because each
+          width costs the harness a page load on every one of 34 mutation runs. M34 removes the
+          markers.
         changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/tools/verify.py,
                         mockups/refs/prophet_lab/tools/mutation_test.py]
       - id: VTL52-608
