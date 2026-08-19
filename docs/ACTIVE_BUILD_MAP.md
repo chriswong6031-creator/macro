@@ -2,30 +2,32 @@
 
 # Active Build Map
 
-Generated: 2026-08-18T08:33:11.395658+00:00  |  Open PRs: 19  |  Merged (window): 500  |  base: `d19b89c619ac3e0dd349ea53cd9c7ed190d56929`
+Generated: 2026-08-19T05:17:28.953080+00:00  |  Open PRs: 21  |  Merged (window): 500  |  base: `12702166ded13ee47ab9703b811f964c237a275c`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #5886 | docs(agentos): record why the daily collect mutex cannot live in et_gate | `claude/daily-collect-mutex-decision` | 2026-08-18 | — |
-| #5885 | fix(nightly): base-freshness fence — refuse to publish an append-only artifact over a base that moved | `claude/append-only-base-fence` | 2026-08-18 | ⚠ protected:4 |
-| #5884 | docs(agentos): D1 recovery-generation proof — Radar 48, fence next | `claude/defense-d1-recovery-proof` | 2026-08-18 | — |
-| #5883 | docs(agentos): RESOLVED — a generation revert was the ci-pack-6 repair; correct the "wedged" conclusion | `claude/govrev-wedge-resolved` | 2026-08-18 | — |
-| #5882 | govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate) | `claude/govrev-event-identity-adjudication` | 2026-08-18 | ⚠ protected:1 |
-| #5879 | fix(ci): hydrate the base commit's blobs so the semantic replay can check it out | `claude/base-replay-partial-clone-hydration` | 2026-08-18 | — |
-| #5877 | fix(stock-identity): band the B rescale's uniformity, not its level | `claude/b-tripwire-band-uniformity` | 2026-08-18 | ⚠ CONFLICTING |
-| #5874 | fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields | `claude/contract-drift-prophet-board-read` | 2026-08-18 | ⚠ CONFLICTING |
-| #5872 | feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief — runtime implementation (v1.2) | `claude/ad1-intel-brief-runtime` | 2026-08-18 | ⚠ protected:4 |
-| #5867 | ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class | `claude/runner-label-registry-core` | 2026-08-18 | ⚠ protected:1 |
-| #5859 | research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census | `claude/prophet-v4-d1-census` | 2026-08-18 | — |
-| #5856 | D1.1F: PIT-safe Government Revenue agency labels | `claude/defense-d1-1-agency-semantic` | 2026-08-18 | — |
-| #5853 | fix(sector_central): withhold the Act-Now board server-side on its second host | `claude/sector-central-act-now-gate` | 2026-08-18 | — |
-| #5851 | ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency | `claude/runner-label-registry` | 2026-08-18 | ⚠ protected:1 |
-| #5845 | radar(w6): Sol-review RP1 ranking-law corrections | `claude/w6-rp1-sol-corrections` | 2026-08-18 | — |
+| #5933 | docs(alpha-intel): c0 adjudication — five census verdicts, FABLE-A conditional GO with amendment rider | `claude/alpha-intel-c0-adjudication` | 2026-08-19 | — |
+| #5932 | D2 Identity Atlas: defense21-v1 graph + per-issuer identity vertical (five pilots + SPR control) | `claude/defense-d2-identity-atlas` | 2026-08-19 | ⚠ protected:1 |
+| #5931 | design(prophet-lab-r5): Prophet Operator Lab reference candidate + RIG R5 packet (no approval) | `claude/prophet-lab-r5-reference` | 2026-08-19 | — |
+| #5929 | radar(w4.1): live-transport correction — confirmed-lane pack field + W4->W5 spool envelope contract | `claude/radar-w41-transport` | 2026-08-19 | — |
+| #5928 | feat(prophet-lab): P-LAB-API — Prophet Operator Lab read-only projection | `claude/prophet-lab-api` | 2026-08-19 | — |
+| #5927 | P0-C2R0: public generation read-path profile (evidence only) | `claude/p0c2r0-read-path-profile` | 2026-08-19 | — |
+| #5926 | fix(canada): CA-TRUTH — one canonical Canada Prophet board per session | `claude/ca-truth-canonical-board` | 2026-08-19 | — |
+| #5925 | fix(entry-radar): W4 pack snapshot reads live ProbeSet.records | `claude/w4-probeset-pack-snapshot` | 2026-08-19 | — |
+| #5922 | ci(baseline): keep the merge-train circuit breaker fresh on a clock | `claude/integration-baseline-keepalive` | 2026-08-19 | ⚠ protected:1 |
+| #5909 | BPC-RECON-0: JV snapshot reconstruction freeze (Sol accepted — pending merge) | `claude/bpc-recon-0` | 2026-08-19 | — |
+| #5908 | feat(fleet): AionUi/Grok SessionStart mints sparse worktrees | `worktree-grok-aionui-sparse-sessions` | 2026-08-19 | — |
+| #5903 | fix(prophet-fusion): pin C2 construction tests to the registered-era frame | `claude/fusion-c2-era-pin` | 2026-08-19 | ⚠ CONFLICTING |
+| #5901 | research: Capital Structure Intelligence V2 architecture freeze (Sol AMEND) | `claude/cs-intel-v2-masterplan` | 2026-08-19 | — |
+| #5898 | FF-1P2R: current-quarter EDGAR index discovery (do not merge; recovery fail-closed) | `claude/ff-1p2-bulk-census` | 2026-08-19 | ⚠ protected:2 |
+| #5892 | fix(leader-radar): make _build_fire_history honor its data_root parameter | `claude/leader-radar-honor-data-root` | 2026-08-19 | — |
+| #5889 | FIF-1R3: final semantic closure — amend in place (DO NOT MERGE) | `claude/fif-1r3-semantic-closure` | 2026-08-19 | — |
+| #5872 | feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief — runtime implementation (v1.2) | `claude/ad1-intel-brief-runtime` | 2026-08-19 | ⚠ protected:4 |
 | #5822 | research: China institutional intelligence alpha masterplan | `research/china-intelligence-alpha-masterplan-2026-08-17` | 2026-08-17 | DRAFT |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
-| #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-17 | ⚠ CONFLICTING |
+| #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | ⚠ CONFLICTING |
 | #5424 | data(govrev): publish reviewed defense20-v1 recipient graph — BWXT + refreshed exact edges | `claude/govrev-defense20-bwxt-graph` | 2026-08-14 | DRAFT |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
@@ -34,25 +36,63 @@ Generated: 2026-08-18T08:33:11.395658+00:00  |  Open PRs: 19  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #5885 | #5872 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
-| #5885 | #5883 | 1 | `agentos/discoveries/DSC-OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS.md` |
-| #5885 | #5882 | 1 ⚠ | `.github/workflows/government-revenue-live.yml` |
-| #5885 | #5853 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5884 | #5882 | 1 | `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-18.md` |
-| #5884 | #5856 | 1 | `agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md` |
-| #5872 | #5853 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5845 | #5737 | 1 | `agentos/workstreams/WS-LIVE-ENTRY-RADAR.md` |
+| #5898 | #5872 | 5 ⚠ | `.github/ci/legacy-jobs.yml`, `config/dag.yml`, `config/r2_delivery_plane_classification.v1.json`, `tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` |
+| #5932 | #5424 | 2 | `data/government_revenue/recipient_entity_graph.json`, `tests/test_government_revenue_recipient_graph.py` |
+| #5901 | #5872 | 2 | `config/mastermind_programs.yml`, `docs/MASTERMIND_SYSTEM_MAP.md` |
+| #5929 | #5925 | 1 | `engine/entry_radar/live_pack.py` |
+| #5929 | #5737 | 1 | `agentos/workstreams/WS-LIVE-ENTRY-RADAR.md` |
+| #5903 | #5898 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5903 | #5889 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5903 | #5872 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5898 | #5889 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5889 | #5872 | 1 | `.github/ci/legacy-jobs.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5930 | fix(main-red-repair): pin CI to a CPython the parser allowlist has reviewed | 2026-08-19 |
+| #5924 | docs(prophet-lab): LAB-0 — recut V4-B5 into B5A Operator Lab + B5B desk; commission Radar W4.1 | 2026-08-19 |
+| #5923 | agentos: mint WS:PROPHET-HK-CA-REVAMP + hardened execution packet | 2026-08-19 |
+| #5921 | feat(prophet-fusion): PR-3D-R1 same-stamp revision + atomic W3 persist | 2026-08-19 |
+| #5919 | docs(agentos): D1 closure proof — next action is Sol acceptance | 2026-08-18 |
+| #5918 | docs(agentos): the sweeper's forward-rebase can drop a commit you pushed | 2026-08-18 |
+| #5917 | fix(worktree-sparse): SIGTERM-first timeout, and a budget sized from the tail | 2026-08-18 |
+| #5915 | docs(path-survival): GROK-F0 capability census | 2026-08-18 |
+| #5914 | docs(research): GROK-E0 opportunity evidence census and casebooks | 2026-08-18 |
+| #5913 | docs(economic-propagation): D0 graph census and casebook | 2026-08-18 |
+| #5912 | docs(research): A0 evidence/provenance estate census | 2026-08-18 |
+| #5911 | research(alpha-intel): GROK-B0 institutional source and capture census | 2026-08-18 |
+| #5910 | docs(alpha-intel): PASS-0 program integration packet + WS record | 2026-08-18 |
+| #5907 | fix(worktree-sparse): never leave a tracked file truncated on a failed `add` | 2026-08-18 |
+| #5906 | docs(biocatalyst): P0-C2 entitled acceptance — generation-read hang | 2026-08-19 |
+| #5905 | fix(main-red-repair): re-price the HK G1 fixture for the 2359.HK adjustment | 2026-08-18 |
+| #5904 | docs(agentos): complete the W1-A1 tripwire handoff with the session's end state | 2026-08-18 |
+| #5902 | feat(prophet): general PIT session replay harness (market, session) under DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT | 2026-08-18 |
+| #5900 | fix(heartbeat): tier-gate mirrored the PR lane's steps but not its venv | 2026-08-18 |
+| #5899 | fix(metabolism): repair blind main-red sentinel (owner/repo 404, dead PAT fallback, HEAD/heartbeat SHA mismatch) | 2026-08-18 |
+| #5897 | fix(entry-radar): W4 hermetic sink proves spool path, not W5 directory absence | 2026-08-19 |
+| #5896 | fix(hk-board): band the refresh-window re-base, not the close level | 2026-08-18 |
+| #5895 | fix(entry-radar): the hermetic control asserted a directory it cannot create | 2026-08-18 |
+| #5894 | research+engine(prophet-v4): V4-D2A canonical identity authority bridge (GMI → Data OS) | 2026-08-18 |
+| #5893 | fix(prophet-fusion): assert PR-2's registered numbers against the artifact, not a rebuild | 2026-08-18 |
+| #5890 | feat(prophet-fusion): PR-3D W3 liveness fence and lawful status surface | 2026-08-18 |
+| #5888 | fix(leader-radar): honour the caller's data_root when joining fire grades | 2026-08-18 |
+| #5887 | docs(agentos): govrev event_id folds the collector's retrieval clock, so a re-run re-mints candidates | 2026-08-18 |
+| #5886 | docs(agentos): record why the daily collect mutex cannot live in et_gate | 2026-08-18 |
+| #5885 | fix(nightly): base-freshness fence — refuse to publish an append-only artifact over a base that moved | 2026-08-18 |
+| #5884 | docs(agentos): D1 recovery-generation proof — Radar 48, fence next | 2026-08-18 |
+| #5883 | docs(agentos): RESOLVED — a generation revert was the ci-pack-6 repair; correct the "wedged" conclusion | 2026-08-18 |
+| #5882 | govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate) | 2026-08-18 |
+| #5879 | fix(ci): hydrate the base commit's blobs so the semantic replay can check it out | 2026-08-18 |
 | #5878 | policy(prophet): force-majeure sessions are backfilled by DEFAULT | 2026-08-18 |
 | #5876 | docs(agentos): the ci-pack-6 red is a candidate-id race between two govrev lanes | 2026-08-18 |
 | #5875 | fix(stock-identity): band the B live-plane tripwire on uniformity, not level | 2026-08-18 |
+| #5874 | fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields | 2026-08-18 |
 | #5873 | docs(agentos): correct the govrev record — the projection lane does NOT clear the ci-pack-6 red | 2026-08-18 |
 | #5871 | docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs | 2026-08-18 |
 | #5870 | fix(govrev): restore the collection generation the candidate projection was frozen against | 2026-08-18 |
+| #5867 | ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class | 2026-08-18 |
 | #5866 | close-pass: grade the frozen launchd bootstrap against origin/main (merged is not deployed) | 2026-08-18 |
 | #5865 | fix(stock-identity): freeze the registered B prefix off the nightly-rewritten plane | 2026-08-18 |
 | #5864 | fix(forensics): raise FF-1 universe bind cap for live 2837-issuer parquet | 2026-08-18 |
@@ -60,16 +100,21 @@ Generated: 2026-08-18T08:33:11.395658+00:00  |  Open PRs: 19  |  Merged (window)
 | #5862 | fix(close-pass): retry a stalled lane probe instead of losing the session | 2026-08-18 |
 | #5861 | docs(agentos): DSC — a git rebase can splice two renders into a paywall leak | 2026-08-18 |
 | #5860 | docs(advanced-data): AD-1P0 freeze semantic authority before implementation | 2026-08-18 |
+| #5859 | research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census | 2026-08-18 |
 | #5858 | fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan | 2026-08-18 |
 | #5857 | fix(main-red-repair): a git REBASE published the paid board, not the renderer | 2026-08-18 |
+| #5856 | D1.1F: PIT-safe Government Revenue agency labels | 2026-08-18 |
 | #5855 | fix(13f-census): un-red both master-index backstop lanes | 2026-08-18 |
 | #5854 | fix(13f-census): decide atom scan completeness on the raw feed page, not the filtered one | 2026-08-18 |
+| #5853 | fix(sector_central): withhold the Act-Now board server-side on its second host | 2026-08-18 |
 | #5852 | feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar | 2026-08-18 |
+| #5851 | ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency | 2026-08-18 |
 | #5850 | ci(13f-census): hourly 12-20Z fast lane + 60m cap so it stops starving the nightly | 2026-08-18 |
 | #5849 | docs(advanced-data): AD-0 data-feasibility amendment — AD-1 scoring refrozen as v1.1 | 2026-08-18 |
 | #5848 | fix(prophet): 08-14→17 outage hardening — hostage-class kill + watchdog wedge/weekend closure | 2026-08-18 |
 | #5847 | docs(prophet-v4): V4-0B reconcile post-0A state and delegate availability implementation | 2026-08-18 |
 | #5846 | fix(us_stocks): withhold the four panels beside the board server-side too | 2026-08-18 |
+| #5845 | radar(w6): Sol-review RP1 ranking-law corrections | 2026-08-18 |
 | #5843 | fix(ci-authority): retry transient GitHub API failures instead of failing the fence closed | 2026-08-18 |
 | #5842 | docs(agentos): E1P live proof handoff; E2 unblocked | 2026-08-17 |
 | #5841 | fix(company-intelligence): unescape EDGAR index-headers for AAPL EX-99.1 | 2026-08-17 |
@@ -506,47 +551,6 @@ Generated: 2026-08-18T08:33:11.395658+00:00  |  Open PRs: 19  |  Merged (window)
 | #5349 | fix(options): isolate chain snapshot scheduler deployment | 2026-08-11 |
 | #5348 | feat(release-radar): add coherent CPI ridge shadow | 2026-08-11 |
 | #5347 | Map the three-repository Mastermind system | 2026-08-11 |
-| #5346 | Market Memory: admit first production record class | 2026-08-11 |
-| #5345 | ops: add private project runtime truth | 2026-08-11 |
-| #5344 | fix(prophet): make marks schedule timezone neutral | 2026-08-11 |
-| #5343 | gmi(w1b): theme-graph semantic spine — bitemporal nodes/edges/evidence + crosswalk CN family + seeder shape discrimination + CN limit-rule registry | 2026-08-11 |
-| #5342 | Flow: publish source-clock and cadence truth | 2026-08-11 |
-| #5341 | fix(prophet): run marks publisher from deployed checkout | 2026-08-11 |
-| #5340 | deploy: repoint terminal-data-setup's repo URL comment to the org | 2026-08-11 |
-| #5339 | research(prophet-us): early-admission construction bake-off — §6.8(a)/(b) replays + stop-anchored ruler | 2026-08-12 |
-| #5338 | fix(nightly): make engine output loss fail closed | 2026-08-11 |
-| #5337 | gmi(w1a): revive THS PIT snapshot cadence + US membership snapshots + freshness tripwire + 42-organ disposition sweep | 2026-08-11 |
-| #5336 | feat(biocatalyst): arm bounded family clocks | 2026-08-11 |
-| #5335 | Let the main integration baseline finish checkout | 2026-08-11 |
-| #5334 | topa-w2: tier-widening wave — B2 confirms cross-tier, A4 reverses, F1/F3/B3 ore body replicates 4/4 panels (G0.5 PRESENTABLE) | 2026-08-11 |
-| #5333 | fix(price-pressure): cold-runner store restore + R2-canonical event ledger (successor to #5322) | 2026-08-12 |
-| #5332 | options: add frozen campaign cohort ledger | 2026-08-11 |
-| #5331 | tests(govrev): clamp vintage clock offsets + decouple incident/grader tests from the live ledger | 2026-08-12 |
-| #5330 | Add fail-closed Market Memory promotion audit | 2026-08-11 |
-| #5329 | Publish durable opportunity receipts for Terminal | 2026-08-11 |
-| #5328 | BioCatalyst: add governed Capital Structure PIT adapter | 2026-08-11 |
-| #5327 | dag: declare every daily.yml fetch_r2 re-invocation; red vanished re-invocations in the conformance differ | 2026-08-11 |
-| #5326 | GMI Theme Graph W0 — phase-0 adjudication masterplan (next TIL chapter: rail + waves, not a lobe) | 2026-08-11 |
-| #5325 | Add the proposed-only Market Memory research handoff | 2026-08-11 |
-| #5324 | feat(options): durably land PIT episode evidence | 2026-08-11 |
-| #5321 | Release Radar: add coherent CPI truth substrate | 2026-08-11 |
-| #5320 | merge-on-green: a fresh red must always leave a visible marker (#5291) | 2026-08-11 |
-| #5319 | feat(massive_stock_day): refuse local research reads of a stale mirror | 2026-08-11 |
-| #5318 | test(us-board): repair rendered-fixture CI drift | 2026-08-11 |
-| #5316 | Make US Prophet copy human and keep earnings setups visible | 2026-08-11 |
-| #5315 | feat(options): add PIT per-side PRISM unusual lens | 2026-08-11 |
-| #5314 | Register the US candidate-pool contract disclosure | 2026-08-11 |
-| #5313 | Refine Macro release-detail modal | 2026-08-11 |
-| #5312 | Add the synthetic Operating Cortex conformance layer | 2026-08-11 |
-| #5311 | fix(biocatalyst): publish across sandbox mount boundary | 2026-08-11 |
-| #5310 | docs(biocatalyst): return handoff to Codex — what is done, what is not, and one correction | 2026-08-11 |
-| #5309 | feat: add synthetic episodic retrieval conformance | 2026-08-11 |
-| #5308 | docs(calcbench): Wave 0B handoff — the blocker is four secrets, not the pipeline | 2026-08-11 |
-| #5307 | fix(us-board): anchor the display-tier earnings chip to the board session (host-clock determinism) | 2026-08-11 |
-| #5306 | marketing: posting outbids telemetry — single-fire the metrics poll, cap it at 8 calls | 2026-08-11 |
-| #5305 | prophet(us): force-majeure outage backfill — receipt-exact 2026-08-09 replay (rev-1, supersedes #5294) | 2026-08-11 |
-| #5304 | docs(prophet-us): backfill design rev-1 — restore review-corrected input adjudication | 2026-08-11 |
-| #5301 | prophet(us): plain-word disclosure for reconstructed plans (chip + receipt + footnote, EN/ZH) | 2026-08-11 |
 
 ---
 
