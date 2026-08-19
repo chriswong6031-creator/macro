@@ -172,6 +172,8 @@ AGENT_WORKTREE_ROOTS = (
     ".claire/worktrees/",
     ".codex/worktrees/",
     ".codex-worktrees/",
+    ".cursor/worktrees/",
+    ".grok/worktrees/",
 )
 # `subprocess.run(timeout=...)` shoots a straggler with SIGKILL, which git cannot
 # catch — so the `index.lock` git's own lockfile machinery would have unlinked on

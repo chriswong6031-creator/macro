@@ -97,10 +97,17 @@ def test_every_guarded_root_is_reachable_by_the_gc() -> None:
 
 @pytest.mark.parametrize(
     "root",
-    [".claude/worktrees/", ".claire/worktrees/", ".codex/worktrees/", ".codex-worktrees/"],
+    [
+        ".claude/worktrees/",
+        ".claire/worktrees/",
+        ".codex/worktrees/",
+        ".codex-worktrees/",
+        ".cursor/worktrees/",
+        ".grok/worktrees/",
+    ],
 )
 def test_known_fleet_roots_are_declared_everywhere(root: str) -> None:
-    """Pin the four roots observed on this host so none silently drops out."""
+    """Pin every in-repo fleet root so none silently drops out."""
     assert root in _in_repo_gc_roots(), f"{root} missing from config/worktree_gc.json"
     assert root in _gitignore_roots(), f"{root} missing from .gitignore"
     assert root in _guard_roots(), f"{root} missing from AGENT_WORKTREE_ROOTS"
