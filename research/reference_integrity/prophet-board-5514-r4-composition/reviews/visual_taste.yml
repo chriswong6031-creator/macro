@@ -1,0 +1,86 @@
+# C8 critic receipt — first-ever independent visual_taste review of the R4 U.S.
+# Prophet Board reference COMPOSITION (condition C8 of the Lab RIG cycle). The author
+# did not write this file; committed verbatim by the adjudicating session from the
+# critic's amended two-pass packet.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-r4-composition
+role: visual_taste
+artifact_tree_hash: d540f493a097cb37f3f91e4c7bc81a39b876d069
+review_standard:
+  - docs/DESIGN_DOCTRINE.md
+  - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+  - research/migration_packets/MP-1-prophet-board.md
+  - mockups/design_system/specimen.html        # READ at second pass via git show; conformance table below
+seat:
+  identity: fresh reviewer seat (opus), no prior exposure to this reference or its review history
+  method: crop-first at arm's length; code opened where a crop raised a question;
+          pixel measurement via a stdlib PNG decoder (no vision-only colour/size claims)
+first_pass:
+  status: frozen before rationale was revealed
+  findings: {blocking_for_migration: 5, known_issue: 12}
+  verdict: SOUND-WITH-BLOCKERS
+second_pass:
+  rationale_read: mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md (710 lines, git show origin/main)
+  specimen_read: mockups/design_system/specimen.html (637 lines, git show origin/main) — closes first-pass GAP 1
+  amendments:
+    upheld_unchanged:  [B3, B4, K2, K3, K6, K10]
+    upheld_reframed:   [B1, B2, B5, K9]          # K9 upgraded to major
+    downgraded:        [K1, K5, K8]
+    withdrawn:         [K4, K7, K11, K12]
+    new:               [N1, N2, N3]
+  specimen_conformance: >-
+    6 conform / 1 authorized divergence (.mx-stance verbs — Q7 operator ruling outranks) /
+    1 minor divergence (.st-table vs .mx-tbl) /
+    2 non-conforming (.mx-error, loading skeleton — both exist in the specimen at
+    :109-116,:443-461 and are absent from the reference; cause = N1) /
+    1 structural divergence UNDECLARED (.mx-ladder: specimen :132-143,:390-399 flex bar
+    with in-device total vs R4's board.css:221-280 grid with out-of-device headline,
+    per-cell .mx-cap weight grammar, terminal cell — two binding visual contracts
+    disagree about the signature device and nobody has adjudicated which wins)
+verdict: SOUND-WITH-BLOCKERS
+findings_final:
+  blocking_for_migration:
+    - {id: B1, title: "stale .mx-cap contract text — a repealed rule stated as current law (DA-001 recurrence)", evidence: "board.css:288-290 vs DESIGN_NOTES §1 'Removed from #5514 v1' (deliberate removal, reasoned); pixel proof: 01-desktop-dark-en.png y410-412 GPCR/DAR identical rails = the Featured rail (board.css:494-500), FN flat; remedy is one sentence"}
+    - {id: B2, title: "MP-1 §6/§10 unreconciled after the adjudicated Market-context deletion", evidence: "board.js:1001-1009 removal ruled at §0a.D + VTC-307; MP-1 §6 still routes five modules there; §10's error copy still names the section; DESIGN_NOTES precedence list puts MP-1 at #3 and never engages it"}
+    - {id: B3, title: "ZH cards print untranslated English sector names", evidence: "board.js:593 esc(r.sec) with no t() twin; visible 03/04/41/06 crops; DESIGN_NOTES Q6's zh-native list omits the sector line; Q1 records the field arrives through a path MP-1 does not yet authorize; same class R4 itself cured at PRC-316"}
+    - {id: B4, title: "error + loading states absent AND undisclosed", evidence: "no match in board.js/board.css/index.html; §8's crop manifest omits both without a PRC-319-style honesty entry; specimen ships .mx-error (:114-116,:455-461) + skeleton (:451-453) with MP-1 §10's canonical copy; cause = N1"}
+    - {id: N1, title: "specimen falsely declared non-existent — the canonical-component gate never ran", evidence: "DESIGN_NOTES §6 Q5 'does not exist on disk' vs git log: landed 2026-08-12 in #5459, predating the notes; near-certain cause = sparse-worktree omitted mockups/ tree; consequence includes the undeclared .mx-ladder structural divergence above"}
+  major:
+    - {id: N2, title: "DA-001 (contradictory positions unmarked in a law-bearing document) has no class-wide guard; six live instances", evidence: "verify_r4.py:84,542,549 + mutation_test.py:96-97 pin two hard-coded strings only; instances: board.css:288-290 (B1); §3 'Entered and Delivering are deliberately identical' vs board.css:322-337 (VTC-305) + measured Delivering block 01.png y122-124 x772-812; §6 Q5 (N1); §0b.5 verbatim-'6' vs rendered '5' (board.js:237-238, 03.png); §3 'Resolved still 17' vs 50-empty--full.png Resolved 20 + Watch em-dash; §8 '00-R3-* the R3 matrix' vs byte-identical R4 renders"}
+    - {id: K9, title: "crop manifest claims 42 views/62 files incl. an 'R3 matrix' that is byte-identical R4 renders", evidence: "sha256 43a510cb/5d6fb631/c5747956 pairs; true distinct coverage 38 views / 54 files"}
+  minor:
+    - {id: B5, title: "the .pv-cau risk pill is 19px on touch, the only route to the safety copy, and absent from MP-1 §5's authorized list", evidence: "05-mobile390-dark-en.png y653-671 = 19px vs MPDS §14 >=40; board.css:931 hover/focus-within only; §0a.A dispositions existence/IA ('shipped .pv-cau, verbatim CSS') but not touch; UNVERIFIED whether genuinely shipped CSS — if so, estate debt like K5 (the single check most likely to change this classification)"}
+    - {id: K2, title: "an Entered card gives the holder no stance (doctrine Law 1 residue past PRC-312)"}
+    - {id: K3, title: "'five published cells' caption over a seven-box device; arithmetic correct only after decoding"}
+    - {id: K10, title: "mobile crop matrix 3/4 — no 390w light-ZH (MP-1 §11 requires 2x2 at both widths)"}
+  nit:
+    - {id: K1, title: "3px cap cannot render 'hollow' (zero interior at top:1px;bottom:0 + 2 borders); Resolved/Overtime ~6 luminance units apart; word-accompanied so no comprehension failure; §3's commitment-class position covers it"}
+    - {id: K4, title: "descending bare PRIORITY reads as a rank tape to a cold user; Chairman-override + never-hued discipline recorded — sort sentence carries it alone"}
+    - {id: K5, title: "inherited controls sub-40px (? = 16px, toggle ~24px) — estate debt for a DS-PR; the specimen's own controls are also sub-floor"}
+    - {id: K6, title: "the ⚠ 1 pill is a count with no noun at glance"}
+    - {id: K8, title: "empty-state copy diverges from MP-1 §10's verbatim clause (superset, better; record which string is law)"}
+  disclosed_by_author_and_upheld:
+    - {id: N3, title: "PRC-319: Watch/Delivering/Overtime have no card rendering anywhere in the crop set — the migration's card-level visual contract for 3 of 7 cells does not exist; carry into the packet as a named gate item", evidence: "DESIGN_NOTES §8; closes when producers publish, not when re-shot"}
+  withdrawn:
+    - {id: K7, note: "Featured aura is the operator-ratified treatment restored verbatim (§0a.E + colour budget: ring, never wash); one line retained for the operator: Featured x No-read x rank-1 combination is new to the lifecycle population and unruled"}
+    - {id: K11, note: "reference scaffolding disclosed at §6 Q10, data-mock-live, 'the only fabricated numbers on the page'"}
+    - {id: K12, note: "aura hue changing by language is the ratified --pv-buy system behaving correctly under the zh flip"}
+    - {id: K4-as-violation, note: "retained as nit only"}
+strengths:
+  - "Degraded states are designed and each teaches its own distinction (24: dash-not-zero; 26: empty-not-missing); R4's variants exceed the specimen."
+  - "ZH direction flip byte-exact with no literal hexes; identity/selection on separate channels by construction; violet stays lock-only."
+  - "Anonymous lock keeps counts honest; light ghosts are clean skeletons (doctrine §5.8 trap avoided)."
+  - "Evidence prints the interval beside the rate and translates it (Law 3) — except the expectancy line (product B6)."
+  - "Population honesty over flattery (DA-001/PRC-203 withdrawal reasoning); refusal to re-bake the fixture (§0c.2); badges sourced not approximated; mutation harness asserts the-harness-can-see-the-work-missing."
+  - "Coherence: reads as one confident design; the seams are in the prose, not the pixels."
+quarantine:
+  first_pass: "held — DESIGN_NOTES.md deleted from the extraction before any read; no PR prose read; one declared boundary crossing (grep matched two r3_source files after B1-B5/K1-K8 were formed; superseded by the authorized second-pass rationale, no longer load-bearing)"
+  second_pass: "lifted by coordinator authorization; DESIGN_NOTES.md + specimen.html read via git show"
+rationale_received_after_first_pass: true
+gaps:
+  - "38 of 54 distinct crops unopened (highest-value unreviewed: 70-73 compare, 90/91 expanded grid)"
+  - "MPDS §10-B 'ladder pinned' on mobile unverifiable from static crops"
+  - "tools/verify.py's 136 checks not executed or read"
+  - "word-budget arithmetic spot-checked, not swept"
+  - "N1's remedy (which ladder becomes canonical) deliberately not pre-empted — a design-authority ruling"
+  - ".pv-cau 'verbatim shipped CSS' claim unverified against production (would reclassify B5 to estate debt)"

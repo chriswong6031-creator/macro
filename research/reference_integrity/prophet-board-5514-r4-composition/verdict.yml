@@ -1,0 +1,141 @@
+# Design-authority verdict — C8 composition cycle over the R4 U.S. Prophet Board
+# reference (tree d540f493a097, origin/main). This cycle exists because the Lab RIG
+# verdict's condition C8 blocked P-MP1-SHELL until R4's composition received its own
+# dual-critic pass. That pass is now COMPLETE (reviews/). The Chairman's day-2
+# directive ordered the pass in preference to an executive override; both reviewers
+# produced substantive objections, so no override is taken.
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-5514-r4-composition
+
+authority:
+  identity: "Fable main loop — Prophet Operator Lab program orchestrator, C8 adjudication session (design authority per factory §1; authored no byte of the reference)"
+  role: design_authority
+
+process_attestation:
+  shape: >
+    Both seats fresh (distinct from every prior R3/R4/Lab critic), both ran the full
+    two-pass shape: quarantined first passes frozen, rationale (DESIGN_NOTES.md)
+    revealed by the commissioning session, genuine amendment passes (product: 1
+    reframe, 2 strengthenings, 1 downgrade, 1 split, 1 withdrawal, 2 additions;
+    visual: 4 withdrawals, 3 downgrades, 3 additions, 1 upgrade — both moved in both
+    directions). The visual seat additionally closed its own specimen gap at second
+    pass and delivered the first specimen-conformance assessment ever run on this
+    reference. One first-pass quarantine boundary crossing (visual seat, grep into
+    r3_source) is disclosed in its receipt and no longer load-bears.
+
+packet:
+  materially_improved: >
+    Nothing changed in the artifact this cycle — this is a ratification pass. What
+    improved is the record: the composition now carries two independent adversarial
+    receipts where it had none, twelve R4-closure dispositions are re-verified at
+    current bytes, and the reference's honesty devices (degraded states, count law,
+    population honesty, anti-vacuity harness) are independently confirmed strengths.
+  materially_worsened: >
+    Nothing — but the pass surfaced that the world moved under the frozen reference:
+    board_read did not exist at its vintage and now covers 225/225 live rows; the
+    watch intake key flipped from absent to present-and-empty; the payload's two age
+    clocks diverge by 35 rows. The reference is correct for its vintage and stale
+    against today; that staleness is the blocking substance.
+  disappeared: >
+    Adjudicated deletions, not losses: the Market-context section (producer-less
+    shell, ruled at VTC-307/§0a.D) and the card weight cap (ruled at §1). Both
+    deletions are UPHELD; what blocks is that MP-1 §6/§10 still route content to the
+    deleted section and board.css:288-290 still states the repealed cap contract as
+    law (DA-001 recurrence).
+  behavior_harder: >
+    On touch: the .pv-cau risk pill is 19px and hover-gated (classification pending
+    the shipped-CSS check); inherited controls are sub-40px estate-wide (specimen
+    included) — a DS-PR item, not this packet's. The reference LENS is hover-only,
+    but production's LENS has a full touch branch consuming the same attributes, so
+    the migration obligation is bind-don't-port (K1, now an MP-1 amendment item).
+  stronger_claims: >
+    None minted here. The reference's own claims were audited: the crop manifest
+    overstates coverage (42/62 claimed vs 38/54 distinct — K9, major), and six DA-001
+    instances state repealed or false positions as current law (N2). Both are
+    repair items, not certified.
+  intent_vs_convenience: >
+    The rationale reveals an unusually deliberate artifact (population honesty over
+    flattery; refusal to re-bake the fixture; sourced badges). Convenience standing
+    in for intent: the specimen declared non-existent on a sparse-tree ls instead of
+    checked from HEAD (N1 — the exact trap the fleet's own sparse-worktree law
+    warns about), and the stale-number sweep that was built (R27) covering one file
+    while the checksum header sat unswept one file away (P-B5).
+  production_preferable_for: >
+    Production remains the shipped truth for users today. This cycle certifies that
+    migrating onto R4's composition will not degrade it — SUBJECT to the named
+    actions — and identifies the two places production is already defective
+    independent of migration (DA-002 token collision, live in production dark; the
+    Overtime clock display question, already ruled — see rulings).
+  strongest_argument_against: >
+    Both seats returned SOUND-WITH-BLOCKERS and the composition itself is ratified;
+    an authority could mint conditions-riding approval today and unblock MP-1 within
+    the hour. Declined for the same reason as the Lab R5.2 verdict: several blockers
+    are false-record and law-breach items (stale contract text stated as law, a
+    packet whose own sections contradict the reference it binds, untranslated ZH on
+    a bilingual-law surface), and certifying those into migration law launders them.
+    The cure set is hours-scale and precisely enumerated.
+
+verdict: REVISE
+
+rulings:
+  b1_actionability_axis:
+    ruling: >
+      RULED (design authority; routed to Sol for veto — effective unless
+      countermanded): board display-tier stance sources `entry_status` when present,
+      else `board_read.fields.status` (ticker-scoped, same twelve-value vocabulary,
+      same us_stock_library producer, published 225/225 with blocked_data:0), with a
+      per-row `stance_basis` disclosure naming which source rendered. "No read yet"
+      renders only when BOTH are absent. Under this ruling spawn-gate G-D-1
+      re-measures as MET.
+    dnr_confrontation: >
+      DNR:KILL-PROPHET-POP-MERGE confronted by name: this ruling changes no
+      population, no blend, no rank, no gate — the graded board population and
+      us_board_ledger are untouched; only the display verb's source field widens,
+      inside the same library the board already consumes. Display-tier under the
+      epistemics law; no promotion occurs.
+  b8_overtime_clock:
+    ruling: >
+      CLOSED BY CITATION — already ruled. plan_clock_date() is the authoritative
+      plan clock (SEA #4684, commit 242aafda0dc7); #5540's overtime contradiction
+      was healed and its closure verified in the D-LAB-R5 blocker re-census (commit
+      444f80d62774 receipts: 0 open rows past horizon on the plan's own clock, 0
+      phase=overtime). The C8 measurement corroborates: clock_age_days>horizon on 0
+      rows; the 35-row divergence is the retired age_days anchor. DESIGN_NOTES Q2
+      recorded the question UNRESOLVED at 2026-08-13, before the ruling landed —
+      R4.2 refreshes that prose. No new ruling needed; the Overtime cell is honest.
+  n1_ladder_canonicity:
+    ruling: >
+      RULED: R4's ladder (board.css:221-280 grid, out-of-device headline, per-cell
+      weight grammar, terminal cell) is CANONICAL for archetype-B board pages. The
+      specimen's .mx-ladder cells are self-labelled illustrative, and the
+      operator-ruled seven-cell partition + two-total law cannot fit a single-total
+      bar. The divergence is hereby DECLARED (curing its invisibility, which was the
+      defect); a future DS-PR annotates the specimen with a pointer to this ruling.
+  pv_cau_classification:
+    ruling: >
+      DEFERRED to one check in R4.2: if .pv-cau is byte-shipped production CSS
+      (_prophet_card.html.j2:302-310 suggests it is), the 19px target is estate debt
+      (joins K5's DS-PR list) and MP-1 §5 gains it as an inherited primitive; if
+      reference-minted, R4.2 fixes the target to >=40px effective and MP-1 §5
+      authorizes it explicitly. Either way the touch-path obligation lands in the
+      DS-PR lane with the other sub-floor controls.
+
+conditions:
+  - id: C8-A-MP1-AMENDMENT
+    text: "MP-1 amendment (records PR, executes against this verdict's rulings): §7 URL contract re-stated to the query-string law the reference implements, with inbound #life= deep-links honored for compatibility (P-B4); §6/§10 Market-context dispositions — the five demoted modules receive explicit homes or explicit retirement rulings and the error copy drops the dead section name (V-B2); §13 gains the DS-PR collision entry for the --pv-buy retune + its sequencing against §11's non-US byte-parity gate (P-B3); §8 gains the stance-projection ownership + the b1 ruling's source/fallback/disclosure contract + the macro wait-default parameter requirement (P-B7); §5 resolves the .pv-mark/.mx-mark/.pv-cau vocabulary and authorizes per the pv_cau ruling; the LENS bind-don't-port obligation is stated (P-K1); §11 forced states gain watch-present-at-zero (P-K19), error+loading (V-B4), the Free-tier boundary (P-K16), and record N3's three unphotographable card cells as a named gate item."
+  - id: C8-B-R42-REFERENCE-REPAIR
+    text: "R4.2 reference repair round (designer, no composition change): correct board.css:288-290's repealed cap contract sentence (V-B1); fix or remove the dead newer-link (P-B2); correct index.html:24-27's checksum block (P-B5); print the expectancy interval or its plain-word straddle at the same tier as the number (P-B6); add the ZH t() twin for the sector line (V-B3); add error+loading states from the specimen's canonical components (V-B4); widen the DA-001 guard beyond two hard-coded strings and correct the six live prose instances incl. §3's Entered/Delivering and Resolved-17 claims and §8's crop-manifest arithmetic (V-N2, V-K9); re-shoot the ladder for the watch-present-at-zero state (P-K19); run the .pv-cau shipped-CSS check (pv_cau ruling); refresh DESIGN_NOTES Q2 per the b8 ruling and Q5 per n1."
+  - id: C8-C-DS-PR-LANE
+    text: "Design-System PR (separate, NOT MP-1, sequenced with awareness of the §11 collision): retune --pv-buy/--ink-pv-buy off --up estate-wide (DA-002 cure); raise the estate's sub-40px touch controls (?, view toggle, .pv-cau if shipped) toward MPDS §14; annotate the specimen per the n1 ruling."
+  - id: C8-D-COMPLETION
+    text: "P-MP1-SHELL may be commissioned when C8-A and C8-B are merged; C8-C sequencing is stated in the amendment but does not gate the shell (production ships the collision today; the shell must simply not silently depend on the retune). Final composition approval (approval.yml on this reference_id) mints with the C8-B round's delta re-check by both seats."
+
+preserved_strengths:
+  - "Both seats: the composition reads as one confident design; the seams are in the prose, not the pixels."
+  - "Degraded-state work is the strongest in the estate; count law real; population honesty over flattery; anti-vacuity harness sound (its coverage gaps are enumerated, not structural)."
+  - "Twelve of twelve R4-closure dispositions hold at current bytes (one by a different mechanism than recorded — DA-002 qualification)."
+
+authority_spot_verification:
+  - "The b8 ruling's citation chain verified by the authority against session records: the D-LAB-R5 blocker re-census (merged with PR #5931's packet) verified #5540 closed on the plan-clock anchor; the C8 product seat's clock_age_days measurement (0 rows) reproduces it on the current payload."
+  - "Both receipts committed verbatim; the authority edited neither."
+  - "The n1 ruling's factual basis (specimen landed 2026-08-12 in #5459, predating the R4 notes) verified from the visual seat's git-log receipt."
