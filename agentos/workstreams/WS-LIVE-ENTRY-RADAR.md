@@ -80,6 +80,35 @@ waves:
     # W5 lane's code merged mid-session; #5768 reconciled the shared files
     # (producers-guard union, sentinel SURFACES union, update.sh sibling
     # blocks); W5's own row/handoff remain that session's to write.
+  - id: W4.1
+    title: PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool
+      envelope contract)
+    status: todo
+    depends_on: [W4, W5]
+    # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
+    # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
+    # LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.2A). Executes under THIS
+    # workstream's ownership (Radar owns detector truth; the Lab is a read-only
+    # projection). Scope, receipts pinned at main a7cfd4bef589: (1) live_eval
+    # _nightly_lanes() reads (pack.probe_set or {}).get("nightly_lanes")
+    # (live_eval.py:2090-2104) but probe_set_snapshot() emits only
+    # {source, market_session, count, tickers, admission} (live_pack.py:686-731) —
+    # confirmed lanes are therefore ALWAYS "unavailable"; prefer
+    # entry_radar.live_pack/v2 with explicit confirmed_lanes inside
+    # compute_pack_hash() coverage (live_pack.py:659-680 currently excludes
+    # probe_set). (2) W4 spools the entry_radar.events/v1 pass envelope
+    # (build_event_payload, live_ledger.py:1114-1132) but W5 read_spool_events()
+    # gates on top-level mastermind.entry_event.v1 (reconcile_entry_radar.py:95,
+    # 268-271) — every W4 pass object is rejected as off-schema; W5 must consume
+    # the real envelope and derive first-observation time from envelope pass_ts.
+    # (3) Preserve exact G0 events EntryEventStore.events() → PendingDelta.events →
+    # spool-before-consume; add an end-to-end contract test
+    # build_event_payload() → read_spool_events(). (4) W5 stays sole durable
+    # data/entry_radar writer; NO detector spec hash changes; Prophet protected
+    # paths byte-clean; never mutate the immutable mastermind.entry_event.v1 event.
+    # Baseline discipline: #5897 (open, test-only tests/test_entry_radar_w4_lane.py)
+    # collides with nothing here but do not merge W4.1 against a knowingly red W4
+    # test baseline — land or reconcile #5897 first.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
     status: done
@@ -112,6 +141,11 @@ waves:
     # PR #5845 is the Sol re-review head (ranking-law PASSES; bounded
     # snapshot_conflict / receipt-wording / W5.1-memory follow-up). NOT done.
     # Do not start W7.
+    # Reconciled 2026-08-18 by the LAB-0 session from merged evidence: PR #5845
+    # MERGED 2026-08-18T12:40:51Z, squash 8552db805ea6d57434668a241dc40c672a5ca4ec
+    # (gh pr view 5845 --json state,mergedAt,mergeCommit). Sol's post-merge
+    # acceptance of the bounded follow-up is NOT evidenced here, so the wave stays
+    # in_progress; no other state manufactured.
   - id: W7
     title: PR-7 outcome-calibrated Opportunity model (gated on honest sample)
     status: todo
@@ -137,7 +171,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: Sol final-reviews PR #5845 bounded follow-up (snapshot_conflict firewall, real-substrate-smoke receipt wording, W5.1 memory). Ranking-law correction PASSES; do not redesign the score. W5.1 merged as #5833. Do not mark W6 done. Do not start W7 or W9. W8 UI reference remains #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9).
+next_action: "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9). NEW: W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) — see the W4.1 wave row for frozen scope/receipts; do not merge it against a knowingly red W4 baseline (#5897 open, test-only)."
 ---
 
 ## Context
