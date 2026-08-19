@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -39,21 +39,21 @@
   "family": "pss_af1_finra_absorption_witness_prospective",
   "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
   "gate_open": true,
-  "generated_utc": "2026-08-18T08:46:35.411066+00:00",
+  "generated_utc": "2026-08-19T06:05:01.766622+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 0,
-    "earliest_action": null,
-    "events": 0,
+    "appended_today": 1,
+    "earliest_action": "2026-08-18",
+    "events": 1,
     "flow_witness": 0,
-    "latest_action": null,
+    "latest_action": "2026-08-18",
     "leader_flow_control": 0,
-    "low_activity_diagnostic": 0,
+    "low_activity_diagnostic": 1,
     "matured": 0,
     "missing_flow_diagnostic": 0,
     "primary_events": 0,
     "rejected_pre_cutoff_today": 0,
-    "ungraded": 0
+    "ungraded": 1
   },
   "manifest_sha256": "6b9fc71307aca9d97a04eb4933f0fdc3744ae4b7b8d9a23cbd9b178be15aa658",
   "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
@@ -62,11 +62,13 @@
   "program_id": "PSS-AF1",
   "registration_ok": true,
   "scan_census": {
-    "derived_events": 0,
-    "eligible_future_cr1_leader_sources": 0,
-    "finra_latest_session": "2026-08-17",
-    "finra_rows_through_as_of": 80833,
-    "reasons": {}
+    "derived_events": 1,
+    "eligible_future_cr1_leader_sources": 1,
+    "finra_latest_session": "2026-08-18",
+    "finra_rows_through_as_of": 82354,
+    "reasons": {
+      "group_low_activity_diagnostic": 1
+    }
   },
   "schema": "personality_flow_absorption.state/v1",
   "status": "prospective_accrual_only"

@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-17",
+ "as_of": "2026-08-18",
  "rows": [
   {
    "ticker": "CRSR",
@@ -37,19 +37,6 @@
    "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "QBTS",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-08-12",
-   "surfaced_price": 20.9,
-   "last_price": 16.21,
-   "pct_since": -22.4,
-   "days_on_board": 2,
-   "exit_date": "2026-08-17",
-   "mark_date": "2026-08-17",
    "status": "stopped",
    "lane": "buy"
   },
@@ -145,6 +132,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "MTDR",
+   "sector": "Energy",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 51.6,
+   "last_price": 57.24,
+   "pct_since": 10.9,
+   "days_on_board": 3,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "VAL",
    "sector": "Energy",
    "first_surfaced": "2026-07-31",
@@ -154,6 +154,32 @@
    "days_on_board": 3,
    "exit_date": "2026-08-13",
    "mark_date": "2026-08-13",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "REZI",
+   "sector": "Industrials",
+   "first_surfaced": "2026-07-01",
+   "surfaced_price": 21.34,
+   "last_price": 23.62,
+   "pct_since": 10.7,
+   "days_on_board": 4,
+   "exit_date": "2026-07-10",
+   "mark_date": "2026-07-10",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "ORA",
+   "sector": "Utilities",
+   "first_surfaced": "2026-07-31",
+   "surfaced_price": 98.02,
+   "last_price": 108.09,
+   "pct_since": 10.3,
+   "days_on_board": 4,
+   "exit_date": "2026-08-07",
+   "mark_date": "2026-08-07",
    "status": "running",
    "lane": "buy"
   },
@@ -197,16 +223,16 @@
    "lane": "buy"
   },
   {
-   "ticker": "REZI",
-   "sector": "Industrials",
-   "first_surfaced": "2026-06-30",
-   "surfaced_price": 21.66,
-   "last_price": 23.62,
-   "pct_since": 9.1,
-   "days_on_board": 5,
-   "exit_date": "2026-07-10",
-   "mark_date": "2026-07-10",
-   "status": "running",
+   "ticker": "TEM",
+   "sector": "Health Care",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 54.29,
+   "last_price": 49.36,
+   "pct_since": -9.1,
+   "days_on_board": 3,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -219,6 +245,19 @@
    "days_on_board": 3,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "AMR",
+   "sector": "Materials",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 155.6,
+   "last_price": 169.44,
+   "pct_since": 8.9,
+   "days_on_board": 3,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
    "status": "running",
    "lane": "buy"
   },
@@ -259,6 +298,19 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "CIEN",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 442.79,
+   "last_price": 405.54,
+   "pct_since": -8.4,
+   "days_on_board": 3,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -353,6 +405,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "NNE",
+   "sector": "Industrials",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 19.66,
+   "last_price": 18.25,
+   "pct_since": -7.2,
+   "days_on_board": 2,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "BDC",
    "sector": "Information Technology",
    "first_surfaced": "2026-07-30",
@@ -375,6 +440,19 @@
    "days_on_board": 4,
    "exit_date": "2026-07-30",
    "mark_date": "2026-07-30",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "JBL",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 363.1,
+   "last_price": 338.62,
+   "pct_since": -6.7,
+   "days_on_board": 2,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
    "status": "stopped",
    "lane": "buy"
   },
@@ -414,6 +492,19 @@
    "days_on_board": 3,
    "exit_date": "2026-07-14",
    "mark_date": "2026-07-14",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "IREN",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-12",
+   "surfaced_price": 44.76,
+   "last_price": 42.0,
+   "pct_since": -6.2,
+   "days_on_board": 3,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
    "status": "stopped",
    "lane": "buy"
   },
@@ -561,6 +652,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "FORM",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 131.6,
+   "last_price": 124.34,
+   "pct_since": -5.5,
+   "days_on_board": 2,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "SHOO",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-07-30",
@@ -600,6 +704,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "SM",
+   "sector": "Energy",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 33.75,
+   "last_price": 35.49,
+   "pct_since": 5.2,
+   "days_on_board": 2,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "MDB",
    "sector": "Information Technology",
    "first_surfaced": "2026-08-07",
@@ -610,6 +727,19 @@
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "KMT",
+   "sector": "Industrials",
+   "first_surfaced": "2026-07-15",
+   "surfaced_price": 35.31,
+   "last_price": 33.53,
+   "pct_since": -5.0,
+   "days_on_board": 3,
+   "exit_date": "2026-07-17",
+   "mark_date": "2026-07-17",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -650,153 +780,27 @@
    "mark_date": "2026-08-07",
    "status": "stopped",
    "lane": "buy"
-  },
-  {
-   "ticker": "LLY",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 1208.29,
-   "last_price": 1153.32,
-   "pct_since": -4.5,
-   "days_on_board": 2,
-   "exit_date": "2026-07-30",
-   "mark_date": "2026-07-30",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "SMR",
-   "sector": "Utilities",
-   "first_surfaced": "2026-08-07",
-   "surfaced_price": 9.18,
-   "last_price": 9.59,
-   "pct_since": 4.5,
-   "days_on_board": 1,
-   "exit_date": "2026-08-12",
-   "mark_date": "2026-08-12",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "VSEC",
-   "sector": "Industrials",
-   "first_surfaced": "2026-08-07",
-   "surfaced_price": 221.23,
-   "last_price": 230.9,
-   "pct_since": 4.4,
-   "days_on_board": 2,
-   "exit_date": "2026-08-13",
-   "mark_date": "2026-08-13",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "ENOV",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-09",
-   "surfaced_price": 25.75,
-   "last_price": 24.65,
-   "pct_since": -4.3,
-   "days_on_board": 2,
-   "exit_date": "2026-07-14",
-   "mark_date": "2026-07-14",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "OLN",
-   "sector": "Materials",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 24.24,
-   "last_price": 23.2,
-   "pct_since": -4.3,
-   "days_on_board": 1,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "NUE",
-   "sector": "Materials",
-   "first_surfaced": "2026-07-31",
-   "surfaced_price": 261.28,
-   "last_price": 272.63,
-   "pct_since": 4.3,
-   "days_on_board": 1,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "WLK",
-   "sector": "Materials",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 77.06,
-   "last_price": 73.82,
-   "pct_since": -4.2,
-   "days_on_board": 1,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "CSL",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-30",
-   "surfaced_price": 371.86,
-   "last_price": 387.49,
-   "pct_since": 4.2,
-   "days_on_board": 2,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "SMPL",
-   "sector": "Consumer Staples",
-   "first_surfaced": "2026-08-13",
-   "surfaced_price": 11.31,
-   "last_price": 10.84,
-   "pct_since": -4.2,
-   "days_on_board": 1,
-   "exit_date": "2026-08-17",
-   "mark_date": "2026-08-17",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "FMC",
-   "sector": "Materials",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 11.78,
-   "last_price": 11.3,
-   "pct_since": -4.1,
-   "days_on_board": 1,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "stopped",
-   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 69,
-  "n_stopped": 75,
-  "n_flat": 318,
-  "n_total": 462,
+  "n_running": 76,
+  "n_stopped": 90,
+  "n_flat": 320,
+  "n_total": 486,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 4,
+  "n_skipped_no_price": 8,
   "skipped_no_price": [
    "ARWR",
+   "CAR",
+   "CE",
+   "DIOD",
    "FN",
+   "HAL",
    "SITM",
    "U"
   ],
-  "win_rate": 0.149,
+  "win_rate": 0.156,
   "avg_pct": -0.0,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",

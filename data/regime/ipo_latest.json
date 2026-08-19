@@ -1,16 +1,16 @@
 {
-  "date": "2026-08-17",
+  "date": "2026-08-18",
   "window_band": "OPEN",
-  "ipo_5y": -0.01869385875801932,
-  "spy_5y": 0.13178230942501568,
-  "gap_5y": -0.150476168183035,
-  "priced_90d": 94,
-  "spac_pct_90d": 51,
-  "upcoming_n": 4,
+  "ipo_5y": -0.028126517885649793,
+  "spy_5y": 0.13273944071069277,
+  "gap_5y": -0.16086595859634256,
+  "priced_90d": 90,
+  "spac_pct_90d": 53,
+  "upcoming_n": 3,
   "verdict": "trails",
-  "lockups_approaching": 7,
-  "lockups_just_expired": 21,
-  "next_lockup": "AIDX",
-  "next_lockup_date": "2026-08-18",
-  "built": "2026-08-18 10:57 UTC"
+  "lockups_approaching": 6,
+  "lockups_just_expired": 22,
+  "next_lockup": "ROC",
+  "next_lockup_date": "2026-08-19",
+  "built": "2026-08-19 07:55 UTC"
 }

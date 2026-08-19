@@ -1,13 +1,13 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-18T08:33:11Z",
+  "generated_at": "2026-08-19T05:17:30Z",
   "inputs": {
-    "workstreams": 25,
-    "decisions": 61,
-    "discoveries": 47,
-    "handoffs": 55,
-    "active_builds": "data/governance/active_builds.json@2026-08-18T08:33:11.395658+00:00",
+    "workstreams": 27,
+    "decisions": 72,
+    "discoveries": 59,
+    "handoffs": 68,
+    "active_builds": "data/governance/active_builds.json@2026-08-19T05:17:28.953080+00:00",
     "active_builds_age_hours": 0.0,
     "worktrees": 1,
     "uncommitted_worktrees": [],
@@ -34,7 +34,7 @@
       "next_action": "Sol review of the AD-1P0 semantic-authority freeze; on PASS, commission AD-1 implementation per the amended handoff (v1.2).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -136,7 +136,7 @@
       "next_action": "Phase 4 is eligible but not started. Commission it as a separate high-blast-radius, report-only hook wave; keep the readiness envelope graph-only and Mastermind's improvement agenda as the sole ranked queue.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -269,6 +269,159 @@
       "source": "agentos/workstreams/WS-AGENT-OS.md"
     },
     {
+      "key": "ALPHA-INTELLIGENCE-INTEGRATION",
+      "title": "Mastermind Alpha Intelligence Expansion — program integration (COO lane)",
+      "status": "active",
+      "program": "mastermind-semantic-system-map",
+      "p0": null,
+      "p0_active": null,
+      "owner": "fable",
+      "class": "adjudication",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Operator dispatches the six read-only Grok censuses (pack files GROK-A0/B0/D0/ E0/F0/G0) with the riders in PASS-0 §6; FABLE-A dispatches only after GROK-A0 returns, under the PASS-0 §7 conditions.",
+      "created": "2026-08-18",
+      "updated": "2026-08-18",
+      "stale_days": 1,
+      "depends_on": [
+        "PROPHET-US-V4-RECOVERY",
+        "PROPHET-CONDITIONAL-FUSION",
+        "GMI-THEME-GRAPH",
+        "EARNINGS-INTELLIGENCE-OS",
+        "EVAL-OS-MEASUREMENT-LAW",
+        "STOCK-IDENTITY",
+        "FINANCIAL-INTELLIGENCE-FABRIC",
+        "FUNDAMENTAL-FORENSICS",
+        "LIVE-ENTRY-RADAR",
+        "DEFENSE-PROCUREMENT-V3"
+      ],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 8
+      },
+      "wave_detail": [
+        {
+          "id": "p0",
+          "title": "PASS-0 architecture reconciliation (ownership matrix, collisions, lane gating)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "c0",
+          "title": "Wave-0 census adjudication (GROK A0/B0/D0/E0/F0/G0 returns; FABLE-A dispatch decision)",
+          "status": "todo",
+          "depends_on": [
+            "p0"
+          ],
+          "deps_satisfied": true,
+          "next_action": "adjudicate the six census returns; confirm/deny FABLE-A dispatch conditions",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k1",
+          "title": "K1 Evidence Foundation — mesh contract freeze (FABLE-A)",
+          "status": "todo",
+          "depends_on": [
+            "c0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k2",
+          "title": "K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)",
+          "status": "todo",
+          "depends_on": [
+            "k1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k3",
+          "title": "K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)",
+          "status": "todo",
+          "depends_on": [
+            "k1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k4",
+          "title": "K4 Path/Event Intelligence — holdability extension (F), earnings event-clock waves (G)",
+          "status": "todo",
+          "depends_on": [
+            "k1"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k5",
+          "title": "K5 OpportunityCase + Prophet integration (H, I) — governed families into the fusion arena",
+          "status": "todo",
+          "depends_on": [
+            "k2",
+            "k3"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k6",
+          "title": "K6 Forward learning — prospective expert/complementarity ledgers (J)",
+          "status": "todo",
+          "depends_on": [
+            "k5"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "k7",
+          "title": "K7 Chairman final experience acceptance",
+          "status": "todo",
+          "depends_on": [
+            "k6"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+    },
+    {
       "key": "BREATHING-PLATFORM",
       "title": "Breathing Platform — live, continuously refreshed US signal platform",
       "status": "active",
@@ -284,7 +437,7 @@
       "next_action": "Land the revival wave (PR-A Massive close truth, PR-B launchd primary clock, PR-C liveness ruler), deploy the launchd agent on the Mac Studio, run replay acceptance, then hold for Monday's live session measurement.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -374,7 +527,7 @@
       "next_action": "Check whether R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID has an updated_at later than 2026-08-11T03:27:33Z; if so, dispatch attested-history-aapl-seed.yml from main, approve the protected environment, and independently admit the four downloaded artifacts with verify_fundamental_forensics_attested_history_seed_bundle.py.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Operator must replace the protected attested-history-seed environment secret R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID with the Cloudflare R2 S3 Access Key ID for the separate Object Read & Write writer role; update its paired secret too if a new writer token is generated. The value must never enter chat or git.\n"
@@ -554,7 +707,7 @@
       "next_action": "STOP the W-SEMANTIC-PROOF wave. Keep W-REWRITE and CI-speed/scoping as separately commissioned work; do not begin either from this completion.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -619,7 +772,7 @@
       "next_action": "P-B3 shipped on PR #5729: NULL=12, UNINFORMATIVE=8; P-D not opened. Parallel only: (1) P-B2-ACCRUAL live min(first_seen) after the first asia-close write; (2) P-C when its data gates open; (3) full-A exact-plane re-measurement. P-D stays last and currently has no P-B3 input. No production scoring change.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -748,7 +901,7 @@
       "next_action": "Stay on PR #5734 (armed merge-on-green). After merge, confirm /etc/macro-sentinel.env has a human-watched channel if DELIVER was SKIP.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -804,7 +957,7 @@
       "next_action": "Operator fills docs/RESTORE_RUNBOOK.md §Vendor backup/PITR and §Scratch-Supabase restore receipt by creating mmx-restore-scratch-YYYYMMDD and running `python -m scripts.backup_user_tables restore --backup-id <id> --dest-db-url \"$SCRATCH_DB_URL\" --i-am-restoring-into-scratch`.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "operator: confirm Supabase plan / PITR / vendor retention in the dashboard for fsldfzlxyavsuwqbceod",
@@ -874,15 +1027,15 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Merge and live-prove the D1 entitled-desk rescue. Stop after that proof. Do not start Atlas/D2. Do not merge #5424.",
+      "next_action": "Sol D1 acceptance review. Do not start Atlas/D2. Do not merge #5424. Do not re-baseline.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 1,
+        "done": 2,
         "dropped": 0,
         "in_progress": 1,
         "todo": 4
@@ -909,18 +1062,37 @@
             "D0R"
           ],
           "deps_satisfied": true,
-          "next_action": "Ship the entitled desk rescue PR, merge, deploy, and prove the signed-in journey. Do not start D2. Do not merge #5424.\n",
-          "prs": [],
-          "done_at": null
+          "next_action": "Sol D1 acceptance review. Desk rescue, stale-base fence, FATAL=1 candidate proof, and PIT-safe agency labels are on main and served. Do not start D2. Do not merge #5424. Do not re-baseline. Do not treat Radar 48 as new alpha.\n",
+          "prs": [
+            5836,
+            5885,
+            5882,
+            5856
+          ],
+          "done_at": "2026-08-18T19:31:07Z"
+        },
+        {
+          "id": "D1.1",
+          "title": "Agency semantic recovery",
+          "status": "done",
+          "depends_on": [
+            "D1"
+          ],
+          "deps_satisfied": false,
+          "next_action": "D1.1F live-proven on #5856. P00032 renders Department of Defense / Defense Information Systems Agency from receipt-backed PIT evidence. Do not start D2. Do not merge #5424.\n",
+          "prs": [
+            5856
+          ],
+          "done_at": "2026-08-18T19:31:07Z"
         },
         {
           "id": "D2",
           "title": "Defense Identity Atlas vertical slice",
           "status": "todo",
           "depends_on": [
-            "D1"
+            "D1.1"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -974,12 +1146,47 @@
           "state": "merged",
           "wave": "D0R",
           "merged_at": "2026-08-17T07:12:39Z"
+        },
+        {
+          "number": 5836,
+          "state": "merged",
+          "wave": "D1",
+          "merged_at": "2026-08-17T13:45:44Z"
+        },
+        {
+          "number": 5885,
+          "state": "merged",
+          "wave": "D1",
+          "merged_at": "2026-08-18T16:02:10Z"
+        },
+        {
+          "number": 5882,
+          "state": "merged",
+          "wave": "D1",
+          "merged_at": "2026-08-18T18:27:16Z"
+        },
+        {
+          "number": 5856,
+          "state": "merged",
+          "wave": "D1",
+          "merged_at": "2026-08-18T19:31:07Z"
+        },
+        {
+          "number": 5856,
+          "state": "merged",
+          "wave": "D1.1",
+          "merged_at": "2026-08-18T19:31:07Z"
         }
       ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
-      "warnings": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5836 is merged",
+        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5885 is merged",
+        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5882 is merged",
+        "record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5856 is merged"
+      ],
       "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
     },
     {
@@ -999,7 +1206,7 @@
       "next_action": "Implement E2 exactly as frozen; render the now-live AAPL FY2026 Q3 event_workspace.v1 through read_event_workspace in the existing Terminal Company Intelligence workspace and Macro dossier glance. Do not re-read the v1 score overlay for the glance and do not broaden scope into E3+.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1097,7 +1304,7 @@
       "next_action": "Merge #5534, #5577 and the P0c-2 PR; then confirm the first nightly writes data/qledger/evidence_clock_start/<family>.json for stock_desk, thematic_desk and demand_chain, and record those three timestamps as the real evidence-clock start.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1182,7 +1389,7 @@
       "next_action": "W1 in flight: core + admin built on claude/eval-os-t4-output-health; adversarial review, Agent OS handoff, PR → merge → live verify.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [
         "EVAL-OS-T1-ENGINE-REGISTRY"
       ],
@@ -1229,7 +1436,7 @@
       "next_action": "W3 shipped. Next decision is the CEO's at the next checkpoint: T4 output-health, T12 Agent OS tier interface, or let prospective evidence accrue; T7/T8 stay calendar-bound. Standing residue: 2 deliberate output_class nulls (cortex — needs a CEO ruling on the two-species cell, and its attention grader coerces direction 0 to a long bet, repair before evaluating that half; options_structure — curate when the Package D producer ships), plus the desk hit-rate metric-binding warning (hit is a non-refutation endpoint, no-skill null far above 0.5 — T7 must bind dir_accuracy or placebo-netted rates).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1306,7 +1513,7 @@
       "next_action": "Sol reviews the FIF-1R2 packet-contract PR. Do not merge until that review accepts. Do not start FIF-2. Native auto-merge and merge-on-green stay disarmed.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1503,7 +1710,7 @@
       "next_action": "Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Live canonical parquet has 2837 issuers; merged MAX_UNIVERSE_ISSUERS=2500 fail-closed the first scheduled incremental (run 32097495749, universe_invalid). Repair raises the bind cap to 4000. Do not resume July recovery until that repair is on main."
@@ -1612,7 +1819,7 @@
       "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1704,18 +1911,18 @@
         "macro",
         "terminal"
       ],
-      "next_action": "Sol reviews the W6 Research Priority PR against the frozen outcome/authority firewall. Do not mark W6 done at merge; live-payload commissioning follows. Do not start W7. W8 UI reference remains",
+      "next_action": "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. NEW: W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) — see the W4.1 wave row for frozen scope/receipts; do not merge it against a knowingly red W4 baseline (#5897 open, test-only).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 6,
+        "done": 7,
         "dropped": 0,
         "in_progress": 1,
-        "todo": 3
+        "todo": 4
       },
       "wave_detail": [
         {
@@ -1788,6 +1995,19 @@
           "done_at": "2026-08-16T03:13:45Z"
         },
         {
+          "id": "W4.1",
+          "title": "PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool envelope contract)",
+          "status": "todo",
+          "depends_on": [
+            "W4",
+            "W5"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
           "id": "W5",
           "title": "PR-5 forward evidence + replay under Evaluation OS",
           "status": "done",
@@ -1802,6 +2022,20 @@
           "done_at": "2026-08-17T10:08:44Z"
         },
         {
+          "id": "W5.1",
+          "title": "Persist control-pool diagnostics on the existing W5 summary surface",
+          "status": "done",
+          "depends_on": [
+            "W5"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [
+            5833
+          ],
+          "done_at": "2026-08-17T12:49:55Z"
+        },
+        {
           "id": "W6",
           "title": "PR-6 deterministic Research Priority (ACCRUING)",
           "status": "in_progress",
@@ -1811,9 +2045,10 @@
           "deps_satisfied": true,
           "next_action": null,
           "prs": [
-            5834
+            5834,
+            5845
           ],
-          "done_at": "2026-08-17T20:56:50Z"
+          "done_at": "2026-08-18T12:40:51Z"
         },
         {
           "id": "W7",
@@ -1892,17 +2127,30 @@
           "merged_at": "2026-08-17T10:08:44Z"
         },
         {
+          "number": 5833,
+          "state": "merged",
+          "wave": "W5.1",
+          "merged_at": "2026-08-17T12:49:55Z"
+        },
+        {
           "number": 5834,
           "state": "merged",
           "wave": "W6",
           "merged_at": "2026-08-17T20:56:50Z"
+        },
+        {
+          "number": 5845,
+          "state": "merged",
+          "wave": "W6",
+          "merged_at": "2026-08-18T12:40:51Z"
         }
       ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
       "warnings": [
-        "record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged"
+        "record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged",
+        "record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5845 is merged"
       ],
       "source": "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
     },
@@ -1924,7 +2172,7 @@
       "next_action": "Drive the benchmark gates green (W1).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1991,7 +2239,7 @@
       "next_action": "Own the M0A PR through merge and production technicals verification, then stop. Do not repair context freshness, API restart, or mixed-root residue in M0A.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2045,10 +2293,10 @@
       "repos": [
         "macro"
       ],
-      "next_action": "PR-3C (this wave) lands the durable W3 paired/family/coverage ledger and wires it into us_prophet_ledgers after grading. After it merges, a FRESH session starts PR-3D only: live instrumentation acceptance + lawful status/display (accrual/maturity/gap only before the 20 matured-H10-session floor). Do not read forward C1-vs-shadow outcomes. Do not implement PR-3D in the PR-3C session. w2 is done (#5700) but real C2 commissioning is still data-gated. w2b live-accepted. w3 stays todo until PR-3D. Durable paired-race N remains 0 until the first post-#5769 candidates-store commit matures at H=10. #5742 is external availability debt. Canonical five-leg nulls on v3 are correct (#5769). STILL OPEN from w1: the §13.0 live-accrual closure.",
+      "next_action": "PR-3D-R1 (this wave) repairs same-stamp revision handling and commissions PR-3D sessions/status from the already-prospective 2026-08-17 W3 parts. w3 stays todo until a NATURAL us_prophet_ledgers run proves: frozen 08-17 blobs unchanged, sessions.jsonl on main, status commissioned with paired N=1 unmatured, same-stamp revised receipt refused not rewritten, no comparison read. Do not start PR-3E, C2-C5, or Prophet V4. Do not rewrite the 2026-08-17 W3 evidence. Do not read C1-vs-shadow outcomes.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2119,7 +2367,7 @@
         },
         {
           "id": "w3",
-          "title": "PR-3 — forward race instrumentation, split PR-3A..3D. Charter: research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo until PR-3D live-accepts instrumentation. PR-3A (#5813) is semantics+prereg. PR-3B (#5829) is outcome-blind LOFO + member census. PR-3C is the durable paired ledger + us_prophet_ledgers wiring (this wave).",
+          "title": "PR-3 — forward race instrumentation, split PR-3A..3D. Charter: research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo until PR-3D live-accepts instrumentation on a natural us_prophet_ledgers run. PR-3A (#5813) semantics+prereg. PR-3B (#5829) outcome-blind LOFO + member census. PR-3C (#5839) durable paired ledger + wiring. PR-3D is production commissioning + durable session_missing/provenance fence + lawful pre-floor status surface. PR-3D-R1 repairs same-stamp revision refusal + atomic multi-grain persist + bootstrap of 2026-08-17 sessions from frozen W3 parts (DEC:W3-FIRST-DURABLE-COMPLETE-OBSERVATION-WINS). Do not mark this wave done until the PASS PATH or an honest named gap.",
           "status": "todo",
           "depends_on": [
             "w2b"
@@ -2186,6 +2434,161 @@
       "source": "agentos/workstreams/WS-PROPHET-CONDITIONAL-FUSION.md"
     },
     {
+      "key": "PROPHET-HK-CA-REVAMP",
+      "title": "HK + Canada Prophet revamp — truth repair, era-clean evaluation, shadow races",
+      "status": "active",
+      "program": "prophet",
+      "p0": null,
+      "p0_active": null,
+      "owner": "fable",
+      "class": "build",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro",
+        "mastermind"
+      ],
+      "next_action": "Merge the CA-TRUTH PR (canonical Canada board, branch claude/ca-truth-canonical-board) and verify the first owed TSX session's artifact/page/ledger parity receipt on the production reader.",
+      "created": "2026-08-18",
+      "updated": "2026-08-18",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 0,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 9
+      },
+      "wave_detail": [
+        {
+          "id": "ca-truth",
+          "title": "Canada canonical board truth",
+          "status": "in_progress",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "ledger-era",
+          "title": "Era-clean HK/CA scorecard semantics",
+          "status": "todo",
+          "depends_on": [
+            "ca-truth"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "shadow-contract",
+          "title": "Rank/discovery shadow substrate",
+          "status": "todo",
+          "depends_on": [
+            "ledger-era"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "hk-discovery",
+          "title": "HK candidate-recall shadow",
+          "status": "todo",
+          "depends_on": [
+            "shadow-contract"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "hk-intel",
+          "title": "HK native intelligence adapters",
+          "status": "todo",
+          "depends_on": [
+            "hk-discovery"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "hk-race",
+          "title": "HK ranking and discovery races",
+          "status": "todo",
+          "depends_on": [
+            "hk-intel"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "ca-intel",
+          "title": "Canada sector/name/entry authority split",
+          "status": "todo",
+          "depends_on": [
+            "shadow-contract"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "ca-race",
+          "title": "Canada rank and sector-name accrual",
+          "status": "todo",
+          "depends_on": [
+            "ca-intel"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "ca-pit",
+          "title": "Canada PIT replay resolution",
+          "status": "todo",
+          "depends_on": [
+            "ledger-era"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "promotion",
+          "title": "Separate market promotion adjudications",
+          "status": "todo",
+          "depends_on": [
+            "hk-race",
+            "ca-race"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+    },
+    {
       "key": "PROPHET-US-AVAILABILITY",
       "title": "Prophet US never-stale availability program",
       "status": "active",
@@ -2201,7 +2604,7 @@
       "next_action": "W3 (2026-08-17 outage hardening) is the live wave: land its PR, verify all five boards fresh, then fold the wedge/hostage classes into the W2 fire-drill list. W1 operator items stand: launchd installer; plus the new W3 operator asks on issue #5742 (cancel debris run 32077948964 post-recovery; census-lane cadence ruling; M1 host revival owns the collect_tail re-pin).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2282,7 +2685,7 @@
       "next_action": "Verify the 22:30Z bake (W1).",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2357,10 +2760,10 @@
       "repos": [
         "macro"
       ],
-      "next_action": "V4-0B complete. DO NOT SPAWN A1 — the Availability/outage sessions own the implementation (#5742); await their return for Sol acceptance against the frozen A1 contract. A2/A3 are adopt-first (map the sibling return before any spawn). The next independently authorized V4 session is D1 (theme-source + identity census), started FRESH — never inside 0B. D3 stays gated on the GMI merge-order ruling.",
+      "next_action": "V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5 contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 — sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane (Chairman 2026-08-18): LAB-0 records merged; next = parallel R-LAB-1 (Radar W4.1, under WS:LIVE-ENTRY-RADAR), D-LAB-R5 RIG, P-LAB-API fixtures — per research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [
         "PROPHET-US-AVAILABILITY",
         "LIVE-ENTRY-RADAR",
@@ -2374,10 +2777,10 @@
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 2,
+        "done": 3,
         "dropped": 0,
-        "in_progress": 0,
-        "todo": 27
+        "in_progress": 2,
+        "todo": 25
       },
       "wave_detail": [
         {
@@ -2505,8 +2908,20 @@
           "done_at": null
         },
         {
-          "id": "b5",
-          "title": "V4-B5 — Early Entry Desk MVP (TURN WATCH finally visible)",
+          "id": "b5a",
+          "title": "V4-B5A — Prophet Operator Lab (LAB-0 recut of b5, Chairman commission 2026-08-18, wave-graph ruling 14, DEC:PROPHET-LAB-B5A-RECUT). Operator-only LIVE|LAB observational surface: read-only projection of canonical Radar output (six Lab boards) over the Prophet page + MP-1 shell migration. ZERO Prophet authority — read/filter/join/decorate only; no B3/B4 dependency. Contract: research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md. Child lanes: R-LAB-1 (= Radar W4.1, executes under WS:LIVE-ENTRY-RADAR), D-LAB-R5 (fresh independent RIG R5 — note R4 reference is committed but carries NO approval.yml; R4 was a closure pass, 10 blocking findings in research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md), P-LAB-API, P-MP1-SHELL, P-LAB-UI. Shipping B5A completes NEITHER b5b NOR b6.",
+          "status": "in_progress",
+          "depends_on": [
+            "0a"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "b5b",
+          "title": "V4-B5B — authoritative Early Entry Desk MVP (TURN WATCH finally visible; retains B3/B4 deps; adopts B5A plumbing instead of rebuilding — LAB-0 recut)",
           "status": "todo",
           "depends_on": [
             "b3",
@@ -2567,10 +2982,10 @@
         },
         {
           "id": "c3",
-          "title": "V4-C3 — operator decision instrumentation",
+          "title": "V4-C3 — operator decision instrumentation (keys on the authoritative desk b5b per LAB-0 ruling 14)",
           "status": "todo",
           "depends_on": [
-            "b5"
+            "b5b"
           ],
           "deps_satisfied": false,
           "next_action": null,
@@ -2579,10 +2994,24 @@
         },
         {
           "id": "d1",
-          "title": "V4-D1 — theme-source and identity census. NEXT AUTHORIZED independent V4 session after 0B (docs/registry census; disjoint from the publication incident; does not depend on a1). Starts in a FRESH session, never inside 0B.",
-          "status": "todo",
+          "title": "V4-D1 — theme-source and identity census. DONE 2026-08-18: master census research/prophet_v4/D1_THEME_SOURCE_AND_IDENTITY_CENSUS_2026-08-18.md + 9 machine artifacts in research/prophet_v4/d1/. Headlines: C6 thematic gap = 2,368/3,253 (73%); graph company plane is ticker-string-keyed (D2's repair); two live graph data defects (GOLD reused-ticker, IBIT ETF-as-company); Citrini OPERATOR_HELD_ONLY; Theia DEC stands; 5 rights decisions routed.",
+          "status": "done",
           "depends_on": [
             "0a"
+          ],
+          "deps_satisfied": true,
+          "next_action": null,
+          "prs": [
+            5859
+          ],
+          "done_at": "2026-08-18T08:42:27Z"
+        },
+        {
+          "id": "d2",
+          "title": "V4-D2 — canonical ontology + probation mapping, executing INSIDE/WITH the GMI lane. RECUT by Sol 2026-08-18 into bounded child PRs D2A-D2E (one giant PR rejected); Sol AMENDED the D1-generated handoff's Gate 1: exact issuer/security/listing identity = the Mastermind Data OS identity spine (lib/dataos/identity.py + data/reference master/aliases), NOT stock_identity; GMI keeps its co:market:symbol#epoch topology ids (KNOWINGLY-DIFFERENT per config/identity_seams.yml); the bridge projection is the seam. Child D2A (identity authority bridge: gmi.identity_resolution/v1 sidecar + reader + guard, frozen contract research/prophet_v4/d2/D2A_FROZEN_CONTRACT_2026-08-18.md) is IN FLIGHT this wave; D2B (coverage expansion + correction lineage), D2C (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT authorized yet — Sol reviews after each child returns.",
+          "status": "in_progress",
+          "depends_on": [
+            "d1"
           ],
           "deps_satisfied": true,
           "next_action": null,
@@ -2590,20 +3019,8 @@
           "done_at": null
         },
         {
-          "id": "d2",
-          "title": "V4-D2 — canonical ontology + probation mapping (with GMI lane)",
-          "status": "todo",
-          "depends_on": [
-            "d1"
-          ],
-          "deps_satisfied": false,
-          "next_action": null,
-          "prs": [],
-          "done_at": null
-        },
-        {
           "id": "d3",
-          "title": "V4-D3 — ThemeState v1 (theme_state/v1; merge-order ruling with GMI W3B first)",
+          "title": "V4-D3 — ThemeState consumption contract. Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's merge-order recommendation ACCEPTED — GMI is the sole ThemeState owner and builds theme_state/v1 as W3B after d2 completes; d3 is the Prophet-side consumption/join wave and V4 never builds a second state engine; engine/neuralweb/thematic_state.py is predecessor lineage W3B must explicitly reconcile/consume/supersede; Finviz/THS-derived state stays internal-only pending the routed rights decision. Future hard gate from D2A: a membership may contribute to security/issuer ThemeState only when its GMI node resolves through the exact identity bridge, or the feature explicitly operates at local-theme/node grain.",
           "status": "todo",
           "depends_on": [
             "d2"
@@ -2627,12 +3044,12 @@
         },
         {
           "id": "d5",
-          "title": "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1)",
+          "title": "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1). Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol authorizes execution, but until d3 the theme_graph family status = ACCRUING, measured fields = null, contribution = none; no provisional theme score, no fake zero, no rank authority. Execution NOT authorized during D2A. Original ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins; SPARSE coverage band is the honest scan-tier default).",
           "status": "todo",
           "depends_on": [
             "d1"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "next_action": null,
           "prs": [],
           "done_at": null
@@ -2755,6 +3172,12 @@
           "state": "merged",
           "wave": "0b",
           "merged_at": "2026-08-18T00:50:19Z"
+        },
+        {
+          "number": 5859,
+          "state": "merged",
+          "wave": "d1",
+          "merged_at": "2026-08-18T08:42:27Z"
         }
       ],
       "claim": null,
@@ -2779,7 +3202,7 @@
       "next_action": "Land the #5643 heal: W2 expert replay onto merged W1-A1, without duplicating B onto the program OHLCV plane or rewriting sealed GOLD. W3 still needs its own operator go — no auto-roll.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2936,7 +3359,7 @@
       "next_action": "Obtain the persistence-model ruling, then start W1.",
       "created": "2026-08-18",
       "updated": "2026-08-18",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3158,6 +3581,332 @@
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-AGENT-OS.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "c0",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#p0",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#c0, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#c0",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k1, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k1",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k2, WS:ALPHA-INTELLIGENCE-INTEGRATION#k3, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k2",
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k3",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k2",
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k3",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k5, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k5",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k5",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "k7",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:ALPHA-INTELLIGENCE-INTEGRATION#k6, WS:DEFENSE-PROCUREMENT-V3, WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:FINANCIAL-INTELLIGENCE-FABRIC, WS:FUNDAMENTAL-FORENSICS, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-V4-RECOVERY, WS:STOCK-IDENTITY.",
+        "depends_on": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k6",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:ALPHA-INTELLIGENCE-INTEGRATION#k6",
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
+      },
+      {
+        "workstream": "ALPHA-INTELLIGENCE-INTEGRATION",
+        "wave": "p0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:DEFENSE-PROCUREMENT-V3",
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+          "WS:FUNDAMENTAL-FORENSICS",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-V4-RECOVERY",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
       },
       {
         "workstream": "BREATHING-PLATFORM",
@@ -3611,16 +4360,26 @@
       },
       {
         "workstream": "DEFENSE-PROCUREMENT-V3",
-        "wave": "D2",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:DEFENSE-PROCUREMENT-V3#D1.",
+        "wave": "D1.1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:DEFENSE-PROCUREMENT-V3#D1"
         ],
-        "unmet_dependencies": [
-          "WS:DEFENSE-PROCUREMENT-V3#D1"
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
+      },
+      {
+        "workstream": "DEFENSE-PROCUREMENT-V3",
+        "wave": "D2",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:DEFENSE-PROCUREMENT-V3#D1.1"
         ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
       },
       {
@@ -4196,12 +4955,37 @@
       },
       {
         "workstream": "LIVE-ENTRY-RADAR",
+        "wave": "W4.1",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:LIVE-ENTRY-RADAR#W4",
+          "WS:LIVE-ENTRY-RADAR#W5"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
+      },
+      {
+        "workstream": "LIVE-ENTRY-RADAR",
         "wave": "W5",
         "state": "done",
         "reason_code": "status_done",
         "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:LIVE-ENTRY-RADAR#W3"
+        ],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
+      },
+      {
+        "workstream": "LIVE-ENTRY-RADAR",
+        "wave": "W5.1",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [
+          "WS:LIVE-ENTRY-RADAR#W5"
         ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
@@ -4474,6 +5258,154 @@
           "WS:PROPHET-CONDITIONAL-FUSION#w6"
         ],
         "source": "agentos/workstreams/WS-PROPHET-CONDITIONAL-FUSION.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "ca-intel",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#shadow-contract.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#shadow-contract"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#shadow-contract"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "ca-pit",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ledger-era.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#ledger-era"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#ledger-era"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "ca-race",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ca-intel.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-intel"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-intel"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "ca-truth",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "hk-discovery",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#shadow-contract.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#shadow-contract"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#shadow-contract"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "hk-intel",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#hk-discovery.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#hk-discovery"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#hk-discovery"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "hk-race",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#hk-intel.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#hk-intel"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#hk-intel"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "ledger-era",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ca-truth.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-truth"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-truth"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "promotion",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ca-race, WS:PROPHET-HK-CA-REVAMP#hk-race.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-race",
+          "WS:PROPHET-HK-CA-REVAMP#hk-race"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#ca-race",
+          "WS:PROPHET-HK-CA-REVAMP#hk-race"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
+      },
+      {
+        "workstream": "PROPHET-HK-CA-REVAMP",
+        "wave": "shadow-contract",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:PROPHET-HK-CA-REVAMP#ledger-era.",
+        "depends_on": [
+          "WS:PROPHET-HK-CA-REVAMP#ledger-era"
+        ],
+        "unmet_dependencies": [
+          "WS:PROPHET-HK-CA-REVAMP#ledger-era"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-HK-CA-REVAMP.md"
       },
       {
         "workstream": "PROPHET-US-AVAILABILITY",
@@ -4895,7 +5827,36 @@
       },
       {
         "workstream": "PROPHET-US-V4-RECOVERY",
-        "wave": "b5",
+        "wave": "b5a",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
+        "depends_on": [
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-AVAILABILITY",
+          "WS:PROPHET-US-ENTRY-TIMING",
+          "WS:PROPHET-US-V4-RECOVERY#0a",
+          "WS:STOCK-IDENTITY"
+        ],
+        "unmet_dependencies": [
+          "WS:EARNINGS-INTELLIGENCE-OS",
+          "WS:EVAL-OS-MEASUREMENT-LAW",
+          "WS:GMI-THEME-GRAPH",
+          "WS:LIVE-ENTRY-RADAR",
+          "WS:PROPHET-CONDITIONAL-FUSION",
+          "WS:PROPHET-US-AVAILABILITY",
+          "WS:PROPHET-US-ENTRY-TIMING",
+          "WS:STOCK-IDENTITY"
+        ],
+        "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
+      },
+      {
+        "workstream": "PROPHET-US-V4-RECOVERY",
+        "wave": "b5b",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
         "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b3, WS:PROPHET-US-V4-RECOVERY#b4, WS:STOCK-IDENTITY.",
@@ -5050,7 +6011,7 @@
         "wave": "c3",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b5, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#b5b, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -5059,7 +6020,7 @@
           "WS:PROPHET-CONDITIONAL-FUSION",
           "WS:PROPHET-US-AVAILABILITY",
           "WS:PROPHET-US-ENTRY-TIMING",
-          "WS:PROPHET-US-V4-RECOVERY#b5",
+          "WS:PROPHET-US-V4-RECOVERY#b5b",
           "WS:STOCK-IDENTITY"
         ],
         "unmet_dependencies": [
@@ -5070,7 +6031,7 @@
           "WS:PROPHET-CONDITIONAL-FUSION",
           "WS:PROPHET-US-AVAILABILITY",
           "WS:PROPHET-US-ENTRY-TIMING",
-          "WS:PROPHET-US-V4-RECOVERY#b5",
+          "WS:PROPHET-US-V4-RECOVERY#b5b",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
@@ -5078,9 +6039,9 @@
       {
         "workstream": "PROPHET-US-V4-RECOVERY",
         "wave": "d1",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -5092,24 +6053,15 @@
           "WS:PROPHET-US-V4-RECOVERY#0a",
           "WS:STOCK-IDENTITY"
         ],
-        "unmet_dependencies": [
-          "WS:EARNINGS-INTELLIGENCE-OS",
-          "WS:EVAL-OS-MEASUREMENT-LAW",
-          "WS:GMI-THEME-GRAPH",
-          "WS:LIVE-ENTRY-RADAR",
-          "WS:PROPHET-CONDITIONAL-FUSION",
-          "WS:PROPHET-US-AVAILABILITY",
-          "WS:PROPHET-US-ENTRY-TIMING",
-          "WS:STOCK-IDENTITY"
-        ],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
       },
       {
         "workstream": "PROPHET-US-V4-RECOVERY",
         "wave": "d2",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d1, WS:STOCK-IDENTITY.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -5129,7 +6081,6 @@
           "WS:PROPHET-CONDITIONAL-FUSION",
           "WS:PROPHET-US-AVAILABILITY",
           "WS:PROPHET-US-ENTRY-TIMING",
-          "WS:PROPHET-US-V4-RECOVERY#d1",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
@@ -5199,7 +6150,7 @@
         "wave": "d5",
         "state": "blocked",
         "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:PROPHET-US-V4-RECOVERY#d1, WS:STOCK-IDENTITY.",
+        "reason": "Waiting for declared dependencies: WS:EARNINGS-INTELLIGENCE-OS, WS:EVAL-OS-MEASUREMENT-LAW, WS:GMI-THEME-GRAPH, WS:LIVE-ENTRY-RADAR, WS:PROPHET-CONDITIONAL-FUSION, WS:PROPHET-US-AVAILABILITY, WS:PROPHET-US-ENTRY-TIMING, WS:STOCK-IDENTITY.",
         "depends_on": [
           "WS:EARNINGS-INTELLIGENCE-OS",
           "WS:EVAL-OS-MEASUREMENT-LAW",
@@ -5219,7 +6170,6 @@
           "WS:PROPHET-CONDITIONAL-FUSION",
           "WS:PROPHET-US-AVAILABILITY",
           "WS:PROPHET-US-ENTRY-TIMING",
-          "WS:PROPHET-US-V4-RECOVERY#d1",
           "WS:STOCK-IDENTITY"
         ],
         "source": "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md"
@@ -5645,9 +6595,14 @@
     "WS:ADVANCED-DATA-OPTIONS — record_disagrees_with_execution: wave AD-1P0 is 'awaiting_ci' but PR #5860 is merged",
     "WS:COMMERCIAL-PATH-ALERTING — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5734 is merged",
     "WS:CUSTOMER-DATA-BACKUP — record_disagrees_with_execution: wave W1 is 'awaiting_ci' but PR #5733 is merged",
+    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5836 is merged",
+    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5885 is merged",
+    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5882 is merged",
+    "WS:DEFENSE-PROCUREMENT-V3 — record_disagrees_with_execution: wave D1 is 'in_progress' but PR #5856 is merged",
     "WS:EVAL-OS-T1-ENGINE-REGISTRY — status is 'active' but every wave is done/dropped — roll the status forward",
     "WS:FUNDAMENTAL-FORENSICS — record_disagrees_with_execution: wave FF-1 is 'in_progress' but PR #5820 is merged",
     "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5834 is merged",
+    "WS:LIVE-ENTRY-RADAR — record_disagrees_with_execution: wave W6 is 'in_progress' but PR #5845 is merged",
     "WS:STOCK-IDENTITY — record_disagrees_with_execution: wave W2 is 'in_progress' but PR #5643 is merged",
     "agentos/workstreams/WS-EVAL-OS-T1-ENGINE-REGISTRY.md: [active-but-complete] status is 'active' but every wave is done/dropped",
     "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'scripts/entry_radar_' does not exist in repo 'macro'",

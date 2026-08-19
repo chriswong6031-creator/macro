@@ -35,6 +35,38 @@ on:
       - "config.yml"
       - "pyproject.toml"
       - "requirements*.txt"
+  # KEEPALIVE — the push trigger alone cannot keep this proof FRESH.
+  #
+  # merge_on_green pauses every ordinary merge once the newest green baseline
+  # crosses BASELINE_MAX_AGE_HOURS (6h), and only a SOURCE push to main
+  # re-proves it. Merges are what produce source pushes, so a quiet main is
+  # SELF-LOCKING: no merges -> no source push -> proof ages out -> still no
+  # merges. Measured over the 3.4 days to 2026-08-19, three green-to-green gaps
+  # crossed the bound, every one of them an overnight window:
+  #     08-15 17:10Z -> 23:57Z         6.8h
+  #     08-16 20:43Z -> 08-17 02:43Z   6.0h
+  #     08-18 20:53Z -> 08-19 03:22Z   6.5h
+  # Each paused the whole armed backlog ("4 baseline-blocked ... source main
+  # baseline is pending") against a main that was green, until the sweeper's own
+  # ensure_integration_baseline noticed the staleness and dispatched -- a ~30 min
+  # lag bounded only by the sweep interval, and it reads as "the merge train is
+  # broken" to anyone watching.
+  #
+  # Every 4h keeps the proof inside the 6h bound with 2h of margin for a run
+  # that has measured 4-14 min. Cost is negligible and lands nowhere sensitive:
+  # this job is `runs-on: ubuntu-latest` on the Enterprise hosted pool (500
+  # jobs), so the keepalive never competes with the self-hosted render or
+  # merge-control lanes. Minute 17 keeps it off the :00 hosted-cron herd.
+  #
+  # REJECTED ALTERNATIVE -- "skip the age bound when main's SOURCE tree is
+  # unchanged since the last green proof". That sounds cheaper and is wrong: the
+  # age bound exists precisely because the path filter above is NOT trusted to
+  # be complete (see the header -- "a missed path trigger, generated sibling
+  # drift"). Deciding freshness with the same path list that missed the change
+  # inherits the exact blind spot the bound is there to cover. Re-proving on a
+  # clock is the only version that cannot be fooled by a path the filter forgot.
+  schedule:
+    - cron: "17 1,5,9,13,17,21 * * *"
   workflow_dispatch:
 
 permissions:
