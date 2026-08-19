@@ -73,16 +73,30 @@ def _sessions_behind(latest: date, last_td: date) -> int:
     return len(nyse_calendar.sessions_between(latest + timedelta(days=1), last_td))
 
 
+def _latest_dated_file(paths: list[str]) -> date | None:
+    """The most recent YYYY-MM-DD-stemmed file among `paths` (lexically
+    sorted), skipping any stray file whose stem does NOT parse as a date
+    instead of giving up entirely.
+
+    N8 (AD-1C0 round 2): the pre-fix version took ONLY the lexically-LAST
+    path and returned None outright if THAT ONE stem failed to parse — a
+    single stray non-date file (a leftover backup, a README, anything that
+    happens to sort after every real "YYYY-MM-DD.json"/".parquet" name)
+    silently disabled the freshness check entirely, masking every real date
+    behind it. Walk backward from the end instead, skipping unparseable
+    stems, until a real date is found or the list is exhausted."""
+    for p in reversed(paths):
+        stem = Path(p).stem
+        try:
+            return datetime.strptime(stem, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+    return None
+
+
 def _latest_chain_date(chains_dir: Path) -> date | None:
     """Date of the most recent chains/*.parquet file, or None if no files."""
-    files = sorted(glob.glob(str(chains_dir / "*.parquet")))
-    if not files:
-        return None
-    stem = Path(files[-1]).stem   # e.g. "2026-07-02"
-    try:
-        return datetime.strptime(stem, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+    return _latest_dated_file(sorted(glob.glob(str(chains_dir / "*.parquet"))))
 
 
 def _health_receipt_dir(data_root: Path) -> Path:
@@ -97,18 +111,13 @@ def _health_receipt_dir(data_root: Path) -> Path:
 
 def _latest_receipt_date(health_dir: Path) -> date | None:
     """Date of the most recent polygon_gex_health/*.json receipt, or None if
-    none exist. Mirrors _latest_chain_date. The ``*.json`` glob does not match
-    a preserved corrupt-aside file (B3's ``<session>.json.corrupt-<ts>`` does
-    not end in ``.json``), so a corrupted-and-recovered session is read from
-    its FRESH recovery receipt, not the quarantined original."""
-    files = sorted(glob.glob(str(health_dir / "*.json")))
-    if not files:
-        return None
-    stem = Path(files[-1]).stem
-    try:
-        return datetime.strptime(stem, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+    none exist. Mirrors _latest_chain_date (both route through
+    _latest_dated_file — N8: a stray non-date .json sibling must not disable
+    this the way it used to). The ``*.json`` glob does not match a preserved
+    corrupt-aside file (B3's ``<session>.json.corrupt-<ts>`` does not end in
+    ``.json``), so a corrupted-and-recovered session is read from its FRESH
+    recovery receipt, not the quarantined original."""
+    return _latest_dated_file(sorted(glob.glob(str(health_dir / "*.json"))))
 
 
 def _read_receipt_attempts(health_dir: Path, session: date) -> list[dict] | None:
@@ -225,6 +234,19 @@ def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
                 f"coverage_pct={latest_health_entry.get('coverage_pct')} "
                 f"(failure_reasons={latest_health_entry.get('failure_reasons')}) — see "
                 f"data/polygon_gex_health/{latest.isoformat()}.json for the full census"
+            )
+        elif health == "unknown_receipt_corrupt":
+            # N6 (AD-1C0 round 2): B3's corruption-recovery state was
+            # previously silent here — the audit surfaced "partial"/"failed"
+            # but said nothing when a receipt had been corrupt-and-recovered,
+            # even though "unknown" health is exactly the kind of gap a
+            # dead-man's-switch tripwire exists to name.
+            warn.append(
+                f"CHAINS HEALTH UNKNOWN: latest chain session {latest} was recovered "
+                f"from a CORRUPT health receipt — its true capture quality is unknown "
+                f"(PIT-protected as immutable, never retro-replaced) — see "
+                f"data/polygon_gex_health/{latest.isoformat()}.json and any "
+                f"*.corrupt-* sibling for the preserved original"
             )
 
     # ── options-flow S3 creds ────────────────────────────────────────────────
