@@ -5248,7 +5248,8 @@ def main() -> int:
     env.filters["min"] = lambda seq: min(seq)
     from engine import i18n
     from lib.seo import SITE_BASE as _SITE_BASE
-    env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip, SITE_BASE=_SITE_BASE)  # bilingual helpers for templates
+    env.globals.update(td=i18n.td, tr=i18n.tr, t_pctile=i18n.t_pctile, zip=zip,
+                       SITE_BASE=_SITE_BASE)  # bilingual helpers for templates
     confirming, contradicting = component_chips(latest)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
