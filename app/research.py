@@ -647,20 +647,34 @@ def research_download(doc_id: str, request: Request,
                       user: dict = Depends(require_user)) -> Response:
     """Metered, watermarked PDF download for an authenticated PRO user.
 
-    Gate order:
+    Gate order (Wave 4, Defect 7 reordered steps 4-6 — see below):
       1. auth (require_user).
       2. tier resolve → non-pro (essential/free/unknown) → 402 paid_required.
       3. doc_id validate (400/404) BEFORE any R2 key.
-      4. ``download_quota.check_and_increment`` (day-keyed; pro 10/day, 50/day for a
-         lifetime holder). allowed=False → 402 quota_exhausted (server-authoritative
-         — increments only on allow, so a scripted POST past the limit is refused
-         here regardless of the button).
-      5. fetch PDF (404 if absent), watermark with the buyer's identity, return as
-         ``attachment`` · ``private, no-store`` · ``X-Robots-Tag: noindex``.
+      4. ``download_quota.peek`` — read-only. Exhausted → 402 WITHOUT fetching, so
+         an exhausted caller can never be used to hammer R2.
+      5. fetch PDF. Absent → 404 with the ledger UNTOUCHED.
+      6. ``download_quota.check_and_increment`` — the authoritative debit, taken
+         only once the bytes are in hand. A concurrent request that consumed the
+         final slot between the peek and here is still refused: the increment,
+         not the peek, is the server-authoritative gate.
+      7. watermark with the buyer's identity, return as ``attachment`` ·
+         ``private, no-store`` · ``X-Robots-Tag: noindex``.
 
-    NOTE the deliberate asymmetry: the tier resolve fails CLOSED (unknown→free→402)
-    while the quota counter fails OPEN (broken ledger → allow, LOUD) — the first
-    guards the paywall, the second guards a paid subscriber's availability.
+    WHY the reorder: the debit used to happen BEFORE the fetch and was explicitly
+    never refunded, so a missing object spent one of a paid subscriber's ten daily
+    downloads and returned them nothing. That was rationalized as a rare
+    just-deleted-document race — but Defect 5 in this same wave made missing PDFs
+    PERSISTENT (a failed promotion still admitted the report to the catalog), which
+    turns a rare race into a repeatable way to burn a paid allowance. Peek-then-
+    fetch-then-debit removes the false debit without opening an unmetered fetch
+    path, and needs no refund subsystem — there is nothing to refund.
+
+    NOTE the deliberate asymmetry, unchanged: the tier resolve fails CLOSED
+    (unknown→free→402) while the quota counter fails OPEN (broken ledger → allow,
+    LOUD) — the first guards the paywall, the second guards a paid subscriber's
+    availability. The peek inherits that: a ledger it cannot read reports the full
+    allowance, so an outage never blocks a paying reader.
     """
     user_id = _user_id_of(user)
     email = str((user or {}).get("email") or user_id)
@@ -672,9 +686,9 @@ def research_download(doc_id: str, request: Request,
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 
-    allowed, info = download_quota.check_and_increment(
-        user_id, tier, lifetime=_lifetime_for(tier, user_id))
-    if not allowed:
+    lifetime = _lifetime_for(tier, user_id)
+
+    def _exhausted(info: dict) -> JSONResponse:
         return JSONResponse(
             {
                 "error": "quota_exhausted",
@@ -686,12 +700,28 @@ def research_download(doc_id: str, request: Request,
             status_code=402,
         )
 
+    # (4) Read-only pre-check. Refusing here keeps an exhausted caller from
+    # reaching R2 at all, which is what stops "no debit before fetch" from
+    # becoming "unlimited un-metered fetches".
+    peeked = download_quota.peek(user_id, tier, lifetime=lifetime)
+    if int(peeked.get("remaining") or 0) <= 0:
+        return _exhausted(peeked)
+
+    # (5) Fetch BEFORE debiting: an object we cannot serve must cost nothing.
     store = _build_store()
     pdf = store.get_bytes(_pdf_key(doc_id)) if store is not None else None
     if not pdf:
-        # Object vanished after the quota debit. We do NOT refund (a rare race on a
-        # just-deleted doc); surfacing 404 is honest and the daily cap self-heals.
+        log.warning("research_vault: %s is catalog-admitted but its canonical PDF "
+                    "is absent — 404 served, quota NOT debited", doc_id)
         raise HTTPException(404, "document not available")
+
+    # (6) The authoritative debit, now that delivery is certain. peek() is advisory
+    # only — between it and here a concurrent request may have taken the last slot,
+    # and this call, which increments before it returns an allow, is what decides.
+    allowed, info = download_quota.check_and_increment(
+        user_id, tier, lifetime=lifetime)
+    if not allowed:
+        return _exhausted(info)
 
     from datetime import datetime, timezone  # noqa: PLC0415
     stamp_text = (

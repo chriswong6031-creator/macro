@@ -1232,3 +1232,114 @@ def test_search_reports_unavailable_when_visibility_cannot_be_established(client
 
     body = c.get("/api/research/search?q=datacenter", headers=_AUTH).json()
     assert body == {"items": [], "count": 0, "available": False}
+
+
+# ===========================================================================
+# Wave 4 PR C — a failed delivery never spends a paid download (Defect 7)
+# ===========================================================================
+# The debit used to happen BEFORE the fetch and was explicitly never refunded, so
+# a missing object cost a Pro one of ten daily downloads and returned nothing.
+# That was rationalized as a rare just-deleted-document race — but Defect 5 in the
+# same wave made missing PDFs PERSISTENT, turning the race into a repeatable way
+# to burn a paid allowance.
+
+
+def _remaining(c) -> int:
+    return int(c.get("/api/research/quota", headers=_AUTH).json()["remaining"])
+
+
+def test_missing_pdf_returns_404_and_does_not_debit_the_quota(client):
+    c, ctl = client
+    ctl["tier"] = "pro"
+    store = _seeded_store(client)
+
+    before = _remaining(c)
+    (Path(store.root) / "research_vault" / f"{_DOC_ID}.pdf").unlink()
+
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 404
+    assert _remaining(c) == before, (
+        "an object we could not serve must cost the buyer nothing"
+    )
+
+
+def test_a_delivered_download_debits_exactly_once(client):
+    c, ctl = client
+    ctl["tier"] = "pro"
+
+    before = _remaining(c)
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 200
+    assert r.content, "a 200 must carry PDF bytes"
+    assert _remaining(c) == before - 1
+
+
+def test_exhausted_quota_never_reaches_the_object_store(client, monkeypatch):
+    """The other half of the reorder: no debit before fetch must not become an
+    unmetered fetch path. An exhausted caller is refused before any R2 read."""
+    import app.research as research_mod
+
+    c, ctl = client
+    ctl["tier"] = "pro"
+
+    limit = c.get("/api/research/quota", headers=_AUTH).json()["limit"]
+    for _ in range(limit):
+        assert c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH).status_code == 200
+    assert _remaining(c) == 0
+
+    fetches: list[str] = []
+    real_store = research_mod._build_store()
+
+    class WatchedStore:
+        def __getattr__(self, name):
+            return getattr(real_store, name)
+
+        def get_bytes(self, key):
+            fetches.append(key)
+            return real_store.get_bytes(key)
+
+    monkeypatch.setattr(research_mod, "_build_store", lambda: WatchedStore())
+
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 402
+    assert r.json()["error"] == "quota_exhausted"
+    assert not [k for k in fetches if k.endswith(".pdf")], (
+        f"an exhausted caller must not fetch the PDF; saw {fetches}"
+    )
+
+
+def test_the_increment_not_the_peek_is_authoritative_on_the_final_slot(client,
+                                                                       monkeypatch):
+    """A concurrent request that takes the last slot between peek and debit wins.
+
+    peek() is advisory by construction — it does not increment — so the race is
+    resolved by check_and_increment, which increments before returning an allow.
+    Simulated by letting the peek report headroom the ledger no longer has.
+    """
+    import app.research as research_mod
+
+    c, ctl = client
+    ctl["tier"] = "pro"
+
+    limit = c.get("/api/research/quota", headers=_AUTH).json()["limit"]
+    for _ in range(limit):
+        assert c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH).status_code == 200
+
+    monkeypatch.setattr(
+        research_mod.download_quota, "peek",
+        lambda *a, **k: {"tier": "pro", "remaining": 5, "limit": limit, "used": 0,
+                         "period": "x", "resets_at": "y"})
+
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 402, "the real ledger, not the advisory peek, decides"
+    assert r.json()["error"] == "quota_exhausted"
+
+
+def test_non_pro_is_still_refused_before_any_quota_work(client):
+    """The paywall order is unchanged: tier first, always."""
+    c, ctl = client
+    for tier in ("free", "essential", "unknown"):
+        ctl["tier"] = tier
+        r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+        assert r.status_code == 402
+        assert r.json()["error"] == "paid_required"
