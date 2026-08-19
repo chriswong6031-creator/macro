@@ -1315,16 +1315,55 @@ class TestRenderedOutput:
                     )
         assert not errors, "Broken nested runtime assets:\n" + "\n".join(errors)
 
-    def test_seo_base_template_does_not_emit_the_assistant_bundle(self):
-        """The source-side guard: the fix must not be undone at the template and
-        only caught after a full estate re-render.
+    def test_no_page_eagerly_loads_the_assistant_bundle_beside_theme_js(self):
+        """mm_brain.js is 227 KB — the largest script in the estate. A page that
+        already loads theme.js gets its launcher from theme.js's stub and fetches
+        the bundle on first activation (#5976), so an eager tag beside theme.js
+        buys nothing and costs every visitor the full download, parse, and mount.
 
-        The estate-WIDE twin of this check (no rendered page may carry an eager
-        tag beside theme.js, with lib.pages.HAND_AUTHORED_PAGES as the asserted
-        exception) lands with the second half of the frozen earnings archive —
-        `scripts/ci_authority.py` caps a pull request at MAX_CHANGED_FILES=3000
-        and the archive alone is 3,419 pages, so the convergence ships in two.
+        The three hand-authored flagships are the deliberate exception and are
+        asserted POSITIVELY: they carry no theme.js, so their own tag is the only
+        loader they have, and silently losing it would take the assistant off
+        those pages entirely.
         """
+        import scripts.build_free_content as bfc
+
+        if not _SITE_DIR.is_dir():
+            pytest.skip("site/ not rendered")
+
+        eager = re.compile(r'<script[^>]+src=["\'][^"\']*mm_brain\.js')
+        theme = re.compile(r'<script[^>]+src=["\'][^"\']*theme\.js')
+
+        offenders, exempt_seen = [], set()
+        for page in _SITE_DIR.rglob("*.html"):
+            html = page.read_text(encoding="utf-8", errors="replace")
+            if not eager.search(html):
+                continue
+            rel = page.relative_to(_SITE_DIR)
+            if bfc._is_hand_authored(rel):
+                exempt_seen.add(str(rel).replace("\\", "/"))
+                # The exemption is earned by NOT having theme.js. If one of these
+                # ever gains the shared chrome, it must drop the eager tag too.
+                if theme.search(html):
+                    offenders.append(
+                        f"{rel}: hand-authored page now loads theme.js — the "
+                        "eager mm_brain.js tag is no longer earned"
+                    )
+                continue
+            offenders.append(f"{rel}: eager mm_brain.js tag beside theme.js")
+
+        assert not offenders, (
+            f"{len(offenders)} page(s) still pay the eager assistant cost:\n"
+            + "\n".join(offenders[:20])
+        )
+        assert exempt_seen == set(bfc.HAND_AUTHORED), (
+            "the hand-authored exemption drifted — expected "
+            f"{sorted(bfc.HAND_AUTHORED)}, found {sorted(exempt_seen)}"
+        )
+
+    def test_seo_base_template_does_not_emit_the_assistant_bundle(self):
+        """The source-side twin of the check above, so the fix cannot be undone at
+        the template and only caught after a full estate re-render."""
         tpl = (_REPO / "templates" / "seo_base.html.j2").read_text(encoding="utf-8")
         emitted = re.findall(r'<script[^>]+src=["\'][^"\']*mm_brain\.js[^>]*>', tpl)
         assert not emitted, (
