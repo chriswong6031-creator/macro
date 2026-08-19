@@ -1,10 +1,9 @@
 ---
-workstream: WS:GREY-DEER
+workstream: "WS:GREY-DEER-RISK-INTELLIGENCE"
 session: claude/gd1-event-replay
 model: local
 ended_because: complete
 discoveries:
-  - DSC:GREY-DEER-ARCHITECTURE-FREEZE-ABSENT
   - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
   - DSC:GD1-EWY-IS-NOT-KOSPI-CASH
 mission: >
@@ -28,10 +27,15 @@ changed:
       Full GD-1 artifact set (ledger, rights/gaps, organ replay, timeline,
       causal ledger, Prophet counterfactual, US defensive composition,
       repair, results, repro manifest).
-  - path: agentos/workstreams/WS-GREY-DEER.md
-    what: Workstream opened on program market-regime-risk.
-  - path: agentos/discoveries/DSC-GREY-DEER-ARCHITECTURE-FREEZE-ABSENT.md
-    what: Sol freeze absent; packet+prereg are the operative H freeze.
+  - path: agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-19-gd1.md
+    what: >
+      This handoff, reconciled into the canonical workstream by Fable COO
+      (originally authored against a session-minted WS:GREY-DEER, which was
+      dropped pre-merge: GD-0A #5963 landed WS:GREY-DEER-RISK-INTELLIGENCE
+      as the one canonical program identity, and GD-1 is its wave GD-1A/GD-1B).
+      A DSC recording "Sol freeze absent" was also dropped pre-merge — true at
+      execution time, falsified by #5963's merge; its durable content moved to
+      unresolved/body below.
   - path: agentos/discoveries/DSC-GD1-LC-EMISSION-LOG-STARTS-BROKEN.md
     what: LC log n=15 starts BROKEN 2026-07-17.
   - path: agentos/discoveries/DSC-GD1-EWY-IS-NOT-KOSPI-CASH.md
@@ -71,7 +75,12 @@ unverified:
   - claim: Portfolio derisk/macro_risk/posture shadow rows for August.
     what_would_verify: named artifacts under Mastermind/portfolio
 unresolved:
-  - Sol Grey Deer architecture freeze still absent (DSC:GREY-DEER-ARCHITECTURE-FREEZE-ABSENT).
+  - >
+    Clock nuance for acceptance: GD-1's hypotheses were frozen from the Fable
+    command packet + prereg 663fb02b500c BEFORE Sol's architecture freeze
+    landed on main (#5963 merged 2026-08-19T12:24Z, after this wave executed).
+    The prereg remains the operative GD-H freeze for GD-1 results; any GD-H
+    change made under the now-landed freeze requires a NEW prereg version.
   - GD-H1 design-era test not run (LC emission log too short).
   - Repair unresolved at cutoff.
   - GD-1 grants no live authority.
@@ -80,7 +89,7 @@ next_actions:
   - Next research action if any: labeled truncate-and-recompute of leadership_crack.v1 on ≤2026-07-31 for GD-H1. Do not pick percentiles on August 2026.
   - If WI/000660/intraday boards remain missing, leave those legs BLOCKED.
 do_not_redo:
-  - Invent a Sol architecture freeze.
+  - Invent a substitute architecture freeze — the canonical one is research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md (landed by #5963, after this wave's prereg).
   - Rename daily yield differences "auction tail".
   - Revive SLF-006 or D2 auction-rebound as if open.
   - Treat EWY as KOSPI cash.

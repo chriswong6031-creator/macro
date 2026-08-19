@@ -23,6 +23,6 @@ scope:
   - macro
   - data/leadership_crack/forward_log.jsonl
   - engine/leadership_crack.py
-  - WS:GREY-DEER
+  - WS:GREY-DEER-RISK-INTELLIGENCE
 confidence: verified
 ---

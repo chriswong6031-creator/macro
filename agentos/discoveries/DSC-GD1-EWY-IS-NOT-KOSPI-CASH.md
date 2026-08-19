@@ -22,6 +22,6 @@ scope:
   - macro
   - data/yahoo/EWY.parquet
   - data/yahoo/_KS11.parquet
-  - WS:GREY-DEER
+  - WS:GREY-DEER-RISK-INTELLIGENCE
 confidence: verified
 ---
