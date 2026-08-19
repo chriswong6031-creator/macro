@@ -10418,6 +10418,37 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
+      # Special Situations desk's four truth contracts, shipped by #5975 and
+      # extended by #5996, were named by no run: step in any workflow. Engine and
+      # templates are FROZEN there — this suite only pins the already-shipped
+      # contract so a regression cannot return silently: goodwill units live in
+      # the field name and are never re-derived from magnitude (the defect printed
+      # '-51245300029.70%'), unlock n_large_30d/7d are counted over the full
+      # forward population BEFORE the _MAX_ROWS display slice (a display cap is
+      # not a statistic), inquiry reply state resolves per (issuer, named thread)
+      # and an unnamed thread is 'undetermined', and a stale-but-readable plane
+      # keeps its last reading on screen while dropping out of the hero's
+      # aggregate tallies and the "board is complete" copy.
+      #
+      # Lives HERE, not next to its sibling tests/test_china_special_situations_
+      # gate.py in tier-gate, for two independent reasons. (1) DEPENDENCIES: this
+      # suite writes its fixtures with DataFrame.to_parquet, and tier-gate's
+      # install line carries no pyarrow — the exact class of failure PR #5985 hit
+      # in CI (green locally, `ModuleNotFoundError` in the job, because the local
+      # environment happened to own a wheel the job's install line does not).
+      # Verified the other way here: a clean venv holding EXACTLY this job's
+      # install line (pytest pandas numpy pyarrow pyyaml jinja2 plotly requests
+      # beautifulsoup4 openpyxl scikit-learn) runs it 45 passed. (2) GATE: it is
+      # hermetic — every fixture is a tmp_path parquet behind a monkeypatched
+      # lib.config, and the render side loads templates/ only, no data/ and no
+      # site/ read — so it belongs on a `gate: code` job that the merge gate
+      # actually plans, not on tier-gate's `gate: data` lane. Ordered next to the
+      # other CN template-render contract above and ahead of the unrelated US
+      # board step, so a red here is not dark behind a failure it has nothing to
+      # do with.
+      - name: China Special Situations desk — goodwill units, unlock population, inquiry identity, stale-plane authority
+        run: python -m pytest tests/test_china_special_situations_truth_wave1.py -q
       - name: US board W9-A producer field + cohort math
         run: python -m pytest tests/test_w4_us_board.py -q
 
