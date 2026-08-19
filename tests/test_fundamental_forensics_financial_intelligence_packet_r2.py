@@ -396,7 +396,8 @@ def test_semantic_tampering_is_rejected() -> None:
 def test_relative_delta_is_a_ratio_not_a_percent() -> None:
     packet = _build()
     revenue_rev = next(item for item in packet["revisions"] if item["metric_id"] == "revenue")
-    assert revenue_rev["original_value"] == "1050"
+    assert revenue_rev["root_value"] == "1050"
+    assert revenue_rev["prior_value"] == "1050"
     assert revenue_rev["revised_value"] == "1060"
     assert revenue_rev["absolute_delta"] == "10"
     assert revenue_rev["relative_delta"].startswith("0.009523809523809523809523809523")
@@ -406,10 +407,10 @@ def test_relative_delta_is_a_ratio_not_a_percent() -> None:
 def test_equal_value_restatement_is_still_a_revision() -> None:
     packet = _build()
     gp = next(item for item in packet["revisions"] if item["metric_id"] == "gross_profit")
-    assert gp["original_value"] == gp["revised_value"] == "500"
+    assert gp["root_value"] == gp["prior_value"] == gp["revised_value"] == "500"
     assert gp["absolute_delta"] == "0"
     assert gp["relative_delta"] == "0"
-    assert gp["original_occurrence_id"] != gp["revised_occurrence_id"]
+    assert gp["root_occurrence_id"] != gp["revised_occurrence_id"]
 
 
 def test_packet_byte_ceiling_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
