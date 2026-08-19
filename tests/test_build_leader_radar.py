@@ -2456,7 +2456,7 @@ class TestFireHistoryGradeJoin:
         )
         assert abs(r["ret_excess_spy"] - 0.1234) < 1e-9
 
-    def test_no_grade_column_in_output(self, tmp_path):
+    def test_no_grade_column_in_output(self, tmp_path, monkeypatch):
         """Output dict must not have 'grade' key (old schema)."""
         from scripts.build_leader_radar import _build_fire_history
 
