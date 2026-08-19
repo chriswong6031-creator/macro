@@ -3011,6 +3011,29 @@ jobs:
         run: python scripts/check_ci_trigger_closure.py
       - name: trigger-closure guard unit tests
         run: python -m pytest tests/test_ci_trigger_closure.py -q
+      # main-red-repair (2026-08-19, #5938/#5929): scripts/ci_gate_reliability_report.py
+      # is the merge-gate reliability PROGRAM's progress metric — it reads this very
+      # manifest (.github/ci/legacy-jobs.yml) to classify each job code-only vs
+      # data-coupled, and (behind `gh`, stubbed in every test below) measures main's
+      # own ci.yml green rate. A reporter that can silently invent a number it did not
+      # measure would make the program's own acceptance gate meaningless in either
+      # direction, so tests/test_ci_gate_reliability_report.py pins: a gh failure/
+      # absence/unparseable-output/no-completed-runs is a STATED SKIP, never a 0%; an
+      # in-flight run is EXCLUDED, never counted red; only `success` counts green
+      # (`cancelled` proves nothing); a suite hidden by a sparse worktree classifies
+      # UNKNOWN, never code-only (never flattering the coupling count); and the real
+      # manifest classification itself (>90% of jobs, >50% data-coupled) is asserted
+      # against THIS file, not a fixture copy. #5938 landed the script and its 14-test
+      # suite but named no `run:` step — the exact SUITE DISCOVERY gap
+      # audit_unrun_tests.py exists to catch (comment above), caught on the very next
+      # census against main. Wired here, the closest existing owner: both this step's
+      # subject and the trigger-closure guard above read .github/ci/legacy-jobs.yml,
+      # and the suite needs only pytest+pyyaml, already installed above (stdlib
+      # subprocess/json/re/collections otherwise; no pandas, no network — `gh` is
+      # monkeypatched in every test and test_report_renders_without_gh pins that
+      # --coupling mode needs it not at all).
+      - name: ci-gate reliability report classifies the merge-gate manifest honestly
+        run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       # render.yml's per-scope publish wiring. #3718 fixed the international
       # dashboard never publishing because `intl` was missing from the render
       # lane's scope list, and shipped this suite as the guard — but no `run:`
