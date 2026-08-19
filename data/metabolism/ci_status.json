@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-19T05:06:26+00:00",
-  "main_sha": "54e4e3b175c3657a470bbfb9718407d20917b7d8",
+  "ts": "2026-08-19T07:19:59+00:00",
+  "main_sha": "3394690227a1c44e6fe4e6667dd46141086301d8",
   "red_required": [
     {
       "name": "immune",
@@ -16,9 +16,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 6,
+  "consecutive_failures": 7,
   "sensed_shas": [
-    "54e4e3b175c3657a470bbfb9718407d20917b7d8",
+    "3394690227a1c44e6fe4e6667dd46141086301d8",
     "3d39073351bf5895ca6c439377851c24dd5c36e8"
   ],
   "heartbeat_degraded": false
