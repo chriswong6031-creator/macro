@@ -1372,6 +1372,48 @@ def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
     return legacy
 
 
+def inferred_as_if_not_exclusive(manifest_path: Path) -> dict[str, LegacyJob]:
+    """What inference WOULD derive for every job, exclusivity aside.
+
+    Canonical home for a computation that used to live only as a local helper in
+    ``tests/test_ci_pack.py``. Two callers now share this single copy: that test
+    (``test_curated_exclusive_scopes_cover_their_own_import_closure`` and its
+    siblings) and ``scripts/check_contract_delta.py``'s PR-vs-base contract-delta
+    gate. Neither may keep a private re-derivation — see
+    ``curated_exclusive_closure_findings`` below for why that matters.
+    """
+    jobs = [replace(job, exclusive=False) for job in load_legacy_jobs(manifest_path)]
+    inferred, _note = infer_job_scopes(jobs)
+    return {job.job_id: job for job in inferred}
+
+
+def curated_exclusive_closure_findings(manifest_path: Path) -> dict[str, tuple[str, ...]]:
+    """``{job_id: uncovered closure paths}`` for every ``scope: exclusive`` job.
+
+    This IS ``tests/test_ci_pack.py::
+    test_curated_exclusive_scopes_cover_their_own_import_closure``'s check, factored
+    out so that test and ``scripts/check_contract_delta.py`` import one copy instead
+    of drifting apart. ``scope: exclusive`` REPLACES inference, so the declared
+    ``paths:`` are the whole scope; a closure file matched by no declared pattern is
+    a job that silently stops running when its own dependency changes.
+
+    Raises ``ValueError`` if a curated job derives no closure at all (curation
+    cannot be checked) — the same hard-fail posture the test's own ``assert``
+    took before this factoring, preserved so behavior does not change.
+    """
+    would_infer = inferred_as_if_not_exclusive(manifest_path)
+    declared = {job.job_id: job for job in load_legacy_jobs(manifest_path) if job.exclusive}
+    misses: dict[str, tuple[str, ...]] = {}
+    for job_id, job in sorted(declared.items()):
+        closure = [p for p in would_infer[job_id].paths if "*" not in p]
+        if not closure:
+            raise ValueError(f"{job_id} derives no closure — curation cannot be checked")
+        uncovered = tuple(p for p in closure if not _matches_any(job.paths, p))
+        if uncovered:
+            misses[job_id] = uncovered
+    return misses
+
+
 def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[LegacyJob]]:
     """Greedily balance stable jobs across ``pack_count`` packs."""
     if pack_count < 1:
