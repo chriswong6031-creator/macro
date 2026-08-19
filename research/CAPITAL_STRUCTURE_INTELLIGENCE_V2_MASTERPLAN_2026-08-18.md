@@ -1,13 +1,15 @@
 # Capital Structure Intelligence V2 — Masterplan and architecture freeze
 
 Date: 2026-08-18
-Status: architecture freeze pending Sol/Chairman acceptance. **No implementation wave is authorized by this document.**
+Status: architecture freeze pending Sol/Chairman acceptance of the **Sol AMEND**. **No implementation wave is authorized by this document.**
 Repository: `mastermindx-market-intelligence/macro`
 Program: `capital-structure-intelligence` (`authority_class: context_only`)
-Owner seat: COO Fable (this research PR); acceptance: Sol / Chairman
+Executor: Cursor Grok 4.6 (this research PR and AMEND)
+Owner seat: COO Fable (program owner, not the proposer of these rulings)
+Acceptance: Sol / Chairman
 Workstream: `WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2`
 
-This document is the canonical V2 program of record. It recovers the original product thesis, reconciles it against current `origin/main`, audits the live estate, updates competitor and primary-source regulatory research, and freezes the ordered waves. It does not ship product code.
+This document is the canonical V2 program of record. It recovers the original product thesis, reconciles it against current `origin/main`, audits the live estate, updates competitor and primary-source regulatory research, and freezes the ordered waves. It does not ship product code. Sol reviewed PR #5901 as **AMEND** (2026-08-18): product thesis accepted; W1 identity and publication hardened below. Do not reopen the accepted architecture listed in §17.
 
 ---
 
@@ -50,6 +52,7 @@ When documents disagree, use this order and never mint a second truth plane:
 Standing laws that bind this freeze:
 
 - `DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY` — a run clock must not enter the identity of immutable content evidence.
+- `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE` — overlapping jobs withhold a whole artifact family when a push would drop `origin/main` evidence; do not file-merge a hash-bound generation.
 - `DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE` — this program does not rewrite global `daily.yml` concurrency.
 - `DEC:AGENTOS-HOME-IS-MACRO` — Agent OS records live here; no second store.
 - Contract: `capital_structure.event.v1` remains the temporary canonical event adapter. Do not silently claim `company_event.v1` (review_by 2026-10-01).
@@ -67,9 +70,11 @@ Standing laws that bind this freeze:
 | Sol audit (reference only) | `a49e448d024f641d48ebc3fa9c54bdcc4ddbd76a` | Baseline Sol named. Not frozen. |
 | Worktree create | `e43ecd49b273` | `data: nightly timings oracle_offrender 2026-08-18` |
 | Mid-session main | `791148b2b7d525917130489322c0a434c091d69d` | First CS-path impact check (empty). |
-| **Freeze SHA (this PR base)** | **`ec62e4981c10d1ce7d6379cb9475747d49f790f1`** | Re-audit immediately before freeze. `marketing-publish: outbox run 2026-08-18T12:02Z` |
+| Original freeze SHA (PR #5901 first head base) | `ec62e4981c10d1ce7d6379cb9475747d49f790f1` | First W0 freeze. Superseded as PR base by the AMEND rebase. |
+| Sol AMEND reference | `71fbb0c68b63322d97c30aac0776ab7c83205642` | SHA Sol named at review. |
+| **AMEND rebase SHA (current origin/main)** | **`ad1aa0a4ab3db659c3ac76834b2c07f5ff7b6ddc`** | Re-audit immediately before AMEND. `press-wire: tick 2026-08-19T02:45Z` |
 
-Verified: `git fetch origin && git rev-parse origin/main` → `ec62e4981c10…` (2026-08-18 session). Worktree fast-forwarded `--ff-only` onto that SHA before commit. Intervening first-parent after `791148b2` (`engine: regime update`, render-sync, timings, press-wire, marketing-publish) did not touch CS producers, contracts, daily.yml, or `data/capital_structure`.
+Verified AMEND: `git fetch origin && git rev-parse origin/main` → `ad1aa0a4ab3d`. Branch `claude/cs-intel-v2-masterplan` rebased `--onto origin/main` with no conflicts. The only first-parent between Sol's `71fbb0c` and `origin/main` is that press-wire tick (`data/marketing/press_wire/*`). **CS producers, contracts, daily.yml CS jobs, append-only fence, and Agent OS schema did not move.** Unrelated main motion is not a reason to restart competitor or product research.
 
 ### 2.2 Impact classification `a49e448d..ec62e498`
 
@@ -93,7 +98,18 @@ Intervening first-parent commits are **unrelated** (HK board fixture, chronicle 
 
 **This freeze does not redo the research program because unrelated main moved.** Live row counts below are dated observations at freeze, not eternal contracts. Accruing datasets invalidate tests that rebuild a registered historical result from today's moving ledger.
 
-Re-run the same path-scoped diff immediately before any later wave starts. If it is still empty, the freeze stands. If it is not, incorporate only architecture-affecting drift.
+### 2.3 Sol AMEND shared-infrastructure impact (`71fbb0c..ad1aa0a4`)
+
+Path-scoped diff empty for CS producers. Shared infra that **does** change W1, already on main at Sol review and still current:
+
+| Artifact | On `origin/main` | W1 consequence |
+|---|---|---|
+| `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE` | Canonical push-path law | W1 extends this fence; does not invent a second publication system |
+| `config/append_only_artifacts.json` | Only `government-revenue` enrolled | CS is **not** yet a family. W1 adds `capital-structure` |
+| `scripts/ci/append_only_base_fence.py` + `push_retry.sh` `push_append_only_fence` | Collect + govrev-live + backfill | CS job at `daily.yml:1332` still `-X theirs` **with no fence** |
+| Collect vs CS staging | Collect **unstages** `data/capital_structure` (`daily.yml:649`) | Calling the fence from collect cannot protect CS |
+
+Re-run the CS-path diff immediately before any later wave starts. If it is still empty, the freeze stands. If it is not, incorporate only architecture-affecting drift.
 
 ---
 
@@ -188,8 +204,8 @@ Statuses used only as defined:
 |---|---|---|---|---|---|---|---|---|
 | SEC discovery + daily-index coverage | `PROVEN_LIVE` | `collectors/sec_capital_structure.py` | same collector | `capital_structure.discovery/v1`, `index_coverage/v1` | Nightly `collect` | 600 complete accessions; 16 filing dates | Queue population | Live-tail overlay (W2) |
 | Retrieval attempts + queue receipt | `PROVEN_LIVE` | same | same | `retrieval_attempt/v1`, `retrieval_queue_receipt.v1` | Nightly | pending 19018, oldest first-seen 2026-08-01 | Retry/parking | Work-class split (W2) |
-| Verified R2 evidence store | `PROVEN_LIVE` | same | compilers, terms | `capital_structure/sec/sha256/{aa}/{sha256}` | Nightly; `r2_research` now, historical `r2_shared` | 1972 manifests; content_sha256 + object_key | Immutable bytes | Identity dual-read (W1) |
-| Source manifest ledger | `PARTIAL` | same | event compiler, projection | `capital_structure.source_manifest/v1` `data/capital_structure/source_manifest.jsonl` | Nightly | 1972 rows; `manifest_id` hashes retrieval clocks (`BROKEN` identity, see §8) | Pointers to bytes | W1 identity + content-aware merge |
+| Verified R2 evidence store | `PROVEN_LIVE` | same | compilers, terms | `capital_structure/sec/sha256/{aa}/{sha256}` | Nightly; `r2_research` now, historical `r2_shared` | 1972 manifests; content_sha256 + object_key | Immutable bytes | Occurrence+bytes `evidence_id` (W1) |
+| Source manifest ledger | `PARTIAL` | same | event compiler, projection | `capital_structure.source_manifest/v1` `data/capital_structure/source_manifest.jsonl` | Nightly | 1972 rows; `manifest_id` hashes retrieval clocks (`BROKEN` identity, see §8) | Pointers to bytes | W1 `evidence_id` + whole-generation fence |
 | Ingestion run + health | `PROVEN_LIVE` | collector + `scripts/check_capital_structure_health.py` | CS job gate | `ingestion_run/v1`, `ingestion_health/v1` | Nightly | PR #5792; verdict `ok` 2026-08-18 | Fail-closed storage | Horizon fields (W2) |
 | Event spine + PIT/correction | `PROVEN_LIVE` | `scripts/compile_capital_structure_events.py` | projection, BioCatalyst PIT | `capital_structure.event.v1` | Nightly | 600 versions; keep-first `available_at` | Observed filing events | Stop inheriting clocked `manifest_id` (W1) |
 | Event edges | `PARTIAL` | same | projection | `capital_structure.event_edge.v1` | Nightly | **1 edge in production** vs 600 versions; LPTH 44 EFFECT/POS AM still unlinked | Almost no lifecycle graph | Registration lifecycle (W4) |
@@ -209,7 +225,7 @@ Statuses used only as defined:
 | Prophet CS features | `REJECTED_BY_DESIGN` until gauntlet | — | — | `prophet_authority=false` | — | Program `context_only` | — | Per-feature gauntlet (W7) |
 | Opaque overall CS / dilution score | `REJECTED_BY_DESIGN` | — | — | — | — | 2026-08-01 docket + this freeze | — | Never |
 | Legacy `edgar_dilution` | `PROVEN_LIVE` | `collectors/edgar_dilution.py` | existing dilution feed | `data/edgar/dilution_events.parquet` | Nightly | Shadow only; no cutover | Compatibility | Keep shadow |
-| Git CS generation publication | `PARTIAL` | `daily.yml` CS checkpoint + `push_retry.sh` | main selector | `data/capital_structure/**`, `site/capital-structure-data` | Best-effort; GH013 possible | Later nights can land; `-X theirs` can wholesale-replace JSONL | Compiled generation when push wins | W1 content-aware merge; no new control plane |
+| Git CS generation publication | `PARTIAL` | `daily.yml` CS checkpoint + `push_retry.sh` | main selector | `data/capital_structure/**`, `site/capital-structure-data` | Best-effort; GH013 possible | Later nights can land; `-X theirs` can wholesale-replace JSONL; CS job has **no** `push_append_only_fence` | Compiled generation when push wins | W1 enroll CS in append-only fence; no new control plane |
 | Source identity under re-observation | `BROKEN` (latent) | `engine/capital_structure/source_identity.py` | every downstream ID | `manifest_id_for` hashes full body incl. clocks | Masked by queue skip | See §8 | False uniqueness | **W1 (first implementation)** |
 | LIVE_TAIL vs backlog work classes | `NOT_BUILT` | — | — | — | Oldest-first 200 | Horizon stale while throughput ok | — | W2 |
 | Six-question capital twin state | `NOT_BUILT` | — | — | `capital_structure_state.v2` (this freeze) | — | Event-state projection only | — | W3–W6 |
@@ -392,9 +408,9 @@ Therefore **unchanged SEC bytes produce a new `manifest_id` on every successful 
 
 | Identity class | Current behavior | Required behavior |
 |---|---|---|
-| **Evidence identity** | `document.content_sha256` + `storage.object_key = capital_structure/sec/sha256/{d[:2]}/{d}` — **stable** | Keep. This is the content-addressed object. |
-| **Retention / manifest identity** | Full-body hash including retrieval clocks — **unstable** | Hash content-binding fields only. |
-| **Observation / recheck** | Not a first-class append; clocks contaminate identity | Append-only observation log (attempt rows already exist for failures). |
+| **Evidence identity** | Not first-class; clocks and interpretation sit inside `manifest_id` | Derived `evidence_id` over occurrence + retained bytes only (`DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES`) |
+| **Retention / manifest identity** | Full-body hash including retrieval clocks — **unstable as evidence id** | Keep `manifest_id_for` as the interpretation-revision receipt. Do not weaken it. |
+| **Observation / recheck** | Attempt rows exist; children have no attempt; post-readback clock is not on the row | Reuse `retrieval_attempts`; additive fields if needed. No second observation artifact. |
 | **Run receipt** | `attempt_id` includes run clock — **correct** | Keep as operational, not content identity. |
 
 `event_id` hashes a body that includes `manifest_ids` (`event_spine.py:469-471`), so the spine **inherits** clock contamination if a remint occurs.
@@ -405,33 +421,39 @@ Tests in `tests/test_capital_structure_source_identity.py` do **not** assert sam
 
 This is the same forbidden construction as Filing Forensics Wave-2 (`DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY`): artifact count measures our cadence, first-retention clocks become last-run clocks, consumers become O(store age).
 
-### 8.2 Ruling — forward-only dual-read (do not patch in this PR)
+### 8.2 Ruling — occurrence+bytes `evidence_id` (do not patch in this PR)
 
-**DEC:CS-V2-IDENTITY-DUAL-READ**
+**DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES** supersedes **DEC:CS-V2-IDENTITY-DUAL-READ**.
+
+Sol AMEND (2026-08-18): keep forward-only dual-read and no historical rewrite. Do **not** freeze the previously proposed v2 hash subset.
 
 1. Do **not** rewrite historical `manifest_id`s or downstream PIT receipts.
-2. Dual-read: v1 manifests continue to validate under the current full-body hash. v2 manifests hash a declared content-binding subset: `source_system`, `source_id`, issuer CIK/`issuer_id`, filing accession/form/file_number (not aliases), `document.content_sha256` / role / byte_length, `storage.object_key`. **Exclude** `retrieval.retrieved_at`, `retrieval.first_seen_at`, parser/run clocks, ticker aliases.
-3. First successful retention **freezes** `first_seen_at`. Later observations append to the retrieval-attempt / observation log with the **same** evidence id and a new observation clock.
-4. Same `content_sha256` + accession + document role arriving from a concurrent run is the same evidence. The second writer must adopt the first writer's `manifest_id` (keep-first), not union two economic sources.
-5. Do **not** add `merge=union` to `data/capital_structure/source_manifest.jsonl`. The ledger is hash-bound via `source_ledger_receipt` / prefix identity the same class as govrev (`DSC:OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS` declined union there). Content-aware merge belongs in `merge_manifest_ledgers` at write and at CS push-time conflict, not in git union.
-6. `-X theirs` on this JSONL is a **lost-update** weapon. W1 replaces CS-owned conflict handling for this file with content-aware merge. That is not a rewrite of global `daily.yml` concurrency.
+2. Dual-read: v1 manifests continue to validate under the current full-body `manifest_id_for`. V2 introduces a derived `evidence_id` over immutable source occurrence + retained bytes: `key_format`, `source_system`, `submission_accession`, occurrence (`submission` or `{parent_content_sha256, byte_start, byte_end}`), `content_sha256`.
+3. **Exclude** from evidence identity: retrieval/run clocks, file-number interpretation, ticker/aliases, parser state/version, normalized issuer mapping, `document_role`, `document_version`, physical storage namespace, `source_id`. Those may remain on the manifest as interpretation. A parser correction **must not remint** `evidence_id`.
+4. Distinct source occurrences **must not collapse**: same bytes in two accessions stay two evidence ids; same bytes in two SGML sequences in one accession stay two evidence ids. Complete submission and each child document are distinct, with children carrying parent coordinates.
+5. Canonical `first_known_at` is frozen at first **Git publication** of that `evidence_id`. Per-attempt `attempted_at` and verified-retention `retained_available_at` are observation clocks. A delayed/competing observation with an earlier local timestamp **cannot** move a published PIT boundary backward.
+6. Observation plane: start from existing `retrieval_attempts`. Add fields only if the current contract cannot represent successful re-observation of children. Do not mint a second observation artifact by convenience.
+7. Do **not** add `merge=union` to `data/capital_structure/source_manifest.jsonl`. Do **not** content-aware-merge that file at push time. Publication is `DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE`.
+8. Drop the unconditional durable W1 gate “concurrent merge = 1 evidence + 2 observations.” Mandatory proof: one canonical `evidence_id`, no duplicate economic event, no stale generation clobber.
 
-Independently useful machine capability of W1: the same SEC bytes cannot become two economic sources; first-retention clocks freeze; competing generations and retries are deterministic.
+Independently useful machine capability of W1: the same SEC occurrence cannot become two economic sources; interpretation correction cannot remint evidence; overlapping CS jobs cannot publish a mixed generation.
+
+Hostile fixtures W1 must pin are listed in the identity DEC (same document two clocks; same bytes two accessions; two sequences in one accession; corrected file-number/issuer/parser; submission plus children; legacy v1; multiple valid v1 ids for one occurrence).
 
 ---
 
 ## 9. Publication / authority ruling
 
-**DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR**
+**DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE** supersedes **DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR**. The Git-selector boundary is **restated, not reopened.**
 
 | Plane | Owner today | Ruling |
 |---|---|---|
 | Durable **evidence** | R2 content-addressed objects (`capital_structure/sec/sha256/…`) | Remains the evidence store. Split `r2_shared` / `r2_research` is a physical namespace, not a second truth. `storage.store_id` already records which. |
 | Durable **compiled generation selector** | Git `data/capital_structure/**` + `site/capital-structure-data` after the CS checkpoint | **Git remains the canonical generation selector** until the operator explicitly moves it onto the existing company/shared publication plane. No new publication control plane. |
 | Why later CS generations can land | Best-effort `push_retry.sh`; GH013 is a ruleset/Actions bypass on `refs/heads/main`, not an ingestion defect; later nights retry; rulesets are not permanently blocking every CS push | Treat push loss as a known degraded publication state, not silent success. |
-| Valid R2 evidence + Git push loses | Bytes remain in R2; next checkout restores last Git ledger; accession can re-queue | W1 identity must make re-derive **reuse** evidence IDs. Health must distinguish "retained in R2, unpublished in Git" from "not retained." |
-| All-or-nothing local generation | Correct for a compiled checkpoint | Keep. Partial generations must not commit. |
-| `git pull --rebase --autostash -X theirs` | Can wholesale-replace `source_manifest.jsonl` (merge unspecified; not in `.gitattributes`) | W1: CS-owned content-aware merge for this ledger. Do not `merge=union`. |
+| Valid R2 evidence + Git push loses | Bytes remain in R2; next checkout restores last Git ledger; accession can re-queue | W1 `evidence_id` must make re-derive **reuse** evidence IDs. Health must distinguish "retained in R2, unpublished in Git" from "not retained." |
+| All-or-nothing local generation | Correct for a compiled checkpoint | Keep. Partial generations must not commit. A manifest merged after compile would no longer match that run's events/terms/projection/health. |
+| `git pull --rebase --autostash -X theirs` | Can wholesale-replace `source_manifest.jsonl` (merge unspecified; not in `.gitattributes`) | W1: extend `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`. On proof that `origin/main` contains source-ledger evidence this candidate would drop, **withhold the entire coherent CS generation**. Do not `merge=union`. Do not file-merge the JSONL at push time. Call the fence from the **capital_structure** job, not collect (collect unstages CS paths). |
 
 GH013 rejecting a legitimate generation is an **org ruleset** problem (see `research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md` class). CS must be idempotent when Git loses. CS must not invent a second selector to work around GH013.
 
@@ -446,9 +468,9 @@ Clock model (every selected fact carries the clocks that apply; unused clocks ar
 | `economic_effective_at` | Filing period / corporate-action effective time / takedown measurement time | Source document or exchange notice |
 | `sec_accepted_at` | SEC acceptance | EDGAR header |
 | `sec_published_at` | SEC dissemination / index appearance | Index or submissions feed |
-| `mastermind_first_seen_at` | First time this evidence identity entered Mastermind | Frozen on first retention (W1) |
-| `retrieved_at` | This retrieval attempt | Observation log |
-| `retained_available_at` | Readback-verified R2 put | Collector after verify |
+| `mastermind_first_seen_at` | Canonical first-known time of this **evidence_id** | Frozen at first Git publication of that evidence (W1). Never moved backward by a later local timestamp |
+| `retrieved_at` / `attempted_at` | This retrieval attempt | Observation log (`retrieval_attempts.attempted_at`) |
+| `retained_available_at` | Readback-verified R2 put | Collector after verify; per observation |
 | `parser_available_at` | Compiler/parser version could emit this interpretation | Compiler generation |
 | `correction_available_at` | Later parse, amendment, or SEC post-acceptance correction became visible | Correction event; **must not** travel back to filing time |
 | `valid_from` / `valid_to` | State interval in the twin | State compiler |
@@ -459,7 +481,7 @@ Frozen semantics (already true on the event spine; extend, do not replace):
 - Historical source evidence is **immutable** even if the current canonical interpretation is corrected.
 - A later parse improvement, filing amendment, or SEC post-acceptance correction appears only at its `correction_available_at` / `parser_available_at`.
 - PIT read at time T uses facts with `available_at ≤ T` and respects `valid_from`/`valid_to`.
-- Keep-first `available_at` = first_seen of that evidence identity.
+- Keep-first `available_at` on the **event spine** remains first-seen of that event. Canonical `first_known_at` on **evidence** is a published PIT boundary: once on `origin/main` it cannot later move backward merely because a delayed/competing observation carried an earlier local timestamp.
 - Supersession is an **edge** (`correction_of`, `amends`, `withdraws`, `effectuates`, `supersedes`), never a destructive rewrite.
 - BioCatalyst adapter must keep replaying this law. New state families ride the same clocks.
 
@@ -774,7 +796,7 @@ JAGX (Jaguar Health, `0001585608`) is the toxic-financing *shape* analogue: EFFE
 ### 17.1 Preserve and extend
 
 - Canonical SEC evidence store (content-addressed R2)
-- Source manifests and exact receipts (after W1 identity dual-read)
+- Source manifests and exact receipts (after W1 `evidence_id` dual-read)
 - Event spine and correction/PIT semantics
 - Direct document-term ledger
 - Instrument candidate-term **code and contracts** (wire; do not rewrite)
@@ -800,6 +822,7 @@ JAGX (Jaguar Health, `0001585608`) is the toxic-financing *shape* analogue: EFFE
 - A new generic queue/control plane
 - A new publication control plane
 - `merge=union` on hash-bound `source_manifest.jsonl`
+- Push-time content-aware merge of `source_manifest.jsonl` (Sol AMEND: withhold the coherent generation instead)
 - A global `et_gate` collect mutex
 - An opaque CS / dilution score
 - Encoding Release 33-11418 as current law
@@ -822,7 +845,7 @@ Not a 20-PR infrastructure staircase. Each wave ships an independently useful us
 | Wave | Capability it unlocks | Depends on |
 |---|---|---|
 | **W0** — this document | Architecture freeze for Sol/Chairman | — |
-| **W1** — Identity / observation / concurrent-safe ledger | Same SEC bytes cannot become two economic sources; first-retention clocks freeze; Git `-X theirs` cannot silently double-count this JSONL | W0 accepted |
+| **W1** — Evidence identity + whole-generation append-only fence | Same SEC occurrence cannot become two economic sources; interpretation correction cannot remint; overlapping CS jobs withhold rather than mix generations | W0 accepted |
 | **W2** — Live-tail / recovery / historical split + horizon health | Today's material filings are not starved; health cannot call a July horizon "fresh" | W1 (do not scale retrieval on clocked IDs) |
 | **W3** — Capital Changes Desk + Capital Twin UX | Discovery + issuer research on **honest states** from existing events/terms; no Loading hero | W1; W2 preferred for "today" but W3 can ship against an honest stale horizon |
 | **W4** — Registration / capacity state | Authorization vs eligibility vs remaining capacity; EFFECT ≠ capacity; I.B.6/CFI/ATM/ELOC | W1; wire existing lifecycle compiler; primary-source rules §7 |
@@ -836,38 +859,40 @@ W3 may start in parallel with W2 only if the desk labels horizon stale. W5 must 
 
 ## 19. First implementation handoff — Wave 1 only
 
-**Do not execute this wave in the architecture session. Do not open a second PR for it until Sol/Chairman accept W0.**
+**Do not execute this wave in the architecture session. Do not open a second PR for it until Sol/Chairman accept the amended W0.**
 
 ### 19.1 Mission
 
-Make Capital Structure evidence identity lawful under `DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY` and safe under retries and concurrent `collect` / CS jobs, without rewriting historical `manifest_id`s, without a global daily.yml mutex, and without `merge=union` on the hash-bound source ledger.
+Make Capital Structure evidence identity lawful under `DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY` and overlapping CS publication lawful under `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`, without rewriting historical `manifest_id`s, without a global daily.yml mutex, without `merge=union`, and without a push-time file merge of `source_manifest.jsonl`.
 
 ### 19.2 Why it matters
 
-Live-tail (W2) will re-observe and race. Scaling retrieval on clocked `manifest_id`s remints economic sources, poisons `event_id`s, and turns artifact count into cadence. Concurrent collect is a measured production shape (`DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE`). Identity is the prerequisite the audit selected over live-tail.
+Live-tail (W2) will re-observe and race. Clocked `manifest_id`s remint economic sources. A post-compile merge of the source ledger would desynchronize events/terms/projection/health. Concurrent collect is a measured production shape. Identity plus whole-generation withhold is the prerequisite the AMEND selected.
 
 ### 19.3 Authority precedence
 
-Same as §1. Identity law: `DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY`. Merge law: `DSC:OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS` (union declined on prefix-hash JSONL). Publication: `DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR`. Decision: `DEC:CS-V2-IDENTITY-DUAL-READ`.
+Same as §1. Identity: `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES` (supersedes `DEC:CS-V2-IDENTITY-DUAL-READ`). Publication: `DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE` (supersedes `DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR`; Git selector restated). Fence law: `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`. Union declined: `DSC:OVERLAPPING-DAILY-COLLECT-JOBS-LOSE-APPEND-ONLY-ROWS`.
 
 ### 19.4 Verified current state
 
-- `manifest_id_for` hashes full body including required retrieval clocks.
+- `manifest_id_for` hashes full body including required retrieval clocks (`source_identity.py:136-141`).
+- `validate_manifest_ledger` hard-aborts same `manifest_id` with two bodies (`:154-170`).
 - Collector sets `retrieved_at = first_seen_at = retained_at` wall clock after readback.
 - Queue skip masks sequential remints; concurrent collect does not.
-- `data/capital_structure/source_manifest.jsonl` has unspecified git merge; CS push uses `-X theirs`.
+- `retrieval_attempts` columns: `attempt_id`, `accession`, `source_id`, `canonical_url`, `attempted_at`, `state`, `error`, `content_sha256`, `retrieval_lane`, `collection_scope`, `http_status`, `storage_operation`, `store_id`, `error_class`. No `evidence_id`; children have no attempt row.
+- Collect unstages `data/capital_structure` (`daily.yml:649`); `push_append_only_fence` runs in collect (`:761`, `:787`) and **not** in the CS job (`:1332` `-X theirs` only).
+- `config/append_only_artifacts.json` enrolls only `government-revenue`.
 - Evidence bytes are already content-addressed and stable.
-- `attempt_id` correctly includes run clock.
 
 ### 19.5 Exact scope
 
-1. Split evidence identity vs observation clocks in schema + `manifest_id_for` with a **v1/v2 dual-read validator**.
-2. Freeze `first_seen_at` on first retention of an evidence identity; later observations append (reuse `retrieval_attempts` or a dedicated observation JSONL that is **not** the source manifest).
-3. Keep-first on same `content_sha256` + accession + document role under concurrent writers in `merge_manifest_ledgers`.
-4. CS push-time conflict on `source_manifest.jsonl`: content-aware merge, not `-X theirs` for this file. Other CS artifacts may keep current all-or-nothing generation rules.
-5. Tests: same bytes → same v2 `manifest_id`; v1 historical fixtures still validate; remint attempt does not double-count; concurrent merge keep-first; prefix/hash receipt still binds; no rewrite of committed historical IDs.
-6. Health: report distinct **evidence count** vs **observation count**.
-7. Docs: contract amendment for dual-read; this masterplan remains program of record.
+1. Derived `evidence_id` over occurrence + bytes. Dual-read validator: v1 `manifest_id_for` unchanged; `evidence_id` projected from row bytes. Do not subset-hash `manifest_id`.
+2. Persist canonical `first_known_at` at first Git publication of that `evidence_id`. Later observations do not move it backward.
+3. Reuse `retrieval_attempts`. Add `observed_evidence_ids` and `retained_available_at` only as needed to represent successful re-observation, including children. No second observation artifact unless those additions fail.
+4. Enroll a `capital-structure` family in `config/append_only_artifacts.json`. Member at minimum: `source_manifest.jsonl` `jsonl_prefix`. `withhold_paths`: `data/capital_structure`, `site/capital-structure-data`. Call `push_append_only_fence` from the **capital_structure** job push loop before `-X theirs`.
+5. Hostile fixtures listed in the identity DEC.
+6. Health: distinct **evidence count** vs **revision/manifest count** vs **observation count**. Idempotent re-observation must not revive the #5792 `selected>0 retained=0` false fail without a third progress term (`re_observed`).
+7. Docs: contract amendment; this masterplan remains program of record.
 
 ### 19.6 Non-goals
 
@@ -878,31 +903,32 @@ Same as §1. Identity law: `DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY`. Merge law: `
 - Global `daily.yml` concurrency rewrite
 - Rewriting historical manifest IDs or PIT receipts
 - `merge=union`
-- Moving publication off Git
+- Push-time content-aware merge of `source_manifest.jsonl`
+- Moving publication off Git or inventing a second publication plane
 - Enabling share-count publication
 - Wiring instrument/lifecycle compilers
+- Unconditional durable "1 evidence + 2 observations" as a W1 acceptance gate
 
 ### 19.7 User / machine journey
 
-1. Night A retains accession X bytes B → evidence id E, `first_seen_at` T0, observation O0.
-2. Night B (or overlapping collect) retrieves the same bytes → observation O1, **same** E, same `first_seen_at` T0, new `retrieved_at`.
-3. PIT read at T0 < t < T1 sees one source, not two.
-4. If Git push of Night A loses and Night B re-derives, Night B's ledger contains E once.
-5. User-visible page still event-state (out of scope); machine consumers stop being able to treat remints as new capital events.
+1. Night A retains occurrence X bytes B → `evidence_id` E, published `first_known_at` T0, observation O0, coherent CS generation G_A on Git.
+2. Overlapping Night B retrieves the same occurrence. If publishing G_B would drop main's source-ledger evidence, **withhold G_B entirely**. R2 still holds B. Next run re-derives E, not a new id.
+3. If Night B runs after G_A is on main and only re-observes: same E, same T0, new attempt row. PIT at T0 < t sees one source.
+4. Parser later corrects file-number/issuer: same E, new `manifest_id` revision, `correction_available_at` is the correction clock.
+5. Same bytes filed under two accessions remain two evidence ids.
 
 ### 19.8 Contracts
 
-- Amend `contracts/capital_structure_source_manifest.schema.json` for identity subset / schema version without invalidating v1 rows.
-- Keep `retrieval` clocks on the record as **observation metadata** that v2 identity hashing excludes.
-- Event compiler: `event_id` must not change for historical rows; new events bind to stable evidence ids going forward (keep-first event append already exists).
-- Queue receipt / health schemas: add evidence-vs-observation counts if those files are versioned.
+- Carry `evidence_id` (and child parent coordinates) on v2 rows so the key is checkable without R2. Do not invalidate v1 rows.
+- Do not put retrieval clocks, file-number interpretation, ticker/aliases, parser version, issuer mapping, or storage namespace into the `evidence_id` preimage.
+- Event compiler: historical `event_id`s unchanged; new events bind to stable `evidence_id` going forward.
+- Queue receipt / health: evidence vs revision vs observation counts.
 
 ### 19.9 Time / null / correction
 
-- `first_seen_at` is keep-first, never moved backward, never overwritten by a later retrieve.
-- `retrieved_at` is per observation.
-- Corrections remain the event-spine path; W1 does not invent a new correction store.
-- Missing identity fields fail closed (no manifest), they do not mint a clocked id.
+Four clocks, never collapsed: evidence identity (no clock); `attempted_at`; `retained_available_at`; canonical `first_known_at` frozen at first Git publication.
+Corrections remain the event-spine path; W1 does not invent a new correction store.
+Missing occurrence/byte fields fail closed (no evidence id), they do not mint a clocked id.
 
 ### 19.10 Deterministic / statistical / model boundaries
 
@@ -911,42 +937,49 @@ All W1 behavior is deterministic. No scores. No LLM. No capacity math.
 ### 19.11 Failure states
 
 - Historical v1 row failing v1 hash → integrity error (unchanged).
-- v2 row with clocks inside the hashed subset → refuse (test).
-- Merge collision same id different content_sha256 → hard fail (corruption).
-- Merge collision same bytes different v1 ids (pre-migration pair) → keep both v1 rows, link as same evidence in an **observation** record, do not delete. Dual-read until a later compaction wave (not W1) if ever authorized.
+- Proposed `evidence_id` that includes an excluded interpretation field → refuse (test).
+- Same `evidence_id`, different retained bytes → new evidence linked by `correction_of`, never a silent rewrite.
+- Multiple v1 `manifest_id`s for one occurrence → keep both v1 rows; project one `evidence_id`; do not delete.
+- Proven drop of main's source-ledger evidence → withhold the whole CS family; do not publish a mixed generation.
 - Push still losing to GH013 → warning already exists; W1 must not red the market plane.
 
 ### 19.12 Ordered build steps
 
-1. Fixture: two retrievals of identical SEC bytes with different wall clocks.
-2. Identity function + schema dual-read.
-3. Collector: freeze first_seen; skip remint of evidence; append observation.
-4. `merge_manifest_ledgers` keep-first by evidence key.
-5. CS job: content-aware merge for this JSONL on rebase conflict (narrow, CS-owned).
-6. Tests listed in 19.5.
-7. Health counters.
+1. Hostile fixtures (clocks, two accessions, two sequences, interpretation correction, submission+children, v1, multi-v1).
+2. `evidence_id` function + dual-read validator. Leave `manifest_id_for` byte-identical.
+3. Collector: compute `evidence_id`; skip remint; append observation on `retrieval_attempts`.
+4. Freeze `first_known_at` only when the evidence is canonically published; never rewrite it backward.
+5. Enroll CS family; wire `push_append_only_fence` in the CS job push loop.
+6. Tests in 19.13.
+7. Health counters including a re-observation progress term so idempotent nights do not look like #5792.
 8. Contract + Agent OS update for W1 complete.
-9. PR → CI → Sol/Chairman may merge W1 only after W0 acceptance. This architecture PR must not contain W1 code.
+9. PR → CI → merge W1 only after W0 acceptance. **This architecture PR must not contain W1 code.**
 
 ### 19.13 Tests
 
-- Same content_sha256 + role + accession → same v2 manifest_id across clocks.
+- Same occurrence + bytes, two clocks → same `evidence_id`; published `first_known_at` frozen.
+- Same bytes, two accessions → distinct `evidence_id`.
+- Same bytes, two SGML sequences in one accession → distinct `evidence_id`.
+- Corrected file-number/issuer/parser → same `evidence_id`, new `manifest_id`.
+- Complete submission plus children → distinct ids; children carry parent coordinates.
 - v1 golden rows still `validate_manifest_identity`.
 - Re-observation does not increment unique evidence count.
-- Concurrent ledger merge: 1 evidence, 2 observations.
-- Event compiler keep-first: no second event_id for the same filing evidence.
-- Health distinguishes evidence vs observations.
-- Regression: selected>0 retained=0 still fails (#5792 must not regress).
+- In-process keep-first may show one `evidence_id` from two mints; publication proof is one coherent generation (fence withhold), not a required pair of durable attempt rows.
+- Event compiler: no second `event_id` for the same filing evidence.
+- Health distinguishes evidence vs revisions vs observations.
+- Regression: selected>0 retained=0 still fails when there is also no verified re-observation (#5792 must not regress).
+- Fence fixture: a CS candidate that would drop main's `source_manifest.jsonl` prefix withholds `data/capital_structure` and `site/capital-structure-data`, not one file.
 
 ### 19.14 Production proof
 
 After W1 merges and one CS job runs:
 
-- Re-retrieve of an already-retained accession does not add a new `manifest_id` for the same complete-submission sha256.
-- `first_seen_at` on that evidence is unchanged.
-- Observation/attempt log shows the recheck.
-- Unique accession evidence count does not jump by the remint.
-- No rewrite of pre-W1 manifest_id strings in historical rows.
+- Re-retrieve of an already-retained occurrence does not add a new `evidence_id`.
+- Published `first_known_at` on that evidence is unchanged.
+- Observation/attempt log can represent the recheck without a second observation plane.
+- Unique evidence count does not jump by the remint.
+- No rewrite of pre-W1 `manifest_id` strings in historical rows.
+- CS family is enrolled; CS job calls the fence.
 
 ### 19.15 Stop condition
 
@@ -956,14 +989,17 @@ W1 is done when the proofs in 19.14 are true on production, tests in 19.13 are g
 
 ## 20. Acceptance / stop condition (this architecture session)
 
-This W0 session is complete when:
+This AMEND session is complete when:
 
-- [x] current main re-audited (freeze SHA `ec62e4981c10`; CS path empty vs Sol `a49e448d`)
+- [x] current main re-audited (`ad1aa0a4`; CS path empty vs Sol `71fbb0c`; press-wire only)
+- [x] W1 uses the existing whole-generation append-only push fence rather than file-level merge (§9, §19)
+- [x] evidence identity is correction-safe and occurrence-safe (§8)
+- [x] Agent OS provenance is truthful (Cursor Grok 4.6 executor; COO Fable remains program owner)
+- [x] no W1 production code exists
 - [x] every meaningful existing CS component has a capability status (§4)
 - [x] no duplicate canonical plane proposed (§17)
 - [x] live-tail freshness architecturally separated from backlog (§12)
 - [x] PIT/correction semantics exact (§10)
-- [x] identity under repeated/concurrent observation resolved as a ruling (§8); patch deferred to W1
 - [x] capacity ≠ expected supply ≠ actual issuance (§5, §11)
 - [x] regulatory constraint logic has primary-source definitions (§7)
 - [x] product supports discovery + issuer research, not ticker lookup alone (§13)
@@ -972,20 +1008,21 @@ This W0 session is complete when:
 - [x] real-data examples demonstrate the architecture (§16)
 - [x] first implementation wave bounded and independently useful (§19)
 
-**Open the research/masterplan PR, make it green, and STOP.** Do not start W1. Do not arm `merge-on-green`. Hand the PR to Sol/Chairman for architecture review and acceptance.
+**Return PR #5901 green and STOP.** Do not start W1. Do not arm `merge-on-green`. Hand the PR back to Sol for architecture acceptance.
 
 ---
 
 ## 21. Agent OS citations minted with this PR
 
 - `WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2`
-- `DEC:CS-V2-IDENTITY-DUAL-READ`
-- `DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR`
-- `DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG`
-- `DEC:CS-V2-SIX-QUESTION-ONTOLOGY`
+- `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES` (supersedes `DEC:CS-V2-IDENTITY-DUAL-READ`)
+- `DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE` (supersedes `DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR`; Git selector restated)
+- `DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG` (Sol-accepted; not reopened)
+- `DEC:CS-V2-SIX-QUESTION-ONTOLOGY` (Sol-accepted; not reopened)
 - `DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS`
-- `DSC:CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE`
+- `DSC:CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE` (so_what retargeted to the fence)
 - `DSC:CS-THROUGHPUT-HEALTHY-HORIZON-STALE`
 - `DSC:CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY`
 - `DSC:CS-EVENT-EDGES-NEAR-ZERO`
 - Handoff: `agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-18.md`
+- Standing law adopted: `DEC:APPEND-ONLY-BASE-FRESHNESS-IS-A-PUSH-PATH-FENCE`

@@ -46,10 +46,14 @@ affects:
   - "data/capital_structure/"
 confidence: high
 reversibility: costly
-decided_by: coo-fable
+decided_by: cursor-grok-4.6
 decided_at: 2026-08-18
 review_by: 2026-08-25
+superseded_by: DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE
 ---
 
-Reversible only by an explicit operator ruling that names a different existing
-publication plane. Sessions must not invent one.
+SUPERSEDED 2026-08-18 by Sol AMEND of PR #5901. Proposed by Cursor Grok 4.6,
+not Fable. Git as compiled-generation selector and "no new publication plane"
+remain in force and are restated by the successor. The CS-owned push-time
+content-aware merge of source_manifest.jsonl is withdrawn. See
+`DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE`.

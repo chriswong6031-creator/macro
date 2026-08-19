@@ -44,10 +44,12 @@ affects:
   - "engine/capital_structure/"
 confidence: high
 reversibility: costly
-decided_by: coo-fable
+decided_by: cursor-grok-4.6
 decided_at: 2026-08-18
 review_by: 2026-08-25
 ---
 
-This ontology is the product freeze. Later waves implement families; they may
+Proposed by the Cursor Grok 4.6 W0 session, not Fable. Sol accepted this
+ontology in the 2026-08-18 AMEND review of PR #5901; it is not reopened.
+Program owner remains COO Fable. Later waves implement families; they may
 not collapse the six questions.

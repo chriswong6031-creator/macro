@@ -7,9 +7,9 @@ objective: >
   what it needs to fund, what supply can hit shareholders, what changed, and
   what that implies for catalysts, Neural Web, and later Prophet — without an
   SEC filing browser, an opaque dilution score, or a second canonical plane.
-  Done for W0 = Sol/Chairman accept the 2026-08-18 masterplan. Done for the
-  program = deterministic twin families live, prophet_authority still false
-  until per-feature gauntlet.
+  Done for W0 = Sol/Chairman accept the 2026-08-18 masterplan as amended.
+  Done for the program = deterministic twin families live, prophet_authority
+  still false until per-feature gauntlet.
 status: awaiting_review
 program: capital-structure-intelligence
 repos: [macro]
@@ -35,8 +35,8 @@ owns_paths:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
   - templates/capital_structure.html.j2
 decisions:
-  - DEC:CS-V2-IDENTITY-DUAL-READ
-  - DEC:CS-V2-GIT-REMAINS-GENERATION-SELECTOR
+  - DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES
+  - DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE
   - DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
 discoveries:
@@ -50,14 +50,16 @@ do_not_redo:
   - "Solve concurrent collect with an et_gate mutex (DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE)"
   - "Rewrite historical manifest_id strings or PIT receipts"
   - "Add merge=union on data/capital_structure/source_manifest.jsonl"
+  - "Push-time content-aware merge of source_manifest.jsonl (Sol AMEND 2026-08-18)"
   - "Create a BioCatalyst-specific or Prophet-specific capital ledger"
   - "Silently claim company_event.v1"
   - "Ship an opaque Capital Structure or dilution score"
   - "Encode Release 33-11418 as current law"
-  - "Start W1 identity implementation before Sol/Chairman accept W0"
+  - "Start W1 identity implementation before Sol/Chairman accept the amended W0"
 landmines:
   - "manifest_id_for hashes retrieval clocks (DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS)"
-  - "CS push uses git pull -X theirs on unspecified-merge source_manifest.jsonl"
+  - "CS job push uses -X theirs with no append-only fence (daily.yml:1332); collect fence cannot see CS because collect unstages data/capital_structure"
+  - "Subset-hashing v2 manifest_id fights validate_manifest_ledger one-id-one-body"
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
   - "Projection freshness is compiler age, not information horizon"
   - "Share-count v2 and Company Facts are default-off / unprovisioned — not live"
@@ -68,35 +70,36 @@ artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
 needs_ceo:
   question: >
-    Accept the Capital Structure Intelligence V2 architecture freeze
-    (research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md)
-    and authorize only Wave 1 identity/idempotency work after this PR merges?
+    Accept the Sol-AMEND Capital Structure V2 freeze (occurrence+bytes
+    evidence_id, whole-generation append-only fence, truthful Grok provenance)
+    and still withhold W1 until this PR merges?
   options:
-    - Accept freeze; authorize Wave 1 only after merge
-    - Accept freeze with named amendments
+    - Accept amended freeze; authorize Wave 1 only after merge
+    - Accept freeze with further named amendments
     - Reject; name which ruling to reopen
   recommendation: >
-    Accept freeze. Do not start Wave 1 in this PR. Do not drain the historical
-    backlog as a substitute for live-tail. Identity is the first implementation
-    wave because the source-identity audit proved a DNR violation.
+    Accept the amended freeze. Do not start Wave 1 in this PR. Do not drain
+    the historical backlog as a substitute for live-tail. Do not file-merge
+    source_manifest.jsonl at push time.
   by_when: 2026-08-25
 next_action: >
-  Sol/Chairman review this architecture PR; do not merge until accepted; do not
-  start Wave 1 identity implementation.
+  Sol/Chairman review the amended architecture PR #5901; do not merge until
+  accepted; do not start W1.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
     status: in_progress
     pr: 5901
     next_action: >
-      PR #5901. Stop when CI is green and the PR is handed to
-      Sol/Chairman. Do not merge. Do not start W1.
+      PR #5901 amended for Sol review. Stop when CI is green and the PR is
+      handed back to Sol. Do not merge. Do not start W1.
   - id: W1
-    title: Identity dual-read, observation log, concurrent-safe ledger merge
+    title: Evidence identity + whole-generation append-only fence
     status: todo
     depends_on: [W0]
     next_action: >
       Execute only after W0 is accepted. Masterplan §19 is the bounded handoff.
+      No W1 production code in this PR.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
@@ -124,5 +127,7 @@ waves:
 ---
 
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
-fixed ingestion. The destination is a PIT issuer capital twin, not a filing
-browser. W0 is docs-only. Implementation starts at W1 only after acceptance.
+fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
+this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
+owner, not the executor of this freeze. Implementation starts at W1 only
+after Sol/Chairman acceptance.
