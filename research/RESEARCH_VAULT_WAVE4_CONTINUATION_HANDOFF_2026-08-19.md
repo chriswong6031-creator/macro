@@ -104,7 +104,15 @@ cleanly with an empty item list.
    It is *not* an authority-change rejection: the payload says
    `allowed: true, reason: same_repo_admin_authority_change`. Do not try to fix
    it from a feature PR.
-3. **Unit tests did not catch two real client defects.** See §5 — the hero
+3. **A NEW `tests/test_*.py` reds `unrun-suite`.** `scripts/audit_unrun_tests.py`
+   fails any collecting suite no `run:` step names. The documented remedy —
+   adding a step to `.github/ci/legacy-jobs.yml` — is a CI_AUTHORITY path AND a
+   global invalidator, which drops the PR's path scoping and makes it inherit
+   main's entire red set. So this wave's ~69 new tests were **folded into the
+   already-wired `tests/test_research_vault.py`** under a `WAVE 4` banner, with
+   `_w4_`-prefixed helpers to avoid colliding with that file's existing
+   `_item`/`_seed_pdf`/`_cat`/`_dt`. Do not split them back out into new files.
+4. **Unit tests did not catch two real client defects.** See §5 — the hero
    counters and the ZH timestamp. Static JS assertions test the code you thought
    to write; only rendering the page tests the page.
 
