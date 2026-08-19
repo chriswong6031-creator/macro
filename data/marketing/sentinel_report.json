@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-19T10:42:33Z",
+  "produced_at": "2026-08-19T18:14:27Z",
   "as_of": "2026-08-19",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 16,
-    "passed": 15,
+    "items": 9,
+    "passed": 8,
     "quarantined": 1,
     "quarantined_policy": 1,
     "quarantined_overflow": 0,
@@ -34,30 +34,6 @@
   ],
   "passed": [
     {
-      "id": "post-flagship-014",
-      "account": "flagship",
-      "slot": "D1-S14",
-      "type": "chart",
-      "cashtag": "$URG",
-      "headline": ""
-    },
-    {
-      "id": "post-flagship-033",
-      "account": "flagship",
-      "slot": "D1-S33",
-      "type": "receipt",
-      "cashtag": "$AGNT",
-      "headline": "$AGNT sits 8.9% below 4.66, the price where the most shares changed hands in six months."
-    },
-    {
-      "id": "post-flagship-042",
-      "account": "flagship",
-      "slot": "D1-S42",
-      "type": "watchlist",
-      "cashtag": "$TEM",
-      "headline": ""
-    },
-    {
       "id": "post-theme-003",
       "account": "flagship",
       "slot": "D1-S2",
@@ -66,44 +42,36 @@
       "headline": "Semiconductors selling off, -5.8% avg on Tuesday"
     },
     {
-      "id": "post-founder-016",
-      "account": "founder",
-      "slot": "D1-S16",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Claims are averaging 199k a week, 12.7% below a year ago."
-    },
-    {
-      "id": "post-founder-042",
-      "account": "founder",
-      "slot": "D1-S42",
-      "type": "signal",
-      "cashtag": "$SWX",
-      "headline": ""
-    },
-    {
-      "id": "post-insider-002",
-      "account": "founder",
-      "slot": "D1-S19",
-      "type": "insider",
-      "cashtag": "$MLAB",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-028",
-      "account": "meagan",
-      "slot": "D1-S28",
-      "type": "receipt",
-      "cashtag": "$RBLX",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-033",
-      "account": "meagan",
-      "slot": "D1-S33",
+      "id": "post-housepick-004",
+      "account": "flagship",
+      "slot": "D1-S23",
       "type": "watchlist",
-      "cashtag": "$MC",
+      "cashtag": "$GILD",
       "headline": ""
+    },
+    {
+      "id": "post-meagan-003",
+      "account": "meagan",
+      "slot": "D1-S3",
+      "type": "watchlist",
+      "cashtag": "$QUBT",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-043",
+      "account": "meagan",
+      "slot": "D1-S43",
+      "type": "watchlist",
+      "cashtag": "$UEC",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-044",
+      "account": "meagan",
+      "slot": "D1-S44",
+      "type": "watchlist",
+      "cashtag": "$BWA",
+      "headline": "$BWA at the 67.9 line"
     },
     {
       "id": "post-theme-004",
@@ -114,28 +82,12 @@
       "headline": "Artificial Intelligence selling off, -2.2% avg on Tuesday"
     },
     {
-      "id": "post-sophia-023",
-      "account": "sophia",
-      "slot": "D1-S23",
-      "type": "chart",
-      "cashtag": "$MPWR",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-050",
+      "id": "post-kelly-026",
       "account": "kelly",
-      "slot": "D1-S50",
+      "slot": "D1-S26",
       "type": "chart",
-      "cashtag": "$EIX",
+      "cashtag": "$WS",
       "headline": ""
-    },
-    {
-      "id": "post-cici-013",
-      "account": "cici",
-      "slot": "D1-S13",
-      "type": "chart",
-      "cashtag": "$OZK",
-      "headline": "While New York slept, $OZK crept back to 52.2, within a whisper of its August high."
     },
     {
       "id": "post-theme-006",
@@ -144,19 +96,11 @@
       "type": "theme_list",
       "cashtag": "$VIAV",
       "headline": "Hardware selling off, -3.2% avg on Tuesday"
-    },
-    {
-      "id": "post-housepick-003",
-      "account": "mastermind_news",
-      "slot": "D1-S1",
-      "type": "watchlist",
-      "cashtag": "$GILD",
-      "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 102,
+      "pairs_checked": 27,
       "hits": 1,
       "shared_media_hits": 0
     },
