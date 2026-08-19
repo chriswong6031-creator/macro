@@ -562,14 +562,30 @@ fix_rounds:
       C12 authority verdict REVISE over both seats' PASS_WITH_CONDITIONS receipts, against
       f40ae70ac98936b5c565a7a55ddd108cb70ae7fa. Six blocking rulings + takeable minors + editorial
       baseline re-stamps. Scoped by condition R53-SCOPE as the final composition-touching round.
-    frozen_at: 6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c
+    frozen_at: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
     harness: >
-      verify.py 162/162; mutation_test.py 34/34 caught, distinct killers, no shared sole catcher;
-      capture.py 49 views / 66 files, all re-shot. Two mutations were re-pointed rather than left
-      stale: M13's pattern moved with the seed lead slot, and M25's SOLE catcher moved from D6c4 to
-      D6c4b when PR52-1 split that check — the harness reported the latter as a hole until it was
-      corrected, which is the split doing its job in both directions (M25 -> ['D6c4b'] alone,
-      M27 -> ['D6c4', 'D6c4b']).
+      verify.py 162/162 at the frozen bytes; capture.py 49 views / 66 files, all re-shot at the
+      frozen bytes; mutation_test.py 34/34 caught, distinct killers, no shared sole catcher.
+      HOW THE 34 WAS OBTAINED, stated because an unprovenanced receipt is the defect this round
+      exists to close. Two runs, not one. (1) A COMPLETE 33-mutation pass — every mutation except
+      M34, which did not exist yet — returned 33 caught. Its one reported "hole" was a LABEL, not a
+      miss: PR52-1 had just split D6c4 into three checks, so M25's sole catcher had moved to D6c4b
+      while its declared expectation still read D6c4; the pass's own output named the real catcher
+      (M25 -> ['D6c4b']) and the expectation was corrected. (2) All TEN mutations R5.3 introduces
+      or re-points — M13, M25, M27..M34 — were then re-run AT THE FROZEN BYTES, driven from
+      mutation_test.py's own MUTATIONS table rather than transcribed, and all ten were caught:
+      M25 -> ['D6c4b'], M27 -> ['D6c4','D6c4b'], M29 -> ['D6i4'], M30 -> ['D28'], M31 -> ['D25'],
+      M32 -> ['D27'], M33 -> ['D24b'], M34 -> ['D29'], M13 -> ['D19g','D6g','D6g2'],
+      M28 -> ['D17c','D26'].
+    harness_not_claimed: >
+      A single uninterrupted 34-mutation pass at the frozen SHA. One was started and reached 7/34
+      (all caught) before it was stopped: the host was carrying a load average of 15-19 and each
+      pass cost ~7 minutes there against ~1 minute on a quiet machine, which put a full pass at
+      ~3 hours. This is the one receipt the round did not obtain and it is named rather than
+      papered over — the delta re-check should take it, and the authority's own spot-verification
+      note already asks the re-check to execute the changed checks. Nothing above depends on it:
+      between the two runs every mutation was executed and caught, and the only results resting on
+      the earlier pass alone are for mutations whose targets the frozen bytes do not change.
     findings:
       - id: PR52-1
         severity: blocker

@@ -5,7 +5,7 @@ verdict; it does not close the cycle. `verdict.yml` (**REVISE**) requires a scop
 by both C12 seats, and the visual seat's deferred rationale-reveal amendment pass completes then.
 This session authored the artifact and is disqualified from all of it.
 
-Artifact: `mockups/refs/prophet_lab/`, frozen at **`6d69c6fc34c7a7956789de6f8aebfa7f05ddca5c`**
+Artifact: `mockups/refs/prophet_lab/`, frozen at **`dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3`**
 (R5.3). Every earlier SHA and what each critic found against it are in `manifest.yml` →
 `sha_lineage`; both C12 receipts were taken against R5.2's `f40ae70ac989` and are stale against
 this SHA by construction (RIG §3).
@@ -231,7 +231,7 @@ explicit named override.
 | Harness | R5 | R5.1 | R5.2 | **R5.3** |
 |---|---|---|---|---|
 | `tools/verify.py` | 72/72 | 104/104 | 125/125 | **162/162** |
-| `tools/mutation_test.py` | 13/13 | 19/19 | 26/26 | **34/34 caught**, distinct killers, no shared sole catcher |
+| `tools/mutation_test.py` | 13/13 | 19/19 | 26/26 | **34/34 caught**, distinct killers, no shared sole catcher — *provenance below* |
 | `tools/capture.py` | 36 views / 49 files | 39 views / 56 files | 46 views / 63 files | **49 views / 66 files**, all re-shot |
 | `check_reference_integrity.py` | clean | clean | clean | clean (5 sets, 0 approved) |
 | `git diff origin/main -- mockups/refs/institutionalize templates/theme.css` | empty | empty | empty | **empty** — the layering law both C12 seats verified still holds |
@@ -253,6 +253,20 @@ subject), **M29** (restore the 23-row constant), **M30** (remove the tap path), 
 again), **M32** (re-hide the caveat), **M33** (land without the offset), **M34** (unkey the meta
 strip). `M13` and `M25` were re-pointed rather than left stale: `M25`'s sole catcher moved to
 `D6c4b` when `D6c4` was split, which the harness reported as a hole until it was corrected.
+
+**Where the 34/34 came from, and what it does not include.** It is two runs. A **complete
+33-mutation pass** (every mutation but `M34`, which did not exist yet) returned 33 caught; its one
+reported "hole" was a **label** — `PR52-1` had just split `D6c4`, so `M25`'s sole catcher had moved
+to `D6c4b` while its expectation still read `D6c4`, and the pass's own output named the real
+catcher. Then all **ten** mutations R5.3 introduces or re-points (`M13`, `M25`, `M27`–`M34`) were
+re-run **at the frozen bytes**, driven from `mutation_test.py`'s own table, and all ten were
+caught — `M25 → ['D6c4b']`, `M27 → ['D6c4','D6c4b']`, `M29 → ['D6i4']`, `M30 → ['D28']`,
+`M31 → ['D25']`, `M32 → ['D27']`, `M33 → ['D24b']`, `M34 → ['D29']`, `M13 → ['D19g','D6g','D6g2']`,
+`M28 → ['D17c','D26']`. **Not claimed:** one uninterrupted 34-mutation pass at this SHA. A pass was
+started and reached 7/34 (all caught) before the host's load average of 15–19 put it at ~3 hours.
+That is the round's one unobtained receipt, it is named in `continuity.yml`
+`fix_rounds[R5.3].harness_not_claimed` rather than papered over, and the delta re-check should take
+it — which the authority's own spot-verification note already asks for.
 
 **Two checks changed what the design is, rather than confirming it.** `D29` was written to measure
 a hairline *separator* drawn into the meta strip's flex gap and failed it at six of ten widths —
