@@ -1367,6 +1367,82 @@ def _never_execute(*args: object, **kwargs: object) -> int:
     raise AssertionError("execute_pack must not be reached on this path")
 
 
+DATA_HEALTH = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_every_data_health_trigger_can_actually_mint_a_plan() -> None:
+    """The lane that took the data-gated jobs off the merge gate must be able to run.
+
+    ``data-health.yml`` fires on ``workflow_run`` (daily completed) and on a
+    13:30 UTC ``schedule`` backstop, and neither passes ``--role``/``--event``,
+    so both resolve to role ``main`` from the ambient ``GITHUB_EVENT_NAME``.
+    Until 2026-08-19 the supported set held only ``main/workflow_dispatch``, so
+    both raised ManifestError BEFORE any legacy job ran: run 32262001614
+    (schedule) died ``main/schedule is unsupported``, exit 2, in all six packs.
+    That is not a fail-closed that protects anything — it silently emptied the
+    only lane that grades the 74 ``gate: data`` jobs against a freshly written
+    data tree, which is the entire promise W2 made when it moved them off ci.yml.
+
+    This asserts the workflow's OWN trigger list, so adding a trigger there
+    without teaching the planner reds here instead of going quiet in production.
+    """
+    workflow = _yaml(DATA_HEALTH)
+    triggers = set((workflow.get("on") or workflow.get(True)).keys())
+    assert triggers, "data-health.yml must declare triggers"
+    for event in sorted(triggers):
+        assert ("main", event) in PACK.SUPPORTED_PLAN_ROLE_EVENTS, (
+            f"data-health.yml fires on {event!r} but the planner refuses "
+            f"main/{event}; that pack dies at exit 2 before a single job runs"
+        )
+
+
+def test_a_main_role_plan_from_a_data_health_trigger_carries_every_data_job(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Widening the transport must not have relaxed what ``main`` MEANS.
+
+    Both new events describe the shape ``main`` already required — a whole-tree
+    run at one checked-out SHA with no diff — so the plan they mint must be the
+    same full ``gate: data`` suite the manual dispatch minted, and it must carry
+    ``house-law-registry``: the guard whose input (the newest
+    ``data/symbol_directory`` snapshot) only ever moves on a nightly commit.
+    """
+    monkeypatch.setenv("GITHUB_SHA", "0" * 40)
+    monkeypatch.delenv("CI_SEMANTIC_ROLE", raising=False)
+    monkeypatch.delenv("CI_TESTED_TREE_SHA", raising=False)
+    monkeypatch.delenv("CI_SUBJECT_HEAD_SHA", raising=False)
+    monkeypatch.delenv("CI_BASE_SHA", raising=False)
+
+    plans = {}
+    for event in ("workflow_dispatch", "workflow_run", "schedule"):
+        monkeypatch.setenv("GITHUB_EVENT_NAME", event)
+        plan = PACK.plan_from_workflow(
+            MANIFEST, changed_from=None, scope_mode="active",
+            pack_count=6, gate="data",
+        )
+        assert plan.role == "main" and plan.event == event
+        assert plan.changed_from is None
+        plans[event] = {job for pack in plan.pack_jobs for job in pack}
+
+    assert "house-law-registry" in plans["schedule"]
+    assert plans["schedule"] == plans["workflow_dispatch"] == plans["workflow_run"]
+
+
+def test_the_supported_role_event_set_stays_closed() -> None:
+    """An unreasoned combination must still fail closed, both minting and consuming.
+
+    The widening above is two named transports for a role whose substance is
+    enforced elsewhere; it is not permission for any event to plan anything.
+    """
+    assert ("main", "push") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "schedule") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "workflow_dispatch") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    # One constant, both gates: the planner and the authoritative-plan reader
+    # cannot drift into disagreeing about what a legal plan is.
+    source = (ROOT / "scripts" / "run_ci_pack.py").read_text()
+    assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
+
+
 def test_plan_is_deterministic() -> None:
     first = _full_plan()
     second = _full_plan()
