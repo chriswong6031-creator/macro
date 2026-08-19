@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T13:35:38.413075+00:00",
-  "count": 1409,
+  "generated_at": "2026-08-19T14:15:40.920628+00:00",
+  "count": 1411,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -338,6 +338,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7gfnrb0chto-b740f5",
+      "title": "Early Morning Reid | Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T08:53:38Z",
+      "summary_points": [
+        "**Bond Yields & Geopolitical Pressure**: Germany 10yr yield hits 3.26% (post-2011 high) amid fiscal deficits, AI boom, and no US-Iran talks; Brent oil surges to $91.71, intensifying European bond stress.",
+        "**Inflation & Policy Risks**: Near-term inflation spikes (US +6.3bps, Euro +12.0bps) and Fed/ECB 2026 hike pricing (23/43 bps) dominate; US data weakness fails to offset bond sell-off as equities decline 3rd consecutive day.",
+        "**Global Equity Selloff**: Stagflationary backdrop triggers broad declines: S&P 500 (-0.69%), NASDAQ (-1.33%), Stoxx 600 (-0.69%), KOSPI (-5.44%) on chip stocks, with futures signaling further drops."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -681,6 +700,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ppalv5hvouf-138523",
+      "title": "Economics Economics Daily Alert 18 08 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-18T21:13:59Z",
+      "summary_points": [
+        "**Geopolitical risk drives asset repricing**: Iran war tensions push oil to $90.87, US equities decline, and 30-yr Treasury yield hits 5.31% (2007 high), suppressing risk appetite across equities, bonds, and currencies.",
+        "**UK CPI acceleration signals policy shift**: Headline inflation rises to 2.9% (July) due to energy price cap reset, indicating potential BoE policy pivot amid cooling labor market dynamics.",
+        "**Japan CPI near BoJ target influences policy**: Headline CPI at 2.1% and core at 1.9% suggest inflation nearing 2% target, reinforcing expectations for Bank of Japan monetary policy normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
