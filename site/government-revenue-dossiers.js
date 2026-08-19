@@ -332,12 +332,23 @@
       return'<div class="atlas-chips">'+out.map(function(pair){return'<span class="truth '+pair[0]+'">'+esc(pair[1])+'</span>'}).join('')+'</div>';
     }
 
+    /* Named gap counts the rail must never contradict. `unresolved(record)` is
+     * curated-only (FIX-6/finding B6): a scope-observed identifier with no
+     * reviewed path and no curated review is never named, only counted in this
+     * gap. Folding it into the rung's own open-state keeps "every observed
+     * identifier sits on the reviewed path" from printing in the SAME breath as
+     * a gaps line saying N of them do not (FIX-D). */
+    function gapCount(record,code){
+      var row=arr(record.gaps).filter(obj).find(function(g){return g.code===code});
+      return row?(n(row.count)||0):0;
+    }
     /* The rail. Four rungs, top to bottom; a rung whose successor is not reviewed
      * carries a dashed connector, so the break in the chain is visible before a
      * word is read. */
     function hop(rung,tone,fact,note){return{rung:rung,tone:tone,fact:fact,note:note}}
     function chain(record){
-      var state=securityState(record),issuer=obj(record.legal_issuer)?record.legal_issuer:null,rows=entities(record),reviewed=reviewedIdCount(record),open=unresolved(record).length;
+      var state=securityState(record),issuer=obj(record.legal_issuer)?record.legal_issuer:null,rows=entities(record),reviewed=reviewedIdCount(record);
+      var curatedOpen=unresolved(record).length,observedOpen=gapCount(record,'observed_identifiers_without_reviewed_path'),open=curatedOpen+observedOpen;
       var hops=[];
       hops.push(hop(
         tr('Public security','上市证券'),
@@ -363,7 +374,7 @@
         tr('Recipient identifiers','收款方标识'),
         reviewed?'reviewed':hasConflict(record)?'conflict':'unresolved',
         reviewed?(isZh()?(reviewed+' 个精确收款方标识已核验'):(reviewed+' exact recipient '+(reviewed===1?'identifier':'identifiers')+' reviewed')):tr('No reviewed recipient identifier','没有已核验的收款方标识'),
-        open?(isZh()?(open+' 项仍未解析，见下方'):(open+' still unresolved, listed below')):reviewed?tr('Every observed identifier sits on the reviewed path','每个已观测标识均位于已核验路径上'):tr('No recipient identifier is on record for this company','该公司没有在册的收款方标识')
+        open?(isZh()?(open+' 项仍未解析'+(curatedOpen?'，见下方':'')):(open+' still unresolved'+(curatedOpen?', listed below':''))):reviewed?tr('Every observed identifier sits on the reviewed path','每个已观测标识均位于已核验路径上'):tr('No recipient identifier is on record for this company','该公司没有在册的收款方标识')
       ));
       return'<ol class="atlas-chain">'+hops.map(function(row,i){
         var next=hops[i+1],broken=next&&next.tone!=='reviewed'&&next.tone!=='historic';

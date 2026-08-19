@@ -9,9 +9,9 @@
     "context_only": true,
     "tier": "display"
   },
-  "content_id": "gria1-8f71a1a2b6d83606d10b465e",
+  "content_id": "gria1-9098b94e2b69ec4b96e02a02",
   "contract": "government_revenue_identity_atlas.v1",
-  "generated_at": "2026-08-19T05:53:37+00:00",
+  "generated_at": "2026-08-19T07:55:25+00:00",
   "graph_digest": "93171ba0e6f7286de02e0918ef85be7db80df3f6b7fd8eb3d47e7e8e4adfa843",
   "graph_id": "recipient-graph:reviewed:2026-08-19:defense21-v1",
   "graph_status": "ready",
@@ -300,6 +300,7 @@
       "gaps": [
         {
           "code": "unresolved_identifiers_present",
+          "count": 3,
           "text_en": "3 curated identifier(s) for BWXT carry a reviewed conflict or gap and stay unresolved (see below).",
           "text_zh": "发行人BWXT有3个已审核标识符存在冲突或缺口，保持未解决状态（见下文）。"
         }
@@ -399,6 +400,7 @@
         },
         {
           "code": "observed_identifiers_without_reviewed_path",
+          "count": 5,
           "text_en": "5 recipient identifier(s) observed in the discovery file have no reviewed path — discovery association only, never issuer proof.",
           "text_zh": "发现文件中观测到的5个收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明。"
         }
@@ -575,6 +577,7 @@
       "gaps": [
         {
           "code": "observed_identifiers_without_reviewed_path",
+          "count": 5,
           "text_en": "5 recipient identifier(s) observed in the discovery file have no reviewed path — discovery association only, never issuer proof.",
           "text_zh": "发现文件中观测到的5个收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明。"
         }
@@ -722,6 +725,7 @@
       "gaps": [
         {
           "code": "observed_identifiers_without_reviewed_path",
+          "count": 2,
           "text_en": "2 recipient identifier(s) observed in the discovery file have no reviewed path — discovery association only, never issuer proof.",
           "text_zh": "发现文件中观测到的2个收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明。"
         }
@@ -955,6 +959,7 @@
       "gaps": [
         {
           "code": "observed_identifiers_without_reviewed_path",
+          "count": 10,
           "text_en": "10 recipient identifier(s) observed in the discovery file have no reviewed path — discovery association only, never issuer proof.",
           "text_zh": "发现文件中观测到的10个收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明。"
         }

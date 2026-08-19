@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import re
 import shutil
 import subprocess
 import textwrap
@@ -371,18 +372,23 @@ def test_4_schema_carries_no_event_or_award_reference_fields():
 
 def _fake_bwxt_fetch(url: str) -> bytes:
     """A fetch stub whose bodies satisfy the mint script's own content
-    assertions (every canonical name in the Ex.21 body, every UEI in its
-    award body, every admitted UEI in the children-endpoint body) without
-    reaching the network."""
+    assertions (registrant named in the 10-K, every canonical name in the
+    Ex.21 body, every UEI paired with its own recipient_name in its award
+    body, every admitted UEI in the children-endpoint body) without reaching
+    the network."""
+    if url == mint.BWXT_10K_URL:
+        return b"BWX TECHNOLOGIES, INC. is the registrant of this report."
     if url == mint.BWXT_EX21_URL:
         names = " ".join(name for _uei, _slug, name, _award_id in mint.BWXT_SUBSIDIARIES)
         return f"EXHIBIT 21.1 {names}".encode("utf-8")
     if url == mint.BWXT_CHILDREN_URL:
         rows = [{"uei": uei} for uei, _slug, _name, _award_id in mint.BWXT_SUBSIDIARIES]
         return json.dumps(rows).encode("utf-8")
-    for uei, _slug, _name, award_id in mint.BWXT_SUBSIDIARIES:
+    for uei, _slug, name, award_id in mint.BWXT_SUBSIDIARIES:
         if url == mint._award_url(award_id):
-            return json.dumps({"recipient": {"uei": uei}}).encode("utf-8")
+            return json.dumps({"recipient": {"uei": uei, "recipient_name": name.upper()}}).encode(
+                "utf-8"
+            )
     return f"body-for:{url}".encode("utf-8")
 
 
@@ -433,6 +439,98 @@ def test_fix4_mint_refuses_a_children_receipt_missing_an_admitted_uei():
     mint._assert_children_receipt_lists_every_admitted_uei(
         body=_fake_bwxt_fetch(mint.BWXT_CHILDREN_URL)
     )
+
+
+def test_fixC_mint_refuses_a_10k_receipt_that_does_not_name_the_registrant():
+    with pytest.raises(ValueError, match="registrant"):
+        mint._assert_10k_names_the_registrant(body=b"This filing is about a different company.")
+    # Passes silently on either the registrant name or its CIK.
+    mint._assert_10k_names_the_registrant(body=b"BWX Technologies, Inc. annual report")
+    mint._assert_10k_names_the_registrant(body=f"CIK {mint.BWXT_CIK}".encode("utf-8"))
+    # And on the real fixture body used by the happy-path mint tests.
+    mint._assert_10k_names_the_registrant(body=_fake_bwxt_fetch(mint.BWXT_10K_URL))
+
+
+def test_fixC_mint_refuses_a_permuted_uei_entity_pairing():
+    """The right UEI and award id, paired with the WRONG canonical_name, must
+    fail -- ``_assert_award_body_names_its_uei`` alone cannot catch this,
+    since the UEI genuinely is in the body; only the recipient_name<->
+    canonical_name pairing check can.
+    """
+    uei, _slug, correct_name, award_id = mint.BWXT_SUBSIDIARIES[0]
+    _other_uei, _other_slug, wrong_name, _other_award_id = mint.BWXT_SUBSIDIARIES[1]
+    assert correct_name != wrong_name
+
+    happy_body = json.dumps({"recipient": {"uei": uei, "recipient_name": correct_name.upper()}}).encode(
+        "utf-8"
+    )
+    # Happy path: passes silently.
+    mint._assert_award_body_matches_paired_entity(
+        uei=uei, canonical_name=correct_name, body=happy_body, award_id=award_id
+    )
+    # Permuted: same UEI, same award id, but the WRONG canonical_name paired
+    # against it (as if a row in BWXT_SUBSIDIARIES had its
+    # (slug, canonical_name) swapped with a neighbor's).
+    with pytest.raises(ValueError, match="does not match"):
+        mint._assert_award_body_matches_paired_entity(
+            uei=uei, canonical_name=wrong_name, body=happy_body, award_id=award_id
+        )
+    # A body with no recipient_name at all must also fail, not degrade silently.
+    with pytest.raises(ValueError, match="carries no recipient.recipient_name"):
+        mint._assert_award_body_matches_paired_entity(
+            uei=uei,
+            canonical_name=correct_name,
+            body=json.dumps({"recipient": {"uei": uei}}).encode("utf-8"),
+            award_id=award_id,
+        )
+    # Non-JSON body must fail loudly rather than pass silently.
+    with pytest.raises(ValueError, match="not valid JSON"):
+        mint._assert_award_body_matches_paired_entity(
+            uei=uei, canonical_name=correct_name, body=b"not json", award_id=award_id
+        )
+
+
+def test_fixC_mint_exercises_every_bwxt_content_assertion_end_to_end_without_the_network():
+    """Happy-path build with canned, real-shaped bodies exercises every
+    content assertion FIX-4/FIX-C added -- 10-K registrant, Ex.21 completeness,
+    parent-plane children completeness, per-award UEI presence, and the
+    UEI<->entity pairing -- in one pass, without a re-mint against the network.
+    """
+    evidence_rows, _companies, entity_rows, identifier_rows, edge_rows, known_at = (
+        mint.build_bwxt_rows(fetch=_fake_bwxt_fetch)
+    )
+    assert known_at != "PENDING"
+    assert len(entity_rows) == 6  # issuer + 5 admitted subsidiaries
+    assert len(identifier_rows) == 5
+    assert len(edge_rows) == 6
+    mint._assert_no_refused_identifiers(identifier_rows)
+
+    # A permuted (slug, canonical_name) pairing across BWXT_SUBSIDIARIES must
+    # fail the whole walk -- prove it by permuting the fetch stub's own pairing
+    # for one award and re-running build_bwxt_rows.
+    def _permuted_fetch(url: str) -> bytes:
+        for uei, _slug, _name, award_id in mint.BWXT_SUBSIDIARIES:
+            if url == mint._award_url(award_id):
+                # Pair this UEI with the WRONG canonical_name -- swap in the
+                # next entity's name in the tuple list.
+                index = [row[3] for row in mint.BWXT_SUBSIDIARIES].index(award_id)
+                wrong_name = mint.BWXT_SUBSIDIARIES[(index + 1) % len(mint.BWXT_SUBSIDIARIES)][2]
+                return json.dumps(
+                    {"recipient": {"uei": uei, "recipient_name": wrong_name.upper()}}
+                ).encode("utf-8")
+        return _fake_bwxt_fetch(url)
+
+    with pytest.raises(ValueError, match="does not match"):
+        mint.build_bwxt_rows(fetch=_permuted_fetch)
+
+    # A wrong-registrant 10-K must also fail the whole walk.
+    def _wrong_registrant_fetch(url: str) -> bytes:
+        if url == mint.BWXT_10K_URL:
+            return b"This is the 10-K of an entirely unrelated company."
+        return _fake_bwxt_fetch(url)
+
+    with pytest.raises(ValueError, match="registrant"):
+        mint.build_bwxt_rows(fetch=_wrong_registrant_fetch)
 
 
 def test_5_committed_defense21_admits_and_preserves_defense19_shape():
@@ -675,8 +773,20 @@ def test_committed_atlas_renders_the_pilots_through_the_shipped_ui_factory(tmp_p
     for html, ticker in ((irdm, "IRDM"), (bwxt, "BWXT")):
         assert "atlas-hop reviewed" in html, ticker
         assert "State unclear" not in html, ticker
+        # Only GE/SPR may carry a break state; a fully reviewed pilot's chain
+        # must never print an unresolved rung (FIX-B).
+        assert "atlas-hop unresolved" not in html, ticker
         assert "Not asserted" not in html.split('<p class="atlas-read">')[0], (
             f"{ticker}: legal issuer hop must not misread the reviewed issuer as unresolved"
+        )
+        # At least one real 64-hex content_sha256 renders inside a receipt
+        # expand -- pins evidenceCode() reading `content_sha256`; silently
+        # reverting it to the nonexistent `.sha256` field must fail this.
+        receipts = "".join(
+            re.findall(r'<details class="atlas-receipt">.*?</details>', html, flags=re.S)
+        )
+        assert re.search(r"sha256: [0-9a-f]{64}", receipts), (
+            f"{ticker}: no real 64-hex sha256 found inside a receipt expand"
         )
 
     ge = out["GE"]

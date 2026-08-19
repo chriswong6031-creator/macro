@@ -149,6 +149,58 @@ def _assert_award_body_names_its_uei(*, uei: str, body: bytes, award_id: str) ->
         )
 
 
+def _assert_10k_names_the_registrant(*, body: bytes) -> None:
+    """Refuse to admit a 10-K cover receipt that does not actually name the
+    registrant it is cited for (case-insensitive; either the registrant name
+    or its CIK is acceptable, since the cover page's XBRL header often
+    carries the CIK before the prose does)."""
+    haystack = body.upper()
+    if b"BWX TECHNOLOGIES" not in haystack and BWXT_CIK.encode("ascii") not in haystack:
+        raise ValueError(
+            "BWXT 10-K evidence does not name the registrant (BWX Technologies, Inc. / "
+            f"CIK {BWXT_CIK}); refusing to admit a mismatched receipt"
+        )
+
+
+def _assert_award_body_matches_paired_entity(
+    *, uei: str, canonical_name: str, body: bytes, award_id: str
+) -> None:
+    """Refuse to admit an award receipt whose OWN recipient name does not
+    match the canonical name paired with this UEI in :data:`BWXT_SUBSIDIARIES`.
+
+    ``_assert_award_body_names_its_uei`` only proves the UEI string appears
+    somewhere in the body -- it says nothing about whether that UEI is
+    actually paired with the RIGHT entity.  A row permuted across
+    ``BWXT_SUBSIDIARIES`` (the right UEI and award id, but the wrong
+    ``canonical_name``/``slug``) would pass that check and still mint a false
+    pairing between an admitted identifier and the wrong legal entity.  This
+    reads the award's own ``recipient.recipient_name`` and requires it to
+    contain the paired canonical name under the same case/punctuation-
+    insensitive join rule ``normalize_legal_name`` uses elsewhere in this
+    module.
+    """
+    try:
+        payload = json.loads(body)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"award receipt {award_id!r} is not valid JSON") from exc
+    recipient = payload.get("recipient") if isinstance(payload, dict) else None
+    recipient_name = (recipient or {}).get("recipient_name") if isinstance(recipient, dict) else None
+    if not isinstance(recipient_name, str) or not recipient_name.strip():
+        raise ValueError(
+            f"award receipt {award_id!r} carries no recipient.recipient_name; "
+            "cannot verify the UEI-entity pairing"
+        )
+    haystack = f" {normalize_legal_name(recipient_name)} "
+    needle = f" {normalize_legal_name(canonical_name)} "
+    if needle not in haystack:
+        raise ValueError(
+            f"award receipt {award_id!r} recipient name {recipient_name!r} does not match "
+            f"the canonical name {canonical_name!r} paired with UEI {uei!r} in "
+            "BWXT_SUBSIDIARIES; refusing a possibly permuted (slug, canonical_name, "
+            "award_id) tuple"
+        )
+
+
 def _assert_ex21_names_every_admitted_entity(*, body: bytes) -> None:
     """Refuse to admit Ex.21 evidence that does not actually list every
     canonical name this script is about to write, case/punctuation-insensitive
@@ -213,6 +265,7 @@ def build_bwxt_rows(
     # --- Top of the chain: the public issuer and its registrant legal entity.
     tenk_body = fetch(BWXT_10K_URL)
     tenk_retrieved_at = datetime.now(timezone.utc).isoformat()
+    _assert_10k_names_the_registrant(body=tenk_body)
     evidence_10k = _evidence_row(
         evidence_id="evidence:bwxt-sec-10k",
         publisher="SEC",
@@ -302,6 +355,9 @@ def build_bwxt_rows(
         award_body = fetch(award_url)
         award_retrieved_at = datetime.now(timezone.utc).isoformat()
         _assert_award_body_names_its_uei(uei=uei, body=award_body, award_id=award_id)
+        _assert_award_body_matches_paired_entity(
+            uei=uei, canonical_name=canonical_name, body=award_body, award_id=award_id
+        )
         evidence_award = _evidence_row(
             evidence_id=f"evidence:bwxt-usaspending-{uei.lower()}",
             publisher="USAspending.gov",

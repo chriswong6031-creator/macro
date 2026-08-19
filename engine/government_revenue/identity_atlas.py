@@ -559,6 +559,7 @@ def _build_issuer(
         gaps.append(
             {
                 "code": _GAP_UNRESOLVED_IDENTIFIERS_PRESENT,
+                "count": len(unresolved_identifiers),
                 "text_en": (
                     f"{len(unresolved_identifiers)} curated identifier(s) for {ticker} carry a "
                     "reviewed conflict or gap and stay unresolved (see below)."
@@ -573,6 +574,13 @@ def _build_issuer(
         gaps.append(
             {
                 "code": _GAP_OBSERVED_WITHOUT_REVIEWED_PATH,
+                # A machine-readable count, not just prose -- the UI folds this
+                # into the "Recipient identifiers" rung's open-state so the rail
+                # never overclaims "every observed identifier sits on the
+                # reviewed path" while this gap says otherwise (FIX-D).
+                # Parsing a number back out of EN/ZH prose would be fragile and
+                # bilingual-unsafe; this field is the single source of truth.
+                "count": observed_unresolved_count,
                 "text_en": (
                     f"{observed_unresolved_count} recipient identifier(s) observed in the "
                     "discovery file have no reviewed path — discovery association only, "

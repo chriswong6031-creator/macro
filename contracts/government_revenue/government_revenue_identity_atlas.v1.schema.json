@@ -160,6 +160,7 @@
       "required": ["code", "text_en", "text_zh"],
       "properties": {
         "code": {"type": "string", "minLength": 1, "pattern": "^[a-z][a-z0-9_]*$"},
+        "count": {"type": "integer", "minimum": 0},
         "text_en": {"type": "string", "minLength": 1},
         "text_zh": {"type": "string", "minLength": 1}
       }
