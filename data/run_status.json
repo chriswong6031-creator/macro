@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-19T09:01:20.163643+00:00",
+  "last_run": "2026-08-19T12:08:27.511924+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -1859,8 +1859,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.9,
-      "checked_at": "2026-08-19T04:42:05.724744+00:00"
+      "elapsed_sec": 3.0,
+      "checked_at": "2026-08-19T12:08:27.511956+00:00"
     },
     "flow_signals": {
       "status": "ok",
