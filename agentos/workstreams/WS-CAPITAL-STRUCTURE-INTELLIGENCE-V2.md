@@ -73,9 +73,9 @@ artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
 needs_ceo:
   question: >
-    Accept W1A (PR not yet numbered) so post-W1 event-version identity is
-    clock-independent, new child writes never mint legacy:{source_id}, and
-    re-observation is a full-bundle decision? Hold W2 until that PR merges.
+    Accept W1A (#6012) so post-W1 event-version identity is clock-independent,
+    new child writes never mint legacy:{source_id}, and re-observation is a
+    full-bundle decision? Hold W2 until that PR merges.
   options:
     - Accept W1A; authorize Wave 2 only after merge and natural CS-path proof
     - Accept W1A with further named amendments
@@ -85,7 +85,7 @@ needs_ceo:
     event_ids or v1 manifests.
   by_when: 2026-08-25
 next_action: >
-  Sol review of the W1A corrective PR; do not merge until accepted; do not start W2.
+  Sol review of W1A PR #6012; do not merge until accepted; do not start W2.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -106,8 +106,9 @@ waves:
     status: in_progress
     depends_on: [W1]
     branch: claude/cs-v2-w1a-identity-correction
+    pr: 6012
     next_action: >
-      Open the W1A PR, make attributable CI green, hand to Sol. Do not start W2.
+      Sol review of #6012. Do not merge until accepted. Do not start W2.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo

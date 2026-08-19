@@ -85,7 +85,7 @@ danger_areas:
   - Dual-read event identity: historical format 1 vs post-W1 format 2
   - ChildOccurrenceUnbound must defer the bundle, not invent an ID
   - classify_bundle_against_published must use evidence_id_from_manifest for v1 rows
-prs: []
+prs: [6012]
 decisions:
   - DEC:CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK
 ---
