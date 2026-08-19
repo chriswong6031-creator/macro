@@ -6,10 +6,17 @@ test reads ``tests/fixtures/prophet_lab/**`` through the same injectable
 path production traffic would.
 
 Fixture layout (see tests/fixtures/prophet_lab/):
-* ``radar_spool/live_flow/entry_radar_events/2026-08-18/`` — two
-  ``entry_radar.events/v1`` envelopes: one at ``pass_ts=09:30Z`` (BEFORE the
-  observation baseline -> retrospective_seed), one at ``pass_ts=14:00Z``
-  (INSIDE the baseline window -> live_forward).
+* ``radar_spool/live_flow/lab_events/2026-08-18/`` — two ``entry_radar.events/v1``
+  envelopes: one at ``pass_ts=09:30Z`` (BEFORE the observation baseline ->
+  retrospective_seed), one at ``pass_ts=14:00Z`` (INSIDE the baseline window
+  -> live_forward). The fixture SUBDIRECTORY name is deliberately NOT
+  ``entry_radar_events`` (Radar's own real spool-key segment,
+  ``engine.entry_radar.live_ledger.EVENT_SPOOL_PREFIX``) — this reader takes
+  an injectable root and never depends on that literal segment name (see
+  ``test_reader_honors_the_real_event_spool_prefix_shape`` below, which
+  proves that independently, from an UNTRACKED tmp_path so it never collides
+  with ``test_entry_radar_w1.py::test_radar_owns_only_its_declared_paths``'s
+  path-substring census of TRACKED files).
 * ``observation_baseline.json`` — baseline window ``13:00Z..21:00Z``.
 * ``prophet_index/index.json`` — plans for BBB (live, entry_date 2026-08-20),
   EEE (watch, entry_date 2026-08-19), CCC (TWO non-closed rows — the newer
@@ -550,13 +557,13 @@ def test_coverage_not_verified_when_spool_has_a_gap(roots: LabRoots, tmp_path: P
     # row -- even the ones inside the nominal window -- degrades to
     # retrospective_seed.
     gapped_spool = tmp_path / "gapped_spool"
-    late_dir = gapped_spool / "live_flow" / "entry_radar_events" / "2026-08-18"
+    late_dir = gapped_spool / "live_flow" / "lab_events" / "2026-08-18"
     late_dir.mkdir(parents=True)
     source = (
-        FIXTURES / "radar_spool" / "live_flow" / "entry_radar_events" / "2026-08-18"
-        / "pass-140000-entry_radar_pack.json"
+        FIXTURES / "radar_spool" / "live_flow" / "lab_events" / "2026-08-18"
+        / "pass-140000-lab-pack.json"
     )
-    (late_dir / "pass-140000-entry_radar_pack.json").write_text(
+    (late_dir / "pass-140000-lab-pack.json").write_text(
         source.read_text(encoding="utf-8"), encoding="utf-8",
     )
     gapped_roots = replace(roots, radar_spool_dir=gapped_spool)
@@ -721,6 +728,37 @@ def test_read_radar_envelopes_skips_malformed_and_off_schema_files(tmp_path: Pat
     assert result.envelopes_skipped == 2
 
 
+def test_reader_honors_the_real_event_spool_prefix_shape(tmp_path: Path) -> None:
+    """The reader is shape-agnostic, but must still work under Radar's REAL prefix.
+
+    ``tests/fixtures/prophet_lab/radar_spool/**`` deliberately does NOT reuse
+    Radar's own ``EVENT_SPOOL_PREFIX`` path segment as a fixture subdirectory
+    name — a COMMITTED path containing the substring ``entry_radar`` trips
+    ``tests/test_entry_radar_w1.py::test_radar_owns_only_its_declared_paths``'s
+    census of tracked files outside the §16 owned-path set, which this
+    package (an intentional, injectable-root READER of Radar's output, not a
+    Radar-owned module) is not on. That guard only scans ``git ls-files``, so
+    it is blind to anything under pytest's ``tmp_path`` — this test proves,
+    from exactly such an untracked location, that :func:`sources_mod.read_radar_envelopes`
+    reads correctly when pointed at a spool laid out with Radar's REAL prefix
+    constant, not just the renamed fixture shape the rest of this module uses.
+    """
+    from engine.entry_radar.live_ledger import EVENT_SPOOL_PREFIX
+
+    spool = tmp_path / "real_shape_spool"
+    real_dir = spool / EVENT_SPOOL_PREFIX / "2026-08-18"
+    real_dir.mkdir(parents=True)
+    (real_dir / "10-00-00-entry_radar_pack.json").write_text(
+        '{"schema": "entry_radar.events/v1", "pass_ts": "2026-08-18T10:00:00Z", '
+        '"pass_id": "entry_radar_pack", "pack": {}, "transitions": [], '
+        '"events": [], "health": {}}',
+        encoding="utf-8",
+    )
+    result = sources_mod.read_radar_envelopes(spool)
+    assert len(result.envelopes) == 1
+    assert result.envelopes[0]["pass_ts"] == "2026-08-18T10:00:00Z"
+
+
 def test_read_radar_envelopes_unconfigured_vs_absent_dir(tmp_path: Path) -> None:
     unconfigured = sources_mod.read_radar_envelopes(None)
     assert unconfigured.configured is False
@@ -777,6 +815,93 @@ def test_read_live_episodes_missing_dir_returns_unavailable(tmp_path: Path) -> N
     unconfigured = sources_mod.read_live_episodes(None)
     assert unconfigured.configured is False
     assert unconfigured.available is False
+
+
+def test_read_live_episodes_no_ledger_file_is_available_and_empty(tmp_path: Path) -> None:
+    # A state dir that exists but has never written episodes.json is a
+    # legitimate, AVAILABLE, empty ledger -- distinct from a missing/
+    # misconfigured state_dir (review S5's own distinction, one layer down).
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    result = sources_mod.read_live_episodes(state_dir)
+    assert result.available is True
+    assert result.episodes == []
+
+
+def test_read_live_episodes_reads_the_real_ledger_file_shape(tmp_path: Path) -> None:
+    """Hand-parsed episodes.json (review ci-pack-10) round-trips a REAL ledger.
+
+    Builds the file through the actual ``LiveEpisode``/``LiveEpisodeLedger``
+    classes (as ``_write_ledger`` does elsewhere in this module) so this test
+    proves the hand-rolled reader in ``sources.read_live_episodes`` correctly
+    reads the byte-real production format, not a reader's own guess at it.
+    """
+    ledger = LiveEpisodeLedger(tmp_path / "state")
+    ledger._episodes["ep-x"] = LiveEpisode(  # noqa: SLF001 — fixture setup
+        episode_id="ep-x", ticker="XXX", detector_id=C1_DETECTOR_ID,
+        detector_version=1, detector_spec_hash="hash", state="TURNING",
+        market_session="2026-08-18",
+    )
+    ledger._episodes["ep-y"] = LiveEpisode(  # noqa: SLF001 — fixture setup
+        episode_id="ep-y", ticker="YYY", detector_id=C1_DETECTOR_ID,
+        detector_version=1, detector_spec_hash="hash", state="EXPIRED",
+        market_session="2026-08-17",
+    )
+    ledger.save()
+
+    result = sources_mod.read_live_episodes(tmp_path / "state")
+    assert result.available is True
+    by_ticker = {e.ticker: e for e in result.episodes}
+    assert by_ticker["XXX"].detector_id == C1_DETECTOR_ID
+    assert by_ticker["XXX"].terminal is False  # TURNING is nonterminal
+    assert by_ticker["YYY"].terminal is True   # EXPIRED is terminal
+
+
+def test_read_live_episodes_skips_malformed_rows(tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    (state_dir / "episodes.json").write_text(
+        '{"schema": "entry_radar.live_ledger/v1", "episodes": ['
+        '{"episode_id": "e1", "ticker": "AAA", "detector_id": "C1_1D_LIVE_WASHOUT@1", '
+        '"state": "ARMED"}, '
+        '{"episode_id": "e2", "ticker": "BBB"}, '
+        '"not_an_object"'
+        ']}',
+        encoding="utf-8",
+    )
+    result = sources_mod.read_live_episodes(state_dir)
+    assert result.available is True
+    assert len(result.episodes) == 1
+    assert result.episodes[0].episode_id == "e1"
+
+
+# ---------------------------------------------------------------------------
+# review ci-pack-10 — the Lab must never import the Radar detector stack
+# ---------------------------------------------------------------------------
+def test_sources_module_never_imports_the_radar_detector_stack() -> None:
+    """AST-level pin: no ``import``/``from`` in sources.py names entry_radar.
+
+    Measured 2026-08-19: a single (even lazy, function-level) import of
+    ``engine.entry_radar.live_ledger`` pulled ~150 unrelated engine/*.py
+    files into the transitive closure of every CI job that reaches
+    ``engine.prophet_lab`` (Radar's own challengers/detectors fan-out into
+    the US board/stock-scoring engine subsystem) -- a real, measured cost
+    that has nothing to do with what this package actually needs (three
+    plain fields off an episode record). This test is an AST walk, not a
+    runtime import, so it catches the edge whether it is module-level or
+    buried inside a function.
+    """
+    import ast
+
+    source_path = Path(sources_mod.__file__)
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    offenders: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and "entry_radar" in node.module:
+            offenders.append(node.module)
+        elif isinstance(node, ast.Import):
+            offenders.extend(a.name for a in node.names if "entry_radar" in a.name)
+    assert not offenders, offenders
 
 
 # ---------------------------------------------------------------------------

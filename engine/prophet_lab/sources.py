@@ -186,42 +186,96 @@ def baseline_coverage_verified(
 # ---------------------------------------------------------------------------
 # Radar live output — episode ledger (nonterminal state, C1 board)
 # ---------------------------------------------------------------------------
+#: §13's three TERMINAL states verbatim (``engine.entry_radar.detectors.TERMINAL_STATES``),
+#: restated as plain strings rather than imported. This module reads exactly
+#: three fields off an episode record (``detector_id``, ``ticker``, ``state``)
+#: to answer one question — "is this unit's CURRENT episode nonterminal" — and
+#: does not need the full ``LiveEpisode`` dataclass, its §13 validation
+#: machinery, or the Radar detector stack that machinery transitively pulls
+#: in to answer it. Measured: importing ``engine.entry_radar.live_ledger`` for
+#: this alone pulled ~150 unrelated engine/*.py files into the closure of
+#: every consumer that reaches this module (CI ci-pack-10 finding, 2026-08-19)
+#: — Radar's OWN pre-existing internal fan-out (challengers/detectors reach
+#: the US board/stock-scoring engine subsystem), not anything this package
+#: needs. Reading the three fields directly keeps the Lab's own promise
+#: (LAB-0 §1: a projection layer, never a second detector stack) honest at
+#: the IMPORT level, not just the call level.
+_TERMINAL_STATES = frozenset({"INVALIDATED", "EXPIRED", "RESOLVED"})
+
+#: The runtime ledger's own file name (``engine.entry_radar.live_ledger._LEDGER_FILE``),
+#: restated for the same reason as ``_TERMINAL_STATES`` above.
+_LEDGER_FILE = "episodes.json"
+
+
+@dataclass(frozen=True)
+class EpisodeSummary:
+    """The three fields this package reads off one ``LiveEpisode`` record."""
+
+    episode_id: str
+    ticker: str
+    detector_id: str
+    state: str
+
+    @property
+    def terminal(self) -> bool:
+        return self.state in _TERMINAL_STATES
+
+
 @dataclass(frozen=True)
 class EpisodeReadResult:
     """S5: lets a board tell "genuinely empty" apart from "unavailable"."""
 
     configured: bool
     available: bool
-    episodes: list[Any] = field(default_factory=list)
+    episodes: list[EpisodeSummary] = field(default_factory=list)
     reason: str | None = None
 
 
 def read_live_episodes(state_dir: Path | str | None) -> EpisodeReadResult:
-    """``LiveEpisode`` records from the injected runtime state dir, plus outcome.
+    """Episode summaries from the injected runtime state dir, plus outcome.
 
-    Reuses ``engine.entry_radar.live_ledger.LiveEpisodeLedger`` — the
-    canonical reader — rather than re-parsing ``episodes.json`` by hand.
-    Imported lazily so a Lab test that never exercises this path does not pay
-    for the full Radar detector stack import. ``available=False`` (with a
-    named ``reason``) covers both "no state dir configured" and "state dir
-    present but unreadable" — a caller (the C1 board, and the C1 component of
-    the union board) must show "unavailable", never silently render as
-    "nothing nonterminal today" (docstring promise this dataclass now makes
-    structural rather than merely stated).
+    Reads ``episodes.json`` directly (the exact file
+    ``engine.entry_radar.live_ledger.LiveEpisodeLedger.save()`` writes) rather
+    than going through that class — see ``_TERMINAL_STATES`` above for why. A
+    torn or off-shape record is skipped, never guessed at, mirroring the house
+    discipline elsewhere in this package. ``available=False`` (with a named
+    ``reason``) covers "no state dir configured", "state dir present but
+    unreadable", and "the file does not parse" — a caller (the C1 board, and
+    the C1 component of the union board) must show "unavailable", never
+    silently render as "nothing nonterminal today".
     """
     if state_dir is None:
         return EpisodeReadResult(configured=False, available=False, reason="not_configured")
     root = Path(state_dir)
     if not root.is_dir():
         return EpisodeReadResult(configured=True, available=False, reason="state_dir_absent")
+    path = root / _LEDGER_FILE
+    if not path.is_file():
+        # No episodes recorded yet is a legitimate, available, empty ledger —
+        # distinct from a missing/misconfigured state_dir.
+        return EpisodeReadResult(configured=True, available=True, episodes=[])
     try:
-        from engine.entry_radar.live_ledger import LiveEpisodeLedger  # noqa: PLC0415
-
-        ledger = LiveEpisodeLedger.load(root)
-        return EpisodeReadResult(configured=True, available=True, episodes=list(ledger.episodes))
-    except Exception as exc:  # noqa: BLE001 — a bad state dir must not break the Lab
-        log.warning("prophet_lab: live episode ledger at %s unreadable (%s)", root, exc)
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        log.warning("prophet_lab: live episode ledger at %s unreadable (%s)", path, exc)
         return EpisodeReadResult(configured=True, available=False, reason="unreadable")
+    if not isinstance(raw, dict):
+        log.warning("prophet_lab: live episode ledger at %s is not an object", path)
+        return EpisodeReadResult(configured=True, available=False, reason="unreadable")
+    episodes: list[EpisodeSummary] = []
+    for row in raw.get("episodes") or ():
+        if not isinstance(row, Mapping):
+            continue
+        episode_id = str(row.get("episode_id") or "").strip()
+        ticker = str(row.get("ticker") or "").strip()
+        detector_id = str(row.get("detector_id") or "").strip()
+        state = str(row.get("state") or "").strip()
+        if not (episode_id and ticker and detector_id and state):
+            continue
+        episodes.append(EpisodeSummary(
+            episode_id=episode_id, ticker=ticker, detector_id=detector_id, state=state,
+        ))
+    return EpisodeReadResult(configured=True, available=True, episodes=episodes)
 
 
 # ---------------------------------------------------------------------------
@@ -345,6 +399,7 @@ __all__ = [
     "BASELINE_SCHEMA",
     "SpoolReadResult",
     "EpisodeReadResult",
+    "EpisodeSummary",
     "read_radar_envelopes",
     "extract_events",
     "earliest_pass_ts",
