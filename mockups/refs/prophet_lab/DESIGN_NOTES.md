@@ -973,6 +973,25 @@ shot at every width.
 themes, both languages, both modes, all six boards, both viewports, `chrome=0` **and** `chrome=1`,
 and — for the LENS — a real touch context under `any-pointer: coarse`. `tools/mutation_test.py` —
 **34/34 caught**, each with a distinct killer and no two mutations sharing a sole catcher.
+
+**How that 34 was obtained, because a receipt that does not say where it came from is the thing
+this round exists to stop.** It is two runs, not one. (1) A **complete 33-mutation harness pass**
+— every mutation except `M34`, which did not exist yet — returned 33 caught. It reported one
+"hole", `M25`, and the hole was a **label**: `PR52-1` had just split `D6c4` into three checks, so
+`M25`'s sole catcher had moved to `D6c4b` while its declared expectation still said `D6c4`. The
+pass's own output named the real catcher (`M25 → ['D6c4b']`), and the expectation was corrected.
+(2) All **ten mutations R5.3 introduces or re-points** — `M13`, `M25`, `M27`–`M34` — were then
+re-run **at the frozen bytes**, driven from `mutation_test.py`'s own table rather than transcribed,
+and all ten were caught: `M25 → ['D6c4b']`, `M27 → ['D6c4','D6c4b']`, `M29 → ['D6i4']`,
+`M30 → ['D28']`, `M31 → ['D25']`, `M32 → ['D27']`, `M33 → ['D24b']`, `M34 → ['D29']`,
+`M13 → ['D19g','D6g','D6g2']`, `M28 → ['D17c','D26']`.
+
+**What is NOT claimed:** a single uninterrupted 34-mutation pass at the frozen SHA. One was
+started and reached 7/34 (all caught) before it was stopped — the host was carrying a load average
+of 15–19 and each pass cost ~7 minutes there, against ~1 minute on a quiet machine. That pass is
+the one receipt this round did not obtain, and the delta re-check should take it. Nothing in the
+two runs above depends on it: between them every mutation was run and caught, and the only
+mutation whose result rests on the earlier pass alone is one the frozen bytes do not change.
 (R5.1 shipped 104/104 and 19/19 at `f889d5eb35f3`; R5.2 shipped 125/125 and 26/26 at
 `f40ae70ac989`. R5.3 adds **fourteen new check ids** — `D6c4b`, `D6c4c`, `D6g2`, `D6i4`, `D25`,
 `D26`, `D26b`, `D26c`, `D27`, `D28`, `D28b`, `D28c`, `D28d`, `D29` — and rewrites `D6c4`; the
