@@ -750,34 +750,76 @@ def compute_pack_hash(*, schema: str, as_of: str, next_session: str, price_basis
     return sha16(payload)
 
 
+def _coerce_probe_row(row: Any) -> Mapping[str, Any] | None:
+    """Normalize one probe row to a mapping.  Objects go through ``to_dict()``."""
+    if isinstance(row, Mapping):
+        return row
+    dumped = getattr(row, "to_dict", None)
+    if callable(dumped):
+        mapped = dumped()
+        if isinstance(mapped, Mapping):
+            return mapped
+    return None
+
+
+def _rows_from_mapping(raw: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], int]:
+    """Canonical serialized key is ``probes``; ``records`` is the legacy alias."""
+    if "probes" in raw:
+        declared = list(raw.get("probes") or ())
+    elif "records" in raw:
+        declared = list(raw.get("records") or ())
+    else:
+        declared = []
+    rows = [mapped for item in declared
+            if (mapped := _coerce_probe_row(item)) is not None]
+    return rows, len(declared)
+
+
 def probe_set_snapshot(probe_set: Any) -> dict[str, Any]:
     """Tickers + an admission-provenance SUMMARY, embedded in the pack.
 
     Accepts a :class:`universe.ProbeSet`, its serialised form, or a bare sequence
-    of tickers (what a test hands in).  The summary is counts by admission layer
-    and reason code — never a collapsed badge and never a rank: §16 A1's
-    no-flattening law governs the probe set itself, and the pack embeds a
-    SUMMARY of it precisely so nobody mistakes the pack for the probe set.
+    of tickers (what a test hands in).  A live ProbeSet is read from ``.records``
+    — never by guessing a ``to_dict()`` key.  Serialized ProbeSet payloads carry
+    those records under ``probes`` (canonical) or ``records`` (legacy).  The
+    summary is counts by admission layer and reason code — never a collapsed
+    badge and never a rank: §16 A1's no-flattening law governs the probe set
+    itself, and the pack embeds a SUMMARY of it precisely so nobody mistakes
+    the pack for the probe set.
     """
     records: list[Mapping[str, Any]] = []
     tickers: list[str] = []
     market_session: str | None = None
     source = "ticker_sequence"
+    declared_n = 0
 
-    raw: Any = probe_set
-    if hasattr(probe_set, "to_dict") and hasattr(probe_set, "records"):
-        raw = probe_set.to_dict()
-    if isinstance(raw, Mapping):
+    if isinstance(probe_set, Mapping):
         source = "probe_set"
-        market_session = raw.get("market_session")
-        for row in raw.get("records") or ():
-            if isinstance(row, Mapping):
-                records.append(row)
-                tickers.append(str(row.get("ticker") or ""))
-        if not records:
-            tickers = [str(t) for t in (raw.get("tickers") or ())]
+        market_session = probe_set.get("market_session")
+        records, declared_n = _rows_from_mapping(probe_set)
+        if records:
+            tickers = [str(row.get("ticker") or "") for row in records]
+        elif declared_n == 0:
+            tickers = [str(t) for t in (probe_set.get("tickers") or ())]
+    elif hasattr(probe_set, "records") and not isinstance(probe_set, (str, bytes)):
+        source = "probe_set"
+        market_session = getattr(probe_set, "market_session", None)
+        raw_rows = list(getattr(probe_set, "records") or ())
+        declared_n = len(raw_rows)
+        for item in raw_rows:
+            coerced = _coerce_probe_row(item)
+            if coerced is None:
+                continue
+            records.append(coerced)
+            tickers.append(str(coerced.get("ticker") or ""))
     else:
-        tickers = [str(t) for t in (raw or ())]
+        tickers = [str(t) for t in (probe_set or ())]
+
+    tickers = sorted({t for t in tickers if t})
+    if declared_n > 0 and not tickers:
+        raise LivePackError(
+            f"probe set snapshot collapsed {declared_n} record(s) to 0 tickers"
+        )
 
     layers: dict[str, int] = {}
     reasons: dict[str, int] = {}
@@ -789,7 +831,6 @@ def probe_set_snapshot(probe_set: Any) -> dict[str, Any]:
                 if isinstance(reason, Mapping) else "unrecorded"
             reasons[code] = reasons.get(code, 0) + 1
 
-    tickers = sorted({t for t in tickers if t})
     return {
         "source": source,
         "market_session": market_session,
