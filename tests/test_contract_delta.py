@@ -194,7 +194,10 @@ def test_ci_yml_carries_a_contract_delta_job_gated_to_pull_request() -> None:
         "main-proof event -- it has no PR base to diff against there"
     )
     assert job.get("runs-on") == "ubuntu-latest"
-    assert job.get("timeout-minutes") == 25
+    # 25 -> 45 (2026-08-19, PR #6013 cancellation): the job is off the
+    # critical path (packs run ~30 min regardless), so this pins a floor, not
+    # an exact value -- a further raise for more margin must not red this.
+    assert job.get("timeout-minutes", 0) >= 45
 
 
 def test_contract_delta_run_step_calls_the_script_with_base() -> None:

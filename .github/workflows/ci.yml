@@ -4782,7 +4782,16 @@ jobs:
     if: github.event_name == 'pull_request'
     name: contract-delta
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 25 -> 45 (2026-08-19). PR #6013's contract-delta job was CANCELLED at
+    # exactly 25 minutes — checkout/setup/fetch all green, only the gate step
+    # itself killed mid-run — because scripts/check_contract_delta.py's two
+    # whole-repo censuses (head + base) ran serially and this hosted 2-core
+    # runner is slower than the machine they were timed on. The script itself
+    # now overlaps those two censuses (concurrent head/base, see its module
+    # docstring), which is the real fix; this is belt-and-suspenders margin.
+    # Safe to keep generous: this job is off the critical path entirely — the
+    # ci-pack matrix it runs alongside already takes ~30 min.
+    timeout-minutes: 45
     steps:
       # Checkout recipe copied verbatim from integration-baseline.yml's
       # `baseline` job (2026-08-13 diet) — same reasoning applies here: this
