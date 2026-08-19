@@ -27,12 +27,20 @@ SCOPE:
   the render budget: metadata-first two-stage ingestion (masterplan §10) — the
   visit-event metadata row (who/when/company/type/published_at) establishes
   the information clock; body/detail hydration is a separate later stage, not
-  this PR. **Failure isolation (asia-close is C0 market-critical):** every
-  failure mode of this collector — source down, schema drift, rights refusal,
-  rate limit — must degrade to a typed empty/partial result for THIS plane
-  only; it must never raise into the lane runner, never delay or fail the
-  market-critical collectors, and never leave a partial write that a rerun
-  cannot reconcile. Prove this with an injected-failure test.
+  this PR. **Failure isolation (asia-close is C0 market-critical) — isolated
+  AND loud (Sol precision ruling 2026-08-19):** every failure mode of this
+  collector — source down, schema drift, rights refusal, rate limit — must
+  degrade to a typed empty/partial result for THIS plane only; it must never
+  raise into the lane runner, never delay or fail the market-critical
+  collectors, and never leave a partial write that a rerun cannot reconcile.
+  BUT isolation is never silence: a source failure must emit a typed
+  degraded/failed health state (plane-level health record the dossier and
+  monitoring can read), and a run whose collector failed must NEVER advance
+  a `measured_no_event` state for any name — "we looked and saw nothing" is
+  only assertable when the source was actually read. A silent failure that
+  presents as a quiet tape is the named defect. Prove BOTH halves with
+  injected-failure tests (lane survives; health goes loud; no
+  measured_no_event advance).
 - **Store**: new owner-native plane `data/china_visits/` (visits remain in the
   visit source plane — masterplan §4.1; this is the lawful new-store case: no
   existing owner). Append-only, dated, dedup on a stable natural key; every

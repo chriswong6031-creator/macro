@@ -26,12 +26,17 @@ SCOPE:
   `WS:STOCK-IDENTITY` record before editing) with China listing identity:
   A-share/H-share listings, venue + ticker + ISIN where published, issuer
   linkage, and the USCC + LEI keys where obtainable from primary sources.
-- Canonical key law (CN-B #5947, adopted): canonical keys = USCC + LEI (when
-  issued) + exchange ticker/venue/ISIN as aliases. Vendor entity IDs
-  (Qichacha/Tianyancha/Wind/equivalent) may be stored ONLY as alias/evidence
-  fields, never as canonical identity, and no vendor API may be called — the
-  resolver NO-BUY stands (masterplan §8.2). Primary sources only: exchange
-  pages, CNInfo, HKEX, GLEIF, official registries.
+- Canonical key law (CN-B #5947, adopted; Sol precision ruling 2026-08-19):
+  USCC and LEI are EXTERNAL deterministic identity evidence — resolution
+  keys INTO the canonical Data OS issuer/security/listing identity — and
+  are NEVER replacements for Mastermind's own canonical IDs. The Data OS
+  master keeps minting its canonical identifiers; USCC/LEI/exchange
+  ticker/venue/ISIN attach to them as deterministic external keys and
+  aliases. Vendor entity IDs (Qichacha/Tianyancha/Wind/equivalent) may be
+  stored ONLY as alias/evidence fields, never as canonical identity, and no
+  vendor API may be called — the resolver NO-BUY stands (masterplan §8.2).
+  Primary sources only: exchange pages, CNInfo, HKEX, GLEIF, official
+  registries.
 - Parent/control facts, where this wave records them at all, are dated
   `(legal_person, role, counterparty, source, as_of, known_at)` tuples from
   primary documents; HKSCC is a nominee, never a parent. If parent/control
