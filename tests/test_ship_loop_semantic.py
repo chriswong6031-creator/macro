@@ -761,3 +761,127 @@ def test_a_pending_head_is_still_reported_as_running_not_unproven(
     )
     assert ok is False
     assert reason.startswith("CI still running")
+
+
+# ---------------------------------------------------------------------------
+# The permanent-trap fence: a unit main is not eligible to report on can never
+# be cleared by a descendant PASS, so it must never pin a session (PR #5936,
+# 2026-08-19). Semantic eligibility is role-dependent — ci.yml plans the merge
+# gate `--gate code` while `gate: data` jobs run on data-health.yml, which
+# emits no main-role evidence at all — so a head planned before that split
+# froze blocking units no main run will ever name again.
+# ---------------------------------------------------------------------------
+
+
+def _inventory(job_ids, *, artifacts=5, descendant=4):
+    return GUARD.semantic_proof.MainRoleInventory(
+        frozenset(job_ids), artifacts, descendant
+    )
+
+
+def _frozen_red_head(monkeypatch, inventory):
+    runs = [
+        _check("ci-pack-7", "failure"),
+        _check("ci-gate", "failure", details=True),
+        _check("some-other-check", "success"),
+    ]
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_head", lambda *_a, **_k: _loaded())
+    monkeypatch.setattr(GUARD, "_semantic_gate", lambda _loaded: _gate(clear=False))
+    monkeypatch.setattr(
+        GUARD, "_recent_main_semantic_evidence", lambda *_a: [{"fixture": "main"}]
+    )
+    monkeypatch.setattr(GUARD, "_run", lambda *_a, **_k: "")
+    monkeypatch.setattr(GUARD, "_is_ancestor", lambda *_a: True)
+    monkeypatch.setattr(
+        GUARD.semantic_proof,
+        "find_descendant_pass_witness",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        GUARD.semantic_proof,
+        "main_role_job_inventory",
+        lambda *_args, **_kwargs: inventory,
+    )
+
+
+def test_unit_main_never_plans_is_retired_not_waited_on(monkeypatch, tmp_path):
+    """The measured trap: block forever on a job no main run can ever emit.
+
+    #5936 merged clean and its Stop gate then demanded a descendant PASS for
+    `house-law-registry`/`signal-contract` across seven post-merge main runs
+    that structurally could not carry them.
+    """
+    _frozen_red_head(monkeypatch, _inventory({"some-code-job", "another-code-job"}))
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is True
+    # Retirement is loud: the unit stays in the record by name.
+    assert "semantic-registry/registry-contract" in detail
+    assert "structurally unclearable" in detail
+    assert "main-eligible=no" in detail
+
+
+def test_main_eligible_unit_still_blocks_and_says_waiting_can_help(
+    monkeypatch, tmp_path
+):
+    _frozen_red_head(monkeypatch, _inventory({"semantic-registry", "some-code-job"}))
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "main-eligible=yes" in detail
+    assert "structurally unclearable" not in detail
+
+
+def test_thin_main_inventory_never_retires_a_unit(monkeypatch, tmp_path):
+    """Fail-closed: too few readable main artifacts answers `unknown`, not `no`."""
+    _frozen_red_head(
+        monkeypatch, _inventory({"some-code-job"}, artifacts=1, descendant=1)
+    )
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "main-eligible=unknown" in detail
+    assert "structurally unclearable" not in detail
+
+
+def test_unreadable_inventory_leaves_the_old_refusal_intact(monkeypatch, tmp_path):
+    """A raising inventory probe must not crash the gate or release the head."""
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("artifact window unreadable")
+
+    _frozen_red_head(monkeypatch, _inventory({"some-code-job"}))
+    monkeypatch.setattr(GUARD.semantic_proof, "main_role_job_inventory", boom)
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "No ancestry-valid descendant PASS" in detail

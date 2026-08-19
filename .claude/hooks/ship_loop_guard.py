@@ -2307,7 +2307,12 @@ def _check_ci(
     if gate is not None:
         semantic_resolved = bool(gate.clear)
         witness_notes: list[str] = []
+        unclearable_notes: list[str] = []
         unresolved_units: list[Any] = []
+        # None until the artifact window is actually read. Every consumer below
+        # treats None as "inventory unknown", which keeps the fail-closed
+        # reading when the witness search itself raised.
+        inventory: Any = None
         if not gate.clear:
             if _semantic_has_nonunit_blocker(loaded, gate):
                 return False, (
@@ -2338,6 +2343,12 @@ def _check_ci(
                         ancestry_cache[key] = _is_ancestor(root, ancestor, descendant)
                     return ancestry_cache[key]
 
+                inventory = semantic_proof.main_role_job_inventory(
+                    merge_sha,
+                    candidates,
+                    ancestry_witness,
+                    max_candidates=SEMANTIC_RUN_LOOKBACK,
+                )
                 for unit in gate.blocking:
                     witness = semantic_proof.find_descendant_pass_witness(
                         unit.logical_job_id,
@@ -2362,6 +2373,52 @@ def _check_ci(
                         "contract_changed="
                         f"{str(bool(getattr(witness, 'contract_changed', False))).lower()})"
                     )
+                # THE PERMANENT-TRAP FENCE (2026-08-19, PR #5936).
+                #
+                # `find_descendant_pass_witness` clears a frozen blocking unit
+                # only with a main-role PASS naming the same `logical_job_id`.
+                # But semantic ELIGIBILITY is role-dependent: `ci.yml` plans the
+                # merge gate `--gate code`, while the 74 `gate: data` jobs moved
+                # to `data-health.yml` (W2, research/
+                # CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md), a lane
+                # that emits no main-role semantic evidence at all. A head
+                # planned before that split froze blocking units for jobs main
+                # will never name again, so the witness search could not
+                # succeed on any future run — measured on #5936's head run
+                # 32223270543 (`house-law-registry`, `signal-contract`) against
+                # seven consecutive post-merge main runs plus an hour-long
+                # ancestry watcher. A job that can never clear must never block:
+                # the session was pinned by the guard's own bookkeeping, not by
+                # anything wrong with its work.
+                #
+                # Fail-closed in both directions. The inventory is read from the
+                # SAME bounded artifacts the witness search already fetched (no
+                # extra API calls, no second source of truth), it counts only
+                # ancestry-valid main artifacts, and with fewer than
+                # `MIN_INVENTORY_ARTIFACTS` of them it answers "unknown" and
+                # every unit stays blocking exactly as before. Retirement is
+                # never silent: the excluded units are named in the release
+                # note, so a genuinely broken job cannot vanish from the record.
+                retired = semantic_proof.unclearable_units(
+                    unresolved_units, inventory
+                )
+                if retired:
+                    retired_ids = {id(unit) for unit in retired}
+                    unresolved_units = [
+                        unit
+                        for unit in unresolved_units
+                        if id(unit) not in retired_ids
+                    ]
+                    for unit in retired:
+                        unclearable_notes.append(
+                            f"{unit.logical_job_id}/{unit.proof_id} retired as "
+                            "structurally unclearable: "
+                            + semantic_proof.format_main_eligibility(
+                                unit, inventory
+                            )
+                            + " — no main-role run plans this logical job, so no "
+                            "descendant PASS can ever exist for it"
+                        )
                 semantic_resolved = not unresolved_units
             except Exception as exc:
                 unresolved_units = list(gate.blocking)
@@ -2371,7 +2428,22 @@ def _check_ci(
                 )
 
         if not semantic_resolved:
-            detail = "; ".join(_semantic_unit_details(unresolved_units or gate.blocking))
+            blocked_units = list(unresolved_units or gate.blocking)
+            detail = "; ".join(_semantic_unit_details(blocked_units))
+            # Whether waiting is even capable of helping is the one fact a
+            # pinned session cannot derive on its own, so state it per unit:
+            # `main-eligible=yes` means a later main run can still emit the PASS
+            # that clears this, `unknown` means the inventory was unreadable.
+            eligibility = [
+                f"{unit.logical_job_id}/{unit.proof_id}: "
+                + semantic_proof.format_main_eligibility(unit, inventory)
+                for unit in blocked_units[:8]
+                if inventory is not None
+            ]
+            if eligibility:
+                detail += "; " + "; ".join(eligibility)
+            if unclearable_notes:
+                detail += "; " + "; ".join(unclearable_notes)
             if semantic_notes:
                 detail += "; " + "; ".join(semantic_notes)
             return False, (
@@ -2385,12 +2457,17 @@ def _check_ci(
         # exact semantic units, even when its own overall workflow stayed red.
         def semantic_transport(entry: tuple[str, str]) -> bool:
             name = entry[0]
+            # A retirement supersedes the frozen `ci-gate` for the same reason
+            # a descendant PASS does: the units that reddened it are no longer
+            # a live verdict on this head. Leaving `ci-gate` behind would keep
+            # the exact trap this fence removes, one name further down.
             return bool(re.fullmatch(r"ci-pack-\d+", name)) or (
-                bool(witness_notes) and name == "ci-gate"
+                bool(witness_notes or unclearable_notes) and name == "ci-gate"
             )
 
         bad = [entry for entry in bad if not semantic_transport(entry)]
         semantic_notes.extend(witness_notes)
+        semantic_notes.extend(unclearable_notes)
         if not bad:
             if pending:
                 return False, "CI still running: " + ", ".join(pending[:8])
