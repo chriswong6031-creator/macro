@@ -1030,7 +1030,20 @@ def reconcile_evidence(
             if raw["outcome"] == "passed":
                 result["classification"] = "passed"
             elif identity["role"] == "main":
-                result["classification"] = "main_failure"
+                # A step can go dark (not_run_prior_failure / timed_out /
+                # infrastructure_blocked) behind an earlier failing step in
+                # the same job without itself having failed. Stamping every
+                # non-passed main outcome as main_failure violated the
+                # validator's outcome=="failed" requirement for that
+                # classification, raising SemanticProofError and voiding the
+                # entire aggregate to an empty jobs list -- which in turn
+                # blocked every session in the fleet from minting a
+                # descendant-PASS witness for any job. Mirror the pr_head
+                # guard below: only a genuinely failed outcome earns
+                # main_failure, everything else is honestly "unknown".
+                result["classification"] = (
+                    "main_failure" if raw["outcome"] == "failed" else "unknown"
+                )
             elif raw["outcome"] == "failed":
                 classification, detail = classify_head_failure(
                     logical_job_id=job_id,
