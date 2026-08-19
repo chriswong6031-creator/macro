@@ -1263,13 +1263,19 @@ class TestRenderedOutput:
             pytest.skip("No rendered free-estate HTML files found in site/")
 
         # Two legitimate script tails, ONE resolution rule.
-        # Generator-rendered estate pages carry the estate tail.
-        _ESTATE_TAIL = ("supabase.js", "account.js", "mm_brain.js", "theme.js")
+        # Generator-rendered estate pages carry the estate tail. mm_brain.js left
+        # this tail in #5983: theme.js mounts its own launcher stub and requests
+        # the 227 KB bundle on first activation, so an eager tag here is pure
+        # first-load cost. It is still in _LANDING_TAIL below — see there.
+        _ESTATE_TAIL = ("supabase.js", "account.js", "theme.js")
         # The hand-authored flagships (bfc.HAND_AUTHORED) ship the LANDING tail
         # instead — masterplan §1, chrome-verified in-browser: onboard.js owns
         # the gear/auth chrome on landing-family pages, so supabase.js,
         # account.js and theme.js are deliberately absent there. They are not
-        # missing; they are not that page's contract.
+        # missing; they are not that page's contract. That absent theme.js is
+        # also why these three KEEP their eager mm_brain.js tag: with no theme.js
+        # there is no launcher stub and no on-demand loader, so the tag is the
+        # only assistant they have.
         # These pages are re-checked against their own tail rather than skipped.
         # The depth-resolution assertion below is what this test exists for — a
         # nested page linking "mm_brain.js" without the "../" 404s — and that
@@ -1308,6 +1314,23 @@ class TestRenderedOutput:
                         f"{page.relative_to(_REPO)}: {asset} resolves to {target}"
                     )
         assert not errors, "Broken nested runtime assets:\n" + "\n".join(errors)
+
+    def test_seo_base_template_does_not_emit_the_assistant_bundle(self):
+        """The source-side guard: the fix must not be undone at the template and
+        only caught after a full estate re-render.
+
+        The estate-WIDE twin of this check (no rendered page may carry an eager
+        tag beside theme.js, with lib.pages.HAND_AUTHORED_PAGES as the asserted
+        exception) lands with the second half of the frozen earnings archive —
+        `scripts/ci_authority.py` caps a pull request at MAX_CHANGED_FILES=3000
+        and the archive alone is 3,419 pages, so the convergence ships in two.
+        """
+        tpl = (_REPO / "templates" / "seo_base.html.j2").read_text(encoding="utf-8")
+        emitted = re.findall(r'<script[^>]+src=["\'][^"\']*mm_brain\.js[^>]*>', tpl)
+        assert not emitted, (
+            "templates/seo_base.html.j2 emits an eager mm_brain.js tag again: "
+            f"{emitted} — theme.js already loads it on first activation (#5976)"
+        )
 
     def test_calculator_pages_have_related_rail(self):
         """F2: Calculator pages must contain the related rail markup (.est-related)."""
