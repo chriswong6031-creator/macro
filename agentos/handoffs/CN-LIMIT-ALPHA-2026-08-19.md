@@ -62,7 +62,7 @@ danger_areas:
   - "engine/china_microstructure.py's ST_STORE_COVERAGE_DATE == 2026-07-06 is store coverage, not the rule-era switch — a P0-ST builder grepping the date will find it first and may wrongly conclude the era switch exists."
   - "Session worktrees are sparse: data/ and site/ are omitted here. P0-ST replay and any candidate-row verification need `python3 scripts/worktree_sparse.py full` first; never git-add an unexpected data/ diff in a sparse tree."
   - "The wave schema has no 'blocked' status: R6 gate states live in next_action prose. Do not 'fix' todo waves into new statuses; do not hand-write created/updated fields."
-prs: []
+prs: [6009]
 decisions: [DEC:CNLI-HAZARD-NOT-MAGIC-INDICATOR, DEC:CNLI-CARRIER-CONTEXT-NOT-SELECTOR, DEC:CNLI-SEQUENCE-OVER-COUNT, DEC:CNLI-ACTOR-NEUTRAL-TAPE-LANGUAGE, DEC:CNLI-OUTCOME-VECTOR, DEC:CNLI-EXACT-CENT-PRIMARY, DEC:CNLI-ONE-CANONICAL-PROPHET-CHAIN, DEC:CNLI-MEASUREMENT-BEFORE-ORDERING, DEC:CNLI-COVERAGE-ATOMIC-CHALLENGER, DEC:CNLI-ERA-IS-EFFECTIVE-AUTHORITY, DEC:CNLI-NO-OUTCOME-AUDITION, DEC:CNLI-AUTHORITY-DOES-NOT-CASCADE, DEC:CNLI-PROPHET-LAB-FENCED-ADJACENCY]
 discoveries: [DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06, DSC:PROPHET-LAB-OWNS-NO-CN-LIMIT-PATHS, DSC:CN-PR0B-NOT-LIVE-BLOCKS-CANDIDATE-PLANE]
 ---
