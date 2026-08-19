@@ -503,3 +503,211 @@ def test_hk_vm_each_leg_has_note_zh():
         for leg in vm["legs"]:
             assert leg.get("note_zh")            # bilingual note on every HK leg
         assert "stance_en" in vm and "stance_zh" in vm
+
+
+# --------------------------------------------------------------------------- #
+# Null contract — non-finite sentinels must never reach user-visible HTML
+# (Wave-2 bug: site/ipo.html rendered "Range $nan-nan" / "Size $nan" because the
+# engine returns raw pandas row cells, which surface float NaN — not None — for a
+# missing offer_price/size_usd/range_low/range_high. `_finite()` + `_usd()`/`_pct()`
+# are the producing-boundary fix; these tests render the FULL page template with
+# planted sentinels and assert none of them leak into the rendered HTML.)
+# --------------------------------------------------------------------------- #
+import re
+
+_NUMERIC_SENTINEL_RE = re.compile(r"(?<![a-zA-Z])(nan|-?inf)(?![a-zA-Z])", re.IGNORECASE)
+# ^ word-boundary-aware: catches a bare "nan"/"inf"/"-inf" token but not "infrastructure",
+# "Infineon", or any other prose word that merely CONTAINS the letters. Scoped further
+# below to just the numeric-cell fragments we pulled out of the rendered page (the offer/
+# size/range table cells and the AVOID-panel lock-up sentence), never the full-page HTML,
+# because the page's disclaimers/footers legitimately contain "infrastructure"-like prose.
+
+
+def _finite_sentinel_free(fragment: str) -> None:
+    m = _NUMERIC_SENTINEL_RE.search(fragment)
+    assert m is None, f"non-finite sentinel {m.group(0)!r} leaked into: {fragment!r}"
+
+
+def test_finite_helper_normalizes_every_non_finite_shape():
+    """_finite(): None passes through; NaN/NaT/pd.NA/+-inf all normalize to None;
+    a real number (including 0) passes through unchanged."""
+    assert bi._finite(None) is None
+    assert bi._finite(float("nan")) is None
+    assert bi._finite(pd.NA) is None
+    assert bi._finite(pd.NaT) is None
+    assert bi._finite(float("inf")) is None
+    assert bi._finite(float("-inf")) is None
+    assert bi._finite(0) == 0 and bi._finite(0.0) == 0.0
+    assert bi._finite(21.5) == 21.5
+
+
+def test_usd_and_pct_are_non_finite_safe_and_preserve_zero():
+    for bad in (None, float("nan"), pd.NA, pd.NaT, float("inf"), float("-inf")):
+        assert bi._usd(bad) == "—", f"_usd({bad!r}) leaked a sentinel"
+        assert bi._pct(bad) == "—", f"_pct({bad!r}) leaked a sentinel"
+    # a legitimate 0 is a REAL value, never the null glyph
+    assert bi._usd(0) == "$0"
+    assert bi._pct(0) == "+0.0%"
+    assert bi._usd(3.5e8) == "$350M"
+
+
+# ---- fixtures: one row per non-finite shape, plus a valid value and a real 0 --- #
+def _recent_row(ticker, offer_price, size_usd, since_offer=None, **extra):
+    row = {
+        "ticker": ticker, "company": f"{ticker} Co", "exchange": "NASDAQ",
+        "offer_price": offer_price, "size_usd": size_usd,
+        "size_band": None, "priced_date": "2026-08-10", "days_since": 3,
+        "is_spac": False, "since_offer": since_offer, "revision": None,
+    }
+    row.update(extra)
+    return row
+
+
+def _upcoming_row(ticker, range_low, range_high, size_usd, **extra):
+    row = {
+        "ticker": ticker, "company": f"{ticker} Co", "exchange": "NASDAQ",
+        "range_low": range_low, "range_high": range_high, "size_usd": size_usd,
+        "size_band": None, "expected_date": "2026-08-20", "is_spac": False,
+    }
+    row.update(extra)
+    return row
+
+
+def _synthetic_snap():
+    recent = [
+        _recent_row("NANX", float("nan"), float("nan"), since_offer=float("nan")),
+        _recent_row("NAX2", pd.NA, pd.NA, since_offer=pd.NA),
+        _recent_row("NAT1", pd.NaT, pd.NaT, since_offer=pd.NaT),
+        _recent_row("INFX", float("inf"), float("-inf"), since_offer=float("inf")),
+        _recent_row("NONX", None, None, since_offer=None),
+        _recent_row("ZERX", 0.0, 0.0, since_offer=0.0),
+        _recent_row("REAL", 21.5, 3.5e8, since_offer=0.125),
+    ]
+    upcoming = [
+        _upcoming_row("RBOTH", float("nan"), float("nan"), float("nan")),   # both missing
+        _upcoming_row("RLOWO", 18.0, float("nan"), 2e8),                    # low only
+        _upcoming_row("RHIGO", float("nan"), 22.0, 2e8),                    # high only
+        _upcoming_row("RFULL", 14.0, 16.0, 4e8),                            # complete range
+        _upcoming_row("RNONE", None, None, None),                          # both None
+        _upcoming_row("RZERO", 0.0, 5.0, 0.0),                             # legit 0 bound + 0 size
+        _upcoming_row("RINF", float("inf"), float("-inf"), float("inf")),  # +-inf both sides
+        _upcoming_row("RPDNA", pd.NA, pd.NA, pd.NA),                       # pandas NA both sides
+    ]
+    win = {"band": "MIXED", "constructive": 1, "hostile": 1, "n_legs": 2,
+           "n_expected": 6, "low_confidence": True, "legs": []}
+    after = {
+        "rows": [
+            {"ticker": "IPO", "label": "Renaissance IPO ETF",
+             "1y": float("nan"), "3y": 0.0, "5y": 0.15},
+            {"ticker": "SPY", "label": "S&P 500", "1y": 0.10, "3y": 0.30, "5y": 0.55},
+        ],
+        "verdict": "tracks", "ipo_5y": 0.15, "spy_5y": 0.20, "gap_5y": -0.05,
+    }
+    pipe = {
+        "available": True, "froth_flags": [], "median_op_size_90d": float("nan"),
+        "pace": "quiet", "priced_90d": 2, "spac_pct_90d": 10, "upcoming_n": len(upcoming),
+    }
+    return {
+        "window": win, "aftermarket": after, "pipeline": pipe,
+        "recent": recent, "upcoming": upcoming,
+        "built": "2026-08-19T00:00:00Z", "as_of": "2026-08-19",
+    }
+
+
+def _render_ipo_html(monkeypatch, tmp_path):
+    """Drive the REAL bi.build() pipeline end to end (same code path as production —
+    window/aftermarket/pipeline view-models, the recent/upcoming loops with the fix
+    under test, hero/avoid/changed builders, and the real ipo.html.j2 render) with
+    every non-engine dependency stubbed out, and the output redirected to tmp_path —
+    never into site/. Returns the rendered HTML string."""
+    snap = _synthetic_snap()
+    monkeypatch.setattr(bi.ir, "radar_snapshot", lambda **kw: snap)
+    monkeypatch.setattr(bi, "_risk_score_from_spvector", lambda: None)
+    monkeypatch.setattr(bi, "_lockup_vm", lambda: {"rows": [], "summary": {}, "raw": []})
+    monkeypatch.setattr(bi, "_hk_vm", lambda: {"available": False})
+    monkeypatch.setattr(bi, "_chart_aftermarket", lambda: None)
+    monkeypatch.setattr("collectors.ipo_calendar.fetch_ipo_calendar", lambda: None)
+    monkeypatch.setattr(bi.config, "data_dir", lambda: tmp_path)
+
+    captured = {}
+
+    def _fake_write_page(path, html, **kw):
+        out = tmp_path / "ipo.html"
+        out.write_text(html)
+        captured["html"] = html
+        return out
+
+    monkeypatch.setattr(bi, "write_page", _fake_write_page)
+    bi.build()
+    return captured["html"]
+
+
+def test_ipo_full_render_has_no_non_finite_sentinel(monkeypatch, tmp_path):
+    """Render the FULL ipo.html.j2 page with every non-finite shape planted in the
+    recent-listings and upcoming-deals rows, then scan just the numeric table/card
+    cells (offer price, size, range) for a leaked nan/inf sentinel."""
+    html = _render_ipo_html(monkeypatch, tmp_path)
+    assert html.strip().startswith("<!DOCTYPE") or html.strip().startswith("<!doctype")
+
+    # scope the assertion to the numeric cells, not the whole page (the disclaimer
+    # prose legitimately contains "infrastructure"-shaped words elsewhere on the site,
+    # and this page's own copy uses words like "informs"/"finalized" nearby)
+    for tkr in ("NANX", "NAX2", "NAT1", "INFX", "NONX", "ZERX", "REAL"):
+        # pull the row's <tr>...</tr> for the recent-listings table
+        m = re.search(rf"<b[^>]*>{tkr}</b>.*?</tr>", html, re.DOTALL)
+        assert m, f"row for {tkr} not found in rendered recent-listings table"
+        _finite_sentinel_free(m.group(0))
+
+    for tkr in ("RBOTH", "RLOWO", "RHIGO", "RFULL", "RNONE", "RZERO", "RINF", "RPDNA"):
+        m = re.search(rf'<div class="d-tkr">{tkr}.*?</div>\s*</div>', html, re.DOTALL)
+        assert m, f"card for {tkr} not found in rendered upcoming-deals grid"
+        _finite_sentinel_free(m.group(0))
+
+
+def test_ipo_range_never_fabricates_missing_side(monkeypatch, tmp_path):
+    """Both bounds missing -> the house em-dash null. Exactly one bound known -> the
+    ONE real bound is shown honestly, never a fabricated/estimated other side."""
+    html = _render_ipo_html(monkeypatch, tmp_path)
+
+    def _range_text(tkr):
+        # the "k" label span wraps the bilingual t() macro output
+        # (<span class="l-en">Range</span><span class="l-zh">...</span>), so match
+        # loosely on "Range" appearing anywhere inside the k-span
+        m = re.search(
+            rf'<div class="d-tkr">{tkr}.*?<span class="k">[^<]*<span class="l-en">Range</span>'
+            rf'.*?<span class="v">(.*?)</span>',
+            html, re.DOTALL)
+        assert m, f"Range row for {tkr} not found"
+        return m.group(1)
+
+    assert _range_text("RBOTH") == "—"                 # both missing -> null
+    assert _range_text("RLOWO") == "$18"                # only low known -> honest single bound
+    assert "–" not in _range_text("RLOWO")              # never fabricate the high side
+    assert _range_text("RHIGO") == "$22"                # only high known -> honest single bound
+    assert "–" not in _range_text("RHIGO")
+    assert _range_text("RFULL") == "$14–16"             # complete range renders both sides
+    assert _range_text("RNONE") == "—"
+    assert _range_text("RINF") == "—"                   # +-inf both sides -> null, not a range
+    assert _range_text("RPDNA") == "—"
+
+
+def test_ipo_zero_survives_as_real_value_not_null(monkeypatch, tmp_path):
+    """A legitimate 0 (offer price / size / range bound) must render as a real zero,
+    never silently promoted to the missing-data em-dash."""
+    html = _render_ipo_html(monkeypatch, tmp_path)
+
+    m = re.search(r"<b[^>]*>ZERX</b>.*?</tr>", html, re.DOTALL)
+    assert m
+    row_html = m.group(0)
+    assert "$0.00" in row_html          # offer_price=0 -> real "$0.00", not "—"
+    assert "$0" in row_html             # size_usd=0 -> real "$0"
+
+    m = re.search(r'<div class="d-tkr">RZERO.*?</div>\s*</div>', html, re.DOTALL)
+    assert m
+    card_html = m.group(0)
+    assert "$0" in card_html            # size_usd=0 on the upcoming card -> real "$0"
+    # range: low=0.0, high=5.0 -> "$0–5" (0 is a real bound, not the em-dash)
+    rng = re.search(
+        r'<span class="k">[^<]*<span class="l-en">Range</span>.*?<span class="v">(.*?)</span>',
+        card_html, re.DOTALL)
+    assert rng and rng.group(1) == "$0–5"
