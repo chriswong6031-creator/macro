@@ -66,6 +66,15 @@
   function chgNodes() { return [].slice.call(document.querySelectorAll(".nb-chg[data-sym]")); }
   function symNodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym],.nb-chg[data-sym]")); }
   function rawSym(el) { return (el.getAttribute("data-sym") || "").trim().toUpperCase(); }
+  // Markets whose BOARD BAKES a "$" on the nightly price, so a live patch must put
+  // it back or the number visibly loses its currency glyph mid-session. Measured on
+  // the served pages 2026-08-19: us_stocks.html data-mkt="us" bakes "$212.55" and
+  // canada_stocks.html data-mkt="ca" bakes "$15.20", while hk_stocks.html ("hk",
+  // HKD) bakes "6.22" and china_stocks.html ("cn", CNY) bakes "37.70" bare. `ca` was
+  // missing here, so every .TO card dropped its "$" the moment live.js patched it —
+  // invisible until the Canada board joined the live universe and started patching
+  // at all. Do NOT add "hk"/"cn": those are HKD/CNY and a "$" would be plain wrong.
+  var DOLLAR_MKT = { us: 1, ca: 1 };
   function fmtPrice(price, mkt) {
     if (mkt === "crypto") {                       // "$" + thousands, no decimals (matches the baked BTC header)
       try { return "$" + Number(price).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
@@ -75,7 +84,7 @@
     var s;
     try { s = Number(price).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
     catch (e) { s = Number(price).toFixed(dec); }
-    return (mkt === "us" ? "$" : "") + s;
+    return (DOLLAR_MKT[mkt] ? "$" : "") + s;
   }
   // Crypto trades 24/7 and is refreshed on its own hourly cadence, so it goes stale
   // only when a scheduled refresh is actually MISSED (~65 min), not at the 20-min

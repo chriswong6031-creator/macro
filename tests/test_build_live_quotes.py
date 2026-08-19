@@ -9,6 +9,7 @@ load-bearing fail-safe (offline = a valid, empty snapshot).
 """
 from __future__ import annotations
 
+import pathlib
 import re
 
 from engine import live_quotes as lq
@@ -464,3 +465,74 @@ def test_yahoo_spark_yield_indexes_are_percent_direct_scale():
     # the level difference (a ÷10 mis-scale would render the ten-year as 0.46%
     # and understate the move 10×; live.js:105 has the reference formula)
     assert round((out["^TNX"]["price"] - out["^TNX"]["prev_close"]) * 100, 1) == 1.8
+
+
+# ---------------------------------------------------------------------------
+# live.js currency-glyph contract: a patched price must keep the "$" the board
+# BAKED, or a card visibly loses its currency symbol the moment it goes live.
+#
+# This only became reachable when the Canada/HK boards joined the live universe
+# (the DISPLAY_BOARD_PAGES expansion above): before that live.js never patched
+# those cards at all, so the mismatch could not show. Measured on the served
+# pages 2026-08-19 — us "$212.55", ca "$15.20", hk "6.22", cn "37.70".
+# ---------------------------------------------------------------------------
+_LIVE_JS = pathlib.Path(__file__).resolve().parents[1] / "templates" / "live.js"
+
+# market -> does its board bake a "$" on the nightly price
+_BAKES_DOLLAR = {"us": True, "ca": True, "hk": False, "cn": False}
+
+
+def _dollar_markets_from_live_js() -> set[str]:
+    """The DOLLAR_MKT table as live.js actually declares it."""
+    src = _LIVE_JS.read_text()
+    m = re.search(r"var\s+DOLLAR_MKT\s*=\s*\{([^}]*)\}", src)
+    assert m, "live.js no longer declares DOLLAR_MKT — update this contract test"
+    return set(re.findall(r"([A-Za-z_]+)\s*:\s*1", m.group(1)))
+
+
+def test_live_js_dollar_markets_match_the_boards_that_bake_a_dollar():
+    """`ca` was missing, so every .TO card dropped its "$" on the first patch."""
+    assert _dollar_markets_from_live_js() == {m for m, b in _BAKES_DOLLAR.items() if b}
+
+
+def test_live_js_never_prefixes_a_dollar_onto_hkd_or_cny():
+    """HK is HKD and China is CNY — a "$" there would be wrong, not merely ugly."""
+    dollar = _dollar_markets_from_live_js()
+    assert "hk" not in dollar and "cn" not in dollar
+
+
+def test_fmt_price_uses_the_table_rather_than_a_hardcoded_us_test():
+    """Regression guard: the old body was `(mkt === "us" ? "$" : "")`, which no
+    amount of table-editing could fix. The table must be what fmtPrice reads."""
+    src = _LIVE_JS.read_text()
+    body = re.search(r"function fmtPrice\(price, mkt\)\s*\{(.*?)\n  \}", src, re.S)
+    assert body, "fmtPrice not found in templates/live.js"
+    assert "DOLLAR_MKT[mkt]" in body.group(1)
+    assert 'mkt === "us" ? "$"' not in body.group(1)
+
+
+def test_built_board_pages_bake_the_prefix_live_js_will_restore():
+    """End-to-end: for every built board page, the glyph the page bakes is the
+    glyph live.js puts back. Skips on a sparse checkout (no site/)."""
+    site = pathlib.Path(__file__).resolve().parents[1] / "site"
+    if not site.is_dir():
+        pytest.skip("sparse worktree — site/ not checked out")
+    dollar = _dollar_markets_from_live_js()
+    checked = 0
+    for page, mkt in (("us_stocks.html", "us"), ("canada_stocks.html", "ca"),
+                      ("hk_stocks.html", "hk"), ("china_stocks.html", "cn")):
+        p = site / page
+        if not p.is_file():
+            continue
+        baked = re.findall(
+            r'<span class="nb-px[^"]*"[^>]*data-mkt="' + mkt + r'"[^>]*>([^<]+)</span>',
+            p.read_text(errors="ignore"))
+        baked = [b.strip() for b in baked if b.strip() and b.strip() != "—"]
+        if not baked:
+            continue
+        checked += 1
+        has_dollar = all(b.startswith("$") for b in baked)
+        assert has_dollar == (mkt in dollar), (
+            f"{page} bakes {baked[:3]} for data-mkt={mkt!r} but live.js "
+            f"{'adds' if mkt in dollar else 'omits'} the $ — a patch would change the glyph")
+    assert checked, "no board page contributed a baked price — contract unverified"
