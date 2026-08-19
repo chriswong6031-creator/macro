@@ -775,8 +775,16 @@ jobs:
       # synthetic pack + recovery tape, no data/, no site/, no network, no LLM.
       # Unnamed suites never run in this manifest; leaving W6 off this line would
       # ship the ranking path dark.
-      - name: entry-radar W1+W2+W3+W4+W5+W6 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence, RP1 Research Priority
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py tests/test_entry_radar_w6_priority.py -q
+      #
+      # W4.1 (2026-08-18/19, live-transport correction) joins the SAME step:
+      # tests/test_entry_radar_w41_transport.py is the real-envelope contract
+      # battery (entry_radar.events/v1 spool envelope -> W5's read_spool_events,
+      # confirmed_lanes pack field -> the RTH reader, byte-exact event identity,
+      # keep-first dedup on a re-spooled event_id, unparseable-pass_ts latch
+      # guard). Hermetic: tmp_path spool files + synthetic packs, no data/, no
+      # site/, no network. Unnamed suites never run in this manifest.
+      - name: entry-radar W1+W2+W3+W4+W4.1+W5+W6 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, live-transport correction, W5 prereg gates + forward evidence, RP1 Research Priority
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w41_transport.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py tests/test_entry_radar_w6_priority.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight

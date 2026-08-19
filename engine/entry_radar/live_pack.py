@@ -102,8 +102,22 @@ from engine.entry_radar.entry_events import EntryEventError, sha16
 from engine.entry_radar.four_hour import four_hour_turn
 from engine.session_digest import session_window_et
 
-SCHEMA_LIVE_PACK = "entry_radar.live_pack/v1"
+SCHEMA_LIVE_PACK = "entry_radar.live_pack/v2"
 SCHEMA_INVERSION_PROOF = "entry_radar.inversion_proof/v1"
+
+#: The RETIRED v1 label, kept ONLY so :func:`load_pack` can tell a genuinely
+#: pre-W4.1 manifest (no ``schema`` key at all) apart from a v2 one instead of
+#: defaulting a missing field to the CURRENT schema — which would mislabel a
+#: pack that was never carrying ``confirmed_lanes`` as if it were.
+_SCHEMA_LIVE_PACK_V1 = "entry_radar.live_pack/v1"
+
+#: The honest default for a ticker the confirmed-lane source never covered — no
+#: slice directory configured, this ticker's slice absent, or a caller-supplied
+#: row that failed to normalize.  Same reason word the RTH reader has always
+#: published (W4.1, was previously unreachable because no writer ever populated
+#: the field this reads).
+_UNAVAILABLE_LANE_ROW: dict[str, Any] = {
+    "availability": "unavailable", "reason": "slice_store_unconfigured"}
 
 #: The six PUBLISHED detector identities (W4 design §0, W3 #5724).  Held as
 #: literals so a spec block edited anywhere in the package REFUSES the pack build
@@ -573,6 +587,10 @@ class LivePack:
     substrate_missing: tuple[dict[str, Any], ...] = ()
     pack_hash: str = ""
     proof: dict[str, Any] | None = None
+    #: (v2) per-ticker ``{g0: {...}, c5: {...}}`` confirmed-bar lane rows —
+    #: see :func:`confirmed_lanes_snapshot`.  Always populated (never absent),
+    #: honestly ``unavailable`` when no confirmed-lane source was supplied.
+    confirmed_lanes: dict[str, Any] = field(default_factory=dict)
 
     def by_ticker(self) -> dict[str, PackName]:
         return {row.ticker: row for row in self.names}
@@ -597,6 +615,7 @@ class LivePack:
             "pack_hash": self.pack_hash,
             "proof": _jsonable(self.proof) if self.proof is not None else None,
             "proof_failed": self.proof_failed,
+            "confirmed_lanes": _jsonable(self.confirmed_lanes),
         }
 
     def with_proof(self, proof: Mapping[str, Any]) -> LivePack:
@@ -611,7 +630,7 @@ class LivePack:
             spec_hashes=dict(self.spec_hashes), probe_set=dict(self.probe_set),
             names=self.names, substrate=dict(self.substrate),
             substrate_missing=self.substrate_missing, pack_hash=self.pack_hash,
-            proof=dict(proof))
+            proof=dict(proof), confirmed_lanes=dict(self.confirmed_lanes))
 
 
 def _jsonable(value: Any) -> Any:
@@ -651,9 +670,51 @@ def substrate_fingerprint(frame: pd.DataFrame) -> str:
     return sha16(rows)
 
 
+def _normalize_confirmed_lane_row(raw: Any) -> dict[str, Any]:
+    """One ticker's ``{g0, c5}`` confirmed-lane row, honestly defaulted.
+
+    A row that is not a mapping, or names an unrecognised ``availability``
+    value, becomes the same ``slice_store_unconfigured`` shape the RTH reader
+    has always published — the null law applied AT THE PACK BOUNDARY, so a
+    malformed nightly-builder input can never reach a live reader as a
+    plausible-looking "available" row.
+    """
+    if not isinstance(raw, Mapping):
+        return {"g0": dict(_UNAVAILABLE_LANE_ROW), "c5": dict(_UNAVAILABLE_LANE_ROW)}
+    out: dict[str, Any] = {}
+    for lane in ("g0", "c5"):
+        row = raw.get(lane)
+        if isinstance(row, Mapping) and row.get("availability") in ("available",
+                                                                     "unavailable"):
+            out[lane] = _jsonable(dict(row))
+        else:
+            out[lane] = dict(_UNAVAILABLE_LANE_ROW)
+    return out
+
+
+def confirmed_lanes_snapshot(confirmed_lanes: Mapping[str, Any] | None,
+                             tickers: Sequence[str]) -> dict[str, dict[str, Any]]:
+    """Normalize the caller-supplied confirmed-lane map to EVERY probe ticker.
+
+    ``confirmed_lanes`` is the nightly builder's own per-ticker G0/C5 read of the
+    Terminal slice store (:func:`scripts.entry_radar_live_pack.slice_lanes`,
+    reshaped by that script's own adapter) — this module names no slice path and
+    performs no IO to produce it, exactly as ``store_reader`` keeps daily-store
+    IO out of this module.  ``None`` (no confirmed-lane source given at all) or a
+    ticker missing from the map both fall to the honest unavailable default —
+    never a silently absent ticker, which is what made the RTH reader's own
+    fallback unreachable before W4.1 (no writer ever populated
+    ``probe_set["nightly_lanes"]``).
+    """
+    source = confirmed_lanes if isinstance(confirmed_lanes, Mapping) else {}
+    return {str(t): _normalize_confirmed_lane_row(source.get(str(t)))
+            for t in tickers}
+
+
 def compute_pack_hash(*, schema: str, as_of: str, next_session: str, price_basis: str,
                       spec_hashes: Mapping[str, str], probe_tickers: Sequence[str],
-                      names: Sequence[PackName]) -> str:
+                      names: Sequence[PackName],
+                      confirmed_lanes: Mapping[str, Any] | None = None) -> str:
     """sha256/16 over the pack's FIRING-RELEVANT content.  Coverage, enumerated:
 
       * ``schema``, ``as_of``, ``next_session``, ``price_basis`` — the session gate
@@ -663,13 +724,18 @@ def compute_pack_hash(*, schema: str, as_of: str, next_session: str, price_basis
       * per name: the ``substrate_fingerprint`` (the frozen bytes), the derived
         confirmed values a detector reads (``as_of_close``, ATR, K, D, bars),
         ``last_confirmed``/``freshness`` (a stale name must not hash equal to a
-        current one), and BOTH threshold receipts in full.
+        current one), and BOTH threshold receipts in full;
+      * (v2) ``confirmed_lanes`` — the per-ticker G0/C5 confirmed-bar
+        availability rows.  These are firing-relevant to the confirmed-bar
+        lanes exactly as the six inverted thresholds are to C1/C2a: a pack
+        whose slice read moved must not hash equal to one whose did not.
 
     DELIBERATELY EXCLUDED: ``built_at`` (rebuilding the same session's pack a
     minute later is the same pack) and ``proof`` (a statement about the pack, not
     part of it).  Everything a name could FIRE on is inside; nothing that merely
     records when the build ran is.
     """
+    lanes = confirmed_lanes_snapshot(confirmed_lanes, probe_tickers)
     payload = {
         "schema": schema,
         "as_of": as_of,
@@ -679,6 +745,7 @@ def compute_pack_hash(*, schema: str, as_of: str, next_session: str, price_basis
         "probe_tickers": sorted(str(t) for t in probe_tickers),
         "names": [_jsonable(row.to_dict()) for row in
                   sorted(names, key=lambda r: r.ticker)],
+        "confirmed_lanes": {t: lanes[t] for t in sorted(lanes)},
     }
     return sha16(payload)
 
@@ -754,13 +821,21 @@ def _frozen_frame(frame: pd.DataFrame, *, ticker: str, next_session: date,
 def build_pack(*, probe_set: Any, store_reader: Callable[[str], pd.DataFrame | None],
                as_of: date | str, built_at: datetime | str,
                price_basis: str = ch.BASIS_ADJUSTED, market: str = "US",
-               vintage: str = "") -> LivePack:
+               vintage: str = "",
+               confirmed_lanes: Mapping[str, Any] | None = None) -> LivePack:
     """Freeze one session's evaluation substrate for the whole probe set.
 
     ``store_reader`` is INJECTED: production hands in a reader over the daily
     store, tests hand in synthetic frames, and this module names no store path at
     all.  A name the reader cannot serve lands in ``substrate_missing`` with its
     reason and is never silently dropped (§6's "escalate, don't truncate").
+
+    ``confirmed_lanes`` is likewise INJECTED (v2): the nightly builder's own
+    per-ticker G0/C5 read of the Terminal slice store, or None when it has
+    nothing to report.  This module performs no slice IO and names no slice
+    path — :func:`confirmed_lanes_snapshot` normalizes whatever is handed in to
+    every probe ticker, honestly ``unavailable`` for one this pass never
+    covered.
 
     Refuses loudly, before reading a price, when a registered detector hash has
     drifted from its published identity.
@@ -807,17 +882,21 @@ def build_pack(*, probe_set: Any, store_reader: Callable[[str], pd.DataFrame | N
         names.append(_pack_name(ticker, frozen, next_session=next_session,
                                 market=market))
 
+    lane_rows = confirmed_lanes_snapshot(confirmed_lanes, snapshot["tickers"])
+
     pack_hash = compute_pack_hash(
         schema=SCHEMA_LIVE_PACK, as_of=as_of_date.isoformat(),
         next_session=next_session.isoformat(), price_basis=price_basis,
-        spec_hashes=spec_hashes, probe_tickers=snapshot["tickers"], names=names)
+        spec_hashes=spec_hashes, probe_tickers=snapshot["tickers"], names=names,
+        confirmed_lanes=lane_rows)
 
     return LivePack(
         schema=SCHEMA_LIVE_PACK, as_of=as_of_date.isoformat(),
         next_session=next_session.isoformat(), built_at=built_stamp,
         price_basis=price_basis, spec_hashes=dict(spec_hashes), probe_set=snapshot,
         names=tuple(sorted(names, key=lambda r: r.ticker)), substrate=substrate,
-        substrate_missing=tuple(missing), pack_hash=pack_hash)
+        substrate_missing=tuple(missing), pack_hash=pack_hash,
+        confirmed_lanes=lane_rows)
 
 
 def _pack_name(ticker: str, frozen: pd.DataFrame, *, next_session: date,
@@ -1357,8 +1436,13 @@ def load_pack(state_dir: Path | str, *, as_of: str | None = None) -> LivePack | 
             frame = block.set_index(pd.DatetimeIndex(pd.to_datetime(block["session"])))
             substrate[str(ticker)] = frame.loc[:, list(_SUBSTRATE_COLUMNS)].astype(float)
 
+    # A missing/empty `schema` field means this manifest predates the field
+    # entirely — that is a v1 pack, never the CURRENT `SCHEMA_LIVE_PACK`
+    # (N4): defaulting it to "whatever v2 currently is" would present a pack
+    # that never carried `confirmed_lanes` as though it did.
+    raw_confirmed_lanes = manifest.get("confirmed_lanes") or {}
     return LivePack(
-        schema=str(manifest.get("schema") or SCHEMA_LIVE_PACK),
+        schema=str(manifest.get("schema") or _SCHEMA_LIVE_PACK_V1),
         as_of=str(manifest["as_of"]), next_session=str(manifest["next_session"]),
         built_at=str(manifest.get("built_at") or ""),
         price_basis=str(manifest.get("price_basis") or ch.BASIS_ADJUSTED),
@@ -1369,6 +1453,13 @@ def load_pack(state_dir: Path | str, *, as_of: str | None = None) -> LivePack | 
         substrate_missing=tuple(dict(row) for row in
                                 manifest.get("substrate_missing") or ()),
         pack_hash=str(manifest.get("pack_hash") or ""),
+        # (S1) Routed through the SAME normalizer `build_pack` uses — a torn or
+        # hand-repaired manifest row must not reach the live reader verbatim;
+        # this is the production read path, and the module's own firewall
+        # claim (confirmed_lanes_snapshot's docstring) is only true if EVERY
+        # entry point normalizes, not just the write path.
+        confirmed_lanes=confirmed_lanes_snapshot(
+            raw_confirmed_lanes, list(raw_confirmed_lanes)),
         proof=manifest.get("proof"))
 
 
