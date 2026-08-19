@@ -181,8 +181,10 @@ too) — where a separator separates nothing and reads as a stray mark, and CSS 
 breakpoint exception is the same evidence, one step earlier.) Keying the rule to each statement
 instead makes wrapping a non-event: every rule belongs to the text immediately right of it, so a
 statement carries its own marker to the new line and needs no exceptions at all. The check stayed,
-inverted: every visible statement is keyed, no control is (`M34` removes the markers).*
-`VTL52-608` — the
+inverted: every visible statement is keyed, no control is (`M34` removes the markers), and its
+width ladder was trimmed with the device — from the ten-width sweep to both sides of every
+breakpoint — because a wrap-position sweep has nothing left to catch and each width costs a page
+load on all 34 mutation runs.* `VTL52-608` — the
 keep/remove criterion is repaired, not the eyebrow: R5.2 wrote that a rail earns its place by
 *differing between adjacent rows*, which the `PROPHET` eyebrow disproves. The real test is
 **label vs claim** — a label names the value beside it and is read *with* it; a claim asserts a
@@ -192,7 +194,18 @@ happens: **solid to the midline, dashed from it down**, instead of running the L
 height across the element that announces the end of LIVE. Both halves are treatments the rows above
 and below already wear; no new device.
 
-**Declined: none.** All three judgment-call minors (`VTL52-606`, `607`, `608`) are taken.
+**Declined: none.** All three judgment-call minors (`VTL52-606`, `607`, `608`) are taken, and so
+are the other four. Two findings are outside the taken set and both are named rather than skipped:
+`PR52-9` (`D19f` is a literal source match) is `NOT_ACTIONED` — it is a cheap redundant guard on
+one specific regression, its own comment already says `D19c` holds the law, and removing it would
+trade redundancy for nothing; `VTL52-609` (the anti-hijack return leg is receipted only at a 40px
+start, and the round-trip crop is shot at a width where the landing never fires) is `NOT_IN_SCOPE`
+— the verdict carried neither it nor a condition covering it, and this round does not widen its own
+scope on the last composition-touching pass. The substance is written down in `continuity.yml` for
+whoever does take it: the 40px start is deliberate and its reason is at `verify.py:402-404`, and
+the stronger receipt would drive the flip from a scroll position reached *without* moving focus and
+shoot the round trip at 390. Neither is a correctness gap in the artifact; both are gaps in the
+evidence for it.
 
 ---
 
