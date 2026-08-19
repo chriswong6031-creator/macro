@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ADBE-BULL-20260706",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.2,
-  "raw_confidence": 64.1,
-  "delta_vs_base": 2.2,
+  "management_confidence": 63.0,
+  "raw_confidence": 64.0,
+  "delta_vs_base": 3.0,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 40.7,
-    "pace": 46.5,
+    "pace": 46.2,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.757,
     "dist_to_t1_r": 0.743,
     "dist_to_t2_r": 2.243,
-    "horizon_pct_used": 77.8,
+    "horizon_pct_used": 80.0,
     "p1": 0.5046,
     "p2": 0.2523,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 35,
-  "tau": 0.7778
+  "days_elapsed": 36,
+  "tau": 0.8
 }

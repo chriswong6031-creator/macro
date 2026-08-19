@@ -264,18 +264,37 @@ overrides: []
 
 verdict: REVISE
 
+# RIG §13.3 SHAPE-ONLY AMENDMENT — added by the D-LAB-R5 cycle, 2026-08-18.
+# A successor must carry every condition forward BY ID; these were bare strings and
+# therefore uncitable, which `check_reference_integrity.py` reports as
+# `condition-without-id` the moment a successor exists. Ids 1-8 are the blocker each
+# condition remedies; 9-11 are minted. Every `text:` below is BYTE-IDENTICAL to the
+# string it replaced — no verdict content was added, removed, softened or reordered.
+# The frozen evidence copy this record was judged against is vendored and sha256-pinned
+# separately at prophet-board-5514-r4/r3_source/verdict.yml and is untouched.
 conditions:
-  - "PRC-301 — the card routes to the name's detail surface, or the capability receives an explicit disposition with a reachability proof. A hover affordance with no destination is not a disposition."
-  - "PRC-302 — the anonymous gate's copy matches what a subscriber actually lands on, or the card tier's level ban is re-adjudicated on the record."
-  - "PRC-305 — the behind-the-tape state gets a slot and a capability id, or an explicit REMOVE with its §1 fields. Production ships this banner today."
-  - "PRC-306 — every row of the book is reachable as a card (in-place expansion as production does it, pagination, or a filter that reaches them), or the table carries the board's own decision fields so it is an honest second representation rather than a demotion."
-  - "VTC-301 — stop stretching short cards against tall neighbours. The artifact already renders these rows well in two other layouts; the canonical grid must not be the one place they read as broken."
-  - "DA-001 — DESIGN_NOTES §0b.1 and §7 are amended to record that the state=paid exemption was withdrawn under PRC-203, or §0b.1 is struck. No document that becomes law may ship two contradictory positions unmarked."
-  - "DA-002 — the r2 non-waivable stance-distinctness condition is discharged on the CHIP as well as the chart (dark --ink-mix-up off 100%, or .pv-buy .pv-chip re-pointed), so a dark Buy card is not two direction inks."
-  - "DA-003 — the compare page renders its specimen at the payload's true stance, scopes divergent shared classes into .cmp-prod so production is shown in production's values, carries a cost list for the revised column, and adds a chartless/no-read specimen."
-  - "VTC-302 is NOT blocking (downgraded on the critic's own pass-2 evidence: 8 of 11 canonical BUY cards also carry the Featured ring and solid badge). It is conditioned, and a concrete ramp satisfying all three constraints in all four theme x language quadrants is recorded in the receipt — including that the fix is a change of mix DIRECTION (toward --text), not more deepening, and that the light values are the shipped --ink-up formula the badges already render."
-  - "Remaining majors carried as revision work, not gates: VTC-303/304/306/307/308, PRC-307/309/310/311/312/313/314."
-  - "Resubmission is a new frozen SHA with fresh critic receipts under a new artifact set or an appended cycle; existing receipts go stale the moment proposal.yml's frozen_sha moves (RIG §3), and approval is possible only then."
+  - id: PRC-301
+    text: "PRC-301 — the card routes to the name's detail surface, or the capability receives an explicit disposition with a reachability proof. A hover affordance with no destination is not a disposition."
+  - id: PRC-302
+    text: "PRC-302 — the anonymous gate's copy matches what a subscriber actually lands on, or the card tier's level ban is re-adjudicated on the record."
+  - id: PRC-305
+    text: "PRC-305 — the behind-the-tape state gets a slot and a capability id, or an explicit REMOVE with its §1 fields. Production ships this banner today."
+  - id: PRC-306
+    text: "PRC-306 — every row of the book is reachable as a card (in-place expansion as production does it, pagination, or a filter that reaches them), or the table carries the board's own decision fields so it is an honest second representation rather than a demotion."
+  - id: VTC-301
+    text: "VTC-301 — stop stretching short cards against tall neighbours. The artifact already renders these rows well in two other layouts; the canonical grid must not be the one place they read as broken."
+  - id: DA-001
+    text: "DA-001 — DESIGN_NOTES §0b.1 and §7 are amended to record that the state=paid exemption was withdrawn under PRC-203, or §0b.1 is struck. No document that becomes law may ship two contradictory positions unmarked."
+  - id: DA-002
+    text: "DA-002 — the r2 non-waivable stance-distinctness condition is discharged on the CHIP as well as the chart (dark --ink-mix-up off 100%, or .pv-buy .pv-chip re-pointed), so a dark Buy card is not two direction inks."
+  - id: DA-003
+    text: "DA-003 — the compare page renders its specimen at the payload's true stance, scopes divergent shared classes into .cmp-prod so production is shown in production's values, carries a cost list for the revised column, and adds a chartless/no-read specimen."
+  - id: COND-VTC-302-NOT-BLOCKING
+    text: "VTC-302 is NOT blocking (downgraded on the critic's own pass-2 evidence: 8 of 11 canonical BUY cards also carry the Featured ring and solid badge). It is conditioned, and a concrete ramp satisfying all three constraints in all four theme x language quadrants is recorded in the receipt — including that the fix is a change of mix DIRECTION (toward --text), not more deepening, and that the light values are the shipped --ink-up formula the badges already render."
+  - id: COND-MAJORS-CARRIED
+    text: "Remaining majors carried as revision work, not gates: VTC-303/304/306/307/308, PRC-307/309/310/311/312/313/314."
+  - id: COND-RESUBMISSION
+    text: "Resubmission is a new frozen SHA with fresh critic receipts under a new artifact set or an appended cycle; existing receipts go stale the moment proposal.yml's frozen_sha moves (RIG §3), and approval is possible only then."
 
 preserved_strengths:
   - "All four r2 blockers genuinely closed and independently verified: the count law over one universe, producer-bound Groups with the regime chips deleted, the ⚠N risk carrier restored with a keyboard-reachable popover, and the stance-branched zone that restores production's anti-chase encoding."

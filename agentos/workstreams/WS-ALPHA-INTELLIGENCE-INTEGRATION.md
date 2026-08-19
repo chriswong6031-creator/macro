@@ -31,6 +31,8 @@ depends_on:
   - WS:DEFENSE-PROCUREMENT-V3
 artifacts:
   - research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md
+  - research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md
+  - research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md
 landmines:
   - "Runtime authority of this workstream is NONE, permanently. It coordinates and
     adjudicates; it never gates, dispatches, ranks, or owns production state. Its
@@ -42,15 +44,34 @@ landmines:
   - "FIF is stop-for-Sol-review (FIF-1R3, PR #5889 DO NOT MERGE) and
     WS:FUNDAMENTAL-FORENSICS is blocked on the FF-1P2 STOP (PR #5898, SEC bulk
     submissions.zip 1.45 GiB): no A/B/C lane may couple to fundamentals truth or
-    route bulk-filings capture around that STOP until Sol rules."
-  - "Theme-graph/identity surface is occupied by PR #5894 (V4-D2A GMI→Data OS
-    bridge, global CI invalidator): no D-lane or mesh work touches
-    engine/theme_graph/*, contracts/theme_graph/*, config/identity_seams.yml until
-    it concludes."
+    route bulk-filings capture around that STOP until Sol rules. FABLE-A's FIF
+    acceptance leg runs on FIXTURE packets only until Sol rules (c0 §5)."
+  - "PR #5894 (V4-D2A GMI→Data OS bridge) MERGED 2026-08-18 — the theme-graph/
+    identity occupation cleared by its own terms (c0 delta). Radar/Prophet-Lab
+    surfaces are now the occupied territory: #5925/#5928/#5929 open post-#5924
+    B5A/B5B recut (DEC:PROPHET-LAB-B5A-RECUT) — F-lane contact stays read-only."
   - "D-lane territory carries score-tier kills: DNR:KILL-PSS-SR2-PEER-DIFFUSION,
     DNR:KILL-PSS-SR3-PARTICIPATION, DNR:KILL-CN-SUPPLY-ABSORPTION,
     DNR:KILL-CAUSAL-DAG-ALPHA. Kills close constructions, not the search space:
     display/research tier is lawful, score tier needs the gauntlet."
+  - "A0's boring-baseline verdict is BINDING on any physical mesh store: the
+    pointer log must lose to 'call the owner reader' unless a funded consumer
+    needs a cross-store pointer index over >=3 owner_stores for one subject
+    (A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md §8 flip condition). FABLE-A
+    freezes contracts; it does not build the store until that condition is met."
+  - "US G0 canonical copy is PR #5955 (research/earnings_intelligence/g0/,
+    inside the Earnings owner's owns_paths). The #5822->#5953 censuses/G0/ set
+    plus its embedded C0G_G0_ADJUDICATION_2026-08-19.md is a NON-SEAT rival
+    draft, superseded by C0G_G0_SEAT_ADJUDICATION_2026-08-19.md — if #5953
+    lands it unchanged, the seat packet remains the governing record; never
+    adjudicate from the rival copy."
+  - "K4-G preconditions are frozen in the seat packet §6: clock-direction fix
+    targets observed_at/generated_at, NEVER source_available_at
+    (DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION); frontier = derived
+    read-only view, no EVENT_STATES edit; FIF-7 'event workspace packet' /
+    'market reaction' two-owner overlap must be adjudicated at K4-G commission
+    time; CN adapter is an Earnings-owner identity-plane wave post-E2
+    (DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL)."
 do_not_redo:
   - "Do not build: a second financial truth store (engine/stock_fundamentals.py +
     engine/fundamental_forensics/ exist); a second Earnings store
@@ -71,10 +92,13 @@ waves:
     title: PASS-0 architecture reconciliation (ownership matrix, collisions, lane gating)
     status: done
   - id: c0
-    title: Wave-0 census adjudication (GROK A0/B0/D0/E0/F0/G0 returns; FABLE-A dispatch decision)
-    status: todo
+    title: Wave-0 census adjudication (GROK A0/B0/D0/E0/F0 returns; FABLE-A dispatch decision)
+    status: done
     depends_on: [p0]
-    next_action: adjudicate the six census returns; confirm/deny FABLE-A dispatch conditions
+  - id: c0g
+    title: G0 return adjudication (post-event reinterpretation census — outstanding at c0)
+    status: done
+    depends_on: [c0]
   - id: k1
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
     status: todo
@@ -104,9 +128,12 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Operator dispatches the six read-only Grok censuses (pack files GROK-A0/B0/D0/
-  E0/F0/G0) with the riders in PASS-0 §6; FABLE-A dispatches only after GROK-A0
-  returns, under the PASS-0 §7 conditions.
+  Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store
+  build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol
+  rules). Census PRs #5955 (US G0) and #5943 (CN-G0) are ACCEPTED and armed to
+  merge; #5953 carries a superseded rival G0 copy — disposition request posted,
+  that lane responds. Next session adjudicates the FABLE-A K1 packet; K4-G is
+  authored by operator/Sol carrying the seat packet §6 preconditions verbatim.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

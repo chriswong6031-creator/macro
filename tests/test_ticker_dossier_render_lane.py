@@ -52,6 +52,22 @@ def test_render_lane_builds_and_guards_ticker_dossiers_before_global_guards():
     assert "company-intelligence-dossier.js" in run
 
 
+def test_render_lane_guards_dossier_integrity_after_ticker_build():
+    """The machine-sentinel estate guard (scripts/check_stock_dossier_integrity.py)
+    must run immediately after the ticker dossiers are (re)built and before the
+    unrelated global site guards — a NaN/Infinity leak into a rendered page is a
+    per-page defect the render manifest's failure_count check cannot see."""
+    build_index, _build_step, steps = _named_step(
+        RENDER_PATH, "render ticker dossiers from rebuilt US stockdata"
+    )
+    guard_index, guard_step, _ = _named_step(
+        RENDER_PATH, "guard — stock dossier integrity (sentinel + identity)"
+    )
+    names = [item.get("name") for item in steps]
+    assert build_index < guard_index < names.index("ensure node for the inline-JS guard")
+    assert "check_stock_dossier_integrity.py" in guard_step["run"]
+
+
 def test_engine_lane_builds_dossiers_for_all_or_macro_but_not_fast():
     index, step, steps = _named_step(
         ENGINE_RENDER_PATH, "render ticker dossiers from rebuilt US stockdata"
@@ -96,3 +112,15 @@ def test_nightly_order_remains_build_site_then_ticker_pages():
     # this assertion is positional — see scripts/workflow_run_source.
     daily = resolved_workflow_text(DAILY_PATH, ROOT)
     assert daily.index("scripts.build_site") < daily.index("scripts.build_ticker_pages")
+
+
+def test_engine_render_lane_also_guards_dossier_integrity():
+    """engine-render.yml rebuilds the SAME public dossier estate, so it inherits the
+    same release standard. Guarding only render.yml would leave a lane that can
+    publish a wrong-company page through a green run."""
+    index, step, steps = _named_step(
+        ENGINE_RENDER_PATH, "guard — stock dossier integrity (sentinel + identity)"
+    )
+    names = [item.get("name") for item in steps]
+    assert names.index("render ticker dossiers from rebuilt US stockdata") < index
+    assert "check_stock_dossier_integrity.py" in step["run"]

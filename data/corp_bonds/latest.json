@@ -1,6 +1,6 @@
 {
   "organ": "corp_credit.v1",
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-19",
   "data_as_of": "2026-08-17",
   "price_convention": "clean",
   "authority": {
@@ -293,5 +293,5 @@
       }
     }
   },
-  "_timing_s": 92.59
+  "_timing_s": 87.8
 }

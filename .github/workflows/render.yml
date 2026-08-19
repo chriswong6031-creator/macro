@@ -1150,6 +1150,22 @@ jobs:
               flush=True,
           )
           PY
+      - name: guard — stock dossier integrity (sentinel + identity)
+        # 69 of 2066 rendered site/stocks/*.html pages once shipped the literal
+        # "$nanM" / "$nan" to the public (NaN treated as present because NaN is
+        # truthy in Python, in two independent formatters). The render manifest
+        # above only checks failure counts, so it cannot see a per-page
+        # formatting defect — this guard scans the estate that was just
+        # rendered and fails the build if the sentinel class reappears. It also
+        # audits IDENTITY: the ticker, issuer name and sector each page asserts
+        # must agree with the canonical rendered universe and with the page's own
+        # JSON-LD, and a published third-party description must carry its
+        # accepted-article provenance. RWT shipped a Portland restaurant's blurb
+        # under a mortgage REIT, and RMD shipped as "ResMed|", through a green lane.
+        if: steps.render_pages.outputs.complete == 'true'
+        run: |
+          python3 scripts/check_stock_dossier_integrity.py site \
+            --manifest "$RUNNER_TEMP/ticker-pages-manifest.json"
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
         # WITHOUT node, so this guard failed on every render there 07-18; the old

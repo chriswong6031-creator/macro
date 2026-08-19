@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AEO-BULL-20260415",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 29.7,
-  "raw_confidence": 28.1,
-  "delta_vs_base": -30.3,
+  "management_confidence": 28.9,
+  "raw_confidence": 28.0,
+  "delta_vs_base": -31.1,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 45.9,
     "progress": 0.0,
-    "pace": 2.5,
+    "pace": 2.0,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.561,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 71.1,
+    "horizon_pct_used": 73.3,
     "p1": -0.2925,
     "p2": -0.1462,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-20",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 32,
-  "tau": 0.7111
+  "days_elapsed": 33,
+  "tau": 0.7333
 }

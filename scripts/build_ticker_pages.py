@@ -37,6 +37,7 @@ _ROOT = _HERE.parent
 sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
+from lib.numeric import finite  # noqa: E402
 from lib.pages import (rendered_basket_pages, rendered_ticker_pages,  # noqa: E402
                        write_page)
 from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
@@ -283,14 +284,91 @@ def _sector_display(raw: str | None) -> str:
     return _SECTOR_DISPLAY.get(raw, raw)
 
 
-def _humanize_number(v: Any) -> str:
-    """Format large numbers: $382B, $24.3M, $1.2K, 24.3%."""
-    if v is None:
+# Values that MEAN "we do not know", written by upstream planes that need a
+# printable placeholder. The em dash is the important one: engine/factor_exposure
+# writes ("<ticker>", "—") for any symbol missing from its name/sector map, and "—"
+# is a perfectly truthy string. Read as a real sector it made RWT's dossier drop the
+# "Real Estate" the hub was showing on the same day, and — because 30 other unmapped
+# symbols carried the same "—" — handed it a peer rail of ARI/AVB/AVNS/BRBR/CABO/CLB,
+# names from six different sectors, most with no market cap at all.
+_SECTOR_UNKNOWN = {"", "-", "--", "—", "–", "n/a", "na", "none", "nan",
+                   "null", "unknown", "unclassified", "other", "?"}
+
+
+def _desc_provenance(profile: dict) -> str:
+    """The auditable linkage for a published third-party business description:
+    `source:accepted-article:strength:resolver-version:fetched-date`, or "" when
+    the page publishes no description.
+
+    A description with no linkage is unauditable — nobody can later ask WHICH page
+    it came from or under WHAT rule it was accepted, which is how a Portland
+    restaurant's blurb sat on a mortgage REIT's dossier for weeks. The estate guard
+    refuses a published description whose provenance string is missing or partial.
+    """
+    desc = _clean_str(profile.get("description") or "")
+    if not desc:
         return ""
-    try:
-        f = float(v)
-    except (TypeError, ValueError):
-        return str(v)
+    title = _clean_str(profile.get("wiki_title") or "")
+    strength = _clean_str(profile.get("desc_strength") or "")
+    version = _clean_str(profile.get("desc_resolver_version") or "")
+    fetched = _clean_str(profile.get("desc_fetched_at") or "")[:10]
+    if not (title and strength and version):
+        return "incomplete"
+    return f"wikipedia:{title}:{strength}:v{version.split('.')[0]}:{fetched}"
+
+
+def _sector_known(raw: Any) -> str:
+    """The sector as written, or "" when it is any spelling of "unknown"."""
+    s = _clean_str(raw).strip()
+    return "" if s.lower() in _SECTOR_UNKNOWN else s
+
+
+def _sector_key(raw: Any) -> str:
+    """A vocabulary-independent comparison key. Yahoo's "Financial Services",
+    FMP's "Financial" and GICS's "Financials" are ONE sector and must compare
+    equal; anything unknown collapses to ""."""
+    return _sector_display(_sector_known(raw))
+
+
+def _sector_canonical(*candidates: Any) -> str:
+    """The first KNOWN sector, in the caller's precedence order.
+
+    Precedence is fixed by the estate: the canonical membership/universe row comes
+    first because it covers all ~1,950 rendered dossiers, and the optional stock
+    profile plane (derived from the ~1,520-name factor table) only fills gaps. A
+    NARROWER optional source must never erase a fact the canonical one knows —
+    that asymmetry IS the fix."""
+    for c in candidates:
+        s = _sector_known(c)
+        if s:
+            return s
+    return ""
+
+
+def _sector_disagreement(*candidates: Any) -> str:
+    """"" unless two sources both claim a sector and they are different sectors.
+    Recorded rather than silently resolved, so a real vocabulary or data conflict
+    surfaces instead of being decided by whichever code path ran last."""
+    keys, seen = [], set()
+    for c in candidates:
+        k = _sector_key(c)
+        if k and k not in seen:
+            seen.add(k)
+            keys.append(k)
+    return " vs ".join(keys) if len(keys) > 1 else ""
+
+
+def _humanize_number(v: Any) -> str:
+    """Format large numbers: $382B, $24.3M, $1.2K, 24.3%.
+
+    Missingness runs through lib.numeric.finite() — never truthiness — so a
+    NaN/Infinity input returns "" (the existing missing-value contract)
+    instead of falling through every magnitude branch and rendering the
+    literal string "$nan" (the #dossier-identity leak fixed here).
+    """
+    f = finite(v)
+    if f is None:
+        return ""
     if f == 0:
         return "$0"
     sign = "-" if f < 0 else ""
@@ -2844,22 +2922,39 @@ def _build_peers(
 
     None means "universe unknown, link everything" — the pre-filter behaviour,
     for callers that build a context without a site tree to consult.
+
+    ELIGIBILITY (every rendered peer satisfies all four, or there is no rail):
+      1. the TARGET has a canonical sector — an unknown one may not be matched on;
+      2. the PEER has a canonical sector;
+      3. the two are equal under the shared sector vocabulary (so "Financials",
+         "Financial Services" and "Financial" are one sector, and "—" is none);
+      4. the peer has a FINITE market cap, because the card claims size proximity.
+
+    Missing peers are acceptable; wrong peers are not. The rail is omitted rather
+    than filled with arbitrary similar-cap names — before rule 1, a target whose
+    sector had been lost to the "—" sentinel matched the 30 OTHER symbols carrying
+    that sentinel and presented six unrelated companies as "Peers".
     """
-    if not sector or not factors_map:
+    target_key = _sector_key(sector)
+    if not target_key or not factors_map:
         return None
 
-    # Get self mktcap_bn for log-cap proximity (factors row, else blob profile hint)
+    # Get self mktcap_bn for log-cap proximity (factors row, else blob profile hint).
+    # finite() (not truthiness) decides presence: a NaN mktcap_bn is not a real
+    # self-cap, so fall through to the hint exactly as a missing value would.
     self_row = factors_map.get(ticker) or {}
-    self_cap = self_row.get("mktcap_bn") or self_cap_hint
+    self_cap = finite(self_row.get("mktcap_bn"))
+    if self_cap is None:
+        self_cap = finite(self_cap_hint)
 
     candidates = []
     for t, row in factors_map.items():
         if t == ticker:
             continue
-        if row.get("sector") != sector:
+        if _sector_key(row.get("sector")) != target_key:
             continue
-        peer_cap = row.get("mktcap_bn")
-        if not peer_cap:
+        peer_cap = finite(row.get("mktcap_bn"))
+        if peer_cap is None:
             continue
         name = row.get("name") or t
         # Log-cap proximity distance
@@ -2883,13 +2978,13 @@ def _build_peers(
 
     rows = []
     for dist, t, name, cap in peers:
-        cap_str = ""
-        if cap:
-            try:
-                cf = float(cap)
-                cap_str = f"${cf:.0f}B" if cf >= 1 else f"${cf*1000:.0f}M"
-            except (TypeError, ValueError):
-                pass
+        # cap is already a finite float (or the loop above would have
+        # `continue`d), so this can never render "$nanM" — but re-run it
+        # through finite() rather than trusting the tuple shape, since a
+        # future caller of this loop body must not have to re-derive that
+        # invariant to stay safe.
+        cf = finite(cap)
+        cap_str = "" if cf is None else (f"${cf:.0f}B" if cf >= 1 else f"${cf*1000:.0f}M")
         rows.append({
             "ticker": t,
             "name": name,
@@ -3301,7 +3396,24 @@ def build_page_context(
 
     # --- Profile fields for meta ---
     profile = (blob or {}).get("profile") or {}
-    sector_disp = _sector_display(profile.get("sector") or sector)
+    # SECTOR PRECEDENCE — resolved ONCE, here, and written back into the profile
+    # block so every downstream reader (meta, hero, peers, JSON-LD, the eyebrow)
+    # answers with the same fact. Several builders used to read
+    # blob["profile"]["sector"] directly, which is the NARROWER plane: the coverage
+    # row spans every rendered dossier while the profile sector is derived from the
+    # ~1,520-name factor table, so a dossier could print "—" for a company the stock
+    # hub was listing as "Real Estate" on the same day, from the same build.
+    # `sector` here is the canonical coverage/universe value; the profile only fills
+    # a gap it cannot fill itself, and can no longer overwrite it with a sentinel.
+    sector_canon = _sector_canonical(sector, profile.get("sector"))
+    sector_conflict = _sector_disagreement(sector, profile.get("sector"))
+    if sector_conflict:
+        log.warning("%s: sector sources disagree (%s) — using the canonical "
+                    "universe value %r", ticker, sector_conflict, sector_canon)
+    if blob is not None:
+        profile["sector"] = sector_canon or None
+        blob["profile"] = profile          # blob may not have carried one at all
+    sector_disp = _sector_display(sector_canon)
 
     # --- Seasonality from blob (precomputed plain strings) ---
     season_this = _clean_str((blob or {}).get("season_this") or "")
@@ -3332,7 +3444,7 @@ def build_page_context(
     why_moving = _build_why_moving(ticker, blob, news_rec, intel)
     ownership = _build_ownership(ticker, blob, agg.get("alt_map", {}).get(ticker))
     peers = _build_peers(
-        ticker, profile.get("sector") or sector,
+        ticker, sector_canon,
         agg.get("factors_map") or {}, baskets_map,
         (blob or {}).get("factors"),
         self_cap_hint=profile.get("mktcap_bn"),
@@ -3427,6 +3539,20 @@ def build_page_context(
         "ticker": ticker,
         "name": name,
         "sector": sector_disp,
+        # Machine-readable identity assertion, emitted as <meta> so the estate
+        # guard (scripts/check_stock_dossier_integrity.py) can audit what the page
+        # CLAIMS instead of scraping its prose. Scraping does not work here: the
+        # dossier has a "Financials" section heading, so every page in the estate
+        # reads as claiming the Financials sector. An explicit assertion is also
+        # the auditable linkage a published third-party description needs — the
+        # blurb's accepted article, resolution strength and resolver version.
+        "identity": {
+            "ticker": ticker,
+            "issuer": name,
+            "sector": sector_canon,
+            "sector_conflict": sector_conflict,
+            "desc_provenance": _desc_provenance(profile),
+        },
         "canonical_url": meta["canonical"],
         "meta_desc": meta["meta_desc"],
         "jsonld_str": meta["jsonld_str"],

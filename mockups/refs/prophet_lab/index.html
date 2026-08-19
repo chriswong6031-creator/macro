@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prophet — US Board + Operator Lab · reference candidate (D-LAB-R5)</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════
+  PROPHET OPERATOR LAB — R5 reference candidate.
+
+  R5 IS R4 PLUS A LAYER. The frozen R4 U.S. Prophet Board reference is loaded
+  from ../institutionalize/us_stocks/ with ZERO bytes changed; every file in
+  THIS directory is additive. The diff between R4 and R5 is therefore exactly
+  the Lab, which is what makes "no broad redesign" reviewable rather than
+  asserted.
+
+  NOT production. No template, no site/ file, no engine path, no data/ write,
+  no theme.css token is touched by this directory.
+
+  Binding authority, in precedence order:
+    1. research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §1–§6
+    2. docs/DESIGN_DOCTRINE.md (content law — wins on conflict)
+    3. research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md (visual/composition law)
+    4. the frozen R4 reference + its DESIGN_NOTES.md
+    5. research/migration_packets/MP-1-prophet-board.md
+
+  HARNESS — state switching by query parameter:
+    R4's own:  ?theme=dark|light  ?lang=en|zh  ?state=…  ?life=…  ?view=…
+    R5 adds:   ?mode=live|lab           ?op=1|0        ?chrome=0|1
+               ?board=lab-g0-v1|lab-c1-v1|lab-c2a-v1|lab-c2-variants-v1
+                     |lab-g0-c2a-v1|lab-all-early-v1
+               ?cls=all|live|seed       ?feed=ok|stale|down|empty
+
+  `mode` is a HARNESS lens only. In the product `desiredMode` is in-memory:
+  a fresh page ALWAYS defaults LIVE (LAB-0 §6.5), and the mode control never
+  writes the URL. tools/capture.py CLICKS the control for the LAB crops and
+  raises if it is missing, so the evidence is of the real interaction.
+  ══════════════════════════════════════════════════════════════════════════
+-->
+<link rel="stylesheet" href="../institutionalize/us_stocks/board.css">
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+  <div id="harness"></div>
+  <div class="wrap">
+    <main id="board"></main>
+  </div>
+  <script src="../institutionalize/us_stocks/board-data.js"></script>
+  <script src="lab-data.js"></script>
+  <script src="../institutionalize/us_stocks/board.js"></script>
+  <script src="lab.js"></script>
+</body>
+</html>

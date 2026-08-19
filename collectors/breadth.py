@@ -301,6 +301,31 @@ class BreadthAdapter(Adapter):
                 return self._repair(t[["symbol", "name", "sector"]])
         raise ValueError("constituents table not found on Wikipedia page")
 
+    @staticmethod
+    def sanitize_company_name(name) -> str:
+        """Strip TRANSPORT residue from a scraped company name — nothing else.
+
+        The constituent tables are parsed out of community-edited wiki markup, where
+        "|" is the cell delimiter. One leaked into the S&P 500 table and made RMD's
+        issuer "ResMed|", which then reached every downstream identity surface of the
+        public dossier: the <title>, the meta description, OpenGraph, the JSON-LD
+        Corporation.name and the visible company name. The name field had no cleanup
+        at all here, while `symbol` next to it had three.
+
+        Deliberately narrow. A pipe is a delimiter and is never part of a company
+        name, so text after one is a leaked neighbouring cell. Legitimate punctuation
+        is LOAD-BEARING and must survive untouched: "AT&T", "Johnson & Johnson",
+        "O'Reilly Automotive", "Berkshire Hathaway Inc.", "Alphabet Inc. (Class A)",
+        "Coca-Cola". Only a delimiter run at the very edge of the string is removed."""
+        s = " ".join(str(name or "").split())
+        if not s:
+            return ""
+        if "|" in s:                      # keep the first real cell, drop the rest
+            s = next((p.strip() for p in s.split("|") if p.strip()), "")
+        s = re.sub(r"^[|;,/\s]+", "", s)
+        s = re.sub(r"[|;,/\s]+$", "", s)  # trailing delimiter run; "Inc." keeps its dot
+        return " ".join(s.split())
+
     def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
         """Clean a freshly-scraped constituents table before it becomes the universe.
 
@@ -335,6 +360,18 @@ class BreadthAdapter(Adapter):
                          self.name, int(hit.sum()),
                          {s: fixups[s] for s in sorted(df.loc[hit, "symbol"].unique())})
                 df["symbol"] = df["symbol"].map(lambda s: fixups.get(s, s))
+        # strip wiki-markup transport residue from the ISSUER NAME (see
+        # sanitize_company_name) — this is the canonical boundary the whole US
+        # dossier estate inherits its company names from, so a stray delimiter
+        # repaired here never reaches a <title>, a JSON-LD block or an OG tag.
+        raw_names = df["name"].astype(str)
+        df["name"] = raw_names.map(self.sanitize_company_name)
+        changed = raw_names[raw_names != df["name"]]
+        if not changed.empty:
+            log.info("%s constituents: sanitised %d company name(s): %s",
+                     self.name, len(changed),
+                     {df.loc[i, "symbol"]: (raw_names[i], df.loc[i, "name"])
+                      for i in list(changed.index)[:5]})
         # a repair can collide with an already-correct row -> keep one
         df = df.drop_duplicates(subset="symbol", keep="first").reset_index(drop=True)
         return df[["symbol", "name", "sector"]]

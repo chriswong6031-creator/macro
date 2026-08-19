@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T15:19:47.065548+00:00",
-  "count": 1414,
+  "generated_at": "2026-08-19T16:17:39.694019+00:00",
+  "count": 1417,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -564,6 +564,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-in7fnfan5ty-ef6b8e",
+      "title": "Bond Top List",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:33Z",
+      "summary_points": [
+        "**Ukraine reconstruction bonds**: Strategic positioning for Ukraine's reconstruction (19.03.2025) as critical geopolitical risk factor driving bond flows.",
+        "**Deteriorating credit flags**: USD US836878XS4 flagged \"Deteriorating\" with yield (5.8%) below coupon (6.066%), signaling premium pricing due to credit concerns.",
+        "**Tier 2 subordinated risks**: Structural risks in subordinated instruments (coupon skipping, callable features, Solvency 2 hybrids) with elevated volatility vs.",
+        "senior bonds.",
+        "**Sector risk exposure**: Energy (Duke Energy, EnBW) and financials (Societe Generale) dominate Preferred/Core, while Avoid category includes auto (Aston Martin) and media (Vigna Media O2)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 121,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1kcnftdxwsl-5347ad",
+      "title": "CIO Client Livestream",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:32Z",
+      "summary_points": [
+        "**Market Drivers & Outlook Factors**: Constructive market outlook hinges on AI capex durability, monetization evidence, earnings breadth, inflation trajectory, and monetary policy—beyond current earnings and AI investment momentum.",
+        "**Asset Class Tiers & Methodology**: Equities assessed via five-tier system (Most to Least Attractive), collapsing to three tiers in House View scenarios; tactical allocation adjusts for portfolio constraints versus strategic positioning.",
+        "**Critical Risk Factors**: Monetization evidence and AI capex sustainability are pivotal for sustained upside; inflation trajectory and policy shifts directly impact near-term market direction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xohm1ga9ym8-21cb6c",
+      "title": "Derivatives Strategy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:31Z",
+      "summary_points": [
+        "**Volatility Spike Monetization**: Delta-hedged long puts monetize volatility spikes during market stress, reducing carry costs vs.",
+        "traditional protective puts and enhancing cost-benefit during sharp equity drawdowns (e.g., 2020, 2025 corrections).",
+        "**Geopolitical Volatility Drivers**: Delta hedging transforms directional exposure into Greeks (gamma/vega), with geopolitical events (e.g., tariff escalations, \"Liberation day\" 2025) driving key Greek exposure and enabling downside protection during volatility spikes.",
+        "**Skew-Adjusted Delta Hedging**: Negative volatility skew causes standard delta-hedging to underperform during corrections; skew-adjusted hedging improves tail-risk defense, reduces carry costs, and optimizes protection for equity indices during market stress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },

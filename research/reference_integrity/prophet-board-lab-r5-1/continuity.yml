@@ -1,0 +1,900 @@
+# Revision continuity closure (RIG V1.1 §13) — derived, then dispositioned.
+#
+#   python3 scripts/check_reference_integrity.py --mandate prophet-board-lab-r5-1
+#
+# Every one of the R5 verdict's 18 conditions gets exactly one disposition, by
+# id. The three blocking findings VTL-401/402/403 are carried as the three
+# R51-M* conditions the verdict minted for them, which is how that verdict
+# expressed them; each row names the finding it answers.
+#
+# HOW TO READ THE DISPOSITIONS HERE, because they are not all the same kind:
+#   RESOLVED_BY_CHANGE — this artifact changed, and the change is checkable at
+#                        the new frozen SHA by a named check and a named crop.
+#   CARRIED_BLOCK      — still open, deliberately, and it BLOCKS. Four of these
+#                        bind LATER waves (P-LAB-API, P-LAB-UI, P-MP1-SHELL) or
+#                        this cycle's own review process. Recorded rather than
+#                        deferred: an unstated debt resets to zero next cycle.
+#
+# ── R5.2 FIX ROUND ──────────────────────────────────────────────────────────
+# `fix_rounds` below records an INTRA-CYCLE round: findings raised by this
+# reference's own first-pass critics and answered before the verdict, as
+# distinct from `predecessors.closure`, which answers a predecessor's VERDICT.
+# The rows are kept separate on purpose — a reader must be able to tell "the R5
+# verdict required this" from "our own critic caught us over-claiming", and only
+# the second kind can invalidate receipts taken against our own earlier SHA.
+schema: mastermind.rig_continuity.v1
+reference_id: prophet-board-lab-r5-1
+
+predecessors:
+  - reference_id: prophet-board-lab-r5
+    verdict: REVISE
+    source: on_disk
+    closure:
+
+      # ── the three majors ──────────────────────────────────────────────────
+      - id: R51-M1-GRID-SCOPE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-401. LAB now paints `#setups` and nothing else. The page subtitle, the
+          plan book's as-of and behind-the-tape banner, the lifecycle ladder, CANDIDATES, GROUPS
+          and EVIDENCE & RECORD all survive the mode; the ladder stays operable with one line
+          saying a cell click returns to Live, so nothing is inert and nothing is deleted. The
+          authority-hygiene concern is answered by SEPARATION as the ruling directs: the Lab
+          renders inside a bounded, labelled region with an accent boundary and an explicit
+          end-of-region rule. Checks D4b/D4c/D4d/D4e/D4f; mutation M7 puts the deletion back and
+          is caught by D4d; capture.py now measures survivors DIFFERENTIALLY against LIVE at the
+          same viewport and refuses to shoot a crop of the defect. Crops 10-17 (full-page),
+          35/36. Cost created and disclosed: at 390 no observation row is above the fold
+          (DESIGN_NOTES §2.10).
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/capture.py
+
+      - id: R51-M2-UNKNOWN-NOT-ZERO
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-402. "The feed is not answering" and "the feed answered with none" are now
+          separate facts wherever they surface. Unavailable renders an em dash in a dashed box on
+          every pill — R4's own key-absence idiom — plus the line that makes the glyph a
+          statement ("a zero here would be a number we never received"); empty keeps its
+          confident tabular 0 and its real-zero copy. Checks D18/D18b/D18c/D18d/D18e, and D18f
+          asserts the two states are not identical at the pill row, which is exactly what the
+          finding measured. Mutation M14 re-conflates them and is caught. Crops 40-42 (empty) vs
+          46-48 (unavailable), dark EN + light ZH + 390 in both.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-M3-SYMMETRIC-LEAD
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-403 on all three of its parts. SIGN: Math.abs is gone from the lead path
+          and the sign is the branch; the fixture emits signed leads, so the adverse and same-day
+          branches are real and photographed (+3, +2, +1, 0, -3 all render). CONFLATION: a
+          measured adverse result left the null idiom and now carries its own magnitude
+          ("Prophet was 3 days earlier"); only genuine absences keep the dashed treatment.
+          EMPHASIS: favourable, adverse and same-day share ONE ink and one unfilled treatment,
+          and the favourable chip no longer out-inks the ticker. Checks D19-D19g, including
+          D19c pinning the favourable and adverse inks to computed-style equality and D19f
+          grepping the source with comments stripped. Mutations M15 (route adverse through the
+          favourable branch) and M16 (re-amplify the chip) are both caught. Crops 35/36/37.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/gen_lab_fixture.py
+
+      # ── conditions this cycle discharges ─────────────────────────────────
+      - id: C1-REDERIVATION-PROOF
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both halves delivered, and the result vindicated the condition. (a) Mutation M17 caches
+          #board.innerHTML on LAB entry and re-inserts it on LIVE while leaving the repaint
+          counter incrementing. (b) Check D22 plants a sentinel data-attribute on a real card
+          before LAB and requires it absent after the return. Under M17, D15d (the counter)
+          PASSED and D22 FAILED — the counter was a self-report, never evidence, exactly as the
+          condition said. R5's M8 had attacked the counter rather than the mechanism, so the law
+          had never been tested. Also fixed en route: apply(initial) no longer counts the cold
+          load as a repaint, so the counter can only ever count real re-derivations.
+        changed_files:
+          - mockups/refs/prophet_lab/tools/verify.py
+          - mockups/refs/prophet_lab/tools/mutation_test.py
+
+      - id: C3-COPY-LAW-COVERAGE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The slug-leak and banned-vocabulary scans now sweep 6 boards x 2 languages in LAB plus
+          both languages in LIVE — 14 views, asserted by C3c so the coverage itself cannot
+          silently shrink. The sweep immediately found a defect in the CHECK: `"validated" in
+          text` fires on the ruled lifecycle word "Invalidated", so the first LIVE-view run
+          flagged compliant copy. It is now a negative-lookbehind regex. A check that fires on
+          correct copy trains people to ignore it.
+        changed_files:
+          - mockups/refs/prophet_lab/tools/verify.py
+
+      - id: C4-390-SELECTOR-AFFORDANCE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The scroller is REMOVED below 980w rather than decorated: the six pills wrap, so all
+          six frozen LAB-0 §3 boards are on screen at 390 with no gesture to discover and nothing
+          to afford. D20 requires all six within the viewport, D20b forbids a hidden scroller
+          (the gap D14c/D16 were structurally blind to, since an inner scroller keeps
+          documentElement.scrollWidth clean), and D20c pins the 40px touch floor on these
+          controls. Mutation M19 restores the scroller and is caught by both D20 and D20b.
+          Crops 14, 27, 34, 42, 45, 48.
+          R5.2 / PR51-2: the wrap is now UNCONDITIONAL, not scoped to max-width:980px. The R5.1
+          source asserted "above 980w all six fit on one line anyway"; measured, the strip clears
+          981w by 22px and the pill widths grow with the COUNTS, which this surface does not
+          control — a three-digit count on any board reopens this exact defect in a band no check
+          looked at. Wrapping at every width is the same behaviour with no threshold to be wrong
+          about, and D20d pins 1000w.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/verify.py
+
+      - id: C5-RECENSUS-CITATIONS
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both corrected in research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md, each verified
+          before writing. (a) `--up` is declared at templates/theme.css:72 (dark) and :148
+          (light) while `--pv-buy` is at :80 and :152 — the R5 text cited only the --pv-buy lines
+          and attributed both tokens to them; the comparison needs both, and §2.8 now names both.
+          (b) `git show --stat 444f80d62774` touches engine/prophet_management.py,
+          scripts/build_prophet.py, the ruling doc and tests — NOT engine/prophet_bridge.py;
+          plan_clock_date() was introduced by 242aafda0dc7 (#4684). The §0 headline now says what
+          #5540 actually did (reconciled the consumers onto the helper) and matches §2.12.
+        changed_files:
+          - research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md
+
+      - id: C10-TOKEN-POLICY-SELF-CONSISTENCY
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The single hex literal is deleted. It was also redundant — the light theme's `--panel`
+          already resolves to white, so the base rule produced the same paint — which is why the
+          fix is a deletion rather than a tokenisation. The file's stated "no hex literal" policy
+          is now true of the file.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: C11-BILINGUAL-ARIA
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The three group labels (board mode, Lab boards, observation class) bind to the current
+          language like every other string on the page, plus a bilingual label on the unknown
+          count marks. An English-only aria-label under data-lang=zh is the one surface where a
+          bilingual page can lose parity with nobody seeing it.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+
+      - id: R51-C13-ERROR-RETRY-AND-ASOF
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-409. The unavailable state gains a "Try again" control beside "Back to
+          Live", and prints the LAST KNOWN-GOOD pass stamp, labelled as such so it cannot be read
+          as current. R5 returned early from feedStamp() before the as-of was appended, so the
+          one state where staleness matters most was the only state that did not date itself.
+          Checks D23/D23b/D23c. Crops 46-48.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-C14-COUNT-DISCIPLINE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-407. A "Showing N of M" line states the rendered count, and the
+          live/history split now computes from the FILTERED set rather than the whole board — R5
+          printed "6 live · 23 seeds" above six rows. Checks D21/D21b/D21c. Pagination is
+          deliberately NOT adopted and the divergence from R4 is argued in DESIGN_NOTES §2.11:
+          R4 pages because 159 cards is a scanning problem, 30 observations is not, and hiding
+          observations on a surface that exists to show every early sighting would trade a
+          capability for a scroll.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-C15-GLANCE-VOCAB
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-405. "Live" now means the MODE and nothing else. The observation class and
+          its filter share one phrase — "Seen live" / "From history" (EN), 「实时观测」/「回溯」
+          (ZH) — so one referent has one word, and the EN "seeds" enum-shorthand is gone. The
+          finding's real point was the inverted bilingual parity (the English was the jargon and
+          the Chinese the plain word); EN and ZH are now equally plain, and the ZH wording is
+          unchanged because it was already right. Partial by construction and stated as such:
+          "Seen live" still contains the token "live", because the honest plain-English phrase
+          for the fact does, and the mode button is contract vocabulary (LAB-0 "LIVE | LAB").
+          Three meanings reduced to two, lexically and visually distinct.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+
+      # ── conditions that bind LATER waves, or this cycle's own process ────
+      - id: C2-LEAD-SIGN-GUARD
+        kind: condition
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds P-LAB-API / P-LAB-UI (the sign guard is already implemented and reviewed in the API; the UI inherits it). A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
+        note: >
+          Discharged for the REFERENCE (see R51-M3: Math.abs removed, sign is the branch, D19f
+          pins it), but the condition's own text binds P-LAB-API and P-LAB-UI, which do not exist
+          yet. It stays open against those waves: any non-positive lead must route through the
+          honest adverse branch in the shipped implementation, with a check pinning it there.
+          Carried rather than marked resolved, because a reference cannot discharge a condition
+          written against a runtime that has not been built.
+
+      - id: C6-LIVE-FORWARD-FAILS-CLOSED
+        kind: condition
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds P-LAB-API (implemented there as baseline_coverage_verified fail-closed, twice reviewed) and every later consumer. A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
+        note: >
+          Binds P-LAB-API, not this artifact. auth.lab_observation_exists and auth.measured_lead
+          remain warranted:false at this SHA — Radar's live transport (R-LAB-1 / W4.1) has not
+          landed, so the Lab plane of the fixture is still synthetic and disclosed as such
+          (DESIGN_NOTES §4). The fail-closed classification rule the condition specifies is the
+          API's to implement and prove.
+
+      - id: C7-REBAKE-TAKES-ITS-OWN-SHA
+        kind: condition
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-lab-r5-1/approval.yml
+        linkage: >
+          The obligation is not extinguished — it is genuinely re-carried: it now binds as a
+          named condition of this packet's APPROVE_WITH_CONDITIONS approval receipt (the RIG §7
+          carrier of forward conditions on an approved reference), where it survives this cycle
+          and binds the post-R-LAB-1 fixture rebake. A continuity CARRIED_BLOCK cannot coexist with approval by §13.1;
+          the approval's conditions list is where an approved reference's live debts belong.
+        note: >
+          Binds the post-producer refresh. No rebake has occurred: the Lab fixture at this SHA is
+          still synthetic on the Lab plane and real on the Prophet/identity plane, exactly as at
+          R5. When R-LAB-1 lands, the rebake takes its own frozen SHA and a lightweight RIG
+          re-check scoped to the observation-class panel and the lead slot.
+
+      - id: C8-R4-COMPOSITION-UNREVIEWED
+        kind: condition
+        disposition: SUPERSEDED
+        superseded_by: research/reference_integrity/prophet-board-5514-r4-composition/verdict.yml
+        source: snapshot
+        linkage: >
+          Genuine replacement, not extinguishment: the debt this row recorded was "no critic pass
+          exists for R4's composition". That pass now exists as its own complete RIG cycle — two
+          fresh seats, two-pass shape, receipts + authority verdict in the superseding packet —
+          and THAT verdict's own conditions (C8-A MP-1 amendment, C8-B R4.2 repair) now carry the
+          P-MP1-SHELL gate this row used to carry. The gate moved to the record that can actually
+          discharge it.
+        note: >
+          DISCHARGED 2026-08-19 by its own dedicated cycle, not by this artifact: R4's
+          composition received its first RIG §6 dual-critic pass (two fresh opus seats, full
+          two-pass quarantine shape, live/payload receipts; both verdicts SOUND-WITH-BLOCKERS,
+          composition ratified sound at its vintage). The pass's own verdict (REVISE with
+          conditions C8-A MP-1 amendment + C8-B R4.2 repair) now carries the P-MP1-SHELL gate —
+          the debt this row recorded (no critic pass exists) no longer describes the world.
+          Source is snapshot: the composition packet rides PR #5990, armed and unmerged at this
+          writing; the linkage expires into on_disk when it lands. This artifact still loads R4
+          unmodified (empty diff re-verified at this SHA).
+
+      - id: C9-PREDECESSOR-AMENDMENT-RULE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Complied with, and not re-exercised. The r3 verdict amendment made at R5 satisfies every
+          guard rail the condition records: shape-only, all 11 texts byte-identical (verified by
+          the R5 product-regression critic against both origin/main and the sha256-pinned
+          r4/r3_source copy), an in-file amendment header naming the amending cycle, the vendored
+          pinned copy untouched, and reported in the successor README and the session return.
+          THIS cycle amends no predecessor record at all — the R5 verdict, both R5 receipts and
+          every earlier artifact set are byte-untouched by this branch.
+        changed_files:
+          - research/reference_integrity/prophet-board-5514-r3/verdict.yml
+
+      - id: C12-SECOND-CRITIC-QUARANTINE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both C12 seats ran the full RIG §6 two-pass shape against the shipping SHA (see the
+          note below and the two receipts' quarantine audits + delta sections); the verdict and
+          approval in this packet stand on those receipts.
+        changed_files:
+          - research/reference_integrity/prophet-board-lab-r5-1/reviews/product_regression.yml
+          - research/reference_integrity/prophet-board-lab-r5-1/reviews/visual_taste.yml
+        note: >
+          THIS CYCLE'S OWN OBLIGATION, and this author cannot discharge it. The condition requires
+          the R5.1 cycle to complete the proper §6 two-pass shape: both critics' first passes
+          frozen before any reveal, then the rationale revealed for genuine amendment passes. No
+          review receipt exists in this packet, no verdict, and no approval. The rationale docs
+          are deliberately kept separate from the artifact directory's runtime files so a critic
+          can be quarantined against them exactly as the R5 visual-taste critic was. It clears
+          when two independent critics have run against the CURRENT frozen SHA in that shape, not
+          before. DISCHARGED 2026-08-19 at the shipping SHA dcbea7cd: both C12 seats completed
+          the full shape — quarantined first passes frozen (product at f40ae70a, visual as a
+          disclosed two-run continuation), rationale revealed only after each freeze, genuine
+          amendment passes (amendments moved in both directions on both legs), and scoped delta
+          re-checks at dcbea7cd with independent live instrumentation. Receipts:
+          reviews/product_regression.yml and reviews/visual_taste.yml in this packet, each
+          carrying its own quarantine audit and r53_delta_recheck section. Neither seat authored
+          any artifact byte; the author participated in none of it.
+
+# ── R5.2 — findings raised by this reference's OWN first-pass critics ────────
+# Answered before the verdict, in one round, at a new frozen SHA. Every row
+# names the check that would fail if the fix were undone, because the lesson of
+# PR51-1 is that a fix asserted in prose and unmeasured in code is not a fix.
+fix_rounds:
+  - id: R5.2
+    trigger: >
+      product_regression first pass = BLOCK (1 blocker + 8 minors); visual_taste first pass =
+      PASS_WITH_CONDITIONS (2 majors + 2 optional). Both against f889d5eb35f3080cf43136ad58bb780b1152c2dc.
+    findings:
+      - id: PR51-1
+        severity: blocker
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          `.lab-mark { position: sticky; top: 0 }` sat inside `.lab-stream { overflow: hidden }`.
+          Any overflow other than `visible` makes an element a scrollport and a sticky child pins to
+          its nearest scrollport, so the divider NEVER pinned. Measured by the critic at 390x844,
+          2,000px into the seed region: four seed rows on screen, zero worded class labels. The
+          packet meanwhile booked add.sticky_class_divider, marked lab.observation_class IMPROVE,
+          and minted BETTER on "the same guarantee, one constant instead of 23".
+        evidence: >
+          The corner clip moved to the list's end members, so `.lab-stream` drops overflow and the
+          pin is real. The divider split so only the CONSTANT pins (date + class badge + one
+          governing sentence); the lesson scrolls away with the crossing. `.lab-cls--seed`, orphaned
+          by VTL-408 with zero references, is re-used as the pinned class badge. D6c3 is BEHAVIOURAL
+          — scrolls 1,200px past the divider at 1440 and 390 and asserts rect.top clamps to 0 with
+          seed rows on screen; receipts 1440: top 0px / 9 seeds, 390: top 0px / 4 seeds at scrollY
+          4,183. M22 re-adds the overflow and is caught ONLY by D6c3; M18 (position:static) is
+          caught by D6c and D6c3. Crops 51/52/53 are shot 1,200px in and capture.py raises if the
+          mark is not pinned.
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/lab.js,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py,
+                        mockups/refs/prophet_lab/tools/capture.py]
+      - id: R52-D1
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          Three parts. (a) The per-row constant VTL-408 targeted still printed: every seed row kept
+          "signal date / not a sighting", so Law 4 was relocated, not closed. (b) `top: 0` hardcodes
+          "this route has no page header" while production ships a global sticky nav. (c) An empty
+          `.lab-lead--adverse { }` rule sat waiting for a follower surface to fill it and silently
+          reintroduce the VTL-403 asymmetry.
+        evidence: >
+          (a) The rail is "signal date" alone. What survives is a UNIT LABEL — it says what the
+          number above it is and DIFFERS between adjacent rows ("first seen" on the other class);
+          the class ASSERTION is what moved to the divider. D6i asserts the assertion appears
+          exactly once, D6i2 that no rail makes one, D6i3 that the two rails differ; M23 restores
+          the per-row constant and is caught by D6i2. (b) The controller measures the sticky chrome
+          above the grid and binds --lab-mark-top; this mockup's harness bar IS a sticky top:0
+          element, so chrome=1 pins at 149px and chrome=0 pins at 0, both asserted by D6c4. M25
+          hardcodes top:0 and is caught only there. (c) The rule is deleted; D19c's computed-colour
+          comparison is what actually holds the law, and it catches divergence from a follower
+          stylesheet or an inline style, which an empty rule never could.
+        r53_correction: >
+          PART (b) OF THIS DISPOSITION WAS WRONGLY BOOKED AT R5.2, and part (a) overstates its own
+          criterion. Corrected here rather than rewritten above, so the record shows what was
+          claimed as well as what was true.
+          (b) "this mockup's harness bar IS a sticky top:0 element, so chrome=1 pins at 149px" was
+          asserted, never measured. `.harness` declares `position: sticky` inside `<div
+          id="harness">`, whose height is exactly the bar's own height, so the bar had NO TRAVEL and
+          never pinned. Measured at 1440, chrome=1, scrolled 1,200px past the divider: barTop
+          -2637px, barH 149px, markTop 149px — the divider pinned 149px down with the bar entirely
+          off screen, i.e. chrome=1 produced an EMPTY 149px BAND, not a seam. D6c4 could not fail on
+          it because it asserted the bar's HEIGHT, which reads identically whether or not the bar is
+          on screen. The correct disposition for (b) at R5.2 was NOT_RESOLVED. It is RESOLVED at
+          R5.3: `#harness { display: contents }` gives the bar a containing block with travel (bar
+          capped to 72px at <=560, where un-capped it stands 385px = 46% of the viewport); D6c4 now
+          asserts barTop ~ 0 at the pin moment, D6c4b that the pin sits at the chrome's bottom edge,
+          D6c4c that the bound offset equals the chrome's height; M27 removes the travel again and
+          is caught by D6c4; crop 55 photographs bar and pin on screen together and refuses to emit
+          otherwise. Post-fix probe: 1440 barTop 0 / barH 149 / markTop 149; 390 barTop 0 / barH 72
+          / markTop 72.
+          (a) The criterion "a UNIT LABEL ... DIFFERS between adjacent rows" does not discriminate:
+          the PROPHET eyebrow is identical on all 30 rows and is legitimate (VTL52-608). The rail's
+          real warrant is LABEL vs CLAIM — a label names the value beside it, a claim asserts a fact
+          about the row — and the rail's retention stands on the repaired criterion. Wording fixed
+          in lab.js and DESIGN_NOTES; no artifact behaviour changed by this half.
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/lab.js,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py,
+                        mockups/refs/prophet_lab/tools/capture.py]
+      - id: R52-D2
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          At 390x844 the LAB mode returned ZERO complete observations above the fold. R5.1 disclosed
+          this as the unavoidable bill for R51-M1 (the ladder) and C4 (six wrapped selectors).
+        evidence: >
+          Measured first: the first row began at 1,009px and stands 294px tall, so it had to start
+          by 550px; the ladder (295px) and the selectors (137px) account for 432px, so compression
+          cannot reach 550 while both stand — deleting the Lab's entire preamble still leaves the
+          row 181px past the fold and would cost Law 1 its stance line. Remedy in two parts: three
+          preamble lines demote to landings (the board subtitle, which every selector pill's tip
+          already printed verbatim; the overlap footnote, onto those same tips; the new lead total,
+          into the split chip's LENS), and the region is LANDED on flip when — and only when — the
+          first observation would otherwise fall below the fold, so nothing moves at 1440. D24
+          requires one complete observation above the fold in EN and ZH; M24 removes the landing and
+          is caught. NEITHER FROZEN STRUCTURE IS REOPENED.
+        guard_rails: >
+          The landing sits next to a standing operator veto on viewport hijacking, so three
+          properties are checked rather than argued: it fires only on a deliberate mode flip (never
+          on load, board change or filter change); the control the reader just pressed re-mounts
+          into what lands at the top (D24b); and flipping back to LIVE restores the scroll position
+          they flipped from (D24c, attacked by M26). The scroll is instant, so there is no motion to
+          suppress under prefers-reduced-motion.
+        r53_correction: >
+          RESOLVED, BUT ON THREE COUNTS THE R5.2 EXECUTION WAS WRONG, and all three are closed at
+          R5.3. (1) One of the three demoted lines was not demotable: the overlap caveat is the
+          caveat WITHOUT WHICH the six visible integers mislead (14/6/10/28/7/30, sum 65 against a
+          population of 30), and the ratified caveat exception (MPDS:386-389) makes it the last
+          thing that may leave the glance tier, not the first (VTL52-603, reached independently by
+          both C12 seats). Its CLAUSE is back at <=560 — "Boards overlap — these do not add up." —
+          with the full sentence still on the pill tips; D27 checks it VISIBLE at 390 in EN and ZH
+          alongside all six integers, M32 re-hides it. Two lines demote here now, not three.
+          (2) The demotions' landings could not be OPENED at <=560: the R4 LENS binds
+          mouseover/focusin only, so under a coarse pointer there was no gesture at all, and no crop
+          in the 63-file set photographed a popover anywhere (PR52-4/VTL52-604/605). lab.js adds a
+          tap/dismiss path over the same .lens-pop element and the same data-tip attributes
+          (board.js is frozen R4 and is not edited); .lab-split and .lab-agg take .lab-auth's dotted
+          underline. D28/D28b/D28c drive a real tap under any-pointer:coarse in both languages; M30
+          removes the path; crops 56 and 57 photograph the landing OPEN at 390 in EN and ZH.
+          (3) landRegion ignored the sticky-chrome offset syncMarkOffset was already computing
+          (PR52-2), so on a route whose header pins the flip scrolled the reader's own control
+          BEHIND the chrome — the exact failure D24b forbids, in the one configuration D24b never
+          entered. landRegion now scrolls to bandTop - --lab-mark-top, and D24/D24b run at chrome=1
+          as well as chrome=0, counting the fold from the offset rather than from 0. Measured after
+          the fix at 390x844: chrome=0 EN offset 0 / band 0 / first row 422 (h 322) / 1 complete row
+          / control top 12; chrome=1 EN offset 72 / band 72 / first row 494 / 1 complete row /
+          control top 84; ZH the same shape (first row 394 and 466, h 296). M33 lands without the
+          offset and is caught by D24b.
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/lab.js,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py,
+                        mockups/refs/prophet_lab/tools/capture.py]
+      - id: R52-D3
+        severity: condition
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          Quadrant and design-floor receipts were incomplete: down/empty were only ever shot dark-EN
+          and light-ZH (theme and language moving together), the 390 lead crop contained no lead
+          chip at all, and 35-lead-symmetry-dark-en was md5-identical to 32-live-only-dark-en.
+        evidence: >
+          49/4a/4b/4c add light-EN and dark-ZH for both states carrying the unknown-vs-zero
+          distinction. 54 scrolls the ADVERSE chip whole into frame at 390 and capture.py raises if
+          it is not there — the branch R5 could not render at all. 32 is deleted (PR51-13); 35 keeps
+          the slot because it also ships the full-page frame, so the M3 family now carries a unique
+          desktop view plus a real 390 receipt.
+        changed_files: [mockups/refs/prophet_lab/tools/capture.py, mockups/refs/prophet_lab/crops]
+      - id: VTL51-506
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          Residue of the "Live" overload VTL-405 partly closed: the page still carried LIVE (mode),
+          "Seen live" (row class) and "Seen live" (filter) — 实时 / 实时观测 / 实时观测.
+        evidence: >
+          TAKEN rather than recorded as accepted residue, because a clean de-collision existed and
+          is also more accurate. The class is now "Seen first-hand" / 「第一手观测」, sharing nothing
+          with the mode word in either language: the axis it measures is PROVENANCE, not timing, and
+          the opposite of "From history" is "seen first-hand" and never was "live". The divider and
+          the baseline copy drop "live" with it. D17c asserts the new probes are live vocabulary in
+          EN before D17b credits their absence in ZH.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/tools/verify.py]
+      - id: VTL51-505
+        severity: optional
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          No lead aggregate: the reader had to count chips across 4,681px of stream to learn how the
+          Lab had done against Prophet overall.
+        evidence: >
+          Taken. One line beside the count — "Lead on 5: 3 earlier · 1 same day · 1 later" —
+          computed from the FILTERED set like the split, counting only measured rows, printing all
+          three outcomes even at zero so it cannot go one-sided by omission. Demotes into the split
+          chip's LENS at 390 so it costs the fold nothing. Deliberate asymmetry with PR51-7 recorded
+          in DESIGN_NOTES §0b.1: a two-glyph ZH opposition (更早/更晚) is legible in an adjacent
+          parallel construction and was not legible on row chips separated by hundreds of pixels.
+        r53_correction: >
+          SHIPPED WITH NO CHECK AND NO MUTATION (PR52-6), and the wording it shipped created a new
+          ambiguity (VTL52-601): "3 earlier" had no subject and no unit, and sat in one viewport
+          with a row chip reading "Prophet was 3 days earlier" — same word, same numeral, one
+          counting rows and the other days. Re-worded at R5.3 to "Lead measured on 5 rows: we were
+          earlier on 3 · same day on 1 · Prophet earlier on 1" / 「提前量已测 5 行：我们更早 3 ·
+          同日 1 · Prophet 更早 1」, with the sign carried by the SUBJECT in both languages — which
+          also retires the PR51-7 asymmetry note above, since the 更早/更晚 opposition no longer
+          does the work. Now guarded: D26 (subject on every count + unit on the line), D26b (the
+          aggregate may not speak the row chip's phrase, per language), D26c (the demotion carrier
+          wears the dotted LENS affordance); M28 restores the R5.2 wording verbatim. The 390
+          landing also dropped the exclusion clause (PR52-7) and now carries it, checked by D28d.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/lab.css,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: PR51-2
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          lab.css asserted "above 980w all six fit on one line anyway". False: the strip clears 981w
+          by 22px and pill widths grow with counts the surface does not control.
+        evidence: "Wrap is unconditional; D20d pins 1000w; M19 restores the scroller and is caught."
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/tools/verify.py]
+      - id: PR51-3
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: "VTL-401 shipped six checks (D4b-D4f) and exactly one mutation (M7 -> D4d)."
+        evidence: "M20 (hide the ladder) attacks D4b; M21 (hide the page header) attacks D4c."
+        changed_files: [mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: PR51-5
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          D17b probed "Live sighting" and "Seed · history" — strings the SAME revision retired, so
+          the ZH leak test could not fail and had been reporting green over an unguarded surface.
+        evidence: >
+          Probes repointed to current vocabulary, and D17c now asserts each is PRESENT in EN before
+          its absence in ZH is credited, so the rot fails loudly next time. It bites already: M2
+          (let a seed carry a measured lead) is caught by D17c as well as D6.
+        changed_files: [mockups/refs/prophet_lab/tools/verify.py]
+      - id: PR51-6
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          The empty state said "try another board" while six pills read a confident 0 — a dead end
+          offered as a next step, contradicting the pill row one line above it.
+        evidence: >
+          Two facts, two sentences: nothing anywhere -> name the next pass, the only thing that can
+          change it; nothing on THIS board while the feed reports -> point at the counts, which
+          already say which boards have rows. The same split VTL-402 forced at the pill row.
+        changed_files: [mockups/refs/prophet_lab/lab.js]
+      - id: PR51-7
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          ZH lead polarity near-collision: 「比 Prophet 早 N 天看到」 vs 「Prophet 早 N 天」 shared
+          the polarity character 早 and the numeral, in a column the VTL-403 symmetry law makes
+          deliberately quiet — so the WORD carries the entire sign and the word was the same.
+        evidence: "Adverse is now 「Prophet 领先我们 N 天」 — no shared character, subject named."
+        changed_files: [mockups/refs/prophet_lab/lab.js]
+      - id: PR51-10
+        severity: nit
+        disposition: RESOLVED_BY_CHANGE
+        finding: "Harness class labels were the pre-VTL-405 words ('Live only' / 'Seeds only')."
+        evidence: "Harness speaks the surface's vocabulary, so it stops re-teaching retired words."
+        changed_files: [mockups/refs/prophet_lab/lab.js]
+      - id: PR51-12
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          DESIGN_NOTES §2.4 item 3 still advertised the withdrawn seed chip as a shipped channel and
+          §6 Q2 still asked a question R5.1 had already answered.
+        evidence: "Both rewritten to the shipped truth; §0 run table counts corrected with them."
+        changed_files: [mockups/refs/prophet_lab/DESIGN_NOTES.md]
+      - id: PR51-13
+        severity: nit
+        disposition: RESOLVED_BY_CHANGE
+        finding: "32-live-only-dark-en.png was byte-identical to 35-lead-symmetry-dark-en.png."
+        evidence: >
+          Same URL under two names, so the set claimed a view it did not hold. 32 deleted, 35 keeps
+          the slot (it also ships the full-page frame), §5 counts recomputed from the capture run.
+        changed_files: [mockups/refs/prophet_lab/tools/capture.py, mockups/refs/prophet_lab/crops]
+
+  # ── R5.3 — the C12 AUTHORITY VERDICT's six blocking rulings ────────────────
+  # Different in kind from the R5.2 round above: those were findings from this
+  # reference's own first-pass critics, answered before a verdict existed. These
+  # are rulings from an issued verdict (verdict.yml, REVISE), so the same
+  # discipline predecessors.closure uses applies — one row per ruling, by id, and
+  # a named check that would fail if the fix were undone.
+  - id: R5.3
+    trigger: >
+      C12 authority verdict REVISE over both seats' PASS_WITH_CONDITIONS receipts, against
+      f40ae70ac98936b5c565a7a55ddd108cb70ae7fa. Six blocking rulings + takeable minors + editorial
+      baseline re-stamps. Scoped by condition R53-SCOPE as the final composition-touching round.
+    frozen_at: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+    harness: >
+      verify.py 162/162 at the frozen bytes; capture.py 49 views / 66 files, all re-shot at the
+      frozen bytes; mutation_test.py 34/34 caught, distinct killers, no shared sole catcher.
+      HOW THE 34 WAS OBTAINED, stated because an unprovenanced receipt is the defect this round
+      exists to close. Two runs, not one. (1) A COMPLETE 33-mutation pass — every mutation except
+      M34, which did not exist yet — returned 33 caught. Its one reported "hole" was a LABEL, not a
+      miss: PR52-1 had just split D6c4 into three checks, so M25's sole catcher had moved to D6c4b
+      while its declared expectation still read D6c4; the pass's own output named the real catcher
+      (M25 -> ['D6c4b']) and the expectation was corrected. (2) All TEN mutations R5.3 introduces
+      or re-points — M13, M25, M27..M34 — were then re-run AT THE FROZEN BYTES, driven from
+      mutation_test.py's own MUTATIONS table rather than transcribed, and all ten were caught:
+      M25 -> ['D6c4b'], M27 -> ['D6c4','D6c4b'], M29 -> ['D6i4'], M30 -> ['D28'], M31 -> ['D25'],
+      M32 -> ['D27'], M33 -> ['D24b'], M34 -> ['D29'], M13 -> ['D19g','D6g','D6g2'],
+      M28 -> ['D17c','D26'].
+    harness_not_claimed: >
+      A single uninterrupted 34-mutation pass at the frozen SHA. One was started and reached 7/34
+      (all caught) before it was stopped: the host was carrying a load average of 15-19 and each
+      pass cost ~7 minutes there against ~1 minute on a quiet machine, which put a full pass at
+      ~3 hours. This is the one receipt the round did not obtain and it is named rather than
+      papered over — the delta re-check should take it, and the authority's own spot-verification
+      note already asks the re-check to execute the changed checks. Nothing above depends on it:
+      between the two runs every mutation was executed and caught, and the only results resting on
+      the earlier pass alone are for mutations whose targets the frozen bytes do not change.
+    findings:
+      - id: PR52-1
+        severity: blocker
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          The chrome=1 seam was imaginary and the false premise was stated three times (lab.js
+          syncMarkOffset comment, DESIGN_NOTES:114-117, continuity r52 rows) and booked as
+          RESOLVED_BY_CHANGE. `.harness` declares position:sticky inside `<div id="harness">`, a
+          wrapper exactly the bar's own height, so the bar has no travel and never pins. D6c4
+          asserted the bar's HEIGHT, which reads the same whether or not the bar is on screen.
+        evidence: >
+          Pre-fix probe (1440, chrome=1, scrolled 1,200px past the divider): barTop -2637px,
+          barH 149px, markTop 149px, --lab-mark-top 149px — 149px of empty band above the pin.
+          Fix: `#harness { display: contents }` makes <body> the bar's containing block, so it pins
+          for the length of the document; at <=560 the bar is capped to 72px with internal scroll
+          (un-capped it is 385px = 46% of the viewport, which no production header is). 72 is
+          measured: the fold holds a whole row for any offset up to 100px. D6c4 now asserts
+          barTop ~ 0 AT THE PIN MOMENT, D6c4b that markTop equals the chrome's bottom edge, D6c4c
+          that --lab-mark-top equals the chrome's height. M25 (hardcode top:0) is caught by D6c4b;
+          M27 (remove the travel again — the defect that shipped) by D6c4. Post-fix: 1440 barTop 0 /
+          barH 149 / markTop 149; 390 barTop 0 / barH 72 / markTop 72. Crop 55 photographs bar and
+          pin together and refuses to emit if either is absent.
+        corrections_booked: >
+          All three false statements corrected where they were made, and the r52 rows re-booked
+          with r53_correction blocks naming what was asserted vs what was measured (R52-D1 part b
+          was NOT_RESOLVED at R5.2 and is RESOLVED at R5.3).
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/lab.js,
+                        mockups/refs/prophet_lab/DESIGN_NOTES.md,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py,
+                        mockups/refs/prophet_lab/tools/capture.py,
+                        research/reference_integrity/prophet-board-lab-r5-1/continuity.yml,
+                        research/reference_integrity/prophet-board-lab-r5-1/proposal.yml]
+      - id: VTL52-601
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          The lead aggregate had no subject and no unit: "Lead on 5: 3 earlier · 1 same day · 1
+          later" counted ROWS while a row chip in the same viewport read "Prophet was 3 days
+          earlier" and counted DAYS. Same word, same numeral, opposite meaning; the subject existed
+          only in the LENS body (Tier 2).
+        evidence: >
+          Tier 1 now reads "Lead measured on 5 rows: we were earlier on 3 · same day on 1 · Prophet
+          earlier on 1" / 「提前量已测 5 行：我们更早 3 · 同日 1 · Prophet 更早 1」. Every count
+          carries its subject; the unit is stated once at the head (Law 4 — merge, never stack); the
+          sign is carried by the SUBJECT, the same rule VTL-403 applies one tier down. D26 requires
+          both subjects and the unit per language, D26b requires the aggregate not to speak the row
+          chip's phrase ("days earlier" / 领先我们). M28 restores the R5.2 wording verbatim.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: VTL52-602
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          "Lead not measurable" printed on all 23 seed rows below a divider that governs every one
+          of them — the third form of one Law 4 defect (chip at R5.1, rail at R5.2, lead slot at
+          R5.3) — and both acceptance gates were drawn around it: D6g counted FILLED slots, D6i
+          counted BADGES, and a sentence repeated 23 times was invisible to both.
+        evidence: >
+          The critics' convergent cure, taken. (1) The seed slot prints an em dash in the artifact's
+          own null idiom (dashed outline, muted — the .lab-n--unk shape, never the shape a
+          measurement wears), keeping its element, its LENS and an aria-label, so this is a change
+          of register and not a deletion. (2) The statement moves to the PINNED strip, MERGED into
+          the sentence already there: "Nothing below this line was seen first-hand, so no row below
+          can show a lead."; .lab-mark-why drops the consequence it was duplicating and keeps the
+          mechanism. The pin (D6c3) guarantees the clause is on screen whenever a row it governs is.
+          (3) D6i4 widens the gate from one selector to the whole seed region: every visible leaf
+          string on every seed row, failing on any that appears on ALL of them at weight >= 12 (CJK
+          counted 2, so one threshold serves both languages). Calibration receipts: the removed
+          constant scores 19 EN / 14 ZH; the legitimate LABELS score 7 (PROPHET eyebrow) and 11
+          ("signal date" rail, which D6i3 governs by name and which is excluded by selector); the em
+          dash scores 1. D6g still forbids a blank slot; D6g2 requires the accessible name; M13
+          blanks the slot; M29 puts the sentence back and is caught only by D6i4.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/lab.css,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: VTL52-603-PR52-4
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          Reached independently by both C12 seats. (a) At <=560 the overlap caveat left the glance
+          tier while all six pill integers stayed — a breach of the ratified caveat exception, which
+          exists so a caveat without which the visible integers mislead is the LAST thing to leave.
+          (b) The <=560 landings had no touch path and no visible affordance: the R4 LENS binds
+          mouseover/focusin only, and .lab-split/.lab-agg carried cursor:help alone. (c) No crop in
+          63 files photographed a LENS popover at any viewport (VTL52-604/605).
+        evidence: >
+          (a) The CLAUSE returns to the glance tier at <=560 — "Boards overlap — these do not add
+          up." / 「各板块互有重叠 —— 数字不能相加。」 — with the full sentence still on every pill's
+          tip: the EXPLANATION demotes, the WARNING does not. D27 checks it VISIBLE (not merely
+          present) at 390 in EN and ZH with all six integers on screen; M32 re-hides it. (b) lab.js
+          adds a tap/dismiss path over the SAME .lens-pop element and the same data-tip attributes —
+          board.js is frozen R4 and is not edited, so there is one popover and one vocabulary, not a
+          second tooltip system. Tap opens; tapping the carrier again, tapping elsewhere, Escape,
+          scrolling or flipping the mode closes it. .lab-split and .lab-agg take .lab-auth's dotted
+          underline and [data-lens-open] marks the open carrier. D28 drives a real TAP under
+          any-pointer:coarse in both languages, D28b checks the affordance, D28c the dismissal,
+          D28d that the 390 landing carries the exclusion clause (PR52-7); M30 removes the path.
+          (c) Crops 56 (390 dark EN) and 57 (390 light ZH) photograph the landing OPEN, taken by tap
+          in a has_touch context, refusing to emit unless the popover is on screen and in frame.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/lab.css,
+                        mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py,
+                        mockups/refs/prophet_lab/tools/capture.py, mockups/refs/prophet_lab/crops]
+      - id: PR52-2
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          landRegion scrolled to bandTop flat while syncMarkOffset was already measuring the sticky
+          chrome for the divider, so on a route whose header pins the flip put the reader's own
+          control BEHIND the chrome — the failure D24b exists to forbid, in the one configuration
+          D24b never ran.
+        evidence: >
+          landRegion now reads the same --lab-mark-top the pin does and scrolls to bandTop - offset
+          (the early-return guard takes the offset too), so one measurement serves both and a route
+          cannot be correct for one and wrong for the other. D24/D24b run at chrome=1 as well as
+          chrome=0 and count the fold FROM the offset. Measured at 390x844 after the fix: chrome=0
+          EN offset 0 / band 0 / first row 422 (h 322) / 1 complete row / control top 12; chrome=1
+          EN offset 72 / band 72 / first row 494 / 1 complete row / control top 84; ZH the same
+          shape (first row 394 and 466, h 296). M33 lands without the offset and is caught by D24b.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: PR52-3
+        severity: major
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          LAB->LIVE dropped focus to <body>: paintLive() destroys the subtree the mode control is
+          mounted in, so a keyboard operator had to re-tab the whole page to reach the surface's one
+          control, while the notes claimed arrow-key traversal.
+        evidence: >
+          paintLive() reads whether focus was IN .lab-seg BEFORE the plane is removed — the control
+          lives inside that plane, so a read taken afterwards can only answer "nobody had it" — and
+          returns focus to the RE-MOUNTED checked control inside sc.onload, with preventScroll so it
+          does not fight the D24c scroll restore. Scoped to that case: a reader focused elsewhere is
+          not yanked into the modebar. D25 drives the flip from the KEYBOARD and asserts the landed
+          element is the checked mode radio; M31 removes the restore.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      # ── the takeable minors. All taken; none declined. ─────────────────────
+      - id: PR52-6
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: ".lab-agg (VTL51-505) shipped with no check and no mutation."
+        evidence: "D26 / D26b / D26c check it in both languages; M28 attacks it."
+        changed_files: [mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: PR52-7
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          .lab-agg demotes into the split chip's LENS at 390, and that landing dropped the exclusion
+          clause — so the mobile reader got the numbers without the caveat naming what the
+          denominator leaves out.
+        evidence: >
+          The split tip carries the aggregate's sentence AND the exclusion clause in both languages;
+          D28d asserts it on the tapped popover at 390.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/tools/verify.py]
+      - id: PR52-8
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: 'D21c passed on any string containing "0".'
+        evidence: >
+          D21c now asserts the exact filtered split string, built from the RENDERED row count
+          ("N seen first-hand · 0 from history"), so a split computed off the whole board fails
+          whatever digits it happens to contain.
+        changed_files: [mockups/refs/prophet_lab/tools/verify.py]
+      - id: VTL52-606
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          The pinned strip kept a bare "Aug 8" but not the sentence that explains it — the
+          explanation lives in .lab-mark-why, which deliberately does not pin — so the pinned state
+          showed "Aug 8" above rows dated Aug 2 / Aug 1 / Jul 31.
+        evidence: >
+          Taken. The gutter cell takes the SPINE'S OWN two-line shape (value, then unit label —
+          exactly what every row's .lab-t + .lab-tl does): "Aug 8" over "and earlier" / 「及更早」.
+          Same idiom, one line of type, no new device; D17c guards the new string as live EN
+          vocabulary and D17b its absence from ZH.
+        changed_files: [mockups/refs/prophet_lab/lab.js, mockups/refs/prophet_lab/lab.css,
+                        mockups/refs/prophet_lab/tools/verify.py]
+      - id: VTL52-607
+        severity: minor
+        disposition: RESOLVED_BY_CHANGE
+        finding: "The meta strip ran five statements together with whitespace as the only separator."
+        evidence: >
+          Taken. A hairline rule keys each STATEMENT while `·` stays the ITEM separator, so the two
+          levels are told apart by kind rather than by size of gap — every statement already used ·
+          inside itself, which is why whitespace could not do the job. It is a MARKER ON EACH, not a
+          rule between: the first draft drew it into the flex gap and D29, written to measure that,
+          failed it at six of ten widths in the responsive ladder (1180/1000/860/768 orphaned
+          .lab-agg's rule at the start of a wrapped line; 640/561 orphaned .lab-split's too — and
+          the <=560 pair survived only because that draft carried a hand-written display:none
+          exception for the member that leads the line once .lab-sub hides, which is the same
+          evidence one step earlier), and CSS has no selector for "first on its line". Keyed to the
+          statement, a wrapped statement
+          carries its own marker with it and nothing can be orphaned. D29 stayed, inverted: every
+          visible statement is keyed and no control is. Its width ladder was ALSO trimmed with the
+          device, from the ten-width sweep to both sides of every breakpoint (1440/1181/1180/981/
+          980/561/560/390): the sweep existed to catch a wrap-POSITION defect, and a per-statement
+          marker has none — the only thing width still changes is which members are visible, which
+          is a function of the breakpoints alone. Said rather than silently narrowed, because each
+          width costs the harness a page load on every one of 34 mutation runs. M34 removes the
+          markers.
+        changed_files: [mockups/refs/prophet_lab/lab.css, mockups/refs/prophet_lab/tools/verify.py,
+                        mockups/refs/prophet_lab/tools/mutation_test.py]
+      - id: VTL52-608
+        severity: nit
+        disposition: RESOLVED_BY_CHANGE
+        finding: >
+          The round's own keep/remove criterion ("differs between adjacent rows") does not
+          discriminate: the PROPHET eyebrow is identical on all 30 rows and was kept.
+        evidence: >
+          Taken as the critic scoped it — repair the criterion, not the eyebrow. The real test is
+          LABEL vs CLAIM: a label names the value beside it and is read WITH it, so deleting it
+          costs a number its unit; a claim asserts a fact about the row, and once a structure states
+          that fact for a region every per-row copy is the Law 4 repetition. That criterion holds
+          for the eyebrow ("Prophet" names the column that follows it), for the rail ("signal date"
+          names the date above it), and against both removed constants. Wording repaired in lab.js
+          and in the R52-D1 r53_correction above; no artifact behaviour changed.
+        changed_files: [mockups/refs/prophet_lab/lab.js]
+      - id: PR52-10
+        severity: nit
+        disposition: RESOLVED_BY_CHANGE
+        finding: "The history divider's gutter wore the solid LIVE spine idiom for its full height."
+        evidence: >
+          Taken. The spine is this artifact's honesty channel — solid where sightings are
+          first-hand, dashed where none is — and the divider is the one member where the stream
+          CROSSES between them, so its segment now changes state at the midline: solid above,
+          dashed below. Read at a glance the device now says what the strip says in words. Both
+          halves are treatments the rows above and below already wear; no new idiom.
+        changed_files: [mockups/refs/prophet_lab/lab.css]
+      - id: PR52-9
+        severity: nit
+        disposition: NOT_ACTIONED
+        finding: >
+          D19f is a literal source match; the law is actually held by D19c. Downgraded from minor to
+          nit by the product seat on revealed evidence and NOT carried into the verdict's minor set.
+        evidence: >
+          Left as-is deliberately. D19f is a belt-and-braces source guard on one specific regression
+          (Math.abs standing between the payload and the sign branch) and its comment already says
+          D19c is what holds the law; removing it would trade a cheap redundant guard for nothing.
+          Named here rather than silently skipped.
+      - id: VTL52-609
+        severity: minor
+        disposition: NOT_IN_SCOPE
+        finding: >
+          The anti-hijack return leg (D24c) starts from scrollY=40 and the round-trip CROP (50) is
+          1440x900, where landRegion returns early — so the reversibility promise is receipted at
+          one small offset and photographed at a width where the landing never fires.
+        evidence: >
+          Raised by the visual seat and NOT carried into the verdict's blocking findings or its
+          takeable-minor list (R53-SCOPE names PR52-6/7/8, VTL52-606/607/608, PR52-10 and nothing
+          else), so this round leaves it rather than widening its own scope on the last
+          composition-touching pass. Named here so the delta re-check can see it was read, not
+          missed. Substance, for whoever takes it: the 40px start is deliberate and its reason is
+          in verify.py:402-404 — at 390 the LIVE mode control sits at ~47-68px, so a reader can
+          only press it near the top of the page, and a 120px start measured nothing because the
+          driver scrolls a click target into view. A stronger receipt would drive the flip from a
+          scroll position reached WITHOUT moving focus, and shoot the round trip at 390 where the
+          landing actually fires. Neither is a correctness gap in the artifact; both are gaps in
+          the evidence for it.
+        finding: >
+          Commission hygiene: pinning critics to the ARTIFACT sha for extraction reproducibly stales
+          the packet records they need (manifest/baseline/continuity live at branch head, not in the
+          artifact tree), which produced one withdrawn finding and one "not located" gap.
+        evidence: >
+          Not the designer's to fix — it is a property of how the C12 seats are commissioned. Raised
+          to the adjudicating session: extract the artifact at the frozen SHA AND the packet
+          directory at branch head, and say so in the commission.

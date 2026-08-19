@@ -21,7 +21,7 @@
   },
   "adc_antibody_drug_conjugate": {
     "last_ingest": "2026-08-19",
-    "api_total": 429
+    "api_total": 430
   },
   "car_t_cell_therapy": {
     "last_ingest": "2026-08-19",
@@ -33,6 +33,6 @@
   },
   "mrna_therapeutics": {
     "last_ingest": "2026-08-19",
-    "api_total": 366
+    "api_total": 367
   }
 }
