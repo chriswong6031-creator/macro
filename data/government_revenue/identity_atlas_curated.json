@@ -4,6 +4,7 @@
   "generated_at": "2026-08-19T04:20:00+00:00",
   "issuers": {
     "SPR": {
+      "company_name": "Spirit AeroSystems Holdings, Inc.",
       "public_security_state": "listing_terminated",
       "listing_events": [
         {
@@ -34,12 +35,12 @@
         "trade_name": "GE Aerospace"
       },
       "attribution_reason_en": "At least five distinct SAM UEIs display as \"GENERAL ELECTRIC COMPANY\" on USAspending awards; none is SAM-verified to CIK 0000040545 through a reviewed Ex.21 exhibit or comparable exact document join, so no reviewed exact recipient → legal entity → GE Aerospace path exists.",
-      "attribution_reason_zh": "USAspending奖励记录中至少有五个不同的SAM UEI显示为“GENERAL ELECTRIC COMPANY”；均未通过已审核的Ex.21附件或同等的精确文件比对验证到CIK 0000040545，因此不存在已审核的“精确受益人 → 法律实体 → GE Aerospace”路径。",
+      "attribution_reason_zh": "USAspending奖励记录中至少有五个不同的SAM UEI显示为“GENERAL ELECTRIC COMPANY”；均未通过已审核的Ex.21附件或同等的精确文件比对验证到CIK 0000040545，因此不存在已审核的“精确受益人 → 法律实体 → GE Aerospace 路径”。",
       "gaps": [
         {
           "code": "no_reviewed_exact_path",
-          "text_en": "No reviewed exact recipient → legal entity → GE Aerospace path.",
-          "text_zh": "不存在已审核的“精确受益人 → 法律实体 → GE Aerospace”路径。"
+          "text_en": "no reviewed exact recipient → legal entity → GE Aerospace path.",
+          "text_zh": "不存在已审核的“精确受益人 → 法律实体 → GE Aerospace 路径”。"
         }
       ],
       "separation_events": [
@@ -137,8 +138,26 @@
         }
       ],
       "notes": [
-        "BWX Technologies, Inc. completed the acquisition of Advanced Overseas Technologies (A.O.T) on 2025-01-03 per the FY2025 10-K business narrative; A.O.T is not yet a reviewed Ex.21 entity and carries no identifier row in defense21-v1.",
-        "BWXT Government Group, Inc. is Ex.21-proven (100% owned, Delaware, FY2023–FY2025) but has zero observed USAspending award rows to attach as of this construction; it stays display-only until an award record exists to review."
+        {
+          "text": "BWX Technologies, Inc. completed the acquisition of Advanced Overseas Technologies (A.O.T) on 2025-01-03 per the FY2025 10-K business narrative; A.O.T is not yet a reviewed Ex.21 entity and carries no identifier row in defense21-v1.",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:bwxt-20251231.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/bwxt-20251231.htm"
+            }
+          ]
+        },
+        {
+          "text": "BWXT Government Group, Inc. is Ex.21-proven (100% owned, Delaware, FY2023–FY2025) but has zero observed USAspending award rows to attach as of this construction; it stays display-only until an award record exists to review.",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm"
+            }
+          ]
+        }
       ]
     }
   }

@@ -1037,13 +1037,25 @@ def build(
     # graph/SI snapshot/mapping backlog/dossier observations/curated PIT file.
     # It never opens dossiers.json, workspace.json, or a candidate ledger for
     # writing -- its write path is limited to identity_atlas.json.
+    #
+    # graph_as_of is bound to the PLANE clock (this generation's own as_of),
+    # never left self-referential to the graph's own graph_known_at.  A graph
+    # minted ahead of the plane must be caught by the exact same
+    # future-known-graph gate the candidates plane already enforces
+    # (entity_resolution.load_recipient_entity_graph) -- otherwise a graph
+    # that the candidates plane correctly refuses as not-yet-knowable would
+    # still render "reviewed" here.  When admission fails, every issuer
+    # degrades to not_asserted and the header's graph_status records why
+    # (never silently "reviewed" on a future-dated graph).
     identity_atlas_generated_at = (
         payload.get("generated_at")
         or payload.get("known_at")
         or datetime.now(timezone.utc).isoformat()
     )
     identity_atlas = build_identity_atlas_payload(
-        root=root, generated_at=identity_atlas_generated_at
+        root=root,
+        generated_at=identity_atlas_generated_at,
+        graph_as_of=payload.get("as_of"),
     )
     if not is_valid_identity_atlas_payload(identity_atlas):
         raise ValueError("government revenue identity atlas returned an invalid schema")

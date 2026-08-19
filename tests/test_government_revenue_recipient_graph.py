@@ -461,7 +461,7 @@ def test_canonical_reviewed_graph_is_strict_and_keeps_absent_event_coverage_empt
         format_checker=FormatChecker(),
     ).validate(graph)
     assert graph["graph_id"] == "recipient-graph:reviewed:2026-08-19:defense21-v1"
-    assert len(graph["evidence"]) == 248
+    assert len(graph["evidence"]) == 249
     assert len(graph["companies"]) == 20
     assert len(graph["legal_entities"]) == 107
     assert len(graph["identifiers"]) == 208

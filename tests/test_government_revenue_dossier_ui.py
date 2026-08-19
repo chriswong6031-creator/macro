@@ -779,7 +779,7 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
     out = _run_atlas(tmp_path, "atlas_states.js", body, OK_RESPONDER)
 
     # Fetched ONCE per session no matter how many issuers are inspected.
-    assert out["fetchCalls"] == ["government-revenue-data/identity_atlas.json"]
+    assert out["fetchCalls"] == ["government-revenue-data/identity-atlas.json"]
 
     irdm = out["html"]["IRDM"]
     for marker in (
@@ -793,10 +793,14 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
         "on record since 2025-12-3",
         "Watch — don’t chase",
         "Show identifiers, dates and receipts",
+        "Reviewed",  # the identifier-row state word (identifierRows -> verification_state)
     ):
         assert marker in irdm, marker
+    # No hop is unresolved and no field-name mismatch prints the "unclear" fallback --
+    # the reviewed rail is unbroken end to end (FIX-2).
     assert "atlas-hop reviewed" in irdm
     assert "atlas-hop unresolved" not in irdm
+    assert "State unclear" not in irdm
     # Technicals are demoted: the UEI, its sha256 and the known_at clock live inside the
     # receipt expand, never in the always-visible tier.
     head, _, receipts = irdm.partition('<details class="atlas-receipt">')
@@ -806,6 +810,9 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
     assert "known at" not in head and "known_at" not in head
 
     # GE: verified security, unresolved recipient, issuer NOT asserted — verbatim.
+    # This is the frozen sentence composed from public_security + attribution +
+    # the curated gaps[0] text, which is itself the frozen attribution_reason-class
+    # copy the spec quotes literally (D2 execution spec §3).
     ge = out["html"]["GE"]
     assert GE_UNRESOLVED_COPY in ge
     assert "Stand aside" in ge
@@ -814,23 +821,32 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
     assert "atlas-hop reviewed break" in ge  # the security hop, then the break
     assert "atlas-entity" not in ge  # nothing is minted where the filing is silent
     assert "Reviewed issuer path" not in ge
-    # Five identically-blocked registrations are ONE card plus its count, never five
-    # copies of one sentence (doctrine Law 4 — a constant never repeats per row).
-    assert "4 recipient registrations named “GENERAL ELECTRIC COMPANY”" in ge
-    assert ge.count('<div class="atlas-gap">') == 2
+    # Adjudicated 2026-08-18 (finding B6): a scope-observed, non-curated identifier
+    # is NEVER named at issuer level -- GE's discovery scope contains unrelated
+    # third-party companies, so nothing here is named, only an aggregate count.
+    assert "atlas-gap" not in ge
+    assert "5 recipient identifier(s) observed in the discovery file" in ge
     # The separation boundary is stated, and nothing is carried back across it.
-    assert "The energy business separated" in ge
+    assert "GE HealthCare Technologies Inc." in ge
+    assert "GE Vernova Inc." in ge
+    assert "2023-01-03" in ge and "2024-04-02" in ge
 
-    # BWXT: five reviewed chains AND three unresolved, one an explicit conflict.
+    # BWXT: five reviewed chains AND three curated, evidence-backed unresolved
+    # identifiers, one an explicit conflict -- and the Legal issuer hop must show
+    # the reviewed canonical name, not "Not asserted" (this was FIX-2's blocker:
+    # the UI previously read legal_issuer.verification_state, a field the
+    # projector never emits, so BWXT's own issuer hop always misread as unresolved).
     bwxt = out["html"]["BWXT"]
     assert "Reviewed issuer path" in bwxt
     assert "Conflict on record" in bwxt
     assert "Link pending" in bwxt
-    assert "AEROJET ORDNANCE TENNESSEE, INC." in bwxt
+    assert "BWX Technologies, Inc." in bwxt  # the Legal issuer hop's fact
+    assert "BWXT ORDNANCE TENNESSEE, INC." in bwxt
     assert "atlas-gap conflict" in bwxt
-    assert "Two official records disagree" in bwxt
+    assert "records its parent as L3HARRIS TECHNOLOGIES, INC" in bwxt
     assert "reviewed, 3 still unresolved" in bwxt
     assert bwxt.count('class="atlas-entity ') == 6
+    assert "State unclear" not in bwxt
 
     # SPR: historical, never live.
     spr = out["html"]["SPR"]
@@ -843,20 +859,21 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
     assert "Reviewed issuer path" not in spr
     assert "verified_live" not in spr
 
-    # LMT: fourteen identifiers kept distinct, Sikorsky filing-known but unobserved.
+    # LMT: fourteen identifiers kept distinct under the single reviewed entity the
+    # graph actually declares -- never flattened, never split.
     lmt = out["html"]["LMT"]
     assert "Holds 14 exact recipient identifiers" in lmt
-    assert "Sikorsky Aircraft Corporation" in lmt
-    assert "No award recipient identifier observed for this entity yet" in lmt
-    assert "the filing omits subsidiaries it does not consider significant" in lmt
-    assert "Absence is not proof that none exists." in lmt
+    assert "LOCKHEED MARTIN CORP" in lmt
+    # No third-party or scope-observed name is ever printed (finding B6); the
+    # discovery-only overflow is an aggregate count, same law as GE.
+    assert "recipient identifier(s) observed in the discovery file" in lmt
 
-    # HII: every reviewed shipyard entity renders, none merged away.
+    # HII: every reviewed entity the graph actually declares renders, none merged away.
     hii = out["html"]["HII"]
     for name in (
-        "Ingalls Shipbuilding, Inc.",
-        "Newport News Shipbuilding and Dry Dock Company",
-        "HII Mission Technologies Corp.",
+        "Huntington Ingalls Incorporated",
+        "HUNTINGTON INGALLS INDUSTRIES, INC.",
+        "HII Nuclear Inc.",
     ):
         assert name in hii, name
 
@@ -890,20 +907,24 @@ def test_identity_atlas_runtime_renders_every_pilot_state(tmp_path: Path) -> Non
 
 @needs_node
 def test_identity_atlas_escapes_hostile_source_text(tmp_path: Path) -> None:
+    # Looked up by ticker, not array position -- the fixture's own issuer order
+    # is the projector's (alphabetical), not an index a test should hard-code.
     body = """
         var LANG='en';
-        ATLAS.issuers[0].company_name='<img src=x onerror=alert(1)>';
-        ATLAS.issuers[0].entities[1].canonical_name='<script>alert(2)</script>';
-        ATLAS.issuers[3].unresolved_identifiers[0].observed_name='<b>GE</b>';
-        ATLAS.issuers[0].entities[1].evidence.url='javascript:alert(3)';
-        var a=mount('IRDM'),b=mount('GE');
-        setTimeout(function(){process.stdout.write(JSON.stringify({irdm:a.host.innerHTML,ge:b.host.innerHTML}))},40);
+        function byTicker(t){return ATLAS.issuers.find(function(r){return r.ticker===t})}
+        var irdmRecord=byTicker('IRDM'),bwxtRecord=byTicker('BWXT');
+        irdmRecord.company_name='<img src=x onerror=alert(1)>';
+        irdmRecord.entities[1].canonical_name='<script>alert(2)</script>';
+        bwxtRecord.unresolved_identifiers[0].observed_name='<b>GE</b>';
+        irdmRecord.entities[1].evidence[0].url='javascript:alert(3)';
+        var a=mount('IRDM'),b=mount('BWXT');
+        setTimeout(function(){process.stdout.write(JSON.stringify({irdm:a.host.innerHTML,bwxt:b.host.innerHTML}))},40);
     """
     out = _run_atlas(tmp_path, "atlas_escape.js", body, OK_RESPONDER)
     assert "&lt;img src=x onerror=alert(1)&gt;" in out["irdm"]
     assert "<img src=x" not in out["irdm"]
     assert "<script>alert(2)</script>" not in out["irdm"]
-    assert "&lt;b&gt;GE&lt;/b&gt;" in out["ge"]
+    assert "&lt;b&gt;GE&lt;/b&gt;" in out["bwxt"]
     assert "javascript:" not in out["irdm"]
 
 
@@ -1072,9 +1093,19 @@ def test_identity_atlas_fixture_covers_the_six_pilot_states() -> None:
     assert sum(len(e["identifiers"]) for e in records["LMT"]["entities"]) == 14
     assert records["GE"]["issuer_attribution"] == "not_asserted"
     assert records["GE"]["entities"] == []
-    assert len(records["GE"]["unresolved_identifiers"]) == 5
+    # Adjudicated 2026-08-18 (finding B6): unresolved_identifiers is curated-only.
+    # GE's discovery scope observed several unrelated third-party companies, which
+    # the fixture -- regenerated FROM build_identity_atlas(), never hand-authored --
+    # correctly names nowhere; they show up only as an aggregate count in gaps[].
+    assert records["GE"]["unresolved_identifiers"] == []
+    assert any(
+        gap["code"] == "observed_identifiers_without_reviewed_path"
+        for gap in records["GE"]["gaps"]
+    )
     assert len(records["GE"]["separation_events"]) == 2
     assert len(records["BWXT"]["entities"]) == 6
+    # BWXT keeps exactly the three curated, evidence-backed identifiers (spec §2's
+    # refused trio) -- these ARE named, because each carries human review + evidence.
     assert len(records["BWXT"]["unresolved_identifiers"]) == 3
     assert [
         row["state"] for row in records["BWXT"]["unresolved_identifiers"]
@@ -1083,12 +1114,15 @@ def test_identity_atlas_fixture_covers_the_six_pilot_states() -> None:
     assert records["SPR"]["issuer_attribution"] == "not_asserted"
     assert records["SPR"]["listing_events"][0]["effective_at"] == "2025-12-08"
 
-    # Every evidence citation is a real https receipt — no bare, unciteable assertion.
+    # Every reviewed-graph evidence citation is a real https receipt with a genuine
+    # sha256 -- no bare, unciteable assertion. Curated evidence (unresolved
+    # identifiers, listing/separation events) cites a URL but never claims a hash,
+    # since it is a human-reviewed citation, not a strict content-addressed receipt.
     def walk(node) -> None:
         if isinstance(node, dict):
-            if "url" in node and "sha256" in node:
+            if "url" in node and "content_sha256" in node:
                 assert str(node["url"]).startswith("https://"), node["url"]
-                assert len(str(node["sha256"])) == 64, node.get("evidence_id")
+                assert len(str(node["content_sha256"])) == 64, node.get("evidence_id")
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):

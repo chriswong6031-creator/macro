@@ -10,6 +10,9 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import shutil
+import subprocess
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -20,6 +23,8 @@ from engine.government_revenue.entity_resolution import (
     resolve_recipient,
 )
 import scripts.mint_defense21_recipient_graph as mint
+
+needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not on PATH")
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -364,13 +369,27 @@ def test_4_schema_carries_no_event_or_award_reference_fields():
 # ===========================================================================
 
 
+def _fake_bwxt_fetch(url: str) -> bytes:
+    """A fetch stub whose bodies satisfy the mint script's own content
+    assertions (every canonical name in the Ex.21 body, every UEI in its
+    award body, every admitted UEI in the children-endpoint body) without
+    reaching the network."""
+    if url == mint.BWXT_EX21_URL:
+        names = " ".join(name for _uei, _slug, name, _award_id in mint.BWXT_SUBSIDIARIES)
+        return f"EXHIBIT 21.1 {names}".encode("utf-8")
+    if url == mint.BWXT_CHILDREN_URL:
+        rows = [{"uei": uei} for uei, _slug, _name, _award_id in mint.BWXT_SUBSIDIARIES]
+        return json.dumps(rows).encode("utf-8")
+    for uei, _slug, _name, award_id in mint.BWXT_SUBSIDIARIES:
+        if url == mint._award_url(award_id):
+            return json.dumps({"recipient": {"uei": uei}}).encode("utf-8")
+    return f"body-for:{url}".encode("utf-8")
+
+
 def test_5_defense19_rows_survive_byte_identical_in_defense21():
     base = _base_graph(graph_id="recipient-graph:reviewed:2026-08-08:defense19-v1")
 
-    def fake_fetch(url: str) -> bytes:
-        return f"body-for:{url}".encode("utf-8")
-
-    merged = mint.build_defense21_graph(base_graph=base, fetch=fake_fetch)
+    merged = mint.build_defense21_graph(base_graph=base, fetch=_fake_bwxt_fetch)
     for table, id_field in mint._ROW_ID_FIELD.items():
         base_rows = {row[id_field]: row for row in base[table]}
         merged_rows = {row[id_field]: row for row in merged[table]}
@@ -385,6 +404,35 @@ def test_5_mutated_historical_row_fails_the_byte_preservation_pin():
 
     with pytest.raises(ValueError, match="mutated"):
         mint._assert_base_rows_untouched(base, mutated_base)
+
+
+def test_fix4_mint_refuses_an_award_receipt_that_does_not_name_its_own_uei():
+    with pytest.raises(ValueError, match="does not contain its own UEI"):
+        mint._assert_award_body_names_its_uei(
+            uei="WJYVCPD5HKK7", body=b'{"recipient": {"uei": "SOME0THERUEI"}}', award_id="test"
+        )
+    # Passes silently when the body genuinely names the UEI.
+    mint._assert_award_body_names_its_uei(
+        uei="WJYVCPD5HKK7", body=b'{"recipient": {"uei": "WJYVCPD5HKK7"}}', award_id="test"
+    )
+
+
+def test_fix4_mint_refuses_ex21_evidence_missing_an_admitted_entity():
+    names = " ".join(name for _uei, _slug, name, _award_id in mint.BWXT_SUBSIDIARIES[:-1])
+    with pytest.raises(ValueError, match="missing"):
+        mint._assert_ex21_names_every_admitted_entity(body=names.encode("utf-8"))
+    # Passes silently when every admitted name is present.
+    mint._assert_ex21_names_every_admitted_entity(body=_fake_bwxt_fetch(mint.BWXT_EX21_URL))
+
+
+def test_fix4_mint_refuses_a_children_receipt_missing_an_admitted_uei():
+    incomplete = json.dumps([{"uei": "WJYVCPD5HKK7"}]).encode("utf-8")
+    with pytest.raises(ValueError, match="missing"):
+        mint._assert_children_receipt_lists_every_admitted_uei(body=incomplete)
+    # Passes silently when every admitted UEI is listed.
+    mint._assert_children_receipt_lists_every_admitted_uei(
+        body=_fake_bwxt_fetch(mint.BWXT_CHILDREN_URL)
+    )
 
 
 def test_5_committed_defense21_admits_and_preserves_defense19_shape():
@@ -467,15 +515,64 @@ def test_7_sikorsky_named_identifier_stays_unresolved_never_auto_attaches():
         }
     ]
 
-    unresolved_values = {row["value"] for row in lmt["unresolved_identifiers"]}
-    assert "SIKORSKY0001" in unresolved_values
-    sikorsky_row = next(
-        row for row in lmt["unresolved_identifiers"] if row["value"] == "SIKORSKY0001"
+    # Adjudicated 2026-08-18 (finding B6): a scope-observed, non-curated
+    # identifier is NEVER named at issuer level -- discovery scope is a fuzzy
+    # association, not issuer proof.  Sikorsky must not appear anywhere named,
+    # under any field, curated or otherwise.
+    assert lmt["unresolved_identifiers"] == []
+    blob = json.dumps(lmt)
+    assert "SIKORSKY" not in blob
+    assert "SIKORSKY0001" not in blob
+    # It still surfaces, but only as an aggregate count with no name attached.
+    gap_codes = {gap["code"] for gap in lmt["gaps"]}
+    assert "observed_identifiers_without_reviewed_path" in gap_codes
+    observed_gap = next(
+        gap for gap in lmt["gaps"] if gap["code"] == "observed_identifiers_without_reviewed_path"
     )
-    assert sikorsky_row["observed_name"] == "SIKORSKY AIRCRAFT CORPORATION"
+    assert "1" in observed_gap["text_en"]
     # Never attached to the reviewed entity's identifiers.
     reviewed_values = {ident["value"] for ident in lmt["entities"][0]["identifiers"]}
     assert "SIKORSKY0001" not in reviewed_values
+
+
+# ===========================================================================
+# FIX-5 — the plane clock, not the graph's own clock, gates admission
+# ===========================================================================
+
+
+def test_future_known_graph_degrades_every_issuer_to_not_asserted():
+    """A graph minted ahead of the plane clock must fail the SAME
+    future-known-graph gate the candidates plane already enforces
+    (entity_resolution.load_recipient_entity_graph) -- never render
+    "reviewed" just because the graph's own clock says so.
+    """
+    graph = _base_graph(graph_id="recipient-graph:reviewed:2026-08-08:defense19-v1")
+    graph["companies"][0]["ticker"] = "TICK"
+    plane_as_of = "2026-07-01T23:59:59+00:00"  # strictly before graph_known_at
+
+    payload = ia.build_identity_atlas(
+        graph=graph,
+        generated_at="2026-08-19T00:00:00+00:00",
+        graph_as_of=plane_as_of,
+    )
+    assert payload["graph_status"] != "ready"
+    for row in payload["issuers"]:
+        assert row["issuer_attribution"] == "not_asserted"
+        assert row["entities"] == []
+        assert row["legal_issuer"]["state"] == "not_asserted"
+
+
+def test_graph_as_of_none_falls_back_to_the_graph_s_own_clock():
+    """Without an explicit plane clock the projector still works standalone
+    (e.g. a bare call, or the disk wrapper's default) -- it evaluates the
+    graph at its own construction instant rather than refusing outright."""
+    graph = _base_graph()
+    payload = ia.build_identity_atlas(
+        graph=graph, generated_at="2026-08-19T00:00:00+00:00", graph_as_of=None
+    )
+    assert payload["graph_status"] == "ready"
+    tick = next(row for row in payload["issuers"] if row["ticker"] == "TICK")
+    assert tick["issuer_attribution"] == "reviewed"
 
 
 # ===========================================================================
@@ -504,3 +601,98 @@ def test_projector_is_deterministic_given_identical_inputs():
     )
     assert payload_a == payload_b
     assert payload_a["content_id"] == payload_b["content_id"]
+
+
+# ===========================================================================
+# FIX-3 — artifact <-> UI contract, pinned permanently
+# ===========================================================================
+#
+# A minimal node harness (same shape as
+# tests/test_government_revenue_dossier_ui.py::_run_atlas) that renders the
+# SHIPPED factory against the COMMITTED data/government_revenue/identity_atlas.json
+# -- never a fixture, never a mock. If the projector's field names and the UI's
+# accessors ever drift again (the exact defect FIX-2 fixed), this test catches
+# it directly against the real artifact, not a hand-authored stand-in.
+
+DOSSIER_JS_PATH = ROOT / "templates" / "government-revenue-dossiers.js"
+COMMITTED_ATLAS_PATH = ROOT / "data" / "government_revenue" / "identity_atlas.json"
+
+
+def _committed_atlas_node_script(body: str) -> str:
+    dossier_js = DOSSIER_JS_PATH.read_text(encoding="utf-8")
+    atlas = json.loads(COMMITTED_ATLAS_PATH.read_text(encoding="utf-8"))
+    scaffold = """
+        var window=globalThis;
+        var ATLAS=__ATLAS__;
+        window.fetch=function(url){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(ATLAS)}})};
+        __DOSSIER_JS__
+        function obj(x){return !!x&&typeof x==='object'&&!Array.isArray(x)}
+        function arr(x){return Array.isArray(x)?x:[]}
+        function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+        function text(x,fb){return x==null||x===''?(fb==null?'\\u2014':fb):String(x)}
+        function n(x){if(x==null||x===''||typeof x==='boolean')return null;var v=Number(x);return Number.isFinite(v)?v:null}
+        function date(x){return String(x||'\\u2014').slice(0,10)}
+        function tr(en,cn){return LANG==='zh'?cn:en}
+        function zhOn(){return LANG==='zh'}
+        function safeUrl(x){try{var u=new URL(String(x||''),'https://example.invalid/');return u.protocol==='https:'?u.href:''}catch(e){return''}}
+        function host(){var h={innerHTML:'',classes:{}};h.classList={add:function(k){h.classes[k]=true},remove:function(){for(var i=0;i<arguments.length;i++)delete h.classes[arguments[i]]}};return h}
+        function mount(ticker){var h=host();var ui=window.createGovernmentRevenueIdentityAtlas({obj:obj,arr:arr,esc:esc,text:text,n:n,date:date,tr:tr,zh:zhOn,safeUrl:safeUrl,host:function(){return h}});ui.loadCompany(ticker);return{host:h,ui:ui}}
+        __BODY__
+    """
+    return (
+        textwrap.dedent(scaffold)
+        .replace("__ATLAS__", json.dumps(atlas))
+        .replace("__DOSSIER_JS__", dossier_js)
+        .replace("__BODY__", textwrap.dedent(body))
+    )
+
+
+def _run_committed_atlas(tmp_path: Path, body: str) -> dict:
+    path = tmp_path / "committed_atlas.js"
+    path.write_text(_committed_atlas_node_script(body), encoding="utf-8")
+    result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout)
+
+
+@needs_node
+def test_committed_atlas_renders_the_pilots_through_the_shipped_ui_factory(tmp_path: Path):
+    body = """
+        var LANG='en';
+        var list=['IRDM','HII','LMT','GE','BWXT','SPR'],out={},i=0,current;
+        function step(){
+          if(i>=list.length){process.stdout.write(JSON.stringify(out));return}
+          var ticker=list[i++];current=host();
+          var ui=window.createGovernmentRevenueIdentityAtlas({obj:obj,arr:arr,esc:esc,text:text,n:n,date:date,tr:tr,zh:zhOn,safeUrl:safeUrl,host:function(){return current}});
+          ui.loadCompany(ticker);
+          setTimeout(function(){out[ticker]=current.innerHTML;step()},20);
+        }
+        step();
+    """
+    out = _run_committed_atlas(tmp_path, body)
+
+    irdm, bwxt = out["IRDM"], out["BWXT"]
+    for html, ticker in ((irdm, "IRDM"), (bwxt, "BWXT")):
+        assert "atlas-hop reviewed" in html, ticker
+        assert "State unclear" not in html, ticker
+        assert "Not asserted" not in html.split('<p class="atlas-read">')[0], (
+            f"{ticker}: legal issuer hop must not misread the reviewed issuer as unresolved"
+        )
+
+    ge = out["GE"]
+    assert (
+        "Public security: verified · Government recipient attribution: unresolved · "
+        "Exact issuer attribution: not asserted"
+    ) in ge
+    assert "no reviewed exact recipient → legal entity → GE Aerospace path." in ge
+    assert "atlas-entity" not in ge
+
+    spr = out["SPR"]
+    assert "Listing terminated" in spr
+    assert "atlas-hop historic" in spr
+    assert "Reviewed issuer path" not in spr
+
+    # No pilot anywhere prints the "unclear" fallback -- pins the whole
+    # artifact<->UI field-name contract in one place, permanently.
+    for ticker, html in out.items():
+        assert "State unclear" not in html, ticker

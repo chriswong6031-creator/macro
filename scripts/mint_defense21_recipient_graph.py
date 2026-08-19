@@ -48,6 +48,7 @@ from scripts.propose_government_revenue_recipient_graph import (  # noqa: E402
     HttpFetcher,
     _evidence_row,
     _temporal,
+    normalize_legal_name,
 )
 
 CANONICAL_GRAPH_PATH = _ROOT / "data" / "government_revenue" / "recipient_entity_graph.json"
@@ -69,6 +70,16 @@ BWXT_EX21_URL = (
 )
 BWXT_10K_RECORD_ID = f"sec:{BWXT_CIK}:{BWXT_ACCESSION_DASHED}:{BWXT_10K_DOC}"
 BWXT_EX21_RECORD_ID = f"sec:{BWXT_CIK}:{BWXT_ACCESSION_DASHED}:{BWXT_EX21_DOC}"
+
+#: Parent-plane corroboration (review finding B4).  Every award receipt's
+#: ``parent_recipient_uei`` field is null; on four of five awards
+#: ``parent_recipient_name`` reads "BWX TECHNOLOGIES, INC." but UMBKD2WKD8N5
+#: self-parents on its only award, so this exact-UEI children listing is the
+#: load-bearing corroboration for that chain.  UEI CMT4S6G76QB5 is BWX
+#: Technologies, Inc.'s own parent-recipient UEI (verified against the award
+#: receipts above at mint time).
+BWXT_PARENT_UEI = "CMT4S6G76QB5"
+BWXT_CHILDREN_URL = f"https://api.usaspending.gov/api/v2/recipient/children/{BWXT_PARENT_UEI}/"
 
 #: (uei, entity slug, canonical name exactly as Ex.21 prints it, award id) —
 #: five admitted chains, frozen order per spec §2/§4.
@@ -122,6 +133,59 @@ _ROW_ID_FIELD = {
 
 def _award_url(award_id: str) -> str:
     return f"https://api.usaspending.gov/api/v2/awards/{award_id}/"
+
+
+def _assert_award_body_names_its_uei(*, uei: str, body: bytes, award_id: str) -> None:
+    """Refuse to admit an award receipt that does not actually name its UEI.
+
+    A wrong award ID pasted into :data:`BWXT_SUBSIDIARIES` would otherwise
+    mint a receipt that loads cleanly but proves nothing about the identifier
+    it claims to corroborate.
+    """
+    if uei.upper().encode("ascii") not in body.upper():
+        raise ValueError(
+            f"award receipt {award_id!r} does not contain its own UEI {uei!r}; "
+            "refusing to admit a mismatched receipt"
+        )
+
+
+def _assert_ex21_names_every_admitted_entity(*, body: bytes) -> None:
+    """Refuse to admit Ex.21 evidence that does not actually list every
+    canonical name this script is about to write, case/punctuation-insensitive
+    (the same join rule ``normalize_legal_name`` uses for a real proposer
+    walk)."""
+    haystack = f" {normalize_legal_name(body.decode('utf-8', 'ignore'))} "
+    missing = [
+        canonical_name
+        for _uei, _slug, canonical_name, _award_id in BWXT_SUBSIDIARIES
+        if f" {normalize_legal_name(canonical_name)} " not in haystack
+    ]
+    if missing:
+        raise ValueError(
+            f"Ex.21 evidence does not name every admitted entity; missing: {missing}"
+        )
+
+
+def _assert_children_receipt_lists_every_admitted_uei(*, body: bytes) -> None:
+    """Fail closed unless the parent-plane children listing corroborates all
+    five admitted UEIs (review finding B4) BEFORE anything is published."""
+    admitted = {uei for uei, _slug, _name, _award_id in BWXT_SUBSIDIARIES}
+    try:
+        rows = json.loads(body)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("BWXT parent-plane children receipt is not valid JSON") from exc
+    if not isinstance(rows, list):
+        raise ValueError("BWXT parent-plane children receipt is not a JSON list")
+    listed = {
+        str(row.get("uei")).upper()
+        for row in rows
+        if isinstance(row, dict) and row.get("uei")
+    }
+    missing = sorted(admitted - listed)
+    if missing:
+        raise ValueError(
+            f"BWXT parent-plane children receipt does not list every admitted UEI; missing: {missing}"
+        )
 
 
 def build_bwxt_rows(
@@ -206,7 +270,30 @@ def build_bwxt_rows(
         valid_from=BWXT_VALID_FROM,
         retrieved_at=ex21_retrieved_at,
     )
+    _assert_ex21_names_every_admitted_entity(body=ex21_body)
     evidence_rows.append(evidence_ex21)
+
+    # --- Parent-plane corroboration (review finding B4): the exact-UEI
+    # children listing under BWX Technologies' own parent recipient UEI.
+    # Per-award ``parent_recipient_uei`` is null on all five award receipts,
+    # so this receipt is the one that actually ties every admitted UEI back
+    # to the same parent recipient by exact identifier, not by name match.
+    children_body = fetch(BWXT_CHILDREN_URL)
+    children_retrieved_at = datetime.now(timezone.utc).isoformat()
+    _assert_children_receipt_lists_every_admitted_uei(body=children_body)
+    evidence_children = _evidence_row(
+        evidence_id="evidence:bwxt-usaspending-children-cmt4s6g76qb5",
+        publisher="USAspending.gov",
+        evidence_class="official_award",
+        record_id=f"recipient-children:{BWXT_PARENT_UEI}",
+        url=BWXT_CHILDREN_URL,
+        body=children_body,
+        claim_scopes=("exact_identifier", "ownership"),
+        known_at=known_at,
+        valid_from=BWXT_VALID_FROM,
+        retrieved_at=children_retrieved_at,
+    )
+    evidence_rows.append(evidence_children)
 
     for uei, slug, canonical_name, award_id in BWXT_SUBSIDIARIES:
         if uei in REFUSED_IDENTIFIERS:  # pragma: no cover - defensive; never true
@@ -214,6 +301,7 @@ def build_bwxt_rows(
         award_url = _award_url(award_id)
         award_body = fetch(award_url)
         award_retrieved_at = datetime.now(timezone.utc).isoformat()
+        _assert_award_body_names_its_uei(uei=uei, body=award_body, award_id=award_id)
         evidence_award = _evidence_row(
             evidence_id=f"evidence:bwxt-usaspending-{uei.lower()}",
             publisher="USAspending.gov",
@@ -229,7 +317,11 @@ def build_bwxt_rows(
         evidence_rows.append(evidence_award)
 
         entity_id = f"legal:bwxt:{slug}"
-        entity_refs = [evidence_ex21["evidence_id"], evidence_award["evidence_id"]]
+        entity_refs = [
+            evidence_ex21["evidence_id"],
+            evidence_award["evidence_id"],
+            evidence_children["evidence_id"],
+        ]
         entity_rows.append(
             {
                 "entity_id": entity_id,
@@ -245,7 +337,11 @@ def build_bwxt_rows(
                 "namespace": "sam_uei",
                 "value": uei,
                 "verification_state": "reviewed",
-                **_temporal(known_at, BWXT_VALID_FROM, [evidence_award["evidence_id"]]),
+                **_temporal(
+                    known_at,
+                    BWXT_VALID_FROM,
+                    [evidence_award["evidence_id"], evidence_children["evidence_id"]],
+                ),
             }
         )
         edge_rows.append(

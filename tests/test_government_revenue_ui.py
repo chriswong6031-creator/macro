@@ -1705,7 +1705,7 @@ def test_identity_atlas_ships_on_the_company_inspector() -> None:
         "身份图谱",
     ):
         assert marker in TEMPLATE, marker
-    assert "government-revenue-data/identity_atlas.json" in DOSSIER_UI_JS
+    assert "government-revenue-data/identity-atlas.json" in DOSSIER_UI_JS
 
     # Exactly one Atlas host — a second would race the first for the same ticker and
     # render two different paths for one company.

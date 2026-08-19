@@ -222,7 +222,7 @@
   global.createGovernmentRevenueIdentityAtlas=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var isZh=typeof api.zh==='function'?api.zh:function(){return false};
-    var ATLAS_PATH='government-revenue-data/identity_atlas.json';
+    var ATLAS_PATH='government-revenue-data/identity-atlas.json';
     var pending=null,index=null,header=null,loadState='idle',ticker='',epoch=0;
 
     function failure(code){var error=new Error(code);error.code=code;return error}
@@ -257,10 +257,12 @@
       if(typeof gap==='string')return gap;
       var direct=loc(gap,'text');if(direct)return direct;
       var code=text(gap&&gap.code,'');
-      if(code==='no_reviewed_issuer_path')return tr('no reviewed exact recipient, legal entity and issuer path exists','没有已核验的精确收款方、法律实体与发行人路径');
-      if(code==='mapping_backlog')return tr('some recipient names in the discovery sample are still unmapped','发现样本中仍有部分收款方名称尚未映射');
-      if(code==='identifier_conflict')return tr('an observed recipient identifier sits outside the reviewed path','有已观测的收款方标识不在已核验路径之内');
-      if(code==='listing_terminated')return tr('there is no live listing behind this record','该记录背后已无在市股票');
+      /* Projector-emitted codes (engine/government_revenue/identity_atlas.py) --
+       * fallbacks only, since every real gap already ships text_en/text_zh and
+       * takes the `direct` branch above. */
+      if(code==='no_reviewed_exact_path')return tr('no reviewed exact recipient → legal entity path exists','没有已核验的精确收款方 → 法律实体路径');
+      if(code==='unresolved_identifiers_present')return tr('some curated identifiers carry a reviewed conflict or gap and stay unresolved','部分已审核标识符存在冲突或缺口，保持未解决状态');
+      if(code==='observed_identifiers_without_reviewed_path')return tr('recipient identifiers observed in the discovery file have no reviewed path — discovery association only, never issuer proof','发现文件中观测到的收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明');
       return'';
     }
     function reasonWords(row){
@@ -276,7 +278,7 @@
     }
     function evidenceCode(row){
       return evidenceList(row).map(function(item){
-        return tr('publisher: ','发布方：')+text(item.publisher)+'\n'+tr('record: ','记录：')+text(item.evidence_id)+'\nsha256: '+text(item.sha256);
+        return tr('publisher: ','发布方：')+text(item.publisher)+'\n'+tr('record: ','记录：')+text(item.evidence_id)+'\nsha256: '+text(item.content_sha256);
       }).join('\n\n');
     }
 
@@ -347,9 +349,9 @@
       ));
       hops.push(hop(
         tr('Legal issuer','法律发行主体'),
-        issuer&&issuer.verification_state==='reviewed'?'reviewed':'unresolved',
-        issuer?text(issuer.canonical_name,text(record.ticker)):tr('Not asserted','未作断言'),
-        issuer?stateWord(issuer.verification_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有申报证据为这些收款方指明发行主体。')
+        issuer&&issuer.state==='reviewed'?'reviewed':'unresolved',
+        issuer&&issuer.state==='reviewed'?text(issuer.canonical_name,text(record.ticker)):tr('Not asserted','未作断言'),
+        issuer&&issuer.state==='reviewed'?stateWord(issuer.review_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有申报证据为这些收款方指明发行主体。')
       ));
       hops.push(hop(
         tr('Legal entities','法律实体'),
@@ -389,7 +391,7 @@
     }
     function identifierRows(entity){
       return arr(entity.identifiers).filter(obj).map(function(row){
-        return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(stateWord(row.state))+'</b></div>';
+        return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(stateWord(row.verification_state))+'</b></div>';
       }).join('');
     }
     function entityReceipt(entity){

@@ -61,6 +61,7 @@ _DEFAULT_UNRESOLVED_REASON = (
 _DEFAULT_UNRESOLVED_REASON_ZH = "该标识符不存在已审核的“精确受益人 → 法律实体”路径覆盖。"
 _GAP_NO_REVIEWED_PATH = "no_reviewed_exact_path"
 _GAP_UNRESOLVED_IDENTIFIERS_PRESENT = "unresolved_identifiers_present"
+_GAP_OBSERVED_WITHOUT_REVIEWED_PATH = "observed_identifiers_without_reviewed_path"
 
 
 def _text(value: Any) -> str | None:
@@ -348,64 +349,77 @@ def _curated_unresolved_by_pair(
     return out
 
 
+def _unresolved_identifier_row(
+    namespace: str, value: str, observed_name: str | None, curated: Mapping[str, Any] | None
+) -> dict[str, Any]:
+    state = "mapping_needed"
+    reason_en = _DEFAULT_UNRESOLVED_REASON
+    reason_zh = _DEFAULT_UNRESOLVED_REASON_ZH
+    evidence: list[Any] = []
+    name = observed_name
+    if curated is not None:
+        state = _text(curated.get("state")) or state
+        # Bare "reason" degrades to English-only when a curator has not
+        # yet supplied a translation twin.
+        reason_en = (
+            _text(curated.get("reason_en")) or _text(curated.get("reason")) or reason_en
+        )
+        reason_zh = _text(curated.get("reason_zh")) or reason_zh
+        raw_evidence = curated.get("evidence")
+        if isinstance(raw_evidence, list):
+            evidence = [row for row in raw_evidence if isinstance(row, Mapping)]
+        curated_name = _text(curated.get("observed_name"))
+        if curated_name:
+            name = curated_name
+    return {
+        "namespace": namespace,
+        "value": value,
+        "observed_name": name,
+        "state": state,
+        "reason": reason_en,
+        "reason_en": reason_en,
+        "reason_zh": reason_zh,
+        "evidence": evidence,
+    }
+
+
 def _unresolved_identifiers(
+    *, curated_by_pair: Mapping[tuple[str, str], Mapping[str, Any]]
+) -> list[dict[str, Any]]:
+    """ONLY curated, evidence-backed entries -- never a scope-observed name.
+
+    Discovery scope (``collection_scope_tickers``) is a fuzzy association,
+    not issuer proof: for a ticker like GE it names several unrelated
+    third-party companies that merely matched the discovery query.  Naming
+    them under an issuer's identity card would read as a claim this module
+    structurally refuses to make.  A scope-observed identifier with no
+    reviewed path and no curated review is instead folded into an aggregate
+    count in ``gaps[]`` by :func:`_observed_unresolved_count` — adjudicated
+    2026-08-18 after an adversarial review finding (B6).
+    """
+    out = [
+        _unresolved_identifier_row(namespace, value, _text(curated.get("observed_name")), curated)
+        for (namespace, value), curated in curated_by_pair.items()
+    ]
+    out.sort(key=lambda row: (row["namespace"], row["value"]))
+    return out
+
+
+def _observed_unresolved_count(
     *,
     observed: Mapping[str, str | None],
     resolved_pairs: set[tuple[str, str]],
     curated_by_pair: Mapping[tuple[str, str], Mapping[str, Any]],
-) -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    covered: set[tuple[str, str]] = set()
-
-    def _row(namespace: str, value: str, observed_name: str | None, curated: Mapping[str, Any] | None) -> dict[str, Any]:
-        state = "mapping_needed"
-        reason_en = _DEFAULT_UNRESOLVED_REASON
-        reason_zh = _DEFAULT_UNRESOLVED_REASON_ZH
-        evidence: list[Any] = []
-        name = observed_name
-        if curated is not None:
-            state = _text(curated.get("state")) or state
-            # Bare "reason" degrades to English-only when a curator has not
-            # yet supplied a translation twin.
-            reason_en = (
-                _text(curated.get("reason_en")) or _text(curated.get("reason")) or reason_en
-            )
-            reason_zh = _text(curated.get("reason_zh")) or reason_zh
-            raw_evidence = curated.get("evidence")
-            if isinstance(raw_evidence, list):
-                evidence = [row for row in raw_evidence if isinstance(row, Mapping)]
-            curated_name = _text(curated.get("observed_name"))
-            if curated_name:
-                name = curated_name
-        return {
-            "namespace": namespace,
-            "value": value,
-            "observed_name": name,
-            "state": state,
-            "reason": reason_en,
-            "reason_en": reason_en,
-            "reason_zh": reason_zh,
-            "evidence": evidence,
-        }
-
-    for value, name in observed.items():
+) -> int:
+    """How many scope-observed identifiers have neither a reviewed path nor
+    curated review — an aggregate count only, never a named list."""
+    count = 0
+    for value in observed:
         pair = ("sam_uei", value)
-        if pair in resolved_pairs:
+        if pair in resolved_pairs or pair in curated_by_pair:
             continue
-        covered.add(pair)
-        out.append(_row("sam_uei", value, name, curated_by_pair.get(pair)))
-
-    # A curated fact never vanishes just because it is outside the current
-    # discovery sample -- evidence-bearing human review is durable, unlike a
-    # bounded nightly collection window.
-    for pair, curated in curated_by_pair.items():
-        if pair in covered or pair in resolved_pairs:
-            continue
-        namespace, value = pair
-        out.append(_row(namespace, value, _text(curated.get("observed_name")), curated))
-
-    out.sort(key=lambda row: (row["namespace"], row["value"]))
-    return out
+        count += 1
+    return count
 
 
 def _public_security(
@@ -512,7 +526,8 @@ def _build_issuer(
 
     observed = _observed_identifiers(dossier_awards, ticker)
     curated_by_pair = _curated_unresolved_by_pair(curated_issuer)
-    unresolved_identifiers = _unresolved_identifiers(
+    unresolved_identifiers = _unresolved_identifiers(curated_by_pair=curated_by_pair)
+    observed_unresolved_count = _observed_unresolved_count(
         observed=observed, resolved_pairs=resolved_pairs, curated_by_pair=curated_by_pair
     )
 
@@ -540,17 +555,32 @@ def _build_issuer(
                 "text_zh": f"发行人{ticker}不存在已审核的“精确受益人 → 法律实体”路径。",
             }
         )
-    if unresolved_identifiers and issuer_attribution == "reviewed":
+    if unresolved_identifiers:
         gaps.append(
             {
                 "code": _GAP_UNRESOLVED_IDENTIFIERS_PRESENT,
                 "text_en": (
-                    f"{len(unresolved_identifiers)} observed identifier(s) for {ticker} have no "
-                    "reviewed ownership path and stay unresolved."
+                    f"{len(unresolved_identifiers)} curated identifier(s) for {ticker} carry a "
+                    "reviewed conflict or gap and stay unresolved (see below)."
                 ),
                 "text_zh": (
-                    f"发行人{ticker}有{len(unresolved_identifiers)}个已观测到的标识符尚无已审核的"
-                    "所有权路径，保持未解决状态。"
+                    f"发行人{ticker}有{len(unresolved_identifiers)}个已审核标识符存在冲突或缺口，"
+                    "保持未解决状态（见下文）。"
+                ),
+            }
+        )
+    if observed_unresolved_count:
+        gaps.append(
+            {
+                "code": _GAP_OBSERVED_WITHOUT_REVIEWED_PATH,
+                "text_en": (
+                    f"{observed_unresolved_count} recipient identifier(s) observed in the "
+                    "discovery file have no reviewed path — discovery association only, "
+                    "never issuer proof."
+                ),
+                "text_zh": (
+                    f"发现文件中观测到的{observed_unresolved_count}个收款方标识没有已审核路径 — "
+                    "仅为发现关联，绝非发行人证明。"
                 ),
             }
         )
