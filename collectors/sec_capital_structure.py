@@ -32,16 +32,20 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from collectors.base import Adapter, is_connection_error
 from engine.capital_structure.source_identity import (
+    ChildOccurrenceUnbound,
     EvidenceIdentityError,
-    child_occurrence,
+    classify_bundle_against_published,
     document_inner_spans,
     evidence_id_for,
     evidence_id_from_manifest,
+    interpretation_fingerprint,
+    latest_published_for_evidence,
     manifest_id_for,
     merge_manifest_ledgers,
     published_first_known_at,
     validate_manifest_identity,
     validate_manifest_ledger,
+    writable_child_occurrence,
 )
 from engine.capital_structure.ingestion_health import (
     INGESTION_RUN_FILENAME,
@@ -531,7 +535,8 @@ def parse_submission(raw: bytes) -> SubmissionBundle:
     key_format 1: each DOCUMENT is stamped with ``(byte_start, byte_end)`` from
     ``document_inner_spans`` so child evidence identities are bound to exact bytes.
     Spans are attached only when count and content-equality checks pass; individual
-    failures leave the document's span fields as ``None`` (legacy path).
+    failures leave the document's span fields as ``None``. The writer must then
+    defer the bundle — never mint ``legacy:{source_id}`` as a new occurrence key.
     """
     accepted_at = None
     accepted_match = _HEADER_FIELD_RE["accepted_at"].search(raw)
@@ -1531,31 +1536,28 @@ class SecCapitalStructureAdapter(Adapter):
             }],
         }
         # --- Evidence identity (key_format 1) stamped BEFORE manifest_id_for ---
-        # occurrence: "submission" for complete submissions; child_occurrence for
-        # documents with bound byte spans; "legacy:{source_id}" otherwise.
+        # occurrence: "submission" for complete submissions; child_occurrence
+        # for documents with bound byte spans. New writes never fall back to
+        # "legacy:{source_id}" — that projection is read-side only for v1 rows.
         accession_str = str(discovery.get("accession") or "")
         if document_role == "complete_submission":
             evidence_occurrence: Any = "submission"
-        elif (
-            parent_content_sha256
-            and isinstance(byte_start, int)
-            and isinstance(byte_end, int)
-        ):
-            evidence_occurrence = child_occurrence(
+        else:
+            evidence_occurrence = writable_child_occurrence(
                 parent_content_sha256=parent_content_sha256,
                 byte_start=byte_start,
                 byte_end=byte_end,
             )
-        else:
-            evidence_occurrence = f"legacy:{source_id}"
         eid = evidence_id_for(
             source_system="sec_edgar",
             submission_accession=accession_str,
             occurrence=evidence_occurrence,
             content_sha256=digest,
         )
-        # first_known_at: copy from the first published row for this evidence_id
-        # so a later re-observation cannot move the published boundary backward.
+        # first_known_at: verified-retention clock of the first observation
+        # of this evidence_id whose generation later became canonical. Copied
+        # from the published row so a later competing local timestamp cannot
+        # move the boundary backward. Not a Git commit timestamp.
         candidate_first_known_at = retrieved_at
         if existing_manifests:
             candidate_first_known_at = published_first_known_at(
@@ -1845,66 +1847,25 @@ class SecCapitalStructureAdapter(Adapter):
                 _validate_source_manifest(complete_manifest)
                 attempt_observed_eids.append(complete_manifest["evidence_id"])
 
-                # Re-observation detection: same evidence_id + same content_sha256
-                # in an already-committed (or this-run) manifest. Check if any
-                # interpretation fields differ to decide revision vs re-observation.
-                complete_eid = complete_manifest["evidence_id"]
-                prior_complete = next(
-                    (m for m in combined_published
-                     if m.get("evidence_id") == complete_eid
-                     and m.get("document", {}).get("content_sha256") == complete_sha256),
-                    None,
+                # Bundle-level re-observation: never shortcut on the complete
+                # row alone. Parent pointer for children is the already-published
+                # complete manifest when that occurrence+interpretation is
+                # unchanged, otherwise the candidate complete just built.
+                complete_prior = latest_published_for_evidence(
+                    evidence_id_from_manifest(complete_manifest),
+                    combined_published,
                 )
-                if prior_complete is not None:
-                    # Check interpretation fields for revision detection.
-                    def _interpretation_key(m: dict) -> tuple:
-                        f = m.get("filing") or {}
-                        i = m.get("issuer") or {}
-                        p = m.get("parser") or {}
-                        return (
-                            str(f.get("form") or ""),
-                            str(f.get("file_number") or ""),
-                            json.dumps(f.get("file_number_provenance"), sort_keys=True),
-                            str(i.get("cik") or ""),
-                            str(p.get("eligibility") or ""),
-                            str(p.get("corruption_state") or ""),
-                        )
-                    if _interpretation_key(complete_manifest) == _interpretation_key(prior_complete):
-                        # Pure re-observation: same occurrence+bytes+interpretation.
-                        # Do not append another manifest revision; count re_observed.
-                        re_observed += 1
-                        retained_available_at = retained_at
-                        state, error = "stored", None
-                        content_hash = complete_sha256
-                        http_status = None
-                        storage_operation = None
-                        error_class = None
-                        attempt_store_id = getattr(source_store, "store_id", None)
-                        attempt_id = hashlib.sha256(
-                            f"{source_id}|{attempted_at}|{state}".encode("utf-8")
-                        ).hexdigest()
-                        new_attempts.append({
-                            "attempt_id": attempt_id, "accession": accession,
-                            "source_id": source_id, "canonical_url": url,
-                            "attempted_at": attempted_at, "state": state,
-                            "error": error, "content_sha256": content_hash,
-                            "retrieval_lane": selected_lane,
-                            "collection_scope": row.get("collection_scope"),
-                            "http_status": http_status,
-                            "storage_operation": storage_operation,
-                            "store_id": attempt_store_id,
-                            "error_class": error_class,
-                            "observed_evidence_ids": json.dumps(attempt_observed_eids),
-                            "retained_available_at": retained_available_at,
-                        })
-                        time.sleep(PACE_SECONDS)
-                        continue
-                    # Interpretation revision: advance document_version, copy first_known_at.
-                    # complete_manifest already has correct first_known_at (published_first_known_at).
-                    # Nothing else changes here; the new manifest_id already differs.
-
-                filing_manifests.append(complete_manifest)
-                parent_id = complete_manifest["manifest_id"]
+                complete_unchanged = (
+                    complete_prior is not None
+                    and interpretation_fingerprint(complete_manifest)
+                    == interpretation_fingerprint(complete_prior)
+                )
+                parent_id = (
+                    str(complete_prior["manifest_id"])
+                    if complete_unchanged
+                    else complete_manifest["manifest_id"]
+                )
+                child_manifests: list[dict] = []
                 for role, document, filename, inspection, doc_receipt in stored_children:
                     doc_source_id = f"{accession}:{document.sequence or 'unknown'}:{filename}"
                     document_manifest = self._manifest_record(
@@ -1929,10 +1890,44 @@ class SecCapitalStructureAdapter(Adapter):
                     )
                     _validate_source_manifest(document_manifest)
                     attempt_observed_eids.append(document_manifest["evidence_id"])
-                    filing_manifests.append(document_manifest)
+                    child_manifests.append(document_manifest)
+                candidates = [complete_manifest, *child_manifests]
+                decision = classify_bundle_against_published(
+                    candidates, combined_published
+                )
+                if decision["status"] == "re_observed":
+                    re_observed += 1
+                    retained_available_at = retained_at
+                    state, error = "stored", None
+                    content_hash = complete_sha256
+                    http_status = None
+                    storage_operation = None
+                    error_class = None
+                    attempt_store_id = getattr(source_store, "store_id", None)
+                    attempt_id = hashlib.sha256(
+                        f"{source_id}|{attempted_at}|{state}".encode("utf-8")
+                    ).hexdigest()
+                    new_attempts.append({
+                        "attempt_id": attempt_id, "accession": accession,
+                        "source_id": source_id, "canonical_url": url,
+                        "attempted_at": attempted_at, "state": state,
+                        "error": error, "content_sha256": content_hash,
+                        "retrieval_lane": selected_lane,
+                        "collection_scope": row.get("collection_scope"),
+                        "http_status": http_status,
+                        "storage_operation": storage_operation,
+                        "store_id": attempt_store_id,
+                        "error_class": error_class,
+                        "observed_evidence_ids": json.dumps(attempt_observed_eids),
+                        "retained_available_at": retained_available_at,
+                    })
+                    time.sleep(PACE_SECONDS)
+                    continue
                 # All selected evidence must verify before any manifest for the
                 # filing is committed. A partially stored bundle stays retryable.
-                new_manifests.extend(filing_manifests)
+                # Unchanged members are not rewritten; only new or
+                # interpretation-revised rows append.
+                new_manifests.extend(decision["append"])
                 retained_available_at = _iso(self._now_fn())
                 if (
                     complete_inspection.parser_eligibility == "eligible"
@@ -1951,6 +1946,18 @@ class SecCapitalStructureAdapter(Adapter):
                 storage_operation = None
                 error_class = None
                 attempt_store_id = getattr(source_store, "store_id", None)
+            except ChildOccurrenceUnbound as exc:
+                state = "stored_parser_deferred"
+                error = f"{type(exc).__name__}: {exc}"
+                content_hash = complete_sha256
+                error_class = type(exc).__name__
+                http_status = None
+                storage_operation = None
+                attempt_store_id = getattr(source_store, "store_id", None)
+                log.warning(
+                    "sec_capital_structure: %s child occurrence unbound: %s",
+                    accession, error,
+                )
             except Exception as exc:  # noqa: BLE001
                 state = "storage_deferred" if "store" in str(exc).lower() else "transient_error"
                 error = f"{type(exc).__name__}: {exc}"
