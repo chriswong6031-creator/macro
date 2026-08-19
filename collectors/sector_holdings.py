@@ -106,7 +106,10 @@ class SectorHoldingsAdapter(Adapter):
     def _fetch_fund(self, fund: str) -> pd.DataFrame:
         r = self.http_get(SSGA_XLSX.format(fund=fund.lower()), retries=3, timeout=60,
                           headers={"User-Agent": "Mozilla/5.0 (research)"})
-        raw = pd.read_excel(io.BytesIO(r.content), header=None)
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        raw = pd.read_excel(io.BytesIO(r.content), header=None,
+                            keep_default_na=False, na_values=[""])
         # find the header row ("Name", "Ticker", ...) and the as-of date above it
         hdr_idx = raw.index[raw.iloc[:, 0].astype(str).str.strip() == "Name"]
         if not len(hdr_idx):

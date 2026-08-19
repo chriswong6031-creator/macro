@@ -151,7 +151,9 @@ class EtfHoldingsAdapter(Adapter):
     def _fetch_ark(self, ticker: str, spec: dict) -> pd.DataFrame:
         url = spec["url"]
         r = self.http_get(url, retries=self.retries)
-        df = pd.read_csv(io.StringIO(r.text))
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(io.StringIO(r.text), keep_default_na=False, na_values=[""])
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
         df = df.dropna(subset=["ticker"]) if "ticker" in df.columns else df
         df = df.rename(columns={"market_value_($)": "market_value",
@@ -174,7 +176,7 @@ class EtfHoldingsAdapter(Adapter):
                       if ln.lower().startswith('"ticker"') or ln.lower().startswith("ticker,")), None)
         if start is None:
             raise ValueError("iShares holdings table not found (consent wall?)")
-        df = pd.read_csv(io.StringIO("\n".join(lines[start:])))
+        df = pd.read_csv(io.StringIO("\n".join(lines[start:])), keep_default_na=False, na_values=[""])
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
         df = df.rename(columns={"weight_(%)": "weight", "shares": "shares",
                                 "market_value": "market_value"})
@@ -222,7 +224,7 @@ class EtfHoldingsAdapter(Adapter):
             for ln in lines[:hdr]:
                 if "as of" in ln.lower():
                     asof = str(pd.to_datetime(ln.lower().split("as of")[1].strip()).date())
-            df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])))
+            df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), keep_default_na=False, na_values=[""])
             df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
             wcol = next((c for c in df.columns if "net_assets" in c or "weight" in c), None)
             scol = next((c for c in df.columns if "shares" in c), None)
@@ -248,7 +250,7 @@ class EtfHoldingsAdapter(Adapter):
         if not r.text.lstrip().lower().startswith("date,account"):  # soft-404 guard
             cache[mdy] = None
             return None
-        cache[mdy] = pd.read_csv(io.StringIO(r.text))
+        cache[mdy] = pd.read_csv(io.StringIO(r.text), keep_default_na=False, na_values=[""])
         return cache[mdy]
 
     def _fetch_roundhill(self, ticker: str, spec: dict) -> pd.DataFrame:
@@ -471,7 +473,7 @@ class EtfHoldingsAdapter(Adapter):
         if not m:
             raise ValueError(f"sprott {ticker}: holdings data-URI not found")
         csv_text = _urlparse.unquote(m.group(1))
-        df = pd.read_csv(io.StringIO(csv_text))
+        df = pd.read_csv(io.StringIO(csv_text), keep_default_na=False, na_values=[""])
         df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
         df = df.rename(columns={k: v for k, v in
                                 {"symbol": "ticker", "quantity": "shares", "security": "name"}.items()
@@ -578,7 +580,7 @@ class EtfHoldingsAdapter(Adapter):
         rc = self._ua_get(csv_url, timeout=45)
         if not rc.text.lstrip().lower().startswith("date,account"):
             raise ValueError(f"procure {ticker}: unexpected csv header")
-        df = pd.read_csv(io.StringIO(rc.text))
+        df = pd.read_csv(io.StringIO(rc.text), keep_default_na=False, na_values=[""])
         df = df.rename(columns={"StockTicker": "ticker", "SecurityName": "name",
                                 "Weightings": "weight", "Shares": "shares",
                                 "MarketValue": "market_value"})
