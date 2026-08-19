@@ -24,6 +24,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from engine.prophet_lab.timeparse import parse_instant
+
 log = logging.getLogger("macro.prophet_lab")
 
 ENVELOPE_SCHEMA = "entry_radar.events/v1"
@@ -116,11 +118,24 @@ def extract_events(
     from whichever envelope is encountered (duplicates across passes must be
     byte-identical content for the same address per the append-only store —
     this reader does not re-validate that, it trusts the spool).
+
+    Temporal correctness amendment (day-2 reconciliation): "earliest" is
+    decided by parsed INSTANT (:func:`engine.prophet_lab.timeparse.parse_instant`),
+    never by comparing the ``pass_ts`` strings directly — see
+    ``timeparse.py``'s module docstring for the measured lexicographic-compare
+    failure this replaces. An envelope whose ``pass_ts`` does not parse to a
+    tz-aware instant can never win "earliest" for an event_id; if EVERY
+    envelope carrying an event_id is unparseable, that event_id is simply
+    absent from ``first_observed_at`` (the same outcome as never having been
+    observed at all — the caller's existing "no known first observation"
+    branch already handles that honestly).
     """
     events_by_id: dict[str, dict[str, Any]] = {}
     first_observed: dict[str, str] = {}
+    first_observed_instant: dict[str, Any] = {}
     for env in envelopes:
         pass_ts = str(env.get("pass_ts") or "").strip()
+        pass_instant = parse_instant(pass_ts) if pass_ts else None
         events = env.get("events")
         if not isinstance(events, list):
             continue
@@ -131,28 +146,55 @@ def extract_events(
             if not event_id:
                 continue
             events_by_id.setdefault(event_id, dict(event))
-            if pass_ts and (
-                event_id not in first_observed or pass_ts < first_observed[event_id]
-            ):
+            if pass_instant is None:
+                continue
+            current = first_observed_instant.get(event_id)
+            if current is None or pass_instant < current:
+                first_observed_instant[event_id] = pass_instant
                 first_observed[event_id] = pass_ts
     return list(events_by_id.values()), first_observed
 
 
 def earliest_pass_ts(envelopes: Iterable[Mapping[str, Any]]) -> str | None:
-    """The earliest envelope ``pass_ts`` in the set, or ``None`` when empty."""
-    stamps = [str(env.get("pass_ts") or "").strip() for env in envelopes]
-    stamps = [s for s in stamps if s]
-    return min(stamps) if stamps else None
+    """The ORIGINAL ``pass_ts`` string whose parsed INSTANT is earliest.
+
+    ``None`` when no envelope carries a parseable ``pass_ts``. Temporal
+    correctness amendment: this used to be ``min()`` over the raw strings,
+    which is only correct when every string shares the same UTC-offset
+    notation — see ``timeparse.py``'s module docstring.
+    """
+    best_raw: str | None = None
+    best_instant: Any = None
+    for env in envelopes:
+        raw = str(env.get("pass_ts") or "").strip()
+        if not raw:
+            continue
+        instant = parse_instant(raw)
+        if instant is None:
+            continue
+        if best_instant is None or instant < best_instant:
+            best_instant = instant
+            best_raw = raw
+    return best_raw
 
 
 def latest_envelope(envelopes: Iterable[Mapping[str, Any]]) -> Mapping[str, Any] | None:
-    """The envelope with the greatest ``pass_ts`` (ties broken arbitrarily)."""
+    """The envelope whose ``pass_ts`` parses to the greatest INSTANT.
+
+    Ties keep the LAST envelope encountered at that instant (preserves the
+    prior ``>=`` tie-break direction). An envelope with an unparseable
+    ``pass_ts`` can never be "latest" — it is skipped, never favored by a
+    lexicographic accident. ``None`` when no envelope parses at all.
+    """
     best: Mapping[str, Any] | None = None
-    best_ts = ""
+    best_instant: Any = None
     for env in envelopes:
-        ts = str(env.get("pass_ts") or "").strip()
-        if ts and ts >= best_ts:
-            best_ts = ts
+        raw = str(env.get("pass_ts") or "").strip()
+        instant = parse_instant(raw) if raw else None
+        if instant is None:
+            continue
+        if best_instant is None or instant >= best_instant:
+            best_instant = instant
             best = env
     return best
 
@@ -171,16 +213,23 @@ def baseline_coverage_verified(
     fails this check, which the caller (``response.py``) turns into "treat
     the baseline as absent" — every row falls back to ``retrospective_seed``,
     never a false ``live_forward`` built on an unverifiable window.
+
+    Temporal correctness amendment: the "at or before" comparison is now an
+    INSTANT comparison via :func:`engine.prophet_lab.timeparse.parse_instant`,
+    never a raw string compare (see ``timeparse.py``'s module docstring for
+    the measured failure mode). An unparseable or naive ``baseline_started_at``
+    fails CLOSED (``False``) — the same fail-honest default as a missing one.
     """
     if not baseline:
         return False
-    started_at = str(baseline.get("baseline_started_at") or "")
-    if not started_at:
+    started = parse_instant(baseline.get("baseline_started_at"))
+    if started is None:
         return False
     earliest = earliest_pass_ts(envelopes)
-    if earliest is None:
+    earliest_instant = parse_instant(earliest) if earliest else None
+    if earliest_instant is None:
         return False
-    return earliest <= started_at
+    return earliest_instant <= started
 
 
 # ---------------------------------------------------------------------------

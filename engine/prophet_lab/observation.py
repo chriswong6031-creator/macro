@@ -25,6 +25,7 @@ from engine.prophet_lab.contracts import (
     OBSERVATION_LIVE_FORWARD,
     OBSERVATION_RETROSPECTIVE_SEED,
 )
+from engine.prophet_lab.timeparse import parse_instant
 
 
 def classify_observation(
@@ -33,18 +34,33 @@ def classify_observation(
     first_observed_at: Mapping[str, str],
     baseline: Mapping[str, Any] | None,
 ) -> str:
-    """The ``observation_class`` for one event, per the rule above."""
+    """The ``observation_class`` for one event, per the rule above.
+
+    Temporal correctness amendment (day-2 reconciliation): every comparison
+    here is an INSTANT comparison via :func:`engine.prophet_lab.timeparse.parse_instant`,
+    never a raw string compare — ``"2026-08-19T10:00:00Z"`` and
+    ``"2026-08-19T06:00:00-04:00"`` name the SAME instant and must classify
+    identically, which a lexicographic compare cannot guarantee (see
+    ``timeparse.py``'s module docstring for the measured failure mode this
+    replaces). An unparseable OR naive (no UTC offset) timestamp anywhere in
+    this comparison — the observation itself, ``baseline_started_at``, or a
+    present ``continuous_through`` — fails CLOSED to ``retrospective_seed``,
+    the same fail-honest default this function already used for a missing
+    baseline or a missing observation.
+    """
     if not baseline:
         return OBSERVATION_RETROSPECTIVE_SEED
-    observed_at = first_observed_at.get(event_id)
-    if not observed_at:
+    observed = parse_instant(first_observed_at.get(event_id))
+    if observed is None:
         return OBSERVATION_RETROSPECTIVE_SEED
-    started_at = str(baseline.get("baseline_started_at") or "")
-    if not started_at or observed_at < started_at:
+    started = parse_instant(baseline.get("baseline_started_at"))
+    if started is None or observed < started:
         return OBSERVATION_RETROSPECTIVE_SEED
-    continuous_through = baseline.get("continuous_through")
-    if continuous_through and observed_at > str(continuous_through):
-        return OBSERVATION_RETROSPECTIVE_SEED
+    continuous_through_raw = baseline.get("continuous_through")
+    if continuous_through_raw:
+        through = parse_instant(continuous_through_raw)
+        if through is None or observed > through:
+            return OBSERVATION_RETROSPECTIVE_SEED
     return OBSERVATION_LIVE_FORWARD
 
 

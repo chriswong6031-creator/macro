@@ -591,6 +591,73 @@ def test_baseline_coverage_verified_helper_unit(roots: LabRoots) -> None:
 
 
 # ---------------------------------------------------------------------------
+# day-2 temporal correctness amendment — baseline_coverage_verified adversarial
+# cases
+# ---------------------------------------------------------------------------
+def test_baseline_coverage_verified_equal_instant_different_offsets() -> None:
+    # The spool's earliest envelope and baseline_started_at name the SAME
+    # instant via different offset forms -- must verify True either way
+    # (inclusive "at or before").
+    baseline_z = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    baseline_offset = {"baseline_started_at": "2026-08-19T06:00:00-04:00"}
+    envelopes_z = [{"pass_ts": "2026-08-19T10:00:00Z"}]
+    envelopes_offset = [{"pass_ts": "2026-08-19T06:00:00-04:00"}]
+    assert sources_mod.baseline_coverage_verified(envelopes_z, baseline_z) is True
+    assert sources_mod.baseline_coverage_verified(envelopes_z, baseline_offset) is True
+    assert sources_mod.baseline_coverage_verified(envelopes_offset, baseline_z) is True
+    assert sources_mod.baseline_coverage_verified(envelopes_offset, baseline_offset) is True
+
+
+def test_baseline_coverage_verified_naive_baseline_started_at_fails_closed() -> None:
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00"}  # naive
+    assert sources_mod.baseline_coverage_verified(
+        [{"pass_ts": "2026-08-19T09:00:00Z"}], baseline,
+    ) is False
+
+
+def test_baseline_coverage_verified_naive_envelope_pass_ts_fails_closed() -> None:
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    assert sources_mod.baseline_coverage_verified(
+        [{"pass_ts": "2026-08-19T09:00:00"}], baseline,  # naive -- unparseable here
+    ) is False
+
+
+def test_baseline_coverage_verified_true_when_evidence_reaches_further_back() -> None:
+    """The mirror-positive case, pinned alongside the regression below.
+
+    baseline_started_at = "2026-08-19T09:00:00-04:00" (13:00 UTC). The
+    spool's only envelope pass_ts = "2026-08-19T10:00:00Z" (10:00 UTC) --
+    BEFORE the claimed start (10:00 < 13:00 UTC), i.e. the spool's evidence
+    reaches back FURTHER than the operator claims -- genuinely verified.
+    """
+    baseline = {"baseline_started_at": "2026-08-19T09:00:00-04:00"}
+    envelopes = [{"pass_ts": "2026-08-19T10:00:00Z"}]
+    assert sources_mod.baseline_coverage_verified(envelopes, baseline) is True
+
+
+def test_baseline_coverage_verified_regression_lexicographic_bug() -> None:
+    """The DANGEROUS direction: old code would have said "verified" when it wasn't.
+
+    baseline_started_at = "2026-08-19T10:00:00Z" (10:00 UTC). The spool's
+    only envelope pass_ts = "2026-08-19T09:00:00-04:00" (13:00 UTC) --
+    actually AFTER the baseline start, so there IS a real gap (the spool's
+    earliest evidence postdates the claimed start) and coverage must be
+    UNVERIFIED.
+
+    The OLD code compared the raw strings: ``"2026-08-19T09:00:00-04:00" <=
+    "2026-08-19T10:00:00Z"`` is TRUE ('09' < '10'), so the old code would
+    have WRONGLY reported coverage as verified -- exactly the false-positive
+    direction that lets every row falsely promote to live_forward. The new
+    instant-based compare correctly reports False.
+    """
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    envelopes = [{"pass_ts": "2026-08-19T09:00:00-04:00"}]
+    # Sanity check the bug is real: the raw strings compare the wrong way.
+    assert envelopes[0]["pass_ts"] <= baseline["baseline_started_at"]
+    assert sources_mod.baseline_coverage_verified(envelopes, baseline) is False
+
+
+# ---------------------------------------------------------------------------
 # health block (review S4/S7/S2-cheap)
 # ---------------------------------------------------------------------------
 def test_health_block_reports_source_availability(roots: LabRoots) -> None:
@@ -938,6 +1005,122 @@ def test_classify_observation_inside_window_is_live_forward() -> None:
     assert obs_mod.classify_observation(
         "e1", first_observed_at={"e1": "2026-08-18T14:00:00Z"}, baseline=baseline,
     ) == OBSERVATION_LIVE_FORWARD
+
+
+# ---------------------------------------------------------------------------
+# day-2 temporal correctness amendment — classify_observation adversarial
+# cases (instant comparison, never lexicographic string comparison)
+# ---------------------------------------------------------------------------
+def test_classify_observation_equal_instant_different_offsets_at_lower_boundary() -> None:
+    # "2026-08-19T10:00:00Z" and "2026-08-19T06:00:00-04:00" name the SAME
+    # instant. An observation exactly AT baseline_started_at (inclusive lower
+    # bound) must classify identically regardless of which offset form either
+    # side happens to use.
+    baseline_z = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    baseline_offset = {"baseline_started_at": "2026-08-19T06:00:00-04:00"}
+    observed_z = {"e1": "2026-08-19T10:00:00Z"}
+    observed_offset = {"e1": "2026-08-19T06:00:00-04:00"}
+    results = {
+        obs_mod.classify_observation("e1", first_observed_at=observed_z, baseline=baseline_z),
+        obs_mod.classify_observation("e1", first_observed_at=observed_z, baseline=baseline_offset),
+        obs_mod.classify_observation("e1", first_observed_at=observed_offset, baseline=baseline_z),
+        obs_mod.classify_observation("e1", first_observed_at=observed_offset, baseline=baseline_offset),
+    }
+    assert results == {OBSERVATION_LIVE_FORWARD}
+
+
+@pytest.mark.parametrize(
+    "observed_ts",
+    [
+        "2026-08-19T09:59:59Z",
+        "2026-08-19T09:59:59+00:00",
+        "2026-08-19T05:59:59-04:00",
+        "2026-08-19T17:59:59+08:00",
+    ],
+)
+def test_classify_observation_before_baseline_across_offset_forms(observed_ts: str) -> None:
+    # All four forms name 09:59:59 UTC -- one second before a 10:00:00 UTC
+    # baseline start, regardless of offset notation.
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": observed_ts}, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED
+
+
+@pytest.mark.parametrize(
+    "observed_ts",
+    [
+        "2026-08-19T10:00:01Z",
+        "2026-08-19T10:00:01+00:00",
+        "2026-08-19T06:00:01-04:00",
+        "2026-08-19T18:00:01+08:00",
+    ],
+)
+def test_classify_observation_after_baseline_across_offset_forms(observed_ts: str) -> None:
+    # All four forms name 10:00:01 UTC -- one second after a 10:00:00 UTC
+    # baseline start, with no continuous_through upper bound.
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": observed_ts}, baseline=baseline,
+    ) == OBSERVATION_LIVE_FORWARD
+
+
+def test_classify_observation_naive_observed_at_fails_closed_to_seed() -> None:
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": "2026-08-19T10:30:00"}, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED  # naive -- no UTC offset -- reject, don't guess
+
+
+def test_classify_observation_naive_baseline_started_at_fails_closed_to_seed() -> None:
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00"}  # naive
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": "2026-08-19T10:30:00Z"}, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED
+
+
+def test_classify_observation_unparseable_continuous_through_fails_closed_to_seed() -> None:
+    # continuous_through IS present but garbage -- must reject, never silently
+    # treat as "no upper bound" (that would be a promotion, not a rejection).
+    baseline = {
+        "baseline_started_at": "2026-08-19T10:00:00Z",
+        "continuous_through": "not-a-timestamp",
+    }
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": "2026-08-19T10:30:00Z"}, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED
+
+
+def test_classify_observation_unparseable_observed_at_fails_closed_to_seed() -> None:
+    baseline = {"baseline_started_at": "2026-08-19T10:00:00Z"}
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at={"e1": "garbage-not-a-timestamp"}, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED
+
+
+def test_classify_observation_regression_lexicographic_bug_would_have_wrongly_promoted() -> None:
+    """THE regression case: the old lexicographic compare's dangerous direction.
+
+    baseline_started_at = "2026-08-19T09:00:00-04:00" (13:00 UTC).
+    observed             = "2026-08-19T10:00:00Z"      (10:00 UTC) -- BEFORE
+    the true baseline start (10:00 < 13:00), so the honest answer is
+    retrospective_seed.
+
+    The OLD code compared ``observed_at < started_at`` as raw strings:
+    ``"2026-08-19T10:00:00Z" < "2026-08-19T09:00:00-04:00"`` is FALSE
+    ('1' > '0' at the hour digit), so the old lower-bound rejection branch
+    would NEVER have fired -- it would have (wrongly) let this event proceed
+    toward live_forward, exactly the "incorrectly promoting retrospective
+    seed evidence" failure the day-2 mandate names. The new instant-based
+    compare correctly rejects it.
+    """
+    baseline = {"baseline_started_at": "2026-08-19T09:00:00-04:00"}
+    observed = {"e1": "2026-08-19T10:00:00Z"}
+    # Sanity check the bug is real: the raw strings compare backwards.
+    assert not (observed["e1"] < baseline["baseline_started_at"])
+    assert obs_mod.classify_observation(
+        "e1", first_observed_at=observed, baseline=baseline,
+    ) == OBSERVATION_RETROSPECTIVE_SEED
 
 
 def test_measured_lead_days_none_for_seed() -> None:
