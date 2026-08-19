@@ -31,7 +31,7 @@
   "top21_eligible_today_n": 0,
   "conversion_rate": 0.0574,
   "conversion_n": "7/122",
-  "basket_misses_n": 0,
+  "basket_misses_n": 1,
   "basket_scored_n": 49
  },
  "top63_excluder_hist": {
@@ -228,18 +228,19 @@
     "emerging_score": 1.39,
     "n_members": 21,
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "ran": 0,
      "leaders": 0
     },
     "present": {
      "buy": [
+      "LUNR",
       "PL"
      ],
      "ran": [],
      "leaders": []
     },
-    "represented_n": 1,
+    "represented_n": 2,
     "days_since_top5_entry": null
    }
   ]
@@ -260,10 +261,33 @@
   ],
   "n_baskets": 49,
   "n_scored": 49,
-  "n_misses": 0,
+  "n_misses": 1,
   "n_top_decile": 3,
-  "n_unrepresented": 20,
-  "misses": [],
+  "n_unrepresented": 22,
+  "misses": [
+   {
+    "basket_id": "gold_miners",
+    "name": "Gold Miners",
+    "category": "Materials & Mining",
+    "as_of": "2026-08-18",
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9702,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": 0.00219,
+    "ew_10d": 0.193042
+   }
+  ],
   "baskets": [
    {
     "basket_id": "gold_miners",
@@ -273,24 +297,17 @@
     "n_members": 12,
     "n_members_live": 12,
     "n_members_read": 12,
-    "n_members_on_board": 6,
-    "members_on_board": [
-     "AEM",
-     "AU",
-     "B",
-     "BTG",
-     "IAG",
-     "NEM"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 6
+     "ran": 0
     },
     "pctile": 0.9702,
     "pctile_n": 252,
-    "miss": false,
+    "miss": true,
     "ew_5d": 0.00219,
     "ew_10d": 0.193042
    },
@@ -354,14 +371,15 @@
     "n_members": 10,
     "n_members_live": 9,
     "n_members_read": 10,
-    "n_members_on_board": 2,
+    "n_members_on_board": 3,
     "members_on_board": [
+     "ABBV",
      "BIIB",
      "JNJ"
     ],
     "present_counts": {
      "buy": 2,
-     "watch": 0,
+     "watch": 1,
      "leaders": 0,
      "ran": 0
     },
@@ -379,16 +397,13 @@
     "n_members": 10,
     "n_members_live": 8,
     "n_members_read": 8,
-    "n_members_on_board": 2,
-    "members_on_board": [
-     "EXK",
-     "FSM"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 2
+     "ran": 0
     },
     "pctile": 0.7956,
     "pctile_n": 252,
@@ -428,14 +443,15 @@
     "n_members": 14,
     "n_members_live": 14,
     "n_members_read": 14,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
+     "GTLB",
      "SNOW"
     ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
-     "leaders": 1,
+     "leaders": 2,
      "ran": 0
     },
     "pctile": 0.752,
@@ -452,12 +468,13 @@
     "n_members": 15,
     "n_members_live": 15,
     "n_members_read": 15,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
+     "LUNR",
      "PL"
     ],
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -500,15 +517,16 @@
     "n_members": 59,
     "n_members_live": 59,
     "n_members_read": 59,
-    "n_members_on_board": 3,
+    "n_members_on_board": 4,
     "members_on_board": [
+     "ABBV",
      "BIIB",
      "CVS",
      "JNJ"
     ],
     "present_counts": {
      "buy": 3,
-     "watch": 0,
+     "watch": 1,
      "leaders": 0,
      "ran": 0
     },
@@ -574,10 +592,12 @@
     "n_members": 10,
     "n_members_live": 10,
     "n_members_read": 10,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "EU"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 1,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -784,10 +804,12 @@
     "n_members": 9,
     "n_members_live": 9,
     "n_members_read": 9,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "NNE"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 1,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -850,15 +872,16 @@
     "n_members": 76,
     "n_members_live": 76,
     "n_members_read": 76,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
+     "BNY",
      "IBKR"
     ],
     "present_counts": {
      "buy": 0,
      "watch": 1,
      "leaders": 0,
-     "ran": 0
+     "ran": 1
     },
     "pctile": 0.3671,
     "pctile_n": 252,
@@ -947,15 +970,13 @@
     "n_members": 26,
     "n_members_live": 26,
     "n_members_read": 26,
-    "n_members_on_board": 1,
-    "members_on_board": [
-     "NEM"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.3274,
     "pctile_n": 252,
@@ -1273,13 +1294,11 @@
     "n_members": 12,
     "n_members_live": 12,
     "n_members_read": 12,
-    "n_members_on_board": 1,
-    "members_on_board": [
-     "CGNX"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
      "buy": 0,
-     "watch": 1,
+     "watch": 0,
      "leaders": 0,
      "ran": 0
     },
@@ -1554,15 +1573,15 @@
   "asof": "2026-08-17",
   "null_reason": null,
   "floor_rule": "still trading (last bar = store's last bar) AND >= 159 bars AND close >= $3 AND median(close x volume) over the last 20 bars >= $5M",
-  "store_n": 20830,
-  "scan_n": 1503,
+  "store_n": 20833,
+  "scan_n": 1097,
   "runners_n": 150,
-  "runners_eligible_today_n": 15,
-  "runners_never_eligible_n": 26,
+  "runners_eligible_today_n": 16,
+  "runners_never_eligible_n": 22,
   "excluder_family_hist": {
-   "not_topped_veto": 130,
-   "ELIGIBLE": 15,
-   "freshness_expired": 5
+   "not_topped_veto": 128,
+   "ELIGIBLE": 16,
+   "freshness_expired": 6
   }
  },
  "priority_score_scorecard": {
