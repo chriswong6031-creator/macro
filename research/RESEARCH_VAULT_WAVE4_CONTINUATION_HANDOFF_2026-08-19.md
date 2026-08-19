@@ -13,14 +13,17 @@ publication plane actually failed.
 
 | Item | State |
 |---|---|
-| Code fixes (Defects 1–7) | **Merged** — see §2 |
+| Code fixes (Defects 1–7) | **MERGED** — `307c4748`, PR #5986, 2026-08-19T14:14:37Z |
 | Unit/integration tests | 444 passing (research vault + neighbours) |
-| Browser verification | Done, all four client states — §5 |
-| **Production correction audit** | **NOT RUN** — needs R2 creds, see §6 |
-| **Live hourly-run acceptance** | **NOT RUN** — see §6 |
+| Browser verification | **DONE**, all four client states — §5 |
+| Production correction audit | **DONE** — run 32264445297, results in §6 |
+| Live hourly-run acceptance | **DONE** — run 32263536891, green + published |
+| Live API proof | **DONE** — §6c |
+| **Corpus search gap (918 rows)** | **OPEN — needs its own wave, see §9** |
 
-The next session's whole job is §6. Nothing in the merged code depends on its
-outcome; §6 measures the *existing* store, which the code changes never touched.
+Wave 4 is complete. The one open item is a PRE-EXISTING defect this wave
+*discovered and measured* but deliberately did not fix (out of scope, and a blind
+re-ingest is explicitly forbidden by the freeze).
 
 ---
 
@@ -138,10 +141,73 @@ Console clean throughout. **This pass found two defects the unit tests missed:**
 
 Both fixed in `325d3a5` and pinned by tests.
 
-## §6 WHAT IS LEFT — production acceptance (needs R2 credentials)
+## §6 PRODUCTION ACCEPTANCE — RESULTS (2026-08-19)
 
-The R2 research-bucket secrets exist only on the self-hosted runner, so both
-remaining items run there. Tooling is merged and ready.
+### 6a. Correction audit — census run `32264445297`, green
+
+| Set | Count |
+|---|---|
+| `CATALOG_IDS` | **1,412** (declared count 1,412; 0 unusable-id rows) |
+| `VAULT_PDF_IDS` | **1,412** |
+| `RECEIPTED_IDS` | **1,412** |
+| `CORPUS_IDS` | **494** |
+
+| Direction | Count | Disposition |
+|---|---|---|
+| `catalog − pdf` | **0** | ✅ no user-visible dead reports |
+| `receipt − catalog` | **0** | ✅ nothing stranded |
+| `corpus − catalog` | **0** | ✅ no publication-ahead leakage |
+| `pdf − catalog` | **0** | ✅ |
+| `catalog − corpus` | **918** | ⚠️ **browsable but NOT searchable — see §9** |
+| repo mirror vs R2 | **0s lag** | ✅ lagging-or-equal, never independently newer |
+
+Catalog, PDFs and receipts agree **exactly** at 1,412 — the three-way identity the
+wave's invariants are stated over holds in production. The corpus is a strict
+SUBSET (`corpus − catalog = 0`), which is what §9 explains.
+
+### 6b. Real hourly run — scheduled run `32263536891`, green
+
+```
+ingested=1  skipped=1411  failed=0  needs_metadata=0
+corpus_published=True  catalog_published=True  catalog_state=valid
+excerpts=491
+```
+
+This is the acceptance criterion Defect 6 was about: **a green workflow now
+correlates with a successful canonical publish**, because `corpus_published` and
+`catalog_published` are both first-class and both required for the zero exit. The
+new `fail the lane if ingestion failed` step ran and passed; the census steps
+correctly SKIPPED (they are `workflow_dispatch`-only).
+
+`catalog_state=valid` also confirms the new strict read succeeds against the real
+1,412-row production catalog — the validator does not red production.
+
+### 6c. Live API — `https://www.mastermind-x.com/api/research/catalog`
+
+```json
+"catalog_health": {"state": "fresh", "generated_at": "2026-08-19T14:30:53.098038+00:00",
+                   "age_seconds": 655, "reason": ""}
+"stale": false, "count": 1412, "items": 3, "preview": true
+```
+
+Independently recomputed age 666s against the 7,200s threshold → `fresh`, which
+matches the server's verdict; `stale` is consistent with `catalog_health.state`.
+The anon projection is intact (3 items, whole-vault `count` preserved). **All
+three surfaces agree on the same publication clock** — API health, census, and the
+committed repo mirror all read `2026-08-19T14:30:53.098038+00:00`.
+
+Note: the API host is `www.mastermind-x.com`. `app.mastermind-x.com` is the
+Terminal (Next.js) and 404s on `/api/research/*`.
+
+### 6d. Still worth doing on a later pass
+
+- Stale/missing/malformed simulation against a STAGED store (never by corrupting
+  production) — the client behaviour is already browser-proven in §5.
+- Quota before/after on a real Pro account (unit-proven; needs a live Pro token).
+
+---
+
+## §6-ORIG. How to re-run the acceptance
 
 ### 6a. Correction audit (the id-set census)
 
@@ -216,3 +282,46 @@ which would buy nothing the visibility filter does not already provide.
 - Do not enforce the future-clock or per-row rules on the ingest path (§3.1).
 - Do not try to fix `ci-authority/codex/merge-queue-pilot` from a feature PR
   (§4.2).
+
+
+---
+
+## §9 NEW FINDING — 918 catalog reports are not searchable (own wave)
+
+**Measured, not inferred.** The production census reports `catalog − corpus = 918`
+of 1,412, and `corpus − catalog = 0`. The corpus is a strict subset: **65% of the
+vault is browsable and openable but invisible to search.**
+
+**Mechanism, verified by reading the code rather than assumed:**
+
+- `corpus_mod.upsert` is called from **exactly one site** — `ingest._ingest_one`,
+  which runs only for inbox PDFs **without a receipt**.
+- All 1,412 documents are receipted, so none re-ingest.
+- The four repair passes cannot close it either: `_repair_titles` iterates catalog
+  rows, `_refresh_sidecars` fills catalog fields, `_reextract_bodies` selects
+  `FROM documents` (rows already present), `_resync_corpus_summaries` UPDATEs
+  existing rows. **None INSERTs a missing corpus row.**
+- `_restore_corpus` returns `"fresh"` and clears local state when the store copy
+  is absent, so a single corpus reset permanently orphans everything ingested
+  before it.
+
+**This is the same defect class as Defect 2 — receipt-idempotency freezing damage
+— but on the CORPUS instead of the CATALOG.** Wave 4 fixed the catalog side and
+made this measurable; it does not repair the existing gap.
+
+**Not a safety or correctness issue.** `catalog − pdf = 0`, so none of the 918 is
+a dead report: they open fine, they are just not findable by search. Wave 4's
+universal catalog-membership filter does not make it worse (the corpus is a subset
+of the catalog, so the filter removes nothing that was previously returned).
+
+**Why it was not fixed here:** the freeze forbids blind re-ingestion, and a
+backfill is ~918 R2 PDF fetches plus `pdftotext` runs — far outside an hourly
+lane's 15-minute budget and outside this wave's stated scope.
+
+**Suggested Wave 5 shape** (the safe version, mirroring `_reextract_bodies`):
+a bounded, self-quiescing `_backfill_corpus_rows` pass that selects catalog ids
+absent from the corpus, fetches the **already-promoted vault PDF** (never the
+inbox, so no receipt surgery and no re-ingestion), extracts, and INSERTs — capped
+per run so a backlog drains over several hours. It is self-quiescing by
+construction: a backfilled row stops being a candidate. Report `remaining` so the
+bound is never silently mistaken for a drained backlog.
