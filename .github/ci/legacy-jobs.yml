@@ -10239,6 +10239,33 @@ jobs:
       # install line above — plus PIL transitively, which blocking leaves 42-passed.
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
         run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_prompt_quality.py tests/test_earnings_score_quality.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py tests/test_stocks_hub.py -q
+      # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): #5984 (the
+      # "$nanM" dossier identity/truth fix) landed three suites named by ZERO
+      # run: steps, so they collected and never ran — dark tests, which are worse
+      # than no tests because they read as coverage.
+      #
+      # They belong to THIS job because it already owns the dossier render lane
+      # (tests/test_ticker_pages.py + tests/test_ticker_dossier_render_lane.py in
+      # the step above): test_dossier_numeric_contract pins lib.numeric.finite, the
+      # single normalization contract whose absence let a truthy float NaN render
+      # "$nanM" on 69 of 2066 published pages; test_check_stock_dossier_integrity
+      # pins the post-render estate guard that catches that leak; and
+      # test_dossier_identity_end_to_end drives the REAL context builder and the
+      # REAL template and asserts on the rendered HTML, which is the outcome the
+      # unit suites only approach one mechanism at a time.
+      #
+      # Given its OWN step rather than appended to the sweep above: that step is
+      # already 31 files wide, and run_ci_pack.py returns on the first non-zero
+      # step, so a red anywhere in it would mask these three entirely — the exact
+      # darkness this wiring exists to end. No dependency widened: measured
+      # 61 passed / 0 skipped in a clean venv holding EXACTLY this job's existing
+      # install line.
+      - name: dossier numeric contract, estate machine-sentinel guard, and identity end-to-end
+        run: >
+          python -m pytest
+          tests/test_dossier_numeric_contract.py
+          tests/test_check_stock_dossier_integrity.py
+          tests/test_dossier_identity_end_to_end.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
