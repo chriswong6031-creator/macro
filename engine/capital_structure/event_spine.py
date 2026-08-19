@@ -371,7 +371,15 @@ def build_event_version(
         raise ValueError("deferred classification requires defer_reason")
     if not classification_state.startswith("deferred_"):
         defer_reason = None
-    first_seen = _iso(observation.get("first_seen_at"), "first_seen_at")
+    # W1: use canonical first_known_at when available so a later re-observation
+    # cannot move the published PIT boundary backward.  Fall back to first_seen_at
+    # for historical v1 events that predate evidence identity.
+    raw_first_known = observation.get("first_known_at")
+    raw_first_seen = observation.get("first_seen_at")
+    first_seen = _iso(
+        raw_first_known if raw_first_known else raw_first_seen,
+        "first_seen_at",
+    )
     accepted = _iso(observation.get("accepted_at"), "accepted_at", nullable=True)
     cik_raw = observation.get("cik")
     cik = str(cik_raw).lstrip("0") or "0" if cik_raw is not None and str(cik_raw) else None
@@ -389,14 +397,22 @@ def build_event_version(
     evidence = list({item["span_id"]: item for item in evidence}.values())
 
     deferred = classification_state.startswith("deferred_")
+    # W1: collect evidence_ids when the observation carries them.
+    evidence_ids_raw = observation.get("evidence_ids")
+    evidence_ids: list[str] | None = None
+    if isinstance(evidence_ids_raw, (list, tuple)):
+        evidence_ids = sorted({str(e) for e in evidence_ids_raw if e})
+    source_block: dict[str, Any] = {
+        "source_system": source_system,
+        "source_id": source_id,
+        "manifest_ids": manifest_ids,
+    }
+    if evidence_ids:
+        source_block["evidence_ids"] = evidence_ids
     event: dict[str, Any] = {
         "schema": EVENT_SCHEMA,
         "event_id": "",  # filled after the immutable body is complete
-        "source": {
-            "source_system": source_system,
-            "source_id": source_id,
-            "manifest_ids": manifest_ids,
-        },
+        "source": source_block,
         "issuer": {
             "issuer_id": issuer_id,
             "cik": cik,

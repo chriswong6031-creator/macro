@@ -10,7 +10,7 @@ objective: >
   Done for W0 = Sol/Chairman accept the 2026-08-18 masterplan as amended.
   Done for the program = deterministic twin families live, prophet_authority
   still false until per-feature gauntlet.
-status: awaiting_review
+status: active
 program: capital-structure-intelligence
 repos: [macro]
 owner: coo-fable
@@ -88,18 +88,18 @@ next_action: >
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
-    status: in_progress
+    status: done
     pr: 5901
     next_action: >
-      PR #5901 amended for Sol review. Stop when CI is green and the PR is
-      handed back to Sol. Do not merge. Do not start W1.
+      Accepted by Sol/Chairman. W1 authorized.
   - id: W1
     title: Evidence identity + whole-generation append-only fence
-    status: todo
+    status: in_progress
     depends_on: [W0]
+    branch: claude/cs-v2-w1-evidence-identity
     next_action: >
-      Execute only after W0 is accepted. Masterplan §19 is the bounded handoff.
-      No W1 production code in this PR.
+      Production wiring and hostile tests complete (212 passed). PR open; awaiting
+      CI and squash-merge. Do not start W2 before merge.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
