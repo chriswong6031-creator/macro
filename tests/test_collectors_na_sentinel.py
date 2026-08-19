@@ -208,6 +208,25 @@ def test_etf_normalize_retains_na_ticker_nano_labs() -> None:
     ("NAN", "Nano Labs Ltd", True),     # pandas residue — str(float('nan')) == 'nan'
     ("NONE", "None Inc", True),         # pandas residue — str(None) == 'None'
     ("NULL", "Null Co", True),          # unconditional sentinel, unchanged
+    # The ambiguous "NA" branch must FALL THROUGH to the shared name rules, not
+    # early-return False. An early return handed a futures leg or a cash sleeve
+    # back as an equity — the one thing moving "NA" out of the unconditional
+    # sentinel set must not cost us.
+    ("NA", "NASDAQ 100 E-MINI JUN26", True),          # _FUTURES_NAME_RE
+    ("NA", "SOME GOVERNMENT OBLIGATIONS FUND", True), # _CASH_EQUIV_NAME_RE
+    ("NA", "US TREASURY BILL 0% 09/2026", True),
+    # A literal missing-value NAME now reaches us as a string, because the parse
+    # sites pass keep_default_na=False so the ticker column survives. It carries
+    # no evidence and must still blank out, or every currency ticker filed with
+    # an "N/A" name silently becomes an equity.
+    ("NA", "N/A", True),
+    ("USD", "N/A", True),
+    ("USD", "NULL", True),
+    ("USD", "nan", True),
+    ("USD", "", True),
+    # real equities still survive
+    ("NVDA", "NVIDIA CORP", False),
+    ("RY", "Royal Bank", False),
 ])
 def test_is_non_equity_holding_na_truth_table(ticker, name, expected) -> None:
     from collectors.holdings import is_non_equity_holding

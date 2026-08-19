@@ -235,7 +235,12 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
     """
     tk = str(ticker).strip().upper()
     nm = str(name).strip()
-    if nm.lower() in ("nan", "none", "<na>"):       # pandas NaN → "nan" via str()
+    # A blank-ish NAME carries no evidence either way. "nan"/"none"/"<na>" are what
+    # str() leaves of a pandas missing value; the rest are literal missing-value
+    # cells that now REACH us, because the parse sites pass keep_default_na=False
+    # so a real 'NA' ticker survives — the name column stopped being pre-blanked
+    # for us, so blank it here instead.
+    if nm.lower() in ("nan", "none", "<na>", "n/a", "na", "null", "-", "--", "—"):
         nm = ""
     if tk in _SENTINEL_TICKERS:
         return True
@@ -244,11 +249,14 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
         # Nano Labs Ltd / National Bank of Canada survive as equities.
         if not nm:                                  # nothing can contradict it
             return True
-        if (_CURRENCY_NAME_RE.match(nm)
-                or _CURRENCY_CONTEXT_RE.search(nm)
-                or _NON_EQUITY_NAME_RE.search(nm)):
+        if _CURRENCY_NAME_RE.match(nm) or _CURRENCY_CONTEXT_RE.search(nm):
             return True
-        return False
+        # Deliberately NO `return False` here: fall through to the shared name
+        # rules below (_NON_EQUITY_NAME_RE / _FUTURES_NAME_RE / _CASH_EQUIV_NAME_RE)
+        # so ticker "NA" on a futures leg ("NASDAQ 100 E-MINI JUN26") or a cash
+        # sleeve ("… GOVERNMENT OBLIGATIONS FUND") is still caught. An early
+        # return would hand those back as equities — the one thing moving "NA"
+        # out of the unconditional set must not cost us.
     if _CURRENCY_INSTRUMENT_RE.match(tk):           # e.g. "USD CASH", "EUR FWD"
         return True
     # Currency-shaped ticker is evidence, not a verdict. A name that
