@@ -181,6 +181,7 @@ def _run(
         var window = {DATA_BASE: 'https://data.example.test/'};
         var FETCHED = [];
         function render() {}
+        function scheduleRender() {}
         function updateFlowStamp() {}
         globalThis.fetch = function (url) {
           FETCHED.push(url);
@@ -481,25 +482,15 @@ def test_template_and_site_copies_agree():
 BOOT_REGIONS = (
     ("var STANCE_META", "function snapUrl"),           # STANCE_META
     ("function snapUrl", "function computeLegs"),      # url/ET helpers, derived metrics
-    ("function computeLegs", "function dealerOf"),     # computeLegs (incl. L5 / quotePx ref)
-    ("function dealerOf", "function fmtNum"),          # dealerOf + computeStance (with quotePx)
-    ("function quotePx", "function computeStance"),    # quotePx helper itself
+    ("function computeLegs", "function dealerOf"),     # computeLegs (incl. L5)
+    ("function dealerOf", "function fmtNum"),          # dealerOf, quotePx, computeStance
     ("function computeAll", "function laneCounts"),    # computeAll
 )
 
 
 def _boot_js(path: Path) -> str:
     src = path.read_text(encoding="utf-8")
-    # quotePx is declared just before computeStance; it must be extracted once.
-    # Build a deduplicated ordered list using a seen-set on the raw slices.
-    pieces: list[str] = []
-    seen: set[str] = set()
-    for a, b in BOOT_REGIONS:
-        chunk = _region(src, a, b)
-        if chunk not in seen:
-            pieces.append(chunk)
-            seen.add(chunk)
-    return "\n".join(pieces)
+    return "\n".join(_region(src, a, b) for a, b in BOOT_REGIONS)
 
 
 # Production-shaped AAPL fixture matching the verified crash context:
@@ -557,7 +548,8 @@ def _boot_run(
         var document = document_stub();
         %(js)s
         var rows = computeAll();
-        var out = { rows: rows.map(function(r){
+        var q0 = quoteState[leaders[0].ticker] || null;
+        var out = { quotePx: quotePx(q0), rows: rows.map(function(r){
           return {
             ticker: r.l.ticker,
             stKey:  r.st.key,
@@ -631,12 +623,12 @@ def test_boot_empty_state_rth_l5_is_unknown_not_false(path):
 
 @needs_node
 @PAGES
-def test_boot_empty_state_rth_pinwatch_no_take_profits(path):
-    """With no quote, pinWatch must remain false — take_profits must not be invented.
+def test_boot_empty_state_rth_quote_px_null(path):
+    """Missing quote must yield quotePx === null so pin-watch cannot invent a distance.
 
-    Old bug: quote.price threw before pinWatch could be set false.  New code: quotePx
-    returns null → near is empty → pinWatch stays false, so take_profits is not returned
-    solely from missing price evidence.
+    take_profits is independently unreachable without a quote (aboveVwap is false),
+    so this asserts the pin-watch *input* rather than a downstream lane that cannot
+    fire either way.
     """
     out = _boot_run(
         path,
@@ -646,13 +638,8 @@ def test_boot_empty_state_rth_pinwatch_no_take_profits(path):
         pulseState={},
         flowState={},
     )
-    row = out["rows"][0]
-    # With no quote and no live tape, take_profits from pinWatch is impossible.
-    # (stand_aside or watch are both fine; act/get_ready also fine; take_profits is the
-    # forbidden outcome when its sole cause — pinWatch — has no price evidence.)
-    assert row["stKey"] != "take_profits", (
-        "take_profits must not fire when quote is missing (no price → no pin evidence)"
-    )
+    assert out["quotePx"] is None
+    assert out["rows"][0]["stKey"] != "take_profits"
 
 
 @needs_node
@@ -687,21 +674,25 @@ def test_boot_quote_arrives_no_throw(path):
 
 @needs_node
 @PAGES
-def test_boot_quote_near_pin_no_throw(path):
-    """Quote price within 1 % of call_wall (pinWatch=true) must not throw."""
-    # call_wall=320, price=321 → wu ≈ 0.31 % → pinWatch fires.
+def test_boot_quote_near_pin_take_profits(path):
+    """Price within 1% of call_wall plus a VWAP below it must land take_profits.
+
+    Positive control that pin-watch still fires when evidence exists (call_wall=320,
+    price=321 → ~0.31%). Empty-state tests prove the null path; this proves the live path.
+    """
     out = _boot_run(
         path,
         market_hours=True,
         leader=AAPL_LEADER,
         quoteState={"AAPL": {"price": 321.0, "changePct": 0.5, "vol": 5_000_000,
                               "hi": 322.0, "lo": 319.0}},
-        pulseState={},
+        pulseState={"AAPL": {"vwap": 300.0, "bars_today": 20, "vol_durability": 0.5,
+                              "rvol_tod": 1.0}},
         flowState={},
     )
     row = out["rows"][0]
     assert row["ticker"] == "AAPL"
-    assert row["stKey"] in VALID_LANE_KEYS
+    assert row["stKey"] == "take_profits"
 
 
 def test_the_net_total_sources_are_still_net_totals():

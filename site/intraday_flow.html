@@ -643,6 +643,27 @@ function quotePx(quote) {
   var n = Number(quote.price);
   return Number.isFinite(n) ? n : null;
 }
+function boardHasPrice() {
+  for (var i = 0; i < leaders.length; i++) {
+    if (quotePx(quoteState[leaders[i].ticker]) != null) return true;
+  }
+  return false;
+}
+function boardHasPulse() {
+  for (var i = 0; i < leaders.length; i++) {
+    var p = pulseState[leaders[i].ticker];
+    if (p && typeof p === 'object') return true;
+  }
+  return false;
+}
+function feedWord(status, zh) {
+  if (zh) {
+    if (status === 'live') return '已接入';
+    if (status === 'unavailable') return '不可用';
+    return '连接中';
+  }
+  return status === 'live' ? 'live' : (status === 'unavailable' ? 'unavailable' : 'connecting');
+}
 
 // ── Stance (mirror engine/intraday_flow.stance — deterministic precedence) ─
 function computeStance(leader, quote, pulse, flow, conf) {
@@ -742,13 +763,21 @@ function fetchQuotes() {
     if (!r.ok) throw new Error('quotes '+r.status);
     return r.json();
   }).then(function(data){
-    quotesInflight = false;
     var q = data.quotes || {};
     Object.keys(q).forEach(function(tk){ if (q[tk] && typeof q[tk] === 'object') quoteState[tk] = q[tk]; });
-    quotesStatus = 'live';
+    quotesStatus = boardHasPrice() ? 'live' : 'unavailable';
+    quotesInflight = false;
     updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ quotesInflight = false; quotesStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
+  }).catch(function(err){
+    if (quotesInflight) {
+      quotesInflight = false;
+      quotesStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 
 // ── Fetch: flow pulse (5min) ───────────────────────────────────────────────
@@ -759,12 +788,20 @@ function fetchPulse() {
     if (!r.ok) throw new Error('pulse '+r.status);
     return r.json();
   }).then(function(data){
-    pulseInflight = false;
     (data.tickers || []).forEach(function(t){ if (t && t.ticker) pulseState[t.ticker] = t; });
-    pulseStatus = 'live';
+    pulseStatus = boardHasPulse() ? 'live' : 'unavailable';
+    pulseInflight = false;
     updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
-  }).catch(function(){ pulseInflight = false; pulseStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
+  }).catch(function(err){
+    if (pulseInflight) {
+      pulseInflight = false;
+      pulseStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 
 // ── Fetch: source-stamped options flow (R2; poll floor is not freshness) ────
@@ -788,7 +825,6 @@ function fetchFlow() {
     fetch(enrichUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
     fetch(metaUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
   ]).then(function(res){
-    flowInflight = false;
     var tide = res[0], enrich = res[1], meta = res[2];
     var metaIsV2 = !!(meta && meta.schema === 'live_flow.meta/v2');
     var asof = metaIsV2 ? (meta.asof || null) : null;
@@ -836,6 +872,7 @@ function fetchFlow() {
     }
     flowMeta = meta; flowAsof = asof; flowRTH = isMarketHours();
     flowStatus = (tide || enrich || meta) ? 'live' : 'unavailable';
+    flowInflight = false;
     updateFlowStamp(asof, meta);
     // Deepen the board's own names — the per-root payload is the only source of the
     // call-only series the lean and L5 need, and flowState is read for leaders only.
@@ -848,7 +885,15 @@ function fetchFlow() {
       });
     }
     scheduleRender();
-  }).catch(function(){ flowInflight = false; flowStatus = 'unavailable'; updateFlowStamp(flowAsof, flowMeta); });
+  }).catch(function(err){
+    if (flowInflight) {
+      flowInflight = false;
+      flowStatus = 'unavailable';
+      updateFlowStamp(flowAsof, flowMeta);
+      return;
+    }
+    throw err;
+  });
 }
 function bestTier(a, b) {
   var rank = { below_medium:0, medium:1, high:2, strong:3, elite:4 };
@@ -895,8 +940,9 @@ function updateFlowStamp(asof, meta) {
   var tapeZh = rth
     ? (asof ? '资金带 来源截至 '+asof : '资金带 来源时间不可用')
     : (asof ? '资金带 非交易时段 · 上一交易时段来源截至 '+asof : '资金带 非交易时段 · 来源时间不可用');
-  var srcEn = 'BASE ready · quotes '+quotesStatus+' · tape '+pulseStatus+' · options '+flowStatus;
-  var srcZh = 'BASE就绪 · 行情 '+quotesStatus+' · 实时带 '+pulseStatus+' · 期权流 '+flowStatus;
+  var baseReady = leaders.length > 0 && base && base !== '—';
+  var srcEn = (baseReady ? 'BASE ready' : 'BASE unavailable')+' · quotes '+feedWord(quotesStatus,false)+' · tape '+feedWord(pulseStatus,false)+' · options '+feedWord(flowStatus,false);
+  var srcZh = (baseReady ? 'BASE就绪' : 'BASE不可用')+' · 行情 '+feedWord(quotesStatus,true)+' · 实时带 '+feedWord(pulseStatus,true)+' · 期权流 '+feedWord(flowStatus,true);
   stamp.innerHTML = lz('Base: '+base+' · '+tapeEn+' · '+srcEn, '基础：'+base+' · '+tapeZh+' · '+srcZh);
 }
 
