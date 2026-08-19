@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T04:55:32.263968+00:00",
-  "count": 1384,
+  "generated_at": "2026-08-19T05:26:47.275182+00:00",
+  "count": 1385,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -221,6 +221,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-scile3ernj8-ef72c1",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:14Z",
+      "summary_points": [
+        "**Long-end yield surge**: US 30-yr (5.31%), German Bund (3.75%), UK Gilts (near 5.85%) driven by inflation/fiscal concerns; short/medium-term quality bonds remain attractive due to anchored front-end curve and starting yields as rate hike cushion - **China macro slippage**: Industrial output +4.5% YoY (below consensus), retail sales weak; policy easing (fiscal spending, RRR cut) anticipated with tech/financials preferred for exposure - **US policy reassessment**: Markets overprice rate hikes; disinflation trend continues (US), Europe scaling back tighter policy due to data-led expectations - **Corporate bond supply pressure**: Elevated tech AI debt issuance + persistent inflation fears pressure long bonds; selectivity in short/medium-term quality bonds key amid yield curve dynamics"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
