@@ -32,6 +32,7 @@ depends_on:
 artifacts:
   - research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md
   - research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md
+  - research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md
 landmines:
   - "Runtime authority of this workstream is NONE, permanently. It coordinates and
     adjudicates; it never gates, dispatches, ranks, or owns production state. Its
@@ -58,6 +59,19 @@ landmines:
     needs a cross-store pointer index over >=3 owner_stores for one subject
     (A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md §8 flip condition). FABLE-A
     freezes contracts; it does not build the store until that condition is met."
+  - "US G0 canonical copy is PR #5955 (research/earnings_intelligence/g0/,
+    inside the Earnings owner's owns_paths). The #5822->#5953 censuses/G0/ set
+    plus its embedded C0G_G0_ADJUDICATION_2026-08-19.md is a NON-SEAT rival
+    draft, superseded by C0G_G0_SEAT_ADJUDICATION_2026-08-19.md — if #5953
+    lands it unchanged, the seat packet remains the governing record; never
+    adjudicate from the rival copy."
+  - "K4-G preconditions are frozen in the seat packet §6: clock-direction fix
+    targets observed_at/generated_at, NEVER source_available_at
+    (DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION); frontier = derived
+    read-only view, no EVENT_STATES edit; FIF-7 'event workspace packet' /
+    'market reaction' two-owner overlap must be adjudicated at K4-G commission
+    time; CN adapter is an Earnings-owner identity-plane wave post-E2
+    (DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL)."
 do_not_redo:
   - "Do not build: a second financial truth store (engine/stock_fundamentals.py +
     engine/fundamental_forensics/ exist); a second Earnings store
@@ -83,9 +97,8 @@ waves:
     depends_on: [p0]
   - id: c0g
     title: G0 return adjudication (post-event reinterpretation census — outstanding at c0)
-    status: todo
+    status: done
     depends_on: [c0]
-    next_action: adjudicate GROK-G0 when it returns; route its findings to the Earnings owner (feeds k4)
   - id: k1
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
     status: todo
@@ -115,10 +128,12 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Operator dispatches GROK-G0 (the one outstanding census) and FABLE-A under the
-  c0 §5 conditions (contract-first; store build gated on A0 §8 flip condition;
-  FIF acceptance leg fixture-only until Sol rules). Next session adjudicates the
-  FABLE-A K1 packet and the G0 return (wave c0g).
+  Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store
+  build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol
+  rules). Census PRs #5955 (US G0) and #5943 (CN-G0) are ACCEPTED and armed to
+  merge; #5953 carries a superseded rival G0 copy — disposition request posted,
+  that lane responds. Next session adjudicates the FABLE-A K1 packet; K4-G is
+  authored by operator/Sol carrying the seat packet §6 preconditions verbatim.
 ---
 
 # Alpha Intelligence Expansion — integration workstream
