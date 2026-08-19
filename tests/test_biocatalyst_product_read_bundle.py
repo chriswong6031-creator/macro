@@ -6,8 +6,10 @@ generation once, without a process-lifetime or cross-request trust cache.
 from __future__ import annotations
 
 from datetime import timedelta
+from hashlib import sha256
 import json
-from typing import Any
+from pathlib import Path
+from typing import Any, Callable
 
 import pytest
 
@@ -17,13 +19,8 @@ from engine.biocatalyst.publication import (
     PublicGenerationPublisher,
     ValidatedPointerBoundGeneration,
 )
-from engine.sector_intelligence import canonical_json_bytes
+from engine.sector_intelligence import canonical_json_bytes, canonical_json_sha256
 import scripts.biocatalyst_worker as worker
-from tests.test_biocatalyst_security import (
-    _generation_paths,
-    _rehash_generation,
-    _rehash_trial_projection,
-)
 from tests.test_biocatalyst_worker import (
     FakeCollectorFactory,
     MemoryStore,
@@ -53,6 +50,75 @@ def _count_loads(monkeypatch: pytest.MonkeyPatch, sink: list[str]) -> None:
         return orig(self, generation_id)
 
     monkeypatch.setattr(PublicGenerationPublisher, "_load_generation_manifest", wrapped)
+
+
+def _generation_paths(publisher: PublicGenerationPublisher) -> tuple[Path, Path, dict[str, Any]]:
+    pointer_path = publisher.pointer_path
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = publisher.public_root / "generations" / pointer["generation_id"]
+    return pointer_path, generation, pointer
+
+
+def _rehash_generation(
+    *,
+    pointer_path: Path,
+    generation: Path,
+    mutate: Callable[[dict[str, Any], dict[str, Any]], None],
+) -> None:
+    """Model a deliberate on-disk rehash attack, not an accidental corruption."""
+
+    health_path = generation / "health.json"
+    manifest_path = generation / "manifest.json"
+    health = json.loads(health_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mutate(health, manifest)
+    health_bytes = canonical_json_bytes(health) + b"\n"
+    health_path.write_bytes(health_bytes)
+    for artifact in manifest["artifacts"]:
+        if artifact["name"] == "health.json":
+            artifact["sha256"] = sha256(health_bytes).hexdigest()
+            artifact["byte_count"] = len(health_bytes)
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+
+
+def _rehash_trial_projection(
+    *,
+    pointer_path: Path,
+    generation: Path,
+    mutate: Callable[[dict[str, Any]], None],
+) -> None:
+    """Model a full-chain rehash attempt against one normalized trial DTO."""
+
+    snapshot_path = generation / "trial_snapshots" / "NCT00000001.json"
+    manifest_path = generation / "manifest.json"
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mutate(snapshot)
+    snapshot["projection_sha256"] = canonical_json_sha256(
+        {key: value for key, value in snapshot.items() if key != "projection_sha256"}
+    )
+    snapshot_bytes = canonical_json_bytes(snapshot) + b"\n"
+    snapshot_path.write_bytes(snapshot_bytes)
+    for artifact in manifest["artifacts"]:
+        if artifact["name"] == "trial_snapshots/NCT00000001.json":
+            artifact["sha256"] = sha256(snapshot_bytes).hexdigest()
+            artifact["byte_count"] = len(snapshot_bytes)
+            break
+    else:
+        raise AssertionError("normalized trial projection artifact missing")
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
 
 
 def test_product_bundle_matches_independent_projection_and_health(
