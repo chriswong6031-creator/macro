@@ -317,6 +317,11 @@ def classify_shelf_drop(
     uncomparable universe is recorded as unchecked and does not block a tape read — a
     universe that IS comparable and has shrunk past the threshold still means data_gap.
 
+    ``advancers``/``decliners`` are applied as a scale-free RATIO, so the caller may
+    pass any consistent cross-section. Deciding whether the sample is big enough to be
+    a market read is the CALLER's job — the builder only passes counts when at least
+    half the universe printed on the aligned session, and passes None otherwise.
+
     Returns::
 
         {"cause": "data_gap"|"tape"|"no_cause_found"|"unverified",
