@@ -2,10 +2,12 @@
 
 Pure functions over a synthetic feature frame (no network, no real data needed).
 """
+import re
 import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -65,3 +67,40 @@ def test_vix_monitor_term_structure_and_fields():
 def test_vix_monitor_none_without_vix():
     f = pd.DataFrame({"SPY": [1.0, 2.0]}, index=pd.bdate_range("2024-01-01", periods=2))
     assert vix_monitor(f) is None
+
+
+# --------------------------------------------------------------------------- #
+# vix_monitor() carries CURATED bilingual twins (regime/rword), per the house
+# idiom where the producer owns the Chinese and the template renders bare. The
+# t() nesting guard (engine/i18n.py) raises on a twin-inside-a-twin, so a
+# template that re-wraps one of these fields kills the whole render — this is
+# what took engine-render down on 2026-08-19 (td(_vix.regime) at
+# macro_signals.html.j2:492). These two tests pin both halves of the contract.
+# --------------------------------------------------------------------------- #
+
+def test_vix_monitor_emits_curated_twins_not_plain_slugs():
+    """The producer owns the zh — a plain slug here would silently drop Chinese,
+    since 'low'/'elevated'/'high fear'/'backwardation'/'contango' are NOT in LEX."""
+    from engine.i18n import t
+
+    idx = pd.bdate_range("2024-01-01", periods=40)
+    f = pd.DataFrame({"vix": [17.0] * 40, "vix_ratio": [1.1] * 40}, index=idx)
+    vm = vix_monitor(f)
+    for field, zh in (("regime", "正常"), ("rword", "倒挂")):
+        rendered = str(vm[field])
+        assert 'class="l-en"' in rendered and 'class="l-zh"' in rendered, field
+        assert zh in rendered, f"{field} lost its curated Chinese"
+        # ...and re-wrapping that twin is exactly what the guard must reject.
+        with pytest.raises(ValueError, match="already contains"):
+            t(vm[field])
+
+
+def test_macro_signals_renders_vix_twins_bare():
+    """Regression: no t()/td() wrap around a vix_monitor twin in the template."""
+    src = (Path(__file__).resolve().parent.parent
+           / "templates" / "macro_signals.html.j2").read_text(encoding="utf-8")
+    offenders = re.findall(r"\b(?:t|td)\(\s*_?vix\.(?:regime|rword)\b", src)
+    assert not offenders, (
+        "macro_signals.html.j2 re-wraps a vix_monitor twin in t()/td(); "
+        f"the i18n nesting guard will fail the render: {offenders}"
+    )
