@@ -574,6 +574,130 @@ def test_inquiry_deferral_notice_does_not_mark_a_letter_replied(tmp_path, monkey
     assert inq["n_open"] == 1
 
 
+def test_inquiry_subject_less_receipt_is_undetermined_not_a_false_open(tmp_path, monkeypatch):
+    """A receipt that names no SUBJECT must not be published as an open question.
+
+    Regression this catches: leaving 收到 in the thread key. "关于收到上海证券交易所
+    问询函的公告" keyed to …收到问询函, and no reply ever contains 收到, so the letter
+    could never match its own reply and was reported open forever. Measured on the
+    real store: 600641 上海先导基电, letter 2026-07-02, its reply 2026-07-11.
+    'undetermined' is the honest state — the filing genuinely does not say which
+    inquiry it is.
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
+
+    # Case A — a receipt WITH a subject. Retaining 收到 makes the letter key
+    # (收到2025年年报问询函) differ from its own reply's key (2025年年报问询函), so
+    # the letter reads 'open' while the answer sits beside it. This is the case
+    # that discriminates: a short subject-less title fails the minimum key length
+    # either way and would pass even with the defect present.
+    issuer_a = "正平股份"
+    # Case B — a receipt with NO subject at all: honestly 'undetermined'.
+    issuer_b = "先导基电科技集团"
+    rows = [
+        _filings_row("600814", issuer_a,
+                     f"{issuer_a}关于收到上海证券交易所对公司2025年年报有关事项问询函的公告",
+                     today, kind="letter", announcement_id="a1"),
+        _filings_row("600814", issuer_a,
+                     f"{issuer_a}关于上海证券交易所对公司2025年年报有关事项问询函的回复公告",
+                     today, kind="reply", announcement_id="a2"),
+        _filings_row("600641", issuer_b, f"{issuer_b}关于收到上海证券交易所问询函的公告",
+                     today, kind="letter", announcement_id="b1"),
+    ]
+    _make_parquet(data_dir / "china_filings" / "filings.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    by_code = {l["secCode"]: l for l in snap["inquiry"]["letters"]}
+
+    # THE regression-catching assertion: a subject-bearing receipt matches its own
+    # reply. With 收到 left in the key this is 'open' — a false open question.
+    assert by_code["600814"]["reply_state"] == "replied", by_code["600814"]
+    # And a genuinely subject-less receipt is undetermined, never a false 'open'.
+    assert by_code["600641"]["reply_state"] == "undetermined", by_code["600641"]
+    assert by_code["600641"]["has_reply"] is False
+    assert snap["inquiry"]["n_open"] == 0
+
+
+def test_inquiry_one_inquiry_filed_twice_counts_once(tmp_path, monkeypatch):
+    """The exchange's own letter AND the company's receipt for it are ONE inquiry.
+
+    Regression this catches: counting rows instead of inquiries. Measured on the
+    real store: 600683 京投发展 filed both on 2026-05-12 with identical thread
+    keys, and the plane reported one question as two open ones.
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    issuer = "京投发展"
+    topic = "有关股价波动及收购资产事项的问询函"
+    today = pd.Timestamp.today().strftime("%Y-%m-%dT09:00:00+08:00")
+    rows = [
+        # The exchange's own letter …
+        _filings_row("600683", issuer, f"关于对{issuer}{topic}", today,
+                     kind="letter", announcement_id="l1"),
+        # … and the company's receipt announcement for the SAME inquiry.
+        _filings_row("600683", issuer,
+                     f"{issuer}关于收到上海证券交易所《关于对{issuer}{topic}》的公告",
+                     today, kind="letter", announcement_id="l2"),
+    ]
+    _make_parquet(data_dir / "china_filings" / "filings.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    inq = snap["inquiry"]
+    # THE regression-catching assertion: one inquiry, one row.
+    assert inq["n_letters"] == 1, [l["title"] for l in inq["letters"]]
+    assert inq["n_open"] == 1
+    assert len(inq["letters"]) == 1
+
+
+def test_inquiry_deferral_variants_do_not_answer_and_do_not_eat_a_letter():
+    """延期/延长/推迟/顺延回复 are deferrals; a SUBJECT mentioning 延期 is not.
+
+    Regression this catches (both directions): a bare 延期 match would delete a
+    genuine inquiry about a postponement from the letter population, while
+    matching only the exact 延期回复 string would let 延长回复/推迟回复 fall through
+    to reply_side and mark the inquiry answered by the notice postponing it.
+    """
+    from engine.china_special_situations import _inquiry_doc_role
+
+    for verb in ("延期", "延长", "推迟", "顺延"):
+        assert _inquiry_doc_role(f"关于{verb}回复《关于甲公司重组的问询函》的公告") == "deferral", verb
+    # A genuine inquiry whose SUBJECT concerns a postponement stays a letter.
+    assert _inquiry_doc_role(
+        "关于收到上海证券交易所《关于甲公司延期复牌事项的问询函》的公告"
+    ) == "letter"
+
+
+def test_unlock_glance_does_not_claim_none_large_when_float_share_unknown(tmp_path, monkeypatch):
+    """With no usable float ratio on any row, the plane may count events but must
+    not assert 'none large'.
+
+    Regression this catches: an unsupported negative — "N unlocks in 30d, none
+    large" when the ratio column is absent or entirely NaN and nothing was ever
+    measured.
+    """
+    data_dir = _wire(tmp_path, monkeypatch)
+    base = pd.Timestamp.today().normalize()
+    rows = [
+        {"ticker": f"00{i:04d}.SZ", "简称": f"名{i}",
+         "解禁时间": base + pd.Timedelta(days=3 + i),
+         "占解禁前流通市值比例": None,           # never measured
+         "实际解禁市值": 10.0, "限售股类型": "首发原股东限售股份"}
+        for i in range(4)
+    ]
+    _make_parquet(data_dir / "china_unlocks" / "detail.parquet", rows)
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    g = snap["unlocks"]["glance"]
+    assert snap["unlocks"]["n_events_30d"] == 4
+    # THE regression-catching assertion.
+    assert "none large" not in g["en"], g
+    assert "均不大额" not in g["zh"], g
+    assert "float share not reported" in g["en"]
+
+
 def test_inquiry_thread_keys_extracted_from_book_quoted_title():
     """Pure-function sanity: a 《》-quoted inquiry name produces a non-empty,
     normalised key.

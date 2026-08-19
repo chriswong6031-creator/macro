@@ -184,7 +184,12 @@ _INQ_PARTY_RE = re.compile(
 )
 _INQ_CO_SUFFIX_RE = re.compile(r"(?:股份有限公司|有限责任公司|有限公司)")
 _INQ_PUNCT_RE = re.compile(r"[《》（）()\[\]、，,。·\"“”'’：:]")
-_INQ_FILLER_RE = re.compile(r"(?:关于|对|的|之|有关|相关|事项|申请文件|申请|公司)")
+# 收到 belongs to the RECEIPT framing ("we received X"), not to the inquiry's
+# identity — the exchange's own letter and every reply omit it. Leaving it in the
+# key made a receipt permanently unmatchable: "关于收到上海证券交易所问询函的公告"
+# keyed to …收到问询函 and could never equal any reply's key, so the letter was
+# published as an open question while its own reply sat in the same window.
+_INQ_FILLER_RE = re.compile(r"(?:关于|对|的|之|有关|相关|事项|申请文件|申请|公司|收到)")
 _INQ_MIN_KEY_LEN = 6
 
 
@@ -227,7 +232,12 @@ def _inquiry_thread_keys(title: str, issuer_name: str = "") -> list[str]:
 # 延期回复 ("we are deferring our reply") is the trap in the other direction: it
 # contains 回复 and is stored kind="reply" for all 41 such notices, so it would
 # otherwise mark an inquiry answered by the very filing that says it is not.
-_INQ_DEFERRAL_RE = re.compile(r"延期")
+# A deferral is specifically a postponed REPLY. Matching a bare 延期 would also
+# swallow a genuine inquiry whose SUBJECT happens to concern a postponement,
+# removing it from the letter population and the reply evidence at once; and the
+# 延长/推迟/顺延 variants must not fall through to reply_side, where they would
+# mark the inquiry answered by the notice saying it has not been.
+_INQ_DEFERRAL_RE = re.compile(r"(?:延期|延长|推迟|顺延)回复")
 # 意见 is deliberately broad rather than an enumeration of 核查意见/独立意见/
 # 法律意见书: the reply side invents new organ and adviser forms constantly
 # (独立董事意见, 董事会审计委员会…相关意见, 评估机构…发表意见, 专项法律意见), and
@@ -253,6 +263,27 @@ def _inquiry_doc_role(title: Any) -> str:
     if _INQ_REPLY_SIDE_RE.search(text):
         return "reply_side"
     return "letter"
+
+
+def _dedupe_letters_by_thread(rows: list[tuple[Any, str, list[str]]]) -> list[Any]:
+    """Collapse rows describing the SAME inquiry down to one per (issuer, thread).
+
+    One inquiry routinely files twice: the exchange publishes its own letter AND
+    the company publishes a receipt announcement for it, with identical thread
+    keys (measured on 600683 京投发展, both 2026-05-12). Counting rows rather than
+    inquiries reported one question as two. Rows carrying no thread key cannot be
+    proven duplicate, so every one is kept. Input order is preserved.
+    """
+    seen: set[tuple[str, str]] = set()
+    out = []
+    for row, sec_code, keys in rows:
+        if keys:
+            ident = {(sec_code, k) for k in keys}
+            if ident & seen:
+                continue
+            seen |= ident
+        out.append(row)
+    return out
 
 
 def _resolve_reply_state(
@@ -443,6 +474,11 @@ def _unlock_block() -> dict | None:
         # never "whatever the soonest row happens to be".
         week_end = today_ts + pd.Timedelta(days=_WEEK_DAYS)
         in_week = (fwd[date_col] >= today_ts) & (fwd[date_col] <= week_end)
+        # Whether ANY row carries a usable float share at all — distinguishes
+        # "measured, none large" from "we could not measure".
+        _float_pct_known = bool(
+            fwd["_float_pct"].apply(lambda x: x is not None and not pd.isna(x)).any()
+        )
         n_events_30d = int(len(fwd))
         n_large_30d = int(fwd["_large"].sum())
         n_events_7d = int(in_week.sum())
@@ -519,6 +555,12 @@ def _unlock_block() -> dict | None:
                        f"in the next 30 days (≥5% of float)."),
                 "zh": f"未来30天有{n_large_30d}笔大额解禁（占流通≥5%）。",
             }
+        elif n_events_30d and not _float_pct_known:
+            # No usable float ratio on any row: we can count the events but cannot
+            # rank them, so "none large" would be a negative the data cannot support.
+            glance = {"level": "active",
+                      "en": f"{n_events_30d} unlocks in 30d; float share not reported.",
+                      "zh": f"未来30天{n_events_30d}笔解禁；未披露占流通比例。"}
         elif n_events_30d:
             glance = {"level": "active",
                       "en": f"{n_events_30d} unlocks in 30d, none large.",
@@ -634,21 +676,28 @@ def _inquiry_block() -> dict | None:
             # Exchange-issued letters only: `kind` alone would admit reply-side
             # filings (see _inquiry_doc_role), which would then be published as
             # unanswered inquiries.
-            letters = df_filt[
+            _letters_df = df_filt[
                 (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
             ].sort_values("_date_str", ascending=False, na_position="last")
+            # One inquiry, one row (see _dedupe_letters_by_thread).
+            letter_rows = _dedupe_letters_by_thread([
+                (r, str(r.get("sec_code") or ""),
+                 _inquiry_thread_keys(r.get("title"), r.get("sec_name")))
+                for _, r in _letters_df.iterrows()
+            ])
 
             # Resolve reply state for the WHOLE letter population first, so the
             # counts below describe the population and not the display slice.
-            states: list[str] = []
-            for _, r in letters.iterrows():
-                states.append(_resolve_reply_state(
+            states = [
+                _resolve_reply_state(
                     str(r.get("sec_code") or ""), r.get("title"),
                     r.get("sec_name"), reply_threads,
-                ))
+                )
+                for r in letter_rows
+            ]
 
             rows = []
-            for (_, r), _state in list(zip(letters.iterrows(), states))[:_MAX_ROWS]:
+            for r, _state in list(zip(letter_rows, states))[:_MAX_ROWS]:
                 letter_date = str(r.get("_date_str") or "")
                 # secCode for claim-key: filings uses sec_code
                 sec_code_val = str(r.get("sec_code") or "")
@@ -673,7 +722,7 @@ def _inquiry_block() -> dict | None:
                 rows.append(letter)
 
             n_replies = int(len(df_filt[df_filt["kind"] == "reply"]))
-            _n_letters = int(len(letters))
+            _n_letters = int(len(letter_rows))
             _n_open = sum(1 for s in states if s == "open")
             _n_undetermined = sum(1 for s in states if s == "undetermined")
             _n_replied = sum(1 for s in states if s == "replied")
@@ -716,20 +765,25 @@ def _inquiry_block() -> dict | None:
                 ):
                     reply_threads.add((_code, _k))
 
-            letters = df_filt[
+            _letters_df = df_filt[
                 (df_filt["kind"] == "letter") & (df_filt["_role"] == "letter")
             ].sort_values("announcementTime", ascending=False, na_position="last")
+            letter_rows = _dedupe_letters_by_thread([
+                (r, str(r.get("secCode") or ""),
+                 _inquiry_thread_keys(r.get("announcementTitle"), r.get("secName")))
+                for _, r in _letters_df.iterrows()
+            ])
 
             states = [
                 _resolve_reply_state(
                     str(r.get("secCode") or ""), r.get("announcementTitle"),
                     r.get("secName"), reply_threads,
                 )
-                for _, r in letters.iterrows()
+                for r in letter_rows
             ]
 
             rows = []
-            for (_, r), _state in list(zip(letters.iterrows(), states))[:_MAX_ROWS]:
+            for r, _state in list(zip(letter_rows, states))[:_MAX_ROWS]:
                 letter_date = str(r.get("announcementTime") or "")
                 letter: dict = {
                     "secCode":   str(r.get("secCode") or ""),
@@ -749,7 +803,7 @@ def _inquiry_block() -> dict | None:
                         letter["regime_chip"] = chip
                 rows.append(letter)
 
-            _n_letters = int(len(letters))
+            _n_letters = int(len(letter_rows))
             _n_open = sum(1 for s in states if s == "open")
             _n_undetermined = sum(1 for s in states if s == "undetermined")
             _n_replied = sum(1 for s in states if s == "replied")

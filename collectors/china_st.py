@@ -99,6 +99,7 @@ def _fetch_st_board() -> pd.DataFrame | None:
     }
     rows = []
     page = 1
+    expected = 0  # server-reported board size, for the truncation check below
     while True:
         params = {**_ST_PARAMS, "pn": str(page)}
         try:
@@ -129,6 +130,7 @@ def _fetch_st_board() -> pd.DataFrame | None:
             # while the server caps at 100, so it broke after page 1 and silently
             # captured 100 of 207 ST names as if that were the whole board.
             total = int((data.get("data") or {}).get("total") or 0)
+            expected = max(expected, total)
             if not total or len(rows) >= total or page >= _MAX_PAGES:
                 break
             page += 1
@@ -150,6 +152,17 @@ def _fetch_st_board() -> pd.DataFrame | None:
             flush=True,
         )
         return None
+    if expected and len(rows) < expected:
+        # A mid-loop failure returns a SHORT board that looks like a complete one:
+        # the count silently drops and every downstream reader treats it as the
+        # whole risk-warning board. That is how a 500-vs-100 page-size assumption
+        # served 100 of 207 names for weeks without anyone noticing.
+        print(
+            "::warning title=china-st-board-truncated::"
+            f"ST board fetch returned {len(rows)} of {expected} reported names — "
+            "the snapshot is incomplete.",
+            flush=True,
+        )
     return pd.DataFrame(rows)
 
 
