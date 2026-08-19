@@ -28,6 +28,9 @@ owns_paths:
   - tests/test_fundamental_forensics_financial_intelligence_packet_r3.py
   - tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json
   - tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json
+  - engine/fundamental_forensics/query_service.py
+  - tests/test_fundamental_forensics_financial_query_service.py
+  - tests/test_fundamental_forensics_financial_query_api.py
 depends_on: []
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
@@ -41,10 +44,9 @@ decisions:
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
   - DEC:FIF-1-V1-FROZEN
 next_action: >
-  FIF-1 is DONE and financial_intelligence_packet.v1 is FROZEN on main
-  (PR #5889, f4183edade53603fad7a97f702eb4c6e5eabff5d). FIF-2 is UNLOCKED
-  and NOT_STARTED. Do not reopen accepted packet semantics. Do not create
-  FIF-1R4. A later session may start FIF-2 from the masterplan.
+  FIF-2A is fixture_proven and held for Sol review. Do not merge until
+  that review accepts. Do not start FIF-2B. Do not claim a production
+  issuer query service. Native auto-merge stays disarmed.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -72,7 +74,8 @@ do_not_redo:
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
   - Do not debug or replace the attested-history Wave 0B credential path.
   - Do not reopen frozen financial_intelligence_packet.v1 semantics; FIF-1 is DONE (DEC:FIF-1-V1-FROZEN).
-  - FIF-2 is UNLOCKED / NOT_STARTED; the landing session did not implement it.
+  - FIF-2A is the authenticated canonical query bridge only; do not start FIF-2B (statements, revisions, trace, packet-read, bulk).
+  - Do not claim production issuer coverage; FIF-2A is fixture-proven against FIP1. FIF-3 wires admitted issuer packages.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
   - Do not silently add unrequested metrics to the user cells array.
@@ -96,9 +99,11 @@ waves:
       packet_id fip_18e2f725f6ba20678d0612bb. Do not reopen. Do not create FIF-1R4.
   - id: FIF-2
     title: Read-only financial query API
-    status: todo
+    status: in_progress
     depends_on: [FIF-1]
-    next_action: UNLOCKED / NOT_STARTED. Do not start in the FIF-1 landing session.
+    next_action: >
+      FIF-2A fixture_proven, held for Sol review. FIF-2 remains in_progress.
+      Do not start FIF-2B. Production issuer coverage is FIF-3.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -162,6 +167,8 @@ semantics, accidental entity_id==CIK law, and unbounded reconvergent graph
 validation. FIF-1R3 closed those defects on PR #5889. Sol freeze-reviewed accepted head
 `e2a584496b08e68ca6054954142050db9e2c587b` as PASS / ACCEPTED_FOR_LANDING.
 #5889 squash-merged as `f4183edade53603fad7a97f702eb4c6e5eabff5d`.
-`financial_intelligence_packet.v1` is FROZEN. FIF-1 is DONE. FIF-2 is
-UNLOCKED / NOT_STARTED. Do not create FIF-1R4. Do not reopen accepted
-packet semantics.
+`financial_intelligence_packet.v1` is FROZEN. FIF-1 is DONE. FIF-2A is
+the authenticated HTTP adapter over that frozen kernel
+(`POST /api/forensics/v1/financial/query`). It is fixture-proven, not a
+production issuer service, and is held for Sol review. Do not start
+FIF-2B. Do not create FIF-1R4. Do not reopen accepted packet semantics.
