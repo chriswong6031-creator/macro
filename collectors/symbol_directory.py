@@ -156,7 +156,18 @@ def _parse_nasdaqlisted(text: str) -> pd.DataFrame:
     lines = [l for l in text.splitlines() if l and not l.startswith(_FOOTER_MARKER)]
     if len(lines) < 2:
         return pd.DataFrame()
-    df = pd.read_csv(io.StringIO("\n".join(lines)), sep="|", dtype=str)
+    df = pd.read_csv(
+        io.StringIO("\n".join(lines)),
+        sep="|",
+        dtype=str,
+        # Nasdaq tickers collide with pandas' default NA sentinels: the
+        # literal symbols NA (Nano Labs), NAN, NULL, NONE are real listings.
+        # Without this they parse as NaN, get dropped by the _cell_text
+        # guard, and the row-count completeness check below then refuses the
+        # whole day's snapshot (LHB-R8 stall 2026-08-11 -> 2026-08-19).
+        keep_default_na=False,
+        na_filter=False,
+    )
     # normalise column names to lowercase / underscored
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
     rows = []
@@ -191,7 +202,18 @@ def _parse_otherlisted(text: str) -> pd.DataFrame:
     lines = [l for l in text.splitlines() if l and not l.startswith(_FOOTER_MARKER)]
     if len(lines) < 2:
         return pd.DataFrame()
-    df = pd.read_csv(io.StringIO("\n".join(lines)), sep="|", dtype=str)
+    df = pd.read_csv(
+        io.StringIO("\n".join(lines)),
+        sep="|",
+        dtype=str,
+        # Nasdaq tickers collide with pandas' default NA sentinels: the
+        # literal symbols NA (Nano Labs), NAN, NULL, NONE are real listings.
+        # Without this they parse as NaN, get dropped by the _cell_text
+        # guard, and the row-count completeness check below then refuses the
+        # whole day's snapshot (LHB-R8 stall 2026-08-11 -> 2026-08-19).
+        keep_default_na=False,
+        na_filter=False,
+    )
     df.columns = [
         c.strip().lower().replace(" ", "_").replace("act_", "") for c in df.columns
     ]
@@ -308,6 +330,24 @@ def _fetch_sec_json(
 # ---------------------------------------------------------------------------
 
 
+# A snapshot is written every calendar day the collector runs; more than this
+# many days behind means the lane is stalled, not merely idle over a weekend.
+_SNAPSHOT_STALE_AFTER_DAYS = 3
+
+
+def _snapshot_lag_days(last_snapshot_date: str | None, today_str: str) -> int | None:
+    """Whole days between the newest snapshot on disk and today (None if unknown)."""
+
+    if not last_snapshot_date:
+        return None
+    try:
+        last = datetime.strptime(last_snapshot_date, "%Y-%m-%d").date()
+        today = datetime.strptime(today_str, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+    return (today - last).days
+
+
 def _symdir_root() -> Path:
     return config.data_dir() / "symbol_directory"
 
@@ -412,6 +452,16 @@ class SymbolDirectoryAdapter(Adapter):
                 log.warning("symbol_directory: could not read existing snapshot: %s", e)
         else:
             collected_snapshot = self._collect_symbol_snapshot(with_evidence=True)
+            if collected_snapshot is None:
+                # A refused write is silent in run_status (the adapter still
+                # reports 'ok'), which is how the 2026-08-11 stall ran for 8
+                # nights unnoticed.  Annotate the Actions summary instead.
+                print(
+                    "::warning title=symbol_directory-snapshot-skipped::"
+                    f"symbol_directory wrote no snapshot for {today_str} "
+                    "(a source guard refused the write; see the warnings above)",
+                    flush=True,
+                )
             if collected_snapshot is not None:
                 if isinstance(collected_snapshot, _CollectedSnapshot):
                     snapshot_details = collected_snapshot
@@ -595,6 +645,19 @@ class SymbolDirectoryAdapter(Adapter):
         mpath = _manifest_path()
         mpath.parent.mkdir(parents=True, exist_ok=True)
         mpath.write_text(json.dumps(manifest, indent=2))
+
+        # Freshness alarm: consumers (scripts/check_symbol_rename_drift.py) read
+        # the NEWEST snapshot, so a frozen directory reds the whole fleet while
+        # this adapter keeps reporting 'ok'.  Make the lag visible in CI.
+        stale_days = _snapshot_lag_days(last_snapshot_date, today_str)
+        if stale_days is not None and stale_days > _SNAPSHOT_STALE_AFTER_DAYS:
+            print(
+                "::warning title=symbol_directory-stale::"
+                f"newest symbol_directory snapshot is {last_snapshot_date} "
+                f"({stale_days}d behind {today_str}); downstream identity guards "
+                "compare live universes against a frozen roster",
+                flush=True,
+            )
 
         # ---- 4. Ingest summary (for run_adapter / status tracking) ----
         ingest = pd.DataFrame(
