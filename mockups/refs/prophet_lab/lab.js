@@ -301,10 +301,29 @@
     }
     /* VTL-406: the pill row reads pre-attentively as a partition, and it is not
        one — 63 memberships across 30 rows. Said once, here, rather than left
-       for the reader to discover by adding the pills up. */
-    h += '<p class="lab-overlap">' + t(
+       for the reader to discover by adding the pills up.
+
+       ── R5.3 / VTL52-603 + PR52-4 — IT COMES BACK TO THE GLANCE TIER AT 390 ──
+       R5.2 demoted this whole line at <=560 into the pill tips and kept all six
+       integers on screen. That inverted the ratified caveat exception (MPDS
+       §7-8): the exception exists precisely so that a caveat WITHOUT which the
+       visible integers mislead may never be the thing that demotes. At 390 the
+       pills read 14/6/10/28/7/30 — sum 65 against a population of 30, with "28"
+       two chips away from "30" — and the only line reconciling them was behind
+       a gesture that, measured, no touch reader could perform.
+
+       The caveat does not come back as the same sentence, because 55 words of
+       11px footnote is exactly the vertical the mobile fold cannot spare. It
+       comes back as the CLAUSE — the operative half — with the full sentence
+       still on every pill's own tip, which is a demotion of the EXPLANATION and
+       never of the warning. One line of type at the design floor, present
+       before the reader's eye leaves the pill row. D27 pins it at 390. */
+    h += '<p class="lab-overlap"><span class="lab-overlap-full">' + t(
       "Boards overlap &mdash; one name can appear on several, so these do not add up to a total.",
-      "各板块互有重叠 —— 同一只股票可能出现在多个板块中，因此这些数字不能相加。") + "</p>";
+      "各板块互有重叠 —— 同一只股票可能出现在多个板块中，因此这些数字不能相加。") +
+      '</span><span class="lab-overlap-brief">' + t(
+      "Boards overlap &mdash; these do not add up.",
+      "各板块互有重叠 —— 数字不能相加。") + "</span></p>";
     return h;
   }
 
@@ -347,19 +366,45 @@
       if (x.cls !== "live_forward" || x.lead == null) return;
       if (x.lead > 0) early++; else if (x.lead < 0) late++; else sameDay++;
     });
+    /* ── R5.3 / VTL52-601 — THE AGGREGATE STATES ITS SUBJECT AND ITS UNIT ────
+       R5.2 printed `Lead on 5: 3 earlier · 1 same day · 1 later`. Two defects,
+       one root: the line named neither WHO was earlier nor WHAT the integers
+       counted. So "3 earlier" sat in the same viewport as a row chip reading
+       "Prophet was 3 days earlier" — same word, same numeral, opposite meaning,
+       one counting ROWS and the other counting DAYS. A reader had no way to
+       tell them apart at the glance tier, and the subject existed only in the
+       LENS body, which is Tier 2.
+
+       Every count now carries its subject, and the unit is established once at
+       the head of the line so it does not have to be repeated three times
+       (Law 4 — merge, never stack). The sign is carried by the SUBJECT, which
+       is the same rule VTL-403 applies to the row chips one tier down: `we were
+       earlier` / `Prophet earlier`, never by ink. ZH takes the same shape —
+       「我们更早」/「Prophet 更早」 — and keeps 更早/更晚 out of opposition here
+       because the subjects now do that work. D26 pins it; M28 strips the
+       subject back off. */
     var measured = early + sameDay + late;
-    var aggEn = "<b>" + early + "</b> earlier &middot; <b>" + sameDay + "</b> same day &middot; <b>" +
-                late + "</b> later";
-    var aggZh = "更早 <b>" + early + "</b> &middot; 同日 <b>" + sameDay + "</b> &middot; 更晚 <b>" +
-                late + "</b>";
+    var aggEn = "we were earlier on <b>" + early + "</b> &middot; same day on <b>" + sameDay +
+                "</b> &middot; Prophet earlier on <b>" + late + "</b>";
+    var aggZh = "我们更早 <b>" + early + "</b> &middot; 同日 <b>" + sameDay +
+                "</b> &middot; Prophet 更早 <b>" + late + "</b>";
+    /* R5.3 / PR52-7 — the 390 landing carries the WHOLE aggregate, exclusion
+       clause included. At <=560 `.lab-agg` demotes into this tip, and R5.2's
+       version of the landing dropped the one sentence that says which rows the
+       denominator leaves out — so the mobile reader got the numbers without
+       the caveat that makes them readable. A landing that arrives incomplete
+       is not a demotion, it is a deletion with a footnote. */
+    var exclEn = " Rows from history are not counted — no sighting time exists for them — " +
+                 "and neither are rows Prophet has no plan on.";
+    var exclZh = "回溯记录不计入（它们没有观测时刻），Prophet 尚无计划的记录也不计入。";
     h += '<span class="lab-split"' + tip(
       "How this stream is ordered", "本时间流的排序方式",
       "Newest first. A row we saw first-hand is placed by the moment we first saw it; a row from history is placed by the signal's own date, because no sighting time exists for it." +
-        (measured ? " Lead measured on " + measured + " of these rows: " + early +
-          " earlier than Prophet, " + sameDay + " same day, " + late + " later." : ""),
+        (measured ? " Lead measured on " + measured + " of these rows: we were earlier on " +
+          early + ", same day on " + sameDay + ", Prophet earlier on " + late + "." + exclEn : ""),
       "按时间倒序。第一手观测的记录按首次看到的时刻排列；回溯记录按信号自身的日期排列，因为它没有观测时刻。" +
-        (measured ? "其中 " + measured + " 条测得提前量：比 Prophet 更早 " + early + " 条，同日 " +
-          sameDay + " 条，更晚 " + late + " 条。" : "")) + ">" + t(
+        (measured ? "其中 " + measured + " 行测得提前量：我们更早 " + early + " 行，同日 " +
+          sameDay + " 行，Prophet 更早 " + late + " 行。" + exclZh : "")) + ">" + t(
       "<b>" + lf + "</b> seen first-hand &middot; <b>" + sd + "</b> from history",
       "第一手观测 <b>" + lf + "</b> &middot; 回溯 <b>" + sd + "</b>") + "</span>";
     /* At 390 this line demotes into the LENS above — the landing is the sentence
@@ -368,10 +413,10 @@
     if (measured) {
       h += '<span class="lab-agg"' + tip(
         "How early, and how late", "提前与落后的合计",
-        "Across the rows on screen, this is how our first sighting compared with the date Prophet opened its plan. Rows from history are not counted — no sighting time exists for them — and neither are rows Prophet has no plan on.",
-        "在当前显示的记录中，这是我们的首次观测与 Prophet 开启计划日期的比较结果。回溯记录不计入（它们没有观测时刻），Prophet 尚无计划的记录也不计入。") +
-        ">" + t("Lead on <b>" + measured + "</b>: " + aggEn,
-                "已测 <b>" + measured + "</b> 条：" + aggZh) + "</span>";
+        "Across the rows on screen, this is how our first sighting compared with the date Prophet opened its plan." + exclEn,
+        "在当前显示的记录中，这是我们的首次观测与 Prophet 开启计划日期的比较结果。" + exclZh) +
+        ">" + t("Lead measured on <b>" + measured + "</b> rows: " + aggEn,
+                "提前量已测 <b>" + measured + "</b> 行：" + aggZh) + "</span>";
     }
     h += '<span class="lab-basis">' + t(
       "Newest first &mdash; by first sighting where there is one, otherwise by the signal&rsquo;s own date.",
@@ -411,19 +456,35 @@
        what the pinned divider now carries once.
 
        The first line stays, and the distinction is the whole argument. `signal
-       date` and `first seen` are UNIT LABELS: they say what the number directly
-       above them is, they DIFFER between adjacent rows, and without them the
-       stream prints two kinds of timestamp in one column with nothing saying
-       which is which. That is the ratified self-labelling-token pattern
+       date` and `first seen` are UNIT LABELS: they name what the number
+       directly above them IS, and without them the stream prints two kinds of
+       timestamp in one column with nothing saying which is which. That is the
+       ratified self-labelling-token pattern
        (doctrine §3, "the state token IS the label"), and it is the closest
        thing a single interleaved stream has to a column header — a table would
        spend one header cell on it, and this stream cannot, because the two
        kinds alternate. Deleting them too would not be honesty, it would be an
        unlabelled number.
 
+       R5.3 / VTL52-608 — THE CRITERION ABOVE WAS STATED WRONG, and the wrong
+       version does not discriminate. R5.2 wrote that a rail earns its place
+       because it "DIFFERS between adjacent rows"; the PROPHET eyebrow four
+       cells over is identical on all 30 rows and is obviously legitimate, so
+       varying text was never the test. What actually separates the two is
+       WHAT THE STRING DOES. A LABEL names a neighbouring value and is read WITH
+       it — delete it and a number loses its unit, so it is not a repetition of
+       information, it is the information's name. A CLAIM asserts a fact about
+       the row, and once a structure states that fact for a whole region, every
+       per-row copy is the Law 4 repetition. `signal date` labels the date above
+       it; `not a sighting` claimed a class; `Lead not measurable` claimed the
+       consequence of that class. The two claims went; the labels stayed. The
+       criterion is label-vs-claim, and it holds for the eyebrow too — `Prophet`
+       names the column that follows it.
+
        D6i pins the split: the class assertion must appear EXACTLY ONCE in the
-       stream, and no row rail may make one. M23 puts the per-row constant back
-       and is caught there. */
+       stream, no row rail may make one, and (R5.3 / D6i4) no CLAUSE may repeat
+       on every seed row at all. M23 puts the per-row rail constant back and M29
+       the lead-slot one; both are caught there. */
     h += '<div class="lab-when"><span class="lab-node" aria-hidden="true"></span>';
     if (seed) {
       h += '<b class="lab-t">' + t(r.sig.en, r.sig.zh) + "</b>";
@@ -617,13 +678,37 @@
         "我们看到了它，而 Prophet 目前对这只股票没有计划，因此没有可比的计划日期。若之后开启计划，这里会出现比较结果。") +
         ">" + t("Nothing to compare yet", "暂无可比对象") + "</span>";
     }
-    return '<span class="lab-lead lab-lead--none"' + tip(
+    /* ── R5.3 / VTL52-602 — THE LAST PER-ROW CONSTANT BECOMES A GLYPH ────────
+       "Lead not measurable" was printed on all 23 seed rows below a pinned
+       divider that governs every one of them — the third form of the same Law 4
+       defect this reference has now fixed three times (the chip at R5.1, the
+       rail at R5.2, this slot at R5.3), and R5.2 shipped it with both acceptance
+       gates drawn around it: D6g counted filled slots, D6i counted badges, and
+       neither could see a sentence repeated 23 times.
+
+       The slot keeps its element, its LENS and its accessible name — this is not
+       a deletion — and prints the artifact's OWN null idiom instead of a
+       sentence: an em dash in a dashed outline, exactly what `.lab-n--unk` uses
+       one component up for "we hold no answer" and never for a real zero. The
+       statement itself moves to the one place that is on screen for as long as
+       it applies: the PINNED strip, merged into the sentence already there
+       rather than stacked beside it.
+
+       Why a glyph is honest here and would not be in isolation: the pin
+       guarantees the governing clause is in the viewport whenever any row it
+       governs is (D6c3), so the dash is a pointer to a stated fact rather than
+       an unlabelled blank. D6g still forbids an EMPTY slot, D6g2 requires the
+       accessible name, and D6i4 widens the constant gate from one badge to any
+       CLAUSE repeated on every seed row. M13 blanks the slot; M29 puts the
+       sentence back and is caught by D6i4. */
+    return '<span class="lab-lead lab-lead--none lab-lead--dash" aria-label="' +
+      esc(lang() === "zh" ? "无法测量提前量" : "Lead not measurable") + '"' + tip(
       "Lead cannot be measured", "无法测量提前量",
       "This is a historical event. The feed never supplied the moment it was first observed, and we do not invent one — so there is no honest number to put against Prophet&rsquo;s plan date.",
       "这是一条历史事件。数据源从未提供它被首次观测到的时刻，我们也不会编造一个 —— 因此没有可以与 Prophet 计划日期对比的诚实数字。",
       "retrospective_seed ⇒ measured lead = null by contract, not by absence of effort (LAB-0 §4).",
       "retrospective_seed ⇒ 依契约测得提前量恒为 null，并非「没算出来」（LAB-0 §4）。") +
-      ">" + t("Lead not measurable", "无法测量提前量") + "</span>";
+      '><span aria-hidden="true">&mdash;</span></span>';
   }
 
   /* ── the three degraded states. Each one stays visibly LAB. ───────────── */
@@ -694,8 +779,18 @@
      withdrawn per-row chip used. R5.1 left that idiom with zero references; it
      now has exactly one, in the place that stays on screen while it applies. */
   function baselineMark() {
+    /* R5.3 / VTL52-606 — the pinned gutter cell used to print a bare "Aug 8"
+       and pin it above rows dated Aug 2, Aug 1, Jul 31. The sentence that made
+       the date mean "and everything before it" lives in `.lab-mark-why`, which
+       deliberately does NOT pin, so the pinned state kept the date and lost its
+       reading. The cell now takes the spine's own two-line shape — value, then
+       unit label, exactly as every row's `.lab-t` + `.lab-tl` does — and says
+       what direction the date points. Same idiom, one line of type, no new
+       device. */
     var h = '<li class="lab-mark" role="separator"><div class="lab-mark-when">' +
-      t(L.baseline.en, L.baseline.zh) + "</div><div class=\"lab-mark-l\">";
+      "<b>" + t(L.baseline.en, L.baseline.zh) + "</b>" +
+      '<span class="lab-mark-tl">' + t("and earlier", "及更早") + "</span>" +
+      "</div><div class=\"lab-mark-l\">";
     h += '<span class="lab-cls lab-cls--seed"' + tip(
       "From history", "回溯记录",
       "These rows were already in our records before continuous watching began on " +
@@ -704,15 +799,22 @@
       "observation_class = retrospective_seed for every row below this marker (LAB-0 §4).",
       "此标记以下每一行的 observation_class = retrospective_seed（LAB-0 §4）。") + ">" +
       t("From history", "回溯记录") + "</span>";
+    /* R5.3 / VTL52-602 — the clause the 23 row slots were carrying, merged into
+       the sentence that was already here rather than stacked under it. This is
+       the half of the cure that keeps the fix from being a deletion: whenever a
+       row whose lead reads "—" is on screen, so is the reason. */
     h += '<span class="lab-mark-rule">' + t(
-      "Nothing below this line was seen first-hand.",
-      "此线以下均非第一手观测。") + "</span></div></li>";
+      "Nothing below this line was seen first-hand, so no row below can show a lead.",
+      "此线以下均非第一手观测，因此下方任何一行都无法给出提前量。") + "</span></div></li>";
     h += '<li class="lab-mark-why"><div class="lab-mark-why-rail"></div>' +
       '<div class="lab-mark-why-l">' + t(
+        /* R5.3 / VTL52-602: the CONSEQUENCE moved up to the pinned strip, so
+           this block keeps only the mechanism. Restating both in two adjacent
+           blocks would be the stack Law 4 forbids. */
         "Continuous watching began " + L.baseline.en +
-          ". The signals below it were already in our records by then, so no first-sighting time exists for them and no row below can carry a lead.",
+          ". The signals below it were already in our records by then, so no first-sighting time exists for them &mdash; and a lead can only be measured against a sighting.",
         "持续观测始于 " + L.baseline.zh +
-          "。此线以下的信号在那之前就已存在于我们的数据中，因此没有首次观测时刻，下方任何一行都无法给出提前量。") +
+          "。此线以下的信号在那之前就已存在于我们的数据中，因此没有首次观测时刻 —— 而提前量只能相对于一次观测来测量。") +
       "</div></li>";
     return h;
   }
@@ -783,6 +885,9 @@
      stream starts and stops. Nothing outside that boundary is ever painted by
      this controller. */
   function paintLab() {
+    /* a tip whose carrier is about to be destroyed may not survive it as a
+       popover pinned to coordinates that no longer mean anything (R5.3) */
+    labLensClose();
     root.setAttribute("data-mode", "lab");
     var s = document.querySelector(".bh-stamp");
     if (s) {
@@ -811,6 +916,30 @@
   }
 
   function paintLive() {
+    /* ── R5.3 / PR52-3 — THE FLIP MAY NOT COST THE READER THEIR PLACE IN THE
+       TAB ORDER. `paintLive()` DESTROYS the board subtree, and the mode control
+       is mounted inside it, so the element that had focus stops existing
+       mid-flip and the browser drops focus to <body>. Measured on R5.2: a
+       keyboard operator who pressed "Live" had to re-tab the whole page to
+       reach the one control this surface has, which made LAB->LIVE strictly
+       harder to operate than LIVE->LAB. The intent was already stated ("arrow
+       keys move within the radiogroup") and was only half true.
+
+       So the flip remembers whether focus was IN the control before the
+       teardown and returns it to the RE-MOUNTED control once board.js has
+       painted — the same identity, not merely the same coordinates. It is
+       scoped to that case deliberately: a reader whose focus was somewhere else
+       entirely must not have it yanked into the modebar. `preventScroll` keeps
+       the restore from fighting the scroll restore below, which is a separate
+       promise (D24c). D25 pins it; M31 removes it.
+
+       This is READ FIRST, before the plane comes out: the control lives INSIDE
+       `.lab-plane`, so removing the plane is itself what drops focus to <body>,
+       and a read taken afterwards can only ever answer "nobody had it". The
+       first draft of this fix read it two lines lower and measured exactly
+       that. */
+    var refocus = !!(document.activeElement && document.activeElement.closest &&
+                     document.activeElement.closest(".lab-seg"));
     root.setAttribute("data-mode", "live");
     var plane_ = document.querySelector(".lab-plane");
     if (plane_) plane_.remove();
@@ -818,6 +947,7 @@
        payload, so the LIVE board after a Lab excursion is produced by exactly
        the code path a cold load uses. Nothing of the Lab can persist, and no
        pre-LAB snapshot exists to go stale. */
+    labLensClose();
     document.querySelectorAll(".lens-pop").forEach(function (n) { n.remove(); });
     var b = document.getElementById("board");
     if (b) b.innerHTML = "";
@@ -825,6 +955,10 @@
     sc.src = "../institutionalize/us_stocks/board.js?repaint=" + (++C.repaints);
     sc.onload = function () {
       mountModebar(); syncSeg(); harnessStamp();
+      if (refocus) {
+        var back = document.querySelector('.lab-seg button[aria-checked="true"]');
+        if (back) back.focus({ preventScroll: true });
+      }
       /* R5.2 / R52-D2: the return trip undoes the landing. An excursion that
          moved the page has to put it back, or "flip back to Live" costs the
          reader their place in the plan book. */
@@ -868,12 +1002,25 @@
      binds `--lab-mark-top`, so one component is correct on a page with a header
      and on one without.
 
-     This mockup exercises the seam rather than dodging it: its own harness bar
-     is a real `position: sticky; top: 0` element, so with `?chrome=1` the
-     divider pins BELOW it and with `?chrome=0` it pins at 0 — two different
-     correct answers from one rule. D6c4 asserts both. Production adds its
-     header to the selector list (or marks it `data-lab-sticky-chrome`) and
-     changes nothing else. */
+     R5.3 / PR52-1 — WHAT THIS COMMENT SAID AT R5.2 WAS FALSE, and the seam is
+     now real. R5.2 asserted "its own harness bar is a real sticky element, so
+     with ?chrome=1 the divider pins BELOW it". Measured at 1440 with chrome=1:
+     the bar's own top was −2,637px — it had scrolled entirely off screen —
+     while the divider pinned at 149px, so what `chrome=1` actually produced was
+     149px of EMPTY BAND above the pin and a check that could not tell the
+     difference. `.harness` declares `position: sticky` inside `#harness`, whose
+     height is exactly the bar's own height, and a sticky box cannot travel
+     outside its containing block. The declaration was true; the layout it lived
+     in made it inert — the same defect class as PR51-1's `overflow: hidden`,
+     one axis over, and this time it was asserted three times in prose.
+
+     `lab.css` now gives the bar a containing block with travel, so it pins for
+     real; D6c4 asserts the BAR'S POSITION at the pin moment (barTop ≈ 0) rather
+     than merely its height, which is what let the false premise pass. With
+     `?chrome=1` the divider pins BELOW a bar that is genuinely on screen and
+     with `?chrome=0` it pins at 0 — two correct answers from one rule.
+     Production adds its header to the selector list (or marks it
+     `data-lab-sticky-chrome`) and changes nothing else. */
   function syncMarkOffset() {
     var top = 0;
     document.querySelectorAll(".harness, [data-lab-sticky-chrome]").forEach(function (n) {
@@ -908,16 +1055,29 @@
        * flipping back to LIVE restores the scroll position they flipped FROM,
          so the excursion leaves the page where it found it.
      The scroll is instant, so there is no motion to suppress under
-     prefers-reduced-motion. */
+     prefers-reduced-motion.
+
+     R5.3 / PR52-2 — THE LANDING OWES THE SAME OFFSET THE PIN DOES. R5.2 landed
+     the band at `bandTop` flat, while `syncMarkOffset` two functions up was
+     already measuring the sticky chrome for the divider. On any route whose
+     header actually pins — which after PR52-1 includes this mockup at
+     `?chrome=1` — that put the modebar UNDER the chrome: the reader pressed a
+     control and the surface scrolled it out of sight behind the header, which
+     is the exact failure D24b exists to forbid, in the one configuration D24b
+     never ran. One measurement serves both: the pin and the landing read the
+     same `--lab-mark-top`, so a route cannot be correct for one and wrong for
+     the other. D24/D24b now run at chrome=1 as well as chrome=0. */
   function landRegion() {
     var band = document.querySelector(".lab-plane .lab-modebar");
     var first = document.querySelector(".lab-row") || document.querySelector(".lab-state");
     if (!band || !first) return;
+    var off = parseInt(window.getComputedStyle(root)
+                .getPropertyValue("--lab-mark-top"), 10) || 0;
     var bandTop = band.getBoundingClientRect().top + window.scrollY;
     var firstBottom = first.getBoundingClientRect().bottom + window.scrollY;
     if (firstBottom <= window.scrollY + window.innerHeight) return;   /* already reachable */
-    if (bandTop <= window.scrollY) return;                            /* already at or above */
-    window.scrollTo({ top: Math.round(bandTop), behavior: "auto" });
+    if (bandTop - off <= window.scrollY) return;                      /* already at or above */
+    window.scrollTo({ top: Math.max(0, Math.round(bandTop) - off), behavior: "auto" });
   }
 
   function syncSeg() {
@@ -952,6 +1112,85 @@
       return;
     }
   });
+  /* ── R5.3 / PR52-4 + VTL52-604 — THE LENS GETS A TOUCH PATH ───────────────
+     The R4 LENS opens on `mouseover` and `focusin` and closes on their
+     opposites. On a desktop that is the whole interaction; on a phone it is
+     none of it — there is no hover, and the only way to raise `focusin` on a
+     `tabindex="0"` span is a keyboard the reader does not have. R5.2 then hung
+     three <=560 demotions off that LENS (the sort basis, the board subtitle,
+     the lead total), so at the design floor the landings existed in the DOM and
+     could not be reached by the only gesture available. A demotion whose
+     landing cannot be opened is a deletion.
+
+     board.js is the frozen R4 reference and may not be edited, so the path is
+     added HERE, additively, over the same `.lens-pop` element and the same
+     `data-tip-*` attributes — one popover, one vocabulary, no second tooltip
+     system. Tap opens; tapping the same carrier again, tapping anywhere else,
+     pressing Escape, or flipping the mode closes it. `pointerdown` on the
+     document does the dismiss so a tap that lands on the page body is caught
+     before it becomes a click somewhere else.
+
+     Scoped to `.lab-plane` on purpose: the Lab owns the tips inside its own
+     region, and reaching outside it to re-bind the plan book's would be this
+     controller taking over a surface it does not paint. D28 drives it under
+     `pointer: coarse`; M30 removes it. */
+  function labLensPop() {
+    var p = document.querySelector(".lens-pop");
+    if (!p) {
+      p = document.createElement("div");
+      p.className = "lens-pop";
+      document.body.appendChild(p);
+    }
+    return p;
+  }
+  var lensHeld = null;
+  function labLensClose() {
+    if (lensHeld) lensHeld.removeAttribute("data-lens-open");
+    lensHeld = null;
+    var p = document.querySelector(".lens-pop");
+    if (p) p.classList.remove("open");
+  }
+  function labLensIsOpen() {
+    var p = document.querySelector(".lens-pop");
+    return !!(p && p.classList.contains("open"));
+  }
+  function labLensOpen(el) {
+    var zh = lang() === "zh";
+    var g = function (n) { return el.getAttribute(n); };
+    var body = (zh && g("data-tip-zh")) || g("data-tip-en");
+    if (!body) return;
+    var title = (zh && g("data-tip-t-zh")) || g("data-tip-t-en");
+    var rc = (zh && g("data-tip-rc-zh")) || g("data-tip-rc-en");
+    var p = labLensPop();
+    p.innerHTML = (title ? '<div class="lens-ttl">' + title + "</div>" : "") +
+                  '<div class="lens-body">' + body + "</div>" +
+                  (rc ? '<div class="lens-receipt">' + rc + "</div>" : "");
+    var r = el.getBoundingClientRect();
+    p.style.left = Math.max(10, Math.min(window.innerWidth - 312, r.left - 8)) + "px";
+    p.style.top = (r.bottom + 8) + "px";
+    p.classList.add("open");
+    lensHeld = el;
+    el.setAttribute("data-lens-open", "1");
+  }
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest && e.target.closest(".lab-plane [data-tip-en]");
+    if (!el) { labLensClose(); return; }
+    /* a carrier that is also a control keeps its control behaviour; the tip
+       still opens, because on touch the two gestures are the same gesture */
+    if (el === lensHeld && labLensIsOpen()) { labLensClose(); return; }
+    labLensClose();
+    labLensOpen(el);
+  }, true);
+  document.addEventListener("pointerdown", function (e) {
+    if (!lensHeld) return;
+    if (e.target.closest && e.target.closest(".lab-plane [data-tip-en]")) return;
+    labLensClose();
+  }, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") labLensClose();
+  });
+  window.addEventListener("scroll", function () { labLensClose(); }, { passive: true });
+
   /* arrow keys move within the radiogroup, per the segmented-control pattern */
   document.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;

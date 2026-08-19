@@ -114,9 +114,9 @@ MUTATIONS = [
      'return out.slice().reverse();   /* already newest-first',
      "D10"),
     ("M13 blank the lead slot on seeds instead of stating why", JS,
-     r'    return \'<span class="lab-lead lab-lead--none"\' \+ tip\(\n'
-     r'      "Lead cannot be measured", "无法测量提前量",',
-     '    return ""; var _mut = tip(\n      "Lead cannot be measured", "无法测量提前量",',
+     r'    return \'<span class="lab-lead lab-lead--none lab-lead--dash" aria-label="\' \+\n'
+     r'      esc\(lang\(\) === "zh" \? "无法测量提前量" : "Lead not measurable"\) \+ \'"\' \+ tip\(',
+     '    return ""; var _mut = ("" +\n      esc("") + "") + tip(',
      "D6g"),
 
     # ══ R5.1 mutations — one per revision requirement ═══════════════════════
@@ -185,10 +185,15 @@ MUTATIONS = [
     # `top: 0` is right only on a route with no page header. This is the defect
     # in the shape a follower surface would actually ship it: still sticky,
     # still pinning, just pinning underneath the site nav where nobody sees it.
+    # R5.3: the expected catcher moves from D6c4 to D6c4b. D6c4 used to be one
+    # check conflating "the chrome is pinned" with "the pin clears it"; PR52-1
+    # split it, and this mutation attacks the second half — the chrome still
+    # pins, the divider just ignores it. Measured: M25 -> ['D6c4b'] alone,
+    # M27 -> ['D6c4', 'D6c4b'], so the split is load-bearing in both directions.
     ("M25 hardcode the pin to top:0, ignoring the page header (R52-D1)", CSS,
      r'  position: sticky; top: var\(--lab-mark-top, 0px\); z-index: 4;',
      '  position: sticky; top: 0; z-index: 4;',
-     "D6c4"),
+     "D6c4b"),
     ("M24 stop landing the region on flip (R52-D2)", JS,
      r'  function landRegion\(\) \{\n    var band = ',
      '  function landRegion() {\n    if (true) return;\n    var band = ',
@@ -197,6 +202,65 @@ MUTATIONS = [
      r'      if \(C\.preLabScrollY != null\) \{\n        var y = C\.preLabScrollY;',
      '      if (false) {\n        var y = C.preLabScrollY;',
      "D24c"),
+
+    # ══ R5.3 mutations — one per blocking ruling ════════════════════════════
+    # PR52-1. THE DEFECT THAT SHIPPED, as a mutation. M25 attacks the pin's
+    # declaration; this takes the CHROME's travel away, which is what made the
+    # seam imaginary for a whole cycle while M25 kept passing. The R5.2 version
+    # of D6c4 read the bar's HEIGHT and could not tell the difference, so this
+    # mutation is also the receipt that the rewritten check now can.
+    ("M27 re-inert the chrome seam by giving the harness no travel (PR52-1)", CSS,
+     r'#harness \{ display: contents; \}',
+     '#harness { display: block; }',
+     "D6c4"),
+    # VTL52-601. The line goes back to bare integers with no subject and no
+    # unit — the R5.2 wording, verbatim, which is what created the collision.
+    ("M28 strip the subject and unit off the lead aggregate (VTL52-601)", JS,
+     r'    var aggEn = "we were earlier on <b>" \+ early \+ "</b> &middot; same day on <b>" \+ sameDay \+\n'
+     r'                "</b> &middot; Prophet earlier on <b>" \+ late \+ "</b>";',
+     '    var aggEn = "<b>" + early + "</b> earlier &middot; <b>" + sameDay +\n'
+     '                "</b> same day &middot; <b>" + late + "</b> later";',
+     "D26"),
+    # VTL52-602. The constant returns to the seed lead slot, 23 times, below a
+    # divider that states it once. D6g and D6i still pass — they did at R5.2 —
+    # so only the widened D6i4 can see it.
+    ("M29 print the class consequence on all 23 seed rows again (VTL52-602)", JS,
+     r'\'><span aria-hidden="true">&mdash;</span></span>\';',
+     '">" + t("Lead not measurable", "无法测量提前量") + "</span>";',
+     "D6i4"),
+    # PR52-4 / VTL52-604. The touch path goes away and the <=560 landings become
+    # unreachable again by the only gesture a phone reader has.
+    ("M30 take the LENS tap path away again (PR52-4)", JS,
+     r'    if \(el === lensHeld && labLensIsOpen\(\)\) \{ labLensClose\(\); return; \}\n'
+     r'    labLensClose\(\);\n    labLensOpen\(el\);',
+     '    return;',
+     "D28"),
+    # PR52-3. Focus is dropped on the way back to LIVE, as it was at R5.2.
+    ("M31 drop focus to <body> on LAB->LIVE again (PR52-3)", JS,
+     r'      if \(refocus\) \{\n'
+     r'        var back = document\.querySelector\(\'\.lab-seg button\[aria-checked="true"\]\'\);\n'
+     r'        if \(back\) back\.focus\(\{ preventScroll: true \}\);\n      \}',
+     '      if (false) { /* focus dropped */ }',
+     "D25"),
+    # VTL52-603. The caveat demotes off the glance tier again while all six
+    # integers stay — the R5.2 rule, restored.
+    ("M32 demote the overlap caveat off the 390 glance tier again (VTL52-603)", CSS,
+     r'  \.lab-overlap \{ margin-top: 6px; \}',
+     '  .lab-overlap { display: none; }',
+     "D27"),
+    # PR52-2. The landing forgets the sticky chrome, which is what put the
+    # reader's own control behind the header at chrome=1.
+    # VTL52-607. The five statements run together with whitespace again.
+    ("M34 run the meta statements together with no separator (VTL52-607)", CSS,
+     r'  content: ""; position: absolute; left: 0; top: 50%;\n'
+     r'  transform: translateY\(-50%\);\n'
+     r'  width: 1px; height: 11px; background: var\(--line\);',
+     '  content: none;',
+     "D29"),
+    ("M33 land the region without the sticky-chrome offset (PR52-2)", JS,
+     r'    window\.scrollTo\(\{ top: Math\.max\(0, Math\.round\(bandTop\) - off\), behavior: "auto" \}\);',
+     '    window.scrollTo({ top: Math.round(bandTop), behavior: "auto" });',
+     "D24b"),
 ]
 
 

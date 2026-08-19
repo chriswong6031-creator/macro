@@ -110,10 +110,29 @@ LAB_SHOTS = [
 # The claim the artifact makes for it is about the position 1,200px later, so
 # that is where these are taken. Each asserts the pin before it shoots: a crop
 # of a divider that scrolled away would be a picture of the R5.1 defect.
+#
+# R5.3 / PR52-1 — `55` is the chrome=1 shot, and it exists because the claim
+# "the divider pins BELOW the sticky chrome" had been stated three times and
+# photographed zero times. It was also FALSE when it was written: the harness
+# bar had no travel, so what chrome=1 actually produced was 149px of empty band
+# above the pin. Now the bar pins, and the crop has to show BOTH of them on
+# screen at once — the block below refuses to shoot unless it does.
 SCROLL_SHOTS = [
-    ("51-seed-region-pinned-dark-en",      DESKTOP, "theme=dark&lang=en"),
-    ("52-seed-region-pinned-light-zh",     DESKTOP, "theme=light&lang=zh"),
-    ("53-seed-region-pinned-390-dark-en",  MOBILE,  "theme=dark&lang=en"),
+    ("51-seed-region-pinned-dark-en",      DESKTOP, "theme=dark&lang=en", "0"),
+    ("52-seed-region-pinned-light-zh",     DESKTOP, "theme=light&lang=zh", "0"),
+    ("53-seed-region-pinned-390-dark-en",  MOBILE,  "theme=dark&lang=en", "0"),
+    ("55-seed-region-pinned-chrome1-dark-en", DESKTOP, "theme=dark&lang=en", "1"),
+]
+
+# ── R5.3 / VTL52-604 + VTL52-605 — THE LENS, OPEN, AT THE DESIGN FLOOR ──────
+# Not one crop in the 63-file R5.2 set photographed a LENS popover anywhere, so
+# every <=560 demotion claim was visually unreceipted — and the capture path
+# actively parked the cursor to CLOSE any tip before shooting. These two open
+# the landing the mobile reader depends on, by TAP under a coarse pointer, and
+# refuse to emit unless the popover is on screen carrying the demoted text.
+LENS_SHOTS = [
+    ("56-lens-open-390-dark-en",  "theme=dark&lang=en",   "en"),
+    ("57-lens-open-390-light-zh", "theme=light&lang=zh",  "zh"),
 ]
 
 FULL_PAGE = {
@@ -237,10 +256,10 @@ def main():
             page.close()
 
         # ── the pinned divider, deep in the region it governs ──────────────
-        for name, (w, h), q in SCROLL_SHOTS:
+        for name, (w, h), q, chrome_q in SCROLL_SHOTS:
             page = browser.new_page(viewport={"width": w, "height": h},
                                     device_scale_factor=1)
-            page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
+            page.goto(f"{BASE}/?{q}&chrome={chrome_q}", wait_until="networkidle")
             page.wait_for_timeout(200)
             el = page.query_selector(LAB_SEG)
             if el is None:
@@ -263,24 +282,83 @@ def main():
             page.wait_for_timeout(280)
             st = page.evaluate("""() => {
                 const m = document.querySelector('.lab-mark');
+                const bar = document.querySelector('.harness');
                 const vh = window.innerHeight;
                 const on = q => [...document.querySelectorAll(q)].filter(n => {
                     const r = n.getBoundingClientRect();
                     return r.bottom > 0 && r.top < vh;
                 }).length;
                 const r = m.getBoundingClientRect();
+                const br = bar ? bar.getBoundingClientRect() : null;
                 return {top: Math.round(r.top), seeds: on('.lab-row--seed'),
-                        live: on('.lab-row--live'), y: Math.round(window.scrollY)};
+                        live: on('.lab-row--live'), y: Math.round(window.scrollY),
+                        off: parseInt(getComputedStyle(document.documentElement)
+                               .getPropertyValue('--lab-mark-top'), 10) || 0,
+                        barTop: br ? Math.round(br.top) : null,
+                        barH: br ? Math.round(br.height) : 0};
             }""")
-            if abs(st["top"]) > 2 or st["seeds"] < 1:
+            # the pin lands at the measured chrome offset — 0 with no chrome,
+            # the chrome's own height with it (R5.3 / PR52-1)
+            if abs(st["top"] - st["off"]) > 2 or st["seeds"] < 1:
                 raise SystemExit(
                     f"::error title=capture::{name}: the divider did not pin — mark top "
-                    f"{st['top']}px with {st['seeds']} seed rows on screen at scrollY "
-                    f"{st['y']}. Refusing to photograph an unpinned divider (PR51-1).")
+                    f"{st['top']}px against a {st['off']}px chrome offset with "
+                    f"{st['seeds']} seed rows on screen at scrollY {st['y']}. Refusing "
+                    f"to photograph an unpinned divider (PR51-1).")
+            if chrome_q == "1" and (st["barH"] < 1 or abs(st["barTop"]) > 1):
+                raise SystemExit(
+                    f"::error title=capture::{name}: the chrome this crop exists to "
+                    f"photograph is not on screen — harness bar top {st['barTop']}px "
+                    f"h {st['barH']}px at scrollY {st['y']}. A crop of an empty band "
+                    f"above the pin is a picture of the PR52-1 defect, not of the seam.")
             files += shoot(page, name, made, w, h,
                            f"  scrollY={st['y']} mark top={st['top']}px "
+                           f"chrome offset={st['off']}px bar top={st['barTop']} "
                            f"seeds on screen={st['seeds']}")
             page.close()
+
+        # ── R5.3 / VTL52-605 — the LENS, open, under a thumb ────────────────
+        for name, q, lg in LENS_SHOTS:
+            ctx = browser.new_context(viewport={"width": 390, "height": 844},
+                                      device_scale_factor=1,
+                                      has_touch=True, is_mobile=True)
+            page = ctx.new_page()
+            page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
+            page.wait_for_timeout(200)
+            if page.query_selector(LAB_SEG) is None:
+                raise SystemExit(f"::error title=capture::{name}: {LAB_SEG} not found")
+            page.tap(LAB_SEG)
+            page.wait_for_selector(".lab-plane", timeout=8000)
+            page.wait_for_timeout(340)
+            # the chip that CARRIES the <=560 demotions: the sort basis, the
+            # board subtitle and the lead total all land in this one tip
+            page.tap(".lab-split")
+            page.wait_for_timeout(300)
+            st = page.evaluate("""() => {
+                const p = document.querySelector('.lens-pop');
+                const s = document.querySelector('.lab-split');
+                const vh = window.innerHeight, vw = window.innerWidth;
+                const r = p ? p.getBoundingClientRect() : null;
+                return {
+                  open: !!(p && p.classList.contains('open')),
+                  inFrame: !!(r && r.top >= 0 && r.bottom <= vh + 1
+                              && r.left >= 0 && r.right <= vw + 1),
+                  marked: !!(s && s.hasAttribute('data-lens-open')),
+                  chars: p ? p.innerText.trim().length : 0,
+                  y: Math.round(window.scrollY)
+                };
+            }""")
+            if not (st["open"] and st["inFrame"] and st["marked"]):
+                raise SystemExit(
+                    f"::error title=capture::{name}: the LENS did not open under a tap, "
+                    f"or opened off frame — {st}. This crop exists because the R5.2 set "
+                    "photographed no popover at all (VTL52-605); refusing to emit one "
+                    "that shows a closed tip.")
+            files += shoot(page, name, made, 390, 844,
+                           f"  tapped .lab-split, popover {st['chars']} chars in frame "
+                           f"at scrollY={st['y']} [{lg}]")
+            page.close()
+            ctx.close()
 
         # ── R5.2 / R52-D3 — a 390 crop that actually CONTAINS a signed lead ──
         #    `37-lead-symmetry-390` was named for the lead and photographed only

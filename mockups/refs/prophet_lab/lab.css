@@ -230,6 +230,9 @@ html[data-mode="live"] .lab-ladhint { display: none; }
 /* VTL-406: six counted pills read pre-attentively as a partition, and they are
    not one. Said once, here, rather than left for the reader to add up. */
 .lab-overlap { margin: 8px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--muted); }
+/* two lengths of one warning: the full sentence above 560w, its operative
+   clause at the design floor. Never nothing (R5.3 / VTL52-603). */
+.lab-overlap .lab-overlap-brief { display: none; }
 
 /* ═══════════════ 4. META LINE — what this board is, and how it is sorted */
 .lab-meta {
@@ -245,6 +248,25 @@ html[data-mode="live"] .lab-ladhint { display: none; }
 .lab-basis { font-size: 11px; color: var(--muted); }
 .lab-split { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help; }
 .lab-split b { color: var(--text); font-weight: 800; }
+/* ── R5.3 / VTL52-604 — A LANDING NEEDS A VISIBLE DOOR ───────────────────────
+   `.lab-auth` established this artifact's LENS affordance at R5: dotted
+   underline, `cursor: help`. The two chips that CARRY the <=560 demotions had
+   the cursor and not the underline, so at the design floor — where the cursor
+   does not exist — they were flat muted text with nothing to say a landing was
+   behind them. Same idiom, applied where the idiom's promise is load-bearing;
+   `[data-lens-open]` makes the state visible once the tap has opened it, since
+   a touch reader gets no hover to tell them which chip they are reading. */
+.lab-split, .lab-agg {
+  border-bottom: 1px dotted color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.lab-split[data-lens-open], .lab-agg[data-lens-open],
+.lab-auth[data-lens-open] {
+  color: var(--text);
+  border-bottom-color: color-mix(in srgb, var(--text) 60%, transparent);
+}
+.lab-split:focus-visible, .lab-agg:focus-visible {
+  outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px;
+}
 /* ── R5.2 / VTL51-505 — THE LEAD, TOTALLED ONCE ──────────────────────────────
    The lead is the one number this surface prints about ITSELF, and reading it
    used to mean counting chips down 4,681px of stream. One line beside the count
@@ -266,6 +288,40 @@ html[data-mode="live"] .lab-ladhint { display: none; }
   font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help;
 }
 .lab-agg b { color: var(--text); font-weight: 800; }
+/* ── R5.3 / VTL52-607 — FIVE STATEMENTS, NOT ONE RUN-ON ──────────────────────
+   The meta line carries up to five independent statements, and every one of
+   them already uses `·` INSIDE itself to separate its own items. With
+   whitespace as the only separator between statements, the two levels
+   collapsed: at 11px muted the reader could not tell where "6 seen first-hand ·
+   23 from history" ended and the lead total began. The rule is the structural
+   device and `·` stays the item device, so the two levels are told apart by
+   KIND rather than by size of gap.
+
+   IT IS A MARKER ON EACH STATEMENT, NOT A SEPARATOR BETWEEN THEM, and that is
+   the whole reason it survives. The first draft drew the rule into the flex gap
+   between items; measured across the responsive ladder, it landed at the START
+   of a wrapped line at six of ten widths — 1180/1000/860/768 (`.lab-agg`),
+   640/561 (`.lab-split` too) — where a separator separates nothing and reads as
+   a stray mark, and the two widths that did NOT orphan only escaped because that
+   draft carried a hand-written `display: none` exception for the member that
+   leads the line once `.lab-sub` hides. A separator drawn in a gap CANNOT
+   survive wrapping: there is no selector for "first on its line", so the best it
+   can do is one exception per breakpoint. Keyed to the statement instead, every
+   rule belongs to the text immediately right of it, so a wrapped statement
+   carries its own marker to the new line and nothing is ever orphaned — and no
+   exception is needed at any width. D29 asserts the marker is on every visible
+   statement and on no control, on both sides of every breakpoint. */
+.lab-meta > .lab-sub, .lab-meta > .lab-showing, .lab-meta > .lab-split,
+.lab-meta > .lab-agg, .lab-meta > .lab-basis {
+  position: relative; padding-left: 9px;
+}
+.lab-meta > .lab-sub::before, .lab-meta > .lab-showing::before,
+.lab-meta > .lab-split::before, .lab-meta > .lab-agg::before,
+.lab-meta > .lab-basis::before {
+  content: ""; position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 1px; height: 11px; background: var(--line);
+}
 .lab-cls-filter { margin-left: auto; display: inline-flex; gap: 3px; }
 .lab-cls-filter button {
   appearance: none; cursor: pointer; border: 1px solid transparent; background: transparent;
@@ -511,6 +567,19 @@ html[data-mode="live"] .lab-ladhint { display: none; }
   color: var(--muted); background: transparent; font-weight: 600;
   border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent);
 }
+/* ── R5.3 / VTL52-602 — THE SEED SLOT IS A GLYPH, NOT A SENTENCE ─────────────
+   Below the divider the lead is unmeasurable for one reason, stated once on the
+   strip that pins there — so the 23 slots print the artifact's own "we hold no
+   answer" mark instead of restating it 23 times. It is deliberately the SAME
+   shape as `.lab-n--unk` at the pill row (em dash, dashed outline, muted, no
+   fill): one glyph vocabulary for one meaning across the surface, and never the
+   shape a real measurement wears. Sized to the measured chips beside it so the
+   column reads as one column and the dash is not mistaken for a missing box. */
+.lab-lead--dash {
+  min-width: 2.4em; justify-content: center;
+  font: 650 12px/1.35 var(--font-mono);
+  letter-spacing: .02em;
+}
 
 /* ═══════════════ 6. LAB STATES — empty · behind · unavailable ══════════
    Each one stays visibly LAB. There is no silent LIVE fallback under a LAB
@@ -563,12 +632,32 @@ html[data-mode="live"] .lab-ladhint { display: none; }
   background: var(--panel);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--lab-acc) 30%, transparent);
 }
+/* ── R5.3 / PR52-10 — THE DIVIDER'S OWN SPINE SEGMENT IS THE CROSSING ────────
+   The spine is the artifact's honesty channel: SOLID above the line where every
+   sighting is first-hand, DASHED below it where none is. The divider is the one
+   member of the list where the stream actually crosses between them, and R5.2
+   drew its whole segment solid — the LIVE idiom, running the full height of the
+   element that announces the end of LIVE. Read at a glance the spine said the
+   opposite of the words beside it, and a reader arriving mid-scroll reads the
+   spine first.
+   The segment now changes state where the crossing happens: solid to the
+   midline, dashed from it down, so the device says structurally what the strip
+   says in words. No new idiom — the two halves are the two treatments the rows
+   above and below already wear. */
 .lab-mark-when {
-  padding: 10px 16px 10px 0; text-align: right;
-  border-right: 2px solid var(--lab-spine);
-  align-self: stretch; display: flex; align-items: center; justify-content: flex-end;
+  padding: 10px 16px 10px 0; text-align: right; position: relative;
+  align-self: stretch; display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: center; gap: 3px;
   font: 700 11px/1.2 var(--font-mono); color: var(--lab-ink);
 }
+.lab-mark-when::before, .lab-mark-when::after {
+  content: ""; position: absolute; right: 0; width: 0; height: 50%;
+}
+.lab-mark-when::before { top: 0; border-right: 2px solid var(--lab-spine); }
+.lab-mark-when::after { bottom: 0; border-right: 2px dashed var(--line); }
+/* the unit label under the date, the same shape every row's gutter uses
+   (R5.3 / VTL52-606) */
+.lab-mark-tl { font: 400 9.5px/1.35 var(--font-ui); color: var(--muted); }
 .lab-mark-l {
   padding: 9px 14px 9px 18px; font-size: 11px; line-height: 1.4; color: var(--muted);
   align-self: stretch; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
@@ -695,20 +784,26 @@ html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: lab-i
                       selector pill's own LENS tip. Two copies of one sentence,
                       12px apart. Hiding it here removes a duplicate, not a
                       fact, and the landing already existed.
-       .lab-overlap — "boards overlap and do not sum" is a footnote ABOUT the
-                      pill row, so it demotes into the pill tips, which is the
-                      only place a reader ever needs it.
        .lab-agg     — the lead total demotes into the split chip's LENS, the
                       same demotion .lab-basis already takes here.
 
      Nothing is silently removed and nothing is compressed into denser jargon —
-     the doctrine's demotion rule applied to the three lines that had a home to
-     go to. The rest of the gap is closed by LANDING the region (lab.js), which
-     is the only lever left once the ladder and the selectors are fixed. */
+     the doctrine's demotion rule applied to the lines that had a home to go to.
+     The rest of the gap is closed by LANDING the region (lab.js), which is the
+     only lever left once the ladder and the selectors are fixed.
+
+     ── R5.3 / VTL52-603 + PR52-4 — `.lab-overlap` IS BACK, AS ITS CLAUSE ──────
+     R5.2 demoted it here too and was wrong to: the ratified caveat exception
+     exists so that a caveat WITHOUT which the visible integers mislead is the
+     one thing that may not leave the glance tier, and the six integers stayed.
+     What demotes now is the EXPLANATION (the long form, and the full sentence
+     on every pill's tip); what stays is the warning, in one line of type. */
   .lab-sub { display: none; }
-  .lab-overlap { display: none; }
   .lab-agg { display: none; }
   .lab-basis { display: none; }
+  .lab-overlap { margin-top: 6px; }
+  .lab-overlap .lab-overlap-full { display: none; }
+  .lab-overlap .lab-overlap-brief { display: inline; }
   .lab-when { padding-right: 10px; }
   .lab-t { font-size: 12px; }
   .lab-tl { font-size: 9px; }
@@ -720,6 +815,40 @@ html[data-mode="lab"] #setups, html[data-mode="live"] #setups { animation: lab-i
   .lab-modebar { gap: 8px; }
   .lab-cls-filter { margin-left: 0; }
   .lab-stamp { margin-left: 0; }
+}
+
+/* ═══════════════ 8b. THE CHROME SEAM IS REAL (R5.3 / PR52-1) ══════════════
+   `--lab-mark-top` exists so ONE divider component is correct on a route with a
+   sticky site header and on one without. The mockup claimed to exercise that
+   seam with its own harness bar, and did not: `.harness` declares
+   `position: sticky; top: 0` inside `<div id="harness">`, whose height is
+   exactly the bar's own height. A sticky box cannot leave its containing block,
+   so a containing block the same size as the box gives it nowhere to go —
+   measured at 1440 with `?chrome=1`, the bar's top was −2,637px (scrolled fully
+   away) while the divider pinned at 149px, i.e. `chrome=1` produced 149px of
+   empty band and a "two correct answers from one rule" claim that had never
+   been true.
+
+   `display: contents` removes the wrapper's box, so the bar's containing block
+   becomes <body> and it pins for the length of the document. Nothing else
+   changes: board.js still writes into `#harness`, `?chrome=0` still hides the
+   bar, and the R4 stylesheet is untouched.
+
+   The height cap at the design floor is a second honesty point, not a dodge.
+   Un-capped, the wrapped harness stands 385px at 390w — 46% of the viewport —
+   and a permanent 385px band is not a seam any production header presents; it
+   would make `chrome=1` a test of the mockup's own chrome rather than of the
+   offset rule. Capped, the bar behaves like the site nav it stands in for and
+   keeps its own contents reachable by scrolling inside itself.
+
+   72px is chosen, not rounded to: at 390x844 the landed band sits at the offset
+   and the first complete observation stands 322px tall 422px below it, so the
+   fold holds a whole row for any offset up to 100px. 72 leaves 28px of margin
+   against a row that grows, and is the height a real mobile site nav occupies.
+   D24/D24b now run at chrome=1, so the budget is measured rather than assumed. */
+#harness { display: contents; }
+@media (max-width: 560px) {
+  .harness { max-height: 72px; overflow-y: auto; overscroll-behavior: contain; }
 }
 
 /* ═══════════════ 9. LIVE MODE IS UNTOUCHED ════════════════════════════

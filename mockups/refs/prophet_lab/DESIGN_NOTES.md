@@ -1,4 +1,4 @@
-# Prophet Operator Lab — D-LAB-R5.1 reference candidate (R5.2 fix round)
+# Prophet Operator Lab — D-LAB-R5.1 reference candidate (R5.3 fix round)
 
 **Status: NOT APPROVED. No `approval.yml` exists and none may be written by this author.**
 This artifact produces a SHA and stops. It inherits the unapproved status of the R4 Prophet
@@ -23,6 +23,179 @@ additions in this directory. The independent critique is owed and is a different
 
 ---
 
+## 0c. R5.3 — the final composition-touching round (C12 verdict `REVISE`)
+
+The C12 cycle returned **`PASS_WITH_CONDITIONS` from both seats** and **`REVISE` from the
+authority**, on the ground that three of the conditions were not forward-ridable: a thrice-stated
+false premise underpinning a booked disposition, a ratified-law placement breach on the mobile
+honesty surface, and a Law 4 breach the harness had been scoped around. All six blocking rulings
+are closed here, with the takeable minors. Nothing is redesigned; no scope moves.
+
+**PR52-1 · the round's own discipline, not applied to its own axis. The seam was imaginary.**
+R5.2 wrote, in three places, that the mockup *"exercises the seam rather than dodging it: its own
+harness bar is a real `position: sticky; top: 0` element, so with `?chrome=1` the divider pins BELOW
+it"*, and booked `R52-D1(b)` as `RESOLVED_BY_CHANGE` on it. Measured at 1440 with `?chrome=1`,
+scrolled 1,200px past the divider:
+
+```
+barTop −2637px   barH 149px   markTop 149px   --lab-mark-top 149px
+```
+
+The bar was **2,637px off the top of the screen** while the divider pinned 149px down, so what
+`chrome=1` produced was a 149px **empty band** above the pin. `.harness` declares `sticky` inside
+`<div id="harness">`, whose height is exactly the bar's own height, and a sticky box cannot leave
+its containing block — a containing block the same size as the box gives it nowhere to go. This is
+the **same defect class as PR51-1** (`overflow: hidden` on `.lab-stream`), one axis over: a true
+declaration made inert by the layout around it. `D6c4` could not see it because it asserted the
+bar's **height**, which reads the same whether or not the bar is on screen.
+
+Four repairs, and the fourth is the one that stops it recurring:
+
+1. **The bar gets a containing block with travel.** `#harness { display: contents }` removes the
+   wrapper's box, so `.harness`'s containing block becomes `<body>` and it pins for the length of
+   the document. `board.css` is untouched; `board.js` still writes into `#harness`; `?chrome=0`
+   still hides the bar.
+2. **The bar is capped at the design floor.** Un-capped it stands **385px at 390w** — 46% of the
+   viewport — and a permanent band that size is not a seam any production header presents. Capped
+   to **72px** (with internal scroll, so nothing in it becomes unreachable) it behaves like the site
+   nav it stands in for. 72 is measured, not rounded to: the landed band sits at the offset and the
+   first complete observation stands 322px tall 422px below it, so the fold holds a whole row for
+   any offset up to **100px** — 28px of margin against a row that grows.
+3. **The check asserts POSITION, not height.** `D6c4` now requires the chrome to be **at** the top
+   of the viewport at the pin moment (`barTop ≈ 0`); `D6c4b` requires the divider to sit at the
+   chrome's **bottom edge**; `D6c4c` requires the bound offset to equal the chrome's height. `M25`
+   (hardcode `top: 0`) is caught by `D6c4b`; `M27` (take the travel away again — *the defect that
+   shipped*) is caught by `D6c4`.
+4. **The three false statements are corrected where they were made** — `lab.js`'s `syncMarkOffset`
+   comment, this file's R5.2 §R52-D1 bullet, and `continuity.yml`'s `r52` rows, which are re-booked
+   with an `r53_correction` naming what was asserted and what was measured. And **`55` photographs
+   it**: a chrome=1 deep-scroll crop that refuses to emit unless the bar and the pin are both on
+   screen at once.
+
+Post-fix, same probe: `barTop 0px · barH 149px · markTop 149px` at 1440, and `barTop 0px ·
+barH 72px · markTop 72px` at 390. Two different correct answers from one rule, for the first time.
+
+**VTL52-601 · the aggregate had no subject and no unit.** R5.2's new lead total printed
+`Lead on 5: 3 earlier · 1 same day · 1 later` — and 350px below it a row chip read
+`Prophet was 3 days earlier`. Same word, same numeral, opposite meaning, one counting **rows** and
+the other **days**, with the subject living only in the LENS body. The line now states both:
+**`Lead measured on 5 rows: we were earlier on 3 · same day on 1 · Prophet earlier on 1`** /
+「提前量已测 5 行：我们更早 3 · 同日 1 · Prophet 更早 1」. The sign is carried by the **subject**,
+which is the rule VTL-403 already applies one tier down — never by ink. `D26` requires a subject on
+every count and the unit on the line; `D26b` requires the aggregate not to speak the row chip's
+phrase (`days earlier` / 领先我们) in either language; `M28` restores the R5.2 wording verbatim.
+
+**VTL52-602 · the last per-row constant, printed 23 times.** *"Lead not measurable"* stood on all
+23 seed rows below a divider that governs every one of them — the **third** form of one Law 4
+defect (the chip at R5.1, the rail at R5.2, this slot at R5.3), and R5.2 shipped it with both gates
+drawn around it: `D6g` counted *filled* slots, `D6i` counted *badges*, and a sentence repeated 23
+times was invisible to both. The critics' convergent cure, taken as given:
+
+- **The slot prints the artifact's own null glyph** — an em dash in a dashed outline, the same
+  shape `.lab-n--unk` uses one component up for *"we hold no answer"* and never the shape a real
+  measurement wears. The element, the LENS and the accessible name all stay: this is a change of
+  register, not a deletion. `D6g` still forbids a blank slot and `D6g2` requires the name.
+- **The statement moves to the PINNED strip**, merged into the sentence already there rather than
+  stacked beside it: *"Nothing below this line was seen first-hand, so no row below can show a
+  lead."* The pin (`D6c3`) guarantees it is on screen whenever a row it governs is, so the dash
+  points at a stated fact rather than standing in for one. `.lab-mark-why` drops the consequence it
+  was duplicating and keeps only the mechanism.
+- **`D6i4` widens the gate from one selector to the whole seed region.** It reads every visible
+  leaf string on every seed row and fails on any that appears on **all** of them with a weight of
+  ≥12 (CJK counted 2, so one threshold serves both languages). That threshold is what makes it
+  true rather than merely strict: a **label** names the value beside it and is legitimately
+  constant — the `PROPHET` eyebrow scores 7, the `signal date` rail 11 — while a **claim** asserts
+  a fact about the row and belongs once, on the structure that governs the region. The removed
+  constant scored 19 (EN) / 14 (ZH); the dash scores 1. `M29` puts the sentence back.
+
+**VTL52-603 + PR52-4 · the mobile honesty surface, reached independently by both seats.**
+Two halves.
+
+- **The caveat comes back to the glance tier.** At 390 the six pills read `14/6/10/28/7/30` — sum
+  65 against a population of 30, with `28` two chips from `30` — and R5.2 demoted the only line
+  that reconciles them. That inverts the ratified caveat exception (MPDS §7–8), which exists
+  precisely so a caveat *without which the visible integers mislead* is the last thing to leave,
+  not the first. It does not come back as the same 55-word footnote, because that is vertical the
+  fold cannot spare: what returns is the **clause** — *"Boards overlap — these do not add up."* /
+  「各板块互有重叠 —— 数字不能相加。」 — with the full sentence still on every pill's own tip. The
+  **explanation** demotes; the **warning** never does. `D27` checks it VISIBLE (not merely present)
+  at 390 in both languages, alongside all six integers; `M32` re-hides it.
+- **The LENS gets a touch path and a visible door.** `board.js` binds `mouseover`/`focusin` only,
+  and R5.2 hung three ≤560 demotions off it — so at the design floor the landings existed in the
+  DOM and could be opened by no gesture the reader has. `board.js` is frozen R4 and may not be
+  edited, so the path is added in `lab.js`, additively, over the **same** `.lens-pop` element and
+  the same `data-tip-*` attributes: one popover, one vocabulary, no second tooltip system. Tap
+  opens; tapping the carrier again, tapping elsewhere, `Escape`, scrolling, or flipping the mode
+  closes it. `.lab-split` and `.lab-agg` take `.lab-auth`'s dotted underline — the artifact's own
+  LENS affordance, applied where its promise is load-bearing — and `[data-lens-open]` marks the
+  open carrier, because a touch reader gets no hover to tell them which chip they are reading.
+  `D28` drives a real **tap** under `any-pointer: coarse` in both languages, `D28c` checks the
+  dismissal, and `M30` removes the path.
+- **And it is photographed.** VTL52-605 was right that not one crop in 63 files showed a popover
+  open — the capture path actively parked the cursor to *close* tips before shooting. `56` and `57`
+  open the mobile landing by tap, EN and ZH, and refuse to emit unless the popover is on screen.
+
+**PR52-2 · the landing owed the same offset the pin does.** `landRegion` scrolled to `bandTop`
+flat while `syncMarkOffset` two functions above was already measuring the chrome. On any route
+whose header pins — after PR52-1 that includes this mockup at `chrome=1` — the reader pressed a
+control and the surface scrolled it **behind the header**, which is exactly what `D24b` forbids, in
+the one configuration `D24b` never entered. One measurement now serves both, so a route cannot be
+right for one and wrong for the other. `D24`/`D24b` run at `chrome=1` as well as `chrome=0`, and
+count the fold from the offset rather than from 0. Measured after the fix at 390×844:
+
+| | offset | band top | first row | complete rows in fold | control visible |
+|---|---|---|---|---|---|
+| `chrome=0` EN | 0px | 0px | 422px (h 322) | 1 | yes (top 12px) |
+| `chrome=1` EN | 72px | 72px | 494px (h 322) | 1 | yes (top 84px) |
+| `chrome=0` ZH | 0px | 0px | 394px (h 296) | 1 | yes |
+| `chrome=1` ZH | 72px | 72px | 466px (h 296) | 1 | yes |
+
+`M33` lands without the offset and is caught by `D24b`.
+
+**PR52-3 · LAB→LIVE dropped focus to `<body>`.** `paintLive()` destroys the subtree the mode
+control is mounted in, so a keyboard operator who pressed *Live* had to re-tab the whole page to
+reach the only control this surface has — LAB→LIVE was measurably harder to operate than
+LIVE→LAB, while the notes claimed arrow-key traversal. The flip now reads whether focus was **in**
+the control before the teardown and returns it to the **re-mounted** control inside `sc.onload`,
+with `preventScroll` so it does not fight the scroll restore (`D24c`). Scoped to that case on
+purpose: a reader focused elsewhere must not have focus yanked into the modebar. `D25` drives the
+flip from the **keyboard** and asserts the landed element is the checked mode radio; `M31` removes
+it. *(Worth recording because it cost a debugging cycle: the first draft read `activeElement`
+two lines too late — after `.lab-plane` was removed — and the control lives inside that plane, so
+the read could only ever answer "nobody had it". D25 caught it immediately.)*
+
+**The minors.** `PR52-6` — `.lab-agg` gets `D26`/`D26b`/`D26c` and `M28`, closing a component that
+shipped with no check and no mutation. `PR52-7` — the 390 landing carries the exclusion clause, so
+the demoted aggregate arrives complete (`D28d`). `PR52-8` — `D21c` asserts the actual filtered
+split string built from the rendered row count, not `"0" in text`, which passed on any string
+containing a zero. `VTL52-606` — the pinned gutter cell takes the spine's own two-line shape,
+`Aug 8` over *"and earlier"* / 「及更早」, so the pinned date keeps its reading. `VTL52-607` — the
+meta strip's five statements each take a hairline **marker**, because every statement already uses
+`·` **inside** itself and whitespace could not tell the two levels apart. *The first draft drew the
+rule into the flex gap between items, as a separator. `D29` was written to measure that and
+immediately killed it: across ten widths in the responsive ladder the gap rule landed at the
+**start** of a wrapped line at six of them — 1180/1000/860/768 (`.lab-agg`), 640/561 (`.lab-split`
+too) — where a separator separates nothing and reads as a stray mark, and CSS has no selector for
+"first on its line". (The ≤560 pair did not orphan only because that draft carried a hand-written
+`display: none` exception for the member that leads the line once `.lab-sub` hides — a per-
+breakpoint exception is the same evidence, one step earlier.) Keying the rule to each statement
+instead makes wrapping a non-event: every rule belongs to the text immediately right of it, so a
+statement carries its own marker to the new line and needs no exceptions at all. The check stayed,
+inverted: every visible statement is keyed, no control is (`M34` removes the markers).*
+`VTL52-608` — the
+keep/remove criterion is repaired, not the eyebrow: R5.2 wrote that a rail earns its place by
+*differing between adjacent rows*, which the `PROPHET` eyebrow disproves. The real test is
+**label vs claim** — a label names the value beside it and is read *with* it; a claim asserts a
+fact about the row, and once a structure states that fact for a region every per-row copy is the
+repetition. `PR52-10` — the divider's own spine segment now changes state where the crossing
+happens: **solid to the midline, dashed from it down**, instead of running the LIVE idiom full
+height across the element that announces the end of LIVE. Both halves are treatments the rows above
+and below already wear; no new device.
+
+**Declined: none.** All three judgment-call minors (`VTL52-606`, `607`, `608`) are taken.
+
+---
+
 ## 0b. R5.2 — the fix round on the R5.1 `product_regression` BLOCK
 
 The R5.1 artifact (frozen `f889d5eb35f3`) drew **BLOCK** on one finding plus a set of
@@ -44,9 +217,11 @@ Three things changed, and the third is the one that matters most:
    clipped by its end members' own radius instead. Nothing in the list paints outside its own box,
    so the clip cost nothing and the pin became real.
 2. **The divider split along the tier line.** What pins is the **constant** — the date, the class
-   name in the seed treatment, and *"Nothing below this line was seen first-hand."* What does **not** pin
-   is the *lesson* — why no row below can carry a lead — which is stated once where the stream
-   crosses the date and scrolls away with it. Pinning R5.1's 25-word sentence would have spent ~12%
+   name in the seed treatment, and *"Nothing below this line was seen first-hand."* *(R5.3 /
+   VTL52-602: the pinned sentence now also carries the consequence — "…, so no row below can show
+   a lead." — because that clause is what the 23 lead slots stopped printing. §0c.)* What does
+   **not** pin is the *lesson* — the mechanism, why no first-sighting time exists — which is stated
+   once where the stream crosses the date and scrolls away with it. Pinning R5.1's 25-word sentence would have spent ~12%
    of a 390 viewport permanently re-teaching a rule the reader learned on the way in. The doctrine's
    demotion rule cuts the same way here as it does for the sort basis at 390 (§2.10).
 3. **The check became behavioural.** `D6c3` scrolls 1,200px past the divider at 1440 **and** 390 and
@@ -63,7 +238,8 @@ that stays on screen for as long as the class applies.
 **Why this round did not simply restore the chips.** The critic's finding is that the artifact
 over-claimed, not that the divider was the wrong device. Per-row repetition of a constant is a Law 4
 defect on its own terms, and the encoding is unchanged: four structural channels on the row (dashed
-spine, hollow node, the *"signal date / not a sighting"* rail, the *"Lead not measurable"* slot) plus
+spine, hollow node, the *"signal date"* rail, the lead slot — *"Lead not measurable"* at R5.2, an
+em dash in the null idiom from **R5.3 / VTL52-602**, §0c) plus
 a class name that is now genuinely present wherever it applies. The disposition therefore stays
 IMPROVE — but the packet records now say *what was wrong at R5.1*, and the BETTER on
 `task.tell_live_from_history` is re-earned against a measured pin rather than against a declaration.
@@ -111,10 +287,16 @@ Two smaller halves of the same finding:
 
 - **The pin is header-aware.** `top: 0` encodes *"this route has no page header"*, and the
   production route ships the shared site nav. The controller now measures the sticky chrome above
-  the grid and binds `--lab-mark-top`. This mockup's own harness bar is a real `position: sticky;
+  the grid and binds `--lab-mark-top`. ~~This mockup's own harness bar is a real `position: sticky;
   top: 0` element, so it **exercises** the seam instead of dodging it: `?chrome=1` pins the divider
   at 149px and `?chrome=0` pins it at 0 — two correct answers from one rule, both asserted by
-  **D6c4**. `M25` hardcodes `top: 0` and is caught only there.
+  **D6c4**.~~ **FALSE AS WRITTEN AT R5.2 — corrected at R5.3 / PR52-1.** The bar declared `sticky`
+  inside a wrapper exactly its own height, so it had no travel and never pinned: measured, its top
+  was **−2,637px** while the divider pinned at 149px, i.e. `?chrome=1` produced an empty 149px band
+  and `D6c4` asserted the bar's *height*, which reads the same either way. The seam is real from
+  R5.3 (`#harness { display: contents }`, bar capped at the design floor) and `D6c4` now asserts the
+  bar's **position** at the pin moment. See §0c. `M25` hardcodes `top: 0` and is caught by `D6c4b`;
+  `M27` takes the travel away again and is caught by `D6c4`.
 - **The empty `.lab-lead--adverse { }` hook is deleted.** R5.1 shipped it reasoning that an explicit
   empty block would deter a future edit. It does the opposite — an empty rule under a comment
   addressed to future editors is a labelled slot, and filling it is the cheapest possible way to
@@ -131,9 +313,12 @@ is two-part:
 
 1. **Three preamble lines demote, each to a landing that already existed or was made for it** — the
    board subtitle (printed verbatim as every selector pill's own tip body: two copies of one
-   sentence, 12px apart), the boards-overlap footnote (a fact *about* the pill row, now riding on
-   the pill tips), and the new lead total (into the split chip's LENS, the demotion `.lab-basis`
+   sentence, 12px apart), ~~the boards-overlap footnote (a fact *about* the pill row, now riding on
+   the pill tips)~~, and the new lead total (into the split chip's LENS, the demotion `.lab-basis`
    already takes here). Nothing is deleted and nothing is compressed into denser jargon.
+   **REVERSED at R5.3 / VTL52-603 (§0c):** the overlap caveat is a caveat without which the six
+   visible integers mislead, so the ratified exception forbids demoting it. Its *clause* is back on
+   the glance tier at 390 and only its *explanation* demotes. Two lines demote here now, not three.
 2. **The region is landed on flip.** The rule is self-scoping rather than breakpoint-scoped: land
    only when the first observation would otherwise fall below the fold, so at 1440 nothing ever
    moves.
@@ -164,12 +349,18 @@ drop "live" with it (*"Continuous watching began Aug 8"*).
 
 **VTL51-505 · the lead, totalled once.** Taken. The lead is the one thing this surface measures
 about *itself*, and reading it meant counting chips down 4,681px of stream. One line beside the
-count — `Lead on 5: 3 earlier · 1 same day · 1 later` / 「已测 5 条：更早 3 · 同日 1 · 更晚 1」 —
-computed from the **filtered** set like the split, printing all three outcomes even at zero so it
+count — ~~`Lead on 5: 3 earlier · 1 same day · 1 later` / 「已测 5 条：更早 3 · 同日 1 · 更晚 1」~~
+— computed from the **filtered** set like the split, printing all three outcomes even at zero so it
 cannot become one-sided by omission the way the R5 lead chip did. It demotes into the split's LENS
-at 390. **Note the deliberate inconsistency with PR51-7**: a two-glyph ZH opposition (更早/更晚) is
+at 390. ~~**Note the deliberate inconsistency with PR51-7**: a two-glyph ZH opposition (更早/更晚) is
 fine *here* and was not fine on the row chips, because here the outcomes sit adjacent in one
-parallel construction and there they are separated by hundreds of pixels and never seen together.
+parallel construction and there they are separated by hundreds of pixels and never seen together.~~
+**RE-WORDED at R5.3 / VTL52-601 (§0c).** That wording had no subject and no unit, so its "3 earlier"
+collided with a row chip's "Prophet was 3 days earlier" — same word, same numeral, one counting rows
+and the other days. The line now reads `Lead measured on 5 rows: we were earlier on 3 · same day on
+1 · Prophet earlier on 1` / 「提前量已测 5 行：我们更早 3 · 同日 1 · Prophet 更早 1」, and the sign
+is carried by the **subject** in both languages rather than by a 更早/更晚 opposition — which also
+retires the PR51-7 exception above, since the two glyphs no longer do the work.
 
 ---
 
@@ -278,13 +469,13 @@ open http://localhost:8794/prophet_lab/index.html
 | `board` | the six ids of LAB-0 §3 | |
 | `cls` | `all` (default) · `live` · `seed` | observation class filter |
 | `feed` | `ok` (default) · `stale` · `down` · `empty` | the Lab source's own health |
-| `chrome` | `1` (default) · `0` | harness bar; crops are `chrome=0` |
+| `chrome` | `1` (default) · `0` | harness bar. Crops are `chrome=0` except `55`, which exists to photograph the `chrome=1` seam. At `chrome=1` the bar is a genuinely pinning sticky element (R5.3 / PR52-1) capped to 72px at ≤560, so it stands in for a production site nav and `--lab-mark-top` binds to its real height |
 
 ```bash
 python3 prophet_lab/tools/gen_lab_fixture.py                                   # rebuild the fixture
-python3 prophet_lab/tools/capture.py  http://localhost:8794/prophet_lab crops   # 46 views / 63 files
-python3 prophet_lab/tools/verify.py   http://localhost:8794/prophet_lab         # 125/125
-python3 prophet_lab/tools/mutation_test.py http://localhost:8794/prophet_lab    # 26/26 caught
+python3 prophet_lab/tools/capture.py  http://localhost:8794/prophet_lab crops   # 49 views / 66 files
+python3 prophet_lab/tools/verify.py   http://localhost:8794/prophet_lab         # 162/162
+python3 prophet_lab/tools/mutation_test.py http://localhost:8794/prophet_lab    # 34/34 caught
 ```
 
 ---
@@ -435,9 +626,13 @@ in ways that fail independently:
    reading its rect at 1440 and 390; **D6c2** asserts no seed ever wears the live treatment.
    *(R5.1 shipped this as a per-row chip and then as an inert `position: sticky`; §0b is the
    history and the repair.)*
-4. **The lead is impossible, and the row says so**: `Lead not measurable`, with a LENS receipt
-   explaining that the feed never supplied a first-observation time and we do not invent one.
-   **D6** asserts no seed ever carries a measured lead.
+4. **The lead is impossible, and the surface says so once**: the row slot prints an em dash in the
+   null idiom (`—`, dashed outline, the `.lab-n--unk` shape), keeping its accessible name and a
+   LENS receipt explaining that the feed never supplied a first-observation time and we do not
+   invent one; the *statement* rides the pinned strip, which is on screen for as long as it applies.
+   **D6** asserts no seed ever carries a measured lead, **D6g/D6g2** that the slot is never blank
+   and never nameless, **D6i4** that no clause repeats on every seed row.
+   *(R5.1–R5.2 printed the sentence on all 23 rows; R5.3 / VTL52-602, §0c.)*
 5. **The ink drops** — seed rows render in muted ink with a quieter spark.
 
 **Why one stream and not two groups.** Grouping seeds below a rule would be easier to draw and
@@ -476,7 +671,7 @@ between this paragraph and the one R5.1 shipped.
 | Same day | `Same day as Prophet` · 「与 Prophet 同一天」 | **measurement** |
 | Prophet's plan opened first | `Prophet was 3 days earlier` · 「Prophet 领先我们 **3** 天」 | **measurement** |
 | Prophet has no plan on the name | `Nothing to compare yet` | absence |
-| Retrospective seed | `Lead not measurable` | absence |
+| Retrospective seed | `—` in the null idiom, named `Lead not measurable`; the sentence pins on the strip (R5.3) | absence |
 
 **The law: a measurement is a measurement.** The three measured outcomes share one ink and one
 treatment — quiet, unfilled, lighter than the ticker — and are told apart by the word and the
@@ -610,14 +805,17 @@ painted when the feed is down) is caught by both.
   mechanism rather than affording it: the pills wrap. It costs one row of vertical space and buys
   back a product contract. **D20** requires all six on screen at 390; **D20b** forbids a hidden
   scroller; **M19** puts it back and is caught.
-- **The mobile reduction is a re-composition, not a squeeze** (§15). Four lines demote at ≤560w,
+- **The mobile reduction is a re-composition, not a squeeze** (§15). Three lines demote at ≤560w,
   each to a landing, and never by being cut: the **sort basis** to the count chip's LENS; the
   **board subtitle** to the selector pills' own tips, where it was already printed verbatim — two
-  copies of one sentence 12px apart, so hiding one removes a duplicate rather than a fact; the
-  **boards-overlap footnote** to those same pill tips, since it is a fact *about* the pill row; and
-  the **lead total** to the split chip's LENS. *(The last three are R5.2 / R52-D2. The test for a
-  legitimate demotion is that the reader can still reach the fact by the obvious gesture on the
-  element the fact is about — not merely that the fact exists somewhere in the DOM.)*
+  copies of one sentence 12px apart, so hiding one removes a duplicate rather than a fact; and
+  the **lead total** to the split chip's LENS. *(The test for a legitimate demotion is that the
+  reader can still reach the fact by the obvious gesture on the element the fact is about — not
+  merely that the fact exists somewhere in the DOM. R5.3 made that test true rather than assumed:
+  before PR52-4 there was no gesture at all under a coarse pointer.)* The **boards-overlap caveat**
+  was a fourth at R5.2 and is **not** one any more — R5.3 / VTL52-603 returns its clause to the
+  glance tier, because a caveat without which the visible integers mislead is the one thing the
+  ratified exception forbids demoting.
 - **~~A cost R5.1 created at 390, stated rather than hidden.~~ PAID at R5.2 (R52-D2).** R51-M1
   restores the ladder above the Lab region and C4 wraps the six selectors into three rows, and R5.1
   disclosed the consequence — at 390×844 **no observation row was above the fold** — as the
@@ -628,12 +826,14 @@ painted when the feed is down) is caught by both.
   so it needed to start by **550px**; the ladder (295px) and the selectors (137px) account for
   432px, which means **no amount of compression reaches 550 while both stand** — even deleting the
   Lab's entire preamble leaves the row 181px past the fold, and deleting it would cost Law 1 its
-  stance. So three preamble lines demote to landings and the region is **landed on flip**, which is
-  the only lever left once the frozen structures are respected. Neither R51-M1 nor C4 is reopened:
-  the ladder is where it was and all six boards are still on screen. **D24** now requires one
-  complete observation above the fold in both languages, and crops `14`–`17`, `27`, `34`, `42`,
-  `45`, `48` show it. §0b.1 carries the argument that the landing is a navigation and not the
-  viewport hijack the standing veto forbids.
+  stance. So the demotable preamble lines go to landings and the region is **landed on flip**,
+  which is the only lever left once the frozen structures are respected. Neither R51-M1 nor C4 is
+  reopened: the ladder is where it was and all six boards are still on screen. **D24** now requires
+  one complete observation above the fold in both languages **at `chrome=0` and `chrome=1`** (R5.3
+  / PR52-2), and crops `14`–`17`, `27`, `34`, `42`, `45`, `48` show it. §0b.1 carries the argument
+  that the landing is a navigation and not the viewport hijack the standing veto forbids.
+  *(R5.3 / VTL52-603: it was three lines at R5.2 and is two now — the overlap caveat's clause is
+  not demotable, because the six integers it reconciles stay on screen. §0c.)*
 - **Motion is a status channel.** Exactly one thing animates: the feed dot, and only while the
   feed is reporting; `behind` and `unavailable` rest (the shipped `.dtp-dot` law). The mode flip
   is one 140ms fade on the board region. `prefers-reduced-motion` kills both **by name**,
@@ -729,8 +929,8 @@ Shape, and why it is this shape (`tools/gen_lab_fixture.py`):
 
 ## 5. Evidence
 
-`crops/` — **46 views, 63 files**, at 1440×900 and 390×844, produced by `tools/capture.py`.
-Every crop is re-shot at the R5.2 SHA.
+`crops/` — **49 views, 66 files**, at 1440×900 and 390×844, produced by `tools/capture.py`.
+Every crop is re-shot at the R5.3 SHA.
 
 | Range | What |
 |---|---|
@@ -743,6 +943,8 @@ Every crop is re-shot at the R5.2 SHA.
 | `50` | the **round trip**: LIVE after a Lab excursion, with the card count proven equal to a cold load |
 | `51`–`53` | *(R5.2 / PR51-1)* **the pinned divider, 1,200px into the seed region** — dark EN, light ZH and 390 — the scroll position the claim is actually about. Every R5.1 crop framed the divider at the crossing, which is the one place a pinned and an unpinned divider look identical. |
 | `54` | *(R5.2 / R52-D3)* **a 390 crop that contains a signed lead** — the adverse chip, whole in frame. The shot named for the lead symmetry at the design floor had been photographing only chrome. |
+| `55` | *(R5.3 / PR52-1)* **the chrome=1 seam, photographed** — the harness bar pinned at the viewport top with the divider immediately below it, 1,200px into the seed region. R5.2 asserted this seam three times and shot it zero times, and it was false when it was written; the capture refuses to emit unless bar **and** pin are on screen together. |
+| `56`–`57` | *(R5.3 / VTL52-604 · 605)* **the LENS open at 390, EN and ZH**, taken by TAP in a touch context. No crop in the R5.2 set photographed a popover anywhere, so every ≤560 demotion claim was visually unreceipted — and the capture path actively parked the cursor to close tips before shooting. |
 
 **Retired at R5.2:** `32-live-only-dark-en.png`. It shot the same URL as `35-lead-symmetry-dark-en`
 and was byte-identical to it (`md5 9df1a63e…`), so the set claimed a view it did not hold. `35`
@@ -754,11 +956,15 @@ a Prophet card visible, or a round trip that did not restore LIVE exactly, all f
 rather than producing a picture of the wrong thing. Zero horizontal page scroll is asserted per
 shot at every width.
 
-**Checks (R5.2).** `tools/verify.py` — **125/125**, run against the rendered page across both
-themes, both languages, both modes, all six boards and both viewports. `tools/mutation_test.py` —
-**26/26 caught**, each with a distinct killer and no two mutations sharing a sole catcher.
-(R5.1 shipped 104/104 and 19/19 at `f889d5eb35f3`; the seven new checks and seven new mutations are
-mapped to their findings in §0b and §0b.1.)
+**Checks (R5.3).** `tools/verify.py` — **162/162**, run against the rendered page across both
+themes, both languages, both modes, all six boards, both viewports, `chrome=0` **and** `chrome=1`,
+and — for the LENS — a real touch context under `any-pointer: coarse`. `tools/mutation_test.py` —
+**34/34 caught**, each with a distinct killer and no two mutations sharing a sole catcher.
+(R5.1 shipped 104/104 and 19/19 at `f889d5eb35f3`; R5.2 shipped 125/125 and 26/26 at
+`f40ae70ac989`. R5.3 adds **fourteen new check ids** — `D6c4b`, `D6c4c`, `D6g2`, `D6i4`, `D25`,
+`D26`, `D26b`, `D26c`, `D27`, `D28`, `D28b`, `D28c`, `D28d`, `D29` — and rewrites `D6c4`; the
+count rises by 37 rather than 14 because most of them run per language, per width, or per
+`chrome` value. Eight new mutations: `M27`–`M34`. All are mapped to their rulings in §0c.)
 
 ### R5.1 — what the new mutations bought, and the one that mattered most
 

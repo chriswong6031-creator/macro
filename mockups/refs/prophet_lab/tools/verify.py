@@ -241,6 +241,19 @@ def main():                                                    # noqa: C901
         # "zero lead", which is a claim nobody made.
         ck("D6g lead-slot-always-filled", seed["leadSlots"] == seed["rows"],
            f"{seed['leadSlots']} slots / {seed['rows']} rows")
+        # R5.3 / VTL52-602 — the seed slot now prints a GLYPH, so the words that
+        # were carrying it visually have to be carried by the accessible name
+        # instead. A dash with no name is the blank D6g forbids, one layer down.
+        named = pg.evaluate("""() => {
+            const s = [...document.querySelectorAll('.lab-row--seed .lab-lead')];
+            return {n: s.length,
+                    named: s.filter(n => (n.getAttribute('aria-label')||'').trim().length > 3).length,
+                    text: s.length ? s[0].innerText.trim() : ''};
+        }""")
+        ck("D6g2 the-glyph-slot-still-has-a-name",
+           named["n"] > 0 and named["named"] == named["n"],
+           f"{named['named']}/{named['n']} seed lead slots carry an accessible name "
+           f"(slot reads {named['text']!r})")
 
         # ── D6i · R5.2 / R52-D1 — THE CLASS ASSERTION IS PRINTED ONCE ─────
         #    VTL-408 removed the 23 per-row seed chips as a Law 4 violation, and
@@ -272,6 +285,47 @@ def main():                                                    # noqa: C901
            and once["railText"].split("\n")[0] != once["liveRail"].split("\n")[0],
            f"seed rail {once['railText'].splitlines()[:1]} vs live rail "
            f"{once['liveRail'].splitlines()[:1]}")
+
+        # ── D6i4 · R5.3 / VTL52-602 — NO CLAUSE MAY REPEAT ON EVERY SEED ROW ─
+        #    D6i counted ONE badge and D6i2 read ONE rail, so both were blind to
+        #    "Lead not measurable" printed 23 times in a third slot — the same
+        #    Law 4 defect the two of them were written for, moved one cell over
+        #    and shipped with the gates drawn around it. This one is not
+        #    selector-scoped at all: it reads every VISIBLE leaf string in the
+        #    seed region and fails on any that appears on all of them.
+        #
+        #    The threshold is what makes it true rather than merely strict. A
+        #    LABEL names the value beside it and is legitimately constant (the
+        #    `PROPHET` eyebrow, w=7; the `signal date` rail, w=11, which D6i3
+        #    governs by name); a CLAUSE asserts a fact about the row and belongs
+        #    once, on the structure that governs the region. Weight counts CJK
+        #    at 2 so one threshold serves both languages: the removed constant
+        #    scored 19 (EN) and 14 (ZH), and the em dash that replaced it scores
+        #    1. M29 puts the sentence back and is caught only here.
+        rep = pg.evaluate("""() => {
+            const wt = s => [...s].reduce((a, c) => a + (c.charCodeAt(0) > 0x2e80 ? 2 : 1), 0);
+            const seeds = [...document.querySelectorAll('.lab-stream .lab-row--seed')];
+            const seen = {};
+            seeds.forEach(row => {
+              const local = new Set();
+              row.querySelectorAll('*').forEach(n => {
+                if (n.children.length || n.offsetParent === null) return;
+                if (n.closest('.lab-tl')) return;        /* the unit rail: D6i3 */
+                const t = (n.innerText || '').trim().replace(/\\s+/g, ' ');
+                if (t) local.add(t);
+              });
+              local.forEach(t => { seen[t] = (seen[t] || 0) + 1; });
+            });
+            const n = seeds.length;
+            return {n, hits: Object.entries(seen)
+                      .filter(([t, c]) => c === n && wt(t) >= 12)
+                      .map(([t, c]) => ({t, c, w: wt(t)}))};
+        }""")
+        ck("D6i4 no-clause-is-printed-on-every-seed-row",
+           rep["n"] > 0 and not rep["hits"],
+           f"{len(rep['hits'])} clause(s) on all {rep['n']} seed rows: "
+           f"{[h['t'] for h in rep['hits']][:3]} — a constant that governs a region "
+           f"belongs on the structure that governs it (Law 4)")
 
         # ── D6c3 · BEHAVIOURAL — the divider actually PINS, deep in the region
         #    it governs. This is the check R5.1 needed and did not have.
@@ -335,25 +389,50 @@ def main():                                                    # noqa: C901
         pgh = b.new_page(viewport={"width": 1440, "height": 900})
         pgh.goto(f"{BASE}/?chrome=1", wait_until="networkidle")
         enter_lab(pgh)
+        # ── R5.3 / PR52-1 — THIS CHECK USED TO ASSERT THE BAR'S HEIGHT AND
+        #    CALL IT A SEAM. `barH` is readable whether or not the bar is on
+        #    screen, so the R5.2 version passed against a harness that had
+        #    scrolled 2,637px away leaving an empty band where it claimed a
+        #    header was. Height is not position. The bar's POSITION at the pin
+        #    moment is the whole claim, so that is what is measured: the chrome
+        #    is AT the top of the viewport (barTop ≈ 0), the divider sits
+        #    immediately below its bottom edge, and the bound offset equals the
+        #    chrome's height. M25 hardcodes top:0 and M27 takes the bar's travel
+        #    away again; each fails a different one of these three.
         chrome = pgh.evaluate("""() => {
             const bar = document.querySelector('.harness');
             const m = document.querySelector('.lab-mark');
             const restY = Math.round(m.getBoundingClientRect().top + window.scrollY);
             window.scrollTo(0, restY + 1200);
-            return new Promise(r => setTimeout(() => r({
-                barH: bar ? Math.round(bar.getBoundingClientRect().height) : 0,
-                barSticky: bar ? getComputedStyle(bar).position : null,
-                markTop: Math.round(document.querySelector('.lab-mark').getBoundingClientRect().top),
-                bound: getComputedStyle(document.documentElement)
-                        .getPropertyValue('--lab-mark-top').trim()
-            }), 220));
+            return new Promise(r => setTimeout(() => {
+                const br = bar ? bar.getBoundingClientRect() : null;
+                r({
+                  barH: br ? Math.round(br.height) : 0,
+                  barTop: br ? Math.round(br.top) : null,
+                  barBottom: br ? Math.round(br.bottom) : null,
+                  barSticky: bar ? getComputedStyle(bar).position : null,
+                  markTop: Math.round(document.querySelector('.lab-mark').getBoundingClientRect().top),
+                  bound: getComputedStyle(document.documentElement)
+                          .getPropertyValue('--lab-mark-top').trim(),
+                  y: Math.round(window.scrollY)
+                });
+            }, 220));
         }""")
-        ck("D6c4 pin-clears-the-sticky-chrome-above-it",
+        ck("D6c4 the-sticky-chrome-is-actually-pinned-at-the-pin-moment",
            chrome["barSticky"] == "sticky" and chrome["barH"] > 0
-           and abs(chrome["markTop"] - chrome["barH"]) <= 2,
-           f"harness bar {chrome['barH']}px ({chrome['barSticky']}), mark pinned at "
-           f"{chrome['markTop']}px, --lab-mark-top={chrome['bound']!r} — a hardcoded "
-           f"top:0 would slide the divider under the page header")
+           and chrome["barTop"] is not None and abs(chrome["barTop"]) <= 1,
+           f"harness bar top {chrome['barTop']}px h {chrome['barH']}px "
+           f"({chrome['barSticky']}) at scrollY {chrome['y']} — a bar that has "
+           f"scrolled away is not chrome the divider has to clear (PR52-1)")
+        ck("D6c4b pin-sits-immediately-below-that-chrome",
+           chrome["barBottom"] is not None
+           and abs(chrome["markTop"] - chrome["barBottom"]) <= 2,
+           f"mark pinned at {chrome['markTop']}px vs chrome bottom "
+           f"{chrome['barBottom']}px — a hardcoded top:0 would slide the divider "
+           f"under the page header")
+        ck("D6c4c the-offset-is-measured-from-that-chrome",
+           chrome["bound"] == f"{chrome['barH']}px",
+           f"--lab-mark-top={chrome['bound']!r} vs chrome height {chrome['barH']}px")
         pgh.close()
 
         # ── D24 · R5.2 / R52-D2 — one COMPLETE observation above the 390 fold ─
@@ -364,34 +443,48 @@ def main():                                                    # noqa: C901
         #    which is why this check drives the real control instead of loading
         #    a URL: the landing only happens on a deliberate mode flip, exactly
         #    as the product behaves.
-        for lg in ("en", "zh"):
-            pgf = b.new_page(viewport={"width": 390, "height": 844})
-            pgf.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
-            enter_lab(pgf)
-            fold = pgf.evaluate("""() => {
-                const vh = window.innerHeight, y = window.scrollY;
-                const whole = [...document.querySelectorAll('.lab-row')].filter(n => {
-                    const r = n.getBoundingClientRect();
-                    return r.top >= -1 && r.bottom <= vh + 1;
-                });
-                const seg = document.querySelector('.lab-seg');
-                const first = document.querySelector('.lab-row');
-                return {
-                  whole: whole.length,
-                  firstH: first ? Math.round(first.getBoundingClientRect().height) : null,
-                  firstTop: first ? Math.round(first.getBoundingClientRect().top) : null,
-                  controlVisible: seg ? (() => { const r = seg.getBoundingClientRect();
-                      return r.bottom > 0 && r.top < vh; })() : false,
-                  y: Math.round(y)
-                };
-            }""")
-            ck(f"D24 one-whole-observation-above-the-390-fold[{lg}]", fold["whole"] >= 1,
-               f"{fold['whole']} complete rows in view; first row top {fold['firstTop']}px "
-               f"h {fold['firstH']}px at scrollY {fold['y']}")
-            # landing may not cost the reader the control they just pressed
-            ck(f"D24b mode-control-stays-in-view-after-landing[{lg}]", fold["controlVisible"],
-               "the flip must not scroll its own control off screen")
-            pgf.close()
+        #
+        #    R5.3 / PR52-2: both run at chrome=1 as well as chrome=0. The
+        #    landing now subtracts the measured sticky-chrome height, and the
+        #    configuration where that matters is exactly the one D24/D24b never
+        #    entered — so "the flip does not scroll its own control out of
+        #    sight" was proven only where there was nothing to scroll it behind.
+        #    Everything above the offset is BEHIND the chrome, so the fold this
+        #    measures starts at the offset and not at 0.
+        for chrome_q in ("0", "1"):
+            for lg in ("en", "zh"):
+                pgf = b.new_page(viewport={"width": 390, "height": 844})
+                pgf.goto(f"{BASE}/?chrome={chrome_q}&lang={lg}", wait_until="networkidle")
+                enter_lab(pgf)
+                fold = pgf.evaluate("""() => {
+                    const vh = window.innerHeight, y = window.scrollY;
+                    const off = parseInt(getComputedStyle(document.documentElement)
+                                  .getPropertyValue('--lab-mark-top'), 10) || 0;
+                    const whole = [...document.querySelectorAll('.lab-row')].filter(n => {
+                        const r = n.getBoundingClientRect();
+                        return r.top >= off - 1 && r.bottom <= vh + 1;
+                    });
+                    const seg = document.querySelector('.lab-seg');
+                    const first = document.querySelector('.lab-row');
+                    return {
+                      whole: whole.length, off,
+                      firstH: first ? Math.round(first.getBoundingClientRect().height) : null,
+                      firstTop: first ? Math.round(first.getBoundingClientRect().top) : null,
+                      controlVisible: seg ? (() => { const r = seg.getBoundingClientRect();
+                          return r.bottom > off && r.top < vh; })() : false,
+                      y: Math.round(y)
+                    };
+                }""")
+                tag = f"{lg},chrome={chrome_q}"
+                ck(f"D24 one-whole-observation-above-the-390-fold[{tag}]", fold["whole"] >= 1,
+                   f"{fold['whole']} complete rows in view; first row top {fold['firstTop']}px "
+                   f"h {fold['firstH']}px below {fold['off']}px of chrome at scrollY {fold['y']}")
+                # landing may not cost the reader the control they just pressed,
+                # and "visible" means visible BELOW the chrome, not underneath it
+                ck(f"D24b mode-control-stays-in-view-after-landing[{tag}]",
+                   fold["controlVisible"],
+                   "the flip must not scroll its own control off screen or behind the chrome")
+                pgf.close()
 
         # ── D24c · the landing is REVERSIBLE — LAB->LIVE restores the scroll ──
         #    An excursion that moves the page has to put it back, or "flip back
@@ -416,6 +509,194 @@ def main():                                                    # noqa: C901
         ck("D24c landing-is-reversible", lab_y > before_y and abs(after_y - before_y) <= 2,
            f"scrollY {before_y} -> LAB {lab_y} -> LIVE {after_y}")
         pgr.close()
+
+        # ── D25 · R5.3 / PR52-3 — LAB->LIVE RETURNS FOCUS TO THE CONTROL ─────
+        #    `paintLive()` destroys the subtree the mode control is mounted in,
+        #    so without an explicit restore the browser drops focus to <body>
+        #    and a keyboard operator has to re-tab the entire page to reach the
+        #    one control this surface offers. Both legs are measured: the flip
+        #    is driven from the KEYBOARD (the case that matters), and the
+        #    restored element must be the re-mounted control itself.
+        pgk = b.new_page(viewport={"width": 1440, "height": 900})
+        pgk.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+        pgk.focus(LAB_SEG)
+        pgk.keyboard.press("Enter")
+        pgk.wait_for_selector(".lab-plane", timeout=8000)
+        pgk.wait_for_timeout(300)
+        pgk.focus(LIVE_SEG)
+        pgk.keyboard.press("Enter")
+        pgk.wait_for_timeout(900)
+        foc = pgk.evaluate("""() => {
+            const a = document.activeElement;
+            return {tag: a ? a.tagName : null,
+                    inSeg: !!(a && a.closest && a.closest('.lab-seg')),
+                    mode: a ? a.getAttribute('data-mode') : null,
+                    checked: a ? a.getAttribute('aria-checked') : null,
+                    mounted: !!document.querySelector('.lab-seg')};
+        }""")
+        ck("D25 lab-to-live-restores-focus-to-the-mode-control",
+           foc["inSeg"] and foc["mode"] == "live" and foc["checked"] == "true",
+           f"focus landed on {foc['tag']} (in .lab-seg: {foc['inSeg']}, "
+           f"data-mode={foc['mode']!r}, aria-checked={foc['checked']!r}); "
+           f"control re-mounted: {foc['mounted']}")
+        pgk.close()
+
+        # ── D26 · R5.3 / VTL52-601 + PR52-6 — THE AGGREGATE NAMES ITS SUBJECT ─
+        #    `.lab-agg` shipped at R5.2 with no check and no mutation, and the
+        #    line it printed — "3 earlier" — shared a word and a numeral with a
+        #    row chip meaning the opposite while counting a different unit. So
+        #    the check is about the line's WORDS, not its arithmetic: every count
+        #    must be attached to a subject, the unit must be stated, and the
+        #    aggregate's phrasing may not collide with the row chip's.
+        for lg, subj, unit, coll in (
+                ("en", ["we were earlier on", "Prophet earlier on"], "rows", "days earlier"),
+                ("zh", ["我们更早", "Prophet 更早"], "行", "领先我们")):
+            pga = b.new_page(viewport={"width": 1440, "height": 900})
+            pga.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
+            enter_lab(pga)
+            agg = pga.evaluate("""() => {
+                const a = document.querySelector('.lab-agg');
+                const c = document.querySelector('.lab-lead--adverse');
+                return {txt: a ? a.innerText.trim().replace(/\\s+/g, ' ') : null,
+                        vis: !!(a && a.offsetParent !== null),
+                        chip: c ? c.innerText.trim().replace(/\\s+/g, ' ') : null,
+                        dotted: a ? getComputedStyle(a).borderBottomStyle : null};
+            }""")
+            txt = agg["txt"] or ""
+            ck(f"D26 lead-aggregate-attaches-a-subject-to-every-count[{lg}]",
+               agg["vis"] and all(s in txt for s in subj) and unit in txt,
+               f"{txt!r} must name who was earlier and what is counted ({unit})")
+            # the collision VTL52-601 found: same word, same numeral, one
+            # counting rows and the other days, in one viewport
+            ck(f"D26b aggregate-does-not-speak-the-row-chip's-phrase[{lg}]",
+               agg["chip"] and coll in agg["chip"] and coll not in txt,
+               f"aggregate {txt!r} vs row chip {agg['chip']!r}")
+            ck(f"D26c the-aggregate-shows-it-has-a-landing[{lg}]",
+               agg["dotted"] == "dotted",
+               f"border-bottom-style={agg['dotted']!r} — a Tier-2 landing needs the "
+               f"artifact's own dotted-underline affordance (VTL52-604)")
+            pga.close()
+
+        # ── D27 · R5.3 / VTL52-603 — THE OVERLAP CAVEAT HOLDS THE GLANCE TIER ─
+        #    At <=560 the six pill integers read 14/6/10/28/7/30 — sum 65 against
+        #    a population of 30 — and R5.2 demoted the one line that reconciles
+        #    them. The ratified caveat exception says the caveat is the last
+        #    thing that may leave, not the first. It is checked VISIBLE, not
+        #    present: `display: none` keeps a node in the DOM.
+        for lg in ("en", "zh"):
+            pgo = b.new_page(viewport={"width": 390, "height": 844})
+            pgo.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
+            enter_lab(pgo)
+            ov = pgo.evaluate("""() => {
+                const n = document.querySelector('.lab-overlap');
+                const pills = [...document.querySelectorAll('.lab-sel .lab-n')]
+                                .filter(x => x.offsetParent !== null).length;
+                return {vis: !!(n && n.offsetParent !== null),
+                        txt: n ? n.innerText.trim().replace(/\\s+/g, ' ') : null,
+                        h: n && n.offsetParent ? Math.round(n.getBoundingClientRect().height) : 0,
+                        pills};
+            }""")
+            ck(f"D27 overlap-caveat-stays-on-the-glance-tier-at-390[{lg}]",
+               ov["vis"] and ov["txt"] and ov["pills"] == 6,
+               f"{ov['pills']} pill integers visible with caveat vis={ov['vis']} "
+               f"{ov['txt']!r} ({ov['h']}px)")
+            pgo.close()
+
+        # ── D29 · R5.3 / VTL52-607 — EVERY STATEMENT IS KEYED, NO CONTROL IS ──
+        #    Five statements separated by whitespace alone read as one run-on at
+        #    11px muted, especially since each already uses `·` internally. The
+        #    device is a hairline marker on EACH statement rather than a rule
+        #    between them, because a rule drawn into the flex gap cannot survive
+        #    wrapping — measured, the gap version orphaned a rule at the start of
+        #    a line at six of the ten widths it was first measured over. So the
+        #    law is: every visible statement carries the marker, the control
+        #    group does not. M34 removes the markers.
+        #
+        #    The ladder is BOTH SIDES OF EVERY BREAKPOINT (1180, 980, 560) plus
+        #    the extremes, rather than the ten-width sweep the first draft
+        #    needed. That sweep existed to catch a wrap-position defect; a
+        #    per-statement marker has no wrap-position defect to catch, and the
+        #    only thing width still changes is WHICH members are visible — which
+        #    is a function of the breakpoints and nothing else. Trimmed
+        #    deliberately, and said so: each width here costs the harness a page
+        #    load on every one of 34 mutation runs.
+        for w in (1440, 1181, 1180, 981, 980, 561, 560, 390):
+            pgm = b.new_page(viewport={"width": w, "height": 900})
+            pgm.goto(f"{BASE}/?chrome=0", wait_until="networkidle")
+            enter_lab(pgm)
+            keyed = pgm.evaluate("""() => {
+                const marked = n => {
+                  const s = getComputedStyle(n, '::before');
+                  return s.content !== 'none' && s.display !== 'none' && s.width === '1px';
+                };
+                const vis = [...document.querySelectorAll('.lab-meta > *')]
+                              .filter(n => n.offsetParent !== null);
+                const stmts = vis.filter(n => !n.classList.contains('lab-cls-filter'));
+                return {
+                  n: stmts.length,
+                  unmarked: stmts.filter(n => !marked(n)).map(n => n.className),
+                  controlsMarked: vis.filter(n => n.classList.contains('lab-cls-filter')
+                                                  && marked(n)).length
+                };
+            }""")
+            ck(f"D29 every-meta-statement-is-keyed[{w}w]",
+               keyed["n"] >= 2 and not keyed["unmarked"] and not keyed["controlsMarked"],
+               f"{keyed['n']} visible statements, unmarked {keyed['unmarked']}, "
+               f"controls wearing a statement marker: {keyed['controlsMarked']}")
+            pgm.close()
+
+        # ── D28 · R5.3 / PR52-4 + VTL52-604 — THE LENS OPENS UNDER A THUMB ────
+        #    The R4 LENS binds mouseover/focusin only, and R5.2 hung three <=560
+        #    demotions off it. Under a coarse pointer neither event exists, so
+        #    the landings were unreachable by the one gesture the reader has.
+        #    Driven as a real TAP, in both languages, on the chip that carries
+        #    the mobile landings — and the dismissal is checked too, because a
+        #    popover you cannot close is a modal nobody asked for.
+        for lg in ("en", "zh"):
+            ctx = b.new_context(viewport={"width": 390, "height": 844},
+                                has_touch=True, is_mobile=True)
+            pgt = ctx.new_page()
+            pgt.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
+            pgt.tap(LAB_SEG)
+            pgt.wait_for_selector(".lab-plane", timeout=8000)
+            pgt.wait_for_timeout(320)
+            coarse = pgt.evaluate("() => matchMedia('(any-pointer: coarse)').matches")
+            aff = pgt.evaluate("""() => {
+                const s = document.querySelector('.lab-split');
+                return s ? getComputedStyle(s).borderBottomStyle : null;
+            }""")
+            pgt.tap(".lab-split")
+            pgt.wait_for_timeout(260)
+            opened = pgt.evaluate("""() => {
+                const p = document.querySelector('.lens-pop');
+                return {open: !!(p && p.classList.contains('open')),
+                        body: p ? p.innerText.trim().replace(/\\s+/g, ' ').slice(0, 120) : '',
+                        marked: !!document.querySelector('.lab-split[data-lens-open]')};
+            }""")
+            pgt.tap(".lab-region-end")
+            pgt.wait_for_timeout(220)
+            closed = pgt.evaluate("""() => {
+                const p = document.querySelector('.lens-pop');
+                return !(p && p.classList.contains('open'));
+            }""")
+            ck(f"D28 lens-opens-on-a-tap-under-a-coarse-pointer[{lg}]",
+               coarse and opened["open"] and opened["marked"],
+               f"coarse={coarse} open={opened['open']} marked={opened['marked']} "
+               f"body={opened['body']!r}")
+            ck(f"D28b the-landing-carrier-shows-it-is-one[{lg}]", aff == "dotted",
+               f".lab-split border-bottom-style={aff!r}")
+            ck(f"D28c a-tapped-lens-can-be-dismissed[{lg}]", closed,
+               "a popover with no way out is a modal")
+            # PR52-7: the 390 landing must carry the exclusion clause, because
+            # `.lab-agg` is demoted into this very tip at this width
+            excl = "Rows from history are not counted" if lg == "en" else "回溯记录不计入"
+            ck(f"D28d the-390-landing-carries-the-exclusion-clause[{lg}]",
+               excl in (opened["body"] or "") or excl in pgt.evaluate(
+                   "() => (document.querySelector('.lab-split')"
+                   ".getAttribute('data-tip-%s') || '')" % lg),
+               f"the demoted aggregate must land complete, exclusion included")
+            pgt.close()
+            ctx.close()
 
         # ── D7 · plain words at the glance tier; exact identity on the
         #        receipt. Both halves, because deleting the slug would also
@@ -628,8 +909,19 @@ def main():                                                    # noqa: C901
         ck("D21b count-follows-the-filter", str(c_live["rows"]) in c_live["showing"]
            and c_live["rows"] < c_all["rows"], f"{c_live['showing']!r} / {c_live['rows']} rows")
         # the split is computed from the FILTERED set, not the whole board
-        ck("D21c split-follows-the-filter", "0" in c_live["split"],
-           f"{c_live['split']!r} — seeds must read 0 under a live-only filter")
+        # R5.3 / PR52-8: `"0" in text` passed on ANY string containing a zero —
+        # including the unfiltered "6 seen first-hand · 30 from history". The
+        # assertion is now the actual sentence the filtered split must print,
+        # built from the rendered row count, so a split computed off the whole
+        # board fails whatever digits it happens to contain.
+        want_split = {
+            "en": f"{c_live['rows']} seen first-hand · 0 from history",
+            "zh": f"第一手观测 {c_live['rows']} · 回溯 0",
+        }
+        ck("D21c split-follows-the-filter",
+           " ".join(c_live["split"].split()) == want_split["en"],
+           f"{c_live['split']!r} != {want_split['en']!r} — the split must be computed "
+           f"from the {c_live['rows']} rendered rows, not the whole board")
         pg2.click('[data-lab-cls="all"]')
         pg2.wait_for_timeout(250)
         pg2.close()
@@ -832,9 +1124,14 @@ def main():                                                    # noqa: C901
         #    absence in ZH is credited — so the next time the vocabulary moves,
         #    the check fails loudly instead of quietly ceasing to measure. This
         #    is the same rot class the R4 README told this cycle to re-check.
+        #    R5.3 / VTL52-602: "Lead not measurable" left the stream when the
+        #    seed slot became a glyph, so it is replaced here rather than left to
+        #    rot into exactly the dead probe this block exists to prevent — with
+        #    two of the strings this round introduced, so the new copy is guarded
+        #    the day it ships instead of a cycle later.
         EN_PROBES = ["Seen first-hand", "From history", "Not on the board",
-                     "Lead not measurable", "Nothing below this line was seen first-hand",
-                     "same day"]
+                     "and earlier", "Nothing below this line was seen first-hand",
+                     "Boards overlap", "we were earlier on", "same day"]
         for lg, probe in (("en", "Watch"), ("zh", "观察")):
             pg = b.new_page(viewport={"width": 1440, "height": 900})
             pg.goto(f"{BASE}/?chrome=0&lang={lg}", wait_until="networkidle")
