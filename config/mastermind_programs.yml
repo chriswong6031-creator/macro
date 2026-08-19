@@ -1360,6 +1360,66 @@ programs:
       authority_class: context_only
       summary: Context may be consumed by separately ratified gates; the regime program does not inherit those decisions.
 
+  grey-deer-risk-intelligence:
+    name: Grey Deer Risk Intelligence & Capital Protection
+    category: market_intelligence
+    kind: decision_engine
+    lifecycle_state: building
+    scope: project
+    purpose: >
+      Produce canonical market hazard/repair truth and bounded protection-policy
+      contracts without replacing domain sensors or downstream portfolio authority.
+    strategic_role: >
+      Convert fragmented risk observations into one coherent, PIT-honest market
+      protection nervous system across Macro, Prophet, Terminal and Portfolio.
+    owns:
+      - Canonical Risk Envelope projection
+      - Market-hazard episode composition
+      - Scope-bounded market protection policy contracts
+      - Cross-product risk-state semantics
+    does_not_own:
+      - Raw Prophet ranking or admission
+      - Terminal quote/chart state
+      - Portfolio position sizing/settlement/execution
+      - LLM signal origination
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      consumes_from:
+        - market-regime-risk
+        - neural-web
+        - policy-transmission-intelligence
+        - rates-inflation-command
+      coordinates_with:
+        - prophet
+        - market-timing-intelligence
+        - cross-repo-contract-governance
+    canonical_docs:
+      - repo: macro
+        path: research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md
+      - repo: macro
+        path: research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md
+    implementation:
+      - repo: macro
+        roots:
+          - research/grey_deer/
+    product_surfaces: []
+    decision_boundary:
+      authority_class: deterministic_control
+      summary: >
+        Envelope itself owns no rank/size/execute authority. Individually registered
+        policies may later carry bounded subtract-only authority after their own gate.
+      authority_sources:
+        - repo: macro
+          path: research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md
+        - repo: macro
+          path: research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md
+
   price-pressure:
     name: Per-Name Price Pressure and Residual Shocks
     category: market_intelligence
