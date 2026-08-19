@@ -584,15 +584,29 @@ tests including the health-block surfacing case (S4), 1
 ### Round 2 verification
 
 ```
+python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py tests/test_prophet_lab_timeparse.py -q
+# 152 passed (re-confirmed post-rebase, both before and after the final
+# rebase onto origin/main @ 6f3fd8b3ea1f)
+
 python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py tests/test_prophet_lab_timeparse.py tests/test_deploy_update_self_heal.py tests/test_entry_radar_w1.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w4_ledger.py -q
 # 569 passed, 1 skipped (same pre-existing conditional skip)
-
-python3.12 scripts/audit_unrun_tests.py
-# exit 0
 
 python3.12 -m pytest tests/test_ci_pack.py -q -k "test_curated_exclusive_scopes_cover_their_own_import_closure or test_the_curated_exclusive_set_is_actually_declared"
 # 2 passed — no .github/ci/legacy-jobs.yml edits this round; re-run as insurance
 ```
+
+`python3.12 scripts/audit_unrun_tests.py` exits 1 post-rebase, but on THREE
+suites this branch never touched and did not introduce:
+`tests/test_chat_launcher_stub.py` (new in #5976, the `mm_brain.js` asset-root
+fix), `tests/test_collectors_na_sentinel.py` (new in #5942, NA-ticker sentinel
+fix), `tests/test_template_site_sync_tokens.py` (new in an unrelated recently
+merged PR). `git diff --stat <merge-base> HEAD -- <those three paths>` is
+empty for all three — none appear in this PR's diff. Confirmed the exact
+`prophet_lab`/`timeparse` suites this branch owns carry zero unrun-suite
+findings (`grep -i prophet_lab` / `grep -i timeparse` on the audit output is
+empty). Left unfixed per house law ("do not absorb adjacent cleanup...
+unrelated failures into the packet") — each belongs to its own PR's follow-up,
+not this one.
 
 No board semantics, observation classes, or payload contract changed this
 round either — `BaselineReadResult` is a new internal return TYPE for one
