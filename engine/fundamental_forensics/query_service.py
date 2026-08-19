@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .financial_intelligence_packet import (
+    EntityInput,
     load_core_registry,
     load_filing_package_fixture,
     period_semantic_key,
@@ -27,6 +28,7 @@ from .query import (
     QueryBoundsError,
     QueryPolicy,
     QueryValidationError,
+    UnsupportedMetricError,
 )
 from .raw_ledger import canonical_json
 
@@ -300,21 +302,33 @@ def _admit_periods(parsed: dict[str, Any]) -> list[Any]:
         missing = _REQUIRED_PERIOD_FIELDS - set(item)
         if extra or missing:
             raise FinancialQueryAdmissionError(400, "request contract violation")
-
-        for field in _REQUIRED_PERIOD_FIELDS:
-            if not isinstance(item[field], str):
-                raise FinancialQueryAdmissionError(400, "request contract violation")
+        if not isinstance(item["kind"], str):
+            raise FinancialQueryAdmissionError(400, "invalid period")
 
         kind = item["kind"]
-        if kind != "duration":
+        if kind not in ("duration", "instant"):
+            raise FinancialQueryAdmissionError(400, "invalid period")
+        if not isinstance(item["end"], str) or not isinstance(item["label"], str):
             raise FinancialQueryAdmissionError(400, "invalid period")
 
         try:
-            period = PeriodRequest.duration(
-                start=item["start"],
-                end=item["end"],
-                label=item["label"],
-            )
+            if kind == "duration":
+                if not isinstance(item["start"], str):
+                    raise FinancialQueryAdmissionError(400, "invalid period")
+                period = PeriodRequest.duration(
+                    start=item["start"],
+                    end=item["end"],
+                    label=item["label"],
+                )
+            else:
+                if item["start"] is not None:
+                    raise FinancialQueryAdmissionError(400, "invalid period")
+                period = PeriodRequest.instant(
+                    end=item["end"],
+                    label=item["label"],
+                )
+        except FinancialQueryAdmissionError:
+            raise
         except QueryValidationError:
             raise FinancialQueryAdmissionError(400, "invalid period") from None
 
@@ -325,6 +339,58 @@ def _admit_periods(parsed: dict[str, Any]) -> list[Any]:
         result.append(period)
 
     return result
+
+
+def _validate_supplied_dataset(entity_id: str, dataset: FinancialQueryDataset) -> CanonicalEntityBinding:
+    """Fail closed on a malformed or source-misbound admitted package.
+
+    Canonical HTTP identity stays separate from source-native kernel identity.
+    This does not construct a Source Registry and does not infer identity
+    from ticker.
+    """
+    if not isinstance(dataset, FinancialQueryDataset):
+        raise FinancialQueryUnavailableError()
+    binding = dataset.binding
+    if not isinstance(binding, CanonicalEntityBinding):
+        raise FinancialQueryUnavailableError()
+    if binding.entity_id != entity_id:
+        raise FinancialQueryUnavailableError()
+    try:
+        EntityInput(
+            entity_id=binding.entity_id,
+            cik=binding.cik,
+            ticker=binding.ticker,
+            name="admitted-dataset",
+            identity_basis="sec-cik",
+            source_entity_id=binding.source_entity_id,
+        )
+    except (TypeError, ValueError):
+        raise FinancialQueryUnavailableError() from None
+    if binding.cik != binding.source_entity_id:
+        raise FinancialQueryUnavailableError()
+
+    ledger = dataset.ledger
+    events = getattr(ledger, "events", None)
+    if not events:
+        raise FinancialQueryUnavailableError()
+    try:
+        iterator = iter(events)
+    except TypeError:
+        raise FinancialQueryUnavailableError() from None
+    saw_event = False
+    for event in iterator:
+        saw_event = True
+        source = getattr(event, "source", None)
+        context = getattr(event, "context", None)
+        source_entity_id = getattr(source, "entity_id", None)
+        context_entity_id = getattr(context, "entity_identifier", None)
+        if source_entity_id != binding.source_entity_id:
+            raise FinancialQueryUnavailableError()
+        if context_entity_id != binding.source_entity_id:
+            raise FinancialQueryUnavailableError()
+    if not saw_event:
+        raise FinancialQueryUnavailableError()
+    return binding
 
 
 # ---------------------------------------------------------------------------
@@ -350,21 +416,14 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
     if cross_product > _MAX_CELLS:
         raise FinancialQueryAdmissionError(413, "request exceeds transport bound")
 
-    # Phase 2: resolve dataset. Never publish a binding that does not match
-    # the requested canonical entity — a misrouted provider is unavailable,
-    # not a successful query of the wrong issuer.
+    # Phase 2: resolve and fail-closed on a malformed/misbound dataset.
+    # A provider that returns the requested canonical ID with a foreign CIK
+    # is unavailable, not a successful query of another issuer's matrix.
     dataset = provider.resolve(entity_id)
-    binding = dataset.binding
-    if binding.entity_id != entity_id:
-        raise FinancialQueryUnavailableError()
+    binding = _validate_supplied_dataset(entity_id, dataset)
 
-    # Phase 3: check metrics against registry
-    registry_metric_ids = set(dataset.registry.metric_ids)
-    unsupported = [m for m in metric_ids if m not in registry_metric_ids]
-    if unsupported:
-        raise FinancialQueryAdmissionError(400, "unsupported metric")
-
-    # Phase 4: kernel query
+    # Phase 3: kernel query. Metric support is cutoff-visible governance,
+    # never live catalog membership.
     try:
         engine = BitemporalMetricQueryEngine(
             ledger=dataset.ledger,
@@ -384,6 +443,8 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
             periods=period_requests,
             policy=policy,
         )
+    except UnsupportedMetricError:
+        raise FinancialQueryAdmissionError(400, "unsupported metric") from None
     except QueryBoundsError:
         raise FinancialQueryAdmissionError(413, "request exceeds transport bound") from None
     except QueryValidationError:

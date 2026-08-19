@@ -44,9 +44,9 @@ decisions:
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
   - DEC:FIF-1-V1-FROZEN
 next_action: >
-  FIF-2A is fixture_proven on PR #5983 and held for Sol review. Do not
-  merge until that review accepts. Do not start FIF-2B. Do not claim a
-  production issuer query service. Native auto-merge stays disarmed.
+  FIF-2A on PR #5983 is BUILT_NOT_ACCEPTED pending Sol after the A–D
+  amendment. Do not merge until Sol accepts. Do not start FIF-2B. Native
+  auto-merge stays disarmed.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -102,8 +102,8 @@ waves:
     status: in_progress
     depends_on: [FIF-1]
     next_action: >
-      FIF-2A fixture_proven on PR #5983, held for Sol review. FIF-2 remains
-      in_progress. Do not start FIF-2B. Production issuer coverage is FIF-3.
+      FIF-2A BUILT_NOT_ACCEPTED on PR #5983 pending Sol after A–D. FIF-2
+      remains in_progress. Do not start FIF-2B. Production issuer coverage is FIF-3.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -169,6 +169,7 @@ validation. FIF-1R3 closed those defects on PR #5889. Sol freeze-reviewed accept
 #5889 squash-merged as `f4183edade53603fad7a97f702eb4c6e5eabff5d`.
 `financial_intelligence_packet.v1` is FROZEN. FIF-1 is DONE. FIF-2A is
 the authenticated HTTP adapter over that frozen kernel
-(`POST /api/forensics/v1/financial/query`). It is fixture-proven, not a
-production issuer service, and is held for Sol review. Do not start
-FIF-2B. Do not create FIF-1R4. Do not reopen accepted packet semantics.
+(`POST /api/forensics/v1/financial/query`). Architecture accepted in
+direction; Sol A–D amendment is BUILT_NOT_ACCEPTED pending review.
+Do not start FIF-2B. Do not create FIF-1R4. Do not reopen accepted
+packet semantics.

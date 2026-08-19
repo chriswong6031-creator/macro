@@ -94,6 +94,16 @@ def test_admission_rejects_body_over_64kib() -> None:
     assert exc_info.value.status_code == 413
 
 
+def test_admission_accepts_exactly_64kib_body() -> None:
+    payload = _make_request()
+    pad = 65536 - len(payload)
+    assert pad > 0
+    body = (b" " * pad) + payload
+    assert len(body) == 65536
+    with pytest.raises(FinancialQueryUnavailableError):
+        execute_financial_query(body=body, provider=UnavailableFinancialQueryProvider())
+
+
 def test_admission_rejects_non_utf8() -> None:
     body = b"\xff\xfe"
     with pytest.raises(FinancialQueryAdmissionError) as exc_info:
@@ -222,8 +232,20 @@ def test_admission_rejects_non_string_metric() -> None:
     assert "request contract violation" in exc_info.value.detail
 
 
-def test_admission_rejects_instant_period() -> None:
-    body = _make_request(periods=[{"kind": "instant", "start": "", "end": "2023-12-31", "label": "Q4"}])
+def test_admission_accepts_canonical_instant_period() -> None:
+    body = _make_request(
+        periods=[{"kind": "instant", "start": None, "end": "2023-12-31", "label": "2023-12-31"}],
+        metric_ids=["accounts_receivable_net"],
+    )
+    with pytest.raises(FinancialQueryUnavailableError):
+        execute_financial_query(body=body, provider=UnavailableFinancialQueryProvider())
+
+
+def test_admission_rejects_instant_period_with_non_null_start() -> None:
+    body = _make_request(
+        periods=[{"kind": "instant", "start": "2023-12-31", "end": "2023-12-31", "label": "2023-12-31"}],
+        metric_ids=["accounts_receivable_net"],
+    )
     with pytest.raises(FinancialQueryAdmissionError) as exc_info:
         execute_financial_query(body=body, provider=UnavailableFinancialQueryProvider())
     assert exc_info.value.status_code == 400
@@ -274,6 +296,30 @@ def test_misbound_provider_is_unavailable() -> None:
         execute_financial_query(body=body, provider=_Misbound())
 
 
+def test_source_misbound_dataset_is_unavailable() -> None:
+    """Canonical ID match with a foreign CIK must not return another issuer's matrix."""
+    fip1 = fip1_fixture_dataset(ROOT)
+    misbound = FinancialQueryDataset(
+        binding=CanonicalEntityBinding(
+            entity_id="mmx.issuer.fip1",
+            cik="0000111111",
+            ticker="FIP1",
+            source_entity_id="0000111111",
+        ),
+        ledger=fip1.ledger,
+        filing_metadata=fip1.filing_metadata,
+        registry=fip1.registry,
+    )
+
+    class _SourceMisbound:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return misbound
+
+    body = _make_request(entity_id="mmx.issuer.fip1")
+    with pytest.raises(FinancialQueryUnavailableError):
+        execute_financial_query(body=body, provider=_SourceMisbound())
+
+
 def test_unavailable_provider_raises_unavailable_error() -> None:
     body = _make_request()
     with pytest.raises(FinancialQueryUnavailableError):
@@ -304,6 +350,97 @@ def test_unsupported_metric_raises_400() -> None:
         execute_financial_query(body=body, provider=provider)
     assert exc_info.value.status_code == 400
     assert "unsupported metric" in exc_info.value.detail
+
+
+def test_future_metric_contract_does_not_change_historical_unsupported_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R1 absent vs R2 future-available contract: same historical 400."""
+    from dataclasses import replace
+    from datetime import datetime, timezone
+
+    from engine.fundamental_forensics import metric_registry as registry_module
+    from engine.fundamental_forensics.metric_registry import ConceptAlias, KnownConcept
+
+    historical_t = T3_RECORDED
+    future_at = datetime(2026, 8, 6, 0, 0, tzinfo=timezone.utc)
+    body = _make_request(
+        metric_ids=["future_metric"],
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": T3_SOURCE,
+            "recorded_at": historical_t,
+        },
+    )
+
+    class _R1:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return fip1_fixture_dataset(ROOT)
+
+    with pytest.raises(FinancialQueryAdmissionError) as r1:
+        execute_financial_query(body=body, provider=_R1())
+    assert r1.value.status_code == 400
+    assert r1.value.detail == "unsupported metric"
+
+    base = fip1_fixture_dataset(ROOT)
+    revenue = base.registry.metric("revenue")
+    mapping = revenue.mappings[0]
+    future_concept = "FutureMetricNotYetGoverned"
+    monkeypatch.setitem(
+        registry_module.KNOWN_CONCEPT_ALLOWLIST,
+        ("us-gaap", future_concept),
+        KnownConcept(
+            taxonomy="us-gaap",
+            concept=future_concept,
+            taxonomy_version_start=2009,
+            taxonomy_version_end=2026,
+            period_kind="duration",
+            contract_units=("USD",),
+        ),
+    )
+    future_contract = replace(
+        revenue,
+        metric_id="future_metric",
+        label="FUTURE LEAK LABEL",
+        rule=replace(
+            revenue.rule,
+            rule_id="metric.future_metric/v1",
+            available_at=future_at,
+        ),
+        mappings=(
+            replace(
+                mapping,
+                metric_id="future_metric",
+                rule=replace(
+                    mapping.rule,
+                    rule_id="mapping.future_metric/v1",
+                    available_at=future_at,
+                ),
+                taxonomy_concept_aliases=(
+                    ConceptAlias("us-gaap", future_concept, 10, 2009, 2026),
+                ),
+            ),
+        ),
+        formula=None,
+        declared_formula_dependencies=(),
+    )
+    r2_registry = replace(base.registry, contracts=base.registry.contracts + (future_contract,))
+    assert "future_metric" in r2_registry.metric_ids
+    r2_dataset = FinancialQueryDataset(
+        binding=base.binding,
+        ledger=base.ledger,
+        filing_metadata=base.filing_metadata,
+        registry=r2_registry,
+    )
+
+    class _R2:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return r2_dataset
+
+    with pytest.raises(FinancialQueryAdmissionError) as r2:
+        execute_financial_query(body=body, provider=_R2())
+    assert r2.value.status_code == r1.value.status_code
+    assert r2.value.detail == r1.value.detail
 
 
 # ---------------------------------------------------------------------------
@@ -363,6 +500,52 @@ def test_receipt_equals_direct_matrix_to_dict() -> None:
     )
     assert result.envelope["receipt"] == matrix.to_dict()
     assert result.envelope["receipt"]["query_hash"] == matrix.query_hash
+
+
+def test_mixed_duration_and_instant_receipt_equals_direct_matrix() -> None:
+    provider = _fip1_provider()
+    periods = [
+        {"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"},
+        {"kind": "instant", "start": None, "end": "2023-12-31", "label": "2023-12-31"},
+    ]
+    body = _make_request(
+        metric_ids=["revenue", "accounts_receivable_net"],
+        periods=periods,
+        policy={
+            "selection": "latest_known_as_of",
+            "source_snapshot_at": T3_SOURCE,
+            "recorded_at": T3_RECORDED,
+        },
+    )
+    result = execute_financial_query(body=body, provider=provider)
+    matrix = _direct_matrix(
+        source_snapshot_at=T3_SOURCE,
+        recorded_at=T3_RECORDED,
+        metric_ids=["revenue", "accounts_receivable_net"],
+        periods=[
+            PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),
+            PeriodRequest.instant("2023-12-31", label="2023-12-31"),
+        ],
+    )
+    assert result.envelope["receipt"] == matrix.to_dict()
+    assert result.envelope["receipt"]["query_hash"] == matrix.query_hash
+    receipt = result.envelope["receipt"]
+    root_ids = set(receipt["root_cell_ids"])
+    roots = [n for n in receipt["nodes"] if n["cell_id"] in root_ids]
+    by_key = {(n["metric_id"], n["period"]["kind"]): n for n in roots}
+    revenue_duration = by_key[("revenue", "duration")]
+    ar_instant = by_key[("accounts_receivable_net", "instant")]
+    revenue_instant = by_key[("revenue", "instant")]
+    ar_duration = by_key[("accounts_receivable_net", "duration")]
+    assert revenue_duration["state"] == "value"
+    assert revenue_duration["value"] == "1060"
+    assert ar_instant["state"] == "value"
+    assert ar_instant["value"] == "121"
+    assert ar_instant["provenance"]["kind"] == "direct"
+    assert revenue_instant["state"] == "not_evaluable"
+    assert ar_duration["state"] == "not_evaluable"
+    assert "outside_period_constraint" in (revenue_instant.get("reason") or "")
+    assert "outside_period_constraint" in (ar_duration.get("reason") or "")
 
 
 def test_receipt_cells_and_nodes_match_direct_matrix() -> None:

@@ -743,6 +743,29 @@ def _financial_query_max_request_bytes() -> int:
     return MAX_REQUEST_BYTES
 
 
+async def _read_bounded_request_body(request: Request, max_bytes: int) -> bytes:
+    """Read at most ``max_bytes + 1`` from the ASGI stream, then 413.
+
+    Content-Length is an early cheap rejection only.  A missing or lying
+    Content-Length cannot force a full-body buffer.
+    """
+    buf = bytearray()
+    limit = max_bytes + 1
+    async for chunk in request.stream():
+        if not chunk:
+            continue
+        remaining = limit - len(buf)
+        if remaining <= 0:
+            raise _private_error(413, "request body exceeds bound")
+        if len(chunk) > remaining:
+            buf.extend(chunk[:remaining])
+            raise _private_error(413, "request body exceeds bound")
+        buf.extend(chunk)
+        if len(buf) > max_bytes:
+            raise _private_error(413, "request body exceeds bound")
+    return bytes(buf)
+
+
 @router.api_route(
     "/api/forensics/v1/financial/query",
     methods=["GET", "PUT", "PATCH", "DELETE", "HEAD"],
@@ -770,7 +793,6 @@ async def financial_query(
 
     max_request_bytes = _financial_query_max_request_bytes()
 
-    # Check Content-Length before reading body
     cl_header = request.headers.get("content-length")
     if cl_header is not None:
         try:
@@ -782,16 +804,12 @@ async def financial_query(
         if cl_int > max_request_bytes:
             raise _private_error(413, "request body exceeds bound")
 
-    # Check Content-Type
     content_type = request.headers.get("content-type", "")
-    # Strip charset suffix: "application/json; charset=utf-8" → "application/json"
     media_type = content_type.split(";")[0].strip().casefold()
     if media_type != "application/json":
         raise _private_error(400, "malformed request")
 
-    body = await request.body()
-    if len(body) > max_request_bytes:
-        raise _private_error(413, "request body exceeds bound")
+    body = await _read_bounded_request_body(request, max_request_bytes)
 
     provider = _financial_query_provider()
 

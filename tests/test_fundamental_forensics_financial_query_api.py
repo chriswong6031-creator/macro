@@ -14,6 +14,7 @@ import app.forensics as forensics_api
 from engine.fundamental_forensics.financial_intelligence_packet import canonical_json
 from engine.fundamental_forensics.query import PeriodRequest, QueryBounds, QueryPolicy, BitemporalMetricQueryEngine
 from engine.fundamental_forensics.query_service import (
+    CanonicalEntityBinding,
     FinancialQueryAdmissionError,
     FinancialQueryDataset,
     FinancialQueryUnavailableError,
@@ -80,6 +81,44 @@ def _fip1_provider(resolve_calls: list | None = None):
             raise FinancialQueryAdmissionError(400, "unknown entity")
 
     return _Provider()
+
+
+def _asgi_post(app, path: str, *, body: bytes, extra_headers: list[tuple[bytes, bytes]]):
+    """POST through the ASGI interface so Content-Length can lie or be absent."""
+    import asyncio
+
+    messages: list[dict] = []
+    sent = {"done": False}
+
+    async def receive():
+        if not sent["done"]:
+            sent["done"] = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        messages.append(message)
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode("ascii"),
+        "root_path": "",
+        "query_string": b"",
+        "headers": extra_headers,
+        "client": ("testclient", 50000),
+        "server": ("testserver", 80),
+    }
+
+    asyncio.run(app(scope, receive, send))
+    start = next(m for m in messages if m["type"] == "http.response.start")
+    body_out = b"".join(m.get("body", b"") for m in messages if m["type"] == "http.response.body")
+    header_map = {k.decode().lower(): v.decode() for k, v in start.get("headers", [])}
+    return start["status"], header_map, body_out
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +255,60 @@ def test_paid_fip1_receipt_equals_direct_matrix(fip1_paid_client) -> None:
     )
     assert envelope["receipt"] == matrix.to_dict()
     assert envelope["receipt"]["query_hash"] == matrix.query_hash
+
+
+def test_http_mixed_duration_instant_receipt_equals_direct_matrix(fip1_paid_client) -> None:
+    periods = [
+        {"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"},
+        {"kind": "instant", "start": None, "end": "2023-12-31", "label": "2023-12-31"},
+    ]
+    response = fip1_paid_client.post(
+        _QUERY_PATH,
+        content=_make_request(
+            metric_ids=["revenue", "accounts_receivable_net"],
+            periods=periods,
+            policy={
+                "selection": "latest_known_as_of",
+                "source_snapshot_at": T3_SOURCE,
+                "recorded_at": T3_RECORDED,
+            },
+        ),
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 200, response.text
+    envelope = response.json()
+    dataset = fip1_fixture_dataset(ROOT)
+    binding = dataset.binding
+    policy = QueryPolicy(
+        source_snapshot_at=T3_SOURCE,
+        recorded_at=T3_RECORDED,
+        selection="latest_known_as_of",
+    )
+    engine = BitemporalMetricQueryEngine(
+        ledger=dataset.ledger,
+        registry=dataset.registry,
+        entities={binding.ticker: binding.source_entity_id},
+        filing_metadata=dataset.filing_metadata,
+        bounds=QueryBounds(max_tickers=1, max_metrics=50, max_periods=8, max_cells=400),
+    )
+    matrix = engine.query_matrix(
+        tickers=[binding.ticker],
+        metrics=["revenue", "accounts_receivable_net"],
+        periods=[
+            PeriodRequest.duration("2023-01-01", "2023-12-31", label="FY2023"),
+            PeriodRequest.instant("2023-12-31", label="2023-12-31"),
+        ],
+        policy=policy,
+    )
+    assert envelope["receipt"] == matrix.to_dict()
+    assert envelope["receipt"]["query_hash"] == matrix.query_hash
+    root_ids = set(envelope["receipt"]["root_cell_ids"])
+    roots = [n for n in envelope["receipt"]["nodes"] if n["cell_id"] in root_ids]
+    by_key = {(n["metric_id"], n["period"]["kind"]): n for n in roots}
+    assert by_key[("revenue", "duration")]["value"] == "1060"
+    assert by_key[("accounts_receivable_net", "instant")]["value"] == "121"
+    assert by_key[("revenue", "instant")]["state"] == "not_evaluable"
+    assert by_key[("accounts_receivable_net", "duration")]["state"] == "not_evaluable"
 
 
 @pytest.mark.parametrize(
@@ -359,6 +452,75 @@ def test_unsupported_metric_returns_400(fip1_paid_client) -> None:
     _assert_error(response, 400, "unsupported metric")
 
 
+def test_http_future_metric_cutoff_matches_absent_metric(paid_client, monkeypatch) -> None:
+    from dataclasses import replace
+    from datetime import datetime, timezone
+
+    from engine.fundamental_forensics import metric_registry as registry_module
+    from engine.fundamental_forensics.metric_registry import ConceptAlias, KnownConcept
+
+    historical = {
+        "selection": "latest_known_as_of",
+        "source_snapshot_at": T3_SOURCE,
+        "recorded_at": T3_RECORDED,
+    }
+    body = _make_request(metric_ids=["future_metric"], policy=historical)
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", _fip1_provider)
+    r1 = paid_client.post(_QUERY_PATH, content=body, headers={"content-type": "application/json"})
+    _assert_error(r1, 400, "unsupported metric")
+
+    base = fip1_fixture_dataset(ROOT)
+    future_at = datetime(2026, 8, 6, 0, 0, tzinfo=timezone.utc)
+    future_concept = "FutureMetricNotYetGoverned"
+    monkeypatch.setitem(
+        registry_module.KNOWN_CONCEPT_ALLOWLIST,
+        ("us-gaap", future_concept),
+        KnownConcept(
+            taxonomy="us-gaap",
+            concept=future_concept,
+            taxonomy_version_start=2009,
+            taxonomy_version_end=2026,
+            period_kind="duration",
+            contract_units=("USD",),
+        ),
+    )
+    revenue = base.registry.metric("revenue")
+    mapping = revenue.mappings[0]
+    future_contract = replace(
+        revenue,
+        metric_id="future_metric",
+        label="FUTURE LEAK LABEL",
+        rule=replace(revenue.rule, rule_id="metric.future_metric/v1", available_at=future_at),
+        mappings=(
+            replace(
+                mapping,
+                metric_id="future_metric",
+                rule=replace(mapping.rule, rule_id="mapping.future_metric/v1", available_at=future_at),
+                taxonomy_concept_aliases=(ConceptAlias("us-gaap", future_concept, 10, 2009, 2026),),
+            ),
+        ),
+        formula=None,
+        declared_formula_dependencies=(),
+    )
+    r2_dataset = FinancialQueryDataset(
+        binding=base.binding,
+        ledger=base.ledger,
+        filing_metadata=base.filing_metadata,
+        registry=replace(base.registry, contracts=base.registry.contracts + (future_contract,)),
+    )
+
+    class _R2:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return r2_dataset
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", lambda: _R2())
+    r2 = paid_client.post(_QUERY_PATH, content=body, headers={"content-type": "application/json"})
+    assert r2.status_code == r1.status_code
+    assert r2.json()["detail"] == r1.json()["detail"]
+    _assert_error(r2, 400, "unsupported metric")
+
+
 def test_duplicate_metric_returns_400(paid_client, monkeypatch) -> None:
     monkeypatch.setattr(forensics_api, "_financial_query_provider", _fip1_provider)
     response = paid_client.post(
@@ -418,18 +580,51 @@ def test_misbound_provider_returns_503(paid_client, monkeypatch) -> None:
     _assert_error(response, 400, "malformed request")
 
 
+def test_source_misbound_dataset_returns_503_not_another_issuer_matrix(
+    paid_client, monkeypatch
+) -> None:
+    fip1 = fip1_fixture_dataset(ROOT)
+    misbound = FinancialQueryDataset(
+        binding=CanonicalEntityBinding(
+            entity_id="mmx.issuer.fip1",
+            cik="0000111111",
+            ticker="FIP1",
+            source_entity_id="0000111111",
+        ),
+        ledger=fip1.ledger,
+        filing_metadata=fip1.filing_metadata,
+        registry=fip1.registry,
+    )
+
+    class _SourceMisbound:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return misbound
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", lambda: _SourceMisbound())
+    response = paid_client.post(
+        _QUERY_PATH,
+        content=_make_request(entity_id="mmx.issuer.fip1"),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 503, "financial query temporarily unavailable")
+    assert response.status_code != 200
+    assert "0000999999" not in response.text or "receipt" not in response.text
+
+
 # ---------------------------------------------------------------------------
 # 413 paths
 # ---------------------------------------------------------------------------
 
 
 def test_oversized_body_returns_413_provider_not_opened(paid_client, monkeypatch) -> None:
+    created: list[str] = []
     resolve_calls: list = []
-    monkeypatch.setattr(
-        forensics_api,
-        "_financial_query_provider",
-        lambda: _fip1_provider(resolve_calls),
-    )
+
+    def _factory():
+        created.append("opened")
+        return _fip1_provider(resolve_calls)
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", _factory)
     big_body = b"x" * 65537
     response = paid_client.post(
         _QUERY_PATH,
@@ -437,7 +632,77 @@ def test_oversized_body_returns_413_provider_not_opened(paid_client, monkeypatch
         headers={"content-type": "application/json", "content-length": str(len(big_body))},
     )
     _assert_error(response, 413)
+    assert created == []
     assert resolve_calls == []
+
+
+def test_no_content_length_oversize_returns_413_without_opening_provider(
+    router_app, monkeypatch
+) -> None:
+    created: list[str] = []
+
+    def _factory():
+        created.append("opened")
+        return _fip1_provider()
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", _factory)
+    router_app.dependency_overrides[forensics_api.require_site_full_user] = lambda: {"id": "paid-user"}
+    status, _headers, body = _asgi_post(
+        router_app,
+        _QUERY_PATH,
+        body=b"x" * 70000,
+        extra_headers=[(b"content-type", b"application/json")],
+    )
+    assert status == 413
+    assert b"request body exceeds bound" in body
+    assert created == []
+
+
+def test_lying_content_length_oversize_returns_413_without_opening_provider(
+    router_app, monkeypatch
+) -> None:
+    created: list[str] = []
+
+    def _factory():
+        created.append("opened")
+        return _fip1_provider()
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", _factory)
+    router_app.dependency_overrides[forensics_api.require_site_full_user] = lambda: {"id": "paid-user"}
+    status, _headers, body = _asgi_post(
+        router_app,
+        _QUERY_PATH,
+        body=b"x" * 70000,
+        extra_headers=[
+            (b"content-type", b"application/json"),
+            (b"content-length", b"12"),
+        ],
+    )
+    assert status == 413
+    assert b"request body exceeds bound" in body
+    assert created == []
+
+
+def test_exactly_64kib_body_is_not_413(paid_client, monkeypatch) -> None:
+    created: list[str] = []
+
+    def _factory():
+        created.append("opened")
+        return UnavailableFinancialQueryProvider()
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", _factory)
+    payload = _make_request()
+    pad = 65536 - len(payload)
+    body = (b" " * pad) + payload
+    assert len(body) == 65536
+    response = paid_client.post(
+        _QUERY_PATH,
+        content=body,
+        headers={"content-type": "application/json", "content-length": "65536"},
+    )
+    assert response.status_code != 413
+    assert created == ["opened"]
+    _assert_error(response, 503, "financial query temporarily unavailable")
 
 
 # ---------------------------------------------------------------------------
