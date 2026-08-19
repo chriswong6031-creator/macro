@@ -1237,6 +1237,36 @@ def test_nightly_restores_last_good_on_an_unmodelled_rename(
     assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt
 
 
+def test_nightly_refuses_on_a_missing_cik_map_evidence_rail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    """V4-D2B1 escape #11 (frozen contract §7 law (a)): ``load_cik_map()`` silently
+    degrades to an empty mapping when ``CIK_MAP_DIR`` is missing/empty/unreadable —
+    correct for the one-shot ``build()``/``main()`` CLI path (a fresh mint with no CIK
+    evidence yet is a valid state), but the nightly refresh calling the SAME ``build()``
+    would then regenerate a falsely-fresh artifact where the issuer axis silently mints
+    NO_ISSUER_EVIDENCE for every row and the receipt carries no ``notes`` to catch it.
+    First establish a last-good baseline, then point CIK_MAP_DIR at a directory that
+    does not exist and prove the refresh REFUSES rather than silently regenerating.
+    """
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {name: (tmp_path / name).read_bytes() for name in BUILD._NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+
+    capsys.readouterr()  # drop the baseline run's own ::notice
+    monkeypatch.setattr(BUILD, "CIK_MAP_DIR", tmp_path / "no-such-cik-map-dir")
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::warning")]
+    assert warning_lines, out
+    assert "cik_map" in warning_lines[0]
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], name
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt, (
+        "generated_at must NOT be re-stamped when the CIK evidence rail is missing"
+    )
+
+
 def test_an_unresolved_name_mints_nothing() -> None:
     """A venue this repo cannot evidence produces a REPORT line, never a guessed id."""
     resolutions = [

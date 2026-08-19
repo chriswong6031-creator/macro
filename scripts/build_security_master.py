@@ -1541,6 +1541,14 @@ def run_nightly_refresh(out_dir: Path) -> int:
     ``receipt['notes']`` ever carries), every artifact including the receipt is
     restored to its prior bytes.  Non-fatal throughout: this function always returns
     0 — a nightly step must never fail the collect job over an identity refresh.
+
+    Law (a) covers TWO distinct identity inputs, both refused pre-flight (never left
+    to ``build()``): the ``required`` seed/config files above, and the ``CIK_MAP_DIR``
+    evidence rail below (escape #11) — ``load_cik_map()`` itself silently degrades to
+    an empty mapping when that directory is missing/empty/unreadable (correct for the
+    one-shot ``build()``/``main()`` CLI path, where "no CIK evidence yet" is a valid
+    state to mint from), which would otherwise let the nightly regenerate a falsely
+    fresh artifact where every issuer axis value quietly goes NO_ISSUER_EVIDENCE.
     """
     required = (CONSTITUENTS, MEMBERSHIP, DELISTED_LEDGER, CONFIG_YML, TICKER_ALIASES_PY)
     missing = [
@@ -1552,6 +1560,34 @@ def run_nightly_refresh(out_dir: Path) -> int:
             f"::warning title=security-master-nightly::missing identity input(s) "
             f"{missing} — refusing, keeping last-good artifacts, generated_at not "
             "re-stamped", flush=True,
+        )
+        return 0
+
+    # V4-D2B1 escape #11: load_cik_map() silently degrades to an empty mapping when
+    # CIK_MAP_DIR is missing/empty/unreadable (the manual `build()` path treats that
+    # as "no CIK evidence yet", not a failure — every row just mints NO_ISSUER_EVIDENCE
+    # and the run still returns a clean receipt with no `notes`). Nightly is the ONLY
+    # lane this widens into an escape: the same silent degrade there was a fail-CLOSED
+    # violation of law (a) — a missing evidence rail must refuse, never regenerate a
+    # falsely-fresh artifact where every issuer axis value quietly goes NO_ISSUER_EVIDENCE.
+    cik_map_unreadable = False
+    if not CIK_MAP_DIR.is_dir():
+        cik_map_unreadable = True
+    else:
+        cik_map_files = sorted(p for p in CIK_MAP_DIR.glob("*.parquet"))
+        if not cik_map_files:
+            cik_map_unreadable = True
+        else:
+            try:
+                import pandas as pd
+                pd.read_parquet(cik_map_files[-1])
+            except Exception:  # noqa: BLE001 — an unreadable snapshot refuses, never half-runs
+                cik_map_unreadable = True
+    if cik_map_unreadable:
+        print(
+            "::warning title=security-master-nightly::identity input missing: "
+            "cik_map — refusing to regenerate; last-good artifacts retained",
+            flush=True,
         )
         return 0
 
