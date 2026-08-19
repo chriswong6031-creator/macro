@@ -1,0 +1,257 @@
+# Proposal ledger (RIG V1 §5-§6) — D-LAB-R5.1.
+#
+# THE SHORT VERSION: five capabilities move from RETAIN to IMPROVE, because the
+# R5 verdict found them regressed or under-served; everything else is RETAIN,
+# and three of the board's own capabilities are BETTER SERVED than at R5 —
+# R5's mode deleted them and R5.1's does not. The authority delta is unchanged
+# and still carries two warranted:false claims. Nothing is REMOVED.
+schema: mastermind.rig_proposal.v1
+reference_id: prophet-board-lab-r5-1
+
+proposed_artifact:
+  frozen_sha: f889d5eb35f3080cf43136ad58bb780b1152c2dc
+  paths:
+    - mockups/refs/prophet_lab/index.html
+    - mockups/refs/prophet_lab/lab.css
+    - mockups/refs/prophet_lab/lab.js
+    - mockups/refs/prophet_lab/lab-data.js
+    - mockups/refs/prophet_lab/DESIGN_NOTES.md
+    - mockups/refs/prophet_lab/tools/gen_lab_fixture.py
+    - mockups/refs/prophet_lab/tools/capture.py
+    - mockups/refs/prophet_lab/tools/verify.py
+    - mockups/refs/prophet_lab/tools/mutation_test.py
+  screenshots:
+    - {path: mockups/refs/prophet_lab/crops/01-live-desktop-dark-en.png,     viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/02-live-desktop-light-zh.png,    viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/03-live-mobile390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/04-live-no-operator-dark-en.png, viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/05-live-no-operator-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/10-lab-desktop-dark-en.png,      viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/11-lab-desktop-light-en.png,     viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/12-lab-desktop-dark-zh.png,      viewport: desktop, theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/13-lab-desktop-light-zh.png,     viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/14-lab-mobile390-dark-en.png,    viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/15-lab-mobile390-light-en.png,   viewport: mobile,  theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/16-lab-mobile390-dark-zh.png,    viewport: mobile,  theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/17-lab-mobile390-light-zh.png,   viewport: mobile,  theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/20-board-earliest-mark.png,      viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/21-board-flush.png,              viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/22-board-turning-up.png,         viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/23-board-all-readings.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/24-board-marked-turning.png,     viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/25-board-all-early.png,          viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/26-board-all-readings-zh.png,    viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/27-board-flush-390-zh.png,       viewport: mobile,  theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/30-seeds-only-dark-en.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/31-seeds-only-light-zh.png,      viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/32-live-only-dark-en.png,        viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/33-live-only-light-en.png,       viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/34-seeds-only-390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/35-lead-symmetry-dark-en.png,    viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/36-lead-symmetry-light-zh.png,   viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/37-lead-symmetry-390-dark-en.png, viewport: mobile, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/40-lab-empty-dark-en.png,        viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/41-lab-empty-light-zh.png,       viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/42-lab-empty-390-dark-en.png,    viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/43-lab-behind-dark-en.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/44-lab-behind-light-zh.png,      viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/45-lab-behind-390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/46-lab-down-dark-en.png,         viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/47-lab-down-light-zh.png,        viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/48-lab-down-390-dark-en.png,     viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/50-roundtrip-live-after-lab.png, viewport: desktop, theme: dark,  locale: en}
+
+dispositions:
+  # ── the board. All RETAIN, and three of them are BETTER SERVED than at R5:
+  #    R5's page-level mode removed them on mode entry (VTL-401) and R5.1's
+  #    grid-scoped mode does not. They are still RETAIN, not IMPROVE — the
+  #    capability itself is unchanged; what changed is that the Lab stopped
+  #    taking it away.
+  - {id: board.title_and_purpose, disposition: RETAIN, target: "unchanged in both modes; the subtitle no longer disappears on mode entry (D4c)"}
+  - {id: board.freshness_state,   disposition: RETAIN, target: "unchanged in both modes; the plan book's as-of and behind-the-tape banner now survive LAB, because they date the plan book and the plan book is still on the page (D4c)"}
+  - {id: board.headline_count,    disposition: RETAIN, target: "unchanged in both modes (D4b)"}
+  - {id: board.lifecycle_ladder,  disposition: RETAIN, target: "unchanged in both modes and fully operable in LAB; one line states that a cell click returns to Live, so nothing is inert (D4b/D4f)"}
+  - {id: board.count_law,         disposition: RETAIN, target: "untouched — the Lab prints no plan-book quantity"}
+  - {id: board.key_absence_disclosure, disposition: IMPROVE, target: "extended to the Lab's pill row: unavailable prints an em dash plus a disclosure line, empty prints a real 0 (D18*)", rationale: "R5 conflated unknown with zero at the pill row (VTL-402) — the one place this capability had not reached"}
+  - {id: board.progressive_expansion, disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: board.table_view,        disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: board.anonymous_gate,    disposition: RETAIN, target: "unchanged; the Lab affordance is absent entirely without entitlement (D3/D3b, crops 04/05)"}
+  - {id: board.empty_state,       disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.chart_hero,         disposition: RETAIN, target: "unchanged in LIVE; the Lab row still leads with the chart"}
+  - {id: card.printed_null_chart, disposition: RETAIN, target: "unchanged; inherited by the Lab row at the same-height/printed-absence law"}
+  - {id: card.live_quote,         disposition: RETAIN, target: "unchanged; the Lab row keeps the unconditional data-sym slot"}
+  - {id: card.stance_chip,        disposition: RETAIN, target: "unchanged in LIVE; still deliberately absent from a Lab row (D13)"}
+  - {id: card.no_read_chip,       disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.identity_link,      disposition: RETAIN, target: "unchanged; the Lab row uses the same stock.html#TICKER convention"}
+  - {id: card.priority,           disposition: RETAIN, target: "unchanged in LIVE; absent from the Lab by design (no ranking authority)"}
+  - {id: card.trigger_chip,       disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.marks,              disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.caution_carrier,    disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.lifecycle_mark,     disposition: RETAIN, target: "unchanged in LIVE; the Lab still quotes the ruled lexicon verbatim in its Prophet comparison"}
+  - {id: card.zone_footer,        disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.episode_chip,       disposition: RETAIN, target: "unchanged in LIVE. Its 'must disambiguate on a card seen alone' principle no longer licenses the Lab's per-row class chip — VTL-408 refused that reading and R5.1 withdrew it"}
+  - {id: section.candidates,      disposition: RETAIN, target: "unchanged in BOTH modes (D4d) — R5 removed it on mode entry"}
+  - {id: section.groups,          disposition: RETAIN, target: "unchanged in BOTH modes (D4d)"}
+  - {id: section.evidence_record, disposition: RETAIN, target: "unchanged in BOTH modes (D4d) — the surface an operator would use to judge a sighting is no longer removed in the same gesture that shows it"}
+  - {id: xc.bilingual,            disposition: IMPROVE, target: "aria-labels now bind to the language like the visible copy (C11); the EN glance vocabulary is as plain as the ZH (C15); the copy-law scan covers both languages across all six boards and both modes (C3)", rationale: "R5 shipped English-only assistive labels and an EN enum-shorthand where the ZH had the plain word — inverted bilingual parity (VTL-403/VTL-405, VTC-403)"}
+  - {id: xc.light_dark,           disposition: RETAIN, target: "unchanged; every new state is captured in both themes"}
+  - {id: xc.mobile_390,           disposition: IMPROVE, target: "all six frozen boards are on screen at 390 with no scroller (D20); the Lab's own controls clear the 40px touch floor (D20c); the rail no longer breaks 'not a sighting' mid-phrase", rationale: "R5 hid three of six product-contract boards behind an unaffordanced scroller that the page-level overflow checks were structurally blind to (VTL-411/VTC-401)"}
+  - {id: xc.lens_receipts,        disposition: RETAIN, target: "unchanged; every machine identity still lives on a receipt, now proven across 14 views"}
+  # ── the Lab, as R5 established it ───────────────────────────────────────
+  - {id: lab.mode_control,        disposition: IMPROVE, target: "the mode now scopes to the principal grid region and the Lab renders inside a bounded, labelled region with an explicit end rule (D4b-D4f)", rationale: "VTL-401 — a page-level mode deleted three baseline capabilities, two of them core; the ruling's own remedy is separation, not deletion"}
+  - {id: lab.six_boards,          disposition: RETAIN, target: "the same six frozen ids, unchanged; now all reachable at 390 (D9/D9b/D20) and carrying an overlap disclosure (VTL-406)"}
+  - {id: lab.observation_spine,   disposition: RETAIN, target: "unchanged — a preserved strength both critics named"}
+  - {id: lab.observation_class,   disposition: IMPROVE, target: "the divider is now sticky, so the class label is present wherever it applies instead of being repeated on 23 rows; four structural channels remain on the row (D6c/D6c1/D6c2/D6e/D6f/D6h)", rationale: "VTL-408 — 23 repeats of a constant below a divider that had already established the fact. The mid-scroll worry that justified them is answered by making the divider sticky rather than by keeping the repeats"}
+  - {id: lab.expert_chips,        disposition: RETAIN, target: "unchanged; identities still never merged (D8/D7c)"}
+  - {id: lab.prophet_comparison,  disposition: RETAIN, target: "unchanged; still quotes the ruled lifecycle lexicon"}
+  - {id: lab.measured_lead,       disposition: IMPROVE, target: "signed and symmetric: five branches, one ink for all measured outcomes, the null idiom reserved for genuine absences, Math.abs removed (D19-D19g)", rationale: "VTL-403 — the only self-referential metric on the surface rendered one-sidedly, and an adverse magnitude was structurally unprintable"}
+  - {id: lab.degraded_states,     disposition: IMPROVE, target: "unavailable gains retry and keeps the last known-good stamp; its pill counts are unknown marks, never zeros (D18*/D23*)", rationale: "VTL-402 and VTL-409 — the error state denied the reader the one fact that says how stale their last read was, and asserted counts it had never received"}
+  - {id: lab.authority_disclosure, disposition: RETAIN, target: "unchanged in substance; merged with the stance line into one sentence (VTL-412), receipt unchanged (D11/D11b)"}
+
+additions:
+  - id: add.lab_region_boundary
+    what: "A bounded, labelled Lab region with an accent boundary and an explicit end-of-region rule — the separation the VTL-401 ruling asks for in place of deletion."
+    evidence: "crops 10-17 (full-page), 46; verify D4e"
+  - id: add.unknown_count_mark
+    what: "An explicit unknown mark at every count position when the feed is not answering, with the line that makes the glyph a statement."
+    evidence: "crops 46-48; verify D18-D18f"
+  - id: add.sticky_class_divider
+    what: "The baseline divider pins while the rows it governs are on screen, replacing 23 per-row constants."
+    evidence: "crops 30/31/34; verify D6c"
+  - id: add.error_retry
+    what: "A retry control on the unavailable state, beside the escape hatch."
+    evidence: "crops 46-48; verify D23"
+  - id: add.row_count_statement
+    what: "A 'Showing N of M' line whose counts follow the observation-class filter."
+    evidence: "crops 32/33/35; verify D21-D21c"
+  - id: add.board_overlap_disclosure
+    what: "One line saying the six boards overlap and do not sum."
+    evidence: "crops 10-13, 20-27"
+
+user_tasks:
+  - {id: task.scan_the_board, task: "Find what is actionable on the US Prophet board right now", critical: true,
+     production: "Header + ladder + priority-sorted card grid", proposal: "Identical; the mode control still adds no row (D2)", verdict: EQUIVALENT}
+  - {id: task.read_one_setup, task: "Understand one setup completely without opening it", critical: true,
+     production: "The shipped .pvcard", proposal: "Unchanged", verdict: EQUIVALENT}
+  - {id: task.filter_by_lifecycle, task: "Filter the book to one lifecycle cell", critical: true,
+     production: "Ladder cells write #life=", proposal: "Unchanged, and now reachable from LAB too — a cell click returns to Live filtered, stated on the surface", verdict: EQUIVALENT}
+  - {id: task.reach_the_tail, task: "Reach every plan row as a card", critical: true,
+     production: "In-place expansion", proposal: "Unchanged", verdict: EQUIVALENT}
+  - {id: task.read_the_record, task: "Read Candidates, Groups and the track record", critical: true,
+     production: "Three sections, always present",
+     proposal: "Present in BOTH modes (D4d). At R5 they vanished on mode entry, which the verdict ruled a contract breach; this is the repair",
+     verdict: EQUIVALENT, notes: "EQUIVALENT to PRODUCTION, and BETTER than the R5 artifact this cycle revises."}
+  - {id: task.return_to_live, task: "Leave the Lab and get the production board back, intact and current", critical: true,
+     production: "n/a", proposal: "Unchanged mechanism, now proven independently of the controller's own counter by a sentinel attribute (D22) — the mutation that restores a cached DOM passes D15d and fails D22",
+     verdict: EQUIVALENT}
+  - {id: task.anonymous_reader, task: "Use the page without an operator entitlement", critical: true,
+     production: "The tier gate; no Lab exists", proposal: "Identical; zero lab-* nodes inside #board (D3/D3b)", verdict: EQUIVALENT}
+  - {id: task.inspect_early_candidates, task: "See exact early-entry candidates before Prophet has written a plan", critical: true,
+     production: "NOT POSSIBLE", proposal: "Six plain-word boards over the canonical Radar output, newest-first, chart-first rows, with the rendered count stated", verdict: BETTER}
+  - {id: task.tell_live_from_history, task: "Tell a genuinely live sighting apart from a historical seed", critical: true,
+     production: "NOT POSSIBLE",
+     proposal: "Four structural channels on the row plus a STICKY dated divider that is present wherever it applies; a seed can never print a clock time or a measured lead",
+     verdict: BETTER, notes: "The five-channel encoding both R5 critics praised, with the repeated chip traded for a sticky label — the same guarantee, one constant instead of 23."}
+  - {id: task.compare_to_prophet, task: "See how a candidate compares to current Prophet state", critical: true,
+     production: "NOT POSSIBLE", proposal: "A per-row Prophet band quoting the ruled lifecycle word and the plan-open date", verdict: BETTER}
+  - {id: task.learn_how_early_or_late, task: "Learn how early — or how LATE — the Lab was against Prophet", critical: true,
+     production: "NOT POSSIBLE",
+     proposal: "Five branches, one ink: favourable, same-day and adverse magnitudes all render as measurements; only genuine absences use the null idiom",
+     verdict: BETTER, notes: "At R5 this task was only half-servable: you could learn how early, never how late (VTL-403). Recorded as a distinct task because the verdict's finding was that the two halves were not equally served."}
+  - {id: task.know_lab_feed_health, task: "Know whether the Lab is showing me current observations", critical: false,
+     production: "NOT POSSIBLE",
+     proposal: "A pulsing/resting feed token, a behind band with the exact silence, a spine gap marker, a retry, and the last known-good stamp even when the feed is down",
+     verdict: BETTER}
+  - {id: task.trust_a_printed_count, task: "Trust that a printed count means what it says", critical: true,
+     production: "R4 distinguishes empty-not-missing at the count cell",
+     proposal: "The same distinction at the Lab's pill row: em dash + disclosure when unknown, real 0 when zero (D18-D18f)",
+     verdict: EQUIVALENT, notes: "EQUIVALENT to the R4 precedent it now matches; at R5 this was WORSE than production, which is why VTL-402 blocked."}
+  - {id: task.pick_a_detector_view, task: "Look at one detector family at a time", critical: false,
+     production: "NOT POSSIBLE",
+     proposal: "Six selectors with counts, all reachable at 390 without a scroll gesture (D20)",
+     verdict: BETTER, notes: "At R5 three of six were undiscoverable at the design floor (VTL-411)."}
+
+authority_delta:
+  - id: auth.lab_observation_exists
+    production_claim: "Production asserts nothing about early-entry candidates."
+    proposal_claim: "The surface asserts that a named detector fired on a named ticker, and — for live-forward rows — the clock time we first saw it."
+    direction: stronger
+    warranted: false
+    evidence: >
+      UNCHANGED from R5 and still unwarranted: R-LAB-1 has not landed, no canonical
+      mastermind.entry_event.v1 stream exists, and every timing/detector/observation-class fact in
+      the fixture is synthetic (DESIGN_NOTES §4, marked data-mock-lab). The R5 verdict adjudicated
+      this APPROVE_AHEAD_OF_PRODUCER_SCOPED — approval warrants composition and disclosure only —
+      with fail-closed condition C6 binding P-LAB-API and C7 binding the rebake. Both are carried
+      as CARRIED_BLOCK in continuity.yml. Re-declared warranted:false rather than inherited
+      quietly, because the producer still does not exist.
+  - id: auth.measured_lead
+    production_claim: "Production asserts no lead over anything."
+    proposal_claim: "A signed Lab-to-Prophet lead on live-forward rows: 'Seen N days before Prophet', 'Same day as Prophet', or 'Prophet was N days earlier'."
+    direction: stronger
+    warranted: false
+    evidence: >
+      Same producer dependency. What CHANGED at R5.1 is that the claim is now two-sided: the
+      surface can state a result against itself, and the fixture exercises that branch. The
+      LAB-0 §4 impossibility for seeds is unchanged and still proven to bite (D6, M2). C2's sign
+      guard is discharged for the reference (Math.abs removed, D19f) and carried against
+      P-LAB-API/P-LAB-UI.
+  - id: auth.zero_authority
+    production_claim: "The board's cards carry stance, priority and lifecycle."
+    proposal_claim: "The Lab explicitly ranks nothing, sizes nothing, originates nothing and mutates nothing, and says so at the glance tier."
+    direction: weaker
+    warranted: true
+    evidence: "LAB-0 §1/§5; all-false authority block asserted by D11; the disclosure is now ONE sentence merged with the stance (VTL-412), pinned by D11b."
+  - id: auth.prophet_state_quotation
+    production_claim: "The seven ruled lifecycle cell words, weight-only and hue-free."
+    proposal_claim: "The same seven words, quoted verbatim."
+    direction: equal
+    warranted: true
+    evidence: "Quotation, not restatement. Unchanged from R5."
+  - id: auth.intersection_board
+    production_claim: "n/a"
+    proposal_claim: "lab-g0-c2a-v1 shows names carrying both marks."
+    direction: equal
+    warranted: true
+    evidence: "Display set intersection only; detector_id = null, nothing minted (DNR:KILL-WASHOUT-TURN). D9d. Unchanged from R5."
+  - id: auth.plan_book_dating
+    production_claim: "The page header dates the plan book with one as-of and a behind-the-tape state."
+    proposal_claim: "The same stamp, now visible in LAB as well, alongside the Lab's own separate feed stamp inside the Lab region."
+    direction: equal
+    warranted: true
+    evidence: >
+      NEW ROW at R5.1, because the R51-M1 fix creates it. R5 hid the plan-book stamp in LAB on the
+      reasoning that it would date the wrong producer; with the plan book's own sections now
+      present, it dates exactly what it describes. Two stamps coexist and each is scoped: the page
+      header's outside the Lab region, the feed's inside it. Recorded so a critic checks the
+      scoping rather than discovering two as-ofs on one page.
+
+information_economics:
+  words_per_card:
+    production: "~12-15 visible words per Prophet card."
+    proposal: >
+      ~16-22 visible words per Lab row — DOWN from R5's ~20-26. The per-row seed chip (6 words on
+      23 of 30 rows) is gone, replaced by a sticky divider counted once.
+  findings:
+    - >
+      Net word count on the Lab plane FELL at R5.1 while three capabilities were added. The
+      removals: 23 seed chips (VTL-408) and one of the two synonymous disclaimer lines (VTL-412).
+      The additions: a "Showing N of M" line, a board-overlap line, and — only when the feed is
+      down — an unknown-disclosure line. The band above the pills went from three lines to two.
+    - >
+      The unknown-disclosure line is spent deliberately and only in the state that needs it. It is
+      the sentence that turns an em dash from a glyph into a statement, which is the whole of
+      VTL-402; a dash with no line would have been a quieter version of the same defect.
+    - >
+      Still WORDIER than a Prophet card, and still for one reason: a Lab row must state why a
+      number is absent ("Lead not measurable"). That is the disclosure whose omission is the
+      failure this surface exists to prevent.
+    - >
+      One constant still repeats per row: the PROPHET eyebrow. Kept as the cheapest way to keep
+      the comparison attributed to a different producer, now that plan-book sections share the
+      page again. A reviewer who disagrees should say so — it is the last repeated constant left.
+  preserved:
+    - "The LIVE board's word count is untouched; the mode control still adds two words and two labels."
+    - "The Lab still answers 'so what do I do' ONCE, in the band."
+    - "One as-of per producer, each scoped to the region it describes (see auth.plan_book_dating)."
+    - "Machine identity remains entirely below the glance tier, now proven across 14 views rather than one (C3)."

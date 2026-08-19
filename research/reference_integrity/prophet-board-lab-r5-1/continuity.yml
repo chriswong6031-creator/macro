@@ -1,0 +1,275 @@
+# Revision continuity closure (RIG V1.1 §13) — derived, then dispositioned.
+#
+#   python3 scripts/check_reference_integrity.py --mandate prophet-board-lab-r5-1
+#
+# Every one of the R5 verdict's 18 conditions gets exactly one disposition, by
+# id. The three blocking findings VTL-401/402/403 are carried as the three
+# R51-M* conditions the verdict minted for them, which is how that verdict
+# expressed them; each row names the finding it answers.
+#
+# HOW TO READ THE DISPOSITIONS HERE, because they are not all the same kind:
+#   RESOLVED_BY_CHANGE — this artifact changed, and the change is checkable at
+#                        the new frozen SHA by a named check and a named crop.
+#   CARRIED_BLOCK      — still open, deliberately, and it BLOCKS. Four of these
+#                        bind LATER waves (P-LAB-API, P-LAB-UI, P-MP1-SHELL) or
+#                        this cycle's own review process. Recorded rather than
+#                        deferred: an unstated debt resets to zero next cycle.
+schema: mastermind.rig_continuity.v1
+reference_id: prophet-board-lab-r5-1
+
+predecessors:
+  - reference_id: prophet-board-lab-r5
+    verdict: REVISE
+    source: on_disk
+    closure:
+
+      # ── the three majors ──────────────────────────────────────────────────
+      - id: R51-M1-GRID-SCOPE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-401. LAB now paints `#setups` and nothing else. The page subtitle, the
+          plan book's as-of and behind-the-tape banner, the lifecycle ladder, CANDIDATES, GROUPS
+          and EVIDENCE & RECORD all survive the mode; the ladder stays operable with one line
+          saying a cell click returns to Live, so nothing is inert and nothing is deleted. The
+          authority-hygiene concern is answered by SEPARATION as the ruling directs: the Lab
+          renders inside a bounded, labelled region with an accent boundary and an explicit
+          end-of-region rule. Checks D4b/D4c/D4d/D4e/D4f; mutation M7 puts the deletion back and
+          is caught by D4d; capture.py now measures survivors DIFFERENTIALLY against LIVE at the
+          same viewport and refuses to shoot a crop of the defect. Crops 10-17 (full-page),
+          35/36. Cost created and disclosed: at 390 no observation row is above the fold
+          (DESIGN_NOTES §2.10).
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/capture.py
+
+      - id: R51-M2-UNKNOWN-NOT-ZERO
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-402. "The feed is not answering" and "the feed answered with none" are now
+          separate facts wherever they surface. Unavailable renders an em dash in a dashed box on
+          every pill — R4's own key-absence idiom — plus the line that makes the glyph a
+          statement ("a zero here would be a number we never received"); empty keeps its
+          confident tabular 0 and its real-zero copy. Checks D18/D18b/D18c/D18d/D18e, and D18f
+          asserts the two states are not identical at the pill row, which is exactly what the
+          finding measured. Mutation M14 re-conflates them and is caught. Crops 40-42 (empty) vs
+          46-48 (unavailable), dark EN + light ZH + 390 in both.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-M3-SYMMETRIC-LEAD
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-403 on all three of its parts. SIGN: Math.abs is gone from the lead path
+          and the sign is the branch; the fixture emits signed leads, so the adverse and same-day
+          branches are real and photographed (+3, +2, +1, 0, -3 all render). CONFLATION: a
+          measured adverse result left the null idiom and now carries its own magnitude
+          ("Prophet was 3 days earlier"); only genuine absences keep the dashed treatment.
+          EMPHASIS: favourable, adverse and same-day share ONE ink and one unfilled treatment,
+          and the favourable chip no longer out-inks the ticker. Checks D19-D19g, including
+          D19c pinning the favourable and adverse inks to computed-style equality and D19f
+          grepping the source with comments stripped. Mutations M15 (route adverse through the
+          favourable branch) and M16 (re-amplify the chip) are both caught. Crops 35/36/37.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/gen_lab_fixture.py
+
+      # ── conditions this cycle discharges ─────────────────────────────────
+      - id: C1-REDERIVATION-PROOF
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both halves delivered, and the result vindicated the condition. (a) Mutation M17 caches
+          #board.innerHTML on LAB entry and re-inserts it on LIVE while leaving the repaint
+          counter incrementing. (b) Check D22 plants a sentinel data-attribute on a real card
+          before LAB and requires it absent after the return. Under M17, D15d (the counter)
+          PASSED and D22 FAILED — the counter was a self-report, never evidence, exactly as the
+          condition said. R5's M8 had attacked the counter rather than the mechanism, so the law
+          had never been tested. Also fixed en route: apply(initial) no longer counts the cold
+          load as a repaint, so the counter can only ever count real re-derivations.
+        changed_files:
+          - mockups/refs/prophet_lab/tools/verify.py
+          - mockups/refs/prophet_lab/tools/mutation_test.py
+
+      - id: C3-COPY-LAW-COVERAGE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The slug-leak and banned-vocabulary scans now sweep 6 boards x 2 languages in LAB plus
+          both languages in LIVE — 14 views, asserted by C3c so the coverage itself cannot
+          silently shrink. The sweep immediately found a defect in the CHECK: `"validated" in
+          text` fires on the ruled lifecycle word "Invalidated", so the first LIVE-view run
+          flagged compliant copy. It is now a negative-lookbehind regex. A check that fires on
+          correct copy trains people to ignore it.
+        changed_files:
+          - mockups/refs/prophet_lab/tools/verify.py
+
+      - id: C4-390-SELECTOR-AFFORDANCE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The scroller is REMOVED below 980w rather than decorated: the six pills wrap, so all
+          six frozen LAB-0 §3 boards are on screen at 390 with no gesture to discover and nothing
+          to afford. D20 requires all six within the viewport, D20b forbids a hidden scroller
+          (the gap D14c/D16 were structurally blind to, since an inner scroller keeps
+          documentElement.scrollWidth clean), and D20c pins the 40px touch floor on these
+          controls. Mutation M19 restores the scroller and is caught by both D20 and D20b.
+          Crops 14, 27, 34, 42, 45, 48.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.css
+          - mockups/refs/prophet_lab/tools/verify.py
+
+      - id: C5-RECENSUS-CITATIONS
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Both corrected in research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md, each verified
+          before writing. (a) `--up` is declared at templates/theme.css:72 (dark) and :148
+          (light) while `--pv-buy` is at :80 and :152 — the R5 text cited only the --pv-buy lines
+          and attributed both tokens to them; the comparison needs both, and §2.8 now names both.
+          (b) `git show --stat 444f80d62774` touches engine/prophet_management.py,
+          scripts/build_prophet.py, the ruling doc and tests — NOT engine/prophet_bridge.py;
+          plan_clock_date() was introduced by 242aafda0dc7 (#4684). The §0 headline now says what
+          #5540 actually did (reconciled the consumers onto the helper) and matches §2.12.
+        changed_files:
+          - research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md
+
+      - id: C10-TOKEN-POLICY-SELF-CONSISTENCY
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The single hex literal is deleted. It was also redundant — the light theme's `--panel`
+          already resolves to white, so the base rule produced the same paint — which is why the
+          fix is a deletion rather than a tokenisation. The file's stated "no hex literal" policy
+          is now true of the file.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: C11-BILINGUAL-ARIA
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The three group labels (board mode, Lab boards, observation class) bind to the current
+          language like every other string on the page, plus a bilingual label on the unknown
+          count marks. An English-only aria-label under data-lang=zh is the one surface where a
+          bilingual page can lose parity with nobody seeing it.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+
+      - id: R51-C13-ERROR-RETRY-AND-ASOF
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-409. The unavailable state gains a "Try again" control beside "Back to
+          Live", and prints the LAST KNOWN-GOOD pass stamp, labelled as such so it cannot be read
+          as current. R5 returned early from feedStamp() before the as-of was appended, so the
+          one state where staleness matters most was the only state that did not date itself.
+          Checks D23/D23b/D23c. Crops 46-48.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-C14-COUNT-DISCIPLINE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-407. A "Showing N of M" line states the rendered count, and the
+          live/history split now computes from the FILTERED set rather than the whole board — R5
+          printed "6 live · 23 seeds" above six rows. Checks D21/D21b/D21c. Pagination is
+          deliberately NOT adopted and the divergence from R4 is argued in DESIGN_NOTES §2.11:
+          R4 pages because 159 cards is a scanning problem, 30 observations is not, and hiding
+          observations on a surface that exists to show every early sighting would trade a
+          capability for a scroll.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+          - mockups/refs/prophet_lab/lab.css
+
+      - id: R51-C15-GLANCE-VOCAB
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Answers VTL-405. "Live" now means the MODE and nothing else. The observation class and
+          its filter share one phrase — "Seen live" / "From history" (EN), 「实时观测」/「回溯」
+          (ZH) — so one referent has one word, and the EN "seeds" enum-shorthand is gone. The
+          finding's real point was the inverted bilingual parity (the English was the jargon and
+          the Chinese the plain word); EN and ZH are now equally plain, and the ZH wording is
+          unchanged because it was already right. Partial by construction and stated as such:
+          "Seen live" still contains the token "live", because the honest plain-English phrase
+          for the fact does, and the mode button is contract vocabulary (LAB-0 "LIVE | LAB").
+          Three meanings reduced to two, lexically and visually distinct.
+        changed_files:
+          - mockups/refs/prophet_lab/lab.js
+
+      # ── conditions that bind LATER waves, or this cycle's own process ────
+      - id: C2-LEAD-SIGN-GUARD
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Discharged for the REFERENCE (see R51-M3: Math.abs removed, sign is the branch, D19f
+          pins it), but the condition's own text binds P-LAB-API and P-LAB-UI, which do not exist
+          yet. It stays open against those waves: any non-positive lead must route through the
+          honest adverse branch in the shipped implementation, with a check pinning it there.
+          Carried rather than marked resolved, because a reference cannot discharge a condition
+          written against a runtime that has not been built.
+
+      - id: C6-LIVE-FORWARD-FAILS-CLOSED
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Binds P-LAB-API, not this artifact. auth.lab_observation_exists and auth.measured_lead
+          remain warranted:false at this SHA — Radar's live transport (R-LAB-1 / W4.1) has not
+          landed, so the Lab plane of the fixture is still synthetic and disclosed as such
+          (DESIGN_NOTES §4). The fail-closed classification rule the condition specifies is the
+          API's to implement and prove.
+
+      - id: C7-REBAKE-TAKES-ITS-OWN-SHA
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Binds the post-producer refresh. No rebake has occurred: the Lab fixture at this SHA is
+          still synthetic on the Lab plane and real on the Prophet/identity plane, exactly as at
+          R5. When R-LAB-1 lands, the rebake takes its own frozen SHA and a lightweight RIG
+          re-check scoped to the observation-class panel and the lead slot.
+
+      - id: C8-R4-COMPOSITION-UNREVIEWED
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Unchanged and unchangeable by this cycle. R4's COMPOSITION has still never had a RIG §6
+          dual-critic pass; the R5 verdict adjudicated its ten RESOLVED_BY_CHANGE rows as factual
+          closure claims only. This artifact continues to load R4 unmodified (empty diff,
+          re-verified at this SHA), so approving R5.1 would still not supply R4 a critic pass.
+          P-MP1-SHELL stays blocked until R4's composition gets one or a design authority records
+          an explicit override naming this condition.
+
+      - id: C9-PREDECESSOR-AMENDMENT-RULE
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Complied with, and not re-exercised. The r3 verdict amendment made at R5 satisfies every
+          guard rail the condition records: shape-only, all 11 texts byte-identical (verified by
+          the R5 product-regression critic against both origin/main and the sha256-pinned
+          r4/r3_source copy), an in-file amendment header naming the amending cycle, the vendored
+          pinned copy untouched, and reported in the successor README and the session return.
+          THIS cycle amends no predecessor record at all — the R5 verdict, both R5 receipts and
+          every earlier artifact set are byte-untouched by this branch.
+        changed_files:
+          - research/reference_integrity/prophet-board-5514-r3/verdict.yml
+
+      - id: C12-SECOND-CRITIC-QUARANTINE
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          THIS CYCLE'S OWN OBLIGATION, and this author cannot discharge it. The condition requires
+          the R5.1 cycle to complete the proper §6 two-pass shape: both critics' first passes
+          frozen before any reveal, then the rationale revealed for genuine amendment passes. No
+          review receipt exists in this packet, no verdict, and no approval. The rationale docs
+          are deliberately kept separate from the artifact directory's runtime files so a critic
+          can be quarantined against them exactly as the R5 visual-taste critic was. It clears
+          when two independent critics have run against frozen SHA
+          f889d5eb35f3080cf43136ad58bb780b1152c2dc in that shape, not before.

@@ -1,0 +1,49 @@
+# RIG manifest (RIG V1 §3) — Prophet Operator Lab, R5.1 revision candidate.
+#
+# STATUS IS `draft` AND STAYS THERE. The R5 verdict's condition C12 requires the
+# R5.1 cycle to run the PROPER §6 two-pass shape — both critics' first passes
+# frozen before any reveal, then the rationale revealed for genuine amendment
+# passes. This session authored the artifact and is disqualified from all of it.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-lab-r5-1
+scope: full
+status: draft
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "claude design session, D-LAB-R5.1 (branch claude/prophet-lab-r5-1-revision)"
+  role: designer
+
+# The revision artifact, frozen. Receipts bind to these bytes: R5's receipts are
+# stale against this SHA by construction (RIG §3), which is why this is a new
+# artifact set rather than an edit to prophet-board-lab-r5.
+reference_files:
+  - path: mockups/refs/prophet_lab
+    frozen_sha: f889d5eb35f3080cf43136ad58bb780b1152c2dc
+
+# Ordered OLDEST -> NEAREST. Every non-approved set governing this route must be
+# named or `undeclared-predecessor` fires (RIG §13.2). The nearest is R5, whose
+# REVISE verdict this cycle answers item by item in continuity.yml.
+lineage:
+  predecessors:
+    - {reference_id: prophet-board-5514-original, verdict: REVISE,
+       note: "founding regression fixture (PR #5520)"}
+    - {reference_id: prophet-board-5514-r2, verdict: REVISE,
+       note: "r2 cycle (PR #5533)"}
+    - {reference_id: prophet-board-5514-r3, verdict: REVISE,
+       note: "r3 cycle (PR #5552); closed by the R4 artifact and carried in prophet-board-lab-r5"}
+    - {reference_id: prophet-board-lab-r5, verdict: REVISE,
+       note: "R5 cycle (PR #5931); 3 majors + 18 conditions, closed row by row in continuity.yml"}
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+  # approval: approval.yml    # ABSENT ON PURPOSE — see README.md
