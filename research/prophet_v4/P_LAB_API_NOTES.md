@@ -3,9 +3,11 @@
 **Wave:** V4-B5A / P-LAB-API, per `research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md`
 (LAB-0) §5-§6. **Status:** fixture-based implementation, tests green locally,
 **round 1 of independent review addressed** (see §Review round 1 dispositions
-below), **CI guard reds fixed** (see §CI guard fixes below). Not yet wired to
-a live Radar spool/state dir or a live Prophet index/stockdata tree on any
-host — see "Production wiring" below.
+below), **CI guard reds fixed** (see §CI guard fixes below), **day-2 main
+reconciliation + temporal correctness amendment landed** (see §Day-2
+reconciliation below). Not yet wired to a live Radar spool/state dir or a
+live Prophet index/stockdata tree on any host — see "Production wiring"
+below.
 
 ## What shipped
 
@@ -314,6 +316,140 @@ branch:
    addition is picked up by ordinary inference and does not interact with
    the ci-pack-10 closure-coverage guard.
 
+## Day-2 reconciliation (2026-08-19, post #5954/#5952/#5969)
+
+Chairman day-2 directive: rebase onto the newest `origin/main` after the CI
+reform landed (#5954 W1 — every legacy job declares `gate: code | data`;
+#5969 W2 — merge-gate packs now gate only `gate:code` jobs, `gate:data`
+receipts move to a post-nightly lane; #5952 wired the reliability suite the
+prior round had separately flagged as an unrelated pre-existing gap), PLUS a
+mandated temporal-correctness amendment before merge.
+
+### What was recomputed, and what survived
+
+Per the directive, every prior `.github/ci/legacy-jobs.yml` hunk was
+temporarily STRIPPED (checked out from fresh `origin/main`) and both guards
+re-run against the bare base, to recompute from scratch rather than assume
+the prior round's widening still applies under the new gate regime:
+
+* `python3.12 scripts/audit_unrun_tests.py` WITHOUT the ci-pack-1 wiring hunk
+  → both `tests/test_prophet_lab.py` and `tests/test_prophet_lab_api.py`
+  reported as unrun again. **Still required**, unchanged by the reform.
+* `test_curated_exclusive_scopes_cover_their_own_import_closure` WITHOUT the
+  ci-pack-10 widening hunk → the exact same four curated jobs
+  (`biocatalyst-history`, `biocatalyst-serving`, `flow-surface`,
+  `unrun-government-revenue-grader`) report uncovered closures again, same
+  shape as before (`biocatalyst-serving` needs only `engine/prophet_lab/**`
+  + `engine/prophet_board_read.py`; the other three need the larger
+  ~105-135-file widening). `test_the_curated_exclusive_set_is_actually_declared`
+  passed throughout — the CURATED_EXCLUSIVE job SET itself is unchanged by
+  #5954/#5969 (the reform added a `gate:` field to every job and moved
+  `gate:data` jobs out of merge-gate packs; it did not touch which jobs are
+  `scope: exclusive` or their declared `paths:`). **Both hunks restored,
+  still fully required.**
+* The `app/deploy/update.sh` restart-regex hunk and the
+  `tests/fixtures/prophet_lab/` rename (ci-pack-9): no commit between the
+  prior round's base and the newest `origin/main` touched
+  `app/deploy/update.sh` or `tests/test_entry_radar_w1.py` at all
+  (`git log --oneline <old-base>..origin/main -- <path>` empty for both) —
+  **unaffected, still required**, both guards re-verified green.
+
+**Authority classification of the final diff: still authority-changing.**
+The final diff touches `.github/ci/legacy-jobs.yml` (409 lines: the
+ci-pack-1 suite wiring + the ci-pack-10 `paths:` widening) — a `scripts/**`/
+`.github/ci/**` edit sets `authority_changed=true` per house law regardless
+of whether the widening turns out to be "still needed" or "newly needed";
+it does not touch `scripts/**` itself. No other file in the diff is under
+`scripts/` or `.github/`.
+
+### Rebase mechanics
+
+Three separate rebases were needed as `origin/main` kept advancing during
+this reconciliation (routine wire/press/marketing ticks plus #5969/#5973
+landing mid-session) — each was a clean fast-forward rebase with ZERO
+conflicts (`git rebase origin/main` reported no conflict markers on any of
+the three), because none of the newly-merged commits touched any file this
+PR owns. Final base: `origin/main` @ `10642922c221` (`marketing-publish:
+outbox run 2026-08-19T11:03Z`), merge-base confirmed equal to `origin/main`'s
+tip at push time.
+
+### The temporal correctness amendment (mandated before merge)
+
+**Finding:** every comparison in the observation-class honesty path
+(`observation.classify_observation`'s `baseline_started_at`/
+`continuous_through` checks, `sources.baseline_coverage_verified`'s
+`earliest<=started_at` check, and the timestamp-ordering helpers that feed
+them — `sources.extract_events`'s per-event "earliest", `earliest_pass_ts`,
+`latest_envelope`) compared RAW STRINGS with `<`/`>`/`min()`/`max()`. That is
+only correct when every timestamp shares identical UTC-offset notation.
+Measured counter-example: `"2026-08-19T09:00:00-04:00"` (13:00 UTC) sorts
+lexicographically BEFORE `"2026-08-19T10:00:00Z"` (10:00 UTC) — `'0' < '1'`
+at the hour digit — despite naming the LATER instant. Any spool envelope or
+baseline marker ever using a non-`Z` (but still legal ISO-8601) offset could
+have silently flipped a `retrospective_seed`/`live_forward` classification,
+in EITHER direction — including the dangerous one the handoff specifically
+named: incorrectly PROMOTING a seed to `live_forward`, or falsely
+"verifying" baseline coverage that does not actually reach back far enough.
+
+**Fix:** `engine/prophet_lab/timeparse.py` (new) — the ONE canonical
+`parse_instant(ts) -> datetime | None` helper: normalizes a `Z`/`z` suffix to
+`+00:00`, parses via `datetime.fromisoformat`, converts to UTC. Every
+honesty-path comparison in `observation.py` and `sources.py` now compares
+the returned `datetime` objects, never the original strings. Naive
+timestamps (no UTC offset at all) FAIL CLOSED — `parse_instant` returns
+`None`, and every caller's existing "could not parse -> retrospective_seed
+/ coverage not verified" branch already handles that. This is documented
+as a deliberate choice, not an oversight: every producer this package reads
+is contracted to always emit an explicit offset (the Radar spool envelope's
+`pass_ts`, the observation-baseline marker's `baseline_started_at`/
+`continuous_through`), so a naive value reaching the parser signals an
+UPSTREAM CONTRACT VIOLATION — treating it as UTC would risk manufacturing a
+`live_forward` classification (and a measured lead) from an instant whose
+zone was never actually known, exactly the failure this amendment exists to
+close.
+
+**Deliberately NOT touched: `boards.py`'s row-sort key.** `_parse_sort_ts`
+(the N1 fix from review round 1) already parses properly, but treats a
+naive timestamp as UTC (needed for bare `YYYY-MM-DD` Prophet plan dates used
+as a fallback `sort_ts` — an existing, tested board DISPLAY behavior). Making
+it share `timeparse.parse_instant`'s fail-closed-on-naive semantics would
+have SILENTLY CHANGED which rows sort last for a naive `sort_ts` — exactly
+the "do not change board semantics" line the mandate drew. The two
+functions solve different problems (sort POSITION vs honesty
+CLASSIFICATION) with legitimately different failure modes; `timeparse.py`'s
+module docstring states this explicitly so a future reader does not "fix"
+the apparent duplication by merging them.
+
+**New tests** (37 total, all adversarial, none merely re-testing the happy
+path already covered):
+* `tests/test_prophet_lab_timeparse.py` (18, new file) — the low-level
+  helper: offset normalization (`Z`, `z`, `+00:00`, `-04:00`, `+08:00`),
+  equal-instant different-offset-form equality, naive/garbage/empty
+  rejection, before/after across all four offset forms on both sides of a
+  reference instant, `earliest_instant_string` correctness including the
+  exact regression pairing.
+* `tests/test_prophet_lab.py` (+19, 75 -> 94) — integration-level adversarial cases
+  through `classify_observation` and `baseline_coverage_verified`:
+  `test_classify_observation_equal_instant_different_offsets_at_lower_boundary`,
+  `test_classify_observation_before_baseline_across_offset_forms` /
+  `..._after_baseline_across_offset_forms` (parametrized over Z/+00:00/
+  -04:00/+08:00), `test_classify_observation_naive_observed_at_fails_closed_to_seed`,
+  `..._naive_baseline_started_at_fails_closed_to_seed`,
+  `..._unparseable_continuous_through_fails_closed_to_seed`,
+  `..._unparseable_observed_at_fails_closed_to_seed`,
+  `test_classify_observation_regression_lexicographic_bug_would_have_wrongly_promoted`
+  (the named dangerous-direction regression case),
+  `test_baseline_coverage_verified_equal_instant_different_offsets`,
+  `..._naive_baseline_started_at_fails_closed`,
+  `..._naive_envelope_pass_ts_fails_closed`,
+  `test_baseline_coverage_verified_true_when_evidence_reaches_further_back`,
+  `test_baseline_coverage_verified_regression_lexicographic_bug` (the S1-axis
+  dangerous-direction regression case).
+
+**No board semantics, observation classes, or payload contract changed** —
+confirmed by the full pre-existing suite passing unmodified alongside the 37
+new tests: 141 total across the three prophet_lab test files (94 + 29 + 18).
+
 ## Verified
 
 * `python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py -q`
@@ -345,3 +481,31 @@ branch:
   `scripts/reconcile_entry_radar.py` (the four W4.1 radar-transport files) —
   confirmed via `git diff --stat HEAD -- <those four paths>` returning empty.
   Zero writes to any Prophet store, zero writes under `data/`.
+
+### Day-2 verification (rebased onto `origin/main` @ `10642922c221`)
+
+* `python3.12 -m pytest tests/test_prophet_lab.py tests/test_prophet_lab_api.py tests/test_prophet_lab_timeparse.py tests/test_deploy_update_self_heal.py tests/test_entry_radar_w1.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w4_ledger.py -q`
+  → **558 passed, 1 skipped** (the skip is the same pre-existing conditional
+  Radar-diff guard as every prior round — this branch touches no Radar code).
+* `python3.12 -m pytest tests/test_ci_pack.py -q -k "test_curated_exclusive_scopes_cover_their_own_import_closure or test_the_curated_exclusive_set_is_actually_declared"`
+  → **2 passed (330s)** on the newest base, both WITH the widening hunks
+  restored AND (separately, per the recompute mandate) WITHOUT them
+  re-confirming the same four jobs go red without the hunk — see "What was
+  recomputed" above.
+* `python3.12 scripts/audit_unrun_tests.py` → exit 0 (also re-confirmed exit
+  1 without the ci-pack-1 hunk, and caught + fixed a genuine miss: the new
+  `tests/test_prophet_lab_timeparse.py` needed its own wiring into the same
+  `engine-render-guards` step, added in a follow-up commit).
+* `python3.12 -c "import yaml; yaml.safe_load(open('.github/ci/legacy-jobs.yml'))"`
+  → parses clean.
+* Three rebases, all clean fast-forwards with zero conflicts (`git rebase
+  origin/main` reported none on any of the three) — `origin/main` kept
+  advancing (routine wire ticks plus #5969/#5973) faster than this
+  reconciliation could finish; each advance was checked for relevance
+  (`git log --oneline <old>..<new> -- <owned paths>`) before re-rebasing,
+  and none touched a file this PR owns beyond the #5954/#5952/#5969 reform
+  itself.
+* `git diff --stat origin/main HEAD` → 23 files, 4492 insertions / 1
+  deletion — the same file set as the prior round plus
+  `engine/prophet_lab/timeparse.py` and `tests/test_prophet_lab_timeparse.py`.
+  Forbidden radar-transport files and `data/` both still empty.
