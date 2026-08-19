@@ -61,8 +61,8 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     registry = model.registry
     assert registry["schema"] == "mastermind_programs.v1"
     assert set(registry["repositories"]) == {"macro", "terminal", "mastermind"}
-    # 59 -> 60: Grey Deer GD-0A landed grey-deer-risk-intelligence (records-only
-    # program registration; freeze research/grey_deer/, 2026-08-19).
+    # 59 -> 60: Grey Deer GD-0A (#5963) landed grey-deer-risk-intelligence
+    # (records-only program registration; freeze research/grey_deer/, 2026-08-19).
     assert len(registry["programs"]) == 60
     assert len(registry["product_surfaces"]) == 16
     assert len(registry["cross_repo_contracts"]) == 17

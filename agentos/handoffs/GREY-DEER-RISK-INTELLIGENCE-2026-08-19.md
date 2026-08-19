@@ -115,7 +115,7 @@ danger_areas:
   - "Sparse worktrees: the system-map generator and any future GD build touching site//data/ need python3 scripts/worktree_sparse.py full first; never git add -A an unexpected data//site/ diff."
   - "The CI control-plane lane (#5954) is actively moving .github/ci/legacy-jobs.yml — a Grey Deer test needing CI registration must wait/rebase, never hand-edit the moving manifest."
   - "Any scripts/** edit sets authority_changed=true in the ship-loop guard and demands a genuinely green main to merge safely — GD-2+ builders must check main health before merging."
-prs: []
+prs: [5963]
 decisions:
   - DEC:RISK-STATE-HAZARD-POLICY-SEPARATION
   - DEC:RISK-ENVELOPE-IS-CANONICAL-DERIVED-PROJECTION

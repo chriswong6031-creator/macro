@@ -53,7 +53,8 @@ do_not_redo:
 waves:
   - id: GD-0A
     title: Durable program landing — freeze, workstream, 8 decisions, handoff, registry, system map
-    status: in_progress
+    status: awaiting_ci
+    pr: 5963
   - id: GD-1A
     title: PIT prereg + source-clock census (Grok; hash-pinned before outcomes)
     status: in_progress
