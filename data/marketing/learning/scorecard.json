@@ -1,12 +1,42 @@
 {
   "as_of": "2026-08-19",
   "bottleneck": {
-    "accounts": [],
+    "accounts": [
+      {
+        "account": "mastermind_news",
+        "author_replies": 0,
+        "contributions": 8,
+        "engagements": 0,
+        "impressions": 0,
+        "measured": 0,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 8
+      }
+    ],
     "basis": "raw_counts",
     "counter_note": "replies_sent counts replies that actually LEFT (send-state rows only). replies_enqueued are drafts awaiting approval and replies_abstained are critic kills — neither is public. At M0 replies_sent is 0 by construction; contributions counts published items only.",
     "why": "north-star (qualified retained followers per 100 contributions) is undefined at zero followers — charter §8"
   },
-  "cells": [],
+  "cells": [
+    {
+      "dims": {
+        "account": "mastermind_news",
+        "format": "breaking",
+        "hook_family": "press_lane",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 8,
+      "n_labelled": 0,
+      "n_null": 8,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    }
+  ],
   "consumers": [
     "d05_wire_loop",
     "is_w5_ranker",
@@ -40,8 +70,8 @@
     "hook_family"
   ],
   "n_floor": 20,
-  "n_rows": 0,
-  "n_rows_all_time": 112,
+  "n_rows": 8,
+  "n_rows_all_time": 120,
   "north_star": {
     "active": false,
     "follower_floor": 250,
@@ -55,10 +85,46 @@
   "note": "Operator console artifact. No score or label on this surface is user-facing, and nothing in site/ reads this file.",
   "produced_by": "engine/marketing/labels.py",
   "provenance": {
-    "angle": [],
+    "angle": [
+      {
+        "angle": "unknown",
+        "med_adjusted": null,
+        "med_impressions": null,
+        "med_label": null,
+        "n": 8,
+        "n_labelled": 0,
+        "n_null": 8,
+        "verdict": "seeding",
+        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      }
+    ],
     "note": "Marginal tables, one dimension at a time — NOT extra joint-cell dimensions. See labels.PROVENANCE_DIMS for the cardinality arithmetic. 'unknown' is a real bucket: an item that carried no shape/angle/trigger is counted, never dropped.",
-    "shape": [],
-    "trigger": []
+    "shape": [
+      {
+        "med_adjusted": null,
+        "med_impressions": null,
+        "med_label": null,
+        "n": 8,
+        "n_labelled": 0,
+        "n_null": 8,
+        "shape": "unknown",
+        "verdict": "seeding",
+        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      }
+    ],
+    "trigger": [
+      {
+        "med_adjusted": null,
+        "med_impressions": null,
+        "med_label": null,
+        "n": 8,
+        "n_labelled": 0,
+        "n_null": 8,
+        "trigger": "unknown",
+        "verdict": "seeding",
+        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      }
+    ]
   },
   "provenance_dims": [
     "shape",
