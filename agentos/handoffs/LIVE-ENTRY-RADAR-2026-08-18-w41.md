@@ -3,7 +3,7 @@ workstream: WS:LIVE-ENTRY-RADAR
 session: claude/radar-w41-transport
 model: sonnet
 ended_because: complete
-prs: []
+prs: [5929]
 
 mission: >
   W4.1 live-transport correction (research/prophet_v4/
@@ -59,17 +59,17 @@ unverified:
     what_would_verify: "Run scripts/entry_radar_live_pack.py --dry-run with ENTRY_RADAR_SLICE_DIR pointed at a fixture directory containing at least one <SYM>.slice.json, and inspect the resulting pack.confirmed_lanes for that ticker; or add a unit test that calls confirmed_lane_pack_rows() against slice_lanes()'s actual per_name dict shape (available=True with g0_grey_events/c5_candidates keys) rather than only the normalizer downstream of it."
   - claim: "A real nightly spooling the same still-open episode across multiple RTH passes appends only ONE forward.parquet row per episode_address within a single reconciler run."
     what_would_verify: "append_forward_rows only dedups new_rows against rows ALREADY PERSISTED in forward.parquet (the 'seen' set), not within the new batch itself. Add a test that spools two envelopes carrying the SAME event_id (different pass_ts) in one reconciler run and asserts forward.parquet ends with exactly one row for that episode_address, not two. This risk pre-dates W4.1 (append_forward_rows is unchanged) but was dormant because zero real envelopes ever parsed before this fix — W4.1 is what makes it reachable for the first time."
-  - claim: "This PR has been pushed, opened, reviewed, and merged, with live verification on the VPS plane."
-    what_would_verify: "Complete push -> PR -> CI -> commissioning-session review -> merge -> live verification per the shared workspace completion law. This build-worker session does not own that chain and did not arm merge-on-green."
+  - claim: "This PR (#5929, pushed and opened) has been reviewed, CI-concluded, and merged, with live verification on the VPS plane."
+    what_would_verify: "Complete CI -> commissioning-session review -> merge -> live verification per the shared workspace completion law. This build-worker session does not own that chain and did not arm merge-on-green."
 
 unresolved:
   - "Whether confirmed_lane_pack_rows()'s reshaping is exercised against slice_lanes()'s REAL per-ticker output shape (see first unverified item) — flagged for the commissioning session or a follow-up test, not blocking this packet."
   - "Whether the newly-reachable duplicate-envelope-same-episode append behavior needs a fix in append_forward_rows() before Radar live commissioning proceeds (LAB0 §6 step 3), or whether it is acceptable as-is (e.g. because episodes in practice only spool once per address in a night) — needs a decision, not made here."
 
 next_actions:
-  - "Commissioning session: review the diff (engine/entry_radar/live_pack.py, live_eval.py, scripts/entry_radar_live_pack.py, scripts/reconcile_entry_radar.py, tests/test_entry_radar_w41_transport.py)."
+  - "Commissioning session: review PR #5929 (engine/entry_radar/live_pack.py, live_eval.py, scripts/entry_radar_live_pack.py, scripts/reconcile_entry_radar.py, tests/test_entry_radar_w41_transport.py)."
   - "Weigh the two unresolved items above, especially the real-slice-store integration gap and the newly-reachable duplicate-envelope dedup question."
-  - "Push branch claude/radar-w41-transport, open the PR, let CI conclude, and own the merge + live verification chain — do not arm merge-on-green without that review."
+  - "Let CI conclude on #5929 and own the merge + live verification chain — do not arm merge-on-green without that review."
   - "After merge: flip the W4.1 wave row in agentos/workstreams/WS-LIVE-ENTRY-RADAR.md to done with the merged squash sha."
   - "Decide whether the duplicate-envelope forward-row question needs its own follow-up wave before Radar live commissioning (LAB0 §6 step 3) proceeds."
 

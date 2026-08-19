@@ -84,6 +84,7 @@ waves:
     title: PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool
       envelope contract)
     status: in_progress
+    pr: 5929
     depends_on: [W4, W5]
     # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
     # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
@@ -178,7 +179,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) is a build worker's PR IN PROGRESS (not yet merged) as of this update — see the W4.1 wave row for scope/receipts; the commissioning session owns review and merge, not the build worker. #5897 (W4 test-baseline repair) MERGED 2026-08-19, so W4.1 rebased onto a green W4 baseline."
+next_action: "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) is build worker's PR #5929, OPEN and NOT YET MERGED as of this update — see the W4.1 wave row for scope/receipts; the commissioning session owns review and merge, not the build worker. #5897 (W4 test-baseline repair) MERGED 2026-08-19, so W4.1 rebased onto a green W4 baseline."
 ---
 
 ## Context
