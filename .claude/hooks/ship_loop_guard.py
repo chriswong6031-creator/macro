@@ -198,19 +198,30 @@ GIT_TERM_GRACE_SECONDS = 10
 # to be the cold number, and the cold number does not fit the wall below.
 #
 # The wall is `.claude/settings.json`, where Stop gives this hook 180s
-# (SessionStart, 30s), and the HARNESS enforces it. A retry budget larger than
-# what is left of that wall is a retry that can never conclude: the hook is
-# cancelled mid-flight and the Stop evaluation silently does not happen at all,
-# which is worse than a block. 60 + GIT_TERM_GRACE_SECONDS + 95 = 165 leaves the
-# rest of the evaluation its margin. `tests/test_ship_loop_guard.py` pins the sum
-# against the settings file so the two cannot drift apart unnoticed.
+# (SessionStart, 30s), and the HARNESS enforces it. Budgets larger than that wall
+# can never conclude: the hook is cancelled mid-flight and the Stop evaluation
+# silently does not happen at all, which is a fail-OPEN — strictly worse than the
+# block it was trying to file. So the numbers below are chosen so that the WHOLE
+# pathological path fits, sweeps and grace periods included, not just the two
+# status attempts: 60 + 10 grace, + a first sweep (5 + 10 grace to resolve the
+# gitdir, 5 for lsof), + 70 + 10 grace, + a second sweep (5 for lsof; the gitdir
+# is cached by then) = 175 of 180. That path ends in a raise and a `guard_error`
+# emit, so 5s is all it needs after it. The path that SUCCEEDS on the retry — the
+# 13s-warm one this is built for — leaves ~77s for the rest of the evaluation.
+# `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file
+# so the two cannot drift apart unnoticed.
 STATUS_TIMEOUT_SECONDS = 60
-STATUS_RETRY_TIMEOUT_SECONDS = 95
+STATUS_RETRY_TIMEOUT_SECONDS = 70
+# Metadata-only probes (`rev-parse`, `lsof`) that must never become the reason
+# the wall above is missed. Both are sub-second in health; this is the leash for
+# the pathological case, not a target.
+SWEEP_PROBE_TIMEOUT_SECONDS = 5
 # When this process started, and therefore the floor for "a lock THIS guard's own
 # killed git could have created". Anything older is somebody else's and is never
 # ours to remove. Module import time, not Stop time, because a SessionStart
 # fingerprint can orphan a lock just as a Stop one can.
 _GUARD_STARTED_AT = time.time()
+_INDEX_LOCK_CACHE: dict[str, Path | None] = {}
 
 
 def _emit(value: dict[str, Any]) -> None:
@@ -251,7 +262,10 @@ def _capture(
             proc.kill()  # last resort; `_sweep_stale_index_lock` is its backstop
             proc.communicate()
         raise expired
-    except Exception:  # noqa: BLE001 — always reap, even on an unexpected failure
+    except BaseException:  # noqa: BLE001 — always reap, even on an unexpected exit
+        # `subprocess.run` reaps on BaseException too, and this claims to be
+        # indistinguishable from it. Narrowing to Exception would leak a live git
+        # on a KeyboardInterrupt or a SystemExit mid-read.
         proc.kill()
         proc.communicate()
         raise
@@ -285,14 +299,27 @@ def _worktree_index_lock(root: Path) -> Path | None:
     per-worktree answer, and is the same path the killed git wrote to. Same
     resolution ``index_lock_path`` in ``scripts/worktree_sparse.py`` makes, and
     the same None-on-unreadable contract.
+
+    Cached per root, including the failure: the second sweep runs on the far side
+    of a second blown budget, and re-paying a probe there is how the pathological
+    path would overrun the wall the budgets above are sized against.
     """
+    key = str(root)
+    if key in _INDEX_LOCK_CACHE:
+        return _INDEX_LOCK_CACHE[key]
     try:
-        found = _run(root, "git", "rev-parse", "--absolute-git-dir", timeout=15)
+        found = _run(
+            root,
+            "git",
+            "rev-parse",
+            "--absolute-git-dir",
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
     except Exception:
-        return None
-    if not found:
-        return None
-    return Path(found) / "index.lock"
+        found = ""
+    lock = Path(found) / "index.lock" if found else None
+    _INDEX_LOCK_CACHE[key] = lock
+    return lock
 
 
 def _lock_is_held(lock: Path) -> bool:
@@ -314,7 +341,7 @@ def _lock_is_held(lock: Path) -> bool:
             ("lsof", "-w", "--", str(lock)),
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
             check=False,
         )
     except Exception:

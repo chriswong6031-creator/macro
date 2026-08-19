@@ -925,6 +925,18 @@ def _clear_token_cache(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _clear_index_lock_cache():
+    """The worktree gitdir is memoised per root so the second sweep is free.
+
+    One hook process only ever judges one tree; this module reuses a single
+    imported guard across every test, so the memo is dropped between them.
+    """
+    GUARD._INDEX_LOCK_CACHE.clear()
+    yield
+    GUARD._INDEX_LOCK_CACHE.clear()
+
+
+@pytest.fixture(autouse=True)
 def _clear_render_lane_cache():
     """`_stop` asks the lane question once per lane, so the answer is memoised.
 
@@ -4771,13 +4783,18 @@ def test_an_unanswerable_status_reaches_stop_as_a_block(monkeypatch, tmp_path, c
     assert "guard_error" in emitted["reason"]
 
 
-def test_the_status_budgets_fit_the_hooks_own_wall():
-    """A retry budget past the harness's wall is a retry that cannot conclude.
+def test_the_whole_pathological_status_path_fits_the_hooks_own_wall():
+    """A budget past the harness's wall is a budget that cannot conclude.
 
     `.claude/settings.json` owns the wall and the HARNESS enforces it: a hook
-    cancelled mid-flight emits no decision at all, so an over-long retry trades a
-    block for a silently skipped Stop evaluation. Pinned here because the two
-    numbers live in different files and nothing else would notice them drifting.
+    cancelled mid-flight emits no decision at all, so overrunning it trades a
+    block for a silently skipped Stop evaluation — a fail-OPEN, strictly worse
+    than the block it was trying to file.
+
+    The sum is the WHOLE worst path, not just the two status attempts: the sweeps
+    and every SIGTERM grace are on it too, and leaving them out is how a budget
+    that looks like it fits does not. Pinned here because the numbers live in a
+    different file from the wall and nothing else would notice them drifting.
     """
     settings = json.loads(
         (ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
@@ -4789,15 +4806,24 @@ def test_the_status_budgets_fit_the_hooks_own_wall():
         if "ship_loop_guard.py" in hook.get("command", "")
     ]
     assert walls, "the Stop hook must still be the ship loop guard"
-    spent = (
+
+    grace = GUARD.GIT_TERM_GRACE_SECONDS
+    probe = GUARD.SWEEP_PROBE_TIMEOUT_SECONDS
+    first_sweep = probe + grace + probe  # resolve the gitdir, then lsof
+    later_sweep = probe  # the gitdir is cached by then, so lsof only
+    worst = (
         GUARD.STATUS_TIMEOUT_SECONDS
-        + GUARD.GIT_TERM_GRACE_SECONDS
+        + grace
+        + first_sweep
         + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
+        + grace
+        + later_sweep
     )
-    assert min(walls) - spent >= 15, (
-        "both status attempts plus the SIGTERM grace must leave the rest of the "
-        f"Stop evaluation its margin: {spent}s of a {min(walls)}s wall"
+    assert worst <= min(walls), (
+        "the pathological status path must still reach its own guard_error block: "
+        f"{worst}s of a {min(walls)}s wall"
     )
+    assert GUARD.STATUS_RETRY_TIMEOUT_SECONDS > GUARD.STATUS_TIMEOUT_SECONDS
 
 
 def _orphaned_lock(repo: Path) -> Path:
@@ -4917,3 +4943,44 @@ def test_an_lsof_that_cannot_run_at_all_reads_as_held(monkeypatch):
 
     monkeypatch.setattr(GUARD.subprocess, "run", absent)
     assert GUARD._lock_is_held(Path("/nonexistent/index.lock")) is True
+
+
+def test_the_gitdir_probe_is_paid_once_not_once_per_sweep(monkeypatch, tmp_path):
+    """The second sweep runs past a SECOND blown budget, with no room to spare.
+
+    Re-resolving the gitdir there is how the pathological path would overrun the
+    wall `test_the_whole_pathological_status_path_fits_the_hooks_own_wall` pins.
+    """
+    repo = _repo(tmp_path)
+    probes: list[tuple] = []
+    real_run = GUARD._run
+
+    def counting_run(root, *args, **kwargs):
+        if "rev-parse" in args:
+            probes.append(args)
+        return real_run(root, *args, **kwargs)
+
+    monkeypatch.setattr(GUARD, "_run", counting_run)
+    first = GUARD._worktree_index_lock(repo)
+    second = GUARD._worktree_index_lock(repo)
+    assert first == second is not None
+    assert len(probes) == 1, "the gitdir must be resolved once per root, not per sweep"
+
+
+def test_an_unresolvable_gitdir_is_remembered_as_unresolvable(monkeypatch, tmp_path):
+    """Caching the FAILURE matters as much as caching the answer.
+
+    A tree whose git cannot answer is the same tree on the second sweep, and the
+    retry path has no budget to ask again.
+    """
+    calls: list[int] = []
+
+    def refuse(_root, *_args, **_kwargs):
+        calls.append(1)
+        raise RuntimeError("git is unreadable")
+
+    monkeypatch.setattr(GUARD, "_run", refuse)
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert len(calls) == 1
+    assert GUARD._sweep_stale_index_lock(tmp_path) is None
