@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T10:17:13.684741+00:00",
-  "count": 1400,
+  "generated_at": "2026-08-19T11:15:11.237716+00:00",
+  "count": 1402,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -80,6 +80,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-neqfjnbkdxm-f1e0a5",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T10:39:54Z",
+      "summary_points": [
+        "**Memory Scarcity Risk**: Micron confirms demand exceeds supply (>50% shortfall), creating persistent scarcity for memory-intensive semiconductors—critical supply constraint driving AI/tech pricing power.",
+        "**GPU/TPU Allocation Risk**: NVDA/GOOGL shipments constrained by Hynix/Samsung/Micron HBM/memory allocation; breaking LTAs risks next-cycle production cuts, with firms unlikely to accept penalties.",
+        "**Fed Minutes & PCE Thresholds**: Bull case dovish (PCE MoM <0.25%, YoY <3.35%) vs.",
+        "bear case hawkish (PCE MoM >0.3%, YoY >3.4%); Fed Minutes key for rate trajectory clarity.",
+        "**Election Seasonality Data**: Post-midterms SPX returns: 3m (+5.4%, 78% hit), 6m/9m/12m (+11.4%/+12.5%/+14.7%, 100% hit since 1990)—strategic for Healthcare/sector allocation timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lbhcu1tsnlj-6747ba",
+      "title": "JPM APAC Consumer AI Survey",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T09:08:05Z",
+      "summary_points": [
+        "**Sector-Specific Profitability Outlook**: Discretionary firms (50% optimism) significantly more bullish on AI-driven profitability vs Staples (17%), prioritizing customer-facing use cases over Staples’ productivity focus; Discretionary anticipates 6.0% labor productivity uplift vs Staples’ 3.2%.",
+        "**Productivity & Revenue Drivers**: Near-term AI upside centered on revenue (+4.5%) and customer satisfaction (+5.5%) in Discretionary, not cost savings; value creation stems from enhanced execution, decision-making, and customer engagement, not headcount reduction.",
+        "**Execution Capability as Critical Differentiator**: Scaling barriers (data quality, workforce readiness, change management) widen gap between strong operators and laggards; proprietary data, loyalty ecosystems, and AI-driven pricing/personalization determine growth durability and earnings conversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-mbiiutd4p4l-b17aad",
       "title": "JPM The BoJ s Catch 22",
