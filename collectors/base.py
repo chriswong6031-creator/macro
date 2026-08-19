@@ -5,6 +5,7 @@ never kill the run — it logs the gap, marks the source stale, and moves on.
 from __future__ import annotations
 
 import logging
+import re
 import time
 import traceback
 from dataclasses import dataclass, field
@@ -18,6 +19,27 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 CIRCUIT_BREAKER_FAILS = 3  # consecutive run failures -> mark dead, skip
+
+# Preventive hardening: redact query strings/credential parameters from retried-
+# request log lines. `requests`' default HTTPError/ConnectionError text embeds the
+# FULL request URL — query string and all — via `raise_for_status()` and friends,
+# so a bare `str(exc)` interpolation carries any `apiKey=`/`api_key=` value straight
+# into the log stream even on a line that otherwise takes care to log a query-
+# stripped URL separately. Two passes: redact a credential-looking assignment
+# wherever it appears (covers non-URL renderings too), then flatten any remaining
+# URL query tail so nothing else in it survives either.
+_CREDENTIAL_PARAM_RE = re.compile(
+    r'(api[_-]?key|token|secret)=[^&\s"\')]+', re.IGNORECASE)
+_QUERY_TAIL_RE = re.compile(r'\?[^\s"\')]+')
+
+
+def safe_exc_text(exc: BaseException) -> str:
+    """Render `exc` for logging with secrets stripped — never log a raw exception
+    that may have travelled through a keyed vendor URL."""
+    text = str(exc)
+    text = _CREDENTIAL_PARAM_RE.sub(lambda m: f"{m.group(1)}=REDACTED", text)
+    text = _QUERY_TAIL_RE.sub("?REDACTED", text)
+    return text
 
 # An open breaker is HALF-OPEN, not permanently dead: after this long it lets ONE
 # probe through. A success closes it; a failure re-opens it for another window.
@@ -150,7 +172,8 @@ class Adapter:
                 last_exc = e
                 wait = backoff_base * (2 ** attempt)
                 log.warning("%s GET %s attempt %d/%d failed (%s); retry in %.0fs",
-                            self.name, url.split("?")[0], attempt + 1, retries, e, wait)
+                            self.name, url.split("?")[0], attempt + 1, retries,
+                            safe_exc_text(e), wait)
                 if attempt < retries - 1:
                     time.sleep(wait)
         raise last_exc  # type: ignore[misc]
