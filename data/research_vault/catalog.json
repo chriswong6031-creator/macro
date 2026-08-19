@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-19T14:30:53.098038+00:00",
-  "count": 1412,
+  "generated_at": "2026-08-19T15:19:47.065548+00:00",
+  "count": 1414,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-wn0fib9oeso-caae04",
+      "title": "DB The Pennsylvania Plan Dealing with US Twin Deficits",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T14:46:49Z",
+      "summary_points": [
+        "**Domestic Treasury Shift**: Pennsylvania Plan targets reducing foreign Treasury demand via duration shortening, dollar stablecoin advocacy, and financial repression (pension reforms, liquidity mandates), aiming to reallocate ownership domestically.",
+        "**External Deficit Tipping Point**: US nearing critical threshold in financing external deficits, driving weaker USD, rising term premia, and persistent Fed easing pressure as domestic savings shift to long-duration assets.",
+        "**Fed Policy Sensitivity**: Foreign capital funding US deficits via short-term dollar assets heightens Fed policy sensitivity; political pressure (e.g., Trump) amplifies easing demands amid fiscal dominance risks.",
+        "**Term Premium & Volatility Risk**: Domestic absorption of debt pressures term premia, increases fiscal dominance threats, and risks higher yields with elevated USD volatility despite potential domestic savings support."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-tzvx7zjggp7-09e00e",
       "title": "GS Blekos Marketcolour 19 Aug 2026",
@@ -2191,6 +2211,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xhjgjspocji-7ada22",
+      "title": "Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-17T16:20:17Z",
+      "summary_points": [
+        "**US-Iran Deadline**: 60-day MoU deadline with no extension sign, escalating geopolitical risk to oil markets - **Brent Oil Disruption**: Physical disruption risk at $88-89.5/bbl range, critical for energy sector exposure - **GBP Data & BoE**: Labour/CPI data driving BoE patience narrative, 10Y Gilt yields at 5% inflection point - **JPY GDP & JGB**: Weaker QoQ GDP (1.1%), rising JGB yields, curve steepening into ultra-long as key technicals"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
