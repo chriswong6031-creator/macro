@@ -140,7 +140,10 @@ class IntlUniverseAdapter(Adapter):
                     if ln.split(",")[0].strip().strip('"') == "Ticker"), None)
         if hdr is None:
             raise ValueError(f"{u['file_name']} holdings: no 'Ticker' header row")
-        df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), thousands=",")
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), thousands=",",
+                         keep_default_na=False, na_values=[""])
 
         def col(sub: str) -> str | None:
             return next((cn for cn in df.columns if sub in cn.lower()), None)
