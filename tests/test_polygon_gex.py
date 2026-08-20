@@ -1699,6 +1699,45 @@ class TestAD1C01BoundaryReviewRepairs:
             (tmp_path / "polygon_gex_health" / f"{session.isoformat()}.json").read_text())
         assert receipt["attempts"][-1]["decision"] == "skipped_vintage_mismatch"
 
+    def test_f7_oi_near_the_float32_precision_boundary_survives_the_round_trip(
+            self, tmp_path):
+        """F7: OI values above float32's exact-integer range (~2^24) lose
+        precision when the STORED side round-trips through _compact()'s
+        float32 downcast at write time. Without the SAME coercion applied
+        to the freshly-fetched CANDIDATE side, a real OI of, say,
+        16,777,217 compares against the stored (silently rounded to
+        16,777,216) value and reads as a genuine disagreement even though
+        the vendor reported the identical real OI both times -- a false
+        skipped_vintage_mismatch. This is the one case in the whole file
+        where the strike/composite-key string comparison does NOT already
+        paper over the missing coercion (unlike odd-cent strikes, which
+        happen to round-trip through str() identically either way) -- so
+        this is the test that actually depends on the explicit F1/F7
+        astype("float32") calls, not just their side effects."""
+        import scripts.build_polygon_gex as bpg
+        big_oi = 16_777_217.0     # 2**24 + 1 -- not exactly representable in float32
+        stored_raw = _raw(("SPY",))
+        stored_raw["oi"] = big_oi
+        p = tmp_path / "c.parquet"
+        bpg._compact(stored_raw.copy()).to_parquet(p)
+        stored = pd.read_parquet(p)
+        # float() first: comparing a bare numpy float32 scalar directly
+        # against a Python float can itself downcast the RHS under NEP-50
+        # promotion rules and mask the very precision loss this assertion
+        # is trying to confirm actually happened.
+        assert float(stored["oi"].iloc[0]) != big_oi, (
+            "the parquet round-trip must actually have LOST precision here, "
+            "or this test isn't exercising the boundary case at all")
+
+        candidate = _raw(("SPY",))
+        candidate["oi"] = big_oi      # the vendor reports the SAME real OI, exactly
+        agrees, overlap, floor = bpg._same_book_overlap(stored, candidate)
+        assert agrees is True, (
+            "the SAME real-world OI, rounded IDENTICALLY on both sides via "
+            "the symmetric float32 cast, must agree -- an asymmetric "
+            "comparison against the unrounded candidate would wrongly call "
+            f"this a mismatch (overlap={overlap}, floor={floor})")
+
     def test_f2_order_swapped_duplicate_identity_still_agrees_via_ticker(self):
         """F2: the 4-field composite key (_CONTRACT_KEY_COLS) is not always
         unique -- an adjusted and a standard contract can share underlying/
