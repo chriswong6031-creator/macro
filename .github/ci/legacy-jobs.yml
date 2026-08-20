@@ -12327,3 +12327,29 @@ jobs:
         run: python3 scripts/check_no_client_supplied_identity.py
       - name: no-client-supplied-identity test suite
         run: python3 -m pytest tests/test_check_no_client_supplied_identity.py -q
+
+  dislocation-p0-a1-blind-harvest:
+    scope: exclusive
+    # P0-A1 price-blind harvest primitives (Turn-5 lexicon, query ledger,
+    # firewall, quota walk). WITHOUT THIS JOB tests/test_dislocation_p0_a1_blind_harvest.py
+    # is a new pytest suite named by no run: step — contract-delta reds it.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    gate: code
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - scripts/research/dislocation_p0_a1_harvest.py
+      - scripts/research/dislocation_p0_a1_lib.py
+      - tests/test_dislocation_p0_a1_blind_harvest.py
+      - research/dislocation_intelligence/**
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: Dislocation P0-A1 price-blind harvest primitives
+        run: python -m pytest tests/test_dislocation_p0_a1_blind_harvest.py -q

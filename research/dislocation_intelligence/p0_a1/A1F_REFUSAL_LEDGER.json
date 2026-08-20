@@ -1,0 +1,12 @@
+{
+  "by_reason": {
+    "AMENDMENT_NOT_ORIGIN": 8181,
+    "DESIGN_TOUCHED": 262,
+    "DEVELOPMENT_QUOTA": 157732,
+    "FORM_6K_QUOTA": 42,
+    "FORM_8K_QUOTA": 119,
+    "MODERN_QUOTA": 118056
+  },
+  "count": 284392,
+  "overbuild_added": 8
+}

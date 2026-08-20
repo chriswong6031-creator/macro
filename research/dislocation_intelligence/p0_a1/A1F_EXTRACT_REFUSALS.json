@@ -1,0 +1,347 @@
+{
+  "count": 7,
+  "rows": [
+    {
+      "accession": "0001558370-20-009798",
+      "candidate_id": "p0cand_0024edbbed8a9024086d808e226f8393193a66af352fe337c40673c8c4d0a7f9",
+      "cik": "0001126874",
+      "display_name": "ENERPLUS Corp  (CIK 0001126874)",
+      "era": "development",
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "family_candidate": "EXTERNAL_HUMAN_INTERRUPTION",
+      "file_type": "EX-99.1",
+      "filed_on": "2020-08-07",
+      "filename": "EX99_1.pdf",
+      "filing_receipt": {
+        "accepted_at": "2020-08-07T10:13:35Z",
+        "accession": "0001558370-20-009798",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/1126874/000155837020009798/EX99_1.pdf",
+        "cik": "0001126874",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2020-08-07",
+        "form": "6-K",
+        "index_error": null,
+        "manifest_id": "becfb17ecbe5d4afdd336bd6603979f3c9a2e2bcb88ca0e29246a9bdc5f6b5f9",
+        "primary_document": "EX99_1.pdf",
+        "source_bytes_sha256": "ed727125aae9fd5568e581f9d9b510a89befd4c697361e0a19e16874e7962def"
+      },
+      "form": "6-K",
+      "hit_id": "0001558370-20-009798:EX99_1.pdf",
+      "is_amendment": false,
+      "items": [],
+      "pool_sha256": "a02ecffeb27ec47a54ae4400c462218ead5a567c2640df69297c5a43bde900e7",
+      "query_edges": [
+        {
+          "family_candidate": "EXTERNAL_HUMAN_INTERRUPTION",
+          "hit_id": "0001558370-20-009798:EX99_1.pdf",
+          "phrase": "civil unrest",
+          "query_cell_id": "e694a9836da45cc33aa4084fa2321297a5ec081d29d100c06956ce3335687bb6",
+          "query_receipt_sha256": "4bb2f7ed90cb9588e7f90840118d164ba0c65405b6f123f2aa69eff1f54bfeb9"
+        },
+        {
+          "family_candidate": "EXTERNAL_HUMAN_INTERRUPTION",
+          "hit_id": "0001558370-20-009798:tmb-20200807xex99d1.htm",
+          "phrase": "civil unrest",
+          "query_cell_id": "e694a9836da45cc33aa4084fa2321297a5ec081d29d100c06956ce3335687bb6",
+          "query_receipt_sha256": "4bb2f7ed90cb9588e7f90840118d164ba0c65405b6f123f2aa69eff1f54bfeb9"
+        }
+      ],
+      "rank": 8,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "0024edbbed8a9024086d808e226f8393193a66af352fe337c40673c8c4d0a7f9",
+      "ticker": null
+    },
+    {
+      "accession": "0000930413-23-001206",
+      "candidate_id": "p0cand_008a34d094310d3749981e5326ee935c0bda05af9e194c9b36bee500ce662229",
+      "cik": "0001434754",
+      "display_name": "SAFE BULKERS, INC.  (SB, SB-PC, SB-PD)  (CIK 0001434754)",
+      "era": "modern",
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "family_candidate": "WEATHER_OR_PHYSICAL_DISASTER",
+      "file_type": "EX-99.1",
+      "filed_on": "2023-04-07",
+      "filename": "c106193_ex99-1.pdf",
+      "filing_receipt": {
+        "accepted_at": "2023-04-07T20:06:02Z",
+        "accession": "0000930413-23-001206",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/1434754/000093041323001206/c106193_ex99-1.pdf",
+        "cik": "0001434754",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2023-04-07",
+        "form": "6-K",
+        "index_error": null,
+        "manifest_id": "fbccfc94e5faae773286faa6fe303a136746974f01fae083e8667d80ee4e01c5",
+        "primary_document": "c106193_ex99-1.pdf",
+        "source_bytes_sha256": "28a03ebce9ee7ad52b043b905bfa9946c24a0769cadc23502b34051455ad8ae5"
+      },
+      "form": "6-K",
+      "hit_id": "0000930413-23-001206:c106193_ex99-1.pdf",
+      "is_amendment": false,
+      "items": [],
+      "pool_sha256": "d64747d65a9c84a27a2a0e8a5e22772e46afd6c7911144108902ac2460a2c6b9",
+      "query_edges": [
+        {
+          "family_candidate": "WEATHER_OR_PHYSICAL_DISASTER",
+          "hit_id": "0000930413-23-001206:c106193_ex99-1.pdf",
+          "phrase": "flooding",
+          "query_cell_id": "3361d23b4ca310a303aa5b9163cd66257a9c8810f187e83e36380fd90a02bfd5",
+          "query_receipt_sha256": "aa1d7cde9a36f94df1ed7c6982378f65727ab58b03933516a4fd6b95f36d985a"
+        }
+      ],
+      "rank": 40,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "008a34d094310d3749981e5326ee935c0bda05af9e194c9b36bee500ce662229",
+      "ticker": null
+    },
+    {
+      "accession": "0001104659-25-027851",
+      "candidate_id": "p0cand_00be1777de6c99e2d8c8391311ccc80457199af90ac4ac74b8f175bd978f9f8f",
+      "cik": "0001061894",
+      "display_name": "Gildan Activewear Inc.  (GIL)  (CIK 0001061894)",
+      "era": "modern",
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "family_candidate": "WEATHER_OR_PHYSICAL_DISASTER",
+      "file_type": "EX-99.4",
+      "filed_on": "2025-03-26",
+      "filename": "tm255804d7_ex99-4.pdf",
+      "filing_receipt": {
+        "accepted_at": "2025-03-25T21:37:47Z",
+        "accession": "0001104659-25-027851",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/1061894/000110465925027851/tm255804d7_ex99-4.pdf",
+        "cik": "0001061894",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2025-03-26",
+        "form": "6-K",
+        "index_error": null,
+        "manifest_id": "7efca5b1279e7e6875d113f25864a0f7bd3696d910b6baeca097dbfe445d60d7",
+        "primary_document": "tm255804d7_ex99-4.pdf",
+        "source_bytes_sha256": "667dbcfaef55780bb50ab1045b60f9465c7a5bff53e92883a24baf761aa1176e"
+      },
+      "form": "6-K",
+      "hit_id": "0001104659-25-027851:tm255804d7_ex99-4.pdf",
+      "is_amendment": false,
+      "items": [],
+      "pool_sha256": "d64747d65a9c84a27a2a0e8a5e22772e46afd6c7911144108902ac2460a2c6b9",
+      "query_edges": [
+        {
+          "family_candidate": "WEATHER_OR_PHYSICAL_DISASTER",
+          "hit_id": "0001104659-25-027851:tm255804d7_ex99-4.pdf",
+          "phrase": "severe weather",
+          "query_cell_id": "dec2a3139541d88cec37a9a287fa813c6e025bf6338ed61f71e59645303b25d7",
+          "query_receipt_sha256": "61f341b0e799652b8c258b02f138c6fa51a1b08ac1869f95eca7179fcd4a7db7"
+        },
+        {
+          "family_candidate": "WEATHER_OR_PHYSICAL_DISASTER",
+          "hit_id": "0001104659-25-027851:tm255804d7_ex99-4.pdf",
+          "phrase": "flooding",
+          "query_cell_id": "3361d23b4ca310a303aa5b9163cd66257a9c8810f187e83e36380fd90a02bfd5",
+          "query_receipt_sha256": "9ff4588b9b2fb6025eed38cc04ffd4cecd42bef3ffb81cba7e6be306929fd8da"
+        }
+      ],
+      "rank": 44,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "00be1777de6c99e2d8c8391311ccc80457199af90ac4ac74b8f175bd978f9f8f",
+      "ticker": "GIL"
+    },
+    {
+      "accession": "0001193125-21-241814",
+      "candidate_id": "p0cand_0154af147ae61de3db432660e9b6ad1eefb45f93c8e5c035bc2bc4bfdeb690d4",
+      "cik": "0000105319",
+      "display_name": "WW INTERNATIONAL, INC.  (WW)  (CIK 0000105319)",
+      "era": "development",
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+      "file_type": "EX-99.1",
+      "filed_on": "2021-08-10",
+      "filename": "d214050dex991.htm",
+      "filing_receipt": {
+        "accepted_at": "2021-08-10T20:11:56Z",
+        "accession": "0001193125-21-241814",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/105319/000119312521241814/d214050dex991.htm",
+        "cik": "0000105319",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2021-08-10",
+        "form": "8-K",
+        "index_error": null,
+        "manifest_id": "cb74b4366abcd3fd6d286ce49fb566208ca9d2bd2fdd067e5920792a64ff82fc",
+        "primary_document": "d214050dex991.htm",
+        "source_bytes_sha256": "8c856947cced37cf5c45dc715a81273f244a23b0e31928a2760292b73093389d"
+      },
+      "form": "8-K",
+      "hit_id": "0001193125-21-241814:d214050dex991.htm",
+      "is_amendment": false,
+      "items": [
+        "2.02",
+        "9.01"
+      ],
+      "pool_sha256": "51cf275536ee214d2c60f9fc04096b9b97b6f01c55df642cbb4855ec479cf917",
+      "query_edges": [
+        {
+          "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+          "hit_id": "0001193125-21-241814:d214050dex991.htm",
+          "phrase": "one-time charge",
+          "query_cell_id": "088b2b7c2c7df7ae78727ec9d5c41bfde9e01b835473824df4be2c72696ebc59",
+          "query_receipt_sha256": "91278905965c084bef72527528d94061236914d146ae5ffbdd74de69b1993037"
+        }
+      ],
+      "rank": 11,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "0154af147ae61de3db432660e9b6ad1eefb45f93c8e5c035bc2bc4bfdeb690d4",
+      "ticker": "WW"
+    },
+    {
+      "accession": "0001144204-17-062489",
+      "candidate_id": "p0cand_02202b6a2ec3bfadba8b549ab1861abb0ad2dd0c866df5a59cd8d7f8d5d6d96e",
+      "cik": "0001641197",
+      "display_name": "Easterly Acquisition Corp.  (CIK 0001641197)",
+      "era": "development",
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+      "file_type": "EX-99.1",
+      "filed_on": "2017-12-06",
+      "filename": "tv480889_ex99-1.htm",
+      "filing_receipt": {
+        "accepted_at": "2017-12-06T11:05:26Z",
+        "accession": "0001144204-17-062489",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/1641197/000114420417062489/tv480889_ex99-1.htm",
+        "cik": "0001641197",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2017-12-06",
+        "form": "8-K",
+        "index_error": null,
+        "manifest_id": "c2e4defe162051dcdac6eeeba387c87d573926b802280db6c76bc550067ff1a6",
+        "primary_document": "tv480889_ex99-1.htm",
+        "source_bytes_sha256": "b80c01bb1dbfd82db8638c4178dff6be2a09d2ac822902ae6b7e55ce50d09e8e"
+      },
+      "form": "8-K",
+      "hit_id": "0001144204-17-062489:tv480889_ex99-1.htm",
+      "is_amendment": false,
+      "items": [
+        "7.01",
+        "9.01"
+      ],
+      "pool_sha256": "51cf275536ee214d2c60f9fc04096b9b97b6f01c55df642cbb4855ec479cf917",
+      "query_edges": [
+        {
+          "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+          "hit_id": "0001144204-17-062489:tv480889_ex99-1.htm",
+          "phrase": "one-time impact",
+          "query_cell_id": "b89b4dfa4ca582253aa94bcddea49642637d41d2fae319692092407370d2efd8",
+          "query_receipt_sha256": "87e3c73c68fb505c7e54b87ba993e8181c1eceab18e62b7b14736bc9daec2b2b"
+        }
+      ],
+      "rank": 21,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "02202b6a2ec3bfadba8b549ab1861abb0ad2dd0c866df5a59cd8d7f8d5d6d96e",
+      "ticker": null
+    },
+    {
+      "accession": "0000950103-22-019544",
+      "candidate_id": "p0cand_072dc21008e96ce657a0b447aac228414e10ee10fa97459b312eecacbf701e7b",
+      "cik": "0001776967",
+      "display_name": "Natura &Co Holding S.A.  (CIK 0001776967)",
+      "era": "modern",
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+      "file_type": "6-K",
+      "filed_on": "2022-11-14",
+      "filename": "dp183943_6k.htm",
+      "filing_receipt": {
+        "accepted_at": "2022-11-14T12:08:00Z",
+        "accession": "0000950103-22-019544",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/1776967/000095010322019544/dp183943_6k.htm",
+        "cik": "0001776967",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2022-11-14",
+        "form": "6-K",
+        "index_error": null,
+        "manifest_id": "5bdee374bc73d83a341ee471fc6ed8b3a4f1acfd7eeb5141a499ae6105894856",
+        "primary_document": "dp183943_6k.htm",
+        "source_bytes_sha256": "ffad2e3ee3081534183a624e7446fb33083b80aa8947b5df0436605b489e277d"
+      },
+      "form": "6-K",
+      "hit_id": "0000950103-22-019544:dp183943_6k.htm",
+      "is_amendment": false,
+      "items": [],
+      "pool_sha256": "51cf275536ee214d2c60f9fc04096b9b97b6f01c55df642cbb4855ec479cf917",
+      "query_edges": [
+        {
+          "family_candidate": "TEMPORARY_EXPECTATION_RESET",
+          "hit_id": "0000950103-22-019544:dp183943_6k.htm",
+          "phrase": "guidance withdrawn",
+          "query_cell_id": "1f609392e7be1262a71ab11b261a09b310f74f8c8e29481b1a1d70fda4862a93",
+          "query_receipt_sha256": "8df2f26760ca984fa695cf330bbda5b3e0cce9ff0cbdef922b73c0694751c817"
+        }
+      ],
+      "rank": 47,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "072dc21008e96ce657a0b447aac228414e10ee10fa97459b312eecacbf701e7b",
+      "ticker": null
+    },
+    {
+      "accession": "0001193125-24-067468",
+      "candidate_id": "p0cand_0014187e001e7179116c4264c32c34adb15a78311b3f6d39a9c7c76217a23377",
+      "cik": "0000938323",
+      "display_name": "PEARSON PLC  (PSO, PSORF)  (CIK 0000938323)",
+      "era": "modern",
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "family_candidate": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "file_type": "EX-99.1",
+      "filed_on": "2024-03-14",
+      "filename": "d741417dex991.pdf",
+      "filing_receipt": {
+        "accepted_at": "2024-03-14T13:13:31Z",
+        "accession": "0001193125-24-067468",
+        "amends_accession": null,
+        "archive_url": "https://www.sec.gov/Archives/edgar/data/938323/000119312524067468/d741417dex991.pdf",
+        "cik": "0000938323",
+        "clock_quality": "EXACT_SEC_ACCEPTANCE",
+        "filed_on": "2024-03-14",
+        "form": "6-K",
+        "index_error": null,
+        "manifest_id": "c9485fee2416cb305e5a2146a712cdc17d812a76ef573b5ba18669236922e5ad",
+        "primary_document": "d741417dex991.pdf",
+        "source_bytes_sha256": "28d2e1d5f996409f493d8e678aabc3a678e48987adb65fa46fb2cc86fef51363"
+      },
+      "form": "6-K",
+      "hit_id": "0001193125-24-067468:d741417dex991.pdf",
+      "is_amendment": false,
+      "items": [],
+      "pool_sha256": "0f9740077d95e946925c317d62b8e8e965c36c2ac125017f3ffc1bdab8b716f3",
+      "query_edges": [
+        {
+          "family_candidate": "STRUCTURAL_IMPAIRMENT_CONTROL",
+          "hit_id": "0001193125-24-067468:d741417dex991.pdf",
+          "phrase": "going concern",
+          "query_cell_id": "e0237f2f4c120c0909e144d86a46dd9354b7ea72d50cd1374814e4c1fea089c7",
+          "query_receipt_sha256": "7c5267cd39b13065fa340f06a8ffa4ecd5ffa88e548fbb91130429fc30379ea3"
+        },
+        {
+          "family_candidate": "STRUCTURAL_IMPAIRMENT_CONTROL",
+          "hit_id": "0001193125-24-067468:d741417dex991.pdf",
+          "phrase": "bankruptcy",
+          "query_cell_id": "42445947f72f4e79c475db749e6113e2f213ba2a5658be6d2b9299b1df4666e8",
+          "query_receipt_sha256": "484e2e1d5da92dd4cd54ed1f9e6cb62a3824603da02af9fcbfc885080dafba07"
+        },
+        {
+          "family_candidate": "STRUCTURAL_IMPAIRMENT_CONTROL",
+          "hit_id": "0001193125-24-067468:d741417dex991.pdf",
+          "phrase": "liquidation",
+          "query_cell_id": "f702685817449629770fdaf232e48dfeba36ae3668a4fce8d480f5424cb48b3b",
+          "query_receipt_sha256": "101719284815af2380706bb87a4ee14e02da852e4149d85815e7b7dbec2025ee"
+        }
+      ],
+      "rank": 37,
+      "refusal_reason": "NOT_AN_ADVERSE_EVENT",
+      "selection_key": "0014187e001e7179116c4264c32c34adb15a78311b3f6d39a9c7c76217a23377",
+      "ticker": null
+    }
+  ]
+}
