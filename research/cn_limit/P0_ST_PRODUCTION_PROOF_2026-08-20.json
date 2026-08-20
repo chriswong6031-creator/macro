@@ -1,0 +1,1538 @@
+{
+  "affected_main_board_universe": [
+    "600079.SS",
+    "600745.SS"
+  ],
+  "affected_universe_matches_expectation": false,
+  "base_repo_head_sha": "8e65f14bcd97edb8af17d39232442aa798db48e4",
+  "census": {
+    "limit_events_max_date": "2026-08-20",
+    "limit_events_min_date": "2011-01-05",
+    "limit_events_stale_5pct_rows": 0,
+    "limit_events_total_rows": 60610,
+    "st_history_dates_covered": [
+      "2026-07-06",
+      "2026-08-20"
+    ],
+    "st_snapshot_asof_dates": [
+      "2026-08-20"
+    ],
+    "st_snapshot_row_count": 207
+  },
+  "constants": {
+    "MAIN_ST_BAND_WIDE_DATE": "2026-07-06",
+    "ST_STORE_COVERAGE_DATE": "2026-07-06",
+    "detector_lookback_buffer_start": "2026-06-29"
+  },
+  "definition_hash_sha256": "e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4",
+  "expected_affected_main_board_universe": [
+    "600079.SS"
+  ],
+  "per_name": {
+    "600079.SS": {
+      "arm_current": {
+        "events": [],
+        "exdiv_excluded": 0,
+        "ipo_excluded": 0
+      },
+      "arm_superseded": {
+        "events": [],
+        "exdiv_excluded": 0,
+        "ipo_excluded": 0
+      },
+      "board": "main",
+      "detector_scored_sessions": 34,
+      "detector_scoring_matches_session_table": true,
+      "diff": {
+        "current_only_count": 0,
+        "identical": true,
+        "superseded_only_count": 0
+      },
+      "session_count": 34,
+      "sessions": [
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.6,
+          "date": "2026-07-06",
+          "high": 18.18,
+          "low": 17.42,
+          "max_abs_move_pct": 2.3073,
+          "open": 17.75,
+          "prev_close": 17.77
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.28,
+          "date": "2026-07-07",
+          "high": 17.54,
+          "low": 17.2,
+          "max_abs_move_pct": 2.2727,
+          "open": 17.49,
+          "prev_close": 17.6
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.13,
+          "date": "2026-07-08",
+          "high": 17.44,
+          "low": 17.11,
+          "max_abs_move_pct": 0.9838,
+          "open": 17.33,
+          "prev_close": 17.28
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.26,
+          "date": "2026-07-09",
+          "high": 17.39,
+          "low": 17.03,
+          "max_abs_move_pct": 1.5178,
+          "open": 17.16,
+          "prev_close": 17.13
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.33,
+          "date": "2026-07-10",
+          "high": 17.45,
+          "low": 17.13,
+          "max_abs_move_pct": 1.1008,
+          "open": 17.24,
+          "prev_close": 17.26
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.38,
+          "date": "2026-07-13",
+          "high": 17.47,
+          "low": 17.25,
+          "max_abs_move_pct": 0.8078,
+          "open": 17.33,
+          "prev_close": 17.33
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.59,
+          "date": "2026-07-14",
+          "high": 17.69,
+          "low": 17.27,
+          "max_abs_move_pct": 1.7837,
+          "open": 17.31,
+          "prev_close": 17.38
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.7,
+          "date": "2026-07-15",
+          "high": 18.07,
+          "low": 17.42,
+          "max_abs_move_pct": 2.7288,
+          "open": 17.45,
+          "prev_close": 17.59
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.85,
+          "date": "2026-07-16",
+          "high": 18.03,
+          "low": 17.59,
+          "max_abs_move_pct": 1.8644,
+          "open": 17.69,
+          "prev_close": 17.7
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.45,
+          "date": "2026-07-17",
+          "high": 18.02,
+          "low": 17.3,
+          "max_abs_move_pct": 3.0812,
+          "open": 17.82,
+          "prev_close": 17.85
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.69,
+          "date": "2026-07-20",
+          "high": 17.81,
+          "low": 17.4,
+          "max_abs_move_pct": 2.063,
+          "open": 17.4,
+          "prev_close": 17.45
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.51,
+          "date": "2026-07-21",
+          "high": 17.76,
+          "low": 17.33,
+          "max_abs_move_pct": 2.0351,
+          "open": 17.62,
+          "prev_close": 17.69
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.63,
+          "date": "2026-07-22",
+          "high": 17.75,
+          "low": 17.46,
+          "max_abs_move_pct": 1.3706,
+          "open": 17.55,
+          "prev_close": 17.51
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.48,
+          "date": "2026-07-23",
+          "high": 17.65,
+          "low": 17.4,
+          "max_abs_move_pct": 1.3046,
+          "open": 17.63,
+          "prev_close": 17.63
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.19,
+          "date": "2026-07-24",
+          "high": 17.48,
+          "low": 17.19,
+          "max_abs_move_pct": 1.659,
+          "open": 17.4,
+          "prev_close": 17.48
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.42,
+          "date": "2026-07-27",
+          "high": 17.52,
+          "low": 17.22,
+          "max_abs_move_pct": 1.9197,
+          "open": 17.22,
+          "prev_close": 17.19
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.59,
+          "date": "2026-07-28",
+          "high": 17.69,
+          "low": 17.43,
+          "max_abs_move_pct": 1.5499,
+          "open": 17.43,
+          "prev_close": 17.42
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.91,
+          "date": "2026-07-29",
+          "high": 17.97,
+          "low": 17.63,
+          "max_abs_move_pct": 2.1603,
+          "open": 17.73,
+          "prev_close": 17.59
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.94,
+          "date": "2026-07-30",
+          "high": 18.08,
+          "low": 17.81,
+          "max_abs_move_pct": 0.9492,
+          "open": 17.92,
+          "prev_close": 17.91
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.91,
+          "date": "2026-07-31",
+          "high": 18.0,
+          "low": 17.81,
+          "max_abs_move_pct": 0.7246,
+          "open": 17.87,
+          "prev_close": 17.94
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.69,
+          "date": "2026-08-03",
+          "high": 17.73,
+          "low": 17.51,
+          "max_abs_move_pct": 2.2334,
+          "open": 17.6,
+          "prev_close": 17.91
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.55,
+          "date": "2026-08-04",
+          "high": 17.8,
+          "low": 17.51,
+          "max_abs_move_pct": 1.0175,
+          "open": 17.76,
+          "prev_close": 17.69
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.68,
+          "date": "2026-08-05",
+          "high": 17.71,
+          "low": 17.45,
+          "max_abs_move_pct": 0.9117,
+          "open": 17.55,
+          "prev_close": 17.55
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.81,
+          "date": "2026-08-06",
+          "high": 17.84,
+          "low": 17.58,
+          "max_abs_move_pct": 0.905,
+          "open": 17.61,
+          "prev_close": 17.68
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.95,
+          "date": "2026-08-07",
+          "high": 17.99,
+          "low": 17.75,
+          "max_abs_move_pct": 1.0107,
+          "open": 17.81,
+          "prev_close": 17.81
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 18.12,
+          "date": "2026-08-10",
+          "high": 18.35,
+          "low": 17.91,
+          "max_abs_move_pct": 2.2284,
+          "open": 17.94,
+          "prev_close": 17.95
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.96,
+          "date": "2026-08-11",
+          "high": 18.31,
+          "low": 17.86,
+          "max_abs_move_pct": 1.4349,
+          "open": 18.13,
+          "prev_close": 18.12
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 18.06,
+          "date": "2026-08-12",
+          "high": 18.07,
+          "low": 17.87,
+          "max_abs_move_pct": 0.6125,
+          "open": 17.96,
+          "prev_close": 17.96
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 18.07,
+          "date": "2026-08-13",
+          "high": 18.18,
+          "low": 18.01,
+          "max_abs_move_pct": 0.6645,
+          "open": 18.1,
+          "prev_close": 18.06
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.99,
+          "date": "2026-08-14",
+          "high": 18.16,
+          "low": 17.96,
+          "max_abs_move_pct": 0.6087,
+          "open": 18.08,
+          "prev_close": 18.07
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.91,
+          "date": "2026-08-17",
+          "high": 18.01,
+          "low": 17.79,
+          "max_abs_move_pct": 1.1117,
+          "open": 17.91,
+          "prev_close": 17.99
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.91,
+          "date": "2026-08-18",
+          "high": 17.97,
+          "low": 17.82,
+          "max_abs_move_pct": 0.5025,
+          "open": 17.9,
+          "prev_close": 17.91
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 18.05,
+          "date": "2026-08-19",
+          "high": 18.27,
+          "low": 17.9,
+          "max_abs_move_pct": 2.0101,
+          "open": 17.92,
+          "prev_close": 17.91
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.86,
+          "date": "2026-08-20",
+          "high": 18.2,
+          "low": 17.83,
+          "max_abs_move_pct": 1.2188,
+          "open": 18.04,
+          "prev_close": 18.05
+        }
+      ]
+    },
+    "600745.SS": {
+      "arm_current": {
+        "events": [
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.001748,
+            "date": "2026-07-20",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 10.0,
+            "ticker": "600745.SS"
+          }
+        ],
+        "exdiv_excluded": 0,
+        "ipo_excluded": 0
+      },
+      "arm_superseded": {
+        "events": [
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.012111,
+            "date": "2026-07-06",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.015409,
+            "date": "2026-07-08",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.088719,
+            "date": "2026-07-08",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.007708,
+            "date": "2026-07-09",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": -0.027613,
+            "date": "2026-07-10",
+            "event": "sealed_up",
+            "lianban_count": 1,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.035649,
+            "date": "2026-07-13",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": -0.004987,
+            "date": "2026-07-14",
+            "event": "sealed_down",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.046438,
+            "date": "2026-07-15",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": -0.001592,
+            "date": "2026-07-16",
+            "event": "sealed_down",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.03443,
+            "date": "2026-07-17",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": -0.051324,
+            "date": "2026-07-20",
+            "event": "sealed_down",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.048377,
+            "date": "2026-07-21",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.00123,
+            "date": "2026-07-22",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.013087,
+            "date": "2026-07-31",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.007541,
+            "date": "2026-08-04",
+            "event": "failed_up_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": -0.009821,
+            "date": "2026-08-11",
+            "event": "sealed_up",
+            "lianban_count": 1,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          },
+          {
+            "board": "main",
+            "close_off_limit_pct": 0.001228,
+            "date": "2026-08-19",
+            "event": "failed_down_seal",
+            "lianban_count": 0,
+            "limit_width": 5.0,
+            "ticker": "600745.SS"
+          }
+        ],
+        "exdiv_excluded": 0,
+        "ipo_excluded": 0
+      },
+      "board": "main",
+      "detector_scored_sessions": 34,
+      "detector_scoring_matches_session_table": true,
+      "diff": {
+        "current_only_count": 1,
+        "identical": false,
+        "superseded_only_count": 17
+      },
+      "session_count": 34,
+      "sessions": [
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 17.55,
+          "date": "2026-07-06",
+          "high": 18.55,
+          "low": 17.3,
+          "max_abs_move_pct": 5.2055,
+          "open": 18.25,
+          "prev_close": 18.25
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.92,
+          "date": "2026-07-07",
+          "high": 18.36,
+          "low": 17.32,
+          "max_abs_move_pct": 4.6154,
+          "open": 17.55,
+          "prev_close": 17.55
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 18.53,
+          "date": "2026-07-08",
+          "high": 19.37,
+          "low": 16.17,
+          "max_abs_move_pct": 9.7656,
+          "open": 17.48,
+          "prev_close": 17.92
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 19.31,
+          "date": "2026-07-09",
+          "high": 19.7,
+          "low": 17.81,
+          "max_abs_move_pct": 6.3141,
+          "open": 17.92,
+          "prev_close": 18.53
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": true,
+            "would_touch": true
+          },
+          "close": 20.84,
+          "date": "2026-07-10",
+          "high": 21.24,
+          "low": 18.74,
+          "max_abs_move_pct": 9.9948,
+          "open": 19.4,
+          "prev_close": 19.31
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 21.1,
+          "date": "2026-07-13",
+          "high": 22.26,
+          "low": 20.83,
+          "max_abs_move_pct": 6.8138,
+          "open": 20.99,
+          "prev_close": 20.84
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": true,
+            "would_touch": true
+          },
+          "close": 19.95,
+          "date": "2026-07-14",
+          "high": 21.48,
+          "low": 19.58,
+          "max_abs_move_pct": 7.2038,
+          "open": 21.18,
+          "prev_close": 21.1
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 19.83,
+          "date": "2026-07-15",
+          "high": 20.8,
+          "low": 18.18,
+          "max_abs_move_pct": 8.8722,
+          "open": 19.0,
+          "prev_close": 19.95
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": true,
+            "would_touch": true
+          },
+          "close": 18.81,
+          "date": "2026-07-16",
+          "high": 20.15,
+          "low": 18.77,
+          "max_abs_move_pct": 5.3454,
+          "open": 19.46,
+          "prev_close": 19.83
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 19.07,
+          "date": "2026-07-17",
+          "high": 20.18,
+          "low": 18.82,
+          "max_abs_move_pct": 7.2834,
+          "open": 19.58,
+          "prev_close": 18.81
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": true,
+            "would_touch": true
+          },
+          "close": 17.19,
+          "date": "2026-07-20",
+          "high": 18.93,
+          "low": 17.16,
+          "max_abs_move_pct": 10.0157,
+          "open": 18.5,
+          "prev_close": 19.07
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 17.12,
+          "date": "2026-07-21",
+          "high": 17.59,
+          "low": 15.83,
+          "max_abs_move_pct": 7.9116,
+          "open": 17.21,
+          "prev_close": 17.19
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 16.28,
+          "date": "2026-07-22",
+          "high": 17.26,
+          "low": 16.2,
+          "max_abs_move_pct": 5.3738,
+          "open": 16.81,
+          "prev_close": 17.12
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.8,
+          "date": "2026-07-23",
+          "high": 17.07,
+          "low": 16.25,
+          "max_abs_move_pct": 4.8526,
+          "open": 16.25,
+          "prev_close": 16.28
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.83,
+          "date": "2026-07-24",
+          "high": 17.34,
+          "low": 16.35,
+          "max_abs_move_pct": 3.2143,
+          "open": 16.51,
+          "prev_close": 16.8
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.07,
+          "date": "2026-07-27",
+          "high": 17.16,
+          "low": 16.46,
+          "max_abs_move_pct": 2.1985,
+          "open": 16.81,
+          "prev_close": 16.83
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.84,
+          "date": "2026-07-28",
+          "high": 17.04,
+          "low": 16.63,
+          "max_abs_move_pct": 2.5776,
+          "open": 16.72,
+          "prev_close": 17.07
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.7,
+          "date": "2026-07-29",
+          "high": 16.9,
+          "low": 16.4,
+          "max_abs_move_pct": 2.6128,
+          "open": 16.75,
+          "prev_close": 16.84
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.01,
+          "date": "2026-07-30",
+          "high": 16.85,
+          "low": 16.0,
+          "max_abs_move_pct": 4.1916,
+          "open": 16.58,
+          "prev_close": 16.7
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 16.59,
+          "date": "2026-07-31",
+          "high": 16.92,
+          "low": 16.34,
+          "max_abs_move_pct": 5.6839,
+          "open": 16.5,
+          "prev_close": 16.01
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.42,
+          "date": "2026-08-03",
+          "high": 16.7,
+          "low": 16.26,
+          "max_abs_move_pct": 1.9891,
+          "open": 16.56,
+          "prev_close": 16.59
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 17.11,
+          "date": "2026-08-04",
+          "high": 17.28,
+          "low": 16.4,
+          "max_abs_move_pct": 5.2375,
+          "open": 16.5,
+          "prev_close": 16.42
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.08,
+          "date": "2026-08-05",
+          "high": 17.33,
+          "low": 16.87,
+          "max_abs_move_pct": 1.4027,
+          "open": 16.92,
+          "prev_close": 17.11
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.76,
+          "date": "2026-08-06",
+          "high": 17.05,
+          "low": 16.61,
+          "max_abs_move_pct": 2.7518,
+          "open": 16.87,
+          "prev_close": 17.08
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.82,
+          "date": "2026-08-07",
+          "high": 16.96,
+          "low": 16.63,
+          "max_abs_move_pct": 1.1933,
+          "open": 16.73,
+          "prev_close": 16.76
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.49,
+          "date": "2026-08-10",
+          "high": 16.79,
+          "low": 16.31,
+          "max_abs_move_pct": 3.0321,
+          "open": 16.78,
+          "prev_close": 16.82
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": true,
+            "would_touch": true
+          },
+          "close": 17.48,
+          "date": "2026-08-11",
+          "high": 17.97,
+          "low": 16.2,
+          "max_abs_move_pct": 8.9751,
+          "open": 16.4,
+          "prev_close": 16.49
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.15,
+          "date": "2026-08-12",
+          "high": 17.37,
+          "low": 17.1,
+          "max_abs_move_pct": 2.1739,
+          "open": 17.24,
+          "prev_close": 17.48
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.43,
+          "date": "2026-08-13",
+          "high": 17.95,
+          "low": 17.02,
+          "max_abs_move_pct": 4.6647,
+          "open": 17.02,
+          "prev_close": 17.15
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.46,
+          "date": "2026-08-14",
+          "high": 18.2,
+          "low": 17.41,
+          "max_abs_move_pct": 4.4177,
+          "open": 17.5,
+          "prev_close": 17.43
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.6,
+          "date": "2026-08-17",
+          "high": 17.96,
+          "low": 17.12,
+          "max_abs_move_pct": 2.8637,
+          "open": 17.16,
+          "prev_close": 17.46
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 17.14,
+          "date": "2026-08-18",
+          "high": 17.52,
+          "low": 17.12,
+          "max_abs_move_pct": 2.7273,
+          "open": 17.51,
+          "prev_close": 17.6
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": true
+          },
+          "close": 16.3,
+          "date": "2026-08-19",
+          "high": 16.89,
+          "low": 16.26,
+          "max_abs_move_pct": 5.1342,
+          "open": 16.85,
+          "prev_close": 17.14
+        },
+        {
+          "at_10pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "at_5pct": {
+            "exdiv_suspect": false,
+            "would_seal": false,
+            "would_touch": false
+          },
+          "close": 16.52,
+          "date": "2026-08-20",
+          "high": 16.79,
+          "low": 16.23,
+          "max_abs_move_pct": 3.0061,
+          "open": 16.43,
+          "prev_close": 16.3
+        }
+      ]
+    }
+  },
+  "provenance_note": "generated on the P0-ST working tree atop this base; the binding fingerprint is definition_hash, not the git sha",
+  "schema": "cn_limit.p0_st_band_replay.v1",
+  "zero_corrections_required": false
+}
