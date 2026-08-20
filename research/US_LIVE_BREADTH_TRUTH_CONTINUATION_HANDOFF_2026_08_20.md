@@ -186,16 +186,43 @@ comp            553 adv / 950 dec / n=1503
 ```
 
 **Truth boundary verified on real production bytes, both directions**, by
-evaluating the shipped gate in the page context against live payloads:
+evaluating the shipped gate logic in the production page's own context against
+live payloads fetched from the production URL:
 
 - legacy payload (no `usable`, no source clock) → `REJECT: usable!=true; no
-  source clock` → board stayed at baked **848 / 651**, stamp `last close ·
-  2026-08-19`, no `live` class. Exactly the intended fallback.
-- canonical payload → `ACCEPT`, adv 551 / dec 952 / n 1503.
+  source clock`. Board showed baked **848 / 651**, stamp `last close ·
+  2026-08-19`, no `live` class.
+- canonical payload → `ACCEPT`, adv 551 / dec 952 / n 1503, and the stamp text
+  the gate would emit was checked directly (see the #6107 defect below).
 
 The served asset is the new build: `live.js?v=b9357424` contains
 `SBX_MAX_SOURCE_AGE_MIN`, `b.usable !== true` and `isFinite(buildAge)`, and no
 longer contains the old `age > 25 || b.session` gate.
+
+**PRECISELY WHAT THE BROWSER EVIDENCE DOES AND DOES NOT PROVE — read this before
+claiming the live upgrade was seen end to end.** The board was never observed
+*visibly flipping* to live counts, and the reason is the HARNESS, not the
+product: `templates/live.js:331` guards its poll with
+`if (_paused || document.hidden || inflight) return;`, and the automated browser
+pane reports `document.hidden === true` / `visibilityState "hidden"` even after
+a screenshot fronts it. Measured: `performance.getEntriesByType('resource')`
+filtered to breadth/quotes returned `[]` — the page made **zero** live requests,
+not even for `quotes.json`, so `applyBreadth` was never invoked on any load.
+That guard is pre-existing and correct (do not poll a hidden tab) and is
+untouched by this wave. Reloading at the very start of a canonical window
+(payload age 0 s, 527/976) still produced a baked board for exactly this reason.
+
+So the chain is proven in two verified links rather than one screenshot:
+1. **Real production payload + real gate semantics → ACCEPT**, with the correct
+   stamp string, evaluated inside the production page (above).
+2. **Real `applyBreadth` → DOM mutates to the payload's values**, proven by
+   `tests/test_live_breadth_js_contract.py`, which extracts the function from the
+   shipped `templates/live.js` and executes it under node (case C).
+
+What remains unproven by direct observation is only the middle link — that the
+page's own visibility-gated tick calls `applyBreadth` — which no line of this
+wave modified. A human opening the page in a real, focused tab during RTH closes
+that gap in seconds; it could not be closed from an automated hidden pane.
 
 **Health plane verified**, three consecutive runs of
 `scripts/check_vps_live_health.py --url https://www.mastermind-x.com/api/status`:
@@ -245,9 +272,24 @@ journalctl -u macro-live-breadth.service -n 30 --no-pager
 
 Retire whatever writes `/var/lib/macro-live/public/live/breadth.json` that is
 **not** `macro-live-breadth.service`, then confirm `producer` stays pinned at
-`vps:macro-live-breadth` across ≥10 consecutive samples and
+`vps:macro-live-breadth` across >=10 consecutive samples and
 `check_vps_live_health.py` stays healthy across the same window. Do not disable
 `macro-live-breadth.timer` to "stop the flapping" — that is the canonical owner.
+
+**Measured flap period (2026-08-20, 6 s sampling):** the canonical payload holds
+for about 70 s per cycle, then the legacy writer takes the path back:
+
+```
+19:06:26Z .. 19:07:02Z  legacy  asof=19:05:58Z
+19:07:09Z .. 19:08:20Z  CANON   asof=19:07:08Z   producer=vps:macro-live-breadth
+19:08:28Z ..            legacy  asof=19:07:36Z
+```
+
+While in the legacy half the artifact carries no `usable`, so the surface
+correctly falls back to the nightly board — the read is never WRONG, only
+intermittently non-live. Second visible symptom of the same cause: the second
+line of `check_vps_live_health.py` output alternates, which is the dead-man
+reporting the contention rather than a fault in either writer.
 
 ## 6. Original open item (now CLOSED by §5b, except §5c)
 
