@@ -3,7 +3,7 @@
   "contract_phase": "w0",
   "display_only": true,
   "as_of": "2026-08-20",
-  "generated_at": "2026-08-20T11:05:03+00:00",
+  "generated_at": "2026-08-20T12:09:57+00:00",
   "hero": {
     "asset": "BTC-USD",
     "price": 69670.34,
@@ -13,8 +13,8 @@
     "summary_en": "The big picture reads risk-on. Support comes from the trend and momentum; the drag comes from futures positioning and stablecoin flows. Day-to-day direction is a coin flip — watch the dip-risk read below.",
     "summary_zh": "大方向偏多。支撑来自趋势与动量；拖累来自期货持仓与稳定币资金。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
     "master_score": 31,
-    "exposure_pct": 0,
-    "gate_active": true
+    "exposure_pct": 44,
+    "gate_active": false
   },
   "axes": [
     {
