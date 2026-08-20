@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mastermind Sector Central V2 — R2 Freeze Candidate</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b1018;--panel:#111823;--panel2:#171f2b;--panel3:#1c2532;--line:#2a3545;
+  --text:#eef3f8;--muted:#97a3b4;--faint:#687487;--link:#68a8ff;
+  --buy:#43ca7a;--soon:#67a8ff;--run:#8d7cf3;--profits:#e8aa3e;--aside:#8a95a5;--danger:#e2656f;
+  --shadow:0 16px 44px rgba(0,0,0,.23);--gutter:clamp(14px,2.4vw,30px);
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eef2f7;--panel:#fff;--panel2:#f6f8fb;--panel3:#edf1f6;--line:#d6dee8;
+  --text:#17202f;--muted:#5d6979;--faint:#8792a1;--link:#2e67b5;
+  --buy:#157d43;--soon:#285fa8;--run:#6550bd;--profits:#8c5c00;--aside:#657181;--danger:#b53043;
+  --shadow:0 14px 38px rgba(37,51,73,.11)
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;background:
+  radial-gradient(circle at 0 10%,color-mix(in srgb,var(--buy) 7%,transparent),transparent 27rem),
+  var(--bg);color:var(--text)
+}
+button,a,input{font:inherit}
+a{color:inherit;text-decoration:none}
+button{color:inherit}
+.l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] .l-zh{display:inline}
+
+/* shared chrome */
+.topbar{
+  min-height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  padding:0 var(--gutter);position:sticky;top:0;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);z-index:20
+}
+.brand{font-size:13px;letter-spacing:.13em;font-weight:850}
+.market-nav{margin-left:28px;display:flex;gap:20px;color:var(--muted);font-size:13px}
+.market-nav b{color:var(--text)}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+.r2{
+  min-height:36px;display:inline-flex;align-items:center;padding:0 10px;border-radius:9px;
+  border:1px solid var(--line);color:var(--faint);font-size:11px;letter-spacing:.07em;text-transform:uppercase
+}
+.ctrl,.tab,.state-tab,.scope-tab,.filter{
+  min-height:40px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  border-radius:10px;padding:0 12px;cursor:pointer
+}
+.ctrl:hover,.tab:hover,.state-tab:hover,.scope-tab:hover,.filter:hover{
+  color:var(--text);border-color:color-mix(in srgb,var(--link) 45%,var(--line))
+}
+.ctrl:focus-visible,.tab:focus-visible,.state-tab:focus-visible,.scope-tab:focus-visible,
+.filter:focus-visible,.row-link:focus-visible,.small-link:focus-visible,input:focus-visible{
+  outline:3px solid color-mix(in srgb,var(--link) 45%,transparent);outline-offset:2px
+}
+.workspace{
+  max-width:1420px;margin:auto;display:grid;grid-template-columns:190px minmax(0,1fr);
+  gap:28px;padding:28px var(--gutter) 80px
+}
+.sidebar{
+  position:sticky;top:86px;align-self:start;display:grid;gap:5px
+}
+.tab{
+  text-align:left;border-color:transparent;background:transparent;display:flex;align-items:center;
+  gap:10px;text-decoration:none
+}
+.tab[aria-selected="true"]{
+  background:var(--panel2);border-color:var(--line);color:var(--text);font-weight:700;
+  box-shadow:inset 3px 0 0 var(--link)
+}
+.tab .ico{width:18px;text-align:center;color:var(--soon)}
+.main{min-width:0}
+.view[hidden]{display:none}
+.eyebrow{font-size:11px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.pagehead{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:start;margin-bottom:24px
+}
+h1{font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.04em;margin:8px 0}
+.answer{font-size:16px;line-height:1.5;color:var(--muted);max-width:68ch;margin:0}
+.answer b{color:var(--text);font-weight:650}
+.meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{
+  font-size:12px;padding:6px 9px;border:1px solid var(--line);background:var(--panel);
+  border-radius:999px;color:var(--muted)
+}
+.chip b{color:var(--text)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}
+.section{margin-top:27px}
+.section-head{display:flex;align-items:end;gap:12px;margin-bottom:12px}
+.section-head h2{font-size:17px;margin:0;letter-spacing:-.015em}
+.section-head p{font-size:13px;color:var(--muted);margin:0}
+.section-head .spacer{flex:1}
+.small-link{
+  min-height:40px;display:inline-flex;align-items:center;color:var(--link);font-size:13px;
+  font-weight:700;padding:0 4px
+}
+
+/* overview */
+.distribution{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:hidden}
+.state-tab{
+  border-radius:0;border:0;border-right:1px solid var(--line);min-height:78px;
+  padding:12px 13px;text-align:left;background:transparent
+}
+.state-tab:last-child{border-right:0}
+.state-tab[aria-selected="true"]{background:var(--panel2);box-shadow:inset 0 3px 0 var(--c)}
+.state-name{
+  display:block;color:var(--c);font-size:11.5px;font-weight:780;text-transform:uppercase;
+  letter-spacing:.045em;white-space:nowrap
+}
+.state-count{display:block;font-size:23px;font-weight:820;font-variant-numeric:tabular-nums;color:var(--text);margin-top:5px}
+.state-note{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.overview-grid{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,.8fr);gap:16px;margin-top:16px}
+.list{overflow:hidden}
+.resource-row{
+  display:grid;grid-template-columns:minmax(210px,1.55fr) 68px 105px minmax(190px,1fr) 34px;
+  gap:14px;align-items:center;min-height:65px;padding:10px 14px;border-bottom:1px solid var(--line)
+}
+.resource-row:last-child{border-bottom:0}
+.resource-row:hover{background:var(--panel2)}
+.name{font-weight:720;font-size:14px;min-width:0}
+.subname{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:2px}
+.score{font-size:18px;font-weight:820;font-variant-numeric:tabular-nums;text-align:right;color:var(--c)}
+.metric{font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
+.metric b{color:var(--buy)}
+.reason{color:var(--muted);font-size:13px;line-height:1.35}
+.chev{font-size:18px;color:var(--faint);text-align:right}
+.rail{padding:16px}
+.rail h3{font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.rail-item{padding:12px 0;border-bottom:1px solid var(--line)}
+.rail-item:last-child{border-bottom:0}
+.rail-item strong{font-size:14px}
+.rail-item p{font-size:12.5px;color:var(--muted);margin:5px 0 0;line-height:1.4}
+.handoff{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;padding:18px}
+.handoff .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.handoff strong{display:block;font-size:16px;margin-top:4px}
+.arrow{font-size:26px;color:var(--soon)}
+.compact-list{overflow:hidden}
+.compact-row{
+  display:grid;grid-template-columns:minmax(220px,1.4fr) 115px minmax(220px,1fr) 30px;
+  gap:14px;align-items:center;min-height:57px;padding:10px 14px;border-bottom:1px solid var(--line)
+}
+.compact-row:last-child{border-bottom:0}
+.compact-row strong{font-size:13.5px}
+.compact-state{font-size:11px;color:var(--soon);font-weight:750;text-transform:uppercase}
+.compact-detail{font-size:12.5px;color:var(--muted)}
+.change-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden}
+.change{
+  padding:13px 15px;border-right:1px solid var(--line);min-height:67px;display:flex;
+  flex-direction:column;justify-content:center
+}
+.change:last-child{border-right:0}
+.change time{font-size:10.5px;color:var(--muted)}
+.change p{font-size:13px;margin:5px 0 0;line-height:1.4}
+
+/* map */
+.map-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+.map-panel{padding:14px}
+.map-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.scope-tab[aria-pressed="true"]{color:var(--text);background:var(--panel3)}
+.map-wrap{
+  position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:var(--panel2);min-height:500px
+}
+.map-wrap svg{display:block;width:100%;height:500px}
+.quad-label{font-size:13px;font-weight:780;letter-spacing:.06em}
+.map-note{position:absolute;right:14px;top:12px;font-size:11px;color:var(--muted)}
+.inspect{padding:16px}
+.inspect h2{font-size:20px;margin:0}
+.inspect .q{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--buy);margin-top:4px}
+.inspect p{font-size:13px;color:var(--muted);line-height:1.5}
+.inspect-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.inspect-kpi{padding:11px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.inspect-kpi span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.inspect-kpi b{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+.cycle-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:hidden}
+.cycle-cell{padding:13px;border-right:1px solid var(--line)}
+.cycle-cell:last-child{border-right:0}
+.cycle-cell span{font-size:10.5px;color:var(--muted);text-transform:uppercase}
+.cycle-cell b{display:block;font-size:19px;margin-top:4px}
+
+/* moving */
+.events{display:grid;gap:8px}
+.event-row{
+  display:grid;grid-template-columns:minmax(150px,1fr) 32px minmax(150px,1fr) minmax(180px,1.25fr) auto;
+  gap:10px;align-items:center;padding:13px 14px
+}
+.event-row .from,.event-row .to{font-weight:700;font-size:13px}
+.event-row .to{color:var(--soon)}
+.event-row .read{font-size:12.5px;color:var(--muted)}
+.event-row .age{font-size:11px;color:var(--muted)}
+.cross-scroll{overflow-x:auto}
+.cross-table{width:100%;border-collapse:collapse}
+.cross-table th,.cross-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+.cross-table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.cross-table tr:last-child td{border-bottom:0}
+.cross-table td:nth-child(2){color:var(--buy)}
+.cross-table td:nth-child(3){color:var(--danger)}
+details.panel{padding:0}
+details summary{cursor:pointer;min-height:48px;display:flex;align-items:center;padding:0 15px;font-size:13px;color:var(--muted)}
+.history{padding:0 15px 15px}
+
+/* money and breadth */
+.read-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:hidden}
+.read-card{padding:15px;border-right:1px solid var(--line)}
+.read-card:last-child{border-right:0}
+.read-card .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.read-card .v{font-size:22px;font-weight:820;margin-top:4px;font-variant-numeric:tabular-nums}
+.read-card .s{font-size:11.5px;color:var(--muted);margin-top:3px}
+.breadth-panel{padding:16px}
+.breadth-bar{height:18px;border-radius:999px;background:var(--panel2);overflow:hidden;display:flex}
+.adv{width:56%;background:var(--buy)}
+.dec{width:44%;background:var(--danger)}
+.bar-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+.money-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.flow-list{overflow:hidden}
+.flow-row{
+  display:grid;grid-template-columns:minmax(180px,1fr) 100px 110px;gap:12px;
+  align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)
+}
+.flow-row:last-child{border-bottom:0}
+.flow-row strong{font-size:13.5px}
+.flow-row span{font-size:12px;color:var(--muted);text-align:right}
+.flow-row b{text-align:right;font-size:13px;color:var(--buy)}
+.support{padding:16px}
+.support h3{font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.support-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.support-row:last-child{border-bottom:0}
+.support-row span{color:var(--muted)}
+.support-row b{font-variant-numeric:tabular-nums}
+
+/* explore */
+.explore-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.search{
+  min-height:42px;flex:1 1 280px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;color:var(--text);padding:0 13px
+}
+.filter[aria-pressed="true"]{background:var(--panel3);color:var(--text)}
+.compare-head{
+  display:grid;grid-template-columns:minmax(230px,1.4fr) 90px 90px 90px 100px;
+  gap:12px;padding:9px 14px;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em
+}
+.compare-row{
+  display:grid;grid-template-columns:minmax(230px,1.4fr) 90px 90px 90px 100px;
+  gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)
+}
+.compare-row:hover{background:var(--panel2)}
+.compare-row strong{font-size:13.5px}
+.compare-row .kind{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.compare-row span{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.compare-row .state{color:var(--buy);font-weight:700;text-transform:uppercase;font-size:10.5px}
+.no-results{padding:22px;color:var(--muted);font-size:13px}
+
+/* confluence */
+.universe-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+.universe-tabs .scope-tab{display:flex;align-items:center;gap:7px}
+.universe-tabs .n{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--panel2)}
+.spread{display:grid;grid-template-columns:1fr 16fr 21fr 18fr 9fr;min-height:67px;overflow:hidden}
+.spread-cell{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  border-right:1px solid color-mix(in srgb,var(--bg) 30%,transparent);
+  background:color-mix(in srgb,var(--c) 20%,var(--panel));min-width:0
+}
+.spread-cell:last-child{border-right:0}
+.spread-cell b{font-size:18px}
+.spread-cell span{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+.coverage{
+  display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--muted);font-size:12px
+}
+.coverage::before{content:"i";width:18px;height:18px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;font-size:10px}
+.focus-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:16px}
+.focus{padding:18px}
+.focus-top{display:flex;align-items:start;gap:10px}
+.focus h2{font-size:22px;margin:0}
+.focus .sector{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.life{margin-left:auto;color:var(--buy);font-size:12px;font-weight:760;border:1px solid color-mix(in srgb,var(--buy) 40%,var(--line));padding:4px 8px;border-radius:8px}
+.focus-copy{font-size:14px;color:var(--muted);line-height:1.5;margin:14px 0}
+.spark{height:84px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);overflow:hidden}
+.spark svg{width:100%;height:100%}
+.focus-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
+.focus-meta div{font-size:12px;color:var(--muted)}
+.focus-meta b{display:block;color:var(--text);font-size:14px;margin-top:2px}
+.queue h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;padding:16px 16px 8px}
+.queue-row{
+  display:grid;grid-template-columns:minmax(0,1fr) 90px 64px 28px;gap:10px;
+  align-items:center;padding:11px 14px;border-top:1px solid var(--line)
+}
+.queue-row strong{font-size:13px}
+.queue-row .qstate{font-size:11px;color:var(--c);font-weight:750;text-transform:uppercase}
+.queue-row .qage{font-size:11px;color:var(--muted);text-align:right}
+.queue-row:hover{background:var(--panel2)}
+.late-list .resource-row{grid-template-columns:minmax(210px,1.5fr) 92px 70px minmax(180px,1fr) 30px}
+
+/* responsive */
+@media(max-width:1080px){
+  .workspace{grid-template-columns:160px minmax(0,1fr);gap:20px}
+  .overview-grid,.focus-grid,.map-layout,.money-grid{grid-template-columns:1fr}
+  .resource-row{grid-template-columns:minmax(185px,1.35fr) 62px 92px minmax(150px,1fr) 28px}
+  .read-grid{grid-template-columns:1fr 1fr}
+  .read-card:nth-child(2){border-right:0}
+  .read-card:nth-child(-n+2){border-bottom:1px solid var(--line)}
+}
+@media(max-width:760px){
+  .topbar{min-height:56px;flex-wrap:wrap;gap:10px;padding-block:9px}
+  .market-nav{display:none}
+  .r2{display:none}
+  .workspace{display:block;padding-top:14px}
+  .sidebar{
+    position:sticky;top:56px;z-index:15;display:flex;gap:6px;overflow-x:auto;
+    margin:0 calc(-1 * var(--gutter)) 20px;padding:8px var(--gutter);
+    background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);
+    scrollbar-width:none
+  }
+  .sidebar::-webkit-scrollbar{display:none}
+  .tab{
+    flex:none;white-space:nowrap;padding-inline:11px;border-color:var(--line);background:var(--panel)
+  }
+  .tab[aria-selected="true"]{box-shadow:inset 0 -3px 0 var(--link)}
+  .pagehead{grid-template-columns:1fr;margin-bottom:20px}
+  .meta{justify-content:flex-start}
+  h1{font-size:34px}
+  .answer{font-size:15px}
+  .distribution{grid-template-columns:repeat(5,minmax(132px,1fr));overflow-x:auto}
+  .state-tab{min-width:132px}
+  .overview-grid{display:block}
+  .rail{margin-top:12px}
+  .resource-row,.late-list .resource-row{
+    grid-template-columns:minmax(0,1fr) 54px 30px;gap:5px 10px;padding:13px 14px;min-height:76px
+  }
+  .resource-row .name{grid-column:1}
+  .resource-row .score{grid-column:2;grid-row:1}
+  .resource-row .metric{grid-column:1;grid-row:2;text-align:left}
+  .resource-row .reason{grid-column:1 / 3;grid-row:3}
+  .resource-row .chev{grid-column:3;grid-row:1 / 4;align-self:center}
+  .handoff{grid-template-columns:1fr 28px 1fr;padding:15px;gap:8px}
+  .handoff strong{font-size:14px}
+  .compact-row{
+    grid-template-columns:minmax(0,1fr) 30px;gap:5px 10px;padding:12px 14px;min-height:70px
+  }
+  .compact-row strong{grid-column:1}
+  .compact-state{grid-column:1}
+  .compact-detail{grid-column:1}
+  .compact-row .chev{grid-column:2;grid-row:1 / 4;align-self:center}
+  .change-strip{grid-template-columns:1fr}
+  .change{border-right:0;border-bottom:1px solid var(--line);min-height:61px}
+  .change:last-child{border-bottom:0}
+  .map-wrap{min-height:400px}
+  .map-wrap svg{height:400px}
+  .inspect-grid{grid-template-columns:1fr 1fr}
+  .cycle-strip{grid-template-columns:repeat(5,minmax(100px,1fr));overflow-x:auto}
+  .cycle-cell{min-width:100px}
+  .event-row{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:6px}
+  .event-row .read{grid-column:1 / 4}
+  .event-row .age{grid-column:1 / 4}
+  .cross-table{min-width:680px}
+  .read-grid{grid-template-columns:1fr}
+  .read-card{border-right:0;border-bottom:1px solid var(--line)!important}
+  .read-card:last-child{border-bottom:0!important}
+  .compare-head{display:none}
+  .compare-row{
+    grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:13px 14px
+  }
+  .compare-row strong{grid-column:1}
+  .compare-row .state{grid-column:2;grid-row:1}
+  .compare-row span:not(.state){text-align:left}
+  .compare-row span:nth-of-type(1){grid-column:1}
+  .compare-row span:nth-of-type(2){grid-column:1}
+  .compare-row span:nth-of-type(3){grid-column:1}
+  .spread{grid-template-columns:repeat(5,minmax(96px,1fr));overflow-x:auto}
+  .spread-cell{min-width:96px}
+  .focus-grid{display:block}
+  .queue{margin-top:12px}
+  .queue-row{grid-template-columns:minmax(0,1fr) 84px 28px}
+  .queue-row .qage{display:none}
+}
+@media(max-width:390px){
+  .brand{font-size:12px}
+  .controls .ctrl{padding-inline:10px}
+  h1{font-size:31px}
+  .meta{gap:6px}
+  .chip{font-size:11.5px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">MASTERMINDX</div>
+  <nav class="market-nav" aria-label="Market scope"><b>United States</b><span>China</span><span>Hong Kong</span><span>Canada</span><span>International</span></nav>
+  <div class="controls">
+    <span class="r2">R2 Freeze Candidate</span>
+    <button class="ctrl" id="theme" type="button">Light</button>
+    <button class="ctrl" id="lang" type="button">中文</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <nav class="sidebar" id="viewTabs" role="tablist" aria-label="Sector Intelligence views" aria-orientation="vertical">
+    <a class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="overview" tabindex="0" href="#overview"><span class="ico">✦</span><span class="l-en">Overview</span><span class="l-zh">总览</span></a>
+    <a class="tab" id="tab-map" role="tab" aria-selected="false" aria-controls="map" tabindex="-1" href="#map"><span class="ico">◎</span><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></a>
+    <a class="tab" id="tab-moving" role="tab" aria-selected="false" aria-controls="moving" tabindex="-1" href="#moving"><span class="ico">↻</span><span class="l-en">What's Moving</span><span class="l-zh">正在轮动</span></a>
+    <a class="tab" id="tab-money" role="tab" aria-selected="false" aria-controls="money" tabindex="-1" href="#money"><span class="ico">≈</span><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></a>
+    <a class="tab" id="tab-explore" role="tab" aria-selected="false" aria-controls="explore" tabindex="-1" href="#explore"><span class="ico">⌕</span><span class="l-en">Explore</span><span class="l-zh">深入探索</span></a>
+    <a class="tab" id="tab-confluence" role="tab" aria-selected="false" aria-controls="confluence" tabindex="-1" href="#confluence"><span class="ico">⌁</span><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></a>
+  </nav>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section class="view" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">US Sector Intelligence · 49 themes</span><span class="l-zh">美国板块情报 · 49 个主题</span></div>
+          <h1><span class="l-en">Where leadership is shifting</span><span class="l-zh">资金正在换领涨方向</span></h1>
+          <p class="answer"><span class="l-en"><b>Health care is taking the lead</b> as AI and semis cool.</span><span class="l-zh"><b>医疗板块正在接棒</b>，AI 与半导体暂时降温。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><b>Risk-on</b></span><span class="chip">Reflation Q2</span><span class="chip"><span class="l-en">As of Aug 19</span><span class="l-zh">截至 8 月 19 日</span></span></div>
+      </header>
+
+      <div class="panel distribution" role="tablist" aria-label="Action states">
+        <button class="state-tab" style="--c:var(--buy)" data-state="buy" aria-selected="true" type="button"><span class="state-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span><span class="state-count">4</span><span class="state-note"><span class="l-en">Entry confirmed</span><span class="l-zh">入场已确认</span></span></button>
+        <button class="state-tab" style="--c:var(--soon)" data-state="soon" aria-selected="false" type="button"><span class="state-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span><span class="state-count">5</span><span class="state-note"><span class="l-en">Near trigger</span><span class="l-zh">接近触发</span></span></button>
+        <button class="state-tab" style="--c:var(--run)" data-state="run" aria-selected="false" type="button"><span class="state-name"><span class="l-en">In favour — don't chase</span><span class="l-zh">看好 — 勿追高</span></span><span class="state-count">5</span><span class="state-note"><span class="l-en">Trend intact</span><span class="l-zh">趋势仍在</span></span></button>
+        <button class="state-tab" style="--c:var(--profits)" data-state="profits" aria-selected="false" type="button"><span class="state-name"><span class="l-en">Take profits</span><span class="l-zh">止盈</span></span><span class="state-count">3</span><span class="state-note"><span class="l-en">Late cycle</span><span class="l-zh">周期后段</span></span></button>
+        <button class="state-tab" style="--c:var(--aside)" data-state="aside" aria-selected="false" type="button"><span class="state-name"><span class="l-en">Stand aside</span><span class="l-zh">暂时回避</span></span><span class="state-count">27</span><span class="state-note"><span class="l-en">No new buying</span><span class="l-zh">暂无新买点</span></span></button>
+      </div>
+
+      <div class="overview-grid">
+        <section>
+          <div class="section-head">
+            <h2 id="selectedTitle"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></h2>
+            <p id="selectedSub"><span class="l-en">Best entry states tonight</span><span class="l-zh">今晚最成熟的入场状态</span></p>
+            <span class="spacer"></span>
+            <a class="small-link" id="viewAll" href="#"><span class="l-en">View all 4 →</span><span class="l-zh">查看全部 4 个 →</span></a>
+          </div>
+          <div class="panel list" id="stateList"></div>
+        </section>
+
+        <aside class="panel rail">
+          <h3><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></h3>
+          <div class="rail-item"><strong><span class="l-en">Consumer Staples</span><span class="l-zh">日常消费</span></strong><p><span class="l-en">Trigger is roughly five sessions away.</span><span class="l-zh">预计约五个交易日后触发。</span></p></div>
+          <div class="rail-item"><strong><span class="l-en">Materials</span><span class="l-zh">原材料</span></strong><p><span class="l-en">Turn is forming; confirmation is still missing.</span><span class="l-zh">拐点正在形成，仍待确认。</span></p></div>
+          <div class="rail-item"><strong><span class="l-en">Communications</span><span class="l-zh">通信服务</span></strong><p><span class="l-en">Trend remains extended; wait for a cleaner level.</span><span class="l-zh">走势仍偏延伸，等待更干净的位置。</span></p></div>
+        </aside>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Leadership handoff</span><span class="l-zh">领涨交接</span></h2><p><span class="l-en">The strongest change this week</span><span class="l-zh">本周最重要的变化</span></p></div>
+        <div class="panel handoff">
+          <div><span class="label"><span class="l-en">Cooling</span><span class="l-zh">降温</span></span><strong>Memory, HBM &amp; Storage</strong></div>
+          <div class="arrow">→</div>
+          <div><span class="label"><span class="l-en">Taking lead</span><span class="l-zh">接棒</span></span><strong>Big Pharma &amp; Health Care</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Early turns</span><span class="l-zh">早期拐点</span></h2><p><span class="l-en">Watch until the entry state upgrades</span><span class="l-zh">等待入场状态升级</span></p><span class="spacer"></span><a class="small-link" href="#confluence"><span class="l-en">Open Confluence →</span><span class="l-zh">打开共振页 →</span></a></div>
+        <div class="panel compact-list">
+          <a class="compact-row row-link" href="#"><strong>Power &amp; Grid Buildout</strong><span class="compact-state"><span class="l-en">Early turn</span><span class="l-zh">早期拐点</span></span><span class="compact-detail"><span class="l-en">Cycle 4/100 · forming low</span><span class="l-zh">周期位置 4/100 · 正在筑底</span></span><span class="chev">›</span></a>
+          <a class="compact-row row-link" href="#"><strong>Nuclear &amp; SMR Power</strong><span class="compact-state"><span class="l-en">Early turn</span><span class="l-zh">早期拐点</span></span><span class="compact-detail"><span class="l-en">Below 200-day trend · gate remains shut</span><span class="l-zh">仍低于 200 日趋势 · 闸门未开</span></span><span class="chev">›</span></a>
+          <a class="compact-row row-link" href="#"><strong>Data-Center Power &amp; Cooling</strong><span class="compact-state"><span class="l-en">Early turn</span><span class="l-zh">早期拐点</span></span><span class="compact-detail"><span class="l-en">Cycle 11/100 · watch for confirmation</span><span class="l-zh">周期位置 11/100 · 等待确认</span></span><span class="chev">›</span></a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">What changed</span><span class="l-zh">最新变化</span></h2></div>
+        <div class="panel change-strip">
+          <div class="change"><time>2026-08-20</time><p><span class="l-en">Health Care moved into the top three.</span><span class="l-zh">医疗板块升入前三。</span></p></div>
+          <div class="change"><time>2026-08-20</time><p><span class="l-en">AI Software slipped from Buy now to In favour.</span><span class="l-zh">AI 软件由立即买入降至看好勿追。</span></p></div>
+          <div class="change"><time>2026-08-19</time><p><span class="l-en">Gold Miners confirmed a fresh entry.</span><span class="l-zh">黄金矿业确认新的入场状态。</span></p></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- MAP -->
+    <section class="view" id="map" role="tabpanel" aria-labelledby="tab-map" hidden>
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">Rotation map · whole market</span><span class="l-zh">全市场轮动图</span></div>
+          <h1><span class="l-en">Where the whole market sits</span><span class="l-zh">全市场当前所处位置</span></h1>
+          <p class="answer"><span class="l-en"><b>Gold and medicine lead</b>; semicap equipment is weakening.</span><span class="l-zh"><b>黄金与医疗领先</b>；半导体设备正在转弱。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><b>269</b> <span class="l-en">groups</span><span class="l-zh">组</span></span><span class="chip"><span class="l-en">As of Aug 20</span><span class="l-zh">截至 8 月 20 日</span></span></div>
+      </header>
+
+      <div class="map-layout">
+        <section class="panel map-panel">
+          <div class="map-toolbar">
+            <button class="scope-tab" aria-pressed="true" type="button"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+            <button class="scope-tab" aria-pressed="false" type="button"><span class="l-en">Sectors</span><span class="l-zh">板块</span></button>
+            <button class="scope-tab" aria-pressed="false" type="button"><span class="l-en">Themes</span><span class="l-zh">主题</span></button>
+            <button class="scope-tab" aria-pressed="false" type="button"><span class="l-en">Subsectors</span><span class="l-zh">细分行业</span></button>
+          </div>
+          <div class="map-wrap">
+            <div class="map-note"><span class="l-en">Relative strength · speed of change</span><span class="l-zh">相对强度 · 变化速度</span></div>
+            <svg viewBox="0 0 900 500" role="img" aria-label="Sector rotation map">
+              <rect width="450" height="250" fill="color-mix(in srgb,var(--soon) 7%,transparent)"/>
+              <rect x="450" width="450" height="250" fill="color-mix(in srgb,var(--buy) 8%,transparent)"/>
+              <rect y="250" width="450" height="250" fill="color-mix(in srgb,var(--danger) 7%,transparent)"/>
+              <rect x="450" y="250" width="450" height="250" fill="color-mix(in srgb,var(--profits) 7%,transparent)"/>
+              <line x1="450" y1="0" x2="450" y2="500" stroke="var(--line)"/><line x1="0" y1="250" x2="900" y2="250" stroke="var(--line)"/>
+              <text class="quad-label" x="20" y="30" fill="var(--soon)">IMPROVING</text>
+              <text class="quad-label" x="778" y="30" fill="var(--buy)">LEADING</text>
+              <text class="quad-label" x="20" y="478" fill="var(--danger)">LAGGING</text>
+              <text class="quad-label" x="752" y="478" fill="var(--profits)">WEAKENING</text>
+              <g stroke="color-mix(in srgb,var(--buy) 45%,transparent)" stroke-width="2" fill="none">
+                <path d="M470 230 L530 198 L600 176 L672 132"/><path d="M390 240 L448 210 L515 184 L585 154"/>
+              </g>
+              <g stroke="color-mix(in srgb,var(--profits) 55%,transparent)" stroke-width="2" fill="none">
+                <path d="M730 155 L760 180 L785 225 L780 290"/><path d="M650 150 L680 188 L700 228 L695 282"/>
+              </g>
+              <g fill="var(--buy)">
+                <circle cx="672" cy="132" r="11"/><circle cx="585" cy="154" r="10"/><circle cx="755" cy="86" r="12"/><circle cx="620" cy="105" r="9"/><circle cx="700" cy="118" r="9"/>
+              </g>
+              <g fill="var(--soon)">
+                <circle cx="430" cy="204" r="9"/><circle cx="382" cy="216" r="8"/><circle cx="330" cy="226" r="7"/><circle cx="520" cy="184" r="8"/>
+              </g>
+              <g fill="var(--profits)">
+                <circle cx="780" cy="290" r="10"/><circle cx="695" cy="282" r="9"/><circle cx="745" cy="254" r="8"/>
+              </g>
+              <g fill="var(--danger)">
+                <circle cx="320" cy="340" r="8"/><circle cx="390" cy="366" r="9"/><circle cx="430" cy="320" r="7"/>
+              </g>
+              <g fill="var(--text)" font-size="12">
+                <text x="688" y="126">Gold</text><text x="600" y="150">Silver</text><text x="766" y="80">Next-Gen Compute</text>
+                <text x="628" y="98">Medicine</text><text x="708" y="111">Memory</text><text x="525" y="178">Wireless</text>
+                <text x="792" y="288">AI Software</text><text x="705" y="279">Semicap Equipment</text>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <aside class="panel inspect">
+          <div class="eyebrow"><span class="l-en">Selected group</span><span class="l-zh">已选组别</span></div>
+          <h2>Gold Miners</h2>
+          <div class="q"><span class="l-en">Leading · still rising</span><span class="l-zh">领先 · 仍在上升</span></div>
+          <p><span class="l-en">Relative strength and momentum remain aligned. Entry timing is confirmed on the action board.</span><span class="l-zh">相对强度与动量仍然一致。操作板已确认入场时机。</span></p>
+          <div class="inspect-grid">
+            <div class="inspect-kpi"><span><span class="l-en">Rank</span><span class="l-zh">排名</span></span><b>#1</b></div>
+            <div class="inspect-kpi"><span><span class="l-en">20d</span><span class="l-zh">20 日</span></span><b>+27.2%</b></div>
+            <div class="inspect-kpi"><span><span class="l-en">Cycle</span><span class="l-zh">周期</span></span><b>Trending</b></div>
+            <div class="inspect-kpi"><span><span class="l-en">Action</span><span class="l-zh">操作</span></span><b>Buy now</b></div>
+          </div>
+          <a class="small-link" href="#"><span class="l-en">Open group →</span><span class="l-zh">打开组别 →</span></a>
+        </aside>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Cycle distribution</span><span class="l-zh">周期分布</span></h2><p><span class="l-en">Context only; action still comes from Overview</span><span class="l-zh">仅作背景；操作仍以总览为准</span></p></div>
+        <div class="panel cycle-strip">
+          <div class="cycle-cell"><span>Bottoming</span><b>34</b></div>
+          <div class="cycle-cell"><span>Prime entry</span><b>29</b></div>
+          <div class="cycle-cell"><span>Trending</span><b>107</b></div>
+          <div class="cycle-cell"><span>Topping</span><b>61</b></div>
+          <div class="cycle-cell"><span>Rolling over</span><b>38</b></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- MOVING -->
+    <section class="view" id="moving" role="tabpanel" aria-labelledby="tab-moving" hidden>
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">Leadership changes · whole market</span><span class="l-zh">全市场领涨变化</span></div>
+          <h1><span class="l-en">Two handoffs are underway</span><span class="l-zh">两组领涨方向正在交接</span></h1>
+          <p class="answer"><span class="l-en">Money is leaving semicap equipment and moving toward memory and non-AI hardware.</span><span class="l-zh">资金正从半导体设备流向存储与非 AI 硬件。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><b>2</b> <span class="l-en">active</span><span class="l-zh">进行中</span></span><span class="chip"><span class="l-en">As of Aug 20</span><span class="l-zh">截至 8 月 20 日</span></span></div>
+      </header>
+
+      <section>
+        <div class="section-head"><h2><span class="l-en">Active handoffs</span><span class="l-zh">进行中的交接</span></h2><p><span class="l-en">Leadership shifts, not buy signals</span><span class="l-zh">领涨变化，并非买入信号</span></p></div>
+        <div class="events">
+          <a class="panel event-row row-link" href="#"><span class="from">Semicap equipment</span><span class="arrow">→</span><span class="to">Memory &amp; storage</span><span class="read"><span class="l-en">Leadership is shifting; wait for the entry state.</span><span class="l-zh">领涨正在切换，等待入场状态。</span></span><span class="age"><span class="l-en">Day 2</span><span class="l-zh">第 2 天</span></span></a>
+          <a class="panel event-row row-link" href="#"><span class="from">Semicap equipment</span><span class="arrow">→</span><span class="to">Non-AI tech &amp; hardware</span><span class="read"><span class="l-en">Relative strength is improving, but timing is early.</span><span class="l-zh">相对强度正在改善，但时机仍早。</span></span><span class="age"><span class="l-en">Day 1</span><span class="l-zh">第 1 天</span></span></a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">What changed</span><span class="l-zh">最新变化</span></h2></div>
+        <div class="panel change-strip">
+          <div class="change"><time>2026-08-20</time><p><span class="l-en">Memory &amp; storage entered an active handoff.</span><span class="l-zh">存储进入进行中的交接。</span></p></div>
+          <div class="change"><time>2026-08-20</time><p><span class="l-en">Non-AI hardware began improving.</span><span class="l-zh">非 AI 硬件开始改善。</span></p></div>
+          <div class="change"><time>2026-08-19</time><p><span class="l-en">Semicap equipment lost leadership.</span><span class="l-zh">半导体设备失去领涨地位。</span></p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Crosscurrents</span><span class="l-zh">内部背离</span></h2><p><span class="l-en">Judge the groups, not the sector average</span><span class="l-zh">看细分组，不只看板块平均</span></p><span class="spacer"></span><a class="small-link" href="#"><span class="l-en">See all →</span><span class="l-zh">查看全部 →</span></a></div>
+        <div class="panel cross-scroll">
+          <table class="cross-table">
+            <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">板块</span></th><th><span class="l-en">Leading pocket</span><span class="l-zh">领先细分</span></th><th><span class="l-en">Lagging pocket</span><span class="l-zh">落后细分</span></th><th><span class="l-en">Read</span><span class="l-zh">结论</span></th></tr></thead>
+            <tbody>
+              <tr><td>Health Care</td><td>Biotech +50.4%</td><td>Managed care −8.0%</td><td><span class="l-en">Follow the groups</span><span class="l-zh">以细分组为准</span></td></tr>
+              <tr><td>Technology</td><td>Software +33.3%</td><td>Semicap equipment −10.5%</td><td><span class="l-en">Rotation in progress</span><span class="l-zh">轮动进行中</span></td></tr>
+              <tr><td>Communication Services</td><td>Entertainment +13.2%</td><td>Interactive media −6.1%</td><td><span class="l-en">Mixed leadership</span><span class="l-zh">领涨分化</span></td></tr>
+              <tr><td>Financials</td><td>Brokers +13.2%</td><td>Regional banks −1.2%</td><td><span class="l-en">Breadth is narrow</span><span class="l-zh">广度偏窄</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <details class="panel">
+          <summary><span class="l-en">Closed rotation events · 7</span><span class="l-zh">已结束的轮动事件 · 7</span></summary>
+          <div class="history">
+            <div class="change"><time>2026-08-19</time><p><span class="l-en">A prior semicap-to-memory event moved into the record.</span><span class="l-zh">此前半导体设备转向存储的事件已进入记录。</span></p></div>
+          </div>
+        </details>
+      </section>
+    </section>
+
+    <!-- MONEY -->
+    <section class="view" id="money" role="tabpanel" aria-labelledby="tab-money" hidden>
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">Participation and flow</span><span class="l-zh">参与度与资金流</span></div>
+          <h1><span class="l-en">Breadth still supports the leaders</span><span class="l-zh">市场广度仍支持领涨方向</span></h1>
+          <p class="answer"><span class="l-en">Participation is positive, but the strongest gains are concentrating in fewer groups.</span><span class="l-zh">参与度仍为正，但最强涨幅正集中到更少的组别。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><span class="l-en">Settled Aug 19</span><span class="l-zh">结算于 8 月 19 日</span></span></div>
+      </header>
+
+      <div class="panel read-grid">
+        <div class="read-card"><div class="k"><span class="l-en">Breadth</span><span class="l-zh">广度</span></div><div class="v">56%</div><div class="s"><span class="l-en">Advancing</span><span class="l-zh">上涨</span></div></div>
+        <div class="read-card"><div class="k"><span class="l-en">Equal-weight</span><span class="l-zh">等权</span></div><div class="v">+0.6%</div><div class="s"><span class="l-en">vs cap-weight · 5d</span><span class="l-zh">相对市值权重 · 5 日</span></div></div>
+        <div class="read-card"><div class="k"><span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></div><div class="v">+$1.8B</div><div class="s"><span class="l-en">Net creations · 5d</span><span class="l-zh">净申购 · 5 日</span></div></div>
+        <div class="read-card"><div class="k"><span class="l-en">Improving sectors</span><span class="l-zh">改善板块</span></div><div class="v">4 / 11</div><div class="s"><span class="l-en">Participation narrowing</span><span class="l-zh">参与度收窄</span></div></div>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Market participation</span><span class="l-zh">市场参与度</span></h2><p><span class="l-en">Advancing versus declining groups</span><span class="l-zh">上涨与下跌组别</span></p></div>
+        <div class="panel breadth-panel">
+          <div class="breadth-bar" aria-label="56 percent advancing, 44 percent declining"><div class="adv"></div><div class="dec"></div></div>
+          <div class="bar-labels"><span><span class="l-en">Advancing 56%</span><span class="l-zh">上涨 56%</span></span><span><span class="l-en">Declining 44%</span><span class="l-zh">下跌 44%</span></span></div>
+        </div>
+      </section>
+
+      <section class="section money-grid">
+        <div>
+          <div class="section-head"><h2><span class="l-en">Where money is entering</span><span class="l-zh">资金流入方向</span></h2></div>
+          <div class="panel flow-list">
+            <div class="flow-row"><strong>Health Care</strong><span>5d flow</span><b>+$0.9B</b></div>
+            <div class="flow-row"><strong>Gold Miners</strong><span>5d flow</span><b>+$0.6B</b></div>
+            <div class="flow-row"><strong>Utilities</strong><span>5d flow</span><b>+$0.3B</b></div>
+            <div class="flow-row"><strong>Semicap Equipment</strong><span>5d flow</span><b style="color:var(--danger)">−$0.5B</b></div>
+          </div>
+        </div>
+        <aside class="panel support">
+          <h3><span class="l-en">Supporting reads</span><span class="l-zh">辅助读数</span></h3>
+          <div class="support-row"><span><span class="l-en">Leadership</span><span class="l-zh">领涨</span></span><b>Healthy</b></div>
+          <div class="support-row"><span><span class="l-en">New highs</span><span class="l-zh">新高</span></span><b>Balanced</b></div>
+          <div class="support-row"><span><span class="l-en">Participation</span><span class="l-zh">参与度</span></span><b>Narrowing</b></div>
+          <div class="support-row"><span><span class="l-en">Flow confirmation</span><span class="l-zh">资金流确认</span></span><b>Positive</b></div>
+        </aside>
+      </section>
+    </section>
+
+    <!-- EXPLORE -->
+    <section class="view" id="explore" role="tabpanel" aria-labelledby="tab-explore" hidden>
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">Search and compare</span><span class="l-zh">搜索与比较</span></div>
+          <h1><span class="l-en">Find any sector or theme</span><span class="l-zh">查找任意板块或主题</span></h1>
+          <p class="answer"><span class="l-en">Compare state, score, relative performance and cycle without opening five separate tools.</span><span class="l-zh">在一个工作区比较状态、评分、相对表现与周期。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><b>49</b> <span class="l-en">themes</span><span class="l-zh">主题</span></span><span class="chip"><b>11</b> <span class="l-en">sectors</span><span class="l-zh">板块</span></span></div>
+      </header>
+
+      <div class="explore-tools">
+        <input class="search" id="search" type="search" placeholder="Search sectors and themes…" aria-label="Search sectors and themes">
+        <button class="filter" type="button" data-filter="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+        <button class="filter" type="button" data-filter="sector" aria-pressed="false"><span class="l-en">Sectors</span><span class="l-zh">板块</span></button>
+        <button class="filter" type="button" data-filter="theme" aria-pressed="false"><span class="l-en">Themes</span><span class="l-zh">主题</span></button>
+      </div>
+
+      <div class="panel">
+        <div class="compare-head"><span><span class="l-en">Group</span><span class="l-zh">组别</span></span><span><span class="l-en">Score</span><span class="l-zh">评分</span></span><span>20d</span><span><span class="l-en">Cycle</span><span class="l-zh">周期</span></span><span><span class="l-en">Action</span><span class="l-zh">操作</span></span></div>
+        <div id="exploreRows"></div>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2><span class="l-en">Historical tools</span><span class="l-zh">历史工具</span></h2><p><span class="l-en">Open only when you need the record</span><span class="l-zh">需要记录时再打开</span></p></div>
+        <div class="panel compact-list">
+          <a class="compact-row row-link" href="#"><strong>Time Machine</strong><span class="compact-state"><span class="l-en">History</span><span class="l-zh">历史</span></span><span class="compact-detail"><span class="l-en">Replay prior sector states</span><span class="l-zh">回放历史板块状态</span></span><span class="chev">›</span></a>
+          <a class="compact-row row-link" href="#"><strong>Track record</strong><span class="compact-state"><span class="l-en">Measured</span><span class="l-zh">已测量</span></span><span class="compact-detail"><span class="l-en">Realized accuracy and rank record</span><span class="l-zh">已实现准确率与排名记录</span></span><span class="chev">›</span></a>
+          <a class="compact-row row-link" href="#"><strong>Forming Narratives</strong><span class="compact-state"><span class="l-en">Analysis only</span><span class="l-zh">仅分析</span></span><span class="compact-detail"><span class="l-en">Model synthesis with sources and timestamp</span><span class="l-zh">带来源与时间戳的模型综合</span></span><span class="chev">›</span></a>
+        </div>
+      </section>
+    </section>
+
+    <!-- CONFLUENCE -->
+    <section class="view" id="confluence" role="tabpanel" aria-labelledby="tab-confluence" hidden>
+      <header class="pagehead">
+        <div>
+          <div class="eyebrow"><span class="l-en">Subsector Confluence · entry timing</span><span class="l-zh">细分行业共振 · 入场择时</span></div>
+          <h1><span class="l-en">One group is buy-ready</span><span class="l-zh">目前只有一组进入可买区</span></h1>
+          <p class="answer"><span class="l-en">Auto Manufacturers just crossed; most other groups are late or still neutral.</span><span class="l-zh">汽车制造刚刚触发；多数其他细分仍偏晚或中性。</span></p>
+        </div>
+        <div class="meta"><span class="chip"><b>Risk-on 81</b></span><span class="chip"><span class="l-en">As of Aug 19</span><span class="l-zh">截至 8 月 19 日</span></span></div>
+      </header>
+
+      <div class="universe-tabs" role="tablist" aria-label="Confluence universe">
+        <button class="scope-tab" type="button" aria-pressed="true">S&amp;P 500 <span class="n">65</span></button>
+        <button class="scope-tab" type="button" aria-pressed="false">Nasdaq-100 <span class="n">12</span></button>
+        <button class="scope-tab" type="button" aria-pressed="false">Russell-2000 <span class="n">93</span></button>
+        <button class="scope-tab" type="button" aria-pressed="false">Thematic Baskets <span class="n">49</span></button>
+      </div>
+
+      <div class="panel spread" aria-label="Confluence distribution, counts not score">
+        <div class="spread-cell" style="--c:var(--buy)"><b>1</b><span><span class="l-en">Buy-ready</span><span class="l-zh">可买</span></span></div>
+        <div class="spread-cell" style="--c:var(--soon)"><b>16</b><span><span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></div>
+        <div class="spread-cell" style="--c:var(--aside)"><b>21</b><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></div>
+        <div class="spread-cell" style="--c:var(--profits)"><b>18</b><span><span class="l-en">Late</span><span class="l-zh">偏晚</span></span></div>
+        <div class="spread-cell" style="--c:var(--danger)"><b>9</b><span><span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></div>
+      </div>
+      <div class="coverage"><span class="l-en">65 of 113 subsectors have enough live data to time · 48 remain thin.</span><span class="l-zh">113 个细分行业中有 65 个具备足够实时数据可用于择时 · 其余 48 个数据较薄。</span></div>
+
+      <section class="section focus-grid">
+        <article class="panel focus">
+          <div class="focus-top">
+            <div><h2>Auto Manufacturers</h2><div class="sector">Consumer Cyclical · 3 names</div></div>
+            <span class="life">T1 · Entry</span>
+          </div>
+          <p class="focus-copy"><span class="l-en">Fresh entry crossed. The group is overbought, so act selectively rather than chase.</span><span class="l-zh">新入场已触发。当前略偏超买，应精选而非追涨。</span></p>
+          <div class="spark">
+            <svg viewBox="0 0 560 84" preserveAspectRatio="none" aria-label="Auto Manufacturers sparkline">
+              <path d="M0 65 L35 61 L70 63 L105 56 L140 58 L175 50 L210 46 L245 48 L280 39 L315 43 L350 33 L385 29 L420 31 L455 20 L490 23 L525 14 L560 11" fill="none" stroke="var(--buy)" stroke-width="3"/>
+              <path d="M0 84 L0 65 L35 61 L70 63 L105 56 L140 58 L175 50 L210 46 L245 48 L280 39 L315 43 L350 33 L385 29 L420 31 L455 20 L490 23 L525 14 L560 11 L560 84 Z" fill="color-mix(in srgb,var(--buy) 12%,transparent)"/>
+            </svg>
+          </div>
+          <div class="focus-meta">
+            <div><span class="l-en">Fresh cross</span><span class="l-zh">新触发</span><b>1 bar ago</b></div>
+            <div><span class="l-en">Timing</span><span class="l-zh">时机</span><b>MACD curling up</b></div>
+            <div><span class="l-en">State</span><span class="l-zh">状态</span><b>Extended</b></div>
+          </div>
+          <a class="small-link" href="#"><span class="l-en">Open group →</span><span class="l-zh">打开细分组 →</span></a>
+        </article>
+
+        <aside class="panel queue">
+          <h3><span class="l-en">Tailwind queue</span><span class="l-zh">顺风队列</span></h3>
+          <a class="queue-row row-link" href="#"><strong>Medical Devices</strong><span class="qstate" style="--c:var(--soon)">Tailwind</span><span class="qage">2 bars</span><span class="chev">›</span></a>
+          <a class="queue-row row-link" href="#"><strong>Big Pharma</strong><span class="qstate" style="--c:var(--soon)">Tailwind</span><span class="qage">3 bars</span><span class="chev">›</span></a>
+          <a class="queue-row row-link" href="#"><strong>Gold Miners</strong><span class="qstate" style="--c:var(--soon)">Tailwind</span><span class="qage">4 bars</span><span class="chev">›</span></a>
+          <a class="queue-row row-link" href="#"><strong>Non-AI Software</strong><span class="qstate" style="--c:var(--soon)">Tailwind</span><span class="qage">5 bars</span><span class="chev">›</span></a>
+        </aside>
+      </section>
+
+      <section class="section late-list">
+        <div class="section-head"><h2><span class="l-en">Late or fading</span><span class="l-zh">偏晚或转弱</span></h2><p><span class="l-en">Reduce risk; do not chase</span><span class="l-zh">降低风险，不追涨</span></p><span class="spacer"></span><a class="small-link" href="#"><span class="l-en">See all 27 →</span><span class="l-zh">查看全部 27 个 →</span></a></div>
+        <div class="panel list">
+          <a class="resource-row row-link" href="#" style="--c:var(--profits)"><span class="name">Oil &amp; Gas Midstream<span class="subname">Energy · 4 names</span></span><span class="score">—</span><span class="metric">2 bars</span><span class="reason"><span class="l-en">Momentum is rolling over.</span><span class="l-zh">动能正在转弱。</span></span><span class="chev">›</span></a>
+          <a class="resource-row row-link" href="#" style="--c:var(--profits)"><span class="name">Oil &amp; Gas Refining &amp; Marketing<span class="subname">Energy · 3 names</span></span><span class="score">—</span><span class="metric">10 bars</span><span class="reason"><span class="l-en">Entry window has passed.</span><span class="l-zh">入场窗口已经过去。</span></span><span class="chev">›</span></a>
+          <a class="resource-row row-link" href="#" style="--c:var(--profits)"><span class="name">Packaging &amp; Containers<span class="subname">Consumer Cyclical · 6 names</span></span><span class="score">—</span><span class="metric">18 bars</span><span class="reason"><span class="l-en">Trend is extended.</span><span class="l-zh">趋势已经延伸。</span></span><span class="chev">›</span></a>
+          <a class="resource-row row-link" href="#" style="--c:var(--danger)"><span class="name">Medical Instruments &amp; Supplies<span class="subname">Health Care · 6 names</span></span><span class="score">—</span><span class="metric">25 bars</span><span class="reason"><span class="l-en">Relative strength is weakening.</span><span class="l-zh">相对强度正在走弱。</span></span><span class="chev">›</span></a>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  const tablist=document.getElementById('viewTabs');
+  const tabs=[...tablist.querySelectorAll('[role="tab"]')];
+  const panels=[...document.querySelectorAll('[role="tabpanel"]')];
+
+  const legacy={
+    'actnow-section':'overview','regime':'overview','grader':'overview',
+    'si-map':'map','sc-cyclemap':'map','board':'map',
+    'si-movement':'moving','rc-events-mount':'moving','rotation-app':'moving',
+    'si-money':'money','internals-section':'money','scc-leadership':'money',
+    'explore-section':'explore','table-section':'explore','chart-section':'explore',
+    'forming-narratives':'explore','tm-mount':'explore','si-confluence':'confluence'
+  };
+
+  function canonicalHash(){
+    const h=(location.hash||'#overview').slice(1);
+    if(panels.some(p=>p.id===h)) return h;
+    if(h.startsWith('read-')) return 'overview';
+    return legacy[h]||'overview';
+  }
+  function activate(id,{focus=false,replace=false}={}){
+    panels.forEach(p=>{p.hidden=p.id!==id});
+    tabs.forEach(t=>{
+      const on=t.getAttribute('aria-controls')===id;
+      t.setAttribute('aria-selected',String(on));
+      t.tabIndex=on?0:-1;
+      if(on&&focus) t.focus();
+      if(on&&innerWidth<=760) t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+    });
+    const url='#'+id;
+    if(replace) history.replaceState(null,'',url); else if(location.hash!==url) history.pushState(null,'',url);
+  }
+  tabs.forEach(t=>t.addEventListener('click',e=>{
+    e.preventDefault();
+    activate(t.getAttribute('aria-controls'));
+  }));
+  tablist.addEventListener('keydown',e=>{
+    const current=tabs.indexOf(document.activeElement);
+    if(current<0) return;
+    const horizontal=innerWidth<=760;
+    let next=null;
+    if((horizontal&&e.key==='ArrowRight')||(!horizontal&&e.key==='ArrowDown')) next=(current+1)%tabs.length;
+    if((horizontal&&e.key==='ArrowLeft')||(!horizontal&&e.key==='ArrowUp')) next=(current-1+tabs.length)%tabs.length;
+    if(e.key==='Home') next=0;
+    if(e.key==='End') next=tabs.length-1;
+    if(next!==null){e.preventDefault();tabs[next].focus();return}
+    if((e.key==='Enter'||e.key===' ')&&document.activeElement.getAttribute('role')==='tab'){
+      e.preventDefault();activate(document.activeElement.getAttribute('aria-controls'));
+    }
+  });
+  addEventListener('popstate',()=>activate(canonicalHash(),{replace:true}));
+  function orient(){
+    tablist.setAttribute('aria-orientation',innerWidth<=760?'horizontal':'vertical');
+  }
+  addEventListener('resize',orient);orient();activate(canonicalHash(),{replace:true});
+
+  document.getElementById('theme').addEventListener('click',e=>{
+    const light=root.dataset.theme!=='light';root.dataset.theme=light?'light':'dark';
+    e.currentTarget.textContent=light?'Dark':'Light';
+  });
+  document.getElementById('lang').addEventListener('click',e=>{
+    const zh=root.dataset.lang!=='zh';root.dataset.lang=zh?'zh':'en';root.lang=zh?'zh':'en';
+    e.currentTarget.textContent=zh?'English':'中文';
+  });
+
+  document.querySelectorAll('.scope-tab').forEach(b=>b.addEventListener('click',()=>{
+    const group=b.parentElement.querySelectorAll('.scope-tab');
+    group.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  }));
+
+  const states={
+    buy:{
+      label:['Buy now','立即买入'],sub:['Best entry states tonight','今晚最成熟的入场状态'],count:4,color:'var(--buy)',
+      rows:[
+        ['Gold Miners','Theme','76','+27.2%','Fresh entry confirmed'],
+        ['AI Agents & Applications','Theme','71','+20.3%','Breadth still supports'],
+        ['Non-AI Software','Theme','70','+30.4%','Leadership is broadening']
+      ]
+    },
+    soon:{
+      label:['Almost ready','接近就绪'],sub:['Near trigger, not a buy yet','接近触发，但尚未可买'],count:5,color:'var(--soon)',
+      rows:[
+        ['Consumer Staples','Sector','—','≈5d','Near trigger'],
+        ['Materials','Sector','—','Wait','Turn remains unconfirmed'],
+        ['Communications','Sector','—','Wait','Needs a cleaner level']
+      ]
+    },
+    run:{
+      label:["In favour — don't chase",'看好 — 勿追高'],sub:['Trend intact, entry already extended','趋势仍在，但入场已延伸'],count:5,color:'var(--run)',
+      rows:[
+        ['Big Pharma','Theme','77','+11.5%','Taking the lead'],
+        ['Silver Miners','Theme','76','+24.1%','Trend intact but extended'],
+        ['AI Software & Platforms','Theme','65','+12.0%','Wait for a pullback']
+      ]
+    },
+    profits:{
+      label:['Take profits','止盈'],sub:['Late cycle; protect gains','周期后段；保护利润'],count:3,color:'var(--profits)',
+      rows:[
+        ['Cybersecurity','Theme','62','+11.6%','Momentum is topping'],
+        ['Robotics & Automation','Theme','64','+7.8%','Leadership is fading'],
+        ['Real Estate','Sector','—','Today','Protect recent gains']
+      ]
+    },
+    aside:{
+      label:['Stand aside','暂时回避'],sub:['No new buying','暂无新买点'],count:27,color:'var(--aside)',
+      rows:[
+        ['PGM Miners','Theme','70','+22.0%','No new buying'],
+        ['US Energy Complex','Theme','69','+3.6%','Entry quality is weak'],
+        ['GLP-1 & Obesity','Theme','66','+3.4%','Timing does not confirm']
+      ]
+    }
+  };
+  function renderState(key){
+    const s=states[key],list=document.getElementById('stateList');
+    list.innerHTML=s.rows.map(r=>`<a class="resource-row row-link" href="#" style="--c:${s.color}">
+      <span class="name">${r[0]}<span class="subname">${r[1]}</span></span>
+      <span class="score">${r[2]}</span>
+      <span class="metric"><b>${r[3]}</b></span>
+      <span class="reason">${r[4]}</span><span class="chev">›</span></a>`).join('');
+    document.getElementById('selectedTitle').innerHTML=`<span class="l-en">${s.label[0]}</span><span class="l-zh">${s.label[1]}</span>`;
+    document.getElementById('selectedSub').innerHTML=`<span class="l-en">${s.sub[0]}</span><span class="l-zh">${s.sub[1]}</span>`;
+    document.getElementById('viewAll').innerHTML=`<span class="l-en">View all ${s.count} →</span><span class="l-zh">查看全部 ${s.count} 个 →</span>`;
+    document.querySelectorAll('.state-tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.state===key)));
+  }
+  document.querySelectorAll('.state-tab').forEach(b=>b.addEventListener('click',()=>renderState(b.dataset.state)));
+  renderState('buy');
+
+  const explore=[
+    {name:'Gold Miners',kind:'theme',score:'76',perf:'+27.2%',cycle:'Trending',action:'Buy now'},
+    {name:'Big Pharma',kind:'theme',score:'77',perf:'+11.5%',cycle:'Trending',action:"In favour"},
+    {name:'Memory, HBM & Storage',kind:'theme',score:'72',perf:'+21.7%',cycle:'Improving',action:'Almost ready'},
+    {name:'Health Care',kind:'sector',score:'74',perf:'+9.4%',cycle:'Trending',action:'Buy now'},
+    {name:'Semicap Equipment',kind:'theme',score:'58',perf:'−10.5%',cycle:'Weakening',action:'Stand aside'},
+    {name:'Communication Services',kind:'sector',score:'61',perf:'+4.1%',cycle:'Improving',action:'Almost ready'},
+    {name:'Data-Center Power & Cooling',kind:'theme',score:'48',perf:'+8.6%',cycle:'Bottoming',action:'Watch'}
+  ];
+  let filter='all';
+  const search=document.getElementById('search'),rows=document.getElementById('exploreRows');
+  function renderExplore(){
+    const q=search.value.trim().toLowerCase();
+    const data=explore.filter(x=>(filter==='all'||x.kind===filter)&&(!q||x.name.toLowerCase().includes(q)));
+    rows.innerHTML=data.length?data.map(x=>`<a class="compare-row row-link" href="#">
+      <strong>${x.name}<span class="kind">${x.kind[0].toUpperCase()+x.kind.slice(1)}</span></strong>
+      <span>${x.score}</span><span>${x.perf}</span><span>${x.cycle}</span><span class="state">${x.action}</span>
+    </a>`).join(''):`<div class="no-results">Nothing matches these filters.</div>`;
+  }
+  search.addEventListener('input',renderExplore);
+  document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{
+    filter=b.dataset.filter;document.querySelectorAll('.filter').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderExplore();
+  }));
+  renderExplore();
+})();
+</script>
+</body>
+</html>

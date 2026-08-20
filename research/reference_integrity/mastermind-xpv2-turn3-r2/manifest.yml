@@ -1,0 +1,37 @@
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-turn3-r2
+scope: full
+status: in_review
+
+surface:
+  route: "intelligence_hub.html + sector_central.html"
+  registry_row: "intelligence_hub + sector_central"
+  archetype: "institutional_explainer + analytical_workspace"
+
+author:
+  identity: "Sol, AI CEO"
+  role: designer
+
+reference_files:
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-turn3-r2/proposal/MASTERMIND_LENS_V2_R2_FREEZE_CANDIDATE.html
+    frozen_sha: da83976ece01c54d5ab07307e68118693e100a58
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-turn3-r2/proposal/MASTERMIND_SECTOR_CENTRAL_V2_R2_FREEZE_CANDIDATE.html
+    frozen_sha: da83976ece01c54d5ab07307e68118693e100a58
+
+files:
+  architecture_packet: ../../MASTERMIND_XPV2_TURN_3_FREEZE_CANDIDATE_AND_HANDOFFS.md
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+    mobile_accessibility: reviews/mobile_accessibility.md
+    data_authority: reviews/data_authority.md
+  verdict: verdict.yml
+
+review_boundary:
+  artifact_sha: da83976ece01c54d5ab07307e68118693e100a58
+  authored_reconciliation_baseline: 2a228fc494b1accba95c95ca25d37c15b9981ecc
+  freeze_parent: 2ad07078f4a200b9fcf8ed65954cff9a873463f2
+  implementation_dispatch_authorized: false
+  canonical_reference: false
