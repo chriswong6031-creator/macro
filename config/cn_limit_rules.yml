@@ -166,9 +166,9 @@ rules:
     limit_down: 0.20
     source: "https://english.sse.com.cn/start/trading/mechanism/"
     note: >
-      NO NARROWING: a STAR risk-warning name keeps the ±20% band. The main-board
-      intuition (ST ⇒ 5%) is wrong here, and the row exists so nobody has to infer that
-      from an absence.
+      NO NARROWING: a STAR risk-warning name keeps the ±20% band. The (pre-2026-07-06
+      main-board intuition, ST ⇒ 5%) is wrong here, and the row exists so nobody has to
+      infer that from an absence.
 
   - board: chinext
     security_status: ordinary

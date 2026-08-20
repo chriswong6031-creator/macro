@@ -171,9 +171,12 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
         # Launch-era ChiNext (2009-10-30 → 2020-08-23) traded main-board widths,
         # including the ±5% risk-warning band (szse.cn t20200729_580056); the
         # 2020-08-24 reform widened ChiNext ST names to 20% with everything else.
-        # Both production callers gate is_st to the main board, so this cell is
-        # reachable only by direct callers — a correctness fix to the width table,
-        # not a production behaviour change.
+        # NOTE: is_st here is st-set membership only, NOT gated to the main board —
+        # scripts/build_china_library.py's _limit_close_bars and
+        # research/cn_prophet_audit/v3_era_retro.py both pass is_st=(ticker in
+        # st_set) for every board, ChiNext included. This cell IS reachable by those
+        # production callers for a launch-era ChiNext ST name (pre-2020-08-24 bars) —
+        # a correctness fix to the width table for that case, not a no-op.
         return 0.05 if is_st else 0.10
     if board == "bse":
         return 0.30

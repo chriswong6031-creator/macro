@@ -312,6 +312,14 @@ class TestSTFlag:
     # the ordinary non-ST width instead), which means the ±5% era can never be
     # observed through _detect_limit_events any more: the width-function boundary
     # tests above (TestLimitWidthForDate) are where the 5% era is asserted.
+    #
+    # The [600079.SS, 000001.SZ] parametrization below is a sanity check, not a
+    # venue-parity proof: _detect_limit_events/limit_width_for_date never branch on
+    # SSE vs. SZSE (both collapse to board="main"), so an SSE and an SZSE ticker are
+    # expected to behave identically here by construction — the parametrization
+    # guards against an accidental venue-conditional regression, it does not
+    # establish that the two venues are held to parity. The real venue-parity
+    # assertion is tests/test_cn_limit_rules.py::test_the_two_main_boards_are_identical_everywhere.
     @pytest.mark.parametrize("ticker", ["600079.SS", "000001.SZ"])
     def test_st_main_10pct_on_or_after_cutoff(self, ticker):
         # ST on main board, at/after the 2026-07-06 band-widening: a +10% close now

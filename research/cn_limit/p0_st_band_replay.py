@@ -12,9 +12,15 @@ data/china_microstructure/limit_events.parquet, data/china_st/st_snapshot.parque
 data/china_st/st_history.parquet, and data/china_stocks_raw/*.parquet. It writes exactly one
 file, the receipt JSON alongside this script, and never touches any store the nightly
 pipeline owns. Running this script twice against unchanged inputs produces a byte-identical
-JSON receipt: there is no wall-clock timestamp inside it (the repo HEAD sha is stamped
-instead via `git rev-parse HEAD`), and every collection that could iterate in a nondeterministic
-order is sorted before being serialised.
+JSON receipt: there is no wall-clock timestamp inside it, and every collection that could
+iterate in a nondeterministic order is sorted before being serialised.
+
+Provenance note: the receipt stamps `base_repo_head_sha` — `git merge-base origin/main HEAD`,
+i.e. the pre-repair base this working tree branched from — NOT `git rev-parse HEAD`. HEAD
+itself moves across this wave's own amendment commits before merge, so pinning HEAD would make
+the receipt claim a sha that stops matching the tree that produced it on the very next commit.
+The base sha is stable across those amendments. The BINDING fingerprint for "what law was this
+replay measuring" is `definition_hash_sha256`, not any git sha — see `_definition_hash()`.
 
 Usage
 -----
@@ -51,9 +57,13 @@ RECEIPT_JSON = Path(__file__).resolve().parent / "P0_ST_BAND_REPAIR_RECEIPT_2026
 
 # ── git / definition provenance ─────────────────────────────────────────────────
 
-def _git_head_sha() -> str:
+def _base_repo_head_sha() -> str:
+    """The pre-repair base this working tree branched from — `git merge-base
+    origin/main HEAD` — NOT `git rev-parse HEAD`. HEAD moves across this wave's own
+    amendment commits before merge; the merge-base does not, so it is stable across
+    those amendments. See the module docstring's provenance note."""
     out = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
+        ["git", "merge-base", "origin/main", "HEAD"],
         cwd=REPO_ROOT, capture_output=True, text=True, check=True,
     )
     return out.stdout.strip()
@@ -164,11 +174,51 @@ def _per_session_table(df: pd.DataFrame, window_start: pd.Timestamp) -> list[dic
 
 # ── two-arm replay ──────────────────────────────────────────────────────────────
 
+# `_detect_limit_events` applies its `start_date` filter to the frame BEFORE computing
+# the prev_close shift (engine/china_microstructure.py: "df = df[df.index >= start_date]"
+# happens ahead of "prev_close = closes.shift(1)"). Passing start_date=MAIN_ST_BAND_WIDE_DATE
+# directly therefore left the era's OWN first day (2026-07-06) with a NaN prev_close post-
+# filter — silently dropped from scoring rather than scored, so only 32 of the window's 33
+# sessions were ever detector-scored. Fix: pass a start_date safely earlier than the window
+# (>=1 real trading day before it, so the shift has a genuine prior close to hand 2026-07-06),
+# then post-filter the returned events back down to the intended window. This buffer is
+# generous (a full calendar week) rather than pinned to one exact prior trading day, so it
+# tolerates a holiday/suspension gap for any affected name without re-deriving a per-name
+# lookback.
+_DETECTOR_LOOKBACK_BUFFER = MAIN_ST_BAND_WIDE_DATE - pd.Timedelta(days=7)  # 2026-06-29
+
+
+def _scored_session_count(df: pd.DataFrame, window_start: pd.Timestamp) -> int:
+    """Independently reproduces the detector's own date-filter-then-shift order (using
+    the SAME buffered start the two arms use) and counts how many bars on/after
+    `window_start` end up with a non-NaN prev_close — i.e. how many sessions the
+    detector actually scores, not merely how many exist in the raw frame. This is the
+    receipt's proof that the buffer fix restores the window's first day to scoring,
+    rather than merely asserting it.
+    """
+    full = df.copy()
+    full.index = pd.to_datetime(full.index)
+    full = full.sort_index()
+    filtered = full[full.index >= _DETECTOR_LOOKBACK_BUFFER]
+    prev_close = filtered["close"].astype(float).shift(1)
+    in_window = prev_close.index[prev_close.index >= window_start]
+    return int(prev_close.loc[in_window].notna().sum())
+
+
+def _filter_events_to_window(events: list[dict], window_start: pd.Timestamp) -> list[dict]:
+    floor = window_start.strftime("%Y-%m-%d")
+    return [e for e in events if e["date"] >= floor]
+
+
 def _run_current_arm(ticker: str, df: pd.DataFrame, st_set: frozenset) -> dict:
     events, ipo_excl, exdiv_excl = _detect_limit_events(
-        ticker, df, "main", st_set, start_date=MAIN_ST_BAND_WIDE_DATE,
+        ticker, df, "main", st_set, start_date=_DETECTOR_LOOKBACK_BUFFER,
     )
-    return {"events": events, "ipo_excluded": ipo_excl, "exdiv_excluded": exdiv_excl}
+    return {
+        "events": _filter_events_to_window(events, MAIN_ST_BAND_WIDE_DATE),
+        "ipo_excluded": ipo_excl,
+        "exdiv_excluded": exdiv_excl,
+    }
 
 
 def _run_superseded_arm(ticker: str, df: pd.DataFrame, st_set: frozenset) -> dict:
@@ -185,11 +235,15 @@ def _run_superseded_arm(ticker: str, df: pd.DataFrame, st_set: frozenset) -> dic
     cm.limit_width_for_date = _superseded_shim
     try:
         events, ipo_excl, exdiv_excl = _detect_limit_events(
-            ticker, df, "main", st_set, start_date=MAIN_ST_BAND_WIDE_DATE,
+            ticker, df, "main", st_set, start_date=_DETECTOR_LOOKBACK_BUFFER,
         )
     finally:
         cm.limit_width_for_date = original
-    return {"events": events, "ipo_excluded": ipo_excl, "exdiv_excluded": exdiv_excl}
+    return {
+        "events": _filter_events_to_window(events, MAIN_ST_BAND_WIDE_DATE),
+        "ipo_excluded": ipo_excl,
+        "exdiv_excluded": exdiv_excl,
+    }
 
 
 def _events_key(ev: dict) -> tuple:
@@ -213,7 +267,7 @@ def main() -> dict:
     affected = _affected_universe()
     census = _census()
     def_hash = _definition_hash()
-    head_sha = _git_head_sha()
+    base_sha = _base_repo_head_sha()
 
     per_name: dict[str, dict] = {}
     for ticker in affected:
@@ -227,37 +281,48 @@ def main() -> dict:
         current_arm = _run_current_arm(ticker, df, st_set)
         superseded_arm = _run_superseded_arm(ticker, df, st_set)
         session_table = _per_session_table(df, MAIN_ST_BAND_WIDE_DATE)
+        scored_sessions = _scored_session_count(df, MAIN_ST_BAND_WIDE_DATE)
         diff = _diff_events(current_arm["events"], superseded_arm["events"])
 
         per_name[ticker] = {
             "board": _board_from_ticker(ticker),
             "session_count": len(session_table),
+            "detector_scored_sessions": scored_sessions,
+            "detector_scoring_matches_session_table": scored_sessions == len(session_table),
             "arm_current": current_arm,
             "arm_superseded": superseded_arm,
             "diff": diff,
             "sessions": session_table,
         }
 
-    all_diffs_empty = all(
-        v.get("diff", {}).get("identical", False)
+    # Non-vacuous: an empty per_name (no affected names at all) or any entry that
+    # errored out (no "diff" key — e.g. a missing raw-store file) must FAIL the
+    # verdict, not be silently skipped. `.get("diff", {}).get("identical")` returns
+    # None (not True) for an error entry, so `all(...) is True` catches both cases.
+    zero_corrections_required = bool(per_name) and all(
+        v.get("diff", {}).get("identical") is True
         for v in per_name.values()
-        if "diff" in v
     )
 
     receipt = {
         "schema": "cn_limit.p0_st_band_replay.v1",
-        "repo_head_sha": head_sha,
+        "base_repo_head_sha": base_sha,
+        "provenance_note": (
+            "generated on the P0-ST working tree atop this base; the binding "
+            "fingerprint is definition_hash, not the git sha"
+        ),
         "definition_hash_sha256": def_hash,
         "constants": {
             "MAIN_ST_BAND_WIDE_DATE": str(MAIN_ST_BAND_WIDE_DATE.date()),
             "ST_STORE_COVERAGE_DATE": str(ST_STORE_COVERAGE_DATE.date()),
+            "detector_lookback_buffer_start": str(_DETECTOR_LOOKBACK_BUFFER.date()),
         },
         "census": census,
         "affected_main_board_universe": affected,
         "expected_affected_main_board_universe": ["600079.SS"],
         "affected_universe_matches_expectation": affected == ["600079.SS"],
         "per_name": per_name,
-        "zero_corrections_required": bool(all_diffs_empty),
+        "zero_corrections_required": zero_corrections_required,
     }
     return receipt
 
@@ -267,7 +332,7 @@ if __name__ == "__main__":
     payload = json.dumps(result, sort_keys=True, indent=2, default=str)
     RECEIPT_JSON.write_text(payload + "\n")
 
-    print(f"repo_head_sha: {result['repo_head_sha']}")
+    print(f"base_repo_head_sha: {result['base_repo_head_sha']}")
     print(f"definition_hash_sha256: {result['definition_hash_sha256']}")
     print(f"limit_events_total_rows: {result['census']['limit_events_total_rows']}")
     print(f"limit_events_stale_5pct_rows: {result['census']['limit_events_stale_5pct_rows']}")
@@ -275,6 +340,13 @@ if __name__ == "__main__":
     print(f"affected_universe_matches_expectation: {result['affected_universe_matches_expectation']}")
     for ticker, v in result["per_name"].items():
         if "diff" in v:
-            print(f"  {ticker}: sessions={v['session_count']} diff={v['diff']}")
+            print(
+                f"  {ticker}: sessions={v['session_count']} "
+                f"detector_scored={v['detector_scored_sessions']} "
+                f"scoring_matches={v['detector_scoring_matches_session_table']} "
+                f"diff={v['diff']}"
+            )
+        else:
+            print(f"  {ticker}: {v}")
     print(f"zero_corrections_required: {result['zero_corrections_required']}")
     print(f"wrote {RECEIPT_JSON}")

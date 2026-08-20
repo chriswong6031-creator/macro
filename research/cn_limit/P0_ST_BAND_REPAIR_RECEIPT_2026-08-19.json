@@ -3,6 +3,7 @@
     "600079.SS"
   ],
   "affected_universe_matches_expectation": true,
+  "base_repo_head_sha": "354f8cd6cf9cd645b8903e9c2ad6cc5f9a071c9e",
   "census": {
     "limit_events_max_date": "2026-08-19",
     "limit_events_min_date": "2011-01-05",
@@ -18,9 +19,10 @@
   },
   "constants": {
     "MAIN_ST_BAND_WIDE_DATE": "2026-07-06",
-    "ST_STORE_COVERAGE_DATE": "2026-07-06"
+    "ST_STORE_COVERAGE_DATE": "2026-07-06",
+    "detector_lookback_buffer_start": "2026-06-29"
   },
-  "definition_hash_sha256": "ff121335bd50cd81cff1b4ebb2c2b4181cb5727f3bfbba76571b2c18d00c01b8",
+  "definition_hash_sha256": "e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4",
   "expected_affected_main_board_universe": [
     "600079.SS"
   ],
@@ -37,6 +39,8 @@
         "ipo_excluded": 0
       },
       "board": "main",
+      "detector_scored_sessions": 33,
+      "detector_scoring_matches_session_table": true,
       "diff": {
         "current_only_count": 0,
         "identical": true,
@@ -674,7 +678,7 @@
       ]
     }
   },
-  "repo_head_sha": "354f8cd6cf9cd645b8903e9c2ad6cc5f9a071c9e",
+  "provenance_note": "generated on the P0-ST working tree atop this base; the binding fingerprint is definition_hash, not the git sha",
   "schema": "cn_limit.p0_st_band_replay.v1",
   "zero_corrections_required": true
 }

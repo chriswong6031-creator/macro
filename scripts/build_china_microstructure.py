@@ -179,7 +179,15 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         if df_recent.empty:
             continue
 
-        # But pass full df for context (prev_close for first bar)
+        # NOTE: this passes the full df (not df_recent) so the IPO-window lookup can
+        # resolve the name's own first store bar correctly, but it does NOT give the
+        # first scored bar a real prev_close: _detect_limit_events applies its
+        # start_date filter to the frame BEFORE computing the prev_close shift, so the
+        # first bar on/after lookback_start still gets prev_close=NaN and is silently
+        # skipped from scoring (same mechanism the P0-ST replay script had to buffer
+        # around — see research/cn_limit/p0_st_band_replay.py). Out of scope for this
+        # wave to change; noted here so the comment stops claiming context this call
+        # does not actually provide.
         events, ipo_excl, _ = _detect_limit_events(
             ticker=ticker,
             df=df,

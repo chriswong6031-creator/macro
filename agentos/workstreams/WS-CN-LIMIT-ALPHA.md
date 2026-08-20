@@ -239,13 +239,23 @@ landmines:
     (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). P-B3's corroborative null
     is a duration/prevalence-preserving within-split spell permutation.
   - >-
-    Main-board risk-warning event labels from 2026-07-06 onward are rule-stale
-    and QUARANTINED until P0-ST closes: the repo still applies ±5% where the
-    official 2026 rules require ±10%
-    (DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06). Note
-    engine/china_microstructure.py's ST_STORE_COVERAGE_DATE is coincidentally
-    also 2026-07-06 — that constant is store coverage, not the missing rule-era
-    switch.
+    QUARANTINE LIFTED at merge (PR #6047, P0-ST wave): the main-board
+    risk-warning band repair (era-dated ±5%→±10% effective 2026-07-06;
+    MAIN_ST_BAND_WIDE_DATE in engine/china_microstructure.py) plus the matching
+    config/cn_limit_rules.yml interval split landed there. The census in that
+    PR's replay (research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md)
+    confirmed ZERO persisted rows at limit_width==5.0 in
+    data/china_microstructure/limit_events.parquet even under the pre-fix code
+    — the sole affected main-board ST name (600079.SS) never actually printed
+    a post-07-06 event at either width — so there were no pre-fix rule-stale
+    era labels to quarantine in the first place; this constraint recorded a
+    risk that the census then measured as not materialized
+    (DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06, now resolved — see that
+    record for the repaired claim). Final closure still waits on a real
+    asia-close production proof (packet §P0-ST). Note
+    engine/china_microstructure.py's ST_STORE_COVERAGE_DATE remains
+    coincidentally also 2026-07-06 — that constant is store coverage, not the
+    rule-era switch (which is the separate MAIN_ST_BAND_WIDE_DATE constant).
   - >-
     The R6 packet statuses (DORMANT_*/BLOCKED_*) are encoded here as todo +
     gates in next_action because the wave schema has no blocked status. The
