@@ -63,7 +63,7 @@ danger_areas:
   - Dual-read event identity: historical format 1 vs post-W1 format 2
   - Closed bundle: every N+1 child must parent the N+1 complete
   - Identity refinement is comparison-only; do not rewrite v1 rows
-prs: []
+prs: [6044]
 decisions:
   - DEC:CS-V2-CLOSED-BUNDLE-ATOMIC-PERSISTENCE
 ---

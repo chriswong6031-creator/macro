@@ -115,6 +115,7 @@ waves:
     status: in_progress
     depends_on: [W1A]
     branch: claude/cs-v2-w1b-closed-bundle
+    pr: 6044
     next_action: >
       Sol review of the W1B PR. Do not merge until accepted. Do not start W2.
   - id: W2
