@@ -1049,6 +1049,11 @@ on:
       - "tests/test_government_revenue_briefcase_ui.py"
       # D3 temporal contract suite (wired by the same PR that added it).
       - "tests/test_government_revenue_temporal_contract.py"
+      # D4 Company Financial Truth Bridge suite (wired by the same PR that added
+      # it). Its subject files (templates/government-revenue-dossiers.js,
+      # templates/government_revenue.html.j2) already ride "templates/**" above;
+      # this line is the suite itself, per the contract-delta law.
+      - "tests/test_government_revenue_company_bridge.py"
       # The prophet↔govrev context bridge, wired into unrun-government-revenue by
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.

@@ -95,13 +95,25 @@ waves:
       typed fallback applies only when no module exists. #6059 fitted the
       page under a ratcheted 296 KiB raw-byte budget after the D3 markup
       left 65 bytes of headroom. All four D3 families production-proven
-      (browser proof 2026-08-20). Awaiting Sol acceptance; D4 unauthorized.
+      (browser proof 2026-08-20). ACCEPTED by Sol 2026-08-20 (D4 authorized
+      on the D3 close).
   - id: D4
     title: Company financial truth bridge
-    status: todo
+    status: in_progress
     depends_on: [D3]
     next_action: >
-      Unauthorized. Awaiting Sol review of the D3 close.
+      Sol authorized 2026-08-20, IRDM ONLY. Put the reviewed P00032 fact
+      beside the canonical Earnings/SEC owner's latest usable IRDM truth in
+      the existing dossier. Owner preflight classifies A (canonical IRDM
+      packet exists: consume read-only) / B (source evidence, no owner
+      packet: render Company packet unavailable + record the owner gap) /
+      C (no usable evidence: same unavailable state). Default
+      comparison_state=not_comparable, denominator null, materiality null —
+      a denominator is admitted only from an owner packet with receipt-bound
+      scope/semantic/period/unit/clock/basis compatible with the government
+      fact. No Earnings Wire HTML parsing; no company dataset under
+      data/government_revenue/; no browser-side division; page fence 296 KiB
+      may NOT be raised again (#6059). D5 unauthorized.
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -109,7 +121,7 @@ waves:
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
-  - "Reviewed recipient graph on HEAD is defense21-v1 as of #5932 (defense19 rows byte-preserved). #5424 defense20-v1 is still open, superseded for BWXT evidence, and must not be treated as live or merged wholesale."
+  - "Reviewed recipient graph on HEAD is defense21-v1 as of #5932 (defense19 rows byte-preserved). #5424 defense20-v1 is CLOSED/superseded by defense21-v1 — do not merge, revive, or recut it (Sol, D4 charter 2026-08-20)."
   - "government-revenue-live can build-and-prove a projection and still fail to publish; prior live projection stays authoritative until commit complete evidence projection lands (run 32112383533 did not publish; run 32177051815 did)."
   - "Radar 48 is the coherent published queue, not 26 new awards. Ledger line_count is append-only audit and is not required to equal Radar."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
@@ -147,13 +159,13 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol D3 acceptance review. D0R/D1/D1.1/D2 done and accepted; D3 shipped
-  2026-08-20 under Sol's bounded charter (#6048 vertical + #6059 page-budget
-  fit) with all four families production-proven — award/action temporal truth
-  live, opportunities SOURCE_UNAVAILABLE and budget PROJECTION_MISSING as
-  honest typed states. D4 is unauthorized. Do not merge #5424 (superseded by
-  defense21-v1). Do not re-baseline. Publisher-vintage alarm remains a
-  reliability follow-up.
+  D4 in progress (Sol authorized 2026-08-20 after accepting D3): IRDM-only
+  company financial truth bridge — GovRev P00032 beside the canonical
+  Earnings/SEC owner's IRDM truth, comparison_state=not_comparable unless a
+  receipt-bound compatible denominator is owner-asserted. D0R/D1/D1.1/D2/D3
+  done and accepted. #5424 is closed/superseded by defense21-v1. Do not
+  re-baseline. Publisher-vintage alarm remains a reliability follow-up. D5
+  unauthorized.
 ---
 
 ## Context
