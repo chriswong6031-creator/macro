@@ -238,6 +238,7 @@ Run from a full clean worktree:
 
 ```bash
 python3 research/grey_deer/gd1c/GD1C_RECONSTRUCT_AND_TEST.py
+python3 research/grey_deer/gd1c/GD1C_VERIFY.py
 python3 scripts/agentos.py validate
 git status --short -- data site
 ```
@@ -252,6 +253,8 @@ Artifacts:
 - `GD1C_GATE_SCORECARD.csv` — all eight endpoint gate records;
 - `GD1C_INCIDENT_COVERAGE.csv` — out-of-design August read;
 - `GD1C_RUN_RECEIPT.json` — verdict and artifact digests;
+- `GD1C_VERIFY.py` — fail-closed topology, identity, episode, gate, artifact,
+  input-digest, and no-production-mutation checks;
 - `GD1C_SOURCE_RIGHTS_AND_GAPS.md` — named primary blockers and lawful minimum
   substitute.
 

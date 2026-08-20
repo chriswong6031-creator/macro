@@ -28,6 +28,7 @@ owns_paths:
 discoveries:
   - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
   - DSC:GD1-EWY-IS-NOT-KOSPI-CASH
+  - DSC:GD1C-PIT-MEMBERSHIP-PREHISTORY-ABSENT
 decisions:
   - DEC:RISK-STATE-HAZARD-POLICY-SEPARATION
   - DEC:RISK-ENVELOPE-IS-CANONICAL-DERIVED-PROJECTION
@@ -93,6 +94,12 @@ waves:
     # current-membership reconstruction labeled def_current_cf; BLOCKED if PIT
     # membership cannot be reconstructed for the primary test; August 2026 may
     # not choose thresholds).
+    # Research package completed 2026-08-19 under prereg freeze fce7bfeb8c92:
+    # PRIMARY GD-H1=BLOCKED and GD-H2=BLOCKED because PIT cohort membership
+    # cannot be reconstructed across 2016-01-04..2026-07-31. The separate
+    # def_current_cf lane produced no secondary PASS. Wave stays in_progress
+    # until the commissioned Fable scope + prereg-topology acceptance review;
+    # ZERO GD-5 promotions and no authority meanwhile.
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
     status: in_progress
@@ -198,8 +205,9 @@ waves:
 next_action: >
   Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8
   on the repaired production render; verify GD-4A's Asia-close row proof;
-  Grok executes GD-1C. GD-3 starts only after Gate 8 passes; GD-5A/B/C wait
-  for GD-1C clearing the promotion gate.
+  Fable reviews the GD-1C BLOCKED/no-promotion research package and prereg
+  topology. GD-3 starts only after Gate 8 passes; GD-5A/B/C remain closed
+  because GD-1C cleared no promotion gate.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
