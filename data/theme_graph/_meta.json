@@ -18,8 +18,8 @@
   "identity_resolution_state_counts": {
     "DEFERRED_IDENTITY_EXCEPTION": 2,
     "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 1868,
-    "RESOLVED": 702,
+    "NOT_IN_MASTER": 737,
+    "RESOLVED": 1833,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",

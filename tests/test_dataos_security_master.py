@@ -1044,9 +1044,12 @@ def test_h2_eqr_and_vmrk_dedup_to_one_master_row(master: pd.DataFrame) -> None:
 
 
 def test_h9_705_rows_tombstone_byte_frozen_except_two_columns(master: pd.DataFrame) -> None:
-    """705 rows total; the tombstone differs from a plain active row's shape only in
-    the two new columns — every OTHER column keeps the value it was minted with."""
-    assert len(master) == 705
+    """705 US rows total; the tombstone differs from a plain active row's shape only
+    in the two new columns — every OTHER column keeps the value it was minted with.
+    V4-D2B2-CN-HK added a separate CN/HK population to the same table (a DIFFERENT
+    grain slice, `country` != "US") — this count is scoped to the US rows this test
+    was written to pin, not the whole table."""
+    assert len(master[master["country"] == "US"]) == 705
     tomb = master[master["security_id"] == "SEC:US-XNYS-VMRK"].iloc[0]
     assert tomb["issuer_state"] == "NO_ISSUER_EVIDENCE"
     assert pd.isna(tomb["issuer_id"])
@@ -1074,10 +1077,16 @@ def test_the_security_migrations_schema_matches_the_registry() -> None:
     assert emitted == declared
 
 
-def test_receipt_carries_the_security_axis_block(receipt: dict) -> None:
+def test_receipt_carries_the_security_axis_block(receipt: dict, master: pd.DataFrame) -> None:
+    """``security.state_counts`` is a WHOLE-TABLE count (same convention as
+    ``issuer.state_counts``) — V4-D2B2-CN-HK added ~1,100 active CN/HK rows to the
+    same table, so ACTIVE is asserted against the committed master's own row count
+    rather than the pre-D2B2 US-only magic number 704 (which
+    ``test_h9_705_rows_tombstone_byte_frozen_except_two_columns`` still pins,
+    scoped to ``country == "US"``)."""
     sec = receipt["security"]
     assert sec["era"] == "security_supersession_duplicate_mint_v1"
-    assert sec["state_counts"]["ACTIVE"] == 704
+    assert sec["state_counts"]["ACTIVE"] == int((master["security_state"].isna()).sum())
     assert sec["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
     assert receipt["pending_transition_refusals"] == []
     # AMENDMENT ruling 3 (M1): listing_continuity is no longer unconditionally empty
@@ -2508,3 +2517,248 @@ def test_an_unresolved_name_mints_nothing() -> None:
     assert pending == []
     assert lost == []
     assert BUILD.build_alias_rows(resolutions, ids) == []
+
+
+# ── V4-D2B2-CN-HK — China/HK canonical identity admission ──────────────────────
+# `research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md` is the binding
+# spec.  Every fixture below runs against the REAL committed evidence (CNInfo
+# `data/china_filings/filings.parquet`, SFC+HKEX `data/hk_shorts/*.parquet`) and the
+# REAL committed master/sidecar this PR bakes — the D2A precedent's own law
+# ("the suite must run on the real committed parquets — planted-AAPL-only is
+# insufficient", handoff §14) extended to this child.
+
+CN_HK_NODES = ROOT / "data" / "theme_graph" / "nodes.parquet"
+CN_HK_FILINGS = ROOT / "data" / "china_filings" / "filings.parquet"
+
+
+@pytest.fixture(scope="module")
+def cn_hk_seeds() -> list[dict]:
+    return BUILD.load_cn_hk_seeds()
+
+
+@pytest.fixture(scope="module")
+def cninfo_evidence() -> dict:
+    evidence, _newest = BUILD.load_cninfo_evidence()
+    return evidence
+
+
+@pytest.fixture(scope="module")
+def hk_evidence() -> dict:
+    evidence, _newest = BUILD.load_hk_shorts_evidence()
+    return evidence
+
+
+def test_cn_hk_seeds_are_exactly_the_graphs_own_company_population(
+    cn_hk_seeds: list[dict],
+) -> None:
+    """The target population is read from `data/theme_graph/nodes.parquet` (upstream
+    graph truth), never the derived sidecar — and it must equal every kind=="company"
+    node whose market is cn/hk, with no filtering by current resolution state
+    (mint-once idempotency in `mint_cn_hk_rows` is what makes re-passing the full
+    population safe on every run)."""
+    nodes = pd.read_parquet(CN_HK_NODES)
+    company = nodes[nodes["kind"] == "company"]
+    expected_cn = set(company.loc[company["market_scope"] == "cn", "node_id"])
+    expected_hk = set(company.loc[company["market_scope"] == "hk", "node_id"])
+    got_cn = {s["node_id"] for s in cn_hk_seeds if s["market"] == "cn"}
+    got_hk = {s["node_id"] for s in cn_hk_seeds if s["market"] == "hk"}
+    assert got_cn == expected_cn
+    assert got_hk == expected_hk
+
+
+def test_cn_hk_seeds_symbol_matches_the_nodes_own_suffixed_spelling(
+    cn_hk_seeds: list[dict],
+) -> None:
+    by_node = {s["node_id"]: s["symbol"] for s in cn_hk_seeds}
+    assert by_node["co:cn:601398.SS"] == "601398.SS"
+    assert by_node["co:hk:1398.HK"] == "1398.HK"
+
+
+# ── Hostile fixture 1: A/H dual listing (ICBC) ──────────────────────────────────
+def test_hostile_ah_dual_listing_icbc_stays_two_securities_no_shared_issuer(
+    master: pd.DataFrame,
+) -> None:
+    """ICBC's A-share (co:cn:601398.SS) and H-share (co:hk:1398.HK) are ONE issuer
+    per the spec's worked example (`ISS:CN-XSHG-601398` — never minted here) but
+    TWO securities, TWO listings — boundary 6: A/H dual listings remain separate
+    securities/listings, sharing an issuer only on deterministic evidence.  This era
+    introduces NO CN/HK issuer-evidence class at all (boundary 4), so the two rows
+    are never grouped — the safe, disclosed, zero-fabrication outcome."""
+    a = master[master["security_id"] == "SEC:CN-XSHG-601398"]
+    h = master[master["security_id"] == "SEC:HK-XHKG-01398"]
+    assert len(a) == 1 and len(h) == 1
+    assert a.iloc[0]["listing_key"] != h.iloc[0]["listing_key"]
+    assert a.iloc[0]["security_id"] != h.iloc[0]["security_id"]
+    # Never grouped: both null, never coincidentally sharing a fabricated value.
+    assert pd.isna(a.iloc[0]["issuer_id"])
+    assert pd.isna(h.iloc[0]["issuer_id"])
+    assert a.iloc[0]["issuer_state"] == "NO_ISSUER_EVIDENCE"
+    assert h.iloc[0]["issuer_state"] == "NO_ISSUER_EVIDENCE"
+
+
+# ── Hostile fixture 2: renamed security (current-identity-only semantics) ───────
+def test_hostile_renamed_security_mints_once_never_two_rows(
+    master: pd.DataFrame, cninfo_evidence: dict,
+) -> None:
+    """sec_code 300223 is REAL disclosed-name-change evidence in the committed
+    CNInfo window: "北京君正" through 2026-07-06, renamed to "君正股份" as of
+    2026-08-17 (VERIFIED at the D2B2 pin).  `security_master.parquet` has no name
+    column at all (boundary 7: current-identity-only, no fabricated historical name
+    lineage) — the mint must produce exactly ONE row for this code regardless, and
+    `effective_at` must be the EARLIEST dated observation (2026-07-06), never the
+    rename date and never a listing date."""
+    rows = master[master["inception_code"] == "300223"]
+    rows = rows[rows["country"] == "CN"]
+    assert len(rows) == 1, "a name change inside the evidence window minted a second row"
+    row = rows.iloc[0]
+    assert row["security_id"] == "SEC:CN-XSHE-300223"
+    assert "legal_name" not in master.columns and "sec_name" not in master.columns
+    assert "300223" in cninfo_evidence
+    assert cninfo_evidence["300223"]["effective_at"] <= "2026-07-06"
+
+
+# ── Hostile fixture 3: SOE / naming-collision risk, never fuzzy-grouped ─────────
+def test_hostile_soe_naming_collision_never_grouped(master: pd.DataFrame) -> None:
+    """Bank of China (601988, "中国银行") and China Pacific Insurance (601601,
+    "中国太保") share the "中国" state-enterprise naming prefix a NAME-similarity
+    heuristic could wrongly treat as one family — the exact forbidden vocabulary
+    (boundary 6: "no name/fuzzy/LLM grouping"; D2B1 issuer law commission §6).  This
+    builder consults no name at all for CN/HK issuer identity, so the two rows are
+    provably independent: distinct security_id, distinct listing_key, both
+    unresolved-issuer (never null-coincidentally-equal, never merged)."""
+    boc = master[master["security_id"] == "SEC:CN-XSHG-601988"].iloc[0]
+    cpic = master[master["security_id"] == "SEC:CN-XSHG-601601"].iloc[0]
+    assert boc["listing_key"] != cpic["listing_key"]
+    assert pd.isna(boc["issuer_id"]) and pd.isna(cpic["issuer_id"])
+    assert boc["issuer_state"] == cpic["issuer_state"] == "NO_ISSUER_EVIDENCE"
+
+
+# ── Hostile fixture 4: unresolved issuer ─────────────────────────────────────────
+def test_hostile_unresolved_issuer_is_the_uniform_cn_hk_state(master: pd.DataFrame) -> None:
+    """Every CN/HK row minted this era carries `issuer_state=NO_ISSUER_EVIDENCE`,
+    `issuer_id=None` — no issuer-evidence class exists for CN/HK yet (disclosed
+    limitation, boundary 4), so EVERY admitted row demonstrates the "unresolved
+    issuer" case, not just a hand-picked one."""
+    cn_hk = master[master["country"].isin(["CN", "HK"])]
+    assert len(cn_hk) > 1000, "the CN/HK admission did not land"
+    assert (cn_hk["issuer_state"] == "NO_ISSUER_EVIDENCE").all()
+    assert cn_hk["issuer_id"].isna().all()
+    assert cn_hk["issuer_cik"].isna().all()
+
+
+# ── Hostile fixture 5: alias-only vendor id (the ordinary CN/HK path) ───────────
+def test_hostile_alias_only_vendor_id_every_cn_hk_row_has_a_theme_graph_alias(
+    master: pd.DataFrame, aliases: pd.DataFrame,
+) -> None:
+    """`inception_code` is always the BARE code (spec §3.1) and never string-equals
+    the GMI node's suffix-qualified `source_native_symbol` — so D2A rule 5 (exact
+    inception-code match) can NEVER resolve a CN/HK node; every admission here is
+    reached ONLY through a vendor-alias row (`vendor=theme_graph_native`).  This is
+    not a hand-picked edge case: it is the universal path for this admission."""
+    cn_hk = master[master["country"].isin(["CN", "HK"])]
+    theme_graph_aliases = aliases[aliases["vendor"] == "theme_graph_native"]
+    assert set(theme_graph_aliases["security_id"]) == set(cn_hk["security_id"])
+    # And the exact-match path genuinely would not have worked:
+    for _, row in cn_hk.sample(min(25, len(cn_hk)), random_state=0).iterrows():
+        alias_row = theme_graph_aliases[theme_graph_aliases["security_id"] == row["security_id"]]
+        assert len(alias_row) == 1
+        assert alias_row.iloc[0]["vendor_symbol"] != row["inception_code"]
+        assert alias_row.iloc[0]["valid_from"] is None or pd.isna(alias_row.iloc[0]["valid_from"])
+        assert alias_row.iloc[0]["valid_to"] is None or pd.isna(alias_row.iloc[0]["valid_to"])
+
+
+# ── Complete accounting (boundary 8: resolved + refused == target N) ────────────
+def test_cn_hk_complete_accounting_matches_the_committed_receipt(
+    receipt: dict, master: pd.DataFrame,
+) -> None:
+    block = receipt["china_hk_admission"]
+    # resolved_total is cumulative (mint-once across runs); on a from-scratch bake
+    # (this PR's first commit of the CN/HK plane) resolved_total == resolved_this_run
+    # and resolved + refused_this_run == target_n exactly.
+    for m in ("cn", "hk"):
+        assert (block["resolved_this_run"][m] + block["refused_this_run"][m]
+                == block["target_n"][m])
+    cn_hk_master = master[master["country"].isin(["CN", "HK"])]
+    assert len(cn_hk_master) == block["resolved_total"]["cn"] + block["resolved_total"]["hk"]
+
+
+def test_cn_hk_admission_is_disclosed_never_asserted_as_completeness(receipt: dict) -> None:
+    """A refused CN code is NAMED (boundary 8: no silent drop), and the receipt
+    states its evidence sources rather than claiming the admission is exhaustive."""
+    block = receipt["china_hk_admission"]
+    assert block["refused_this_run"]["cn"] > 0, (
+        "the fixture assumes at least one CN code lacks committed CNInfo evidence "
+        "in the window — re-check the D2B2 pin if this assertion changes"
+    )
+    reasons = {r["reason"] for r in block["refusals_this_run"]["cn"]}
+    assert reasons <= {"no_committed_primary_source_evidence"} or all(
+        r.startswith("unparseable_symbol") or r == "no_committed_primary_source_evidence"
+        for r in reasons
+    )
+    assert "evidence_sources" in block and "cn" in block["evidence_sources"]
+    assert "evidence_sources" in block and "hk" in block["evidence_sources"]
+
+
+# ── Mint-once idempotency, market-scoped (the false-"lost" regression this stage
+#    introduced and then fixed — see build()'s existing_us_rows/existing_cn_hk_rows
+#    split) ───────────────────────────────────────────────────────────────────
+def test_mint_cn_hk_rows_is_idempotent_and_never_re_touches_a_prior_mint() -> None:
+    now = "2026-08-20T00:00:00"
+    seeds = [{"node_id": "co:cn:600519.SS", "market": "cn", "symbol": "600519.SS"}]
+    evidence = {"600519": {"effective_at": "2026-01-01"}}
+    rows1, aliases1, cov1 = BUILD.mint_cn_hk_rows([], seeds, evidence, {}, now)
+    assert cov1["resolved_this_run"]["cn"] == 1
+    assert len(rows1) == 1
+    rows2, aliases2, cov2 = BUILD.mint_cn_hk_rows(rows1, seeds, evidence, {}, "2026-08-21T00:00:00")
+    assert cov2["resolved_this_run"]["cn"] == 0, "a second run re-minted an already-minted row"
+    assert rows2 == rows1
+    assert aliases2 == []
+
+
+def test_mint_cn_hk_rows_refuses_without_silently_dropping() -> None:
+    now = "2026-08-20T00:00:00"
+    seeds = [
+        {"node_id": "co:cn:999999.SS", "market": "cn", "symbol": "999999.SS"},
+        {"node_id": "co:hk:1.HK", "market": "hk", "symbol": "1.HK"},
+    ]
+    rows, aliases, cov = BUILD.mint_cn_hk_rows([], seeds, {}, {}, now)
+    assert rows == []
+    assert aliases == []
+    assert cov["refused_this_run"] == {"cn": 1, "hk": 1}
+    assert cov["refusals_this_run"]["cn"][0]["reason"] == "no_committed_primary_source_evidence"
+    assert cov["refusals_this_run"]["hk"][0]["reason"] == "no_committed_primary_source_evidence"
+
+
+def test_mint_cn_hk_rows_types_an_unparseable_symbol_refusal() -> None:
+    now = "2026-08-20T00:00:00"
+    seeds = [{"node_id": "co:cn:NOTACODE", "market": "cn", "symbol": "NOTACODE"}]
+    rows, aliases, cov = BUILD.mint_cn_hk_rows([], seeds, {}, {}, now)
+    assert rows == []
+    assert cov["refusals_this_run"]["cn"][0]["reason"].startswith("unparseable_symbol")
+
+
+# ── D2A rule 4 (F1 cross-market equality) is trivially satisfied ────────────────
+def test_cn_hk_rows_country_agrees_with_their_own_mic(master: pd.DataFrame) -> None:
+    """Every minted CN row is on a CN MIC (XSHG/XSHE/XBSE) and every HK row is on
+    XHKG — F1's cross-market guard in the D2A sidecar (§4 amendment) can never fire
+    against a row this builder minted, because `listing_key`'s own MIC is derived
+    deterministically from the code (`lib.dataos.identity.normalize_cn_symbol` /
+    `normalize_hk_symbol`), never declared independently of it."""
+    cn_hk = master[master["country"].isin(["CN", "HK"])]
+    cn = cn_hk[cn_hk["country"] == "CN"]
+    hk = cn_hk[cn_hk["country"] == "HK"]
+    assert set(cn["mic"]) <= {"XSHG", "XSHE", "XBSE"}
+    assert set(hk["mic"]) <= {"XHKG"}
+
+
+# ── US existing identity fixtures unchanged (boundary "US existing identity
+#    fixtures remain behaviorally unchanged") ────────────────────────────────────
+def test_us_coverage_is_unchanged_by_the_cn_hk_admission(receipt: dict) -> None:
+    """The CN/HK admission stage runs entirely additively (a SEPARATE US-rows-only
+    input to `mint_master_rows`, see build()'s `existing_us_rows` split) — the US
+    coverage numbers must be BYTE-IDENTICAL to the pre-D2B2 committed receipt."""
+    assert receipt["coverage"]["total"] == 713
+    assert receipt["coverage"]["resolved"] == 704
+    assert receipt["coverage"]["unresolved"] == 9
+    assert receipt["issuer"]["state_counts"]["RESOLVED"] == 699
+    assert receipt["security"]["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
