@@ -234,7 +234,45 @@ waves:
       flip — the test-pinned-retired-literal trap, third instance). The five
       test_hk_board_ui reds were NOT fixture drift — #6029 proved a sparse-CI
       checkout artifact (day-2 diagnosis STRUCK, chip dismissed). P-LAB-UI NOT
-      started (directive §9)."
+      started (directive §9).
+      DAY-4 STATE (2026-08-20, Sol Day-4 directive — CLOSURE): W-L1 RULED by Sol
+      (option b, MP-1 §13 row CLOSED, records #6064). GATE B COMMISSIONED under
+      the Chairman's explicit admin grant: env repairs applied (drop-in
+      EnvironmentFile + slice dir + baseline path + macro-api restart), a NEW
+      code blocker isolated and healed same-day (#6095: live_eval._quote_ts
+      only read 'ts' while the loader normalizes to 'ts_ms' — a healthy
+      2,089-symbol snapshot darked the whole probe set 0/2979), two bounded
+      resource rulings on the evaluator unit (MemoryHigh 768M/Max 1G;
+      TimeoutStartSec 570 — first full pass is cold-I/O ~10min), first genuine
+      in-window envelope 115834-entry_radar_live.json (240 usable quotes, 54
+      transitions, 27 events, 237 basis audits 0 mismatch), baseline minted
+      LAWFULLY 16:10:41Z (dry-run first, backend r2, after real passes),
+      post-mint service cycles self-sustaining (~5min cadence) with
+      observation_class live_forward=49 / retrospective_seed=150, pools
+      separate, coverage_verified true. Receipt (verdict COMMISSIONED):
+      /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json.
+      P-MP1-SHELL CENTRAL ACT MERGED #6076 (squash 31ca4971ba4a) after THREE
+      build rounds + THREE independent adversarial review rounds (final
+      certification MERGE-SAFE; §8b three-part record: mechanism PASS /
+      boundary WITHHELD pending the B1 escalation / candidate split
+      conformant): plan-book grid re-source in published plans_sort_key order,
+      §4b ladder verbatim, ?life= URL law, W-L1 neutralization per ruling (b)
+      (data-mp1-grid marker + :not() choke point; poller+stamp byte-identical),
+      §8a stance wiring, §10 states (dense clause DEFERRED — no plan-book
+      table view exists yet), Candidates shelf gated at the standing 1/3/full
+      idiom, fail-closed gate config, non-US byte parity proven at merge-base.
+      CRITICAL ESCALATION B1 (routed to Sol + operator,
+      DSC:PROPHET-INDEX-PUBLIC-R2-TWIN): the FULL plan book is anonymously
+      world-readable at the public R2 dev URL (200/2.16MB/262 plans with
+      entries/zones/targets/invalidations/theses) while the origin 401s the
+      same path — a LIVE pre-existing leak that the shell's paid boundary now
+      sits on top of. Remedy sketch in the DSC (redacted public stub for the
+      rescue watchdog + credentialed server-side reads for the Terminal's
+      /api/flow route + delete the public object; all consumers are
+      server-side). Post-merge render pending at the merge SHA; browser matrix
+      + live verification follow the bake. Follow-ups owed: cadence finding
+      for the Radar owner (cold-start pass exceeds the 5-min tick), N1 dead-JS
+      heal, N2 macro.html dead CSS, remote-route proof (site-full token)."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]
