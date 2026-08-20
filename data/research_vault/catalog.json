@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T03:37:05.609216+00:00",
-  "count": 1449,
+  "generated_at": "2026-08-20T05:00:01.373668+00:00",
+  "count": 1454,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -141,6 +141,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-m7qjvw1h4fr-d917b5",
+      "title": "Equities Tactical Top Picks",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:22Z",
+      "summary_points": [
+        "**Alpha Decay in Closed Ideas**: YTD alpha of -7.9% across 63 ideas (24 trading days) signals underperformance vs benchmark, requiring portfolio rebalancing.",
+        "**Regional Underperformance**: Asia-Pacific (-5.8% absolute) and Americas (-1.2% absolute) lag Europe (+2.7% absolute) and Switzerland (+0.5% absolute), highlighting sector-specific weakness in US/Asian markets.",
+        "**Data Center OCS Catalyst**: High-margin Optical Circuit Switches (OCS) driving revenue/margin expansion through 2028, with shares trading below Swiss peers offering relative upside.",
+        "**UBS Target Upside**: UBS 325 CHF target (vs.",
+        "current 230 CHF) for data center play, supported by H1 results beat, earnings forecasts above consensus, and market mispricing of infrastructure assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-m0xtai7vrdy-863dbf",
       "title": "Daily Europe",
       "institution": "UBS",
@@ -157,6 +178,88 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hbkq924i6po-7e46b3",
+      "title": "Investment strategy insights",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:16Z",
+      "summary_points": [
+        "**European Equities**: Stox Europe 600 targeting 4-year high Q2 profit growth driven by defense, infrastructure, AI, and energy security; geopolitical tensions create \"buy on dips\" opportunities amid US concentration risks.",
+        "**Asia ex-Japan**: 72% earnings growth forecast supported by AI hardware supply chain and cyclical segments; favor A-shares over H-shares with constructive stance on mainland China equities via IT, healthcare, and policy support.",
+        "**India Market**: Upgrade to Attractive due to improving macro backdrop, accelerating earnings growth, and compelling valuations enabling stronger earnings recovery.",
+        "**Diversification Imperative**: 40% of self-managed equity investors hold >50% in ≤10 stocks, amplifying risk; requires broad regional, sector, and instrument diversification in core equity allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tbliynlaqkt-bc801c",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:15Z",
+      "summary_points": [
+        "**Gulf Tensions & Oil**: Crude oil futures >$90/barrel reignite inflation concerns, but consumer spending shifts mitigate real income damage vs.",
+        "inflation data, softening impact.",
+        "**Policy Shifts**: US reverses 50% Canadian tariff (2h pre-effect) amid affordability crisis; ECB Lagarde’s WEF speech signals potential leadership move/early ECB exit.",
+        "**Asset Class Rating System**: Five-tier equity rating (Most Attractive to Least Attractive) collapses to three tiers when combined with other assets, guiding tactical allocation via expected returns and scenario analysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x8olxoy6ifh-d54df5",
+      "title": "UBS Equity Preference List European Communication Services 2026 08 19",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:14Z",
+      "summary_points": [
+        "**Deutsche Telekom Dominance & Risk**: 32% portfolio weight; strong US/Germany growth (T-Mobile merger, fiber/5G) but faces 1&1 Telefónica switch, electricity costs, and macro slowdown risks.",
+        "**Sector Valuation Premium**: Telecom trades at 25% dividend yield premium vs 15-yr avg; fiber capex decline (Spain/Italy/Norway/UK) to boost FCF/dividend yield.",
+        "**UMG Structural Advantage**: Undervalued with symbiotic streaming growth (2024-2025 incremental benefit); irreplaceable music backlog offsets piracy decline and low pricing (~USD 10/month).",
+        "**Spotify Defensive Scale**: 22.3% weight; proven freemium scaling, expanding content ecosystem (music/podcasts/video) drives monetization despite competition and macro headwinds.",
+        "**EUR Currency Concentration**: 67.5% portfolio weight in EUR (vs USD exposure via Spotify), creating significant regional FX risk amid European market volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-axsmm9dgdou-36a50f",
+      "title": "UBS Equity Preference List Singapore 2026 08 19",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:13Z",
+      "summary_points": [
+        "**EQDP Upsizing & Liquidity Catalyst**: SGD 6.5bn Equity Market Development Programme (up from SGD 5bn) drives market performance, with CPF Investment Scheme (2028) adding long-term liquidity; key 2026 driver for >20% annual returns.",
+        "**Extreme Bank Concentration Risk**: 61% portfolio allocation to Singaporean banks (DBS 31.0%, OCBC 20.5%, UOB 9.5%), creating vulnerability to domestic regulatory shifts, interest rate movements, and Singapore’s economic performance.",
+        "**SGD Currency & Geopolitical Vulnerability**: 95% SGD-heavy portfolio amplifies currency volatility risk and systemic exposure to Singapore’s regulatory/geopolitical environment, despite being labeled a \"geopolitical risk safe haven.\" - **DBS/OCBC Yield vs.",
+        "Recession Risk**: High dividend yields (DBS 5.5%, OCBC >6%) offset near-term earnings softness, but face risks from prolonged recession, credit costs, and asset quality deterioration.",
+        "**REIT Catalysts vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
