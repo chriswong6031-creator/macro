@@ -134,6 +134,32 @@ waves:
     # proof needs a site-full operator bearer token (none exists on the host;
     # none was minted); an in-window pass with an EMPTY delta spools nothing,
     # so first-envelope timing depends on real transitions after 13:29Z.
+    # DAY-4 (2026-08-20): COMMISSIONED. Repairs applied by the Fable session
+    # under explicit Chairman admin grant (drop-in EnvironmentFile=
+    # /etc/macro-api.env on the evaluator unit; ENTRY_RADAR_SLICE_DIR;
+    # PROPHET_LAB_OBSERVATION_BASELINE_PATH + macro-api restart). NEW code
+    # blocker found by the first real in-window pass and healed same-day
+    # (#6095: live_eval._quote_ts read only 'ts' but the local-quote loader
+    # normalizes rows to 'ts_ms' via live_verify._merge_quotes — a fresh,
+    # correct 2,089-symbol quotes_full.json darked the ENTIRE probe set
+    # 0/2979; e2e regression now runs the real loader chain). Two bounded
+    # resource rulings on macro-live-entry-radar.service (drop-ins:
+    # MemoryHigh=768M/MemoryMax=1G after a 256M-throttle swap-crawl kill;
+    # TimeoutStartSec=570 after a cold-I/O ~10min first pass — 60-150s CPU,
+    # rest I/O over the 5.7G slice tree). First genuine envelope
+    # live_flow/entry_radar_events/2026-08-20/115834-entry_radar_live.json
+    # (supervised manual pass, timer stopped/restarted around it: 240/2979
+    # usable quotes, 54 transitions, 27 events, 237 basis audits 0 mismatch).
+    # Baseline minted lawfully 16:10:41Z (dry-run first, backend r2).
+    # Post-mint SERVICE cycles self-sustain at ~5min (warm ledger = delta
+    # passes fit the window): live_forward=49 / retrospective_seed=150,
+    # pools separate, coverage_verified true. OWNER FOLLOW-UP (cadence): any
+    # long gap re-creates the cold-start wedge — a first pass after a dark
+    # period exceeds the 5-min tick + 570s timeout; consider substrate
+    # caching or a bootstrap path. Pack-unit MemoryMax remains untested for
+    # a full in-service build. Per the LAB-0 non-completion rule this
+    # commissioning contributes evidence toward B6 but does NOT close it
+    # (full-RTH-session cadence proof still owed).
     # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
     # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
     # LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.2A). Executes under THIS
