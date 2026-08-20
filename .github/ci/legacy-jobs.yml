@@ -2063,6 +2063,8 @@ jobs:
           tests/test_us_act_now.py
           tests/test_p_mp1_shell_groundwork.py
           tests/test_p_mp1_shell_stance_projection.py
+          tests/test_p_mp1_shell_nonus_byte_parity.py
+          tests/test_wl1_lifecycle_neutralization.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
