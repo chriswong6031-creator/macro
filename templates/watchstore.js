@@ -1000,19 +1000,36 @@
 
   // ---- portfolio CRUD --------------------------------------------------------
   // Targets portfolio_positions when signed in; the localStorage book when signed out.
-  // All cloud queries filter by user_id = session user. If RLS is not yet applied,
-  // errors are caught and logged; status() reports 'local' so callers degrade.
+  // All cloud queries filter by user_id = session user.
+  //
+  // A1A authority law (research/market_os/…A1A_COMMISSIONING…md §10):
+  //   anonymous     -> the local Portfolio is canonical
+  //   authenticated -> the cloud Portfolio is canonical
+  // A signed-in session is NEVER "local mode", even when the cloud read/write most
+  // recently failed — `portfolioOk` is a diagnostic used for last-good bookkeeping and
+  // the read-state banner, never a router to the anonymous local book. The old shape
+  // (`_isLocalMode` including `!portfolioOk`) is exactly Turn 6's defect "authenticated
+  // cloud-to-local fork": one failed read silently and PERMANENTLY rerouted every later
+  // read AND write to the anonymous local book for the rest of the session — never
+  // resolved, never disclosed, and never the visitor's own local data to begin with.
+
+  var pfLastGoodCloud = null;   // {rows, at} — the last rows a CLOUD read actually returned
+  // the current read-state answer, refreshed on every portfolioList() call
+  var pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
 
   function _portfolioGuard() {
     if (!user || !sb) return Promise.reject(new Error('no-session'));
-    if (!portfolioOk) return Promise.reject(new Error('portfolio-unavailable'));
     return Promise.resolve();
   }
-  // signed-out (or a portfolio backend that has gone unavailable) -> the local book
-  function _isLocalMode() { return !user || !sb || !portfolioOk; }
+  // signed-out only. A degraded authenticated session is NOT local mode — see the law
+  // above; it is 'cloud' authority in a 'degraded' or 'error' read_state instead.
+  function _isLocalMode() { return !user || !sb; }
 
   function portfolioList() {
-    if (_isLocalMode()) return pfLocalList();
+    if (_isLocalMode()) {
+      pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+      return pfLocalList();
+    }
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .select('*')
@@ -1020,14 +1037,29 @@
         .order('created_at');
     }).then(function (res) {
       if (res.error) throw res.error;
-      return res.data || [];
+      var rows = res.data || [];
+      portfolioOk = true;
+      pfLastGoodCloud = { rows: rows.slice(), at: nowISO() };
+      pfReadState = { authority: 'cloud', state: 'ready', last_good_at: pfLastGoodCloud.at, warning: null };
+      return rows;
     }).catch(function (err) {
       portfolioOk = false;
       warnOnce('portfolio-list', 'portfolio list failed: ' + (err && err.message || err));
-      // backend unavailable -> fall back to the local book rather than showing nothing
-      return pfLocalList();
+      /* NEVER substitute the anonymous local Portfolio for a signed-in session's cloud
+         read, and NEVER assert zero. Preserve last-good cloud rows (degraded, read-only)
+         when we have them; otherwise resolve `null` — an explicit "we do not know",
+         never an empty array standing in for a true zero. A durable authenticated
+         offline outbox is a separate, later capability (A1A does not build one). */
+      if (pfLastGoodCloud) {
+        pfReadState = { authority: 'cloud', state: 'degraded',
+                         last_good_at: pfLastGoodCloud.at, warning: 'cloud-unavailable' };
+        return pfLastGoodCloud.rows.slice();
+      }
+      pfReadState = { authority: 'cloud', state: 'error', last_good_at: null, warning: 'cloud-unavailable' };
+      return null;
     });
   }
+  function portfolioReadState() { return pfReadState; }
 
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
@@ -1146,8 +1178,13 @@
       upsert: portfolioUpsert,
       close: portfolioClose,
       remove: portfolioRemove,
-      // 'local' = the localStorage book (signed out, or backend unavailable)
-      isLocal: _isLocalMode
+      // 'local' = the localStorage book — signed OUT only (A1A authority law, §10).
+      isLocal: _isLocalMode,
+      // {authority, state, last_good_at, warning} — refreshed by every list() call.
+      // 'local' authority is always 'ready'; 'cloud' authority may be 'ready',
+      // 'degraded' (last-good rows, read-only) or 'error' (no last-good; list()
+      // resolved null). Private — never logged, published, or sent to analytics.
+      readState: portfolioReadState
     }
   };
 

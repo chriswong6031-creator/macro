@@ -156,15 +156,23 @@ def test_percent_mode_normalises_to_100_and_does_not_claim_it_was_told():
 
 
 @needs_node
-def test_a_partially_sized_book_is_flagged_as_assumed_not_silently_filled():
-    """Filling a missing size with the average is a reasonable default and a lie if it
-    is not disclosed — `assumed` is what drives the "No sizes given" meta line."""
+def test_a_partially_sized_book_abstains_rather_than_average_filling():
+    """A1A (§12, defect 'hidden weighting completion'): filling a missing size with the
+    AVERAGE of the sized rows and blending it into the same distribution as the real
+    ones is exactly the fabrication the weighting law forbids — some sized / some
+    unsized must ABSTAIN, never silently average-fill. This is the mutation-red pin for
+    'restore average-filling missing sizes': reintroducing the old `avg =
+    tot/sizedCount; filled = rows.map(r => r.size||avg)` block turns it red (`assumed`
+    stays true but `abstain` disappears and every item carries a fabricated `money`)."""
     out = _wl(
         "var p = WL.parseBook('AAPL 60, MSFT 20, NVDA');"
         "OUT(WL.weightsOf(p, 'pct'));"
     )
     assert out["assumed"] is True
-    assert sum(i["money"] for i in out["items"]) == pytest.approx(100, abs=1e-6)
+    assert out["abstain"] is True
+    # no fabricated distribution — every row's money is explicitly unknown, never a
+    # number quietly derived from the two rows that DID carry a size
+    assert all(i["money"] is None for i in out["items"])
 
 
 @needs_node
@@ -587,16 +595,20 @@ def test_book_filter_regression_an_empty_model_never_resets_a_persisted_book():
     """DEFECT 2. `refresh()` fell back to All whenever the active book had no members —
     including on first paint, before positions had loaded, and it PERSISTED that reset,
     so the visitor's choice never came back. "We don't know yet" and "that book is gone"
-    have to be different answers."""
+    have to be different answers.
+
+    A1A retired `refresh(watchSyms, rows, priceOf)` for `refresh(rows, priceOf)` — the
+    strip is Portfolio-only now (§11) — so this pins the same regression against
+    Portfolio ROWS directly rather than a watchlist ∪ rows union."""
     out = _run(
         # the module reads the persisted book AT REQUIRE TIME, so the seed must precede it
         "localStorage.setItem('mdash.book.v1', 'hk');\n"
         "var MB = require(%s);\n"
-        "MB.refresh([], null, null);\n"                       # first paint: nothing loaded
+        "MB.refresh(null, null);\n"                            # first paint: nothing loaded
         "var afterEmpty = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
-        "MB.refresh(['NVDA'], [{ticker:'0700.HK'},{ticker:'NVDA'}], function(){return 1;});\n"
+        "MB.refresh([{ticker:'0700.HK'},{ticker:'NVDA'}], function(){return 1;});\n"
         "var afterLoad = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
-        "MB.refresh(['NVDA'], [{ticker:'NVDA'}], function(){return 1;});\n"   # hk genuinely gone
+        "MB.refresh([{ticker:'NVDA'}], function(){return 1;});\n"   # hk genuinely gone
         "var afterGone = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
         "OUT({afterEmpty: afterEmpty, afterLoad: afterLoad, afterGone: afterGone});"
         % json.dumps(str(MARKET_BOOKS))

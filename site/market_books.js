@@ -114,20 +114,24 @@
     return out;
   }
 
-  /* The full render model for the strip.
-       watchSyms : watchlist symbols   rows: portfolio rows   priceOf: price resolver
-     Members of a book = watchlist names ∪ OPEN positions in that market. */
-  function buildModel(watchSyms, rows, priceOf) {
+  /* A1A (research/market_os/…A1A_COMMISSIONING…md §11): the books strip lives inside
+     the Portfolio holdings toolbar (`#bk_strip`, templates/watchlist.html.j2) and must
+     describe the canonical Portfolio ONLY — a Watchlist name may never enter its count,
+     and picking a book here may never invisibly filter the Watchlist surface (which
+     shows no book-filter UI of its own). The two constructors below are the ONLY
+     legal ways to build a book membership model; there is no longer a unioning
+     `buildModel` — that construction is what let a Watchlist name paint the Portfolio's
+     own market strip (Turn 6 defect "population union"). */
+  function membersFrom(names) {
     var members = {};   // book -> {sym: 1}
-    function addName(t) {
+    (names || []).forEach(function (t) {
       if (!t) return;
       var bk = marketOf(t);
       (members[bk] || (members[bk] = {}))[t] = 1;
-    }
-    (watchSyms || []).forEach(addName);
-    (rows || []).forEach(function (r) { if (r && r.status !== 'closed') addName(r.ticker); });
-
-    var agg = aggregate(rows, priceOf);
+    });
+    return members;
+  }
+  function modelFrom(members, agg) {
     var present = BOOK_ORDER.filter(function (b) {
       return members[b] && Object.keys(members[b]).length > 0;
     });
@@ -139,10 +143,30 @@
       present: present,
       nAll: Object.keys(allNames).length,
       members: members,
-      agg: agg,
+      agg: agg || {},
       // the strip is a partition device: pointless with a single market present
       show: present.length > 1
     };
+  }
+
+  /* rows: canonical Portfolio rows (open positions only are counted; a closed row is
+     skipped exactly like `aggregate` already skips it). Members of a book = OPEN
+     Portfolio positions in that market — never a Watchlist name. */
+  function buildPortfolioModel(rows, priceOf) {
+    var names = (rows || []).filter(function (r) { return r && r.status !== 'closed'; })
+      .map(function (r) { return r.ticker; });
+    return modelFrom(membersFrom(names), aggregate(rows, priceOf));
+  }
+
+  /* watchSyms: the selected Watchlist's symbols. This constructor exists so a Watchlist
+     membership model can be built with the SAME rules as the Portfolio one — it is not
+     wired into `#bk_strip` (that host is Portfolio-only), and today has no production
+     caller: A1A adds no new Watchlist book filter (§11), so nothing consumes this model
+     to filter the Watchlist surface. It stays public because a future Watchlist-scoped
+     book view is exactly the kind of feature this constructor — never a union with
+     Portfolio rows — must back. */
+  function buildWatchlistModel(watchSyms) {
+    return modelFrom(membersFrom(watchSyms || []), {});
   }
 
   // =========================================================================
@@ -250,10 +274,13 @@
       document.documentElement.getAttribute('data-lang') === 'zh';
   }
 
-  /* Recompute + repaint. Callers: watchlist.js (list changed), portfolio.js (rows or
-     prices changed). Cheap and idempotent — safe to call on every render. */
-  function refresh(watchSyms, rows, priceOf) {
-    MODEL = buildModel(watchSyms, rows, priceOf);
+  /* Recompute + repaint. Sole caller: portfolio.js, on every render (rows or prices
+     changed). `#bk_strip` is the Portfolio holdings toolbar's strip — A1A retired the
+     watchlist.js caller that used to repaint it with Watchlist names while no Portfolio
+     was loaded (Turn 6 defect "population union"); watchlist.js no longer calls this.
+     Cheap and idempotent — safe to call on every render. */
+  function refresh(rows, priceOf) {
+    MODEL = buildPortfolioModel(rows, priceOf);
     /* An active book that no longer has members falls back to All (never a dead view).
        An EMPTY model is not that case: on first paint the positions have not loaded
        yet, so every book looks absent and this reset silently discarded the visitor's
@@ -371,7 +398,8 @@
     marketOf: marketOf, storeOf: storeOf,
     isModeled: isModeled, modeledOnly: modeledOnly, modeledWeights: modeledWeights,
     BOOKS: BOOKS, BOOK_ORDER: BOOK_ORDER,
-    aggregate: aggregate, buildModel: buildModel,
+    aggregate: aggregate,
+    buildPortfolioModel: buildPortfolioModel, buildWatchlistModel: buildWatchlistModel,
     fmtValue: fmtValue, bookName: bookName,
     getBook: getBook, setBook: setBook, inActive: inActive,
     presentBooks: function () { return MODEL.present.slice(); },
