@@ -4201,6 +4201,12 @@ on:
       - "tests/test_dataos_security_master.py"
       - "scripts/build_security_master.py"
       - "data/reference/**"
+      # Job: dislocation-p0-a1-blind-harvest (.github/ci/legacy-jobs.yml).
+      # Two-halves: the suite AND the primitives it imports.
+      - "tests/test_dislocation_p0_a1_blind_harvest.py"
+      - "scripts/research/dislocation_p0_a1_harvest.py"
+      - "scripts/research/dislocation_p0_a1_lib.py"
+      - "research/dislocation_intelligence/**"
   workflow_dispatch:
     inputs:
       expected_sha:
