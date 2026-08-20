@@ -242,6 +242,31 @@ class CommittedTrialProjection:
 
 
 @dataclass(frozen=True)
+class ValidatedGenerationArtifacts:
+    """Normalized public artifacts admitted by one generation proof.
+
+    Request-local.  Projection assembly consumes these objects instead of
+    reopening generation files.  The next independent logical read must prove
+    the generation again and must not reuse this value.
+    """
+
+    source_states_by_nct: Mapping[str, dict[str, Any]]
+    trial_snapshots_by_nct: Mapping[str, dict[str, Any]]
+    protocols_by_nct: Mapping[str, dict[str, Any]]
+    history_models_by_nct: Mapping[str, dict[str, Any]]
+    prospective_models_by_nct: Mapping[str, dict[str, Any]]
+    change_tapes_by_nct: Mapping[str, dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class _MaterializedPublicGeneration:
+    """Internal fully-materialized generation proof for one logical read."""
+
+    manifest: Mapping[str, Any]
+    artifacts: ValidatedGenerationArtifacts
+
+
+@dataclass(frozen=True)
 class ValidatedPointerBoundGeneration:
     """This pointer and this fully validated generation for this logical read.
 
@@ -252,6 +277,7 @@ class ValidatedPointerBoundGeneration:
     pointer: Mapping[str, Any]
     committed: CommittedGeneration
     manifest: Mapping[str, Any]
+    artifacts: ValidatedGenerationArtifacts
 
 
 @dataclass(frozen=True)
@@ -1349,7 +1375,11 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_POINTER_INVALID")
         return self._generations_root() / generation_id
 
-    def _load_generation_manifest(self, generation_id: str) -> dict[str, Any]:
+    def _materialize_validated_generation(
+        self, generation_id: str
+    ) -> _MaterializedPublicGeneration:
+        """Fully prove one generation and retain the admitted normalized artifacts."""
+
         generation = self._generation_dir(generation_id)
         if not generation.is_dir() or generation.is_symlink():
             raise PublicationError("PUBLIC_GENERATION_INVALID")
@@ -1589,6 +1619,12 @@ class PublicGenerationPublisher:
             name for name in seen if name.startswith("trials/")
         }:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
+        source_states_by_nct = {nct_id: state for nct_id, state in states}
+        trial_snapshots_by_nct: dict[str, dict[str, Any]] = {}
+        protocols_by_nct: dict[str, dict[str, Any]] = {}
+        history_models_by_nct: dict[str, dict[str, Any]] = {}
+        prospective_models_by_nct: dict[str, dict[str, Any]] = {}
+        change_tapes_by_nct: dict[str, dict[str, Any]] = {}
         if generation_schema == "1.0.0" and trial_snapshot_names:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if generation_schema in {"1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
@@ -1604,7 +1640,7 @@ class PublicGenerationPublisher:
                     generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
                     code="TRIAL_PROJECTION_INVALID",
                 )
-                _validate_trial_snapshot_binding(
+                trial_snapshots_by_nct[nct_id] = _validate_trial_snapshot_binding(
                     product,
                     source_state=states_by_nct[nct_id],
                     nct_id=nct_id,
@@ -1621,7 +1657,9 @@ class PublicGenerationPublisher:
                         generation / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
                         code="TRIAL_HISTORY_PROJECTION_INVALID",
                     )
-                    _validate_trial_history_model_binding(history_model, nct_id=nct_id)
+                    history_models_by_nct[nct_id] = _validate_trial_history_model_binding(
+                        history_model, nct_id=nct_id
+                    )
             if generation_schema in {"1.3.0", "1.5.0", "1.7.0"}:
                 expected_prospective_names = {
                     f"{_TRIAL_PROSPECTIVE_DIRECTORY}/{nct_id}.json"
@@ -1640,6 +1678,7 @@ class PublicGenerationPublisher:
                         raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
                     if prospective_model.get("nct_id") != nct_id:
                         raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
+                    prospective_models_by_nct[nct_id] = prospective_model
             if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
                 expected_protocol_names = {
                     f"{_TRIAL_PROTOCOL_DIRECTORY}/{nct_id}.json"
@@ -1652,14 +1691,10 @@ class PublicGenerationPublisher:
                         generation / _TRIAL_PROTOCOL_DIRECTORY / f"{nct_id}.json",
                         code="TRIAL_PROTOCOL_PROJECTION_INVALID",
                     )
-                    snapshot = _load_json_object(
-                        generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
-                        code="TRIAL_PROJECTION_INVALID",
-                    )
-                    _validate_trial_protocol_projection_binding(
+                    protocols_by_nct[nct_id] = _validate_trial_protocol_projection_binding(
                         protocol,
                         source_state=states_by_nct[nct_id],
-                        trial_snapshot=snapshot,
+                        trial_snapshot=trial_snapshots_by_nct[nct_id],
                         nct_id=nct_id,
                     )
             if generation_schema in {"1.6.0", "1.7.0"}:
@@ -1675,7 +1710,10 @@ class PublicGenerationPublisher:
                         code="TRIAL_CHANGE_TAPE_PROJECTION_INVALID",
                     )
                     try:
-                        validate_trial_change_tape_read_model(tape, nct_id=nct_id)
+                        change_tapes_by_nct[nct_id] = validate_trial_change_tape_read_model(
+                            tape,
+                            nct_id=nct_id,
+                        )
                     except ChangeTapeError as exc:
                         raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_INVALID") from exc
         if (
@@ -1693,7 +1731,27 @@ class PublicGenerationPublisher:
             last_attempt_at=manifest["last_attempt_at"],
             last_success_at=manifest["last_success_at"],
         )
-        return manifest
+        return _MaterializedPublicGeneration(
+            manifest=manifest,
+            artifacts=ValidatedGenerationArtifacts(
+                source_states_by_nct=source_states_by_nct,
+                trial_snapshots_by_nct=trial_snapshots_by_nct,
+                protocols_by_nct=protocols_by_nct,
+                history_models_by_nct=history_models_by_nct,
+                prospective_models_by_nct=prospective_models_by_nct,
+                change_tapes_by_nct=change_tapes_by_nct,
+            ),
+        )
+
+    def _load_generation_manifest(self, generation_id: str) -> dict[str, Any]:
+        """Validate a generation and return only its manifest.
+
+        Compatibility wrapper around the fully-materialized loader. Product
+        reads keep the retained artifacts; callers that only need the manifest
+        still receive a complete generation proof.
+        """
+
+        return dict(self._materialize_validated_generation(generation_id).manifest)
 
     def _read_current_pointer(self) -> dict[str, Any] | None:
         """Validate the current pointer file without loading its generation."""
@@ -1757,12 +1815,13 @@ class PublicGenerationPublisher:
         pointer = self._read_current_pointer()
         if pointer is None:
             return None
-        manifest = self._load_generation_manifest(pointer["generation_id"])
-        committed = self._committed_from_pointer_and_manifest(pointer, manifest)
+        materialized = self._materialize_validated_generation(pointer["generation_id"])
+        committed = self._committed_from_pointer_and_manifest(pointer, materialized.manifest)
         return ValidatedPointerBoundGeneration(
             pointer=dict(pointer),
             committed=committed,
-            manifest=dict(manifest),
+            manifest=dict(materialized.manifest),
+            artifacts=materialized.artifacts,
         )
 
     def _pointer_matches_validated(self, validated: ValidatedPointerBoundGeneration) -> bool:
@@ -1839,50 +1898,42 @@ class PublicGenerationPublisher:
     ) -> CommittedTrialProjection:
         committed = validated.committed
         manifest = validated.manifest
+        artifacts = validated.artifacts
         generation_schema = manifest.get("schema_version")
         if generation_schema not in {"1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
             raise PublicationError("TRIAL_PROJECTION_UNAVAILABLE")
-        generation = self._generation_dir(committed.generation_id)
+        nct_ids = tuple(manifest["configured_nct_ids"])
+        if set(artifacts.source_states_by_nct) != set(nct_ids):
+            raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+        if set(artifacts.trial_snapshots_by_nct) != set(nct_ids):
+            raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"} and set(
+            artifacts.protocols_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_PROTOCOL_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"} and set(
+            artifacts.history_models_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_HISTORY_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.3.0", "1.5.0", "1.7.0"} and set(
+            artifacts.prospective_models_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.6.0", "1.7.0"} and set(artifacts.change_tapes_by_nct) != set(
+            nct_ids
+        ):
+            raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_BINDING_MISMATCH")
         trials: list[dict[str, Any]] = []
         protocols_by_nct: dict[str, dict[str, Any]] = {}
         history_models_by_nct: dict[str, dict[str, Any]] = {}
         prospective_models_by_nct: dict[str, dict[str, Any]] = {}
         change_tapes_by_nct: dict[str, dict[str, Any]] = {}
-        for nct_id in manifest["configured_nct_ids"]:
-            source_state = _load_json_object(
-                generation / "trials" / f"{nct_id}.json",
-                code="COLLECTOR_PROJECTION_INVALID",
-            )
-            product = _load_json_object(
-                generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
-                code="TRIAL_PROJECTION_INVALID",
-            )
-            trial_snapshot = _validate_trial_snapshot_binding(
-                product,
-                source_state=source_state,
-                nct_id=nct_id,
-            )
-            trials.append(trial_snapshot)
+        for nct_id in nct_ids:
+            trials.append(artifacts.trial_snapshots_by_nct[nct_id])
             if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
-                protocol = _load_json_object(
-                    generation / _TRIAL_PROTOCOL_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_PROTOCOL_PROJECTION_INVALID",
-                )
-                protocols_by_nct[nct_id] = _validate_trial_protocol_projection_binding(
-                    protocol,
-                    source_state=source_state,
-                    trial_snapshot=trial_snapshot,
-                    nct_id=nct_id,
-                )
+                protocols_by_nct[nct_id] = artifacts.protocols_by_nct[nct_id]
             if generation_schema in {"1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
-                history_model = _load_json_object(
-                    generation / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_HISTORY_PROJECTION_INVALID",
-                )
-                history_models_by_nct[nct_id] = _validate_trial_history_model_binding(
-                    history_model,
-                    nct_id=nct_id,
-                )
+                history_models_by_nct[nct_id] = artifacts.history_models_by_nct[nct_id]
             else:
                 # B1b remains readable after B2 ships.  It has no public
                 # history artifact, so state that absence explicitly instead
@@ -1892,34 +1943,14 @@ class PublicGenerationPublisher:
                     "unavailable_reason": "not_collected",
                 }
             if generation_schema in {"1.3.0", "1.5.0", "1.7.0"}:
-                prospective_model = _load_json_object(
-                    generation / _TRIAL_PROSPECTIVE_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_PROSPECTIVE_PROJECTION_INVALID",
-                )
-                try:
-                    validate_prospective_public_model(prospective_model)
-                except ProspectiveError as exc:
-                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
-                if prospective_model.get("nct_id") != nct_id:
-                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
-                prospective_models_by_nct[nct_id] = prospective_model
+                prospective_models_by_nct[nct_id] = artifacts.prospective_models_by_nct[nct_id]
             else:
                 prospective_models_by_nct[nct_id] = {
                     "available": False,
                     "unavailable_reason": "baseline_not_established",
                 }
             if generation_schema in {"1.6.0", "1.7.0"}:
-                tape = _load_json_object(
-                    generation / _TRIAL_CHANGE_TAPE_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_CHANGE_TAPE_PROJECTION_INVALID",
-                )
-                try:
-                    change_tapes_by_nct[nct_id] = validate_trial_change_tape_read_model(
-                        tape,
-                        nct_id=nct_id,
-                    )
-                except ChangeTapeError as exc:
-                    raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_INVALID") from exc
+                change_tapes_by_nct[nct_id] = artifacts.change_tapes_by_nct[nct_id]
             else:
                 change_tapes_by_nct[nct_id] = {
                     "available": False,
