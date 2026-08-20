@@ -9,19 +9,17 @@
     "trade_authority": "none"
   },
   "cik_map_snapshot": "2026-08-18",
-  "code_version": "a6fac4b16a5cd8d63c3ad269a16e87279da0e603",
+  "code_version": "aaf83b6ea03090cf1fa2d8a03551a576779c45a0",
   "coverage": {
-    "resolved": 702,
+    "resolved": 704,
     "total": 713,
-    "unresolved": 11,
+    "unresolved": 9,
     "unresolved_names": [
       "ANGPY",
-      "AVB",
       "B",
       "BLD",
       "CBOE",
       "EA",
-      "EQR",
       "GATO",
       "IMPUY",
       "MAG",
@@ -32,9 +30,10 @@
     "reference.security_master",
     "reference.vendor_aliases",
     "reference.issuer_master",
-    "reference.issuer_migrations"
+    "reference.issuer_migrations",
+    "reference.security_migrations"
   ],
-  "generated_at": "2026-08-20T01:30:18",
+  "generated_at": "2026-08-20T11:37:27",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -51,12 +50,12 @@
   ],
   "inputs": {
     "config.yml": "3c34cf00574ba9c316e4e767b59bed1e311b5d42e5bdded5aebaf8fb1840940c",
-    "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
+    "config/delisted_symbols.yml": "6c2a0194fa1e612b207bafa730ce78cbc6c41c252ead5f558a48901aac4c1cb5",
     "data/baskets/membership.json": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
     "data/breadth/constituents.parquet": "f40d594d8115f9036c4d8a8ded8df81edbd2a40638d2240501ac1adca00b252c",
     "data/symbol_directory/cik_map": "1e47a7312c27fb70da6863eac31eb70b2fa35e605f1325f1bafc941340bca748",
     "data/symbol_directory/snapshots": "1a96fd521d0954dfc9704d6556915e1493e3f9aa0d7e0e3b7c1da26b44e8e9f3",
-    "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
+    "lib/ticker_aliases.py": "b47e717a10c833187f43f8ab27617b02230cebc7efd79a6b2415e6afdca236f8"
   },
   "issuer": {
     "era": "issuer_semantic_correction_v1",
@@ -88,11 +87,13 @@
     ],
     "state_counts": {
       "DEFERRED_IDENTITY_EXCEPTION": 1,
-      "NO_ISSUER_EVIDENCE": 5,
+      "NO_ISSUER_EVIDENCE": 4,
       "RESOLVED": 699
     }
   },
+  "listing_continuity": [],
   "notes": [],
+  "pending_transition_refusals": [],
   "producer": "scripts/build_security_master.py",
   "rename_events": [
     {
@@ -102,6 +103,16 @@
       "on": "2026-01-14",
       "vendors": [
         "yahoo"
+      ]
+    },
+    {
+      "evidence": "SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession 0001140361-26-033377, Item 5.03: name changed Equity Residential -> Vivmark Residential eff. 2026-08-17; NYSE ticker EQR->VMRK eff. 2026-08-18 (open of trading). Corroborated by data.sec.gov/submissions/CIK0000906107.json (name VIVMARK RESIDENTIAL, ticker VMRK, unbroken formerNames chain) and www.sec.gov/files/company_tickers.json (CIK 906107 -> VMRK).",
+      "new": "VMRK",
+      "old": "EQR",
+      "on": "2026-08-18",
+      "vendors": [
+        "yahoo",
+        "membership"
       ]
     },
     {
@@ -116,15 +127,26 @@
       ]
     }
   ],
+  "resurrection_refusals": [],
   "row_counts": {
     "issuer_master": 701,
     "issuer_migrations": 3,
     "security_master": 705,
-    "vendor_alias_rows_readable": 2825,
-    "vendor_aliases": 2825
+    "security_migrations": 1,
+    "vendor_alias_rows_readable": 2823,
+    "vendor_aliases": 2823
+  },
+  "security": {
+    "era": "security_supersession_duplicate_mint_v1",
+    "era_migrations_total": 1,
+    "migrations_this_run": 0,
+    "state_counts": {
+      "ACTIVE": 704,
+      "SUPERSEDED_DUPLICATE_MINT": 1
+    }
   },
   "seed_counts": {
-    "delisted_keys": 2,
+    "delisted_keys": 3,
     "directory_symbols": 13161,
     "ticker_fixups": 2,
     "ticker_key_migrations": 1,

@@ -112,6 +112,9 @@ ALIASES_NAME = "vendor_aliases.parquet"
 RECEIPT_NAME = "_receipt.json"
 ISSUER_MASTER_NAME = "issuer_master.parquet"
 ISSUER_MIGRATIONS_NAME = "issuer_migrations.parquet"
+#: V4-D2B1-R1 — the durable security-axis correction receipt (parallel to
+#: ISSUER_MIGRATIONS_NAME, one axis over).
+SECURITY_MIGRATIONS_NAME = "security_migrations.parquet"
 
 CONSTITUENTS = ROOT / "data" / "breadth" / "constituents.parquet"
 MEMBERSHIP = ROOT / "data" / "baskets" / "membership.json"
@@ -136,6 +139,10 @@ ISSUER_GROUP_ALLOWLIST_PATH = ROOT / "config" / "issuer_group_allowlist.yml"
 #: V4-D2B1: it sits next to ``issuer_id`` because the four columns together are one
 #: semantic unit (the value, its evidentiary status, the evidence CIK, and the
 #: snapshot it was observed in).
+#: V4-D2B1-R1 §3.1: the security-axis correction columns sit at the END of the
+#: declared order (they are the newest addition, era-seamed exactly like
+#: ISSUER_AXIS_COLUMNS) — never a re-mint, never a deletion, a CORRECTION recorded
+#: in place on the row it corrects.
 MASTER_COLUMNS = (
     "security_id",
     "issuer_id",
@@ -148,6 +155,8 @@ MASTER_COLUMNS = (
     "inception_code",
     "effective_at",
     "ingested_at",
+    "security_state",
+    "superseded_by",
 )
 ALIAS_COLUMNS = (
     "vendor",
@@ -180,6 +189,19 @@ ISSUER_MIGRATIONS_COLUMNS = (
     "evidence_snapshot",
     "migrated_at",
 )
+#: ``reference.security_migrations`` (V4-D2B1-R1 §3.5) — append-only, one row per
+#: security-axis correction: a security wrongly minted as an independent row for a
+#: rename's NEW symbol before this builder modelled the rename, corrected onto the
+#: pre-existing continuing security rather than deleted. Mirrors
+#: ISSUER_MIGRATIONS_COLUMNS one axis over — durable old->new mapping, never the
+#: live join (the live join is `security_master.superseded_by`).
+SECURITY_MIGRATIONS_COLUMNS = (
+    "security_id",
+    "superseded_by",
+    "reason",
+    "evidence",
+    "migrated_at",
+)
 
 #: Non-string column kinds, from the same ``schema:`` blocks.  Rows are carried in
 #: memory as ISO STRINGS and cast only at write, so a re-read of a committed artifact
@@ -190,6 +212,7 @@ MASTER_DTYPES = {"effective_at": "datetime", "ingested_at": "datetime",
 ALIAS_DTYPES = {"valid_from": "date", "valid_to": "date", "ingested_at": "datetime"}
 ISSUER_MASTER_DTYPES = {"evidence_snapshot": "date", "n_securities": "int"}
 ISSUER_MIGRATIONS_DTYPES = {"evidence_snapshot": "date", "migrated_at": "datetime"}
+SECURITY_MIGRATIONS_DTYPES = {"migrated_at": "datetime"}
 
 #: Columns a PRE-D2B1 committed ``security_master.parquet`` will not carry yet.
 #: ``_read_existing`` fills these with ``None`` instead of refusing, which is what
@@ -198,8 +221,22 @@ ISSUER_MIGRATIONS_DTYPES = {"evidence_snapshot": "date", "migrated_at": "datetim
 #: idempotent migration").
 ISSUER_AXIS_COLUMNS = frozenset({"issuer_state", "issuer_cik", "issuer_evidence_snapshot"})
 
+#: Columns a PRE-D2B1-R1 committed ``security_master.parquet`` will not carry yet —
+#: same era-seam pattern as :data:`ISSUER_AXIS_COLUMNS`, one axis over (V4-D2B1-R1
+#: §3.1).  ``security_state is None`` means "active, never corrected"; the closed
+#: enum's one value this era is ``SUPERSEDED_DUPLICATE_MINT``.
+SECURITY_AXIS_COLUMNS = frozenset({"security_state", "superseded_by"})
+
 #: The one authorized issuer-identity correction era (spec §4).
 ERA_ISSUER_CORRECTION = "issuer_semantic_correction_v1"
+
+#: The one authorized security-identity correction era (V4-D2B1-R1 §3.5) — a
+#: security minted as an independent row for a rename's NEW symbol before this
+#: builder modelled the rename, corrected onto the pre-existing continuing security.
+ERA_SECURITY_SUPERSESSION = "security_supersession_duplicate_mint_v1"
+
+#: Closed enum, one value today (V4-D2B1-R1 §3.1).
+SECURITY_STATE_SUPERSEDED_DUPLICATE_MINT = "SUPERSEDED_DUPLICATE_MINT"
 
 # ── Vendors (symbol SPACES) — TWO CLOCKS, never one ───────────────────────────
 # A "vendor" here is a symbol space, which is why several of them are this repo.
@@ -303,6 +340,37 @@ RENAME_EVENTS: tuple[RenameEvent, ...] = (
             "lib/ticker_aliases.py module docstring (MMC->MRSH 2026-01-14, symbol change "
             "only: same listing, same CUSIP; Yahoo serves the NEW symbol); "
             "config.yml breadth.ticker_fixups MRSH->MMC"
+        ),
+    ),
+    RenameEvent(
+        old="EQR",
+        new="VMRK",
+        on=date(2026, 8, 18),
+        # V4-D2B1-R1 §1 E1: SEC EDGAR, CIK 0000906107, Form 8-K filed 2026-08-17
+        # (accession 0001140361-26-033377), Item 5.03 — corporate name changed from
+        # Equity Residential to Vivmark Residential effective 2026-08-17; NYSE ticker
+        # changed EQR->VMRK effective 2026-08-18 (open of trading). Corroborated by
+        # live EDGAR submissions (data.sec.gov/submissions/CIK0000906107.json: name
+        # VIVMARK RESIDENTIAL, ticker VMRK, formerNames chain unbroken under one CIK)
+        # and www.sec.gov/files/company_tickers.json (CIK 906107 -> VMRK). `yahoo`
+        # moved (the exchange-side rename is real and Yahoo follows the exchange
+        # spelling, same as MMC/SATS). `membership` is DATED here — unlike MMC, where
+        # breadth.ticker_fixups pins the vendor-led rename straight back to the repo
+        # key so only ONE `membership`-space observation ever exists — this security's
+        # two universe seeds (data/baskets/membership.json still keyed EQR;
+        # data/breadth/constituents.parquet already re-fetched as VMRK) are BOTH left
+        # live on purpose (§2.3 — the dedup onto one master row is exactly what this
+        # repair tests), so `membership` genuinely carries two simultaneous
+        # observations that need the same date boundary to stay unambiguous.
+        vendors=(VENDOR_YAHOO, VENDOR_MEMBERSHIP),
+        evidence=(
+            "SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession "
+            "0001140361-26-033377, Item 5.03: name changed Equity Residential -> "
+            "Vivmark Residential eff. 2026-08-17; NYSE ticker EQR->VMRK eff. "
+            "2026-08-18 (open of trading). Corroborated by "
+            "data.sec.gov/submissions/CIK0000906107.json (name VIVMARK RESIDENTIAL, "
+            "ticker VMRK, unbroken formerNames chain) and "
+            "www.sec.gov/files/company_tickers.json (CIK 906107 -> VMRK)."
         ),
     ),
     RenameEvent(
@@ -863,6 +931,16 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
       overlap on ``(vendor, security_id)``, so a "current catalog" carrying both names
       open-bounded is not a thing this reader will accept — correctly, because "what do
       I call it today" has exactly one answer.
+
+      V4-D2B1-R1: a dedup-onto-one-master-row rename (§2.3 — e.g. EQR/VMRK, where BOTH
+      the pre-rename and post-rename symbol stay live universe keys on purpose, unlike
+      MMC/SATS where a config fixup collapses the pair to one key upstream) means MORE
+      THAN ONE resolution can share one ``sec``.  Only the ROOT resolution — the one
+      whose OWN key equals its OWN ``inception_code``, i.e. the key this repo's stores
+      actually carry — contributes a current-catalog row for that security; a chain
+      member reached only via the rename (``res.key != res.inception_code``) never
+      does, because "what do I call it today" cannot have two simultaneously-open
+      answers in one vendor space.
     """
     dated: dict[tuple[str, str], RenameEvent] = {}
     for event in RENAME_EVENTS:
@@ -871,6 +949,7 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
             dated[(vendor, event.new)] = event
 
     rows: list[AliasRow] = []
+    current_by_sec: dict[tuple[str, str], tuple[str, bool]] = {}
     for res in resolutions:
         if res.listing_key is None:
             continue
@@ -895,6 +974,7 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
             VENDOR_YAHOO_FETCH: ticker_aliases.fetch_symbol(res.key),
             VENDOR_STORE: res.key,
         }
+        is_root = res.key == res.inception_code
 
         for vendor, symbol in historical.items():
             event = dated.get((vendor, symbol))
@@ -907,7 +987,13 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
             rows.append(AliasRow(vendor, event.new, sec, event.on, None))
 
         for vendor, symbol in current.items():
-            rows.append(AliasRow(vendor, symbol, sec, None, None))
+            key = (vendor, sec)
+            prior = current_by_sec.get(key)
+            if prior is None or is_root:
+                current_by_sec[key] = (symbol, is_root)
+
+    for (vendor, sec), (symbol, _is_root) in current_by_sec.items():
+        rows.append(AliasRow(vendor, symbol, sec, None, None))
 
     # Dedup on the full grain — a security reached through two spaces that happen to
     # agree must not produce two identical rows (which would also read as an overlap).
@@ -983,9 +1069,64 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0).isoformat()
 
 
-def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
-                     now: str) -> tuple[list[dict], dict[str, str], list[str]]:
-    """``(master rows, {membership key: security_id}, notes)`` — existing ids never move.
+def _current_symbol_of_row(row: dict) -> str:
+    """A committed master row's CURRENT symbol — :func:`_current_symbol` walked from
+    its OWN stored ``inception_code`` (V4-D2B1-R1 §5.1 "lost" predicate)."""
+    return _current_symbol(str(row.get("inception_code") or "").upper())
+
+
+def _compute_lost(existing: list[dict], resolutions: list[Resolution],
+                  delisted: dict[str, dict]) -> list[dict]:
+    """The pending-transition fence predicate (V4-D2B1-R1 §5.1): committed master rows
+    that are ACTIVE (``security_state`` null), whose CURRENT symbol is NOT
+    exit-ledgered, and whose ``listing_key`` is re-derived by NO resolution in THIS
+    build — a row this run's evidence went quiet on, distinct from a genuine exit
+    (which the ledger already accounts for) and from a correction (already excluded by
+    the state check).  A snapshot flip that silently drops a name's evidence (the
+    VMRK-before-the-RenameEvent race, H1) is exactly what this catches; §5.4's
+    ``listing_continuity`` census is this list, disclosed.
+
+    TWO further exclusions, both already disclosed elsewhere in the receipt so this
+    census never re-raises the SAME fact under a second name:
+
+    * a row whose bare inception code equals a :data:`RENAME_EVENTS` ``.new`` — the
+      EXACT shape :func:`apply_security_supersession` corrects THIS SAME run (or
+      already corrected in an earlier one).  Excluded here so the fence never flags
+      its own correction target as "lost" purely because supersession runs AFTER
+      minting, in the same build.
+    * a row whose inception code is a registered identity exception
+      (:data:`DEFERRED_IDENTITY_KEYS` / :data:`DISCLOSED_IDENTITY_EXCEPTIONS`, e.g.
+      GOLD) — already surfaced via ``receipt['identity_exceptions']`` every build;
+      re-flagging it as "lost" would be a second alarm for one already-disclosed fact.
+    """
+    rederived = {
+        res.listing_key.render() for res in resolutions if res.listing_key is not None
+    }
+    rename_new_symbols = {e.new for e in RENAME_EVENTS}
+    exceptions = _exception_by_inception_code()
+    out: list[dict] = []
+    for row in existing:
+        if row.get("security_state"):
+            continue
+        code = str(row.get("inception_code") or "").upper()
+        if code in rename_new_symbols or code in exceptions:
+            continue
+        if _current_symbol_of_row(row) in delisted:
+            continue
+        if str(row["listing_key"]) in rederived:
+            continue
+        out.append(row)
+    return out
+
+
+def mint_master_rows(
+    resolutions: list[Resolution], existing: list[dict], now: str,
+    cik_map: dict[str, tuple[str, str]] | None = None,
+    delisted: dict[str, dict] | None = None,
+    snapshot_date: str | None = None,
+) -> tuple[list[dict], dict[str, str], list[str], list[dict], list[dict], list[dict]]:
+    """``(master rows, {membership key: security_id}, notes, resurrection_refusals,
+    pending_transition_refusals, lost_rows)`` — existing ids never move.
 
     The join back into a committed master is by ``listing_key``: the master's grain is
     the security, and it deliberately carries no membership-key column (that belongs to
@@ -1006,6 +1147,22 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
     never a declared column, never written to parquet) so the era stage can tell a
     genuine issuer_id VALUE CHANGE (migration-worthy) from a brand-new mint's first
     assignment (not a migration: there was no prior stored value to migrate from).
+
+    V4-D2B1-R1 §3.4 + §5 — TWO new refusal classes, both non-fatal and disclosed,
+    never a silent mint:
+
+    * **resurrection refusal (H8).**  A resolution whose rendered listing key hits an
+      EXISTING row that is ``security_state``-superseded (a tombstone) never resolves
+      to that superseded id — reuse of a superseded listing key needs a future
+      ratified identity-break record (GOLD precedent), not an automatic rejoin.
+    * **pending-transition fence (§5.2).**  A would-be NEW mint (a listing-key MISS)
+      is refused when the committed master has unaccounted-for active rows this run
+      (``lost``, §5.1) AND the candidate lacks independent registrant evidence (a
+      current CIK map entry for the candidate whose CIK differs from every lost row's
+      ``issuer_cik``).  A rename covered by :data:`RENAME_EVENTS` never reaches this
+      branch at all — it already resolved to an existing row above.  An empty ``lost``
+      set, or independent CIK evidence, lets the mint proceed (H7: IPOs are not
+      collateral damage).
     """
     by_listing_key = {str(row["listing_key"]): dict(row) for row in existing}
     out: dict[str, dict] = {}
@@ -1015,26 +1172,97 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
         out[k] = row
     ids: dict[str, str] = {}
     notes: list[str] = []
+    resurrection_refusals: list[dict] = []
+    pending_transition_refusals: list[dict] = []
 
-    minted_by: dict[str, str] = {}
+    lost_rows = _compute_lost(existing, resolutions, delisted or {})
+    lost_ciks = {r.get("issuer_cik") for r in lost_rows if r.get("issuer_cik")}
+    cik_map = cik_map or {}
+
+    minted_by: dict[str, tuple[str, str]] = {}  # rendered -> (first res.key, inception_code)
     for res in resolutions:
         if res.listing_key is None:
             continue
         rendered = res.listing_key.render()
         stored = by_listing_key.get(rendered)
         if stored is not None:
+            if stored.get("security_state"):
+                # H8 — never a silent resurrection of a superseded listing key.
+                resurrection_refusals.append({
+                    "key": res.key,
+                    "listing_key": rendered,
+                    "security_id": stored["security_id"],
+                    "security_state": stored["security_state"],
+                    "superseded_by": stored.get("superseded_by"),
+                    "reason": (
+                        "resolution hit a superseded listing key — refusing to "
+                        "resurrect; reuse requires a future ratified identity-break "
+                        "record (GOLD precedent)"
+                    ),
+                })
+                print(
+                    f"::warning title=security-master-resurrection-refusal::"
+                    f"{res.key!r} resolved to superseded listing key {rendered!r} "
+                    f"({stored['security_id']}, superseded_by="
+                    f"{stored.get('superseded_by')}) — refusing, no resurrection",
+                    flush=True,
+                )
+                continue
             ids[res.key] = str(stored["security_id"])
         else:
+            if lost_rows:
+                evidence_key = _evidence_join_key(res.inception_code or res.key)
+                candidate_evidence = cik_map.get(evidence_key)
+                independent = (
+                    candidate_evidence is not None
+                    and candidate_evidence[0] not in lost_ciks
+                )
+                if not independent:
+                    refusal = {
+                        "symbol": res.key,
+                        "listing_key": rendered,
+                        "lost_rows": sorted(r["security_id"] for r in lost_rows),
+                        "snapshot_date": snapshot_date,
+                        "reason": (
+                            f"pending-transition fence: {len(lost_rows)} committed "
+                            "row(s) unaccounted for this build and no independent "
+                            "registrant evidence for the candidate symbol (§5.2)"
+                        ),
+                    }
+                    pending_transition_refusals.append(refusal)
+                    print(
+                        f"::warning title=security-master-pending-transition::"
+                        f"refusing to mint {res.key!r} ({rendered}) while "
+                        f"{len(lost_rows)} committed row(s) are unaccounted for this "
+                        "build and no independent registrant evidence backs the "
+                        "candidate — pending-transition fence (§5.2)",
+                        flush=True,
+                    )
+                    continue
             sec = security_id(res.listing_key)
-            if rendered in minted_by and minted_by[rendered] != res.key:
+            prior = minted_by.get(rendered)
+            if prior is not None:
+                if prior[1] == res.inception_code:
+                    # V4-D2B1-R1 §2.3: a SECOND universe key that walks (via
+                    # RENAME_EVENTS / class-notation normalization) to the SAME
+                    # inception_code as an already-minted resolution is the SAME
+                    # identity reached by a second name — exactly the EQR/VMRK dedup
+                    # this repair requires (H2), never a collision. `rendered` is
+                    # structurally `<country>-<mic>-<inception_code>`, so identical
+                    # inception codes are the ONLY way two resolutions ever share a
+                    # rendered key on a bare build with no existing row to join
+                    # against — a genuine ticker-REUSE collision (spec §5) would
+                    # differ here, not agree.
+                    ids[res.key] = sec
+                    continue
                 notes.append(
-                    f"collision: {minted_by[rendered]!r} and {res.key!r} both mint "
+                    f"collision: {prior[0]!r} and {res.key!r} both mint "
                     f"{sec} — spec §5 resolves a genuine ticker REUSE with an explicit "
                     "'.2' disambiguator, which is an operator ratification, not a guess"
                 )
                 ids[res.key] = sec
                 continue
-            minted_by[rendered] = res.key
+            minted_by[rendered] = (res.key, res.inception_code)
             out[rendered] = {
                 "security_id": sec,
                 "issuer_id": None,
@@ -1052,11 +1280,92 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
                     else f"{res.effective_at.isoformat()}T00:00:00"
                 ),
                 "ingested_at": now,
+                "security_state": None,
+                "superseded_by": None,
             }
             ids[res.key] = sec
 
     rows = [out[k] for k in sorted(out)]
-    return rows, ids, notes
+    return (rows, ids, notes, resurrection_refusals, pending_transition_refusals,
+            lost_rows)
+
+
+def apply_security_supersession(
+    rows: list[dict], ids: dict[str, str]
+) -> tuple[list[dict], list[dict]]:
+    """V4-D2B1-R1 §3 — correct a security wrongly minted as an independent row for a
+    rename's NEW symbol BEFORE this builder modelled the rename: the RenameEvent chain
+    now proves it is the same security as an existing (different) row.
+
+    Returns ``(rows, freshly_superseded)`` — ``freshly_superseded`` names ONLY the
+    rows THIS call transitioned from active to superseded (never a row that already
+    carried a non-null ``security_state`` on entry), which is what makes
+    :func:`build_security_migration_rows` emit exactly one migration row per
+    correction rather than one every run forever.
+
+    CORRECTION, NEVER DELETION (§3.2): the duplicate row is tombstoned in place —
+    ``security_state=SUPERSEDED_DUPLICATE_MINT``, ``superseded_by=<canonical id>`` —
+    and every OTHER field stays byte-frozen exactly as committed (H9).  MINT-ONCE for
+    this axis too: a row already carrying a non-null ``security_state`` is left
+    untouched on a later run (idempotent, H6) — this only ever CLAIMS an active row,
+    never re-examines one already corrected.
+
+    A row is recognised as the duplicate mint for ``event`` when its OWN listing key
+    literally spells ``event.new`` as a bare inception code on the SAME venue as the
+    canonical row the chain now resolves ``event.new`` to — exactly the shape
+    :func:`mint_master_rows` produced for VMRK before this builder modelled the rename
+    (§0 root cause: the mint join keys on listing key only, and a rename produces a new
+    listing key unconditionally).
+    """
+    freshly_superseded: list[dict] = []
+    for event in RENAME_EVENTS:
+        canonical_id = ids.get(event.new)
+        if canonical_id is None:
+            continue
+        for row in rows:
+            if row.get("security_state"):
+                continue  # already superseded (or otherwise non-null) — mint-once
+            if row["security_id"] == canonical_id:
+                continue
+            try:
+                _country, _mic, code = str(row["listing_key"]).split("-", 2)
+            except ValueError:
+                continue
+            if code.upper() != event.new:
+                continue
+            row["security_state"] = SECURITY_STATE_SUPERSEDED_DUPLICATE_MINT
+            row["superseded_by"] = canonical_id
+            freshly_superseded.append(row)
+    return rows, freshly_superseded
+
+
+def build_security_migration_rows(freshly_superseded: list[dict], now: str) -> list[dict]:
+    """Fresh ``reference.security_migrations`` rows (V4-D2B1-R1 §3.5) — one per row
+    THIS run's :func:`apply_security_supersession` newly tombstoned (never one for a
+    row that was already superseded coming in — that would re-emit the same
+    correction every run forever). :func:`_merge_security_migrations` is the
+    append-only, idempotent merge with whatever is already committed."""
+    out: list[dict] = []
+    for row in freshly_superseded:
+        out.append({
+            "security_id": row["security_id"],
+            "superseded_by": row["superseded_by"],
+            "reason": ERA_SECURITY_SUPERSESSION,
+            "evidence": _supersession_evidence_for(row),
+            "migrated_at": now,
+        })
+    return out
+
+
+def _supersession_evidence_for(row: dict) -> str:
+    """The E1-cited evidence string for the RenameEvent that produced this
+    supersession (V4-D2B1-R1 §3.5 — "this era writes exactly one row" cites the
+    ratified evidence verbatim, never a hand-restamped summary)."""
+    code = str(row.get("inception_code") or "").upper()
+    for event in RENAME_EVENTS:
+        if event.new == code:
+            return event.evidence
+    return "scripts/build_security_master.py RENAME_EVENTS (evidence not found by inception_code)"
 
 
 # ── Issuer axis (V4-D2B1) — the one authorized correction era ─────────────────
@@ -1184,8 +1493,15 @@ def apply_issuer_correction(
     # committed assignment at stake, so a clean later map must be allowed to settle it
     # (RESOLVED/DEFERRED/EVIDENCE_CONFLICT stay mint-once).  Captured BEFORE either
     # loop below mutates issuer_state, so a row's PRIOR state is still readable here.
+    # V4-D2B1-R1 §3.3: a security-axis-superseded row (a tombstone) is excluded from
+    # this re-examination selection entirely — it never enters `pending`, never joins
+    # a CIK group, and a future CIK map carrying its old symbol can never trip it into
+    # EVIDENCE_CONFLICT (H4).  Its issuer columns stay exactly as committed, frozen.
     _REOPENABLE = (None, "", "NO_ISSUER_EVIDENCE", "AMBIGUOUS")
-    pending = [r for r in rows if r.get("issuer_state") in _REOPENABLE]
+    pending = [
+        r for r in rows
+        if r.get("issuer_state") in _REOPENABLE and not r.get("security_state")
+    ]
     if not pending:
         return rows, []
     reexamined_ids = {
@@ -1300,6 +1616,23 @@ def _merge_issuer_migrations(existing: list[dict], fresh: list[dict]) -> list[di
     return [merged[k] for k in sorted(merged, key=lambda k: (k[0], k[3]))]
 
 
+def _merge_security_migrations(existing: list[dict], fresh: list[dict]) -> list[dict]:
+    """Append-only on ``(security_id, superseded_by, reason)`` — the security-axis
+    mirror of :func:`_merge_issuer_migrations`.  Mint-once means a security is
+    superseded at most once per reason in practice; the dedup is defensive, not
+    load-bearing (V4-D2B1-R1 §3.5)."""
+    merged: dict[tuple, dict] = {}
+    for row in existing:
+        key = (str(row["security_id"]), str(row["superseded_by"]), str(row["reason"]))
+        merged[key] = dict(row)
+    for row in fresh:
+        key = (row["security_id"], row["superseded_by"], row["reason"])
+        if key in merged:
+            continue
+        merged[key] = row
+    return [merged[k] for k in sorted(merged, key=lambda k: (k[0], k[2]))]
+
+
 def _build_issuer_master_rows(master_rows: list[dict],
                               cik_to_title: dict[str, str]) -> list[dict]:
     """``reference.issuer_master`` — one row per distinct non-null ``issuer_id`` in the
@@ -1307,9 +1640,15 @@ def _build_issuer_master_rows(master_rows: list[dict],
     ``lib.dataos.identity.issuer_id`` (inside :func:`apply_issuer_correction`),
     pointed into by ``security_master.issuer_id`` — this is a CENSUS over that column,
     never an independent allocator.
+
+    V4-D2B1-R1 §3.3: a security-axis-superseded row never contributes to this census —
+    excluded from issuer aggregation and issuer_master membership, same as it is
+    excluded from re-examination in :func:`apply_issuer_correction`.
     """
     groups: dict[str, list[dict]] = {}
     for r in master_rows:
+        if r.get("security_state"):
+            continue
         iid = r.get("issuer_id")
         if iid:
             groups.setdefault(iid, []).append(r)
@@ -1341,6 +1680,65 @@ def _build_issuer_master_rows(master_rows: list[dict],
                 "era": "legacy",
             })
     return sorted(out, key=lambda r: r["issuer_id"])
+
+
+def _prune_stale_aliases(
+    existing: list[dict], fresh: list[AliasRow], superseded_ids: frozenset[str]
+) -> list[dict]:
+    """Existing alias rows that a FRESH build's own evidence now proves wrong
+    (V4-D2B1-R1 §3.7) — dropped from the merge input rather than kept as append-only
+    garbage. "No alias row hand-deleted" (§3.7) means no HAND edit; a row the SAME
+    canonical builder's own fresh derivation contradicts is not append-only history,
+    it is a stale artifact of a mint this repair corrects.  Two classes:
+
+    1. **Superseded security_id.**  Any row minted for a security this run tombstoned
+       (V4-D2B1-R1 §3) is categorically wrong — VMRK's alias rows must converge onto
+       EQR's family (§3.7), never keep pointing at the corrected id.
+    2. **Ambiguity-conflicting.**  A row that would violate :class:`VendorAliasTable`'s
+       own unambiguous invariant against a FRESH row in the same ``(vendor,
+       vendor_symbol)`` or ``(vendor, security_id)`` bucket — e.g. an open-bounded
+       pre-repair row for a symbol a RenameEvent has now retroactively dated (a live
+       security dated for the FIRST time by this repair, unlike MMC/SATS which were
+       dated from this builder's very first commit and never had an open row to
+       retire).  Two rows that are BYTE-IDENTICAL are not a conflict — ordinary merge
+       dedup already handles those, and this never touches a fresh row's own side.
+    """
+    fresh_by_vendor_symbol: dict[tuple[str, str], list[AliasRow]] = {}
+    fresh_by_vendor_sec: dict[tuple[str, str], list[AliasRow]] = {}
+    for row in fresh:
+        fresh_by_vendor_symbol.setdefault((row.vendor, row.vendor_symbol), []).append(row)
+        fresh_by_vendor_sec.setdefault((row.vendor, row.security_id), []).append(row)
+
+    out: list[dict] = []
+    for ex in existing:
+        if str(ex["security_id"]) in superseded_ids:
+            continue
+        ex_row = AliasRow(
+            str(ex["vendor"]), str(ex["vendor_symbol"]), str(ex["security_id"]),
+            _as_bound_date(ex["valid_from"]), _as_bound_date(ex["valid_to"]),
+        )
+        candidates = (
+            fresh_by_vendor_symbol.get((ex_row.vendor, ex_row.vendor_symbol), [])
+            + fresh_by_vendor_sec.get((ex_row.vendor, ex_row.security_id), [])
+        )
+        conflict = False
+        for fr in candidates:
+            if (fr.vendor_symbol, fr.security_id, fr.valid_from, fr.valid_to) == (
+                ex_row.vendor_symbol, ex_row.security_id, ex_row.valid_from, ex_row.valid_to
+            ):
+                continue  # identical — ordinary dedup, not a conflict
+            if ex_row.overlaps(fr):
+                conflict = True
+                break
+        if conflict:
+            continue
+        out.append(ex)
+    return out
+
+
+def _as_bound_date(value: str | None) -> date | None:
+    """A ``_read_existing``-normalized ISO date string (or None) as a ``date``."""
+    return date.fromisoformat(value) if value else None
 
 
 def merge_alias_rows(fresh: list[AliasRow], existing: list[dict], now: str) -> list[dict]:
@@ -1448,9 +1846,25 @@ def _write_parquet(rows: list[dict], columns: tuple[str, ...], path: Path,
 
 
 def _issuer_state_counts(master_rows: list[dict]) -> dict[str, int]:
+    """Issuer-state census over ACTIVE rows only (V4-D2B1-R1 §8: "states split by
+    security_state") — a security-axis-superseded row's issuer_state stays whatever it
+    was byte-frozen at (§3.2) and must not inflate an active-row census with a
+    tombstone; see :func:`_security_state_counts` for the axis this excludes."""
     counts: dict[str, int] = {}
     for r in master_rows:
+        if r.get("security_state"):
+            continue
         state = r.get("issuer_state") or "UNMIGRATED"
+        counts[state] = counts.get(state, 0) + 1
+    return counts
+
+
+def _security_state_counts(master_rows: list[dict]) -> dict[str, int]:
+    """Security-axis census (V4-D2B1-R1 §3.1) — ``ACTIVE`` (``security_state`` null)
+    alongside every closed-enum non-null value actually present."""
+    counts: dict[str, int] = {}
+    for r in master_rows:
+        state = r.get("security_state") or "ACTIVE"
         counts[state] = counts.get(state, 0) + 1
     return counts
 
@@ -1506,28 +1920,47 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
     aliases_path = out_dir / ALIASES_NAME
     issuer_master_path = out_dir / ISSUER_MASTER_NAME
     issuer_migrations_path = out_dir / ISSUER_MIGRATIONS_NAME
+    security_migrations_path = out_dir / SECURITY_MIGRATIONS_NAME
 
     seed_notes = unmodelled_renames(fixups, migrations)
 
-    master_rows, ids, notes = mint_master_rows(
+    (master_rows, ids, notes, resurrection_refusals, pending_transition_refusals,
+     lost_rows) = mint_master_rows(
         resolutions,
         _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES,
-                       allow_missing=ISSUER_AXIS_COLUMNS),
+                       allow_missing=ISSUER_AXIS_COLUMNS | SECURITY_AXIS_COLUMNS),
         now,
+        cik_map=cik_map,
+        delisted=delisted,
+        snapshot_date=cik_snapshot_date,
     )
+    # V4-D2B1-R1 §3 — correct any security minted as an independent row for a rename's
+    # NEW symbol before this builder modelled the rename, BEFORE the issuer era stage
+    # runs (so a freshly-tombstoned row is excluded from re-examination this same run,
+    # §3.3 / H4).
+    master_rows, freshly_superseded = apply_security_supersession(master_rows, ids)
+    superseded_ids = frozenset(r["security_id"] for r in master_rows if r.get("security_state"))
+
     master_rows, fresh_issuer_migrations = apply_issuer_correction(
         master_rows, cik_map, cik_snapshot_date, now, ambiguous_tickers=ambiguous_tickers
     )
 
     fresh_aliases = build_alias_rows(resolutions, ids)
-    alias_rows = merge_alias_rows(
-        fresh_aliases, _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES), now
+    existing_aliases = _prune_stale_aliases(
+        _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES),
+        fresh_aliases, superseded_ids,
     )
+    alias_rows = merge_alias_rows(fresh_aliases, existing_aliases, now)
 
     issuer_migration_rows = _merge_issuer_migrations(
         _read_existing(issuer_migrations_path, ISSUER_MIGRATIONS_COLUMNS,
                        ISSUER_MIGRATIONS_DTYPES),
         fresh_issuer_migrations,
+    )
+    security_migration_rows = _merge_security_migrations(
+        _read_existing(security_migrations_path, SECURITY_MIGRATIONS_COLUMNS,
+                       SECURITY_MIGRATIONS_DTYPES),
+        build_security_migration_rows(freshly_superseded, now),
     )
     cik_to_title = {cik: title for cik, title in cik_map.values()}
     issuer_master_rows = _build_issuer_master_rows(master_rows, cik_to_title)
@@ -1536,10 +1969,22 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
     # write time, not in whatever consumer first asks it a question.
     table = VendorAliasTable.from_records(alias_rows)
 
+    # V4-D2B1-R1 §5.4 — the standing pending-transition instrument: a non-empty
+    # `lost` set is a visible ::warning on EVERY build, not only the one that first
+    # produced it, so a killed or missing signal can never again be silent for a week.
+    if lost_rows:
+        print(
+            f"::warning title=security-master-listing-continuity::{len(lost_rows)} "
+            "committed row(s) unaccounted for this build: "
+            f"{', '.join(sorted(_current_symbol_of_row(r) for r in lost_rows))}",
+            flush=True,
+        )
+
     receipt = {
         "dataset_ids": [
             "reference.security_master", "reference.vendor_aliases",
             "reference.issuer_master", "reference.issuer_migrations",
+            "reference.security_migrations",
         ],
         "producer": "scripts/build_security_master.py",
         "code_version": _git_sha(),
@@ -1571,6 +2016,7 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "vendor_alias_rows_readable": len(table.rows),
             "issuer_master": len(issuer_master_rows),
             "issuer_migrations": len(issuer_migration_rows),
+            "security_migrations": len(security_migration_rows),
         },
         "coverage": {
             "total": len(resolutions),
@@ -1578,6 +2024,18 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "unresolved": len(unresolved),
             "unresolved_names": [r.key for r in unresolved],
         },
+        # V4-D2B1-R1 §5 — the general pending-transition fence, disclosed every build
+        # (never merged/accumulated across runs — refusals are RE-EXAMINED every
+        # build, §5.3, and clear naturally when evidence arrives).
+        "pending_transition_refusals": pending_transition_refusals,
+        # V4-D2B1-R1 §5.4 — the standing "lost" census, by current symbol name. Empty
+        # after this repair (EQR heals via the rename chain, AVB via the exit ledger,
+        # CTRA/TPH already exit-ledgered); a non-empty value on any FUTURE nightly is
+        # the visible ::warning above.
+        "listing_continuity": sorted(_current_symbol_of_row(r) for r in lost_rows),
+        # V4-D2B1-R1 §3.4/H8 — typed refusals for a resolution that hit a superseded
+        # (tombstoned) listing key; never a silent resurrection.
+        "resurrection_refusals": resurrection_refusals,
         "seed_counts": {
             "universe_keys": len(universe),
             "delisted_keys": len(delisted),
@@ -1631,6 +2089,15 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "era_migrations_total": len(issuer_migration_rows),
             "evidence_snapshot": cik_snapshot_date,
         },
+        # V4-D2B1-R1 §3 — the security-axis mirror of the "issuer" block above: one
+        # correction era, ACTIVE/superseded split, this-run and all-time migration
+        # counts.
+        "security": {
+            "era": ERA_SECURITY_SUPERSESSION,
+            "state_counts": _security_state_counts(master_rows),
+            "migrations_this_run": len(freshly_superseded),
+            "era_migrations_total": len(security_migration_rows),
+        },
     }
 
     if not dry_run:
@@ -1641,6 +2108,8 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
                        ISSUER_MASTER_DTYPES)
         _write_parquet(issuer_migration_rows, ISSUER_MIGRATIONS_COLUMNS,
                        issuer_migrations_path, ISSUER_MIGRATIONS_DTYPES)
+        _write_parquet(security_migration_rows, SECURITY_MIGRATIONS_COLUMNS,
+                       security_migrations_path, SECURITY_MIGRATIONS_DTYPES)
         (out_dir / RECEIPT_NAME).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
     receipt["_resolutions"] = resolutions  # in-process only; never serialized
@@ -1650,7 +2119,8 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
 # ── Nightly fail-closed refresh seam (V4-D2B1 §7) ──────────────────────────────
 #: The artifacts a nightly refresh compares byte-for-byte to decide "did anything
 #: actually change" (RECEIPT_NAME is handled separately — see :func:`run_nightly_refresh`).
-_NIGHTLY_ARTIFACT_NAMES = (MASTER_NAME, ALIASES_NAME, ISSUER_MASTER_NAME, ISSUER_MIGRATIONS_NAME)
+_NIGHTLY_ARTIFACT_NAMES = (MASTER_NAME, ALIASES_NAME, ISSUER_MASTER_NAME, ISSUER_MIGRATIONS_NAME,
+                           SECURITY_MIGRATIONS_NAME)
 
 
 def _read_bytes_if_exists(path: Path) -> bytes | None:
