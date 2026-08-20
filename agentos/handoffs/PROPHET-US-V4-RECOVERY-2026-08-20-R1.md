@@ -11,6 +11,14 @@ mission: >
   identity, dated aliases from canonical evidence, and the general
   pending-transition fence. D2B2 stays unauthorized until the next natural refresh
   proves one canonical identity survives.
+state_before: >
+  At origin/main after nightly commit b6e0062ca889: two master rows for one
+  economic security (SEC:US-XNYS-VMRK freshly minted NO_ISSUER_EVIDENCE;
+  SEC:US-XNYS-EQR still RESOLVED on CIK 0000906107); EQR in
+  coverage.unresolved_names; no EQR→VMRK signal anywhere in-repo; AVB
+  (extinguished by the same merger) RESOLVED with no typed marker; no
+  security-level supersession machinery of any kind; the mint join keyed on
+  listing key only, with no cross-row transition detection.
 changed:
   - path: research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md
     what: >
@@ -84,22 +92,43 @@ verified:
       tests/test_dataos_security_master.py tests/test_dataos_registry.py
       tests/test_theme_graph_identity_resolution.py
       tests/test_theme_graph_contracts.py -q
-next_action: >
-  (1) SURVIVAL PROOF (Sol's D2B2 gate): on the first post-merge natural nightly,
-  verify one canonical identity survives — no new VMRK/EQR mint, tombstone not
-  resurrected, receipt sane. EXPECT the first nightly to report "identity inputs
-  advanced — regenerated" and churn parquet BYTES without content change: the
-  artifact set carries mixed pyarrow writer provenance (builder 24.0.0 vs runner
-  25.0.1) and the run homogenizes it. That is NOT a failure of the byte-stable
-  no-op law — content is the check on night one, bytes thereafter. (2) The weekly
-  CIK map will bring VMRK→0000906107 and reassign bare "EQR"→0000931182 (ERP
-  Operating LP): the EQR row must stay RESOLVED on 906107 via its VMRK join key
-  and the tombstone must stay unexamined (both test-pinned, H3/H4). (3) Owed
-  follow-ups, each needing its own reviewed lane: same-id-refinement carve-out to
-  the M5 prune rule (restores the store-space VMRK alias; design in AMENDMENT §2)
-  and breadth-lane retirement of the data/stocks/VMRK.parquet double store
-  (8,309-row spliced duplicate of EQR.parquet; ticker_fixups VMRK:EQR already
-  points lanes at EQR).
+next_actions:
+  - >
+    SURVIVAL PROOF (Sol's D2B2 gate): on the first post-merge natural nightly,
+    verify one canonical identity survives — no new VMRK/EQR mint, tombstone not
+    resurrected, receipt sane. EXPECT the first nightly to report "identity
+    inputs advanced — regenerated" and churn parquet BYTES without content
+    change: the artifact set carries mixed pyarrow writer provenance (builder
+    24.0.0 vs runner 25.0.1) and the run homogenizes it. Content is the check on
+    night one, bytes thereafter.
+  - >
+    The weekly CIK map will bring VMRK→0000906107 and reassign bare
+    "EQR"→0000931182 (ERP Operating LP): the EQR row must stay RESOLVED on
+    906107 via its VMRK join key and the tombstone must stay unexamined (both
+    test-pinned, H3/H4).
+  - >
+    Owed follow-ups, each needing its own reviewed lane: same-id-refinement
+    carve-out to the M5 prune rule (restores the store-space VMRK alias; design
+    in AMENDMENT §2) and breadth-lane retirement of the
+    data/stocks/VMRK.parquet double store (8,309-row spliced duplicate of
+    EQR.parquet; ticker_fixups VMRK:EQR already points lanes at EQR).
+unresolved:
+  - >
+    Store vendor space has no VMRK answer (ruling 9 deferred by AMENDMENT §2;
+    carve-out design named there).
+  - >
+    data/stocks/VMRK.parquet double store awaits the breadth-lane retirement
+    (out of R1 scope — price stores forbidden).
+  - >
+    4 active NO_ISSUER_EVIDENCE rows (AEP, CTRA, TPH, FISV-via-FI) unchanged
+    from D2B1 — FI heals on a future CIK map; not R1's surface.
+unverified:
+  - >
+    The exact first-nightly churn set on the self-hosted runner is inferred from
+    parquet footer writer strings (24.0.0 vs 25.0.1), not observed on the runner.
+  - >
+    The survival proof itself — this wave merged before the next natural refresh
+    by design (Sol's gate is that refresh).
 do_not_redo:
   - >
     Do not re-flag the missing store-space VMRK alias as a bug — AMENDMENT §2
