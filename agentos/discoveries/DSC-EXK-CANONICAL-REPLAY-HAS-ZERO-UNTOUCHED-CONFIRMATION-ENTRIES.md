@@ -1,32 +1,35 @@
 ---
 key: EXK-CANONICAL-REPLAY-HAS-ZERO-UNTOUCHED-CONFIRMATION-ENTRIES
-finding: >
+claim: >
   At the Turn-4 replay pin, the canonical common EXK/SIL adjusted-close tape
-  spans only 2023-01-03 through 2026-08-05 (900 sessions), and no canonical
-  SLV file exists. Nine economic episode origins are before the common-store
-  start and the August 2026 blockade is after the common-store end. Six origins
-  are measurable, five design-touched. The sole untouched origin (October 2023
-  Guanacevi) produces H0/H1 entries but no H2/H3/H4/H4B signal within the frozen
-  60-session wait. Therefore untouched confirmation-arm entered N is zero.
-evidence:
-  - "EXK parquet sha256 c1a19bc98e6caecd0d2edf89747084863d422d70891a9bbf58e7d9ea1ce1fcd9"
-  - "SIL parquet sha256 39750160b985733e471749d46abe0f2767fa958faff68f0a27816020706aec39"
-  - "replay v1.2 output sha256 aa2a11691be2f982f368a17562fd4dcf81397cc1072dfbbf3abd68e0479eb9ff"
-  - "PR #6057 closed unmerged after two byte-identical runs"
-impact: >
-  Positive H2/H3/H4 descriptive medians cannot support a trading claim or
-  promotion. The full 2016-2026 EXK hypothesis is not testable on the current
-  canonical benchmark tape. EXK must stop being tuned and the next proof must
-  use a blind cross-issuer panel.
+  spans only 2023-01-03 through 2026-08-05 (900 sessions), and H2, H3, H4 and
+  H4B have zero untouched entered episode origins.
 falsifier: >
-  A canonical, provenance-compatible benchmark history that lawfully covers the
-  full event era could complete the frozen EXK replay, but it would not increase
-  untouched N for rules designed from EXK. Only new untouched issuers can answer
-  the promotion question.
-confidence: high
-discovered_by: sol
-discovered_at: 2026-08-20
+  gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log
+  | grep -E 'first_common_session|last_common_session|confirmatory_episode_n';
+  a common start before 2023-01-03, end after 2026-08-05, or any H2/H3/H4/H4B
+  confirmatory_episode_n above zero disproves this claim.
+so_what: >
+  Positive EXK confirmation-arm medians remain design-touched description and
+  cannot support a trading claim or promotion. Stop tuning EXK and obtain the
+  next proof from a price-blind, untouched cross-issuer panel.
+kind: constraint
+verified_at: 2026-08-20
+verified_by: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log; PR #6057"
+scope: [macro, alpha-intelligence, WS:ALPHA-INTELLIGENCE-INTEGRATION]
+confidence: verified
 ---
+
+## Evidence detail
+
+- EXK Parquet SHA-256: `c1a19bc98e6caecd0d2edf89747084863d422d70891a9bbf58e7d9ea1ce1fcd9`.
+- SIL Parquet SHA-256: `39750160b985733e471749d46abe0f2767fa958faff68f0a27816020706aec39`.
+- Replay v1.2 output SHA-256: `aa2a11691be2f982f368a17562fd4dcf81397cc1072dfbbf3abd68e0479eb9ff`.
+- PR #6057 closed unmerged after two byte-identical runs.
+- Nine economic episode origins precede the common-store start; the August 2026
+  blockade follows its end. Six origins are measurable and five are design-touched.
+- The sole untouched origin, October 2023 Guanacevi, enters H0/H1 but produces no
+  H2/H3/H4/H4B signal within the frozen 60-session wait.
 
 ## Additional case-level discovery
 
