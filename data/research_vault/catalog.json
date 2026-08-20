@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T21:17:21.849074+00:00",
-  "count": 1493,
+  "generated_at": "2026-08-20T22:14:55.331173+00:00",
+  "count": 1496,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -122,6 +122,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-a6qsqdbtprn-5ef9fa",
+      "title": "Opera Ltd. (OPRA) Q2'26 Earnings Review Query Based Monetization Drives Q2 Performance as Broader AI Strategy Takes Hold",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:06Z",
+      "summary_points": [
+        "**Q2 Revenue Drivers**: Commerce/travel ads, AI product adoption (Browser Connector), Western market growth (+8% Mobile MAUs YoY), and MinPay potential drive near-term upside; price target $24.00 (32.5% upside).",
+        "**Critical Risks**: Macro volatility (ad spend), competition (browsers), concentrated governance (70%+ ownership), China exposure, and regulatory/geopolitical risks.",
+        "**Growth & Cash Flow Catalyst**: 29.4% EBITDA growth forecast (12/26E) vs 1.0% (12/25), strong operating cash flow ($165.1m), and negative Net debt/EBITDA (low leverage).",
+        "**Valuation Downgrade**: Price target lowered to $24.00 (from $25.00) due to EV/EBITDA compression and DCF adjustments amid near-term revenue pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tfeng5wlgfg-7f4e03",
       "title": "Germany Federal Spending Slightly Below Expectations in July, Federal Deficit YTD Remains Above Our Expectations",
       "institution": "Goldman Sachs",
@@ -137,6 +157,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l5ds7rhp1pd-77df09",
+      "title": "Global Markets Daily Fed Communication And Term Premium",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:25Z",
+      "summary_points": [
+        "**Fed Communication Shift**: Reduced Fed transparency amplifies policy uncertainty, elevating term premium and pushing long-end UST yields to multi-cycle highs amid sluggish long-duration appetite and debt supply constraints.",
+        "**Term Premium Dynamics**: Uncertainty-driven term premium spikes decay 25-33% within weeks (vs.",
+        "macro shocks), with underweight duration positioning signaling potential near-term decline despite current elevated levels.",
+        "**UST Yield Valuation**: Long-end UST yields not misvalued against macro fundamentals (Exhibit 5), indicating no significant undervaluation risk amid current conditions.",
+        "**Positioning Bias**: Market remains positioned for higher yields (Exhibit 6), with elevated sensitivity to curve shifts (TY 3m 25d risk reversal) and active FX/IR trade targets defining critical risk thresholds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bgsv6kzfvqw-3bbd05",
+      "title": "The 720 SK Hynix, Sumitomo Electric, HK Exchanges, Top of Mind Fed Transparency, AIA, CR Beer, Giant Biogene, Anritsu",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:09Z",
+      "summary_points": [
+        "**SK Hynix Buyback**: 400m share buyback (3.3% of shares) to drive EPS upside; raised 2025-2027 shareholder return target to 50% of cumulative FCF, with 2026-2028 EPS estimates raised 4-10% - **India Policy Shift**: RBI's hawkish stance with 50bp cumulative rate hikes expected (25bp each in Dec 2026, Feb 2027) due to firming core-goods inflation, signaling potential policy tightening - **HKEX Valuation**: Trading at 26X 1-year forward P/E (vs mid-cycle 33X), indicating potential undervaluation (Buy, on CL) - **Anritsu 6G Catalyst**: Strong Test & Measurement orders driving FY3/27 sales beat, 800G volume growth alongside 6G R&D shipments ahead of 2030 rollout, 12m TP ¥5,400 - **India Policy Shift**: RBI's hawkish stance with 50bp cumulative rate hikes expected (25bp each in Dec 2026, Feb 2027) due to firming core-goods inflation, signaling potential policy tightening"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
