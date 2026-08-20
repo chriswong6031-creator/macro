@@ -40,3 +40,4 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .queue-rail.observed{background:var(--gr-blue)}.truth.observed{color:var(--gr-blue)}
 .truth.conflict{color:var(--gr-bad)}.truth.historic{color:var(--gr-muted)}
 .truth.late{color:var(--gr-warn)}.truth.correction{color:var(--gr-blue)}
+#companyBridge>.inspect-label{margin-top:12px}#companyBridge>.inspect-label:first-child{margin-top:0}
