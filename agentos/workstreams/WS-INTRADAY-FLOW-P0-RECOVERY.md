@@ -60,12 +60,17 @@ waves:
   - id: PR-4
     title: Restore honest live quote, pulse, and options transport
     status: in_progress
+    pr: 6105
     depends_on: [PR-1, PR-2, PR-3]
     next_action: >
       Production incident reopened the user-facing outcome: the board painted but its
       three live inputs were dead or falsely labelled live. Recovery is being shipped
       from a fresh worktree with board-scoped quote coverage, ts-index normalization,
       semantic pulse health, RTH options-source freshness, and exact live receipts.
+      The operator's direct 2026-08-20 request to investigate and fix superseded the
+      earlier read-only/no-re-arm boundary for this incident. Recovery is limited to
+      the existing canonical com.mastermind.liveflow unit; the retired Studio options
+      fleet remains disarmed and no second engine or publication plane was created.
 next_action: >
   Workstream complete: the board paints in production during RTH, the corrected OPEX
   calendar is on the live checkout, and the independent live-flow plane is explicitly
