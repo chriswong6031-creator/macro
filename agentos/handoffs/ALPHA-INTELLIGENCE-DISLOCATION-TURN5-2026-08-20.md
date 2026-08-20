@@ -15,6 +15,8 @@ state_before: >
 changed:
   - path: research/dislocation_intelligence/DISLOCATION_TURN5_SOURCE_ARCHITECTURE_FREEZE_2026-08-20.md
     what: "Source census, FTS capacity, rights-safe scope, blind selection, evidence contract, capability ledger and P0-S0/S1 freeze."
+  - path: research/dislocation_intelligence/contracts/DISLOCATION_P0_SOURCE_CANDIDATE_SCHEMA.json
+    what: "Machine contract for price-blind candidate provenance, deterministic selection, exact filing/document receipts, evidence proposals, audit and all-false authority."
   - path: research/dislocation_intelligence/commissions/GROK_P0_S1_BLIND_SOURCE_EXTRACTION_2026-08-20.md
     what: "Twenty-packet source-only semantic extraction commission."
   - path: research/dislocation_intelligence/commissions/FABLE_P0_SOURCE_PROGRAM_2026-08-20.md
