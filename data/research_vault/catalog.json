@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T15:23:17.333065+00:00",
-  "count": 1484,
+  "generated_at": "2026-08-20T16:20:55.397138+00:00",
+  "count": 1487,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-xqjcyd78wka-1180c9",
+      "title": "Snowflake Aug 20",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T15:57:06Z",
+      "summary_points": [
+        "**CoCo-Driven Revenue Growth**: 35% y/y revenue growth projection fueled by CoCo migration timelines (e.g., Teradata reduced from 9mo to 3.5mo) and AI Services, with gross profit/EBIT accretive; product revenue beat at $1.418m (30% y/y).",
+        "**Margin Expansion Catalysts**: FY27 margin expansion supported by COGS efficiencies, OpEx leverage, and public cloud demand; non-GAAP operating margin guidance at 12.5% (+1.35pts y/y), targeting ~15%-16%.",
+        "**Target Price Upgrade**: Price target raised to $350 (17% increase) from $300, reflecting sustainable momentum from NGOM (new AWS contract, flat COGS) and realistic 3-4% quarterly revenue beat.",
+        "**AI Services Traction**: CoCo drives >7k customers, with +1.9x y/y migrations, +1.7x y/y new use cases, and AI ARR exceeding $300m (vs.",
+        "$100m in F3Q26), driven by incremental updates and CoCo contribution."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-torf4p4qgvm-d2a7b4",
+      "title": "JPM US Treasury Market Daily Aug 20",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T15:34:14Z",
+      "summary_points": [
+        "**Treasury Policy Shift**: Surprise $4bn buyback increase (from $2bn) triggers 9bp long-end yield drop and curve flattening, signaling potential policy shift beyond routine management despite liquidity metrics showing no immediate need.",
+        "**Structural Yield Pressure**: 6% budget deficit amid near-full employment and lack of fiscal consolidation drives persistent long-end yield pressures, with end-user demand at record highs worsening supply-demand imbalance.",
+        "**CFTC Positioning Divergence**: Net short CFTC non-commercial positions (-1.02 z-score) contrast sharply with Treasury Client Survey net long (0.47/0.59 z-scores), indicating conflicting market views and heightened risk.",
+        "**2s/10s Curve Technical Signal**: Flattening from 51.3-55.74bp resistance toward 200-day MA, with short-term support near 43bp; low conviction on steepening due to repeated June-August whipsaws.",
+        "**Fiscal Deficit Risk**: Treasury’s tactical actions (auction cuts, guidance) address symptoms of long-end yield rises but fail to resolve root causes, as structural deficit and record end-user demand dominate supply-demand dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-uq917jnpkeb-f0b524",
       "title": "LONG EM CARRY",
       "institution": "TS Lombard",
@@ -94,6 +136,28 @@
         "**China Oil Import Structural Shift**: Crude oil imports fell to 35.7 million tons (2026), signaling structural energy strategy change with implications for global oil demand, supply chains, and energy transition investments."
       ],
       "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cp3ek8xlldv-ea154d",
+      "title": "Nomura McElligott PRIMING THE PUMP BUT ITS GOTTA GET WORSE FIRST 20 Aug 2026",
+      "institution": "Nomura",
+      "side": "sell",
+      "desk": "Mcelligott",
+      "published_at": "2026-08-20T13:03:11Z",
+      "summary_points": [
+        "**Treasury Buyback & Iran Quagmire**: Treasury \"Buyback\" signals policy capitulation amid \"Losing the Long-End\" risk; Iran escalation drives energy shocks (diesel crack spreads), inflation tail risks, and bear-steepening in rates/equity sell-offs.",
+        "**Rates Market Headwinds**: Crowding-out of UST duration buyers, AI financing (+59% YoY corporate credit), Japan fiscal strain, and deficit spending amplify sticky inflation; energy shock scenario (Iran/Straits) risks market body-impulse.",
+        "**Energy/Inflation Data**: European gas at €65/MWh (highest since March), German 5-yr yield at 3% (first since 2008) – energy shocks drive impulsive fuel/logistics price spikes despite tailing inflation.",
+        "**Geopolitical Escalation Risk**: No \"off ramp\" without military escalation/Trump escalation; Iran quagmire intensifies energy shocks and inflation tail risks, overriding policy countermeasures."
+      ],
+      "tags": [
+        "Mcelligott"
+      ],
       "tickers": [],
       "top_pick": false,
       "pages": 6,
