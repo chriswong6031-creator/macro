@@ -1,0 +1,1672 @@
+{
+  "a1_declared_ledger_sha256": "04d502e398a0f2ae65df7b2f9d5156305094f7b10ca104da08792d7219c1f83c",
+  "a1_declared_ledger_status": "UNVERIFIED_ABSENT_SOURCE_FILE",
+  "a1_declared_sample_seed": "ec34136d9ed11f0070a5eed0a0225f465f8095d3f3cd228b752b3c27c9f1e876",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "blocked_families": {
+    "MACRO_OR_INDUSTRY_WIDE": "SOURCE_CAPACITY_SHORTFALL"
+  },
+  "exclusions": {
+    "ciks": [
+      "0001015647"
+    ],
+    "name_substrings": [
+      "endeavour silver"
+    ],
+    "note": "Ticker EDR is not a blanket exclusion: US EDR is a different issuer. Exclude Endeavour Silver by CIK/name/EXK only.",
+    "tickers": [
+      "EXK"
+    ]
+  },
+  "forms": [
+    "8-K",
+    "6-K"
+  ],
+  "lexicon": {
+    "CYBER_OR_IT_INTERRUPTION": [
+      "cybersecurity incident",
+      "cyber incident",
+      "ransomware",
+      "network outage",
+      "systems outage",
+      "system outage",
+      "information technology outage",
+      "data breach",
+      "unauthorized access",
+      "cyber-related business interruption"
+    ],
+    "EXTERNAL_HUMAN_INTERRUPTION": [
+      "labor strike",
+      "work stoppage",
+      "labor action",
+      "union strike",
+      "blockade",
+      "community protest",
+      "civil unrest",
+      "picket line",
+      "access restriction",
+      "workforce walkout"
+    ],
+    "PHYSICAL_MECHANICAL_INTERRUPTION": [
+      "equipment failure",
+      "mechanical failure",
+      "unplanned outage",
+      "temporary shutdown",
+      "temporarily shut down",
+      "temporarily suspended operations",
+      "operations were suspended",
+      "production interruption",
+      "manufacturing interruption",
+      "plant outage",
+      "facility outage",
+      "equipment malfunction",
+      "power outage"
+    ],
+    "RESOLVED_BEFORE_DISCLOSURE_CONTROL": [
+      "operations have resumed",
+      "resumed normal operations",
+      "service has been restored",
+      "fully restored operations",
+      "returned to normal operations",
+      "operations resumed",
+      "issue has been resolved"
+    ],
+    "STRUCTURAL_IMPAIRMENT_CONTROL": [
+      "going concern",
+      "bankruptcy",
+      "permanent closure",
+      "permanently close",
+      "non-reliance on previously issued financial statements",
+      "material weakness",
+      "ceased operations",
+      "liquidation",
+      "insolvency",
+      "default under"
+    ],
+    "TEMPORARY_EXPECTATION_RESET": [
+      "temporary headwinds",
+      "temporary margin pressure",
+      "temporary cost pressure",
+      "temporary demand weakness",
+      "temporary slowdown",
+      "one-time impact",
+      "one-time charge",
+      "transitory impact",
+      "guidance withdrawn",
+      "lowered guidance",
+      "temporary disruption",
+      "temporary factors"
+    ],
+    "WEATHER_OR_PHYSICAL_DISASTER": [
+      "severe weather",
+      "hurricane damage",
+      "winter storm",
+      "wildfire",
+      "flooding",
+      "earthquake",
+      "tornado",
+      "facility fire",
+      "plant fire",
+      "natural disaster",
+      "storm damage"
+    ]
+  },
+  "lexicon_sha256": "c164b5b3d0cfa8365a685e88662b00d8ad338957886fd51771286bf3c137cb58",
+  "query_cells": [
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "equipment failure",
+      "query_cell_id": "473d96df9693824346cdaf426263c5be0d7e77a5466f72839072f00963548180"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "equipment failure",
+      "query_cell_id": "6df6c577e6d71c060db29089557b085656641498fec916b8828c0a2892c45f67"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "mechanical failure",
+      "query_cell_id": "d9150478b8551b7228ada708d053b753b54cf5b5529b8b0391072f81c8eec61e"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "mechanical failure",
+      "query_cell_id": "39e9982f2b9066e692315d155be58451ef8afcf6d1ebe67d5feb967a964b2e86"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "unplanned outage",
+      "query_cell_id": "6ca4085bbaf5269ca50db5793d092c3ca015032794b14ff5caf352625c414594"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "unplanned outage",
+      "query_cell_id": "56cccffcbda7ac4803986e3e79132aebf86d3f29f42a3464c958cc685e90be14"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporary shutdown",
+      "query_cell_id": "27616baa319b01ec164e75576a947b91c31c09ba662553fc8d673bfd138eb1db"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporary shutdown",
+      "query_cell_id": "f21ee3a979f6c1cdb35f2c7e54b01643408f225fcba102fac3fa75c22cc2f593"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporarily shut down",
+      "query_cell_id": "1e2378fb2b71269de2b82e49b6f51a8cfeaa7c955583282a39b6986db0e9e17d"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporarily shut down",
+      "query_cell_id": "987ac2fb1739b6cf7ef610b1004de7450391f3d76d6d6807c5a5d6819ff88255"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporarily suspended operations",
+      "query_cell_id": "6f85f5bac7fd51db0fec0c88fdc409dbf6809b1c5cab0b760c5753b3b0adfc81"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "temporarily suspended operations",
+      "query_cell_id": "2673e823229b1538388936fac023f62eb8dd5c7e15a7c616be2836981d7b6386"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "operations were suspended",
+      "query_cell_id": "872b628393fdf7614bbad1923e3205c11658f7a658f3b04e7d8f82c94411ee0c"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "operations were suspended",
+      "query_cell_id": "17f00da92b1d4d7b69ea13cbd16e52f777974571bd7a6e20226ec5960d78685d"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "production interruption",
+      "query_cell_id": "b5ec2e784f9ce1982b47540a1d5a3e56af50ae1920a6ed30e8333f09b4e4e161"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "production interruption",
+      "query_cell_id": "a6aa0ac1138b9c9e5f60a8720ad0688245f39164c79ae933e6dfecc0fb1467bd"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "manufacturing interruption",
+      "query_cell_id": "d58c03ee4422e51342613ab235feaf48bcfffa5e3604b3a77a2e65866a92d297"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "manufacturing interruption",
+      "query_cell_id": "8e8111d892b0e0f395a9d8d53929f5ea5a59bf16c54b421ec6e5a78713b15080"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "plant outage",
+      "query_cell_id": "c76f9c8880adda55fda62ee71b27121b4a93ecf7218e745e549134c30b194670"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "plant outage",
+      "query_cell_id": "0362cf9ac319e4ca45cd6fb6f409ccac7d97c3d56069926344c3e753972f856f"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "facility outage",
+      "query_cell_id": "ed67f2c6a12eba03b0d81c78f4c0e60a2e41591f9de4d2359620468ed829fc65"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "facility outage",
+      "query_cell_id": "d173738b99b0e2fca159fa5d094581ec67e4b97b648f69d8de9344e598cdaad4"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "equipment malfunction",
+      "query_cell_id": "b3848a033a1c785830b0af594af613bc62dd000c40441eaa7a5215be2e45fbc0"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "equipment malfunction",
+      "query_cell_id": "c446323a5b40d54b0360ad25bad51f466787d38d05ca912fbf14ba77ca43fe46"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "power outage",
+      "query_cell_id": "6b3654df7bfdb21580586a4109d6de5de3a4071952b0f082b8d645a9df0ca7a1"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "PHYSICAL_MECHANICAL_INTERRUPTION",
+      "phrase": "power outage",
+      "query_cell_id": "87211ac04732136469896d6a27fae6aee671086970764f728cbf9cae7c091d15"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "labor strike",
+      "query_cell_id": "24b2a580c2f3484914e46b39c4d528ecb6cb4a0c05c71e3a3a18454522d86fb0"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "labor strike",
+      "query_cell_id": "26c9f9173003784e8305bfadd6955c6afc91e22fa872305f6e3aeada376ab988"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "work stoppage",
+      "query_cell_id": "d468824bd76262fdd400187e53de91a6f10600276af919fd373b179b33043405"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "work stoppage",
+      "query_cell_id": "b2baf5aba9fb4df9b46f57d25e6a4bfe6f30c63f6604f04badea2490f756e0ec"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "labor action",
+      "query_cell_id": "9839ac679591441a9dd10758fd3b08bd025512cc57f9148d2770d97a72acfa24"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "labor action",
+      "query_cell_id": "853d211c61fa011e165d7dd612ca0b71ae7ef02a82abe7e42afd4730202fa466"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "union strike",
+      "query_cell_id": "ef658857faa242f633c1740d41400b71fcd36a9be8ae0c5460807a1fa165b51e"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "union strike",
+      "query_cell_id": "06f1a8d3505159af9441640dce5a0fceeb9f9e584d7efe08a75b9af96b32df90"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "blockade",
+      "query_cell_id": "202d49ab7a49130d69ddd355fa65aecf2885e29d6ef59a0246b31245053d9617"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "blockade",
+      "query_cell_id": "0ab44f593e3fb3804d0a558618ae798de9ead1235669c79c297494f3d5dbadaa"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "community protest",
+      "query_cell_id": "73c2590b86044da03e938f74aad32f7cc4e75c873b02606864dd23d95b8df8f0"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "community protest",
+      "query_cell_id": "4d9dd6a224c639eb68f290d2f586055818c595fa4a11677efa6bb01cad0eae49"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "civil unrest",
+      "query_cell_id": "f9a73bd4bf961c585bbb852f7a5dd99dc516b1033628f34a4431620d1b841652"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "civil unrest",
+      "query_cell_id": "e694a9836da45cc33aa4084fa2321297a5ec081d29d100c06956ce3335687bb6"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "picket line",
+      "query_cell_id": "896ac1db8dd35d07167ac382871c58de3fdc523dc4a097382b73e8d785eaf02d"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "picket line",
+      "query_cell_id": "cfeaafa286ac584b760f6a94aaf4cb3367a1130e5ea811075f333c1af44783e2"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "access restriction",
+      "query_cell_id": "867725da0a70effbfca067544ec7df0a3fae830fe8bb807aafac856f67dfc41d"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "access restriction",
+      "query_cell_id": "67a29a555166bb80c3bf45155e87a8dab4096df7cfc91b8f1160a00bcaf37877"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "workforce walkout",
+      "query_cell_id": "9dad7a5bc8f997796e36ab3951c00358143cff2e437fa0c2330c7966cb70ba24"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "phrase": "workforce walkout",
+      "query_cell_id": "8f51d5cd671c9da841436e0c4505b8a0e241a5633e3c2aeb4592fe568618633f"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cybersecurity incident",
+      "query_cell_id": "0baddf6798a957486bd71ecaed2c2709697ce0df5346a558d51474b6e63db873"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cybersecurity incident",
+      "query_cell_id": "52e576d80657380c69b0dd9975a4d3731f4713c14791452906f2211f9f9afcbb"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cyber incident",
+      "query_cell_id": "7909b8e655182aca7586841500dcbf8b0404758f0392ba2095705792ee891362"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cyber incident",
+      "query_cell_id": "7d37c43256bd57029d73661deed04b2155e7dbc86a8467febe253e36b97de701"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "ransomware",
+      "query_cell_id": "c703d34cd83a27884534e4c0179f6b63d4f7b303d4a809347deb9fde6e74f475"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "ransomware",
+      "query_cell_id": "7e6eb022304a30032693bd6ce8c5d705f75348051d583afafa78e6fcad1aa64d"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "network outage",
+      "query_cell_id": "60f61e3698f4278f1f1b86587a0f10825d6bc384faee7f07051748b28b5fac4e"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "network outage",
+      "query_cell_id": "0c6e375a8bf091afee2e73130715b5a5c399d8b3f241994a43cc5e60d4b3dc23"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "systems outage",
+      "query_cell_id": "a42656697db933a9cdd8c96a601dda5d6a0ad80cb4ac6f8b65ee6702d54d76c6"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "systems outage",
+      "query_cell_id": "b5286fc889bf3eca99df0c5eeb3a157c4c257e365bea73b3d2933126cf40eb12"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "system outage",
+      "query_cell_id": "cd41f575d293bf70ac805f4059afe3540bd21995362207dbd37ed026c9e02438"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "system outage",
+      "query_cell_id": "de59628e768e79fc6a4989e36f3b35ff495534fbdb448a4f36f446c15743c841"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "information technology outage",
+      "query_cell_id": "70fc5722556d02b194f6b7400582a301f8a425e3f55b96fe1ff96b4d718381de"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "information technology outage",
+      "query_cell_id": "b0a6f950bdaa93253150c45d1e2238356313bb53b6285b7de7a58e171d4529ed"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "data breach",
+      "query_cell_id": "c48f2631c954f8a616cb8a63f52288d4a1b88e25c1b4c46f276e1644fe300be5"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "data breach",
+      "query_cell_id": "9378c19162c3cd74802ce5ed408b92d3b4302f63852522b8215b942351904ee6"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "unauthorized access",
+      "query_cell_id": "caedd8468ede43b112b083115b38057733c22f9bab92c2f3fdf1a53bd8393e0e"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "unauthorized access",
+      "query_cell_id": "c75f542d394205406a19733c8db81282bd8308b0ec32ab27b3c3137599e897aa"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cyber-related business interruption",
+      "query_cell_id": "f22173fd7cf47b3f562ac4a1579db63c8396f321009c4d2747b5c7b385d23597"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "CYBER_OR_IT_INTERRUPTION",
+      "phrase": "cyber-related business interruption",
+      "query_cell_id": "33585f0a5f39097f672542377ab18255b6e5f558d3c198250365f1cba6e94e6e"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "severe weather",
+      "query_cell_id": "30c4cda5c2681451e62ac4e12c942bb257b7e2c835812c03724e48ede2199cf2"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "severe weather",
+      "query_cell_id": "dec2a3139541d88cec37a9a287fa813c6e025bf6338ed61f71e59645303b25d7"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "hurricane damage",
+      "query_cell_id": "e35bb4a414824b8ec22bb4ea66ae2185ffbf9d3192f58a7bd28ea826f646c5e6"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "hurricane damage",
+      "query_cell_id": "328b5a16d7dbabe0ca3783e6e73b332382a8a275cd998f26ced5f80ce8bcd60f"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "winter storm",
+      "query_cell_id": "b190323c50f5d3ab29485dc5edde57d7be09da8c5ca07bf5ce59c4affb6dded4"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "winter storm",
+      "query_cell_id": "88f79395563efdd62038ad2a34840ce8b75da650849631a6b33dedb861ff88bd"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "wildfire",
+      "query_cell_id": "659c6e91be0d716977aaf4420cd167f4d8f25216fd05c4314061d0257de92da3"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "wildfire",
+      "query_cell_id": "51038d15ee243e8026da92948a5501c97f15bb6e2f52a715104fbd2ee87b4e8f"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "flooding",
+      "query_cell_id": "39c14638856856af6b974f122ff790a16cf031bb7114a16d53e0c53ace508a89"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "flooding",
+      "query_cell_id": "3361d23b4ca310a303aa5b9163cd66257a9c8810f187e83e36380fd90a02bfd5"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "earthquake",
+      "query_cell_id": "76e7bff2b1d7a83a7ab955c869d602cb2e93cc04ac7dba58d5e0f8726d0ff168"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "earthquake",
+      "query_cell_id": "6bc47da11ad1481a8f791a87f987c09cb729693e29aa1b8b5c02af91397dead1"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "tornado",
+      "query_cell_id": "6a5a71d7706db8a3ef1d3652b751648fc7aabc9460da98321910ef02dcb759dc"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "tornado",
+      "query_cell_id": "52e19498ed8549c9a291ee10c302626a5c166a88dca43bb66ecafeea4227d968"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "facility fire",
+      "query_cell_id": "69d0a2acd011b2138d3085d0b21c5d3be8158c49be52bda0589500f639bcf969"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "facility fire",
+      "query_cell_id": "22ec53654805f27793ebd9cec5a9c9f9927c27ee6c7248ed238e04eed2ae1e89"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "plant fire",
+      "query_cell_id": "67ce0a6bda5710889ff0b2deea045afcbaa28cb429ca7574b0b9117901939e3b"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "plant fire",
+      "query_cell_id": "034ccbc2ea0a2a73a3440c280f7d6531ac66c320f9d79ffeabee8dbb88807b11"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "natural disaster",
+      "query_cell_id": "6e52182600f25e3586fae34a7cbc6c28483a2b88d1eefed64bb188c1f53132fb"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "natural disaster",
+      "query_cell_id": "e252f9068a8cec2eff1b3e00f42a50e2ce46b9fab3229a2ede48525f8562ff27"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "storm damage",
+      "query_cell_id": "2470a8d79203d2aa6d61f64d60ea310f544f74662ec0eb12a3b016a37f21291b"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "phrase": "storm damage",
+      "query_cell_id": "0a8dfbcac7062f0c2c636974fe821c38d384e621705cb09e4a7baead16a9447b"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary headwinds",
+      "query_cell_id": "bda727f08823615d46b5ee98c4e34e54af14516ee1f58784e7f3acf250bae011"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary headwinds",
+      "query_cell_id": "cd84810d810d1cd5693f6a963c5f94af7f9603a0aa156e5e4d7bbec59c0f3e64"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary margin pressure",
+      "query_cell_id": "f8a3fb1f5d7becd51ae85ca5a2db6583c5c87d4246cd0f01320b079d6879b167"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary margin pressure",
+      "query_cell_id": "70d835cd092feb89d28f8dd6620c525fbdcd8a291b1f55ecd889ee31024cc4f5"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary cost pressure",
+      "query_cell_id": "5a16e94e3cfcf5665938ff846999fa722f9c0fb89089df9e3f9b82628d1f3e62"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary cost pressure",
+      "query_cell_id": "ed8c08796358bec1d4fa9ff889067898fb0008be98d160655354f8e0aa382ae3"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary demand weakness",
+      "query_cell_id": "b657a477f9204fdbccdd4392c0dde11721dd1fa4862a7d85370061392976f635"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary demand weakness",
+      "query_cell_id": "1ff69f24eeac8b4fdc8dcea0fe4fcdd8419227997d1bed7ab1c42841e90acc43"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary slowdown",
+      "query_cell_id": "7801331cb84536a305288874ca17d267fdbaccfc809cd55fbb7930542c09de4d"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary slowdown",
+      "query_cell_id": "3f9c4c1c7202b339b3ff3f4908d9db61444673dd9a1e670a36b0c8d4e6cba149"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "one-time impact",
+      "query_cell_id": "b89b4dfa4ca582253aa94bcddea49642637d41d2fae319692092407370d2efd8"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "one-time impact",
+      "query_cell_id": "4b4ec70d96f5596cc70a1e6734a17f008203a7e91e7259456b01367f50a6ef1b"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "one-time charge",
+      "query_cell_id": "088b2b7c2c7df7ae78727ec9d5c41bfde9e01b835473824df4be2c72696ebc59"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "one-time charge",
+      "query_cell_id": "b6aec0cb55f69b6189d5b756284c9ff142c1a0b23e208be694a69aede8790099"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "transitory impact",
+      "query_cell_id": "83a86050a78b8fc0b86357d4b976a8c99d3dd979f8f95c76d86c40c1a52fe530"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "transitory impact",
+      "query_cell_id": "98b19a9f499ec8748d35659b541052ca1cf876823c26bb9eed6c4d567d010eca"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "guidance withdrawn",
+      "query_cell_id": "654fdd37a6ede1bd38eeab66f791b496872057254f20df9938098c7c65e74a57"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "guidance withdrawn",
+      "query_cell_id": "1f609392e7be1262a71ab11b261a09b310f74f8c8e29481b1a1d70fda4862a93"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "lowered guidance",
+      "query_cell_id": "ded35e83993b623cdfbe1f6c9745fe56ec2abc18cbfa767514b4e6126140daf9"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "lowered guidance",
+      "query_cell_id": "753f4cfd1f6f8115e5f88bdaa2e04064377c38b56bacc79ac7f0c352cc02493e"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary disruption",
+      "query_cell_id": "81839d9bb3319d3f97b2a84923bbe39a786fb323dc66267844228289d4e8b436"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary disruption",
+      "query_cell_id": "6ce824efa6921d88d1c5bf47833156eba5a9b89806f781677f66bad22e00bdc5"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary factors",
+      "query_cell_id": "6794221d039702428f2b8e75d809b8b0f5bec14842c458f77a25e78426de2d60"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "phrase": "temporary factors",
+      "query_cell_id": "a735595c0f1dd1e1a7d4b188fc6019ab03dbe8cdc10beaf39a46faa036b418fe"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "going concern",
+      "query_cell_id": "88cc157dc6a872871a767bab868c26cecf8b5e5483efd00dd5625f31a633df69"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "going concern",
+      "query_cell_id": "e0237f2f4c120c0909e144d86a46dd9354b7ea72d50cd1374814e4c1fea089c7"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "bankruptcy",
+      "query_cell_id": "353d03abf862c8903774844dca6f077fb3084b45de93b0506e1e6cff9b473222"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "bankruptcy",
+      "query_cell_id": "42445947f72f4e79c475db749e6113e2f213ba2a5658be6d2b9299b1df4666e8"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "permanent closure",
+      "query_cell_id": "195471af01cb2a607f8a628cc387fd56a41dc1c9e1b16a179ae85d5de94cd5b9"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "permanent closure",
+      "query_cell_id": "1b520c1ae5a02fe012f46cc7d0554d261c8f9aa2de28cce0f1699f9a4ac4f996"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "permanently close",
+      "query_cell_id": "8bd817737095a6c021b946aa028bb7d52a814455517c8f7feb0cdd4787845e7d"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "permanently close",
+      "query_cell_id": "8fbf7b96f138993978b7627f80c1b4e12a3fa9ff15fc3131ab72abcae1bb8231"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "non-reliance on previously issued financial statements",
+      "query_cell_id": "b5ec42a10131bcd002a56df9e28ca6fe31e2bdc9334822f9e2c16781903a1d31"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "non-reliance on previously issued financial statements",
+      "query_cell_id": "ca9497f13386b2a448409628807ec3f52178f8032c539ca8dd7176aba94f0121"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "material weakness",
+      "query_cell_id": "f60d8ca122e9f27f312959aacc8782e5f21013da2adc5290e6ba5b213b5aa389"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "material weakness",
+      "query_cell_id": "5d148ad4470810623ef7d2fff0f7d60321d4e6b588903db4f1a3b33c9375b956"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "ceased operations",
+      "query_cell_id": "dfed81cbc8fa21041f2e95fc587e50e8f55ec325ac1b7ed7e480636fe3247820"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "ceased operations",
+      "query_cell_id": "247bbe7f67da18bebcdbe8a21de6ef88676ba5a2fef0c11e39074b368d9127ab"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "liquidation",
+      "query_cell_id": "d8d0e8c8f9c142c0f4bf560737186ac4d64c4d050aae848f00044ae6e1bffcdb"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "liquidation",
+      "query_cell_id": "f702685817449629770fdaf232e48dfeba36ae3668a4fce8d480f5424cb48b3b"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "insolvency",
+      "query_cell_id": "402830730f4e0e5ef7377e0c6a1f4e4303d016a19a63ea6bfef66faa80e27909"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "insolvency",
+      "query_cell_id": "4d61c128dd8d930cea30a4d2368e8cfdeae2e15ce70ce3c351905344dcb03e58"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "default under",
+      "query_cell_id": "c05fa4ef6c5cde2efde61b3ba95c1262dbea0f98f954617b5fe3ae951630cbb1"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "STRUCTURAL_IMPAIRMENT_CONTROL",
+      "phrase": "default under",
+      "query_cell_id": "0e1266e72f4ebaff3f0671b8a5afe1af16c7364acb375e4f2084f24729620d17"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "operations have resumed",
+      "query_cell_id": "d43077d8d9cf982565409a4aaa2cb637edfe3b488ef4fad5324c0ceeffda50b1"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "operations have resumed",
+      "query_cell_id": "a9a06f2fa01d29660626b81aca0b90c5f69d5722dfd6566021393c2afcc67653"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "resumed normal operations",
+      "query_cell_id": "f7a52d3cd8d3e632ef762a0dac08cf9f11aafe8c3b8d545d24c505fe976233da"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "resumed normal operations",
+      "query_cell_id": "437f47b07297ffde47299bee6077605bd81ae42d7979036d4b1767a16b1b04d8"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "service has been restored",
+      "query_cell_id": "8295ef541f85a2d41a699443ded554e43c8cf55a86aebd71f40941829dab3d70"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "service has been restored",
+      "query_cell_id": "6474446e1f3caabd421b7f57df23dd9d73b94dbe6d677b4da332bc794f995122"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "fully restored operations",
+      "query_cell_id": "ed0e2020b44067880dcd87600a69a5d718ba8b4e04f02c6cf7d5c6afba2a1b1e"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "fully restored operations",
+      "query_cell_id": "f3c121ec66c4f9db01f0802d0059a59033d4cee89b0780d2e89d08eec4cf21e5"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "returned to normal operations",
+      "query_cell_id": "6607f5532ef7cda262bf6756f3acb431db219a90bbbde8067cd01605f389c4e8"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "returned to normal operations",
+      "query_cell_id": "30bdf067f40c53b80effefde9a6dd7acaefb31f8e020a0d8e9f51ed1674ba127"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "operations resumed",
+      "query_cell_id": "fe9128f30bd7885f9d6c2695c2477027b337d6a830e54aad95dbcd578676370f"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "operations resumed",
+      "query_cell_id": "1f529d582bc8d1e224ccdc49248f69055200970265fbe2590121e0d55d4dd216"
+    },
+    {
+      "base_form": "8-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "issue has been resolved",
+      "query_cell_id": "0da3e72b712984532b4381d302878cff81e092c83d6e6d971142ada8b8fbedc1"
+    },
+    {
+      "base_form": "6-K",
+      "date_shard": {
+        "end": "2025-12-31",
+        "start": "2016-01-01"
+      },
+      "family": "RESOLVED_BEFORE_DISCLOSURE_CONTROL",
+      "phrase": "issue has been resolved",
+      "query_cell_id": "87104bb4802d399d881b632ee376707f4987bff4f16023212c6af81ddf775a9e"
+    }
+  ],
+  "quotas": {
+    "CYBER_OR_IT_INTERRUPTION": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "EXTERNAL_HUMAN_INTERRUPTION": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "MACRO_OR_INDUSTRY_WIDE": {
+      "development": 8,
+      "form_6k": 8,
+      "form_8k": 16,
+      "modern": 16,
+      "reason": "Turn-5 frozen lexicon has no MACRO_OR_INDUSTRY_WIDE phrases",
+      "source_target": 24,
+      "status": "SOURCE_CAPACITY_SHORTFALL"
+    },
+    "PHYSICAL_MECHANICAL_INTERRUPTION": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "RESOLVED_BEFORE_DISCLOSURE_CONTROL": {
+      "development": 8,
+      "form_6k": 8,
+      "form_8k": 16,
+      "modern": 16,
+      "source_target": 24
+    },
+    "STRUCTURAL_IMPAIRMENT_CONTROL": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "TEMPORARY_EXPECTATION_RESET": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "WEATHER_OR_PHYSICAL_DISASTER": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    }
+  },
+  "rights": {
+    "sec_reporting_core": true,
+    "sedar_public_automation": false,
+    "sedar_status": "RIGHTS_BLOCKED"
+  },
+  "schema": "mastermind.dislocation_p0.source_query_ledger.v1",
+  "seed": "DISLOCATION-P0-SOURCE-2026-08-20-v1",
+  "selection": {
+    "formula": "SHA256(seed | family | era | base_form | cik | accession)",
+    "max_per_issuer_before_audit": 5,
+    "review_order": "ascending selection_key",
+    "seed": "DISLOCATION-P0-SOURCE-2026-08-20-v1"
+  },
+  "turn5_lexicon_sha256": "c164b5b3d0cfa8365a685e88662b00d8ad338957886fd51771286bf3c137cb58",
+  "warning": "Query phrase is candidate provenance, never event-family evidence. A search hit is not an economic episode.",
+  "windows": {
+    "development_2016_2021": {
+      "end": "2021-12-31",
+      "start": "2016-01-01"
+    },
+    "full_2016_2025": {
+      "end": "2025-12-31",
+      "start": "2016-01-01"
+    },
+    "modern_2022_2025": {
+      "end": "2025-12-31",
+      "start": "2022-01-01"
+    }
+  }
+}
