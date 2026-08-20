@@ -504,30 +504,89 @@ def _within_capture_lease(session: date, capture_instant: datetime) -> bool:
 def _same_book_overlap(stored: pd.DataFrame, candidate: pd.DataFrame) -> tuple[bool, int, int]:
     """FROZEN SPEC same-book proof (AD-1C0.1): does `candidate` describe the
     SAME settled book as `stored`, evaluated only over the contracts they
-    both hold (identity = _CONTRACT_KEY_COLS). Pure (no I/O) — the caller
-    reads both frames. Returns (agrees, overlap, floor):
+    both hold. Pure (no I/O) — the caller reads both frames. Returns
+    (agrees, overlap, floor):
       * overlap -- the number of shared contracts.
       * floor -- the required overlap: min(OI_OVERLAP_FLOOR_ABS,
-        ceil(OI_OVERLAP_FLOOR_FRACTION * stored's own contract count)); 0
-        when `stored` itself has no rows (never reached in practice — a
-        REPLACEABLE stored capture always has >0 rows, see _health_verdict).
+        ceil(OI_OVERLAP_FLOOR_FRACTION * stored's own contract count)).
       * agrees -- True only when overlap >= floor AND every shared
         contract's open_interest matches EXACTLY between the two captures.
         Below the floor, `agrees` is False regardless of what the
         (too-thin) intersection shows — an underpowered check must never
         read as a pass.
+
+    F3 (boundary review, 2026-08-20): `stored` with ZERO rows returns
+    (False, 0, 0) immediately — an empty frame vacuously "agrees" with
+    anything under a naive all()-over-nothing check, which is exactly the
+    false-positive this proof exists to prevent. (In practice a
+    REPLACEABLE stored capture always has >0 rows — see _health_verdict —
+    so this is a defense-in-depth guard, not a reachable production path.)
+
+    F1/F7 (dtype symmetry, boundary review): the STORED parquet has already
+    been through _compact()'s float32 downcast of K and oi; a freshly
+    fetched CANDIDATE frame has not. Joining/comparing float32 against
+    float64 directly makes odd-cent (non-dyadic) strikes fail to match on
+    the join key even for the IDENTICAL contract — float64->float32
+    rounding shifts a value like 100.05 by an amount the float64 side never
+    experiences, so the two sides silently land on different float32 grid
+    points. Both K (the join key) and oi (the comparison) are round-tripped
+    through the SAME float32 cast on BOTH sides before anything else
+    happens, so the comparison is exact by construction and never
+    precision- or side-dependent.
+
+    F2 (identity collision, boundary review): _CONTRACT_KEY_COLS
+    (underlying/expiry/K/is_call) is not always a unique contract identity
+    — an adjusted and a standard contract can share all four fields. The
+    vendor's own per-contract ticker (strike_ticker) is therefore the
+    PRIMARY join key wherever it is present and non-null on a given row;
+    rows lacking it fall back to the 4-field composite. Both frames are
+    sorted deterministically (by the 4-field key, then ticker, then oi)
+    BEFORE drop_duplicates, so which row a same-key collision keeps can
+    never depend on the two captures' incidental original row order — a
+    bare positional "keep first" made an order swap alone flip the verdict.
     """
+    if len(stored) == 0:
+        return False, 0, 0
+
     cols = list(_CONTRACT_KEY_COLS)
-    s = stored[[*cols, "oi"]].drop_duplicates(subset=cols)
-    c = candidate[[*cols, "oi"]].drop_duplicates(subset=cols)
-    merged = s.merge(c, on=cols, how="inner", suffixes=("_stored", "_candidate"))
+
+    def _prepared(df: pd.DataFrame) -> pd.DataFrame:
+        out = df[[*cols, "oi"]].copy()
+        out["K"] = out["K"].astype("float32")      # F1: symmetric strike grid
+        out["oi"] = out["oi"].astype("float32")     # F1/F7: symmetric OI grid
+        ticker = (df["strike_ticker"] if "strike_ticker" in df.columns
+                 else pd.Series([None] * len(df), index=df.index))
+        out["_ticker"] = ticker
+        has_ticker = ticker.notna()
+        composite = out[cols].astype(str).agg("|".join, axis=1)
+        # F2: ticker-first identity, composite fallback for rows without one.
+        out["_key"] = composite.mask(has_ticker.to_numpy(), "T:" + ticker.astype(str))
+        # F2: fully deterministic pre-dedup order — never dependent on the
+        # frame's incidental original row order.
+        sort_key = out[cols].astype(str).copy()
+        sort_key["_ticker"] = out["_ticker"].fillna("")
+        sort_key["oi"] = out["oi"]
+        order = sort_key.sort_values(list(sort_key.columns), kind="stable").index
+        out = out.loc[order]
+        return out.drop_duplicates(subset="_key", keep="first")
+
+    s = _prepared(stored)
+    c = _prepared(candidate)
+    merged = s.merge(c, on="_key", how="inner", suffixes=("_stored", "_candidate"))
     overlap = len(merged)
-    floor = (min(OI_OVERLAP_FLOOR_ABS, math.ceil(OI_OVERLAP_FLOOR_FRACTION * len(s)))
-            if len(s) else 0)
+    floor = min(OI_OVERLAP_FLOOR_ABS, math.ceil(OI_OVERLAP_FLOOR_FRACTION * len(s)))
     if overlap < floor:
         return False, overlap, floor
-    agrees = bool((merged["oi_stored"].astype("float64")
-                  == merged["oi_candidate"].astype("float64")).all())
+    # F6 (boundary review, ACCEPTED design — no behavior change): a single
+    # differing contract on the intersection refuses the whole replacement,
+    # exact-match, no tolerance band. This fails CLOSED by design — real OI
+    # can legitimately tick between two genuine same-evening captures, so a
+    # strict proof will sometimes reject a lawful rescue rather than risk
+    # accepting an actually-different book. Whether that operational yield
+    # is acceptable in production is a question for real consecutive
+    # captures to answer, not this proof; loosening it is a separate,
+    # deliberate ruling, not a bug fix.
+    agrees = bool((merged["oi_stored"] == merged["oi_candidate"]).all())
     return agrees, overlap, floor
 
 
