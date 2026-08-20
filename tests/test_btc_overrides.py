@@ -128,6 +128,32 @@ def test_disabled_config_no_override() -> None:
         "override_id must be '' when gate is disabled"
 
 
+def test_production_config_retires_midterm_override_authority() -> None:
+    """Operator ruling 2026-08-20: the production calendar veto stays disabled.
+
+    The historical implementation remains testable for attribution, but the shipped
+    config must leave final allocation equal to the measured raw engine throughout a
+    midterm year and must never stamp an active override.
+    """
+    vcfg = config.load()["vector"]
+    registry = next(row for row in vcfg["overrides"]
+                    if row.get("id") == "midterm_blackout")
+    assert registry.get("status") == "retired"
+    assert registry.get("authority") == "context_only"
+
+    acfg = {**vcfg["allocation"], "conviction_sizing": False,
+            "drawdown_brake": False, "bottom_overlay": False}
+    assert acfg["midterm_gate"]["enabled"] is False
+
+    idx = pd.date_range("2026-01-01", "2026-12-31", freq="D")
+    result = OV.apply(_pure_alloc(idx), acfg, ctx={"overrides": vcfg["overrides"]})
+    for col in [c for c in result if c.startswith("alloc_") and not c.endswith("_raw")]:
+        pd.testing.assert_series_equal(result[col], result[f"{col}_raw"],
+                                       check_names=False)
+    assert not result["override_active"].astype(bool).any()
+    assert (result["override_id"] == "").all()
+
+
 def test_missing_config_no_override() -> None:
     """With no midterm_gate key the override must be a no-op."""
     idx = pd.date_range("2022-01-01", "2022-12-31", freq="D")
