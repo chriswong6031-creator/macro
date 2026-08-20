@@ -999,6 +999,92 @@ jobs:
   conviction-profile:
     if: ${{ false }}
     gate: code
+    # CURATED SCOPE (2026-08-19, follow-up to #6027). `scope: exclusive` makes
+    # the paths below REPLACE inference instead of being unioned under it.
+    #
+    # #6027 moved #5984's three dossier suites into this job (correctly — the
+    # unrun-publish-ops home they had in #6023 is `gate: data`, which ci.yml
+    # never plans, so they were wired and still dark). But those suites import
+    # scripts/build_ticker_pages.py and scripts/check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the inferred FALLBACK tier grew
+    # whole-tree `templates/**`, `site/**`, `data/**`, `research/**`, `config/**`
+    # and `tools/**` claims. This job began selecting on files no suite in it
+    # reads: measured, it newly matched `templates/index.html` and pushed that
+    # probe to 128 against the 127 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # That is smear, and this file's own convention is to curate it away at the
+    # source rather than pay for it in the ceiling (same treatment as `inline-js`,
+    # `flow-surface`, `options-estate-guards`).
+    #
+    # Every path below is EARNED — the 59 concrete files inference already owned,
+    # plus the two templates build_ticker_pages.py loads by name
+    # (`ticker.html.j2`, which tests/test_dossier_identity_end_to_end.py renders
+    # directly, and `ticker_index.html.j2`). Nothing whole-tree survives, and
+    # scripts/check_ci_trigger_closure.py is the guard that every module these
+    # suites read can still start this job.
+    scope: exclusive
+    paths:
+      - "config/site_access.yml"
+      - "config/sparse_worktree.json"
+      - "engine/__init__.py"
+      - "engine/canon.py"
+      - "engine/conditions.py"
+      - "engine/cycles.py"
+      - "engine/i18n.py"
+      - "engine/indicators.py"
+      - "engine/indicators_m2.py"
+      - "engine/market_heatmap.py"
+      - "engine/marketing/__init__.py"
+      - "engine/marketing/accounts.py"
+      - "engine/marketing/authority.py"
+      - "engine/marketing/campaign_compiler.py"
+      - "engine/marketing/chart_render.py"
+      - "engine/marketing/charter.py"
+      - "engine/marketing/claims.py"
+      - "engine/marketing/cmo.py"
+      - "engine/marketing/departments.py"
+      - "engine/marketing/economics.py"
+      - "engine/marketing/events.py"
+      - "engine/marketing/ledgers.py"
+      - "engine/marketing/logo_cache.py"
+      - "engine/marketing/market_clock.py"
+      - "engine/marketing/movers_source.py"
+      - "engine/marketing/opportunity_bus.py"
+      - "engine/marketing/publication.py"
+      - "engine/marketing/share_cards.py"
+      - "engine/marketing/source_authority.py"
+      - "engine/marketing/state.py"
+      - "engine/session_anchor.py"
+      - "engine/sp500_heatmap.py"
+      - "engine/stock_dossier.py"
+      - "engine/stock_score.py"
+      - "engine/stock_view.py"
+      - "engine/stocks_hub.py"
+      - "engine/technicals.py"
+      - "engine/valuation.py"
+      - "engine/vol_forecast.py"
+      - "engine/vol_regime.py"
+      - "lib/__init__.py"
+      - "lib/config.py"
+      - "lib/numeric.py"
+      - "lib/nyse_calendar.py"
+      - "lib/pages.py"
+      - "lib/procutil.py"
+      - "lib/seo.py"
+      - "lib/store.py"
+      - "scripts/build_ticker_pages.py"
+      - "scripts/check_stock_dossier_integrity.py"
+      - "scripts/sparse_guard.py"
+      - "scripts/worktree_sparse.py"
+      - "templates/china.html.j2"
+      - "templates/ticker.html.j2"
+      - "templates/ticker_index.html.j2"
+      - "tests/test_analyzer_i18n_percentile.py"
+      - "tests/test_check_stock_dossier_integrity.py"
+      - "tests/test_dossier_identity_end_to_end.py"
+      - "tests/test_dossier_numeric_contract.py"
+      - "tests/test_stock_dossier.py"
+      - "tests/test_stock_score.py"
     # Wired 2026-08-02: neither suite was named by ANY run step, so #4297's caution
     # rewrite ran 4 stock_score pins red for a day with no CI signal, and the dossier's
     # prose-matched risk_veto died silently. test_stock_score pins the honesty
