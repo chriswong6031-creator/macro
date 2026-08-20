@@ -5671,6 +5671,39 @@ jobs:
       - name: unsubscribe page + per-matcher serving boundary (templates/unsubscribe.html.j2)
         run: python -m pytest tests/test_unsubscribe_page.py -v
 
+  serving-observability:
+    if: ${{ false }}
+    gate: code
+    # app/observability.py — the Sentry arm for the macro-api serving tier.
+    # This job exists because the failure mode it guards is asymmetric: a bug in
+    # error REPORTING can take down the thing it reports on. init_sentry() runs
+    # before `app = FastAPI(...)` in app/main.py, so anything it raises is an
+    # unbootable /api on the droplet — and the droplet is where a boot failure
+    # is least visible (the unit just Restart=always-loops in the journal).
+    #
+    # The suite therefore pins the fail-safe contract rather than the happy
+    # path: absent DSN, absent sentry_sdk wheel, a malformed DSN that makes
+    # sentry_sdk.init raise, and an older wheel that rejects the newer
+    # `enable_logs` kwarg must ALL return False quietly instead of propagating.
+    # It also pins the sample-rate parser against the NaN fail-open (every
+    # comparison with NaN is false, so a naive `if v < 0 or v > 1` range guard
+    # passes NaN straight through to the SDK) and pins the conservative
+    # defaults — the vendor quickstart's traces=1.0/profiles=1.0 would trace
+    # every /api/flow/* poll on a 1-2 vCPU box.
+    #
+    # Deps are `pytest` alone on purpose: app/observability.py is pure stdlib
+    # and the suite stubs sentry_sdk, so this job must stay green on a runner
+    # where the real SDK is not installed at all.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: sentry arm is fail-safe and never blocks API boot (app/observability.py)
+        run: python -m pytest tests/test_observability_sentry.py -q
+
   billing-emails:
     if: ${{ false }}
     gate: code
