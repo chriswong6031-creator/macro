@@ -46,7 +46,23 @@
       "properties": {
         "stage": {"enum": ["NONE", "FRAGILE", "TRANSMITTING", "BREAKDOWN", null]},
         "stage_reason": {
-          "enum": ["observed_settled_evidence", "required_coverage_unavailable", "no_usable_hazard_evidence"]
+          "description": "Why the stage is what it is. `required_source_state_unmapped` was added by GD-2R1: a required source that is FRESH but publishes a state this build cannot map nulls the stage, so an optional calm source can never decide the answer alone. Widening an enum within v1 - no version bump.",
+          "enum": [
+            "observed_settled_evidence",
+            "required_coverage_unavailable",
+            "required_source_state_unmapped",
+            "no_usable_hazard_evidence"
+          ]
+        },
+        "unmapped_required_sources": {"type": "array", "items": {"type": "string"}},
+        "capped_sources": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Sources whose stage claim exceeded the stage they are competent to observe; admitted at their ceiling, named here so the demotion is auditable."
+        },
+        "stage_since_basis": {
+          "const": "no_episode_lifecycle_in_v0",
+          "description": "V0 owns no episode lifecycle, so there is no lawful first-observed transition instant and stage_since is always null. A source's own retrospective onset stays in provenance.sources[].detail."
         },
         "unreadable_sources": {"type": "array", "items": {"type": "string"}},
         "contributing_sources": {"type": "array", "items": {"type": "string"}},
@@ -91,9 +107,15 @@
     "coherence": {
       "type": "object",
       "description": "Do the answers agree? A structural verdict, never a severity and never a score.",
-      "required": ["state", "contradictions", "contradiction_count", "display_only"],
+      "required": ["state", "scope", "contradictions", "contradiction_count", "display_only"],
       "properties": {
         "state": {"enum": ["ALIGNED", "MIXED", "CONTRADICTORY"]},
+        "scope": {
+          "const": "market_reads",
+          "description": "GD-2R1: coherence compares the measured trend against the hazard evidence and NOTHING else. Capital policy is orthogonal - a posture built from zero policies cannot agree or disagree with a market reading - so it never participates."
+        },
+        "compares": {"type": "array", "items": {"type": "string"}},
+        "excludes": {"type": "array", "items": {"type": "string"}},
         "contradictions": {
           "type": "array",
           "items": {
