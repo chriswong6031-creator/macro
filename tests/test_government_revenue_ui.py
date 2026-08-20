@@ -49,6 +49,7 @@ def _run_runtime(
     lang: str = "en",
     budget_module_status: str | None = None,
     company_bridge_stub: bool = False,
+    real_dossiers_js: bool = False,
 ) -> dict:
     """Run the page's real IIFE against a deliberately tiny browser DOM stub."""
     page_runtime = _page_runtime_js()
@@ -103,6 +104,12 @@ def _run_runtime(
         var history = {replaceState:function(){}};
         var navigator = {clipboard:null};
         var window = {location:location, history:history, navigator:navigator, innerWidth:1440};
+        // R6: when requested, load the REAL shipped government-revenue-dossiers.js
+        // (not a stub) so window.createGovernmentRevenueCompanyBridge/IdentityAtlas/
+        // Dossier/Budget are the actual production factories, proving the page's
+        // wiring end-to-end. Any per-factory stub below still wins if the caller
+        // ALSO asked for one (assigned after, so it overrides).
+        %(dossiers_js)s
         if(CANDIDATE_ROWS!==null)window.createGovernmentRevenueCandidateRadar=function(api){return {
           load:function(){api.onRows(CANDIDATE_ROWS,{status:CANDIDATE_STATUS,total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS,mapping_backlog_states:CANDIDATE_BACKLOG_STATES,freshness:{exact_candidate_availability:EXACT_CANDIDATE_AVAILABILITY}});return Promise.resolve(CANDIDATE_ROWS)},
           refresh:function(){return this.load()}, render:function(){}, invalidate:function(){}, state:function(){return 'ok'}, crosschecks:function(){return ''}
@@ -153,7 +160,15 @@ def _run_runtime(
               agencyFilterHtml:node('agencyFilter').innerHTML,
               agencyNames:runtime.agencyNames(),
               workspaceComplete:runtime.workspaceIsComplete(PAYLOAD.procurement_workspace),
-              bridgeCalls:bridgeCalls};
+              bridgeCalls:bridgeCalls,
+              // The fake DOM's innerHTML is a plain string, not parsed --
+              // getElementById('companyBridge') returns a SEPARATE fake
+              // element from whatever was stuffed into #inspector's
+              // innerHTML string, so the real factory's own render() writes
+              // land on node('companyBridge') directly, not inside
+              // inspectorHtml above.
+              companyBridgeHtml:node('companyBridge').innerHTML,
+              companyBridgeHidden:node('companyBridge').hidden};
             LANG = 'zh';
             var langError = null;
             try { (docListeners['langchange']||[]).forEach(function(fn){fn({type:'langchange'})}); }
@@ -181,6 +196,11 @@ def _run_runtime(
         "lang": json.dumps(lang),
         "budget_module_status": json.dumps(budget_module_status) if budget_module_status is not None else "null",
         "company_bridge_stub": json.dumps(company_bridge_stub),
+        "dossiers_js": (
+            (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+            if real_dossiers_js
+            else ""
+        ),
         "page_runtime": page_runtime,
     }
     path = tmp_path / "government_revenue_runtime.js"
@@ -1815,7 +1835,9 @@ def test_company_bridge_ships_on_the_company_inspector() -> None:
     assert '<section class="inspect-section company-bridge" id="companyBridge" hidden>' in TEMPLATE
     # Sibling of Identity Atlas + Award history inside the SAME company inspector
     # branch, before the Evidence & limits close -- never a new page, new nav entry.
-    assert "identityAtlasSection()+dossierBookSection()+companyBridgeSection()" in TEMPLATE
+    # R11: the section markup itself is included ONLY for ticker==='IRDM' --
+    # a non-IRDM company dossier stays byte-unchanged (gate 9, literal).
+    assert "identityAtlasSection()+dossierBookSection()+(ticker==='IRDM'?companyBridgeSection():'')" in TEMPLATE
     assert TEMPLATE.count('{% include "_site_nav.html.j2" %}') == 1
 
 
@@ -1870,3 +1892,56 @@ def test_runtime_wires_the_company_bridge_on_selection_and_invalidates_elsewhere
     # factory's own responsibility (pinned in test_government_revenue_company_bridge.py
     # T9), not the page's.
     assert {"op": "load", "ticker": "LMT"} in out_other["bridgeCalls"]
+
+
+@needs_node
+def test_runtime_renders_the_real_bridge_government_fact_block_for_an_irdm_selection(
+    tmp_path: Path,
+) -> None:
+    """R6: end-to-end proof using the SHIPPED dossiers.js (not a stub).
+
+    The frozen P00032 fixture (also used by tests/test_government_revenue_company_bridge.py,
+    itself gate:code and read-only against that committed fixture) supplies
+    the workspace event; this test only needs to prove the page's real
+    wiring reaches the real factory and renders the real Government Fact
+    block -- it does not need the company-intelligence fetch to succeed.
+    """
+    fixture_path = ROOT / "tests" / "fixtures" / "govrev_company_bridge" / "p00032_event.json"
+    gov_event = json.loads(fixture_path.read_text(encoding="utf-8"))
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "f" * 24,
+        "total": 1,
+        "next_cursor": None,
+        "events": [gov_event],
+        "coverage": {"events_visible": 1},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "IRDM", "name": "Iridium Communications"}],
+        "market": {},
+        "freshness": {"status": "ok", "opportunities": {"status": "unavailable"}},
+        "opportunity_intelligence": {
+            "market": {},
+            "opportunities": [],
+            "events": [],
+            "freshness": {"status": "unavailable", "records_visible": 0, "observed_at": None},
+        },
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        location_search="?mode=companies&item=company%3AIRDM",
+        real_dossiers_js=True,
+    )
+    assert 'id="companyBridge"' in out["inspectorHtml"]
+    assert out["companyBridgeHidden"] is False
+    bridge_html = out["companyBridgeHtml"]
+    assert "HC101319C0006" in bridge_html
+    assert "P00032" in bridge_html
+    assert "$18,416,666.66" in bridge_html
+    assert "Government fact" in bridge_html or "政府事实" in bridge_html

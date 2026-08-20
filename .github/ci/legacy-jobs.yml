@@ -8424,13 +8424,11 @@ jobs:
       # the UI suite above, whose _run_runtime it imports).
       - name: D3 temporal contract — typed rails, clock block, hostile families T1-T8
         run: python -m pytest tests/test_government_revenue_temporal_contract.py -q
-      # D4 Company Financial Truth Bridge (IRDM only): node-harness hostile
-      # families T1-T10 rendering the shipped dossier JS factory against the
-      # COMMITTED workspace P00032 event, plus a fetch stub for the owner's
-      # company-intelligence packet and the candidates artifact. Same runner
-      # requirement as the D2/D3 suites above (needs node, present here).
-      - name: D4 company financial truth bridge — IRDM-only, hostile families T1-T10
-        run: python -m pytest tests/test_government_revenue_company_bridge.py -q
+      # D4 Company Financial Truth Bridge moved OUT of this job (adversarial
+      # review, 2026-08-20): this job is `gate: data` (advisory-only, never
+      # merge-binding), and D4's frozen-fixture suite needs to actually BLOCK
+      # a merge. It now runs merge-binding in the `govrev-company-bridge`
+      # `gate: code` job below (tests/test_government_revenue_company_bridge.py).
       # D2 Identity Atlas: projector + graph-delta pins + the node-harness test
       # that renders the shipped dossier JS factory against the COMMITTED
       # identity-atlas artifact (needs node, present on these runners for the
@@ -8501,6 +8499,29 @@ jobs:
       - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
         proof_id: sbir-sttr-progression-evidence-post-amount-semantics
         run: python -m pytest tests/test_sbir_awards.py -q
+
+  govrev-company-bridge:
+    if: ${{ false }}
+    gate: code
+    # D4 Company Financial Truth Bridge (IRDM only): the suite MUST be
+    # merge-binding (adversarial review, 2026-08-20), which unrun-government-revenue
+    # above -- `gate: data`, advisory-only -- structurally cannot be. Moved
+    # here instead of reusing that job's heavier install line because the
+    # suite reads NOTHING beyond a committed test fixture
+    # (tests/fixtures/govrev_company_bridge/p00032_event.json, frozen from
+    # the real P00032 workspace event -- never site/government-revenue-data/
+    # or data/government_revenue/) plus templates/government-revenue-dossiers.js
+    # and templates/government_revenue.html.j2 as plain text: pytest and node
+    # (preinstalled on ubuntu-latest) are the only runtime dependencies.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: D4 company financial truth bridge — IRDM-only, hostile families T1-T10 + R2/R4/R5/R7/R9/R10/R12
+        run: python -m pytest tests/test_government_revenue_company_bridge.py -q
 
   unrun-government-revenue-candidate-projection:
     # The projection matrix is the slower half of the candidate contract. It

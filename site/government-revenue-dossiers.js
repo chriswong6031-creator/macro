@@ -545,13 +545,18 @@
    * what-the-government-recorded vs what-the-company-reports. Government
    * facts come from the already-loaded workspace events (api.workspaceEvents)
    * -- no new fetch -- and stay byte-identical across every company-packet
-   * variation. Comparison is a frozen `not_comparable` sentence: this wave
-   * never renders a ratio node on any input (DEC:D4-COMPANY-RAIL-CONSUMES-CI-V1-CONTEXT). */
+   * variation. Comparison is FIXED closed-state copy (review amendment
+   * 2026-08-20, DEC:D4-COMPANY-RAIL-CONSUMES-CI-V1-CONTEXT): the module's
+   * ONLY network read is /api/company-intelligence/{ticker} -- no candidates
+   * artifact fetch, no ratio node ever, on any input. */
   global.createGovernmentRevenueCompanyBridge=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,factCell=api.factCell,hostFor=api.host;
     var workspaceEvents=typeof api.workspaceEvents==='function'?api.workspaceEvents:function(){return[]};
-    var IRDM='IRDM',AWARD_PIID='HC101319C0006',MOD_NUMBER='P00032',LINEAGE_OK='earnings_history',COMPANY_SCHEMA='company_intelligence_context.v1',CANDIDATES_PATH='government-revenue-data/candidates.json';
-    var epoch=0,ticker='',companyState='idle',companyPacket=null,comparisonNote=false;
+    var workspaceReady=typeof api.workspaceComplete==='function'?api.workspaceComplete:function(){return true};
+    var FETCH_TIMEOUT_MS=typeof api.companyFetchTimeoutMs==='number'?api.companyFetchTimeoutMs:10000;
+    var IRDM='IRDM',AWARD_PIID='HC101319C0006',MOD_NUMBER='P00032',LINEAGE_OK='earnings_history',COMPANY_SCHEMA='company_intelligence_context.v1';
+    var epoch=0,ticker='',companyState='idle',companyPacket=null;
+    var pendingByTicker={},successByTicker={};
 
     function modNumber(award){
       var actionId=text(award.action_id,''),piid=text(award.piid,'');
@@ -561,31 +566,63 @@
       var rest=actionId.slice(idx+marker.length).split('_');
       return rest[0]||'';
     }
+    /* R10: constrain to events that actually carry the IRDM ticker (never
+     * trust piid/mod alone), and when more than one qualifies, prefer the
+     * one with the LATEST known_at -- the freshest reviewed record wins. */
+    function eventTickers(e){
+      var out=[],impacts=arr(e.listed_company_impacts).filter(obj);
+      impacts.forEach(function(row){var t=text(row.ticker,'');if(t)out.push(t)});
+      arr(e.tickers).forEach(function(t){if(typeof t==='string'&&t)out.push(t)});
+      var primary=text(e.primary_ticker,'');if(primary)out.push(primary);
+      return out;
+    }
     function govEvent(){
-      return arr(workspaceEvents()).filter(obj).find(function(e){
+      var matches=arr(workspaceEvents()).filter(obj).filter(function(e){
         var award=obj(e.award_change)?e.award_change:{};
-        return award.piid===AWARD_PIID&&modNumber(award)===MOD_NUMBER;
-      })||null;
+        return award.piid===AWARD_PIID&&modNumber(award)===MOD_NUMBER&&eventTickers(e).indexOf(IRDM)>-1;
+      });
+      if(!matches.length)return null;
+      matches.sort(function(a,b){
+        var ak=text((obj(a.change)?a.change:{}).known_at,''),bk=text((obj(b.change)?b.change:{}).known_at,'');
+        return bk<ak?-1:bk>ak?1:0;
+      });
+      return matches[0];
     }
     function amountValue(event){
       var rows=arr(event.amounts).filter(obj),row=rows.find(function(r){return r.id==='federal_action_obligation'})||rows[0];
       return row?n(row.value):null;
     }
-    /* Exact-cent display -- the reviewed obligation is never abbreviated to
-     * "$18.4M" the way money() would; §0 gate 1 requires the exact figure. */
+    /* R12: exact, non-rounding display -- the reviewed obligation is never
+     * abbreviated to "$18.4M" the way money() would (§0 gate 1), and never
+     * ROUNDED the way toFixed(2) would either: whatever fractional digits the
+     * source number carries are shown verbatim, comma-grouped, nothing more. */
     function preciseMoney(v){
       v=n(v);if(v==null)return'—';
-      var neg=v<0,fixed=Math.abs(v).toFixed(2),parts=fixed.split('.');
+      var neg=v<0,parts=String(Math.abs(v)).split('.');
       parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
       return(neg?'−':'')+'$'+parts.join('.');
     }
+    /* R4: the receipt bound to THIS action's own transaction record --
+     * matched by content_sha256 against award_change.source_identity, never
+     * by URL shape (an /awards/ URL is the AWARD snapshot receipt, a
+     * different observation from the action that actually carries P00032). */
     function receiptUrl(event){
-      var rows=arr((event.evidence||{}).receipts).filter(obj),pick=rows.find(function(r){return/\/awards\//.test(text(r.url,''))})||rows[0];
+      var award=obj(event.award_change)?event.award_change:{},identity=obj(award.source_identity)?award.source_identity:{},wantSha=text(identity.content_sha256,'');
+      var rows=arr((event.evidence||{}).receipts).filter(obj);
+      var pick=(wantSha&&rows.find(function(r){return text(r.content_sha256,'')===wantSha}))||rows[0];
       return pick?safeUrl(pick.url):'';
     }
+    /* R5: govEvent() returning null is ambiguous between "not yet hydrated"
+     * (the embedded first-paint slice may not carry this event) and
+     * "genuinely absent". Only the latter may say "unavailable" -- see the
+     * `governmentworkspacehydrated` re-render pointer in government_revenue.html.j2
+     * for why a stale pre-hydration render self-heals without polling here. */
     function govFactHtml(){
       var event=govEvent();
-      if(!event)return'<div class="dossier-empty">'+esc(tr('Government fact unavailable','政府事实不可用'))+'</div>';
+      if(!event){
+        if(!workspaceReady())return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Loading government record','正在加载政府记录'))+'</b></span></div>';
+        return'<div class="dossier-empty">'+esc(tr('Government fact unavailable','政府事实不可用'))+'</div>';
+      }
       var award=obj(event.award_change)?event.award_change:{},change=obj(event.change)?event.change:{},late=award.is_late_discovery===true,url=receiptUrl(event);
       return(late?'<div class="atlas-chips"><span class="truth late">'+esc(tr('Late discovery','延迟发现'))+'</span></div>':'')+
         '<div class="facts-grid">'+
@@ -600,16 +637,49 @@
 
     /* Company Truth -- read-only consumption of the canonical earnings owner's
      * closed per-ticker packet. Only earnings_history-lineage fields render;
-     * score_overlay-lineage fields (e.g. summary) are never touched here. */
+     * score_overlay-lineage fields (e.g. summary) are never touched here.
+     * R2: bounded timeout races the fetch so a hung network call cannot leave
+     * an aria-busy state that lives forever -- it resolves to the same typed
+     * unavailable state as any other fetch failure. */
+    function withTimeout(promise,ms){
+      return new Promise(function(resolve,reject){
+        var settled=false,timer=global.setTimeout(function(){
+          if(settled)return;settled=true;reject(new Error('timeout'));
+        },ms);
+        promise.then(function(value){
+          if(settled)return;settled=true;global.clearTimeout(timer);resolve(value);
+        },function(error){
+          if(settled)return;settled=true;global.clearTimeout(timer);reject(error);
+        });
+      });
+    }
     function fetchCompany(t){
       if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
-      return global.fetch('/api/company-intelligence/'+encodeURIComponent(t),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
+      var chain=global.fetch('/api/company-intelligence/'+encodeURIComponent(t),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
         if(r.status!==200)throw new Error('http_'+r.status);
         return r.json();
       }).then(function(data){
         if(!obj(data)||data.available!==true||data.schema!==COMPANY_SCHEMA)throw new Error('contract');
         return data;
       });
+      return withTimeout(chain,FETCH_TIMEOUT_MS);
+    }
+    /* R7: memoize per ticker -- a success is cached (repeated selections and
+     * search keystrokes on an already-open IRDM panel never refetch); an
+     * in-flight fetch is shared; a failure is NEVER cached, so a fresh
+     * selection (which invalidate() always precedes) retries. Restatement
+     * (§0 gate 6 / T7) advances on the NEXT fresh load, i.e. after the panel
+     * is re-opened -- not mid-display on every keystroke. */
+    function loadCompanyPacket(t){
+      if(successByTicker[t])return Promise.resolve(successByTicker[t]);
+      if(pendingByTicker[t])return pendingByTicker[t];
+      var p=fetchCompany(t).then(function(data){
+        successByTicker[t]=data;delete pendingByTicker[t];return data;
+      },function(error){
+        delete pendingByTicker[t];throw error;
+      });
+      pendingByTicker[t]=p;
+      return p;
     }
     function highlightList(items,lineageArr,label){
       items=arr(items);lineageArr=arr(lineageArr);
@@ -631,9 +701,11 @@
       var data=companyPacket,latest=obj(data.latest_event)?data.latest_event:{},lineage=obj(latest.field_lineage)?latest.field_lineage:{},metricsLineage=obj(lineage.metrics)?lineage.metrics:{},metrics=obj(latest.metrics)?latest.metrics:{};
       var period=(latest.fiscal_year!=null?'FY'+text(latest.fiscal_year):'')+(latest.fiscal_quarter!=null?' Q'+text(latest.fiscal_quarter):'');
       var rows=factCell(tr('Fiscal period','财报周期'),period||'—')+factCell(tr('Call date','电话会日期'),date(latest.call_date));
+      /* R9: a null/non-numeric growth figure is SKIPPED entirely -- never a
+       * "—" value claim standing in for a number the owner did not assert. */
       if(metricsLineage.revenue_growth_pct===LINEAGE_OK){
         var g=n(metrics.revenue_growth_pct);
-        rows+=factCell(tr('Revenue growth (owner-reported)','收入增长（公司披露）'),g==null?'—':((g>0?'+':'')+g+'%'));
+        if(g!=null)rows+=factCell(tr('Revenue growth (owner-reported)','收入增长（公司披露）'),(g>0?'+':'')+g+'%');
       }
       var html='<div class="facts-grid">'+rows+'</div>'+
         highlightList(latest.positive_highlights,lineage.positive_highlights,tr('Positive highlights','正面亮点'))+
@@ -644,29 +716,15 @@
       return html;
     }
 
-    /* Comparison -- reads the IRDM candidate's materiality object read-only,
-     * but the primary sentence never varies with it: no ratio node ever
-     * renders on any input (§0 gate 3). */
-    function fetchCandidates(){
-      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
-      return global.fetch(CANDIDATES_PATH,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
-        if(!r.ok)throw new Error('http_'+r.status);
-        return r.json();
-      }).then(function(value){
-        if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1')throw new Error('contract');
-        return value;
-      });
-    }
-    function findIrdmCandidate(value){
-      var items=arr(value.candidates).length?arr(value.candidates):arr(value.items);
-      return items.filter(obj).find(function(c){
-        var issuer=obj(c.issuer)?c.issuer:{};
-        return text(c.ticker,'')===IRDM||text(issuer.ticker,'')===IRDM;
-      })||null;
-    }
+    /* Comparison -- FIXED closed-state copy (review amendment 2026-08-20).
+     * The producer's own recorded materiality
+     * (comparison_state: not_comparable, reason_code:
+     * exact_issuer_attributed_denominator_not_available) is the truth this
+     * copy mirrors, but the UI performs NO fetch for it: no ratio node ever
+     * renders on any input, so nothing here can vary with a network read. */
     function comparisonHtml(){
       return'<p class="limit-copy">'+esc(tr('Not comparable — no issuer-attributed denominator has been asserted.','不可比 — 尚无发行人归属的分母。'))+'</p>'+
-        (comparisonNote?'<p class="limit-copy">'+esc(tr('The government-side materiality record confirms no issuer-attributed denominator exists yet.','政府侧重要性记录确认目前尚无发行人归属的分母。'))+'</p>':'');
+        '<p class="limit-copy">'+esc(tr('The government-side materiality record confirms no issuer-attributed denominator exists yet.','政府侧重要性记录确认目前尚无发行人归属的分母。'))+'</p>';
     }
 
     function researchHtml(){
@@ -688,23 +746,22 @@
       var ticket=++epoch;ticker=text(value,'').toUpperCase();
       if(!hostFor())return;
       if(ticker!==IRDM){render();return}
-      companyState='loading';companyPacket=null;comparisonNote=false;render();
-      fetchCompany(ticker).then(function(data){
+      if(successByTicker[ticker]){companyPacket=successByTicker[ticker];companyState='ok';render();return}
+      companyState='loading';companyPacket=null;render();
+      loadCompanyPacket(ticker).then(function(data){
         if(ticket!==epoch)return;
         companyPacket=data;companyState='ok';render();
       }).catch(function(){
         if(ticket!==epoch)return;
         companyPacket=null;companyState='unavailable';render();
       });
-      fetchCandidates().then(function(value2){
-        if(ticket!==epoch)return;
-        var candidate=findIrdmCandidate(value2),materiality=candidate&&obj(candidate.materiality)?candidate.materiality:null;
-        comparisonNote=!!(materiality&&materiality.reason_code==='exact_issuer_attributed_denominator_not_available');
-        render();
-      }).catch(function(){});
     }
 
-    return{loadCompany:loadCompany,invalidate:function(){epoch++;ticker='';companyState='idle';companyPacket=null;comparisonNote=false;var host=hostFor();if(host){host.hidden=true;host.innerHTML=''}}};
+    return{loadCompany:loadCompany,invalidate:function(){
+      epoch++;ticker='';companyState='idle';companyPacket=null;
+      pendingByTicker={};successByTicker={};
+      var host=hostFor();if(host){host.hidden=true;host.innerHTML=''}
+    }};
   };
 
   global.createGovernmentRevenueBudget=function(api){

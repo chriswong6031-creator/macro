@@ -3,18 +3,26 @@
 Frozen spec: research/defense_intelligence/DEFENSE_D4_COMPANY_FINANCIAL_TRUTH_BRIDGE_SPEC.md
 Consumption law: agentos/decisions/DEC-D4-COMPANY-RAIL-CONSUMES-CI-V1-CONTEXT.md
 
-The harness below mirrors the D2 Identity Atlas precedent
-(tests/test_government_revenue_identity_atlas.py::_run_committed_atlas): it
-loads the SHIPPED templates/government-revenue-dossiers.js unmodified and
-mounts the real `createGovernmentRevenueCompanyBridge` factory against a
-fetch stub that records every requested URL and answers with
-per-test-configurable fixtures. The government fact comes from the
-committed site/government-revenue-data/workspace.json exemplar event
-(govws-a6c70850a9cbdce9fa3e7f3b, HC101319C0006 / P00032) exactly as D3/D2
-do, so a silent drift in the artifact's field names fails these tests too.
+Adversarial-review amendment (2026-08-20): this suite must be `gate: code`
+(merge-binding), which means ZERO moving-data dependence. The P00032
+exemplar event is therefore a FROZEN, committed test fixture
+(tests/fixtures/govrev_company_bridge/p00032_event.json) rather than a live
+read of the nightly-rewritten site/government-revenue-data/workspace.json --
+this suite never reads site/government-revenue-data/ or
+data/government_revenue/ at all. The government FACTS themselves (piid,
+obligation, dates, receipt sha) are still the real committed truth; only the
+READ PATH changed.
+
+The harness loads the SHIPPED templates/government-revenue-dossiers.js
+unmodified, and also extracts the REAL page helper functions (esc, text,
+date, tr, zh, n, money, factCell, safeUrl, obj, arr) verbatim from
+templates/government_revenue.html.j2 -- not hand-retyped stand-ins -- so a
+regression in either file's real formatting/localization breaks this suite,
+not just a private copy of it.
 """
 from __future__ import annotations
 
+import copy
 import json
 import re
 import shutil
@@ -26,35 +34,57 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 DOSSIER_JS_PATH = ROOT / "templates" / "government-revenue-dossiers.js"
-WORKSPACE_PATH = ROOT / "site" / "government-revenue-data" / "workspace.json"
+TEMPLATE_PATH = ROOT / "templates" / "government_revenue.html.j2"
+FIXTURE_PATH = ROOT / "tests" / "fixtures" / "govrev_company_bridge" / "p00032_event.json"
+
+TEMPLATE = TEMPLATE_PATH.read_text(encoding="utf-8")
 
 needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not on PATH")
 
-BANNED_LABEL_WORDS_EN = ("revenue", "backlog", "bookings", "cash", "fcf")
-BANNED_LABEL_WORDS_ZH = ("收入", "积压", "预订", "现金", "自由现金流")
+BANNED_LABEL_WORDS_EN = ("revenue", "backlog", "bookings", "sales", "cash", "fcf")
+BANNED_LABEL_WORDS_ZH = ("收入", "积压", "预订", "销售", "现金", "自由现金流")
 
 
 # ---------------------------------------------------------------------------
-# Committed-artifact fixture
+# Committed fixture (frozen, gate:code safe -- no moving-data dependence)
 # ---------------------------------------------------------------------------
 
 
-def _committed_gov_event() -> dict:
-    """The real, committed P00032 workspace event -- not a synthetic double."""
-    workspace = json.loads(WORKSPACE_PATH.read_text(encoding="utf-8"))
-    for event in workspace["events"]:
-        award = event.get("award_change") or {}
-        action_id = str(award.get("action_id") or "")
-        if award.get("piid") == "HC101319C0006" and "_P00032_" in action_id:
-            return event
-    raise AssertionError("committed HC101319C0006 / P00032 workspace event was not found")
+def _load_gov_event() -> dict:
+    event = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    assert event["award_change"]["piid"] == "HC101319C0006"
+    assert "_P00032_" in event["award_change"]["action_id"]
+    return event
 
 
-GOV_EVENT = _committed_gov_event()
+GOV_EVENT = _load_gov_event()
 
 
 # ---------------------------------------------------------------------------
-# Company / candidate fixture builders
+# Real page helpers -- extracted verbatim from templates/government_revenue.html.j2,
+# never hand-retyped, so this suite tracks the REAL production formatting/
+# localization rather than a private stand-in copy of it.
+# ---------------------------------------------------------------------------
+
+_HELPER_NAMES = ["obj", "arr", "zh", "tr", "esc", "n", "text", "money", "date", "safeUrl", "factCell"]
+
+
+def _extract_helper_line(name: str) -> str:
+    pattern = re.compile(r"^  function " + re.escape(name) + r"\(.*$", re.M)
+    match = pattern.search(TEMPLATE)
+    assert match, f"real helper function {name!r} not found in government_revenue.html.j2 -- extraction pattern drifted"
+    return match.group(0)
+
+
+def _real_helpers_js() -> str:
+    return "\n".join(_extract_helper_line(name) for name in _HELPER_NAMES)
+
+
+REAL_HELPERS_JS = _real_helpers_js()
+
+
+# ---------------------------------------------------------------------------
+# Company packet fixture builder
 # ---------------------------------------------------------------------------
 
 
@@ -102,101 +132,68 @@ def _company_packet(**overrides) -> dict:
     return packet
 
 
-def _candidates_payload(candidates=None) -> dict:
-    return {
-        "contract": "government_revenue_candidate_queue.v1",
-        "schema_version": "1.0.0",
-        "content_id": "grcq1-" + "a" * 24,
-        "total": 1,
-        "candidates": (
-            candidates
-            if candidates is not None
-            else [
-                {
-                    "ticker": "IRDM",
-                    "issuer": {"ticker": "IRDM", "company_name": "Iridium Communications"},
-                    "materiality": {
-                        "comparison_state": "not_comparable",
-                        "reason_code": "exact_issuer_attributed_denominator_not_available",
-                        "issuer_attributed_denominator": None,
-                        "materiality_ratio": None,
-                    },
-                }
-            ]
-        ),
-    }
-
-
 # ---------------------------------------------------------------------------
 # Node harness
 # ---------------------------------------------------------------------------
 
 
-def _bridge_node_script(body: str, *, events: list[dict] | None = None) -> str:
+def _bridge_node_script(body: str) -> str:
     dossier_js = DOSSIER_JS_PATH.read_text(encoding="utf-8")
-    events = events if events is not None else [GOV_EVENT]
     scaffold = """
         var window = globalThis;
         var LANG = 'en';
-        var EVENTS = __EVENTS__;
+        var document = { documentElement: { getAttribute: function(name){
+          return name === 'data-lang' ? LANG : 'en';
+        } } };
+        var location = { href: 'https://example.test/government_revenue.html' };
+        var GOV_EVENT = __GOV_EVENT__;
         var fetchCalls = [];
         var FIXTURES = {
-          company: null, companyStatus: 200, companyReject: false,
-          candidates: null, candidatesStatus: 200, candidatesReject: false
+          company: null, companyStatus: 200, companyReject: false, companyHang: false
         };
         window.fetch = function(url){
           fetchCalls.push(url);
           if (url.indexOf('/api/company-intelligence/') === 0) {
+            if (FIXTURES.companyHang) return new Promise(function(){});
             if (FIXTURES.companyReject) return Promise.reject(new Error('network'));
             var s = FIXTURES.companyStatus;
             return Promise.resolve({ok: s >= 200 && s < 300, status: s,
               json: function(){ return Promise.resolve(FIXTURES.company); }});
           }
-          if (url.indexOf('government-revenue-data/candidates.json') === 0) {
-            if (FIXTURES.candidatesReject) return Promise.reject(new Error('network'));
-            var cs = FIXTURES.candidatesStatus;
-            return Promise.resolve({ok: cs >= 200 && cs < 300, status: cs,
-              json: function(){ return Promise.resolve(FIXTURES.candidates); }});
-          }
           return Promise.reject(new Error('unexpected_url:' + url));
         };
+        __REAL_HELPERS__
         __DOSSIER_JS__
-        function obj(x){ return !!x && typeof x === 'object' && !Array.isArray(x); }
-        function arr(x){ return Array.isArray(x) ? x : []; }
-        function esc(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){
-          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-        function text(x, fb){ return x == null || x === '' ? (fb == null ? '\\u2014' : fb) : String(x); }
-        function n(x){ if (x == null || x === '' || typeof x === 'boolean') return null;
-          var v = Number(x); return Number.isFinite(v) ? v : null; }
-        function date(x){ return String(x || '\\u2014').slice(0, 10); }
-        function tr(en, cn){ return LANG === 'zh' ? cn : en; }
-        function safeUrl(x){ try { var u = new URL(String(x || ''), 'https://example.invalid/');
-          return u.protocol === 'https:' ? u.href : ''; } catch (e) { return ''; } }
-        function factCell(labelCopy, value){ return '<div class="fact-cell"><span>' + esc(labelCopy) +
-          '</span><b>' + esc(value == null || value === '' ? '\\u2014' : value) + '</b></div>'; }
         function host(){ return {innerHTML: '', hidden: false}; }
-        function mount(evts){
+        function mount(opts){
+          opts = opts || {};
           var h = host();
-          var ui = window.createGovernmentRevenueCompanyBridge({
+          var events = opts.events !== undefined ? opts.events : [GOV_EVENT];
+          var ready = opts.workspaceComplete !== undefined ? opts.workspaceComplete : true;
+          var api = {
             obj: obj, arr: arr, esc: esc, text: text, n: n, date: date, tr: tr, safeUrl: safeUrl,
             factCell: factCell, host: function(){ return h; },
-            workspaceEvents: function(){ return evts || EVENTS; }
-          });
+            workspaceEvents: function(){ return events; },
+            workspaceComplete: function(){ return ready; }
+          };
+          if (opts.timeoutMs !== undefined) api.companyFetchTimeoutMs = opts.timeoutMs;
+          var ui = window.createGovernmentRevenueCompanyBridge(api);
           return {host: h, ui: ui};
         }
         __BODY__
     """
     return (
         textwrap.dedent(scaffold)
-        .replace("__EVENTS__", json.dumps(events))
+        .replace("__GOV_EVENT__", json.dumps(GOV_EVENT))
+        .replace("__REAL_HELPERS__", REAL_HELPERS_JS)
         .replace("__DOSSIER_JS__", dossier_js)
         .replace("__BODY__", textwrap.dedent(body))
     )
 
 
-def _run_bridge(tmp_path: Path, name: str, body: str, *, events: list[dict] | None = None) -> dict:
+def _run_bridge(tmp_path: Path, name: str, body: str) -> dict:
     path = tmp_path / name
-    path.write_text(_bridge_node_script(body, events=events), encoding="utf-8")
+    path.write_text(_bridge_node_script(body), encoding="utf-8")
     result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr or result.stdout
     assert result.stdout.strip(), result.stderr
@@ -205,8 +202,9 @@ def _run_bridge(tmp_path: Path, name: str, body: str, *, events: list[dict] | No
 
 def _gov_block(html: str) -> str:
     """Isolate the Government Fact sub-block: from the top of the module's
-    innerHTML up to (not including) the second `.atlas-sub` label div, which
-    is always the Company Truth header."""
+    innerHTML up to (not including) the second `.inspect-label` header div,
+    which is always the Company Truth header (the module's own render()
+    emits exactly four `.inspect-label` headers in a fixed order)."""
     first = html.index('<div class="inspect-label">')
     second = html.index('<div class="inspect-label">', first + 1)
     return html[:second]
@@ -226,19 +224,17 @@ def _comparison_block(html: str) -> str:
 @needs_node
 def test_t1_government_block_is_byte_identical_across_packet_variation(tmp_path: Path) -> None:
     variants = [
-        ("company_ok", "FIXTURES.company = __PACKET_OK__; FIXTURES.candidates = __CANDIDATES__;"),
+        ("company_ok", f"FIXTURES.company = {json.dumps(_company_packet())};"),
         ("company_absent", "FIXTURES.companyStatus = 404;"),
         (
             "company_mutated",
-            "FIXTURES.company = Object.assign({}, __PACKET_OK__, {generated_at: '2099-01-01T00:00:00Z'});"
-            "FIXTURES.candidates = __CANDIDATES__;",
+            "FIXTURES.company = "
+            + json.dumps(_company_packet(generated_at="2099-01-01T00:00:00Z"))
+            + ";",
         ),
     ]
     blocks = {}
     for tag, setup in variants:
-        setup = setup.replace("__PACKET_OK__", json.dumps(_company_packet())).replace(
-            "__CANDIDATES__", json.dumps(_candidates_payload())
-        )
         body = f"""
             {setup}
             var m = mount();
@@ -257,13 +253,13 @@ def test_t1_government_block_is_byte_identical_across_packet_variation(tmp_path:
     assert "HC101319C0006" in gov_html
     assert "P00032" in gov_html
     assert "$18,416,666.66" in gov_html
-    assert "2026-05-12" in gov_html  # took effect
-    assert "2026-08-12" in gov_html  # first known to Mastermind
-    assert 'class="truth late"' in gov_html  # is_late_discovery === true on the committed event
+    assert "May 12, 2026" in gov_html  # took effect, REAL date() formatting
+    assert "Aug 12, 2026" in gov_html  # first known to Mastermind
+    assert 'class="truth late"' in gov_html  # is_late_discovery === true on the fixture
 
 
 # ---------------------------------------------------------------------------
-# T2 -- label law
+# T2 -- label law (now includes "sales" per gate 2, R8)
 # ---------------------------------------------------------------------------
 
 
@@ -273,7 +269,6 @@ def test_t2_label_law_en_and_zh(tmp_path: Path) -> None:
         body = f"""
             LANG = {json.dumps(lang)};
             FIXTURES.company = {json.dumps(_company_packet())};
-            FIXTURES.candidates = {json.dumps(_candidates_payload())};
             var m = mount();
             m.ui.loadCompany('IRDM');
             setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -282,7 +277,6 @@ def test_t2_label_law_en_and_zh(tmp_path: Path) -> None:
         gov_html = _gov_block(out["html"]).lower()
         for word in banned:
             assert word.lower() not in gov_html, (lang, word, gov_html)
-        # The one permitted label is present in the government block.
         assert ("obligation" in gov_html if lang == "en" else "拨款义务" in gov_html)
 
 
@@ -297,7 +291,6 @@ def test_t3_revenue_facts_present_still_yield_not_comparable_with_no_ratio_node(
     packet["latest_event"]["positive_highlights"][0] = "Government services revenue grew 12% year over year."
     body = f"""
         FIXTURES.company = {json.dumps(packet)};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -322,7 +315,6 @@ def test_t4_backlog_highlight_is_verbatim_commentary_with_zero_attribution(tmp_p
     packet["latest_event"]["field_lineage"]["negative_highlights"][0] = "earnings_history"
     body = f"""
         FIXTURES.company = {json.dumps(packet)};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -356,7 +348,6 @@ def test_t5_unavailable_typing_renders_the_honest_state_not_zero_not_a_forever_s
     setup = setup.replace("__PACKET__", json.dumps(_company_packet()))
     body = f"""
         {setup}
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -377,7 +368,6 @@ def test_t5_unavailable_typing_renders_the_honest_state_not_zero_not_a_forever_s
 def test_t6_no_estimate_vocabulary_anywhere_in_the_section(tmp_path: Path) -> None:
     body = f"""
         FIXTURES.company = {json.dumps(_company_packet())};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -387,7 +377,9 @@ def test_t6_no_estimate_vocabulary_anywhere_in_the_section(tmp_path: Path) -> No
 
 
 # ---------------------------------------------------------------------------
-# T7 -- restatement
+# T7 -- restatement (R7: memoized per ticker, so restatement lands on the
+# NEXT fresh open, after invalidate() -- not on every re-selection of an
+# already-open panel; see R7 in the module's loadCompanyPacket() comment).
 # ---------------------------------------------------------------------------
 
 
@@ -398,13 +390,12 @@ def test_t7_restatement_updates_company_block_keeps_government_block_identical(t
     packet_b = _company_packet(generated_at="2026-08-20T06:52:58Z")
     packet_b["latest_event"]["call_date"] = "2026-04-23"
     body = f"""
-        var candidates = {json.dumps(_candidates_payload())};
-        FIXTURES.candidates = candidates;
         var m = mount();
         FIXTURES.company = {json.dumps(packet_a)};
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{
           var first = m.host.innerHTML;
+          m.ui.invalidate();
           FIXTURES.company = {json.dumps(packet_b)};
           m.ui.loadCompany('IRDM');
           setTimeout(function(){{
@@ -416,21 +407,21 @@ def test_t7_restatement_updates_company_block_keeps_government_block_identical(t
     out = _run_bridge(tmp_path, "t7.js", body)
     first_gov, second_gov = _gov_block(out["first"]), _gov_block(out["second"])
     assert first_gov == second_gov
-    assert "2026-01-15" in out["first"]
-    assert "2026-04-23" in out["second"]
+    assert "Jan 15, 2026" in out["first"]
+    assert "Apr 23, 2026" in out["second"]
     assert out["first"] != out["second"]
 
 
 # ---------------------------------------------------------------------------
-# T8 -- no wire parsing, single-endpoint allowlist
+# T8 -- no wire parsing, single-endpoint allowlist (amended: candidates
+# artifact is now NEVER requested -- comparison is fixed closed-state copy).
 # ---------------------------------------------------------------------------
 
 
 @needs_node
-def test_t8_fetch_targets_are_only_company_intelligence_and_candidates_artifact(tmp_path: Path) -> None:
+def test_t8_only_fetch_target_is_company_intelligence_candidates_never_requested(tmp_path: Path) -> None:
     body = f"""
         FIXTURES.company = {json.dumps(_company_packet())};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{calls: fetchCalls}})); }}, 40);
@@ -441,10 +432,9 @@ def test_t8_fetch_targets_are_only_company_intelligence_and_candidates_artifact(
     for url in calls:
         assert "irdm-2026q1-call-record" not in url
         assert "stocks/earnings" not in url
-        allowed = url.startswith("/api/company-intelligence/") or url.startswith(
-            "government-revenue-data/candidates.json"
-        )
-        assert allowed, url
+        assert "candidates.json" not in url
+        assert "government-revenue-candidate" not in url
+        assert url.startswith("/api/company-intelligence/"), url
 
 
 # ---------------------------------------------------------------------------
@@ -455,7 +445,6 @@ def test_t8_fetch_targets_are_only_company_intelligence_and_candidates_artifact(
 @needs_node
 def test_t9_non_irdm_company_renders_no_bridge_section_and_fetches_nothing(tmp_path: Path) -> None:
     body = """
-        FIXTURES.company = null;
         var m = mount();
         m.ui.loadCompany('LMT');
         setTimeout(function(){
@@ -472,7 +461,6 @@ def test_t9_non_irdm_company_renders_no_bridge_section_and_fetches_nothing(tmp_p
 def test_t9_irdm_selection_unhides_the_host(tmp_path: Path) -> None:
     body = f"""
         FIXTURES.company = {json.dumps(_company_packet())};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{hidden: m.host.hidden}})); }}, 40);
@@ -490,7 +478,6 @@ def test_t9_irdm_selection_unhides_the_host(tmp_path: Path) -> None:
 def test_t10_score_overlay_lineage_fields_never_render(tmp_path: Path) -> None:
     body = f"""
         FIXTURES.company = {json.dumps(_company_packet())};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -510,7 +497,6 @@ def test_t10_revenue_growth_with_score_overlay_lineage_is_excluded(tmp_path: Pat
     packet["latest_event"]["field_lineage"]["metrics"]["revenue_growth_pct"] = "score_overlay"
     body = f"""
         FIXTURES.company = {json.dumps(packet)};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -520,43 +506,235 @@ def test_t10_revenue_growth_with_score_overlay_lineage_is_excluded(tmp_path: Pat
 
 
 # ---------------------------------------------------------------------------
-# Additional gate coverage (§0 gates not carved into their own T-number)
+# R2 -- bounded timeout, never an eternal spinner
 # ---------------------------------------------------------------------------
 
 
 @needs_node
-def test_comparison_copy_is_fixed_regardless_of_candidate_reachability(tmp_path: Path) -> None:
-    """§0 gate 3: 'if unreachable (gated/absent) fail closed to the same copy.'"""
-    variants = {
-        "reachable": json.dumps(_candidates_payload()),
-        "absent": "null",
-        "wrong_ticker": json.dumps(_candidates_payload(candidates=[{"ticker": "LMT", "materiality": {}}])),
-    }
-    outputs = {}
-    for tag, candidates_js in variants.items():
-        reject = "FIXTURES.candidatesStatus = 404;" if tag == "absent" else f"FIXTURES.candidates = {candidates_js};"
-        body = f"""
-            FIXTURES.company = {json.dumps(_company_packet())};
-            {reject}
-            var m = mount();
-            m.ui.loadCompany('IRDM');
-            setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
-        """
-        out = _run_bridge(tmp_path, f"comparison_{tag}.js", body)
-        outputs[tag] = _comparison_block(out["html"])
-        assert "not comparable" in outputs[tag].lower() or "不可比" in outputs[tag]
+def test_r2_hung_fetch_resolves_to_unavailable_via_the_bounded_timeout(tmp_path: Path) -> None:
+    body = """
+        FIXTURES.companyHang = true;
+        var m = mount({timeoutMs: 20});
+        m.ui.loadCompany('IRDM');
+        setTimeout(function(){
+          process.stdout.write(JSON.stringify({html: m.host.innerHTML}));
+        }, 200);
+    """
+    out = _run_bridge(tmp_path, "r2_hung.js", body)
+    html = out["html"]
+    assert "Company packet unavailable" in html
+    assert "aria-busy" not in html
 
-    # The primary sentence (first <p>) is identical no matter what the
-    # candidate artifact says -- only an optional trailing note may vary.
-    first_paras = {tag: re.search(r"<p[^>]*>.*?</p>", html, re.S).group(0) for tag, html in outputs.items()}
-    assert len(set(first_paras.values())) == 1, first_paras
+
+# ---------------------------------------------------------------------------
+# R4 -- correct receipt: the action's own transaction record, not the award
+# snapshot (matched by content_sha256 against award_change.source_identity).
+# ---------------------------------------------------------------------------
 
 
 @needs_node
-def test_no_zero_no_forever_spinner_on_committed_event_happy_path(tmp_path: Path) -> None:
+def test_r4_receipt_link_is_the_actions_own_transaction_receipt_not_the_award_snapshot(
+    tmp_path: Path,
+) -> None:
+    want_sha = GOV_EVENT["award_change"]["source_identity"]["content_sha256"]
+    want_receipt = next(r for r in GOV_EVENT["evidence"]["receipts"] if r["content_sha256"] == want_sha)
+    other_receipt_urls = [
+        r["url"] for r in GOV_EVENT["evidence"]["receipts"] if r["content_sha256"] != want_sha
+    ]
+    assert other_receipt_urls, "fixture must carry a decoy (award-snapshot) receipt to prove selectivity"
+
     body = f"""
         FIXTURES.company = {json.dumps(_company_packet())};
-        FIXTURES.candidates = {json.dumps(_candidates_payload())};
+        var m = mount();
+        m.ui.loadCompany('IRDM');
+        setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
+    """
+    out = _run_bridge(tmp_path, "r4.js", body)
+    gov_html = _gov_block(out["html"])
+    assert f'href="{want_receipt["url"]}"' in gov_html
+    for other_url in other_receipt_urls:
+        assert f'href="{other_url}"' not in gov_html
+
+
+# ---------------------------------------------------------------------------
+# R5 -- hydration-aware government fact state (loading vs genuinely absent)
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r5_events_empty_and_not_hydrated_shows_loading_not_unavailable(tmp_path: Path) -> None:
+    body = """
+        var m = mount({events: [], workspaceComplete: false});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({html: m.host.innerHTML}));
+    """
+    out = _run_bridge(tmp_path, "r5_loading.js", body)
+    gov_html = _gov_block(out["html"])
+    assert "aria-busy" in gov_html
+    assert "Government fact unavailable" not in gov_html
+
+
+@needs_node
+def test_r5_events_empty_and_hydrated_shows_unavailable_not_a_spinner(tmp_path: Path) -> None:
+    body = """
+        var m = mount({events: [], workspaceComplete: true});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({html: m.host.innerHTML}));
+    """
+    out = _run_bridge(tmp_path, "r5_unavailable.js", body)
+    gov_html = _gov_block(out["html"])
+    assert "Government fact unavailable" in gov_html
+    assert "aria-busy" not in gov_html
+
+
+# ---------------------------------------------------------------------------
+# R7 -- memoization: repeated selections don't refetch; invalidate() + a
+# fresh selection retries (and picks up a restatement, see T7 above).
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r7_repeated_selection_of_the_same_ticker_does_not_refetch(tmp_path: Path) -> None:
+    body = f"""
+        FIXTURES.company = {json.dumps(_company_packet())};
+        var m = mount();
+        m.ui.loadCompany('IRDM');
+        setTimeout(function(){{
+          var callsAfterFirst = fetchCalls.length;
+          m.ui.loadCompany('IRDM');
+          m.ui.loadCompany('IRDM');
+          setTimeout(function(){{
+            process.stdout.write(JSON.stringify({{callsAfterFirst: callsAfterFirst, callsAfterRepeats: fetchCalls.length}}));
+          }}, 20);
+        }}, 40);
+    """
+    out = _run_bridge(tmp_path, "r7_memo.js", body)
+    assert out["callsAfterFirst"] == 1
+    assert out["callsAfterRepeats"] == 1
+
+
+@needs_node
+def test_r7_unavailable_result_is_not_cached_and_retries_on_a_fresh_selection(tmp_path: Path) -> None:
+    body = f"""
+        FIXTURES.companyStatus = 404;
+        var m = mount();
+        m.ui.loadCompany('IRDM');
+        setTimeout(function(){{
+          var firstHtml = m.host.innerHTML;
+          m.ui.invalidate();
+          FIXTURES.companyStatus = 200;
+          FIXTURES.company = {json.dumps(_company_packet())};
+          m.ui.loadCompany('IRDM');
+          setTimeout(function(){{
+            process.stdout.write(JSON.stringify({{firstHtml: firstHtml, secondHtml: m.host.innerHTML, calls: fetchCalls.length}}));
+          }}, 40);
+        }}, 40);
+    """
+    out = _run_bridge(tmp_path, "r7_retry.js", body)
+    assert "Company packet unavailable" in out["firstHtml"]
+    assert "Company packet unavailable" not in out["secondHtml"]
+    assert out["calls"] == 2
+
+
+# ---------------------------------------------------------------------------
+# R9 -- null/non-numeric growth is SKIPPED, never a "—" value claim
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r9_null_revenue_growth_skips_the_metric_row_entirely(tmp_path: Path) -> None:
+    packet = _company_packet()
+    packet["latest_event"]["metrics"]["revenue_growth_pct"] = None
+    body = f"""
+        FIXTURES.company = {json.dumps(packet)};
+        var m = mount();
+        m.ui.loadCompany('IRDM');
+        setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
+    """
+    out = _run_bridge(tmp_path, "r9.js", body)
+    assert "Revenue growth" not in out["html"]
+    assert "收入增长" not in out["html"]
+
+
+# ---------------------------------------------------------------------------
+# R10 -- ticker-constrained match, latest known_at wins on multiple matches
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r10_event_matching_piid_and_mod_but_wrong_ticker_is_excluded(tmp_path: Path) -> None:
+    decoy = copy.deepcopy(GOV_EVENT)
+    decoy["listed_company_impacts"] = [{"ticker": "LMT"}]
+    decoy["primary_ticker"] = "LMT"
+    decoy["tickers"] = ["LMT"]
+    body = f"""
+        var m = mount({{events: [{json.dumps(decoy)}], workspaceComplete: true}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r10_wrong_ticker.js", body)
+    gov_html = _gov_block(out["html"])
+    assert "Government fact unavailable" in gov_html
+    assert "$18,416,666.66" not in gov_html
+
+
+@needs_node
+def test_r10_multiple_matches_prefer_the_latest_known_at(tmp_path: Path) -> None:
+    older = copy.deepcopy(GOV_EVENT)
+    older["change"]["known_at"] = "2026-08-01T00:00:00+00:00"
+    older["amounts"][0]["value"] = 1111111.11
+
+    newer = copy.deepcopy(GOV_EVENT)
+    newer["change"]["known_at"] = "2026-08-15T00:00:00+00:00"
+    newer["amounts"][0]["value"] = 2222222.22
+
+    body = f"""
+        var m = mount({{events: [{json.dumps(older)}, {json.dumps(newer)}], workspaceComplete: true}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r10_latest.js", body)
+    gov_html = _gov_block(out["html"])
+    assert "$2,222,222.22" in gov_html
+    assert "$1,111,111.11" not in gov_html
+
+
+# ---------------------------------------------------------------------------
+# R12 -- non-rounding, comma-grouped display (verbatim fractional digits)
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_r12_obligation_display_never_rounds_extra_precision(tmp_path: Path) -> None:
+    mutated = copy.deepcopy(GOV_EVENT)
+    mutated["amounts"][0]["value"] = 18416666.659999967
+    body = f"""
+        var m = mount({{events: [{json.dumps(mutated)}]}});
+        m.ui.loadCompany('IRDM');
+        process.stdout.write(JSON.stringify({{html: m.host.innerHTML}}));
+    """
+    out = _run_bridge(tmp_path, "r12.js", body)
+    gov_html = _gov_block(out["html"])
+    # toFixed(2) would round this to $18,416,666.66, silently discarding the
+    # extra precision the source number actually carries (Node's own
+    # String(18416666.659999967) === "18416666.659999967", verified above
+    # this module's docstring claims). The non-rounding formatter must show
+    # that full value, comma-grouped, verbatim -- never the rounded one.
+    assert "$18,416,666.659999967" in gov_html, gov_html
+    assert "$18,416,666.66<" not in gov_html
+    assert "$18,416,666.66 " not in gov_html
+
+
+# ---------------------------------------------------------------------------
+# R13 note: _gov_block()/_comparison_block() above already slice on the REAL
+# `.inspect-label` sub-block headers (not a stray `.atlas-sub` reference).
+# ---------------------------------------------------------------------------
+
+
+@needs_node
+def test_no_zero_no_forever_spinner_on_committed_fixture_happy_path(tmp_path: Path) -> None:
+    body = f"""
+        FIXTURES.company = {json.dumps(_company_packet())};
         var m = mount();
         m.ui.loadCompany('IRDM');
         setTimeout(function(){{ process.stdout.write(JSON.stringify({{html: m.host.innerHTML}})); }}, 40);
@@ -567,3 +745,19 @@ def test_no_zero_no_forever_spinner_on_committed_event_happy_path(tmp_path: Path
     assert "Company packet unavailable" not in html
     assert "Wording verification pending" in html or "措辞核验中" in html
     assert "transcript: present" in html.lower()
+
+
+def test_no_moving_data_dependence() -> None:
+    """gate:code law: this suite must never READ live/nightly-rewritten trees.
+
+    Checks actual Path()/open()-style construction sites, not prose (this
+    module's own docstrings and comments legitimately explain, by name, the
+    live trees it deliberately avoids reading).
+    """
+    source = Path(__file__).read_text(encoding="utf-8")
+    for banned in (
+        r'ROOT\s*/\s*"site"\s*/\s*"government-revenue-data"',
+        r'ROOT\s*/\s*"data"\s*/\s*"government_revenue"',
+    ):
+        assert not re.search(banned, source), banned
+    assert FIXTURE_PATH == ROOT / "tests" / "fixtures" / "govrev_company_bridge" / "p00032_event.json"

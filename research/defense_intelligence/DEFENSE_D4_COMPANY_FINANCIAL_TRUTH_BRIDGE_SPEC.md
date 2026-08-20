@@ -113,11 +113,16 @@ Classification: **A on the v1 context plane, with the richer packet absent.**
   within events carrying ticker IRDM; fields: amount, effective_at,
   known_at/first_seen_at, is_late_discovery, official source URL). Reuses
   D3's clock vocabulary (Took effect / First known to Mastermind).
-- Comparison block: the IRDM candidate's `materiality` object from the
-  already-published candidate artifacts (`comparison_state`, `reason_code`,
-  `issuer_attributed_denominator`, `materiality_ratio`) — producer-asserted;
-  UI performs no computation. Candidate missing → render the default
-  not-comparable copy (fail closed).
+- Comparison block: FIXED closed-state copy (adversarial-review amendment
+  2026-08-20). The producer's candidate `materiality` record
+  (`comparison_state: not_comparable`,
+  `reason_code: exact_issuer_attributed_denominator_not_available`) is the
+  recorded truth this copy mirrors, but the UI does NOT fetch the candidates
+  artifact for it — the comparison verdict is closed by law this wave, a
+  dynamic open state would require an owner-reviewed denominator-admission
+  path that does not exist, and fetching a ~434 KiB artifact for one
+  sentence violates gate 7's single-endpoint law. A future authorized wave
+  may wire dynamic comparison state only together with that admission path.
 - Company block: `GET /api/company-intelligence/IRDM` at view time.
 - Research question block: static bilingual copy — watch the next company
   print / owner packet for a lawful transmission bridge; windows, not
@@ -138,8 +143,8 @@ Identity Atlas + Award history, before Cross-links. Four sub-blocks:
 2. **COMPANY TRUTH / 公司披露** — owner packet facts per §0 gate 4, or the
    explicit unavailable state.
 3. **COMPARISON / 可比性** — "Not comparable — no issuer-attributed
-   denominator has been asserted" (不可比 — 尚无发行人归属的分母) from the
-   candidate materiality block; ratio row absent (not "0", not "—" as a
+   denominator has been asserted" (不可比 — 尚无发行人归属的分母) as fixed
+   closed-state copy (see §2); ratio row absent (not "0", not "—" as a
    value claim).
 4. **RESEARCH QUESTION / 研究问题** — static watch copy.
 
@@ -164,16 +169,23 @@ harness precedent). Hostile families:
 - T6 estimates null: no estimate vocabulary anywhere in the section.
 - T7 restatement: packet A then packet B (later generated_at) → company
   block updates, government block bytes identical.
-- T8 no-wire-parsing + single-endpoint: the bridge module's fetch targets
-  are exactly `/api/company-intelligence/…`; `irdm-2026q1-call-record` never
-  requested (harness records all fetch URLs).
+- T8 no-wire-parsing + single-endpoint: the bridge module's ONLY fetch
+  target is `/api/company-intelligence/…`; `irdm-2026q1-call-record` and the
+  candidates artifact are never requested (harness records all fetch URLs).
 - T9 IRDM-only: a non-IRDM company inspector renders no bridge section.
 - T10 lineage filter: a field whose lineage is `score_overlay` is not
   rendered even when present.
 
-CI wiring: add the suite to a `run:` step in `.github/ci/legacy-jobs.yml`
-AND `.github/workflows/ci.yml` paths (contract-delta law). Template edits
-require the byte-matching `site/` twin in the same PR
+CI wiring (adversarial-review amendment 2026-08-20): the suite must be
+MERGE-BINDING, which means a `gate: code` home — the govrev family job
+`unrun-government-revenue` is `if: false` + `gate: data` (advisory
+data-health lane only) and may not house D4's law gates. To be safe in
+`gate: code` the suite must carry ZERO moving-data dependence: the P00032
+exemplar event is frozen as a committed test fixture
+(`tests/fixtures/govrev_company_bridge/`), never read from the
+nightly-rewritten `site/government-revenue-data/` artifacts. Also add the
+suite to `.github/workflows/ci.yml` paths (contract-delta law). Template
+edits require the byte-matching `site/` twin in the same PR
 (`python -m scripts.check_template_site_sync --fix`).
 
 ## §5 Non-changes

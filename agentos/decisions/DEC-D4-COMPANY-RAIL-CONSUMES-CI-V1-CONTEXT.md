@@ -77,6 +77,17 @@ decided_by: coo-fable
 decided_at: 2026-08-20
 ---
 
+## Comparison stays static-closed this wave (review amendment 2026-08-20)
+
+The opus adversarial review caught the first cut fetching the ~434 KiB
+candidates artifact per selection to decorate a verdict that is closed by
+law. Ruling: the COMPARISON block renders fixed closed-state copy mirroring
+the producer's recorded materiality
+(exact_issuer_attributed_denominator_not_available); the bridge's only
+network read is /api/company-intelligence/{ticker}. Dynamic comparison
+state may only arrive together with an owner-reviewed denominator-admission
+path in a future authorized wave.
+
 ## Auto-upgrade path (recorded, not built)
 
 If the earnings owner later publishes an IRDM event_workspace.v1 generation,
