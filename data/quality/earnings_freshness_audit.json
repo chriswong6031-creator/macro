@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-08-19T15:10:38.741923+00:00",
+  "as_of": "2026-08-20T01:42:25.565599+00:00",
   "ok": false,
   "fail_reasons": [],
   "warnings": [
     "earnings store COVERAGE stale: only 241 of 1989 rows (12.1%) carry an as_of within the 2 td SLA (floor=50%) \u2014 the store-level as_of looks fresh because a few rows were refreshed while the rest are frozen; check that the collector is sweeping the whole universe, not a named-ticker subset"
   ],
   "errors": [
-    "earnings store stale AT SCALE: only 241 of 1989 names reporting within the sweep window (12.1%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-08-19) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
+    "earnings store stale AT SCALE: only 241 of 1989 names reporting within the sweep window (12.1%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-08-20) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
   ],
   "detail": {
-    "today_utc": "2026-08-19",
-    "store_path": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/earnings/earnings.parquet",
+    "today_utc": "2026-08-20",
+    "store_path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/earnings/earnings.parquet",
     "store_present": true,
-    "as_of_str": "2026-08-19T15:10:10.943140+00:00",
+    "as_of_str": "2026-08-20T01:42:24.634649+00:00",
     "as_of_age_td": 0,
     "ticker_count": 1989,
     "with_next_date": 1989,
