@@ -1,0 +1,46 @@
+name: Debug Turn 5 AgentOS validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "agentos/**"
+      - "research/dislocation_intelligence/**"
+      - ".github/workflows/debug-agentos-turn5.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            agentos
+            scripts/agentos.py
+            config/mastermind_programs.yml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check pyyaml
+      - name: Print exact validator output
+        run: |
+          set +e
+          python scripts/agentos.py validate --root agentos 2>&1 | tee agentos-validate.log
+          rc=${PIPESTATUS[0]}
+          echo "VALIDATOR_RC=$rc"
+          exit $rc
+      - name: Upload validator output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turn5-agentos-validator-output
+          path: agentos-validate.log
+          if-no-files-found: error
+          retention-days: 2
