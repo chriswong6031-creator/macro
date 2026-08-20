@@ -539,6 +539,174 @@
     return{loadCompany:loadCompany,invalidate:function(){epoch++;ticker=''},state:function(){return loadState}};
   };
 
+  /* D4 — Company Financial Truth Bridge (IRDM only, frozen golden constant).
+   * Puts the reviewed P00032 government fact beside the canonical earnings
+   * owner's v1 context packet, read-only, so a reader can separately answer
+   * what-the-government-recorded vs what-the-company-reports. Government
+   * facts come from the already-loaded workspace events (api.workspaceEvents)
+   * -- no new fetch -- and stay byte-identical across every company-packet
+   * variation. Comparison is a frozen `not_comparable` sentence: this wave
+   * never renders a ratio node on any input (DEC:D4-COMPANY-RAIL-CONSUMES-CI-V1-CONTEXT). */
+  global.createGovernmentRevenueCompanyBridge=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,factCell=api.factCell,hostFor=api.host;
+    var workspaceEvents=typeof api.workspaceEvents==='function'?api.workspaceEvents:function(){return[]};
+    var IRDM='IRDM',AWARD_PIID='HC101319C0006',MOD_NUMBER='P00032',LINEAGE_OK='earnings_history',COMPANY_SCHEMA='company_intelligence_context.v1',CANDIDATES_PATH='government-revenue-data/candidates.json';
+    var epoch=0,ticker='',companyState='idle',companyPacket=null,comparisonNote=false;
+
+    function modNumber(award){
+      var actionId=text(award.action_id,''),piid=text(award.piid,'');
+      if(!actionId||!piid)return'';
+      var marker='_'+piid+'_',idx=actionId.indexOf(marker);
+      if(idx<0)return'';
+      var rest=actionId.slice(idx+marker.length).split('_');
+      return rest[0]||'';
+    }
+    function govEvent(){
+      return arr(workspaceEvents()).filter(obj).find(function(e){
+        var award=obj(e.award_change)?e.award_change:{};
+        return award.piid===AWARD_PIID&&modNumber(award)===MOD_NUMBER;
+      })||null;
+    }
+    function amountValue(event){
+      var rows=arr(event.amounts).filter(obj),row=rows.find(function(r){return r.id==='federal_action_obligation'})||rows[0];
+      return row?n(row.value):null;
+    }
+    /* Exact-cent display -- the reviewed obligation is never abbreviated to
+     * "$18.4M" the way money() would; §0 gate 1 requires the exact figure. */
+    function preciseMoney(v){
+      v=n(v);if(v==null)return'—';
+      var neg=v<0,fixed=Math.abs(v).toFixed(2),parts=fixed.split('.');
+      parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+      return(neg?'−':'')+'$'+parts.join('.');
+    }
+    function receiptUrl(event){
+      var rows=arr((event.evidence||{}).receipts).filter(obj),pick=rows.find(function(r){return/\/awards\//.test(text(r.url,''))})||rows[0];
+      return pick?safeUrl(pick.url):'';
+    }
+    function govFactHtml(){
+      var event=govEvent();
+      if(!event)return'<div class="dossier-empty">'+esc(tr('Government fact unavailable','政府事实不可用'))+'</div>';
+      var award=obj(event.award_change)?event.award_change:{},change=obj(event.change)?event.change:{},late=award.is_late_discovery===true,url=receiptUrl(event);
+      return(late?'<div class="atlas-chips"><span class="truth late">'+esc(tr('Late discovery','延迟发现'))+'</span></div>':'')+
+        '<div class="facts-grid">'+
+          factCell(tr('Award / PIID','授标 / PIID'),text(award.piid))+
+          factCell(tr('Modification','修订编号'),modNumber(award)||'—')+
+          factCell(tr('Obligation','拨款义务'),preciseMoney(amountValue(event)))+
+          factCell(tr('Took effect','生效'),date(change.effective_at))+
+          factCell(tr('First known to Mastermind','Mastermind 首次获知'),date(change.known_at))+
+        '</div>'+
+        (url?'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(tr('Open official receipt','打开官方凭证'))+'</b><span>↗</span></a>':'');
+    }
+
+    /* Company Truth -- read-only consumption of the canonical earnings owner's
+     * closed per-ticker packet. Only earnings_history-lineage fields render;
+     * score_overlay-lineage fields (e.g. summary) are never touched here. */
+    function fetchCompany(t){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      return global.fetch('/api/company-intelligence/'+encodeURIComponent(t),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
+        if(r.status!==200)throw new Error('http_'+r.status);
+        return r.json();
+      }).then(function(data){
+        if(!obj(data)||data.available!==true||data.schema!==COMPANY_SCHEMA)throw new Error('contract');
+        return data;
+      });
+    }
+    function highlightList(items,lineageArr,label){
+      items=arr(items);lineageArr=arr(lineageArr);
+      var kept=[];
+      for(var i=0;i<items.length&&kept.length<2;i++){
+        if(lineageArr[i]===LINEAGE_OK&&typeof items[i]==='string'&&items[i])kept.push(items[i]);
+      }
+      if(!kept.length)return'';
+      return'<div class="atlas-sub">'+esc(label)+'</div><ul class="atlas-open">'+kept.map(function(t){return'<li>'+esc(t)+'</li>'}).join('')+'</ul>';
+    }
+    function sourcesLine(latest){
+      var rows=arr(latest.sources).filter(obj);
+      if(!rows.length)return'';
+      return'<div class="limit-copy">'+esc(rows.map(function(s){return text(s.kind)+': '+text(s.status)}).join(' · '))+'</div>';
+    }
+    function companyHtml(){
+      if(companyState==='unavailable')return'<div class="dossier-empty">'+esc(tr('Company packet unavailable','公司数据包不可用'))+'</div>';
+      if(companyState!=='ok'||!obj(companyPacket))return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Loading company packet','正在加载公司数据包'))+'</b></span></div>';
+      var data=companyPacket,latest=obj(data.latest_event)?data.latest_event:{},lineage=obj(latest.field_lineage)?latest.field_lineage:{},metricsLineage=obj(lineage.metrics)?lineage.metrics:{},metrics=obj(latest.metrics)?latest.metrics:{};
+      var period=(latest.fiscal_year!=null?'FY'+text(latest.fiscal_year):'')+(latest.fiscal_quarter!=null?' Q'+text(latest.fiscal_quarter):'');
+      var rows=factCell(tr('Fiscal period','财报周期'),period||'—')+factCell(tr('Call date','电话会日期'),date(latest.call_date));
+      if(metricsLineage.revenue_growth_pct===LINEAGE_OK){
+        var g=n(metrics.revenue_growth_pct);
+        rows+=factCell(tr('Revenue growth (owner-reported)','收入增长（公司披露）'),g==null?'—':((g>0?'+':'')+g+'%'));
+      }
+      var html='<div class="facts-grid">'+rows+'</div>'+
+        highlightList(latest.positive_highlights,lineage.positive_highlights,tr('Positive highlights','正面亮点'))+
+        highlightList(latest.negative_highlights,lineage.negative_highlights,tr('Negative highlights','负面亮点'));
+      if(latest.claim_citations_pending===true)html+='<div class="limit-copy">'+esc(tr('Wording verification pending','措辞核验中'))+'</div>';
+      html+=sourcesLine(latest);
+      html+='<div class="atlas-asof">'+esc(tr('Company packet as of ','公司数据包截至 ')+date(data.generated_at))+'</div>';
+      return html;
+    }
+
+    /* Comparison -- reads the IRDM candidate's materiality object read-only,
+     * but the primary sentence never varies with it: no ratio node ever
+     * renders on any input (§0 gate 3). */
+    function fetchCandidates(){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      return global.fetch(CANDIDATES_PATH,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
+        if(!r.ok)throw new Error('http_'+r.status);
+        return r.json();
+      }).then(function(value){
+        if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1')throw new Error('contract');
+        return value;
+      });
+    }
+    function findIrdmCandidate(value){
+      var items=arr(value.candidates).length?arr(value.candidates):arr(value.items);
+      return items.filter(obj).find(function(c){
+        var issuer=obj(c.issuer)?c.issuer:{};
+        return text(c.ticker,'')===IRDM||text(issuer.ticker,'')===IRDM;
+      })||null;
+    }
+    function comparisonHtml(){
+      return'<p class="limit-copy">'+esc(tr('Not comparable — no issuer-attributed denominator has been asserted.','不可比 — 尚无发行人归属的分母。'))+'</p>'+
+        (comparisonNote?'<p class="limit-copy">'+esc(tr('The government-side materiality record confirms no issuer-attributed denominator exists yet.','政府侧重要性记录确认目前尚无发行人归属的分母。'))+'</p>':'');
+    }
+
+    function researchHtml(){
+      return'<p class="atlas-question">'+esc(tr('Watch the next company print or owner packet for a lawful transmission bridge — windows, not certainties, redrawn on each new record.','关注下一次公司财报或所有者数据包，寻找合规的传导桥梁——这些只是观察窗口，并非确定结论，随每份新记录重新绘制。'))+'</p>';
+    }
+
+    function render(){
+      var host=hostFor();if(!host)return;
+      if(ticker!==IRDM){host.hidden=true;host.innerHTML='';return}
+      host.hidden=false;
+      host.innerHTML=
+        '<div class="inspect-label">'+esc(tr('Government fact','政府事实'))+'</div>'+govFactHtml()+
+        '<div class="inspect-label">'+esc(tr('Company truth','公司披露'))+'</div>'+companyHtml()+
+        '<div class="inspect-label">'+esc(tr('Comparison','可比性'))+'</div>'+comparisonHtml()+
+        '<div class="inspect-label">'+esc(tr('Research question','研究问题'))+'</div>'+researchHtml();
+    }
+
+    function loadCompany(value){
+      var ticket=++epoch;ticker=text(value,'').toUpperCase();
+      if(!hostFor())return;
+      if(ticker!==IRDM){render();return}
+      companyState='loading';companyPacket=null;comparisonNote=false;render();
+      fetchCompany(ticker).then(function(data){
+        if(ticket!==epoch)return;
+        companyPacket=data;companyState='ok';render();
+      }).catch(function(){
+        if(ticket!==epoch)return;
+        companyPacket=null;companyState='unavailable';render();
+      });
+      fetchCandidates().then(function(value2){
+        if(ticket!==epoch)return;
+        var candidate=findIrdmCandidate(value2),materiality=candidate&&obj(candidate.materiality)?candidate.materiality:null;
+        comparisonNote=!!(materiality&&materiality.reason_code==='exact_issuer_attributed_denominator_not_available');
+        render();
+      }).catch(function(){});
+    }
+
+    return{loadCompany:loadCompany,invalidate:function(){epoch++;ticker='';companyState='idle';companyPacket=null;comparisonNote=false;var host=hostFor();if(host){host.hidden=true;host.innerHTML=''}}};
+  };
+
   global.createGovernmentRevenueBudget=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var contentId=null,detailEpoch=0,loadEpoch=0,detailCache={},loadState='loading',listing=null;

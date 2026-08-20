@@ -48,6 +48,7 @@ def _run_runtime(
     location_search: str = "",
     lang: str = "en",
     budget_module_status: str | None = None,
+    company_bridge_stub: bool = False,
 ) -> dict:
     """Run the page's real IIFE against a deliberately tiny browser DOM stub."""
     page_runtime = _page_runtime_js()
@@ -67,6 +68,8 @@ def _run_runtime(
         var LOCATION_SEARCH = %(location_search)s;
         var LANG = %(lang)s;
         var BUDGET_MODULE_STATUS = %(budget_module_status)s;
+        var COMPANY_BRIDGE_STUB = %(company_bridge_stub)s;
+        var bridgeCalls = [];
         var fetchCalls = 0;
         function makeElement(){
           var listeners = {};
@@ -111,6 +114,16 @@ def _run_runtime(
           load:function(){api.onRows([],{status:BUDGET_MODULE_STATUS});return Promise.resolve([])},
           refresh:function(){return[]}, render:function(){}, invalidate:function(){}, state:function(){return BUDGET_MODULE_STATUS}
         }};
+        // D4: optional stub recording every wiring call the page makes into the
+        // Company Financial Truth Bridge factory -- proves the call SITES
+        // (loadCompany/invalidate on selection changes) without re-testing the
+        // factory's own IRDM-only/lineage/comparison behavior, which the
+        // dedicated tests/test_government_revenue_company_bridge.py suite
+        // already pins against the shipped module.
+        if(COMPANY_BRIDGE_STUB)window.createGovernmentRevenueCompanyBridge=function(api){return {
+          loadCompany:function(t){bridgeCalls.push({op:'load', ticker:t})},
+          invalidate:function(){bridgeCalls.push({op:'invalidate'})}
+        }};
         var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:FETCH_STATUS >= 200 && FETCH_STATUS < 300,status:FETCH_STATUS,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
         function CustomEvent(name, init){this.type=name;this.detail=init&&init.detail}
         %(page_runtime)s
@@ -139,7 +152,8 @@ def _run_runtime(
               filmstripHtml:node('companyFilmstrip').innerHTML,
               agencyFilterHtml:node('agencyFilter').innerHTML,
               agencyNames:runtime.agencyNames(),
-              workspaceComplete:runtime.workspaceIsComplete(PAYLOAD.procurement_workspace)};
+              workspaceComplete:runtime.workspaceIsComplete(PAYLOAD.procurement_workspace),
+              bridgeCalls:bridgeCalls};
             LANG = 'zh';
             var langError = null;
             try { (docListeners['langchange']||[]).forEach(function(fn){fn({type:'langchange'})}); }
@@ -166,6 +180,7 @@ def _run_runtime(
         "location_search": json.dumps(location_search),
         "lang": json.dumps(lang),
         "budget_module_status": json.dumps(budget_module_status) if budget_module_status is not None else "null",
+        "company_bridge_stub": json.dumps(company_bridge_stub),
         "page_runtime": page_runtime,
     }
     path = tmp_path / "government_revenue_runtime.js"
@@ -1776,3 +1791,82 @@ def test_identity_atlas_never_states_a_trade_instruction() -> None:
     # The Atlas has no authority fields of its own and never mints a candidate.
     for banned in ("can_rank", "can_size", "can_gate", "grc1-", "candidate_ledger"):
         assert banned not in atlas_source, banned
+
+
+# --------------------------------------------------------------------------------------
+# D4 Company Financial Truth Bridge -- page-level wiring guards. The factory's own
+# IRDM-only / label-law / lineage-filter / no-ratio behavior is pinned against the
+# shipped module in tests/test_government_revenue_company_bridge.py; these tests pin
+# only that the page actually CALLS that factory at the right places.
+# --------------------------------------------------------------------------------------
+
+
+def test_company_bridge_ships_on_the_company_inspector() -> None:
+    for marker in (
+        "createGovernmentRevenueCompanyBridge",
+        'id="companyBridge"',
+        "companyBridgeSection()",
+    ):
+        assert marker in TEMPLATE, marker
+    # Exactly one host -- a second would race the first for the same ticker.
+    assert TEMPLATE.count('id="companyBridge"') == 1
+    # Hidden by default: a non-IRDM company inspector must never flash the section
+    # before the factory's own loadCompany() gate has a chance to hide it.
+    assert '<section class="inspect-section company-bridge" id="companyBridge" hidden>' in TEMPLATE
+    # Sibling of Identity Atlas + Award history inside the SAME company inspector
+    # branch, before the Evidence & limits close -- never a new page, new nav entry.
+    assert "identityAtlasSection()+dossierBookSection()+companyBridgeSection()" in TEMPLATE
+    assert TEMPLATE.count('{% include "_site_nav.html.j2" %}') == 1
+
+
+@needs_node
+def test_runtime_wires_the_company_bridge_on_selection_and_invalidates_elsewhere(
+    tmp_path: Path,
+) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "bundle_id": "grw2-" + "e" * 24,
+        "total": 0,
+        "next_cursor": None,
+        "events": [],
+        "coverage": {"events_visible": 0},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [
+            {"ticker": "IRDM", "name": "Iridium Communications"},
+            {"ticker": "LMT", "name": "Lockheed Martin"},
+        ],
+        "market": {},
+        "freshness": {"status": "ok", "opportunities": {"status": "unavailable"}},
+        "opportunity_intelligence": {
+            "market": {},
+            "opportunities": [],
+            "events": [],
+            "freshness": {"status": "unavailable", "records_visible": 0, "observed_at": None},
+        },
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        location_search="?mode=companies&item=company%3AIRDM",
+        company_bridge_stub=True,
+    )
+    assert {"op": "load", "ticker": "IRDM"} in out["bridgeCalls"]
+
+    out_other = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        location_search="?mode=companies&item=company%3ALMT",
+        company_bridge_stub=True,
+    )
+    # The page wires the SAME call for every ticker -- IRDM-only gating is the
+    # factory's own responsibility (pinned in test_government_revenue_company_bridge.py
+    # T9), not the page's.
+    assert {"op": "load", "ticker": "LMT"} in out_other["bridgeCalls"]
