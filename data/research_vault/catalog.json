@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T11:17:44.134791+00:00",
-  "count": 1472,
+  "generated_at": "2026-08-20T12:22:55.204652+00:00",
+  "count": 1476,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -99,6 +99,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yjqhxrdzpt7-4fe1ba",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T10:08:11Z",
+      "summary_points": [
+        "**10Y Yield Risk**: 10Y yield at 4.99% (vs 6.65% in 1990s) with >5.25% triggering historical sell signal (2007 context); bond volatility critical headwind over yields.",
+        "**Debt-Driven Earnings**: S&P 500 high-debt firms ($50bn+ debt) show 43% earnings growth vs 32% for mid-debt, signaling debt as growth catalyst but vulnerability to rate hikes.",
+        "**SPX Tech Dominance**: SPX Tech weighting surged to 37.8% (vs 15.2% in 2007Q2), replacing Financials (12.3%) and Energy (3.5%), reflecting structural growth shift.",
+        "**Student Loan Risk**: Student loans show 11.0% early delinquency (vs mortgages' 3.8%), highest among loan types, critical credit portfolio risk.",
+        "**Treasury Buyback Mechanics**: Treasury buybacks reallocate deficit \"air\" to front end via bill supply, supporting long-end yields without resolving fiscal deficit."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
       "language": "en",
       "needs_metadata": false
     },
@@ -219,6 +240,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bnxb8rkgv7q-0a24b1",
+      "title": "Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T08:32:53Z",
+      "summary_points": [
+        "**Treasury Buyback Expansion**: Surprise $4bn per operation (double prior size) triggered 2s30s slope decline (-8.5bps), 30yr yield drop (-9.2bps), and DXY weakness (-0.83%), signaling policy-driven long-end support amid financial repression risks.",
+        "**Cross-Asset Disruption**: Long-end Treasuries rallied (10yr yield 4.65%), gold surged 4.18% (largest gain since March), and dollar hit 3-month low as Treasury policy overrode FOMC hawkish bias.",
+        "**Policy Override of Fed Signals**: Treasury buyback offset weak hawkish FOMC minutes (\"many\" participants), reducing September hike odds (35%→32%) and December pricing (22bps), proving fiscal policy dominance over monetary signals.",
+        "**Critical Data & Geopolitics**: UK CPI (headline +2.9%) and Strait of Hormuz blockage amplified inflation fears (Brent crude $91.96/bbl), driving equity flows (healthcare gains vs.",
+        "chip drag) and commodity exposure shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -1770,6 +1812,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bkuqdrhdm2c-6a2226",
+      "title": "Silver",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:31:59Z",
+      "summary_points": [
+        "**Gold-Silver Ratio Outlook**: Limited upside (max 80.0 in 2027) due to no material economic downturn; high correlation (0.9) means silver closely tracks gold, with divergence rare.",
+        "**Structural Silver Drivers**: Persistent fiscal deficits, central bank purchases, and US dollar risks support silver; rate cuts (if USD weakens) could boost real asset demand.",
+        "**Silver Forecast & Key Risk**: 3Q27 forecast raised to $80/oz; 2027 deficit expected from investment demand.",
+        "Critical risk: monetary tightening (rate hikes) could push prices to $45/oz."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xtravguo3hi-b8816c",
       "title": "Daily Europe",
       "institution": "UBS",
@@ -1787,6 +1849,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b1ykuofvpiq-533b60",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:31:54Z",
+      "summary_points": [
+        "**AI Infrastructure Demand-Supply Imbalance**: Token-driven AI demand (training/inference) structural, with Big 3 DRAM capex down 22% (FY22-FY24) signaling capacity constraints; GPU/memory pricing power sustained by exponential model leaps vs.",
+        "slow supply chain adjustments.",
+        "**NVIDIA's Competitive Shift & Valuation**: Forward P/E at decade-low amid tight GPU supply, but inference workloads (agents) threaten moat; AMD's CPU server TAM forecast triples (Fig 5) due to enterprise agent demand, challenging NVIDIA's market share.",
+        "**Memory LTAs as Critical Hedge**: Long-term agreements (LTAs) provide downside protection during supply tightness (peaking 2027), with gross margins exceeding past cycle peaks (\"well above peak quarterly margins\").",
+        "**Cloud Revenue Acceleration from Token Demand**: Big 4 cloud revenue growing 48% y/y (2026) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },
