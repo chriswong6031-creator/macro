@@ -1943,7 +1943,17 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                     for e in (buys + watch + laggards + leaders + ran + vetoed)
                     if e.get("ticker")
                 }
-                _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read()}
+                # board_definition MUST come along (LEDGER-ERA track_ledger fence,
+                # 2026-08-20 review, BLOCKER-1): from_board_ledger_grade only fences
+                # rows/summary to the current era when the scorecard dict it is
+                # handed actually NAMES that era. _bt (board_ledger.grade("HK"),
+                # just computed above) already carries the same board_definition
+                # board_ledger.scorecard("HK") would derive — reuse it rather than
+                # a second scorecard() call, so hk_track_ledger.json's row table
+                # gets the same era fence the HK summary cards already have via
+                # _hk_track_record_vm() -> board_ledger.scorecard("HK") directly.
+                _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read(),
+                          "board_definition": _bt.get("board_definition")}
                 _hk_doc = _tl.from_board_ledger_grade(
                     "HK", _bt, _hk_sc,
                     bench={"code": "_HSI", "en": "Hang Seng", "zh": "恒生指数"},

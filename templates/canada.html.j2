@@ -2310,10 +2310,21 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {% set _ca_h21 = (trk.by_horizon or {})['21d'] if (trk.by_horizon and '21d' in trk.by_horizon) else none %}
   {% if trk.status == 'scored' and _ca_h21 and _ca_h21.hit_rate_21d is not none %}
     {% set _ca_state = 'scored' %}
+    {#- n_matured/n_resolved/n_calls MUST be the era-scoped denominator the win
+        rate was actually computed over (_ca_h21.n_buy — the buy-lane graded
+        count LEDGER-ERA's scorecard() scopes hit_rate_21d to), never
+        trk.n_graded (SURFACE COMPLETION, review 2026-08-20): trk.n_graded is
+        the WHOLE ledger's graded-row count across every group AND every era —
+        an all-era number that was one template edit away from publishing next
+        to an era-scoped rate. Before this fix n_matured was never set at all,
+        so the popup's "of {{ n_matured }} finished trades" caption
+        (_track_record_dlg.html.j2:503) silently rendered "of — finished
+        trades". -#}
     {% set _ca_stats = {
       'win_rate_pct': (_ca_h21.hit_rate_21d * 100)|round|int,
-      'avg_pct': none, 'n_resolved': trk.n_graded, 'n_up': none, 'n_stopped': none, 'n_flat': none,
-      'n_calls': trk.n_graded,
+      'avg_pct': none, 'n_matured': _ca_h21.n_buy,
+      'n_resolved': _ca_h21.n_buy, 'n_up': none, 'n_stopped': none, 'n_flat': none,
+      'n_calls': _ca_h21.n,
     } %}
   {% else %}
     {% set _ca_state = 'accruing' %}

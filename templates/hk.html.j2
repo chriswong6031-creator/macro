@@ -4515,10 +4515,22 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {% set _hk_h21 = (TR.horizons | selectattr('h', 'equalto', '21d') | list | first) if TR.horizons else none %}
   {% if TR.status == 'scored' and _hk_h21 and _hk_h21.hit_rate_21d is not none %}
     {% set _hk_state = 'scored' %}
+    {#- n_matured/n_resolved/n_calls: the era-scoped BUY-LANE denominator the win
+        rate was actually computed over (_hk_h21.n_buy), never TR.n_calls
+        (SURFACE COMPLETION, review 2026-08-20 — mirrors the canada.html.j2
+        fix): TR.n_calls is board_ledger.scorecard()'s TOP-LEVEL n_calls, the
+        WHOLE raw ledger row count across every era — an all-era number next
+        to an era-scoped rate. n_matured was never set at all, so the popup's
+        "of {{ n_matured }} finished trades" caption
+        (_track_record_dlg.html.j2:503) silently rendered "of — finished
+        trades", same as CA. n_resolved switches from _hk_h21.n (every scoped
+        row, including non-buy-lane groups like 'watch') to _hk_h21.n_buy to
+        match what the rate above it actually counted. -#}
     {% set _hk_stats = {
       'win_rate_pct': (_hk_h21.hit_rate_21d * 100)|round|int,
-      'avg_pct': none, 'n_resolved': _hk_h21.n, 'n_up': none, 'n_stopped': none, 'n_flat': none,
-      'n_calls': TR.n_calls,
+      'avg_pct': none, 'n_matured': _hk_h21.n_buy,
+      'n_resolved': _hk_h21.n_buy, 'n_up': none, 'n_stopped': none, 'n_flat': none,
+      'n_calls': _hk_h21.n,
     } %}
   {% else %}
     {% set _hk_state = 'accruing' %}
