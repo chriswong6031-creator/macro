@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T02:10:01.099013+00:00",
-  "count": 1446,
+  "generated_at": "2026-08-20T03:37:05.609216+00:00",
+  "count": 1449,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,23 @@
   ],
   "items": [
     {
+      "id": "marketdesk-2v7aymr4zey-14526d",
+      "title": "Podcast Global equities checkin Europe strong, Asia rebuilding",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T01:22:29Z",
+      "summary_points": [
+        "**Europe Strong, Asia Rebuilding**: Europe's outperformance driven by AI/semiconductors/miners/banks; APAC transitioning to accumulation; key risks: rising rates, geopolitics, fragile investor conviction - **Signal from the Noise**: S&P 500 timing tool with 8.6% annual return, 1.7x Sharpe (2010-2021); bullish on 'Strong Buy' signals using fundamental/positioning data - **Global Positioning Intelligence**: Flows-based analysis (retail/ETF) highlighting crowding, leverage risks; alpha generation by sector/industry/strategy"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-jrd4radwsd6-5153e0",
       "title": "Salesforce Aug 19",
       "institution": "Deutsche Bank",
@@ -144,6 +161,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-3ucrjfkfccl-27f57a",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:12Z",
+      "summary_points": [
+        "**Equity Resilience**: Core equity thesis holds despite yield pressures and tech/AI volatility; sell-offs reflect momentum (not fundamentals), with AI stock underperformance aligning with profit-taking.",
+        "**Critical Data Catalysts**: US jobless claims, Philly Fed index, Japan trade balance, and Riksbank rate decision (20 Aug) are pivotal for near-term market direction.",
+        "**Earnings & AI Health**: S&P 500 underlying earnings up 35% YoY (Q2), broad participation across sectors; AI hyperscalers cloud revenue up 48% YoY, signaling robust investment cycle."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9bqaztysson-bb635b",
       "title": "CEO Macro Briefing Book Insight on AI",
       "institution": "UBS",
@@ -161,6 +197,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x3euhetxrty-3e26fa",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:06Z",
+      "summary_points": [
+        "**Long-end yield pressures don't negate quality bonds**: Short/medium-term quality bonds remain attractive despite rising long-end yields (US 30-yr 5.33%, German Bund 3.75%), driven by persistent inflation/fiscal concerns and selectivity needs.",
+        "**Starting yields provide rate hike cushion**: 2-5 yr US Treasuries require 100-230 bps yield rise to offset income returns, supporting quality bond preference amid tech debt issuance and fiscal uncertainty.",
+        "**Central Bank Policy Reassessment**: Weakened Fed hike case (US inflation/labor data) and Europe’s constrained tightening (growth risks) drive yield declines as markets scale back rate hike expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
