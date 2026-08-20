@@ -1669,6 +1669,13 @@ jobs:
       - "scripts/validate_options_ivspread.py"
       - "scripts/validate_options_skew.py"
       - "scripts/workflow_run_source.py"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json, pulled
+      # into this job's closure via tests/test_live_flow.py and
+      # tests/test_options_issue_desk_api.py. site/flowleaders/** and
+      # site/leaderradar/** below already cover the sibling pick_lab reads;
+      # this one glob was the only gap the import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure) found.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
@@ -6783,12 +6790,24 @@ jobs:
       - "engine/sector_intelligence/**"
       - "lib/*"
       - "research/DO_NOT_REBUILD.md"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json, and
+      # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
+      # site/leaderradar/radar.json — both already-declared engine files
+      # (`engine/htf_durability.py`, `engine/pick_lab/**` below), pulled into
+      # this job's closure via tests/test_biocatalyst_change_tape_values.py.
+      # The import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure)
+      # requires the declared scope to cover these site reads too, or the job
+      # silently stops running for edits to them.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
       - "site/data/**"
       - "site/factordata/**"
+      - "site/flowleaders/leaders.json"
       - "site/hkbasketdata/**"
+      - "site/leaderradar/radar.json"
       - "site/master_brief.json"
       - "site/prophet/**"
       - "site/vol/**"
@@ -11447,13 +11466,24 @@ jobs:
       - "scripts/__init__.py"
       - "scripts/build_government_revenue.py"
       - "scripts/build_government_revenue_candidates.py"
+      # engine/htf_durability.py reads site/basketdata/fear_greed.json and
+      # engine/pick_lab/candidates.py reads site/flowleaders/leaders.json and
+      # site/leaderradar/radar.json — both already-declared engine files
+      # (`engine/htf_durability.py`, `engine/pick_lab/**` above), pulled into
+      # this job's closure via tests/test_government_revenue_candidate_api.py.
+      # The import-closure contract
+      # (test_curated_exclusive_scopes_cover_their_own_import_closure)
+      # requires the declared scope to cover these site reads too.
+      - "site/basketdata/fear_greed.json"
       - "site/canadabasketdata/**"
       - "site/chinabasketdata/**"
       - "site/coming-soon.html"
       - "site/data/**"
       - "site/factordata/**"
+      - "site/flowleaders/leaders.json"
       - "site/government-revenue-data/**"
       - "site/hkbasketdata/**"
+      - "site/leaderradar/radar.json"
       - "site/master_brief.json"
       - "site/prophet/**"
       - "site/vol/**"

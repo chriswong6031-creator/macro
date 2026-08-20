@@ -3028,12 +3028,46 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     ceilings are again NOT moved: the 18 weight-seconds removed here are two
     orders of magnitude below the ~1,550 a fallback-tier regression costs,
     and packs were 9 on every probe before and after.
+
+    JOB COUNT RE-BASED +1 on engine/prophet/plan_book.py only (120, wave 6,
+    2026-08-20 main-red-repair). Measured against the last lane-green main
+    commit (d972484c6474): baseline selects 119/195 jobs for this probe;
+    the current manifest selects 120/196, and diffing the two selected-job
+    NAME sets (not just counts) isolates the entire delta to one job,
+    ``reference-integrity`` — present in both manifests, but newly matching
+    this probe. #6122 (XPV2-SC-R3A, commit f4305a4485f6) added a third step
+    to that already-existing job (`tests/test_xpv2_sector_r3_fixture.py`,
+    over the frozen Sector Central fixture), and that suite's import closure
+    carries several ``dynamic import`` / ``subprocess invocation``
+    ambiguities several hops deep (engine/alert_triage.py,
+    engine/codex_lane/runner.py) that resolve to CODE_SCAN_ROOTS/
+    SUBPROCESS_ROOTS, which include ``engine/**`` — hence the new match on
+    engine/prophet/plan_book.py specifically, not anything Sector Central or
+    Prophet actually share.
+
+    This is NOT curated away like serving-observability's smear (2026-08-20
+    main-red-repair, same wave) or curated like dataos-identity-seams was
+    REJECTED (wave 2 note above): reference-integrity's own header comment
+    documents it as deliberately unscoped — "Unscoped on purpose: L7/L8/L9
+    are namespace and coupling closures over mockups/design_system,
+    research/migration_packets and the page registry, so a diff that adds a
+    file anywhere in those roots must re-run this" — a whole-tree RIG V1
+    reference-integrity gate that already existed pre-#6122 and is meant to
+    fire broadly. Declaring `scope: exclusive` on a job whose real purpose is
+    "catch reference laundering anywhere in these wide namespaces" would
+    either lie about coverage or degenerate straight back to the fallback
+    breadth it already carries — the identical failure mode
+    dataos-identity-seams was rejected for. One extra match on an
+    already-broad, already-reviewed, always-on gate costs nothing over the
+    ~1,550 weight-seconds/3-pack fallback-regression bound this file guards;
+    ratcheting the ceiling is the correct-risk response, not curation.
+    WEIGHT and PACK ceilings stay unmoved (5,600 / 9 packs, unchanged).
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
         ("templates/index.html", 127, 5_800),
         ("scripts/build_free_content.py", 124, 5_600),
-        ("engine/prophet/plan_book.py", 119, 5_600),
+        ("engine/prophet/plan_book.py", 120, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
