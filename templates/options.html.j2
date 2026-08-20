@@ -128,6 +128,10 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-stamp-row .k{color:var(--muted)}
 .oew-stamp-row .v{margin-left:auto;color:var(--ink-2);font-weight:600}
 .oew-stamp-row .v.brass{color:var(--oew-stamp)}
+.oew-source-receipt{margin-top:7px;border-top:1px solid var(--hair);padding-top:6px}
+.oew-source-receipt summary{cursor:pointer;color:var(--muted);font-size:10px;letter-spacing:.04em}
+.oew-source-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;font-size:10px;color:var(--muted)}
+.oew-source-row .stale{color:var(--orange);font-weight:650}.oew-source-row .current{color:var(--up)}
 
 /* ── THE POSTURE CONSOLE — four co-displayed readings, NEVER fused ─────────
    Four equal cells, hairline-divided, no arithmetic between them. The refusal
@@ -156,6 +160,7 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-pips.sm .oew-pip{width:9px;height:5px}
 
 .oew-nofuse{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s4);font-size:12.5px;color:var(--ink-2)}
+.oew-aib>.oew-nofuse{margin:0;padding:10px var(--s4);border-bottom:1px solid var(--hair);background:var(--tile)}
 
 /* ── STANCE CHIP — the most important words on the page ─────────────────── */
 .oew-stance{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:11.5px;font-weight:700;
@@ -892,7 +897,7 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
 
     <!-- THE SESSION STAMP -->
     <div class="oew-stampblock">
-      <div class="oew-stamp-k">{{ t('Session closed', '收盘场次') }}</div>
+      <div class="oew-stamp-k">{{ t('Latest completed session', '最近完成场次') }}</div>
       <div class="oew-stamp-date mono">{{ sess.date if sess.date else '—' }}</div>
       <div class="oew-stamp-closed">
         {% if sess.weekday_en %}
@@ -913,6 +918,15 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
           <span class="v" data-tip-en="{{ sess.quality_tip_en }}" data-tip-zh="{{ sess.quality_tip_zh }}">{{ t(sess.quality_en, sess.quality_zh) }}</span>
         </div>
       </div>
+      <details class="oew-source-receipt">
+        <summary>{{ t('Source-session receipt', '数据源场次凭证') }}</summary>
+        {%- for src in sess.sources %}
+        <div class="oew-source-row">
+          <span>{{ t(src.name_en, src.name_zh) }}</span>
+          <span class="mono {{ src.status }}">{{ src.source_session or t('unavailable', '不可用') }}{% if src.sessions_behind %} · {{ src.sessions_behind }} {{ t('sessions behind', '个交易日落后') }}{% endif %}</span>
+        </div>
+        {%- endfor %}
+      </details>
     </div>
 
     <!-- THE POSTURE CONSOLE — four readings, side by side, never combined -->
@@ -986,13 +1000,18 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
 
 <!-- ══════════════════ MODE 1 · DAILY BRIEF (baked inline) ══════════════════ -->
 <section class="oew-mode active" id="mode-brief" role="tabpanel" aria-labelledby="tab-brief">
-
   <!-- ══ AD-1 · OPTIONS INTELLIGENCE BRIEF (contracts/options/OPTIONS_INTEL_BRIEF_V1.md) ══
        PASS-THROUGH ONLY: every score/order/state/text below is copied verbatim from
        site/options_intel_brief.json via scripts/build_options_command.py's `aib`
        context (build_aib()/`_aib_card()`).  No ranking, ordering or scoring happens
        in this template. -->
   <div class="oew-panel oew-aib" id="aib">
+    {%- if sess.quality_en == 'Stale' %}
+    <div class="oew-nofuse" role="status">
+      <span>{{ t('The latest completed session is ' ~ sess.target_session ~ '. The panels below are retained prior-session context; each footer keeps its actual source date and none describes the target close.',
+                 '最近完成场次为 ' ~ sess.target_session ~ '。以下面板仅保留为较早场次背景；每个页脚均保留真实数据源日期，均不代表目标收盘。') }}</span>
+    </div>
+    {%- endif %}
     <div class="oew-phead">
       <h2 class="oew-ph-title">{{ t('Options Intelligence Brief', '期权情报简报') }}</h2>
       <span class="oew-ph-sub">{{ t('ranked priorities, event and crowding reads, and one quiet control', '优先级排序、事件与拥挤读数，以及一个平静对照') }}</span>
@@ -1613,6 +1632,9 @@ function getJSON(url){
    .catch(→ null), and an honest labelled absence on every failure path.
    ══════════════════════════════════════════════════════════════════════════ */
 var flDesk = null, flTide = null;
+/* Generated from the canonical NYSE calendar at bake time.  It is null on a
+   weekend/holiday, so the literal Today panel cannot invent a session. */
+var LIVE_SESSION_DATE = {{ live_session_date|tojson }};
 
 function r2Url(path){
   var base = String((window && window.DATA_BASE) || '').replace(/\/+$/, '');
@@ -1943,6 +1965,17 @@ function flApplyTide(tide){
   }
   flDrawUnfold();
 }
+
+function flTideValidity(tide){
+  if(!tide || tide.schema !== 'live_flow.tide/v1') return 'schema';
+  if(!LIVE_SESSION_DATE || tide.session_date !== LIVE_SESSION_DATE) return 'session';
+  if(typeof tide.asof !== 'string' || !tide.asof || isNaN(Date.parse(tide.asof))) return 'asof';
+  if(!Array.isArray(tide.minutes) || tide.minutes.length < 2) return 'minutes';
+  var valid = tide.minutes.every(function(m){
+    return m && typeof m.t === 'string' && num(m.ncp) !== null && num(m.npp) !== null;
+  });
+  return valid ? null : 'minutes';
+}
 function renderFlow(host, desk, cohorts){
   if(!desk || !desk.sector_heatmap){
     host.innerHTML = emptyPanel('The flow desk did not report for this close. It returns with the next options tape.',
@@ -1963,7 +1996,9 @@ function renderFlow(host, desk, cohorts){
   fetch(url, { cache:'no-cache' })
     .then(function(r){ return r.ok ? r.json() : null; })
     .catch(function(){ return null; })
-    .then(function(t){ if(t){ try{ flApplyTide(t); }catch(e){} } });
+    .then(function(t){
+      if(t && !flTideValidity(t)){ try{ flApplyTide(t); }catch(e){} }
+    });
 }
 
 /* ══════════ SCANNER ══════════ */

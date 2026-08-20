@@ -28,7 +28,7 @@ def tmp_root(tmp_path):
     for spec in _ARTIFACTS:
         p = tmp_path / spec.path
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({"as_of": EXPECTED}))
+        p.write_text(json.dumps({spec.as_of_key: EXPECTED}))
     return tmp_path
 
 
@@ -83,6 +83,15 @@ def test_oracle_state_asof_fallback(tmp_root):
     assert rc == 0
 
 
+def test_options_flow_manifest_uses_its_asof_clock(tmp_root, capsys):
+    spec = next(s for s in _ARTIFACTS if s.path == "site/flow/index.json")
+    assert spec.as_of_key == "asof"
+    (tmp_root / spec.path).write_text(json.dumps({"asof": "2026-07-07", "rows": []}))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    out = capsys.readouterr().out
+    assert "site/flow/index.json" in out and "2026-07-07" in out
+
+
 def test_selftest_passes():
     assert sentinel.selftest() == 0
 
@@ -126,7 +135,7 @@ def test_two_sessions_behind_escalates_once_not_per_surface(tmp_root, _captured_
     Six pushes is how an operator learns to mute the channel.
     """
     for spec in _ARTIFACTS:
-        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+        (tmp_root / spec.path).write_text(json.dumps({spec.as_of_key: "2026-07-02"}))
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
     assert len(_captured_push) == 1, "one digest, never one alert per surface"
     kw = _captured_push[0]
@@ -162,7 +171,7 @@ def test_a_broken_alert_channel_never_breaks_the_render(tmp_root, monkeypatch, c
 
     monkeypatch.setattr(at, "push_ops_alert", boom)
     for spec in _ARTIFACTS:
-        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+        (tmp_root / spec.path).write_text(json.dumps({spec.as_of_key: "2026-07-02"}))
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0, "a dead channel must not fail the sentinel"
     assert "SURFACE STALE" in capsys.readouterr().out, "and the annotations must survive it"
 
