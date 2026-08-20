@@ -19,8 +19,15 @@ jobs:
       - name: Checkout canonical PR tape
         uses: actions/checkout@v4
         with:
-          lfs: true
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            data/yahoo/EXK.parquet
+            data/yahoo/SIL.parquet
+            data/yahoo/SLV.parquet
+            scripts/exk_turn4_replay.py
+            research/exk_dislocation/EXK_TURN4_EVENTS_MIN.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
