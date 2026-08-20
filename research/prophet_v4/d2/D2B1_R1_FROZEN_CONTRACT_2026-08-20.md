@@ -309,3 +309,19 @@ orchestrator reviews, an Opus reviewer attacks, the orchestrator merges). Every 
 green with named tests; every §9 control demonstrated dying; targeted suites + guard
 strict + selftest green; PR body carries the §2.2 store-by-store receipt and the §8
 post-state numbers.
+
+### AMENDMENT §2 (2026-08-20) — ruling 9 deferred on a genuine rulings conflict
+
+Executing ruling 9 (dated `store`-space VMRK alias) requires closing the pre-existing
+committed open row `(store, EQR, SEC:US-XNYS-EQR, None, None)`, which ruling 6's strict
+fail-closed prune rule forbids (overlap with a committed row pointing at an ACTIVE id).
+The builder correctly reverted rather than redesign either ruling. Orchestrator ruling:
+**M5 stays strict this era; ruling 9 is DEFERRED.** The principled completion — a
+same-id-refinement carve-out (a fresh dated family that points at the SAME active
+security_id and fully covers the committed open row's mapping is a lawful refinement,
+matching the reviewer's own lawful/unlawful classification of the pass-1 closures) —
+is the named follow-up design, to be implemented with its own review alongside the owed
+breadth-lane retirement of `data/stocks/VMRK.parquet`. Until then the `store` space has
+no VMRK answer (absence is strictly better than the wrong-id answer it replaced), and
+any future dated rename will fail closed at the prune conflict with a visible
+`::warning` until that carve-out lands — accepted, disclosed behavior.
