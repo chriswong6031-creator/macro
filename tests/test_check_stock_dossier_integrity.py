@@ -299,10 +299,34 @@ def test_identity_requires_provenance_for_a_published_description(tmp_path):
     ctx = _universe(tmp_path)
     page = tmp_path / "RWT.html"
     bad = _page_html("RWT", "Redwood Trust Inc", "Real Estate", provenance="incomplete")
-    assert "description-provenance-missing" in {v["pattern"] for v in check_identity(page, bad, ctx)}
+    violations = check_identity(page, bad, ctx)
+    assert "description-provenance-missing" in {v["pattern"] for v in violations}
     # no description published at all -> nothing to audit, no violation
     none_published = _page_html("RWT", "Redwood Trust Inc", "Real Estate")
     assert check_identity(page, none_published, ctx) == []
+
+
+def test_identity_tags_incomplete_provenance_as_pending_not_a_hard_fail(tmp_path):
+    """desc_strength is empty on 100% of the committed profiles.parquet rows —
+    only the nightly network drip (~80/night) populates it. 'incomplete' is
+    therefore an honest declaration, not a false claim, and must be classified
+    as pending re-resolution rather than a failing identity violation."""
+    ctx = _universe(tmp_path)
+    page = tmp_path / "RWT.html"
+    incomplete = _page_html("RWT", "Redwood Trust Inc", "Real Estate", provenance="incomplete")
+    violations = [v for v in check_identity(page, incomplete, ctx)
+                  if v["pattern"] == "description-provenance-missing"]
+    assert len(violations) == 1
+    assert violations[0].get("pending") is True
+
+    # a provenance string that IS present but malformed (not "incomplete", and
+    # missing the ":"-delimited accepted-article linkage) is a positive claim
+    # that cannot be substantiated -- it must still hard-fail, not pend.
+    malformed = _page_html("RWT", "Redwood Trust Inc", "Real Estate", provenance="wiki:v2")
+    bad_violations = [v for v in check_identity(page, malformed, ctx)
+                       if v["pattern"] == "description-provenance-missing"]
+    assert len(bad_violations) == 1
+    assert bad_violations[0].get("pending") is not True
 
 
 def test_identity_ignores_corporate_form_differences(tmp_path):
@@ -395,3 +419,121 @@ def test_guard_without_a_manifest_still_judges_the_whole_estate(tmp_path):
     """The standalone/local contract is unchanged: everything must be clean."""
     root = _estate(tmp_path, {"OLD.html": _DIRTY})
     assert guard_main([str(root)]) == 1
+
+
+# --- provenance pending bucket (main()) --------------------------------------
+# desc_strength is empty on every committed data/profile/profiles.parquet row —
+# only the nightly network drip populates it (~80/night). A run that scans the
+# full rewritten estate must not fail on the honest "incomplete" declaration; it
+# must warn and keep exit 0, while a malformed positive claim still fails.
+
+def test_main_does_not_fail_on_pending_provenance_and_warns(tmp_path, capsys):
+    root = _estate(tmp_path, {})
+    stocks = root / "stocks"
+    hub = stocks / "index.html"
+    hub.write_text(_HUB, encoding="utf-8")
+    page = stocks / "RWT.html"
+    page.write_text(
+        _page_html("RWT", "Redwood Trust Inc", "Real Estate", provenance="incomplete"),
+        encoding="utf-8",
+    )
+    code = guard_main([str(root)])
+    out = capsys.readouterr().out
+    assert code == 0
+    warning_lines = [ln for ln in out.splitlines()
+                      if ln.startswith("::warning title=stock-dossier-provenance-pending::")]
+    assert warning_lines, out
+    assert "::error title=stock-dossier-integrity::" not in out
+
+
+def test_main_still_fails_on_malformed_provenance(tmp_path, capsys):
+    root = _estate(tmp_path, {})
+    stocks = root / "stocks"
+    hub = stocks / "index.html"
+    hub.write_text(_HUB, encoding="utf-8")
+    page = stocks / "RWT.html"
+    page.write_text(
+        _page_html("RWT", "Redwood Trust Inc", "Real Estate", provenance="wiki:v2"),
+        encoding="utf-8",
+    )
+    code = guard_main([str(root)])
+    out = capsys.readouterr().out
+    assert code == 1
+    assert "::error title=stock-dossier-integrity::" in out
+
+
+# --- _unescape -----------------------------------------------------------------
+# Only `&` used to be decoded from a \uXXXX escape; a hub or page name with an
+# escaped apostrophe, dash, or accented letter never matched its own canonical
+# name and false-positived as an issuer-name-mismatch (BJ's, Brown-Forman).
+
+from scripts.check_stock_dossier_integrity import _unescape  # noqa: E402
+
+
+def test_unescape_decodes_generic_unicode_escapes():
+    assert _unescape("BJ\\u0027s Wholesale Club") == "BJ's Wholesale Club"
+    assert _unescape("Brown\\u2013Forman") == "Brown–Forman"
+    assert _unescape("Est\\u00e9e Lauder") == "Estée Lauder"
+    assert _unescape("Bj\\u00f6rn Borg") == "Björn Borg"
+
+
+def test_unescape_preserves_existing_entity_and_backslash_behavior():
+    assert _unescape("Johnson &amp; Johnson") == "Johnson & Johnson"
+    assert _unescape("Lowe&#39;s") == "Lowe's"
+    assert _unescape("&quot;Widget&quot;") == '"Widget"'
+    assert _unescape("A\\/B") == "A/B"
+    assert _unescape('a \\"quoted\\" name') == 'a "quoted" name'
+    assert _unescape("back\\\\slash") == "back\\slash"
+
+
+def test_identity_matches_issuer_name_carrying_escaped_punctuation(tmp_path):
+    """The hub row and the page both carry the SAME literal backslash-u escape
+    for a non-ASCII issuer-name character; before the generic \\uXXXX decode
+    this was a false issuer-name-mismatch."""
+    hub = tmp_path / "index.html"
+    hub.write_text(
+        '<!doctype html><html><body><script>'
+        'const ROWS = [["BJ", "BJ\\u0027s Wholesale Club", "Staples", 12.0]];'
+        '</script></body></html>',
+        encoding="utf-8",
+    )
+    ctx = {"universe": load_canonical_universe(hub)}
+    page = tmp_path / "BJ.html"
+    html = _page_html("BJ", "BJ\\u0027s Wholesale Club", "Staples")
+    assert check_identity(page, html, ctx) == []
+
+
+# --- sector alias: consumer defensive -----------------------------------------
+
+def test_identity_accepts_consumer_defensive_as_staples_alias(tmp_path):
+    hub = tmp_path / "index.html"
+    hub.write_text(
+        '<!doctype html><html><body><script>'
+        'const ROWS = [["KO", "Coca-Cola Co", "Staples", 280.0]];'
+        '</script></body></html>',
+        encoding="utf-8",
+    )
+    ctx = {"universe": load_canonical_universe(hub)}
+    page = tmp_path / "KO.html"
+    html = _page_html("KO", "Coca-Cola Co", "Consumer Defensive")
+    assert check_identity(page, html, ctx) == []
+
+
+# --- regression: genuine defects must still fail ------------------------------
+
+def test_identity_still_flags_a_genuinely_different_company(tmp_path):
+    ctx = _universe(tmp_path)
+    page = tmp_path / "RWT.html"
+    wrong_name = _page_html("RWT", "Totally Different Restaurant Group", "Real Estate")
+    assert "issuer-name-mismatch" in {v["pattern"] for v in check_identity(page, wrong_name, ctx)}
+
+
+def test_identity_still_flags_issuer_name_residue(tmp_path):
+    """The RMD 'ResMed|' transport-residue class is real data corruption and is
+    unaffected by this heal — it must keep failing."""
+    ctx = _universe(tmp_path)
+    page = tmp_path / "RMD.html"
+    html = _page_html("RMD", "ResMed|", "Health Care", jsonld_name="ResMed|")
+    pats = {v["pattern"] for v in check_identity(page, html, ctx)}
+    assert "issuer-name-residue" in pats
+    assert "jsonld-name-residue" in pats
