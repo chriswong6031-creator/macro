@@ -1,6 +1,6 @@
 {
   "schema": "flow_signals.gate/v2",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "scored": false,
   "status": "building_history",
   "ledger": {
@@ -41,11 +41,11 @@
     "n_new_this_run": 0
   },
   "grader": {
-    "n_graded_ok": 0,
+    "n_graded_ok": 1950,
     "n_split_seam": 0,
-    "n_not_matured": 18451,
+    "n_not_matured": 16501,
     "n_errors": 59,
-    "elapsed_sec": 2.51
+    "elapsed_sec": 3.68
   },
   "scoring": {
     "enabled": false,
@@ -56,6 +56,6 @@
     "calibration": {},
     "monitor": {}
   },
-  "elapsed_sec": 4.21,
+  "elapsed_sec": 5.98,
   "note": "Flow-event ledger accruing. Scored field remains false until FS-3 pre-registration + FS-4 model training + FS-5 gauntlet pass. Ledger history older than 48h is permanently lost from the R2 archive window (FS-R1); run nightly without gaps."
 }

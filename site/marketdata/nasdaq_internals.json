@@ -1,13 +1,13 @@
 {
   "schema": "nasdaq_internals.v1",
-  "asof": "2026-08-19T16:23:21.423224+00:00",
+  "asof": "2026-08-20T04:20:35.912984+00:00",
   "benchmark": "QQQ",
-  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-19); historical composition approximated. Descriptive, display-only.",
-  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-19）；历史成分经近似处理。描述性展示，仅供参考。",
+  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-20); historical composition approximated. Descriptive, display-only.",
+  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-20）；历史成分经近似处理。描述性展示，仅供参考。",
   "ew_vs_qqq": {
-    "spread_20d": 2.8896,
-    "spread_60d": 4.5752,
-    "pctile_1y": 58.5,
+    "spread_20d": 3.2817,
+    "spread_60d": 3.1157,
+    "pctile_1y": 61.66,
     "n_members": 55
   },
   "groups": [
@@ -16,98 +16,98 @@
       "label_en": "AI Compute Supply Chain",
       "label_zh": "AI 算力供应链",
       "n": 23,
-      "rs_20d": -2.7077,
-      "rs_60d": -0.0578,
-      "accel": 7.9521,
-      "breadth_above_50dma": 21.74,
-      "dispersion_20d": 7.5517,
+      "rs_20d": -5.1837,
+      "rs_60d": -3.5661,
+      "accel": 1.4018,
+      "breadth_above_50dma": 17.39,
+      "dispersion_20d": 8.3436,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 1
+      "state_days": 2
     },
     {
       "id": "ai_capex_spenders",
       "label_en": "AI Capex Spenders",
       "label_zh": "AI 资本支出方",
       "n": 4,
-      "rs_20d": 0.918,
-      "rs_60d": -2.3919,
-      "accel": -10.1864,
+      "rs_20d": 3.3559,
+      "rs_60d": -0.4738,
+      "accel": -2.8327,
       "breadth_above_50dma": 50.0,
-      "dispersion_20d": 15.1435,
+      "dispersion_20d": 15.4507,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 5
+      "state_days": 6
     },
     {
       "id": "edge_device",
       "label_en": "Edge & Device Ecosystem",
       "label_zh": "终端设备生态",
       "n": 2,
-      "rs_20d": -7.4652,
-      "rs_60d": -11.4837,
-      "accel": -4.8357,
+      "rs_20d": -6.5655,
+      "rs_60d": -14.8657,
+      "accel": -5.8586,
       "breadth_above_50dma": 50.0,
-      "dispersion_20d": 1.6613,
+      "dispersion_20d": 3.6173,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 10
+      "state_days": 11
     },
     {
       "id": "software_enterprise",
       "label_en": "Enterprise Software",
       "label_zh": "企业软件",
       "n": 16,
-      "rs_20d": 13.4972,
-      "rs_60d": 12.383,
-      "accel": 5.3166,
-      "breadth_above_50dma": 75.0,
-      "dispersion_20d": 12.3625,
+      "rs_20d": 17.4081,
+      "rs_60d": 13.0656,
+      "accel": 14.1118,
+      "breadth_above_50dma": 81.25,
+      "dispersion_20d": 15.4226,
       "state": "leading",
       "state_candidate": "leading",
-      "state_days": 20
+      "state_days": 21
     },
     {
       "id": "cyber",
       "label_en": "Cybersecurity",
       "label_zh": "网络安全",
       "n": 4,
-      "rs_20d": 10.0467,
-      "rs_60d": 28.3624,
-      "accel": -9.3533,
-      "breadth_above_50dma": 100.0,
-      "dispersion_20d": 10.2759,
+      "rs_20d": 8.7908,
+      "rs_60d": 20.1586,
+      "accel": -3.4085,
+      "breadth_above_50dma": 75.0,
+      "dispersion_20d": 13.3591,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 5
+      "state_days": 6
     },
     {
       "id": "digital_services_media",
       "label_en": "Digital Services & Media",
       "label_zh": "数字服务与媒体",
       "n": 8,
-      "rs_20d": -2.9211,
-      "rs_60d": -9.6867,
-      "accel": -9.0005,
+      "rs_20d": -0.959,
+      "rs_60d": -7.4408,
+      "accel": -2.2228,
       "breadth_above_50dma": 50.0,
-      "dispersion_20d": 15.0469,
+      "dispersion_20d": 15.0018,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 5
+      "state_days": 6
     },
     {
       "id": "megacap_quality",
       "label_en": "Mega-cap Quality",
       "label_zh": "超大盘优质股",
       "n": 8,
-      "rs_20d": -1.3784,
-      "rs_60d": -3.7306,
-      "accel": -9.3126,
+      "rs_20d": -0.6524,
+      "rs_60d": -2.5169,
+      "accel": -7.0031,
       "breadth_above_50dma": 50.0,
-      "dispersion_20d": 11.3394,
+      "dispersion_20d": 11.609,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 5
+      "state_days": 6
     }
   ],
   "divergences": [
@@ -116,7 +116,7 @@
         "ai_compute_supply",
         "edge_device"
       ],
-      "gap_accel_z": 0.8047,
+      "gap_accel_z": 0.4636,
       "note_en": "Descriptive gap between group RS accelerations; no forward claim.",
       "note_zh": "两组RS加速度之间的描述性差距；不构成前瞻性判断。"
     },
@@ -125,7 +125,7 @@
         "ai_compute_supply",
         "megacap_quality"
       ],
-      "gap_accel_z": 1.4889,
+      "gap_accel_z": 0.7404,
       "note_en": "Descriptive gap between group RS accelerations; no forward claim.",
       "note_zh": "两组RS加速度之间的描述性差距；不构成前瞻性判断。"
     },
@@ -134,7 +134,7 @@
         "software_enterprise",
         "cyber"
       ],
-      "gap_accel_z": 0.9449,
+      "gap_accel_z": 1.1146,
       "note_en": "Descriptive gap between group RS accelerations; no forward claim.",
       "note_zh": "两组RS加速度之间的描述性差距；不构成前瞻性判断。"
     }

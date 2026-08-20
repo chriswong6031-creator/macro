@@ -1,0 +1,257 @@
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   THREE SEPARATE READS — Grey Deer risk-envelope band (macro.html only)
+
+   Page-local scope under body.page-macro. Every value is a token derivation — no
+   new :root family, no hex literal, no new font stack (MASTER_PRODUCT_DESIGN_SYSTEM
+   §2). The page's own --sp-*/--r-*/--ink-*/--hair/--tile locals are already bound to
+   theme values, so dark, light and the zh 红涨绿跌 flip all propagate at paint.
+
+   THE SIGNATURE — the split spine
+   ────────────────────────────────
+   Coherence cannot be a colour: the reserved-hue law gives hue exactly five
+   meanings (direction, health, wayfinding, epistemic tier, lock) and "agreement"
+   is not one of them. So agreement is structural. Each read carries a 3px left
+   rail; when the reads agree the rails butt into ONE continuous spine, and when
+   they disagree the container opens a gap and each rail takes its own row's
+   meaning-ink. One line = one truth. Three marks = three truths.
+
+   Ink assignment, and why the zh flip lands correctly on its own:
+     · trend row  → --ink-up/--ink-down. This IS market direction, so it SHOULD flip
+                    under 红涨绿跌, and it does, globally.
+     · hazard row → --ink-ok/--ink-warn/--ink-act. This IS health/severity, which
+                    never flips (theme.css:378-390 scopes the zh pole remap to the
+                    .rrx/.igx gauges only), so red stays danger for every reader.
+     · null       → --prov-ink, the TEXT-grade provisional rung (theme.css:367-376).
+                    Never --prov, which is fill-grade.
+     · posture    → achromatic. Zero policies means nothing is restricted; there is
+                    no reserved meaning for hue to carry, so it takes none.
+
+   Nothing here animates. Motion law: an animated element must encode a live or
+   ongoing fact, and this artifact is settled. The stillness is deliberate — it is
+   what will read as "settled" once the GD-3 live lane sits beside it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.page-macro .gde-band { padding: var(--sp-5) var(--pad) var(--sp-5); }
+
+/* ── header: eyebrow + the section's question + one session stamp ───────────── */
+body.page-macro .gde-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+  padding: 0 0 var(--sp-3); margin: 0 0 var(--sp-4);
+  border-bottom: var(--rule) solid var(--hair-strong);
+}
+body.page-macro .gde-eyebrow {
+  display: block; font-size: var(--fs-label); font-weight: 600;
+  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
+}
+html[data-lang="zh"] body.page-macro .gde-eyebrow { letter-spacing: 0; text-transform: none; }
+body.page-macro .gde-h2 {
+  font-size: var(--fs-h2); font-weight: 700; letter-spacing: -.01em;
+  color: var(--ink-1); margin: 3px 0 0; line-height: 1.3;
+}
+html[data-lang="zh"] body.page-macro .gde-h2 { letter-spacing: 0; }
+/* the ONE as-of stamp for this panel (doctrine §9.6 — per-source clocks live on
+   the rows themselves, and the drawer carries the full table) */
+body.page-macro .gde-stamp {
+  font-size: var(--fs-micro); font-weight: 600; color: var(--ink-3);
+  letter-spacing: .04em; cursor: help; white-space: nowrap;
+}
+
+/* ── the answer: this section's primary question, answered first ────────────── */
+body.page-macro .gde-lead {
+  font-size: var(--fs-md); line-height: 1.55; color: var(--ink-1);
+  margin: 0 0 var(--sp-5); max-width: 78ch;
+}
+body.page-macro .gde-lead b { font-weight: 800; }
+
+/* ── the three reads ────────────────────────────────────────────────────────── */
+/* default (agreeing): zero gap + one shared neutral rail = a single spine */
+body.page-macro .gde-reads { display: grid; gap: 0; }
+/* disagreeing: the spine breaks into three separate, differently-inked marks */
+body.page-macro .gde-reads.is-split { gap: var(--sp-4); }
+
+body.page-macro .gde-read {
+  padding: var(--sp-3) 0 var(--sp-3) var(--sp-4);
+  border-left: 3px solid var(--line);
+  /* grid items default to min-width:auto, so without this the evidence table's
+     min-width pushes the whole row past the viewport instead of scrolling inside
+     .gde-tblwrap — measured as a 516px document at a 390px viewport with the
+     drawer open, which is exactly the overflow the 390 gate forbids */
+  min-width: 0;
+}
+/* The grid is on .gde-row, NOT on .gde-read, so the evidence drawer sits OUTSIDE
+   column sizing. When the drawer was a grid child, opening it let the wide table
+   collapse the clause column and the row re-flowed under the reader's cursor.
+   The clause column is capped at a readable measure rather than stretched, so the
+   "when" column sits immediately after the "why" instead of being stranded at the
+   far edge of a 1440 panel. Three rows, three clocks, one column — which is what
+   makes the three clocks comparable at a glance. */
+body.page-macro .gde-row {
+  display: grid;
+  grid-template-columns: minmax(0, 232px) minmax(0, 58ch) max-content;
+  grid-template-areas:
+    "q      clause clock"
+    "answer clause clock";
+  column-gap: var(--sp-6); row-gap: 2px; align-items: start;
+}
+body.page-macro .gde-reads.is-split .gde-read { border-left-color: var(--gde-c, var(--line)); }
+/* capital posture with zero policies has no meaning for hue to carry — achromatic
+   by construction, and quiet on purpose: nothing is being restricted. The word
+   still needs contrast, but the rail must stay the quietest of the three or an
+   empty policy set reads as loud as a broken cohort (visible in light mode). */
+body.page-macro .gde-read--quiet { --gde-c: var(--ink-2); }
+body.page-macro .gde-reads.is-split .gde-read--quiet { border-left-color: var(--hair-strong); }
+
+body.page-macro .gde-q {
+  grid-area: q; font-size: var(--fs-label); font-weight: 600;
+  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
+}
+html[data-lang="zh"] body.page-macro .gde-q { letter-spacing: 0; text-transform: none; }
+
+/* the answer word — 22px/800 keeps it subordinate to the regime hero above
+   (34px score) while still reading as an answer rather than a label */
+body.page-macro .gde-a {
+  grid-area: answer; margin: 1px 0 0;
+  font-size: var(--fs-num-lg); font-weight: 800; line-height: 1.15;
+  letter-spacing: -.01em; color: var(--gde-c, var(--ink-1));
+}
+html[data-lang="zh"] body.page-macro .gde-a { letter-spacing: 0; }
+/* the direction sign — smaller than the word, same ink, so "up" survives the zh
+   hue flip that makes direction and danger share a colour */
+body.page-macro .gde-arr { font-size: .58em; margin-left: .32em; vertical-align: .18em; }
+
+body.page-macro .gde-c {
+  grid-area: clause; margin: 0; align-self: center;
+  font-size: var(--fs-sm); line-height: 1.55; color: var(--ink-2); max-width: 60ch;
+}
+/* the score is a QUOTE of the hero's number, not a second headline (§9.11) */
+body.page-macro .gde-quote {
+  color: var(--ink-1); font-weight: 700; text-decoration: none;
+  border-bottom: 1px dashed var(--hair-strong);
+}
+body.page-macro .gde-quote:hover { border-bottom-color: var(--ink-link, var(--link)); }
+body.page-macro .gde-outof { color: var(--ink-3); font-weight: 400; }
+
+body.page-macro .gde-clock {
+  grid-area: clock; justify-self: start; align-self: center;
+  font-size: var(--fs-micro); color: var(--ink-3); white-space: nowrap;
+}
+/* shown ONLY when coverage is not clean — a caveat that changes how the row's
+   answer should be read belongs beside it, never only behind the drawer */
+body.page-macro .gde-flag { color: var(--ink-warn); white-space: normal; }
+
+/* ── evidence drawer: the only home for source enums, receipts and technicals ── */
+body.page-macro .gde-disc { margin: var(--sp-3) 0 0; min-width: 0; }
+body.page-macro .gde-disc > summary {
+  cursor: pointer; display: inline-block;
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink-3);
+}
+body.page-macro .gde-disc > summary:hover { color: var(--ink-link, var(--link)); }
+body.page-macro .gde-disc-body {
+  margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4);
+  background: var(--tile); border: var(--rule) solid var(--hair); border-radius: var(--r-md);
+  min-width: 0;
+}
+body.page-macro .gde-tblwrap { overflow-x: auto; max-width: 100%; }
+body.page-macro .gde-tbl { width: 100%; min-width: 520px; border-collapse: collapse; }
+/* dates and heads scroll rather than wrap — a broken "2026-08-\n18" is harder to
+   read than a scroll, and the container already owns the overflow */
+body.page-macro .gde-tbl th,
+body.page-macro .gde-tbl td.tnum { white-space: nowrap; }
+/* The page centres/right-aligns every non-first cell for numeric columns
+   (dashboard.html.j2:1738). This is an evidence LIST — source names, state words
+   and dates — so every column reads left, like the prose it is. */
+body.page-macro .gde-tbl th,
+body.page-macro .gde-tbl td:not(:first-child):not(.l) { text-align: left; }
+body.page-macro .gde-tbl th {
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); text-align: left;
+  padding: 0 var(--sp-3) var(--sp-2) 0; border-bottom: var(--rule) solid var(--hair);
+}
+/* tablesort.js enhances every table on the page. A 3-row evidence receipt has
+   nothing meaningful to sort by, so drop the affordance rather than advertise one. */
+body.page-macro .gde-tbl th .sarrow { display: none; }
+body.page-macro .gde-tbl th.th-sort { cursor: default; }
+html[data-lang="zh"] body.page-macro .gde-tbl th { letter-spacing: 0; text-transform: none; }
+body.page-macro .gde-tbl td {
+  font-size: var(--fs-sm); color: var(--ink-2); padding: var(--sp-2) var(--sp-3) var(--sp-2) 0;
+  border-bottom: var(--rule) solid var(--hair); vertical-align: top;
+}
+body.page-macro .gde-tbl tr:last-child td { border-bottom: none; }
+body.page-macro .gde-tbl td.l { color: var(--ink-1); font-weight: 600; }
+/* health ink for a coverage problem — this IS severity, so the hue is earned */
+body.page-macro .gde-warn { color: var(--ink-warn); }
+body.page-macro .gde-req {
+  font-size: var(--fs-micro); color: var(--ink-3); border: var(--rule) solid var(--hair);
+  border-radius: var(--r-sm); padding: 0 5px; margin-left: 4px; white-space: nowrap;
+}
+body.page-macro .gde-disc-h {
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--trk);
+  text-transform: uppercase; color: var(--ink-3); margin: var(--sp-4) 0 var(--sp-2);
+}
+html[data-lang="zh"] body.page-macro .gde-disc-h { letter-spacing: 0; text-transform: none; }
+body.page-macro .gde-conflicts { margin: 0; padding-left: 1.15em; }
+body.page-macro .gde-conflicts li {
+  font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.5; margin-bottom: 3px;
+}
+body.page-macro .gde-conflicts b { color: var(--ink-1); font-weight: 700; }
+/* the machine receipt — never at rest, always here (doctrine §9.7) */
+body.page-macro .gde-receipt {
+  margin: var(--sp-4) 0 0; padding-top: var(--sp-2);
+  border-top: var(--rule) solid var(--hair);
+  font-size: var(--fs-micro); color: var(--ink-3); line-height: 1.6; word-break: break-word;
+}
+
+/* ── footer: one stance, one sentence (doctrine Law 1 + Law 4) ──────────────── */
+body.page-macro .gde-foot {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+  margin: var(--sp-5) 0 0; padding-top: var(--sp-3);
+  border-top: var(--rule) solid var(--hair);
+}
+body.page-macro .gde-stance {
+  display: inline-flex; align-items: center; font-weight: 700; font-size: var(--fs-sm);
+  padding: 4px 11px; border-radius: 999px;
+  border: var(--rule) solid color-mix(in srgb, var(--gde-c, var(--ink-2)) 34%, transparent);
+  background: color-mix(in srgb, var(--gde-c, var(--ink-2)) 12%, var(--panel));
+  color: var(--gde-c, var(--ink-2)); white-space: nowrap;
+}
+body.page-macro .gde-note { font-size: var(--fs-sm); color: var(--ink-3); }
+
+/* ── focus: visible, token-derived, both themes ─────────────────────────────── */
+body.page-macro :where(.gde-quote, .gde-disc > summary):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px;
+}
+
+/* ── responsive ─────────────────────────────────────────────────────────────── */
+/* ≤980w: the clock leaves its own column and rides under the answer, so the
+   clause keeps a readable measure instead of being squeezed to three words */
+@media (max-width: 980px) {
+  body.page-macro .gde-row {
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+    grid-template-areas:
+      "q      clause"
+      "answer clause"
+      "clock  clause";
+  }
+  body.page-macro .gde-clock { justify-self: start; align-self: start; margin-top: 3px; }
+}
+/* ≤720w (tablet portrait → phone): one column, deliberate stack. Reading order is
+   question → answer → why → when, which is the order the row is meant to be read
+   in anyway — the desktop grid is the compression, not this. */
+@media (max-width: 720px) {
+  body.page-macro .gde-band { padding: var(--sp-4) var(--sp-4) var(--sp-4); }
+  body.page-macro .gde-read { padding-left: var(--sp-3); }
+  body.page-macro .gde-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "q" "answer" "clause" "clock";
+    row-gap: 4px;
+  }
+  body.page-macro .gde-c { align-self: start; max-width: none; }
+  body.page-macro .gde-clock { justify-self: start; margin-top: 2px; }
+  /* the answer word deliberately keeps its 22px on phones: it is the row's answer,
+     and shrinking it below 18px would also drop it under the ink-rung threshold */
+  body.page-macro .gde-lead { font-size: var(--fs-body); margin-bottom: var(--sp-4); }
+  body.page-macro .gde-head { flex-wrap: wrap; }
+  body.page-macro .gde-disc-body { padding: var(--sp-3); }
+}

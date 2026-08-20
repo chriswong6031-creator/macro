@@ -1,6 +1,6 @@
 {
-  "date": "2026-08-18",
-  "score": 26,
+  "date": "2026-08-19",
+  "score": 25,
   "band": "elevated",
   "band_label": "ELEVATED \u2014 trim",
   "equity_w": 66,
@@ -10,6 +10,6 @@
   "sharpe": 0.87,
   "maxdd": -37.4,
   "equity_weight": 66,
-  "risk_score": 26,
-  "asof": "2026-08-18"
+  "risk_score": 25,
+  "asof": "2026-08-19"
 }

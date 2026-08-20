@@ -55,6 +55,13 @@ landmines:
     after a real production run traverses the real path and the receipt (run
     id + evidence) is recorded here. asia-close proves collectors; the real
     nightly plane write proves telemetry."
+  - "HOLD LAW (DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT): #5953 merged 2026-08-19
+    16:05Z under a recorded CEO hold via a direct account merge — label
+    removal does not bind humans. Any future held PR in this program must be
+    label-disarmed AND auto-merge-disabled AND converted to DRAFT AND
+    hold-commented. The freeze is NOT effective at merge; it becomes
+    effective only at Sol's post-merge final freeze acceptance, recorded
+    here and in the DEC when given."
 do_not_redo:
   - "Do not re-run the PRC entity-resolver bake-off — CN-B #5947 returned
     NO-BUY (all five vendors; overseas/IP + cross-border-storage
@@ -89,17 +96,17 @@ waves:
     status: done
     pr: [5933, 5943, 5955]
   - id: pr0a
-    title: PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol freeze-review verdict; freeze effective at Sol's final review)
+    title: PR-0A final research authority — masterplan rewrite, census adjudication, AgentOS (revised 2026-08-19 second pass per Sol verdict; MERGED PREMATURELY 16:05Z under a recorded CEO hold — DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT; content = the revised artifact exactly; freeze NOT effective until Sol's post-merge final freeze acceptance)
     status: done
     pr: [5822, 5953]
   - id: pr0b
     title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)
-    status: todo
-    next_action: after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md
+    status: in_progress
+    next_action: builder dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md)
   - id: rights0
     title: RIGHTS-0 source entitlement/rights audit (consumes CN-A #5945 matrix + CN-B #5947 resolver findings + CN-E #5951 license findings; residual only)
-    status: todo
-    next_action: after Sol's final freeze review, spawn researcher with research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md
+    status: in_progress
+    next_action: researcher dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md)
   - id: p1
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
     status: todo
@@ -107,8 +114,8 @@ waves:
     next_action: spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md after rights0 verdict on the visit source
   - id: pr0d
     title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)
-    status: todo
-    next_action: after Sol's final freeze review, spawn builder with research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md, coordinated with WS:STOCK-IDENTITY
+    status: in_progress
+    next_action: builder dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md), coordinated with WS:STOCK-IDENTITY
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -133,14 +140,17 @@ waves:
     status: todo
     depends_on: [l0, p1b]
 next_action: >
-  Gate: Sol's final freeze review of the revised #5953 head. After it clears:
-  spawn PR-0B (builder) and RIGHTS-0 (researcher) in parallel from their
-  commission files; PR-0D (builder) in parallel coordinated with
-  WS:STOCK-IDENTITY; P1 spawns after the RIGHTS-0 verdict on the
-  institutional visit source. Completion law on every build wave: merge =
-  BUILT_NOT_PROVEN; a real production receipt (recorded here) = done. Later
-  tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their
-  wave boundaries.
+  FREEZE EFFECTIVE (Sol post-merge final freeze acceptance GO, 2026-08-20;
+  accepted reconciliation receipt = main 49533d59b16076630ccd7d8bf48307f658db61da).
+  Execution now: PR-0B (builder) + RIGHTS-0 (researcher) + PR-0D (builder,
+  coordinated with WS:STOCK-IDENTITY) dispatched in parallel from their
+  frozen commission files — the commissions are the authority, never
+  broadened, and workers do not rediscover the architecture. P1 spawns ONLY
+  after the RIGHTS-0 verdict on the institutional visit source. Completion
+  law on every build wave: merge = BUILT_NOT_PROVEN; a real production
+  receipt (recorded here) = done — production proof, not green CI, advances
+  wave state. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the
+  masterplan at their wave boundaries.
 artifacts:
   - research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md
   - research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md

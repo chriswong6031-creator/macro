@@ -1,7 +1,7 @@
 {
   "date": "2026-08-19",
   "regime": "mixed / no clear trend",
-  "breadth": 0.23,
+  "breadth": 0.31,
   "favored": [
     "equity_us",
     "equity_sm",
@@ -17,10 +17,10 @@
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.68,
+      "absorption_pctile": 0.59,
       "n_markets": 6,
-      "absorption_ratio": 0.383,
-      "mean_abs_corr": 0.243,
+      "absorption_ratio": 0.375,
+      "mean_abs_corr": 0.245,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -131,11 +131,11 @@
         0.406,
         0.392,
         0.396,
-        0.383
+        0.375
       ],
       "spark_asof": "2026-08-21"
     },
-    "breadth": 0.23,
+    "breadth": 0.31,
     "trend_top": [
       {
         "asset": "equity_us",
@@ -170,7 +170,7 @@
     ],
     "trend_summary": {
       "n": 13,
-      "n_up": 6,
+      "n_up": 7,
       "n_down": 3
     },
     "intermarket": [
@@ -178,25 +178,25 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 52.0
+        "pctile": 46.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 69.748,
+        "ratio": 68.202,
+        "trend": "mid",
+        "pctile": 29.0
+      },
+      {
+        "pair": "oil_gold",
+        "ratio": 0.018,
         "trend": "mid",
         "pctile": 33.0
       },
       {
-        "pair": "oil_gold",
-        "ratio": 0.019,
-        "trend": "mid",
-        "pctile": 45.0
-      },
-      {
         "pair": "stocks_gold",
-        "ratio": 0.174,
+        "ratio": 0.168,
         "trend": "mid",
-        "pctile": 41.0
+        "pctile": 34.0
       }
     ],
     "carry": {
@@ -235,41 +235,41 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.3,
-          "t": 4.67,
+          "r": 0.296,
+          "t": 4.644,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.315,
-          "t": 4.35,
+          "r": 0.316,
+          "t": 4.349,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.28,
-          "t": 4.095,
+          "r": 0.277,
+          "t": 4.109,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.244,
-          "t": 3.486,
-          "q": 0.0187
+          "r": 0.251,
+          "t": 3.643,
+          "q": 0.0112
         },
         {
           "leader": "Crypto",
           "follower": "China",
           "lag": 1,
-          "r": 0.197,
-          "t": 3.057,
-          "q": 0.066
+          "r": 0.19,
+          "t": 3.028,
+          "q": 0.075
         }
       ],
       "stable": false,
@@ -288,14 +288,14 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-08-17",
+      "asof": "2026-08-18",
       "state": "calm",
-      "score": 47.0,
-      "spread_bp": 3.0
+      "score": 34.0,
+      "spread_bp": 2.0
     },
     "confirm": {
       "verdict": "diverge",
-      "agree_pct": 50,
+      "agree_pct": 100,
       "n_blind_flags": 2,
       "flags_top": [
         {
@@ -340,14 +340,14 @@
       "unstable_n": 0,
       "fx_stress": {
         "dominant": null,
-        "top_key": "em_crisis_capital_flight",
-        "top_val": 26.3
+        "top_key": "reflation_risk_on",
+        "top_val": 51.1
       }
     },
     "shadow": {
-      "pressure_pctile": 0.68,
-      "incumbent_state": "calm",
-      "shadow_state": "calm",
+      "pressure_pctile": 0.59,
+      "incumbent_state": "watch",
+      "shadow_state": "watch",
       "escalated": false
     },
     "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"

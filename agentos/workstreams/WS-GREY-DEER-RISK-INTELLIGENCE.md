@@ -82,7 +82,10 @@ waves:
     # See DEC:GD1-ACCEPTED-NO-PROMOTION.
   - id: GD-1C
     title: leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)
-    status: todo
+    status: in_progress
+    # Relayed to the Grok operator 2026-08-19 (Sol: "relay now"; operator
+    # carried GROK_GD1C_DESIGN_ERA_RECONSTRUCTION_PACKET_2026-08-19.md into
+    # the AionUI session; canonical commission is the in-repo file below).
     depends_on: [GD-1B]
     # Sol-commissioned 2026-08-19; packet:
     # research/grey_deer/commissions/GD-1C_LEADERSHIP_CRACK_DESIGN_ERA_COMMISSION_2026-08-19.md
@@ -93,24 +96,42 @@ waves:
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
     status: in_progress
+    pr: 6026
     depends_on: [GD-0A]
-    # Sol-commissioned 2026-08-19 as its own PR; packet:
-    # research/grey_deer/commissions/GD-2_SETTLED_ENVELOPE_COMMISSION_2026-08-19.md.
-    # Birth authority DESCRIPTIVE ONLY: no predictive probability, no
-    # ARMED/TRIGGERING lead claim, no Prophet restriction, no size/execution
-    # authority. The accepted GD-1 2026-08-18 dual-read (LC BROKEN + Market
-    # State RISK_ON 76 + Risk Radar calm 53.9) is a permanent regression
-    # fixture: the composer must carry disagreement, never blend it.
+    # PR #6026 MERGED 2026-08-19T23:15:52Z (e6a3fcd6e094) on a fully green
+    # full-manifest re-run; Fable design review PASS. Sol post-merge review
+    # 2026-08-19: Gate 8 (production acceptance) is BLOCKED until GD-2R1
+    # merges, and then runs on the REPAIRED production render. Birth authority
+    # DESCRIPTIVE ONLY unchanged.
+  - id: GD-2R1
+    title: Semantic-correctness repair of the settled envelope (pre-acceptance)
+    status: in_progress
+    depends_on: [GD-2]
+    # Sol post-merge commission 2026-08-19; packet:
+    # research/grey_deer/commissions/GD-2R1_SEMANTIC_CORRECTNESS_REPAIR_2026-08-19.md.
+    # (1) LC BROKEN alone -> FRAGILE never TRANSMITTING (transmission needs an
+    # independent settled source); (2) stage_since null until a lawful
+    # first-observed episode transition — source onset stays in provenance;
+    # (3) required-unmappable source nulls the hazard, optional calm can never
+    # yield NONE; (4) behavioral stance copy removed while zero policies —
+    # descriptive language + "no Grey Deer policy active"; (5) coherence
+    # describes market reads only, posture excluded from agreement encoding;
+    # (6) 08-18 fixture expectation -> FRAGILE / CONTRADICTORY, stage_since
+    # null, raw source states unchanged.
   - id: GD-3
     title: Live provisional envelope + pending escalation
     status: todo
     depends_on: [GD-2]
-    # Sol ruling 2026-08-19: do NOT start GD-3 implementation until GD-2 is
-    # accepted in production.
+    # Sol rulings 2026-08-19 (x2): do NOT start GD-3 until Gate 8 passes on
+    # the GD-2R1-REPAIRED production render.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
     status: in_progress
+    pr: 6022
     depends_on: [GD-0A]
+    # PR #6022 MERGED (7d203ee2862f); Sol post-merge review 2026-08-19:
+    # implementation ACCEPTED pending the real Asia-close production proof
+    # (one current CN row + one current HK row, idempotent, zero intraday).
     # Sol-commissioned 2026-08-19 as its own PR; packet:
     # research/grey_deer/commissions/GD-4A_CNHK_LEDGER_REPAIR_COMMISSION_2026-08-19.md.
     # COLLECT_LANE=nightly ONLY on the exact settled forward-ledger advancement
@@ -175,11 +196,10 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  Execute the two Sol-commissioned build lanes as separate PRs (GD-2 settled
-  envelope, GD-4A CN/HK ledger repair — packets under
-  research/grey_deer/commissions/); relay the GD-1C research packet to the
-  Grok operator; GD-3 waits for GD-2 production acceptance; GD-5A/B/C wait for
-  GD-1C clearing the promotion gate.
+  Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8
+  on the repaired production render; verify GD-4A's Asia-close row proof;
+  Grok executes GD-1C. GD-3 starts only after Gate 8 passes; GD-5A/B/C wait
+  for GD-1C clearing the promotion gate.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
