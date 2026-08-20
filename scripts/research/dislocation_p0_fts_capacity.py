@@ -3,12 +3,14 @@
 
 This one-time research executable tests whether a frozen, semantics-first phrase
 lexicon can retrieve enough official SEC filing candidates to justify the blind
-extraction program.  It does NOT classify events, read prices/volume/outcomes, or
+extraction program. It does NOT classify events, read prices/volume/outcomes, or
 claim that a search hit is an economic episode.
 
 Network boundary: HTTPS GET requests to exactly efts.sec.gov/LATEST/search-index.
-Forms: 8-K and 6-K, queried separately.  Windows: 2016-2025 and 2022-2025.
+Forms: 8-K and 6-K, queried separately. Windows: 2016-2025 and 2022-2025.
 Every count is a query-hit count and can contain duplicates or false positives.
+If SEC FTS rejects an overloaded multi-year cell, the exact same phrase/form cell
+is split into calendar-year shards; unresolved shards are typed errors, not zeroes.
 """
 from __future__ import annotations
 
@@ -36,110 +38,57 @@ MAX_RETRIES = 3
 PAGE_SIZE = 100
 USER_AGENT = "MastermindX research-source-census research@mastermind-x.com"
 
-# Frozen before querying.  These phrases are candidate-retrieval hooks, not
-# event classifications and not evidence of temporary impairment.
+# Frozen before querying. These phrases are candidate-retrieval hooks, not
+# classifications and not evidence of temporary impairment.
 LEXICON = {
     "PHYSICAL_MECHANICAL_INTERRUPTION": [
-        "equipment failure",
-        "mechanical failure",
-        "unplanned outage",
-        "temporary shutdown",
-        "temporarily shut down",
-        "temporarily suspended operations",
-        "operations were suspended",
-        "production interruption",
-        "manufacturing interruption",
-        "plant outage",
-        "facility outage",
-        "equipment malfunction",
-        "power outage",
+        "equipment failure", "mechanical failure", "unplanned outage",
+        "temporary shutdown", "temporarily shut down",
+        "temporarily suspended operations", "operations were suspended",
+        "production interruption", "manufacturing interruption", "plant outage",
+        "facility outage", "equipment malfunction", "power outage",
     ],
     "EXTERNAL_HUMAN_INTERRUPTION": [
-        "labor strike",
-        "work stoppage",
-        "labor action",
-        "union strike",
-        "blockade",
-        "community protest",
-        "civil unrest",
-        "picket line",
-        "access restriction",
-        "workforce walkout",
+        "labor strike", "work stoppage", "labor action", "union strike",
+        "blockade", "community protest", "civil unrest", "picket line",
+        "access restriction", "workforce walkout",
     ],
     "CYBER_OR_IT_INTERRUPTION": [
-        "cybersecurity incident",
-        "cyber incident",
-        "ransomware",
-        "network outage",
-        "systems outage",
-        "system outage",
-        "information technology outage",
-        "data breach",
-        "unauthorized access",
+        "cybersecurity incident", "cyber incident", "ransomware",
+        "network outage", "systems outage", "system outage",
+        "information technology outage", "data breach", "unauthorized access",
         "cyber-related business interruption",
     ],
     "WEATHER_OR_PHYSICAL_DISASTER": [
-        "severe weather",
-        "hurricane damage",
-        "winter storm",
-        "wildfire",
-        "flooding",
-        "earthquake",
-        "tornado",
-        "facility fire",
-        "plant fire",
-        "natural disaster",
-        "storm damage",
+        "severe weather", "hurricane damage", "winter storm", "wildfire",
+        "flooding", "earthquake", "tornado", "facility fire", "plant fire",
+        "natural disaster", "storm damage",
     ],
     "TEMPORARY_EXPECTATION_RESET": [
-        "temporary headwinds",
-        "temporary margin pressure",
-        "temporary cost pressure",
-        "temporary demand weakness",
-        "temporary slowdown",
-        "one-time impact",
-        "one-time charge",
-        "transitory impact",
-        "guidance withdrawn",
-        "lowered guidance",
-        "temporary disruption",
-        "temporary factors",
+        "temporary headwinds", "temporary margin pressure",
+        "temporary cost pressure", "temporary demand weakness",
+        "temporary slowdown", "one-time impact", "one-time charge",
+        "transitory impact", "guidance withdrawn", "lowered guidance",
+        "temporary disruption", "temporary factors",
     ],
     "STRUCTURAL_IMPAIRMENT_CONTROL": [
-        "going concern",
-        "bankruptcy",
-        "permanent closure",
-        "permanently close",
+        "going concern", "bankruptcy", "permanent closure", "permanently close",
         "non-reliance on previously issued financial statements",
-        "material weakness",
-        "ceased operations",
-        "liquidation",
-        "insolvency",
+        "material weakness", "ceased operations", "liquidation", "insolvency",
         "default under",
     ],
     "RESOLVED_BEFORE_DISCLOSURE_CONTROL": [
-        "operations have resumed",
-        "resumed normal operations",
-        "service has been restored",
-        "fully restored operations",
-        "returned to normal operations",
-        "operations resumed",
+        "operations have resumed", "resumed normal operations",
+        "service has been restored", "fully restored operations",
+        "returned to normal operations", "operations resumed",
         "issue has been resolved",
     ],
 }
 
 FORBIDDEN_PATHS = (
-    "data/yahoo",
-    "data/stocks",
-    "data/ohlc",
-    "data/stockdata",
-    "data/intraday",
-    "data/chinaohlc",
-    "data/hkohlc",
-    "data/canadaohlc",
-    "data/intlohlc",
-    "data/price_pressure",
-    "data/washout_turn",
+    "data/yahoo", "data/stocks", "data/ohlc", "data/stockdata",
+    "data/intraday", "data/chinaohlc", "data/hkohlc", "data/canadaohlc",
+    "data/intlohlc", "data/price_pressure", "data/washout_turn",
 )
 
 
@@ -151,17 +100,19 @@ def lexicon_sha256() -> str:
     return hashlib.sha256(canonical_json(LEXICON).encode("utf-8")).hexdigest()
 
 
-def request_json(session: requests.Session, *, phrase: str, form: str, start: str, end: str) -> dict:
+def request_json(
+    session: requests.Session, *, phrase: str, form: str, start: str, end: str
+) -> dict:
     parsed = urlparse(ENDPOINT)
-    if parsed.scheme != "https" or parsed.netloc != ALLOWED_HOST or parsed.path != "/LATEST/search-index":
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != ALLOWED_HOST
+        or parsed.path != "/LATEST/search-index"
+    ):
         raise RuntimeError("SEC FTS endpoint binding changed")
     params = {
-        "q": f'"{phrase}"',
-        "startdt": start,
-        "enddt": end,
-        "forms": form,
-        "from": 0,
-        "size": PAGE_SIZE,
+        "q": f'"{phrase}"', "startdt": start, "enddt": end,
+        "forms": form, "from": 0, "size": PAGE_SIZE,
     }
     last: Exception | None = None
     for attempt in range(MAX_RETRIES):
@@ -179,11 +130,11 @@ def request_json(session: requests.Session, *, phrase: str, form: str, start: st
             if not isinstance(payload, dict):
                 raise RuntimeError("SEC FTS returned non-object JSON")
             return payload
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 — typed below after bounded retries
             last = exc
             if attempt + 1 < MAX_RETRIES:
                 time.sleep(1.5 * (attempt + 1))
-    raise RuntimeError(f"SEC FTS failed for {phrase!r}/{form}: {last}")
+    raise RuntimeError(f"SEC FTS failed for {phrase!r}/{form}/{start}..{end}: {last}")
 
 
 def total_hits(payload: dict) -> int:
@@ -218,56 +169,115 @@ def parse_hit(hit: dict) -> dict[str, Any] | None:
     }
 
 
-def search_one(session: requests.Session, *, phrase: str, form: str, start: str, end: str) -> dict:
-    payload = request_json(session, phrase=phrase, form=form, start=start, end=end)
+def parse_payload(payload: dict, expected_form: str) -> dict[str, Any]:
     raw_hits = ((payload.get("hits") or {}).get("hits")) or []
-    parsed_hits = [row for row in (parse_hit(hit) for hit in raw_hits) if row is not None]
-    mismatches = sorted({str(row.get("form")) for row in parsed_hits if row.get("form") != form})
+    rows = [row for row in (parse_hit(hit) for hit in raw_hits) if row is not None]
+    return {
+        "total_hits": total_hits(payload),
+        "rows": rows,
+        "form_filter_mismatches": sorted(
+            {str(row.get("form")) for row in rows if row.get("form") != expected_form}
+        ),
+    }
+
+
+def annual_shards(start: str, end: str) -> list[tuple[str, str]]:
+    start_year = int(start[:4])
+    end_year = int(end[:4])
+    return [(f"{year}-01-01", f"{year}-12-31") for year in range(start_year, end_year + 1)]
+
+
+def search_one(
+    session: requests.Session, *, phrase: str, form: str, start: str, end: str
+) -> dict[str, Any]:
+    errors: list[str] = []
+    shards: list[dict[str, Any]] = []
+    try:
+        parsed = parse_payload(
+            request_json(session, phrase=phrase, form=form, start=start, end=end), form
+        )
+        shards.append({"start": start, "end": end, **parsed})
+        query_mode = "whole_window"
+    except Exception as exc:  # noqa: BLE001 — overload fallback is the point
+        errors.append(str(exc))
+        query_mode = "annual_fallback"
+        for shard_start, shard_end in annual_shards(start, end):
+            try:
+                parsed = parse_payload(
+                    request_json(
+                        session,
+                        phrase=phrase,
+                        form=form,
+                        start=shard_start,
+                        end=shard_end,
+                    ),
+                    form,
+                )
+                shards.append({"start": shard_start, "end": shard_end, **parsed})
+            except Exception as shard_exc:  # noqa: BLE001 — typed unresolved shard
+                errors.append(str(shard_exc))
+            time.sleep(PACE_SECONDS)
+
+    all_rows: dict[str, dict[str, Any]] = {}
+    mismatch_forms: set[str] = set()
+    total = 0
+    for shard in shards:
+        total += int(shard["total_hits"])
+        mismatch_forms.update(shard["form_filter_mismatches"])
+        for row in shard["rows"]:
+            all_rows[row["hit_id"]] = row
+    rows = [all_rows[key] for key in sorted(all_rows)]
     return {
         "phrase": phrase,
         "form": form,
-        "total_hits": total_hits(payload),
-        "returned_hits": len(parsed_hits),
-        "form_filter_mismatches": mismatches,
-        "unique_accessions_in_page": len({row.get("accession") for row in parsed_hits if row.get("accession")}),
-        "unique_ciks_in_page": len({row.get("cik") for row in parsed_hits if row.get("cik")}),
-        "sample": parsed_hits[:10],
-        "page_hit_ids": sorted(row["hit_id"] for row in parsed_hits),
+        "query_mode": query_mode,
+        "resolved_shards": len(shards),
+        "errors": errors,
+        "complete": bool(shards) and not errors[1:] if query_mode == "annual_fallback" else not errors,
+        "total_hits": total,
+        "returned_unique_hits": len(rows),
+        "form_filter_mismatches": sorted(mismatch_forms),
+        "unique_accessions_in_pages": len(
+            {row.get("accession") for row in rows if row.get("accession")}
+        ),
+        "unique_ciks_in_pages": len({row.get("cik") for row in rows if row.get("cik")}),
+        "sample": rows[:10],
+        "page_hit_ids": [row["hit_id"] for row in rows],
     }
 
 
 def aggregate(results: list[dict]) -> dict[str, Any]:
-    by_window_family: dict[str, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    grouped: dict[str, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
     for row in results:
-        by_window_family[row["window"]][row["family"]].append(row)
+        grouped[row["window"]][row["family"]].append(row)
 
     output: dict[str, Any] = {}
-    for window, family_map in sorted(by_window_family.items()):
+    for window, family_map in sorted(grouped.items()):
         output[window] = {}
         for family, rows in sorted(family_map.items()):
-            accessions: set[str] = set()
-            ciks: set[str] = set()
-            hit_ids: set[str] = set()
-            for row in rows:
-                for sample in row["sample"]:
-                    if sample.get("accession"):
-                        accessions.add(sample["accession"])
-                    if sample.get("cik"):
-                        ciks.add(sample["cik"])
-                hit_ids.update(row["page_hit_ids"])
+            hit_ids = {
+                hit_id for row in rows for hit_id in row.get("page_hit_ids", [])
+            }
+            ciks = {
+                sample.get("cik")
+                for row in rows
+                for sample in row.get("sample", [])
+                if sample.get("cik")
+            }
             output[window][family] = {
                 "query_form_cells": len(rows),
                 "raw_total_hit_sum_not_deduped": sum(row["total_hits"] for row in rows),
-                "first_page_unique_hit_ids": len(hit_ids),
-                "sample_unique_accessions": len(accessions),
+                "page_unique_hit_ids": len(hit_ids),
                 "sample_unique_ciks": len(ciks),
                 "cells_with_at_least_15_hits": sum(row["total_hits"] >= 15 for row in rows),
-                "zero_hit_cells": sum(row["total_hits"] == 0 for row in rows),
+                "zero_hit_cells": sum(row["total_hits"] == 0 and row["complete"] for row in rows),
+                "incomplete_cells": sum(not row["complete"] for row in rows),
+                "annual_fallback_cells": sum(row["query_mode"] == "annual_fallback" for row in rows),
                 "form_filter_mismatch_cells": sum(bool(row["form_filter_mismatches"]) for row in rows),
                 "capacity_read": (
                     "CANDIDATE_CAPACITY_PRESENT"
-                    if len(accessions) >= 15
-                    else "INSUFFICIENT_SAMPLE_CAPACITY"
+                    if len(hit_ids) >= 15
+                    else "INSUFFICIENT_PAGE_SAMPLE_CAPACITY"
                 ),
             }
     return output
@@ -284,27 +294,32 @@ def run(root: Path) -> dict[str, Any]:
         for family, phrases in LEXICON.items():
             for phrase in phrases:
                 for form in FORMS:
-                    row = search_one(session, phrase=phrase, form=form, start=start, end=end)
-                    row.update({"window": window, "family": family, "start": start, "end": end})
+                    row = search_one(
+                        session, phrase=phrase, form=form, start=start, end=end
+                    )
+                    row.update(
+                        {"window": window, "family": family, "start": start, "end": end}
+                    )
                     results.append(row)
                     time.sleep(PACE_SECONDS)
 
     return {
-        "schema": "mastermind.dislocation_p0_fts_capacity.v1",
+        "schema": "mastermind.dislocation_p0_fts_capacity.v1_1",
         "authority": {
-            "can_rank": False,
-            "can_gate": False,
-            "can_size": False,
-            "can_originate_signal": False,
-            "can_escalate": False,
+            "can_rank": False, "can_gate": False, "can_size": False,
+            "can_originate_signal": False, "can_escalate": False,
         },
         "query_contract": {
             "endpoint": ENDPOINT,
             "allowed_host": ALLOWED_HOST,
             "forms": list(FORMS),
-            "windows": {key: {"start": value[0], "end": value[1]} for key, value in WINDOWS.items()},
+            "windows": {
+                key: {"start": value[0], "end": value[1]}
+                for key, value in WINDOWS.items()
+            },
             "page_size": PAGE_SIZE,
             "phrase_matching": "quoted_exact_phrase_candidate_retrieval",
+            "overload_fallback": "same phrase/form split into calendar-year shards",
             "lexicon": LEXICON,
             "lexicon_sha256": lexicon_sha256(),
             "warning": "hit counts are not events; duplicates and false positives are expected",
