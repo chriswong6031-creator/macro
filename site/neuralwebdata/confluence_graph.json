@@ -83,7 +83,7 @@
       "type": "engine",
       "label": "demand_chain",
       "meta": {
-        "n_spine_rows": 1
+        "n_spine_rows": 2
       }
     },
     {
@@ -107,7 +107,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 97
+        "n_spine_rows": 106
       }
     },
     {
@@ -163,7 +163,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 64
+        "n_spine_rows": 67
       }
     },
     {
@@ -171,7 +171,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 17437
+        "n_spine_rows": 17438
       }
     },
     {
@@ -179,7 +179,7 @@
       "type": "engine",
       "label": "reflex.commodity_shock",
       "meta": {
-        "n_spine_rows": 4
+        "n_spine_rows": 5
       }
     },
     {
@@ -195,7 +195,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 331
+        "n_spine_rows": 345
       }
     },
     {
@@ -235,7 +235,7 @@
       "type": "engine",
       "label": "us_board",
       "meta": {
-        "n_spine_rows": 4623
+        "n_spine_rows": 4712
       }
     },
     {
@@ -243,7 +243,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 21387
+        "n_spine_rows": 22213
       }
     },
     {
@@ -251,7 +251,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 21387
+        "n_spine_rows": 22213
       }
     },
     {
@@ -1965,7 +1965,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "mixed",
-        "asof": "2026-08-19",
+        "asof": "2026-08-20",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "mixed",
@@ -1973,7 +1973,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 122
+        "days_in_regime": 123
       }
     },
     {
@@ -1984,20 +1984,20 @@
         "subtype": "rates_transmission",
         "state": {
           "rates": {
-            "real_10y": 2.44,
-            "real_10y_pctile": 0.99,
-            "real_10y_chg_63d_bp": 26.0,
-            "nominal_10y": 4.72,
-            "curve_2s10s": 0.52,
-            "curve_tp_adj": 1.36,
+            "real_10y": 2.41,
+            "real_10y_pctile": 0.98,
+            "real_10y_chg_63d_bp": 25.0,
+            "nominal_10y": 4.71,
+            "curve_2s10s": 0.46,
+            "curve_tp_adj": 1.3,
             "policy_gap": 0.56,
             "regime": "restrictive",
             "direction": "rising",
-            "real_10y_chg_22d_bp": 13.0,
+            "real_10y_chg_22d_bp": 6.0,
             "turn_watch": "extreme_watch",
             "label": {
-              "en": "Real 10y 2.44% (restrictive, rising — at a 5y extreme)",
-              "zh": "实际10年期 2.44%（偏紧，处于5年极值）"
+              "en": "Real 10y 2.41% (restrictive, rising — at a 5y extreme)",
+              "zh": "实际10年期 2.41%（偏紧，处于5年极值）"
             }
           },
           "inflation": {
@@ -2017,14 +2017,14 @@
           },
           "expectations": {
             "breakeven_10y": 2.3,
-            "breakeven_5y5y": 2.33,
+            "breakeven_5y5y": 2.32,
             "model_5y": 2.48,
             "survey_1y": 4.6,
-            "market_minus_model_bp": -15.0,
+            "market_minus_model_bp": -16.0,
             "anchoring": "anchored",
             "label": {
-              "en": "5y5y breakeven 2.33% vs model 2.48% (anchored)",
-              "zh": "5年5年盈亏平衡 2.33% vs 模型 2.48%（锚定）"
+              "en": "5y5y breakeven 2.32% vs model 2.48% (anchored)",
+              "zh": "5年5年盈亏平衡 2.32% vs 模型 2.48%（锚定）"
             }
           }
         },
@@ -2033,7 +2033,7 @@
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
         "yield_curve_regime": "bear_steepener",
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -2046,8 +2046,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.533060106786197,
-        "asof": "2026-08-18",
+        "recession_risk": 4.535479773840009,
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -2063,7 +2063,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -2091,9 +2091,9 @@
         "subtype": "global_regime:us",
         "quad": "Q2",
         "quad_name": "Reflation",
-        "cycle_tag": "mid",
+        "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2138,7 +2138,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-18",
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2162,8 +2162,8 @@
         "subtype": "market_structure",
         "regime": "long",
         "agreement": "aligned_adding",
-        "cor1m_regime": "normal",
-        "asof": "2026-08-18",
+        "cor1m_regime": "dispersion",
+        "asof": "2026-08-19",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
       }
@@ -20518,17 +20518,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=20 ticker-level demand-vs-supply divergences b=n_divergences=20, top tickers=['IRDM', 'ASTS', 'GOOGL', 'PAN"
-    },
-    {
-      "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-      "dst": "data/regime/latest.json:regime (equity)",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=100"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=19 ticker-level demand-vs-supply divergences b=n_divergences=19, top tickers=['IRDM', 'ASTS', 'NVDA', 'CRWD"
     },
     {
       "src": "engine:altdata",
@@ -20567,12 +20557,12 @@
       "src": "engine:altdata",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 27,
-      "lift": -0.00107,
+      "n": 28,
+      "lift": -0.00016,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0011 n=27 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0002 n=28 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20611,12 +20601,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 36,
-      "lift": -0.01754,
+      "n": 37,
+      "lift": -0.02092,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0175 n=36 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0209 n=37 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20655,12 +20645,12 @@
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 102,
-      "lift": 0.00148,
+      "n": 105,
+      "lift": 0.00339,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0015 n=102 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0034 n=105 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -20677,12 +20667,12 @@
       "src": "engine:track_record",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 36,
+      "n": 38,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=36 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
+      "note": "n=38 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
     },
     {
       "src": "options.skew_rising",
@@ -20732,7 +20722,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.295 verdict=headwind source_lobe=rates_transmission asof=2026-08-18"
+      "note": "rates headwind: asset=XLB net=-0.287 verdict=headwind source_lobe=rates_transmission asof=2026-08-19"
     },
     {
       "src": "macro:rates_transmission",
@@ -20742,7 +20732,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.277 verdict=headwind source_lobe=rates_transmission asof=2026-08-18"
+      "note": "rates headwind: asset=XLF net=-0.262 verdict=headwind source_lobe=rates_transmission asof=2026-08-19"
     },
     {
       "src": "macro:rates_transmission",
@@ -20752,7 +20742,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.24 verdict=headwind source_lobe=rates_transmission asof=2026-08-18"
+      "note": "rates headwind: asset=XLK net=-0.236 verdict=headwind source_lobe=rates_transmission asof=2026-08-19"
     },
     {
       "src": "macro:fx_dollar",
@@ -20762,7 +20752,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-08-18 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-08-19 source_lobe=contradictions/cross_asset_confirm"
     },
     {
       "src": "macro:rates_credit",
@@ -20772,17 +20762,16 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-08-18 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-08-19 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
-    "n": 2,
+    "n": 1,
     "by_severity": {
-      "tension": 2
+      "note": 1
     },
     "top_pair_ids": [
-      "briefing-divergences",
-      "cross_asset_confirm-diverge"
+      "briefing-divergences"
     ]
   },
   "contradiction_records": [
@@ -20790,32 +20779,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "20 ticker-level demand-vs-supply divergences"
+        "reading": "19 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=20, top tickers=['IRDM', 'ASTS', 'GOOGL', 'PANW', 'VSAT']"
+        "reading": "n_divergences=19, top tickers=['IRDM', 'ASTS', 'NVDA', 'CRWD', 'VSAT']"
       },
       "kind": "directional-opposition",
-      "severity": "tension",
+      "severity": "note",
       "as_of": "2026-08-19",
-      "note": "20 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: IRDM, ASTS, GOOGL, PANW, VSAT.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
-      "display_only": true
-    },
-    {
-      "pair_id": "cross_asset_confirm-diverge",
-      "a": {
-        "artifact": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-        "reading": "bonds+FX cross-asset leg readings"
-      },
-      "b": {
-        "artifact": "data/regime/latest.json:regime (equity)",
-        "reading": "cross_asset_confirm verdict=diverge, agree_pct=100"
-      },
-      "kind": "directional-opposition",
-      "severity": "tension",
-      "as_of": "2026-08-19",
-      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit, usd_positioning).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
+      "note": "19 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: IRDM, ASTS, NVDA, CRWD, VSAT.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
@@ -20837,7 +20810,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-20T04:45:35Z",
-  "inputs_hash": "sha256:f05a06363a265125272a2a9fbadb2c9d28d09d13407c1fae52c52858d84b29d3",
+  "produced_at": "2026-08-20T09:12:04Z",
+  "inputs_hash": "sha256:35a1530bbdd214501650debd2cbbbd7ea04774a6826990e03948cfb62184c907",
   "tier": "display"
 }

@@ -2,6 +2,10 @@
 .pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
 .pvcard:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.22);border-color:color-mix(in srgb,var(--pvh) 55%,var(--line))}
 .pv-buy{--pvh:var(--pv-buy);--pvh-ink:var(--ink-pv-buy,var(--pvh))}.pv-near{--pvh:var(--pv-near);--pvh-ink:var(--ink-pv-near,var(--pvh))}.pv-wait{--pvh:var(--pv-wait);--pvh-ink:var(--ink-pv-wait,var(--pvh))}.pv-hold{--pvh:var(--pv-hold);--pvh-ink:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid);--pvh-ink:var(--ink-pv-avoid,var(--pvh))}
+
+.pv-noread{--pvh:var(--muted);--pvh-ink:var(--muted)}
+
+.pv-chip[data-noread]{border-style:dashed;background:transparent}
 .pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
 
