@@ -1,0 +1,82 @@
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-turn3-r2
+role: visual_taste
+artifact_sha: da83976ece01c54d5ab07307e68118693e100a58
+
+reviewer:
+  identity: codex-xpv2-visual-taste-20260820
+  model: gpt-5.5
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user and business job
+    - provided production baseline screenshots
+    - browser-rendered frozen proposed references
+    - Turn-3 section 9 capability-disposition ledger only
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-20T07:20:49-07:00"
+  verdict: BLOCK
+  findings:
+    - id: VTC-001
+      severity: blocker
+      capability: page_answer_and_hash_entry
+      finding: Sticky chrome and automatic hash scrolling visibly occlude the page answer at desktop and mobile widths.
+    - id: VTC-002
+      severity: blocker
+      capability: mobile_action_distribution
+      finding: The 660px five-lane strip clips labels and hides two action states without a visible continuation affordance.
+    - id: VTC-003
+      severity: blocker
+      capability: confluence_state_distribution
+      finding: Proportional columns clip Buy-ready and hide later Confluence states in the default viewport.
+    - id: VTC-004
+      severity: major
+      capability: mobile_map
+      finding: The mobile Map is a shrunken dense desktop SVG in a tall frame rather than a readable mobile instrument.
+    - id: VTC-005
+      severity: major
+      capability: bilingual_parity
+      finding: Dynamic Sector rows and supporting LENS labels remain English in ZH mode.
+    - id: VTC-006
+      severity: major
+      capability: overview_hierarchy
+      finding: Multiple similarly weighted modules make the mobile Overview read as a compressed dashboard stack.
+    - id: VTC-007
+      severity: major
+      capability: canonical_navigation_chrome
+      finding: The reference hand-builds a third topbar idiom and omits real product affordances.
+    - id: VTC-008
+      severity: major
+      capability: institutional_visual_language
+      finding: Unicode and emoji-like glyphs read as mockup shorthand rather than restrained instrumentation.
+    - id: VTC-009
+      severity: major
+      capability: lens_reference_scope
+      finding: LENS is mostly empty canvas when judged as a page rather than an interaction/component specimen.
+    - id: VTC-010
+      severity: minor
+      capability: lens_focus_treatment
+      finding: Mobile sheet title focus is accessible but visually browser-default and unpolished.
+  strengths:
+    - R2 is materially calmer and less noisy than the production baseline.
+    - Desktop Moving is aligned, restrained, and task-clear.
+    - Desktop light Overview is credible as an institutional research workspace.
+    - LENS copy and modal structure are concise and premium when scoped as a component.
+
+second_pass:
+  amended_at: "2026-08-20T07:25:30-07:00"
+  amendments:
+    - {finding: VTC-001, action: upheld, note: "Shareable hashes and immediate answers do not authorize occlusion."}
+    - {finding: VTC-002, action: downgraded, note: "Major: local scroll is allowed, but clipping and invisible continuation remain unacceptable."}
+    - {finding: VTC-003, action: upheld, note: "The packet's universe and coverage truth requirements reinforce the blocker."}
+    - {finding: VTC-004, action: upheld, note: "The packet requires reduced chart density and mobile selected-object composition."}
+    - {finding: VTC-005, action: upheld, note: "The acceptance matrix requires complete EN and ZH names."}
+    - {finding: VTC-006, action: upheld, note: "Module order is accepted; rendered weighting and mobile composition are not."}
+    - {finding: VTC-007, action: upheld, note: "Condition: production must treat the mock topbar as non-binding and keep canonical chrome."}
+    - {finding: VTC-008, action: upheld, note: "The packet says instrumentation, not ornament."}
+    - {finding: VTC-009, action: downgraded, note: "Condition: lawful only when explicitly scoped as a component specimen."}
+    - {finding: VTC-010, action: downgraded, note: "The focus destination is correct; only its visual treatment needs repair."}
+  verdict: BLOCK
