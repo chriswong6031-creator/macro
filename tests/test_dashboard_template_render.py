@@ -74,7 +74,15 @@ def _prophet_plan(**overrides) -> dict:
 
 
 def _prophet_book(plans: "list | None" = None, **overrides) -> dict:
-    plans = plans if plans is not None else [_prophet_plan()]
+    # Two rows by default (not one): several suites assert "every board card"
+    # properties (>= 2 occurrences) against the default fixture, matching the
+    # pre-existing two-row (ACME + ZEUS) us_standouts.buy default this grid's
+    # population moved off of.
+    plans = plans if plans is not None else [
+        _prophet_plan(),
+        _prophet_plan(id="ZEUS-BULL-20260701", asset="ZEUS", lifecycle_state="ready",
+                       entry_status="bounce_wait", _priority_score=48.0),
+    ]
     from collections import Counter
     counts = Counter(p.get("lifecycle_state") for p in plans)
     book = {

@@ -431,28 +431,17 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
    fill escalation lives on the strip, where a cross is news and has no verb to outrank. #}
 .pv-live--close{background:color-mix(in srgb,var(--plvc) 18%,var(--panel));border-color:color-mix(in srgb,var(--plvc) 70%,transparent)}
 .pv-live--drop,.pv-live--over{--plvc:var(--pv-wait)}
-{# ── P-MP1-SHELL §5/§6 — THE LIFECYCLE FACT ROW ──────────────────────────────
-   Replaces the 4-dot Bottoming/Turning/Ready/Trend rail (.pv-stp/.pv-stl) on
-   the lifecycle-sourced call path ONLY (pv_card's `lifecycle` param, additive
-   and OFF by default — every existing caller keeps the 4-dot rail unchanged,
-   MP-1 §12 acceptance item 3). NAMED .pv-life, not .pv-live — that is a
-   DIFFERENT, pre-existing chip (the ◐ intraday chip, P1 spec) a few lines up.
-   The two strings are one character apart; do not conflate them when editing. #}
-.pv-life{display:flex;align-items:center;gap:6px;margin:7px 1px 0;min-width:0}
-.pv-life-w{font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap}
-.pv-newer{font-size:9.5px;font-weight:700;color:var(--ink-link,var(--info));white-space:nowrap;text-decoration:none;overflow:hidden;text-overflow:ellipsis}
-.pv-newer:hover{text-decoration:underline}
-{# ── P-MP1-SHELL §5 — `.pv-mark`: THE STATIC LANE CHIP ────────────────────────
-   Vocabulary resolution (Amendment 1, P-B5): `.pv-mark` (this rule) and
-   `.mx-mark` (the six-weight lifecycle glyph, above) are TWO DIFFERENT
-   primitives that happen to share the `mark` word — do not conflate. `.pv-mark`
-   is template-scoped (not theme.css), keyed on `lane` in {bottoming,
-   continuation} ONLY (§12 acceptance item 5: no chip for any other value).
-   Reuses the marks row's established chip geometry (font-size/padding/radius
-   match .pv-mk-i) so it sits at the same visual weight as the row it lives
-   beside, without adopting that row's per-`k` color grammar — this chip is a
-   SHAPE fact (setup geometry), not a rank/recency/risk fact. #}
-.pv-mark{display:inline-flex;align-items:center;font-size:9.5px;font-weight:700;line-height:1.45;padding:1px 6px;border-radius:6px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);cursor:help}
+{#- P-MP1-SHELL: .pv-life / .pv-newer / .pv-mark CSS deliberately does NOT live
+   here. This macro (pv_css()) is called by EVERY board — hk/china/canada/intl
+   included (each does `{% import "_prophet_card.html.j2" as pv %}` +
+   `{{ pv.pv_css() }}`) — and MP-1 §7/§12 item 3 require those pages' rendered
+   bytes to stay byte-identical. Adding CSS here would change their <style>
+   block even though the markup that CSS supports (pv_card's `lifecycle`/
+   `lane_mark` params) is exercised only by the US template. That CSS lives in
+   templates/dashboard.html.j2's own <style> block instead — the same
+   non-shared placement §9's restated "theme.css" law and this packet's other
+   template-scoped primitives already use. See dashboard.html.j2 for
+   .pv-life/.pv-life-w/.pv-newer/.pv-mark. #}
 [data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
 [data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
 [data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
