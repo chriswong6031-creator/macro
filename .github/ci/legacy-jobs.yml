@@ -12123,6 +12123,10 @@ jobs:
       - lib/delisted_symbols.py
       - lib/ticker_aliases.py
       - scripts/build_security_master.py
+      # V4-D2B2-CN-HK: build_security_master.py's import closure names the
+      # binding spec path as a string; contract-delta requires declared paths
+      # to cover it (widening is the safe direction).
+      - research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml
