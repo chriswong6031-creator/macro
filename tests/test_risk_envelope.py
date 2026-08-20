@@ -83,11 +83,38 @@ class TestGD1PermanentRegressionFixture:
         sources = {s["source_id"]: s for s in gd1_envelope["provenance"]["sources"]}
         lead = sources["leadership-crack-latest"]
         assert lead["state"] == "BROKEN"           # source-native, verbatim
-        assert lead["hazard_stage"] == "TRANSMITTING"
-        assert gd1_envelope["hazard_summary"]["stage"] in ("FRAGILE", "TRANSMITTING", "BREAKDOWN")
+        # GD-2R1: cohort damage is FRAGILE. `dislocation` means the cohort is damaged
+        # while the INDEX still holds — evidence damage has NOT spread — so reading it
+        # as TRANSMITTING inverted the signal's own meaning.
+        assert lead["hazard_stage"] == "FRAGILE"
+        assert gd1_envelope["hazard_summary"]["stage"] == "FRAGILE"
+
+    def test_dislocation_is_carried_as_evidence_not_promoted_to_transmission(self, gd1_envelope):
+        sources = {s["source_id"]: s for s in gd1_envelope["provenance"]["sources"]}
+        lead = sources["leadership-crack-latest"]
+        assert lead["detail"]["dislocation"] is True     # the flag is still carried
+        assert lead["hazard_stage"] == "FRAGILE"         # …and still does not promote
+
+    def test_stage_since_is_null_and_the_source_onset_stays_with_the_source(self, gd1_envelope):
+        """The Grey Deer lifecycle clock is not Leadership Crack's retrospective onset."""
+        hz = gd1_envelope["hazard_summary"]
+        assert hz["stage_since"] is None
+        assert hz["stage_since_basis"] == "no_episode_lifecycle_in_v0"
+        sources = {s["source_id"]: s for s in gd1_envelope["provenance"]["sources"]}
+        # 2026-07-07 is still available — attributed to the source that claims it
+        assert sources["leadership-crack-latest"]["detail"]["state_since"] == "2026-07-07"
+        assert "2026-07-07" not in json.dumps(hz)
 
     def test_coherence_is_contradictory(self, gd1_envelope):
         assert gd1_envelope["coherence"]["state"] == "CONTRADICTORY"
+
+    def test_coherence_covers_market_reads_only_never_policy(self, gd1_envelope):
+        co = gd1_envelope["coherence"]
+        assert co["scope"] == "market_reads"
+        assert co["compares"] == ["measured_state", "hazard_evidence"]
+        assert "policy_summary" in co["excludes"]
+        for c in co["contradictions"]:
+            assert "polic" not in json.dumps(c).lower()
 
     def test_the_contradiction_is_named_explicitly(self, gd1_envelope):
         kinds = {c["kind"] for c in gd1_envelope["coherence"]["contradictions"]}
@@ -104,7 +131,7 @@ class TestGD1PermanentRegressionFixture:
         assert radar["score"] == 53.9                  # verbatim
         assert radar["hazard_stage"] == "NONE"
         # …and the composed stage is still the damaged one. A calm vote never pulls down.
-        assert gd1_envelope["hazard_summary"]["stage"] == "TRANSMITTING"
+        assert gd1_envelope["hazard_summary"]["stage"] == "FRAGILE"
         assert {c["kind"] for c in gd1_envelope["coherence"]["contradictions"]} >= {"hazard_split"}
 
     def test_no_blended_or_averaged_number_appears_anywhere(self, gd1_envelope):
@@ -114,6 +141,83 @@ class TestGD1PermanentRegressionFixture:
             assert forbidden not in blob, f"blended value {forbidden!r} leaked into the envelope"
         scores = re.findall(r'"score":([0-9.]+)', blob)
         assert sorted(set(scores)) == ["53.9", "76"], f"unexpected score set {scores}"
+
+
+# ══ GD-2R1 §0.1 — STAGE COMPETENCE: TRANSMITTING IS UNREACHABLE IN V0 ═════════
+
+class TestStageCompetence:
+    """A source may only assert stages it is competent to OBSERVE.
+
+    Cohort damage is not transmission. V0 maps no independent transmission source, so
+    TRANSMITTING and BREAKDOWN must be unreachable — by construction, not by the
+    accident of no adapter happening to claim them.
+    """
+
+    def _measured(self):
+        return SourceRead(source_id="market-state-latest", role="measured_state",
+                          state="RISK_ON", score=76, as_of="2026-08-18", required=True)
+
+    def test_default_ceiling_is_fragile(self):
+        s = SourceRead(source_id="x", role="hazard_evidence", hazard_stage="NONE")
+        assert s.stage_ceiling == "FRAGILE"
+
+    @pytest.mark.parametrize("claim", ["TRANSMITTING", "BREAKDOWN"])
+    def test_a_claim_above_the_ceiling_is_admitted_at_the_ceiling(self, claim):
+        s = SourceRead(source_id="x", role="hazard_evidence", state="BROKEN",
+                       as_of="2026-08-18", hazard_stage=claim)
+        assert s.admitted_stage == "FRAGILE"
+        assert s.stage_was_capped is True
+
+    def test_transmitting_is_unreachable_from_leadership_crack_alone(self, gd1):
+        """Even if the LC adapter tried to claim it, the composer would not admit it."""
+        reads = build_sources(gd1["market_state"], gd1["leadership_crack"], gd1["session"])
+        lc = next(s for s in reads if s.source_id == "leadership-crack-latest")
+        # the adapter no longer promotes…
+        assert lc.hazard_stage == "FRAGILE"
+        # …and if a future edit re-introduced the promotion, competence still caps it
+        forced = [s for s in reads if s.source_id != "leadership-crack-latest"]
+        forced.append(SourceRead(
+            source_id="leadership-crack-latest", role="hazard_evidence", state="BROKEN",
+            as_of=gd1["session"], required=True, hazard_stage="TRANSMITTING",
+            detail={"dislocation": True}))
+        env = _compose(forced, session=gd1["session"])
+        assert env["hazard_summary"]["stage"] == "FRAGILE"
+        assert "leadership-crack-latest" in env["hazard_summary"]["capped_sources"]
+
+    def test_a_cap_is_recorded_never_silent(self):
+        env = _compose([
+            self._measured(),
+            SourceRead(source_id="lc", role="hazard_evidence", state="BROKEN",
+                       as_of="2026-08-18", required=True, hazard_stage="BREAKDOWN"),
+        ])
+        assert env["hazard_summary"]["capped_sources"] == ["lc"]
+        src = {s["source_id"]: s for s in env["provenance"]["sources"]}["lc"]
+        assert src["hazard_stage"] == "FRAGILE"          # what counted
+        assert src["hazard_stage_claimed"] == "BREAKDOWN"  # what was claimed
+        assert src["stage_ceiling"] == "FRAGILE"
+
+    def test_no_v0_source_emits_transmitting_or_breakdown_on_the_live_build(self):
+        env = build(now=datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc))
+        if not env.get("source_session"):
+            pytest.skip("settled market-state artifact not present in this checkout")
+        assert env["hazard_summary"]["stage"] in ("NONE", "FRAGILE", None)
+        for s in env["provenance"]["sources"]:
+            assert s["hazard_stage"] in ("NONE", "FRAGILE", None)
+
+    def test_a_promoted_source_may_still_carry_a_higher_ceiling(self):
+        """The ceiling is a promotion gate, not a hard-coded maximum."""
+        env = _compose([
+            self._measured(),
+            SourceRead(source_id="promoted-transmission", role="hazard_evidence",
+                       state="spreading", as_of="2026-08-18", required=True,
+                       hazard_stage="TRANSMITTING", stage_ceiling="TRANSMITTING"),
+        ])
+        assert env["hazard_summary"]["stage"] == "TRANSMITTING"
+        assert env["hazard_summary"]["capped_sources"] == []
+
+    def test_an_unknown_ceiling_is_refused(self):
+        with pytest.raises(EnvelopeContractError):
+            SourceRead(source_id="x", role="hazard_evidence", stage_ceiling="ARMED")
 
 
 # ══ §0.1 — PURE COMPOSER ══════════════════════════════════════════════════════
@@ -226,9 +330,12 @@ class TestNullLaw:
     def test_stale_source_never_casts_a_calm_vote_over_a_fresh_damaged_one(self):
         e = _compose([
             self._measured(),
+            # explicit ceiling: this test is about a stale source not voting, not about
+            # competence — without it the claim would be capped at FRAGILE and the
+            # assertion would stop testing what it names
             SourceRead(source_id="leadership-crack-latest", role="hazard_evidence",
                        state="BROKEN", as_of="2026-08-18", required=True,
-                       hazard_stage="BREAKDOWN"),
+                       hazard_stage="BREAKDOWN", stage_ceiling="BREAKDOWN"),
             SourceRead(source_id="risk-radar-us", role="hazard_evidence",
                        state="calm", score=0, as_of="2026-08-01", stale=True,
                        hazard_stage="NONE"),
@@ -236,6 +343,42 @@ class TestNullLaw:
         assert e["hazard_summary"]["stage"] == "BREAKDOWN"
         assert "risk-radar-us" in e["hazard_summary"]["unreadable_sources"]
         assert "risk-radar-us" not in e["hazard_summary"]["contributing_sources"]
+
+    def test_fresh_but_unmapped_required_source_nulls_the_stage(self):
+        """A state we cannot map is not a state we may ignore (GD-2R1 §0.3)."""
+        e = _compose([
+            self._measured(),
+            SourceRead(source_id="leadership-crack-latest", role="hazard_evidence",
+                       state="SOME_NEW_VOCABULARY", as_of="2026-08-18", required=True,
+                       hazard_stage=None),
+        ])
+        assert e["hazard_summary"]["stage"] is None
+        assert e["hazard_summary"]["stage_reason"] == "required_source_state_unmapped"
+        assert e["hazard_summary"]["unmapped_required_sources"] == ["leadership-crack-latest"]
+
+    def test_optional_calm_source_cannot_yield_none_while_a_required_one_is_unmapped(self):
+        """The exact failure this rule exists to stop: the optional source deciding."""
+        e = _compose([
+            self._measured(),
+            SourceRead(source_id="leadership-crack-latest", role="hazard_evidence",
+                       state="SOME_NEW_VOCABULARY", as_of="2026-08-18", required=True,
+                       hazard_stage=None),
+            SourceRead(source_id="risk-radar-us", role="hazard_evidence",
+                       state="calm", score=53.9, as_of="2026-08-18", hazard_stage="NONE"),
+        ])
+        assert e["hazard_summary"]["stage"] is None, "an optional calm source decided the answer"
+        assert "risk-radar-us" in e["hazard_summary"]["contributing_sources"]
+
+    def test_an_unmapped_OPTIONAL_source_does_not_null_the_stage(self):
+        e = _compose([
+            self._measured(),
+            SourceRead(source_id="leadership-crack-latest", role="hazard_evidence",
+                       state="INTACT", as_of="2026-08-18", required=True, hazard_stage="NONE"),
+            SourceRead(source_id="risk-radar-us", role="hazard_evidence",
+                       state="???", as_of="2026-08-18", hazard_stage=None),
+        ])
+        assert e["hazard_summary"]["stage"] == "NONE"
+        assert e["hazard_summary"]["unmapped_required_sources"] == []
 
     def test_none_requires_fresh_required_coverage_and_a_positive_result(self):
         e = _compose([
@@ -392,6 +535,47 @@ class TestContractShape:
         jsonschema = pytest.importorskip("jsonschema")
         schema = json.loads(_SCHEMA_FILE.read_text(encoding="utf-8"))
         jsonschema.validate(gd1_envelope, schema)
+
+    def test_every_stage_reason_the_composer_can_emit_is_in_the_schema(self):
+        """A producer must never be able to emit an envelope its own contract rejects.
+
+        Before GD-2R1 only the happy path was schema-checked, so the new
+        `required_source_state_unmapped` reason would have shipped as a contract
+        violation nobody's tests could see.
+        """
+        jsonschema = pytest.importorskip("jsonschema")
+        schema = json.loads(_SCHEMA_FILE.read_text(encoding="utf-8"))
+        allowed = set(schema["properties"]["hazard_summary"]["properties"]["stage_reason"]["enum"])
+        measured = SourceRead(source_id="market-state-latest", role="measured_state",
+                              state="RISK_ON", score=76, as_of="2026-08-18", required=True)
+        cases = {
+            "observed_settled_evidence": [
+                measured,
+                SourceRead(source_id="lc", role="hazard_evidence", state="INTACT",
+                           as_of="2026-08-18", required=True, hazard_stage="NONE")],
+            "required_coverage_unavailable": [
+                measured,
+                SourceRead(source_id="lc", role="hazard_evidence", present=False, required=True)],
+            "required_source_state_unmapped": [
+                measured,
+                SourceRead(source_id="lc", role="hazard_evidence", state="???",
+                           as_of="2026-08-18", required=True, hazard_stage=None)],
+            "no_usable_hazard_evidence": [measured],
+        }
+        seen = set()
+        for expected, sources in cases.items():
+            env = _compose(sources)
+            reason = env["hazard_summary"]["stage_reason"]
+            assert reason == expected, f"expected {expected}, got {reason}"
+            assert reason in allowed, f"{reason} is not in the schema enum"
+            jsonschema.validate(env, schema)   # the whole envelope, in this state
+            seen.add(reason)
+        assert seen == allowed, f"schema enum has unreachable values: {allowed - seen}"
+
+    def test_schema_pins_coherence_scope_to_market_reads(self):
+        schema = json.loads(_SCHEMA_FILE.read_text(encoding="utf-8"))
+        assert schema["properties"]["coherence"]["properties"]["scope"]["const"] == "market_reads"
+        assert "scope" in schema["properties"]["coherence"]["required"]
 
     def test_schema_forbids_anticipatory_stages(self):
         schema = json.loads(_SCHEMA_FILE.read_text(encoding="utf-8"))

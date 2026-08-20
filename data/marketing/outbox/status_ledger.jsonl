@@ -3182,3 +3182,7 @@
 {"id":"ob-2026-08-20-9dc357e772","from":"approved","to":"posting","at":"2026-08-20T05:50:19Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-20-9dc357e772","from":"posting","to":"posted","at":"2026-08-20T05:50:20Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a86959c34a1034a3c4f71d1","external_url":null,"at":"2026-08-20T05:50:09Z","booked_at":"2026-08-20T05:50:09Z"}}
 {"id":"ob-2026-08-20-b189e82dc0","from":"approved","to":"quarantined","at":"2026-08-20T05:50:20Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.83) of ob-2026-08-20-9dc357e772 posted today; same template, different ticker","receipt":null}
+{"id":"ob-2026-08-20-5a7740da9c","from":"queued","to":"approved","at":"2026-08-20T06:20:49Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-20-5d1f2f6c17","from":"queued","to":"approved","at":"2026-08-20T06:20:49Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-20-5a7740da9c","from":"approved","to":"quarantined","at":"2026-08-20T06:20:50Z","actor":"publisher","note":"clock: stale_session_claim:2026-08-18!=2026-08-20 (copy names Tuesday's tape)","receipt":null}
+{"id":"ob-2026-08-20-5d1f2f6c17","from":"approved","to":"quarantined","at":"2026-08-20T06:20:50Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.83) of ob-2026-08-20-9dc357e772 posted today; same template, different ticker","receipt":null}

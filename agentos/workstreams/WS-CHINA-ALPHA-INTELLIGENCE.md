@@ -111,8 +111,8 @@ waves:
       intel_unavailable_reason is set for refused names.
   - id: rights0
     title: RIGHTS-0 source entitlement/rights audit (consumes CN-A #5945 matrix + CN-B #5947 resolver findings + CN-E #5951 license findings; residual only)
-    status: in_progress
-    next_action: researcher dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md)
+    status: done
+    next_action: "P1 verdict (research/china_alpha_intelligence/RIGHTS_REGISTRY.md section 10): do NOT build on Tushare stk_surv (UNKNOWN_RIGHTS, no collector, tier UNKNOWN(operator)); P1 builds on the CNInfo primary-source route instead (rights-clear metadata plane, china_filings.py) -- blocker is the missing 投资者关系活动记录表/调研 category bucket in CATEGORY_PRIORITY (collectors/china_filings.py:139-150), not rights. Family-2 (fund_portfolio) and Family-6 named-actor plane remain GAP with no rights-clear native alternative; spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md next."
   - id: p1
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
     status: todo

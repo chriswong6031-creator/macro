@@ -9,26 +9,38 @@
    The page above this band already answers "what regime am I in". It answers it
    with ONE number, and until now it narrated the disagreement away in a prose
    aside ("a rotation read, not a high-beta cue"). This band answers a different
-   question — "do the reads agree?" — and it is built so the answer cannot be
-   averaged: three co-equal rows, each carrying its own state, its own plain
-   clause, and its OWN clock.
+   question — "do the market reads agree?" — and it is built so the answer cannot be
+   averaged: co-equal rows, each carrying its own state, its own plain clause, and
+   its OWN clock. Three answers are shown; exactly two of them are compared.
+
+   ── GD-2R1 (Sol post-merge review) ────────────────────────────────────────────
+   Two corrections landed here:
+   · The spine now spans the TWO MARKET READS only. Capital policy moved out of it
+     into its own inset strip with no rail, because a posture derived from zero
+     policies cannot agree or disagree with a market reading — carrying a rail would
+     have said it does. Different structure = different kind of statement.
+   · All behavioural copy is gone while zero policies exist. There is no stance chip
+     and no action instruction anywhere in this band; the capital strip reports the
+     literal state "no Grey Deer policy active" and advises nothing. Guidance returns
+     only when a registered policy exists to carry it.
 
    ── The signature: the split spine ────────────────────────────────────────────
    Under the reserved-hue law (MASTER_PRODUCT_DESIGN_SYSTEM_V1 §1) hue may mean
    exactly five things — market direction, health/severity, wayfinding, epistemic
    tier, or lock. "Agreement" is none of them, so coherence may NOT be a colour.
-   It is encoded structurally instead: the three rows share one continuous rail
-   when they agree, and the rail BREAKS into three separate marks when they do
-   not. One line = one truth; three marks = three truths. No legend needed, and
+   It is encoded structurally instead: the two MARKET-READ rows share one continuous
+   rail when they agree, and the rail BREAKS into separate marks when they do
+   not. One line = one truth; separate marks = separate truths. No legend needed, and
    it survives both themes and the zh 红涨绿跌 flip because it derives from the
    same tokens that flip.
 
    Each row's ink then falls straight out of the same law:
      · trend   → direction ink (--ink-up/--ink-down), the market's direction
      · hazard  → health ink (--ink-ok/--ink-warn/--ink-act), severity
-     · posture → achromatic, because zero policies means nothing is restricted
-                 and there is no meaning for hue to carry
-   In the contradictory case the three rows are therefore literally different
+     · policy  → achromatic AND rail-less, because zero policies means nothing is
+                 restricted, there is no meaning for hue to carry, and it is not a
+                 party to the agreement the rail encodes
+   In the contradictory case the two market rows are therefore literally different
    hues by construction — the disagreement is visible before a word is read.
 
    ── Deliberate omissions ──────────────────────────────────────────────────────
@@ -97,8 +109,11 @@
 
   <div class="gde-head">
     <div>
-      <span class="gde-eyebrow"><span class="l-en">Three separate reads</span><span class="l-zh">三项独立判读</span></span>
-      <h2 class="gde-h2"><span class="l-en">Do the reads agree?</span><span class="l-zh">三项判读一致吗？</span></h2>
+      <span class="gde-eyebrow"><span class="l-en">Three reads, kept separate</span><span class="l-zh">三项判读，各自独立</span></span>
+      {# "market reads", not "the reads": capital policy sits below and is deliberately
+         NOT part of this comparison (GD-2R1 §0.5). The zh title said 三项 ("all three")
+         and was simply wrong once policy left the spine. #}
+      <h2 class="gde-h2"><span class="l-en">Do the market reads agree?</span><span class="l-zh">市场判读一致吗？</span></h2>
     </div>
     <span class="gde-stamp tnum"
           data-tip-en="Settled session — the close these reads were taken from. Each source below also keeps its own clock."
@@ -118,8 +133,9 @@
       <span class="l-en"><b>Not fully.</b> One read can't be made cleanly today. What we can see is shown below, unchanged.</span>
       <span class="l-zh"><b>并不完全一致。</b>今日有一项无法干净判读，可见部分原样列于下方，未做平均。</span>
     {% else %}
-      <span class="l-en"><b>Yes — all three point the same way.</b> Nothing below is contradicting anything else today.</span>
-      <span class="l-zh"><b>一致——三项方向相同。</b>今日下方各项之间没有相互矛盾。</span>
+      {# "both", not "all three": capital policy is not one of the compared reads. #}
+      <span class="l-en"><b>Yes — both market reads point the same way.</b> Neither is contradicting the other today.</span>
+      <span class="l-zh"><b>一致——两项市场判读方向相同。</b>今日两者之间没有矛盾。</span>
     {% endif %}
   </p>
 
@@ -176,8 +192,12 @@
           <span class="l-en">We looked at every source we need and none of them shows damage.</span>
           <span class="l-zh">已核对全部必需来源，均未见损伤。</span>
         {% else %}
-          <span class="l-en">{{ (_ns.lead.label_en if _ns.lead else 'A tracked group') }} has taken damage{% if _hz.get('stage_since') %} since {{ _hz.get('stage_since') }}{% endif %}, while the trend read above hasn't moved.</span>
-          <span class="l-zh">{{ (_ns.lead.label_zh if _ns.lead else '受追踪的一组标的') }}已出现损伤{% if _hz.get('stage_since') %}（自 {{ _hz.get('stage_since') }} 起）{% endif %}，而上方趋势判读未变。</span>
+          {# The onset date is the SOURCE's own retrospective reading, not this read's
+             lifecycle clock (hazard_summary.stage_since is null in V0), so the sentence
+             attributes it to the source rather than claiming it as ours. #}
+          {% set _onset = (_ns.lead.detail.get('state_since') if _ns.lead and _ns.lead.detail else none) %}
+          <span class="l-en">{{ (_ns.lead.label_en if _ns.lead else 'A tracked group') }} is damaged while the index holds{% if _onset %} — its own read has said so since {{ _onset }}{% endif %}.</span>
+          <span class="l-zh">{{ (_ns.lead.label_zh if _ns.lead else '受追踪的一组标的') }}受损，而指数仍在支撑{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
         {% endif %}
       </p>
       {# the clock column means "when was this read taken", not "when did the state
@@ -236,40 +256,41 @@
 
           <p class="gde-receipt tnum">
             {{ _re.get('definition_id') }} · bundle {{ _re.get('bundle_id') }} ·
-            coverage {{ _re.get('data_state') }} · coherence {{ _coh }} ·
+            coverage {{ _re.get('data_state') }} ·
+            coherence {{ _coh }} (scope {{ _co.get('scope') }}) ·
             stage {{ _stage if _stage is not none else 'null' }} ({{ _hz.get('stage_reason') }}) ·
+            stage_since null ({{ _hz.get('stage_since_basis') }})
+            {%- if _hz.get('capped_sources') %} · capped at source competence: {{ _hz.get('capped_sources') | join(', ') }}{% endif %} ·
             engine/risk_envelope.py
           </p>
         </div>
       </details>
     </div>
 
-    {# ── 3 · capital posture — a display projection of zero policies ─────────── #}
-    <div class="gde-read gde-read--quiet">
-     <div class="gde-row">
-      <span class="gde-q"><span class="l-en">What's being held back?</span><span class="l-zh">有什么被限制？</span></span>
-      <p class="gde-a">
-        <span class="l-en">Nothing held back</span><span class="l-zh">未做任何限制</span>
-      </p>
-      <p class="gde-c">
-        <span class="l-en">No limits are in force. This read describes the market; it doesn't restrict anything you do.</span>
-        <span class="l-zh">当前没有任何限制。此判读只描述市场，不会限制你的任何操作。</span>
-      </p>
-      <span class="gde-clock tnum">{{ _ps.get('policy_count', 0) }} <span class="l-en">in force</span><span class="l-zh">项生效</span></span>
-     </div>
-    </div>
+  </div>{# /.gde-reads — the spine covers the MARKET READS and stops here #}
 
+  {# ── Capital policy — ORTHOGONAL, deliberately outside the spine ────────────
+     GD-2R1 §0.5: coherence describes the market reads only. A posture derived from
+     zero policies cannot agree or disagree with a market reading, so it must not
+     carry a rail — the rail IS the agreement encoding. It gets a different
+     structure entirely (an inset strip, no rail, its own label) so the eye reads it
+     as a different KIND of statement rather than a third opinion.
+     §0.4: no behavioural instruction while zero policies exist — the state is
+     reported, and nothing is advised. #}
+  <div class="gde-policy">
+    <span class="gde-policy-lbl"><span class="l-en">Capital policy</span><span class="l-zh">资金政策</span></span>
+    <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
+    <span class="gde-policy-note">
+      <span class="l-en">Nothing is restricted. This is a market read — it carries no instruction, and it is not part of the agreement above.</span>
+      <span class="l-zh">当前没有任何限制。这是一项市场判读——不含任何操作指示，也不参与上方的一致性比较。</span>
+    </span>
+    <span class="gde-policy-count tnum">{{ _ps.get('policy_count', 0) }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>
   </div>
 
   <div class="gde-foot">
-    {% if _split or (_stage and _stage != 'NONE') %}
-      <span class="gde-stance" style="--gde-c: var(--ink-warn)"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追</span></span>
-    {% else %}
-      <span class="gde-stance" style="--gde-c: var(--ink-2)"><span class="l-en">Ignore — nothing to act on</span><span class="l-zh">可忽略——无需动作</span></span>
-    {% endif %}
     <span class="gde-note">
-      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm".</span>
-      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。</span>
+      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm". Agreement above compares the two market reads only.</span>
+      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。上方的一致性仅比较两项市场判读。</span>
     </span>
   </div>
 

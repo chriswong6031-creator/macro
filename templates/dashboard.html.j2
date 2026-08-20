@@ -19315,13 +19315,100 @@ if (document.readyState === 'loading') {
     body.parentNode.insertBefore(btn, body.nextSibling);
   }
 
+  /* ── Splice the withheld cards INTO the groups the shell already drew ───────
+     The two sides of the wall render from one partial (_us_board_cards.html.j2)
+     and each groups its OWN rows: the shell heads the preview slice, the payload
+     heads the locked remainder, and both headings carry the true full-board count
+     (build_site._us_board_group_items — deliberately, so a gated shell's "Live
+     now · 13" stays honest). Appending that block whole therefore drew the SAME
+     heading twice — "Live now · 13" over the 3 preview cards, then "Live now · 13"
+     again over the 10 withheld ones, which is what a reader sees as two Live-now
+     sections holding different names. It also mis-ordered the board whenever the
+     preview spanned more than one stage: every withheld group landed after every
+     shell group, so a preview ending in "Setting up" put the withheld "Live now"
+     BELOW it.
+     Merge instead, group by group: a group the shell already opened hands over
+     its CARDS and drops its duplicate heading; a group the shell never opened is
+     inserted whole at its own rank in the stage order. Cards keep their server
+     order on both paths — preview first, then the remainder — so the ranked feed
+     reads the same as an ungated render. */
+  var BOARD_STAGES = ['live', 'setting_up', 'ran', 'basing', 'blocked'];
+  /* Type-prefixed so a `stage` and a `lane` of the same name can never join, and
+     null (not '') for a heading with no key — an old cached payload whose lane
+     headings predate data-lane then degrades to plain appending rather than
+     collapsing every lane into one group. */
+  function groupKey(el){
+    if (!el || el.nodeType !== 1 || !el.classList) return null;
+    var k;
+    if (el.classList.contains('nb-stage-hd')){ k = el.getAttribute('data-stage'); return k ? 'stage:' + k : null; }
+    if (el.classList.contains('nb-lane-hd')){ k = el.getAttribute('data-lane'); return k ? 'lane:' + k : null; }
+    return null;
+  }
+  function stageRank(key){
+    return (key && key.indexOf('stage:') === 0) ? BOARD_STAGES.indexOf(key.slice(6)) : -1;
+  }
+  function mergeBoardCards(grid, html){
+    var box = document.createElement('div');
+    box.innerHTML = html;
+    /* [{key, head, cards[]}] in payload order. Anything before the first heading
+       rides a leading keyless group, which — processed first, while the grid still
+       ends with the shell's last node — appends exactly where it used to land. */
+    var groups = [], cur = { key: null, head: null, cards: [] };
+    groups.push(cur);
+    while (box.firstElementChild){
+      var el = box.firstElementChild, k = groupKey(el);
+      box.removeChild(el);
+      if (k === null){ cur.cards.push(el); }
+      else { cur = { key: k, head: el, cards: [] }; groups.push(cur); }
+    }
+    groups.forEach(function(g){
+      var head = null, hds, i;
+      if (g.key !== null){
+        hds = grid.querySelectorAll('.nb-stage-hd,.nb-lane-hd');
+        for (i = 0; i < hds.length; i++){
+          if (groupKey(hds[i]) === g.key){ head = hds[i]; break; }
+        }
+      }
+      if (head){
+        /* walk to the last card of the shell's group and insert after it, so the
+           preview names keep their rank ahead of the ones that were withheld */
+        var at = head;
+        while (at.nextElementSibling && groupKey(at.nextElementSibling) === null) at = at.nextElementSibling;
+        var ref = at.nextSibling;
+        g.cards.forEach(function(c){ grid.insertBefore(c, ref); });
+        return;
+      }
+      /* Not on the page yet: place it at its own rank, never merely at the end —
+         a preview that happened to be all "Blocked" must not push "Live now"
+         underneath it. An unranked group (legacy lane, or a stage this build does
+         not know) appends, which is the old behaviour. */
+      var rank = stageRank(g.key), before = null;
+      if (rank > -1){
+        hds = grid.querySelectorAll('.nb-stage-hd');
+        for (i = 0; i < hds.length; i++){
+          var r = stageRank(groupKey(hds[i]));
+          if (r > rank){ before = hds[i]; break; }
+        }
+      }
+      if (g.head) grid.insertBefore(g.head, before);
+      g.cards.forEach(function(c){ grid.insertBefore(c, before); });
+    });
+  }
+
   function hydrate(payload){
     if (!payload || payload.schema !== 'tier_payload.v1' || payload.page !== 'us_stocks'){
       throw new Error('invalid payload');
     }
     hydratePanels(payload);
     var grid = document.querySelector('#us-standouts .nbgrid');
-    if (grid && payload.cards_html) grid.insertAdjacentHTML('beforeend', payload.cards_html);
+    if (grid && payload.cards_html) mergeBoardCards(grid, payload.cards_html);
+    /* Every card just spliced in carries a `.nb-px`/`.nb-chg` pill still holding
+       its baked value. live.js re-queries the document each tick, so these WOULD
+       paint on their own — in up to 60 seconds, during which the three preview
+       cards show a moving price and percentage and the sixty beside them show
+       last night's. One nudge paints them together. (Same reason and same call
+       as the evening board's _pvcPaint.) */
+    if (window.LiveQuotes && window.LiveQuotes.refresh) try{ window.LiveQuotes.refresh(); }catch(e){}
     if (Array.isArray(payload.rows) && payload.rows.length &&
         window.USStockTable && window.USStockTable._mergeRows){
       window.USStockTable._mergeRows(payload.rows);
