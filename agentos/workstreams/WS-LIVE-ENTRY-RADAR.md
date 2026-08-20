@@ -101,6 +101,39 @@ waves:
     # fail-closed. W4 ARMING REMAINS AN OPERATOR ACT — runbook
     # research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md; backend gates (the
     # day-2 directive's "#5929 + transport/provisioning merged") are now clear.
+    # DAY-3 COMMISSIONING ATTEMPT (2026-08-20, Sol directive Gate B) — verdict
+    # BLOCKED-ON-OPERATOR, receipts at /var/lib/macro-live/state/prophet_lab/
+    # commissioning_receipt_2026-08-20.json (VPS). FOUND: W4 was ALREADY armed
+    # 2026-08-18 13:04 by a prior operator (env header "W6 commissioning") and
+    # ran 215 armed passes through 08-19 — 160 IN-WINDOW, every one refused
+    # 'no_pack' (the pack service exited 5 on the 08-19 windows: the daily
+    # store's newest session had not advanced — an HONEST refusal that
+    # self-resolved; 08-20 dry-run builds names=241 with inversion proof
+    # 725/725 pass). ARMED IS NOT PRODUCING: zero envelopes have EVER been
+    # written to the canonical spool (R2 mastermindx/live_flow/
+    # entry_radar_events = 0 keys; the sibling nominations prefix holds 195
+    # keys written by the marketing hot-tape workflow, proving transport).
+    # Four config blockers, all staged for repair, application = OPERATOR act
+    # (the session harness denies remote production config mutation): B2 the
+    # writer env (/etc/macro-live.env) has neither R2 credentials nor a spool
+    # dir — spool_then_commit withholds every transition fail-closed with no
+    # error surface; B3 same-host split-brain — the API env reads the R2
+    # events prefix the writer never writes; B4 the API env lacks
+    # PROPHET_LAB_OBSERVATION_BASELINE_PATH; B5 ENTRY_RADAR_SLICE_DIR unset
+    # (G0/C5 publish slice_store_unconfigured; the LAB-0 candidate path
+    # /opt/terminal/terminal/public/data is NOW VERIFIED live: 5.7G, 44,436
+    # entries, manifest.json, fresh mtime). Staged repair = a systemd drop-in
+    # giving the evaluator unit EnvironmentFile=/etc/macro-api.env (no
+    # credential VALUES handled anywhere; same-source by construction; 0 env
+    # name collisions, only the four R2_* names referenced by spool.py) + the
+    # two path appends + macro-api restart. Baseline NOT minted — the CLI
+    # refused on zero spooled passes, verbatim refusal preserved (correct:
+    # never self-baseline). Known residual risks for the applier: the pack
+    # service caps MemoryMax=512M vs ~857MB observed unconstrained build RSS
+    # (watch the next 10:20:35Z run's exit); the remote-route same-source
+    # proof needs a site-full operator bearer token (none exists on the host;
+    # none was minted); an in-window pass with an EMPTY delta spools nothing,
+    # so first-envelope timing depends on real transitions after 13:29Z.
     # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
     # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
     # LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.2A). Executes under THIS

@@ -1042,6 +1042,7 @@ def test_historical_v1_complete_reobserved_unchanged_is_not_a_new_revision():
     assert evidence_id_from_manifest(v1) == w1["evidence_id"]
     decision = classify_bundle_against_published([w1], [v1])
     assert decision["status"] == "re_observed"
+    assert decision["persist"] == []
     assert decision["append"] == []
 
 
@@ -1081,7 +1082,13 @@ def test_complete_unchanged_child_interpretation_change_is_bundle_revision():
         [candidate_complete, candidate_child], published,
     )
     assert decision["status"] == "revision"
-    assert [row["evidence_id"] for row in decision["append"]] == [candidate_child["evidence_id"]]
+    assert [row["evidence_id"] for row in decision["changed"]] == [
+        candidate_child["evidence_id"]
+    ]
+    assert [row["evidence_id"] for row in decision["persist"]] == [
+        candidate_complete["evidence_id"], candidate_child["evidence_id"],
+    ]
+    assert decision["append"] == decision["persist"]
     assert interpretation_fingerprint(candidate_complete) == interpretation_fingerprint(complete)
 
 
@@ -1119,5 +1126,6 @@ def test_complete_and_children_unchanged_is_one_verified_reobservation():
         [later_complete, later_child], published,
     )
     assert decision["status"] == "re_observed"
+    assert decision["persist"] == []
     assert decision["append"] == []
     assert len(decision["unchanged"]) == 2
