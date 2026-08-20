@@ -907,6 +907,19 @@
      filter can reach it, but sits OUT of the default/unfiltered view — the
      section total (live) and the grid population must reconcile without it. */
   #us-standouts:not([data-lifef="resolved"]) #us-life-grid > [data-life="resolved"] { display: none !important; }
+  /* The reveal half — SAME reason data-stagef needs one above (:not([data-stagef=X])
+     alone leaves a matching card that also carries .sm-hidden, tier_preview.js's
+     `mx-tier-hidden`, or both hidden by that OTHER rule's own !important). A card the
+     ladder filter selects must win over show-more's collapse; it may NOT win over the
+     tier lock (a filter is not a paywall bypass), so only .sm-hidden is reversed here. */
+  #us-standouts[data-lifef="watch"]       #us-life-grid > .sm-hidden[data-life="watch"],
+  #us-standouts[data-lifef="ready"]       #us-life-grid > .sm-hidden[data-life="ready"],
+  #us-standouts[data-lifef="entered"]     #us-life-grid > .sm-hidden[data-life="entered"],
+  #us-standouts[data-lifef="delivering"]  #us-life-grid > .sm-hidden[data-life="delivering"],
+  #us-standouts[data-lifef="overtime"]    #us-life-grid > .sm-hidden[data-life="overtime"],
+  #us-standouts[data-lifef="invalidated"] #us-life-grid > .sm-hidden[data-life="invalidated"],
+  #us-standouts[data-lifef="resolved"]    #us-life-grid > .sm-hidden[data-life="resolved"] { display: flex !important; }
+  #us-standouts[data-lifef] #us-life-grid + .sm-bar { display: none !important; }
   /* ── P-MP1-SHELL §5/§6 — THE LIFECYCLE FACT ROW (.pv-life) + `.pv-mark`
      (template-scoped HERE, not in _prophet_card.html.j2's shared pv_css() —
      that macro is called by hk/china/canada/intl too, and §7/§12 item 3
