@@ -99,6 +99,12 @@
   .ws-chip.is-local i { background:transparent; border:1px solid currentColor; }
   .ws-chip.is-offline { color:var(--ink-warn); border-color:color-mix(in srgb,var(--warn) 34%,var(--line)); }
   .ws-chip.is-offline i { background:transparent; border:1px solid currentColor; }
+  /* A1A Part A: `failed` is a Portfolio write that did not land — the danger/down
+     token, same family as a real error. `unavailable` is a paused-editing read state,
+     not a failure of anything the visitor did — the muted/warn tone `offline` uses. */
+  .ws-chip.is-failed { color:var(--ink-down); border-color:color-mix(in srgb,var(--down) 34%,var(--line)); }
+  .ws-chip.is-unavailable { color:var(--ink-warn); border-color:color-mix(in srgb,var(--warn) 34%,var(--line)); }
+  .ws-chip.is-unavailable i { background:transparent; border:1px solid currentColor; }
   @keyframes ws-chippulse { 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
   @media (prefers-reduced-motion:reduce){ .ws-chip.is-saving i { animation:none; } }
 
@@ -1098,15 +1104,15 @@
 <script src="market_books.js?v=3"></script>
 <script src="portfolio_state.js?v=1"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=10"></script>
-<script src="factor_exposure.js?v=4"></script>
+<script src="watchlist.js?v=11"></script>
+<script src="factor_exposure.js?v=5"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
 <script src="watchlist_risk.js?v=6"></script>
-<script src="watchstore.js?v=7"></script>
-<script src="portfolio.js?v=7"></script>
+<script src="watchstore.js?v=8"></script>
+<script src="portfolio.js?v=8"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px; text-align:center">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>

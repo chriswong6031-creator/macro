@@ -36,6 +36,9 @@
 
   // ---- state -----------------------------------------------------------------
   var sb = null;           // shared Supabase client, set on auth
+  var sbInitFailed = false; // A1A blocker 2: true once getClient() has REJECTED for the
+                             // current session — `sb` will never resolve; see
+                             // _isClientUnavailable() below, near the portfolio CRUD.
   var user = null;         // current auth user
   var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
   var listsCache = [];     // [{id,name,position}] — last server read of the user's lists
@@ -1031,9 +1034,32 @@
      `!user||!sb` used to read as "local mode" and a signed-in load briefly rendered
      the anonymous LOCAL book under a 'local' authority/chip. This is neither anonymous
      (there IS a user) nor ready cloud (no client yet) — a THIRD transitional state. */
-  function _isCloudLoading() { return !!user && !sb; }
+  function _isCloudLoading() { return !!user && !sb && !sbInitFailed; }
+  /* A1A blocker 2 (Sol, 2026-08-20): `getClient()` can also REJECT — the SDK blocked
+     (GFW), a config error, a throw inside the client factory — and when it does, `sb`
+     stays null FOREVER for this session; nothing was ever going to make it resolve.
+     Before this branch existed, that case was indistinguishable from `_isCloudLoading`
+     (both are `user` truthy, `sb` null), so `portfolioList()` answered 'loading' and
+     never anything else — an authenticated visitor behind a broken client was stuck on
+     a loading placeholder for the rest of the session, in violation of "loading always
+     resolves to ready/degraded/error". `sbInitFailed` is the ONLY thing that
+     distinguishes "still resolving" from "will never resolve" — set once, by the
+     `getClient().catch()` below, and reset on every uid transition. */
+  function _isClientUnavailable() { return !!user && !sb && sbInitFailed; }
 
   function portfolioList() {
+    if (_isClientUnavailable()) {
+      // Terminal cloud-unreachable, not a router to the anonymous local book (A1A
+      // authority law, §10) — the same last-good/none split an ordinary cloud read
+      // failure uses, so this reads exactly like any other degraded/error cloud state.
+      pfReadState = {
+        authority: 'cloud',
+        state: pfLastGoodCloud ? 'degraded' : 'error',
+        last_good_at: pfLastGoodCloud ? pfLastGoodCloud.at : null,
+        warning: 'client-unavailable'
+      };
+      return Promise.resolve(pfLastGoodCloud ? pfLastGoodCloud.rows.slice() : null);
+    }
     if (_isCloudLoading()) {
       // never local rows, never an error banner for plain loading
       pfReadState = { authority: 'cloud', state: 'loading', last_good_at: null, warning: null };
@@ -1079,6 +1105,7 @@
     // status must be 'open' or 'closed'
     // A1A (S6): a signed-in write during the cloud-loading window must never land in
     // the anonymous local book — reject cleanly; the caller must not claim Saved.
+    if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalUpsert(pos);
     return _portfolioGuard().then(function () {
@@ -1125,6 +1152,7 @@
   }
 
   function portfolioClose(id) {
+    if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalClose(id);
     return _portfolioGuard().then(function () {
@@ -1146,6 +1174,7 @@
   }
 
   function portfolioRemove(id) {
+    if (_isClientUnavailable()) return Promise.resolve(null);
     if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalRemove(id);
     return _portfolioGuard().then(function () {
@@ -1222,6 +1251,9 @@
        "last-good" rows as their own degraded state. */
     pfLastGoodCloud = null;
     pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+    // A1A blocker 2: a fresh uid transition gets a fresh chance to resolve the client —
+    // yesterday's permanent failure must never carry over onto today's sign-in.
+    sbInitFailed = false;
 
     user = u || null;
     if (!user) {
@@ -1279,6 +1311,16 @@
     }).catch(function (err) {
       setPill('offline');
       warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
+      /* A1A blocker 2: `sb` will never resolve now — mark it terminal and re-fire
+         'wl-auth' exactly like the success path does a few lines up. Without the
+         re-fire, every listener that read the FIRST 'wl-auth' (dispatched before this
+         promise settled) is left holding the transient 'loading' answer forever: this
+         promise is the only thing that was ever going to correct it, and it just
+         failed. The re-fire lets portfolio.js's onAuth() re-read through
+         portfolioList(), which now (via _isClientUnavailable()) answers a TERMINAL
+         degraded/error state instead of leaving the read hanging. */
+      sbInitFailed = true;
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     });
   }
 
@@ -1377,7 +1419,9 @@
       resolveFoldTarget: resolveFoldTarget,
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
-      _setTestSession: function (u, client) { user = u; sb = client; },
+      _setTestSession: function (u, client, initFailed) {
+        user = u; sb = client; sbInitFailed = !!initFailed;
+      },
       // A1A test seam (review B1): the real auth-transition reset logic, so the
       // cross-user last-good-cloud leak can be pinned against the actual function
       // rather than reconstructed by hand in a test.

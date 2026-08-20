@@ -68,6 +68,7 @@
       // A1A frozen copy (research/market_os/…A1A_COMMISSIONING…md §13c) — verbatim
       degradedBanner: 'Cloud portfolio unavailable — showing your last saved positions (read-only).',
       errorBanner: "Cloud portfolio unavailable. We can't show your positions right now.",
+      loadingMsg: 'Loading your positions…',
       equalAssumed: 'Equal weights assumed — no position sizes entered.',
       mixedAbstain: 'Weights not shown — mix of sized and unsized positions.',
       mixedBasisAbstain: 'Weights not shown — mix of live-priced and at-cost positions.',
@@ -120,6 +121,7 @@
       lblStage: '阶段',
       degradedBanner: '云端持仓暂不可用 —— 显示你最后一次保存的持仓（只读）。',
       errorBanner: '云端持仓暂不可用。目前无法显示你的持仓。',
+      loadingMsg: '正在加载持仓…',
       equalAssumed: '按等权重计算 —— 未输入仓位大小。',
       mixedAbstain: '未显示权重 —— 部分持仓有仓位大小，部分没有。',
       mixedBasisAbstain: '未显示权重 —— 部分按现价，部分按成本价。',
@@ -167,9 +169,49 @@
   // A1A: {authority, state, last_good_at, warning} from watchstore.js's read seam —
   // 'ready' | 'degraded' (last-good, read-only) | 'error' (unknown, nothing to show)
   var readState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+  // A1A blocker 3 (write-failure honesty): 'clean' | 'saving' | 'saved' | 'failed'.
+  // Never stores 'offline_readonly' directly — that word is DERIVED (see
+  // refreshSnapshot below) whenever the read authority itself is degraded/error and
+  // no write is in flight; there is no authenticated outbox to call anything "clean".
+  var writeState = 'clean';
+  // A1A blocker 2 decision (Sol): the ONE portfolio_snapshot.v1 this file consumes —
+  // never a second, independently-derived mirror of the same population/read/write
+  // facts. Refreshed by refreshSnapshot(); null whenever window.PS has not deployed
+  // yet (B2 split-deploy window) or rows is genuinely unknown.
+  var snapshot = null;
 
   // ---- portfolio_state.js seam ----------------------------------------------
   function PS() { return window.PS || null; }
+
+  /* Assembles the canonical `portfolio_snapshot.v1` (research/market_os/…A1A…§9-12)
+     from the CURRENT rows/readState/writeState and holds it in `snapshot`. Every
+     population, read-state and write-state question this file answers reads THIS
+     object — openRows()/closedRows() (population + the table's row set),
+     renderReadBanner() (the read story) and the write-honesty dispatch all route
+     through it, rather than re-deriving the same fact a second, independent way.
+     PS-absent (split-deploy window, B2): `snapshot` stays null and every consumer
+     below falls back to its own pre-PS literal check on rows/readState — legacy-
+     quiet, no weighting-law claim, the existing B2 fallback untouched. */
+  function refreshSnapshot() {
+    var ps = PS();
+    if (!ps) { snapshot = null; return null; }
+    var effWrite = writeState;
+    if (effWrite === 'clean' && readState.authority === 'cloud' &&
+        (readState.state === 'degraded' || readState.state === 'error')) {
+      effWrite = 'offline_readonly';
+    }
+    snapshot = ps.computeSnapshot({
+      rows: rows,
+      authority: readState.authority,
+      readState: readState.state,
+      writeState: effWrite,
+      priceOf: priceOf,
+      bookOf: marketOf,
+      lastGoodAt: readState.last_good_at,
+      warning: readState.warning
+    });
+    return snapshot;
+  }
 
   // ---- market/book seam ----------------------------------------------------
   function MB() { return window.MB || null; }
@@ -192,6 +234,24 @@
     // A1A frozen copy (§13c): a cloud read error with no last-good rows — never a
     // silent zero, never the local book substituted in.
     if (errDiv) { errDiv.textContent = L('errorBanner'); errDiv.style.display = 'block'; }
+  }
+  /* A1A blocker 2 (Sol, consumer-level auth-transition fix): the delayed-cloud window
+     (onAuth()'s synchronous rows=null + 'loading' clear, below) must paint HONESTLY
+     too — never silently leave a PRIOR authority's table (the anonymous local rows,
+     or a previous signed-in user's cloud rows, B1) standing on screen while THIS
+     authority's real read is still unknown. Table content is cleared, not merely
+     hidden — a hidden-but-present stale row is still a leak the moment anything
+     un-hides it. Never an error tone: this is expected, resolving traffic. */
+  function showLoading() {
+    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_closed');
+    var host = el('tbl_pf');
+    if (host) host.innerHTML = '';
+    var errDiv = el('pf_err_inline');
+    if (errDiv) {
+      errDiv.textContent = L('loadingMsg');
+      errDiv.className = 'pf-err-inline is-loading';
+      errDiv.style.display = 'block';
+    }
   }
 
   // ---- index ---------------------------------------------------------------
@@ -216,16 +276,23 @@
   function tickerName(t) { var r = idxRec(t); return r ? (r.n || '') : ''; }
   function tickerSt(t) { var r = idxRec(t); return r ? (r.st || null) : null; }
 
-  // ---- open/closed split ---------------------------------------------------
+  // ---- open/closed split -----------------------------------------------------
+  // A1A blocker 2: sourced from the ONE portfolio_snapshot.v1 (refreshSnapshot()) —
+  // never a second independent filter of `rows`. PS-absent falls back to the exact
+  // pre-PS literal filter (B2: legacy-quiet, never a divergent answer).
   function openRows() {
     if (!rows) return [];
-    return rows.filter(function (r) { return r.status !== 'closed'; })
-      .sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
+    var snap = refreshSnapshot();
+    var list = snap ? snap.open_rows
+      : rows.filter(function (r) { return r.status !== 'closed'; });
+    return list.slice().sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
   }
   function closedRows() {
     if (!rows) return [];
-    return rows.filter(function (r) { return r.status === 'closed'; })
-      .sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
+    var snap = refreshSnapshot();
+    var list = snap ? snap.closed_rows
+      : rows.filter(function (r) { return r.status === 'closed'; });
+    return list.slice().sort(function (a, b) { return (a.ticker || '').localeCompare(b.ticker || ''); });
   }
 
   // ---- value math (per row; never crosses a currency) ----------------------
@@ -1122,8 +1189,13 @@
        successful read's content also lands here with `state === 'error'` (reload()'s
        `.catch()` sets 'error' but deliberately never touches `rows`) — that used to
        render the stale table with no disclosure at all. It reads exactly like
-       'degraded' to the visitor (last-good rows, read-only) and gets the same banner. */
-    if (readState.state === 'degraded' || (readState.state === 'error' && rows && rows.length)) {
+       'degraded' to the visitor (last-good rows, read-only) and gets the same banner.
+       A1A blocker 2: read through the ONE snapshot (refreshSnapshot()), never a
+       second literal mirror of `readState.state` — PS-absent falls back to the exact
+       same reads on `readState` directly (B2: legacy-quiet). */
+    var snap = refreshSnapshot();
+    var rs = snap ? snap.read_state : readState.state;
+    if (rs === 'degraded' || (rs === 'error' && rows && rows.length)) {
       host.textContent = L('degradedBanner');
       host.className = 'pf-readbanner is-degraded';
       host.style.display = 'block';
@@ -1134,13 +1206,22 @@
   }
   function render() {
     if (!section()) return;
+    // A1A blocker 2: assemble the ONE portfolio_snapshot.v1 for this render pass.
+    // openRows()/closedRows()/renderReadBanner() below all read it (or refresh their
+    // own equivalent copy of the same inputs, PS-present) rather than re-deriving
+    // population/read-state a second, independent way.
+    refreshSnapshot();
     if (rows === null) {
-      /* A1A: `rows === null` now means one of two honest things — not loaded yet
-         (readState still its default 'ready'), or a cloud read that genuinely failed
-         with no last-good rows to fall back to (readState.state === 'error'). The
-         second case gets the explicit unavailable message; NEVER a silent zero and
-         NEVER the anonymous local book substituted in. */
-      if (readState.state === 'error' && wsState().indexOf('anon') !== 0) showError();
+      /* A1A: `rows === null` now means one of three honest things — not loaded yet
+         (readState still its default 'ready'), a cloud read that genuinely failed
+         with no last-good rows to fall back to (readState.state === 'error'), or the
+         delayed-cloud window on an auth flip (readState.state === 'loading', onAuth()
+         below) — the previous authority's rows were cleared and the real read has not
+         settled yet. Each gets its own explicit, honest paint; NEVER a silent zero
+         and NEVER a PRIOR authority's rows (anonymous local, or a previous user's
+         cloud book, B1) left standing or substituted in. */
+      if (readState.state === 'error' && wsState().indexOf('anon') !== 0) { showError(); return; }
+      if (readState.state === 'loading' && wsState().indexOf('anon') !== 0) { showLoading(); return; }
       return;
     }
     if (wsState().indexOf('anon') === 0) return;
@@ -1385,6 +1466,15 @@
      watchlist.js's chip picks whichever event matches the active mode (portfolio.js
      never touches the chip's DOM directly — same seam discipline as the Watchlist). */
   function dispatchPfSave(state) {
+    /* A1A blocker 2/3: keep the tracked write_state (feeds refreshSnapshot()) in
+       lockstep with whatever word this dispatch just told the chip — so the ONE
+       snapshot this file assembles always answers "what did we just say happened"
+       consistently, rather than a second silent mirror of the same fact that could
+       drift from it. Every other chip word ('local', 'clean', 'unavailable', a plain
+       read's 'saving' during the S6 loading window) means "nothing is currently
+       in-flight or just landed" -> 'clean' (refreshSnapshot derives 'offline_readonly'
+       from readState when that is also honest). */
+    writeState = (state === 'saving' || state === 'saved' || state === 'failed') ? state : 'clean';
     try { document.dispatchEvent(new CustomEvent('pf-save', { detail: { state: state } })); }
     catch (e) { /* no CustomEvent (very old browser / test shell) */ }
   }
@@ -1392,7 +1482,16 @@
      "the write you just made landed," and a first load / background re-read never
      made one. `afterWrite` is true ONLY when this settles a doSave()/doRemove() call;
      everything else (onAuth's first load, the visibilitychange refetch, 'pf-folded')
-     settles to the neutral 'clean' state instead. */
+     settles to the neutral 'clean' state instead.
+     A1A blocker 3 (Sol, verbatim: "A1A has no authenticated Portfolio outbox, so
+     failed Portfolio writes must never claim they are locally retained or will sync
+     later"): a non-ready read state used to map to 'offline' unconditionally — the
+     WATCHLIST word that claims local retention and push-through sync, both false for
+     the authenticated Portfolio. A confirmed write (afterWrite) still reports 'saved'
+     even when the FOLLOW-UP read comes back non-ready — the write itself already
+     landed (doSave/doRemove only call reload(true) after a truthy result); the read
+     story is the read banner's job, not the chip's. A plain (non-afterWrite) non-ready
+     read reports the honest 'unavailable', never 'offline'. */
   function pfChipStateFor(rs, afterWrite) {
     if (!rs || rs.authority === 'local') return 'local';
     // S6's brief cloud-loading window ('user' set, the shared Supabase client not yet
@@ -1400,7 +1499,7 @@
     // read is in flight," and it self-corrects within the tick the re-fired 'wl-auth'
     // lands (watchstore.js dispatches it the instant `sb` resolves).
     if (rs.state === 'loading') return 'saving';
-    if (rs.state !== 'ready') return 'offline';
+    if (rs.state !== 'ready') return afterWrite ? 'saved' : 'unavailable';
     return afterWrite ? 'saved' : 'clean';
   }
 
@@ -1423,7 +1522,14 @@
     }).catch(function () {
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
-      dispatchPfSave('offline');
+      /* A1A blocker 3: this catch fires for a READ failure. When it follows a
+         CONFIRMED write (afterWrite — doSave()/doRemove() only call reload(true)
+         after upsert/remove already returned a truthy result), the write itself
+         landed; only the follow-up read failed. 'saved' stays honest; the read
+         banner (renderReadBanner, driven by the same readState) carries the read
+         story. Otherwise this is a plain read failure with no write involved:
+         'unavailable', never 'offline' (this file has no local retention to claim). */
+      dispatchPfSave(afterWrite ? 'saved' : 'unavailable');
       render();
     });
   }
@@ -1456,8 +1562,9 @@
       saveBtn.disabled = false;
       if (!result) {
         if (errEl) errEl.textContent = L('saveError');
-        // never claim Saved on a write that did not happen
-        dispatchPfSave('offline');
+        // A1A blocker 3: never claim Saved OR local retention on a write that did
+        // not happen — 'failed', never 'offline' (there is no authenticated outbox).
+        dispatchPfSave('failed');
         return;
       }
       pfCloseDlg();
@@ -1465,7 +1572,7 @@
     }).catch(function () {
       saveBtn.disabled = false;
       if (errEl) errEl.textContent = L('saveError');
-      dispatchPfSave('offline');
+      dispatchPfSave('failed');
     });
   }
 
@@ -1475,9 +1582,10 @@
     delete openDrawers[id];
     dispatchPfSave('saving');
     window.WatchStore.portfolio.remove(id).then(function (result) {
-      if (!result) { dispatchPfSave('offline'); return; }
+      // A1A blocker 3: a failed remove is 'failed', never 'offline' — see doSave().
+      if (!result) { dispatchPfSave('failed'); return; }
       reload(true);   // afterWrite (M-d)
-    }).catch(function () { dispatchPfSave('offline'); });
+    }).catch(function () { dispatchPfSave('failed'); });
   }
 
   // ---- drawer toggle -------------------------------------------------------
@@ -1513,6 +1621,23 @@
     if (!window.WatchStore || !window.WatchStore.portfolio) { showError(); return; }
     lastListAt = Date.now();
     hydrated = false;
+    /* A1A blocker 2 (Sol, verbatim): "prove anonymous rows never render under
+       authenticated authority ... loading always resolves to ready/degraded/error".
+       Authority is flipping (or re-confirming) to cloud the instant this fires with a
+       user present — `window.WatchStore.portfolio.list()` below is ASYNC (the S6
+       cloud-loading race, or now a client-init failure), so whatever `rows` currently
+       holds (the anonymous local book, or a PRIOR user's cloud book) must never be
+       left standing for an interim render() — a price tick, a language toggle, an fx
+       event — to paint while the real cloud read is still in flight. Clear
+       SYNCHRONOUSLY and render the loading state before the list() call below settles
+       anything; the unknown-rows branch of render() then paints loading, never the
+       stale book. Anonymous (`user()` false) is unaffected — pfLocalList() resolves
+       synchronously in practice and never needed this. */
+    if (window.WatchStore.user && window.WatchStore.user()) {
+      rows = null;
+      readState = { authority: 'cloud', state: 'loading', last_good_at: null, warning: null };
+      render();
+    }
     window.WatchStore.portfolio.list().then(function (newRows) {
       var rs = window.WatchStore.portfolio.readState ? window.WatchStore.portfolio.readState() : null;
       readState = rs || { authority: 'local', state: 'ready', last_good_at: null, warning: null };
@@ -1525,7 +1650,9 @@
     }).catch(function () {
       readState = { authority: readState.authority, state: 'error',
                     last_good_at: readState.last_good_at, warning: 'read-failed' };
-      dispatchPfSave('offline');
+      // A1A blocker 3: no write is ever involved in onAuth()'s plain read — always
+      // the honest 'unavailable', never 'offline'.
+      dispatchPfSave('unavailable');
       showError();
     });
   }

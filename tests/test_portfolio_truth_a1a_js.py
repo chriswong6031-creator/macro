@@ -929,15 +929,73 @@ def test_ma_unresolved_basis_gets_its_own_copy_not_the_mixed_sizing_message():
 
 
 def test_mc_error_state_with_stale_rows_still_shows_the_degraded_banner():
-    """MUTATION CHECK: revert renderReadBanner()'s condition to
-    `readState.state === 'degraded'` alone and this reds — an 'error' read that still
-    has STALE rows on screen (a later read failed after an earlier success) must show
-    the same disclosure a 'degraded' read does, never silently render as if nothing
-    happened."""
+    """MUTATION CHECK: revert renderReadBanner()'s condition to `rs === 'degraded'`
+    alone and this reds — an 'error' read that still has STALE rows on screen (a later
+    read failed after an earlier success) must show the same disclosure a 'degraded'
+    read does, never silently render as if nothing happened.
+    Post-commissioning (Part B, snapshot authority): the condition now reads `rs`,
+    sourced from `refreshSnapshot()` (portfolio_snapshot.v1's `read_state`) rather
+    than `readState.state` directly — see test_partB_read_banner_is_snapshot_derived
+    for the mutation pin on THAT routing."""
     code = _pf_code()
     idx = code.index("function renderReadBanner() {")
     fn = code[idx:code.index("\n  function ", idx + 10)]
-    assert "readState.state === 'error' && rows && rows.length" in fn
+    assert "rs === 'error' && rows && rows.length" in fn
+
+
+# ===========================================================================
+# Part B (commissioning, 2026-08-20): portfolio_snapshot.v1 becomes the REAL
+# consumed Portfolio state authority — Sol's blocker 2 decision ("either make
+# portfolio_snapshot.v1 the real consumed Portfolio state authority or explicitly
+# amend the architecture"; the decision taken is to make it real).
+# ===========================================================================
+def test_partB_read_banner_is_snapshot_derived():
+    """MUTATION CHECK: revert renderReadBanner()'s condition to read `readState.state`
+    UNCONDITIONALLY (dropping the `snap ? snap.read_state : ...` routing, i.e. deleting
+    `refreshSnapshot()`/`snap.read_state` and using `readState.state` as the sole
+    source even when PS IS present) and this reds — the read banner must prefer the
+    ONE portfolio_snapshot.v1 this file assembles per render() whenever PS is present;
+    `readState.state` may remain only as the B2 split-deploy PS-absent fallback."""
+    code = _pf_code()
+    idx = code.index("function renderReadBanner() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "refreshSnapshot()" in fn
+    assert "snap.read_state" in fn
+    assert "rs === 'degraded' || (rs === 'error' && rows && rows.length)" in fn
+
+
+def test_partB_open_and_closed_rows_are_snapshot_derived():
+    """MUTATION CHECK: revert openRows()/closedRows() to filter `rows` directly
+    without consulting refreshSnapshot() and this reds — population (open.length ===
+    0/1/many, driving the zero/one/many Book Read branches) and the table's row set
+    must both come from the ONE snapshot, PS-present, never a second independent
+    filter of the same raw rows."""
+    code = _pf_code()
+    for name in ("function openRows() {", "function closedRows() {"):
+        idx = code.index(name)
+        fn = code[idx:code.index("\n  function ", idx + 10)]
+        assert "refreshSnapshot()" in fn, name
+
+
+def test_partB_render_assembles_the_snapshot_once_per_pass():
+    """MUTATION CHECK: delete the `refreshSnapshot();` call from render() (leaving
+    openRows()/closedRows()/renderReadBanner() to each lazily refresh their own copy
+    with no single assembly point) and this reds."""
+    code = _pf_code()
+    start = code.index("function render() {")
+    render_fn = code[start:]
+    render_fn = render_fn[:render_fn.index("\n  function ", 10)]
+    assert "refreshSnapshot();" in render_fn
+
+
+def test_partB_ps_absent_read_banner_falls_back_to_readState_directly():
+    """B2 (split-deploy window): when window.PS has not deployed yet, refreshSnapshot()
+    must return null and every consumer must fall back to its OWN pre-PS literal
+    check — never a weighting-law or read-state claim manufactured without PS."""
+    code = _pf_code()
+    idx = code.index("function refreshSnapshot() {")
+    fn = code[idx:code.index("\n  function ", idx + 10)]
+    assert "if (!ps) { snapshot = null; return null; }" in fn
 
 
 def test_md_a_plain_read_never_claims_saved():

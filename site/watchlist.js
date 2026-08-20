@@ -735,13 +735,25 @@
   }
 
   /* The save-state chip is the ONLY disclosure of sync state on this page — the
-     Account Sync panel is deleted. Five states, each literally true:
+     Account Sync panel is deleted. Seven states, each literally true:
        saved   — a WRITE just landed in the account
        clean   — a READ succeeded from the account; nothing has been written this
                  session, so nothing is claimed to have been "saved" (M-d review)
        saving  — a write is in flight
        local   — anonymous; the list lives in this browser and nowhere else
-       offline — the network is unreachable and changes are being kept locally */
+       offline — WATCHLIST ONLY (see scope law below): the network is unreachable
+                 and changes are being kept locally
+       failed      — a Portfolio WRITE was attempted and did not land anywhere
+       unavailable — the cloud Portfolio cannot be read right now; editing is paused
+
+     A1A (Sol blocker 3, verbatim): "A1A has no authenticated Portfolio outbox, so
+     failed Portfolio writes must never claim they are locally retained or will sync
+     later." `offline`'s copy ("changes kept locally… written through when it comes
+     back") is TRUE for the Watchlist (a real local store with push-through sync) and
+     FALSE for the authenticated Portfolio (no local mirror, no outbox — a failed
+     cloud write is simply lost). SCOPE LAW: `offline` remains a WATCHLIST-only chip
+     word; portfolio.js's write/read authority dispatches `failed` or `unavailable`
+     for the Portfolio scope, NEVER `offline`. */
   var CHIP = {
     saved:   ['is-saved',   'Saved', '已保存',
               'Saved to your Mastermind account. Your list and positions follow you to the Terminal.',
@@ -757,7 +769,13 @@
               '这份名单只存在这个浏览器里。保存到免费账户后，任何设备都能看到。'],
     offline: ['is-offline', 'Offline — changes kept locally', '离线 · 更改已存在本地',
               'We cannot reach the network right now. Your changes are kept on this device and written through when it comes back.',
-              '当前无法连接网络。更改会先保存在本机，恢复后自动写入。']
+              '当前无法连接网络。更改会先保存在本机，恢复后自动写入。'],
+    failed: ['is-failed', 'Change not saved', '更改未保存',
+             'The write to your account failed — this change was not stored and will not sync on its own. Please retry.',
+             '写入你的账户失败——这笔更改没有被保存，也不会自动同步。请重试。'],
+    unavailable: ['is-unavailable', 'Portfolio unavailable — read-only', '云端持仓暂不可用 · 只读',
+                  'We cannot reach your cloud portfolio right now. Editing is paused so nothing can be silently lost.',
+                  '当前无法连接云端持仓。已暂停编辑，以免更改被悄悄丢失。']
   };
   /* A1A (§13, defect "Save-state crossover"): this ONE chip used to be driven
      exclusively by Watchlist synchronization (`ws-save`, dispatched by watchstore.js's
