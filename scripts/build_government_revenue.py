@@ -96,10 +96,19 @@ SHELL_JSON_BUDGET_BYTES = 100_000
 # fact disclosure added in #5369 are legitimate bounded presentation markup.
 # With the current committed evidence they render to 277,445 raw bytes, which
 # exceeded the old 275,000-byte fence and blocked engine-render 31594939986
-# before publication. 288 KiB restores 17,467 bytes (5.9%) of measured
+# before publication. 288 KiB restored 17,467 bytes (5.9%) of measured
 # headroom while preserving the stricter 100 KB embedded-data cap; the radar
 # runtime itself remains an external, cacheable asset.
-RAW_HTML_BUDGET_BYTES = 294_912
+# D3 (#6048) added the Change Tape temporal-truth markup — dual-clock tape
+# rows, the inspector Clocks block with its named-null source-publication
+# row, and the correction/successor state — 3,465 rendered bytes of bounded
+# presentation law that left 65 bytes of headroom under 288 KiB: one nightly
+# payload wobble from blocking the render lane (this exact page baked to
+# 294,847 against the committed 2026-08-20 evidence). 296 KiB restores 8,257
+# bytes (2.8%) of measured headroom; the embedded-data cap is unchanged and
+# the D3 inline comments were simultaneously trimmed to pointer form so the
+# raise covers real markup, not narration.
+RAW_HTML_BUDGET_BYTES = 303_104
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",
