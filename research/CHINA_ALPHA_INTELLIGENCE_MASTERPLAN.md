@@ -86,6 +86,11 @@ path — the actual scheduled lane run, not a dry-run or fixture — and the
 receipt (run id + produced-artifact evidence) is recorded in the workstream.
 For China collector waves the proving lane is the next real `asia-close.yml`
 run; for candidate-plane telemetry it is the next real nightly plane write.
+(Lane correction, measured 2026-08-20: the China candidate/telemetry plane
+is ALSO written only by `asia-close.yml` — `daily.yml` resets `data/china*`
+in its collect step and can never prove a China wave; "real nightly" above
+resolves to the real asia-close production run. PR-0B's receipt accrued
+exactly there: run 32348780228 → commit baf4cf7c9291.)
 
 ## §0-ter. Sol freeze-review revision record (2026-08-19, second pass)
 
@@ -1067,9 +1072,12 @@ future causal diagnosis of champion ranking.
 Non-goal:
 no rank change, no historical fabricated served values.
 
-Completion: merge = `BUILT_NOT_PROVEN`; `done` only on the first real nightly
-plane write carrying the new columns, receipt recorded in the workstream
-(§0-bis Completion law).
+Completion: merge = `BUILT_NOT_PROVEN`; `done` only on the first real
+production plane write carrying the new columns, receipt recorded in the
+workstream (§0-bis Completion law; the writing lane is `asia-close.yml` —
+see the §0-bis lane correction). **RECEIPT ACCRUED 2026-08-20:** asia-close
+run 32348780228 → commit baf4cf7c9291 (intel_* columns live, 1,636–1,640
+non-null covered rows, 4 typed refusals) — wave `pr0b` is done.
 
 ### PR-0C — Evidence contract / fixtures
 Mission:

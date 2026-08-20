@@ -55,8 +55,11 @@ landmines:
     china_corporate_event.v1 on any path."
   - "Completion law: merge = BUILT_NOT_PROVEN on every build wave; done only
     after a real production run traverses the real path and the receipt (run
-    id + evidence) is recorded here. asia-close proves collectors; the real
-    nightly plane write proves telemetry."
+    id + evidence) is recorded here. Lane correction 2026-08-20: ALL China
+    data planes — collectors AND candidate-plane telemetry — are written by
+    asia-close.yml; daily.yml resets data/china* in its collect step and can
+    never prove a China wave, so every earlier 'real nightly plane write'
+    phrase resolves to the real asia-close production run."
   - "HOLD LAW (DSC:CHINA-ALPHA-HOLD-MERGE-INCIDENT): #5953 merged 2026-08-19
     16:05Z under a recorded CEO hold via a direct account merge — label
     removal does not bind humans. Any future held PR in this program must be
@@ -102,16 +105,22 @@ waves:
     status: done
     pr: [5822, 5953]
   - id: pr0b
-    title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)
-    status: in_progress
+    title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (RECEIPT ACCRUED 2026-08-20)
+    status: done
     pr: [6045]
     next_action: >
-      BUILT_NOT_PROVEN — merged as PR #6045 (squash fdbf543b2333ec6077988ffd571966f180008cc5;
-      immutable merge SHA is the canonical proof pointer per Sol 2026-08-20);
-      done only on the real-nightly telemetry receipt. Follow-up verification session runs,
-      against a full (non-sparse) checkout: `git log --oneline -1 -- data/china_prophet_rank/`
-      then reads the newest rows and asserts intel_* columns are non-null for covered names and
-      intel_unavailable_reason is set for refused names.
+      DONE — merged as PR #6045 (squash fdbf543b2333ec6077988ffd571966f180008cc5) and
+      PROVEN by the first qualifying natural post-merge production run: asia-close.yml
+      run 32348780228 (the operator-dispatched real production execution of 2026-08-20;
+      asia job 13:29-15:20Z success; merge is an ancestor of its checkout). Plane write
+      = commit baf4cf7c9291 data/china_prophet_rank/candidates.parquet (24,070 rows):
+      all intel_* columns present, 1,636-1,640 non-null across covered-name fields, 4
+      rows with intel_unavailable_reason set (typed refusals) — exactly the receipt
+      standard. LANE CORRECTION recorded with the receipt: the China candidate/telemetry
+      plane is written by asia-close.yml, NOT daily.yml — daily.yml resets data/china*
+      in its collect step and can never prove a China wave; every "real nightly" phrase
+      in earlier PR-0B prose means the real asia-close production run. Proof-only
+      inspection 2026-08-20; no run was manufactured for this receipt.
   - id: rights0
     title: RIGHTS-0 source entitlement/rights audit (consumes CN-A #5945 matrix + CN-B #5947 resolver findings + CN-E #5951 license findings; residual only)
     status: done
@@ -120,7 +129,7 @@ waves:
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
     status: in_progress
     depends_on: [rights0]
-    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done."
+    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done. PARTIAL RECEIPT (proof-only inspection 2026-08-20): page half PROVEN — https://www.mastermind-x.com/china_intel.html serves the K2c visits block with honest not-yet-covered states (render commit baf4cf7c9291; the later render-public 8e73239563ef only re-stamped assets). Data half NOT accrued: asia-close run 32372312243 (first checkout containing the merge; still in progress at inspection) wrote data/china_visits/ via commit a14ac56627c9 with n_candidates=0 ('0 candidate row(s) this run', health ok) — the collector ran end-to-end without error but zero real visit rows exist yet; it is forward-only, so 0 rows can be a legitimately quiet filing day. Remaining proof: the first asia-close run persisting >=1 real institutional_visit row, plus the crops."
   - id: pr0d
     title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)
     status: in_progress
@@ -165,14 +174,16 @@ waves:
 next_action: >
   ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication received;
   freeze effective since Sol post-merge acceptance GO, receipt = main
-  49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b BUILT_NOT_PROVEN
-  (#6045 squash fdbf543b2333), rights0 done, p1 BUILT_NOT_PROVEN (#6050
-  squash c54d1b55f673), pr0d OWNER_ROUTED_WAIT on D2B2-CN-HK under
-  WS:PROPHET-US-V4-RECOVERY (DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK; no
-  China-lane identity builder). Next in this WS: (1) the PR-0B/P1
-  production-proof verification (bounded proof-only inspection of the first
-  qualifying NATURAL post-merge nightly/asia-close runs — never manufacture
-  a run; RECEIPT_NOT_YET_ACCRUED leaves waves BUILT_NOT_PROVEN); (2) adopt
+  49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b DONE (#6045 squash
+  fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291,
+  intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash
+  c54d1b55f673; page half proven live, zero real visit rows yet), pr0d
+  OWNER_ROUTED_WAIT on D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY
+  (DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK; no China-lane identity
+  builder). Next in this WS: (1) P1 data-half proof — the first asia-close
+  run persisting >=1 real institutional_visit row + production dossier
+  desktop/mobile crops (never manufacture a run; RECEIPT_NOT_YET_ACCRUED
+  leaves the wave BUILT_NOT_PROVEN); (2) adopt
   the D2B2-CN-HK result by reference when the owner child merges. Completion
   law on every build wave: merge = BUILT_NOT_PROVEN; a real production
   receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B,

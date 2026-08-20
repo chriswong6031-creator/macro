@@ -61,7 +61,11 @@ changed:
       pr0d wave encoded OWNER_ROUTED_WAIT / consumer-verifier with the
       adopt-by-reference + natural-nightly done-gate; pr0b/#6045 and
       p1/#6050 receipts re-pointed at immutable squash SHAs (fdbf543b2333 /
-      c54d1b55f673); top-level next_action rewritten to the closed-activation
+      c54d1b55f673); pr0b flipped to DONE on the accrued asia-close receipt
+      (run 32348780228 -> commit baf4cf7c9291) with the
+      asia-close-writes-China-planes lane correction recorded in the
+      completion-law landmine; p1 partial receipt (page half proven live,
+      data half pending) recorded; top-level next_action rewritten to the closed-activation
       state (proof-only verification + owner-child adoption; no new
       verticals without a Sol directive); depends_on += WS:PROPHET-US-V4-RECOVERY;
       decisions += DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK.
@@ -75,6 +79,12 @@ verified:
     command: "gh pr view 6045/6050 --json mergeCommit"
   - claim: "AgentOS schema passes with the new DEC + WS edits"
     command: "python3 scripts/agentos.py validate (run pre-push in this PR)"
+  - claim: "PR-0B receipt accrued: asia-close run 32348780228 (post-merge checkout, asia job success) produced commit baf4cf7c9291 whose data/china_prophet_rank/candidates.parquet carries all intel_* columns — 1,636-1,640 non-null covered rows, 4 typed intel_unavailable_reason refusals"
+    command: "gh run view 32348780228 --json jobs; git merge-base --is-ancestor fdbf543b2333... <run head>; git show baf4cf7c9291:data/china_prophet_rank/candidates.parquet + pyarrow (proof-only inspection 2026-08-20)"
+  - claim: "China planes are written by asia-close.yml only — daily.yml resets data/china* in its collect step (lane correction recorded in WS landmine + masterplan §0-bis)"
+    command: "grep -n 'git reset -q -- data/' .github/workflows/daily.yml; grep -rn build_china_intel .github/workflows/*.yml"
+  - claim: "production china_intel page serves the #6050 K2c visits block with honest not-yet-covered states"
+    command: "curl -s https://www.mastermind-x.com/china_intel.html | grep -n 'Institutional visits'; diff <(git show baf4cf7c9291:site/china_intel.html) <(git show 8e73239563ef:site/china_intel.html) — asset-stamp-only diff"
 do_not_redo:
   - "Do not spawn a China-lane identity builder from PR-0D_china_identity_extension.md — the file's banner and DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK route implementation to the D2B2-CN-HK child; the 2026-08-20 builder's STOP at the collision was correct behavior, not a failure to finish."
   - "Do not authorize or start the D2B2 US/Canada backlog, D2B3, D2C, D2D, or D2E from this ruling — Sol bounded the authorization to the China/HK slice only."
@@ -84,25 +94,28 @@ danger_areas:
   - "The D2B2-CN-HK builder writes data/reference/ through the canonical builder — sparse-worktree law applies (opt into the full tree; never git add an unexpected data/ diff)."
   - "New pytest suites must be wired into .github/ci/legacy-jobs.yml owner lanes in the same PR or contract-delta reds the vehicle (this exact latch bit #6050)."
 unverified:
-  - claim: "no qualifying natural post-merge production run existed yet for PR-0B or P1 at handoff time"
-    what_would_verify: "the dispatched proof-only inspection's return (gh run ids for the first natural daily.yml / asia-close.yml runs postdating the merges + artifact evidence)"
+  - claim: "P1's zero collected visit rows (n_candidates=0 in commit a14ac56627c9) reflects a genuinely quiet filing day rather than a latent category-classification defect in collectors/china_filings.py"
+    what_would_verify: "the first asia-close run on a day with a real 投资者关系活动记录表 filing persisting >=1 row; or a targeted read of the institutional_visit category taxonomy against that day's raw filings"
 unresolved:
-  - "PR-0B/P1 production receipts: both waves stay BUILT_NOT_PROVEN until the first qualifying NATURAL post-merge run proves them (PR-0B: nightly intel_* plane write in data/china_prophet_rank/; P1: asia-close visit rows + production dossier desktop/mobile crops with honest failure states)."
+  - "P1 data-half receipt: the wave stays BUILT_NOT_PROVEN until the first qualifying natural asia-close run persists >=1 real institutional_visit row AND the production dossier desktop/mobile crops with honest failure states are captured (page half already proven live 2026-08-20 — render commit baf4cf7c9291 serving on https://www.mastermind-x.com/china_intel.html)."
   - "D2B2-CN-HK execution: contract frozen and authorized, child not yet merged; China pr0d waits to adopt its immutable merge SHA by reference."
 next_actions:
   - "D2B2-CN-HK child executes research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md under WS:PROPHET-US-V4-RECOVERY (spawn commission = the contract's SECTION block; merge = BUILT_NOT_PROVEN; Sol reviews the return)."
-  - "PR-0B/P1 production-proof: a bounded proof-only inspection was dispatched 2026-08-20; on RECEIPT_NOT_YET_ACCRUED, a follow-up verification session re-inspects after the next natural nightly (PR-0B) and asia-close run (P1), then flips waves to done with run IDs and evidence — never manufacture a run."
+  - "P1 data-half proof: re-inspect after the next natural asia-close run (early-bird cron 06:00Z, backstops through 11:15Z) — RECEIPT_ACCRUED needs >=1 real institutional_visit row in data/china_visits/ plus the production crops; never manufacture a run. PR-0B needs nothing further (receipt accrued, wave done)."
   - "When D2B2-CN-HK merges, record its immutable merge SHA on China wave pr0d (BUILT_NOT_PROVEN, adopt-by-reference); pr0d done only on the natural-nightly source -> master -> GMI proof with measured CN/HK resolution delta."
 ---
 
 # China Alpha activation close-out — 2026-08-20
 
 Cold-stranger summary: the activation's four waves ended the day as
-pr0b BUILT_NOT_PROVEN (#6045, squash fdbf543b2333), rights0 done,
-p1 BUILT_NOT_PROVEN (#6050, squash c54d1b55f673, repaired dossier consumer
-merged after the Sol hold/repair cycle), and pr0d OWNER_ROUTED_WAIT — Sol's
-adjudication routed China/HK identity implementation to the bounded child
-D2B2-CN-HK under the V4 D2 / Data OS owner rather than a China-lane build.
-The frozen contract, decision record, seam corrections, and receipt
-hygiene (immutable merge SHAs) all landed in the records PR carrying this
-handoff. Production proof for pr0b/p1 accrues on natural runs only.
+pr0b DONE (#6045, squash fdbf543b2333; receipt = asia-close run 32348780228
+→ commit baf4cf7c9291, intel_* columns live with typed refusals), rights0
+done, p1 BUILT_NOT_PROVEN (#6050, squash c54d1b55f673, repaired dossier
+consumer merged after the Sol hold/repair cycle; page half proven live,
+zero real visit rows yet), and pr0d OWNER_ROUTED_WAIT — Sol's adjudication
+routed China/HK identity implementation to the bounded child D2B2-CN-HK
+under the V4 D2 / Data OS owner rather than a China-lane build. The frozen
+contract, decision record, seam corrections, receipt hygiene (immutable
+merge SHAs), and the asia-close-writes-China-planes lane correction all
+landed in the records PR carrying this handoff. Remaining production proof
+(p1 data half, pr0d owner chain) accrues on natural runs only.
