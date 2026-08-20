@@ -753,7 +753,7 @@
   }
 
   /* The save-state chip is the ONLY disclosure of sync state on this page — the
-     Account Sync panel is deleted. Seven states, each literally true:
+     Account Sync panel is deleted. Eight states, each literally true:
        saved   — a WRITE just landed in the account
        clean   — a READ succeeded from the account; nothing has been written this
                  session, so nothing is claimed to have been "saved" (M-d review)
@@ -761,8 +761,13 @@
        local   — anonymous; the list lives in this browser and nowhere else
        offline — WATCHLIST ONLY (see scope law below): the network is unreachable
                  and changes are being kept locally
-       failed      — a Portfolio WRITE was attempted and did not land anywhere
-       unavailable — the cloud Portfolio cannot be read right now; editing is paused
+       failed       — a Portfolio WRITE was attempted under CLOUD authority and did
+                      not land anywhere (account-scoped copy)
+       failed_local — a Portfolio WRITE was attempted under LOCAL (anonymous)
+                      authority and did not land anywhere (device-storage copy —
+                      F3, Sol post-review: 'failed's account copy is false for a
+                      visitor with no account)
+       unavailable  — the cloud Portfolio cannot be read right now; editing is paused
 
      A1A (Sol blocker 3, verbatim): "A1A has no authenticated Portfolio outbox, so
      failed Portfolio writes must never claim they are locally retained or will sync
@@ -770,8 +775,16 @@
      back") is TRUE for the Watchlist (a real local store with push-through sync) and
      FALSE for the authenticated Portfolio (no local mirror, no outbox — a failed
      cloud write is simply lost). SCOPE LAW: `offline` remains a WATCHLIST-only chip
-     word; portfolio.js's write/read authority dispatches `failed` or `unavailable`
-     for the Portfolio scope, NEVER `offline`. */
+     word; portfolio.js's write/read authority dispatches `failed`/`failed_local` or
+     `unavailable` for the Portfolio scope, NEVER `offline`.
+     F3 (Sol post-review, MAJOR — proofC_anon_write_failure.py): `failed` and
+     `unavailable` are themselves ACCOUNT-scoped claims ("your account", "your cloud
+     portfolio") — both false for an ANONYMOUS visitor, whose local write failure
+     (Safari private mode, storage quota) is a device problem, not an account one.
+     portfolio.js's dispatch is authority-aware: under local authority, a write
+     failure dispatches `failed_local`, and `unavailable` becomes unreachable
+     (the honest `local` word is dispatched instead — nothing is actually wrong
+     with a cloud account that does not exist for this visitor). */
   var CHIP = {
     saved:   ['is-saved',   'Saved', '已保存',
               'Saved to your Mastermind account. Your list and positions follow you to the Terminal.',
@@ -791,6 +804,9 @@
     failed: ['is-failed', 'Change not saved', '更改未保存',
              'The write to your account failed — this change was not stored and will not sync on its own. Please retry.',
              '写入你的账户失败——这笔更改没有被保存，也不会自动同步。请重试。'],
+    failed_local: ['is-failed', 'Change not saved', '更改未保存',
+                   'Saving on this device failed — storage may be full or blocked. The change was not stored.',
+                   '本机保存失败——存储可能已满或被禁用。这笔更改没有被保存。'],
     unavailable: ['is-unavailable', 'Portfolio unavailable — read-only', '云端持仓暂不可用 · 只读',
                   'We cannot reach your cloud portfolio right now. Editing is paused so nothing can be silently lost.',
                   '当前无法连接云端持仓。已暂停编辑，以免更改被悄悄丢失。']
@@ -1733,6 +1749,20 @@
       // including the Portfolio click — is the W4 2026-08-15 chip drop: FX paints the
       // watchlist as "this book's risk" while holdings is 0 rows.
       if (window.FX) {
+        /* Harness non-vacuity finding (Sol post-review, F2 follow-on): portfolio.js
+           calls pushFxWeights() on its OWN render pass regardless of which tab is
+           active, and F2's fix made an empty/thin Portfolio push the honest-empty
+           `{}` instead of `null` — but `{}` is still a NON-null AUTO_W, so
+           factor_exposure.js's `autoMode = AUTO_W !== null` stayed permanently
+           locked into 'auto' (portfolio) mode with nothing in it, silently
+           overriding FX.update() below and leaving the Watchlists tab's OWN panel
+           dark even while the reader is looking straight at it (caught by the
+           browser after-proof's watchlist-mode trace check going empty). Auto
+           mode is a PORTFOLIO-tab concept; entering Watchlists mode explicitly
+           releases it back to null so the watchlist's own universe governs here —
+           portfolio.js re-asserts its own AUTO_W the moment the reader switches
+           back (render() -> pushFxWeights() on every Portfolio-mode render). */
+        window.FX.setAutoWeights(null);
         var syms = blob.items.map(function (it) { return it.t; });
         window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
       }
@@ -2212,6 +2242,34 @@
     });
     document.addEventListener('pf-save', function (e) {
       if (e && e.detail && e.detail.state) setChip(e.detail.state, 'portfolio');
+    });
+    /* F2 (Sol post-review, MAJOR, part iii — the "belt" at the auth boundary,
+       proofB_risk_latch_auth.js): the RISK payload was invalidated ONLY at the
+       Watchlists->Portfolio MODE boundary (setMode()) — nothing invalidated it at
+       an AUTH boundary. A signed-in user A's Risk Center read (RISK.rcTabs, keyed
+       to A's own book) survived A's sign-out and a second user B signing in on the
+       same page session while the reader stayed in Portfolio mode: any ordinary
+       repaint B's session triggers (a price tick, hydration, a langchange) simply
+       re-painted A's stale read. Reset RISK the same way setMode()'s mode-boundary
+       fix does, whenever the wl-auth IDENTITY actually changes (sign-in, sign-out,
+       or a different uid replacing the previous one) — never on the S6 double-fire
+       of the SAME identity (user set, then the shared Supabase client resolving),
+       which must not cost an extra reset+render. `lastAuthIdentity === undefined`
+       is the one-time "never seen a wl-auth yet" state at page load and is
+       deliberately treated as a change too (belt-and-suspenders: RISK is normally
+       already the empty default at that point, so the reset is a harmless no-op
+       value-wise, but staying fail-safe here — rather than special-casing "first
+       fire, skip" — means the belt still closes the gap even if some future path
+       ever populates RISK before the page's own first wl-auth). */
+    var lastAuthIdentity;
+    document.addEventListener('wl-auth', function (e) {
+      var uid = (e && e.detail && e.detail.user && e.detail.user.id) || null;
+      if (uid !== lastAuthIdentity) {
+        RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+                 seamItems: null, coverage: null, headline: null };
+        render();
+      }
+      lastAuthIdentity = uid;
     });
 
     /* Resolve the live universe across every market the saved list actually touches.

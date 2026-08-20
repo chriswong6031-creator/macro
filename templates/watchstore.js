@@ -36,9 +36,33 @@
 
   // ---- state -----------------------------------------------------------------
   var sb = null;           // shared Supabase client, set on auth
-  var sbInitFailed = false; // A1A blocker 2: true once getClient() has REJECTED for the
-                             // current session — `sb` will never resolve; see
-                             // _isClientUnavailable() below, near the portfolio CRUD.
+  var sbInitFailed = false; // A1A blocker 2: true once getClient() has REJECTED (or, F6,
+                             // TIMED OUT) for the current session — `sb` will never
+                             // resolve on time; see _isClientUnavailable() below.
+  // F6 (Sol post-review, MAJOR): which of the two ways sbInitFailed became true —
+  // read by portfolioList()'s _isClientUnavailable() branch so the warning names the
+  // real cause instead of a generic word for both.
+  var sbInitFailureReason = 'client-unavailable';
+  // F6: "loading always resolves" was false — getClient()'s promise (theme.js's SDK
+  // load) and the PostgREST read itself had no deadline; a stalled connection left
+  // _isCloudLoading() (or a bare in-flight read) true for the rest of the session.
+  // Bounds BOTH async gates. Test seam: _setCloudDeadlineMs() shortens it so a test
+  // does not need to wait 12 real seconds.
+  var PF_CLOUD_DEADLINE_MS = 12000;
+  /* Returns {promise, cancel} rather than a bare promise: an uncancelled timer
+     keeps holding the event loop open for the full `ms` even after the OTHER side
+     of the race has already settled — invisible in the browser (nothing waits on
+     process exit) but a real cost in every node-shelled test that exercises a
+     cloud call, each now silently paying up to PF_CLOUD_DEADLINE_MS of dead time
+     per call otherwise. Callers MUST call `cancel()` once the real promise they
+     raced this against settles, win or lose. */
+  function _deadline(ms, tag) {
+    var timer;
+    var promise = new Promise(function (_resolve, reject) {
+      timer = setTimeout(function () { reject(new Error(tag)); }, ms);
+    });
+    return { promise: promise, cancel: function () { clearTimeout(timer); } };
+  }
   var user = null;         // current auth user
   var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
   var listsCache = [];     // [{id,name,position}] — last server read of the user's lists
@@ -1056,7 +1080,7 @@
         authority: 'cloud',
         state: pfLastGoodCloud ? 'degraded' : 'error',
         last_good_at: pfLastGoodCloud ? pfLastGoodCloud.at : null,
-        warning: 'client-unavailable'
+        warning: sbInitFailureReason
       };
       return Promise.resolve(pfLastGoodCloud ? pfLastGoodCloud.rows.slice() : null);
     }
@@ -1069,7 +1093,14 @@
       pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
       return pfLocalList();
     }
-    return _portfolioGuard().then(function () {
+    // F6 (Sol post-review, MAJOR): the PostgREST read itself had no deadline — a
+    // stalled connection left a `portfolioList()` call pending forever. `readPromise`
+    // is the REAL query; it keeps running (and keeps its OWN .then()/.catch() below,
+    // which is the single place pfLastGoodCloud/pfReadState get written for this
+    // read) independently of the race — so a genuinely slow read still reconciles
+    // pfReadState to 'ready' (or the ordinary degraded/error shape) via the exact
+    // same code path an on-time read uses, whenever it finally settles, late or not.
+    var readPromise = _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .select('*')
         .eq('user_id', user.id)
@@ -1097,6 +1128,24 @@
       pfReadState = { authority: 'cloud', state: 'error', last_good_at: null, warning: 'cloud-unavailable' };
       return null;
     });
+    // THIS call's own answer is bounded — readPromise never rejects (its own catch
+    // above always resolves), so the race is really "whichever settles first": the
+    // read, or the deadline. A timed-out call answers degraded (last-good)/error
+    // with warning:'read-timeout' RIGHT NOW; readPromise's own handlers above still
+    // run later and correct pfReadState/pfLastGoodCloud for whoever reads them next.
+    var readDeadline = _deadline(PF_CLOUD_DEADLINE_MS, 'read-timeout');
+    readPromise.then(readDeadline.cancel, readDeadline.cancel);
+    return Promise.race([readPromise, readDeadline.promise])
+      .catch(function (err) {
+        if (!(err && err.message === 'read-timeout')) throw err; // defensive: readPromise never rejects
+        pfReadState = {
+          authority: 'cloud',
+          state: pfLastGoodCloud ? 'degraded' : 'error',
+          last_good_at: pfLastGoodCloud ? pfLastGoodCloud.at : null,
+          warning: 'read-timeout'
+        };
+        return pfLastGoodCloud ? pfLastGoodCloud.rows.slice() : null;
+      });
   }
   function portfolioReadState() { return pfReadState; }
 
@@ -1254,6 +1303,7 @@
     // A1A blocker 2: a fresh uid transition gets a fresh chance to resolve the client —
     // yesterday's permanent failure must never carry over onto today's sign-in.
     sbInitFailed = false;
+    sbInitFailureReason = 'client-unavailable';
 
     user = u || null;
     if (!user) {
@@ -1298,30 +1348,70 @@
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
     if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
-    getClient().then(function (c) {
+    var uidAtCall = user && user.id;
+    function clientReady(c) {
+      // A late resolution after a different uid has since signed in must not
+      // resurrect a PRIOR session's client into the CURRENT one.
+      if ((user && user.id) !== uidAtCall) return;
+      // Idempotency: `clientPromise` is listened to TWICE (the race below, and the
+      // late-settle reconciliation further down) — on the normal fast path both
+      // resolve to the SAME client, and this guard is what stops the second one
+      // from re-running sb=c/pull()/re-dispatch a wasteful, duplicate second time.
+      if (sb === c) return;
       sb = c;
+      sbInitFailed = false;
       pull();
       /* A1A (review finding S6): the FIRST 'wl-auth' above fired before `sb`
          resolved, so portfolio.js's onAuth() ran during the cloud-loading window
          (`user` set, `sb` not yet) and could read nothing but the loading
          placeholder (see portfolioList's `_isCloudLoading()` branch). Re-fire now
          that `sb` is ready so the Portfolio re-reads the real cloud rows without
-         any user interaction. */
+         any user interaction. F6: this ALSO covers the late-settle case — a
+         client that finally resolves after this file's own timeout already
+         declared it unavailable corrects the state the same way an on-time
+         success would have. */
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
-    }).catch(function (err) {
+    }
+    function clientFailed(err, reason) {
+      if ((user && user.id) !== uidAtCall) return;
       setPill('offline');
-      warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
-      /* A1A blocker 2: `sb` will never resolve now — mark it terminal and re-fire
-         'wl-auth' exactly like the success path does a few lines up. Without the
-         re-fire, every listener that read the FIRST 'wl-auth' (dispatched before this
-         promise settled) is left holding the transient 'loading' answer forever: this
-         promise is the only thing that was ever going to correct it, and it just
-         failed. The re-fire lets portfolio.js's onAuth() re-read through
-         portfolioList(), which now (via _isClientUnavailable()) answers a TERMINAL
-         degraded/error state instead of leaving the read hanging. */
+      warnOnce('client', 'getSupabaseClient ' + (reason === 'client-timeout' ? 'timed out' : 'failed') +
+        ': ' + (err && err.message || err));
+      /* A1A blocker 2 / F6 (Sol post-review, MAJOR — "loading always resolves" was
+         false): `sb` will never resolve ON TIME now — mark it terminal and re-fire
+         'wl-auth' exactly like the success path does above. Without the re-fire,
+         every listener that read the FIRST 'wl-auth' (dispatched before this
+         promise settled) is left holding the transient 'loading' answer forever.
+         `reason` distinguishes a genuine REJECT (theme.js's SDK failed to load —
+         GFW, config error) from a TIMEOUT (the promise never settles at all — a
+         stalled connection, neither onload nor onerror) — both are terminal for
+         THIS call, but the reason is real information the warning field carries
+         rather than collapsing to one generic word. */
       sbInitFailed = true;
+      sbInitFailureReason = reason;
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
-    });
+    }
+    var clientPromise = getClient();
+    // F6: bound the client gate with a deadline — `clientPromise` itself may never
+    // settle (a stalled connection fires neither onload nor onerror), which used to
+    // leave `_isCloudLoading()` true for the rest of the session. Race it against a
+    // timer for THIS call's terminal answer; the timer is cancelled once
+    // `clientPromise` itself settles (win or lose the race) so a fast/normal
+    // resolution never leaves a dangling 12s timer alive behind it.
+    var clientDeadline = _deadline(PF_CLOUD_DEADLINE_MS, 'client-timeout');
+    clientPromise.then(clientDeadline.cancel, clientDeadline.cancel);
+    Promise.race([clientPromise, clientDeadline.promise])
+      .then(clientReady)
+      .catch(function (err) {
+        clientFailed(err, (err && err.message === 'client-timeout') ? 'client-timeout' : 'client-unavailable');
+      });
+    /* F6 late-settle reconciliation: `clientPromise` is tracked independently of the
+       race above, so a genuinely slow (but eventually successful) client init still
+       corrects the state once it finally resolves — `clientReady`'s own idempotency
+       (re-running sb=c/pull()/re-dispatch) is harmless if the race ALSO already
+       succeeded on time; a late rejection after the race already timed out is a
+       no-op (the terminal state is already correctly recorded). */
+    clientPromise.then(clientReady, function () { /* already handled by the race's catch */ });
   }
 
   // ---- init ------------------------------------------------------------------
@@ -1421,6 +1511,11 @@
       tickersOf: _tickersOf,
       _setTestSession: function (u, client, initFailed) {
         user = u; sb = client; sbInitFailed = !!initFailed;
+      },
+      // F6 test seam: shortens the client/read deadline so a test does not have to
+      // wait the real 12s default. Returns the previous value.
+      _setCloudDeadlineMs: function (ms) {
+        var prev = PF_CLOUD_DEADLINE_MS; PF_CLOUD_DEADLINE_MS = ms; return prev;
       },
       // A1A test seam (review B1): the real auth-transition reset logic, so the
       // cross-user last-good-cloud leak can be pinned against the actual function

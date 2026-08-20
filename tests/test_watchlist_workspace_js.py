@@ -2176,3 +2176,53 @@ def test_every_watchlist_page_script_is_served_or_deliberately_gated():
         f"{missing} — add each to every matcher naming /watchlist.js in "
         "app/deploy/Caddyfile, or add it to GATED above if the 401 is intended."
     )
+
+
+@needs_node
+def test_entering_watchlists_mode_releases_auto_weights_back_to_manual():
+    """Harness non-vacuity follow-on (Sol post-review, found via the browser
+    after-proof re-run): portfolio.js's own render passes push AUTO_W (even the
+    honest-empty {} F2 requires) regardless of which tab is active, so entering
+    Watchlists mode used to inherit whatever AUTO_W state the Portfolio last left
+    behind — factor_exposure.js's `autoMode = AUTO_W !== null` stayed locked into
+    'auto' with nothing in it, silently blanking the Watchlists tab's own panel.
+
+    MUTATION CHECK: delete the `window.FX.setAutoWeights(null);` call from
+    render()'s `mode === 'watchlists'` branch and this reds — fxCalls would never
+    see a `null` push when switching into Watchlists mode."""
+    out = _run(
+        """
+        var fxCalls = [];
+        var nodes = {};
+        function node(id) {
+          if (!nodes[id]) nodes[id] = {
+            id: id, innerHTML: '', textContent: '', style: {}, className: '',
+            classList: { contains: function () { return false; }, toggle: function () {},
+                         add: function () {}, remove: function () {} },
+            setAttribute: function () {}, getAttribute: function () { return null; },
+            querySelector: function () { return null; },
+            querySelectorAll: function () { return []; },
+            addEventListener: function () {}
+          };
+          return nodes[id];
+        }
+        document.getElementById = function (id) { return node(id); };
+        window.SD = {};
+        window.FX = {
+          setAutoWeights: function (w) { fxCalls.push(w); },
+          update: function () {}
+        };
+        window.MB = { refresh: function () {}, modeledOnly: function (s) { return s; },
+                      marketOf: function () { return 'us'; }, inActive: function () { return true; } };
+        window.PF = { count: function () { return 0; }, render: function () {} };
+        var WLT = require(%s);
+        window.WL.replace({v:1, updated:'2026-08-20T00:00:00.000Z',
+          items:[{t:'AAPL', added:'2026-08-20T00:00:00.000Z', note:''}],
+          order:['AAPL'], settings:{}});
+        fxCalls = [];
+        WLT.setMode('watchlists', false);
+        OUT({ fxCalls: fxCalls, mode: window.WS.mode() });
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["mode"] == "watchlists"
+    assert None in out["fxCalls"], out["fxCalls"]
