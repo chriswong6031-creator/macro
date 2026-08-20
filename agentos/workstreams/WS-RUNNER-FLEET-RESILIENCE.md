@@ -58,8 +58,10 @@ waves:
     status: todo
     depends_on: [W2]
     next_action: >
-      Add exactly one general macstudio production slot on the guarded M1 and restore
-      theta-m1 only on the proven store-bearing listener; prove a natural nightly run.
+      Census every current macstudio consumer and its memory/local-capability envelope,
+      then admit one explicitly selected safe production lane through m1-nightly and
+      restore theta-m1 only on the proven store-bearing listener. Do not add the generic
+      macstudio label to the M1 in this wave.
   - id: W5
     title: Retire obsolete M2 roles and add live fleet health projection
     status: todo
@@ -78,6 +80,7 @@ decisions:
   - DEC:RUNNER-FLEET-PHYSICAL-FAILURE-DOMAINS
 artifacts:
   - research/RUNNER_FLEET_RESILIENCE_ARCHITECTURE_FREEZE_2026-08-20.md
+  - research/RUNNER_FLEET_RESILIENCE_M0_ADVERSARIAL_AMENDMENT_2026-08-20.md
   - research/PRIVATE_REPO_RUNNER_STORAGE_ALLOCATION_AUDIT_2026_08_14.md
   - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
 landmines:
@@ -93,6 +96,10 @@ landmines:
     historical labels before the guarded m1-runner-canary passes. See
     research/PRIVATE_REPO_RUNNER_STORAGE_ALLOCATION_AUDIT_2026_08_14.md.
   - >
+    The generic macstudio label is a broad capability grant, not a capacity label. On
+    the 32-GB M1 it is forbidden until a separate current-consumer/resource census proves
+    every macstudio job is lawful there. See the M0 adversarial amendment.
+  - >
     `render-linux` being declared in runner-policy does not prove it is online; the
     registry is static operator-maintained state. Re-prove current PC liveness.
 do_not_redo:
@@ -107,6 +114,9 @@ do_not_redo:
     Do not treat PR #6089 as having fixed runner starvation; it fixed Asia-close's
     starvation blindness/classification bug and explicitly left runner starvation
     separate.
+  - >
+    Do not restore generic macstudio to the M1 merely because mac-builder-1/2 historically
+    carried production. Current workload/resource compatibility must be re-proven first.
 next_action: >
   Get M0 records green and merged, then execute W1 only: hosted merge-control
   environment canary under WS:CI-MERGE-CONTROL-PLANE. Prepare W2/W3 diagnostic host
