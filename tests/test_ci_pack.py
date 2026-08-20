@@ -2842,6 +2842,19 @@ CURATED_EXCLUSIVE = {
     # Curated at the source: its true subject is exactly app/observability.py
     # and tests/test_observability_sentry.py, both declared and covered.
     "serving-observability",
+    # 2026-08-20 main-red-repair (same wave). govrev-company-bridge (D4
+    # Company Financial Truth Bridge) also shipped with no scope. Its suite's
+    # own `node` subprocess call (tests/test_government_revenue_company_bridge.py:197)
+    # resolves to `subprocess roots=templates,tests`, widening to templates/**
+    # and matching every ordinary templates/index.html PR. Curated at the
+    # source: its true subject is the frozen fixture plus the two template
+    # files its own header comment already documents as the only reads.
+    "govrev-company-bridge",
+    # #6117 (records(dislocation): P0-A1 price-blind candidate harvest) shipped
+    # its own `scope: exclusive` declaration pre-curated — registered here so
+    # this file's pin does not drift from the manifest (no fix required, the
+    # job's own paths: already cover its full closure).
+    "dislocation-p0-a1-blind-harvest",
 }
 
 

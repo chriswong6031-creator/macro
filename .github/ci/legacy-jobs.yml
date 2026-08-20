@@ -8591,6 +8591,21 @@ jobs:
     # or data/government_revenue/) plus templates/government-revenue-dossiers.js
     # and templates/government_revenue.html.j2 as plain text: pytest and node
     # (preinstalled on ubuntu-latest) are the only runtime dependencies.
+    #
+    # `scope: exclusive` declared here (2026-08-20, main-red-repair): shipped
+    # with no scope at all, the suite's own `node` subprocess invocation
+    # (tests/test_government_revenue_company_bridge.py:197) is an opaque
+    # subprocess call scope inference cannot see through — it resolves to
+    # `subprocess roots=templates,tests`, which widens to templates/** and
+    # matched every ordinary templates/index.html PR. Curated at the source:
+    # its true subject is exactly the four files below, per this job's own
+    # header comment above.
+    scope: exclusive
+    paths:
+      - "templates/government-revenue-dossiers.js"
+      - "templates/government_revenue.html.j2"
+      - "tests/fixtures/govrev_company_bridge/p00032_event.json"
+      - "tests/test_government_revenue_company_bridge.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
