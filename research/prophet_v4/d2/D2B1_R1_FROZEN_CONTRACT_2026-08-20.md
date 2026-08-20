@@ -325,3 +325,19 @@ breadth-lane retirement of `data/stocks/VMRK.parquet`. Until then the `store` sp
 no VMRK answer (absence is strictly better than the wrong-id answer it replaced), and
 any future dated rename will fail closed at the prune conflict with a visible
 `::warning` until that carve-out lands — accepted, disclosed behavior.
+
+### AMENDMENT §3 (2026-08-20) — re-verification regression ruling
+
+Re-verification found all original findings FIXED and one NEW MAJOR introduced by the
+fix pass: `VendorAliasPruneConflict(SystemExit)` escapes `run_nightly_refresh`'s
+`except Exception`, breaking the seam's "always returns 0" invariant, skipping
+`_restore_artifacts`, and emitting no annotation on the exact path AMENDMENT §2
+promises will fire on every future dated rename. Ruling: the class re-bases on
+`Exception`, and `run_nightly_refresh` catches it EXPLICITLY before the generic
+handler — dedicated `::warning` naming the conflicting alias rows and that curation is
+required, last-good artifacts restored, return 0. The CLI path stays fail-closed
+(uncaught → non-zero). Test-pinned on the nightly seam (conflict → rc 0 + dedicated
+warning + artifacts restored). Ruling-10 completion: the sidecar diff must add exactly
+ONE epoch over origin/main (re-derive once over main's committed parquet with the final
+code; the two pass-1 intermediate epochs never belonged on main); the two content-equal
+issuer parquets restore their base bytes.
