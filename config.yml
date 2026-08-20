@@ -2318,6 +2318,15 @@ breadth:
                   # are keyed on it.
     FISV: FI      # Fiserv renamed FISV->FI in 2023 — the page still shows the OLD symbol
                   # (Yahoo does too, hence the inverse entry in lib/ticker_aliases)
+    VMRK: EQR     # Equity Residential renamed EQR->VMRK on the NYSE 2026-08-18 (SEC EDGAR
+                  # CIK 0000906107, 8-K accession 0001140361-26-033377, Item 5.03 —
+                  # research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md
+                  # AMENDMENT ruling 7 / M6). EQR stays the stored key (same MMC->MRSH
+                  # precedent; lib/ticker_aliases.YAHOO_FETCH_ALIASES["EQR"]="VMRK"
+                  # fetches under the NEW symbol and stores under the OLD one). Does NOT
+                  # retire the pre-existing data/stocks/EQR.parquet + VMRK.parquet double
+                  # store — that is an owed breadth-lane retirement, out of scope here
+                  # (§10 forbids editing price stores).
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same

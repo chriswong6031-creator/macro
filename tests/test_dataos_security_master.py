@@ -1080,8 +1080,20 @@ def test_receipt_carries_the_security_axis_block(receipt: dict) -> None:
     assert sec["state_counts"]["ACTIVE"] == 704
     assert sec["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
     assert receipt["pending_transition_refusals"] == []
-    assert receipt["listing_continuity"] == []
+    # AMENDMENT ruling 3 (M1): listing_continuity is no longer unconditionally empty
+    # post-repair — the fence-scoped (plain-string) half IS empty (EQR heals via the
+    # rename chain, AVB via the exit ledger, CTRA/TPH already exit-ledgered), but the
+    # GOLD row (a registered DISCLOSED_IDENTITY_EXCEPTIONS entry, excluded from the
+    # fence itself) is a typed, EXPLAINED entry — never silently dropped.
+    assert receipt["listing_continuity"] == [
+        {"code": "GOLD", "explained": "identity_exception"}
+    ]
     assert receipt["resurrection_refusals"] == []
+    # AMENDMENT ruling 4 (M3) / ruling 6 (M5) — the two new disclosure blocks are
+    # present and empty in the healthy post-repair state (no unregistered rename
+    # duplicate exists, and no alias row needed pruning this run).
+    assert receipt["unregistered_rename_duplicates"] == []
+    assert receipt["vendor_alias_prunes"] == []
 
 
 # H1 — race replay WITHOUT the RenameEvent: the fence refuses the VMRK mint.
@@ -1102,7 +1114,7 @@ def test_h1_race_replay_without_the_rename_event_the_fence_refuses(
         BUILD.Resolution("VMRK", _lk("US", "XNYS", "VMRK"), "VMRK", "VMRK",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map={},
     )
     assert lost and lost[0]["security_id"] == EQR_ID
@@ -1137,7 +1149,7 @@ def test_h7_independent_cik_evidence_mints_normally_despite_a_nonempty_lost_set(
                          "fixture", date(2026, 8, 20)),
     ]
     cik_map = {"NEWCO": ("0009990001", "New Company Inc.")}
-    rows, ids, notes, refusals, pending, lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
     )
     assert lost and lost[0]["security_id"] == EQR_ID
@@ -1165,10 +1177,52 @@ def test_h7_a_shared_cik_with_a_lost_row_is_NOT_independent_and_still_refuses(
                          "fixture", date(2026, 8, 20)),
     ]
     cik_map = {"VMRK": ("0000906107", "Vivmark Residential")}  # SAME cik as the lost row
-    rows, ids, notes, refusals, pending, lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
     )
     assert len(pending) == 1, "a shared CIK with the lost row is not independent evidence"
+
+
+# AMENDMENT ruling 2 (M2) — REPRODUCE-THEN-KILL the reviewer's exact scenario: a
+# lost row with a NULL issuer_cik used to be silently dropped from `lost_ciks`
+# entirely (`if r.get("issuer_cik")`), so it could never disqualify any candidate —
+# a fresh mint with an evidenced CIK sailed through with ZERO refusals even though
+# independence from the null-CIK lost row was never actually proven. Fixed:
+# independence now requires EVERY fence-scoped lost row to carry a non-null CIK.
+def test_m2_a_null_cik_lost_row_fails_closed_never_lets_a_candidate_through(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(BUILD, "RENAME_EVENTS", ())
+    existing = [{
+        # The exact defect class: a lost row with NO evidenced issuer_cik — the
+        # reviewer's own reproduction used a resurrection-adjacent NO_ISSUER_EVIDENCE
+        # row exactly like this shape.
+        "security_id": EQR_ID, "issuer_id": None,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": "US-XNYS-EQR",
+        "country": "US", "mic": "XNYS", "inception_code": "EQR",
+        "effective_at": "2023-05-09T00:00:00", "ingested_at": "2026-08-13T00:00:00",
+        "security_state": None, "superseded_by": None,
+    }]
+    resolutions = [
+        # ZZZNEW is a genuine new listing with its OWN evidenced CIK — under the
+        # pre-fix code this minted with ZERO refusals (the null lost-CIK vanished
+        # from `lost_ciks` and "not in {}" is vacuously true for ANY candidate CIK).
+        BUILD.Resolution("ZZZNEW", _lk("US", "XNAS", "ZZZNEW"), "ZZZNEW", "ZZZNEW",
+                         "fixture", date(2026, 8, 20)),
+    ]
+    cik_map = {"ZZZNEW": ("0009990002", "Zzz New Inc.")}
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+        resolutions, existing, "2026-08-20T00:00:00", cik_map=cik_map,
+    )
+    assert lost and lost[0]["security_id"] == EQR_ID and lost[0]["issuer_cik"] is None
+    assert len(pending) == 1, (
+        "a null-CIK lost row must fail EVERY candidate closed (independence "
+        "unprovable), never let one through — this is the reviewer's own "
+        "reproduced defect (0 refusals, ZZZNEW minted)"
+    )
+    assert "ZZZNEW" not in ids
+    assert not any(r["security_id"] == "SEC:US-XNAS-ZZZNEW" for r in rows)
 
 
 # H8 — a seed rendering a SUPERSEDED listing key never resurrects it.
@@ -1195,7 +1249,7 @@ def test_h8_a_resolution_hitting_a_tombstone_is_a_typed_refusal_not_a_resurrecti
         BUILD.Resolution("VMRK2", _lk("US", "XNYS", "VMRK"), "VMRK", "VMRK",
                          "fixture", date(2026, 8, 20)),
     ]
-    rows, ids, notes, refusals, pending, lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
         resolutions, existing, "2026-08-20T00:00:00", cik_map={},
     )
     assert "VMRK2" not in ids, "never a silent resurrection"
@@ -1205,6 +1259,312 @@ def test_h8_a_resolution_hitting_a_tombstone_is_a_typed_refusal_not_a_resurrecti
     assert refusals[0]["superseded_by"] == EQR_ID
     # And the tombstone itself is carried through untouched — never deleted.
     assert any(r["security_id"] == "SEC:US-XNYS-VMRK" for r in rows)
+
+
+# ── AMENDMENT ruling 4 (M3) — SECURITY_SUPERSESSIONS is an EXACT listing-key
+# registry; a RenameEvent-implied bare-code match on a DIFFERENT venue must NEVER
+# auto-tombstone (the reviewer's cross-MIC scenario) — it is disclosed instead.
+def test_m3_the_registry_matches_the_committed_vmrk_entry_exactly() -> None:
+    assert len(BUILD.SECURITY_SUPERSESSIONS) == 1
+    entry = BUILD.SECURITY_SUPERSESSIONS[0]
+    assert entry.listing_key == "US-XNYS-VMRK"
+    assert entry.canonical_id == EQR_ID
+    assert "0001140361-26-033377" in entry.evidence
+
+
+def test_m3_reproduce_then_kill_the_cross_mic_auto_tombstone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """REPRODUCE (the pre-fix defect): the OLD code matched any row whose bare
+    inception code equalled a RenameEvent's `.new`, on ANY venue — a genuinely
+    independent NASDAQ listing sharing VMRK's bare code as its OWN inception code
+    got auto-tombstoned onto EQR. KILL: the fixed code matches SECURITY_SUPERSESSIONS
+    entries by EXACT listing_key only, so the cross-MIC row must survive untouched
+    and the mismatch must surface as a disclosure, never an execution.
+    """
+    eqr_row = {
+        "security_id": EQR_ID, "issuer_id": "ISS:US-XNYS-EQR",
+        "issuer_state": "RESOLVED", "issuer_cik": "0000906107",
+        "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-EQR",
+        "country": "US", "mic": "XNYS", "inception_code": "EQR",
+        "security_state": None, "superseded_by": None,
+    }
+    # A genuinely independent NASDAQ listing that happens to carry "VMRK" as its OWN
+    # bare inception code — a different venue, a different real company.
+    cross_mic_row = {
+        "security_id": "SEC:US-XNAS-VMRK", "issuer_id": None,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": "US-XNAS-VMRK",
+        "country": "US", "mic": "XNAS", "inception_code": "VMRK",
+        "security_state": None, "superseded_by": None,
+    }
+    rows = [dict(eqr_row), dict(cross_mic_row)]
+    # `ids` mirrors what mint_master_rows would really produce: "VMRK" as a SEED KEY
+    # walks the real EQR->VMRK rename chain to the canonical EQR_ID — the cross-MIC
+    # row is a DIFFERENT, independent listing that merely happens to share the bare
+    # code "VMRK" on XNAS; its id is never a VALUE `ids` maps any seed key to.
+    ids = {"EQR": EQR_ID, "VMRK": EQR_ID}
+
+    # REPRODUCE: the pre-amendment matcher (bare inception-code match on ANY venue).
+    def pre_fix_match(rows, ids):
+        freshly = []
+        for event in BUILD.RENAME_EVENTS:
+            canonical_id = ids.get(event.new)
+            if canonical_id is None:
+                continue
+            for row in rows:
+                if row.get("security_state"):
+                    continue
+                if row["security_id"] == canonical_id:
+                    continue
+                try:
+                    _c, _m, code = str(row["listing_key"]).split("-", 2)
+                except ValueError:
+                    continue
+                if code.upper() != event.new:
+                    continue
+                row["security_state"] = BUILD.SECURITY_STATE_SUPERSEDED_DUPLICATE_MINT
+                row["superseded_by"] = canonical_id
+                freshly.append(row)
+        return rows, freshly
+    reproduced_rows, reproduced_freshly = pre_fix_match([dict(eqr_row), dict(cross_mic_row)], ids)
+    reproduced = {r["security_id"]: r for r in reproduced_rows}
+    assert reproduced["SEC:US-XNAS-VMRK"]["security_state"] == "SUPERSEDED_DUPLICATE_MINT", (
+        "reproduction failed — the pre-fix matcher was expected to WRONGLY tombstone "
+        "the cross-MIC row onto EQR"
+    )
+
+    # KILL: the fixed function must leave the cross-MIC row untouched.
+    out_rows, freshly_superseded = BUILD.apply_security_supersession(rows, ids)
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNAS-VMRK"]["security_state"] is None, (
+        "the EXACT-listing-key registry must never tombstone a cross-MIC row that "
+        "merely shares the bare inception code"
+    )
+    assert freshly_superseded == []
+
+    # And the mismatch is DISCLOSED, never silently dropped.
+    disclosures = BUILD.detect_unregistered_rename_duplicates(out_rows)
+    assert len(disclosures) == 1
+    assert disclosures[0]["security_id"] == "SEC:US-XNAS-VMRK"
+
+
+def test_m3_the_registered_exact_key_still_supersedes_normally() -> None:
+    """The positive direction: a row whose listing_key EXACTLY matches the
+    registered entry IS corrected — the fix narrows the match, it does not disable
+    it."""
+    eqr_row = {
+        "security_id": EQR_ID, "issuer_id": "ISS:US-XNYS-EQR",
+        "issuer_state": "RESOLVED", "issuer_cik": "0000906107",
+        "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-EQR",
+        "country": "US", "mic": "XNYS", "inception_code": "EQR",
+        "security_state": None, "superseded_by": None,
+    }
+    dup_row = {
+        "security_id": "SEC:US-XNYS-VMRK", "issuer_id": None,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": "US-XNYS-VMRK",
+        "country": "US", "mic": "XNYS", "inception_code": "VMRK",
+        "security_state": None, "superseded_by": None,
+    }
+    out_rows, freshly_superseded = BUILD.apply_security_supersession(
+        [eqr_row, dup_row], {"EQR": EQR_ID, "VMRK": "SEC:US-XNYS-VMRK"})
+    by_id = {r["security_id"]: r for r in out_rows}
+    assert by_id["SEC:US-XNYS-VMRK"]["security_state"] == "SUPERSEDED_DUPLICATE_MINT"
+    assert by_id["SEC:US-XNYS-VMRK"]["superseded_by"] == EQR_ID
+    assert len(freshly_superseded) == 1
+    assert BUILD.detect_unregistered_rename_duplicates(out_rows) == []
+
+
+# ── AMENDMENT ruling 5 (M4) — dedup discriminator is each seed's CURRENT symbol,
+# not the shared inception_code (which is structurally always equal whenever two
+# resolutions reach the collision branch at all — the dead-code defect).
+def test_m4_two_resolutions_sharing_a_current_symbol_dedup_lawfully() -> None:
+    """The H2 shape as a direct unit test of mint_master_rows: EQR (root) and VMRK
+    (chain member) both render US-XNYS-EQR and both walk to the SAME current symbol
+    (VMRK) — dedup, no collision note, both map to the SAME freshly-minted id."""
+    resolutions = [
+        BUILD.Resolution("EQR", _lk("US", "XNYS", "EQR"), "EQR", "EQR",
+                         "fixture", date(2020, 1, 1)),
+        BUILD.Resolution("VMRK", _lk("US", "XNYS", "EQR"), "EQR", "EQR",
+                         "fixture", date(2026, 8, 20)),
+    ]
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+        resolutions, [], "2026-08-20T00:00:00", cik_map={},
+    )
+    assert notes == [], "same current symbol must dedup lawfully, never a collision note"
+    assert ids["EQR"] == ids["VMRK"] == EQR_ID
+    assert len([r for r in rows if r["security_id"] == EQR_ID]) == 1
+
+
+def test_m4_reproduce_then_kill_the_dead_collision_note(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """REPRODUCE: the pre-fix discriminator (`res.inception_code`) is structurally
+    ALWAYS equal whenever two resolutions share a rendered listing key (the key is
+    literally built from the inception code), so the collision `notes.append` branch
+    was DEAD — 0 resolutions could ever reach it. KILL: with a genuine ticker-REUSE
+    fixture (two DIFFERENT raw seed identities that happen to render the same listing
+    key but answer DIFFERENT current symbols), the fixed discriminator fires the
+    collision note; the OLD discriminator would have silently deduped them instead.
+    """
+    monkeypatch.setattr(BUILD, "RENAME_EVENTS", ())
+    # Two independent Resolution objects manufactured to share a rendered listing
+    # key (as the ONLY real path there — via resolve_universe — forces) while their
+    # RAW seed keys answer DIFFERENT current symbols (no chain connects them).
+    res_a = BUILD.Resolution("OLD1", _lk("US", "XNYS", "SHARED"), "SHARED", "OLD1",
+                             "fixture", date(2020, 1, 1))
+    res_b = BUILD.Resolution("OLD2", _lk("US", "XNYS", "SHARED"), "SHARED", "OLD2",
+                             "fixture", date(2021, 1, 1))
+    assert BUILD._current_symbol("OLD1") == "OLD1"
+    assert BUILD._current_symbol("OLD2") == "OLD2"
+
+    # REPRODUCE: the pre-fix discriminator compared `res.inception_code`, which is
+    # "SHARED" for BOTH — always equal, so the pre-fix code would silently dedup.
+    assert res_a.inception_code == res_b.inception_code == "SHARED", (
+        "reproduction precondition — the dead discriminator's own equality holds"
+    )
+
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+        [res_a, res_b], [], "2026-08-20T00:00:00", cik_map={},
+    )
+    assert notes, (
+        "the fixed discriminator (_current_symbol of the RAW seed key) must fire "
+        "the collision note for a genuine reuse — the pre-fix inception_code "
+        "comparison could never distinguish this case (dead code)"
+    )
+    assert "collision" in notes[0]
+    assert ids["OLD1"] == ids["OLD2"], (
+        "collision still assigns a (shared, ambiguous) id — spec §5 leaves the "
+        "human-ratified '.2' disambiguator as the resolution, not a crash"
+    )
+
+
+# ── AMENDMENT ruling 3 (M1) — the fence-scoped lost set excludes ONLY registered
+# identity exceptions; the listing_continuity census discloses them as typed,
+# EXPLAINED entries rather than silently dropping them.
+def test_m1_a_registered_exception_loss_is_explained_not_silently_dropped() -> None:
+    gold_row = {
+        "security_id": "SEC:US-XNYS-GOLD", "issuer_id": None,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": "US-XNYS-GOLD",
+        "country": "US", "mic": "XNYS", "inception_code": "GOLD",
+        "effective_at": "2023-05-09T00:00:00", "ingested_at": "2026-08-13T00:00:00",
+        "security_state": None, "superseded_by": None,
+    }
+    fence_lost, exception_lost = BUILD._compute_lost([gold_row], [], {})
+    assert fence_lost == [], (
+        "a registered identity exception must NEVER gate the fence — its "
+        "permanently-null CIK would otherwise jam all future minting"
+    )
+    assert len(exception_lost) == 1
+    assert exception_lost[0]["security_id"] == "SEC:US-XNYS-GOLD"
+
+
+def test_m1_a_genuine_unexplained_loss_still_gates_the_fence() -> None:
+    """The OTHER direction: a row that is NOT a registered exception still lands in
+    fence_lost (gates minting) and would still surface as a plain listing_continuity
+    string, never silently folded into the explained bucket."""
+    eqr_row = {
+        "security_id": EQR_ID, "issuer_id": "ISS:US-XNYS-EQR",
+        "issuer_state": "RESOLVED", "issuer_cik": "0000906107",
+        "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-EQR",
+        "country": "US", "mic": "XNYS", "inception_code": "EQR",
+        "effective_at": "2023-05-09T00:00:00", "ingested_at": "2026-08-13T00:00:00",
+        "security_state": None, "superseded_by": None,
+    }
+    fence_lost, exception_lost = BUILD._compute_lost([eqr_row], [], {})
+    assert exception_lost == []
+    assert len(fence_lost) == 1
+    assert fence_lost[0]["security_id"] == EQR_ID
+
+
+def test_m1_accepted_residual_a_rename_of_a_quarantined_listing_mints_without_a_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The documented accepted residual (AMENDMENT ruling 3): a rename of an
+    exception-quarantined listing (e.g. GOLD -> a hypothetical GLDC) can mint a NEW
+    id without a fence refusal, because the quarantined row is excluded from
+    fence_lost entirely — this cannot corrupt a clean identity (the quarantined row
+    was never the newcomer's identity) and the adjacent explained census line keeps
+    it visible."""
+    monkeypatch.setattr(BUILD, "RENAME_EVENTS", ())
+    gold_row = {
+        "security_id": "SEC:US-XNYS-GOLD", "issuer_id": None,
+        "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+        "issuer_evidence_snapshot": None, "listing_key": "US-XNYS-GOLD",
+        "country": "US", "mic": "XNYS", "inception_code": "GOLD",
+        "effective_at": "2023-05-09T00:00:00", "ingested_at": "2026-08-13T00:00:00",
+        "security_state": None, "superseded_by": None,
+    }
+    resolutions = [
+        BUILD.Resolution("GLDC", _lk("US", "XNYS", "GLDC"), "GLDC", "GLDC",
+                         "fixture", date(2026, 8, 20)),
+    ]
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
+        resolutions, [gold_row], "2026-08-20T00:00:00", cik_map={},
+    )
+    assert pending == [], (
+        "a quarantined identity-exception row must never gate the fence — the "
+        "documented accepted residual"
+    )
+    assert ids["GLDC"] == "SEC:US-XNYS-GLDC"
+    assert exc_lost and exc_lost[0]["security_id"] == "SEC:US-XNYS-GOLD"
+
+
+# ── AMENDMENT ruling 6 (M5) — a committed alias row may be pruned ONLY when it
+# points at a superseded security_id; a fresh row overlapping a committed row that
+# points at an ACTIVE id is now a fail-closed build error, never a silent
+# last-write-wins replacement.
+def _alias_dict(vendor: str, symbol: str, sec: str, vf: str | None, vt: str | None) -> dict:
+    return {"vendor": vendor, "vendor_symbol": symbol, "security_id": sec,
+            "valid_from": vf, "valid_to": vt, "ingested_at": "2026-08-13T00:00:00"}
+
+
+def test_m5_a_row_pointing_at_a_superseded_id_is_pruned_and_receipted() -> None:
+    existing = [_alias_dict("yahoo", "VMRK", "SEC:US-XNYS-VMRK", None, None)]
+    fresh: list[AliasRow] = []
+    kept, pruned = BUILD._prune_stale_aliases(existing, fresh, frozenset({"SEC:US-XNYS-VMRK"}))
+    assert kept == []
+    assert len(pruned) == 1
+    assert pruned[0]["security_id"] == "SEC:US-XNYS-VMRK"
+
+
+def test_m5_reproduce_then_kill_the_silent_active_id_replacement() -> None:
+    """REPRODUCE (the pre-fix defect): ANY committed row overlapping a fresh row —
+    even one pointing at a perfectly ACTIVE id — was silently dropped ("ambiguity-
+    conflicting" class 2), an undisclosed last-write-wins replacement on an
+    append-only dataset. KILL: the fixed function refuses instead, fail-closed."""
+    existing = [_alias_dict("store", "EQR", EQR_ID, None, None)]  # fully open, ACTIVE id
+    fresh = [AliasRow("store", "EQR", EQR_ID, None, date(2026, 8, 18))]  # overlaps
+
+    # REPRODUCE: the pre-fix "ambiguity-conflicting" class silently dropped this.
+    ex_row = AliasRow("store", "EQR", EQR_ID, None, None)
+    assert ex_row.overlaps(fresh[0]), "reproduction precondition — the rows do overlap"
+
+    # KILL: the fixed function raises instead of silently pruning.
+    with pytest.raises(BUILD.VendorAliasPruneConflict):
+        BUILD._prune_stale_aliases(existing, fresh, frozenset())
+
+
+def test_m5_a_byte_identical_row_is_not_a_conflict() -> None:
+    """Ordinary merge dedup, not a conflict — this never touches a fresh row's own
+    side and must not spuriously raise."""
+    existing = [_alias_dict("yahoo", "MMC", MMC_ID, None, "2026-01-14")]
+    fresh = [AliasRow("yahoo", "MMC", MMC_ID, None, date(2026, 1, 14))]
+    kept, pruned = BUILD._prune_stale_aliases(existing, fresh, frozenset())
+    assert kept == existing
+    assert pruned == []
+
+
+def test_m5_a_non_overlapping_row_for_the_same_active_id_is_kept() -> None:
+    """A fresh row for a DIFFERENT, non-overlapping time range against the same
+    active security_id must not trip the fail-closed guard at all."""
+    existing = [_alias_dict("yahoo", "MMC", MMC_ID, None, "2026-01-14")]
+    fresh = [AliasRow("yahoo", "MRSH", MMC_ID, date(2026, 1, 14), None)]
+    kept, pruned = BUILD._prune_stale_aliases(existing, fresh, frozenset())
+    assert kept == existing
+    assert pruned == []
 
 
 # H3 — a hostile future map EQR->0000931182 (live-real, per E3: SEC's company_tickers
@@ -1291,6 +1651,87 @@ def test_h5_avb_leaves_unresolved_names_and_no_avb_vmrk_alias_exists(
     joined2 = aliases[(aliases["security_id"] == avb_id)
                       & (aliases["vendor_symbol"].isin(["VMRK"]))]
     assert joined2.empty, "VMRK must never alias onto the AVB security"
+
+
+# ── AMENDMENT ruling 1 (B1, BLOCKER) — H10: an end-to-end build() run through BOTH
+# refusal classes must complete: receipts disclose, ::warning fires, NO exception,
+# and every artifact writes. REPRODUCE (before the fix): build_alias_rows did
+# `sec = ids[res.key]` unconditionally for every resolved-listing-key resolution —
+# a refused resolution (pending-transition OR resurrection) never gets an `ids`
+# entry, so this raised `KeyError` and build() crashed AFTER printing the
+# ::warning but BEFORE writing a single artifact. On the real nightly seam this
+# meant the fence could never actually ship its own disclosure.
+def test_h10_end_to_end_build_survives_both_refusal_classes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture,
+) -> None:
+    monkeypatch.setattr(BUILD, "RENAME_EVENTS", ())
+    monkeypatch.setattr(BUILD, "load_universe", lambda: {
+        # VMRK: resolves to listing key US-XNYS-VMRK, which the pre-seeded master
+        # already carries as a TOMBSTONE -> resurrection refusal.
+        "VMRK": {"sources": ["fixture"], "first_seen": date(2026, 8, 20)},
+        # NEWCO: a listing-key MISS with no independent CIK evidence while EQR
+        # (below) is unaccounted-for this build -> pending-transition refusal.
+        "NEWCO": {"sources": ["fixture"], "first_seen": date(2026, 8, 20)},
+    })
+    monkeypatch.setattr(BUILD, "load_delisted", lambda: {})
+    monkeypatch.setattr(
+        BUILD, "load_directory",
+        lambda: ({"VMRK": "N", "NEWCO": "NASDAQ"}, "2026-08-20", None),
+    )
+    monkeypatch.setattr(BUILD, "load_cik_map", lambda: ({}, None, None, frozenset()))
+    monkeypatch.setattr(BUILD, "load_config_maps", lambda: ({}, {}))
+
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    existing_rows = [
+        {
+            # EQR: active, and NOT re-derived this build (not in the fixture
+            # universe above) -> the fence's `lost` set.
+            "security_id": EQR_ID, "issuer_id": "ISS:US-XNYS-EQR",
+            "issuer_state": "RESOLVED", "issuer_cik": "0000906107",
+            "issuer_evidence_snapshot": "2026-08-18", "listing_key": "US-XNYS-EQR",
+            "country": "US", "mic": "XNYS", "inception_code": "EQR",
+            "effective_at": "2023-05-09T00:00:00", "ingested_at": "2026-08-13T00:00:00",
+            "security_state": None, "superseded_by": None,
+        },
+        {
+            # The tombstone VMRK's own resolution will hit.
+            "security_id": "SEC:US-XNYS-VMRK", "issuer_id": None,
+            "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None,
+            "issuer_evidence_snapshot": None, "listing_key": "US-XNYS-VMRK",
+            "country": "US", "mic": "XNYS", "inception_code": "VMRK",
+            "effective_at": "2026-08-20T00:00:00", "ingested_at": "2026-08-20T01:30:18",
+            "security_state": "SUPERSEDED_DUPLICATE_MINT", "superseded_by": EQR_ID,
+        },
+    ]
+    BUILD._write_parquet(existing_rows, BUILD.MASTER_COLUMNS,
+                         out_dir / BUILD.MASTER_NAME, BUILD.MASTER_DTYPES)
+    capsys.readouterr()
+
+    # KILL: this must not raise (the pre-fix code crashed here with KeyError).
+    receipt = BUILD.build(out_dir, allow_missing_evidence=True)
+
+    assert len(receipt["resurrection_refusals"]) == 1
+    assert receipt["resurrection_refusals"][0]["security_id"] == "SEC:US-XNYS-VMRK"
+    assert len(receipt["pending_transition_refusals"]) == 1
+    assert receipt["pending_transition_refusals"][0]["symbol"] == "NEWCO"
+
+    out = capsys.readouterr().out
+    assert "::warning" in out
+    assert "resurrection-refusal" in out
+    assert "pending-transition" in out
+
+    # Every artifact actually wrote (the crash used to happen AFTER the mint stage
+    # but BEFORE any _write_parquet call).
+    for name in (BUILD.MASTER_NAME, BUILD.ALIASES_NAME, BUILD.ISSUER_MASTER_NAME,
+                BUILD.ISSUER_MIGRATIONS_NAME, BUILD.SECURITY_MIGRATIONS_NAME,
+                BUILD.RECEIPT_NAME):
+        assert (out_dir / name).exists(), f"{name} must be written — build() did not crash"
+
+    # Neither refused resolution contributed ANY alias row.
+    aliases_out = pd.read_parquet(out_dir / BUILD.ALIASES_NAME)
+    assert not (aliases_out["vendor_symbol"] == "NEWCO").any()
+    assert not aliases_out["security_id"].isin(["SEC:US-XNAS-NEWCO"]).any()
 
 
 # §6.1 — sidecar assertions (re-derived; see tests/test_theme_graph_identity_resolution.py
@@ -2000,7 +2441,7 @@ def test_an_unresolved_name_mints_nothing() -> None:
         BUILD.Resolution("CBOE", None, None, None, "fixture", None,
                          "exchange code 'Z' has no MIC in KNOWN_MICS"),
     ]
-    rows, ids, notes, refusals, pending, lost = BUILD.mint_master_rows(
+    rows, ids, notes, refusals, pending, lost, exc_lost = BUILD.mint_master_rows(
         resolutions, [], "2026-08-13T00:00:00"
     )
     assert rows == []

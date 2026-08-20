@@ -362,6 +362,19 @@ RENAME_EVENTS: tuple[RenameEvent, ...] = (
         # live on purpose (§2.3 — the dedup onto one master row is exactly what this
         # repair tests), so `membership` genuinely carries two simultaneous
         # observations that need the same date boundary to stay unambiguous.
+        #
+        # `store` is DELIBERATELY NOT dated here (AMENDMENT ruling 9 / m3 asks for a
+        # dated store answer "per the same derivation rules as the yahoo family" —
+        # attempted and reverted: dating it requires CLOSING the pre-existing
+        # committed open-bounded `(store, EQR, ...)` row, which AMENDMENT ruling 6 /
+        # M5 forbids (a fresh row overlapping a committed row pointing at an ACTIVE
+        # id is now a fail-closed build error, never a silent replacement — verified:
+        # this exact combination raises VendorAliasPruneConflict on the real
+        # committed alias table). Reported as a builder-discovered ruling conflict
+        # rather than force one ruling over the other; see the PR body / packet
+        # DEVIATIONS for the full analysis and the two ways to resolve it (a narrow
+        # ruling-6 carve-out for a row a NEWLY-dated RenameEvent retroactively
+        # scopes, or an explicit one-time hand-migration of the stale `store` row).
         vendors=(VENDOR_YAHOO, VENDOR_MEMBERSHIP),
         evidence=(
             "SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession "
@@ -395,6 +408,52 @@ RENAME_EVENTS: tuple[RenameEvent, ...] = (
             "effective 2026-06-24; SATS 128 rows and ECHO 128 rows with identical "
             "(date,type) key sets and 39 byte-identical identity columns); "
             "config.yml quality.ticker_key_migrations SATS: ECHO"
+        ),
+    ),
+)
+
+
+# ── The curated security-supersession registry (AMENDMENT ruling 4 / M3) ──────
+@dataclass(frozen=True)
+class SecuritySupersession:
+    """One EXACT-listing-key correction: a security wrongly minted as an independent
+    row is corrected onto an existing, different, canonical row.
+
+    NEVER a bare inception-code match on ANY venue — that was the pre-amendment
+    defect: :func:`apply_security_supersession` matched any row whose inception code
+    equalled a :data:`RenameEvent` ``.new`` on ANY venue, so a hostile cross-MIC
+    scenario (a genuinely independent listing that happens to share the new symbol's
+    bare code on a DIFFERENT exchange) got auto-tombstoned onto the wrong row. This
+    registry is authored data (same evidence-string law as :data:`RENAME_EVENTS`) —
+    curation ratifies each correction by its EXACT ``listing_key``, never a pattern
+    the builder infers on its own.
+    """
+
+    listing_key: str
+    canonical_id: str
+    evidence: str
+    on: date
+
+
+SECURITY_SUPERSESSIONS: tuple[SecuritySupersession, ...] = (
+    SecuritySupersession(
+        listing_key="US-XNYS-VMRK",
+        canonical_id="SEC:US-XNYS-EQR",
+        on=date(2026, 8, 18),
+        # V4-D2B1-R1 §1 E1 (verbatim, same evidence as the EQR->VMRK RenameEvent
+        # above): SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession
+        # 0001140361-26-033377, Item 5.03 — Equity Residential -> Vivmark Residential
+        # eff. 2026-08-17; NYSE ticker EQR->VMRK eff. 2026-08-18. Corroborated by
+        # data.sec.gov/submissions/CIK0000906107.json and
+        # www.sec.gov/files/company_tickers.json (CIK 906107 -> VMRK).
+        evidence=(
+            "SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession "
+            "0001140361-26-033377, Item 5.03: name changed Equity Residential -> "
+            "Vivmark Residential eff. 2026-08-17; NYSE ticker EQR->VMRK eff. "
+            "2026-08-18 (open of trading). Corroborated by "
+            "data.sec.gov/submissions/CIK0000906107.json (name VIVMARK RESIDENTIAL, "
+            "ticker VMRK, unbroken formerNames chain) and "
+            "www.sec.gov/files/company_tickers.json (CIK 906107 -> VMRK)."
         ),
     ),
 )
@@ -953,6 +1012,15 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
     for res in resolutions:
         if res.listing_key is None:
             continue
+        if res.key not in ids:
+            # V4-D2B1-R1 AMENDMENT ruling 1 (B1): a REFUSED resolution — the
+            # pending-transition fence or a resurrection refusal — never reaches
+            # `ids` (mint_master_rows deliberately does not assign one). Before this
+            # fix, `ids[res.key]` below raised KeyError for exactly this shape,
+            # which meant a real refusal crashed build() instead of merely being
+            # disclosed. A refused resolution contributes NO alias row of any kind
+            # (historical or current-catalog) — there is no security to alias it to.
+            continue
         sec = ids[res.key]
 
         historical = {
@@ -970,6 +1038,14 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
         # (ECHO, not SATS) and `breadth.ticker_fixups` pins a vendor-led rename back to
         # it (MRSH -> MMC), which is why data/baskets/ohlcv/MMC.parquet is the file that
         # exists while Yahoo is fetched under MRSH.
+        #
+        # `store` stays a plain current-catalog space (one open-bounded row, the
+        # is_root-gated root resolution only) — AMENDMENT ruling 9 (m3) asked for a
+        # dated VMRK answer here, but dating it structurally requires closing the
+        # pre-existing committed open `(store, EQR, ...)` row, which AMENDMENT ruling
+        # 6 / M5's fail-closed law forbids (verified: raises
+        # VendorAliasPruneConflict). See the `historical` dict above for the full
+        # note; reported as a builder-discovered ruling conflict, not force-resolved.
         current = {
             VENDOR_YAHOO_FETCH: ticker_aliases.fetch_symbol(res.key),
             VENDOR_STORE: res.key,
@@ -1076,47 +1152,57 @@ def _current_symbol_of_row(row: dict) -> str:
 
 
 def _compute_lost(existing: list[dict], resolutions: list[Resolution],
-                  delisted: dict[str, dict]) -> list[dict]:
-    """The pending-transition fence predicate (V4-D2B1-R1 §5.1): committed master rows
-    that are ACTIVE (``security_state`` null), whose CURRENT symbol is NOT
-    exit-ledgered, and whose ``listing_key`` is re-derived by NO resolution in THIS
-    build — a row this run's evidence went quiet on, distinct from a genuine exit
-    (which the ledger already accounts for) and from a correction (already excluded by
-    the state check).  A snapshot flip that silently drops a name's evidence (the
-    VMRK-before-the-RenameEvent race, H1) is exactly what this catches; §5.4's
-    ``listing_continuity`` census is this list, disclosed.
+                  delisted: dict[str, dict]) -> tuple[list[dict], list[dict]]:
+    """The pending-transition fence predicate (V4-D2B1-R1 §5.1, AMENDMENT ruling 3 /
+    M1): ``(fence_lost, exception_lost)`` — committed master rows that are ACTIVE
+    (``security_state`` null), whose CURRENT symbol is NOT exit-ledgered, and whose
+    ``listing_key`` is re-derived by NO resolution in THIS build — a row this run's
+    evidence went quiet on, distinct from a genuine exit (which the ledger already
+    accounts for) and from a correction (already excluded by the state check).  A
+    snapshot flip that silently drops a name's evidence (the VMRK-before-the-
+    RenameEvent race, H1) is exactly what this catches; §5.4's ``listing_continuity``
+    census is built from BOTH lists, disclosed.
 
-    TWO further exclusions, both already disclosed elsewhere in the receipt so this
-    census never re-raises the SAME fact under a second name:
+    ``fence_lost`` gates minting (:func:`mint_master_rows`'s independence check) and
+    EXCLUDES rows whose inception code is a REGISTERED identity exception
+    (:data:`DEFERRED_IDENTITY_KEYS` / :data:`DISCLOSED_IDENTITY_EXCEPTIONS`, e.g.
+    GOLD) — those identities are already quarantined fail-closed at their own layer,
+    and their permanently-null CIKs would otherwise jam ALL future minting under the
+    ruling-2 fail-closed independence check (a lost row with no CIK can never be
+    proven independent of anything).
 
-    * a row whose bare inception code equals a :data:`RENAME_EVENTS` ``.new`` — the
-      EXACT shape :func:`apply_security_supersession` corrects THIS SAME run (or
-      already corrected in an earlier one).  Excluded here so the fence never flags
-      its own correction target as "lost" purely because supersession runs AFTER
-      minting, in the same build.
-    * a row whose inception code is a registered identity exception
-      (:data:`DEFERRED_IDENTITY_KEYS` / :data:`DISCLOSED_IDENTITY_EXCEPTIONS`, e.g.
-      GOLD) — already surfaced via ``receipt['identity_exceptions']`` every build;
-      re-flagging it as "lost" would be a second alarm for one already-disclosed fact.
+    ``exception_lost`` carries exactly those excluded rows — NEVER silently dropped:
+    the receipt's ``listing_continuity`` discloses them as typed, explained entries
+    (AMENDMENT ruling 3) rather than folding them into the plain "unexplained loss"
+    list a future nightly's ``::warning`` fires on.
+
+    AMENDMENT ruling 3 REMOVES the prior ``rename_new_symbols`` exclusion (a bare
+    inception-code match on :data:`RENAME_EVENTS` ``.new``, on ANY venue): a
+    security-axis-superseded row is now excluded ENTIRELY via the ``security_state``
+    check above, once :func:`apply_security_supersession` has tombstoned it (which,
+    in steady state, is true on every run AFTER the one that performed the
+    correction) — no separate bare-code shortcut is needed, and the shortcut itself
+    was capable of masking a genuine cross-venue collision (AMENDMENT ruling 4).
     """
     rederived = {
         res.listing_key.render() for res in resolutions if res.listing_key is not None
     }
-    rename_new_symbols = {e.new for e in RENAME_EVENTS}
     exceptions = _exception_by_inception_code()
-    out: list[dict] = []
+    fence_lost: list[dict] = []
+    exception_lost: list[dict] = []
     for row in existing:
         if row.get("security_state"):
-            continue
-        code = str(row.get("inception_code") or "").upper()
-        if code in rename_new_symbols or code in exceptions:
             continue
         if _current_symbol_of_row(row) in delisted:
             continue
         if str(row["listing_key"]) in rederived:
             continue
-        out.append(row)
-    return out
+        code = str(row.get("inception_code") or "").upper()
+        if code in exceptions:
+            exception_lost.append(row)
+            continue
+        fence_lost.append(row)
+    return fence_lost, exception_lost
 
 
 def mint_master_rows(
@@ -1124,9 +1210,14 @@ def mint_master_rows(
     cik_map: dict[str, tuple[str, str]] | None = None,
     delisted: dict[str, dict] | None = None,
     snapshot_date: str | None = None,
-) -> tuple[list[dict], dict[str, str], list[str], list[dict], list[dict], list[dict]]:
+) -> tuple[list[dict], dict[str, str], list[str], list[dict], list[dict], list[dict],
+           list[dict]]:
     """``(master rows, {membership key: security_id}, notes, resurrection_refusals,
-    pending_transition_refusals, lost_rows)`` — existing ids never move.
+    pending_transition_refusals, lost_rows, exception_lost_rows)`` — existing ids
+    never move.  ``lost_rows``/``exception_lost_rows`` are :func:`_compute_lost`'s
+    ``(fence_lost, exception_lost)`` pair (AMENDMENT ruling 3 / M1) — the fence gates
+    on ``lost_rows`` only; ``exception_lost_rows`` is disclosed by the caller as typed
+    ``listing_continuity`` entries, never silently dropped.
 
     The join back into a committed master is by ``listing_key``: the master's grain is
     the security, and it deliberately carries no membership-key column (that belongs to
@@ -1175,11 +1266,20 @@ def mint_master_rows(
     resurrection_refusals: list[dict] = []
     pending_transition_refusals: list[dict] = []
 
-    lost_rows = _compute_lost(existing, resolutions, delisted or {})
+    lost_rows, exception_lost_rows = _compute_lost(existing, resolutions, delisted or {})
+    # AMENDMENT ruling 2 (M2, null-CIK fail-open): a CIK-less lost row makes
+    # independence UNPROVABLE, not vacuously true. The prior code dropped null CIKs
+    # from `lost_ciks` entirely (`if r.get("issuer_cik")`), which meant a lost row
+    # with no evidenced CIK could never disqualify ANY candidate — exactly the
+    # reviewer's reproduced defect (a lost row with a null issuer_cik let a fresh
+    # candidate mint with zero refusals). `lost_ciks` still names the non-null CIKs
+    # (for the "candidate shares a lost row's own CIK" comparison); `_lost_has_null_cik`
+    # additionally fails EVERY candidate closed when ANY lost row's CIK is unproven.
     lost_ciks = {r.get("issuer_cik") for r in lost_rows if r.get("issuer_cik")}
+    _lost_has_null_cik = any(not r.get("issuer_cik") for r in lost_rows)
     cik_map = cik_map or {}
 
-    minted_by: dict[str, tuple[str, str]] = {}  # rendered -> (first res.key, inception_code)
+    minted_by: dict[str, tuple[str, str]] = {}  # rendered -> (first res.key, current_symbol)
     for res in resolutions:
         if res.listing_key is None:
             continue
@@ -1213,8 +1313,14 @@ def mint_master_rows(
             if lost_rows:
                 evidence_key = _evidence_join_key(res.inception_code or res.key)
                 candidate_evidence = cik_map.get(evidence_key)
+                # AMENDMENT ruling 2 (M2): independent iff the candidate HAS a CIK,
+                # EVERY fence-scoped lost row has a NON-NULL CIK, AND the candidate's
+                # CIK differs from all of them. A null anywhere makes independence
+                # unprovable -> refuse (fail-closed; the incident's own row class was
+                # null-CIK).
                 independent = (
                     candidate_evidence is not None
+                    and not _lost_has_null_cik
                     and candidate_evidence[0] not in lost_ciks
                 )
                 if not independent:
@@ -1240,19 +1346,22 @@ def mint_master_rows(
                     )
                     continue
             sec = security_id(res.listing_key)
+            current_symbol = _current_symbol(res.key)
             prior = minted_by.get(rendered)
             if prior is not None:
-                if prior[1] == res.inception_code:
-                    # V4-D2B1-R1 §2.3: a SECOND universe key that walks (via
-                    # RENAME_EVENTS / class-notation normalization) to the SAME
-                    # inception_code as an already-minted resolution is the SAME
-                    # identity reached by a second name — exactly the EQR/VMRK dedup
-                    # this repair requires (H2), never a collision. `rendered` is
-                    # structurally `<country>-<mic>-<inception_code>`, so identical
-                    # inception codes are the ONLY way two resolutions ever share a
-                    # rendered key on a bare build with no existing row to join
-                    # against — a genuine ticker-REUSE collision (spec §5) would
-                    # differ here, not agree.
+                # AMENDMENT ruling 5 (M4): `rendered` is structurally
+                # `<country>-<mic>-<inception_code>`, so two resolutions can only
+                # ever REACH this branch by already sharing the same inception_code —
+                # comparing `res.inception_code` here (the prior code) was therefore
+                # ALWAYS true and the collision `notes.append` below it was dead
+                # (reviewer: 0 resolutions where rendered != country-mic-inception).
+                # The lawful discriminator is each seed's OWN CURRENT symbol
+                # (:func:`_current_symbol` of the RAW seed key, not the shared
+                # inception_code): two resolutions dedup lawfully (the EQR/VMRK
+                # shape, H2) iff their seeds' current symbols AGREE; a genuine ticker
+                # REUSE collision (spec §5) would differ here even though the
+                # rendered listing key and inception_code are forced equal.
+                if prior[1] == current_symbol:
                     ids[res.key] = sec
                     continue
                 notes.append(
@@ -1262,7 +1371,7 @@ def mint_master_rows(
                 )
                 ids[res.key] = sec
                 continue
-            minted_by[rendered] = (res.key, res.inception_code)
+            minted_by[rendered] = (res.key, current_symbol)
             out[rendered] = {
                 "security_id": sec,
                 "issuer_id": None,
@@ -1287,15 +1396,15 @@ def mint_master_rows(
 
     rows = [out[k] for k in sorted(out)]
     return (rows, ids, notes, resurrection_refusals, pending_transition_refusals,
-            lost_rows)
+            lost_rows, exception_lost_rows)
 
 
 def apply_security_supersession(
     rows: list[dict], ids: dict[str, str]
 ) -> tuple[list[dict], list[dict]]:
-    """V4-D2B1-R1 §3 — correct a security wrongly minted as an independent row for a
-    rename's NEW symbol BEFORE this builder modelled the rename: the RenameEvent chain
-    now proves it is the same security as an existing (different) row.
+    """V4-D2B1-R1 §3, AMENDMENT ruling 4 (M3) — correct a security wrongly minted as
+    an independent row: the curated :data:`SECURITY_SUPERSESSIONS` registry now
+    proves it is the same security as an existing, different, canonical row.
 
     Returns ``(rows, freshly_superseded)`` — ``freshly_superseded`` names ONLY the
     rows THIS call transitioned from active to superseded (never a row that already
@@ -1310,33 +1419,73 @@ def apply_security_supersession(
     untouched on a later run (idempotent, H6) — this only ever CLAIMS an active row,
     never re-examines one already corrected.
 
-    A row is recognised as the duplicate mint for ``event`` when its OWN listing key
-    literally spells ``event.new`` as a bare inception code on the SAME venue as the
-    canonical row the chain now resolves ``event.new`` to — exactly the shape
-    :func:`mint_master_rows` produced for VMRK before this builder modelled the rename
-    (§0 root cause: the mint join keys on listing key only, and a rename produces a new
-    listing key unconditionally).
+    AMENDMENT ruling 4: a row is recognised as the duplicate mint for a
+    :data:`SecuritySupersession` entry ONLY when its OWN ``listing_key`` matches the
+    entry's ``listing_key`` EXACTLY (same country, same MIC, same code) — never a
+    bare inception-code match on ANY venue.  The prior code matched any row whose
+    inception code equalled a :data:`RenameEvent` ``.new`` regardless of venue, which
+    let a hostile cross-MIC row (a genuinely independent listing that happens to
+    share the new symbol's bare code on a DIFFERENT exchange) get auto-tombstoned
+    onto the wrong canonical row.  ``ids`` is unused here (the registry names its own
+    ``canonical_id`` literally, per curation, never derived from this run's mint
+    output) — kept as a parameter for call-site stability and because a future
+    registry entry may want it; the canonical row must still actually exist in
+    ``rows`` for a correction to apply.
     """
+    del ids  # AMENDMENT ruling 4: canonical id comes from the curated registry, not
+    #  from this run's mint output — see docstring.
     freshly_superseded: list[dict] = []
-    for event in RENAME_EVENTS:
-        canonical_id = ids.get(event.new)
-        if canonical_id is None:
-            continue
+    for entry in SECURITY_SUPERSESSIONS:
+        if not any(r["security_id"] == entry.canonical_id for r in rows):
+            continue  # the canonical row must exist in THIS build's row set
         for row in rows:
             if row.get("security_state"):
                 continue  # already superseded (or otherwise non-null) — mint-once
-            if row["security_id"] == canonical_id:
+            if row["security_id"] == entry.canonical_id:
                 continue
-            try:
-                _country, _mic, code = str(row["listing_key"]).split("-", 2)
-            except ValueError:
-                continue
-            if code.upper() != event.new:
-                continue
+            if str(row["listing_key"]) != entry.listing_key:
+                continue  # EXACT listing-key match only — never a bare-code match
             row["security_state"] = SECURITY_STATE_SUPERSEDED_DUPLICATE_MINT
-            row["superseded_by"] = canonical_id
+            row["superseded_by"] = entry.canonical_id
             freshly_superseded.append(row)
     return rows, freshly_superseded
+
+
+def detect_unregistered_rename_duplicates(rows: list[dict]) -> list[dict]:
+    """V4-D2B1-R1 AMENDMENT ruling 4 (M3) — a row whose ``inception_code`` matches a
+    :data:`RENAME_EVENTS` ``.new`` (the shape a duplicate mint takes, on ANY venue),
+    but whose EXACT ``listing_key`` has no matching entry in
+    :data:`SECURITY_SUPERSESSIONS`: a receipt DISCLOSURE, never an execution.
+
+    This is the guard against the M3 defect resurfacing quietly: a genuine future
+    duplicate-mint incident must be RATIFIED (an authored registry entry, per
+    curation) before this builder ever tombstones it — a bare rename-implied
+    cross-venue match is not sufficient evidence on its own, exactly like the
+    reviewer's cross-MIC scenario (a row sharing a rename's ``.new`` bare code on a
+    DIFFERENT venue must yield NO supersession, only this disclosure).
+    """
+    registered_keys = {entry.listing_key for entry in SECURITY_SUPERSESSIONS}
+    rename_new_codes = {e.new for e in RENAME_EVENTS}
+    out: list[dict] = []
+    for row in rows:
+        if row.get("security_state"):
+            continue  # already corrected (or otherwise non-active) — not a duplicate
+        code = str(row.get("inception_code") or "").upper()
+        if code not in rename_new_codes:
+            continue
+        if str(row["listing_key"]) in registered_keys:
+            continue  # a ratified registry entry already covers this exact key
+        out.append({
+            "security_id": row["security_id"],
+            "listing_key": row["listing_key"],
+            "inception_code": code,
+            "reason": (
+                "inception code matches a RenameEvent .new but no exact-listing-key "
+                "SECURITY_SUPERSESSIONS entry names this listing key — disclosed, "
+                "never auto-corrected (V4-D2B1-R1 AMENDMENT ruling 4 / M3)"
+            ),
+        })
+    return out
 
 
 def build_security_migration_rows(freshly_superseded: list[dict], now: str) -> list[dict]:
@@ -1682,26 +1831,44 @@ def _build_issuer_master_rows(master_rows: list[dict],
     return sorted(out, key=lambda r: r["issuer_id"])
 
 
+class VendorAliasPruneConflict(SystemExit):
+    """Raised by :func:`_prune_stale_aliases` (AMENDMENT ruling 6 / M5) when a fresh
+    alias row overlaps a committed row that points at an ACTIVE (non-superseded)
+    ``security_id``. Fail-closed by design: the pre-amendment code silently dropped
+    ANY overlapping committed row (whether it pointed at a superseded id or not),
+    which is an undisclosed last-write-wins replacement on an append-only dataset —
+    exactly the M5 defect. A genuine correction to an ACTIVE row's alias history is a
+    curation act (a new RENAME_EVENTS/SECURITY_SUPERSESSIONS entry, or an operator
+    resolving the conflict by hand), never something this builder silently resolves.
+    """
+
+
 def _prune_stale_aliases(
     existing: list[dict], fresh: list[AliasRow], superseded_ids: frozenset[str]
-) -> list[dict]:
-    """Existing alias rows that a FRESH build's own evidence now proves wrong
-    (V4-D2B1-R1 §3.7) — dropped from the merge input rather than kept as append-only
-    garbage. "No alias row hand-deleted" (§3.7) means no HAND edit; a row the SAME
-    canonical builder's own fresh derivation contradicts is not append-only history,
-    it is a stale artifact of a mint this repair corrects.  Two classes:
+) -> tuple[list[dict], list[dict]]:
+    """``(kept, pruned)`` — existing alias rows that a FRESH build's own evidence now
+    proves wrong (V4-D2B1-R1 §3.7, AMENDMENT ruling 6 / M5), dropped from the merge
+    input rather than kept as append-only garbage. "No alias row hand-deleted" (§3.7)
+    means no HAND edit; a row the SAME canonical builder's own fresh derivation
+    contradicts is not append-only history, it is a stale artifact of a mint this
+    repair corrects.
 
-    1. **Superseded security_id.**  Any row minted for a security this run tombstoned
-       (V4-D2B1-R1 §3) is categorically wrong — VMRK's alias rows must converge onto
-       EQR's family (§3.7), never keep pointing at the corrected id.
-    2. **Ambiguity-conflicting.**  A row that would violate :class:`VendorAliasTable`'s
-       own unambiguous invariant against a FRESH row in the same ``(vendor,
-       vendor_symbol)`` or ``(vendor, security_id)`` bucket — e.g. an open-bounded
-       pre-repair row for a symbol a RenameEvent has now retroactively dated (a live
-       security dated for the FIRST time by this repair, unlike MMC/SATS which were
-       dated from this builder's very first commit and never had an open row to
-       retire).  Two rows that are BYTE-IDENTICAL are not a conflict — ordinary merge
-       dedup already handles those, and this never touches a fresh row's own side.
+    ONE deletion class, narrowly scoped (AMENDMENT ruling 6 REMOVES the prior
+    "ambiguity-conflicting" class 2, which silently dropped ANY committed row
+    overlapping a fresh one — including rows pointing at a perfectly ACTIVE id, an
+    undisclosed last-write-wins replacement on an append-only dataset):
+
+    * **Superseded security_id.**  Any row minted for a security this run tombstoned
+      (V4-D2B1-R1 §3) is categorically wrong — VMRK's alias rows must converge onto
+      EQR's family (§3.7), never keep pointing at the corrected id.  Every deletion in
+      this class is named in ``pruned`` — the caller receipts it (``vendor_alias_prunes``
+      + a ``::warning``), never a silent drop.
+
+    A fresh row that overlaps a committed row pointing at an ACTIVE id (never
+    superseded) is NO LONGER pruned — it is a fail-closed :class:`VendorAliasPruneConflict`.
+    Two rows that are BYTE-IDENTICAL are not a conflict (ordinary merge dedup in
+    :func:`merge_alias_rows` already handles those), and this never touches a fresh
+    row's own side.
     """
     fresh_by_vendor_symbol: dict[tuple[str, str], list[AliasRow]] = {}
     fresh_by_vendor_sec: dict[tuple[str, str], list[AliasRow]] = {}
@@ -1710,8 +1877,10 @@ def _prune_stale_aliases(
         fresh_by_vendor_sec.setdefault((row.vendor, row.security_id), []).append(row)
 
     out: list[dict] = []
+    pruned: list[dict] = []
     for ex in existing:
         if str(ex["security_id"]) in superseded_ids:
+            pruned.append(ex)
             continue
         ex_row = AliasRow(
             str(ex["vendor"]), str(ex["vendor_symbol"]), str(ex["security_id"]),
@@ -1721,19 +1890,24 @@ def _prune_stale_aliases(
             fresh_by_vendor_symbol.get((ex_row.vendor, ex_row.vendor_symbol), [])
             + fresh_by_vendor_sec.get((ex_row.vendor, ex_row.security_id), [])
         )
-        conflict = False
         for fr in candidates:
             if (fr.vendor_symbol, fr.security_id, fr.valid_from, fr.valid_to) == (
                 ex_row.vendor_symbol, ex_row.security_id, ex_row.valid_from, ex_row.valid_to
             ):
                 continue  # identical — ordinary dedup, not a conflict
             if ex_row.overlaps(fr):
-                conflict = True
-                break
-        if conflict:
-            continue
+                # AMENDMENT ruling 6 (M5): fail-closed — never a silent replacement.
+                raise VendorAliasPruneConflict(
+                    f"fresh alias row {fr!r} overlaps a COMMITTED row pointing at "
+                    f"an ACTIVE security_id ({ex_row!r}) — refusing to silently "
+                    "prune or replace it. A committed alias row may be pruned ONLY "
+                    "when it points at a superseded security_id (AMENDMENT ruling "
+                    "6 / M5); resolve this by curation (a registered "
+                    "RENAME_EVENTS/SECURITY_SUPERSESSIONS entry) or by hand, never "
+                    "by silent last-write-wins."
+                )
         out.append(ex)
-    return out
+    return out, pruned
 
 
 def _as_bound_date(value: str | None) -> date | None:
@@ -1925,7 +2099,7 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
     seed_notes = unmodelled_renames(fixups, migrations)
 
     (master_rows, ids, notes, resurrection_refusals, pending_transition_refusals,
-     lost_rows) = mint_master_rows(
+     lost_rows, exception_lost_rows) = mint_master_rows(
         resolutions,
         _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES,
                        allow_missing=ISSUER_AXIS_COLUMNS | SECURITY_AXIS_COLUMNS),
@@ -1940,16 +2114,41 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
     # §3.3 / H4).
     master_rows, freshly_superseded = apply_security_supersession(master_rows, ids)
     superseded_ids = frozenset(r["security_id"] for r in master_rows if r.get("security_state"))
+    # AMENDMENT ruling 4 (M3) — a rename-implied duplicate NOT covered by an exact
+    # SECURITY_SUPERSESSIONS entry is disclosed, never auto-corrected.
+    unregistered_rename_duplicates = detect_unregistered_rename_duplicates(master_rows)
+    if unregistered_rename_duplicates:
+        print(
+            f"::warning title=security-master-unregistered-rename-duplicate::"
+            f"{len(unregistered_rename_duplicates)} active row(s) share a RenameEvent "
+            ".new inception code with no exact-listing-key SECURITY_SUPERSESSIONS "
+            "entry naming them — disclosed, never auto-corrected: "
+            f"{', '.join(sorted(r['security_id'] for r in unregistered_rename_duplicates))}",
+            flush=True,
+        )
 
     master_rows, fresh_issuer_migrations = apply_issuer_correction(
         master_rows, cik_map, cik_snapshot_date, now, ambiguous_tickers=ambiguous_tickers
     )
 
     fresh_aliases = build_alias_rows(resolutions, ids)
-    existing_aliases = _prune_stale_aliases(
+    existing_aliases, alias_prunes = _prune_stale_aliases(
         _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES),
         fresh_aliases, superseded_ids,
     )
+    if alias_prunes:
+        # AMENDMENT ruling 6 (M5) — every prune is receipted + a ::warning, never a
+        # silent drop.
+        print(
+            f"::warning title=security-master-vendor-alias-prune::{len(alias_prunes)} "
+            "committed vendor alias row(s) pruned (pointed at a security_id this "
+            "run tombstoned): "
+            + ", ".join(
+                f"{r['vendor']}/{r['vendor_symbol']}->{r['security_id']}"
+                for r in alias_prunes
+            ),
+            flush=True,
+        )
     alias_rows = merge_alias_rows(fresh_aliases, existing_aliases, now)
 
     issuer_migration_rows = _merge_issuer_migrations(
@@ -2018,6 +2217,22 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "issuer_migrations": len(issuer_migration_rows),
             "security_migrations": len(security_migration_rows),
         },
+        # AMENDMENT ruling 6 (M5) — every committed vendor alias row this run pruned
+        # (all point at a security_id this SAME run tombstoned), receipted rather
+        # than silently dropped.
+        "vendor_alias_prunes": [
+            {
+                "vendor": r["vendor"], "vendor_symbol": r["vendor_symbol"],
+                "security_id": r["security_id"], "valid_from": r["valid_from"],
+                "valid_to": r["valid_to"],
+            }
+            for r in sorted(alias_prunes, key=lambda r: (r["vendor"], r["vendor_symbol"]))
+        ],
+        # AMENDMENT ruling 4 (M3) — a rename-implied duplicate mint with no exact
+        # SECURITY_SUPERSESSIONS registry entry naming it: disclosed, never executed.
+        "unregistered_rename_duplicates": sorted(
+            unregistered_rename_duplicates, key=lambda r: r["security_id"]
+        ),
         "coverage": {
             "total": len(resolutions),
             "resolved": len(resolved),
@@ -2028,11 +2243,24 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         # (never merged/accumulated across runs — refusals are RE-EXAMINED every
         # build, §5.3, and clear naturally when evidence arrives).
         "pending_transition_refusals": pending_transition_refusals,
-        # V4-D2B1-R1 §5.4 — the standing "lost" census, by current symbol name. Empty
-        # after this repair (EQR heals via the rename chain, AVB via the exit ledger,
-        # CTRA/TPH already exit-ledgered); a non-empty value on any FUTURE nightly is
-        # the visible ::warning above.
-        "listing_continuity": sorted(_current_symbol_of_row(r) for r in lost_rows),
+        # V4-D2B1-R1 §5.4, AMENDMENT ruling 3 (M1) — the standing "lost" census, by
+        # current symbol name, PLUS registered-identity-exception losses as typed,
+        # EXPLAINED entries (never silently dropped, unlike the fence-scoped
+        # `lost_rows` these exceptions are excluded from). Post-repair this is
+        # exactly ONE explained GOLD entry (the exception row's own current answer is
+        # orphaned — nothing this build re-derives it — but it is quarantined at its
+        # own layer, not a genuine loss the fence should ever gate on). The PLAIN
+        # STRING half is empty after this repair (EQR heals via the rename chain, AVB
+        # via the exit ledger, CTRA/TPH already exit-ledgered); a non-empty plain
+        # entry on any FUTURE nightly is the visible ::warning above (exception
+        # entries never re-trigger it — already alarmed via `identity_exceptions`).
+        "listing_continuity": (
+            sorted(_current_symbol_of_row(r) for r in lost_rows)
+            + [
+                {"code": _current_symbol_of_row(r), "explained": "identity_exception"}
+                for r in sorted(exception_lost_rows, key=_current_symbol_of_row)
+            ]
+        ),
         # V4-D2B1-R1 §3.4/H8 — typed refusals for a resolution that hit a superseded
         # (tombstoned) listing key; never a silent resurrection.
         "resurrection_refusals": resurrection_refusals,
