@@ -27,6 +27,7 @@ import pandas as pd
 
 from engine.government_revenue.amount_semantics import assert_combinable
 from engine.government_revenue.award_events import build_award_change_events
+from engine.government_revenue.budget_program import is_valid_budget_program_graph
 from engine.government_revenue.entity_resolution import (
     attach_recipient_resolutions,
     build_recipient_resolution_coverage,
@@ -1586,6 +1587,39 @@ def _latest_known_at(values: Iterable[Any]) -> str | None:
     return max(stamps).isoformat() if stamps else None
 
 
+# D3 (research/defense_intelligence/DEFENSE_D3_TEMPORAL_CONTRACT_AND_CHANGE_TAPE_SPEC.md
+# §2): the budget/program rail is typed PROJECTION_MISSING from the read-model,
+# never left to an eternal frontend "loading" guess.  This is a path/loader
+# check, deliberately never an HTTP call -- no PDF acquisition is authorized
+# here.  On current main the artifact has never been produced (Wave 8 was
+# fixture-only), so the honest default is the typed failure.
+def _budget_freshness(repo: Path) -> dict[str, Any] | None:
+    path = repo / "data" / "government_revenue" / "budget_program_graph.json"
+    if not path.exists():
+        return None
+    graph = _read_json(path, None)
+    if not isinstance(graph, dict) or not is_valid_budget_program_graph(graph):
+        return {
+            "status": "unavailable",
+            "failure_state": "projection_missing",
+            "observed_at": None,
+            "records_visible": 0,
+            "reason_code": "invalid_request_graph_artifact",
+        }
+    coverage = graph.get("source_coverage") if isinstance(graph.get("source_coverage"), dict) else {}
+    request_status = str(
+        (coverage.get("president_budget_request") or {}).get("status") or "ok"
+    )
+    programs = graph.get("programs")
+    return {
+        "status": request_status,
+        "failure_state": None,
+        "observed_at": graph.get("known_at"),
+        "records_visible": len(programs) if isinstance(programs, list) else 0,
+        "reason_code": None,
+    }
+
+
 def _freshness_contract(
     *,
     monthly: pd.DataFrame,
@@ -2156,6 +2190,7 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
         award_events=award_events,
         award_event_freshness=award_event_freshness,
         vertical_links_by_ticker=vertical_links_by_ticker,
+        budget_freshness=_budget_freshness(repo),
     )
 
     return {
