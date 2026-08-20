@@ -21,6 +21,16 @@ whole heading-bearing block after the shell's, so
 These tests run the SHIPPED merge — sliced out of the rendered page, not
 reimplemented — against a stub DOM (tests/us_board_hydrate_harness.js), plus the
 markup-contract pins that keep the join key alive on both sides of the wall.
+
+JINJA2-ONLY, deliberately (same discipline as tests/test_us_board_gate.py's own
+"import-light where possible" note). Nothing here imports scripts.build_site: the
+merge block it slices carries no Jinja and no gate-derived value, so a hand-built
+`gate` dict renders the identical bytes, and pulling build_site in would drag
+pandas/plotly — and, in a curated `scope: exclusive` CI job, build_site's whole
+engine import closure — behind a suite that only needs a template render. If the
+gate contract ever moves out from under `_gate()` below, `_merge_source` fails
+LOUDLY on the missing block rather than passing over a shell that never rendered
+the hydrate script.
 """
 from __future__ import annotations
 
@@ -47,6 +57,31 @@ STAGE_HD = re.compile(r'<div class="nb-stage-hd[^"]*"[^>]*data-stage="([^"]+)"')
 from tests.test_us_board_gate import (  # noqa: E402
     _render_shell, _rows_with_stage, _rows,
 )
+
+_STAGE_KEYS = ("live", "setting_up", "ran", "basing", "blocked")
+_LANE_KEYS = ("bottoming", "continuation", "trend", "recovery", "watch")
+PREVIEW = 3
+
+
+def _gate(rows: list[dict], preview: int = PREVIEW) -> dict:
+    """The `gate` dict the gated shell renders from — the same keys
+    build_site._split_us_board emits, built here so this module stays
+    jinja2-only (see the module docstring). Only `total`/`preview`/`locked`/
+    `stage_counts` are read by the template, and none of them reach the merge
+    block these tests slice."""
+    counts = {k: 0 for k in _STAGE_KEYS + _LANE_KEYS}
+    for r in rows:
+        for key in (r.get("stage"), r.get("lane")):
+            if key in counts:
+                counts[key] += 1
+    return {"tier": "essential", "payload": "/premiumdata/us_stocks.json",
+            "preview": preview, "locked": len(rows) - preview,
+            "total": len(rows), "stage_counts": counts}
+
+
+def _gated_shell(rows: list[dict]) -> str:
+    """The rendered gated shell: preview slice on the page, gate dict beside it."""
+    return _render_shell({"buy": rows[:PREVIEW], "eligible": len(rows)}, _gate(rows))
 
 
 def _merge_source(html: str) -> str:
@@ -105,13 +140,7 @@ def _card(ticker: str, stage: str = "live") -> str:
 
 @pytest.fixture(scope="module")
 def merge_js() -> str:
-    pytest.importorskip("pandas")
-    pytest.importorskip("plotly")
-    from scripts.build_site import _split_us_board
-
-    shell_su, gate, _ = _split_us_board({"buy": _rows_with_stage(7), "eligible": 7},
-                                        3, gated=True)
-    return _merge_source(_render_shell(shell_su, gate))
+    return _merge_source(_gated_shell(_rows_with_stage(7)))
 
 
 # ── the merge itself (executable, against the shipped source) ───────────────
@@ -206,14 +235,8 @@ def test_a_keyless_heading_degrades_to_appending_not_to_collapsing(tmp_path, mer
 
 # ── the markup contract the merge joins on ─────────────────────────────────
 
-def test_the_shell_no_longer_blind_appends_the_payload_block(merge_js):
-    pytest.importorskip("pandas")
-    pytest.importorskip("plotly")
-    from scripts.build_site import _split_us_board
-
-    shell_su, gate, _ = _split_us_board({"buy": _rows_with_stage(7), "eligible": 7},
-                                        3, gated=True)
-    html = _render_shell(shell_su, gate)
+def test_the_shell_no_longer_blind_appends_the_payload_block():
+    html = _gated_shell(_rows_with_stage(7))
     assert "mergeBoardCards(grid, payload.cards_html)" in html
     assert "insertAdjacentHTML('beforeend', payload.cards_html)" not in html, (
         "blind-appending the payload block is the defect — it re-draws every "
@@ -232,12 +255,7 @@ def test_both_heading_idioms_carry_a_join_key():
 def test_the_lane_path_still_renders_its_heading_label():
     """data-lane is additive: the legacy heading must keep its bilingual label
     and count, or the attribute traded a duplicate heading for a blank one."""
-    pytest.importorskip("pandas")
-    pytest.importorskip("plotly")
-    from scripts.build_site import _split_us_board
-
-    shell_su, gate, _ = _split_us_board({"buy": _rows(7), "eligible": 7}, 3, gated=True)
-    html = _render_shell(shell_su, gate)
+    html = _gated_shell(_rows(7))
     m = re.search(r'<div class="nb-lane-hd" data-lane="(\w+)">(.*?)</div>', html, re.S)
     assert m, "lane heading missing or lost its data-lane"
     assert "l-en" in m.group(2) and "l-zh" in m.group(2) and "·" in m.group(2)
