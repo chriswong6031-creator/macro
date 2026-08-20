@@ -57,6 +57,15 @@ waves:
       (built_at 2026-08-12T20:09:45.521589Z), age 186.173 hours: verdict DEGRADED.
       No launchd unit was loaded or re-armed. Any repair belongs to the existing
       WS-ADVANCED-DATA-OPTIONS authority lane after its AD-9 gate, not this closed P0.
+  - id: PR-4
+    title: Restore honest live quote, pulse, and options transport
+    status: in_progress
+    depends_on: [PR-1, PR-2, PR-3]
+    next_action: >
+      Production incident reopened the user-facing outcome: the board painted but its
+      three live inputs were dead or falsely labelled live. Recovery is being shipped
+      from a fresh worktree with board-scoped quote coverage, ts-index normalization,
+      semantic pulse health, RTH options-source freshness, and exact live receipts.
 next_action: >
   Workstream complete: the board paints in production during RTH, the corrected OPEX
   calendar is on the live checkout, and the independent live-flow plane is explicitly
@@ -65,6 +74,7 @@ next_action: >
 discoveries:
   - "DSC:INTRADAY-FLOW-RTH-NULL-QUOTE-BOOT"
   - "DSC:OPEX-FUTURE-MONTH-LAST-OBS-CLAMP"
+  - "DSC:INTRADAY-FLOW-AGE-HEALTH-CAN-HIDE-EMPTY-BOARD"
 landmines:
   - >
     PR #6073 landed before the workstream's ordered PR-1 production-browser receipt.
