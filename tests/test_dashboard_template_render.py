@@ -356,7 +356,10 @@ def test_both_modes_render_with_no_standouts():
 
 def test_old_schema_rows_take_the_legacy_lane_partition():
     html = _render("stocks")
-    assert '<div class="nb-lane-hd">' in html
+    # prefix-matched, not the whole open tag: `data-lane` (2026-08-20, the
+    # hydration join key) rides on this div, and a literal `…nb-lane-hd">` would
+    # go quietly false the next time an attribute is added.
+    assert '<div class="nb-lane-hd"' in html
     assert '<div class="nb-stage-hd sg-' not in html
     assert '<div class="pbf-bar" id="us-stage-filter"' not in html
     assert '<span class="l-en">Edge</span><span class="l-zh">优势</span>' in html
@@ -382,7 +385,7 @@ def test_new_schema_rows_take_the_priority_path():
     assert '<div class="pbr" data-stage="ran">' in html
     assert '<div class="pbt">' not in html                   # no duplicate theme strip
     assert '<a class="pvcard pv-buy pv-featured"' in html     # the glow cohort
-    assert '<div class="nb-lane-hd">' not in html             # legacy headings stood down
+    assert '<div class="nb-lane-hd"' not in html              # legacy headings stood down
     assert html.find('data-ticker="ACME"') < html.find('data-ticker="NXE"')
 
 
