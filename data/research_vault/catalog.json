@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T05:00:01.373668+00:00",
-  "count": 1454,
+  "generated_at": "2026-08-20T05:21:11.448099+00:00",
+  "count": 1455,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -279,6 +279,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hz3dcpeovh5-deb1e8",
+      "title": "UBS Equity Preference List UK 2026 08 19",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:11Z",
+      "summary_points": [
+        "**UK Equity View**: Neutral stance with 12.3x forward P/E (vs 12.8x median), earnings growth upgraded to 11% (from 5%) driven by oil; secular growth better accessed via single-stock selections in manufacturing/AI/electrification sectors.",
+        "**Policy & Currency Risk**: 75-80% of UK equities' earnings outside UK, making currency swings more critical than domestic growth; policies likely moderate for fiscal credibility.",
+        "**Anglo American Copper Strategy**: Merger with Tech adds copper assets targeting 30% growth by 2030; key risks include China industrial slowdown and restructuring delays.",
+        "**Glencore Strategic Shift**: Acquired Teck’s coal business, sold agricultural assets, expanded trading; largest commodity trader ($250bn sales 2025), benefits from structural metal demand in low-carbon world; risks: low commodity prices, tax changes.",
+        "**BAE Systems NATO Catalyst**: NATO’s 3.5% defense spending target (2023) and geopolitical tensions (Saudi/US clients) drive growth; supports valuation despite historical underperformance; risks: program delays, FX volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
