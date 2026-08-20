@@ -86,7 +86,7 @@ affects:
   - agentos/decisions/DEC-SLACK-IS-EVENT-TRANSPORT-NOT-RUNTIME-DELIVERY.md
   - research/MASTERMIND_SLACK_AGENT_EVENT_BRIDGE_CONTRACT_2026-08-20.md
 confidence: high
-reversibility: medium
+reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-20
 ---
