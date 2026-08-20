@@ -411,3 +411,64 @@ def test_a_malformed_confirmed_lane_row_normalizes_to_unavailable(
     malformed LANE does not need to blind its sound sibling lane."""
     normalized = lp.confirmed_lanes_snapshot({"AAPL": bad_row}, ["AAPL"])
     assert normalized["AAPL"] == {"g0": expected_g0, "c5": expected_c5}
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-20 commissioning defect: the local-quote book reaches read_quote in
+# live_verify's NORMALIZED shape (ts_ms/prev_close), not the raw snapshot
+# shape (ts/prevClose). _quote_ts read only "ts", so a fresh, correct
+# 2,089-symbol quotes_full.json darked the whole probe set as no_quote
+# (coverage 0/2979) on the first real in-window pass. These tests run the
+# ACTUAL loader chain end-to-end so the two shapes can never diverge silently
+# again.
+# ---------------------------------------------------------------------------
+
+def _iso_now_ms():
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    return now, int(now.timestamp() * 1000)
+
+
+def test_quote_ts_accepts_both_raw_and_normalized_keys():
+    from datetime import datetime, timezone
+    now, ms = _iso_now_ms()
+    raw_shape = le._quote_ts({"ts": ms})
+    norm_shape = le._quote_ts({"ts_ms": ms})
+    assert raw_shape is not None and norm_shape is not None
+    assert abs((raw_shape - now).total_seconds()) < 2
+    assert raw_shape == norm_shape
+    assert le._quote_ts({}) is None
+
+
+def test_local_loader_book_yields_usable_quotes_end_to_end(tmp_path, monkeypatch):
+    """The REAL chain: a raw-shape snapshot file -> load_local_quotes (which
+    normalizes through live_verify's own helpers) -> read_quote -> usable.
+    Pins the commissioning failure: if the loader's output shape and
+    read_quote's expectations ever diverge again, this goes red."""
+    from datetime import date, datetime, timezone
+    from scripts.entry_radar_live import load_local_quotes
+
+    now = datetime.now(timezone.utc)
+    ms = int(now.timestamp() * 1000)
+    snapshot = {
+        "asof": now.isoformat(),
+        "ts": ms,
+        "meta": {"delayed_min": 0},
+        "quotes": {
+            "AAPL": {"price": 231.5, "prevClose": 230.0, "ts": ms,
+                     "basis": "trade", "delayMin": 0.0, "source": "test"},
+        },
+    }
+    p = tmp_path / "quotes_full.json"
+    p.write_text(json.dumps(snapshot), encoding="utf-8")
+
+    loaded = load_local_quotes((str(p),))
+    assert loaded is not None and "AAPL" in loaded["quotes"]
+
+    qp = le.read_quote("AAPL", loaded["quotes"]["AAPL"], now=now,
+                       session=now.date(), max_age_min=25.0)
+    # The session-window gate depends on wall-clock ET; the defect under test
+    # is the TIMESTAMP KEY, so the only refusal states acceptable here are the
+    # deliberate session gates -- never no_quote (the key-mismatch signature).
+    assert qp.state != "no_quote", qp.state
+    assert qp.ts is not None and qp.price is not None
