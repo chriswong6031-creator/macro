@@ -28,6 +28,7 @@ owns_paths:
 discoveries:
   - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
   - DSC:GD1-EWY-IS-NOT-KOSPI-CASH
+  - DSC:GD1C-PIT-MEMBERSHIP-PREHISTORY-ABSENT
 decisions:
   - DEC:RISK-STATE-HAZARD-POLICY-SEPARATION
   - DEC:RISK-ENVELOPE-IS-CANONICAL-DERIVED-PROJECTION
@@ -83,6 +84,7 @@ waves:
   - id: GD-1C
     title: leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)
     status: in_progress
+    pr: 6038
     # Relayed to the Grok operator 2026-08-19 (Sol: "relay now"; operator
     # carried GROK_GD1C_DESIGN_ERA_RECONSTRUCTION_PACKET_2026-08-19.md into
     # the AionUI session; canonical commission is the in-repo file below).
@@ -93,6 +95,23 @@ waves:
     # current-membership reconstruction labeled def_current_cf; BLOCKED if PIT
     # membership cannot be reconstructed for the primary test; August 2026 may
     # not choose thresholds).
+    # Research package completed 2026-08-19 under prereg freeze fce7bfeb8c92:
+    # PRIMARY GD-H1=BLOCKED and GD-H2=BLOCKED because PIT cohort membership
+    # cannot be reconstructed across 2016-01-04..2026-07-31. The separate
+    # def_current_cf lane produced no secondary PASS. ZERO GD-5 promotions.
+    # FABLE ACCEPTANCE 2026-08-19 (this PR): verdict DONE / BLOCKED_NO_PROMOTION.
+    # Verified: prereg topology (fce7bfeb = first branch commit, prereg only;
+    # outcomes first at 722ddaf/9d6acde); PIT blocker real (membership first
+    # tracked 2026-06-14, retrospective added-fields rejected, no rate
+    # vintages) and not substituted away; def_current_cf labeling throughout;
+    # thresholds frozen on <=2026-07-31 rows only; effective-N episode
+    # collapse + frozen S12 gates applied (the one adequately-powered cell
+    # fails discrimination/Brier/calibration/sign/baseline; the tempting
+    # H1 3pct/1s row adjudicated small-N noise under the frozen rule).
+    # GD-5A/B/C stay CLOSED. Only lawful continuation (NOT commissioned):
+    # recover date-effective first-known cohort membership + first-available
+    # nominal-rate vintages, then freeze a NEW prereg version before outcome
+    # access, only if Fable judges the recovery worth pursuing.
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
     status: in_progress
@@ -198,8 +217,11 @@ waves:
 next_action: >
   Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8
   on the repaired production render; verify GD-4A's Asia-close row proof;
-  Grok executes GD-1C. GD-3 starts only after Gate 8 passes; GD-5A/B/C wait
-  for GD-1C clearing the promotion gate.
+  Merge GD-2R1 (#6037, conflict reconciliation in flight) then run Gate 8 on
+  the repaired production render; verify GD-4A's real Asia-close row proof.
+  GD-1C is DONE / BLOCKED_NO_PROMOTION — GD-5A/B/C stay closed; the only
+  lawful H1/H2 continuation is the named membership+vintage recovery under a
+  new prereg, not commissioned. GD-3 starts only after Gate 8 passes.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
