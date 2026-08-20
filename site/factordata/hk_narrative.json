@@ -2,8 +2,8 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-08-20",
-  "generated_utc": "2026-08-20T13:23:38+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-08-20T15:08:18+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
@@ -100,15 +100,15 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": -0.614,
+      "attention_shock_z": null,
       "tone_pctile": null,
-      "narrative_state": "quiet",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-08-19",
-      "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
+      "narrative_state": null,
+      "young": true,
+      "n_obs": 0,
+      "as_of_date": null,
+      "no_data_reason": "young series: 0 < 20 obs",
+      "state_en": null,
+      "state_zh": null
     },
     {
       "slug": "smic",
@@ -146,21 +146,6 @@
       "state_zh": "\u5e73\u9759"
     },
     {
-      "slug": "kuaishou",
-      "ticker": "1024.HK",
-      "name_en": "Kuaishou",
-      "name_zh": "\u5feb\u624b",
-      "attention_shock_z": -0.614,
-      "tone_pctile": null,
-      "narrative_state": "quiet",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-08-19",
-      "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
-    },
-    {
       "slug": "smic",
       "ticker": "0981.HK",
       "name_en": "SMIC",
@@ -177,7 +162,7 @@
     }
   ],
   "n_watched": 8,
-  "n_live": 3,
+  "n_live": 2,
   "warming_up": false,
   "is_stale": true
 }

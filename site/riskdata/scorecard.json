@@ -1,6 +1,6 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-08-20T14:02:22+00:00",
+  "generated_at": "2026-08-20T15:08:18+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-08-19",
@@ -60,28 +60,28 @@
       }
     },
     "cn": {
-      "asof_last_row": "2026-07-16",
+      "asof_last_row": "2026-08-20",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 35,
-        "ungraded_backlog": 8,
-        "awaiting_maturity": 4,
+        "log_fresh": true,
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 0,
+        "awaiting_maturity": 1,
         "backlog_cutoff_bd": 28,
-        "graded_n": 0
+        "graded_n": 12
       },
       "windows": {
         "full": {
           "alerts": {
-            "n": 0,
-            "tp": 0,
-            "fp": 0,
-            "hit_rate": null
+            "n": 5,
+            "tp": 2,
+            "fp": 3,
+            "hit_rate": 0.4
           },
           "watch_caution": {
-            "n": 0,
-            "tp": 0,
+            "n": 7,
+            "tp": 7,
             "tn": 0,
-            "precursor_rate": null
+            "precursor_rate": 1.0
           },
           "calm": {
             "n": 0,
@@ -89,21 +89,28 @@
             "quiet": 0,
             "quiet_rate": null
           },
-          "by_scare": {},
+          "by_scare": {
+            "breadth": {
+              "n": 5,
+              "tp": 2,
+              "fp": 3,
+              "hit_rate": 0.4
+            }
+          },
           "recovery": null
         },
         "y1": {
           "alerts": {
-            "n": 0,
-            "tp": 0,
-            "fp": 0,
-            "hit_rate": null
+            "n": 5,
+            "tp": 2,
+            "fp": 3,
+            "hit_rate": 0.4
           },
           "watch_caution": {
-            "n": 0,
-            "tp": 0,
+            "n": 7,
+            "tp": 7,
             "tn": 0,
-            "precursor_rate": null
+            "precursor_rate": 1.0
           },
           "calm": {
             "n": 0,
@@ -111,34 +118,41 @@
             "quiet": 0,
             "quiet_rate": null
           },
-          "by_scare": {},
+          "by_scare": {
+            "breadth": {
+              "n": 5,
+              "tp": 2,
+              "fp": 3,
+              "hit_rate": 0.4
+            }
+          },
           "recovery": null
         }
       }
     },
     "hk": {
-      "asof_last_row": "2026-07-16",
+      "asof_last_row": "2026-08-20",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 35,
-        "ungraded_backlog": 7,
-        "awaiting_maturity": 4,
+        "log_fresh": true,
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 0,
+        "awaiting_maturity": 1,
         "backlog_cutoff_bd": 28,
-        "graded_n": 0
+        "graded_n": 11
       },
       "windows": {
         "full": {
           "alerts": {
-            "n": 0,
+            "n": 3,
             "tp": 0,
-            "fp": 0,
+            "fp": 3,
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 0,
+            "n": 8,
             "tp": 0,
-            "tn": 0,
-            "precursor_rate": null
+            "tn": 8,
+            "precursor_rate": 0.0
           },
           "calm": {
             "n": 0,
@@ -146,21 +160,28 @@
             "quiet": 0,
             "quiet_rate": null
           },
-          "by_scare": {},
+          "by_scare": {
+            "capital_flow": {
+              "n": 3,
+              "tp": 0,
+              "fp": 3,
+              "hit_rate": null
+            }
+          },
           "recovery": null
         },
         "y1": {
           "alerts": {
-            "n": 0,
+            "n": 3,
             "tp": 0,
-            "fp": 0,
+            "fp": 3,
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 0,
+            "n": 8,
             "tp": 0,
-            "tn": 0,
-            "precursor_rate": null
+            "tn": 8,
+            "precursor_rate": 0.0
           },
           "calm": {
             "n": 0,
@@ -168,7 +189,14 @@
             "quiet": 0,
             "quiet_rate": null
           },
-          "by_scare": {},
+          "by_scare": {
+            "capital_flow": {
+              "n": 3,
+              "tp": 0,
+              "fp": 3,
+              "hit_rate": null
+            }
+          },
           "recovery": null
         }
       }
