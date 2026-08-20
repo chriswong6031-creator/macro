@@ -129,7 +129,11 @@ waves:
       lawful arm exactly, and the non-vacuity guard flipped on the real
       divergence. Receipts: P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json}
       (frozen build-time) + P0_ST_PRODUCTION_PROOF_2026-08-20.{md,json} (this
-      proof). DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 resolved. SCOPE:
+      proof) + P0_ST_PRODUCTION_CONCLUSION_2026-08-20.json (machine-readable
+      store conclusion: the replay artifact's `zero_corrections_required:
+      false` is the frozen arms-identity predicate, NOT a store defect — the
+      produced store matches the lawful arm and needs zero corrections).
+      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 resolved. SCOPE:
       the quarantine lift covers ONLY this rule defect — no exact-plane
       authorization, no full-A gate change, no tolerant-label promotion, and
       DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT binds unchanged.

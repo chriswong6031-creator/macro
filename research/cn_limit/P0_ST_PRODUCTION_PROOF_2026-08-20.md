@@ -68,6 +68,14 @@ Replay over 2026-07-06 → 2026-08-20 (34 sessions each, first day genuinely sco
   (`bool(per_name) and all(identical)`); nothing passed vacuously.
 - `definition_hash_sha256` unchanged from the merged receipt:
   `e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4`.
+- **Machine-readable conclusion:** the frozen replay predicate above is preserved
+  unmodified as generated evidence; the unambiguous production conclusion
+  (`rule_arms_identical: false`, `produced_store_matches_lawful_arm: true`,
+  `produced_store_corrections_required: false`, `repair_consequential: true`,
+  `superseded_only_event_count: 17`) is carried by the wrapper receipt
+  `research/cn_limit/P0_ST_PRODUCTION_CONCLUSION_2026-08-20.json`
+  (`cn_limit.p0_st_production_conclusion.v1`). Machine consumers of the store's
+  correctness read the wrapper, never the replay predicate.
 
 ## 5. Quarantine-lift scope (binding)
 
