@@ -89,7 +89,9 @@ verified:
     command: git diff --stat 6cb8166643ea origin/main -- <7 owned files>
     result: empty diff (byte-identical)
   - claim: mutation kills EXECUTED, not reasoned
-    command: reviewer hand-applied mutations (board_ledger: a-narrow/a-broad/b/c1/c2/d/e; track_ledger: is_current=True) and ran pytest per mutation
+    command: >
+      reviewer hand-applied mutations (board_ledger — a-narrow/a-broad/b/c1/
+      c2/d/e; track_ledger — is_current=True) and ran pytest per mutation
     result: every mutation kills >=1 named test; table in PR #6072 body + review transcript
   - claim: dialog does NOT re-hydrate summary cards from DATA.summary (so the scorecard fix alone already fixed the live headline)
     command: grep DATA.summary in templates/_track_record_dlg.html.j2 (one hit = prior_record.summary at :1052); render() writes only #trd-tbl-mount
