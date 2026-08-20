@@ -1987,6 +1987,28 @@ html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--mu
 .mx-empty-line { font-size:var(--fs-md); font-weight:600; }
 .mx-empty-why { color:var(--muted); font-size:var(--fs-sm); margin-top:4px; }
 
+/* Loading + error states — the other two non-live states next to .mx-empty
+   above. Loading is true geometry with no words (skeleton shimmer); error
+   names what failed and what still works, never a bare "—" (doctrine, see
+   the design-system's null-disclosure law). Ported verbatim from
+   mockups/design_system/specimen.html:112-116 — P-MP1-SHELL / DS-PR gate:
+   MP-1 Amendment 1 V-B4 makes review of §10's loading/error states
+   blocking against these two specimen components. No consumer wired here;
+   the shell builder owns the markup (blast radius = 0, see PR body).
+
+   --r-ctl/--r-card are DS-PR-0 scales not yet landed at :root — same
+   FORWARD-COMPAT situation the section header above documents, and the
+   same idiom .mx-ladder below already uses (var(--r-btn,10px)): each
+   fallback is the specimen's OWN :root value (specimen.html:24 —
+   --r-ctl:8px, --r-card:12px), not an invented one. Both fallbacks go
+   inert the moment DS-PR-0 lands the scale. */
+.skel { border-radius:var(--r-ctl,8px); background:linear-gradient(90deg, var(--panel2) 25%, color-mix(in srgb, var(--text) 7%, var(--panel2)) 45%, var(--panel2) 65%); background-size:200% 100%; animation:skel 1.2s linear infinite; }
+@keyframes skel { to { background-position:-200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation:none; } }
+.mx-error { display:flex; align-items:flex-start; gap:10px; border:1px solid color-mix(in srgb, var(--warn) 34%, var(--line));
+  border-radius:var(--r-card,12px); padding:10px 14px; font-size:var(--fs-sm); background:color-mix(in srgb, var(--warn) 6%, var(--panel)); }
+.mx-error b { color:var(--ink-warn); }
+
 /* Count ladder — control form; the active cell reads as WEIGHT (solid underline
    + 800), never as hue.
 

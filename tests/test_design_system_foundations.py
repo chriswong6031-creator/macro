@@ -167,6 +167,133 @@ def test_the_ladder_carries_sol_scoping_rider(theme):
     )
 
 
+# ── (b2) loading + error states — the other two non-live states (P-MP1-SHELL gate) ──
+#
+# MP-1 Amendment 1 (V-B4) makes review of §10's loading/error states blocking against
+# the specimen's own .skel / .mx-error components. This section is the DS-PR that
+# discharges that gate: it ports both, verbatim, from
+# mockups/design_system/specimen.html:112-116 into theme.css, additive-only, with zero
+# consumers wired here (the shell builder owns markup wiring next).
+
+SPECIMEN = ROOT / "mockups" / "design_system" / "specimen.html"
+
+
+@pytest.fixture(scope="module")
+def specimen() -> str:
+    return SPECIMEN.read_text(encoding="utf-8")
+
+
+def _rule_body(css: str, selector_pattern: str) -> str:
+    """First balanced-brace rule body whose selector matches ``selector_pattern`` at
+    the start of a line — a generalisation of ``_root_block`` above to an arbitrary
+    anchored selector (comments already stripped by the caller's fixture source)."""
+    stripped = _strip_comments(css)
+    m = re.search(rf"^{selector_pattern}\s*\{{", stripped, re.M)
+    assert m, f"selector {selector_pattern!r} not found"
+    depth, start = 0, m.end() - 1
+    for j in range(start, len(stripped)):
+        if stripped[j] == "{":
+            depth += 1
+        elif stripped[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return stripped[start : j + 1]
+    raise AssertionError(f"unterminated rule for {selector_pattern!r}")
+
+
+def _normalize_declarations(body: str) -> str:
+    """Collapse whitespace, and drop the ONE documented accommodation — the
+    DS-PR-0 --r-ctl/--r-card forward-compat fallback (see the comment above
+    .skel in theme.css) — so the comparison judges the DECLARATION the specimen
+    ships, not the landed-token workaround theme.css needs until DS-PR-0 lands
+    the scale at :root. var(--r-ctl,8px) normalizes to var(--r-ctl), which is
+    exactly what the specimen itself resolves to (specimen.html:24 defines
+    --r-ctl:8px at :root), so this does not paper over an actual drift."""
+    body = re.sub(r"var\(\s*(--r-ctl|--r-card)\s*,\s*[^)]+\)", r"var(\1)", body)
+    body = re.sub(r"\s+", " ", body).strip()
+    return re.sub(r"\s*\{", "{", body)
+
+
+@pytest.mark.parametrize("selector", [r"\.skel", r"@keyframes skel", r"\.mx-error", r"\.mx-error b"])
+def test_loading_error_rules_match_the_specimen_verbatim(theme, specimen, selector):
+    """Drift guard: theme.css and the specimen can never silently diverge.
+
+    Re-derives both rule bodies from source (not from a hand-copied constant) and
+    compares them declaration-for-declaration, so a future edit to either file that
+    is not mirrored in the other fails here rather than shipping unnoticed.
+    """
+    theme_body = _normalize_declarations(_rule_body(theme, selector))
+    specimen_body = _normalize_declarations(_rule_body(specimen, selector))
+    assert theme_body == specimen_body, (
+        f"{selector} has drifted from the specimen:\n"
+        f"  theme.css:  {theme_body}\n"
+        f"  specimen:   {specimen_body}"
+    )
+
+
+def test_skel_reduced_motion_guard_present(theme):
+    """prefers-reduced-motion disables the shimmer (specimen.html:165)."""
+    css = _strip_comments(theme)
+    assert re.search(
+        r"@media\s*\(\s*prefers-reduced-motion:\s*reduce\s*\)\s*\{\s*"
+        r"\.skel\s*\{\s*animation\s*:\s*none\s*;?\s*\}\s*\}",
+        css,
+    ), ".skel must be disabled under prefers-reduced-motion, per the specimen (line 165)"
+
+
+def test_the_loading_and_error_states_are_additive_only(theme):
+    """Purely-additive proof, by construction. The port was a single insertion
+    between two byte-exact anchors that already shipped in theme.css: the last
+    declaration PR-0(b) gave .mx-empty-why, and the first line of the comment
+    C8-C gave the count ladder. If both anchors still read exactly as they did
+    before this PR, nothing between or around them was touched — only the new
+    block was inserted in the gap.
+    """
+    before_anchor = (
+        ".mx-empty-why { color:var(--muted); font-size:var(--fs-sm); margin-top:4px; }"
+    )
+    after_anchor = (
+        "/* Count ladder — control form; the active cell reads as WEIGHT (solid underline"
+    )
+    assert before_anchor in theme, "the pre-existing .mx-empty-why rule must be untouched"
+    assert after_anchor in theme, "the pre-existing count-ladder comment must be untouched"
+    gap = theme[theme.index(before_anchor) + len(before_anchor) : theme.index(after_anchor)]
+    assert ".skel" in gap and ".mx-error" in gap, (
+        "the new loading/error block must sit in the gap between the two untouched anchors"
+    )
+
+
+def test_no_consumer_wires_the_new_primitives_yet(theme):
+    """Blast-radius guard for THIS PR: additive only, zero consumers estate-wide.
+
+    The shell builder (P-MP1-SHELL / PR #6049 lane) owns wiring .skel/.mx-error into
+    actual markup next. A consumer appearing in the same PR that ports the primitive
+    would be undisclosed scope creep against this PR's own stated blast radius.
+    """
+    offenders = []
+    for path in sorted((ROOT / "templates").rglob("*")):
+        if not path.is_file() or path.suffix not in {".j2", ".html"}:
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        # Token-exact: a naive `\bskel\b` false-boundaries on the hyphen in
+        # page-local compounds like "trd-skel"/"oew-skel-bar"/"rx-skel" (all of
+        # which are pre-existing, unrelated page classes, not this primitive) —
+        # a hyphen is a non-word char, so `\b` fires on both of its sides and a
+        # substring match would misreport every one of them as a consumer.
+        # Split each class attribute on whitespace and check for the exact
+        # token "skel" instead.
+        has_skel = any(
+            "skel" in cls.split()
+            for cls in re.findall(r'class=["\']([^"\']*)["\']', text)
+        )
+        if has_skel or "mx-error" in text:
+            offenders.append(path.relative_to(ROOT).as_posix())
+    assert not offenders, (
+        f"unexpected consumers of .skel/.mx-error found: {offenders} — this PR is "
+        "additive-only; wiring belongs to the shell builder (P-MP1-SHELL)"
+    )
+
+
 # ── (c) the archetype-B board ladder + the lifecycle weight grammar (C8-C) ──────────
 
 #: The seven lifecycle states the grammar draws, over six distinct weights — Delivering
