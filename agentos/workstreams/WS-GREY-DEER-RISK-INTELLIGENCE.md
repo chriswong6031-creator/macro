@@ -84,6 +84,7 @@ waves:
   - id: GD-1C
     title: leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)
     status: in_progress
+    pr: 6038
     # Relayed to the Grok operator 2026-08-19 (Sol: "relay now"; operator
     # carried GROK_GD1C_DESIGN_ERA_RECONSTRUCTION_PACKET_2026-08-19.md into
     # the AionUI session; canonical commission is the in-repo file below).

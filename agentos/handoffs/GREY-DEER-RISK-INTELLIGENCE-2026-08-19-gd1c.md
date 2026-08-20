@@ -150,7 +150,7 @@ danger_areas:
   - "FRED DGS/VIX files are latest-revised and lack first-known clocks; they are secondary-only here."
   - "The full worktree is required before reading data; never run a writer into omitted data/ or site/ trees."
   - "A merge/rebase that rewrites prereg commit fce7bfeb8c92 invalidates the stamped SHA; merge moving main instead of rebasing this branch."
-prs: []
+prs: [6038]
 decisions:
   - DEC:GD1-ACCEPTED-NO-PROMOTION
 ---
