@@ -8,8 +8,8 @@ A selectable scorecard page comparing Bitcoin allocation strategies. Two cores:
     proprietary and are NOT surfaced on the page.
   • BTC Risk Allocation Strategy — trend (200D) + risk-throttle (350D stretch) managed
     exposure; stays invested in uptrends, de-risks at extremes, exits downtrends.
-Both also stand aside through US midterm-election years until ~the vote (the same gate the
-live Bitcoin Vector allocation uses, engine.btc_signals.midterm_blackout).
+Election-cycle history is retained as context only. It does not alter either strategy or
+the live Bitcoin Vector allocation.
 
 Everything is backtested on real daily BTC closes (engine.btc_inputs.load_price, Coinbase
 spliced with Yahoo for the 2014-15 tail). Equity curves are rendered as self-contained
@@ -203,25 +203,21 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
     a_cycle = cycle_alloc(close, pivots)
     a_risk = risk_alloc(close)
 
-    # W1 N7 dual scorecard: compute BOTH with-gate and without-gate for the Risk
-    # Allocation strategy. Owner decision D2: subscriber-facing wording stays
-    # "Proprietary cycle timer" — the dual sub-line uses "cycle timer" phrasing.
-    # Raw (ungated) allocations for the dual comparison:
+    # W1 N7 dual scorecard: retain the old gated/raw comparison plumbing for historical
+    # attribution. The production gate is retired, so both tracks now agree.
     a_cycle_raw = a_cycle.copy()    # cycle timer's own down-phase already avoids midterms
     a_risk_raw = a_risk.copy()      # raw risk allocation (no calendar gate)
 
-    # House rule (mirrors the live Bitcoin Vector allocation): stand aside through US
-    # midterm-election years until ~the vote — historically the worst window for BTC. Reuse
-    # the SAME gate the Vector uses so the page and the live engine agree. (For the cycle
-    # timer this is ~a no-op — its down-phase already brackets the midterms — but it adds a
-    # real dodge to the trend/risk strategy.)
+    # Historical override compatibility: use the SAME configured flag as the Vector so
+    # the study page and live engine cannot diverge. Production has this disabled by
+    # operator ruling; election-cycle history is context only and changes no exposure.
     gate_live = {"active": False}   # W3: the ONE stamped gated-state flag (display side)
     gate_active_days = 0
     try:
         from engine.btc_signals import gate_state, midterm_blackout
         from lib import config
         mg = (config.load().get("vector", {}).get("allocation", {}) or {}).get("midterm_gate") \
-            or {"enabled": True}
+            or {"enabled": False}
         gate = midterm_blackout(close.index, mg)
         a_cycle = a_cycle.where(~gate, 0.0)
         a_risk = a_risk.where(~gate, 0.0)
@@ -231,7 +227,7 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
         gate_live = gate_state(close.index[-1], mg,
                                vector_cfg=config.load().get("vector", {}))
         gate_active_days = int(gate.sum())
-        log.info("midterm-election blackout active on %d days", gate_active_days)
+        log.info("retired midterm override active on %d historical days", gate_active_days)
     except Exception as e:  # pragma: no cover - never break the page over the overlay
         log.warning("midterm blackout overlay skipped (%s)", e)
 
@@ -311,10 +307,8 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
             "thesis": ("Our proprietary multi-year cycle timer: go fully risk-on at each projected "
                        "cycle bottom, ride the up-phase to the projected top, then sit in cash through "
                        "the down-phase and re-enter at the next projected bottom. The down-phase has "
-                       "historically bottomed into the US midterm elections — the post-election fiscal "
-                       "impulse throws off inflation the Fed tightens into ~18–24 months later, with BTC "
-                       "capitulating in the trough — so the timer is in cash through midterm years until "
-                       "the vote. The exact timing model is proprietary."),
+                       "has sometimes overlapped US midterm elections, but the election calendar itself "
+                       "does not change exposure. The exact timing model is proprietary."),
             "metrics": m_cycle,
             "metrics_raw": m_cycle_raw,  # W1 N7: without cycle timer, for dual sub-line
             "vs": {kk: m_cycle[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
@@ -323,7 +317,7 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
                 "Anchor on a confirmed cycle bottom; the timer projects every pivot forward.",
                 "At a projected bottom: allocate 100% (optionally leveraged).",
                 "Hold through the projected up-phase to the projected top — no mid-cycle trimming.",
-                "At the top: sell to cash and sit out the projected down-phase (it bottoms into the US midterms).",
+                "At the top: sell to cash and sit out the projected down-phase.",
                 "Re-enter at the next projected bottom. Repeat.",
             ],
             "leverage": lev_rows,
@@ -342,8 +336,8 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
             "thesis": ("Stay invested while the trend is intact and value is reasonable, de-risk as price "
                        "stretches above its long-term mean, and step aside when the trend breaks. Exposure "
                        "is scaled by a 200-day trend filter and a 350-day stretch throttle rather than by "
-                       "calendar timing — and, reflecting the house view, it stands aside through US "
-                       "midterm-election years until the vote, the period that has been hardest on BTC."),
+                       "calendar timing. Election-cycle history remains context only and never overrides "
+                       "the measured trend and risk allocation."),
             "metrics": m_risk,
             "metrics_raw": m_risk_raw,  # W1 N7: without cycle timer, for dual sub-line
             "vs": {kk: m_risk[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
@@ -353,14 +347,14 @@ def build_context(close: pd.Series | None = None, chart_points: int = 240) -> di
                 "Risk throttle: 100% when price < 2× the 350-day SMA…",
                 "…60% when 2–3.5×, 30% when > 3.5× (overheated).",
                 "Flat when the 200-day trend breaks down.",
-                "Stand aside (cash) through US midterm-election years until ~election day.",
+                "Election-cycle history is context only; it never changes exposure.",
             ],
             "leverage": None,
             "pivots": None,
             "caveats": [
                 "Trend-following: gives back part of every top and re-enters late after bottoms.",
                 "Parameters (200/350-day, 2×/3.5×) are sensible but not exhaustively tuned.",
-                "The midterm-election blackout is a deterministic calendar rule on only a few cycles of history.",
+                "Calendar seasonality is excluded from sizing because the historical sample is too small.",
             ],
         },
     ]
