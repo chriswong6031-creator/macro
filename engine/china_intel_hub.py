@@ -296,8 +296,16 @@ def _load_visits_context() -> dict:
     if df is not None and not df.empty:
         for row in df.to_dict("records"):
             code = str(row.get("sec_code") or "").strip()
-            if code:
-                by_code.setdefault(code, []).append(row)
+            if not code:
+                continue
+            # Plain-word filing-type label, computed ONCE per plane load (not
+            # per-dossier-call) — descriptive only, never routes/scores.
+            try:
+                kind_en, kind_zh = cv.visit_kind_label(row.get("title") or "")
+            except Exception:  # noqa: BLE001
+                kind_en, kind_zh = "investor visit", "机构调研"
+            row = {**row, "kind_en": kind_en, "kind_zh": kind_zh}
+            by_code.setdefault(code, []).append(row)
     try:
         coverage_start = cv.read_coverage_start()
     except Exception:  # noqa: BLE001
@@ -335,19 +343,21 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
                               "collection run yet", "recent": []}
 
         stale = False
+        stale_days = None
         last_success = health.get("last_success_utc")
         if last_success:
             try:
-                age_days = (datetime.now(timezone.utc)
-                            - datetime.fromisoformat(last_success)).days
-                stale = age_days > _VISIT_STALE_AFTER_DAYS
+                stale_days = (datetime.now(timezone.utc)
+                              - datetime.fromisoformat(last_success)).days
+                stale = stale_days > _VISIT_STALE_AFTER_DAYS
             except Exception:  # noqa: BLE001
                 stale = False
+                stale_days = None
 
         rows = (visit_ctx.get("by_code") or {}).get(code) or []
         if not rows:
             if stale:
-                return {"state": "stale",
+                return {"state": "stale", "stale_days": stale_days,
                         "detail": "visit-tape source has not refreshed recently — "
                                   "absence of visits cannot be confirmed right now",
                         "recent": [], "coverage_start": coverage_start}
@@ -363,6 +373,8 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
         for r in rows_sorted[:5]:
             recent.append({
                 "title": r.get("title"),
+                "kind_en": r.get("kind_en") or "investor visit",
+                "kind_zh": r.get("kind_zh") or "机构调研",
                 "source_published_at": r.get("source_published_at"),
                 "visitor_raw": r.get("visitor_raw"),
                 "visitor_class": r.get("visitor_class"),
@@ -375,6 +387,7 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
             })
         return {
             "state": "stale" if stale else "ok",
+            "stale_days": stale_days if stale else None,
             "detail": ("visit-tape source has not refreshed recently" if stale else None),
             "recent": recent,
             "n_total": len(rows),
@@ -1373,6 +1386,7 @@ def _empty(today: date) -> dict:
         "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "command": [], "discovery": [], "n_universe": 0,
+        "visits_coverage_start": None,
         "desks": {}, "counts": {}, "disclaimer": DISCLAIMER,
     }
 
@@ -1512,6 +1526,10 @@ def _build_inner(today: date, top: int) -> dict:
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "n_universe": len(all_dossiers),
         "command": command,
+        # Plane-level fact (P1, China Alpha Intelligence) — the visit tape's own
+        # coverage_start, exposed ONCE here rather than re-derived per row by a
+        # template scanning every dossier's nested visits.coverage_start.
+        "visits_coverage_start": visit_ctx.get("coverage_start"),
         "discovery": discovery_queue,
         "analogs": analogs,
         "desks": _desks_summary(command),

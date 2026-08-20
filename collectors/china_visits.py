@@ -91,6 +91,31 @@ def resolve_actor(raw_name: str) -> tuple[str, str]:
     return (cls, ONTOLOGY_VERSION) if cls else ("unresolved", ONTOLOGY_VERSION)
 
 
+# Plain-word filing-TYPE label for display only — never used to route, score,
+# or rank. Priority mirrors CATEGORY_PRIORITY's institutional_visit keyword
+# family (collectors/china_filings.py) so the two never drift: most specific
+# first, falling back to a generic label for a title that matched the bucket
+# only via the broad 调研 keyword (e.g. 机构调研情况登记表).
+_VISIT_KIND_LABELS: tuple[tuple[str, tuple[str, str]], ...] = (
+    ("业绩说明会", ("earnings briefing", "业绩说明会")),
+    ("分析师会议", ("analyst meeting", "分析师会议")),
+    ("特定对象调研", ("site visit", "特定对象调研")),
+    ("投资者关系活动记录表", ("IR activity record", "投资者关系活动记录表")),
+)
+_VISIT_KIND_DEFAULT = ("investor visit", "机构调研")
+
+
+def visit_kind_label(title: str) -> tuple[str, str]:
+    """(en, zh) plain-word filing-type label for display. Pure, descriptive
+    only. Falls back to a generic label for a still-genuine institutional_visit
+    filing whose title matched only the broad 调研 keyword."""
+    title = title or ""
+    for kw, label in _VISIT_KIND_LABELS:
+        if kw in title:
+            return label
+    return _VISIT_KIND_DEFAULT
+
+
 # ------------------------------------------------------------------ store --
 
 _VISIT_COLUMNS = (

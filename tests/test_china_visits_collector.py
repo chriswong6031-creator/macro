@@ -84,6 +84,33 @@ class TestResolveActor:
         assert cls == "unresolved"
 
 
+class TestVisitKindLabel:
+    def test_earnings_briefing(self):
+        assert cv.visit_kind_label("2026年半年度业绩说明会公告") == ("earnings briefing", "业绩说明会")
+
+    def test_analyst_meeting(self):
+        assert cv.visit_kind_label("2026年度分析师会议纪要") == ("analyst meeting", "分析师会议")
+
+    def test_site_visit(self):
+        assert cv.visit_kind_label("关于接待特定对象调研的公告") == ("site visit", "特定对象调研")
+
+    def test_ir_activity_record(self):
+        assert cv.visit_kind_label("顺网科技：投资者关系活动记录表") == (
+            "IR activity record", "投资者关系活动记录表")
+
+    def test_generic_fallback_for_broad_survey_keyword(self):
+        assert cv.visit_kind_label("机构调研情况登记表") == cv._VISIT_KIND_DEFAULT
+
+    def test_empty_title_falls_back(self):
+        assert cv.visit_kind_label("") == cv._VISIT_KIND_DEFAULT
+
+    def test_specific_keyword_wins_over_generic(self):
+        # A title carrying both 调研 and a specific family keyword must not
+        # fall through to the generic label.
+        label = cv.visit_kind_label("特定对象调研接待情况登记表")
+        assert label == ("site visit", "特定对象调研")
+
+
 # --------------------------------------------------------------------------- #
 # _derive_row — pure mapping
 # --------------------------------------------------------------------------- #

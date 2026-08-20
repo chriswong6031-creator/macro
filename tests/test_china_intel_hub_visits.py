@@ -95,6 +95,7 @@ class TestVisitBlockStates:
             health={"status": "ok", "last_success_utc": old}))
         assert block["state"] == "stale"
         assert block["recent"] == []
+        assert block["stale_days"] == 10
 
     def test_ok_with_rows_carries_typed_visitor_fields(self):
         rows = [{
@@ -115,6 +116,25 @@ class TestVisitBlockStates:
         assert r["visitor_class"] == "not_yet_available"
         assert r["ontology_version"] == "B0_DRAFT_pin-3d12412e561e"
         assert r["first_seen_since_coverage_start"] is True   # the only row = earliest
+        assert r["kind_en"] == "investor visit"    # default fallback (row carries no kind_*)
+        assert r["kind_zh"] == "机构调研"
+
+    def test_ok_row_propagates_kind_label_from_load_visits_context(self):
+        # Simulates what _load_visits_context() actually attaches per row.
+        rows = [{
+            "announcement_id": "A2", "sec_code": "000002",
+            "title": "关于接待特定对象调研的公告",
+            "source_published_at": "2026-08-19T09:00:00+08:00",
+            "visitor_raw": "not_yet_available", "visitor_class": "not_yet_available",
+            "ontology_version": "v1", "adjunct_url": "",
+            "kind_en": "site visit", "kind_zh": "特定对象调研",
+        }]
+        fresh = datetime.now(timezone.utc).isoformat()
+        block = hub._visit_block("000002.SZ", _ctx(
+            by_code={"000002": rows}, coverage_start="2026-08-01",
+            health={"status": "ok", "last_success_utc": fresh}))
+        assert block["recent"][0]["kind_en"] == "site visit"
+        assert block["recent"][0]["kind_zh"] == "特定对象调研"
 
     def test_first_seen_flag_only_on_earliest_row(self):
         rows = [
@@ -188,6 +208,9 @@ class TestLoadVisitsContext:
         assert ctx["coverage_start"] is not None
         assert ctx["health"]["status"] == "ok"
         assert "000001" in ctx["by_code"]
+        # kind label is attached at load time, not left for the template to guess
+        assert ctx["by_code"]["000001"][0]["kind_en"] == "IR activity record"
+        assert ctx["by_code"]["000001"][0]["kind_zh"] == "投资者关系活动记录表"
 
 
 # --------------------------------------------------------------------------- #

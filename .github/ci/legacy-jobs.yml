@@ -2624,7 +2624,10 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml jsonschema
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
-      - name: china institutional visit tape collector (P1)
+      # China Alpha Intelligence P1 (#6050): institutional-visit tape, derived
+      # from china_filings' own store — same wiring-hole class this job exists
+      # for (a fixture-pinned collector named by NO job would rot silently).
+      - name: china institutional-visit tape collector tests (P1)
         run: python -m pytest tests/test_china_visits_collector.py -q
       - name: china native policy / OMO / trade-detail collector tests (W3 CNH)
         run: python -m pytest tests/test_china_omo_collector.py tests/test_china_trade_detail_collector.py tests/test_china_official_corpora.py -q
@@ -8893,8 +8896,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts
         run: python -m pytest tests/test_admin_brief_gate.py tests/test_ai_desk_panel.py tests/test_altdata_intel.py tests/test_altdata_price_truth.py tests/test_china_intel_hub.py tests/test_master_brain.py tests/test_master_brain_policy.py tests/test_master_brain_producer.py tests/test_master_brain_scorer.py tests/test_risk_brain.py tests/test_risk_radar_review.py tests/test_shock_deescalation.py tests/test_w7_llm_determinism.py -q
-      - name: china intel hub visit tape + dossier UI consumer (P1)
-        run: python -m pytest tests/test_china_intel_hub_visits.py tests/test_china_intel_visits_ui.py -q
+      # China Alpha Intelligence P1 (#6050): the china_intel_hub dossier's
+      # descriptive-only visits block — joins the china_intel_hub owner lane.
+      # test_china_intel_visits_render.py is the SOL-repair template render
+      # test (renders china_intel.html.j2 through the real builder env).
+      - name: china_intel_hub institutional-visit dossier block (P1)
+        run: python -m pytest tests/test_china_intel_hub_visits.py tests/test_china_intel_visits_render.py -q
       - name: Intelligence Hub PIT scope + W0 measurement heals + ticker-shape gate
         run: python -m pytest tests/test_intel_hub_universe_scope.py tests/test_intel_hub_w0_heals.py tests/test_ticker_shape.py -q
 
