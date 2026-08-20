@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T00:34:16.249312+00:00",
-  "count": 1441,
+  "generated_at": "2026-08-20T02:10:01.099013+00:00",
+  "count": 1446,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -81,6 +81,109 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jrd4radwsd6-5153e0",
+      "title": "Salesforce Aug 19",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T01:19:21Z",
+      "summary_points": [
+        "**AI Adoption Hurdles**: F2Q demand constrained by governance/data readiness challenges and extended evaluation cycles (compute/data integration), delaying deals despite AI transition focus.",
+        "**Favorable Valuation**: 11x Street EV/CY27E uFCF and 15x ex-SBC valuation deemed attractive, supporting Buy rating despite modest upside potential.",
+        "**Salesforce Adoption Metrics**: Agentforce adoption accelerating (13 avg activated agents/enterprise, 53% faster creation), but scaled growth hindered by data quality/integration constraints.",
+        "**Contentful Acquisition Impact**: Closing F3Q27 adds ~$80M to FY27 subscription revenue (+20bps growth) and ~50bps to cRPO, with timing critical for near-term guidance.",
+        "**Key Risks**: IT spending pace volatility, competition from disruptive platforms, and generative AI adoption rate slowdowns pose material near-term threats."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eoytnwxjgid-271204",
+      "title": "LONG-END YIELDS HAVE A MESSAGE",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-20T01:18:24Z",
+      "summary_points": [
+        "**UK Structural Yield Extremity**: UK yield curve repricing driven by structural pension fund demand (pre-GFC), QE-induced duration gaps, and broken cross-currency arbitrage, amplifying negative duration gaps during yield declines.",
+        "**Hedge Fund Intermediation Shift**: Hedge funds now dominate global bond intermediation over central banks/real money, with UK’s shift more pronounced; post-tariff shock term premium widening confirms expanded market influence.",
+        "**30-10s Spread Deterioration**: UK’s widening 30-10s spread since 2022 signals deteriorating fiscal perception (market pricing longer-term risks), debunking \"high debt = high yields\" myth despite yield cheapening.",
+        "**Duration Gap Amplification**: Post-GFC regulation constrained intermediation, creating unstable duration search; negative duration gaps amplify UK yield repricing volatility vs.",
+        "peers (US/Japan/Germany/France)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m0xtai7vrdy-863dbf",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:19Z",
+      "summary_points": [
+        "**Yield Pressure Nuance**: Long-end yield pressures (US 30-yr: 5.33%, German 30-yr: 3.78%, UK gilt: 5.8577%) do not threaten short-to-medium maturity quality bonds due to anchored front-end yields and income cushion against rate hikes.",
+        "**Critical Data Releases**: UK July inflation and ECB President Lagarde’s speech are pivotal for assessing policy shifts and liquidity risks.",
+        "**Central Bank Policy Shift**: Weakening US inflation/labor data reduce Fed hike expectations; Europe’s growth risks limit tightening, driving yield decline expectations.",
+        "**China Robotics Momentum**: IPOs (e.g., 3x price, CNY 6.1bn raised) signal strong investor enthusiasm, highlighting opportunities in sensors, actuators, and overseas supply chains for diversified exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9bqaztysson-bb635b",
+      "title": "CEO Macro Briefing Book Insight on AI",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-19T23:36:06Z",
+      "summary_points": [
+        "**AI GDP Contribution Surge**: AI-related investment contribution to real GDP growth doubled, with computer equipment capex adding nearly 50bps growth by 2025 (vs 10bps in 2024), surpassing IT’s dot-com era impact per Fed data.",
+        "**Sector Adoption Disparity**: Tech leads at 44.1% AI adoption, finance/professional services at 42.8%/42.9%, while utilities (19.7%) and natural resources (7.9%) lag; national average at 24.3%, critical for sector rotation.",
+        "**AI Exposure vs.",
+        "Layoffs Paradox**: Highest AI-exposed prime-age workers have *lowest* layoff rates (contradicting narrative), despite 40% of young workers fearing displacement and AI blamed for ~200k tech job cuts.",
+        "**US-China Model Performance Gap**: US models cost ~10x more during peak usage but are more intelligent (higher AAI Index); Chinese models cheaper (lower cost per 1M tokens), with 40% US adoption despite only 12% belief in US AI edge."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pagfhdtkygu-9eabea",
+      "title": "SEK Covered Monthly July 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-19T23:34:31Z",
+      "summary_points": [
+        "**YTD Issuance Progress**: SEK covered bond market issued ~300bn YTD (72% of 425bn target), led by Nordea and SEB, indicating strong market activity toward full-year goals.",
+        "**July Activity Surge**: July saw 26.2bn SEK issuance—5bn above historical summer average—signaling elevated seasonal demand and institutional participation.",
+        "**Major Buyback Flows**: July buybacks totaled ~5.2bn (SHYP 1592: 2.5bn, SEB581: 4.5bn), reflecting significant institutional liquidity reallocation and market positioning shifts.",
+        "**Spread Volatility**: 5Y spreads to government bonds peaked near 65+ bp in March 2026, highlighting acute credit risk exposure and relative value dislocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-48d8dhxfvbl-a77826",
       "title": "Broadening delivered now prepare for volatility",
