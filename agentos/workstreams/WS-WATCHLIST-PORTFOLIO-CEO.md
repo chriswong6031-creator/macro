@@ -1,19 +1,19 @@
 ---
 key: WATCHLIST-PORTFOLIO-CEO
-title: Watchlist + Portfolio CEO revamp (superseded by Market OS)
+title: Watchlist + Portfolio CEO revamp — compatibility redirect
 objective: >
-  Preserve the historical W0/P0-husk record and prevent later sessions from resuming
-  its stale persistence fork or treating its shipped W2–W4 information architecture as
-  the final flagship. This workstream is parked; all continuation belongs to
-  WS:MARKET-OS.
-status: parked
+  Preserve the historical W0/P0-husk record and route any legacy continuation into
+  WS:MARKET-OS without authorizing the stale persistence fork or the prior W2–W4 page
+  hierarchy. Done means A1A is accepted and every remaining consumer no longer relies
+  on this legacy readiness identity, after which this redirect can be parked.
+status: active
 program: terminal-user-services
 p0: PRODUCT_TRUST_COHERENCE
 repos: [macro, terminal]
 owner: coo-fable
 class: design
 blast_radius: user_facing
-ambiguity: specified
+ambiguity: scoped
 waves:
   - id: W0
     title: Initial revamp shipped
@@ -24,12 +24,12 @@ waves:
     status: done
     pr: 5463
   - id: W1
-    title: Persistence-model decision and continuation
-    status: dropped
+    title: Compatibility redirect into Market OS A1A
+    status: todo
     depends_on: [P0-HUSK]
     next_action: >
-      Do not resume. Separate canonical tables and the positions-only Terminal surface
-      are already established; the product continuation is WS:MARKET-OS A1A.
+      Do not implement the legacy persistence proposal. Continue only through
+      WS:MARKET-OS A1A Portfolio Population Truth + State Authority.
 decisions:
   - "DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE"
   - "DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT"
@@ -40,10 +40,11 @@ do_not_redo:
   - Do not call the prior revamp complete merely because W0–W4 runtime pieces exist.
 next_action: >
   Use WS:MARKET-OS. After its M0 records merge, the only authorized runtime continuation
-  is A1A Portfolio Population Truth + State Authority.
+  is A1A Portfolio Population Truth + State Authority. This legacy record authorizes no
+  implementation of its former W1 persistence proposal.
 ---
 
-## Supersession record
+## Supersession and compatibility record
 
 This workstream captured the first Watchlist/Portfolio revamp and the emergency husk
 repair. Its original unresolved recommendation was a single positions table with a kind
@@ -55,6 +56,12 @@ The larger Chairman commission also exceeds this workstream's scope. The flagshi
 joins Market discovery, per-security research, actual Portfolio exposure, named
 Watchlists, charting, changes, catalysts, evidence, and eventual continuous intelligence.
 The durable successor is `WS:MARKET-OS`.
+
+This record remains an active compatibility redirect for now because repository tests
+and older session entry points still use its readiness identity as a fixture. `active`
+and W1 `todo` mean only “follow the redirect”; they are not authority to resume the old
+persistence design. A later bounded fixture-decoupling wave may park this record after
+A1A is accepted and those consumers no longer rely on it.
 
 ## What remains reusable
 
