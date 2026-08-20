@@ -9,7 +9,7 @@
     "trade_authority": "none"
   },
   "cik_map_snapshot": "2026-08-18",
-  "code_version": "aaf83b6ea03090cf1fa2d8a03551a576779c45a0",
+  "code_version": "cff76abbff615255602bad3cc54b670bcbec1d4c",
   "coverage": {
     "resolved": 704,
     "total": 713,
@@ -33,7 +33,7 @@
     "reference.issuer_migrations",
     "reference.security_migrations"
   ],
-  "generated_at": "2026-08-20T11:37:27",
+  "generated_at": "2026-08-20T12:47:29",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -49,7 +49,7 @@
     }
   ],
   "inputs": {
-    "config.yml": "3c34cf00574ba9c316e4e767b59bed1e311b5d42e5bdded5aebaf8fb1840940c",
+    "config.yml": "513ca587572a85e29e1676a1966c643997702ef2fc3e0c95343f9b5590d28703",
     "config/delisted_symbols.yml": "6c2a0194fa1e612b207bafa730ce78cbc6c41c252ead5f558a48901aac4c1cb5",
     "data/baskets/membership.json": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
     "data/breadth/constituents.parquet": "f40d594d8115f9036c4d8a8ded8df81edbd2a40638d2240501ac1adca00b252c",
@@ -91,7 +91,12 @@
       "RESOLVED": 699
     }
   },
-  "listing_continuity": [],
+  "listing_continuity": [
+    {
+      "code": "GOLD",
+      "explained": "identity_exception"
+    }
+  ],
   "notes": [],
   "pending_transition_refusals": [],
   "producer": "scripts/build_security_master.py",
@@ -148,7 +153,7 @@
   "seed_counts": {
     "delisted_keys": 3,
     "directory_symbols": 13161,
-    "ticker_fixups": 2,
+    "ticker_fixups": 3,
     "ticker_key_migrations": 1,
     "universe_keys": 711
   },
@@ -159,5 +164,7 @@
       "new": "FI",
       "old": "FISV"
     }
-  ]
+  ],
+  "unregistered_rename_duplicates": [],
+  "vendor_alias_prunes": []
 }
