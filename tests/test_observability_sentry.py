@@ -8,6 +8,7 @@ an unbootable /api — not a missing breadcrumb.
 from __future__ import annotations
 
 import builtins
+import logging
 import importlib
 import sys
 
@@ -155,6 +156,50 @@ def test_sample_rate_parsing(obs, monkeypatch, raw, expected):
 def test_flag_parsing(obs, monkeypatch, raw, expected):
     monkeypatch.setenv("SENTRY_SEND_DEFAULT_PII", raw)
     assert obs._flag("SENTRY_SEND_DEFAULT_PII", True) is expected
+
+
+def test_armed_banner_reaches_stdout_not_just_the_logger(obs, monkeypatch, capsys):
+    """The runbook's verification step greps the journal. Pin the mechanism.
+
+    FOUND LIVE 2026-08-20 right after #6115 deployed: the arm line was a
+    `log.info` and never reached `journalctl -u macro-api`, because uvicorn
+    configures only its own three loggers and leaves root at WARNING. The
+    documented verification could not work. Asserting via capsys (NOT caplog)
+    is the whole point — caplog would pass on the broken version.
+    """
+    monkeypatch.setenv("SENTRY_DSN", "https://k@o1.ingest.us.sentry.io/2")
+    monkeypatch.setenv("SENTRY_RELEASE", "deadbeef")
+    _install(monkeypatch, _FakeSDK())
+
+    assert obs.init_sentry("macro-api") is True
+    out = capsys.readouterr().out
+    assert "Sentry armed for macro-api" in out
+    # The operator reads these three off the banner to confirm the box is on
+    # the settings they think it is.
+    assert "env=production" in out
+    assert "release=deadbeef" in out
+    assert "traces=0.1" in out
+
+
+def test_disabled_banner_also_reaches_stdout(obs, capsys):
+    """"Why is Sentry dark?" must be answerable from the journal alone."""
+    assert obs.init_sentry("macro-api") is False
+    assert "SENTRY_DSN unset" in capsys.readouterr().out
+
+
+def test_banner_survives_a_root_logger_pinned_at_warning(obs, monkeypatch, capsys):
+    """Reproduce uvicorn's actual config: root at WARNING, INFO suppressed."""
+    root = logging.getLogger()
+    prev = root.level
+    root.setLevel(logging.WARNING)
+    try:
+        monkeypatch.setenv("SENTRY_DSN", "https://k@o1.ingest.us.sentry.io/2")
+        _install(monkeypatch, _FakeSDK())
+        assert obs.init_sentry("macro-api") is True
+        assert logging.getLogger("macro.observability").getEffectiveLevel() == logging.WARNING
+        assert "Sentry armed for macro-api" in capsys.readouterr().out
+    finally:
+        root.setLevel(prev)
 
 
 def test_pii_and_logs_can_be_switched_off(obs, monkeypatch):
