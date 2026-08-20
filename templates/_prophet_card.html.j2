@@ -70,6 +70,105 @@
    it MUST stay outside .nb-px because live.js replaces the price node's textContent. #}
 {% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
 
+{# ═══ P-MP1-SHELL §4b/§10 — THE 7-CELL LIFECYCLE LADDER ═══════════════════════════
+   Renders MP-1-prophet-board.md §4b's cell set VERBATIM (labels/order/weight
+   grammar), against `.mx-ladder--board`/`.mx-cell`/`.mx-cap`/`.mx-mark` — the
+   DS-PR-0 primitives (theme.css, gate G-B) — never new CSS here beyond the
+   template-scoped .pv-mark/.pv-life additions above/below.
+
+   COUNT LAW (ruling §6, MP-1 §7 "canonical counts"): every number this macro
+   prints is a published field off `book` — `lifecycle_counts`,
+   `lifecycle_live_total`, `lifecycle_grand_total` — NEVER a row count computed
+   here. `book` is ALWAYS the FULL (unsliced) book, regardless of tier gating:
+   docs/TIER_PREVIEW_PATTERN.md — "state and totals are free, names are paid" —
+   so life_gate never reaches this macro and never should.
+
+   FILTER STATE is entirely CLIENT-SIDE (this is a statically generated page,
+   baked once per build with no per-request query string to read): every cell
+   bakes `aria-pressed="false"`; dashboard.html.j2's inline script reads
+   `location.search`/legacy `location.hash` on load and toggles the pressed
+   state + `data-lifef` (MP-1 §7 URL law) — mirrors the existing `data-stagef`
+   CSS-filter idiom (theme.css / dashboard.html.j2 ~880-891) exactly, keyed on
+   `data-life` instead of `data-stage`.
+
+   STATES (§10, Amendment 2 ratified): `book` None → LOADING (skeletons shimmer
+   the COUNTS only, never dashes/zeros — the em dash already means
+   "published and absent", ruling §6 fn.1, so a loading dash would make one
+   glyph carry two facts). `book` present, `early_turn_watch` key absent from
+   `book.intake` → the Watch cell renders the KEY-ABSENCE em-dash + the
+   `.ladder-absence` disclosure line. `early_turn_watch` present (even empty,
+   Amendment 1 P-K19) → Watch renders its normal zero-count cell like every
+   other live cell, no disclosure line. #}
+{% macro mx_ladder(book, error=false) %}
+{%- set _CELLS_LIVE = ['watch','ready','entered','delivering','overtime','invalidated'] -%}
+{%- set _LEX_EN = {'watch':'Watch','ready':'Ready','entered':'Entered','delivering':'Delivering','overtime':'Overtime','invalidated':'Invalidated','resolved':'Resolved'} -%}
+{%- set _LEX_ZH = {'watch':'观察','ready':'就绪','entered':'入场','delivering':'达标','overtime':'超时','invalidated':'失效','resolved':'已结'} -%}
+{%- set _NUMWORD = {1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven'} -%}
+{%- if error %}
+{#- §10 error state, Amendment 2's C8-B shipped three-section string (supersedes
+   Amendment 1's two-section draft — the trading-record strip is a third
+   surviving section the promise must cover). `.mx-error` is the DS-PR-0
+   primitive (theme.css). Retry reloads the page — this is a static-build
+   artifact-read failure, not a client-side fetch, so the only "retry" that
+   means anything is asking the browser for the page again (the NEXT render
+   is what actually fixes it; this button just gives the reader something to
+   press rather than a dead end). -#}
+<div class="mx-error" role="alert">
+  <b>!</b>
+  <span>
+    <span class="l-en">The board didn’t load. Candidates, Groups and the record below are current.</span>
+    <span class="l-zh">看板未能加载。下方的候选、板块与战绩仍是最新。</span>
+    <button type="button" class="ladder-clear" style="min-height:40px;min-width:40px;margin-top:6px" onclick="location.reload()">{{ t('Retry', '重试') }}</button>
+  </span>
+</div>
+{%- elif not book %}
+<div class="ladder-headline"><span class="skel sk-head" aria-hidden="true"></span><span class="ladder-nl">{{ t('live setups today','个跟踪中计划') }}</span></div>
+<div class="mx-ladder mx-ladder--board" role="group" aria-busy="true" aria-label="Lifecycle counts loading">
+  {% for k in _CELLS_LIVE %}
+  <div class="mx-cell{% if loop.last %} mx-cell--last-live{% endif %}"><span class="mx-cap mx-cap--{{ k }}" aria-hidden="true"></span><span class="skel sk-n" aria-hidden="true"></span><span class="mx-cell-l">{{ t(_LEX_EN[k], _LEX_ZH[k]) }}</span></div>
+  {% endfor %}
+  <div class="mx-ladder-gap" aria-hidden="true"></div>
+  <div class="mx-cell mx-cell--term"><span class="mx-cap mx-cap--resolved" aria-hidden="true"></span><span class="skel sk-n" aria-hidden="true"></span><span class="mx-cell-l">{{ t(_LEX_EN.resolved, _LEX_ZH.resolved) }}</span></div>
+  <div class="ladder-termnote">{{ t('not in today’s count', '不计入上方总数') }}</div>
+</div>
+{%- else -%}
+{%- set _counts = book.get('lifecycle_counts') or {} -%}
+{%- set _live_total = book.get('lifecycle_live_total') or 0 -%}
+{%- set _watch_present = 'early_turn_watch' in (book.get('intake') or {}) -%}
+{%- set _published = _CELLS_LIVE|length - (0 if _watch_present else 1) -%}
+<div class="ladder-headline"><span class="ladder-n fig">{{ _live_total }}</span><span class="ladder-nl">{{ t('live setups today','个跟踪中计划') }}</span><span class="ladder-sub">{{ t('the ' ~ _NUMWORD.get(_published, _published) ~ ' published cells below add up to this number', '下方 ' ~ _published ~ ' 个已发布状态合计') }}</span></div>
+<div class="mx-ladder mx-ladder--board" role="group" aria-label="Filter setups by lifecycle" id="us-life-ladder">
+  {% for k in _CELLS_LIVE %}
+  {%- set _absent = (k == 'watch') and not _watch_present -%}
+  {%- set _n = _counts.get(k) or 0 -%}
+  <button type="button" class="mx-cell{% if loop.last %} mx-cell--last-live{% endif %}" data-life="{{ k }}" aria-pressed="false"{% if _absent %} data-absent="1"{% elif _n == 0 %} data-zero="1"{% endif %}>
+    <span class="mx-cap mx-cap--{{ k }}" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">{{ '—' if _absent else _n }}</span>
+    <span class="mx-cell-l">{{ t(_LEX_EN[k], _LEX_ZH[k]) }}</span>
+  </button>
+  {% endfor %}
+  <div class="mx-ladder-gap" aria-hidden="true"></div>
+  <button type="button" class="mx-cell mx-cell--term" data-life="resolved" aria-pressed="false">
+    <span class="mx-cap mx-cap--resolved" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">{{ _counts.get('resolved') or 0 }}</span>
+    <span class="mx-cell-l">{{ t(_LEX_EN.resolved, _LEX_ZH.resolved) }}</span>
+  </button>
+  <div class="ladder-termnote">{{ t('not in today’s count', '不计入上方总数') }}</div>
+</div>
+{%- if not _watch_present %}
+{#- Repair round, finding S5: the ZH string must be MP-1 §10's ratified
+   string VERBATIM — the previous copy ("「观察」将在下一次收盘更新后发布。")
+   was a paraphrase, not the ruled text. -#}
+<p class="ladder-absence"><span class="mx-mark mx-mark--watch" aria-hidden="true"></span>{{ t('Watch tier publishes from the next nightly.', '观察档自下一次夜间构建起发布。') }}</p>
+{%- endif %}
+<div class="ladder-foot">
+  <span>{{ t('Sorted by priority — how ready a setup is today, not how likely it is to win.', '按优先级排序 — 数值越高表示越接近可操作，并不代表胜率更高。') }}
+  <span class="help">?<span class="tip tip-wide"><span class="l-en">Each cell counts plan rows — one row per tracked commitment, so a name traded twice appears twice. Watch counts names with a live signal and no open plan yet. The six live cells add up to the headline; Resolved sits outside it, because a closed plan is record rather than inventory.</span><span class="l-zh">每一格统计的是「计划」条目——每条对应一次独立的跟踪，因此同一只股票若有两次操作，就会出现两次。「观察」统计的是已有信号、但尚未建立计划的股票。6 个状态相加等于标题数字；「已结」不计入其中，因为已平仓的计划属于历史战绩，不是当前持仓。</span></span></span></span>
+  <button type="button" class="ladder-clear" id="us-life-clear" data-life="" hidden>{{ t('Clear filter','清除筛选') }}</button>
+</div>
+{%- endif %}
+{% endmacro %}
+
 {% macro pv_css() %}
 <style>
 .pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
@@ -352,6 +451,17 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
    fill escalation lives on the strip, where a cross is news and has no verb to outrank. #}
 .pv-live--close{background:color-mix(in srgb,var(--plvc) 18%,var(--panel));border-color:color-mix(in srgb,var(--plvc) 70%,transparent)}
 .pv-live--drop,.pv-live--over{--plvc:var(--pv-wait)}
+{#- P-MP1-SHELL: .pv-life / .pv-newer / .pv-mark CSS deliberately does NOT live
+   here. This macro (pv_css()) is called by EVERY board — hk/china/canada/intl
+   included (each does `{% import "_prophet_card.html.j2" as pv %}` +
+   `{{ pv.pv_css() }}`) — and MP-1 §7/§12 item 3 require those pages' rendered
+   bytes to stay byte-identical. Adding CSS here would change their <style>
+   block even though the markup that CSS supports (pv_card's `lifecycle`/
+   `lane_mark` params) is exercised only by the US template. That CSS lives in
+   templates/dashboard.html.j2's own <style> block instead — the same
+   non-shared placement §9's restated "theme.css" law and this packet's other
+   template-scoped primitives already use. See dashboard.html.j2 for
+   .pv-life/.pv-life-w/.pv-newer/.pv-mark. #}
 [data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
 [data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
 [data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
@@ -404,7 +514,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 {%- set _no_read = allow_no_read and (cx.verb not in _VEN) -%}
 {%- set _verb = 'wait' if _no_read else (cx.verb if cx.verb in _VEN else 'wait') -%}
 {%- set _stage = cx.get('stage') or 0 -%}
-<a class="pvcard{% if _no_read %} pv-noread{% else %} pv-{{ _verb }}{% endif %}{% if cx.get('featured') %} pv-featured{% elif cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}" data-ticker="{{ cx.tk|e }}"{% if cx.get('stage_key') %} data-stage="{{ cx.stage_key|e }}"{% endif %}{% if cx.get('stance_basis') %} data-tip-en="{{ cx.get('stance_tip_en') or ('Stance source: ' ~ cx.stance_basis) }}" data-tip-zh="{{ cx.get('stance_tip_zh') or ('依据来源：' ~ cx.stance_basis) }}"{% endif %}>
+<a class="pvcard{% if _no_read %} pv-noread{% else %} pv-{{ _verb }}{% endif %}{% if cx.get('featured') %} pv-featured{% elif cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}"{% if cx.get('id') %} id="pv-{{ cx.id|e }}"{% endif %} data-ticker="{{ cx.tk|e }}"{% if cx.get('life') %} data-life="{{ cx.life|e }}"{% endif %}{% if cx.get('stage_key') %} data-stage="{{ cx.stage_key|e }}"{% endif %}{% if cx.get('stance_basis') %} data-tip-en="{{ cx.get('stance_tip_en') or ('Stance source: ' ~ cx.stance_basis) }}" data-tip-zh="{{ cx.get('stance_tip_zh') or ('依据来源：' ~ cx.stance_basis) }}"{% endif %}>
   <div class="pv-chart">
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
@@ -439,6 +549,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
       <span class="pv-edge"><span class="pv-edl">{{ t(cx.get('edge_label_en') or 'Edge', cx.get('edge_label_zh') or '优势') }}</span>{% if cx.get('edge') is not none %}<span class="pv-edn">{{ cx.edge }}</span>{% elif cx.get('edge_txt') %}<span class="pv-edn">{{ cx.edge_txt }}</span>{% else %}<span class="pv-edn pv-edna">—</span>{% endif %}</span>
     </div>
     {% if cx.get('sec') %}<div class="pv-ind">{{ t(cx.sec, cx.get('sec_zh') or cx.sec) }}</div>{% endif %}
+    {%- if cx.get('lane_mark') %}{% set _lm = cx.lane_mark %}<span class="pv-mark" tabindex="0" data-tip-en="{{ _lm.tip_en|e }}" data-tip-zh="{{ (_lm.get('tip_zh') or _lm.tip_en)|e }}">{{ t(_lm.en, _lm.get('zh') or _lm.en) }}</span>{% endif %}
     {%- if cx.get('marks') is not none %}
     {#- FEATURED and NEW carry no popover (operator 2026-08-05): both are badges whose
         whole job is to be read at a glance, and their explainers were the longest cards
@@ -447,8 +558,18 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
     {%- set _MK_NOTIP = ('feat', 'new') -%}
     <div class="pv-mk">{% for _mk in cx.marks %}{% set _mkk = _mk.get('k') or 'lane' %}<span class="pv-mk-i pv-mk-{{ _mkk }}"{% if _mk.get('tip_en') and _mkk not in _MK_NOTIP %} data-tip-en="{{ _mk.tip_en|e }}" data-tip-zh="{{ (_mk.get('tip_zh') or _mk.tip_en)|e }}"{% endif %}>{{ t(_mk.en, _mk.get('zh') or _mk.en) }}</span>{% endfor %}</div>
     {%- endif %}
+    {#- P-MP1-SHELL §6 (ruling §10.1): on the lifecycle-sourced call path
+        (cx.lifecycle present), the 4-dot Bottoming/Turning/Ready/Trend rail is
+        REPLACED by the lifecycle fact row (.mx-mark + word + optional
+        newer-plan link) — same-PR removal, per-card, additive: every caller
+        that omits `lifecycle` keeps the 4-dot rail byte-identical
+        (§12 acceptance item 3). -#}
+    {%- if cx.get('lifecycle') %}{% set _lc = cx.lifecycle %}
+    <div class="pv-life"><span class="mx-mark mx-mark--{{ _lc.state|e }}" aria-hidden="true"></span><span class="pv-life-w">{{ t(_lc.label_en, _lc.label_zh) }}</span>{% if _lc.get('newer') %}<a class="pv-newer" href="#pv-{{ _lc.newer|e }}">{{ t('Newer plan on this name →', '该股最新计划 →') }}</a>{% endif %}</div>
+    {%- else %}
     <div class="pv-stp">{% for _i in [1,2,3,4] %}{% if _i > 1 %}<span class="pv-seg{% if _stage >= _i %} pa{% endif %}"></span>{% endif %}<span class="pv-dot{% if _stage == _i %} on{% elif _stage > _i %} pa{% endif %}"></span>{% endfor %}</div>
     <div class="pv-stl"><span{% if _stage == 1 %} class="on"{% endif %}>{{ t('Bottoming','筑底') }}</span><span{% if _stage == 2 %} class="on"{% endif %}>{{ t('Turning','转向') }}</span><span{% if _stage == 3 %} class="on"{% endif %}>{{ t('Ready','就绪') }}</span><span{% if _stage == 4 %} class="on"{% endif %}>{{ t('Trend','趋势') }}</span></div>
+    {%- endif %}
   </div>
   <div class="pv-zn">
     {%- set _zk = cx.get('zone_kind') or 'none' -%}
