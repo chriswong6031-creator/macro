@@ -2442,7 +2442,12 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
-    assert checkout["with"]["fetch-depth"] == 0
+    # Commit 09abde056620 "fix(ci): contain fence checkout to proof surface"
+    # bounded fence-pack's checkout to fetch-depth 256 + sparse-checkout
+    # (~74.7k -> 4,994 files, production-proven). The exact shape (paths,
+    # cone-mode) is canonically owned by test_fence_checkout_contract.py;
+    # this assertion only keeps this file from drifting back to the old pin.
+    assert checkout["with"]["fetch-depth"] == 256
 
     publish = next(step for step in pack["steps"] if step.get("id") == "publish")
     assert publish["if"] == "always()"
@@ -2828,6 +2833,15 @@ CURATED_EXCLUSIVE = {
     # test and enumeration would drop them silently.
     "cn-standout-audit",
     "coiled-mtf-anchor-era",
+    # 2026-08-20 main-red-repair. serving-observability (#6115, Sentry arm for
+    # the macro-api serving tier) shipped with no scope at all. Its own subject
+    # (_release()'s `subprocess.run(["git", ...])` for the deployed SHA) is an
+    # opaque subprocess call scope inference cannot see through, so it fell back
+    # to SUBPROCESS_ROOTS — including site/** and templates/** — and matched
+    # every ordinary templates/index.html PR (128 > the 127 ceiling below).
+    # Curated at the source: its true subject is exactly app/observability.py
+    # and tests/test_observability_sentry.py, both declared and covered.
+    "serving-observability",
 }
 
 

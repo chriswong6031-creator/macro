@@ -5694,6 +5694,20 @@ jobs:
     # Deps are `pytest` alone on purpose: app/observability.py is pure stdlib
     # and the suite stubs sentry_sdk, so this job must stay green on a runner
     # where the real SDK is not installed at all.
+    #
+    # `scope: exclusive` declared here (2026-08-20, main-red-repair): shipped
+    # with no scope at all, this job's own subject (_release()'s
+    # `subprocess.run(["git", ...])` for the deployed SHA) is an opaque
+    # subprocess call scope inference cannot see through, so it fell back to
+    # SUBPROCESS_ROOTS — including site/** and templates/** — and matched
+    # every ordinary templates/index.html PR (128 vs the 127 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs).
+    # That is smear, so it is curated away at the source rather than paid for
+    # there. Its true subject is exactly the two files below.
+    scope: exclusive
+    paths:
+      - "app/observability.py"
+      - "tests/test_observability_sentry.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
