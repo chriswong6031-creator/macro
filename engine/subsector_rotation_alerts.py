@@ -20,6 +20,33 @@ severity, headline/detail + _zh, context, anchor) so engine.alert_triage picks
 it up with zero new plumbing. FIRST run (no prior state) SEEDS silently — never
 an alert storm. CONTEXT-ONLY: a rotation read carries no validated forward edge;
 it rides Finviz's broad-universe numbers (names we hold no prices for).
+
+THREE CLOCKS (2026-08-20 repair — see engine/alert_time.py)
+----------------------------------------------------------
+The rotation payload distinguishes ``asof`` (the settled session the read is about)
+from ``generated_utc`` (the moment our builder ran).  This engine used to stamp its
+events with ``generated_utc or asof``, so a conclusion drawn from the Aug-19 close
+surfaced on the Alert Command Center as "2026-08-20 · today" — build time wearing
+event time's clothes, on a board whose whole job is to rank by what is live NOW.
+Every event therefore carries all three clocks explicitly:
+
+  ``event_date``   the session the rotation was observed from  (= ``asof``)
+  ``source_asof``  the observation it was derived from          (= ``asof``)
+  ``recorded_at``  when we serialized it                        (= ``generated_utc``)
+  ``ts``           the LEGACY field, kept for the append-only store's ordering and
+                   for readers predating this schema.  It is the EVENT date when we
+                   know it; when ``asof`` is missing it falls back to the record
+                   clock and ``date_precision`` is ``"unknown"``, which forbids any
+                   consumer from reading it as an event time.  It is never silently
+                   the build clock again.
+
+The ``id`` bucket deliberately stays on the RECORDED day.  Dedup safety: the store is
+append-only and merges by id (``rebuild``), and every historical row was minted with a
+recorded-day bucket.  Re-bucketing on ``asof`` would let a future event's id collide
+with an existing row (an Aug-20 session recorded Aug-21 would mint the same id as the
+Aug-19 session recorded Aug-20), and ``by_id.setdefault`` would silently DROP the new
+event.  Keeping the recorded bucket leaves every historical id byte-identical and every
+future id collision-free, so this repair rewrites no history and drops no event.
 """
 from __future__ import annotations
 
@@ -100,10 +127,40 @@ def _turn_severity(s: dict, up: bool) -> str:
     return "minor"
 
 
-def _ev(key, ts, type_, severity, headline, detail, context, headline_zh="", detail_zh=""):
-    ts = pd.Timestamp(ts)
-    bucket = ts.strftime("%Y-%m-%d")
-    return {"id": f"rotation:{REGION}:{type_}:{key}:{bucket}", "ts": ts.isoformat(),
+def _clocks(payload: dict) -> tuple[str | None, str, str]:
+    """Split the payload's two clocks apart ONCE per run.
+
+    Returns ``(event_date, recorded_at, id_bucket)``:
+      * ``event_date`` — the settled session (``asof``), or None when the payload does
+        not supply one.  We never substitute the build clock for it.
+      * ``recorded_at`` — ``generated_utc`` (or now) — provenance only.
+      * ``id_bucket`` — the RECORDED day, unchanged from the pre-repair formula so no
+        historical id moves and no future id can collide with one (see module docstring).
+    """
+    asof = str(payload.get("asof") or "").strip()
+    event_date = asof[:10] if len(asof) >= 10 else None
+    recorded_raw = str(payload.get("generated_utc") or "").strip()
+    recorded_at = recorded_raw or pd.Timestamp.utcnow().isoformat()
+    try:
+        id_bucket = pd.Timestamp(recorded_at).strftime("%Y-%m-%d")
+    except (ValueError, TypeError):     # unparseable build clock — fall back to the session
+        id_bucket = event_date or pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    if event_date is None:
+        log.warning("rotation alerts: payload carries no asof — event date is UNKNOWN "
+                    "(ts falls back to the record clock; date_precision='unknown')")
+    return event_date, recorded_at, id_bucket
+
+
+def _ev(key, clocks, type_, severity, headline, detail, context, headline_zh="", detail_zh=""):
+    event_date, recorded_at, bucket = clocks
+    return {"id": f"rotation:{REGION}:{type_}:{key}:{bucket}",
+            # legacy ordering key — the EVENT date when known, the record clock otherwise
+            # (and then date_precision says so).  Never the build clock in disguise.
+            "ts": event_date or recorded_at,
+            "event_date": event_date,
+            "source_asof": event_date,
+            "recorded_at": recorded_at,
+            "date_precision": "date" if event_date else "unknown",
             "source": "rotation", "asset": key, "type": type_,
             "severity": severity, "headline": headline, "detail": detail,
             "headline_zh": headline_zh or headline, "detail_zh": detail_zh or detail,
@@ -117,7 +174,7 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
     prior = prior or {}
     if not prior:                       # first run → seed, never storm
         return []
-    ts = payload.get("generated_utc") or payload.get("asof") or pd.Timestamp.utcnow().isoformat()
+    clocks = _clocks(payload)           # (event_date, recorded_at, id_bucket)
     out = []
     cur = {s["key"]: s for s in payload.get("subsectors", []) if s.get("key")}
     for key, s in cur.items():
@@ -179,7 +236,7 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
                 det_zh = (f"{nm} {fromwhat_zh}，现已连续多个交易日确认转为下行"
                           f"——本周 {_pc(s, '1W')}，市场为 {mkt_w}%/周，"
                           f"{brd_zh}同步走弱{conc_zh}。仅作参考，非卖出清单。")
-            out.append(_ev(key, ts, f"rotation_{st_now}", sev, hl, det,
+            out.append(_ev(key, clocks, f"rotation_{st_now}", sev, hl, det,
                            {"turn_state": st_now, "since": s.get("turn_since"),
                             "score": s.get("turn_score"), "n_members": s.get("n_members"),
                             "breadth": brd, "legs": s.get("legs_up" if up else "legs_dn"),
@@ -197,7 +254,7 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
             det_zh = (f"{nm} 刚转为{('领先' if qd=='leading' else '改善')}且加速"
                       f"（1周 {_pc(s,'1W')}，1月 {_pc(s,'1M')}，3月 {_pc(s,'3M')}；加速 {_f(s.get('accel'))}）。"
                       f"早期轮入候选 — 仅作参考，非买入清单。")
-            out.append(_ev(key, ts, "rotation_emerging", sev, hl, det,
+            out.append(_ev(key, clocks, "rotation_emerging", sev, hl, det,
                            {"quadrant": qd, "accel": s.get("accel"),
                             "emerging_score": s.get("emerging_score")}, hl_zh, det_zh))
         # rotate-OUT: a prior leader/improver newly flips to weakening.
@@ -211,7 +268,7 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
             det_zh = (f"{nm} 此前领先，但动量已转弱"
                       f"（1周 {_pc(s,'1W')}，3月 {_pc(s,'3M')}；动量 {_f(s.get('rs_mom'))}）。"
                       f"轮出/止盈观察 — 仅作参考。")
-            out.append(_ev(key, ts, "rotation_fading", "minor", hl, det,
+            out.append(_ev(key, clocks, "rotation_fading", "minor", hl, det,
                            {"quadrant": qd, "rs_mom": s.get("rs_mom")}, hl_zh, det_zh))
     return out
 
