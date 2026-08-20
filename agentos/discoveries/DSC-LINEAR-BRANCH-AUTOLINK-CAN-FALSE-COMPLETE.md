@@ -5,10 +5,10 @@ claim: >
   so a non-completion PR can falsely project the referenced delivery issue to Done
   on merge when its relationship semantics are broader than the issue's acceptance law.
 falsifier: >
-  Re-run harmless native Linear↔GitHub canaries for a branch-name auto-link, a
-  relation-only link, a non-closing link, and skip/ignore suppression; this claim is
-  false if branch issue identifiers do not auto-link/status-transition under the
-  configured workflow or if relation/suppression cannot prevent the merge transition.
+  Re-run the live relation-only #6119 and skip/ignore #6104 canaries plus harmless
+  closing and non-closing canaries under MAS-67; this claim is false if branch issue
+  identifiers do not auto-link/status-transition under the configured workflow or if
+  relation/suppression cannot prevent the merge transition.
 so_what: >
   Future sessions must use a delivery issue's branch identifier only for PRs whose
   merge legitimately completes that object; architecture/source-law/research/evidence
