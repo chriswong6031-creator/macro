@@ -303,10 +303,19 @@ waves:
       contract research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md +
       AMENDMENTS §1-§3) shipped as #6082 — Sol's D2B2 gate = the next natural
       refresh proving one canonical identity survives (see the R1 handoff for
-      the expected first-night provenance churn). D2B2 (broad expansion: 1,868
-      NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
-      (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
-      authorized yet — Sol reviews after each child returns."
+      the expected first-night provenance churn). D2B2-CN-HK AUTHORIZED
+      2026-08-20 (Sol adjudication DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK,
+      resolving the China Alpha pr0d owner collision): exactly one bounded
+      child admitting the source-supported China/HK listing population into
+      the canonical master (or typed refusals for every target) and
+      re-deriving the GMI identity projection — frozen contract
+      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md; start
+      pin re-censuses NOT_IN_MASTER by market (the 1,868 figure is
+      observation, not contract); China wave pr0d is consumer-verifier and
+      adopts the child's result by reference. The full D2B2 US/Canada
+      backlog, D2B3 (GMI GOLD/B + IBIT corrections), D2C (PIT vintages), D2D
+      (ontology/probation), D2E (rights/acceptance) remain NOT authorized —
+      Sol reviews after each child returns."
     status: in_progress
   - id: d3
     depends_on: [d2]

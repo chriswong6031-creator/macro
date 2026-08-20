@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-20",
-  "generated_utc": "2026-08-20T15:07:08.553895+00:00",
-  "n_tickers": 2597,
+  "generated_utc": "2026-08-20T16:20:56.108223+00:00",
+  "n_tickers": 2596,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -23807,16 +23807,6 @@
     },
     "GTLS": {
       "ticker": "GTLS",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "VMRK": {
-      "ticker": "VMRK",
       "channels": [
         "special_situation"
       ],

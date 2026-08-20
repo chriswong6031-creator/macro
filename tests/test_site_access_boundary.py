@@ -446,6 +446,8 @@ def test_generated_data_is_not_accidentally_public():
         # Reviewed machine-readable marketing metadata; contains no signal rows.
         "/brand-facts.json",
         "/live/quotes.json",
+        "/live/intraday_quotes.json",
+        "/live/flow_pulse.json",
         "/live/breadth.json",
         # Official agency publication lifecycle and verified factual outcomes.
         "/live/release_publications.json",

@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-20T14:20:47.504614+00:00",
+  "generated_at": "2026-08-20T17:03:07.017862+00:00",
   "n_ledgers": 34,
   "n_closed": 22,
   "n_grader_starved": 12,
@@ -14,9 +14,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 56099,
-      "n_graded": 74450,
-      "last_graded_at": "2026-08-20T14:18:56.603354+00:00",
+      "n_logged": 56154,
+      "n_graded": 74408,
+      "last_graded_at": "2026-08-20T17:01:15.803835+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -28,9 +28,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 74450,
-      "n_graded": 74450,
-      "last_graded_at": "2026-08-20T14:18:56.603354+00:00",
+      "n_logged": 74408,
+      "n_graded": 74408,
+      "last_graded_at": "2026-08-20T17:01:15.803835+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -379,9 +379,9 @@
       "graders": [
         "engine/btc_override_ledger.py"
       ],
-      "n_logged": 35,
+      "n_logged": 36,
       "n_graded": 0,
-      "last_graded_at": "2026-08-19",
+      "last_graded_at": "2026-08-20",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -393,9 +393,9 @@
       "graders": [
         "engine/foresight_grader.py"
       ],
-      "n_logged": 163,
+      "n_logged": 164,
       "n_graded": 0,
-      "last_graded_at": "2026-08-19",
+      "last_graded_at": "2026-08-20",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -449,7 +449,7 @@
       "graders": [
         "engine/species_registry.py"
       ],
-      "n_logged": 2040,
+      "n_logged": 2042,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
@@ -463,7 +463,7 @@
       "graders": [
         "engine/species_registry.py"
       ],
-      "n_logged": 2040,
+      "n_logged": 2042,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",

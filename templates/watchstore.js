@@ -1000,19 +1000,49 @@
 
   // ---- portfolio CRUD --------------------------------------------------------
   // Targets portfolio_positions when signed in; the localStorage book when signed out.
-  // All cloud queries filter by user_id = session user. If RLS is not yet applied,
-  // errors are caught and logged; status() reports 'local' so callers degrade.
+  // All cloud queries filter by user_id = session user.
+  //
+  // A1A authority law (research/market_os/…A1A_COMMISSIONING…md §10):
+  //   anonymous     -> the local Portfolio is canonical
+  //   authenticated -> the cloud Portfolio is canonical
+  // A signed-in session is NEVER "local mode", even when the cloud read/write most
+  // recently failed — `portfolioOk` is a diagnostic used for last-good bookkeeping and
+  // the read-state banner, never a router to the anonymous local book. The old shape
+  // (`_isLocalMode` including `!portfolioOk`) is exactly Turn 6's defect "authenticated
+  // cloud-to-local fork": one failed read silently and PERMANENTLY rerouted every later
+  // read AND write to the anonymous local book for the rest of the session — never
+  // resolved, never disclosed, and never the visitor's own local data to begin with.
+
+  var pfLastGoodCloud = null;   // {rows, at} — the last rows a CLOUD read actually returned
+  // the current read-state answer, refreshed on every portfolioList() call
+  var pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
 
   function _portfolioGuard() {
     if (!user || !sb) return Promise.reject(new Error('no-session'));
-    if (!portfolioOk) return Promise.reject(new Error('portfolio-unavailable'));
     return Promise.resolve();
   }
-  // signed-out (or a portfolio backend that has gone unavailable) -> the local book
-  function _isLocalMode() { return !user || !sb || !portfolioOk; }
+  // signed-out only. A degraded authenticated session is NOT local mode — see the law
+  // above; it is 'cloud' authority in a 'degraded' or 'error' read_state instead.
+  function _isLocalMode() { return !user; }
+  /* A1A (review finding S6): `user` is set the instant onAuthUser sees a session, but
+     the shared Supabase client resolves ASYNCHRONOUSLY afterward (`getClient().then
+     (c => sb = c)`) — and portfolio.js's `onAuth()` runs off the FIRST 'wl-auth',
+     dispatched BEFORE that resolves. In that window `user` is truthy and `sb` is not:
+     `!user||!sb` used to read as "local mode" and a signed-in load briefly rendered
+     the anonymous LOCAL book under a 'local' authority/chip. This is neither anonymous
+     (there IS a user) nor ready cloud (no client yet) — a THIRD transitional state. */
+  function _isCloudLoading() { return !!user && !sb; }
 
   function portfolioList() {
-    if (_isLocalMode()) return pfLocalList();
+    if (_isCloudLoading()) {
+      // never local rows, never an error banner for plain loading
+      pfReadState = { authority: 'cloud', state: 'loading', last_good_at: null, warning: null };
+      return Promise.resolve(null);
+    }
+    if (_isLocalMode()) {
+      pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
+      return pfLocalList();
+    }
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .select('*')
@@ -1020,18 +1050,36 @@
         .order('created_at');
     }).then(function (res) {
       if (res.error) throw res.error;
-      return res.data || [];
+      var rows = res.data || [];
+      portfolioOk = true;
+      pfLastGoodCloud = { rows: rows.slice(), at: nowISO() };
+      pfReadState = { authority: 'cloud', state: 'ready', last_good_at: pfLastGoodCloud.at, warning: null };
+      return rows;
     }).catch(function (err) {
       portfolioOk = false;
       warnOnce('portfolio-list', 'portfolio list failed: ' + (err && err.message || err));
-      // backend unavailable -> fall back to the local book rather than showing nothing
-      return pfLocalList();
+      /* NEVER substitute the anonymous local Portfolio for a signed-in session's cloud
+         read, and NEVER assert zero. Preserve last-good cloud rows (degraded, read-only)
+         when we have them; otherwise resolve `null` — an explicit "we do not know",
+         never an empty array standing in for a true zero. A durable authenticated
+         offline outbox is a separate, later capability (A1A does not build one). */
+      if (pfLastGoodCloud) {
+        pfReadState = { authority: 'cloud', state: 'degraded',
+                         last_good_at: pfLastGoodCloud.at, warning: 'cloud-unavailable' };
+        return pfLastGoodCloud.rows.slice();
+      }
+      pfReadState = { authority: 'cloud', state: 'error', last_good_at: null, warning: 'cloud-unavailable' };
+      return null;
     });
   }
+  function portfolioReadState() { return pfReadState; }
 
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
+    // A1A (S6): a signed-in write during the cloud-loading window must never land in
+    // the anonymous local book — reject cleanly; the caller must not claim Saved.
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalUpsert(pos);
     return _portfolioGuard().then(function () {
       function toNumOrNull(v) {
@@ -1077,6 +1125,7 @@
   }
 
   function portfolioClose(id) {
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalClose(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1097,6 +1146,7 @@
   }
 
   function portfolioRemove(id) {
+    if (_isCloudLoading()) return Promise.resolve(null);
     if (_isLocalMode()) return pfLocalRemove(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
@@ -1146,8 +1196,13 @@
       upsert: portfolioUpsert,
       close: portfolioClose,
       remove: portfolioRemove,
-      // 'local' = the localStorage book (signed out, or backend unavailable)
-      isLocal: _isLocalMode
+      // 'local' = the localStorage book — signed OUT only (A1A authority law, §10).
+      isLocal: _isLocalMode,
+      // {authority, state, last_good_at, warning} — refreshed by every list() call.
+      // 'local' authority is always 'ready'; 'cloud' authority may be 'ready',
+      // 'degraded' (last-good rows, read-only) or 'error' (no last-good; list()
+      // resolved null). Private — never logged, published, or sent to analytics.
+      readState: portfolioReadState
     }
   };
 
@@ -1158,6 +1213,15 @@
     var uid = (u && u.id) ? u.id : null;
     if (uid === lastAuthUid) return;
     lastAuthUid = uid;
+
+    /* A1A (review finding B1 — cross-user private-holdings leak): the cached
+       last-good cloud rows and read-state are PER-USER private data. Reset them on
+       EVERY uid transition, sign-in and sign-out alike, before anything else below
+       runs — otherwise a second user signing in on the same page session, whose own
+       first cloud read then fails, would be served the FIRST user's cached
+       "last-good" rows as their own degraded state. */
+    pfLastGoodCloud = null;
+    pfReadState = { authority: 'local', state: 'ready', last_good_at: null, warning: null };
 
     user = u || null;
     if (!user) {
@@ -1205,6 +1269,13 @@
     getClient().then(function (c) {
       sb = c;
       pull();
+      /* A1A (review finding S6): the FIRST 'wl-auth' above fired before `sb`
+         resolved, so portfolio.js's onAuth() ran during the cloud-loading window
+         (`user` set, `sb` not yet) and could read nothing but the loading
+         placeholder (see portfolioList's `_isCloudLoading()` branch). Re-fire now
+         that `sb` is ready so the Portfolio re-reads the real cloud rows without
+         any user interaction. */
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     }).catch(function (err) {
       setPill('offline');
       warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
@@ -1307,6 +1378,10 @@
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
       _setTestSession: function (u, client) { user = u; sb = client; },
+      // A1A test seam (review B1): the real auth-transition reset logic, so the
+      // cross-user last-good-cloud leak can be pinned against the actual function
+      // rather than reconstructed by hand in a test.
+      onAuthUser: onAuthUser,
       // W2: the read-side guard that keeps a focus refetch from reverting an edit
       // that is still only local (see tests/test_watchlist_workspace_js.py)
       _testHooks: {

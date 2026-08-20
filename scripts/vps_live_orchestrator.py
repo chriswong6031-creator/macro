@@ -110,6 +110,31 @@ def quote_snapshot_error(
         return f"quote snapshot quality check failed: {exc}"
 
 
+def flow_pulse_error(path: Path, *, min_coverage: float) -> str | None:
+    """Reject an age-fresh pulse that carries no usable intraday bars."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        rows = payload.get("tickers") or []
+        requested = int(payload.get("n_tickers") or 0)
+        if payload.get("mode") != "fastpath":
+            return f"flow pulse is not live: mode={payload.get('mode') or 'missing'}"
+        if not isinstance(rows, list) or requested <= 0 or requested != len(rows):
+            return "flow pulse ticker count does not match payload"
+        resolved = sum(
+            1 for row in rows
+            if isinstance(row, dict) and int(row.get("bars_today") or 0) > 0
+        )
+        coverage = resolved / requested
+        if coverage < min_coverage:
+            return (
+                f"flow pulse quality too low: {resolved}/{requested} "
+                f"({coverage:.1%}) have current-session bars"
+            )
+        return None
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return f"flow pulse quality check failed: {exc}"
+
+
 class Orchestrator:
     def __init__(
         self,
@@ -353,6 +378,21 @@ class Orchestrator:
         )
         if quote_result.status != "ok" or not snapshot_live.exists():
             return
+        intraday_quote_stage = self.stage_dir / "intraday_quotes.json"
+        self.module(
+            "intraday_quotes",
+            "scripts.build_intraday_flow_quotes",
+            [
+                "--base", str(ROOT / "site" / "flowtracker" / "base.json"),
+                "--quotes", str(snapshot_live),
+                "--out", str(intraday_quote_stage),
+            ],
+            outputs=self._publish_pairs(("intraday_quotes.json",)),
+            timeout=30,
+            validator=lambda path: quote_snapshot_error(
+                path, min_resolved=80, min_coverage=0.90
+            ),
+        )
         for market, filename in (
             ("us", "basket_pulse.json"),
             ("hk", "basket_pulse_hk.json"),
@@ -392,6 +432,7 @@ class Orchestrator:
             env={"MACRO_INTRADAY_DIR": str(intraday_dir)},
             outputs=self._publish_pairs(("flow_pulse.json", "flow_pulse_lastgood.json")),
             timeout=180,
+            validator=lambda path: flow_pulse_error(path, min_coverage=0.80),
         )
 
     def write_status(self, lane: str, started_at: datetime) -> None:

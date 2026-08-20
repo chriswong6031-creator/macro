@@ -1510,6 +1510,51 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# LIVE BREADTH lane (docs/live_breadth_runbook.md). Own block, same narrow
+# allow-list and self-arming contract as the prophet block above: go-live is a
+# REPO COMMIT, and the unit did not exist when live-setup.sh was last run on the
+# box, so a CHANGED-only trigger would install a timer nobody ever enables and
+# the producer would stay dark exactly as it was before this lane existed.
+#
+# This block is what makes live breadth OWNED. Before it, live-setup.sh armed
+# five lanes and none of them was breadth, while VPS_LIVE_PRIMARY=true disabled
+# the GitHub backstop — so the only repo-managed producer was switched off and
+# its replacement was never installed. An operator re-running live-setup.sh by
+# hand is not ownership; this is.
+#
+# The .service is NEVER restarted: it is a oneshot (`--once --publish`), so a
+# restart would burn a Polygon snapshot out of band, off the windowed schedule
+# and outside the one-snapshot-per-cycle entitlement the lane is built around.
+# Only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-breadth\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-breadth.timer ]; }; then
+	BREADTH_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-breadth.service"
+		"$APP_DIR/app/deploy/macro-live-breadth.timer"
+	)
+	if systemd-analyze verify "${BREADTH_UNIT_SOURCES[@]}"; then
+		BREADTH_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${BREADTH_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				BREADTH_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$BREADTH_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-breadth.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-breadth units updated"
+		fi
+		systemctl enable --now macro-live-breadth.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-breadth.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-breadth unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # CN PROPHET LIVE lane (CN-PR-1). Own block — a widened regex would restart the
 # US prophet timer whenever this unit changed. Same self-arming contract: go-live
 # is a REPO COMMIT, so a CHANGED-only trigger would install a timer nobody ever

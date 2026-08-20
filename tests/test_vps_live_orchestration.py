@@ -7,10 +7,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import pandas as pd
 
 from engine.release_actuals import receipts_from_payload
+from scripts import build_intraday_flow as bif
 from scripts import vps_live_orchestrator as vlo
 from scripts import watch_release_publications as wrp
+from scripts.build_intraday_flow_quotes import build_payload as build_flow_quotes
 from scripts.check_vps_live_health import evaluate as evaluate_live_health
 
 FOMC_STATEMENT = """
@@ -1122,6 +1125,77 @@ def test_quote_snapshot_quality_rejects_empty_or_low_coverage(tmp_path: Path):
     ) is None
 
 
+def test_board_quote_filter_keeps_only_leaders_with_real_prices():
+    payload = build_flow_quotes(
+        {"leaders": [{"ticker": "AMD"}, {"ticker": "AAPL"}, {"ticker": "MISS"}]},
+        {
+            "ts": 123,
+            "asof": "2026-08-20T16:00:00+00:00",
+            "source": "snapshot",
+            "quotes": {
+                "AAPL": {"price": 200.0},
+                "AMD": {"price": "150.25"},
+                "MISS": {"price": None},
+                "SPY": {"price": 700.0},
+            },
+            "meta": {"requested": 2000, "resolved": 1900},
+        },
+    )
+    assert set(payload["quotes"]) == {"AAPL", "AMD"}
+    assert payload["meta"]["requested"] == 3
+    assert payload["meta"]["resolved"] == 2
+    assert payload["meta"]["upstream_resolved"] == 1900
+
+
+def test_datetime_index_named_ts_is_normalized_for_today_bars(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    now_et = pd.Timestamp.now(tz="America/New_York").normalize()
+    index = pd.DatetimeIndex(
+        [now_et + pd.Timedelta(hours=10), now_et + pd.Timedelta(hours=11)],
+        name="ts",
+    ).tz_convert("UTC")
+    frame = pd.DataFrame(
+        {
+            "open": [100.0, 101.0],
+            "high": [102.0, 103.0],
+            "low": [99.0, 100.0],
+            "close": [101.0, 102.0],
+            "volume": [1000.0, 2000.0],
+        },
+        index=index,
+    )
+    intraday = tmp_path / "intraday"
+    intraday.mkdir()
+    (intraday / "AAPL.parquet").touch()
+    monkeypatch.setattr(bif.pd, "read_parquet", lambda _: frame.copy())
+
+    rows = bif._today_bars("AAPL", tmp_path)
+
+    assert len(rows) == 2
+    assert rows[-1]["close"] == 102.0
+
+
+def test_flow_pulse_quality_rejects_age_fresh_no_data(tmp_path: Path):
+    path = tmp_path / "flow_pulse.json"
+    path.write_text(json.dumps({
+        "mode": "no_data", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 0},
+            {"ticker": "AMD", "bars_today": 0},
+        ],
+    }))
+    assert "mode=no_data" in (vlo.flow_pulse_error(path, min_coverage=0.8) or "")
+    path.write_text(json.dumps({
+        "mode": "fastpath", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 4},
+            {"ticker": "AMD", "bars_today": 4},
+        ],
+    }))
+    assert vlo.flow_pulse_error(path, min_coverage=0.8) is None
+
+
 def test_command_can_publish_private_state_outside_public_root(tmp_path: Path):
     source = tmp_path / "stage" / "quotes_full.json"
     source.parent.mkdir()
@@ -1364,7 +1438,12 @@ def _healthy_vps_status() -> dict:
             "overlay": {"age_min": 2},
             "risk_state": {"age_min": 2},
             "china_risk_state": {"age_min": 2},
-            "flow_pulse": {"age_min": 30},
+            "flow_pulse": {
+                "age_min": 30,
+                "mode": "fastpath",
+                "n_tickers": 116,
+                "with_bars": 116,
+            },
         },
     }
 
@@ -1386,6 +1465,16 @@ def test_vps_health_contract_reports_failed_or_stale_lane():
     )
     assert "lane snapshot: last run was not healthy" in failures
     assert any("lane snapshot: stale" in failure for failure in failures)
+
+
+def test_vps_health_contract_rejects_age_fresh_no_data_pulse():
+    payload = _healthy_vps_status()
+    payload["checks"]["flow_pulse"].update({"mode": "no_data", "with_bars": 0})
+    failures = evaluate_live_health(
+        payload,
+        now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc),
+    )
+    assert "flow_pulse: semantically unavailable (mode=no_data)" in failures
 
 
 def test_vps_health_contract_reports_semantically_late_release():
@@ -1436,12 +1525,238 @@ def test_vps_health_contract_does_not_require_equity_lanes_on_weekend():
     ) == []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Live-breadth truth boundary — /api/status semantic health (FROZEN CONTRACT §6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _healthy_breadth_check() -> dict:
+    return {
+        "usable": True,
+        "unusable_reason": None,
+        "feed_status": "ok",
+        "session": "rth",
+        "source_asof": "2026-07-20T14:44:00Z",
+        "source_age_min": 4.0,
+        "delay_min": 19,
+        "producer": "vps:macro-live-breadth",
+        "coverage_n": 1503,
+        "coverage_pct": 100.2,
+        "adv": 900,
+        "dec": 580,
+    }
+
+
+def test_breadth_health_is_absent_ok():
+    """A box that has not deployed the macro-live-breadth lane yet must not red
+    the whole dead-man — same ABSENT-OK precedent as cn_prophet_live."""
+    payload = _healthy_vps_status()
+    assert "breadth" not in payload["checks"]
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    ) == []
+
+
+def test_breadth_health_passes_during_the_live_window_when_healthy():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)  # weekday, in window
+    ) == []
+
+
+def test_breadth_health_fails_when_unusable_during_the_live_window():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["unusable_reason"] = "source_stale"
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: not usable" in f and "source_stale" in f for f in failures)
+
+
+def test_breadth_health_fails_on_stale_source_clock():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    # Source snapshot 40 min before `now` — the ABSOLUTE stamp is what is graded.
+    payload["checks"]["breadth"]["source_asof"] = "2026-07-20T14:20:00Z"
+    payload["checks"]["breadth"]["source_age_min"] = 40.0
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: source stale" in f for f in failures)
+
+
+def test_breadth_health_catches_a_producer_that_stopped_writing():
+    """A dead producer must red the dead-man, not read healthy.
+
+    `source_age_min` is frozen at BUILD time. A lane that died three hours ago
+    keeps serving an artifact that still says `source_age_min: 4.0` and
+    `usable: true` forever, so grading that field would declare a stopped
+    producer perfectly healthy — the exact blindness a dead-man exists to
+    prevent. Only the absolute `source_asof` keeps ageing after the writer
+    stops, so it is what gets graded.
+    """
+    payload = _healthy_vps_status()
+    breadth = _healthy_breadth_check()
+    # Everything the payload says about itself still looks fresh...
+    assert breadth["source_age_min"] == 4.0 and breadth["usable"] is True
+    # ...but nothing has been written for three hours.
+    breadth["source_asof"] = "2026-07-20T11:44:00Z"
+    breadth["age_min"] = 180.0
+    payload["checks"]["breadth"] = breadth
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: source stale" in f for f in failures), failures
+    assert any("producer that stopped writing" in f for f in failures), failures
+
+
+def test_breadth_health_fails_closed_without_an_absolute_source_stamp():
+    payload = _healthy_vps_status()
+    breadth = _healthy_breadth_check()
+    breadth.pop("source_asof")
+    breadth.pop("source_age_min")
+    payload["checks"]["breadth"] = breadth
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: missing or invalid source_asof" in f for f in failures)
+
+
+def test_breadth_health_fails_on_low_coverage():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["coverage_pct"] = 40.0
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: coverage low" in f for f in failures)
+
+
+def test_breadth_health_fails_on_missing_producer():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["producer"] = ""
+    failures = evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    )
+    assert any("breadth: missing producer" in f for f in failures)
+
+
+def test_breadth_health_requires_nothing_when_session_closed():
+    """Stale last-session data outside a session is legitimate evidence of
+    nothing being wrong — never a fault, even inside what would otherwise be
+    the live window's hour (explicit spec requirement)."""
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["session"] = "closed"
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+    ) == []
+
+
+def test_breadth_health_requires_nothing_on_the_weekend():
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 19, 15, 0, tzinfo=timezone.utc)  # Sunday
+    ) == []
+
+
+def test_breadth_health_requires_only_parsing_outside_the_live_window():
+    """Weekday, session open, but outside UTC hour 14..20 — require only that
+    the key parses; report nothing about freshness/coverage/usable."""
+    payload = _healthy_vps_status()
+    payload["checks"]["breadth"] = _healthy_breadth_check()
+    payload["checks"]["breadth"]["usable"] = False
+    payload["checks"]["breadth"]["source_age_min"] = 999.0
+    assert evaluate_live_health(
+        payload, now=datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)  # weekday, before window
+    ) == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Live-breadth canonical production ownership (FROZEN CONTRACT §7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_live_setup_installs_and_arms_the_breadth_lane():
+    root = Path(__file__).resolve().parents[1]
+    live_setup = (root / "app" / "deploy" / "live-setup.sh").read_text()
+    assert "macro-live-breadth.service macro-live-breadth.timer" in live_setup
+    enable_block = live_setup.split("systemctl enable --now")[1].split("\n\n")[0]
+    assert "macro-live-breadth.timer" in enable_block
+
+
+def test_breadth_unit_pair_exists_and_uses_the_shared_env_file():
+    root = Path(__file__).resolve().parents[1]
+    service = (root / "app" / "deploy" / "macro-live-breadth.service").read_text()
+    timer = (root / "app" / "deploy" / "macro-live-breadth.timer").read_text()
+    assert "EnvironmentFile=-/etc/macro-live.env" in service
+    assert "ExecStart=/opt/macro/.venv/bin/python -m scripts.live_breadth_poller --once" in service
+    assert "Environment=MACRO_LIVE_PRODUCER=vps:macro-live-breadth" in service
+    assert "Unit=macro-live-breadth.service" in timer
+
+
+def test_breadth_vps_lane_never_publishes_via_git():
+    """The VPS lane publishes by atomic rename into $MACRO_LIVE_DIR — the path
+    Caddy serves first, no-store — so it must NOT carry --publish.
+
+    Two independent reasons, both load-bearing:
+
+    1. Ownership. --publish is the GitHub BACKSTOP's mechanism (it commits
+       site/live/breadth.json to main so the STATIC fallback advances). If the
+       VPS lane also published, two writers would claim primary ownership of the
+       same artifact, which is exactly the state this wave exists to end.
+    2. It would hard-fail every two minutes. With MACRO_LIVE_DIR set, the output
+       path is OUTSIDE the git work tree, so `git add -f` returns "is outside
+       repository", publish() returns False, and --once --publish now (correctly)
+       exits non-zero. Verified by direct run against a temp MACRO_LIVE_DIR.
+    """
+    root = Path(__file__).resolve().parents[1]
+    service = (root / "app" / "deploy" / "macro-live-breadth.service").read_text()
+    exec_line = next(
+        line for line in service.splitlines() if line.startswith("ExecStart=")
+    )
+    assert "--publish" not in exec_line, (
+        "the VPS breadth lane must not git-publish: it would contend with the GH "
+        "backstop for primary ownership AND fail on every tick, because "
+        "$MACRO_LIVE_DIR is outside the git work tree"
+    )
+
+    # The backstop is the one that DOES publish — the other half of the split.
+    workflow = (root / ".github" / "workflows" / "live-breadth.yml").read_text()
+    assert "--once --publish" in workflow
+
+
+def test_update_sh_self_arms_the_breadth_lane_on_a_running_box():
+    """live-setup.sh alone is not ownership: it is a manual operator act, and the
+    unit did not exist when it last ran on the box. update.sh is what actually
+    installs a NEW live lane on an already-provisioned VPS, via the same
+    absent-file self-arming clause macro-live-prophet uses.
+    """
+    root = Path(__file__).resolve().parents[1]
+    update = (root / "app" / "deploy" / "update.sh").read_text()
+    assert "app/deploy/macro-live-breadth" in update
+    assert "[ ! -f /etc/systemd/system/macro-live-breadth.timer ]" in update
+    assert "systemctl enable --now macro-live-breadth.timer" in update
+    # A oneshot must never be restarted out of band — that would burn a Polygon
+    # snapshot off-schedule. Only the timer is re-armed.
+    assert "systemctl restart macro-live-breadth.service" not in update
+
+
 def test_caddy_serves_live_store_without_cache():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "Caddyfile").read_text()
     assert "@vps_public_live" in text
     assert "@vps_external" in text
     assert "handle /live/quotes.json" in text
+    assert "/live/intraday_quotes.json" in text
+    assert "/live/flow_pulse.json" in text
     assert "handle /live/release_publications.json" in text
     assert "root * /var/lib/macro-live/public" in text
     assert 'Cache-Control "no-store"' in text

@@ -13,6 +13,13 @@
 #                       provisional board from R2 to the GATED
 #                       live/us_board_provisional.json. Pure transport — it never
 #                       computes. Needs R2_* in /etc/macro-live.env.
+#   macro-live-breadth  every ~2m across the US session: the live intraday
+#                       market-breadth poller (adv/dec/pa50/pa200/net_nh),
+#                       writing the CANONICAL live/breadth.json this box serves.
+#                       Reads the nightly-baked close caches off disk; a fault
+#                       here can never take the served site down (own artifact
+#                       only, own atomic rename). Was previously unowned by any
+#                       VPS install — only the coarse GH-cron backstop ran it.
 #
 # All browser artifacts are atomically published to /var/lib/macro-live/public,
 # outside /opt/macro and /opt/macro/site.served. Canonical history, forward ledgers,
@@ -100,7 +107,8 @@ for unit in \
   macro-live-snapshot.service macro-live-snapshot.timer \
   macro-live-bars.service macro-live-bars.timer \
   macro-live-prophet.service macro-live-prophet.timer \
-  macro-live-closepass.service macro-live-closepass.timer
+  macro-live-closepass.service macro-live-closepass.timer \
+  macro-live-breadth.service macro-live-breadth.timer
 do
   unit_sources+=("$APP_DIR/app/deploy/$unit")
 done
@@ -132,16 +140,18 @@ test -s "$LIVE_DIR/quotes.json"
   "$LIVE_DIR/quotes.json"
 
 log "[5/6] enable replacement timers"
-# macro-live-prophet and macro-live-closepass are armed here too, but neither is part
-# of the fail-safe smoke transaction above: they consume what the three lanes publish
-# and write only their own runtime artifacts, so a fault in either can never take the
+# macro-live-prophet, macro-live-closepass and macro-live-breadth are armed here too,
+# but none of the three is part of the fail-safe smoke transaction above: they consume
+# what the three lanes publish (or, for breadth, the nightly-baked close caches) and
+# write only their own runtime artifacts, so a fault in any of them can never take the
 # served site down.
 systemctl enable --now \
   macro-live-fast.timer \
   macro-live-snapshot.timer \
   macro-live-bars.timer \
   macro-live-prophet.timer \
-  macro-live-closepass.timer >/dev/null
+  macro-live-closepass.timer \
+  macro-live-breadth.timer >/dev/null
 
 log "[6/6] retire legacy cron writer"
 tmp_cron=$(mktemp)
@@ -155,6 +165,6 @@ trap - EXIT
 log "DONE — live plane installed"
 systemctl list-timers \
   macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer \
-  macro-live-prophet.timer macro-live-closepass.timer \
+  macro-live-prophet.timer macro-live-closepass.timer macro-live-breadth.timer \
   --no-pager
 log "After production freshness is verified, set GitHub repository variable VPS_LIVE_PRIMARY=true."

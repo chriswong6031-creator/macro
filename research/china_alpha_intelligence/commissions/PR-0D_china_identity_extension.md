@@ -1,9 +1,28 @@
-# PR-0D — China exact identity extension (builder commission)
+# PR-0D — China exact identity extension (OWNER-ROUTED — not a spawn commission)
 
-**Program:** `WS:CHINA-ALPHA-INTELLIGENCE` wave `pr0d` · **Route:** build (Sonnet `builder`)
-**Authority:** `research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md` §5 + §13 PR-0D + §0-ter.6 boundary; `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`; `DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL` (boundary it must NOT cross).
-**Coordination gate:** before touching any identity surface, read the current `WS:STOCK-IDENTITY` record + its latest handoff and name in your PR body which of its waves you interlock with. If that workstream has an in-flight PR on the same files, coordinate in its lane — never race it.
-**Spawn note:** paste this file as the commission; SECTION labels below are the routed-spawn contract.
+> **AUTHORITY CORRECTION (Sol adjudication 2026-08-20 —
+> `DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`): do NOT spawn a China-lane builder
+> from this file.** Its original `WS:STOCK-IDENTITY` / `engine/stock_identity/`
+> builder pointer was a mistaken seam. Canonical identity authority is the Data OS
+> master (`lib/dataos/identity.py` + canonical builder
+> `scripts/build_security_master.py` + `data/reference/` receipts), with GMI
+> consuming it through the existing `gmi.identity_resolution/v1` projection (D2A
+> #5894). Implementation is owned by the bounded child **D2B2-CN-HK** under
+> `WS:PROPHET-US-V4-RECOVERY` / Data OS identity authority — frozen contract +
+> spawn commission: `research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`
+> (China/HK slice only; the full D2B2 US/Canada backlog stays unauthorized).
+> China wave `pr0d` is **OWNER_ROUTED_WAIT / consumer-verifier**: it adopts the
+> owner result by reference at D2B2-CN-HK merge (BUILT_NOT_PROVEN) and flips to
+> `done` only after a natural production nightly demonstrates real China/HK nodes
+> flowing source → canonical master → GMI projection (run ID + measured CN/HK
+> resolution delta recorded in the WS record). The text below is preserved as the
+> China-lane requirement record; wherever it names a build seam, the D2B2-CN-HK
+> frozen contract supersedes it.
+
+**Program:** `WS:CHINA-ALPHA-INTELLIGENCE` wave `pr0d` · **Route:** owner-routed to `WS:PROPHET-US-V4-RECOVERY` child D2B2-CN-HK (see banner)
+**Authority:** `research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md` §5 + §13 PR-0D + §0-ter.6 boundary; `DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE`; `DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`; `DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL` (boundary it must NOT cross).
+**Coordination gate:** identity implementation coordinates inside the `WS:PROPHET-US-V4-RECOVERY` V4-D2 lane (D2A/D2B1/D2B1-R1 frozen contracts), never here.
+**Spawn note (historical):** the SECTION block below was the original routed-spawn contract; it is superseded as a spawn vehicle by the D2B2-CN-HK commission.
 
 ROUTE: build
 
@@ -21,9 +40,10 @@ unresolved/not-in-master. PR-0D is the wave the c0 adjudication and this
 masterplan assigned to extend the canonical master.
 
 SCOPE:
-- Extend the canonical Data OS master (the spine `engine/stock_identity/`
-  family — locate the exact writer/reader seam from the current
-  `WS:STOCK-IDENTITY` record before editing) with China listing identity:
+- Extend the canonical Data OS master (the spine `lib/dataos/identity.py` via
+  its canonical builder `scripts/build_security_master.py` — the exact seam is
+  frozen in the D2B2-CN-HK contract, seam pointer corrected 2026-08-20 per
+  `DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`) with China listing identity:
   A-share/H-share listings, venue + ticker + ISIN where published, issuer
   linkage, and the USCC + LEI keys where obtainable from primary sources.
 - Canonical key law (CN-B #5947, adopted; Sol precision ruling 2026-08-19):
@@ -64,14 +84,19 @@ bytes committed from your session (nightly advances `data/`; sparse-tree
 law: never `git add` a `data/` diff).
 
 FROZEN SPEC: masterplan §5 (identity law), §13 PR-0D block, §0-ter.6
-boundary, CN-B #5947 key law, and the current `WS:STOCK-IDENTITY` seam you
-name in the PR body. If the spine's actual writer seam contradicts this
-commission, STOP and return the conflict — do not improvise a second plane.
+boundary, CN-B #5947 key law, and the canonical Data OS seam
+(`lib/dataos/identity.py` + `scripts/build_security_master.py`) as frozen in
+`research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`. If the
+spine's actual writer seam contradicts this commission, STOP and return the
+conflict — do not improvise a second plane. (This STOP clause fired
+2026-08-20; the return produced the owner-route adjudication.)
 
-OWNED FILES: the Data OS master extension seam (named exactly in your PR
-body after reading `WS:STOCK-IDENTITY`), the GMI bridge resolution path
-(`engine/theme_graph/identity.py` family), new/extended tests. Nothing
-under `engine/company_intelligence/`.
+OWNED FILES: the canonical Data OS master extension seam
+(`scripts/build_security_master.py` + `lib/dataos/` + `data/reference/`
+through the canonical builder only), the GMI bridge resolution path
+(`engine/theme_graph/identity_resolution.py` family, D2A seam),
+new/extended tests. Nothing under `engine/company_intelligence/`. All owned
+by the D2B2-CN-HK child, not a China-lane builder.
 
 TESTS: (1) resolution: a fixture set of hostile China identities (A/H
 dual-listing, renamed issuer, SOE subsidiary, unresolved name) resolves

@@ -9,7 +9,7 @@ boundaries — no wall-clock-dependent assertion that could flip after 5pm PDT
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -22,7 +22,13 @@ from scripts import live_breadth_poller as poller
 TIER_KEYS = {"key", "label", "univ", "n", "adv", "dec", "unch", "adv_pct",
              "pa50", "pa200", "nh", "nl", "net_nh"}
 COMP_KEYS = {"n", "adv", "dec", "unch", "adv_pct", "pa50", "pa200", "net_nh"}
-TOP_KEYS = {"schema", "asof", "delay_min", "session", "basis", "tiers", "comp", "meta"}
+# FROZEN CONTRACT §1/§9: the truth-boundary wave adds built_at/source_asof/
+# source_age_min/feed_status/usable/unusable_reason/coverage/producer —
+# purely additive, `asof` stays for back-compat (mirrors built_at).
+TOP_KEYS = {"schema", "asof", "built_at", "source_asof", "source_age_min",
+            "delay_min", "session", "basis", "feed_status", "usable",
+            "unusable_reason", "coverage", "producer", "tiers", "comp", "meta"}
+COVERAGE_KEYS = {"n", "expected", "pct"}
 
 
 def _th(prev, ma50, ma200, hi52, lo52):
@@ -269,3 +275,243 @@ def test_cli_once_offline_writes_file(tmp_path, monkeypatch):
     assert p["basis"] == "poll"
     # offline -> empty tiers, fail-soft
     assert p["tiers"] == []
+    assert p["usable"] is False
+
+
+# ── evaluate_usable: the ONE truth-boundary adjudicator (FROZEN CONTRACT §1) ──
+
+def _base_usable_kwargs(**over):
+    base = dict(feed_status="ok", session="rth", n_tiers=3, coverage_pct=95.0,
+                source_age_min=10.0)
+    base.update(over)
+    return base
+
+
+def test_evaluate_usable_happy_path_is_true():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs())
+    assert usable is True and reason is None
+
+
+def test_evaluate_usable_feed_not_ok():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(feed_status="no_key"))
+    assert usable is False and reason == "feed_no_key"
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(feed_status="offline"))
+    assert usable is False and reason == "feed_offline"
+
+
+def test_evaluate_usable_session_closed_or_falsy():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(session="closed"))
+    assert usable is False and reason == "session_closed"
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(session=""))
+    assert usable is False and reason == "session_closed"
+
+
+def test_evaluate_usable_tiers_incomplete():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(n_tiers=2))
+    assert usable is False and reason == "tiers_incomplete"
+
+
+def test_evaluate_usable_no_source_clock():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(source_age_min=None))
+    assert usable is False and reason == "no_source_clock"
+
+
+def test_evaluate_usable_source_stale():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(source_age_min=30.0))
+    assert usable is False and reason == "source_stale"
+
+
+def test_evaluate_usable_negative_source_age_is_allowed_not_rejected():
+    """Clock skew (source clock ahead of the build) is NOT staleness — never
+    rejected here; only display code may clamp it."""
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(source_age_min=-5.0))
+    assert usable is True and reason is None
+
+
+def test_evaluate_usable_no_coverage():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(coverage_pct=None))
+    assert usable is False and reason == "no_coverage"
+
+
+def test_evaluate_usable_coverage_low():
+    usable, reason = lb.evaluate_usable(**_base_usable_kwargs(coverage_pct=50.0))
+    assert usable is False and reason == "coverage_low"
+
+
+def test_evaluate_usable_checks_fire_in_declared_order():
+    """When multiple checks would fail at once, the FIRST one in the declared
+    order wins — a degraded feed is reported as a feed problem even though the
+    session/coverage/source-clock checks would also fail."""
+    usable, reason = lb.evaluate_usable(
+        feed_status="error", session="closed", n_tiers=0,
+        coverage_pct=None, source_age_min=None,
+    )
+    assert usable is False and reason == "feed_error"
+
+
+# ── holiday-aware session (Defect 3) ────────────────────────────────────────
+
+def test_session_closed_on_good_friday_2026():
+    # 2026-04-03 is Good Friday. EDT (UTC-4): 14:00 UTC = 10:00 ET — an ordinary
+    # Friday at this instant would be "rth" (see test below); the full-day
+    # closure must win over the clock.
+    assert poller.session_tag(_utc(2026, 4, 3, 14, 0)) == "closed"
+    assert poller.within_rth(_utc(2026, 4, 3, 14, 0)) is False
+
+
+def test_session_closed_on_thanksgiving_2026():
+    # 2026-11-26 is Thanksgiving (4th Thursday of November). EST (UTC-5):
+    # 15:00 UTC = 10:00 ET.
+    assert poller.session_tag(_utc(2026, 11, 26, 15, 0)) == "closed"
+    assert poller.within_rth(_utc(2026, 11, 26, 15, 0)) is False
+
+
+def test_session_closed_on_observed_independence_day_2026():
+    # 2026-07-04 (Independence Day) is a Saturday, observed Friday 2026-07-03.
+    # EDT (UTC-4): 14:00 UTC = 10:00 ET.
+    assert poller.session_tag(_utc(2026, 7, 3, 14, 0)) == "closed"
+    assert poller.within_rth(_utc(2026, 7, 3, 14, 0)) is False
+
+
+def test_ordinary_friday_still_rth_2026():
+    # 2026-04-10 is an ordinary (non-holiday) Friday. EDT: 14:00 UTC = 10:00 ET.
+    assert poller.session_tag(_utc(2026, 4, 10, 14, 0)) == "rth"
+    assert poller.within_rth(_utc(2026, 4, 10, 14, 0)) is True
+
+
+# The pre-existing EDT/EST DST tests (test_session_rth_summer_edt,
+# test_session_rth_winter_est, test_session_pre_and_post_edt,
+# test_session_closed_overnight_and_weekend, test_session_dst_transition_days,
+# test_within_rth_window_edges) are UNCHANGED above and must stay green — the
+# calendar check runs BEFORE the time-of-day logic, never replacing it.
+
+
+# ── source clock is first class (Defect 2) ──────────────────────────────────
+
+def test_build_breadth_emits_source_clock_and_usable_fields(monkeypatch):
+    monkeypatch.setattr(poller, "_delay_floor", lambda: 15)
+    monkeypatch.setattr(poller, "_producer_id", lambda: "host:test")
+
+    class _Store:
+        by_tier = {
+            "large": {"A": _th(100, 90, 80, 120, 70)},
+            "mid": {"B": _th(100, 90, 80, 120, 70)},
+            "small": {"C": _th(100, 90, 80, 120, 70)},
+        }
+    now = _utc(2026, 7, 24, 14, 0)
+    snap_ts = _utc(2026, 7, 24, 13, 54)          # 6 min stale
+    p = poller.build_breadth(_Store(), {"A": 110, "B": 105, "C": 95}, now=now,
+                             snapshot_ts=snap_ts, feed_status="ok")
+    assert p["source_asof"] == "2026-07-24T13:54:00Z"
+    assert p["source_age_min"] == pytest.approx(6.0)
+    assert p["feed_status"] == "ok"
+    assert p["producer"] == "host:test"
+    assert p["built_at"] == p["asof"]
+    assert isinstance(p["usable"], bool)
+    assert set(p.keys()) == TOP_KEYS
+
+
+def test_source_age_over_sla_marks_unusable(monkeypatch):
+    """built-now (fresh artifact) + a 2h-stale SOURCE clock -> unusable, and the
+    reason names the source clock, not the build clock."""
+    monkeypatch.setattr(poller, "_delay_floor", lambda: 15)
+
+    class _Store:
+        by_tier = {
+            "large": {"A": _th(100, 90, 80, 120, 70)},
+            "mid": {"B": _th(100, 90, 80, 120, 70)},
+            "small": {"C": _th(100, 90, 80, 120, 70)},
+        }
+    now = _utc(2026, 7, 24, 14, 0)
+    snap_ts = now - timedelta(hours=2)
+    p = poller.build_breadth(_Store(), {"A": 110, "B": 105, "C": 95}, now=now,
+                             snapshot_ts=snap_ts)
+    assert p["source_age_min"] == pytest.approx(120.0)
+    assert p["usable"] is False
+    assert p["unusable_reason"] == "source_stale"
+
+
+def test_empty_payload_no_key_is_never_usable():
+    p = lb.empty_payload(asof="2026-07-24T14:00:00Z", delay_min=15, session="rth",
+                         note="no_key", feed_status="no_key")
+    assert p["usable"] is False
+    assert p["unusable_reason"] == "feed_no_key"
+    assert set(p.keys()) == TOP_KEYS
+
+
+def test_build_breadth_no_key_and_offline_are_never_usable(monkeypatch):
+    monkeypatch.setattr(poller, "_delay_floor", lambda: 15)
+
+    class _Store:
+        by_tier = {"large": {"A": _th(100, 90, 80, 120, 70)}}
+    p_offline = poller.build_breadth(_Store(), {}, now=_utc(2026, 7, 24, 14, 0),
+                                     offline=True)
+    assert p_offline["usable"] is False
+    p_no_key = poller.build_breadth(_Store(), {}, now=_utc(2026, 7, 24, 14, 0),
+                                    offline=False, feed_status="no_key")
+    assert p_no_key["usable"] is False
+    assert p_no_key["feed_status"] == "no_key"
+
+
+# ── _out_path honours MACRO_LIVE_DIR (Defect 5) ─────────────────────────────
+
+def test_out_path_honours_macro_live_dir_env(monkeypatch, tmp_path):
+    live_dir = tmp_path / "public" / "live"
+    monkeypatch.setenv("MACRO_LIVE_DIR", str(live_dir))
+    out = poller._out_path()
+    assert out == live_dir / "breadth.json"
+    assert out.parent == live_dir            # no extra "live" segment appended
+
+
+def test_out_path_explicit_site_dir_wins_over_env(monkeypatch, tmp_path):
+    live_dir = tmp_path / "env-live"
+    monkeypatch.setenv("MACRO_LIVE_DIR", str(live_dir))
+    explicit = tmp_path / "explicit"
+    out = poller._out_path(explicit)
+    assert out == explicit / "live" / "breadth.json"
+
+
+def test_out_path_default_falls_back_to_site_dir(monkeypatch, tmp_path):
+    monkeypatch.delenv("MACRO_LIVE_DIR", raising=False)
+    monkeypatch.setattr(poller.config, "site_dir", lambda: tmp_path)
+    out = poller._out_path()
+    assert out == tmp_path / "live" / "breadth.json"
+
+
+# ── publication truth (Defect 4) ────────────────────────────────────────────
+
+def test_main_once_publish_returns_1_and_annotates_when_publish_fails(
+    monkeypatch, tmp_path, capsys
+):
+    monkeypatch.setattr(poller.config, "site_dir", lambda: tmp_path)
+    monkeypatch.setattr(poller, "publish", lambda out: False)
+    rc = poller.main(["--once", "--offline", "--publish"])
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "::error title=live-breadth-publish::" in out
+    # line-start, never through the logger (tests/test_gh_annotation_line_start.py)
+    assert any(line.startswith("::error") for line in out.splitlines())
+
+
+def test_main_once_publish_returns_0_when_publish_succeeds(monkeypatch, tmp_path):
+    """Covers both a real successful publish AND the deliberate no-op success for
+    a byte-identical unchanged payload — both make `publish()` return True, and
+    `main()`/`run_cycle` treat them identically (the no-op-vs-real-commit
+    distinction lives entirely inside `publish()`, which this test does not
+    re-exercise so the suite never shells out to real git)."""
+    monkeypatch.setattr(poller.config, "site_dir", lambda: tmp_path)
+    monkeypatch.setattr(poller, "publish", lambda out: True)
+    rc = poller.main(["--once", "--offline", "--publish"])
+    assert rc == 0
+
+
+def test_loop_path_does_not_raise_when_publish_fails(monkeypatch, tmp_path):
+    """Loop mode: a publish failure must never kill the daemon — only `--once`
+    treats it as fatal. Drives exactly one iteration by pre-arming the SIGTERM
+    stop flag the loop already checks after each cycle, so the test needs no
+    real sleep."""
+    monkeypatch.setattr(poller.config, "site_dir", lambda: tmp_path)
+    monkeypatch.setattr(poller, "publish", lambda out: False)
+    monkeypatch.setitem(poller._SIGTERM, "stop", True)
+    rc = poller.main(["--offline", "--publish"])
+    assert rc == 0

@@ -119,21 +119,49 @@ def parse_instant(value) -> datetime | None:
     return dt if dt.tzinfo is not None else None
 
 
+def _as_text(value) -> str | None:
+    """Coerce a scalar stamp to text.  A JSON producer (or a numpy int out of pandas)
+    can hand us a bare ``20260819`` rather than ``"2026-08-19"``; without this the
+    non-string form skips the session-date detection below, gets read as a naive
+    instant at midnight, and is then projected BACK a day into ET — the exact
+    date-as-midnight defect this module exists to prevent.  Verified 2026-08-20:
+    ``{"ts": 20260819}`` resolved to board day 2026-08-18 before this coercion.
+    """
+    if isinstance(value, str):
+        return value.strip() or None
+    if isinstance(value, bool):          # bool is an int subclass — never a date
+        return None
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return None
+
+
 def parse_date(value) -> date | None:
     """Parse a source-native event/session DATE.  Never fabricates a clock time.
 
-    Accepts ``date`` / ``datetime`` objects, ``"YYYY-MM-DD"``, and the
-    ``"YYYY-MM-DDT..."`` serializations the jsonl engines emit (the date part is taken
-    verbatim — no timezone shift, because shifting a session date has no meaning).
+    Accepts ``date`` / ``datetime`` objects, ``"YYYY-MM-DD"``, the basic-ISO
+    ``"20260819"`` / ``20260819`` forms, and the ``"YYYY-MM-DDT..."`` serializations the
+    jsonl engines emit (the date part is taken verbatim — no timezone shift, because
+    shifting a session date has no meaning).
     """
     if isinstance(value, datetime):
         return value.date()
     if isinstance(value, date):
         return value
-    if not isinstance(value, str) or len(value.strip()) < 10:
+    raw = _as_text(value)
+    if raw is None:
+        return None
+    if len(raw) == 8 and raw.isdigit():          # basic ISO: YYYYMMDD
+        try:
+            return date(int(raw[:4]), int(raw[4:6]), int(raw[6:]))
+        except ValueError:
+            return None
+    if len(raw) < 10:
         return None
     try:
-        return date.fromisoformat(value.strip()[:10])
+        return date.fromisoformat(raw[:10])
     except ValueError:
         return None
 
@@ -143,10 +171,15 @@ def _is_bare_midnight(value) -> bool:
     if isinstance(value, datetime):
         return (value.tzinfo is None and value.hour == 0 and value.minute == 0
                 and value.second == 0)
-    if not isinstance(value, str):
+    # NOTE the order: datetime IS a subclass of date, so it must be tested first.  A bare
+    # `date` carries no clock by construction, and without this arm it fell through to the
+    # naive-instant branch and was projected back a day into ET.
+    if isinstance(value, date):
+        return True
+    raw = _as_text(value)
+    if raw is None:
         return False
-    raw = value.strip()
-    if len(raw) == 10:          # bare "YYYY-MM-DD"
+    if len(raw) == 10 or (len(raw) == 8 and raw.isdigit()):   # YYYY-MM-DD / YYYYMMDD
         return True
     try:
         dt = datetime.fromisoformat(raw)

@@ -371,6 +371,14 @@
   // ── Live breadth patch (sbx scoreboard, us_stocks) ─────────────────────────
   // Stance bands MIRROR scripts/build_site.py::_breadth_read exactly — if those
   // thresholds or words change, change these with them (render test pins baked).
+  //
+  // The fail-CLOSED eligibility gate + stamp below (FROZEN CONTRACT §3/§9) is
+  // lifted verbatim by tests/test_live_breadth_js_contract.py and executed
+  // under node against a DOM stub — do not rename these markers, and keep them
+  // as SELF-CONTAINED block comments (not nested in a `//` line) so the sliced
+  // text is still valid, parseable JS.
+  /* SBX-BREADTH-CONTRACT-BEGIN */
+  var SBX_MAX_SOURCE_AGE_MIN = 25;   // SLA on the SOURCE clock (mirrors the engine default)
   var SBX_STANCE = {
     broad: { l: ["broad", "广泛"], v: ["The advance is well-supported across the full 1,500", "上涨在整个 1500 只股票中获得良好支撑"], tone: "pos" },
     thin:  { l: ["thin", "稀薄"], v: ["Few names hold their trend — rallies here are fragile", "守住趋势的个股很少 — 此时的反弹较脆弱"], tone: "neg" },
@@ -386,12 +394,28 @@
   }
   function sbxSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
   function applyBreadth(b) {
+    // Fail-CLOSED eligibility gate (FROZEN CONTRACT §3): every check returns
+    // EARLY with ZERO DOM writes. `usable !== true` is the load-bearing first
+    // line — an explicit server-side opt-in, so a legacy v1 payload carrying no
+    // `usable` key (or a degraded/offline/no_key fail-soft payload, which is
+    // ALWAYS `usable: false`) is rejected outright and the baked nightly board
+    // (848 adv / 651 dec class of numbers) is left completely untouched.
+    if (!b || b.usable !== true) return;
     var c = b && b.comp;
     if (!c || typeof c.adv !== "number" || typeof c.dec !== "number") return;
-    // freshness + session honesty: patch only a payload from an open/near session,
-    // stamped within the last 25 min — otherwise the baked close numbers stand.
-    var age = b.asof ? (Date.now() - new Date(b.asof).getTime()) / 60000 : 1e9;
-    if (age > 25 || b.session === "closed") return;
+    if (b.session === "closed") return;
+    // Both clocks are checked with isFinite, NOT a bare `> SLA`: an unparseable
+    // stamp yields NaN, and EVERY NaN comparison is false, so `NaN > SLA` would
+    // sail through the gate and hand a malformed payload live authority over the
+    // baked board — a fail-OPEN hole in a gate whose whole job is to fail closed.
+    var srcAge = (typeof b.source_age_min === "number" && isFinite(b.source_age_min))
+      ? b.source_age_min : null;
+    if (srcAge === null) return;                          // missing/NaN source clock -> fail closed
+    if (srcAge > SBX_MAX_SOURCE_AGE_MIN) return;          // stale SOURCE, however fresh the build
+    var buildStamp = b.built_at || b.asof;
+    var buildAge = buildStamp
+      ? (Date.now() - new Date(buildStamp).getTime()) / 60000 : NaN;
+    if (!isFinite(buildAge) || buildAge > SBX_MAX_SOURCE_AGE_MIN) return;  // missing/unparseable/stale artifact
     var n = c.n || (c.adv + c.dec + (c.unch || 0)) || 1;
     var unch = (typeof c.unch === "number") ? c.unch : Math.max(0, n - c.adv - c.dec);
     var den = (c.adv + c.dec + unch) || 1;
@@ -430,12 +454,16 @@
     var stamp = document.getElementById("sbx-stamp");
     if (stamp) {
       stamp.classList.add("live");
-      var et = new Date(b.asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
-      var dm = (typeof b.delay_min === "number") ? b.delay_min : 15;
+      // Stamp reflects the ACCEPTED SOURCE age, never the build clock: the ET
+      // time shown comes from source_asof, and the delay number is the rounded
+      // source_age_min — both already gated above.
+      var et = new Date(b.source_asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+      var dm = Math.round(srcAge);
       stamp.innerHTML = '<span class="sbx-dot"></span>' +
         sbxBi(["≈" + dm + "-min delayed · " + et + " ET", "约" + dm + "分钟延迟 · 美东 " + et]);
     }
   }
+  /* SBX-BREADTH-CONTRACT-END */
 
   // Stamp an honest feed caption into any [data-live-label] element the build placed
   // (e.g. "≈15-min delayed (Polygon Standard / Yahoo)"). No-op if none / no label.

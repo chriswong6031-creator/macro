@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-08-20",
-  "generated_utc": "2026-08-20T15:15:04Z",
+  "generated_utc": "2026-08-20T17:26:29Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -73,7 +73,7 @@
     ]
   },
   "microstructure": {
-    "as_of": "2026-08-20",
+    "as_of": "2026-08-19",
     "aggregate": {
       "date": "2026-08-20",
       "limit_up_count": 16.0,
@@ -88,7 +88,7 @@
     },
     "name_summary": {
       "n_packets": 81,
-      "chase_veto_count": 6,
+      "chase_veto_count": 4,
       "fillable_count": 81
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
@@ -169,49 +169,49 @@
     "ths_heat": {
       "as_of": "2026-08-20",
       "basket_count": 237,
-      "above_200d_pct": 54.4,
+      "above_200d_pct": 51.1,
       "hot_baskets": [
         {
           "id": "ths_innovative_rx",
-          "ret_60d": 0.3078
+          "ret_60d": 0.2312
         },
         {
           "id": "thsc308822",
-          "ret_60d": 0.1947
-        },
-        {
-          "id": "thsc308915",
-          "ret_60d": 0.1683
+          "ret_60d": 0.1193
         },
         {
           "id": "ths_synbio",
-          "ret_60d": 0.1518
+          "ret_60d": 0.1151
+        },
+        {
+          "id": "thsc308915",
+          "ret_60d": 0.097
         },
         {
           "id": "thsc301146",
-          "ret_60d": 0.1356
+          "ret_60d": 0.0813
         }
       ],
       "cold_baskets": [
-        {
-          "id": "thsc309128",
-          "ret_60d": -0.2243
-        },
         {
           "id": "ths_bci",
           "ret_60d": -0.2246
         },
         {
+          "id": "thsc309106",
+          "ret_60d": -0.2251
+        },
+        {
           "id": "thsc309120",
-          "ret_60d": -0.2367
+          "ret_60d": -0.2428
         },
         {
           "id": "thsc300795",
-          "ret_60d": -0.2413
+          "ret_60d": -0.2445
         },
         {
           "id": "ths_appliances",
-          "ret_60d": -0.2432
+          "ret_60d": -0.2522
         }
       ]
     }

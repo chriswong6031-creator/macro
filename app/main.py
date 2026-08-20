@@ -596,6 +596,7 @@ def status() -> dict:
         ("flow_pulse", "flow_pulse.json"),
         ("release_publications", "release_publications.json"),
         ("orchestrator", "orchestrator_status.json"),
+        ("breadth", "breadth.json"),
     ):
         artifact = _live_artifact(filename)
         if artifact.exists():
@@ -603,7 +604,8 @@ def status() -> dict:
                 data = json.loads(artifact.read_text())
                 checks[key] = {
                     "schema": data.get("schema"),
-                    "built": data.get("built") or data.get("updated_at") or data.get("as_of"),
+                    "built": (data.get("built") or data.get("built_at")
+                              or data.get("updated_at") or data.get("as_of")),
                     "age_min": age_min(artifact),
                 }
                 if key == "overlay":
@@ -614,6 +616,19 @@ def status() -> dict:
                         {
                             "requested": meta.get("requested"),
                             "resolved": meta.get("resolved"),
+                        }
+                    )
+                elif key == "flow_pulse":
+                    rows = data.get("tickers") or []
+                    checks[key].update(
+                        {
+                            "mode": data.get("mode"),
+                            "n_tickers": data.get("n_tickers"),
+                            "with_bars": sum(
+                                1 for row in rows
+                                if isinstance(row, dict)
+                                and int(row.get("bars_today") or 0) > 0
+                            ),
                         }
                     )
                 elif key == "release_publications":
@@ -699,6 +714,29 @@ def status() -> dict:
                             "age_min": lane_age,
                         }
                     checks[key]["lanes"] = lanes
+                elif key == "breadth":
+                    # SEMANTIC fields, not just mtime (TRAP, FROZEN CONTRACT §5):
+                    # a fresh deployment can copy OLD content, so a young
+                    # artifact `age_min` does not mean a young `source_asof` —
+                    # health must key off the fields below, never mtime alone.
+                    coverage = data.get("coverage") or {}
+                    comp = data.get("comp") or {}
+                    checks[key].update(
+                        {
+                            "usable": data.get("usable"),
+                            "unusable_reason": data.get("unusable_reason"),
+                            "feed_status": data.get("feed_status"),
+                            "session": data.get("session"),
+                            "source_asof": data.get("source_asof"),
+                            "source_age_min": data.get("source_age_min"),
+                            "delay_min": data.get("delay_min"),
+                            "producer": data.get("producer"),
+                            "coverage_n": coverage.get("n"),
+                            "coverage_pct": coverage.get("pct"),
+                            "adv": comp.get("adv"),
+                            "dec": comp.get("dec"),
+                        }
+                    )
             except Exception as e:  # noqa: BLE001
                 # Coarsen the client-facing error: str(e) on a FileNotFoundError /
                 # JSON parse error echoes the absolute artifact path to any anonymous

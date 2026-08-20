@@ -1,7 +1,7 @@
 {
   "schema": "intel_hub.track_record.v1",
   "as_of": "2026-08-20",
-  "generated_at": "2026-08-20T15:15:04.720510+00:00",
+  "generated_at": "2026-08-20T17:26:30.718275+00:00",
   "is_context_only": true,
   "n_snapshots": 3627,
   "horizons": {
@@ -64,22 +64,22 @@
       }
     },
     "10": {
-      "n_matured": 470,
-      "opportunity_ic_pooled": 0.3142,
+      "n_matured": 452,
+      "opportunity_ic_pooled": 0.3345,
       "opportunity_ic_daily": {
-        "mean_ic": 0.2191,
-        "ic_vol": 0.3314,
-        "ic_ir": 0.661,
-        "ic_ir_ann": 2.957,
-        "t_hac": 2.214,
-        "p_hac": 0.0268,
-        "hit": 0.714,
-        "n": 28,
+        "mean_ic": 0.2349,
+        "ic_vol": 0.3268,
+        "ic_ir": 0.719,
+        "ic_ir_ann": 3.215,
+        "t_hac": 2.502,
+        "p_hac": 0.0123,
+        "hit": 0.741,
+        "n": 27,
         "hac_lags": 10,
         "hac_lags_requested": 10
       },
-      "opportunity_ic": 0.2191,
-      "edge_ic_pooled": 0.2036,
+      "opportunity_ic": 0.2349,
+      "edge_ic_pooled": 0.2177,
       "by_stage": {
         "consensus": {
           "n": 12,
@@ -87,24 +87,24 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 167,
-          "mean_fwd_rel": -0.0171,
-          "hit_rate": 0.617
+          "n": 161,
+          "mean_fwd_rel": -0.0182,
+          "hit_rate": 0.627
         },
         "exhausted": {
-          "n": 53,
-          "mean_fwd_rel": -0.0129,
-          "hit_rate": 0.453
+          "n": 52,
+          "mean_fwd_rel": -0.0132,
+          "hit_rate": 0.462
         },
         "faltering": {
-          "n": 30,
-          "mean_fwd_rel": 0.0249,
+          "n": 29,
+          "mean_fwd_rel": 0.0261,
           "hit_rate": null
         },
         "early": {
-          "n": 192,
-          "mean_fwd_rel": -0.0006,
-          "hit_rate": 0.568
+          "n": 182,
+          "mean_fwd_rel": 0.0004,
+          "hit_rate": 0.593
         },
         "quiet": {
           "n": 16,
@@ -116,14 +116,14 @@
       "by_regime": {},
       "coverage": {
         "n_eligible": 2953,
-        "n_matured": 470,
-        "coverage_pct": 15.92,
+        "n_matured": 452,
+        "coverage_pct": 15.31,
         "below_floor": true
       }
     },
     "21": {
-      "n_matured": 314,
-      "opportunity_ic_pooled": 0.4876,
+      "n_matured": 304,
+      "opportunity_ic_pooled": 0.4938,
       "opportunity_ic_daily": {
         "mean_ic": 0.3765,
         "ic_vol": 0.3168,
@@ -137,7 +137,7 @@
         "hac_lags_requested": 21
       },
       "opportunity_ic": 0.3765,
-      "edge_ic_pooled": 0.4331,
+      "edge_ic_pooled": 0.4313,
       "by_stage": {
         "consensus": {
           "n": 10,
@@ -145,14 +145,14 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 103,
-          "mean_fwd_rel": -0.0545,
-          "hit_rate": 0.757
+          "n": 99,
+          "mean_fwd_rel": -0.0551,
+          "hit_rate": 0.758
         },
         "exhausted": {
-          "n": 28,
-          "mean_fwd_rel": -0.0287,
-          "hit_rate": 0.571
+          "n": 27,
+          "mean_fwd_rel": -0.03,
+          "hit_rate": 0.593
         },
         "faltering": {
           "n": 19,
@@ -160,13 +160,13 @@
           "hit_rate": null
         },
         "early": {
-          "n": 141,
-          "mean_fwd_rel": 0.0317,
-          "hit_rate": 0.688
+          "n": 137,
+          "mean_fwd_rel": 0.0314,
+          "hit_rate": 0.693
         },
         "quiet": {
-          "n": 13,
-          "mean_fwd_rel": -0.0094,
+          "n": 12,
+          "mean_fwd_rel": -0.0064,
           "hit_rate": null
         }
       },
@@ -174,8 +174,8 @@
       "by_regime": {},
       "coverage": {
         "n_eligible": 2029,
-        "n_matured": 314,
-        "coverage_pct": 15.48,
+        "n_matured": 304,
+        "coverage_pct": 14.98,
         "below_floor": true
       }
     },
@@ -232,14 +232,14 @@
     },
     "10": {
       "n_eligible": 2953,
-      "n_matured": 470,
-      "coverage_pct": 15.92,
+      "n_matured": 452,
+      "coverage_pct": 15.31,
       "below_floor": true
     },
     "21": {
       "n_eligible": 2029,
-      "n_matured": 314,
-      "coverage_pct": 15.48,
+      "n_matured": 304,
+      "coverage_pct": 14.98,
       "below_floor": true
     },
     "63": {

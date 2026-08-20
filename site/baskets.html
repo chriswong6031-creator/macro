@@ -61,6 +61,13 @@ if(id){window.__THEME_RESOLVED=1;location.replace('basket/'+id+'.html');return}
 location.replace("sector_central.html#actnow-section");
 }
 if(location.hash.startsWith('#theme-'))resolveThemeHash();
+/* FORMING-NARRATIVE deep links (#ne-<signature>). The Alert Command Center now points
+   emergence alerts straight at sector_central.html (engine/alert_triage.SOURCES), which
+   is the page that actually renders the #ne-<sig> cards via forming_narratives.js. This
+   branch only rescues links minted BEFORE that fix — bookmarks and already-sent pushes —
+   which would otherwise fall through to the generic #actnow-section below and lose the
+   exact card the alert was about. Carry the hash across instead of eating it. */
+else if(location.hash.startsWith('#ne-'))location.replace('sector_central.html'+location.hash);
 </script>
 <meta http-equiv="refresh" content="0;url=sector_central.html#actnow-section">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0f16;color:#edf0f7;font:15px/1.5 system-ui,sans-serif}main{width:min(560px,calc(100% - 40px));padding:32px;border:1px solid #2a3040;border-radius:14px}h1{margin:0 0 10px;font-size:25px}p{color:#aab1c1}a{color:#a895ff}</style>
@@ -73,7 +80,7 @@ if(location.hash.startsWith('#theme-'))resolveThemeHash();
 <p><a href="sector_central.html#actnow-section">Open Sector Intelligence →</a></p>
 </main>
 <script>
-if(location.hash&&location.hash.startsWith('#theme-')){location.replace('sector_central.html'+location.hash)}
+if(location.hash&&(location.hash.startsWith('#theme-')||location.hash.startsWith('#ne-'))){location.replace('sector_central.html'+location.hash)}
 else{location.replace("sector_central.html#actnow-section")}
 </script>
 </body>
