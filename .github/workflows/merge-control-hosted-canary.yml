@@ -48,8 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # PHASE 1 is deliberately the exact checkout shape used by the real sweeper.
-      # If this cannot materialize on hosted, W1-B must not move the controller.
+      # PHASE 1 materializes exactly the production sweeper's tracked surface.
+      # `persist-credentials:false` is the one deliberate tightening: this canary is
+      # read-only and must not retain a credential it can never lawfully use.
       - name: exact production sparse checkout
         uses: actions/checkout@v4
         with:
@@ -64,8 +65,57 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      # Copy the real sweeper's import-first PyYAML contract rather than proving a
-      # stronger setup-python environment the production job does not use.
+      # Byte-for-byte copy of merge-on-green.yml's production dependency bootstrap.
+      # Keep this as its own step so the parity assertion below can fail if production
+      # changes independently of the canary.
+      - name: exact production PyYAML bootstrap
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+            exit 0
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pyyaml
+          python3 -c "import yaml"
+
+      # The canary must not become a stale imitation of production. Compare the live
+      # main-tree workflow contracts before claiming any environment proof. Credential
+      # persistence is intentionally excluded because the canary is stricter/read-only.
+      - name: assert canary tracks the production environment contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          root = Path.cwd()
+          prod = yaml.safe_load((root / ".github/workflows/merge-on-green.yml").read_text(encoding="utf-8"))
+          canary = yaml.safe_load((root / ".github/workflows/merge-control-hosted-canary.yml").read_text(encoding="utf-8"))
+
+          def named(steps, name):
+              matches = [step for step in steps if step.get("name") == name]
+              assert len(matches) == 1, (name, len(matches))
+              return matches[0]
+
+          prod_steps = prod["jobs"]["sweep"]["steps"]
+          canary_steps = canary["jobs"]["hosted-environment"]["steps"]
+          prod_checkout = next(step for step in prod_steps if str(step.get("uses", "")).startswith("actions/checkout@"))
+          canary_checkout = named(canary_steps, "exact production sparse checkout")
+
+          assert canary_checkout["uses"] == prod_checkout["uses"]
+          for key in ("filter", "sparse-checkout", "sparse-checkout-cone-mode"):
+              assert canary_checkout["with"][key] == prod_checkout["with"][key], key
+          assert canary_checkout["with"]["persist-credentials"] is False
+
+          prod_bootstrap = named(prod_steps, "install the yaml parser")
+          canary_bootstrap = named(canary_steps, "exact production PyYAML bootstrap")
+          assert canary_bootstrap["run"] == prod_bootstrap["run"]
+          print("merge-control production/canary environment contract parity: OK")
+          PY
+
+      # Probe the imported runtime after the byte-identical production bootstrap.
+      # This is intentionally stronger than production but carries no alternate setup.
       - name: prove the production system-Python dependency contract
         run: |
           if python3 -c "import yaml" 2>/dev/null; then
@@ -106,6 +156,7 @@ jobs:
               "python": sys.version.split()[0],
               "platform": platform.platform(),
               "phase1": "production_sparse_import_ok",
+              "production_contract_parity": True,
           }
           path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
           path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
