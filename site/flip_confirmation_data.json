@@ -1,13 +1,13 @@
 {
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "last_event": {
     "event_date": "2026-07-30",
-    "z": -3.2848,
+    "z": -3.2843,
     "spread": -0.0816,
     "direction": "offense",
     "t1_attribution": {
       "t1_date": "2026-07-31",
-      "t1_z": -0.2407,
+      "t1_z": -0.2406,
       "spread_persistence": {
         "same_direction": true,
         "magnitude": 0.0075,
@@ -30,7 +30,7 @@
   "descriptive_scan": [
     {
       "event_date": "2024-01-02",
-      "z": 3.2533,
+      "z": 3.253,
       "spread": 0.0464,
       "direction": "defensive",
       "t1_attribution": {
@@ -50,12 +50,12 @@
     },
     {
       "event_date": "2024-02-22",
-      "z": -3.2138,
+      "z": -3.214,
       "spread": -0.0495,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2024-02-23",
-        "t1_z": 0.7624,
+        "t1_z": 0.7623,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0095,
@@ -75,7 +75,7 @@
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-04-22",
-        "t1_z": -0.5224,
+        "t1_z": -0.5225,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0096,
@@ -90,12 +90,12 @@
     },
     {
       "event_date": "2024-06-05",
-      "z": -2.5951,
-      "spread": -0.0395,
+      "z": -2.5952,
+      "spread": -0.0396,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2024-06-06",
-        "t1_z": 0.6379,
+        "t1_z": 0.638,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0079,
@@ -110,12 +110,12 @@
     },
     {
       "event_date": "2024-06-24",
-      "z": 2.7502,
+      "z": 2.75,
       "spread": 0.0397,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-06-25",
-        "t1_z": -1.678,
+        "t1_z": -1.6779,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0268,
@@ -130,7 +130,7 @@
     },
     {
       "event_date": "2024-07-11",
-      "z": 2.6262,
+      "z": 2.6261,
       "spread": 0.0384,
       "direction": "defensive",
       "t1_attribution": {
@@ -155,7 +155,7 @@
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-07-18",
-        "t1_z": -1.0796,
+        "t1_z": -1.0795,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0182,
@@ -170,12 +170,12 @@
     },
     {
       "event_date": "2024-07-24",
-      "z": 3.5853,
+      "z": 3.5851,
       "spread": 0.0565,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-07-25",
-        "t1_z": 0.7954,
+        "t1_z": 0.7955,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0117,
@@ -215,7 +215,7 @@
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-08-02",
-        "t1_z": 2.8041,
+        "t1_z": 2.8042,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0479,
@@ -230,12 +230,12 @@
     },
     {
       "event_date": "2024-08-02",
-      "z": 2.8041,
+      "z": 2.8042,
       "spread": 0.0479,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-08-05",
-        "t1_z": 0.1592,
+        "t1_z": 0.159,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.002,
@@ -255,7 +255,7 @@
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2024-09-04",
-        "t1_z": 0.256,
+        "t1_z": 0.2559,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.004,
@@ -270,12 +270,12 @@
     },
     {
       "event_date": "2024-09-11",
-      "z": -2.6568,
+      "z": -2.6567,
       "spread": -0.0501,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2024-09-12",
-        "t1_z": 0.0566,
+        "t1_z": 0.0567,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0001,
@@ -290,12 +290,12 @@
     },
     {
       "event_date": "2025-01-27",
-      "z": 4.9649,
+      "z": 4.965,
       "spread": 0.0999,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2025-01-28",
-        "t1_z": -1.5745,
+        "t1_z": -1.5742,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0325,
@@ -310,7 +310,7 @@
     },
     {
       "event_date": "2025-04-03",
-      "z": 3.5664,
+      "z": 3.5663,
       "spread": 0.0769,
       "direction": "defensive",
       "t1_attribution": {
@@ -330,12 +330,12 @@
     },
     {
       "event_date": "2025-04-09",
-      "z": -5.1739,
+      "z": -5.1738,
       "spread": -0.1178,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2025-04-10",
-        "t1_z": 1.9843,
+        "t1_z": 1.9844,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0458,
@@ -370,12 +370,12 @@
     },
     {
       "event_date": "2026-05-06",
-      "z": -2.5149,
+      "z": -2.515,
       "spread": -0.0471,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-05-07",
-        "t1_z": 0.6409,
+        "t1_z": 0.6411,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0083,
@@ -390,12 +390,12 @@
     },
     {
       "event_date": "2026-05-08",
-      "z": -2.6737,
+      "z": -2.6736,
       "spread": -0.0507,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-05-11",
-        "t1_z": -0.9182,
+        "t1_z": -0.9181,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0194,
@@ -410,12 +410,12 @@
     },
     {
       "event_date": "2026-05-26",
-      "z": -2.7006,
-      "spread": -0.0514,
+      "z": -2.7162,
+      "spread": -0.0517,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-05-27",
-        "t1_z": 0.8868,
+        "t1_z": 0.8867,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0131,
@@ -430,12 +430,12 @@
     },
     {
       "event_date": "2026-06-05",
-      "z": 5.1201,
+      "z": 5.119,
       "spread": 0.096,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2026-06-08",
-        "t1_z": -2.3633,
+        "t1_z": -2.3627,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0487,
@@ -450,12 +450,12 @@
     },
     {
       "event_date": "2026-06-11",
-      "z": -2.708,
+      "z": -2.7073,
       "spread": -0.0566,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-06-12",
-        "t1_z": -0.4999,
+        "t1_z": -0.4998,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0126,
@@ -470,12 +470,12 @@
     },
     {
       "event_date": "2026-06-18",
-      "z": -2.5897,
+      "z": -2.5892,
       "spread": -0.0563,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-06-22",
-        "t1_z": -0.2469,
+        "t1_z": -0.2468,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.008,
@@ -490,12 +490,12 @@
     },
     {
       "event_date": "2026-06-23",
-      "z": 3.8072,
+      "z": 3.8066,
       "spread": 0.0781,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2026-06-24",
-        "t1_z": 0.7672,
+        "t1_z": 0.7671,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0137,
@@ -510,12 +510,12 @@
     },
     {
       "event_date": "2026-06-26",
-      "z": 2.6811,
+      "z": 2.6807,
       "spread": 0.0554,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2026-06-29",
-        "t1_z": -1.3493,
+        "t1_z": -1.349,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.0315,
@@ -530,12 +530,12 @@
     },
     {
       "event_date": "2026-07-02",
-      "z": 3.0065,
+      "z": 3.006,
       "spread": 0.0651,
       "direction": "defensive",
       "t1_attribution": {
         "t1_date": "2026-07-06",
-        "t1_z": -1.2382,
+        "t1_z": -1.238,
         "spread_persistence": {
           "same_direction": false,
           "magnitude": 0.03,
@@ -550,12 +550,12 @@
     },
     {
       "event_date": "2026-07-30",
-      "z": -3.2848,
+      "z": -3.2843,
       "spread": -0.0816,
       "direction": "offense",
       "t1_attribution": {
         "t1_date": "2026-07-31",
-        "t1_z": -0.2407,
+        "t1_z": -0.2406,
         "spread_persistence": {
           "same_direction": true,
           "magnitude": 0.0075,

@@ -8,7 +8,6 @@
   "CMC": "consensus_at_risk",
   "CTVA": "ahead_of_consensus",
   "D": "ahead_of_consensus",
-  "DHR": "ahead_of_consensus",
   "DUK": "ahead_of_consensus",
   "INTU": "consensus_at_risk",
   "LDOS": "ahead_of_consensus",

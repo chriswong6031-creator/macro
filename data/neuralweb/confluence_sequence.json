@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-08-19",
+  "asof": "2026-08-20",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -762,8 +762,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1752,8 +1752,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-27",
-      "n_sessions_in_tape": 13,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 14,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1983,8 +1983,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-13",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2960,10 +2960,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3160,8 +3160,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-27",
-      "n_sessions_in_tape": 4,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 5,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3378,10 +3378,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": -1.0,
+      "strength_slope": -0.5,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3457,8 +3457,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-27",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3501,8 +3501,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3532,10 +3532,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3547,6 +3547,17 @@
       "state": "gone",
       "last_as_of": "2026-07-29",
       "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SYF",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3649,6 +3660,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "META",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-30",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "NWS",
       "direction": 1,
       "horizon": "5.0",
@@ -3657,6 +3679,17 @@
       "state": "gone",
       "last_as_of": "2026-07-29",
       "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "NWS",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3674,6 +3707,17 @@
       "subject": "OMC",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "OMC",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3723,6 +3767,17 @@
       "state": "gone",
       "last_as_of": "2026-08-05",
       "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "T",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3998,17 +4053,6 @@
       "state": "gone",
       "last_as_of": "2026-08-03",
       "n_sessions_in_tape": 3,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
-      "subject": "META",
-      "direction": 1,
-      "horizon": "21.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4661,6 +4705,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "KO",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "ROST",
       "direction": 1,
       "horizon": "63.0",
@@ -4678,14 +4733,14 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-18",
-      "n_sessions_in_tape": 17
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 18
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 2,
+      "persistence_streak": 0,
       "strength_slope": 0.0,
-      "state": "stable",
+      "state": "gone",
       "last_as_of": "2026-08-19",
       "n_sessions_in_tape": 27
     },
@@ -4714,9 +4769,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 999,
+  "n_tape_rows": 1015,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-19T16:46:57Z",
+  "produced_at": "2026-08-20T04:46:58Z",
   "authority_check": []
 }

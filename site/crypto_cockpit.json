@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-19",
-  "generated_at": "2026-08-19T22:50:24+00:00",
+  "as_of": "2026-08-20",
+  "generated_at": "2026-08-20T04:24:22+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 64303.95,
-    "change_24h_pct": -0.58,
-    "stance_en": "NEUTRAL",
-    "stance_zh": "中性",
-    "summary_en": "The big picture reads neutral. Support comes from fundamentals and the trend; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向中性。支撑来自基本面与趋势；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 4,
+    "price": 69670.34,
+    "change_24h_pct": 0.53,
+    "stance_en": "RISK-ON",
+    "stance_zh": "偏多",
+    "summary_en": "The big picture reads risk-on. Support comes from the trend and momentum; the drag comes from futures positioning and stablecoin flows. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向偏多。支撑来自趋势与动量；拖累来自期货持仓与稳定币资金。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 31,
     "exposure_pct": 0,
     "gate_active": true
   },
@@ -26,9 +26,9 @@
         "label_en": "Momentum",
         "label_zh": "动量",
         "source": "master.board.momentum",
-        "state_en": "Bearish",
-        "state_zh": "看空",
-        "tone": "bear",
+        "state_en": "Bullish",
+        "state_zh": "看多",
+        "tone": "bull",
         "grade": "DIRECTIONAL"
       },
       "spark_source": "signals.momentum",
@@ -48,9 +48,9 @@
           "label_en": "Impulse",
           "label_zh": "脉冲",
           "source": "master.board.impulse",
-          "state_en": "Neutral",
-          "state_zh": "中性",
-          "tone": "neutral",
+          "state_en": "Accelerating",
+          "state_zh": "加速",
+          "tone": "bull",
           "grade": "DIRECTIONAL"
         }
       ]
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-19"
+        "as_of": "2026-08-20"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
@@ -236,9 +236,9 @@
         "label_en": "Macro liquidity",
         "label_zh": "宏观流动性",
         "source": "master.board.macro",
-        "state_en": "Neutral",
-        "state_zh": "中性",
-        "tone": "neutral",
+        "state_en": "Tailwind",
+        "state_zh": "顺风",
+        "tone": "bull",
         "grade": "CONFIRMED"
       },
       "spark_source": "signals.macro_score",

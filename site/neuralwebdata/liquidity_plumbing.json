@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-08-18",
+  "asof": "2026-08-19",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -24,17 +24,17 @@
   },
   "fed": {
     "assets_bn": 6759.955,
-    "assets_chg_20d_bn": 16.927,
+    "assets_chg_20d_bn": 12.577,
     "reserve_balances_bn": 2944.059,
-    "walcl_stale_days": 4,
+    "walcl_stale_days": 5,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-08-18"
+    "asof": "2026-08-19"
   },
   "treasury": {
-    "tga_bn": 932.785,
-    "tga_chg_20d_bn": 104.588,
-    "net_issuance_20d_bn": 412.79,
+    "tga_bn": 961.952,
+    "tga_chg_20d_bn": 86.972,
+    "net_issuance_20d_bn": 393.466,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,73 +47,69 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-08-17"
+    "asof": "2026-08-18"
   },
   "rrp": {
-    "rrp_bn": 0.155,
-    "rrp_chg_20d_bn": -0.12,
+    "rrp_bn": 0.317,
+    "rrp_chg_20d_bn": -0.059,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5827.015,
-    "netliq_chg_20d_bn": -40.758,
-    "netliq_chg_65d_bn": -142.021,
-    "netliq_pctile_expanding": 0.777963,
+    "netliq_bn": 5797.686,
+    "netliq_chg_20d_bn": -113.899,
+    "netliq_chg_65d_bn": -137.698,
+    "netliq_pctile_expanding": 0.772274,
     "overlay": "contracting"
   },
   "quality": {
     "label": "contracting",
-    "fed_share": 0.1,
+    "fed_share": 0.11,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.7,
-      "hy_oas_z": 0.11,
-      "nfci": -0.549,
+      "hy_oas_pct": 2.75,
+      "hy_oas_z": 0.42,
+      "nfci": -0.559,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 4
+    "walcl_stale_days": 5
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
     "effr_minus_iorb_pctile": 0.9132,
-    "sofr_minus_iorb_bp": 1.0,
-    "sofr_minus_iorb_d20_bp": 9.0,
-    "sofr_minus_iorb_pctile": 0.9349,
-    "sofr_99pctl_minus_iorb_bp": 9.0,
-    "sofr_99pctl_minus_iorb_d20_bp": 8.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.8817,
+    "sofr_minus_iorb_bp": 0.0,
+    "sofr_minus_iorb_d20_bp": 4.0,
+    "sofr_minus_iorb_pctile": 0.9104,
+    "sofr_99pctl_minus_iorb_bp": 7.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 3.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8103,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-08-17"
+    "asof": "2026-08-18"
   },
   "components": {
     "walcl": {
       "level_bn": 6760.0,
-      "d20_bn": 16.9,
+      "d20_bn": 12.6,
       "d65_bn": 31.5,
       "pctile": 0.7767
     },
     "rrp": {
-      "level_bn": 0.2,
+      "level_bn": 0.3,
       "d20_bn": -0.1,
-      "d65_bn": -0.5,
-      "pctile": 0.0555
+      "d65_bn": -6.9,
+      "pctile": 0.1237
     },
     "tga": {
-      "level_bn": 932.8,
-      "d20_bn": 57.8,
-      "d65_bn": 174.0,
-      "pctile": 0.9405
+      "level_bn": 962.0,
+      "d20_bn": 126.5,
+      "d65_bn": 176.0,
+      "pctile": 0.9481
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-05-20",
-        "v": 5906.8
-      },
       {
         "d": "2026-05-21",
         "v": 5924.5
@@ -360,7 +356,11 @@
       },
       {
         "d": "2026-08-18",
-        "v": 5827.0
+        "v": 5797.8
+      },
+      {
+        "d": "2026-08-19",
+        "v": 5797.7
       }
     ],
     "reserves": {
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-19T16:52:45Z",
-  "inputs_hash": "sha256:ba1c7768cca1093a3ac6c228907f7f52106e494401342a552bb6c803891e6307",
+  "produced_at": "2026-08-20T04:54:46Z",
+  "inputs_hash": "sha256:5c18c74488519317a7602f1983c04831bb42786cf915cc0771d55ae1b885c3ce",
   "tier": "shadow"
 }

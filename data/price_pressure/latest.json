@@ -2,7 +2,7 @@
   "schema": "price_pressure.v1",
   "engine_version": "price_pressure.v1",
   "asof": "2026-08-18",
-  "generated_utc": "2026-08-19T16:58:07+00:00",
+  "generated_utc": "2026-08-20T05:00:31+00:00",
   "display_only": true,
   "authority": {
     "can_rank": false,
@@ -53,8 +53,8 @@
     "broad_selloff_threshold": 60.0,
     "character": {
       "verdict": "clear",
-      "primary_label": "Oil shock",
-      "asof": "2026-08-18",
+      "primary_label": "Crypto liquidity",
+      "asof": "2026-08-19",
       "source": "data/regime/latest.json#market_drivers"
     },
     "banner": "Today's pressure is name-by-name, not market-wide.",

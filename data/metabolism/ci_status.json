@@ -1,13 +1,7 @@
 {
-  "ts": "2026-08-20T03:24:34+00:00",
-  "main_sha": "91971c843ad290c2dd6a3963de4461a81e9a4130",
+  "ts": "2026-08-20T05:10:23+00:00",
+  "main_sha": "70b695e882e0f3206c2fb6d2a176c6031e9c5a2b",
   "red_required": [
-    {
-      "name": "sweep",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32327338948/job/96301159099"
-    },
     {
       "name": "project",
       "conclusion": "cancelled",
@@ -16,9 +10,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 1,
+  "consecutive_failures": 2,
   "sensed_shas": [
-    "91971c843ad290c2dd6a3963de4461a81e9a4130",
+    "70b695e882e0f3206c2fb6d2a176c6031e9c5a2b",
     "97144ce33b5bdf718f1a0dd71290e3f5cfd2b60d"
   ],
   "heartbeat_degraded": false

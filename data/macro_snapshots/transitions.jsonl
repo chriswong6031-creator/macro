@@ -168,3 +168,8 @@
 {"asof": "2026-08-19", "domain": "china", "field": "china_fe_band", "from_value": "Greed", "to_value": "Neutral", "macro_context_id": "5d0b7e2fe4703eed"}
 {"asof": "2026-08-19", "domain": "hk", "field": "hk_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "5d0b7e2fe4703eed"}
 {"asof": "2026-08-19", "domain": "canada", "field": "canada_overlay_state", "from_value": "Risk-on", "to_value": "Neutral", "macro_context_id": "5d0b7e2fe4703eed"}
+{"asof": "2026-08-20", "domain": "us", "field": "us_risk_radar", "from_value": "calm", "to_value": "watch", "macro_context_id": "0f57fe8e43fac656"}
+{"asof": "2026-08-20", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "0f57fe8e43fac656"}
+{"asof": "2026-08-20", "domain": "commodity", "field": "commodity_ladder", "from_value": "FRESH BUY", "to_value": "RALLY ON", "macro_context_id": "0f57fe8e43fac656"}
+{"asof": "2026-08-20", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Extended \u2014 late cycle", "to_value": "Neutral", "macro_context_id": "0f57fe8e43fac656"}
+{"asof": "2026-08-20", "domain": "commodity", "field": "copper_action", "from_value": "HOLD", "to_value": "BUY", "macro_context_id": "0f57fe8e43fac656"}
