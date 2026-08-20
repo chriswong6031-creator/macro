@@ -451,8 +451,19 @@ def _iso(ts: datetime | None) -> str | None:
 
 
 def _quote_ts(row: Mapping[str, Any]) -> datetime | None:
-    """The quote's own timestamp.  Milliseconds since epoch per §3b."""
+    """The quote's own timestamp.  Milliseconds since epoch per §3b.
+
+    Accepts BOTH row shapes this lane actually receives: the raw snapshot's
+    ``ts`` AND live_verify's normalized ``ts_ms`` — scripts/entry_radar_live.py
+    builds its book through ``LV._quotes_from_snapshot``/``_merge_quotes``,
+    which re-key the timestamp to ``ts_ms``. Reading only ``ts`` here darked
+    the ENTIRE probe set as ``no_quote`` (coverage 0/2979) on the first real
+    in-window commissioning pass, 2026-08-20 — a fresh, correct 2,089-symbol
+    snapshot rendered invisible by the key mismatch.
+    """
     raw = row.get("ts")
+    if raw is None:
+        raw = row.get("ts_ms")
     if raw is None:
         return None
     try:

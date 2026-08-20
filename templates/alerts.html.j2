@@ -350,7 +350,8 @@
   {% set sevcls = 'crit' if a.severity=='critical' else ('major' if a.severity=='major' else 'minor') %}
   {% set v = a.validation %}
   <div class="ac sev-{{ sevcls }}" data-sev="{{ a.severity }}" data-tier="{{ a.tier }}" data-src="{{ a.source }}"
-       data-cluster="{{ a.cluster }}" data-life="{{ a.lifecycle }}" data-emit="{{ a.ts }}" data-age="{{ a.age_days }}"
+       data-cluster="{{ a.cluster }}" data-life="{{ a.lifecycle }}" data-emit="{{ a.ts }}"
+       data-board="{{ a.board_date or '' }}" data-age="{{ '' if a.age_days is none else a.age_days }}"
        data-id="{{ a.alert_id }}" data-q="{{ hay(a)|trim }}">
     <div class="rail">
       <div class="pr">{{ a.priority }}</div>
@@ -366,7 +367,14 @@
         {% if a.lifecycle=='new' %}<span class="lifepill life-new">🆕 {{ t('new','新') }}</span>
         {% elif a.lifecycle=='persisting' %}<span class="lifepill life-persisting">↻ {{ t('persisting','持续') }} {{ a.streak_days }}{{ t('d','天') }}</span>
         {% elif a.lifecycle=='fading' %}<span class="lifepill life-fading">{{ t('fading','消退') }}</span>{% endif %}
-        <span class="mono">{{ a.ts[:10] }}{% if a.age_days==0 %} · {{ t('today','今天') }}{% elif a.age_days==1 %} · {{ t('1d ago','1天前') }}{% else %} · {{ a.age_days }}{{ t('d ago','天前') }}{% endif %}</span>
+        {#- The date is the EVENT's board day (America/New_York), never our build clock.
+            An event whose time we cannot establish says so instead of borrowing today. -#}
+        {% if a.board_date %}
+        <span class="mono">{{ a.board_date }}{% if a.age_days==0 %} · {{ t('today','今天') }}{% elif a.age_days==1 %} · {{ t('1d ago','1天前') }}{% elif a.age_days is not none %} · {{ a.age_days }}{{ t('d ago','天前') }}{% endif %}</span>
+        {% if a.recorded_at and a.date_precision=='date' and a.recorded_at[:10] != a.board_date %}<span class="muted">{{ help('Event date, not build time — this read is drawn from the ' ~ a.board_date ~ ' session; we recorded it at ' ~ a.recorded_at ~ '.', '事件日期，非生成时间 — 该结论取自 ' ~ a.board_date ~ ' 交易日，我们于 ' ~ a.recorded_at ~ ' 记录。') }}</span>{% endif %}
+        {% else %}
+        <span class="mono muted">{{ t('date unknown','日期未知') }}{{ help('This alert reached us without a usable event time, so it earns no freshness credit and is never labelled today. We show it rather than invent a date for it.','该警报到达时没有可用的事件时间，因此不获得新鲜度加分，也绝不标注为“今天”。我们照实展示，而非为其编造日期。') }}</span>
+        {% endif %}
         {% if a.fire_count>1 %}<span class="muted">· {{ t('fired','触发') }} <b class="mono">{{ a.fire_count }}×</b>{% if a.streak_days>0 %} {{ t('over','历') }} {{ a.streak_days }}{{ t('d','天') }}{% endif %}</span>{% endif %}
       </div>
       <div class="hl">{{ t(a.headline, a.headline_zh) }}</div>
@@ -440,6 +448,9 @@
   <p class="src muted sm" style="margin:0">
     {{ t('Assembler','汇编') }}: engine/alert_triage.py · {{ t('feeds','数据源') }}: macro / bonds / forex / vector / commodity / themes / rotation / single-name ·
     {{ t('window','窗口') }} {{ window_days }}{{ t('d','天') }} · {{ t('as-of','截至') }} {{ asof or '—' }} ·
+    {{ t('board day','看板交易日') }} {{ board_date or '—' }} ({{ board_tz or 'America/New_York' }}){{ help(
+      "Three separate clocks. Board day is the New York session this board is reading — what 'today' means on a US cross-asset desk. Each alert is dated by when its EVENT happened, not by when we processed it. 'Rendered' below is only when this page was built.",
+      '三个互不相同的时钟。看板交易日是本看板所读取的纽约交易日 — 即美股跨资产台面上“今天”的含义。每条警报按其事件发生的时间标注日期，而非我们处理它的时间。下方的“生成”仅表示本页构建的时刻。') }} ·
     {{ t('rendered','生成') }} {{ generated_utc }} UTC</p>
 </div>
 
@@ -455,7 +466,8 @@
     var prev = parseInt(localStorage.getItem(LASTKEY) || '0', 10);
     var newest = 0;
     cards.forEach(function(c){
-      var ts = Date.parse((c.dataset.emit||'').slice(0,10)) || 0;
+      // board day (ET), not the build clock — same date the card shows
+      var ts = Date.parse((c.dataset.board||c.dataset.emit||'').slice(0,10)) || 0;
       if (ts > newest) newest = ts;
       if (prev && ts > prev) { var d=document.createElement('span'); d.className='newdot'; c.querySelector('.rail').appendChild(d); }
     });

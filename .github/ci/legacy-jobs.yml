@@ -5955,6 +5955,12 @@ jobs:
       - "engine/ai_desk.py"
       - "engine/ai_desk_scorer.py"
       - "engine/alert_triage.py"
+      # engine/alert_triage.py imports engine/alert_time.py (the Alert Center
+      # three-clock / ET board-day contract, Wave 7 2026-08-20), so this curated
+      # scope's import closure reaches it. Declared here because a curated
+      # `scope: exclusive` job must cover its OWN closure — widening is always the
+      # safe direction (scripts/check_contract_delta.py).
+      - "engine/alert_time.py"
       - "engine/alerts.py"
       - "engine/altdata_confirmers.py"
       - "engine/altdata_ledger.py"
@@ -9332,6 +9338,12 @@ jobs:
       - "engine/ai_desk.py"
       - "engine/ai_desk_scorer.py"
       - "engine/alert_triage.py"
+      # engine/alert_triage.py imports engine/alert_time.py (the Alert Center
+      # three-clock / ET board-day contract, Wave 7 2026-08-20), so this curated
+      # scope's import closure reaches it. Declared here because a curated
+      # `scope: exclusive` job must cover its OWN closure — widening is always the
+      # safe direction (scripts/check_contract_delta.py).
+      - "engine/alert_time.py"
       - "engine/alerts.py"
       - "engine/alt_cycle.py"
       - "engine/altdata_ledger.py"
@@ -10615,6 +10627,31 @@ jobs:
         run: python -m pytest tests/test_china_special_situations_truth_wave1.py -q
       - name: US board W9-A producer field + cohort math
         run: python -m pytest tests/test_w4_us_board.py -q
+      # Alert Command Center — the TIME CONTRACT and the evidence links (Wave 7,
+      # 2026-08-20). This page is a triage layer: its ranking, its "today / 1d ago"
+      # wording, its recency points and its catalyst countdown decide what a PM reads
+      # first, so a clock defect there is an epistemic defect, not a cosmetic one. Two
+      # shipped: engine/subsector_rotation_alerts.py stamped events with the rotation
+      # payload's generated_utc (when OUR builder ran) rather than its asof (the settled
+      # session the read is about), so Aug-19 conclusions displayed "Aug-20 · today"; and
+      # build_triage() took its own "today" from UTC midnight while running every aware
+      # stamp through tz_localize(None) — between 00:00Z and ~05:00Z, exactly when the
+      # nightly runs, a US cross-asset desk rolled its day over while New York was still
+      # in the previous afternoon.
+      #
+      # WIRED, NOT JUST ADDED (#5952-class): tests/test_alert_triage.py has sat in
+      # config/unrun_test_baseline.json since the 2026-08-09 freeze, so the suite pinning
+      # this board's honesty invariants — no fabricated hit-rate, demote-only severity,
+      # forex/commodity never reach act tier — ran in NO job. Adding time tests to a dark
+      # file would have left them dark too. Both suites run here and the file leaves the
+      # grandfather list in the same PR. Lives in this lane because it is a template/page
+      # contract guard like its neighbours, it is gate: code (these invariants belong on
+      # the merge gate, unlike the gate: data lanes that carry the rotation engine), and
+      # a clean venv holding EXACTLY this job's install line runs both green — the time
+      # suite is hermetic (monkeypatched feed, injected clock, zero wall-clock reads) and
+      # the triage suite needs only the committed data/ + templates/ this checkout has.
+      - name: Alert Command Center — three clocks, ET board day, and exact evidence links
+        run: python -m pytest tests/test_alert_time_contract.py tests/test_alert_triage.py -q
 
   # ── RED-ON-ARRIVAL SWEEP, BATCH C (2026-07-27) ─────────────────────────────
   # The PIT / frozen-tape share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on

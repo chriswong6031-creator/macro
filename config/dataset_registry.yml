@@ -314,6 +314,20 @@ datasets:
       inception_code: {dtype: string, nullable: false}
       effective_at: {dtype: "datetime64[ns]", nullable: false}
       ingested_at: {dtype: "datetime64[ns]", nullable: false}
+      security_state:
+        dtype: string
+        nullable: true
+        note: >
+          Closed enum (V4-D2B1-R1 §3.1): null = active | SUPERSEDED_DUPLICATE_MINT
+          (a security minted as an independent row for a rename's NEW symbol BEFORE
+          this builder modelled the rename, corrected onto superseded_by — never
+          deleted, H9). A superseded row is excluded from issuer re-examination,
+          issuer aggregation, and every consumer join index (see
+          reference.security_migrations, lib.dataos.identity.IssuerMaster).
+      superseded_by:
+        dtype: string
+        nullable: true
+        note: "security_id this row was corrected onto; null unless security_state=SUPERSEDED_DUPLICATE_MINT."
     notes: >
       lib/dataos/identity.py is the ALLOCATOR (mint-once, a pure derivation); this
       dataset is the AUTHORITY (the stored value). Re-running the producer NEVER
@@ -349,6 +363,15 @@ datasets:
       decomposed `authority` block. Historical issuer lineage is explicitly
       UNAVAILABLE: CIK evidence is a current-registrant observation only (no `asof`
       parameter anywhere on the issuer reader).
+      SECURITY AXIS (V4-D2B1-R1, 2026-08-20): security_state/superseded_by are a
+      SEPARATE closed-enum era from the issuer axis above — a CORRECTION (never a
+      deletion, H9) for a security minted as an independent row for a rename's NEW
+      symbol before this builder modelled the rename (the VMRK/EQR duplicate mint).
+      See data/reference/security_migrations.parquet for the durable receipt and
+      lib.dataos.identity.IssuerMaster.security_state_of/superseded_by_of for the
+      canonical reader. The general pending-transition fence (§5) that prevents a
+      RECURRENCE of this class lives in the receipt's `pending_transition_refusals`
+      and `listing_continuity` blocks, not in this schema.
 
   - dataset_id: reference.vendor_aliases
     layer: L2
@@ -499,3 +522,44 @@ datasets:
       identical SEC registrant CIK and repoints issuer_id to the group's canonical
       member (e.g. GOOGL's issuer_id repoints to GOOG's, per spec §2 tie-break rule
       4); security_id/listing_key are never touched.
+
+  - dataset_id: reference.security_migrations
+    layer: L2
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: scripts/build_security_master.py
+    storage: data/reference/security_migrations.parquet
+    format: parquet
+    grain: [security_id, superseded_by, reason]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: on_demand   # same producer, same reason — see reference.security_master
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [referential]
+    version: "0.1.0"
+    inputs: [reference.security_master]
+    schema:
+      security_id: {dtype: string, nullable: false, note: "the SUPERSEDED (duplicate-mint) security_id"}
+      superseded_by: {dtype: string, nullable: false, note: "the continuing security_id this row was corrected onto"}
+      reason: {dtype: string, nullable: false, note: "the era constant, e.g. security_supersession_duplicate_mint_v1"}
+      evidence: {dtype: string, nullable: false, note: "the ratified RenameEvent evidence string, cited verbatim (never a hand-restamped summary)"}
+      migrated_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      Append-only durable correction receipt (V4-D2B1-R1 §3.5) — the security-axis
+      mirror of reference.issuer_migrations, one axis over. One row per security this
+      builder corrected from an independent (wrongly-minted) row onto the pre-existing
+      continuing security — a rename whose NEW symbol was minted as a new security_id
+      BEFORE this builder modelled the rename (RENAME_EVENTS in
+      scripts/build_security_master.py). CORRECTION, NEVER DELETION: the superseded
+      row stays in reference.security_master forever (security_state=
+      SUPERSEDED_DUPLICATE_MINT, superseded_by=<this row's superseded_by>), byte-frozen
+      on every other column. First and only era to date:
+      security_supersession_duplicate_mint_v1 (V4-D2B1-R1, 2026-08-20) — SEC:US-XNYS-VMRK
+      (Vivmark Residential, formerly Equity Residential, NYSE ticker change EQR->VMRK
+      effective 2026-08-18) superseded by SEC:US-XNYS-EQR, the continuing security. The
+      general pending-transition fence that prevents a RECURRENCE of this class (§5) is
+      disclosed in _receipt.json's `pending_transition_refusals`/`listing_continuity`
+      blocks, not written here — this dataset records only a REALIZED correction.
