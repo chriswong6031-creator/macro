@@ -17,6 +17,7 @@ owns_paths:
   - ".github/runner-policy.yml"
   - ".github/workflows/m1-runner-canary.yml"
   - ".github/workflows/selfhosted-ci-canary.yml"
+  - ".github/workflows/merge-control-hosted-canary.yml"
   - ".github/workflows/render.yml"
   - ".github/workflows/engine-render.yml"
   - "ops/runner-host/**"
@@ -27,18 +28,18 @@ depends_on: []
 waves:
   - id: M0
     title: Physical failure-domain architecture freeze and work identity
-    status: awaiting_ci
+    status: done
     next_action: >
-      Review and merge the records-only M0 PR; no production route or runner label
-      changes are authorized in M0.
+      M0 is frozen by PR #6094. Do not widen it; execute the bounded W1 environment
+      proof before any merge-control route change.
   - id: W1
     title: Hosted merge-control environment canary and bounded cutover
-    status: todo
+    status: in_progress
     depends_on: [M0]
     next_action: >
-      Commission the hosted environment canary through WS:CI-MERGE-CONTROL-PLANE;
-      require three canaries including one congested-window proof before changing
-      the real merge-on-green runner route.
+      Land W1-A's read-only hosted canary, then dispatch it three times from main,
+      including one congested-window run. Only after all three meet the frozen pickup,
+      checkout, dependency, and test gates may W1-B change merge-on-green's runner route.
   - id: W2
     title: Guarded M1 three-listener diagnostic restoration
     status: todo
@@ -83,6 +84,7 @@ artifacts:
   - research/RUNNER_FLEET_RESILIENCE_M0_ADVERSARIAL_AMENDMENT_2026-08-20.md
   - research/PRIVATE_REPO_RUNNER_STORAGE_ALLOCATION_AUDIT_2026_08_14.md
   - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
+  - .github/workflows/merge-control-hosted-canary.yml
 landmines:
   - >
     `parked` is not an exclusion label; positive label matching still routes jobs to
@@ -117,10 +119,13 @@ do_not_redo:
   - >
     Do not restore generic macstudio to the M1 merely because mac-builder-1/2 historically
     carried production. Current workload/resource compatibility must be re-proven first.
+  - >
+    Do not call the hosted canary a merge controller. It has contents:read, no merge token,
+    and must never execute scripts/merge_on_green.py; it proves environment capacity only.
 next_action: >
-  Get M0 records green and merged, then execute W1 only: hosted merge-control
-  environment canary under WS:CI-MERGE-CONTROL-PLANE. Prepare W2/W3 diagnostic host
-  recovery in parallel only if it changes no production labels or default routes.
+  Merge M0 PR #6094. Then land W1-A and obtain three main-ref hosted canary receipts.
+  W1-B remains blocked until those receipts pass, including one during the congested
+  nightly/render window.
 ---
 
 ## Current incident
@@ -135,5 +140,5 @@ under-routed and merge-control remains on the same physical M2.
 This workstream owns fleet topology, host recovery, runner policy, canary substrate, and
 render routing. It does **not** own merge semantics. Any edit to
 `.github/workflows/merge-on-green.yml` or `scripts/merge_on_green.py` is commissioned
-through `WS:CI-MERGE-CONTROL-PLANE`; W1 only supplies the environment/capacity proof and
-the physical-failure-domain requirement.
+through `WS:CI-MERGE-CONTROL-PLANE`; W1-A supplies environment/capacity proof only and
+W1-B is the separately reviewed route cutover.
