@@ -24,10 +24,18 @@ parser, no cap change, no #5424, no Atlas expansion, no Prophet/Neural Web.
 4. **Opportunities mode** shows typed `SOURCE_UNAVAILABLE` sourced from the
    read-model (not recomputed frontend truth), and an absent/malformed rail
    block fails CLOSED to unavailable — never to "no opportunities this week".
-5. **Budget mode** reaches typed `PROJECTION_MISSING` from the read-model.
-   The current permanent "Loading budget request graph" state is dead: no
-   state may imply verification-in-progress for a projection that has never
-   been produced.
+5. **Budget mode** reaches typed `PROJECTION_MISSING` honestly on every
+   path. AMENDED after adversarial review (2026-08-20, PR #6048 F1-F3): the
+   real module (`createGovernmentRevenueBudget` in
+   `government-revenue-dossiers.js`) already maps the live HTTP receipt
+   (404/503/contract) to `projection_missing` — that verdict is
+   AUTHORITATIVE and must never be overridden by the read-model fallback
+   (a transport `unavailable` is never laundered into a producer claim; a
+   settled `ok` with zero rows is never demoted). The typed
+   `freshness.budget.failure_state` fallback applies ONLY when no module
+   exists at all — where the pre-D3 page sat on "Loading budget request
+   graph" forever. No state may imply verification-in-progress for a
+   projection that has never been produced.
 6. All new copy bilingual via `tr()`; no translated text in `title=`
    attributes; no "证伪/refuted" vocabulary; no raw slugs at glance tier
    except the two established typed codes (`SOURCE_UNAVAILABLE`,

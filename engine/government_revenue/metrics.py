@@ -1598,7 +1598,10 @@ def _budget_freshness(repo: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     graph = _read_json(path, None)
-    if not isinstance(graph, dict) or not is_valid_budget_program_graph(graph):
+    # root=repo is load-bearing: the validator resolves contracts/ relative to
+    # cwd by default, so an artifact read from `repo` must be validated against
+    # `repo`'s own contracts or a path mismatch masquerades as a typed failure.
+    if not isinstance(graph, dict) or not is_valid_budget_program_graph(graph, root=repo):
         return {
             "status": "unavailable",
             "failure_state": "projection_missing",

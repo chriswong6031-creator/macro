@@ -430,13 +430,23 @@ def _budget_rail(value: Any) -> dict[str, Any]:
         status = str(value.get("status") or "").strip().lower() or "unavailable"
         failure_state = value.get("failure_state")
         if failure_state not in _VALID_BUDGET_FAILURE_STATES:
-            failure_state = None
+            # A caller that supplies a bad/missing failure_state does not get
+            # a silently "live" rail: derive it from status the same way the
+            # sibling rails do, so failure_state None always means live/ok.
+            failure_state = _source_failure_state({"status": status})
+        records_visible = value.get("records_visible")
+        if isinstance(records_visible, bool) or not isinstance(records_visible, (int, float)):
+            records_visible = None
+        else:
+            records_visible = max(0, int(records_visible))
+        observed_at = value.get("observed_at")
+        reason_code = value.get("reason_code")
         return {
             "status": status,
             "failure_state": failure_state,
-            "observed_at": value.get("observed_at"),
-            "records_visible": value.get("records_visible"),
-            "reason_code": value.get("reason_code"),
+            "observed_at": str(observed_at) if observed_at is not None else None,
+            "records_visible": records_visible,
+            "reason_code": str(reason_code) if reason_code is not None else None,
         }
     return {
         "status": "unavailable",

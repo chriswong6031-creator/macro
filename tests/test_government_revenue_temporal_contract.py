@@ -76,7 +76,7 @@ def _mini_payload(workspace: dict, companies: list[dict] | None = None) -> dict:
     }
 
 
-NOW_MS = 1_786_000_000_000  # 2026-08-26T ~ well after every exemplar's known_at
+NOW_MS = 1_787_500_000_000  # 2026-08-23T17:46Z -- after every exemplar's known_at
 
 
 # ---------------------------------------------------------------------------
@@ -231,7 +231,12 @@ def test_t4_p00032_tape_row_carries_effective_date_and_late_chip_and_known_ago(t
     assert "Late discovery" in queue
     assert "Took effect" in queue
     assert "May 12, 2026" in queue
-    assert "found " in queue
+    # "found " must be followed by a real value -- a dangling "found " with
+    # nothing after it (the F5 null-clock defect) also contained "found ", so
+    # this pins found-plus-value, not the mere prefix.
+    import re
+
+    assert re.search(r"found [^<\s]", queue)
 
 
 @needs_node
@@ -462,3 +467,191 @@ def test_t8_diff_and_clock_renderers_render_fixture_values_verbatim(tmp_path):
     assert f"{int(before)} → {int(after)}" in inspector or (
         str(int(before)) in inspector and str(int(after)) in inspector
     )
+
+
+# ---------------------------------------------------------------------------
+# Adversarial-review pins (2026-08-20 opus review of PR #6048).
+# F1/F2/F3: the REAL budget module's HTTP-receipt verdict is authoritative and
+# is never overridden by the read-model fallback; the fallback exists only for
+# the module-absent path. F5: null clocks render as named blanks. F6: budget
+# artifact validation resolves contracts from the repo argument, never cwd.
+# F8: _budget_rail never emits a silently-"live" failure_state. F9: the
+# correction chip is scoped to award_change events.
+# ---------------------------------------------------------------------------
+def _typed_budget_freshness() -> dict:
+    return {
+        "status": "unavailable",
+        "failure_state": "projection_missing",
+        "observed_at": None,
+        "records_visible": 0,
+        "reason_code": "no_request_graph_artifact",
+    }
+
+
+@needs_node
+def test_f1_real_module_projection_missing_verdict_survives_zero_rows(tmp_path):
+    """Today's live behaviour: dossiers.js maps the real 404 to
+    projection_missing with 0 rows. That verdict must land verbatim."""
+    workspace = _mini_workspace([], freshness={"status": "ok"})
+    out = _run_runtime(
+        tmp_path, _mini_payload(workspace), workspace, NOW_MS,
+        location_search="?mode=budget", budget_module_status="projection_missing",
+    )
+    assert "PROJECTION_MISSING" in out["queueSummary"]
+    assert "PROJECTION_MISSING" in out["queueHtml"]
+    assert "source-native programs" not in out["queueSummary"]
+
+
+@needs_node
+def test_f2_transport_failure_is_never_laundered_into_projection_missing(tmp_path):
+    """Module 'unavailable' (e.g. HTTP 500) + typed read-model
+    projection_missing: the transport verdict wins -- an outage must never be
+    reported as 'we never produced it'."""
+    workspace = _mini_workspace([], freshness={"status": "ok", "budget": _typed_budget_freshness()})
+    out = _run_runtime(
+        tmp_path, _mini_payload(workspace), workspace, NOW_MS,
+        location_search="?mode=budget", budget_module_status="unavailable",
+    )
+    assert "PROJECTION_MISSING" not in out["queueSummary"]
+    assert "PROJECTION_MISSING" not in out["queueHtml"]
+    assert "Budget program evidence unavailable" in out["queueHtml"]
+
+
+@needs_node
+def test_f3_settled_ok_with_zero_rows_keeps_the_module_status(tmp_path):
+    """A contract-legal empty graph (programs: []) is a valid current state --
+    the row count must not demote a genuine 'ok' to a failure label."""
+    workspace = _mini_workspace([], freshness={"status": "ok", "budget": _typed_budget_freshness()})
+    out = _run_runtime(
+        tmp_path, _mini_payload(workspace), workspace, NOW_MS,
+        location_search="?mode=budget", budget_module_status="ok",
+    )
+    assert "source-native programs" in out["queueSummary"]
+    assert "PROJECTION_MISSING" not in out["queueSummary"]
+
+
+@needs_node
+def test_f1_module_absent_falls_back_to_the_typed_read_model_state(tmp_path):
+    """Only when NO module exists (no fetch, no receipt) does the baked typed
+    state drive budgetStatus -- and 'loading' is never the settled state."""
+    workspace = _mini_workspace([], freshness={"status": "ok", "budget": _typed_budget_freshness()})
+    out = _run_runtime(
+        tmp_path, _mini_payload(workspace), workspace, NOW_MS,
+        location_search="?mode=budget",
+    )
+    assert "PROJECTION_MISSING" in out["queueSummary"]
+    assert "Loading budget request graph" not in out["queueHtml"]
+
+
+@needs_node
+def test_f5_late_row_with_null_known_at_renders_a_named_blank_not_a_dangling_prefix(tmp_path):
+    event = _real_event("govws-a6c70850a9cbdce9fa3e7f3b")
+    event["change"]["known_at"] = None
+    event["change"]["first_seen_at"] = None
+    workspace = _mini_workspace([event])
+    payload = _mini_payload(workspace, companies=[{"ticker": "IRDM", "name": "Iridium Communications"}])
+    out = _run_runtime(tmp_path, payload, workspace, NOW_MS)
+    queue = out["queueHtml"]
+    assert "Took effect" in queue
+    assert "found —" in queue
+    import re
+
+    assert not re.search(r"found\s*<", queue)
+
+
+@needs_node
+def test_f4_unrecognized_typed_failure_state_fails_closed_not_open(tmp_path):
+    """Any non-null failure_state on the opportunities rail means not-current,
+    even a value the consumer does not specifically know."""
+    workspace = _mini_workspace(
+        [],
+        freshness={
+            "status": "ok",
+            "opportunities": {"status": "ok", "failure_state": "projection_missing"},
+        },
+    )
+    payload = _mini_payload(workspace)
+    payload["opportunity_intelligence"] = {"market": {}, "freshness": {"status": "ok"}}
+    out = _run_runtime(
+        tmp_path, payload, workspace, NOW_MS, location_search="?mode=opportunities",
+    )
+    assert "SOURCE_UNAVAILABLE" in out["queueHtml"]
+    assert "No opportunities in this cut" not in out["queueHtml"]
+
+
+@needs_node
+def test_f9_correction_chip_never_fires_on_a_non_award_change_kind(tmp_path):
+    recompete = {
+        "contract": "government_procurement_event.v2",
+        "event_id": "govws-f9-recompete-fixture", "record_id": "rec-f9", "version": 1,
+        "kind": "recompete", "state": "updated", "title_original": "Recompete watch fixture",
+        "agency": {"name": "Department of Defense"},
+        "change": {"known_at": "2026-08-19T00:00:00+00:00", "effective_at": "2026-08-01T00:00:00+00:00",
+                   "is_correction": True, "changed_fields": []},
+        "recompete": {"piid": "F9FIXTURE"}, "opportunity": {}, "award_change": {},
+        "dates": [], "amounts": [], "listed_company_impacts": [], "primary_ticker": None,
+        "evidence": {"source_class": "official", "receipts": []}, "authority": {},
+    }
+    workspace = _mini_workspace([recompete])
+    out = _run_runtime(tmp_path, _mini_payload(workspace), workspace, NOW_MS)
+    assert "truth correction" not in out["queueHtml"]
+
+
+def test_f6_budget_freshness_validates_against_the_repo_argument_not_cwd(tmp_path, monkeypatch):
+    from engine.government_revenue import metrics as m
+
+    artifact_dir = tmp_path / "data" / "government_revenue"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "budget_program_graph.json").write_text(
+        json.dumps({"known_at": "2026-08-02T12:00:00+00:00",
+                    "source_coverage": {"president_budget_request": {"status": "ok"}},
+                    "programs": [{"id": "p1"}, {"id": "p2"}]}),
+        encoding="utf-8",
+    )
+    seen = {}
+
+    def _recording_validator(graph, *, root=None):
+        seen["root"] = root
+        return True
+
+    monkeypatch.setattr(m, "is_valid_budget_program_graph", _recording_validator)
+    monkeypatch.chdir(tmp_path / "data")  # cwd deliberately NOT the repo root
+    result = m._budget_freshness(tmp_path)
+    assert seen["root"] == tmp_path
+    assert result == {
+        "status": "ok", "failure_state": None,
+        "observed_at": "2026-08-02T12:00:00+00:00",
+        "records_visible": 2, "reason_code": None,
+    }
+
+
+def test_f6_budget_freshness_absent_and_invalid_artifact_paths(tmp_path, monkeypatch):
+    from engine.government_revenue import metrics as m
+
+    assert m._budget_freshness(tmp_path) is None  # absent -> workspace default
+
+    artifact_dir = tmp_path / "data" / "government_revenue"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "budget_program_graph.json").write_text("[]", encoding="utf-8")
+    result = m._budget_freshness(tmp_path)
+    assert result["failure_state"] == "projection_missing"
+    assert result["reason_code"] == "invalid_request_graph_artifact"
+
+
+def test_f8_budget_rail_derives_failure_state_and_coerces_records_visible():
+    workspace = build_procurement_workspace(
+        _empty_oi(), [], as_of="2026-07-31", known_at="2026-07-31T23:59:59Z",
+        budget_freshness={"status": "unavailable", "records_visible": 3.0},
+    )
+    budget = workspace["freshness"]["budget"]
+    # A degraded status without a supplied failure_state is never silently live.
+    assert budget["failure_state"] == "source_unavailable"
+    assert budget["records_visible"] == 3
+    assert isinstance(budget["records_visible"], int)
+
+    workspace2 = build_procurement_workspace(
+        _empty_oi(), [], as_of="2026-07-31", known_at="2026-07-31T23:59:59Z",
+        budget_freshness={"status": "ok", "records_visible": True},
+    )
+    assert workspace2["freshness"]["budget"]["records_visible"] is None
+    assert workspace2["freshness"]["budget"]["failure_state"] is None

@@ -18,9 +18,11 @@ rationale: >
   effective_at/known_at/first_seen_at/last_seen_at, typed award_change.event_type,
   receipt-bound changed_fields[].before/.after, is_late_discovery, and
   prior_source_identity. The misreads were render-side (single winning clock on
-  the tape row, unreachable PROJECTION_MISSING, frontend-computed failure
-  states). A contract bump would ripple through every validator and consumer for
-  zero informational gain.
+  the tape row, frontend-computed failure states, and a module-absent budget
+  path stuck on "loading" forever — the REAL budget module already emitted
+  projection_missing from the live HTTP receipt, and D3 preserves that verdict
+  as authoritative per the PR #6048 adversarial review). A contract bump would
+  ripple through every validator and consumer for zero informational gain.
 alternatives: >
   (1) Bump to government_procurement_event.v3 — rejected: churn without new
   information; breaks HAS_WORKSPACE-style consumers for no user-visible truth
