@@ -388,6 +388,7 @@ on:
       - "engine/rotation_events.py"
       - "tests/test_alert_time_contract.py"
       - "tests/test_alert_triage.py"
+      - "tests/test_alert_coverage_recurrence.py"
       - "engine/altdata_signals.py"
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"

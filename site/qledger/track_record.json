@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T14:18:59.602570+00:00",
+  "generated_at": "2026-08-20T17:01:19.277767+00:00",
   "grade_horizons": [
     5,
     21,
@@ -1909,20 +1909,20 @@
     }
   },
   "counts": {
-    "n_claims": 56099,
-    "n_grades": 74450,
+    "n_claims": 56154,
+    "n_grades": 74408,
     "n_placebo": 1028,
     "n_rejected": 14,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 71670
+      "next_bar": 71628
     },
     "grades_by_clock_basis": {
-      "legacy_calendar_unstamped": 69189,
+      "legacy_calendar_unstamped": 69147,
       "explicit_unit_v1:trading_days:US": 5247,
       "explicit_unit_v1:calendar_days:US": 14
     },
-    "n_claims_horizon_unit_declared": 9469,
+    "n_claims_horizon_unit_declared": 9524,
     "n_claims_unstamped_regime": 6241
   },
   "ladder_states": {
@@ -3421,7 +3421,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-20T14:19:44.204259+00:00",
+  "ladder_states_at": "2026-08-20T17:02:06.137546+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -6227,5 +6227,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-20T14:20:45.613008+00:00"
+  "promotion_readiness_at": "2026-08-20T17:03:05.564724+00:00"
 }

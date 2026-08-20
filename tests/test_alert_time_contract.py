@@ -105,6 +105,41 @@ def test_no_aware_timestamp_is_ever_silently_made_naive():
         assert T.parse_instant(block["event_ts"]) is not None, raw
 
 
+@pytest.mark.parametrize("value", [
+    "2026-08-19",                       # bare ISO date
+    "2026-08-19T00:00:00",              # the jsonl engines' session-date serialization
+    "20260819",                         # basic ISO, as text
+    20260819,                           # basic ISO, as an int (JSON / numpy out of pandas)
+    20260819.0,                         # ...and as a float
+    dt.date(2026, 8, 19),               # a real date object
+    dt.datetime(2026, 8, 19, 0, 0, 0),  # naive midnight datetime
+])
+def test_every_date_only_representation_stays_a_date(value):
+    """A date-only value must NEVER be read as an instant at midnight.
+
+    Found by fuzzing the seam 2026-08-20: a non-string stamp skipped the session-date
+    detection, fell through to the naive-instant branch, was assumed UTC, and projected
+    BACK a day into ET — `{"ts": 20260819}` resolved to board day 2026-08-18. A bare
+    `date` object hit the same path, because `datetime` is a subclass of `date` and not
+    the reverse. Both are the exact date-as-midnight defect this module exists to prevent.
+    """
+    block = T.normalize_event({"ts": value})
+    assert block["date_precision"] == T.PRECISION_DATE, value
+    assert block["event_date"] == "2026-08-19", value
+    assert block["board_date"] == "2026-08-19", value
+    assert block["event_ts"] is None, value          # no fabricated instant
+
+
+@pytest.mark.parametrize("value", [True, False, None, "", "   ", "not-a-date", 3.7,
+                                   "2026-08", "2026-02-31"])
+def test_non_dates_are_unknown_never_guessed(value):
+    """Fail closed: anything that is not a date earns no date, not a plausible one."""
+    block = T.normalize_event({"ts": value})
+    assert block["date_precision"] == T.PRECISION_UNKNOWN, value
+    assert block["board_date"] is None, value
+    assert T.age_days(block, dt.date(2026, 8, 20)) is None, value
+
+
 def test_unknown_event_time_is_not_fabricated():
     """A producer that declares it has no event time gets no date at all."""
     block = T.normalize_event({"ts": "2026-08-20 02:45", "date_precision": "unknown"})
@@ -199,9 +234,14 @@ def test_rotation_producer_refuses_to_invent_a_date_without_asof():
 # --- 4. the assembled board ---------------------------------------------------
 
 def _fake_feed(monkeypatch, rows):
-    """Drive build_triage off a controlled feed (no data/ dependency, no wall clock)."""
-    monkeypatch.setattr(at, "_macro_raw", lambda today, cutoff: [])
-    monkeypatch.setattr(at, "_load_context", lambda: {})
+    """Drive build_triage off a controlled feed (no data/ dependency, no wall clock).
+
+    Readers return a TYPED read (source / state / events) — a crashed feed is missing
+    evidence, never "zero alerts" (see tests/test_alert_coverage_recurrence.py).
+    """
+    monkeypatch.setattr(at, "_macro_raw",
+                        lambda today, cutoff: at._read("macro", at.READ_OK_ZERO, []))
+    monkeypatch.setattr(at, "_load_context", lambda: {"_state": at.READ_OK})
 
     def _fake_jsonl(source, today, cutoff, tier_map):
         out = []
@@ -224,7 +264,7 @@ def _fake_feed(monkeypatch, rows):
                 "detail": "", "detail_zh": "",
                 "anchor": r.get("anchor", "#timeline"), "edge": "", "edge_zh": "",
             })
-        return out
+        return at._read(source, at.READ_OK if out else at.READ_OK_ZERO, out)
 
     monkeypatch.setattr(at, "_jsonl_raw", _fake_jsonl)
 
@@ -321,7 +361,7 @@ def test_future_dated_rows_are_quarantined_not_ranked(monkeypatch):
     assert [a["asset"] for a in p["alerts"]] == ["silver"]
 
 
-def test_persistence_span_is_measured_in_board_days(monkeypatch):
+def test_recurrence_span_is_measured_in_board_days(monkeypatch):
     """Mixed date-only and offset-aware fires must not raise, and must span board days."""
     _fake_feed(monkeypatch, [
         {"source": "vector", "type": "risk_regime", "asset": "BTC",

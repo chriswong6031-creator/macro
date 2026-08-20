@@ -33,6 +33,15 @@ from __future__ import annotations
 
 from typing import Any
 
+# ── truth-boundary thresholds (FROZEN CONTRACT §1) ─────────────────────────────
+# A degraded/stale/holiday/failed live snapshot must never be able to overwrite
+# the valid baked nightly breadth board. These are the defaults `evaluate_usable`
+# and the payload builders below gate on; every one is overridable per call.
+DEFAULT_EXPECTED_UNIVERSE = 1500     # S&P Composite 1500 (500 + 400 + 600 ~= 1503 live)
+DEFAULT_MIN_COVERAGE_PCT = 90.0      # catches collapse, not class-share/missing-name noise
+DEFAULT_MAX_SOURCE_AGE_MIN = 25      # SLA on the SOURCE clock (vendor floor is 15)
+EXPECTED_TIERS = 3
+
 # Tier key / order / labels / universe — MUST mirror build_site._BREADTH_TIERS.
 # (key, namespace, univ_label, (label_en, label_zh)). The `T()` objects in the
 # nightly builder are render-time bilingual wrappers; here we emit plain
@@ -67,6 +76,47 @@ def _wmean(tiers: list[dict], key: str) -> float | None:
     num = sum(t[key] * t["n"] for t in tiers if t.get(key) is not None)
     den = sum(t["n"] for t in tiers if t.get(key) is not None)
     return num / den if den else None
+
+
+def evaluate_usable(
+    *,
+    feed_status: str,
+    session: str,
+    n_tiers: int,
+    coverage_pct: float | None,
+    source_age_min: float | None,
+    min_coverage_pct: float = DEFAULT_MIN_COVERAGE_PCT,
+    max_source_age_min: float = DEFAULT_MAX_SOURCE_AGE_MIN,
+    expected_tiers: int = EXPECTED_TIERS,
+) -> tuple[bool, str | None]:
+    """The ONE adjudicator for "may the browser replace the nightly board?".
+
+    Pure, no I/O — fully unit-testable without a socket or a store. Returns
+    ``(False, <reason>)`` on the FIRST failing check, in a fixed order (a
+    degraded feed is reported as a feed problem even if the source clock also
+    happens to be stale), else ``(True, None)``.
+
+    Unavailable is NOT zero: a `None` coverage/age is treated as unknown, never
+    coerced to a passing or failing number by accident. Negative
+    `source_age_min` (clock skew — the source ahead of the build) is ALLOWED;
+    it is not evidence of staleness, so it is never rejected here (display code
+    may clamp it, this adjudicator must not).
+    """
+    if feed_status != "ok":
+        return False, "feed_" + feed_status
+    if session == "closed" or not session:
+        return False, "session_closed"
+    if n_tiers < expected_tiers:
+        return False, "tiers_incomplete"
+    if source_age_min is None:
+        return False, "no_source_clock"
+    if source_age_min > max_source_age_min:
+        return False, "source_stale"
+    if coverage_pct is None:
+        return False, "no_coverage"
+    if coverage_pct < min_coverage_pct:
+        return False, "coverage_low"
+    return True, None
 
 
 def compute_tier(
@@ -156,6 +206,14 @@ def build_payload(
     session: str,
     missing: dict[str, int] | None = None,
     n_snapshot: int | None = None,
+    source_asof: str | None = None,
+    source_age_min: float | None = None,
+    feed_status: str = "ok",
+    producer: str | None = None,
+    expected_universe: int = DEFAULT_EXPECTED_UNIVERSE,
+    min_coverage_pct: float = DEFAULT_MIN_COVERAGE_PCT,
+    max_source_age_min: float = DEFAULT_MAX_SOURCE_AGE_MIN,
+    expected_tiers: int = EXPECTED_TIERS,
 ) -> dict[str, Any]:
     """Assemble the full display payload from the per-tier dicts.
 
@@ -163,6 +221,10 @@ def build_payload(
     label / verdict / tone — stance wording stays with the surface (masterplan
     §6; the poller never emits copy). Composite adv_pct is recomputed from the
     summed adv/dec so it matches the nightly composite.
+
+    `usable`/`unusable_reason` are adjudicated HERE (never by the browser) via
+    `evaluate_usable` — the truth-boundary gate (FROZEN CONTRACT §0/§1): a
+    degraded, stale, holiday, or failed snapshot must never carry `usable: True`.
     """
     adv = sum(t["adv"] for t in tiers)
     dec = sum(t["dec"] for t in tiers)
@@ -179,37 +241,97 @@ def build_payload(
         "pa200": _wmean(tiers, "pa200"),
         "net_nh": int(net_nh),
     }
+    expected = expected_universe
+    coverage = {
+        "n": comp["n"],
+        "expected": expected,
+        "pct": (100.0 * comp["n"] / expected) if expected else None,
+    }
+    usable, unusable_reason = evaluate_usable(
+        feed_status=feed_status,
+        session=session,
+        n_tiers=len(tiers),
+        coverage_pct=coverage["pct"],
+        source_age_min=source_age_min,
+        min_coverage_pct=min_coverage_pct,
+        max_source_age_min=max_source_age_min,
+        expected_tiers=expected_tiers,
+    )
     meta: dict[str, Any] = {"missing": missing or {}}
     if n_snapshot is not None:
         meta["snapshot_names"] = int(n_snapshot)
     return {
         "schema": "live.breadth.v1",
         "asof": asof,
+        "built_at": asof,
+        "source_asof": source_asof,
+        "source_age_min": source_age_min,
         "delay_min": int(delay_min),
         "session": session,
         "basis": "poll",
+        "feed_status": feed_status,
+        "usable": usable,
+        "unusable_reason": unusable_reason,
+        "coverage": coverage,
+        "producer": producer,
         "tiers": tiers,
         "comp": comp,
         "meta": meta,
     }
 
 
-def empty_payload(*, asof: str, delay_min: int, session: str,
-                  note: str = "no data") -> dict[str, Any]:
+def empty_payload(
+    *,
+    asof: str,
+    delay_min: int,
+    session: str,
+    note: str = "no data",
+    feed_status: str = "error",
+    source_asof: str | None = None,
+    source_age_min: float | None = None,
+    producer: str | None = None,
+    expected_universe: int = DEFAULT_EXPECTED_UNIVERSE,
+    min_coverage_pct: float = DEFAULT_MIN_COVERAGE_PCT,
+    max_source_age_min: float = DEFAULT_MAX_SOURCE_AGE_MIN,
+    expected_tiers: int = EXPECTED_TIERS,
+) -> dict[str, Any]:
     """Fail-soft payload: empty tiers + null composite, never a crash.
 
     Emitted when the snapshot is unavailable (offline / feed down / no key) so a
     strict consumer still parses a well-formed object and falls back to the baked
     nightly numbers. Same top-level keys as `build_payload`.
+
+    MUST NEVER return `usable: True` — with zero tiers, `evaluate_usable`'s
+    `n_tiers < expected_tiers` check fails on any well-formed default, and the
+    zero-coverage `coverage_low` check is a second, independent backstop.
     """
     comp = {"n": 0, "adv": 0, "dec": 0, "unch": 0, "adv_pct": None,
             "pa50": None, "pa200": None, "net_nh": 0}
+    coverage = {"n": 0, "expected": expected_universe, "pct": 0.0}
+    usable, unusable_reason = evaluate_usable(
+        feed_status=feed_status,
+        session=session,
+        n_tiers=0,
+        coverage_pct=coverage["pct"],
+        source_age_min=source_age_min,
+        min_coverage_pct=min_coverage_pct,
+        max_source_age_min=max_source_age_min,
+        expected_tiers=expected_tiers,
+    )
     return {
         "schema": "live.breadth.v1",
         "asof": asof,
+        "built_at": asof,
+        "source_asof": source_asof,
+        "source_age_min": source_age_min,
         "delay_min": int(delay_min),
         "session": session,
         "basis": "poll",
+        "feed_status": feed_status,
+        "usable": usable,
+        "unusable_reason": unusable_reason,
+        "coverage": coverage,
+        "producer": producer,
         "tiers": [],
         "comp": comp,
         "meta": {"missing": {}, "note": note},
