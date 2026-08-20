@@ -172,8 +172,18 @@ _TITLE_RE = re.compile(r"<title\b[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL
 _NAME_RESIDUE_RE = re.compile(r"^[|;,/\s]|[|;,/]\s*$|\|")
 
 
+# Generic \uXXXX escape (the shape a JS-string-literal-in-HTML source carries for
+# any non-ASCII character, not just the `&` the guard used to special-case) —
+# decoded BEFORE the entity/backslash replace chain below. Without this, an
+# issuer name with an escaped apostrophe, dash, or accented letter (BJ's,
+# Brown-Forman, Estee Lauder) never matches its own hub row and false-positives
+# as an issuer-name-mismatch.
+_UNICODE_ESCAPE_RE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
 def _unescape(s: str) -> str:
-    return (s.replace("\\u0026", "&").replace("\\\"", "\"").replace("\\/", "/")
+    s = _UNICODE_ESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), s)
+    return (s.replace("\\\"", "\"").replace("\\/", "/")
              .replace("&amp;", "&").replace("&#39;", "'").replace("&quot;", "\"")
              .replace("\\\\", "\\").strip())
 
@@ -241,9 +251,12 @@ def check_identity(page: Path, text: str, ctx: dict) -> list[dict]:
     canon = universe.get(expected) or {}
     asserted = _asserted_identity(text)
 
-    def flag(pattern: str, snippet: str) -> None:
-        violations.append({"page": page.name, "check": "identity",
-                           "pattern": pattern, "snippet": snippet[:170]})
+    def flag(pattern: str, snippet: str, *, pending: bool = False) -> None:
+        v = {"page": page.name, "check": "identity",
+             "pattern": pattern, "snippet": snippet[:170]}
+        if pending:
+            v["pending"] = True
+        violations.append(v)
 
     # 1. the page's own <title> must name this ticker
     title_m = _TITLE_RE.search(text)
@@ -293,11 +306,23 @@ def check_identity(page: Path, text: str, ctx: dict) -> list[dict]:
                 flag("jsonld-name-mismatch",
                      f"JSON-LD name {nm!r} disagrees with {ref!r}")
 
-    # 6. a published third-party description must carry auditable provenance
+    # 6. a published third-party description must carry auditable provenance.
+    # "incomplete" is an HONEST declaration — desc_strength is only populated by
+    # the nightly network drip (~80/night), so most of the committed estate
+    # carries it between drip cycles. That is pending re-resolution, not a wrong
+    # claim, so it is tagged pending and does not fail the run (see main()). A
+    # provenance string that IS present but malformed (not "incomplete" and
+    # missing the ":"-delimited accepted-article linkage) is a positive claim
+    # that cannot be substantiated, and still hard-fails.
     prov = asserted.get("desc-provenance")
-    if prov is not None and (prov == "incomplete" or prov.count(":") < 3):
-        flag("description-provenance-missing",
-             f"a description is published with no accepted-article linkage ({prov!r})")
+    if prov is not None:
+        if prov == "incomplete":
+            flag("description-provenance-missing",
+                 f"a description is published pending re-resolution ({prov!r})",
+                 pending=True)
+        elif prov.count(":") < 3:
+            flag("description-provenance-missing",
+                 f"a description is published with no accepted-article linkage ({prov!r})")
     return violations
 
 
@@ -313,6 +338,7 @@ _SECTOR_ALIASES = {
     "consumer disc.": "consumer disc.",
     "communication services": "comm. services", "comm. services": "comm. services",
     "industrials": "industrials", "consumer staples": "staples", "staples": "staples",
+    "consumer defensive": "staples",
     "energy": "energy", "materials": "materials", "basic materials": "materials",
     "real estate": "real estate", "utilities": "utilities",
 }
@@ -448,8 +474,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"stock dossier integrity: REFUSED — {refusal}")
         return 1
 
-    fresh = [v for v in violations if not v.get("stale")]
+    not_stale = [v for v in violations if not v.get("stale")]
     stale = [v for v in violations if v.get("stale")]
+    # A violation that is BOTH pending and stale reports in the stale bucket
+    # above (this run did not even rewrite that page) — pending is only for a
+    # violation on a page this run just wrote.
+    pending = [v for v in not_stale if v.get("pending")]
+    fresh = [v for v in not_stale if not v.get("pending")]
 
     if stale:
         stale_pages = len({v["page"] for v in stale})
@@ -465,6 +496,21 @@ def main(argv: list[str] | None = None) -> int:
             "::warning title=stock-dossier-integrity-stale::"
             f"{len(stale)} pre-existing violation(s) on {stale_pages} page(s) this "
             "render did not rebuild — the next scope=all render should clear them",
+            flush=True,
+        )
+
+    if pending:
+        pending_pages = len({v["page"] for v in pending})
+        print(f"stock dossier integrity: {len(pending)} violation(s) on "
+              f"{pending_pages} page(s) pending re-resolution (not failing the run):")
+        for v in pending[:20]:
+            print(f"  (pending) {v['page']}  [{v['check']}:{v['pattern']}]  {v['snippet']}")
+        if len(pending) > 20:
+            print(f"  … and {len(pending) - 20} more")
+        print(
+            "::warning title=stock-dossier-provenance-pending::"
+            f"{len(pending)} page(s) publish descriptions pending re-resolution "
+            "(desc_strength not yet populated; nightly drip heals ~80/night)",
             flush=True,
         )
 

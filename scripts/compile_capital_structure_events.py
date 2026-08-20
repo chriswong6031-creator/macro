@@ -37,13 +37,16 @@ from engine.capital_structure import (
     link_registration_graph,
     route_form,
 )  # noqa: E402
+from engine.capital_structure.event_spine import compute_event_id  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     SOURCE_LEDGER_FILENAME,
     read_source_ledger,
     source_ledger_path,
 )  # noqa: E402
 from engine.capital_structure.source_identity import (
+    current_manifest_bundle,
     evidence_id_from_manifest,
+    refine_evidence_ids_for_semantic_compare,
     source_ledger_prefix_hash,
     validate_manifest_ledger,
 )  # noqa: E402
@@ -236,95 +239,8 @@ def _span_evidence(record: Mapping[str, Any]) -> list[dict[str, Any]]:
 def _current_manifest_bundle(
     records: Sequence[Mapping[str, Any]], *, accession: str
 ) -> list[dict[str, Any]]:
-    """Select current document versions and enforce closed accession lineage."""
-    by_manifest: dict[str, dict[str, Any]] = {}
-    manifest_bytes: dict[str, bytes] = {}
-    for raw in records:
-        row = dict(_native(raw))
-        manifest_id = str(row.get("manifest_id") or "")
-        encoded = _canonical_json(row)
-        if manifest_id in manifest_bytes and manifest_bytes[manifest_id] != encoded:
-            raise ValueError(f"immutable manifest collision for {manifest_id}")
-        manifest_bytes[manifest_id] = encoded
-        by_manifest.setdefault(manifest_id, row)
-
-    for row in by_manifest.values():
-        row_accession = str((row.get("filing") or {}).get("accession") or "")
-        if row_accession != accession:
-            raise ValueError(
-                f"manifest {row.get('manifest_id')} belongs to accession {row_accession!r}"
-            )
-
-    all_rows = list(by_manifest.values())
-    complete_versions = [
-        int((row.get("document") or {}).get("document_version") or 0)
-        for row in all_rows
-        if (row.get("document") or {}).get("document_role") == "complete_submission"
-    ]
-    if not complete_versions:
-        raise ValueError(f"{accession}: bundle has no complete_submission version")
-    bundle_version = max(complete_versions)
-    if any(
-        int((row.get("document") or {}).get("document_version") or 0) > bundle_version
-        for row in all_rows
-    ):
-        raise ValueError(
-            f"{accession}: child document version exceeds latest complete bundle version"
-        )
-    bundle_rows = [
-        row for row in all_rows
-        if int((row.get("document") or {}).get("document_version") or 0) == bundle_version
-    ]
-
-    by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in bundle_rows:
-        by_source[str(row.get("source_id") or "")].append(row)
-
-    current: list[dict[str, Any]] = []
-    for source_id, versions in by_source.items():
-        hashes = {
-            str((row.get("document") or {}).get("content_sha256") or "").lower()
-            for row in versions
-        }
-        if len(hashes) != 1:
-            raise ValueError(
-                f"source_id {source_id!r} has competing document version {bundle_version}"
-            )
-        versions.sort(
-            key=lambda row: (
-                str((row.get("retrieval") or {}).get("retrieved_at") or ""),
-                str(row.get("manifest_id") or ""),
-            )
-        )
-        current.append(versions[-1])
-
-    complete = [
-        row for row in current
-        if (row.get("document") or {}).get("document_role") == "complete_submission"
-    ]
-    if len(complete) != 1:
-        raise ValueError(
-            f"{accession}: bundle requires exactly one current complete_submission; found {len(complete)}"
-        )
-    complete_id = str(complete[0]["manifest_id"])
-    if (complete[0].get("document") or {}).get("parent_manifest_id") is not None:
-        raise ValueError(f"{accession}: complete_submission cannot have a parent_manifest_id")
-    primaries = [
-        row for row in current
-        if (row.get("document") or {}).get("document_role") == "primary"
-    ]
-    if len(primaries) > 1:
-        raise ValueError(f"{accession}: bundle has multiple current primary documents")
-    for row in current:
-        role = (row.get("document") or {}).get("document_role")
-        if role == "complete_submission":
-            continue
-        parent_id = str((row.get("document") or {}).get("parent_manifest_id") or "")
-        if parent_id != complete_id:
-            raise ValueError(
-                f"{accession}: {row.get('manifest_id')} parent must reference {complete_id}"
-            )
-    return sorted(current, key=lambda row: str(row.get("manifest_id") or ""))
+    """Compiler wrapper over the shared current-closed-bundle selector."""
+    return current_manifest_bundle(records, accession=accession)
 
 
 def event_from_manifest_group(
@@ -567,9 +483,8 @@ def _validate_event_source_lineage(
 
 
 def _validate_event_identity(event: Mapping[str, Any], *, label: str) -> None:
-    body = copy.deepcopy(dict(event))
-    event_id = str(body.pop("event_id", ""))
-    expected = "event:cs:" + hashlib.sha256(_canonical_json(body)).hexdigest()[:24]
+    event_id = str(event.get("event_id") or "")
+    expected = compute_event_id(event)
     if event_id != expected:
         raise ValueError(f"{label} event_id digest mismatch: {event_id!r} != {expected!r}")
 
@@ -774,6 +689,7 @@ def _semantic_event_body(event: Mapping[str, Any]) -> bytes:
         for item in evidence_list:
             if isinstance(item, dict):
                 item.pop("manifest_id", None)
+                item.pop("span_id", None)
     return _canonical_json(body)
 
 
@@ -810,6 +726,38 @@ def _project_evidence_ids_into_event(
             pass
     if eids:
         source["evidence_ids"] = sorted(set(eids))
+    return projected
+
+
+def _event_for_semantic_compare(
+    event: Mapping[str, Any],
+    manifest_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Project and refine evidence_ids so identity migration is not a correction.
+
+    Historical v1 children project ``legacy:{source_id}``. A later coordinate-bound
+    row for the same accession+source_id+bytes is the same evidence occurrence.
+    Comparison uses the coordinate id when it exists. Historical rows are not
+    rewritten.
+    """
+    projected = _project_evidence_ids_into_event(event, manifest_records)
+    source = projected.get("source")
+    if not isinstance(source, dict):
+        return projected
+    eids = source.get("evidence_ids")
+    if not isinstance(eids, list) or not eids:
+        return projected
+    accession = str(
+        (projected.get("filing") or {}).get("accession")
+        or source.get("accession")
+        or source.get("source_id")
+        or ""
+    )
+    source["evidence_ids"] = refine_evidence_ids_for_semantic_compare(
+        [str(eid) for eid in eids],
+        accession=accession,
+        records=manifest_records,
+    )
     return projected
 
 
@@ -1015,10 +963,15 @@ def compile_manifest_records(
                 # W1: project evidence_ids into historical prior so that the
                 # first W1 compile does not generate a spurious correction for
                 # every accession whose economic content is unchanged.
-                prior_for_compare = _project_evidence_ids_into_event(
+                prior_for_compare = _event_for_semantic_compare(
                     prior, manifest_records
                 )
-                if _semantic_event_body(candidate) == _semantic_event_body(prior_for_compare):
+                candidate_for_compare = _event_for_semantic_compare(
+                    candidate, manifest_records
+                )
+                if _semantic_event_body(candidate_for_compare) == _semantic_event_body(
+                    prior_for_compare
+                ):
                     continue
             if prior is not None:
                 produced = pd.Timestamp(now)

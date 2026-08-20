@@ -285,6 +285,30 @@ must never make a guard or test pass for the wrong reason:
   per-test reporting. `tests/test_ship_loop_guard.py::test_the_pair_list_is_the_ci_gate_s_own_enumeration`
   is the one test marked here: it asserts its pair list is non-empty and builds it by
   walking `site/`, so unmarked it fails with a bare `assert set()`.
+- **THE ANNOTATOR CANNOT SEE A *SWALLOWED* FileNotFoundError (found 2026-08-19).**
+  The bullet above promises a wrong answer "stays red, it just stops being a
+  mystery" — but attribution is by name match against the omitted trees in the
+  TRACEBACK, so it only fires when the error propagates. Production code that
+  catches the missing-reference error ON PURPOSE defeats it completely.
+  `hk_board_rank.confirmation_move()` is the worked example: it derives the HK
+  vetoed/ran lanes' confirmation close through
+  `signal_quality.confirmation_date(..., market="HK")`, which anchors on the
+  committed `data/hk/_HSI.parquet`, and it narrowly catches that FileNotFoundError
+  because a missing reference is its documented **disclosed-null** case, not a crash
+  the nightly should take. That contract is correct and unchanged. Its side effect in
+  a sparse tree is that every vetoed row comes back `pct_since: null`, no traceback
+  ever names `data/`, no NOTE is attributed — and the HK board pair prints
+  **18 clean assertion failures that read exactly like engine-vs-fixture drift**
+  (`tests/test_hk_board_ui.py` 5, `tests/test_hk_board_rank.py` 13). Measured on
+  origin/main f69f224c9723: 18 failed sparse; `git sparse-checkout add data/hk` on
+  the same bytes and nothing else, 0 failed. A session was commissioned to heal them
+  as deterministic main reds while main's own ci.yml ran green — the cost this
+  records. All eighteen now carry `needs_full_checkout("data")`: this is the
+  surgical use the paragraph above reserves, not a retreat from it, and the
+  distinguishing test is whether the annotator CAN fire. Where a traceback names the
+  omitted tree, leave it red and opt into a full checkout; where production swallows
+  the error, the failure is unattributable and marking is the only honest signal.
+
 - Detection reads git's sparse state, never `Path.is_dir()`: `data/` survives
   `git reset --hard` as a **0-byte husk**, so presence checks report it materialised
   while it holds none of its 2.3 GiB. `scripts/worktree_sparse.missing_dirs()` is the

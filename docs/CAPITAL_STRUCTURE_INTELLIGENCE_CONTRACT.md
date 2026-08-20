@@ -510,7 +510,12 @@ Events are immutable versions. Corrections create a new event ID and point backw
 do not edit the original row. Registration relationships live in a separate edge table so a
 later EFFECT or withdrawal cannot mutate an older registration. Each accession compiles
 only from its latest closed bundle version; documents that belonged only to an older bundle
-cannot leak into the replacement bundle.
+cannot leak into the replacement bundle. A revision persists the entire candidate bundle
+at the newly allocated accession-wide `document_version` and must not append only the
+changed members. A previously current member absent from the candidate because it was
+deselected or removed is itself a revision; the removed member is not copied into N+1.
+Every surviving child in that new bundle points at the new complete-submission
+`manifest_id`.
 
 The graph engine can use, in order:
 

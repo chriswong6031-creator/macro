@@ -288,6 +288,50 @@ PIP_INSTALL_RE = re.compile(
 # express carries an explicit allowance above its 112s share. These are
 # estimates from a measured shape, not a second hosted run — replace them from
 # a green post-split run's step timings when one exists.
+# Which (role, event) pairs may mint or consume a semantic plan.
+#
+# ``role`` carries the SUBSTANCE and is enforced separately below: ``pr_head``
+# requires an exact changed-file inventory and ``changed_from == base_sha``;
+# ``main`` requires one identical tree/head/base SHA and no ``changed_from``.
+# The event is the TRANSPORT, and it is allowlisted rather than ignored so a
+# combination nobody has reasoned about fails closed instead of silently
+# planning something unintended.
+#
+# The two ``main`` triggers below the dispatch were added 2026-08-19 because
+# leaving them out did not fail closed in the useful sense — it left the lane
+# that runs every ``gate: data`` job unable to run ANY of them. ``data-health.yml``
+# (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md) took the
+# 74 data-gated jobs off the merge gate on the promise that this lane would still
+# grade them AFTER the nightly writes the tree they assert against. It fires on
+# ``workflow_run`` (daily completed) and on a 13:30 UTC ``schedule`` backstop,
+# and both resolve role ``main`` — so both raised ManifestError before a single
+# legacy job ran. Measured: run 32262001614 (schedule, 2026-08-19T14:06Z) died
+# with ``main/schedule is unsupported``, exit 2, in all SIX packs; the
+# ``workflow_run`` run 32246816331 only escaped the same fate because its packs
+# were skipped by the daily-success condition. The single execution that lane
+# achieved all day came from a manual ``workflow_dispatch``, and it graded the
+# universe against ``data/symbol_directory/snapshots/2026-08-10.parquet`` — nine
+# days stale, because the 2026-08-19 snapshot (6f3fd8b3ea1f) was not committed
+# until 12:16Z, after it. The schedule that exists to catch exactly that ordering
+# is the one that could not start.
+#
+# Both events describe the same shape ``main`` already means: a whole-tree run at
+# one checked-out SHA with no diff. Nothing about the substance is relaxed here —
+# the ``role == "main"`` invariants still reject a plan that is not that shape.
+# The set stays CLOSED; ``push`` is deliberately absent (no gating workflow uses
+# it, and ci.yml has no push trigger).
+#
+# ``ci_semantic_proof._identity`` keeps its OWN, narrower pair set on purpose —
+# do not "unify" it with this one. That gate also asserts ``workflow == "ci"``:
+# it judges merge-gate proofs, and a data-health plan is not one. Widening it
+# would let a non-gating lane's plan pose as authority for a merge.
+SUPPORTED_PLAN_ROLE_EVENTS = frozenset({
+    ("pr_head", "pull_request"),
+    ("main", "workflow_dispatch"),
+    ("main", "workflow_run"),
+    ("main", "schedule"),
+})
+
 PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
     "engine-render-guards": 860,
@@ -1752,10 +1796,7 @@ def build_plan(
     role = role or os.environ.get("CI_SEMANTIC_ROLE") or (
         "pr_head" if event == "pull_request" else "main"
     )
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS:
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
         )
@@ -2059,10 +2100,7 @@ def load_authoritative_plan(
     if role not in {"pr_head", "main"}:
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS:
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"
         )

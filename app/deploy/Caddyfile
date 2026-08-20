@@ -510,7 +510,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /biocatalyst.css /biocatalyst.js /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /lightweight-charts-v5.js /chart.js /stockview.js /stockbrief.js /mtf.js /aidesk_lean.js /mm_brain.js /plotly-2.32.0.min.js /lightweight-charts.js /cycle.css /sector_cycles.css /macro-desk.css /markets.css /odds.css /capital_structure.css /government-revenue-parity.css /illus.css /illus.js /watchlist.js /watchstore.js /market_books.js /portfolio.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /biocatalyst.css /biocatalyst.js /navigation-refresh.css /stock-logos.js /logo_config.js /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /lightweight-charts-v5.js /chart.js /stockview.js /stockbrief.js /mtf.js /aidesk_lean.js /mm_brain.js /plotly-2.32.0.min.js /lightweight-charts.js /cycle.css /sector_cycles.css /macro-desk.css /markets.css /odds.css /capital_structure.css /government-revenue-parity.css /illus.css /illus.js /watchlist.js /watchstore.js /market_books.js /portfolio.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"
@@ -529,8 +529,23 @@
 	# the shared bundle (theme.js/heatmap.js/theme.css, ~143KB) stops being
 	# re-revalidated on every page navigation — the dominant mobile cost. Refs
 	# WITHOUT ?v= (e.g. a page rendered before the sweep) keep the short TTL above.
+	#
+	# THIS LIST MUST TRACK @public_static. optimize_assets stamps EVERY local
+	# .js/.css ref, not a curated set, so a stamped asset missing here matches
+	# @public_static's `not query v=*` too and ends up with NO Cache-Control at
+	# all — which hands EdgeOne its long default TTL, the exact 2026-07-03
+	# white-page incident class this section exists to prevent. Measured
+	# 2026-08-20 before the sweep below: 38 reviewed-public assets and 20,525
+	# page-refs were landing in that hole, /navigation-refresh.css (9,644 refs)
+	# worst. tests/test_site_access_boundary.py now fails if the lists drift.
+	#
+	# Adding a path here is NOT an access decision and must never widen one: every
+	# entry is already reviewed public — either listed in @public_static above or
+	# carried in config/site_access.yml `public.exact`. Member-only assets
+	# (wh_banner.js, mm_charts.js, sector_cycles.js, …) answer 401 + no-store and
+	# MUST stay out, or the CDN caches a gated body under a public key.
 	@public_versioned {
-		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /biocatalyst.css /biocatalyst.js /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/*
+		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /biocatalyst.css /biocatalyst.js /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/* /navigation-refresh.css /stock-logos.js /logo_config.js /lightweight-charts-v5.js /chart.js /plotly-2.32.0.min.js /lightweight-charts.js /macro-desk.css /tablesort.js /illus.js /illus.css /chart_i18n.js /charts.js /dashboard-icons.css /cycle.css /dashboard-icons.js /stockview.js /sector_cycles.css /heatmap.js /tier_preview.css /stocktable.js /tier_preview.js /timemachine.js /risk_state_live.js /vendor/topojson-client.min.js /vendor/d3-geo.min.js /vendor/d3-array.min.js /stockbrief.js /stock_seasonality.js /stock_seasonality.css /sky.js /research_vault_app.js /odds.css /markets.css /hub-welcome.js /globe-deck.js /capital_structure.css /aidesk_lean.js /mtf.js /mm_brain.js
 		query v=*
 	}
 	header @public_versioned Cache-Control "public, max-age=31536000, immutable"
@@ -540,11 +555,19 @@
 	# content hashes — so they can take neither @public_static above (its
 	# `not query v=*` skips them) nor @public_versioned's immutable year (a body
 	# edit without a stamp bump would pin the stale body at the edge forever).
+	# Verified 2026-08-20, still true: watchlist.js?v=9, watchstore.js?v=5,
+	# market_books.js?v=2, portfolio.js?v=6 — integers, and none equals its own
+	# sha256[:8]. mtf.js and mm_brain.js LEFT this list the same day: both are
+	# served content-hash-stamped (b62aea2f / f74045d8, each matching its file
+	# body), so the immutable year is correct for them and the 300s here was
+	# costing a revalidation on every navigation. Membership is a claim about
+	# how a path is STAMPED, not about who owns it — re-check the served stamp
+	# before adding one back.
 	# Without this matcher their stamped responses carry NO Cache-Control at
 	# all, which hands EdgeOne its long default TTL — the 2026-07-03 white-page
 	# incident class. Same short TTL as their unstamped form.
 	@watchlist_shell_versioned {
-		path /watchlist.js /watchstore.js /market_books.js /portfolio.js /mtf.js /mm_brain.js
+		path /watchlist.js /watchstore.js /market_books.js /portfolio.js
 		query v=*
 	}
 	header @watchlist_shell_versioned Cache-Control "public, max-age=300, must-revalidate"

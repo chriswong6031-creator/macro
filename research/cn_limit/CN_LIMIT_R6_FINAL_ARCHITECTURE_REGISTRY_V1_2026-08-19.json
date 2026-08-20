@@ -1,0 +1,2270 @@
+{
+  "schema": "cn_limit_r6_final_architecture_freeze.v1",
+  "generated_date": "2026-08-19",
+  "authority": "FINAL_RESEARCH_AND_INTEGRATION_ARCHITECTURE_FREEZE_NO_RUNTIME_AUTHORITY",
+  "repository": "mastermindx-market-intelligence/macro",
+  "repository_reconciliation_pin": "b556c73a8d5c83a4babee326adc6fad46b6aa6a7",
+  "prior_r5_pin": "baace0a24fd15951c174b22bbedaf5a22be8a62e",
+  "parent_artifacts": [
+    {
+      "role": "takeover",
+      "path": "/mnt/data/CN_LIMIT_PROJECT_TAKEOVER_CONTEXT_HANDOFF_2026-08-19.md",
+      "sha256": "aaf1e370cf81e2bb0cb92eba9cf4617e78db36a55642b802a1dadd77e4f6084e"
+    },
+    {
+      "role": "r1",
+      "path": "/mnt/data/CN_LIMIT_PRO_RESEARCH_R1_PRIMARY_EVIDENCE_MAP_2026-08-19.md",
+      "sha256": "d8b06f30147acd87e4ae9044394768f966d7d923e6dfbfb25b83b694c9989238"
+    },
+    {
+      "role": "r2",
+      "path": "/mnt/data/CN_LIMIT_PRO_RESEARCH_R2_CAUSAL_MECHANISM_AND_FALSIFICATION_ARCHITECTURE_2026-08-19.md",
+      "sha256": "d53a377935e8f427e918d0196824b003a339e03ba635446910b307d902e9e2d3"
+    },
+    {
+      "role": "r3",
+      "path": "/mnt/data/CN_LIMIT_PRO_RESEARCH_R3_SIGNAL_ONTOLOGY_AND_REPOSITORY_DATA_MAP_2026-08-19.md",
+      "sha256": "1765d6ae48ebb0ab1274060a52ee8d9224898af9ba7d81d6c7810cbe90bac727"
+    },
+    {
+      "role": "r3_registry",
+      "path": "/mnt/data/CN_LIMIT_R3_RESEARCH_SIGNAL_REGISTRY_V1_2026-08-19.json",
+      "sha256": "46d5602e0d469144c7675d5a3b91a57d053b48e697ddb7bbb4c77e8b12562d6f"
+    },
+    {
+      "role": "r4",
+      "path": "/mnt/data/CN_LIMIT_PRO_RESEARCH_R4_MEASUREMENT_PREREGISTRATION_AND_PROMOTION_GAUNTLET_2026-08-19.md",
+      "sha256": "782af1e158b47021c03554e5c58f0a8adc8cc876009f31e957bd89a4e26719cc"
+    },
+    {
+      "role": "r4_registry",
+      "path": "/mnt/data/CN_LIMIT_R4_MEASUREMENT_REGISTRY_V1_2026-08-19.json",
+      "sha256": "c95d7b2ab66a77f4c6a5006b95ab8df17ce41fe80d04516a0076633d223a4e96"
+    },
+    {
+      "role": "r5",
+      "path": "/mnt/data/CN_LIMIT_PRO_RESEARCH_R5_INTEGRATION_ARCHITECTURE_AND_CHAMPION_CHALLENGER_GOVERNANCE_2026-08-19.md",
+      "sha256": "6b7f322d0769ccd23aac6ec1fa39849770e9c30e054e7f65860554b31802c072"
+    },
+    {
+      "role": "r5_registry",
+      "path": "/mnt/data/CN_LIMIT_R5_INTEGRATION_ARCHITECTURE_REGISTRY_V1_2026-08-19.json",
+      "sha256": "497ed1e3736602abe2556a8b1301df30223dc5996643a774379b63fb775e7d4c"
+    }
+  ],
+  "product_thesis": {
+    "user_job": "Prioritize lawful China Prophet candidates entering mechanism-coherent, accessible rerating sequences before broad recognition.",
+    "machine_job": "Maintain point-in-time anatomy, exact event/adverse/access outcomes, immutable predictions/corrections, and fixed-candidate counterfactual ordering.",
+    "canonical_formula": "carrier × mechanism evidence × transition/release × sector/catalyst authorization × Prophet actionability × access",
+    "moat": "Correction-safe chronology and cross-plane sequence, not indicator count."
+  },
+  "binding_boundaries": [
+    "DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT",
+    "P-B2/P-B3 frozen; no rerun or P-D resurrection",
+    "P0 main-board risk-warning rows from 2026-07-06 quarantined",
+    "exact-plane authority gates remain fail-closed",
+    "Prophet remains sole live ranking/admission authority",
+    "candidate plane and board/path grader are canonical",
+    "PR-0B candidate telemetry must land and prove live before CN-Limit candidate writer changes",
+    "missing is not zero; event date is not known-at",
+    "no duplicate identity, event, intelligence, candidate, grader, lifecycle, or scheduler",
+    "no manipulation/insider inference from price",
+    "no public probability/score/gate/size authority",
+    "P-Lab fenced adjacency"
+  ],
+  "architecture_decisions": [
+    {
+      "id": "DEC:CNLI-HAZARD-NOT-MAGIC-INDICATOR",
+      "answer": "CN-Limit is a mechanism-aware event-hazard and accessible-rerating system, not a one-score technical indicator.",
+      "rationale": "Different corporate, policy, ownership, reflexive, and supply mechanisms can produce the same limit-up endpoint but have different lawful clocks, precursors, confounders, access, and continuation."
+    },
+    {
+      "id": "DEC:CNLI-CARRIER-CONTEXT-NOT-SELECTOR",
+      "answer": "Structural washout is a carrier/baseline, not the new selector.",
+      "rationale": "Prophet already concentrates in washed-out/coiled names and P-B2/P-B3 did not certify static-state timing/occupancy."
+    },
+    {
+      "id": "DEC:CNLI-SEQUENCE-OVER-COUNT",
+      "answer": "Ordered mechanism sequence is the primary conjunction object; unordered confirmation count is a negative control.",
+      "rationale": "Correlated technicals manufacture confidence. Professional discovery, transition, sector authorization, Prophet actionability, and retail recognition have directional time order."
+    },
+    {
+      "id": "DEC:CNLI-ACTOR-NEUTRAL-TAPE-LANGUAGE",
+      "answer": "Tape features describe downside ineffectiveness, resilience, reclaim quality, and constructive-volume asymmetry; they never label hidden accumulation, insider activity, manipulation, or orchestration.",
+      "rationale": "Intent is latent and cannot be inferred from OHLCV. Actor claims require independent public evidence."
+    },
+    {
+      "id": "DEC:CNLI-OUTCOME-VECTOR",
+      "answer": "First exact board, continuous rerating, adverse breakdown, access, continuation, and capacity are separate outcomes.",
+      "rationale": "A model can predict locked boards yet be commercially useless; board probability and achievable expectancy are not interchangeable."
+    },
+    {
+      "id": "DEC:CNLI-EXACT-CENT-PRIMARY",
+      "answer": "Authority-grade first-board outcomes require unadjusted nominal prices, vendor exact legal limits, positive-volume eligibility, and integer-cent equality.",
+      "rationale": "Adjusted prices, reconstructed ratios, tolerant primary labels, and ties-to-even rounding caused the binding stop-ship."
+    },
+    {
+      "id": "DEC:CNLI-ONE-CANONICAL-PROPHET-CHAIN",
+      "answer": "Use the existing candidate plane, board/path grader, identity, event, and nightly planes; CN-Limit adds only derived anatomy plus a referential immutable research sidecar.",
+      "rationale": "A duplicate candidate plane or grader would create diverging truth and destroy attribution."
+    },
+    {
+      "id": "DEC:CNLI-MEASUREMENT-BEFORE-ORDERING",
+      "answer": "I1 prospective measurement shadow must precede I2 ordering shadow.",
+      "rationale": "A feature must survive exact outcomes, Prophet overlap, valid nulls, calibration, access, and prospective proof before an order counterfactual is meaningful."
+    },
+    {
+      "id": "DEC:CNLI-COVERAGE-ATOMIC-CHALLENGER",
+      "answer": "A challenger order exists only when every member of the frozen comparison population has a valid prediction under one definition.",
+      "rationale": "Per-row incumbent fallback mixed with challenger values creates incomparable scales and selection bias."
+    },
+    {
+      "id": "DEC:CNLI-ERA-IS-EFFECTIVE-AUTHORITY",
+      "answer": "Champion era is keyed by board definition plus effective order basis, order mode, score/admission hashes, and candidate schema—not board_definition alone.",
+      "rationale": "A v4 bake served through v3 fallback is not the same treatment as a complete Intelligence-ordered v4 bake."
+    },
+    {
+      "id": "DEC:CNLI-NO-OUTCOME-AUDITION",
+      "answer": "One preregistered challenger enters each prospective race; any formula/model/threshold change starts a new era.",
+      "rationale": "Selecting the best of many observed challengers invalidates the forward comparison."
+    },
+    {
+      "id": "DEC:CNLI-AUTHORITY-DOES-NOT-CASCADE",
+      "answer": "Research, prediction, ordering, score, gate, size, and public probability are separate authority grants.",
+      "rationale": "Success at one level does not establish safety or value at the next."
+    },
+    {
+      "id": "DEC:CNLI-PROPHET-LAB-FENCED-ADJACENCY",
+      "answer": "The new Prophet Operator Lab is an adjacent US/Radar read-only product, not a CN-Limit owner or storage seam.",
+      "rationale": "It is fixture-based, not live-wired, and has its own detector ontology. Automatic reuse would blur programs and create a shortcut around canonical China planes."
+    }
+  ],
+  "capability_ledger": [
+    {
+      "capability": "China Prophet v4 score, ordering, admission, lifecycle lanes, caps, and current champion fallback behavior",
+      "state": "PROVEN_LIVE",
+      "owner": "engine/china_board_rank.py",
+      "ruling": "Canonical and exclusive live ranking/admission authority. CN-Limit may condition on it and later run an off-path shadow; it may not replace or fork it."
+    },
+    {
+      "capability": "Full-universe Prophet-scored China candidate research population with keep-first nightly rows",
+      "state": "PROVEN_LIVE",
+      "owner": "engine/china_prophet_shadow.py → data/china_prophet_rank/candidates.parquet",
+      "ruling": "Canonical candidate plane. Future CN-Limit anatomy is an additive nullable family only after PR-0B is merged and proven live."
+    },
+    {
+      "capability": "China board-selection and T+1 path grading plane",
+      "state": "PROVEN_LIVE",
+      "owner": "engine/china_standout_track.py → data/china_standout_track/board.parquet",
+      "ruling": "Canonical selected-board/path grader. It is not the full-market first-board risk-set ledger."
+    },
+    {
+      "capability": "Prospective keep-first broker, margin, block-trade, and buyback evidence accrual",
+      "state": "PROVEN_LIVE",
+      "owner": "existing China Intelligence collectors/stores",
+      "ruling": "Event date is not knowledge date. Use first-seen/system clocks; no historical PIT backfill claims."
+    },
+    {
+      "capability": "Unadjusted, exact-price, full-A TuShare spine foundation and range-shard campaign implementation",
+      "state": "BUILT_NOT_PROVEN",
+      "owner": "collectors/china_tushare_spine.py and range-shard owner",
+      "ruling": "Synthetic-tested and fail-closed. Empty reviewed trust roots and BULK_HISTORICAL_BACKFILL_READY=False remain binding; no authority-grade execution yet."
+    },
+    {
+      "capability": "Lawful pattern-tier washout-onset research and prior Prophet-panel anatomy",
+      "state": "BUILT_NOT_PROVEN",
+      "owner": "research/cn_prophet_audit/",
+      "ruling": "Useful as mechanism/design evidence only. Back-adjusted, partial-universe, tolerant-event results do not carry exact-event or trading authority."
+    },
+    {
+      "capability": "P-B2/P-B3 frozen static-state/precursor construction",
+      "state": "REJECTED_BY_DESIGN",
+      "owner": "WS:CN-LIMIT-ALPHA frozen research record",
+      "ruling": "No discriminator at the preregistered bar; 12 NULL, 8 UNINFORMATIVE; zero certified timing or occupancy. Never rerun or shop."
+    },
+    {
+      "capability": "Current limit-event tape and realized vendor limit pool",
+      "state": "PARTIAL",
+      "owner": "engine/china_microstructure.py; data/china_zt_pool/",
+      "ruling": "Useful witness/recent ecology only. Not full-A exact legal ground truth and currently contaminated for main-board risk-warning names after 2026-07-06."
+    },
+    {
+      "capability": "2026 main-board risk-warning rule parity and correction-safe re-derived downstream labels",
+      "state": "BROKEN",
+      "owner": "China microstructure/rule owner",
+      "ruling": "P0. Repo still applies ±5% where official 2026 rules require ±10% from 2026-07-06. Quarantine affected rows until repaired and replayed."
+    },
+    {
+      "capability": "Full v4 Intelligence anatomy in the canonical candidate plane",
+      "state": "SPEC_ONLY",
+      "owner": "China Alpha Intelligence PR-0B",
+      "ruling": "PR #5953 remains open/nonmergeable; no CN-Limit candidate-plane edit may race it."
+    },
+    {
+      "capability": "Institutional-visit, analyst-effort, fund/ownership, and company-event canonical evidence planes",
+      "state": "SPEC_ONLY",
+      "owner": "China Alpha Intelligence / Data OS / event owners",
+      "ruling": "Rights, identity, and prospective clocks must close upstream. CN-Limit consumes derived owner-native outputs only."
+    },
+    {
+      "capability": "Four primary daily transition features projected prospectively into the candidate plane",
+      "state": "NOT_BUILT",
+      "owner": "CN-Limit derived-feature projection, future",
+      "ruling": "Build one vertical at a time only after canonical telemetry seam and definition-era contracts are live."
+    },
+    {
+      "capability": "Exact full-market first-board target, PIT eligibility overlay, access classes, and correction-safe grade adapter",
+      "state": "NOT_BUILT",
+      "owner": "Exact-plane/eligibility owners plus bounded CN-Limit target adapter",
+      "ruling": "Required before R4 results, calibration, or G6. No adjusted-plane substitute."
+    },
+    {
+      "capability": "Immutable CN-Limit prediction/grade/comparison sidecar",
+      "state": "SPEC_ONLY",
+      "owner": "china_prophet_rank.cn_limit_research.v1, future",
+      "ruling": "Referential, not a second candidate store; monthly immutable parts, exact schemas, keep-first contradictions, owner-native scheduler."
+    },
+    {
+      "capability": "Fixed-candidate CN-Limit ordering shadow inside unchanged Prophet lanes",
+      "state": "NOT_BUILT",
+      "owner": "Future I2 commission after G6",
+      "ruling": "Coverage-atomic and off-path only. No admission, cap, gate, score, plan, or product authority."
+    },
+    {
+      "capability": "Prophet Operator Lab API added after R5 pin",
+      "state": "BUILT_NOT_PROVEN",
+      "owner": "Prophet US/Radar program",
+      "ruling": "Fixture-based, all-false authority, not production-wired. Adjacent read-only projection only; never a CN-Limit store, grader, or shortcut."
+    }
+  ],
+  "active_features": [
+    {
+      "id": "CNLI.TRANS.DOWN_IMPACT_ASYMMETRY",
+      "name": "Downside price-impact decay relative to upside impact",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "candidate_feature",
+      "method": "DETERMINISTIC_CONTINUOUS",
+      "r2_disposition": "ADVANCE",
+      "definition": {
+        "window_logic": "W1=d-19..d; W0=d-39..d-20. Calculate impact separately on negative and positive sessions.",
+        "down_eff_W": "median(max(-r_t,0) / max(value_rel_t,0.05) | r_t<0)",
+        "up_eff_W": "median(max(r_t,0) / max(value_rel_t,0.05) | r_t>0)",
+        "primary_value": "log((down_eff_W0+eps)/(down_eff_W1+eps)) - log((up_eff_W0+eps)/(up_eff_W1+eps))",
+        "interpretation": "Positive means downside impact fell more than upside/general price impact. It is actor-neutral and must never be labeled hidden accumulation.",
+        "minimum_support": "At least five valid negative and five valid positive sessions across each comparison window; otherwise NOT_COVERED."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV owner; CN-Limit defines research projection only",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet",
+        "collectors/china_stock_raw.py",
+        "collectors/_stock_ohlc.py"
+      ],
+      "identity_key": "canonical listing/security identity resolved upstream; ticker is a temporary join only",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Record source digest and generated_at. Future prospective projection must keep-first on candidate/session/definition era. Raw bar corrections remain additive receipts, never silent replacement of a published feature.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "NOT_BUILT",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Long daily history for the committed China-search universe; not the authorized full-A exact plane.",
+      "coverage": "China-search universe only; delisted/never-indexed names and incomplete raw histories create survivorship/coverage risk.",
+      "rights_and_licensing_risk": "Keyless market-data source; reuse is internal. Exact event authority remains separately blocked.",
+      "survivorship_and_revision_risk": "Current historical files may be repaired for splits/corporate actions; prior byte vintages are not a canonical correction ledger.",
+      "hypothesized_direction": "HYPOTHESIZED_POSITIVE",
+      "expected_horizons": [
+        "H5",
+        "H10",
+        "H21"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING",
+        "PRE_ONSET_ACCESS"
+      ],
+      "carrier_dependence": "Must be evaluated inside and outside the structural washout carrier; static washout is a baseline, not part of this formula.",
+      "prophet_overlap": "Potential overlap with bottom_quality, entry lifecycle, and generic volatility/liquidity. R4 must ablate against all six Prophet score components.",
+      "sector_or_actor_dependency": "No actor identity required; sector/market controls required.",
+      "prohibited_post_treatment_inputs": [
+        "target-session OHLCV",
+        "same-session first-board/seal fields",
+        "future catalyst text",
+        "future ownership evidence"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.RAW_VOLUME_SPIKE",
+        "CNLI.NC.STATIC_WASHOUT_OCCUPANCY"
+      ],
+      "falsification_condition": "Close if the value adds no discrimination beyond carrier + size/liquidity/volatility + Prophet, if the sign is equally strong on upside impact, or if it survives only after using corrected/future bars unavailable at the decision cutoff.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK"
+      ],
+      "r4_required_action": "R4 preregisters exact windows, minimum counts, winsorization, market/sector controls, and a correction-aware replay witness before any result is opened.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.TRANS.BAD_DAY_RESILIENCE",
+      "name": "Improving residual behavior on objectively bad market or sector sessions",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "candidate_feature",
+      "method": "DETERMINISTIC_CONTINUOUS",
+      "r2_disposition": "ADVANCE",
+      "definition": {
+        "bad_market_session": "r_market,t <= the trailing 252-session 20th percentile computed using data available before t",
+        "residual_return": "r_i,t - beta_i,m,t-1 * r_market,t",
+        "primary_value": "median(residual_return on the six most recent bad-market sessions) - median on the preceding twelve bad-market sessions",
+        "secondary_sector_channel": "Repeat on bad-sector sessions only when PIT sector membership exists; never substitute current membership silently.",
+        "interpretation": "Positive means the name has become harder to damage during externally bad conditions."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV + canonical market/sector context owners",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet",
+        "engine/china_sector_cycles.py",
+        "data/china_search/closes.parquet"
+      ],
+      "identity_key": "canonical listing identity; PIT sector edge required for the sector channel",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Same correction policy as daily tape. Sector mapping changes require versioned membership receipts.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED",
+        "IDENTITY_BLOCKED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "NOT_BUILT",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Market benchmark and stock daily history are deep; PIT per-name sector membership is not yet proven.",
+      "coverage": "Market version is available on the partial stock universe. Sector version is blocked unless the membership edge is valid at t.",
+      "rights_and_licensing_risk": "No new rights issue for existing price context; sector identity must be canonical.",
+      "survivorship_and_revision_risk": "Current/static sector membership can create hindsight; beta and percentile estimates must be lagged.",
+      "hypothesized_direction": "HYPOTHESIZED_POSITIVE",
+      "expected_horizons": [
+        "H5",
+        "H10",
+        "H21"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING"
+      ],
+      "carrier_dependence": "Expected to be most informative inside a distressed carrier, but carrier interaction must beat main effect.",
+      "prophet_overlap": "Overlaps runway, bottom quality, low-vol context, and entry recovery. Explicit component-level ablation required.",
+      "sector_or_actor_dependency": "Sector-dependent only for the secondary channel.",
+      "prohibited_post_treatment_inputs": [
+        "future bad-session classification",
+        "post-event sector membership",
+        "target-session return"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.STATIC_WASHOUT_OCCUPANCY"
+      ],
+      "falsification_condition": "Close if improvement is merely beta compression or market-wide liquidity recovery, if current sector membership is load-bearing, or if there is no effect on matched bad sessions.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK",
+        "PIT_SECTOR_MEMBERSHIP_UNAVAILABLE"
+      ],
+      "r4_required_action": "R4 freezes the market-only primary channel first; sector variant is a separate ablation and cannot rescue a null market result.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.TRANS.CONSTRUCTIVE_VOL_ASYM",
+      "name": "Constructive versus destructive volume effectiveness",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "candidate_feature",
+      "method": "DETERMINISTIC_CONTINUOUS",
+      "r2_disposition": "ADVANCE",
+      "definition": {
+        "constructive_session": "market_excess_t>0 and clv_t>=0",
+        "destructive_session": "market_excess_t<0 and clv_t<=0",
+        "constructive_effect": "median(max(market_excess_t,0) / max(value_rel_t,0.05) on constructive sessions in d-39..d)",
+        "destructive_effect": "median(max(-market_excess_t,0) / max(value_rel_t,0.05) on destructive sessions in d-39..d)",
+        "primary_value": "constructive_effect - destructive_effect",
+        "companion_anatomy": "median(value_rel on constructive) - median(value_rel on destructive)",
+        "interpretation": "The feature measures which side uses volume effectively; it is not a raw volume spike."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV owner",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet",
+        "collectors/china_stock_raw.py"
+      ],
+      "identity_key": "canonical listing identity",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Published prospective rows keep-first; corrections append a reason and re-derived observation rather than mutating the original.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "NOT_BUILT",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Daily depth follows each raw ticker history.",
+      "coverage": "Partial China-search universe; sufficient constructive/destructive session counts vary by name.",
+      "rights_and_licensing_risk": "No incremental rights issue for internal raw-market source.",
+      "survivorship_and_revision_risk": "Corporate-action repairs and illiquid zero-volume days require explicit exclusion.",
+      "hypothesized_direction": "HYPOTHESIZED_POSITIVE",
+      "expected_horizons": [
+        "H5",
+        "H10",
+        "H21"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING"
+      ],
+      "carrier_dependence": "Carrier-independent value is tested first, then carrier interaction.",
+      "prophet_overlap": "Overlaps signal, runway, low-vol, and generic volume features; raw volume is a registered negative control.",
+      "sector_or_actor_dependency": "No actor identity; market control required.",
+      "prohibited_post_treatment_inputs": [
+        "target-session volume",
+        "same-day LHB",
+        "seal funds",
+        "future revisions"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.RAW_VOLUME_SPIKE"
+      ],
+      "falsification_condition": "Close if raw volume spike performs equally well, if the signal is simply positive-return persistence, or if destructive effectiveness does not decline before outcomes.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK"
+      ],
+      "r4_required_action": "R4 freezes robust scaling and minimum event counts and evaluates value/share anatomy separately before any composite.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.TRANS.RECLAIM_HOLD_QUALITY",
+      "name": "Completed reclaim speed, hold quality, adverse excursion, and failure history",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "candidate_state",
+      "method": "DETERMINISTIC_STATE_MACHINE",
+      "r2_disposition": "ADVANCE",
+      "definition": {
+        "setup": "A reclaim episode begins after at least five consecutive closes below the lagged 20-session moving average.",
+        "reclaim": "First close back above the lagged MA20; the MA value is frozen at the reclaim session for episode evaluation.",
+        "speed": "Sessions from the episode's lowest close to the reclaim close.",
+        "hold": "Among the next five completed sessions available by d, count closes at or above the frozen reclaim level.",
+        "mae": "Minimum low relative to the frozen reclaim level over the completed hold window.",
+        "states": {
+          "NO_COMPLETED_RECLAIM": "no episode completed by d",
+          "PENDING_RECLAIM": "reclaim occurred but the five-session hold window has not completed",
+          "FAST_HELD": "speed<=3, hold>=4, mae>-0.02",
+          "SLOW_HELD": "held criteria met but speed>3",
+          "FAILED": "two or more closes below the level or mae<=-0.02",
+          "MIXED_HISTORY": "multiple completed episodes with conflicting states"
+        },
+        "primary_output": "latest completed state plus component vector; no hidden scalar score."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV owner; incumbent Prophet components remain separate",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet",
+        "engine/china_board_rank.py",
+        "engine/coiled.py"
+      ],
+      "identity_key": "canonical listing identity",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Episodes are immutable once their five-session evaluation window is complete; source corrections create a new version linked to the prior episode.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "NOT_BUILT",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Requires at least 45 sessions; episode completion consumes only past sessions.",
+      "coverage": "Partial universe; names without completed episodes are explicit NO_COMPLETED_RECLAIM, not zero quality.",
+      "rights_and_licensing_risk": "No new rights issue.",
+      "survivorship_and_revision_risk": "High overlap with existing entry lifecycle, signal tiers, and bottom-quality machinery.",
+      "hypothesized_direction": "NONLINEAR",
+      "expected_horizons": [
+        "H5",
+        "H10",
+        "H21"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING",
+        "PRE_ONSET_ACCESS"
+      ],
+      "carrier_dependence": "Most relevant after a carrier washout; carrier is an interaction, not embedded in the state.",
+      "prophet_overlap": "Very high. R4 must test whether any component adds beyond entry, signal, runway, and bottom_quality. A null closes this route rather than changing thresholds.",
+      "sector_or_actor_dependency": "No actor identity.",
+      "prohibited_post_treatment_inputs": [
+        "hold sessions after d",
+        "target-session reclaim",
+        "future event knowledge"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.STATIC_WASHOUT_OCCUPANCY"
+      ],
+      "falsification_condition": "Close if state value vanishes after the incumbent Prophet entry/signal variables, or if only pending episodes appear predictive through future hold information.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK",
+        "PENDING_RECLAIM"
+      ],
+      "r4_required_action": "R4 treats the component vector as primary and the categorical state as a transparent summary; no fitted scalar without a later preregistration.",
+      "notes": []
+    }
+  ],
+  "secondary_features": [
+    {
+      "id": "CNLI.TRANS.COMPRESS_RELEASE",
+      "name": "Volatility/turnover compression followed by controlled pre-event release",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "candidate_state",
+      "method": "DETERMINISTIC_STATE_MACHINE",
+      "r2_disposition": "ADVANCE_AS_SECONDARY",
+      "definition": {
+        "compression_ratio": "median(range_t over d-9..d) / median(range_t over d-59..d-10)",
+        "turnover_compression": "median(value_rel_t over d-9..d)",
+        "compressed_state": "compression_ratio<=0.65 and turnover_compression<=0.80",
+        "controlled_release": "Within three sessions after a compressed state, range_t>=1.25*prior compressed median, value_rel_t>=1.50, r_t>0, clv_t>=0.50, and the session itself is not the target first-board event.",
+        "states": [
+          "NOT_COMPRESSED",
+          "COMPRESSED_INACTIVE",
+          "CONTROLLED_RELEASE",
+          "DISORDERLY_EXPANSION",
+          "TARGET_SESSION_EXCLUDED"
+        ],
+        "interpretation": "Distinguishes release from inactivity; thresholds are frozen for R4 only after coverage census."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV owner",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet",
+        "engine/coiled.py",
+        "engine/china_board_rank.py"
+      ],
+      "identity_key": "canonical listing identity",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Same daily-tape correction policy.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "NOT_BUILT",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Requires 60+ sessions.",
+      "coverage": "Partial universe; target-event exclusion requires a lawful event label in R4.",
+      "rights_and_licensing_risk": "No new rights issue.",
+      "survivorship_and_revision_risk": "Static compression is strongly overlapping with coiled/runway/entry; only transition/release is eligible.",
+      "hypothesized_direction": "NONLINEAR",
+      "expected_horizons": [
+        "H3",
+        "H5",
+        "H10"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING",
+        "PRE_ONSET_ACCESS"
+      ],
+      "carrier_dependence": "Carrier interaction expected but must beat compression and carrier alone.",
+      "prophet_overlap": "High overlap with runway, bottom_quality, entry, and signal. Secondary priority by design.",
+      "sector_or_actor_dependency": "No actor identity.",
+      "prohibited_post_treatment_inputs": [
+        "same target session legal-limit outcome",
+        "future three-session release after d",
+        "post-event volume"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.RAW_VOLUME_SPIKE",
+        "CNLI.NC.STATIC_WASHOUT_OCCUPANCY"
+      ],
+      "falsification_condition": "Close if static compression alone explains the result, if controlled release cannot be separated from the target session, or if the feature adds nothing beyond incumbent Prophet components.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK",
+        "TARGET_EVENT_LABEL_UNAVAILABLE"
+      ],
+      "r4_required_action": "R4 performs overlap and leakage audit before permitting this family into any challenger.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.TRANS.CLV_WICK_DIVERGENCE",
+      "name": "Close-location and lower-wick divergence anatomy",
+      "group": "T",
+      "mechanism_family": "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+      "evidence_family": "DAILY_TAPE_TRANSITION",
+      "role": "ablation_child",
+      "method": "DETERMINISTIC_COMPONENT_VECTOR",
+      "r2_disposition": "DEFER_ABLATE",
+      "definition": {
+        "components": [
+          "slope of clv_t on negative sessions over d-39..d",
+          "median lower_wick_t on negative sessions",
+          "fraction of lower-wick sessions whose next completed close did not break the wick low, using only sessions <=d"
+        ],
+        "primary_rule": "May be emitted as anatomy under DOWN_IMPACT_ASYMMETRY; it is not an independent evidence family or confirmation count.",
+        "independence_test": "If correlation/conditional mutual information shows no independent value after H1 tape components, retire the standalone identifier."
+      },
+      "required_inputs": {
+        "basis": "Raw nominal OHLCV through decision session d; no bar after d.",
+        "r_t": "C_t / C_{t-1} - 1",
+        "range_t": "max(H_t-L_t, |H_t-C_{t-1}|, |L_t-C_{t-1}|) / C_{t-1}",
+        "clv_t": "(2*C_t-H_t-L_t) / max(H_t-L_t, epsilon), clipped to [-1,1]",
+        "lower_wick_t": "(min(O_t,C_t)-L_t) / max(H_t-L_t, epsilon)",
+        "yuan_value_t": "C_t * V_t",
+        "value_rel_t": "yuan_value_t / median(yuan_value over prior 20 sessions)",
+        "market_excess_t": "r_t - beta_{t-1} * r_market,t, with beta estimated only from trailing observations"
+      },
+      "canonical_owner": "China raw OHLCV owner",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet"
+      ],
+      "identity_key": "canonical listing identity",
+      "clocks": {
+        "event_time": "session close of each input bar",
+        "publication_time": "exchange session close; not a separate corporate-publication clock",
+        "first_seen_time": "collector ingestion/fetched timestamp when available; legacy raw files do not preserve every historical first-seen",
+        "system_recorded_time": "future feature-generation time and immutable candidate/session projection time",
+        "correction_time": "source bar revision or corporate-action repair time; current raw store does not version all prior bytes",
+        "lawful_cutoff": "all bars with session <= decision session d; the target session must begin after d"
+      },
+      "correction_policy": "Same daily-tape correction policy.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE",
+        "PARTIAL"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Daily depth; next-session hold component only uses sessions completed by d.",
+      "coverage": "Partial universe.",
+      "rights_and_licensing_risk": "No new rights issue.",
+      "survivorship_and_revision_risk": "Likely correlated with downside-impact and reclaim families.",
+      "hypothesized_direction": "NONLINEAR",
+      "expected_horizons": [
+        "H5",
+        "H10"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET",
+        "CONTINUOUS_RERATING"
+      ],
+      "carrier_dependence": "No carrier embedded.",
+      "prophet_overlap": "Potential duplicate of bottom-quality and entry-reversal anatomy.",
+      "sector_or_actor_dependency": "No actor identity.",
+      "prohibited_post_treatment_inputs": [
+        "future wick hold after d",
+        "target-session wick"
+      ],
+      "registered_negative_controls": [
+        "CNLI.NC.UNORDERED_FAMILY_COUNT"
+      ],
+      "falsification_condition": "Reject as independent if it fails family-level ablation against DOWN_IMPACT_ASYMMETRY and RECLAIM_HOLD_QUALITY.",
+      "failure_states": [
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_NEGATIVE_SESSIONS",
+        "NO_VALID_POSITIVE_SESSIONS",
+        "CORPORATE_ACTION_SUSPECT",
+        "STALE_PRICE_STORE",
+        "PARTIAL_UNIVERSE",
+        "QUARANTINED_RULE_MISMATCH",
+        "MISSING_MARKET_BENCHMARK"
+      ],
+      "r4_required_action": "R4 may retain components for explanation but may not count them as an additional independent family.",
+      "notes": []
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "CNLI.NC.RAW_MARGIN_BALANCE",
+      "name": "Raw margin-financing balance",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Raw financing level is an actor-aggregate crowding measure, not informed bullish demand.",
+        "comparison_target": "CNLI.MARGIN.BUILTIN_SUPPLY"
+      },
+      "required_inputs": [
+        "data/tushare/margin_hist.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/tushare/margin_hist.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "PROSPECTIVE_PIT_ACCRUING"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.RAW_LHB_FLAG",
+      "name": "Any same/recent LHB event",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "House evidence finds the raw flag drains; same-session use is also leakage for the same board.",
+        "comparison_target": "actor-history/continuation research only"
+      },
+      "required_inputs": [
+        "data/china_lhb/events.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/china_lhb/events.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "PROSPECTIVE_PIT_ACCRUING"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.RAW_POSITIVE_BLOCK_PREMIUM",
+      "name": "Unsigned positive block-trade premium",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Current house evidence contradicts the collector prose that labels premium as conviction.",
+        "comparison_target": "CNLI.BLOCK.ACTOR_CONTEXT"
+      },
+      "required_inputs": [
+        "data/china_block_trades/events.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/china_block_trades/events.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "PROSPECTIVE_PIT_ACCRUING"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.RAW_VOLUME_SPIKE",
+      "name": "Raw volume or traded-value spike",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Generic attention/liquidity; tests whether sophisticated tape features merely rename volume.",
+        "comparison_target": "T-family asymmetry/transition features"
+      },
+      "required_inputs": [
+        "data/china_stocks_raw/*.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/china_stocks_raw/*.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.STATIC_WASHOUT_OCCUPANCY",
+      "name": "Static washout/coiled occupancy",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Already heavily represented in the incumbent Prophet carrier and frozen P-B2/P-B3 constructions.",
+        "comparison_target": "transition within carrier"
+      },
+      "required_inputs": [
+        "engine/coiled.py + candidate anatomy"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "engine/coiled.py + candidate anatomy"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "HISTORICAL_SESSION_PIT_CORRECTIONS_UNVERSIONED"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.STAR_ANALYST_STATUS",
+      "name": "Star-analyst label or prestige proxy",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Tests costly research effort against prestige/status without assuming star quality predicts returns.",
+        "comparison_target": "CNLI.INTEL.ANALYST_EFFORT_RESIDUAL"
+      },
+      "required_inputs": [
+        "future analyst/actor ontology"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "future analyst/actor ontology"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "COVERAGE_BLOCKED"
+      ],
+      "source_capability": [
+        "SPEC_ONLY"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.UNSEGMENTED_HOLDER_COUNT_CHANGE",
+      "name": "Raw registered-holder count change",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Registered-holder breadth is not institutional sponsorship and can carry the opposite sign.",
+        "comparison_target": "CNLI.OWN.RETAIL_INSTITUTIONAL_BREADTH_DIVERGENCE"
+      },
+      "required_inputs": [
+        "data/china_holder_counts/holder_counts.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/china_holder_counts/holder_counts.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "PROSPECTIVE_PIT_ACCRUING"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.SAME_SESSION_SEAL_ANATOMY",
+      "name": "Target-session seal funds, open count, first touch, or LHB",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "The event has already begun or completed; valid only for continuation/access targets.",
+        "comparison_target": "CNLI.SEAL.CONTINUATION_STATE"
+      },
+      "required_inputs": [
+        "data/china_zt_pool/pool.parquet"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "data/china_zt_pool/pool.parquet"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "PROHIBITED_LEAKAGE"
+      ],
+      "source_capability": [
+        "PROVEN_LIVE"
+      ],
+      "repo_feature_status": "REJECTED_BY_DESIGN",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    },
+    {
+      "id": "CNLI.NC.UNORDERED_FAMILY_COUNT",
+      "name": "Number of active confirmations without temporal grammar",
+      "group": "NC",
+      "mechanism_family": "NEGATIVE_CONTROL",
+      "evidence_family": "NEGATIVE_CONTROL",
+      "role": "negative_control",
+      "method": "DETERMINISTIC_BASELINE",
+      "r2_disposition": "REGISTERED_NEGATIVE_CONTROL",
+      "definition": {
+        "value": "Source-native raw value or boolean under the exact clock named by the source.",
+        "purpose": "Correlated evidence can manufacture confidence; sequence must beat unordered count.",
+        "comparison_target": "mechanism-specific sequence tokens"
+      },
+      "required_inputs": [
+        "future research projection"
+      ],
+      "canonical_owner": "Canonical source owner; CN-Limit registers control only",
+      "source_paths": [
+        "future research projection"
+      ],
+      "identity_key": "source-native listing/session identity",
+      "clocks": {
+        "event_time": "source-native",
+        "publication_time": "source-native",
+        "first_seen_time": "source-native",
+        "system_recorded_time": "control projection",
+        "correction_time": "source-native",
+        "lawful_cutoff": "same as candidate feature; leakage controls are always blocked"
+      },
+      "correction_policy": "Source-native; negative-control registration is immutable for the R4 preregistration.",
+      "data_readiness": [
+        "AUTHORITY_BLOCKED"
+      ],
+      "source_capability": [
+        "SPEC_ONLY"
+      ],
+      "repo_feature_status": "SPEC_ONLY",
+      "current_authority": "NONE_RESEARCH_SPEC",
+      "historical_depth": "Source-specific.",
+      "coverage": "Source-specific.",
+      "rights_and_licensing_risk": "Source-specific.",
+      "survivorship_and_revision_risk": "Source-specific.",
+      "hypothesized_direction": "NEGATIVE_CONTROL",
+      "expected_horizons": [
+        "same as paired feature"
+      ],
+      "permitted_targets": [
+        "FIRST_BOARD_ONSET"
+      ],
+      "carrier_dependence": "None embedded.",
+      "prophet_overlap": "Control for the named comparator.",
+      "sector_or_actor_dependency": "Source-specific.",
+      "prohibited_post_treatment_inputs": [
+        "Any use outside registered clock/target; post-event fields where prohibited."
+      ],
+      "registered_negative_controls": [],
+      "falsification_condition": "Control succeeds if the paired candidate does not materially outperform it under the same risk set; it may not be re-signed after results.",
+      "failure_states": [
+        "SOURCE_UNAVAILABLE",
+        "NOT_COVERED",
+        "LEAKAGE_BLOCKED"
+      ],
+      "r4_required_action": "R4 includes this control in the preregistration and does not remove it after seeing results.",
+      "notes": []
+    }
+  ],
+  "mechanism_families": [
+    "M1_FUNDAMENTAL_OR_PROFESSIONAL_DISCOVERY",
+    "M2_PUBLIC_CORPORATE_CATALYST",
+    "M3_POLICY_THEME_RELAY",
+    "M4_OWNERSHIP_CONTROL_CAPITAL_ACTION",
+    "M5_REFLEXIVE_MOMENTUM_ECOLOGY",
+    "M6_SUPPLY_SQUEEZE_SEAL_MICROSTRUCTURE"
+  ],
+  "primary_target": {
+    "id": "CNLI.TARGET.FIRST_SEALED_UP_H10",
+    "event": "first subsequent eligible traded session within H10 where close_cents == up_limit_cents",
+    "reset": "no exact sealed upper close in prior 21 eligible traded sessions inclusive of decision session",
+    "decision_cutoff": "after completed session d; no input after d",
+    "event_authority": "exact-plane vendor stk_limit and unadjusted nominal integer-cent daily"
+  },
+  "populations": [
+    "U0_FULL_AT_RISK",
+    "U1_CARRIER_MATCHED",
+    "U2_PROPHET_SCORED",
+    "U3_RAW_BUYABLE",
+    "U4_ADMITTED",
+    "U5_FEATURED"
+  ],
+  "integration_states": [
+    {
+      "id": "I0_NO_SURVIVING_FEATURE",
+      "authority": "A0",
+      "outputs": [
+        "research receipts only"
+      ]
+    },
+    {
+      "id": "I1_MEASUREMENT_SHADOW_ACCRUAL",
+      "authority": "A1_A2",
+      "outputs": [
+        "candidate anatomy",
+        "immutable predictions",
+        "exact grades",
+        "corrections"
+      ]
+    },
+    {
+      "id": "I2_ORDERING_SHADOW_ELIGIBLE",
+      "authority": "A3",
+      "outputs": [
+        "fixed-candidate off-path order",
+        "same-rule/same-cap shelf counterfactual"
+      ]
+    }
+  ],
+  "authority_ladder": [
+    {
+      "id": "A0",
+      "name": "research receipts",
+      "live_authority": false
+    },
+    {
+      "id": "A1",
+      "name": "prospective deterministic anatomy",
+      "live_authority": false
+    },
+    {
+      "id": "A2",
+      "name": "frozen predictions and exact grades",
+      "live_authority": false
+    },
+    {
+      "id": "A3",
+      "name": "off-path fixed-candidate ordering shadow",
+      "live_authority": false
+    },
+    {
+      "id": "A4",
+      "name": "qualified for future champion decision",
+      "live_authority": false
+    },
+    {
+      "id": "A5",
+      "name": "potential bounded live ordering",
+      "live_authority": "EXPLICIT_SEPARATE_DECISION_REQUIRED"
+    },
+    {
+      "id": "A6_PLUS",
+      "name": "score/gate/size/public probability",
+      "live_authority": "SEPARATE_PROGRAM_AND_GAUNTLET_REQUIRED"
+    }
+  ],
+  "canonical_owner_map": [
+    {
+      "capability": "Live China Prophet score/order/admission/lifecycle/caps",
+      "owner": "engine/china_board_rank.py",
+      "boundary": "CN-Limit may later supply one board-independent shadow input only after promotion; no direct import in I0/I1."
+    },
+    {
+      "capability": "Full Prophet-scored candidate population",
+      "owner": "engine/china_prophet_shadow.py → data/china_prophet_rank/candidates.parquet",
+      "boundary": "Extend additively after PR-0B; never fork."
+    },
+    {
+      "capability": "Selected-board and T+1 path grading",
+      "owner": "engine/china_standout_track.py",
+      "boundary": "Reuse outcome/path semantics where applicable; do not turn it into the full-market target ledger."
+    },
+    {
+      "capability": "Exact A-share prices, limits, sessions, suspensions, ST and universe",
+      "owner": "collectors/china_tushare_spine.py and eligibility owner",
+      "boundary": "CN-Limit consumes sanitized exact outputs; never edits authority gates or copies raw licensed history."
+    },
+    {
+      "capability": "Issuer/listing identity",
+      "owner": "Data OS / GMI / stock identity owner",
+      "boundary": "No ticker-only permanent keys and no CN-Limit resolver."
+    },
+    {
+      "capability": "Institutional visits, analysts, funds, ownership, corporate intelligence",
+      "owner": "China Alpha Intelligence",
+      "boundary": "CN-Limit owns no raw collector or rival composite."
+    },
+    {
+      "capability": "Company-event process and canonical event identity",
+      "owner": "Venue-neutral company-event / Earnings OS owner",
+      "boundary": "CN-Limit consumes public shadow state; no china_corporate_event.v1."
+    },
+    {
+      "capability": "Theme/sector graph and PIT membership",
+      "owner": "GMI theme graph / basket membership owner",
+      "boundary": "No current-membership backcast; candidate excluded from peer counts."
+    },
+    {
+      "capability": "Derived limit-hazard features, exact target vector, mechanism sequence, sidecar, R4/G6 evaluation",
+      "owner": "CN-Limit program",
+      "boundary": "This is CN-Limit’s proper ownership ceiling before later explicit authority decisions."
+    },
+    {
+      "capability": "Prophet Operator Lab",
+      "owner": "Prophet US/Radar program",
+      "boundary": "Fenced adjacency; possible later read-only consumer only by separate product decision."
+    }
+  ],
+  "wave_graph": [
+    {
+      "id": "R6-0",
+      "title": "Durable final-freeze landing",
+      "owner": "Fable",
+      "status": "AUTHORIZED_NEXT",
+      "depends_on": [],
+      "mission": "Land the R1–R6 canonical research, architecture freeze, registries, decisions, workstream update, handoff index, and exact next action as records-only repository state.",
+      "capability_unlocked": "A fresh Mastermind session can discover and execute the CN-Limit program without reconstructing this conversation.",
+      "scope": [
+        "research/cn_limit/** (new canonical R6 package)",
+        "agentos/workstreams/WS-CN-LIMIT-ALPHA.md",
+        "new AgentOS decisions/discoveries/handoff",
+        "program/system map only if canonical generator requires it"
+      ],
+      "non_goals": [
+        "no engine, collector, workflow, data, template, site, score, rank, gate, size, probability, or authority change"
+      ],
+      "acceptance": [
+        "byte-faithful landing or explicitly reconciled paths",
+        "AgentOS validation 0 errors",
+        "one canonical R6 index",
+        "stale-instruction sweep",
+        "no runtime diff"
+      ],
+      "production_proof": "Merged records discoverable on origin/main; no runtime production proof claimed.",
+      "stop": "Stop after merge and repository discovery proof. Do not begin a runtime wave in the same PR."
+    },
+    {
+      "id": "P0-ST",
+      "title": "2026 main-board risk-warning rule parity and replay",
+      "owner": "Fable with China microstructure owner",
+      "status": "DORMANT_UNTIL_R6_0_MERGED",
+      "depends_on": [
+        "R6-0"
+      ],
+      "mission": "Correct the effective-dated SSE/SZSE main-board risk-warning band from ±5% to ±10% beginning 2026-07-06 and re-derive every affected canonical downstream artifact with correction receipts.",
+      "capability_unlocked": "Current risk-warning event labels, breadth, failed seals, ladder counts, and microstructure packets become legally correct after the rule change.",
+      "scope": [
+        "config/cn_limit_rules.yml",
+        "engine/china_microstructure.py",
+        "parity/rule tests",
+        "owner-native re-derivation scripts/stores",
+        "downstream affected-row census and receipts"
+      ],
+      "non_goals": [
+        "no full-A gate unlock",
+        "no CN-Limit feature/model work",
+        "no tolerant-label promotion",
+        "no unrelated ST collector redesign"
+      ],
+      "acceptance": [
+        "official-source effective-date receipt",
+        "boundary tests 2026-07-05/06 both venues",
+        "exact affected-row census",
+        "old/new event comparison",
+        "bounded replay",
+        "downstream parity and correction receipts",
+        "real asia-close proof"
+      ],
+      "production_proof": "Real post-repair asia-close writes rule-correct packets; affected stores and public/internal consumers show the 10% regime; no stale 5% label remains.",
+      "stop": "Stop if owner paths or official rule interpretation conflict; return a ruling packet rather than guessing."
+    },
+    {
+      "id": "DEP-CAI",
+      "title": "China Alpha Intelligence freeze, PR-0B telemetry, rights and identity dependency closure",
+      "owner": "Fable in China Alpha Intelligence program",
+      "status": "BLOCKED_OPEN_PRS",
+      "depends_on": [
+        "R6-0"
+      ],
+      "mission": "Rebase/adjudicate PR #5953 and prerequisite PRs; merge the canonical architecture; execute PR-0B and prove full Intelligence anatomy on real candidate rows before CN-Limit touches the candidate writer.",
+      "capability_unlocked": "Canonical candidate rows preserve the incumbent v4 Intelligence anatomy required for honest G4 ablation and champion-era reconstruction.",
+      "scope": [
+        "PR #5953 chain",
+        "PR-0B commission",
+        "RIGHTS-0",
+        "PR-0D identity; P1 visits only after rights GO"
+      ],
+      "non_goals": [
+        "no CN-Limit fields yet",
+        "no rival visit tape",
+        "no rank change in PR-0B",
+        "no historical served-value fabrication"
+      ],
+      "acceptance": [
+        "mergeable rebased architecture",
+        "single-compute telemetry",
+        "ordering-invariance",
+        "real asia-close candidate rows with non-null intel anatomy and explicit unavailable reasons",
+        "workstream proof state done only after real write"
+      ],
+      "production_proof": "Newest canonical candidate rows carry the complete intel_ family and coverage/fallback anatomy under one served definition.",
+      "stop": "CN-Limit candidate-plane work remains blocked until PR-0B is PROVEN_LIVE, not merely merged."
+    },
+    {
+      "id": "DEP-EXACT",
+      "title": "Exact-plane authorization, live canary, range campaign, and completeness",
+      "owner": "Fable with exact-plane authority owner/operator",
+      "status": "BLOCKED_RIGHTS_AND_AUTHORITY",
+      "depends_on": [
+        "R6-0"
+      ],
+      "mission": "Close written authorization/trust-root governance, run licensed canaries, promote the operational range campaign only through reviewed gates, and produce a complete sanitized exact-plane manifest.",
+      "capability_unlocked": "Authority-grade full-A nominal daily, exact legal limits, sessions, suspensions, ST state, and PIT universe become available for target construction.",
+      "scope": [
+        "existing fail-closed spine and range-shard path",
+        "private authorization receipts/allowlist review",
+        "licensed canary and throughput evidence",
+        "completeness manifest"
+      ],
+      "non_goals": [
+        "no self-authored authorization",
+        "no gate constant edits without reviewed evidence",
+        "no public redistribution of licensed raw data",
+        "no CN-Limit model"
+      ],
+      "acceptance": [
+        "authorization scope valid",
+        "trust root code-reviewed",
+        "live canaries exact-schema/receipt-bound",
+        "range recovery proven",
+        "zero unknown/name-orphan/completeness failures",
+        "private store integrity"
+      ],
+      "production_proof": "A real licensed campaign completes with immutable request/artifact receipts and a sanitized manifest that closes every contract gate.",
+      "stop": "Stop on any rights ambiguity, source cap ambiguity, unknown row, identity orphan, or parity failure."
+    },
+    {
+      "id": "DEP-ID-ELIG",
+      "title": "Canonical China identity, PIT membership, and eligibility overlay",
+      "owner": "Fable with Data OS/GMI/eligibility owners",
+      "status": "BLOCKED_EXACT_AND_IDENTITY",
+      "depends_on": [
+        "DEP-EXACT",
+        "DEP-CAI"
+      ],
+      "mission": "Produce the point-in-time eligible security-session population and time-valid sector/theme edges without creating a CN-Limit identity or membership plane.",
+      "capability_unlocked": "R4 U0/U1 populations, carrier matching, sector relay, and exact denominators become survivorship- and era-honest.",
+      "scope": [
+        "canonical security/listing IDs",
+        "listing/delisting/ST/suspension/IPO/no-limit states",
+        "PIT sector/theme edges",
+        "eligible_at_risk projection"
+      ],
+      "non_goals": [
+        "no ticker-only identity",
+        "no current-membership backfill",
+        "no new company-event store",
+        "no ranking"
+      ],
+      "acceptance": [
+        "one row per canonical security-session",
+        "reason-coded exclusions/quarantines",
+        "delisted and suspended names retained lawfully",
+        "time-valid membership",
+        "cross-owner referential integrity"
+      ],
+      "production_proof": "Exact population counts and exclusion reasons reconcile to source manifests across representative eras/boards and a current real session.",
+      "stop": "Stop if an issuer/listing or membership edge cannot be resolved point-in-time; mark unavailable, never infer."
+    },
+    {
+      "id": "I1A-T1",
+      "title": "First candidate-anatomy vertical: downside-impact asymmetry",
+      "owner": "Fable builder after dependency gates",
+      "status": "BLOCKED_DEPENDENCIES",
+      "depends_on": [
+        "P0-ST",
+        "DEP-CAI",
+        "DEP-ID-ELIG"
+      ],
+      "mission": "Compute one frozen deterministic feature, project it prospectively onto canonical candidate rows, and ship a real audit consumer that measures coverage, missingness, carrier distribution, and Prophet overlap—without changing order.",
+      "capability_unlocked": "Mastermind begins accruing the first lawful transition feature on every Prophet-scored candidate under immutable clocks and definition eras.",
+      "scope": [
+        "one feature formula from R3/R4",
+        "candidate-plane nullable fields after PR-0B seam",
+        "coverage/overlap audit receipt",
+        "tests and real asia-close proof"
+      ],
+      "non_goals": [
+        "no prediction probability",
+        "no rank/order/admission",
+        "no generic feature framework without the real feature/consumer",
+        "no raw licensed copy"
+      ],
+      "acceptance": [
+        "exact formula and support rules",
+        "no bar after cutoff",
+        "single compute",
+        "null reasons not zero",
+        "candidate writer keep-first preserved",
+        "all board outputs byte-identical",
+        "real candidate rows and audit receipt"
+      ],
+      "production_proof": "One real settled asia-close writes the feature anatomy across the full canonical candidate population; audit consumer reproduces counts and source digests.",
+      "stop": "Stop on PR-0B collision, candidate digest ambiguity, stale/partial session, or inability to preserve correction receipts."
+    },
+    {
+      "id": "I1A-T2",
+      "title": "Bad-day resilience vertical",
+      "owner": "Fable or bounded builder under Fable review",
+      "status": "DORMANT",
+      "depends_on": [
+        "I1A-T1"
+      ],
+      "mission": "Add market-only bad-day resilience as a second independently useful candidate-anatomy vertical; sector channel remains unavailable until PIT membership is proven.",
+      "capability_unlocked": "Candidate rows show whether external down sessions have become less damaging.",
+      "scope": [
+        "one feature, market channel, candidate projection, audit consumer"
+      ],
+      "non_goals": [
+        "no sector backcast",
+        "no feature stacking score"
+      ],
+      "acceptance": [
+        "pre-t bad-session threshold",
+        "trailing beta only",
+        "market benchmark completeness",
+        "same invariance/proof as I1A-T1"
+      ],
+      "production_proof": "Real nightly rows plus audit receipt.",
+      "stop": "Unavailable benchmark or insufficient bad sessions returns explicit NOT_COVERED."
+    },
+    {
+      "id": "I1A-T3",
+      "title": "Constructive-volume asymmetry vertical",
+      "owner": "Bounded builder under Fable review",
+      "status": "DORMANT",
+      "depends_on": [
+        "I1A-T1"
+      ],
+      "mission": "Separate constructive from destructive use of volume and beat the raw-volume negative control.",
+      "capability_unlocked": "Candidate rows distinguish selective demand from generic volume spikes.",
+      "scope": [
+        "one feature, raw-volume control, candidate projection, audit consumer"
+      ],
+      "non_goals": [
+        "no hidden-actor label",
+        "no generic volume bullishness"
+      ],
+      "acceptance": [
+        "session classification fixed before outcomes",
+        "support floors",
+        "raw-volume control emitted beside candidate",
+        "invariance/proof"
+      ],
+      "production_proof": "Real nightly rows plus control-comparison audit.",
+      "stop": "If the construction collapses to raw volume under frozen anatomy, retain only the control and close the candidate."
+    },
+    {
+      "id": "I1A-T4",
+      "title": "Reclaim-and-hold quality vertical",
+      "owner": "Fable due state-machine and pivot overlap complexity",
+      "status": "DORMANT",
+      "depends_on": [
+        "I1A-T1"
+      ],
+      "mission": "Project the frozen component vector and interpretable state without fitting a scalar or duplicating Prophet entry logic.",
+      "capability_unlocked": "Candidate rows reveal reclaim speed, hold quality, adverse excursion, and failure frequency.",
+      "scope": [
+        "component vector, state, pivot provenance, overlap audit"
+      ],
+      "non_goals": [
+        "no fitted score",
+        "no post-cutoff hold",
+        "no copied entry status"
+      ],
+      "acceptance": [
+        "pivot known by decision session",
+        "pending states explicit",
+        "Prophet-overlap ablation fields",
+        "invariance/proof"
+      ],
+      "production_proof": "Real nightly rows and reference-case state receipts.",
+      "stop": "If pivot or completed-reclaim identity cannot be stable point-in-time, do not emit a state."
+    },
+    {
+      "id": "I1B-MEASURE",
+      "title": "Exact target plus first immutable prediction/grade sidecar vertical",
+      "owner": "Fable",
+      "status": "BLOCKED_EXACT_AND_FEATURE_ACCRUAL",
+      "depends_on": [
+        "DEP-ID-ELIG",
+        "I1A-T1"
+      ],
+      "mission": "Ship the referential sidecar with one real feature, the R4 H10 exact target, access dispositions, predictions written before outcomes, and correction-safe grades—never an empty generic foundation.",
+      "capability_unlocked": "Mastermind can perform an authority-free, exact, prospective test of one CN-Limit feature against canonical candidate and outcome identities.",
+      "scope": [
+        "risk-set observation/prediction/grade/correction logical parts",
+        "monthly immutable partitions",
+        "one feature and target",
+        "real audit consumer"
+      ],
+      "non_goals": [
+        "no second candidate population",
+        "no score/rank/gate",
+        "no imported withdrawn rows",
+        "no historical seed from adjusted plane"
+      ],
+      "acceptance": [
+        "exact schemas",
+        "candidate and board digest binding",
+        "keep-first contradiction abort",
+        "no-fill visible",
+        "calendar and outcome correction branches",
+        "nightly sole advancer",
+        "real end-to-end row maturity"
+      ],
+      "production_proof": "Real candidate input → pre-outcome prediction row → later exact grade/correction receipt → audit report; all ids/digests reconcile.",
+      "stop": "Stop if a full-market target is unavailable or the sidecar starts enumerating candidates independently."
+    },
+    {
+      "id": "M2-R4-BATTERY",
+      "title": "Frozen historical/rolling-origin R4 active-family battery",
+      "owner": "Fable research orchestrator; Grok fixtures/controls",
+      "status": "BLOCKED_DATA_AND_PREREG",
+      "depends_on": [
+        "I1B-MEASURE",
+        "I1A-T2",
+        "I1A-T3",
+        "I1A-T4"
+      ],
+      "mission": "Freeze formulas, populations, baselines, controls, nulls, folds, metrics and sample floors before opening exact outcomes; then run once and issue advance/kill/accrue verdicts.",
+      "capability_unlocked": "The program knows which, if any, transition family adds exact first-board hazard beyond carrier and Prophet under valid nulls.",
+      "scope": [
+        "four primary features",
+        "secondary compression only after overlap audit",
+        "five/six baselines",
+        "nine controls",
+        "U0-U5",
+        "R4 models/nulls"
+      ],
+      "non_goals": [
+        "no interaction rescue of failed main effects",
+        "no threshold shopping",
+        "no featured-only headline",
+        "no production score"
+      ],
+      "acceptance": [
+        "pre-outcome hash freeze",
+        "mutation-detecting leakage battery",
+        "Holm/BH rules",
+        "rolling folds",
+        "commercial access metrics",
+        "complete ore ledger"
+      ],
+      "production_proof": "Reproducible exact-plane run and independent adversarial review; result receipts byte-stable under identical inputs.",
+      "stop": "A NULL or kill verdict is complete. Do not reopen except through a new preregistered construction."
+    },
+    {
+      "id": "I1C-G6",
+      "title": "Prospective G6 measurement shadow",
+      "owner": "Fable",
+      "status": "BLOCKED_SURVIVING_FEATURE",
+      "depends_on": [
+        "M2-R4-BATTERY"
+      ],
+      "mission": "Accrue exactly one preregistered challenger prospectively until the R4 floors are met; evaluate without model shopping or live authority.",
+      "capability_unlocked": "A surviving feature earns or fails `ELIGIBLE_FOR_SHADOW_IMPLEMENTATION_COMMISSION` on real future evidence.",
+      "scope": [
+        "one definition era",
+        "≥120 candidate sessions",
+        "≥2 regimes",
+        "≥60 exact first-board events",
+        "access/calibration/coverage monitoring"
+      ],
+      "non_goals": [
+        "no partial peeks",
+        "no retuning",
+        "no public probability"
+      ],
+      "acceptance": [
+        "immutable rows before outcomes",
+        "era and correction integrity",
+        "complete candidate coverage",
+        "predeclared verdict logic"
+      ],
+      "production_proof": "Real prospective dossier with all floors and source receipts; independent review reproduces verdict.",
+      "stop": "If floors are not met, state ACCRUING; if integrity breaks, quarantine era; never extrapolate."
+    },
+    {
+      "id": "I2A-ORDER",
+      "title": "Fixed-candidate off-path ordering shadow",
+      "owner": "Fable",
+      "status": "BLOCKED_G6",
+      "depends_on": [
+        "I1C-G6"
+      ],
+      "mission": "On a frozen U3 raw-buyable set, compute a coverage-atomic challenger order and replay the same Prophet admission rule and caps for counterfactual shelf allocation.",
+      "capability_unlocked": "Mastermind can observe whether limit-hazard information improves scarce shelf allocation without changing production.",
+      "scope": [
+        "paired candidate references",
+        "champion/challenger ranks",
+        "same-rule/same-cap shelf",
+        "comparison session/candidate records"
+      ],
+      "non_goals": [
+        "no live rank",
+        "no changed candidate set",
+        "no admission rule change",
+        "no per-row fallback mixing"
+      ],
+      "acceptance": [
+        "champion discovery at runtime",
+        "effective-era key",
+        "board/candidate digest binding",
+        "coverage atomicity",
+        "production bytes invariant",
+        "counterfactual outcomes share one grader"
+      ],
+      "production_proof": "Real nightly shadow comparisons with canonical board hash; deleting the challenger leaves all production artifacts byte-identical.",
+      "stop": "Any population, grade, or authority divergence invalidates paired-row treatment and requires Sol ruling."
+    },
+    {
+      "id": "A5-DECISION",
+      "title": "Potential bounded live ordering decision",
+      "owner": "Sol/Chairman with Fable evidence packet",
+      "status": "NOT_AUTHORIZED",
+      "depends_on": [
+        "I2A-ORDER"
+      ],
+      "mission": "Decide—not implement by default—whether one challenger earns bounded ordering authority inside unchanged Prophet admission.",
+      "capability_unlocked": "Only if explicitly approved: live order may use a proven limit-hazard input while Prophet retains admission and execution authority.",
+      "scope": [
+        "decision record and, only after approval, separate build commission"
+      ],
+      "non_goals": [
+        "no automatic promotion",
+        "no score/gate/size/public probability"
+      ],
+      "acceptance": [
+        "prospective champion/challenger evidence",
+        "access and capacity noninferiority",
+        "drift/rollback design",
+        "Chairman/Sol approval"
+      ],
+      "production_proof": "Separate later wave; not defined as complete in R6.",
+      "stop": "R6 grants no A5 authority."
+    }
+  ],
+  "dormant_mechanism_branches": [
+    {
+      "id": "D-PRO-DISCOVERY",
+      "families": [
+        "VISIT_ABNORMAL_PUBLIC",
+        "VISIT_FIRST_AFTER_DROUGHT",
+        "VISIT_COST_ACTOR_QUALITY",
+        "ANALYST_EFFORT_RESIDUAL"
+      ],
+      "owner_dependency": "China Alpha Intelligence rights, visit/analyst tapes, actor ontology, identity",
+      "unlock": "Prospective public/first-seen clocks and minimum coverage/drought history",
+      "rule": "Never use occurrence date as known-at. Public usability must be measured."
+    },
+    {
+      "id": "D-CATALYST",
+      "families": [
+        "PUBLIC_SHADOW_STATE",
+        "SHADOW_X_TRANSITION"
+      ],
+      "owner_dependency": "Canonical company-event process and identity",
+      "unlock": "Public process/milestone state with correction-safe timestamps",
+      "rule": "Shadow ends at first public resolution; outcome text cannot define the prior state."
+    },
+    {
+      "id": "D-SECTOR",
+      "families": [
+        "RELAY_STATE",
+        "LEADER_TRANSFERABILITY",
+        "LEADER_DRAIN_ACCESS",
+        "RELAY_ACCELERATION"
+      ],
+      "owner_dependency": "PIT theme graph/membership and exact event denominator",
+      "unlock": "Time-valid peer edges, pre-outcome leader definition, exact peer events",
+      "rule": "Candidate excluded from peer counts; leader authorization and liquidity drain separate."
+    },
+    {
+      "id": "D-SUPPLY",
+      "families": [
+        "BUYBACK_EXECUTION_FLOAT_IMPACT",
+        "UNLOCK_PRESSURE",
+        "VACUUM_ACCESS_DUAL",
+        "PLEDGE_SUPPORT_BREAKDOWN_STATE",
+        "BLOCK_ACTOR_CONTEXT"
+      ],
+      "owner_dependency": "Owner-native versioned supply/actor planes and free-float history",
+      "unlock": "Execution, actor, purpose, first-seen, and correction anatomy",
+      "rule": "Event hazard and access/capacity separate; plan is not execution; pledge is dual risk."
+    },
+    {
+      "id": "D-INTRADAY",
+      "families": [
+        "AUCTION_DEMAND_QUALITY",
+        "SEAL_CONTINUATION_STATE"
+      ],
+      "owner_dependency": "Licensed auction/minute/order data and P-C charter",
+      "unlock": "Exact pre-open/intraday timestamps and depth",
+      "rule": "Seal anatomy never predicts the same first-board target; continuation/access only."
+    }
+  ],
+  "fable_immediate_authorization": "R6-0",
+  "grok_commissions": [
+    {
+      "id": "G0-DEPENDENCY-CENSUS",
+      "status": "AUTHORIZED_AFTER_R6_0",
+      "mission": "Refresh the current-state ledger for CN-Limit, China Alpha Intelligence, exact-plane, identity, ST parity, and relevant open PRs under a fixed schema.",
+      "why": "Fable should consume a verified dependency table rather than spend orchestration tokens rediscovering moving PR state.",
+      "inputs": [
+        "R6 freeze",
+        "GitHub main and open PRs",
+        "AgentOS records"
+      ],
+      "outputs": [
+        "one table of owner/path/status/mergeability/head SHA/next gate",
+        "diff from R6 pin",
+        "collision list"
+      ],
+      "non_goals": [
+        "no merge decision",
+        "no architecture change",
+        "no code"
+      ],
+      "tests": [
+        "every claimed PR/file has a resolvable URL/SHA",
+        "no stale-state claim without timestamp",
+        "owner paths deduped"
+      ],
+      "stop": "Stop on ambiguous supersession and flag for Fable."
+    },
+    {
+      "id": "G1-ST-AFFECTED-ROW-CENSUS",
+      "status": "DORMANT_P0_ST",
+      "mission": "Under Fable’s frozen P0 repair branch, enumerate all main-board risk-warning rows and downstream event/aggregate records affected from 2026-07-06 onward.",
+      "why": "The repair needs a bounded replay and correction receipt, not an unscoped data rewrite.",
+      "inputs": [
+        "official rule dates",
+        "pre/post repair engine outputs",
+        "ST history/snapshot",
+        "event/tape stores"
+      ],
+      "outputs": [
+        "affected key list by store",
+        "before/after event class counts",
+        "downstream dependency matrix",
+        "sanitized replay receipt"
+      ],
+      "non_goals": [
+        "no rule interpretation",
+        "no engine patch",
+        "no alpha inference"
+      ],
+      "tests": [
+        "both venues",
+        "boundary dates",
+        "ordinary and risk-warning controls",
+        "no pre-2026-07-06 drift"
+      ],
+      "stop": "Any unexplained row outside the expected key set blocks replay."
+    },
+    {
+      "id": "G2-SOURCE-CLOCK-COVERAGE",
+      "status": "AUTHORIZED_AFTER_OWNER_PLANE_LANDS",
+      "mission": "Produce a per-source coverage/clock/correction census for every R3 feature family under the frozen ontology.",
+      "why": "Unavailable and late-public evidence must remain unavailable rather than silently becoming historical predictors.",
+      "inputs": [
+        "owner schemas and stores",
+        "R3 source matrix",
+        "R6 owner map"
+      ],
+      "outputs": [
+        "coverage start by source/universe",
+        "occurrence/publication/first-seen/system/correction fields",
+        "rights and identity status",
+        "minimum viable study date"
+      ],
+      "non_goals": [
+        "no feature sign",
+        "no imputation",
+        "no current-snapshot backfill"
+      ],
+      "tests": [
+        "random source-row clock audit",
+        "late-first-seen trap cases",
+        "correction examples",
+        "unknown reason counts"
+      ],
+      "stop": "If a clock is absent, mark source `CLOCK_BLOCKED` and stop that family."
+    },
+    {
+      "id": "G3-T-FEATURE-ORACLE-FIXTURES",
+      "status": "DORMANT_I1A",
+      "mission": "Build independent synthetic fixtures and a non-production oracle for the four primary T features exactly as frozen in R3/R4.",
+      "why": "Fable needs mutation-detecting tests independent of the production implementation.",
+      "inputs": [
+        "R3 machine registry",
+        "R4 support/cutoff laws"
+      ],
+      "outputs": [
+        "minimal positive/negative/insufficient/stale/correction fixtures",
+        "oracle outputs",
+        "mutation matrix"
+      ],
+      "non_goals": [
+        "no threshold changes",
+        "no real outcomes",
+        "no production import"
+      ],
+      "tests": [
+        "future bar mutation must fail",
+        "target-session mutation must not change predictor",
+        "measured zero versus missing",
+        "support floor boundaries"
+      ],
+      "stop": "Any formula ambiguity returns to Sol/Fable; Grok does not choose."
+    },
+    {
+      "id": "G4-LEAKAGE-AND-NULL-MUTATION-BANK",
+      "status": "DORMANT_M2",
+      "mission": "Implement synthetic attack cases for target-session leakage, future-publication leakage, current-membership backcast, wrong ST regime, suspension-as-miss, invalid persistent-state shifts, and reversed sequence.",
+      "why": "A green evaluation harness that cannot detect these known incidents is not evidence.",
+      "inputs": [
+        "R2 falsifiers",
+        "R4 null architecture",
+        "P0 rule cases"
+      ],
+      "outputs": [
+        "mutation fixtures",
+        "expected failing checks",
+        "anti-vacuity assertions"
+      ],
+      "non_goals": [
+        "no statistical verdict",
+        "no real-data result access"
+      ],
+      "tests": [
+        "each mutation independently reds at least one named check",
+        "clean baseline green"
+      ],
+      "stop": "A mutation that passes requires harness repair before outcomes open."
+    },
+    {
+      "id": "G5-MECHANISM-CASEBOOK",
+      "status": "DORMANT_SOURCE_READY",
+      "mission": "Collect a frozen-schema casebook of professional discovery, public catalyst, sector relay, supply withdrawal, pledge support/breakdown, and reflexive episodes using only public point-in-time evidence.",
+      "why": "Mechanism labels and failure states need concrete lawful examples without turning anecdotes into weights.",
+      "inputs": [
+        "official filings/exchange publications",
+        "owner-native clocks",
+        "R2 inclusion rules"
+      ],
+      "outputs": [
+        "case rows with exact source receipts and alternative explanations",
+        "no effect estimates"
+      ],
+      "non_goals": [
+        "no cherry-picking winners only",
+        "no intent accusation",
+        "no model"
+      ],
+      "tests": [
+        "include matched non-events/failed sequences",
+        "every step’s public clock",
+        "no post-outcome text in precursor columns"
+      ],
+      "stop": "Any case lacking a lawful public clock is excluded, not repaired."
+    },
+    {
+      "id": "G6-PRODUCTION-RECEIPT-AUDIT",
+      "status": "DORMANT_POST_MERGE",
+      "mission": "After a Fable wave merges, independently verify the exact real production receipt, data rows, definition hashes, missingness, and invariance claims.",
+      "why": "Merge is BUILT_NOT_PROVEN; Fable needs a cheap independent proof packet before closing the wave.",
+      "inputs": [
+        "merged SHA",
+        "real nightly run id",
+        "canonical stores",
+        "PR acceptance contract"
+      ],
+      "outputs": [
+        "pass/fail receipt",
+        "sample row evidence",
+        "invariance digest",
+        "unmet claims"
+      ],
+      "non_goals": [
+        "no repair",
+        "no status inflation"
+      ],
+      "tests": [
+        "real—not fixture—rows",
+        "correct lane/session",
+        "row counts and hashes",
+        "downstream consumer"
+      ],
+      "stop": "If proof is unavailable, return BUILT_NOT_PROVEN."
+    }
+  ],
+  "next_action": "Execute records-only R6-0 durable landing; then separately commission P0-ST, DEP-CAI, and DEP-EXACT. No CN-Limit runtime feature wave yet.",
+  "stop_conditions": [
+    "rights or official rule ambiguous",
+    "lawful known-at clock unavailable",
+    "identity or PIT membership unresolved",
+    "candidate-plane PR-0B collision",
+    "post-cutoff or target-session leakage required",
+    "duplicate canonical plane would be created",
+    "negative control or baseline explains feature",
+    "valid nulls contradict headline",
+    "sample/regime/prospective floors unmet",
+    "access deterioration erases value",
+    "shadow changes production bytes",
+    "intent label inferred from price alone"
+  ],
+  "generated_artifacts": [
+    {
+      "path": "/mnt/data/CN_LIMIT_R6_FINAL_ARCHITECTURE_FREEZE_2026-08-19.md",
+      "sha256": "9115d1c995e1406cf09a1e8fc8b581f0ee755b0728b735168e8d3b436b1c5048"
+    },
+    {
+      "path": "/mnt/data/CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md",
+      "sha256": "1a06753f4bc86e3ef8a10c4ac153e22dd2df574b012b3766b506e3bf9d914e40"
+    },
+    {
+      "path": "/mnt/data/CN_LIMIT_R6_GROK_BOUNDED_COMMISSIONS_2026-08-19.md",
+      "sha256": "f4abcef1606c3414459bd41ac59b7c22b3273d069aabbd64e02316c4954c14bf"
+    }
+  ]
+}

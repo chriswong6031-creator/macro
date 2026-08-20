@@ -37,7 +37,7 @@
     "first_known_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Canonical first Git-publication time of this evidence_id. Frozen; never moved backward."
+      "description": "Verified-retention clock of the first observation of this evidence_id whose generation later became canonical. Frozen at first canonical publication; never moved backward. This is not the Git commit timestamp of publication."
     },
     "source_system": {"type": "string", "enum": ["sec_edgar", "issuer", "market_data", "other"]},
     "source_id": {"type": "string", "minLength": 1},

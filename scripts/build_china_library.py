@@ -4256,6 +4256,11 @@ def main(alpha: dict | None = None) -> dict | None:
                     as_of,
                     lane=_lane,
                     board_lanes=_board_lanes,
+                    # Same map already computed once above and fed to
+                    # enrich_and_score_rows — single-compute invariant (masterplan
+                    # §13 PR-0B): persists the full intel_* anatomy without a
+                    # second interest_score() evaluation.
+                    intel_by=_intel_by_ticker,
                 )
                 log.info("china Prophet shadow ledger: %d total candidate rows", _shadow_n)
             except Exception as _shadow_e:  # noqa: BLE001 — research log never suppresses board

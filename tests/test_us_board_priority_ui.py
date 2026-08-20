@@ -388,7 +388,10 @@ def test_no_blocked_or_ran_card_renders_above_the_first_live_card():
 def test_legacy_artifact_keeps_the_lane_partition_and_grows_no_priority_surface():
     """Fail-soft proof: no stage on the rows -> today's board, unchanged."""
     html = _legacy_html()
-    assert '<div class="nb-lane-hd">' in html            # legacy headings still render
+    # legacy headings still render. `data-lane` was added 2026-08-20 as the
+    # hydration join key (tests/test_us_board_hydration_merge.py) — additive,
+    # same class, same label; the class is what this test is about.
+    assert '<div class="nb-lane-hd" data-lane="' in html
     assert '<div class="nb-stage-hd sg-' not in html     # …and nothing new appears
     assert '<div class="pbf-bar" id="us-stage-filter"' not in html
     assert '<div class="pbt">' not in html

@@ -465,3 +465,242 @@ def test_missing_definition_is_refused_not_relabelled_v2(shadow_store):
         board_lanes=_lane_doc({"featured": [row]}),
     ) == 0
     assert not shadow._store_path().exists()
+
+
+# ── PR-0B: full intel_interest anatomy persisted to the candidate plane ───────
+#
+# engine/china_intel_interest.py's interest_score() is the live cn_prophet_v4
+# ordering authority. The candidate plane previously recorded none of its
+# anatomy, so R4/L-track diagnosis of *why* the champion ordered a name the way
+# it did was unrecoverable after the fact. These tests pin: (1) the full record
+# — including the components china_board_rank._attach_intel does NOT hoist to
+# its compact ``row["intel"]`` — round-trips through the store with correct
+# null-safety for refused/absent names; (2) the persisted values are exactly
+# what the board attached, proving the plane and the board share one computed
+# record rather than re-scoring; (3) adding this persistence changes no
+# ordering/board output; (4) appending against an old-schema fixture (no
+# intel_* columns) still succeeds via the store's existing schema-union path.
+
+def _measured_intel(
+    score: float = 62.5,
+    *,
+    drivers: list[str] | None = None,
+    falsifiers: list[str] | None = None,
+) -> dict:
+    return {
+        "definition": "cn_intel_interest_v1",
+        "basis": "measured",
+        "score": score,
+        "signal_core": 0.7,
+        "signal_source": "altdata",
+        "edge_remaining": 0.6,
+        "edge_components": 2,
+        "gap": 1,
+        "lead_up": 1,
+        "gap_mult": 1.05,
+        "falsifier_penalty": 1.0 if not falsifiers else 0.85,
+        "falsifiers": falsifiers or [],
+        "drivers": drivers if drivers is not None else ["altdata convergence", "no board overhang"],
+        "excludes": ["prophet_score", "prophet_rank", "hub_opportunity_score"],
+    }
+
+
+def _fallback_intel(reason: str = "no_desk_evidence") -> dict:
+    return {
+        "definition": "cn_intel_interest_v1",
+        "basis": "fallback_v3",
+        "score": None,
+        "unavailable_reason": reason,
+        "drivers": [],
+        "excludes": ["prophet_score", "prophet_rank", "hub_opportunity_score"],
+    }
+
+
+def test_intel_anatomy_persists_with_null_safety_for_refused_names(shadow_store):
+    measured = _candidate("600090.SS")
+    fallback = _candidate("600091.SS")
+    absent = _candidate("600092.SS")  # not present in intel_by at all
+    rows = [measured, fallback, absent]
+    intel_by = {
+        "600090.SS": _measured_intel(),
+        "600091.SS": _fallback_intel("no_edge_evidence"),
+    }
+
+    assert shadow.append_candidates(
+        rows,
+        "2026-07-29",
+        lane="asia",
+        board_lanes=_lane_doc({"featured": rows}),
+        intel_by=intel_by,
+    ) == 3
+
+    stored = pd.read_parquet(shadow._store_path()).set_index("ticker")
+
+    m = stored.loc["600090.SS"]
+    assert m["intel_score"] == pytest.approx(62.5)
+    assert m["intel_basis"] == "measured"
+    assert m["intel_definition"] == "cn_intel_interest_v1"
+    assert m["intel_signal_core"] == pytest.approx(0.7)
+    assert m["intel_signal_source"] == "altdata"
+    assert m["intel_edge_remaining"] == pytest.approx(0.6)
+    assert m["intel_edge_components"] == pytest.approx(2)
+    assert m["intel_gap"] == pytest.approx(1)
+    assert m["intel_lead_up"] == pytest.approx(1)
+    assert m["intel_gap_mult"] == pytest.approx(1.05)
+    assert m["intel_falsifier_penalty"] == pytest.approx(1.0)
+    assert pd.isna(m["intel_falsifiers"]) or m["intel_falsifiers"] is None
+    assert m["intel_drivers"] == "altdata convergence|no board overhang"
+    assert m["intel_excludes"] == "prophet_score|prophet_rank|hub_opportunity_score"
+    assert pd.isna(m["intel_unavailable_reason"]) or m["intel_unavailable_reason"] is None
+
+    f = stored.loc["600091.SS"]
+    assert pd.isna(f["intel_score"])
+    assert f["intel_basis"] == "fallback_v3"
+    assert f["intel_unavailable_reason"] == "no_edge_evidence"
+
+    a = stored.loc["600092.SS"]
+    assert pd.isna(a["intel_score"])
+    assert pd.isna(a["intel_basis"]) or a["intel_basis"] is None
+    assert a["intel_unavailable_reason"] == "no_intel_record"
+
+
+def test_intel_falsifiers_pipe_joined_like_gate_reasons(shadow_store):
+    row = _candidate("600093.SS")
+    intel_by = {
+        "600093.SS": _measured_intel(
+            falsifiers=["price rolling over (20d drawdown + RS falling)", "weak altdata convergence"],
+        ),
+    }
+    assert shadow.append_candidates(
+        [row], "2026-07-29", lane="asia",
+        board_lanes=_lane_doc({"featured": [row]}), intel_by=intel_by,
+    ) == 1
+    stored = pd.read_parquet(shadow._store_path()).iloc[0]
+    assert stored["intel_falsifiers"] == (
+        "price rolling over (20d drawdown + RS falling)|weak altdata convergence"
+    )
+    assert stored["intel_falsifier_penalty"] == pytest.approx(0.85)
+
+
+def test_intel_plane_persists_the_same_record_the_board_attached(shadow_store):
+    """Board-attach vs plane-persist must share values for the same input.
+
+    ``intel_by`` is one map, computed once, fed to BOTH
+    ``china_board_rank.enrich_and_score_rows`` (which stamps the compact,
+    top-level ``intel_interest_score``/``intel_interest_basis`` the live board
+    orders by) and ``shadow.append_candidates`` (which now persists the full
+    anatomy). This structurally demonstrates the single-compute invariant: no
+    second ``interest_score()`` evaluation happens for the plane write.
+    """
+    ticker = "600094.SS"
+    source = _candidate(ticker)
+    intel_by = {ticker: _measured_intel(score=41.75)}
+
+    scored = shadow.china_board_rank.enrich_and_score_rows(
+        [source],
+        verdict_by={ticker: source["signal"]},
+        profile_by={ticker: source["conviction"]},
+        entry_by={ticker: source["entry_signal"]},
+        micro_by={ticker: source["microstructure"]},
+        liquidity_by={ticker: source["liquidity"]},
+        board_asof="2026-07-29",
+        intel_by=intel_by,
+    )
+    assert scored[0]["intel_interest_score"] == pytest.approx(41.75)
+    assert scored[0]["intel_interest_basis"] == "measured"
+
+    lanes = shadow.china_board_rank.partition_board_rows(scored)
+    assert shadow.append_candidates(
+        scored, "2026-07-29", lane="asia", board_lanes=lanes, intel_by=intel_by,
+    ) == 1
+
+    stored = pd.read_parquet(shadow._store_path()).iloc[0]
+    assert stored["intel_score"] == pytest.approx(scored[0]["intel_interest_score"])
+    assert stored["intel_basis"] == scored[0]["intel_interest_basis"]
+
+
+def test_intel_persistence_leaves_ordering_and_board_output_untouched(shadow_store):
+    """Adding intel_by persistence must not perturb enrich_and_score_rows' output.
+
+    Snapshots the FULL scored-row population (order, scores, ranks, the compact
+    board ``intel`` attach) before it is handed to the shadow writer, then
+    re-snapshots after ``append_candidates`` runs (with and without intel_by).
+    Byte-identical proves the new persistence path is read-only with respect to
+    the board's own ranked output.
+    """
+    import copy
+    import json
+
+    rows = [_candidate(f"60010{i}.SS", score=float(90 - i)) for i in range(3)]
+    intel_by = {r["ticker"]: _measured_intel(score=float(10 + i)) for i, r in enumerate(rows)}
+
+    scored = shadow.china_board_rank.enrich_and_score_rows(
+        [dict(r) for r in rows],
+        verdict_by={r["ticker"]: r["signal"] for r in rows},
+        profile_by={r["ticker"]: r["conviction"] for r in rows},
+        entry_by={r["ticker"]: r["entry_signal"] for r in rows},
+        micro_by={r["ticker"]: r["microstructure"] for r in rows},
+        liquidity_by={r["ticker"]: r["liquidity"] for r in rows},
+        board_asof="2026-07-29",
+        intel_by=intel_by,
+    )
+    before = json.dumps(
+        [{k: v for k, v in r.items() if not k.startswith("_")} for r in scored],
+        sort_keys=True, default=str,
+    )
+    lanes = shadow.china_board_rank.partition_board_rows(copy.deepcopy(scored))
+
+    assert shadow.append_candidates(
+        scored, "2026-07-29", lane="asia", board_lanes=lanes,
+    ) == 3
+    after_no_intel = json.dumps(
+        [{k: v for k, v in r.items() if not k.startswith("_")} for r in scored],
+        sort_keys=True, default=str,
+    )
+    assert after_no_intel == before
+
+    assert shadow.append_candidates(
+        scored, "2026-07-30", lane="asia", board_lanes=lanes, intel_by=intel_by,
+    ) == 6
+    after_with_intel = json.dumps(
+        [{k: v for k, v in r.items() if not k.startswith("_")} for r in scored],
+        sort_keys=True, default=str,
+    )
+    assert after_with_intel == before
+
+
+def test_intel_columns_append_onto_a_pre_pr0b_fixture_parquet(shadow_store):
+    """Schema-union: an existing store without any intel_* columns must accept
+    a new append that carries them, per the store's existing keep-both-columns
+    contract (see test_schema_union_preserves_legacy_columns)."""
+    path = shadow._store_path()
+    path.parent.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "stamp_date": "2026-07-28",
+                "ticker": "600095.SS",
+                "board_definition": "cn_prophet_v2",
+                "prophet_score": 50.0,
+            }
+        ]
+    ).to_parquet(path, index=False)
+
+    row = _candidate("600096.SS")
+    intel_by = {"600096.SS": _measured_intel(score=77.0)}
+    assert shadow.append_candidates(
+        [row],
+        "2026-07-29",
+        lane="asia",
+        board_lanes=_lane_doc({"featured": [row]}),
+        intel_by=intel_by,
+    ) == 2
+
+    stored = pd.read_parquet(path).set_index("ticker")
+    assert "intel_score" in stored.columns
+    old = stored.loc["600095.SS"]
+    assert pd.isna(old["intel_score"])
+    assert pd.isna(old["intel_basis"]) or old["intel_basis"] is None
+    new = stored.loc["600096.SS"]
+    assert new["intel_score"] == pytest.approx(77.0)
+    assert new["intel_basis"] == "measured"

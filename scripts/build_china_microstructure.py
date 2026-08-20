@@ -179,7 +179,15 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         if df_recent.empty:
             continue
 
-        # But pass full df for context (prev_close for first bar)
+        # NOTE: this passes the full df (not df_recent) so the IPO-window lookup can
+        # resolve the name's own first store bar correctly, but it does NOT give the
+        # first scored bar a real prev_close: _detect_limit_events applies its
+        # start_date filter to the frame BEFORE computing the prev_close shift, so the
+        # first bar on/after lookback_start still gets prev_close=NaN and is silently
+        # skipped from scoring (same mechanism the P0-ST replay script had to buffer
+        # around — see research/cn_limit/p0_st_band_replay.py). Out of scope for this
+        # wave to change; noted here so the comment stops claiming context this call
+        # does not actually provide.
         events, ipo_excl, _ = _detect_limit_events(
             ticker=ticker,
             df=df,
@@ -288,8 +296,16 @@ def build_increment(target_date: Optional[str] = None) -> dict:
             "st_flags_current_only": True,
             "st_flags_note": (
                 "ST/\\*ST membership history in data/china_st covers 2026-07-06 forward only. "
-                "Historical sealed_down counts on ST names may be understated before this date."
+                "Historical sealed_down counts on ST names may be understated before this date. "
+                "From 2026-07-06 the main-board risk-warning band is ±10% (2026 trading-rules "
+                "revision), identical to ordinary main-board names."
             ),
+            "st_band_regime": {
+                "main_st_width_pct": 10.0,
+                "effective_from": "2026-07-06",
+                "prior_width_pct": 5.0,
+                "receipt": "research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.md",
+            },
             "backfill_version": "W1-2026-07-08",
         },
     }

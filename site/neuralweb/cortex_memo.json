@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-19T17:58:11+00:00",
+  "as_of": "2026-08-19T21:28:38+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -34,52 +34,76 @@
     "model_used": "claude-sonnet-4-6",
     "provider_attempts": [
       {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
         "provider": "oauth",
         "model": "claude-opus-4-8",
         "attempted": true,
         "ok": false,
         "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeCYKbjMNRDzhHKpTQMbe'}"
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeCpir5KAmbF6VmGi5poV'}"
       },
       {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYKqCUUMEtjZ3k7zjQt'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYM8hxhoA8FvmuFpGAG'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYRkAH7tGtk59JbS4ES'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeCYfDctHpR1FPGcmbbgP'}"
-      },
-      {
-        "provider": "oauth",
+        "provider": "codex",
         "model": "claude-sonnet-4-6",
         "attempted": true,
         "ok": false,
-        "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeCYfH5zW69QNzgtNoYjv'}"
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
+      },
+      {
+        "provider": "codex",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       }
     ],
     "tool_call_batches": 0,

@@ -202,6 +202,25 @@ improvise the lane.
   return-for-adjudication loop they were opened for (comment-audited for review
   freezes first; none present).
 - #5953: disposition comment only (§5.3). Not armed, not blocked by this seat.
-- The G0 census content reaches origin/main only when #5955/#5943 merge; until
-  then this packet's citations to their content reference the PR heads
-  (#5955 @ `5938ac1a5414`; #5943 @ `fd0e8b33e103` as audited — AMENDED 2026-08-19: #5943 head is now `60df496462a2`, a single reference-hygiene commit made on Sol's post-revision instruction via the China FABLE-00 seat. Verified delta: 29+/27− canonicity/status lines across 9 files — US G0 pointers re-aimed at canonical #5955 + this packet, stale "#5822 OPEN"/"#5953 owns US G0" rows corrected, GQ7 marked RESOLVED per the §4 DEC. No CN-G0 finding, contract, identity conclusion, or owner routing changed; this adjudication stands unchanged over the new head).
+- FINAL PIN (post-merge reconciliation, 2026-08-19): both census PRs are
+  MERGED and the citations now resolve on `origin/main`. #5955 merged at its
+  final head `0840f57683f1` — all six `research/earnings_intelligence/g0/`
+  files byte-identical to the audited object `5938ac1a5414`. #5943 merged at
+  final head `96fd029665bd` — the branch was rebuilt over post-merge main
+  before landing, and its seven `censuses/CN-G0/` files plus
+  `DSC:CN-POST-EVENT-TAPES-SHARE-NO-EVENT-ID` are byte-identical to the
+  audited-plus-hygiene object `60df496462a2` (itself `fd0e8b33e103` as
+  audited plus one reference-hygiene commit made on Sol's post-revision
+  instruction via the China FABLE-00 seat: 29+/27− canonicity/status lines —
+  US G0 pointers re-aimed at canonical #5955 + this packet, stale
+  "#5822 OPEN"/"#5953 owns US G0" rows corrected, GQ7 marked RESOLVED per
+  the §4 DEC). The only #5943 paths that differ on main are the two SHARED
+  Earnings-owner agentos files (`WS-EARNINGS-INTELLIGENCE-OS.md` and the
+  date-keyed handoff), advanced afterward by that owner's own E2 sessions —
+  outside CN-G0 authority; and main retains THIS seat's version of the
+  shared `ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19.md` handoff rather than
+  the per-lane copies carried by #5947/#5949/#5950 (each of whose own
+  research artifacts + DSCs landed byte-identical to their adjudicated
+  objects). No CN-G0 finding, contract, identity conclusion, or owner
+  routing changed anywhere in that delta; this adjudication stands unchanged
+  over the merged tree.

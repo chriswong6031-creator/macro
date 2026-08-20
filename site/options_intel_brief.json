@@ -2,7 +2,7 @@
   "as_of_session": "2026-08-12",
   "board_reason": null,
   "board_state": "STALE_SOURCE",
-  "built_at_utc": "2026-08-18T14:06:31.424083+00:00",
+  "built_at_utc": "2026-08-20T08:43:11.462082+00:00",
   "config_hash": "975ea7db731fc5dcd04f2e63cd29dcff973931a17a4d768c9232fa4aa66123ac",
   "contract_identity_exclusions": 0,
   "directional_qualified_count": 0,
@@ -53,14 +53,14 @@
       "asof": "2026-08-12",
       "logical_source": "earnings",
       "path": "data/earnings/earnings.parquet",
-      "sha256": "3c4f5a5939b56734c5fe251369f355b0e1f6caafbfe3622d7be40e97b4501d64",
+      "sha256": "aef6c976383e4deffc91fbc73719ab2118f0d262dc41422a11f786f650976911",
       "state": "ok"
     },
     {
-      "asof": "2026-08-17",
+      "asof": "2026-08-20",
       "logical_source": "prophet_index",
       "path": "site/prophet/index.json",
-      "sha256": "2f36c117b1ef7ee936004af6d212ae19873dfca908ffe6ee1a0b0de98af01a8b",
+      "sha256": "93d2f65e6cdf24d2169e51b3737cdb540b2fdb24efbe45f97a7dc5ea620b5380",
       "state": "ok"
     },
     {
@@ -94,7 +94,7 @@
   "opportunities_overflow": 0,
   "pending_reason": "OI_NOT_YET_SETTLED",
   "pending_session": "2026-08-13",
-  "receipt_id": "d2b01d4f03febf728fb006008b0d661b8dfc5a97bcf2d2fe37b73a685bb65a36",
+  "receipt_id": "442f3344c38b427edf8e2ad4351357938b90bbd00871b9a5e14bf2268afde124",
   "risk_board_overflow": 0,
   "risk_warnings": [],
   "schema": "options.intel_brief/v1",
@@ -521,7 +521,7 @@
     "chains_session_D": "2026-08-13",
     "chains_session_S": "2026-08-12",
     "events_loaded": true,
-    "prophet_asof": "2026-08-17",
+    "prophet_asof": "2026-08-20",
     "signing_gate_asof": "2026-06-21",
     "summaries_max_session": "2026-08-13"
   }

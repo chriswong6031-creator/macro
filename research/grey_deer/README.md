@@ -31,11 +31,18 @@ AgentOS records: `agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md`, eight
 
 The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 research conduct under 2–3.
 
-## Current next action (updated 2026-08-19, GD-0A)
+## Current next action (updated 2026-08-19, Sol acceptance after GD-1)
 
-- **GD-1A** (Grok): prereg + source-clock census under `research/grey_deer/gd1/` — hash-pinned before any outcome access. Commissioned; runs in parallel.
-- **GD-2 / GD-4A archaeology** (bounded read-only scouts): settled-envelope producer/consumer seam, CN/HK forward-ledger freeze reproduction, live publisher/VPS seam. Findings reconcile against the freeze before any build.
-- **GD-2 build** starts only after GD-0A is merged and Fable reconciles archaeology.
+- **GD-1 closed:** GD-1A DONE; GD-1B ACCEPTED_NO_PROMOTION — no construction cleared the
+  preregistered design-era gate; zero GD-5 promotions (`DEC:GD1-ACCEPTED-NO-PROMOTION`).
+  Dossier: `gd1/`.
+- **GD-2** (settled envelope + three-answer hero, descriptive-only birth authority) and
+  **GD-4A** (CN/HK forward-ledger repair, per-step lane arm, prospective resume) are
+  commissioned as separate PRs — packets under `commissions/`.
+- **GD-1C** (research-only GD-5 prerequisite): design-era leadership_crack.v1
+  reconstruction under a fresh prereg — packet under `commissions/`, Grok lane.
+- **Gates:** GD-3 waits for GD-2 production acceptance. GD-5A/B/C wait for GD-1C clearing
+  the promotion gate.
 
 ## Do not start (explicit)
 

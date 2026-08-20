@@ -1,10 +1,10 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-08-18T07:45:31.433939+00:00",
-  "state_asof": "2026-08-17",
+  "generated_at": "2026-08-20T09:00:23.076920+00:00",
+  "state_asof": "2026-08-19",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow lens is display_only with no validated forward edge: every sector has directional=false, cohesion gates read low/non-cohering, and concentration ranks are descriptive only. Regime snap is dormant (snap=false, VIX 15.2 at 13.9th percentile) with fear rebuilding but no relief trigger, so no actionable directional lean is defensible.",
+  "regime_context": "The flow detector is display_only with no validated forward edge (rank-IC ~0) and no sector carries directional=true; the regime snap is dormant with VIX 14.9 at the 9th percentile and no relief snap. Nothing here clears the guardrail for a forward sector or VIX lean, including the only overlapping panel avoid (Health Care), which is a single-name MRNA artifact on a non-cohering tape.",
   "theses": [],
   "source_verdicts": {
     "flow": "display_only",
@@ -12,7 +12,7 @@
   },
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-08-18",
+    "as_of": "2026-08-20",
     "scored_total": 43,
     "open": 16,
     "unscored_soft": 0,
@@ -72,7 +72,7 @@
         "dir_accuracy": 0.694
       }
     },
-    "calibration_note": "43 scored, hit-rate 0.93 (directional accuracy 0.721). Chance alone would land a hit-rate near 0.8905 (directional accuracy near 0.4889) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+    "calibration_note": "43 scored, hit-rate 0.93 (directional accuracy 0.721). Chance alone would land a hit-rate near 0.8916 (directional accuracy near 0.489) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
     "recent": [
       {
         "id": "2026-07-20-3",
@@ -165,15 +165,15 @@
         "check_by": "2026-08-10"
       }
     ],
-    "calibration_note_zh": "\u5df2\u8bc4\u5206 43 \u6761\uff0c\u547d\u4e2d\u7387 0.93\uff08\u65b9\u5411\u51c6\u786e\u7387 0.721\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8905 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4889\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
+    "calibration_note_zh": "\u5df2\u8bc4\u5206 43 \u6761\uff0c\u547d\u4e2d\u7387 0.93\uff08\u65b9\u5411\u51c6\u786e\u7387 0.721\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8916 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.489\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
   },
   "passport": {
     "state": "measured",
     "earned": true,
-    "label_en": "measured \u00b7 n=40",
-    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=40",
-    "n": 40,
-    "hit_rate": 0.25,
+    "label_en": "measured \u00b7 n=43",
+    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=43",
+    "n": 43,
+    "hit_rate": 0.2791,
     "detail": "",
     "last_validated": null,
     "expected_max_age_days": null,
@@ -184,123 +184,118 @@
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, CHECKABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "No durable directional lean is defensible from this state: the flow lens is display-only with rank-IC ~0, every sector has directional=false, and the relief snap is dormant/coincident. At most, the high-concentration sectors are a watch list, not a directional call.",
+      "stance": "From this display-only lens there is no durable directional lean: VIX is 14.9 (9th pctile) and regime_snap is dormant with no relief snap, the weakest setting for the flow signal. The clearest flow-concentration flags are Energy, Health Care, and Information Technology, but none has directional=true or cohesion support.",
       "candidates": [
         {
-          "subject": "Information Technology",
+          "subject": "Energy",
           "lean": "none",
-          "rationale": "High rs_pctile (0.984) and confirmed stage, but directional=false with low cohesion; no forward edge.",
-          "strength": "weak"
+          "rationale": "Highest read_quality 0.75 plus rs_pctile 0.869 and confirmed stage support flow concentration, but cohesion is only 0.364 and directional=false.",
+          "strength": "moderate"
         },
         {
           "subject": "Health Care",
           "lean": "none",
-          "rationale": "High rs_pctile (0.964) but cooling with negative flow_score; no durable directional read in calm VIX.",
-          "strength": "weak"
+          "rationale": "rs_pctile 1.0 and confirmed stage are notable, but cohesion 0.156 and Moderna's +200% 20d dominate a single-name move.",
+          "strength": "moderate"
         },
         {
-          "subject": "Energy",
+          "subject": "Information Technology",
           "lean": "none",
-          "rationale": "High rs_pctile (0.857) and broad leadership, but cohesion_gate false and directional=false; concentration only.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Materials",
-          "lean": "none",
-          "rationale": "Only emerging sector with positive concentration, but directional=false and low cohesion; not a validated theme.",
+          "rationale": "Elevated rs_pctile 0.833 contrasts with very low cohesion 0.157 and directional=false, so no durable leg is supported.",
           "strength": "weak"
         },
         {
           "subject": "VIX",
           "lean": "none",
-          "rationale": "Regime_snap is dormant with snap=false and low VIX percentile; no relief snap or fear extreme to fade.",
+          "rationale": "VIX at 14.9 (9th pctile) with regime_snap dormant and no relief snap gives no fade-fear or fear-call leg.",
           "strength": "weak"
         }
       ],
-      "key_risk": "If the flow lens's overall_verdict flips to validated_directional or VIX becomes elevated with a stress-conditional signal, the current no-lean read would be broken and a durable lean would need reassessment."
+      "key_risk": "A move into the high-VIX stress regime where this flow concentration historically had a positive conditional edge could turn these descriptive flags into a durable directional read."
     },
     "skeptic": {
-      "stance": "Flow lens is display-only with no forward edge, so all apparent high-RS sector leadership is low-cohesion and non-directional; I read it as already-priced-in dispersion, not durable themes. I would fade high-RS sectors with failing cohesion gates and treat the low VIX fear build as no snap.",
+      "stance": "Flow is display-only with no validated forward edge; the apparent high-RS sector leaders are non-cohering or single-name artifacts, so I would fade their sector-level read and not chase.",
       "candidates": [
-        {
-          "subject": "Information Technology",
-          "lean": "avoid",
-          "rationale": "RS pctile .984 is extreme but cohesion is 0.153 non-cohering, leaders show negative alpha, and directional confidence is low.",
-          "strength": "moderate"
-        },
         {
           "subject": "Health Care",
           "lean": "avoid",
-          "rationale": "RS pctile .964 but stage cooling, cohesion 0.153 non-cohering with negative change, and leader alpha is mixed/negative.",
+          "rationale": "rs_pctile=1.0 is a Moderna-driven single-name artifact (+200% MRNA, 8% share) with sector cohesion only 0.156 and falling, not a broad theme.",
           "strength": "moderate"
         },
         {
           "subject": "Energy",
-          "lean": "avoid",
-          "rationale": "Confirmed stage and 0.857 RS, but cohesion 0.373 fails the low tier gate, leadership alpha is mixed, and directional is false.",
+          "lean": "underweight",
+          "rationale": "High relative strength (0.869 sector / 0.933 equal-weight) coincides with falling cohesion and mixed leader alpha, making it already-priced-in/mean-reverting rather than predictive.",
           "strength": "moderate"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "avoid",
+          "rationale": "rs_pctile 0.833 rests on a low-cohesion (0.157) tape with a single-name RNG spike, so it is a narrow artifact, not a sector theme.",
+          "strength": "weak"
         },
         {
           "subject": "Financials",
           "lean": "avoid",
-          "rationale": "Cooling with RS 0.73 and cohesion 0.253; high-return leaders like MKTX carry negative alpha, so it is a narrow artifact not a sector theme.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Materials",
-          "lean": "avoid",
-          "rationale": "Emerging flow score is concentration-kind with cohesion only 0.196 and non-cohering, so the apparent emergence is not a broad durable signal.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
-          "lean": "fade-fear",
-          "rationale": "Regime snap is dormant, snap false; fear_built 0.368 with VIX 15.2 at 13.9th pctile is not a confirmed stress build.",
+          "rationale": "Cooling stage and negative flow_score are not directional (directional=false) and cohesion is non-cohering, so it is noise/mean-reversion, not a bearish edge.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A VIX spike that flips the cohesion gates to true cohering and produces broad, coordinated leadership would invalidate the fade/avoid read."
+      "key_risk": "A fast VIX spike that activates the lens's stress-conditional dispersion signal would invalidate this calm-regime fade stance."
     },
     "base_rate": {
-      "stance": "Flow is display-only with no validated forward edge, so this lens cannot support sector overweights or underweights. I can only describe concentrations: Information Technology and Health Care show the highest RS percentiles, while Materials is the sole emerging sector; none clear the cohesion or directional gates.",
+      "stance": "This detector set is display-only: flow has no validated forward edge (rank-IC ~0) and the regime snap is dormant/coincident, so no sector read here supports a directional call. The only permissible view is descriptive: Health Care, Energy, and Information Technology show high RS percentiles but remain directional=false with low cohesion gates.",
       "candidates": [
-        {
-          "subject": "Information Technology",
-          "lean": "none",
-          "rationale": "Highest sector RS percentile (0.984) but cohesion is low and not cohering, so no action from this lens.",
-          "strength": "weak"
-        },
         {
           "subject": "Health Care",
           "lean": "none",
-          "rationale": "High RS percentile (0.964) but cooling and low cohesion, with directional gate false.",
+          "rationale": "Highest RS percentile and MRNA-driven leadership, but cohesion is low and directional confidence is low.",
           "strength": "weak"
         },
         {
           "subject": "Energy",
           "lean": "none",
-          "rationale": "Confirmed stage and elevated RS, but cohesion gate is low and directional is false.",
+          "rationale": "Elevated RS percentile with broad leadership, but the cohesion gate is low and no directional edge is validated.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "none",
+          "rationale": "High RS percentile but weak cohesion and display-only flow status prevent a forward lean.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "Treating high RS percentile or emerging/cooling flow scores as a forward return signal when the flow lens has no validated unbiased edge and the regime snap is dormant."
+    },
+    "structural": {
+      "stance": "Display-only structural read: the dominant cluster (Consumer Discretionary, Real Estate, Financials, Health Care) is broad but low-absorption, and the highest co-movement is the Industrials\u2013Materials pair at 0.78 with low sector cohesion. No genuine theme spread leads; Health Care's high RS is a single-name MRNA mirage.",
+      "candidates": [
+        {
+          "subject": "Health Care",
+          "lean": "avoid",
+          "rationale": "RS pctile 1.0 is driven by MRNA's +200% 20d; sector cohesion is low and falling, so it is not broad co-movement.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Top pair with Materials but sector cohesion is only 0.165 and leadership is idiosyncratic; no genuine theme lead.",
           "strength": "weak"
         },
         {
           "subject": "Materials",
           "lean": "none",
-          "rationale": "Emerging flow concentration, but cohesion remains low and not cohering.",
+          "rationale": "High pairwise correlation with Industrials but low cohesion and miner-heavy leadership; not a confirmed spread.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Energy",
+          "lean": "none",
+          "rationale": "High RS and broad leadership but not in the cross-group cluster; cohesion_gate false, so no structural edge.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A regime shift to a confirmed stress/fear snap could activate the stress-conditional dispersion/rotation effect, but without a validated forward edge this lens would still lack a reliable directional signal."
-    },
-    "structural": {
-      "stance": "Sector-level leadership is broad and low-HHI, so no high-HHI single-name mirage is present; the only elevated co-movement is the Industrials\u2013Materials pair (0.78), with Materials as concentration leader but no directional confirmation. The dominant Consumer Discretionary/Real Estate/Financials/Health Care cluster is broad and leaderless.",
-      "candidates": [
-        {
-          "subject": "Materials",
-          "lean": "none",
-          "rationale": "Top-pair leg with Industrials and emerging concentration; HHI 0.021/n 75 broad, but cohesion low and directional false.",
-          "strength": "weak"
-        }
-      ]
+      "key_risk": "If the dominant cluster's absorption rises and multiple low-cohesion sectors flip to cohering=true together, the no-genuine-theme read would break."
     }
   }
 }

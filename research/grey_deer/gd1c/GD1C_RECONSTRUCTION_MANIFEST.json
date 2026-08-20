@@ -1,0 +1,872 @@
+{
+  "analysis_head": "37ca71ecdd486854fedc8229c9751c8deab7d508",
+  "analysis_script_sha256": "c8272948d9a7c5c3a236d3d785bf6932a90191f4417779152d4f59db8c549bed",
+  "authority": "No live market, Prophet, Portfolio, alert, rank, sizing, gate, or execution authority.",
+  "base_commit_sha": "cdf99c6203b6bd964d7fb5564452289ecfde90e8",
+  "definition_schema": "leadership_crack.v1",
+  "design_window": [
+    "2016-01-04",
+    "2026-07-31"
+  ],
+  "fold_receipts": [
+    {
+      "held_out_era": "E1_2016_2019",
+      "hypothesis": "GD-H1",
+      "test_episode_n": 13,
+      "test_raw_fire_n": 23,
+      "thresholds": {
+        "d_dgs10_3d_q80": 0.08000000000000007,
+        "d_dgs30_3d_q80": 0.08000000000000007
+      },
+      "train_episode_n": 48,
+      "train_raw_fire_n": 137
+    },
+    {
+      "held_out_era": "E2_2020_2022",
+      "hypothesis": "GD-H1",
+      "test_episode_n": 26,
+      "test_raw_fire_n": 114,
+      "thresholds": {
+        "d_dgs10_3d_q80": 0.0600000000000005,
+        "d_dgs30_3d_q80": 0.06000000000000005
+      },
+      "train_episode_n": 40,
+      "train_raw_fire_n": 100
+    },
+    {
+      "held_out_era": "E3_2023_2026H1",
+      "hypothesis": "GD-H1",
+      "test_episode_n": 25,
+      "test_raw_fire_n": 67,
+      "thresholds": {
+        "d_dgs10_3d_q80": 0.06999999999999984,
+        "d_dgs30_3d_q80": 0.06000000000000005
+      },
+      "train_episode_n": 39,
+      "train_raw_fire_n": 143
+    },
+    {
+      "held_out_era": "E1_2016_2019",
+      "hypothesis": "GD-H2",
+      "test_episode_n": 18,
+      "test_raw_fire_n": 40,
+      "thresholds": {
+        "drv_spy_5d_q80": 1.7224197369192936e-05
+      },
+      "train_episode_n": 57,
+      "train_raw_fire_n": 158
+    },
+    {
+      "held_out_era": "E2_2020_2022",
+      "hypothesis": "GD-H2",
+      "test_episode_n": 30,
+      "test_raw_fire_n": 125,
+      "thresholds": {
+        "drv_spy_5d_q80": 9.36392954982712e-06
+      },
+      "train_episode_n": 55,
+      "train_raw_fire_n": 124
+    },
+    {
+      "held_out_era": "E3_2023_2026H1",
+      "hypothesis": "GD-H2",
+      "test_episode_n": 27,
+      "test_raw_fire_n": 55,
+      "thresholds": {
+        "drv_spy_5d_q80": 1.3223057088437995e-05
+      },
+      "train_episode_n": 53,
+      "train_raw_fire_n": 162
+    }
+  ],
+  "generated_at": "2026-08-20T04:52:19.042281+00:00",
+  "input_inventories": [
+    {
+      "available_at_basis": "no first-known per-member membership receipt",
+      "bytes": 305773,
+      "path": "data/baskets/membership.json",
+      "sha256": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6"
+    },
+    {
+      "bytes": 243483,
+      "columns": [
+        "close_price",
+        "close",
+        "volume"
+      ],
+      "first_index": "1993-01-29 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/yahoo/SPY.parquet",
+      "rows": 8446,
+      "sha256": "8b2624a966a36e3a4660b24a25714795e54f658a8f7d39d56f2949d7aabe152a"
+    },
+    {
+      "bytes": 171222,
+      "columns": [
+        "us10y"
+      ],
+      "first_index": "1962-01-02 00:00:00",
+      "last_index": "2026-08-18 00:00:00",
+      "path": "data/fred/DGS10.parquet",
+      "rows": 16142,
+      "sha256": "7dd2925101a944efdb0532761ce592ebab3f3916659e557be149635c91e4deea"
+    },
+    {
+      "bytes": 132809,
+      "columns": [
+        "us30y"
+      ],
+      "first_index": "1977-02-15 00:00:00",
+      "last_index": "2026-08-18 00:00:00",
+      "path": "data/fred/DGS30.parquet",
+      "rows": 12372,
+      "sha256": "f1979b9b9321250bbfe19424c93e863efab065e3023561ca4d17a8ad2333040d"
+    },
+    {
+      "bytes": 108021,
+      "columns": [
+        "vix_close"
+      ],
+      "first_index": "1990-01-02 00:00:00",
+      "last_index": "2026-08-18 00:00:00",
+      "path": "data/fred/VIXCLS.parquet",
+      "rows": 9254,
+      "sha256": "0cd1b88121b0672ddee8fa3b43902b4ed21f11ab8ed495aeeef1141812518a7e"
+    },
+    {
+      "bytes": 165220,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/NVDA.parquet",
+      "rows": 3176,
+      "sha256": "94f2be0bef1663a4ac2cdcda82be9ee9c6f740664d054aaaa37d3e9e5a8019ea"
+    },
+    {
+      "bytes": 163910,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/AVGO.parquet",
+      "rows": 3176,
+      "sha256": "49f2180595a7f8b26d8fd809faa290b0c9180154d087d64088cedc1f2fec93f8"
+    },
+    {
+      "bytes": 129690,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/AMD.parquet",
+      "rows": 3176,
+      "sha256": "15414cb315d12b3c8f17a10e422d369da6d806f0c3d14a49fc563c3fb3b91104"
+    },
+    {
+      "bytes": 162969,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/QCOM.parquet",
+      "rows": 3176,
+      "sha256": "9daadad64cd8e626c4011896930e22b40bbf8c13e00b42f72444b25e2281ae84"
+    },
+    {
+      "bytes": 162141,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/MRVL.parquet",
+      "rows": 3176,
+      "sha256": "23e96e1481328d7d2a9e6b1f9356f644f3a66ef31896a46220807515b08c5155"
+    },
+    {
+      "bytes": 159009,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/MPWR.parquet",
+      "rows": 3176,
+      "sha256": "ef40225b95753bf747f12cfea6657f6a92cdbec33c5442290669d9ffc3a35119"
+    },
+    {
+      "bytes": 132710,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-06-06 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ANET.parquet",
+      "rows": 3069,
+      "sha256": "54b57a294424be61aa140cd0ea019e077a349a1052f94b122153b625c5c062a2"
+    },
+    {
+      "bytes": 121193,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/SMCI.parquet",
+      "rows": 3176,
+      "sha256": "003b6ed08a0e2267f82600cdb45165b8546596091971cdadae496b82f962948a"
+    },
+    {
+      "bytes": 34514,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2023-09-14 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ARM.parquet",
+      "rows": 735,
+      "sha256": "d34e9425183a1db9bb2e82d12f51ea3adcecbee1726747db0bc14f2f3b94a80b"
+    },
+    {
+      "bytes": 29651,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2024-03-20 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ALAB.parquet",
+      "rows": 606,
+      "sha256": "c76a45a29402fe9196e2bbdc95eec27518029c1e430f40229fdfd2c5e76a9c5b"
+    },
+    {
+      "bytes": 50444,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2022-01-27 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/CRDO.parquet",
+      "rows": 1144,
+      "sha256": "87e24d3810223ee0a8939e4106e0f147434d5b0c4c7070a62f1f5db8586e16a8"
+    },
+    {
+      "bytes": 6993,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2026-05-14 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/CBRS.parquet",
+      "rows": 67,
+      "sha256": "b9a9e84ebba393513ece1baeaceb3278ddd6fbce0e5a7273bddffb516ff51891"
+    },
+    {
+      "bytes": 162501,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/MU.parquet",
+      "rows": 3176,
+      "sha256": "485af784aba21446aa51f08a05d86144a0473f35e755aec3f6605107de46e8fa"
+    },
+    {
+      "bytes": 97183,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2018-08-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/VRT.parquet",
+      "rows": 2022,
+      "sha256": "6ef3803b4a147384039b63e02f2703c062878bad0a0ddba4e015b6b6926bbfba"
+    },
+    {
+      "bytes": 130521,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2016-08-17 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/DELL.parquet",
+      "rows": 2515,
+      "sha256": "bd8b79fe54586e45ff37c88afff485e0ed99754c786e19828352132bb29812b6"
+    },
+    {
+      "bytes": 122656,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/CIEN.parquet",
+      "rows": 3176,
+      "sha256": "65f2b74853ef6bf34badd04515c73ebcb01440f45e8c6479b5378d3461a9969d"
+    },
+    {
+      "bytes": 112958,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2015-07-23 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/LITE.parquet",
+      "rows": 2785,
+      "sha256": "c72cc0ca6fccf70ad3e1c51df3a32be65502c98548673fefa2d7e775279ed06e"
+    },
+    {
+      "bytes": 123813,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/COHR.parquet",
+      "rows": 3176,
+      "sha256": "1fbd99629bf7ee4cb6ad31beb29b281ef9ca5c070ec9ecaa7c45b8abcf0d62ac"
+    },
+    {
+      "bytes": 23464,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2024-10-21 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/NBIS.parquet",
+      "rows": 458,
+      "sha256": "ba7bdf5956b12beac537e9e6b524b8348c1a4f4c3099ede8455e46993f5f14cc"
+    },
+    {
+      "bytes": 18928,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2025-03-28 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/CRWV.parquet",
+      "rows": 350,
+      "sha256": "d127e4ba4537848b589d1d53f9f195782563dc0b9308c96a5332c2ba651a8de1"
+    },
+    {
+      "bytes": 162720,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/AMAT.parquet",
+      "rows": 3176,
+      "sha256": "0caf9e4d6a5ed3e812b318c18487f2b0c2ef3f17ef37e0c8b866e5f9f0ebb2ff"
+    },
+    {
+      "bytes": 163397,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/LRCX.parquet",
+      "rows": 3176,
+      "sha256": "6f2bc7247878cb767c5265ba2295a02d8af849eebaa422c91c28546fc73e5992"
+    },
+    {
+      "bytes": 162315,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/KLAC.parquet",
+      "rows": 3176,
+      "sha256": "8d600d682220f767036dd0f31681ad2068024ed0fb7477704941cdea49a2aa57"
+    },
+    {
+      "bytes": 161268,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/TER.parquet",
+      "rows": 3176,
+      "sha256": "90d6aeb9403a9208cb9eacc8d9bae713bd72aea280c1a980476cd822a8eac56c"
+    },
+    {
+      "bytes": 161649,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/APH.parquet",
+      "rows": 3176,
+      "sha256": "598464943384236e1b90a32814bb6f685fabcd5a38516a7c48feea50120cf0eb"
+    },
+    {
+      "bytes": 161757,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/GLW.parquet",
+      "rows": 3176,
+      "sha256": "9d13a5df9801d7325cf48e5e5ca3391e8982e69083e5a5666144475a50e033dd"
+    },
+    {
+      "bytes": 162125,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/WDC.parquet",
+      "rows": 3176,
+      "sha256": "0f31a16f0c44fab42c9caa1c82e16eb0f5aeb4835aa23cbb51b4e57fc83ca54b"
+    },
+    {
+      "bytes": 162089,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/STX.parquet",
+      "rows": 3176,
+      "sha256": "2a6aee4da48083eac39725b3b45ab69d7e04cd5ff37f5aad04a4f9768341dcf1"
+    },
+    {
+      "bytes": 20251,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2025-02-13 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/SNDK.parquet",
+      "rows": 380,
+      "sha256": "429a909132343ac750573e21d97ea305245956addcaf8efdf68b684eaf51a3be"
+    },
+    {
+      "bytes": 158057,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ENTG.parquet",
+      "rows": 3176,
+      "sha256": "b9b4bf7d4696e3952eeec34c1ac422469d030d8679f2b2bff84e6c8839cda8d7"
+    },
+    {
+      "bytes": 159464,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/MKSI.parquet",
+      "rows": 3176,
+      "sha256": "673b67f2fe764d8db9f417b6c4c7316b9a534585721840707f7fb15c6a3edbf8"
+    },
+    {
+      "bytes": 74568,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2019-10-28 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ONTO.parquet",
+      "rows": 1711,
+      "sha256": "4847746e8b3bf1a6cf4f6b2a7decb484bb5635cb549d1f353e1f372d4381ad8e"
+    },
+    {
+      "bytes": 117439,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ACLS.parquet",
+      "rows": 3176,
+      "sha256": "e332081243b3f153e8da64c1ae85e1c8811bced3a399d70ecb82298923f7745a"
+    },
+    {
+      "bytes": 146185,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/COHU.parquet",
+      "rows": 3176,
+      "sha256": "dfdd1b569a0506db98b25f707f7fb0011c233cb51519068e8229f33f3630defe"
+    },
+    {
+      "bytes": 114288,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/FORM.parquet",
+      "rows": 3176,
+      "sha256": "6973ba6dc081e9e6696bd78eabd88b0e1d351d3fcd719d9841895a5cce9a552b"
+    },
+    {
+      "bytes": 93480,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2016-12-09 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/ICHR.parquet",
+      "rows": 2435,
+      "sha256": "4ab37453eaa6fa9fb3fe25d2adf2198872dbce13a8e51987c986d3edb3ab59b6"
+    },
+    {
+      "bytes": 157036,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/AEIS.parquet",
+      "rows": 3176,
+      "sha256": "f7849da2d2665f8ffc79ece9a988c02e54c445863dd766fe5e148aa1e0654b52"
+    },
+    {
+      "bytes": 118563,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/UCTT.parquet",
+      "rows": 3176,
+      "sha256": "e68400e2e7cc4ac8dc72d977c7ddb9eb5b82e22d122f8df85405f273cfcff728"
+    },
+    {
+      "bytes": 118851,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/NVMI.parquet",
+      "rows": 3176,
+      "sha256": "d98d2b24856f7b2f1cd82ebde6fe67f7c6e71e40bf94167c6e98ee179fea223e"
+    },
+    {
+      "bytes": 150114,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/CAMT.parquet",
+      "rows": 3176,
+      "sha256": "4aefc6b5f3413feb7b3f9795cf7dd808630d634b1426a0faea260fb7621cbc8b"
+    },
+    {
+      "bytes": 157088,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/KLIC.parquet",
+      "rows": 3176,
+      "sha256": "e5ad49af8434ad731a348caf42d5ddf61cc59b9906be0d4fd16702b25833f5c2"
+    },
+    {
+      "bytes": 108660,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_index": "2014-01-02 00:00:00",
+      "last_index": "2026-08-19 00:00:00",
+      "path": "data/baskets/ohlcv/VECO.parquet",
+      "rows": 3176,
+      "sha256": "5aa444ead78b3f7eb2559d9b93f5917c1f2ec9d572be5f31de6773dd5796fb98"
+    }
+  ],
+  "leadership_crack_blob_sha": "cb0a3f468ac1bf2267fb6d0ee57d378b293d3c0b",
+  "membership_earliest_tracked_receipt": "29721d07084c0332e1c2b5387a32addc1863c395|2026-06-14T03:50:29-07:00|feat(baskets): thematic baskets page (FactorWatch Baskets replication, free data)",
+  "membership_git_history": [
+    "6d04e9b3100af7afaf834ceb2c9c307a48808f0b|2026-08-14T10:30:13-07:00|fix(baskets): gold_miners wrong-issuer repair \u2014 GOLD out, Barrick in under B (#5632)",
+    "89b2c56b344a20c9939ee4008fb9ec4868e5e49f|2026-08-07T04:34:01-07:00|feat(universe): the silver + PGM complexes join the graded US population, with honest curation stamps (W1-C) (#4931)",
+    "0d1cb2289a0f5f6adef00fae984735249d4560ff|2026-08-05T20:51:02-07:00|baskets: BLD is delisted, not stale \u2014 census honors the exit ledger (#4613 follow-up) (#4616)",
+    "a10f126b4dc5f9ac944e886cf42b0a91aa32eab1|2026-08-05T03:26:40-07:00|W-H silver sleeve + W-F reclaim-veto decision packet (research; no behaviour change) (#4607)",
+    "a1b404b290f7de8d4b0aa53bee605b8cbde4961c|2026-07-30T19:21:05-07:00|Add precious-metals cycle timing across theme dashboards (#4116)",
+    "9a31b78ad0fe06dd57e78ffce126689c25e508c4|2026-07-05T01:47:06-07:00|Simplify basket page copy",
+    "9d2f843324e8b9a38669ddb17f6e7a579cd771ba|2026-07-03T03:17:25-07:00|baskets: found Crypto & Digital Rails (Second Act \u00a710.4) + crypto/neocloud beta re-audit (#1024)",
+    "1c82e306d791c7ffabe490de42ba206f09479aa6|2026-06-27T21:14:47-07:00|sectors: top-20 SPDR holdings + 11 equal-weight US sector baskets (#568)",
+    "55c230679c659edb4f93f13f627b935dbdfdd0c2|2026-06-22T00:52:18-07:00|feat(baskets): coherence-audit additions \u2014 seed history + quant-gate candidates, add 36 across 13 baskets",
+    "639875554516be5423d5c372bf7abf8036606b35|2026-06-21T20:29:20-07:00|feat(us-stocks): de-cram standout cards + unify sector/basket action board + validated basket\u2192stock de-risk",
+    "a8d0cf4cf181d16126c204faf209c2f289cc53cb|2026-06-19T14:40:21-07:00|feat(baskets): 6 web-vetted hot themes (GLP-1, quantum, uranium, critical minerals, space, AI agents) + AI-pivot fixes (#287)",
+    "aefd60e69efbe6859af30467d3239c46c2bb30b4|2026-06-19T01:15:12-07:00|fix(baskets): crypto \u2192 move miner-hyperscalers (RIOT/CLSK/MARA/GLXY) to Neoclouds, HOOD to Fintech (#275)",
+    "3a1d1ffd2a25f6674b03fc1d032b627f09a9c5ec|2026-06-19T00:33:50-07:00|feat(baskets): Theme Rotation Desk masterpiece \u2014 taxonomy, advanced scoring, per-theme pages, \"act now\" (#267)",
+    "28af23b826e38e52afdcf546b64b2f18cf50c749|2026-06-18T23:23:44-07:00|fix(baskets): drop AI/HPC-pivoted miners from Crypto basket; add ETHA (ETH ETF) (#260)",
+    "51821f253562f3337471db5dd62d0b72a9023392|2026-06-17T20:46:49-07:00|feat(baskets): expand US membership 155\u2192251 + deep-history store (#176)",
+    "e61d9d3cc487b79f925a30b9baa51d2e3ba83495|2026-06-15T11:23:12-07:00|feat(baskets): expand themes + off-index cache + Crypto basket (#91)",
+    "dd8256f804eb645c1be6598e75387693b61c3453|2026-06-14T13:56:50-07:00|feat(baskets): FactorWatch-parity rebuild \u2014 interactive chart, category grouping, thesis/rationale, sigma+MTD",
+    "29721d07084c0332e1c2b5387a32addc1863c395|2026-06-14T03:50:29-07:00|feat(baskets): thematic baskets page (FactorWatch Baskets replication, free data)"
+  ],
+  "output_files": [
+    "GD1C_RECONSTRUCTION_ROWS.csv",
+    "GD1C_EPISODE_LEDGER.csv",
+    "GD1C_GATE_SCORECARD.csv",
+    "GD1C_INCIDENT_COVERAGE.csv",
+    "GD1C_RECONSTRUCTION_MANIFEST.json"
+  ],
+  "preregistration_freeze_sha": "fce7bfeb8c925748ed92b54a7b19901c3a9f35c1",
+  "primary_lane": {
+    "evaluated_rows": 0,
+    "evidence": [
+      "data/baskets/membership.json first enters tracked history on 2026-06-14",
+      "the four cohort baskets are curated in 2026",
+      "retrospective member added dates are not first-known membership receipts",
+      "membership rows do not carry available_at / observed_at clocks"
+    ],
+    "gap": "No point-in-time cohort-membership lineage spans 2016-01-04..2026-07-31.",
+    "lane": "pit_membership",
+    "minimum_lawful_substitute": "def_current_cf current-membership truncate-and-recompute, secondary only",
+    "verdict": "BLOCKED"
+  },
+  "schema": "grey_deer.gd1c.reconstruction_manifest.v1",
+  "secondary_lane": {
+    "design_row_n": 2659,
+    "full_design_thresholds": {
+      "d_dgs10_3d_q80": 0.07000000000000006,
+      "d_dgs30_3d_q80": 0.06999999999999984,
+      "drv_spy_5d_q80": 1.2656586738287092e-05,
+      "rv_spy_5d_q80_baseline": 0.00011364261358742598,
+      "vix_level_q80_baseline": 22.732000000000003
+    },
+    "incident_row_n": 13,
+    "lane": "def_current_cf",
+    "member_n": 42,
+    "members": [
+      "NVDA",
+      "AVGO",
+      "AMD",
+      "QCOM",
+      "MRVL",
+      "MPWR",
+      "ANET",
+      "SMCI",
+      "ARM",
+      "ALAB",
+      "CRDO",
+      "CBRS",
+      "MU",
+      "VRT",
+      "DELL",
+      "CIEN",
+      "LITE",
+      "COHR",
+      "NBIS",
+      "CRWV",
+      "AMAT",
+      "LRCX",
+      "KLAC",
+      "TER",
+      "APH",
+      "GLW",
+      "WDC",
+      "STX",
+      "SNDK",
+      "ENTG",
+      "MKSI",
+      "ONTO",
+      "ACLS",
+      "COHU",
+      "FORM",
+      "ICHR",
+      "AEIS",
+      "UCTT",
+      "NVMI",
+      "CAMT",
+      "KLIC",
+      "VECO"
+    ],
+    "membership_basis": "current_membership_file_at_run_not_pit",
+    "rate_revision_basis": "latest_revised_no_available_at_secondary_only"
+  },
+  "wave": "GD-1C",
+  "workstream": "WS:GREY-DEER-RISK-INTELLIGENCE"
+}

@@ -432,6 +432,14 @@ surviving PR proof run is the merge's evidence — watch it to conclusion. `--ad
 remains only for the spurious Workers X, docs-only pull requests that trigger no
 pack checks, and genuine wedges — never to outrun CI.
 
+**A RECORDED HOLD IS A MERGE BARRIER (Sol 2026-08-19, #5974/#5953).** A hold stated in a
+PR's body or comments (HOLD-FOR-SOL / "do not merge") binds EVERY merge path — the sweeper,
+blanket-arming sessions, and manual merges alike — regardless of label state. Enforce it as
+state (no arming label, `autoMergeRequest` null, DRAFT, hold comment naming authority +
+release condition), and never arm a PR you did not open without grepping its
+title+body+comments for a hold. Conditional merge authority granted for one PR NEVER
+transfers to any other PR (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).
+
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
 `merge-on-green`; `scripts/merge_on_green.py` has no code path that does. Every
 removal is a session's deliberate act, so treat it as one: taking a pull request
@@ -644,6 +652,26 @@ merge at once, but preflight for an in-flight baseline first (see the livelock
 note above: a re-dispatch cancels the very proof every pinned session is waiting
 on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
+An AUTHORITY-FROZEN merged head is no longer unclearable forever (2026-08-19,
+DEC-AUTHORITY-FREEZE-CLEARS-ON-DESCENDANT-BASELINE). A merged head whose semantic
+evidence records `authority_changed=true` (any edit in the CI-authority
+inventory — `scripts/**`, `.github/ci/**`, `.github/workflows/**`,
+`.claude/hooks/**`, top-level `*.py`, conftest/pyproject; see
+`scripts/ci_authority_paths.py`) still may not use candidate-era semantic
+evidence or descendant unit healing to excuse its red, but it clears through
+exactly ONE lever: a completed ci.yml run concluding SUCCESS on a main
+descendant of the merge — proof of main under the merged authority itself,
+dispatched with the same preflight discipline as above. The scope is the freeze
+ALONE: the artifact's only non-clear signals must be the freeze itself (the
+emitter's `authority_self_excuse_refused` infrastructure row) with ZERO
+classified blocking units — a `pr_regression`/`unknown` unit is the head's own
+red and is never blanketed by a baseline. Infrastructure ambiguity stays
+outside that path, an unanswerable probe keeps the freeze, and pending checks
+still outrank the clearing. Operator-grant markers (labels, comments, grant
+files) were evaluated and REJECTED as clearing evidence: the fleet
+authenticates as one shared token, so any such marker is mintable by the
+session itself — self-excuse by construction.
+
 The PRE-merge path is base-side-aware too, and has to be: now that every session
 stays through its own merge, that path runs on EVERY Stop of EVERY armed session,
 which is exactly the population that inherits a red main. Before an armed head's
@@ -672,4 +700,11 @@ longer trap a session indefinitely: an EXTERNAL blocker escapes at 2 consecutive
 unmerged/ci_failed_unmerged/unpushed/uncommitted/unsafe_branch/guard_error)
 escapes at 10 consecutive OR 15 total blocks. Every escape still requires an explicit `SHIP LOOP BLOCKED:`
 evidence report with `stop_hook_active` set, so a session cannot bail on the first
-attempt.
+attempt. A ratified ladder exit is REMEMBERED for the exact frozen state it excused
+(2026-08-19): once the full ladder has fired for a `ci_failed` merged-head block,
+the key `ci_failed:<head>:<merge>:<sha256(reason)[:12]>` passes later Stops
+without demanding the identical report again — one evidence report per frozen
+state, not one per Stop. The reason digest is load-bearing: a rerun or late cron
+that binds a DIFFERENT red to the same shas mints a different key and re-blocks.
+A new merge gates fresh; internal codes and evolving states carry no key and are
+unchanged.

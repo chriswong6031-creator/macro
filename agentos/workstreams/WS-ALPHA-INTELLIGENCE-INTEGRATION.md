@@ -59,12 +59,14 @@ landmines:
     needs a cross-store pointer index over >=3 owner_stores for one subject
     (A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md §8 flip condition). FABLE-A
     freezes contracts; it does not build the store until that condition is met."
-  - "US G0 canonical copy is PR #5955 (research/earnings_intelligence/g0/,
-    inside the Earnings owner's owns_paths). The #5822->#5953 censuses/G0/ set
-    plus its embedded C0G_G0_ADJUDICATION_2026-08-19.md is a NON-SEAT rival
-    draft, superseded by C0G_G0_SEAT_ADJUDICATION_2026-08-19.md — if #5953
-    lands it unchanged, the seat packet remains the governing record; never
-    adjudicate from the rival copy."
+  - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
+    inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
+    (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
+    censuses/G0/ set plus its embedded non-seat C0G_G0_ADJUDICATION was
+    WITHDRAWN from #5953 before it merged — no rival copy exists on main.
+    C0G_G0_SEAT_ADJUDICATION_2026-08-19.md remains the governing record of
+    G0 canonicity (final merged-object pins in its §7); never adjudicate
+    from any resurrected rival copy."
   - "K4-G preconditions are frozen in the seat packet §6: clock-direction fix
     targets observed_at/generated_at, NEVER source_available_at
     (DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION); frontier = derived
@@ -130,10 +132,12 @@ waves:
 next_action: >
   Operator dispatches FABLE-A under the c0 §5 conditions (contract-first; store
   build gated on A0 §8 flip condition; FIF acceptance leg fixture-only until Sol
-  rules). Census PRs #5955 (US G0) and #5943 (CN-G0) are ACCEPTED and armed to
-  merge; #5953 carries a superseded rival G0 copy — disposition request posted,
-  that lane responds. Next session adjudicates the FABLE-A K1 packet; K4-G is
-  authored by operator/Sol carrying the seat packet §6 preconditions verbatim.
+  rules). Post-merge state 2026-08-19: #5955 (US G0), #5943 (CN-G0), #5933
+  (this seat's c0/c0g packet) and #5953 (China masterplan, rival G0 copy
+  withdrawn pre-merge) are ALL MERGED — c0/c0g are supplied by main; final
+  merged-object pins live in the seat packet §7. Next session adjudicates the
+  FABLE-A K1 packet; K4-G is authored by operator/Sol carrying the seat
+  packet §6 preconditions verbatim.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

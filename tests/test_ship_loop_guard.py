@@ -3016,6 +3016,72 @@ def _drive_block(path: Path, capsys, code: str, payload: dict) -> bool:
     return capsys.readouterr().out.strip() == ""
 
 
+def _drive_block_keyed(path: Path, capsys, code: str, payload: dict, exit_key: str) -> bool:
+    """`_drive_block` with an exit key; return True if the Stop was allowed."""
+    state = GUARD._load(path)
+    GUARD._block(path, state, payload, code, f"reason for {code}", exit_key=exit_key)
+    return capsys.readouterr().out.strip() == ""
+
+
+def test_a_ratified_ladder_exit_is_remembered_for_the_exact_frozen_state(tmp_path, capsys):
+    """One evidence report per frozen merged head, not one per Stop.
+
+    A `ci_failed` block on a merged head argues about evidence frozen at merge,
+    so once the full ladder ratified an exit (report + external arms) the same
+    state must pass every later Stop without demanding an identical re-report —
+    the 2026-08-19 authority-frozen session filed the same `SHIP LOOP BLOCKED:`
+    report dozens of times."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    assert GUARD._load(path)["ladder_exits"] == [key]
+    # A later NATURAL stop — no report, no stop_hook_active — passes through
+    # silently and bumps no counter.
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    before = GUARD._load(path)["total_blocks"]
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, key) is True
+    assert GUARD._load(path)["total_blocks"] == before
+
+
+def test_a_remembered_exit_never_covers_a_different_frozen_state(tmp_path, capsys):
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    first = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is True
+    # A new merge mints a new key; without a fresh report it must still block.
+    second = f"ci_failed:{'e' * 40}:{'f' * 40}"
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, second) is False
+    assert GUARD._load(path)["ladder_exits"] == [first]
+
+
+def test_an_unratified_block_records_no_ladder_exit(tmp_path, capsys):
+    """Only the moment an escape actually fires may write the memory — a block
+    that was refused (no report yet) must leave nothing behind."""
+    path = _block_state(tmp_path)
+    unreported = {"stop_hook_active": True, "last_assistant_message": "still working"}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert "ladder_exits" not in GUARD._load(path)
+
+
+def test_a_keyless_block_never_reads_or_writes_the_exit_memory(tmp_path, capsys):
+    """Internal codes and evolving states carry no key; the ladder is unchanged
+    for them even when a remembered exit exists for another state."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block(path, capsys, "render_pending", natural) is False
+    assert GUARD._load(path)["ladder_exits"] == [key]
+
+
 def test_external_ping_pong_escapes_on_the_third_cumulative_external_block(tmp_path, capsys):
     """The new cumulative arm. Alternating external codes reset the CONSECUTIVE
     counter every hop, so the old `count >= 2` rule never armed — a session

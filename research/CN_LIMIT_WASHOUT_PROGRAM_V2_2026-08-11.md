@@ -1,10 +1,16 @@
 # CN limit-move alpha — program home v2: the washout-onset thesis (2026-08-11)
 
-Status: **ACTIVE program home** — the going-forward charter after the 2026-08-10 STOP-SHIP
-enforcement. The historical masterplan (`research/CN_LIMIT_ALPHA_MASTERPLAN_BY_FABLE.md`)
-is stamped superseded on main and remains archaeology; on any conflict,
-`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT` and the amended
-`research/CN_LIMIT_ALPHA_RECONCILIATION_LEDGER_2026-08-09.md` govern, then this document.
+Status: **THESIS CHARTER; forward queue superseded by R6 (2026-08-19).** The CN-Limit R6
+final architecture freeze (`research/cn_limit/CN_LIMIT_R6_FINAL_ARCHITECTURE_FREEZE_2026-08-19.md`)
+and the workstream record (`agentos/workstreams/WS-CN-LIMIT-ALPHA.md`) now govern the
+program's execution plan; this document's wave map/queue (P-A..P-D) is reconciled into the
+R6 wave graph there and must not be chartered from independently. The washout thesis text
+remains valid as carrier/mechanism context (R6: carrier, not selector —
+DEC:CNLI-CARRIER-CONTEXT-NOT-SELECTOR). The historical masterplan
+(`research/CN_LIMIT_ALPHA_MASTERPLAN_BY_FABLE.md`) is stamped superseded on main and
+remains archaeology; on any conflict, `DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT` and the
+amended `research/CN_LIMIT_ALPHA_RECONCILIATION_LEDGER_2026-08-09.md` govern, then the R6
+freeze, then this document.
 
 Authority: `none_research_display_only`. Nothing chartered here ranks, sizes, gates,
 alerts, or trades. Promotion of any construction beyond display tier goes through the

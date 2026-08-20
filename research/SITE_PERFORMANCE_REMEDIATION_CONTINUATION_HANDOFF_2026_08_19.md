@@ -8,9 +8,9 @@ audited baseline `e6815775d2e3`.
 | # | scope | state |
 |---|---|---|
 | 1 | correct, idempotent, on-demand assistant loader | **MERGED `7688e47df893`** (#5976) |
-| 2 | remove direct assistant tags from canonical estate templates | **MERGED `351be097b51e`** (#5993) + follow-on (this PR) |
-| 3 | close content-hash cache-policy gaps (`Caddyfile`) | not started ← **next** |
-| 4 | incremental list-overlay mutation handling | not started |
+| 2 | remove direct assistant tags from canonical estate templates | **MERGED `351be097b51e`** (#5993) + `418c583754a6` (#6000) |
+| 3 | close content-hash cache-policy gaps (`Caddyfile`) | **MERGED `4ec6887610c6`** (#6033) |
+| 4 | incremental list-overlay mutation handling | not started ← **next** (scouted, see below) |
 | 5 | Smart Money progressive disclosure | not started |
 | 6 | scatter-capable Plotly distribution | not started |
 | 7 | deployment instrumentation (optional, separate) | not started |
@@ -122,7 +122,112 @@ retired, `#mmb-launch` present. Depths 0/1/2/3 covered: `about-research.html`,
 
 ---
 
-## Next single action
+## PR 3 — every content-hashed public asset gets the immutable year · #6033 merged `4ec6887610c6`
+
+### What it fixes
+
+`scripts/optimize_assets.py` stamps `?v=<sha256[:8]>` on **every** local `.js`/`.css`
+ref in `site/**/*.html` — not a curated set. The Caddyfile splits cache policy on
+that stamp: `@public_static` carries `not query v=*`, so a stamped request can only
+be caught by `@public_versioned`. That list held **24** paths against **81**
+reviewed-public ones, so a stamped asset missing from it matched **nothing** and was
+served with **no `Cache-Control` at all** — EdgeOne's long default TTL, the exact
+2026-07-03 white-page incident class the section exists to prevent.
+
+Measured live before the change:
+
+```
+GET /navigation-refresh.css?v=c299c324   200   Cache-Control: (absent)
+GET /theme.css?v=6d906bba                200   public, immutable, max-age=31536000
+```
+
+| | before | after |
+|---|---|---|
+| stamped refs served `immutable` | 59,299 | **79,824** |
+| stamped refs with NO `Cache-Control` | 34,483 | 14,025 (all 401-gated or 60s) |
+| `@public_versioned` paths | 24 | **64** |
+
+38 reviewed-public assets / 20,525 page-refs were in the hole.
+`/navigation-refresh.css` alone is on 9,644 pages and had no `Cache-Control` in
+*either* form, stamped or bare.
+
+### The trap — why this is a reviewed list and not an extension matcher
+
+A blanket `*.js`/`*.css` matcher is the obvious fix and is a **security bug**.
+Checked against production, not assumed:
+
+```
+wh_banner.js?v=…          401  no-store    (7,107 page-refs — 2nd largest in the gap)
+mm_charts.js  sector_cycles.js  forming_narratives.js
+baskets_desk.js  ai_desk_thematic.js        401  no-store
+```
+
+Caching any of them publicly turns the CDN into an authentication bypass. Every
+path added was already reviewed public — 35 already in `@public_static`, plus
+`/navigation-refresh.css`, `/stock-logos.js`, `/logo_config.js` which
+`config/site_access.yml` declares `public.exact` but which were never added to
+either cache list. **No access was widened**, and a guard now enforces that.
+
+`/mtf.js` and `/mm_brain.js` LEFT the hand-stamp carve-out: it exists for
+hand-authored `?v=N` integers, and both now serve content hashes equal to their own
+file bodies (`b62aea2f`, `f74045d8`), so 300s was costing a revalidation per
+navigation. The four genuine integers stay (`watchlist.js?v=9`, `watchstore.js?v=5`,
+`market_books.js?v=2`, `portfolio.js?v=6`).
+
+### Guards (in the already-wired `tests/test_site_access_boundary.py`)
+
+Each verified to FAIL on the pre-fix tree, not merely pass on the fixed one:
+
+| guard | caught |
+|---|---|
+| every `@public_versioned` entry is already reviewed public | a planted `/wh_banner.js` |
+| every reviewed-public asset served `?v=`-stamped is on the immutable matcher | all 35 |
+| carve-out holds only paths whose served stamp is NOT their own `sha256[:8]` | `mtf.js`, `mm_brain.js` |
+
+`caddy validate --adapter caddyfile` → **Valid configuration**. 299 tests green
+across every suite that reads these matchers.
+
+### Left open, deliberately
+
+`/stocks/earnings/assets/earnings-wire.{css,js}` — 6,816 page-refs, content-hash
+stamped, currently served `public, must-revalidate, max-age=60` by a different rule
+(not "no header", so no safety exposure). They are **not** in `public.exact`, so
+promoting them needs an explicit access review, not a drive-by. That review is the
+cheapest remaining cache win in the estate.
+
+---
+
+## Next single action — PR 4 (scouted while PR 3 sat in CI; NOT started)
+
+**Replace the body-wide list-overlay rescan with incremental handling.**
+`templates/theme.js` `initListOverlay()` (~:4448) ends with:
+
+```js
+mo.observe(document.body, { childList: true, subtree: true });
+```
+
+Every DOM mutation anywhere on the page schedules a rAF that runs `upgrade()`,
+whose first act is `document.querySelectorAll('.lst-wrap')`.
+
+**Measured 2026-08-20: only 11 pages in the estate contain a `.lst-wrap` at all**
+(`hk_stocks`, `china_stocks`, `canada_stocks` at 4 each; `sector_central`,
+`allocation`, `allocation_hk` and 5 more at 1). `initListOverlay` is called
+unconditionally, so on the other **~8,324 pages** the observer fires on every
+mutation and the selector always returns empty — permanent per-frame cost for
+zero work, worst on live-tape pages where `live.js` mutates continuously.
+
+Two mitigations already exist and must be preserved: rAF coalescing (one pass per
+frame) and the per-wrap `dataset.ovlN` idempotence early-return.
+
+**Do NOT "fix" it by early-returning when no `.lst-wrap` exists at boot** — the
+function's own comment records that lists are injected after boot (`renderActNow`,
+`langchange` rebuilds), so a boot-time check would silently break those pages.
+The safe shape is to inspect the MutationRecords (do any `addedNodes` contain or
+sit inside a `.lst-wrap`?) before scheduling the rAF, or to scope `observe()` to
+the list containers once one appears.
+
+
+## Superseded — next single action (PR 3, now merged)
 
 **PR 3 — close the content-hash cache-policy gaps in `app/deploy/Caddyfile`.**
 
@@ -146,3 +251,29 @@ the `:547` group; the immutable list is the one that must gain the content-hashe
   (`inactive_base_context`). Excluded by `merge_on_green.py`. Not a red you own.
 - The audit's "Technical Lab 7.4 MB screener" item is correctly out of scope —
   production 404s `/tech_lab.html` by design.
+
+
+---
+
+## Verifying an edge-cache change — read before re-checking PR 3
+
+A plain `curl -I` against a promoted asset can keep showing the OLD header long
+after the reload, and that is not a failed deploy. Measured 2026-08-20, ~10 min
+after #6033 merged:
+
+```
+GET /navigation-refresh.css?v=c299c324            server: TencentEdgeOne  age: 2648   (no Cache-Control)
+GET /navigation-refresh.css?v=c299c324&cb=<rand>  cache-control: public, immutable, max-age=31536000
+```
+
+The pathology PR 3 fixed is its own verification obstacle: the header-less
+responses were already pinned at EdgeOne under its long default TTL, so the edge
+keeps serving them. **Always append a cache-busting param to force origin** — the
+`@public_versioned` matcher only requires `query v=*`, so `&cb=…` does not change
+which matcher fires. The stale cohort is bounded and self-clearing: any content
+change mints a new `?v=` hash, hence a new URL.
+
+`app/deploy/update.sh:373` installs the Caddyfile only when it differs, gated on
+`caddy validate`, then `systemctl reload caddy`. Cron runs it every ~3 min under a
+flock. A Caddyfile change therefore needs **no render lane at all** — it is not a
+rendered artifact, so `render.yml`/`pages.yml` are irrelevant to it.
