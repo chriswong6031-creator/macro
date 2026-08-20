@@ -196,7 +196,45 @@ waves:
       post-#6006 nightly payload (08-19 library collapse was a #5980 partial
       build; heal #6006 squash 0de8b86 merged 2026-08-19T20:07:23Z; groundwork
       branch claude/p-mp1-shell at 3f43864e41ce, no PR). P-LAB-UI after the
-      settled shell + API, per the day-2 directive §7."
+      settled shell + API, per the day-2 directive §7.
+      DAY-3 STATE (2026-08-20, Sol Day-3 directive): SEQUENCE CORRECTED — the
+      frozen LAB-0 §6 order is P-LAB-API -> R-LAB-1 -> Radar live commissioning
+      -> P-MP1-SHELL -> P-LAB-UI; the day-2 handoff's shell->UI->commissioning
+      ordering is SUPERSEDED. Gate A (G-D) PASS: measured at blob 251b9351 (the
+      post-#6006 publication 0b0c296f, byte-identical at tip) — frozen Reading A
+      (available/(available+blocked_data), not_applicable:plan_closed excluded
+      per producer law) = 237/237 = 100.0000%, blocked_data 0; gross-row Reading
+      B = 237/262 = 90.46%; ALL plausible readings clear >=90%. BINDING READING
+      ADJUDICATED = Reading A (uniquely reproduces MP-1's literal 225/225).
+      Do NOT wait for another nightly to re-measure — measure the CURRENT
+      artifact (the day-2 'tonight's nightly' wait is CLOSED). Gate B (Radar
+      commissioning) BLOCKED-ON-OPERATOR: W4 was already armed 08-18 by a prior
+      operator; 215 armed passes ALL refused (160 in-window 'no_pack') — the
+      08-19 pack builder store-gate red self-resolved, but four config blockers
+      remain: B2 writer has NO spool destination (live env lacks R2 creds AND
+      spool dir), B3 same-host split-brain (API env reads R2
+      mastermindx/live_flow/entry_radar_events; writer resolves to nothing),
+      B4 PROPHET_LAB_OBSERVATION_BASELINE_PATH absent from the API env, B5
+      ENTRY_RADAR_SLICE_DIR unset (path /opt/terminal/terminal/public/data now
+      VERIFIED live: 5.7G, 44,436 entries). Repairs are STAGED (systemd drop-in
+      referencing the API env file — no credential values handled — + two path
+      appends); the harness permission boundary denies remote production config
+      mutation from any lane, so applying them is an OPERATOR act; receipts:
+      /var/lib/macro-live/state/prophet_lab/commissioning_receipt_2026-08-20.json.
+      Baseline NOT minted (CLI correctly refused: zero spooled passes — never
+      self-baseline). P-MP1-SHELL: bounded prep MERGED #6049 (1ccf7fe8bdba —
+      §8a stance projection plumbing unwired, pv_card parameter byte-parity
+      proven, count plumbing, suites wired into engine-render-guards); CENTRAL
+      ACT OWED on a Sol referral — MP-1 is silent on the W-L1 collision (the
+      pinned provisional-board surface repaints the same #us-standouts .nbgrid
+      the packet re-sources; research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md).
+      DS-PR #6055 MERGED (d78121d6459c: .skel + .mx-error ported from the
+      specimen, additive-only, drift-guarded) discharging the V-B4 primitive
+      gap. Heal #6053 MERGED (zh-rebind test re-pinned to the C8-C structural
+      flip — the test-pinned-retired-literal trap, third instance). The five
+      test_hk_board_ui reds were NOT fixture drift — #6029 proved a sparse-CI
+      checkout artifact (day-2 diagnosis STRUCK, chip dismissed). P-LAB-UI NOT
+      started (directive §9)."
     status: in_progress
   - id: b5b
     depends_on: [b3, b4]
