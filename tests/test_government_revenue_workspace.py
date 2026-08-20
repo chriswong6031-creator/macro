@@ -500,7 +500,11 @@ def test_workspace_copies_validated_award_events_and_dedupes_exact_ids():
     assert len(award_rows) == 1
     assert award_rows[0] == original
     assert award_rows[0] is not award_event
-    assert workspace["freshness"]["award_events"] == {"status": "ok", "records_visible": 1}
+    assert workspace["freshness"]["award_events"] == {
+        "status": "ok",
+        "records_visible": 1,
+        "failure_state": None,
+    }
     assert workspace["coverage"]["award_events"] == {
         "input": 3,
         "validated": 2,

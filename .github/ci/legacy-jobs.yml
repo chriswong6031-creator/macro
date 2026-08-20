@@ -8404,6 +8404,11 @@ jobs:
         run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
+      # D3 temporal contract: typed rail states (producer) + the Change Tape
+      # clock/diff/successor renders (node harness, same runner requirement as
+      # the UI suite above, whose _run_runtime it imports).
+      - name: D3 temporal contract — typed rails, clock block, hostile families T1-T8
+        run: python -m pytest tests/test_government_revenue_temporal_contract.py -q
       # D2 Identity Atlas: projector + graph-delta pins + the node-harness test
       # that renders the shipped dossier JS factory against the COMMITTED
       # identity-atlas artifact (needs node, present on these runners for the

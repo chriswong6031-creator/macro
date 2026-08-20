@@ -12,6 +12,7 @@
   "properties": {
     "schema_version": {"const": "government_procurement_workspace.v2"},
     "event_contract": {"const": "government_procurement_event.v2"},
+    "temporal_contract": {"const": "government_procurement_temporal.v3"},
     "as_of": {"type": "string", "format": "date"},
     "known_at": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
     "generated_at": {"type": "string", "format": "date-time"},
@@ -25,6 +26,7 @@
         "opportunities": {"$ref": "#/$defs/opportunityFreshness"},
         "recompetes": {"$ref": "#/$defs/detailFreshness"},
         "award_events": {"$ref": "#/$defs/awardEventFreshness"},
+        "budget": {"$ref": "#/$defs/budgetFreshness"},
         "mappings": {"$ref": "#/$defs/mappingFreshness"}
       }
     },
@@ -104,11 +106,24 @@
       }
     },
     "metadataScalar": {"type": ["string", "number", "boolean", "null"]},
+    "railFailureState": {"enum": [null, "source_unavailable", "projection_missing"]},
+    "budgetFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "failure_state", "observed_at", "records_visible", "reason_code"],
+      "properties": {
+        "status": {"type": "string"},
+        "failure_state": {"$ref": "#/$defs/railFailureState"},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "records_visible": {"type": ["integer", "null"], "minimum": 0},
+        "reason_code": {"type": ["string", "null"]}
+      }
+    },
     "opportunityFreshness": {
       "type": "object", "additionalProperties": false,
       "required": ["status"],
       "properties": {
         "status": {"type": "string"},
+        "failure_state": {"$ref": "#/$defs/railFailureState"},
         "reason": {"type": ["string", "null"]},
         "observed_at": {"type": ["string", "null"], "format": "date-time"},
         "age_minutes": {"type": ["number", "null"], "minimum": 0},
@@ -204,6 +219,7 @@
       "required": ["status"],
       "properties": {
         "status": {"type": "string"},
+        "failure_state": {"$ref": "#/$defs/railFailureState"},
         "reason": {"type": ["string", "null"]},
         "scope": {"type": ["string", "null"]},
         "observed_at": {"type": ["string", "null"], "format": "date-time"},
@@ -309,6 +325,7 @@
       "required": ["status"],
       "properties": {
         "status": {"type": "string"}, "availability": {"type": ["string", "null"]},
+        "failure_state": {"$ref": "#/$defs/railFailureState"},
         "reason": {"type": ["string", "null"]}, "activation_state": {"type": ["string", "null"]},
         "known_at": {"type": ["string", "null"], "format": "date-time"},
         "observed_at": {"type": ["string", "null"], "format": "date-time"},
