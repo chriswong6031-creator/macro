@@ -106,24 +106,37 @@ waves:
       Appendix C and the manifest.
   - id: P0-ST
     title: 2026 main-board risk-warning rule parity and replay (program P0)
-    status: in_progress
+    status: done
     depends_on: [R6-0]
     next_action: >-
-      BUILT_NOT_PROVEN (merge pending → asia-close production proof pending).
-      Era-dated main-board risk-warning band ±5%→±10% effective 2026-07-06
-      landed in config/cn_limit_rules.yml + engine/china_microstructure.py
-      (MAIN_ST_BAND_WIDE_DATE) with official-source receipts (SSE
+      PROVEN_LIVE 2026-08-20. Repair merged as #6047 (squash 609d883506b3):
+      era-dated main-board risk-warning band ±5%→±10% effective 2026-07-06 in
+      engine/china_microstructure.py (MAIN_ST_BAND_WIDE_DATE) +
+      config/cn_limit_rules.yml interval split, official-source receipts (SSE
       c_20260424_10816474; SZSE 深证上〔2026〕551号 arts. 3.3.13/10.9),
-      boundary tests for both venues, and a bounded owner-native replay:
-      census found 0 stale limit_width==5.0 rows and exactly one affected
-      main-board name (600079.SS); both replay arms (current era-dated law vs.
-      the superseded always-5% law) produced identical empty event sets over
-      its 33 scored sessions since 2026-07-06 (max move 3.08%, never near
-      either band) — zero store corrections required. Receipts:
-      research/cn_limit/P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json},
-      research/cn_limit/p0_st_band_replay.py. Resolves
-      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 pending merge + a real
-      asia-close live proof.
+      boundary tests both venues, definition hash
+      e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4. Real
+      asia-close production proof: workflow run 32348780228 (asia job SUCCESS
+      2026-08-20T15:20Z on head e2ba19c17d73, a descendant of the merge)
+      committed baf4cf7c9291 — microstructure.json as_of 2026-08-20 carries
+      metadata.st_band_regime main_st_width_pct 10.0, packet widths {10,20}
+      only, and the post-run store holds 60,610 event rows with ZERO at
+      limit_width==5.0. Post-run replay: zero corrections required to any
+      produced store; the refreshed ST snapshot (207 names, asof 08-20) grew
+      the affected universe to {600079.SS, 600745.SS}, where the superseded 5%
+      law would have written 17 phantom events on 600745.SS alone — the
+      store's single real row (2026-07-20 failed_down_seal @10.0) matches the
+      lawful arm exactly, and the non-vacuity guard flipped on the real
+      divergence. Receipts: P0_ST_BAND_REPAIR_RECEIPT_2026-08-19.{md,json}
+      (frozen build-time) + P0_ST_PRODUCTION_PROOF_2026-08-20.{md,json} (this
+      proof) + P0_ST_PRODUCTION_CONCLUSION_2026-08-20.json (machine-readable
+      store conclusion: the replay artifact's `zero_corrections_required:
+      false` is the frozen arms-identity predicate, NOT a store defect — the
+      produced store matches the lawful arm and needs zero corrections).
+      DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06 resolved. SCOPE:
+      the quarantine lift covers ONLY this rule defect — no exact-plane
+      authorization, no full-A gate change, no tolerant-label promotion, and
+      DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT binds unchanged.
   - id: DEP-CAI
     title: China Alpha Intelligence PR-0B telemetry + rights/identity closure
     status: todo
@@ -251,8 +264,14 @@ landmines:
     era labels to quarantine in the first place; this constraint recorded a
     risk that the census then measured as not materialized
     (DSC:CN-MAIN-ST-BAND-STILL-5PCT-AFTER-2026-07-06, now resolved — see that
-    record for the repaired claim). Final closure still waits on a real
-    asia-close production proof (packet §P0-ST). Note
+    record for the repaired claim). CLOSED 2026-08-20: the real asia-close
+    production proof landed (run 32348780228, commit baf4cf7c9291;
+    research/cn_limit/P0_ST_PRODUCTION_PROOF_2026-08-20.md) — it also measured
+    the repair's first real consequence: the superseded 5% law would have
+    written 17 phantom events on the newly risk-warning 600745.SS in that very
+    session. The lift is SCOPED to this rule defect only — it grants no
+    exact-plane authorization and leaves
+    DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT fully binding. Note
     engine/china_microstructure.py's ST_STORE_COVERAGE_DATE remains
     coincidentally also 2026-07-06 — that constant is store coverage, not the
     rule-era switch (which is the separate MAIN_ST_BAND_WIDE_DATE constant).
