@@ -1,9 +1,9 @@
 name: EXK Turn 3 exact replay scratch
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - sol/exk-turn3-exact-replay-20260820
 
 permissions:
   contents: write
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout scratch branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: sol/exk-turn3-exact-replay-20260820
           fetch-depth: 1
 
       - name: Set up Python
@@ -31,9 +31,7 @@ jobs:
       - name: Run exact repository-price replay
         run: python scratch/exk_turn3_replay.py
 
-      - name: Commit compact scratch outputs to the PR branch
-        env:
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Commit compact scratch outputs to the scratch branch
         run: |
           git config user.name "exk-turn3-scratch-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -43,4 +41,4 @@ jobs:
             exit 0
           fi
           git commit -m "scratch(exk): exact Turn-3 replay outputs [skip ci]"
-          git push origin "HEAD:${HEAD_REF}"
+          git push origin HEAD:sol/exk-turn3-exact-replay-20260820
