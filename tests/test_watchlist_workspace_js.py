@@ -712,6 +712,178 @@ def test_portfolio_no_longer_carries_the_retired_fx_seeding_workaround():
     assert "FX.setAutoWeights(" in code
 
 
+@needs_node
+def test_leaving_watchlists_mode_retracts_the_watchlist_from_portfolio_risk():
+    """Market OS freeze §13 — no Watchlist name in Portfolio risk — driven as the ROUND
+    TRIP the reader actually performs, not as a call-site assertion.
+
+    Visit Watchlists mode, then click Portfolio with nothing in the book. Holdings
+    correctly said "No positions yet" while the Risk Center's Concentration tab went on
+    reading "One name, ETH-USD, carries 40% of this book's risk" off names the reader does
+    not own. A fresh load straight into Portfolio mode looked perfect, which is what kept
+    this hidden: the leak needs a prior Watchlists render to have filled `LAST`.
+
+    Neither end of the chain was at fault. watchlist.js stopped feeding the blob to FX on
+    the Portfolio click (the test above), portfolio.js correctly reported an empty book
+    (`setAutoWeights(null)`), and watchlist_risk.js recomputes purely from what it is
+    handed. In between, `render()` fell back to `LAST` — the WATCHLIST — whenever there
+    was no auto book, so the empty-book report REPUBLISHED the watchlist as "this book".
+
+    The assertion is the composed Concentration tab, so it pins what the reader sees
+    rather than the seam's shape: the watchlist read is proven to exist first (otherwise
+    an empty string later proves nothing), and is then required to be gone.
+
+    MUTATION CHECK: restore `var universe = autoMode ? Object.keys(AUTO_W) : tickers;` in
+    factor_exposure.js and pfConc names ETH-USD again."""
+    model = {
+        "factors": [{"key": "mkt", "label": "Market", "tier": "high"},
+                    {"key": "growth", "label": "Growth / Tech", "tier": "high"}],
+        "factor_cov": {"mkt": {"mkt": 0.03, "growth": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.02}},
+        "betas": {
+            "ETH-USD": {"mkt": 1.6, "growth": 1.4, "idio_vol": 0.80, "name": "Ethereum"},
+            "AAPL": {"mkt": 1.0, "growth": 0.5, "idio_vol": 0.25, "name": "Apple"},
+            "NVDA": {"mkt": 1.3, "growth": 0.9, "idio_vol": 0.40, "name": "NVIDIA"},
+        },
+    }
+    out = _run(
+        """
+        var __mode = 'watchlists';               // html[data-ws-mode], owned by setMode()
+        var __panel = { style: {}, innerHTML: '',
+          querySelectorAll: function () { return []; }, querySelector: function () { return null; } };
+        document.documentElement.getAttribute = function (k) {
+          if (k === 'data-ws-mode') return __mode;
+          if (k === 'data-lang') return 'en';
+          return null;
+        };
+        document.getElementById = function (id) { return id === 'fx_panel' ? __panel : null; };
+        global.fetch = function () {
+          return Promise.resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+        };
+        window.MB = { modeledOnly: function (s) { return s; }, isModeled: function () { return true; },
+                      getBook: function () { return 'all'; },
+                      presentBooks: function () { return ['us']; } };
+        require(%s);                              // risk_core.js -> window.RiskCore
+        var WRISK = require(%s);                  // watchlist_risk.js -> the tab builders
+        require(%s);                              // factor_exposure.js -> window.FX
+
+        function lastWeights() {
+          for (var i = __events.length - 1; i >= 0; i--) {
+            if (__events[i].type === 'fx-weights') return __events[i].detail;
+          }
+          return null;
+        }
+        /* The Concentration tab exactly as the page composes it: recomputeBook's modeled
+           filter + RiskCore read, publishBook's thin gate (rcTabs null -> watchlist.js
+           paints RC_THIN), then the tab builder. */
+        function concTab(w) {
+          if (!w) return null;
+          var wIn = {};
+          WRISK.modeledUniverse(w.universe).forEach(function (t) {
+            var v = w.wmap[t];
+            wIn[t] = (typeof v === 'number' && isFinite(v) && v > 0) ? v : 1;
+          });
+          var RR = window.RiskCore.read(MODEL, wIn);
+          if (!RR.calm.ok) return '';
+          var cov = RR.calm.coverage || window.RiskCore.coverage(MODEL, wIn);
+          return WRISK.concentrationHTML(RR.calm, cov);
+        }
+
+        // 1) Watchlists mode: watchlist.js feeds the watched names to FX
+        window.FX.update(['ETH-USD', 'AAPL', 'NVDA']);
+        setTimeout(function () {
+          var wl = lastWeights();
+          var wlConc = concTab(wl);
+          // 2) the reader clicks Portfolio — setMode() flips the attribute...
+          __mode = 'portfolio';
+          // 3) ...and portfolio.js reports an empty book (0 modeled open rows)
+          window.FX.setAutoWeights(null);
+          setTimeout(function () {
+            var pf = lastWeights();
+            OUT({
+              wlUniverse: wl ? wl.universe.slice().sort() : [],
+              wlConc: wlConc || '',
+              pfUniverse: pf ? pf.universe.slice() : null,
+              pfMode: pf && pf.mode,
+              pfConc: concTab(pf),
+              panelShown: __panel.style.display
+            });
+          }, 30);
+        }, 30);
+        """ % (json.dumps(str(ROOT / "templates" / "risk_core.js")),
+               json.dumps(str(ROOT / "templates" / "watchlist_risk.js")),
+               json.dumps(str(ROOT / "templates" / "factor_exposure.js"))),
+        {"MODEL": model},
+    )
+    # precondition: Watchlists mode really does publish the watchlist and really does
+    # produce a concentration read. Without this, the empty read below proves nothing.
+    assert out["wlUniverse"] == ["AAPL", "ETH-USD", "NVDA"], out
+    assert "ETH-USD" in out["wlConc"], (
+        "the fixture never produced a watchlist-derived Concentration read, so the "
+        "assertion below cannot tell a fix from an inert test"
+    )
+    # the retraction: an empty book is PUBLISHED, not merely left unsaid
+    assert out["pfUniverse"] == [], out
+    # and the tab the reader lands on is the thin state, not stale watchlist percentages
+    assert out["pfConc"] == "", out
+    assert "ETH-USD" not in (out["pfConc"] or ""), out
+    assert out["panelShown"] == "none", out
+
+
+@needs_node
+def test_an_emptied_portfolio_retracts_its_own_risk_read_too():
+    """The same defect with the watchlist out of the picture: `setAutoWeights` bailed on
+    `!LAST.length && !autoNames`, and "nothing anywhere" is exactly when a book already on
+    screen must be RETRACTED. With an empty watchlist (`LAST` empty), deleting down to one
+    position announced nothing at all, so the Risk Center kept describing the book the
+    reader had just dismantled.
+
+    MUTATION CHECK: restore that early return and `retracted` is false — the second
+    announcement never happens and the AAPL/NVDA read stands."""
+    model = {
+        "factors": [{"key": "mkt", "label": "Market", "tier": "high"},
+                    {"key": "growth", "label": "Growth / Tech", "tier": "high"}],
+        "factor_cov": {"mkt": {"mkt": 0.03, "growth": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.02}},
+        "betas": {"AAPL": {"mkt": 1.0, "growth": 0.5, "idio_vol": 0.25},
+                  "NVDA": {"mkt": 1.3, "growth": 0.9, "idio_vol": 0.40}},
+    }
+    out = _run(
+        """
+        var __panel = { style: {}, innerHTML: '',
+          querySelectorAll: function () { return []; }, querySelector: function () { return null; } };
+        document.documentElement.getAttribute = function (k) {
+          return k === 'data-ws-mode' ? 'portfolio' : (k === 'data-lang' ? 'en' : null);
+        };
+        document.getElementById = function (id) { return id === 'fx_panel' ? __panel : null; };
+        global.fetch = function () {
+          return Promise.resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+        };
+        require(%s);
+        // THE CASE: the watchlist is empty, so FX.update is never called — `LAST` stays [].
+        window.FX.setAutoWeights({ AAPL: 15000, NVDA: 20000 });
+        setTimeout(function () {
+          var n = __events.length;
+          // the reader deletes a position: one modeled row left, so portfolio.js sends null
+          window.FX.setAutoWeights(null);
+          setTimeout(function () {
+            var after = __events.slice(n).filter(function (e) { return e.type === 'fx-weights'; });
+            OUT({ retracted: after.length > 0,
+                  universe: after.length ? after[after.length - 1].detail.universe : null,
+                  panelShown: __panel.style.display });
+          }, 30);
+        }, 30);
+        """ % json.dumps(str(ROOT / "templates" / "factor_exposure.js")),
+        {"MODEL": model},
+    )
+    assert out["retracted"], (
+        "the emptied book was never announced — the Risk Center keeps describing a book "
+        "the reader no longer has"
+    )
+    assert out["universe"] == [], out
+    assert out["panelShown"] == "none", out
+
+
 def test_seam_segment_cap_is_bounded_and_the_denominators_are_not():
     """DEFECT 5 (round-2). One segment per position overflowed the PAGE at 100 names on
     390px (measured 86px). The rail now folds a disclosed tail — but the brackets and
