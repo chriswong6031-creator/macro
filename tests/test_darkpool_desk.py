@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import pathlib
 import sys
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
@@ -312,8 +314,8 @@ def test_thin_ticker_excluded():
 # ---------------------------------------------------------------------------
 # 4. Builder smoke test
 # ---------------------------------------------------------------------------
-def test_builder_returns_0_when_panel_missing(tmp_path, monkeypatch):
-    """Builder should return 0 (not raise) when the panel file is absent.
+def test_builder_reports_failure_when_panel_missing(tmp_path, monkeypatch):
+    """Missing canonical input retains prior artifacts but is not a success.
 
     BOTH panel paths must be nulled: _load_panel() reads PANEL_DEEP_PATH *and*
     PANEL_PATH and returns their union, so nulling only the collector panel left
@@ -340,8 +342,82 @@ def test_builder_returns_0_when_panel_missing(tmp_path, monkeypatch):
 
     result = bdd.main()
 
-    assert result == 0
+    assert result != 0
     assert not wrote, f"panel-missing path must write nothing, wrote: {sorted(wrote)}"
+
+
+def test_finra_expected_available_session_owns_1830_et_release_clock():
+    from collectors.finra_short_volume import expected_available_session
+
+    et = ZoneInfo("America/New_York")
+    assert expected_available_session(datetime(2026, 8, 19, 18, 29, tzinfo=et)).isoformat() == "2026-08-18"
+    assert expected_available_session(datetime(2026, 8, 19, 18, 30, tzinfo=et)).isoformat() == "2026-08-19"
+    assert expected_available_session(datetime(2026, 8, 21, 19, 0, tzinfo=et)).isoformat() == "2026-08-21"  # Friday evening
+    assert expected_available_session(datetime(2026, 8, 22, 12, 0, tzinfo=et)).isoformat() == "2026-08-21"  # Saturday
+    assert expected_available_session(datetime(2026, 8, 24, 18, 29, tzinfo=et)).isoformat() == "2026-08-21"  # Monday pre-release
+    assert expected_available_session(datetime(2026, 9, 7, 20, 0, tzinfo=et)).isoformat() == "2026-09-04"   # Labor Day
+
+
+def test_mixed_ticker_dates_partition_current_authority_from_browse_history():
+    import inspect
+    import scripts.build_darkpool_desk as bdd
+
+    rows = [
+        {"ticker": "AAPL", "asof": "2026-08-19", "participation": 0.41},
+        {"ticker": "MSFT", "asof": "2026-08-19", "participation": 0.38},
+        {"ticker": "QQQ", "asof": "2026-08-04", "participation": 0.52},
+    ]
+    current, stale, coverage = bdd._partition_session_rows(
+        rows, panel_latest="2026-08-19", tracked_universe=3
+    )
+    assert [r["ticker"] for r in current] == ["AAPL", "MSFT"]
+    assert [r["ticker"] for r in stale] == ["QQQ"]
+    assert stale[0]["session_status"] == "stale"
+    assert coverage == {
+        "tracked_universe": 3,
+        "current_session_rows": 2,
+        "stale_rows": 1,
+        "missing_rows": 0,
+        "current_session_pct": 66.7,
+    }
+
+    # The single admission seam feeds every current-authority consumer.
+    source = inspect.getsource(bdd.main)
+    assert "for r in current_stats" in source          # market gauge
+    assert "_dpc.build_context_feed(\n            current_clean" in source
+    assert "_emit_pane_json(\n            current_clean" in source
+
+
+def test_darkpool_pane_separates_current_universe_from_historical_rows(tmp_path):
+    import json
+    import scripts.build_darkpool_desk as bdd
+
+    current = [{"ticker": "AAPL", "asof": "2026-08-19", "session_status": "current"}]
+    historical = [{"ticker": "QQQ", "asof": "2026-08-04", "session_status": "stale"}]
+    out = tmp_path / "darkpool_eod.json"
+    bdd._emit_pane_json(
+        current, {}, panel_latest="2026-08-19", panel_dates=100, below_floor=False,
+        n_with_oe=1, n_with_ats=0, ats_lag_note=None, built="test",
+        coverage={"tracked_universe": 2, "current_session_rows": 1,
+                  "stale_rows": 1, "missing_rows": 0, "current_session_pct": 50.0},
+        historical_rows=historical, out_path=out,
+    )
+    payload = json.loads(out.read_text())
+    assert [r["ticker"] for r in payload["universe"]] == ["AAPL"]
+    assert [r["ticker"] for r in payload["historical_rows"]] == ["QQQ"]
+    assert all(r["asof"] == payload["asof"] for r in payload["universe"])
+
+
+def test_darkpool_static_settled_copy_never_uses_wall_clock_today():
+    from engine.darkpool_context import _hero
+
+    template = (pathlib.Path(__file__).resolve().parents[1] / "templates" / "darkpool.html.j2").read_text()
+    assert "today" not in template.lower()
+    assert "今日" not in template
+    active = _hero({"heavy_into_weakness": 1}, {"participation_dollar_wtd": 0.4})
+    quiet = _hero({}, {"participation_dollar_wtd": 0.4})
+    assert "settled session" in active["en"] and "today" not in active["en"].lower()
+    assert "settled session" in quiet["en"] and "today" not in quiet["en"].lower()
 
 
 def test_builder_disabled_by_config(tmp_path, monkeypatch):

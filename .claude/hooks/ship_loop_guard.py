@@ -543,6 +543,92 @@ def _changed_since_baseline(baseline: dict[str, str], now: dict[str, str]) -> li
     return sorted(path for path, value in now.items() if baseline.get(path) != value)
 
 
+def _shipped_identical_untracked(
+    root: Path, now: dict[str, str], dirty: list[str]
+) -> set[str]:
+    """Untracked paths whose bytes already sit at the same path on origin/main.
+
+    The 2026-08-20 class: the primary checkout sat on a detached 2026-07-14
+    HEAD while a repair session restored the WorktreeCreate hook bytes with
+    `git show origin/main:<path> > <path>` — the documented zero-git-state
+    repair for stale hook bytes. Those files are tracked on origin/main and
+    byte-identical to it, but the old HEAD predates them, so `git status`
+    reports `??` and every session evaluating that tree blocked at Stop on
+    content with nothing left to ship: a commit would add nothing that main
+    does not already have, and the escape ladder was the only exit.
+
+    Scope is deliberately narrow and fail-closed:
+    - `??` entries only. A TRACKED file modified to match origin/main still
+      blocks — its diff against HEAD is real checkout state, and excusing it
+      would also excuse an un-pulled revert riding in the working tree.
+    - Regular files only. The fingerprint digest is a content hash for files;
+      `dir`, `symlink:*`, and `missing` entries never qualify (a symlink's
+      blob is its target STRING, which `git hash-object` of the followed file
+      would misjudge).
+    - Identity is blob-OID equality at the SAME path: one `git ls-tree` for
+      origin/main's OIDs and one `git hash-object` for the working copies.
+      Neither reads blob content, so a blobless clone answers without a
+      promisor fetch.
+    - Any failure — no origin/main ref, a git error, a racing edit — excludes
+      nothing, and the path keeps blocking exactly as before.
+
+    A stale origin/main ref is safe on both edges: matching a stale blob
+    still proves the bytes shipped on SOME main commit, and failing to match
+    keeps the block (the pre-existing behavior).
+    """
+    candidates = []
+    for entry in dirty:
+        value = now.get(entry, "")
+        if not value.startswith("??:"):
+            continue
+        digest = value[3:]
+        if digest in ("dir", "missing") or digest.startswith("symlink:"):
+            continue
+        candidates.append(entry)
+    if not candidates:
+        return set()
+    try:
+        listing = _run_raw(
+            root,
+            "git",
+            "ls-tree",
+            "-z",
+            "refs/remotes/origin/main",
+            "--",
+            *candidates,
+        )
+        shipped_oid: dict[str, str] = {}
+        for record in listing.split("\0"):
+            if not record:
+                continue
+            meta, _, name = record.partition("\t")
+            fields = meta.split()
+            if len(fields) != 3:
+                continue
+            mode, object_type, oid = fields
+            # Blobs only, in the two regular-file modes. 120000 (symlink) and
+            # 160000 (gitlink) records name different object semantics, and a
+            # tree here means the untracked path collides with a shipped
+            # DIRECTORY — never equivalence.
+            if object_type != "blob" or mode not in ("100644", "100755"):
+                continue
+            shipped_oid[name] = oid
+        matched = [entry for entry in candidates if entry in shipped_oid]
+        if not matched:
+            return set()
+        hashed = _run_raw(root, "git", "hash-object", "--", *matched, timeout=90)
+        oids = hashed.split()
+        if len(oids) != len(matched):
+            return set()
+        return {
+            entry
+            for entry, oid in zip(matched, oids)
+            if shipped_oid[entry] == oid
+        }
+    except Exception:
+        return set()
+
+
 def _load(path: Path) -> dict[str, Any] | None:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -3758,7 +3844,16 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
 
     baseline = state.get("baseline") or {}
-    dirty = _changed_since_baseline(baseline, _fingerprint(root))
+    now = _fingerprint(root)
+    dirty = _changed_since_baseline(baseline, now)
+    if dirty:
+        # Untracked bytes already shipped at the same path on origin/main are
+        # not committable work (see _shipped_identical_untracked). Checked only
+        # here, on the paths about to block, so the cost stays two bounded git
+        # calls at Stop rather than per-status-entry.
+        shipped = _shipped_identical_untracked(root, now, dirty)
+        if shipped:
+            dirty = [entry for entry in dirty if entry not in shipped]
     if dirty:
         preview = ", ".join(dirty[:12])
         _block(path, state, payload, "uncommitted", f"Session-created changes remain: {preview}")
