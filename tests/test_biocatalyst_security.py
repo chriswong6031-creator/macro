@@ -92,13 +92,15 @@ def _generation_paths(publisher: PublicGenerationPublisher) -> tuple[Path, Path,
 
 
 def _count_generation_loads(monkeypatch: pytest.MonkeyPatch, sink: list[str]) -> None:
-    orig = PublicGenerationPublisher._load_generation_manifest
+    orig = PublicGenerationPublisher._materialize_validated_generation
 
-    def wrapped(self: PublicGenerationPublisher, generation_id: str) -> dict[str, Any]:
+    def wrapped(self: PublicGenerationPublisher, generation_id: str):
         sink.append(generation_id)
         return orig(self, generation_id)
 
-    monkeypatch.setattr(PublicGenerationPublisher, "_load_generation_manifest", wrapped)
+    monkeypatch.setattr(
+        PublicGenerationPublisher, "_materialize_validated_generation", wrapped
+    )
 
 
 def _rehash_generation(
@@ -985,3 +987,166 @@ def test_second_pointer_change_during_bundle_read_fails_closed(
     with pytest.raises(PublicationError) as raised:
         publisher.read_product_bundle(now=NOW)
     assert raised.value.code == "PUBLIC_GENERATION_CHANGED"
+
+
+def _count_family_validators(
+    monkeypatch: pytest.MonkeyPatch, sink: dict[str, int]
+) -> None:
+    orig_snapshot = publication_module._validate_trial_snapshot_binding
+    orig_protocol = publication_module._validate_trial_protocol_projection_binding
+    orig_history = publication_module._validate_trial_history_model_binding
+    orig_prospective = publication_module.validate_prospective_public_model
+    orig_tape = publication_module.validate_trial_change_tape_read_model
+
+    def wrap_snapshot(*args: Any, **kwargs: Any):
+        sink["snapshot"] += 1
+        return orig_snapshot(*args, **kwargs)
+
+    def wrap_protocol(*args: Any, **kwargs: Any):
+        sink["protocol"] += 1
+        return orig_protocol(*args, **kwargs)
+
+    def wrap_history(*args: Any, **kwargs: Any):
+        sink["history"] += 1
+        return orig_history(*args, **kwargs)
+
+    def wrap_prospective(*args: Any, **kwargs: Any):
+        sink["prospective"] += 1
+        return orig_prospective(*args, **kwargs)
+
+    def wrap_tape(*args: Any, **kwargs: Any):
+        sink["tape"] += 1
+        return orig_tape(*args, **kwargs)
+
+    monkeypatch.setattr(publication_module, "_validate_trial_snapshot_binding", wrap_snapshot)
+    monkeypatch.setattr(
+        publication_module, "_validate_trial_protocol_projection_binding", wrap_protocol
+    )
+    monkeypatch.setattr(
+        publication_module, "_validate_trial_history_model_binding", wrap_history
+    )
+    monkeypatch.setattr(
+        publication_module, "validate_prospective_public_model", wrap_prospective
+    )
+    monkeypatch.setattr(
+        publication_module, "validate_trial_change_tape_read_model", wrap_tape
+    )
+
+
+def test_unchanged_product_bundle_materializes_once_and_does_not_reopen_artifacts(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, publisher = committed_generation
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+    opened_during_projection: list[str] = []
+    orig_projection = PublicGenerationPublisher._trial_projection_from_validated
+    orig_read_bytes = Path.read_bytes
+    orig_read_text = Path.read_text
+
+    def wrapped_projection(
+        self: PublicGenerationPublisher, validated: ValidatedPointerBoundGeneration
+    ):
+        _, generation, _ = _generation_paths(self)
+        generation_files = {
+            path.resolve() for path in generation.rglob("*") if path.is_file()
+        }
+
+        def tracked_read_bytes(path_self: Path, *args: Any, **kwargs: Any) -> bytes:
+            if path_self.resolve() in generation_files:
+                opened_during_projection.append(path_self.resolve().as_posix())
+            return orig_read_bytes(path_self, *args, **kwargs)
+
+        def tracked_read_text(path_self: Path, *args: Any, **kwargs: Any) -> str:
+            if path_self.resolve() in generation_files:
+                opened_during_projection.append(path_self.resolve().as_posix())
+            return orig_read_text(path_self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_bytes", tracked_read_bytes)
+        monkeypatch.setattr(Path, "read_text", tracked_read_text)
+        try:
+            return orig_projection(self, validated)
+        finally:
+            monkeypatch.setattr(Path, "read_bytes", orig_read_bytes)
+            monkeypatch.setattr(Path, "read_text", orig_read_text)
+
+    monkeypatch.setattr(
+        PublicGenerationPublisher, "_trial_projection_from_validated", wrapped_projection
+    )
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert loads == [bundle.projection.generation.generation_id]
+    assert opened_during_projection == []
+
+
+def test_schema_16_product_bundle_validates_each_family_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Production schema 1.6.0 used to validate each family twice per NCT.
+
+    A 4-NCT generation was 8 validations per family; the request-local
+    materialization keeps that to once per NCT (4, not 8). The owned worker
+    fixture is one NCT, so the contract is observed_nct_count, not 2×.
+    """
+
+    config = worker_config(tmp_path, prospective_enabled=False)
+    result = worker.run_once(
+        config,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: MemoryStore(),
+        now_fn=lambda: NOW,
+    )
+    assert result.status == "success"
+    publisher = PublicGenerationPublisher(config.public_root)
+    counts = {
+        "snapshot": 0,
+        "protocol": 0,
+        "history": 0,
+        "prospective": 0,
+        "tape": 0,
+    }
+    _count_family_validators(monkeypatch, counts)
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert bundle.projection.generation.schema_version == "1.6.0"
+    nct_count = bundle.projection.generation.observed_nct_count
+    assert nct_count >= 1
+    assert counts["snapshot"] == nct_count
+    assert counts["protocol"] == nct_count
+    assert counts["history"] == nct_count
+    assert counts["tape"] == nct_count
+    assert counts["prospective"] == 0
+    assert bundle.projection.prospective_models_by_nct["NCT00000001"] == {
+        "available": False,
+        "unavailable_reason": "baseline_not_established",
+    }
+
+
+def test_projection_uses_validated_artifacts_after_post_proof_disk_mutation(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    validated = publisher.read_validated_generation()
+    assert validated is not None
+    _, generation, _ = _generation_paths(publisher)
+    snapshot_path = generation / "trial_snapshots" / "NCT00000001.json"
+    original = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    mutated = dict(original)
+    mutated["source_snapshot_ref"] = "ctgov_snapshot_NCT00000001_mutated_after_validate"
+    snapshot_path.write_bytes(canonical_json_bytes(mutated) + b"\n")
+
+    projection = publisher._trial_projection_from_validated(validated)
+
+    assert projection.trials[0]["source_snapshot_ref"] == original["source_snapshot_ref"]
+    assert (
+        projection.trials[0]["source_snapshot_ref"] != mutated["source_snapshot_ref"]
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_product_bundle(now=NOW)
+    assert raised.value.code == "PUBLIC_GENERATION_ARTIFACT_MISMATCH"
