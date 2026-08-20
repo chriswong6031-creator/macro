@@ -38,6 +38,7 @@ def test_canaries_are_dispatch_only_and_not_merge_authority() -> None:
 
 def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -> None:
     document = workflow("merge-control-hosted-canary.yml")
+    production = workflow("merge-on-green.yml")
     assert document["permissions"] == {"contents": "read"}
     assert set(document["jobs"]) == {"trust-gate", "hosted-environment"}
     trust = document["jobs"]["trust-gate"]
@@ -74,6 +75,28 @@ def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -
         ".github/workflows",
     }
 
+    # Canary/production parity is a live contract, not duplicated prose. The canary
+    # is allowed to tighten credential persistence only; the actual materialized
+    # source surface and dependency bootstrap must remain byte-for-byte equivalent.
+    prod_steps = production["jobs"]["sweep"]["steps"]
+    prod_checkout = next(
+        step for step in prod_steps if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert exact["uses"] == prod_checkout["uses"]
+    for key in ("filter", "sparse-checkout", "sparse-checkout-cone-mode"):
+        assert exact["with"][key] == prod_checkout["with"][key]
+    prod_bootstrap = next(step for step in prod_steps if step.get("name") == "install the yaml parser")
+    canary_bootstrap = next(
+        step for step in steps if step.get("name") == "exact production PyYAML bootstrap"
+    )
+    assert canary_bootstrap["run"] == prod_bootstrap["run"]
+    parity = next(
+        step for step in steps if step.get("name") == "assert canary tracks the production environment contract"
+    )
+    assert "merge-on-green.yml" in parity["run"]
+    assert "merge-control-hosted-canary.yml" in parity["run"]
+    assert "production/canary environment contract parity: OK" in parity["run"]
+
     production_probe = next(
         step
         for step in steps
@@ -92,11 +115,12 @@ def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -
     assert "!/site/" in broad_options["sparse-checkout"]
     assert "!/data/" in broad_options["sparse-checkout"]
 
-    tests = next(
-        step
-        for step in steps
+    tests_index = next(
+        index
+        for index, step in enumerate(steps)
         if step.get("name") == "run existing merge-control and runner-boundary suites"
-    )["run"]
+    )
+    tests = steps[tests_index]["run"]
     for suite in (
         "tests/test_ci_pack.py",
         "tests/test_merge_on_green.py",
@@ -105,6 +129,28 @@ def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -
         "tests/test_ci_canary_workflows.py",
     ):
         assert suite in tests
+
+    # A phase-1 environment receipt is evidence, not acceptance. It starts false and
+    # flips true only after the real control suites pass; the artifact is uploaded on
+    # both green and red runs so a failed canary leaves an explicit negative receipt.
+    initial = next(step for step in steps if step.get("name") == "write environment receipt")
+    assert '"phase2": "pending"' in initial["run"]
+    assert '"accepted": False' in initial["run"]
+    finalize_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "finalize successful canary receipt"
+    )
+    finalize = steps[finalize_index]
+    assert tests_index < finalize_index
+    assert 'receipt["phase2"] = "control_tests_ok"' in finalize["run"]
+    assert 'receipt["accepted"] = True' in finalize["run"]
+    upload_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and str(step.get("with", {}).get("name", "")).startswith("merge-control-hosted-canary-")
+    )
+    assert finalize_index < upload_index
+    assert steps[upload_index]["if"] == "always()"
 
 
 def test_normal_ci_and_fences_remain_hosted() -> None:
