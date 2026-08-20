@@ -140,11 +140,15 @@ artifacts:
   - research/biocatalyst_recovery_v2/P0_C2R2_PRODUCTION_ACCEPTANCE_2026-08-20.md
 next_action: >
   Recovery program complete. Preserve #6090 as the production proof and close this
-  workstream rather than using it as an implementation catch-all. Post-P0 continuation
-  is a separate Sol CEO adjudication (Linear MAS-74): recover the larger V2 product
-  thesis against current production, then either commission a distinct parity/truth/
-  alpha/Prophet workstream with one bounded first vertical or explicitly park further
-  expansion. No post-P0 implementation is authorized by this closeout.
+  workstream rather than using it as an implementation catch-all. The MAS-74 post-P0
+  adjudication was executed 2026-08-20 by the Sol-commissioned P1-0 recharter:
+  research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
+  (capability ledger, first-vertical verdict Catalyst Radar — Trial Milestones,
+  frozen first slice in
+  research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md). The P1 workstream
+  home and the verdict's ratification are returned to Sol in that document's §11.
+  No post-P0 implementation is authorized by this closeout or by the recharter
+  records themselves.
 ---
 
 ## Closure

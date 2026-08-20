@@ -4,8 +4,9 @@ title: BioPharmCatalyst JV snapshot reconstruction (independent primary sources)
 objective: >
   Turn the authorized 2026-08-17 BPC snapshots into a reconstruction spec, then
   later onboard the licensed corpus and independently rebuild reconstructable
-  families from Mastermind-owned primary sources. Done for RECON-0 = freeze
-  architecture accepted by Sol; complete pending merge of PR #5909.
+  families from Mastermind-owned primary sources. RECON-0 is done: freeze
+  architecture accepted by Sol and PR #5909 merged 2026-08-19T19:51:49Z as
+  9711c60d3067f1908a7822008ffd7a8b23171854.
   Done for the program = (1) licensed snapshot corpus onboarded and useful,
   (2) independent producers can continuously regenerate the targeted data
   families, (3) owner-plane projections wired to website/machine consumers,
@@ -23,14 +24,19 @@ waves:
     title: JV snapshot archaeology + source-system reconstruction freeze
     status: done
     pr: 5909
-    next_action: Architecture accepted; complete pending merge of PR #5909. Do not start SNAPSHOT-ONBOARD from this PR.
+    next_action: >
+      Done. #5909 merged 2026-08-19T19:51:49Z as 9711c60d3067. Do not start
+      SNAPSHOT-ONBOARD from that PR; commissioning is a separate Sol act.
   - id: SNAPSHOT-ONBOARD
     title: Licensed snapshot corpus onboarding
     status: todo
     depends_on: [RECON-0]
     next_action: >
-      Do not start from PR #5909. After #5909 merges, return to Sol for
-      commissioning of the first bounded SNAPSHOT-ONBOARD vertical. When
+      #5909 is merged; commissioning is now owed to Sol (bundled with the
+      post-soak sequencing adjudication in
+      research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
+      §11). Do not start until Sol commissions the first bounded
+      SNAPSHOT-ONBOARD vertical. When
       commissioned and W1–W4 bytes are in the implementation environment, census
       each workbook (SHA-256 → ordered sheet set → dimensions → content hashes →
       pair class ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT |
@@ -41,7 +47,11 @@ waves:
     title: Continuous source reconstruction
     status: todo
     depends_on: [RECON-0]
-    next_action: Do not start from PR #5909. Independent producers, consumer wiring, PIT research; Drugs@FDA matcher is a calibration component, not this wave's proof.
+    next_action: >
+      Remains todo; #5909 is merged but grants no start authority. Independent
+      producers, consumer wiring, PIT research; Drugs@FDA matcher is a
+      calibration component, not this wave's proof. Runtime source registration
+      stays post-soak successor-registry gated.
   - id: RECON-1
     title: Drugs@FDA hermetic matcher (recast — calibration component, not program-done)
     status: dropped
@@ -126,15 +136,21 @@ do_not_redo:
     registration waits for the post-soak successor registry / successor
     launch-manifest transition.
 next_action: >
-  After #5909 merges, return to Sol for commissioning of the first bounded
-  SNAPSHOT-ONBOARD vertical. Do not begin it from this PR.
+  RECON-0 merged (#5909, 2026-08-19). Return to Sol for commissioning of the
+  first bounded SNAPSHOT-ONBOARD vertical — bundled with the post-soak
+  sequencing adjudication proposed in
+  research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
+  §11. Runtime biopharmcatalyst_jv_snapshot registration remains prohibited
+  until the post-soak successor-registry / successor-launch-manifest
+  transition.
 artifacts:
   - research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
 ---
 
 ## Context
 
-RECON-0 is Sol-accepted architecture, soak-safe pending merge of PR #5909.
+RECON-0 is Sol-accepted architecture, merged 2026-08-19 (PR #5909, squash
+`9711c60d3067f1908a7822008ffd7a8b23171854`).
 Canonical identity `biopharmcatalyst_jv_snapshot` is frozen; live registry
 insertion is deferred until the post-soak successor source-registry /
 successor launch-manifest transition. The program continues (`status: active`).
