@@ -99,21 +99,25 @@ waves:
       on the D3 close).
   - id: D4
     title: Company financial truth bridge
-    status: in_progress
+    status: done
+    pr: [6123]
     depends_on: [D3]
     next_action: >
-      Sol authorized 2026-08-20, IRDM ONLY. Put the reviewed P00032 fact
-      beside the canonical Earnings/SEC owner's latest usable IRDM truth in
-      the existing dossier. Owner preflight classifies A (canonical IRDM
-      packet exists: consume read-only) / B (source evidence, no owner
-      packet: render Company packet unavailable + record the owner gap) /
-      C (no usable evidence: same unavailable state). Default
-      comparison_state=not_comparable, denominator null, materiality null —
-      a denominator is admitted only from an owner packet with receipt-bound
-      scope/semantic/period/unit/clock/basis compatible with the government
-      fact. No Earnings Wire HTML parsing; no company dataset under
-      data/government_revenue/; no browser-side division; page fence 296 KiB
-      may NOT be raised again (#6059). D5 unauthorized.
+      Done — shipped and live 2026-08-20 (merge b5548ece927d) under Sol's
+      IRDM-only charter. Owner preflight: case A on the v1 context plane
+      (GET /api/company-intelligence/IRDM serves company_intelligence_
+      context.v1 live; event_workspace.v1 stays AAPL-only; DEC:D4-COMPANY-
+      RAIL-CONSUMES-CI-V1-CONTEXT). Bridge renders GOVERNMENT FACT (P00032,
+      transaction receipt by content_sha256) / COMPANY TRUTH
+      (earnings_history-lineage fields only, fail-closed typed unavailable)
+      / COMPARISON fixed not_comparable with no ratio node / RESEARCH
+      QUESTION. 27-test hostile suite on a committed P00032 fixture in the
+      MERGE-BINDING gate:code job govrev-company-bridge. Opus review found
+      the suite would have shipped dark (gate:data holding pen) and a
+      wrong-receipt link — repaired pre-merge, probes pinned as tests.
+      Page fence unchanged (baked 296,693 <= 303,104). Awaiting Sol
+      acceptance; D5 unauthorized. Residual: one entitled production
+      eyeball (operator-side; all inputs individually live-proven).
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -159,13 +163,14 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D4 in progress (Sol authorized 2026-08-20 after accepting D3): IRDM-only
-  company financial truth bridge — GovRev P00032 beside the canonical
-  Earnings/SEC owner's IRDM truth, comparison_state=not_comparable unless a
-  receipt-bound compatible denominator is owner-asserted. D0R/D1/D1.1/D2/D3
-  done and accepted. #5424 is closed/superseded by defense21-v1. Do not
-  re-baseline. Publisher-vintage alarm remains a reliability follow-up. D5
-  unauthorized.
+  Sol D4 acceptance review. D0R/D1/D1.1/D2/D3 done and accepted; D4 shipped
+  and live 2026-08-20 (#6123, merge b5548ece927d) — GovRev P00032 beside
+  the canonical owner's live IRDM context packet, comparison closed
+  (not_comparable, null ratio) with no lawful denominator asserted. D5 is
+  unauthorized. #5424 is closed/superseded by defense21-v1. Do not
+  re-baseline. Publisher-vintage alarm remains a reliability follow-up;
+  new candidate follow-up: fixture-freeze the D2/D3 law suites out of the
+  unrun-government-revenue holding pen (advisory-only today).
 ---
 
 ## Context
