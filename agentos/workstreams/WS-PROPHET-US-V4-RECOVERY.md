@@ -327,9 +327,9 @@ waves:
       US coverage byte-identical (702/533/2/1 unchanged); 5 hostile fixtures
       on real committed data (A/H ICBC, renamed 300223, SOE-naming-collision
       601988/601601, unresolved issuer, alias-only vendor id — CN/HK never
-      resolves via rule 5, only rule 6); PR #6116, branch
-      claude/d2b2-cn-hk (merge SHA pending — see the next handoff for the
-      immutable pointer once merged). China pr0d wave adopts this result by
+      resolves via rule 5, only rule 6); PR #6116, squash-merged as
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA). China
+      pr0d wave adopts this result by
       reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
       production nightly proving source -> master -> GMI projection with a
       recorded run id and the measured CN/HK resolution delta, per Sol's

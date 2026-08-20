@@ -142,9 +142,9 @@ waves:
       evidence, then re-derived the GMI identity_resolution/v1 sidecar — real
       China/HK company nodes now resolve through canonical Mastermind ids
       (co:cn:601398.SS -> SEC:CN-XSHG-601398, co:hk:1398.HK ->
-      SEC:HK-XHKG-01398, etc). PR #6116, branch claude/d2b2-cn-hk (immutable
-      merge SHA to be recorded here once merged — see the owner WS's D2B2
-      handoff for full receipts). This wave flips to done only after a
+      SEC:HK-XHKG-01398, etc). PR #6116, squash-merged as
+      ed28d0d992a144aec5f0ef2616024e3e32d83b1a (immutable merge SHA) — see
+      the owner WS's D2B2 handoff for full receipts. This wave flips to done only after a
       natural production nightly demonstrates real China/HK nodes flowing
       source -> canonical master -> GMI projection, with run ID and measured
       CN/HK resolution delta recorded here (not yet observed).
@@ -179,7 +179,7 @@ next_action: >
   intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash
   c54d1b55f673; page half proven live, zero real visit rows yet), pr0d
   BUILT_NOT_PROVEN, adopted by reference from D2B2-CN-HK under
-  WS:PROPHET-US-V4-RECOVERY (PR #6116, branch claude/d2b2-cn-hk; CN 0->96.4%
+  WS:PROPHET-US-V4-RECOVERY (PR #6116 squash ed28d0d992a1; CN 0->96.4%
   / HK 0->100% GMI resolution). Next in this WS: (1) P1 data-half proof — the
   first asia-close run persisting >=1 real institutional_visit row +
   production dossier desktop/mobile crops (never manufacture a run;
