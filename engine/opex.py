@@ -40,14 +40,20 @@ def _third_friday(y: int, m: int) -> date:
 
 def expiration_days(index: pd.DatetimeIndex) -> pd.Series:
     """Map each month's 3rd-Friday expiration to the last trading day <= that Friday in
-    `index` (handles holidays e.g. Good Friday). Returns a Series of those trading days
-    flagged is_quad. Causal — purely calendar-derived."""
+    `index` (handles holidays e.g. Good Friday). Only expirations whose calendar date is
+    within the observed index are emitted; a future expiration must never be projected
+    onto the last available bar. Returns those trading days flagged is_quad. Causal —
+    purely calendar-derived."""
     idx = pd.DatetimeIndex(sorted(set(index)))
+    if idx.empty:
+        return pd.Series(index=pd.DatetimeIndex([]), dtype=bool)
     years = range(idx[0].year, idx[-1].year + 1)
     rows = {}
     for y in years:
         for m in range(1, 13):
             fri = pd.Timestamp(_third_friday(y, m))
+            if fri > idx[-1]:
+                continue
             on_or_before = idx[idx <= fri]
             if len(on_or_before):
                 rows[on_or_before[-1]] = (m in QUAD_MONTHS)
@@ -65,18 +71,36 @@ def tag(index: pd.DatetimeIndex) -> pd.DataFrame:
     n = len(idx)
     i_all = np.arange(n)
     # nearest expiration position at/below and above each day
-    prev_idx = np.searchsorted(exp_pos, i_all, side="right") - 1
-    next_idx = np.searchsorted(exp_pos, i_all, side="left")
-    td_since = np.where(prev_idx >= 0, i_all - exp_pos[np.clip(prev_idx, 0, len(exp_pos) - 1)], np.nan)
-    td_to = np.where(next_idx < len(exp_pos), exp_pos[np.clip(next_idx, 0, len(exp_pos) - 1)] - i_all, np.nan)
+    if len(exp_pos):
+        prev_idx = np.searchsorted(exp_pos, i_all, side="right") - 1
+        next_idx = np.searchsorted(exp_pos, i_all, side="left")
+        td_since = np.where(
+            prev_idx >= 0,
+            i_all - exp_pos[np.clip(prev_idx, 0, len(exp_pos) - 1)],
+            np.nan,
+        )
+        td_to = np.where(
+            next_idx < len(exp_pos),
+            exp_pos[np.clip(next_idx, 0, len(exp_pos) - 1)] - i_all,
+            np.nan,
+        )
+        quad_vals = exp.to_numpy()
+        is_quad_cycle = np.where(
+            prev_idx >= 0,
+            quad_vals[np.clip(prev_idx, 0, len(quad_vals) - 1)],
+            False,
+        )
+    else:
+        td_since = np.full(n, np.nan)
+        td_to = np.full(n, np.nan)
+        is_quad_cycle = np.zeros(n, dtype=bool)
     out["td_since"] = td_since
     out["td_to"] = td_to
-    in_week = (td_to <= -OPEX_WEEK_LO) & (td_to >= 0) | (td_since == 0)
+    in_week = ((td_to <= -OPEX_WEEK_LO) & (td_to >= 0)) | (td_since == 0)
     out["in_opex_week"] = in_week
     out["in_post_opex"] = (td_since >= POST_LO) & (td_since <= POST_HI)
     # quad flag attaches to the cycle whose expiration is the nearest PAST one
-    quad_vals = exp.to_numpy()
-    out["is_quad_cycle"] = np.where(prev_idx >= 0, quad_vals[np.clip(prev_idx, 0, len(quad_vals) - 1)], False)
+    out["is_quad_cycle"] = is_quad_cycle
     out["phase"] = np.where(out["in_opex_week"], "opex_week",
                             np.where(out["in_post_opex"], "post_opex", "mid_cycle"))
     return out
