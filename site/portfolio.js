@@ -72,6 +72,7 @@
       mixedAbstain: 'Weights not shown — mix of sized and unsized positions.',
       mixedBasisAbstain: 'Weights not shown — mix of live-priced and at-cost positions.',
       unresolvedBasisAbstain: 'Weights not shown — a position has no resolvable price.',
+      singlePositionBook: 'One position in this book — a relationship read needs at least two.',
       costWeighted: 'Weighted by entry cost — live prices are not available for these positions.',
       onePosSay: 'This book is one position',
       onePosBecause: 'There is nothing to compare it against yet. Add a second position and this reads what your book really is.',
@@ -123,6 +124,7 @@
       mixedAbstain: '未显示权重 —— 部分持仓有仓位大小，部分没有。',
       mixedBasisAbstain: '未显示权重 —— 部分按现价，部分按成本价。',
       unresolvedBasisAbstain: '未显示权重 —— 有一笔持仓没有可用价格。',
+      singlePositionBook: '这本账簿只有一笔持仓——关系读数需要至少两笔。',
       costWeighted: '按成本价加权 —— 这些持仓暂无实时价格。',
       onePosSay: '这本账簿只有一笔持仓',
       onePosBecause: '目前还没有可比较的对象。再添加一笔持仓，这里就会读出你的账簿到底是什么。',
@@ -827,6 +829,11 @@
       var abstainMsg = T.en.mixedAbstain, abstainMsgZh = T.zh.mixedAbstain;
       if (W && W.reason === 'mixed_price_basis') { abstainMsg = T.en.mixedBasisAbstain; abstainMsgZh = T.zh.mixedBasisAbstain; }
       else if (W && W.reason === 'unresolved_basis') { abstainMsg = T.en.unresolvedBasisAbstain; abstainMsgZh = T.zh.unresolvedBasisAbstain; }
+      /* A 1-US + 1-HK all-sized book (core audience) reaches this block via the
+         lead-book restriction: leadRows.length===1 → 'insufficient'/'single_position'.
+         The generic mixed-sizing sentence is FALSE for it — every position carries a
+         size. Name the real reason instead ('no_positions' defensively: same copy). */
+      else if (W && (W.reason === 'single_position' || W.reason === 'no_positions')) { abstainMsg = T.en.singlePositionBook; abstainMsgZh = T.zh.singlePositionBook; }
       say.innerHTML = te(abstainMsg, abstainMsgZh);
       if (because) because.innerHTML = '';
       if (stance) stance.innerHTML = '';

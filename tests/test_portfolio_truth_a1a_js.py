@@ -974,3 +974,26 @@ def test_md_pfChipStateFor_never_returns_saved_without_afterWrite():
     # text itself is bilingual markup this harness does not re-render here.
     src = WATCHLIST.read_text()
     assert "clean:   ['is-saved',   'Up to date'" in src
+
+
+# ===========================================================================
+# Post-review (commissioning session): the single-position lead-book copy —
+# a 1-US + 1-HK all-sized book must never be told "mix of sized and unsized"
+# ===========================================================================
+def test_single_position_lead_book_never_gets_the_mixed_sizing_copy():
+    """MUTATION CHECK: delete the `single_position` route in renderBookRead's
+    abstain block and this reds. A 1-US + 1-HK all-sized book (core audience)
+    passes the zero/one split (open.length === 2), then the lead-book restriction
+    leaves leadRows.length === 1, so computeWeighting returns
+    'insufficient'/'single_position' (pinned behaviorally in
+    test_portfolio_state_js.py::test_zero_or_one_position_is_insufficient_no_relationship_read).
+    The generic mixed-sizing sentence is FALSE for that book — every position
+    carries a size — so the reason must route to its own honest copy."""
+    code = _pf_code()
+    idx = code.index("var abstainMsg = T.en.mixedAbstain")
+    block = code[idx:code.index("say.innerHTML", idx)]
+    assert "single_position" in block
+    assert "singlePositionBook" in block
+    # both language tables carry the copy
+    assert "One position in this book" in code
+    assert "这本账簿只有一笔持仓" in code
