@@ -20,6 +20,7 @@ from __future__ import annotations
 import html
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -36,6 +37,14 @@ from scripts.build_options_command import (  # noqa: E402
     render,
     _pips,
 )
+
+
+@pytest.fixture(autouse=True)
+def _pin_completed_session(monkeypatch):
+    """Historical fixtures describe the completed 2026-07-24 close."""
+    import scripts.build_options_command as boc
+    monkeypatch.setattr(boc.nyse_calendar, "expected_last_session",
+                        lambda *_a, **_k: __import__("datetime").date(2026, 7, 24))
 
 # Five modes since OIP W1.6-A (the One-Door consolidation): Flow lands SECOND,
 # and the order is pinned — the five evening questions in reading order.
@@ -152,7 +161,7 @@ def _stores() -> dict:
             ],
         },
         "leaders": {
-            "as_of": "2026-07-26T01:51:28+00:00", "stale": False,
+            "as_of": "2026-07-26T01:51:28+00:00", "session_date": "2026-07-24", "stale": False,
             "board_a": [{"ticker": "MARA", "sector": "Crypto", "recurrence_count": 6.0,
                          "A1_flow_recur": True, "A2_flow_z_hot": False, "A5_price_leader": None,
                          "fire_a": False, "de_escalation": {"earnings_window": True}}],
@@ -630,21 +639,54 @@ def test_absent_stores_produce_plain_word_empty_states():
         assert phrase in page
 
 
-def test_quality_word_is_a_presence_census_not_a_threshold():
+def test_quality_word_is_a_session_integrity_census_not_a_threshold():
     full = build_context(REPO, _stores())["session"]
     assert full["quality_en"] == "Complete" and full["quality_zh"] == "完整"
 
     gone = build_context(REPO, dict(EMPTY_STORES))["session"]
-    assert gone["quality_en"] == "Partial" and gone["quality_zh"] == "部分"
+    assert gone["quality_en"] == "Unavailable" and gone["quality_zh"] == "不可用"
     assert set(gone["quality_tip_en"]) and set(gone["quality_tip_zh"])
 
 
 def test_stale_leader_boards_are_named_in_the_quality_receipt():
     stores = _stores()
     stores["leaders"]["stale"] = True
+    stores["leaders"]["session_date"] = "2026-07-23"
+    ctx = build_context(REPO, stores)
+    sess = ctx["session"]
+    assert sess["quality_en"] == "Stale"
+    assert "2026-07-23" in sess["quality_tip_en"]
+    assert ctx["rail"]["asof"] == "2026-07-23", "build timestamp must not masquerade as session"
+
+
+def test_coherently_old_estate_is_stale_never_complete():
+    stores = _stores()
+    old = "2026-07-20"  # four NYSE sessions behind target 2026-07-24
+    stores["flow_desk"]["asof"] = old
+    for row in stores["screener"]["rows"]:
+        row["asof"] = old
+    stores["leaders"]["session_date"] = old
+    stores["market_structure"]["asof"] = old
+    stores["vol"]["asof"] = old
+    for row in stores["gex_index"]:
+        row["asof"] = old
+
     sess = build_context(REPO, stores)["session"]
-    assert sess["quality_en"] == "Partial"
-    assert "earlier session" in sess["quality_tip_en"]
+    assert sess["date"] == "2026-07-24"
+    assert sess["quality_en"] == "Stale"
+    assert all(r["status"] == "stale" for r in sess["sources"])
+    assert {r["sessions_behind"] for r in sess["sources"]} == {4}
+
+
+def test_optional_source_alone_cannot_make_target_composition_partial():
+    stores = dict(EMPTY_STORES)
+    stores["leaders"] = {
+        "session_date": "2026-07-24", "as_of": "2026-07-25T01:00:00Z",
+        "board_a": [{"ticker": "SPY"}], "board_b": [],
+    }
+    sess = build_context(REPO, stores)["session"]
+    assert sess["quality_en"] == "Unavailable"
+    assert "No core source" in sess["quality_tip_en"]
 
 
 def test_present_but_empty_stores_are_not_complete():
@@ -689,7 +731,7 @@ def test_index_levels_vintage_mismatch_also_degrades_quality():
     stores = _stores()
     stores["gex_index"] = [{"key": k, "asof": "2026-07-22"} for k in INDEX_KEYS]
     sess = build_context(REPO, stores)["session"]
-    assert sess["quality_en"] == "Partial"
+    assert sess["quality_en"] == "Stale"
     assert "2026-07-22" in sess["quality_tip_en"]
 
 
@@ -1005,25 +1047,23 @@ def test_money_formatting():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# main() — the "always exits 0" contract (#F1-08)
+# main() — retention is not publication success (#F1-08)
 # ─────────────────────────────────────────────────────────────────────────────
-def test_main_exits_zero_even_when_write_page_raises(monkeypatch, tmp_path):
-    """The docstring's contract (§5): the builder always exits 0.  write_page
-    and the second, redundant context-build-for-logging used to sit OUTSIDE
-    the render() try/except, so an exception in either escaped main() despite
-    the contract's promise."""
+def test_main_returns_nonzero_and_preserves_prior_page_when_write_page_raises(monkeypatch, tmp_path):
     import scripts.build_options_command as boc
 
     def _boom(*_a, **_k):
         raise RuntimeError("disk full")
 
+    out = tmp_path / "options.html"
+    out.write_text("prior published page")
     monkeypatch.setattr("lib.pages.write_page", _boom)
-    rc = boc.main(["--root", str(REPO), "--out", str(tmp_path / "options.html")])
-    assert rc == 0
-    assert not (tmp_path / "options.html").exists()
+    rc = boc.main(["--root", str(REPO), "--out", str(out)])
+    assert rc != 0
+    assert out.read_text() == "prior published page"
 
 
-def test_main_exits_zero_on_a_genuine_render_failure(monkeypatch, tmp_path):
+def test_main_returns_nonzero_on_a_genuine_render_failure(monkeypatch, tmp_path):
     import scripts.build_options_command as boc
 
     def _boom(*_a, **_k):
@@ -1031,7 +1071,7 @@ def test_main_exits_zero_on_a_genuine_render_failure(monkeypatch, tmp_path):
 
     monkeypatch.setattr(boc, "render", _boom)
     rc = boc.main(["--root", str(REPO), "--out", str(tmp_path / "options.html")])
-    assert rc == 0
+    assert rc != 0
 
 
 def test_main_writes_the_page_on_the_happy_path(tmp_path):
@@ -2405,6 +2445,38 @@ def test_flow_mode_degrades_honestly_at_every_absence(page):
     for key, html_ in res.items():
         en, zh = html_.count('class="l-en"'), html_.count('class="l-zh"')
         assert en == zh, f"{key}: bilingual parity broke in an empty state ({en}/{zh})"
+
+
+@_needs_node
+def test_today_tide_accepts_only_same_et_market_session():
+    live_page = render(REPO, _stores(), now=datetime(2026, 7, 24, 15, tzinfo=timezone.utc))
+    out = _node(live_page, """
+    var good = { schema:'live_flow.tide/v1', session_date:'2026-07-24',
+      asof:'2026-07-24T15:00:00Z', minutes:[{t:'09:31',ncp:1,npp:2},{t:'09:32',ncp:2,npp:3}] };
+    var stale = Object.assign({}, good, {session_date:'2026-07-23'});
+    var badSchema = Object.assign({}, good, {schema:'live_flow.tide/v0'});
+    var badAsof = Object.assign({}, good, {asof:'not-a-time'});
+    process.stdout.write(JSON.stringify({good:flTideValidity(good), stale:flTideValidity(stale),
+      schema:flTideValidity(badSchema), asof:flTideValidity(badAsof)}));
+    """)
+    result = _json.loads(out.strip().splitlines()[-1])
+    assert result == {"good": None, "stale": "session", "schema": "schema", "asof": "asof"}
+
+
+@_needs_node
+def test_today_tide_is_disabled_on_weekends_and_holidays():
+    for instant in (
+        datetime(2026, 7, 25, 15, tzinfo=timezone.utc),  # Saturday
+        datetime(2026, 7, 3, 15, tzinfo=timezone.utc),   # observed Independence Day
+    ):
+        closed_page = render(REPO, _stores(), now=instant)
+        assert "var LIVE_SESSION_DATE = null;" in closed_page
+        out = _node(closed_page, """
+        var tide = { schema:'live_flow.tide/v1', session_date:'2026-07-24',
+          asof:'2026-07-24T15:00:00Z', minutes:[{t:'09:31',ncp:1,npp:2},{t:'09:32',ncp:2,npp:3}] };
+        process.stdout.write(String(flTideValidity(tide)));
+        """)
+        assert out.strip().endswith("session")
 
 
 def test_tide_canvas_colour_is_read_from_tokens_at_draw_time(page):

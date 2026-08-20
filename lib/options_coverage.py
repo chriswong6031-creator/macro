@@ -43,6 +43,8 @@ SHAPE (schema ``options_coverage.v1``)
 """
 from __future__ import annotations
 
+from datetime import timedelta
+
 SCHEMA = "options_coverage.v1"
 
 
@@ -57,7 +59,7 @@ def _as_asof(v) -> str | None:
     return s
 
 
-def _sessions_behind(asof) -> int | None:
+def _sessions_behind(asof, expected_session=None) -> int | None:
     """Completed sessions missing behind ``asof``, or None when it cannot be judged.
 
     Calendar-derived, never a wall-clock day count — a store holding Friday's close is
@@ -70,9 +72,30 @@ def _sessions_behind(asof) -> int | None:
 
         from lib import nyse_calendar
 
-        return int(nyse_calendar.sessions_behind(pd.Timestamp(str(asof)).date()))
+        actual = pd.Timestamp(str(asof)).date()
+        if expected_session is not None:
+            expected = pd.Timestamp(str(expected_session)).date()
+            return len(nyse_calendar.sessions_between(actual + timedelta(days=1), expected))
+        return int(nyse_calendar.sessions_behind(actual))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _status(asof, expected_session=None) -> str:
+    stamp = _as_asof(asof)
+    if not stamp:
+        return "unavailable"
+    if expected_session is not None:
+        try:
+            import pandas as pd
+            if pd.Timestamp(stamp).date() > pd.Timestamp(str(expected_session)).date():
+                return "conflict"
+        except Exception:  # noqa: BLE001 — unreadable dates are unavailable, never current
+            return "unavailable"
+    behind = _sessions_behind(asof, expected_session)
+    if behind is None:
+        return "unavailable"
+    return "stale" if behind else "current"
 
 
 def _as_int(v) -> int | None:
@@ -92,26 +115,31 @@ def _as_int(v) -> int | None:
 
 
 def source(key: str, name_en: str, name_zh: str, *,
-           asof=None, n: int | None = None) -> dict:
+           asof=None, n: int | None = None, expected_session=None) -> dict:
     """One input store's freshness row.
 
     ``key`` is machine-only (never rendered).  ``name_en`` / ``name_zh`` are the plain
     words a surface prints.  ``asof`` is the store's own session stamp; ``n`` the number
     of names it covered.  Both may be None — an unknown is printed as unknown.
     """
+    behind = _sessions_behind(asof, expected_session)
+    status = _status(asof, expected_session)
     return {
         "key": str(key),
         "name_en": str(name_en),
         "name_zh": str(name_zh),
         "asof": _as_asof(asof),
         "n": _as_int(n),
-        "sessions_behind": _sessions_behind(asof),
+        "expected_session": _as_asof(expected_session),
+        "sessions_behind": behind,
+        "status": status,
     }
 
 
 def coverage_object(*, universe_name_en: str, universe_name_zh: str,
                     universe_n: int | None, covered_n: int | None,
-                    asof=None, sources: list[dict] | None = None) -> dict:
+                    asof=None, sources: list[dict] | None = None,
+                    expected_session=None) -> dict:
     """Build the shared coverage object.  Never raises; unknowns stay None.
 
     ``covered_n`` is clamped to ``universe_n`` when both are known — a coverage share
@@ -133,6 +161,8 @@ def coverage_object(*, universe_name_en: str, universe_name_zh: str,
         "covered": cov,
         "coverage_pct": pct,
         "asof": _as_asof(asof),
-        "sessions_behind": _sessions_behind(asof),
+        "expected_session": _as_asof(expected_session),
+        "sessions_behind": _sessions_behind(asof, expected_session),
+        "status": _status(asof, expected_session),
         "sources": list(sources or []),
     }

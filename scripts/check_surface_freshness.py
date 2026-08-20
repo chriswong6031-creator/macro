@@ -54,6 +54,10 @@ _ARTIFACTS: list[ArtifactSpec] = [
     ArtifactSpec("site/basketdata/sector_pulse.json"),
     ArtifactSpec("site/basketdata/turn_watch.json"),  # FTR W4 basket turn-watch organ
     ArtifactSpec("site/factordata/us_standouts.json"),  # CSP-W5 FT-R8 registration
+    # Options Flow publishes ``asof`` (no underscore).  Registering the actual
+    # reader-facing manifest closes the gap where its producer could no-op for
+    # several sessions while this shared sentinel remained green.
+    ArtifactSpec("site/flow/index.json", "asof"),
 ]
 
 
@@ -302,7 +306,7 @@ def selftest() -> int:
         for spec in _ARTIFACTS:
             p = tmp / spec.path
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(json.dumps({"as_of": expected}))
+            p.write_text(json.dumps({spec.as_of_key: expected}))
 
         rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
         assert rc == 0, f"fresh scenario returned {rc}"
