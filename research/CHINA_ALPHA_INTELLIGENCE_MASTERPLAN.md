@@ -64,10 +64,16 @@ The nine commissioned adjudications, each ruled at current `origin/main`:
 **Execution rulings:** what runs in parallel NOW = PR-0B (v4 telemetry) and
 RIGHTS-0 (source entitlement audit) — commissions at
 `research/china_alpha_intelligence/commissions/`. P1 spawns after RIGHTS-0
-names a lawful visit source. PR-0D (identity extension) may run in parallel
-with all of these (different owner surface, coordinate with
-`WS:STOCK-IDENTITY`; commission `PR-0D_china_identity_extension.md`, boundary
-in §0-ter.6). Waiting on data/time: P1B (needs P1 accrual), L2+ (needs
+names a lawful visit source. PR-0D (identity extension) is OWNER-ROUTED
+(authority-seam correction, Sol 2026-08-20,
+`DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK` — the original
+`WS:STOCK-IDENTITY` coordination pointer was mistaken): implementation runs
+as the bounded child D2B2-CN-HK under `WS:PROPHET-US-V4-RECOVERY` / Data OS
+identity authority (`lib/dataos/identity.py` + canonical builder;
+`research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`); the
+China lane is consumer-verifier only (commission
+`PR-0D_china_identity_extension.md` banner; boundary in §0-ter.6 unchanged).
+Waiting on data/time: P1B (needs P1 accrual), L2+ (needs
 L0 + family states), C3 (needs data depth per §11.2). Stop conditions: §17.
 The estate-side FABLE-A contract wave is dispatched separately under its own
 DEC and is NOT a China-lane dependency.
@@ -1072,19 +1078,28 @@ freeze pointer/event/independence/as-of contracts and prove them against real na
 Boring-baseline rule:
 no persistent Mesh store unless a funded cross-store consumer fails the owner-reader baseline.
 
-### PR-0D — China exact identity extension — **commission ready**
+### PR-0D — China exact identity extension — **OWNER-ROUTED (Sol 2026-08-20)**
 `research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md`
 
 Mission:
 DataOS resolves China listing/security/issuer identities and vendor aliases; GMI bridge resolves real China company nodes or typed refusals.
+
+Owner route (authority-seam correction,
+`DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`): implementation is owned by the
+bounded child D2B2-CN-HK under `WS:PROPHET-US-V4-RECOVERY` / Data OS identity
+authority (`lib/dataos/identity.py` + `scripts/build_security_master.py`;
+frozen contract `research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`).
+The China lane never builds identity itself; wave `pr0d` is consumer-verifier
+and adopts the owner result by reference (merge = BUILT_NOT_PROVEN; done only
+on the natural-nightly source → master → GMI proof with run ID + measured
+CN/HK resolution delta).
 
 Authority boundary (binding, §0-ter.6): identity/GMI resolution ONLY. PR-0D
 never inherits the Earnings event-adapter job — CN issuer admission into
 event truth is a later Earnings-owner wave post-E2 under
 `DEC:ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL`, and no
 `china_corporate_event.v1` exists on any path. Primary-source resolution only
-(§8.2 resolver NO-BUY stands). Coordinate with `WS:STOCK-IDENTITY` before
-touching identity surfaces.
+(§8.2 resolver NO-BUY stands).
 
 ### P1 — Institutional Visit Tape + Dossier — **commission ready, gated on RIGHTS-0**
 `research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md`
@@ -1237,9 +1252,11 @@ revised head.** After that clears:
    rights findings rather than re-deriving any of them — its residual scope
    is the non-Tushare ToS posture, resolver persistence rights for the
    primary-source route, and the P1 source verdict synthesis. PR-0D (China
-   exact identity extension) may also run in parallel from its commission,
-   coordinated with `WS:STOCK-IDENTITY`; it inherits #5943's issuer-layer
-   CIK-lock finding and the §0-ter.6 boundary.
+   exact identity extension) is OWNER-ROUTED per
+   `DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK` (2026-08-20): implementation
+   = D2B2-CN-HK under `WS:PROPHET-US-V4-RECOVERY` / Data OS identity
+   authority, China lane consumer-verifier only; it inherits #5943's
+   issuer-layer CIK-lock finding and the §0-ter.6 boundary.
 2. **After the RIGHTS-0 verdict on the visit source:** spawn P1 Institutional
    Discovery (`P1_institutional_visit_tape.md`).
 3. **After P1 accrues + L0 lands:** P1B discovery state, then the L-track

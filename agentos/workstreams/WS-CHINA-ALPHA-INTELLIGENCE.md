@@ -24,10 +24,12 @@ owns_paths:
 depends_on:
   - WS:ALPHA-INTELLIGENCE-INTEGRATION
   - WS:EARNINGS-INTELLIGENCE-OS
+  - WS:PROPHET-US-V4-RECOVERY
   - WS:STOCK-IDENTITY
   - WS:GMI-THEME-GRAPH
 decisions:
   - DEC:CHINA-ALPHA-INTELLIGENCE-ARCHITECTURE-FREEZE
+  - DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK
 landmines:
   - "Serving firewall: Intelligence serving inputs never contain Prophet
     score/rank/lane/board membership/entry state/signal tier. Those are
@@ -104,7 +106,8 @@ waves:
     status: in_progress
     pr: [6045]
     next_action: >
-      BUILT_NOT_PROVEN — merged as PR #6045 (head 9f94f0b131787011ca9ee2e0f826d003dc7363cd);
+      BUILT_NOT_PROVEN — merged as PR #6045 (squash fdbf543b2333ec6077988ffd571966f180008cc5;
+      immutable merge SHA is the canonical proof pointer per Sol 2026-08-20);
       done only on the real-nightly telemetry receipt. Follow-up verification session runs,
       against a full (non-sparse) checkout: `git log --oneline -1 -- data/china_prophet_rank/`
       then reads the newest rows and asserts intel_* columns are non-null for covered names and
@@ -117,11 +120,25 @@ waves:
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
     status: in_progress
     depends_on: [rights0]
-    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050; done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done."
+    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050 (squash c54d1b55f673cb383c00889e8f4ab809614666ba; immutable merge SHA is the canonical proof pointer per Sol 2026-08-20); done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done."
   - id: pr0d
-    title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)
+    title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)
     status: in_progress
-    next_action: builder dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/PR-0D_china_identity_extension.md), coordinated with WS:STOCK-IDENTITY
+    next_action: >
+      OWNER_ROUTED_WAIT (Sol authority adjudication 2026-08-20,
+      DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK): the 2026-08-20 China-lane
+      builder correctly STOPPED at the D2B2 owner collision — its commission's
+      WS:STOCK-IDENTITY / engine/stock_identity/ seam pointer was mistaken, and
+      no China-lane builder runs again. Implementation is owned by the bounded
+      child D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY / Data OS identity
+      authority (frozen contract
+      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md; China/HK
+      slice only, US/Canada unauthorized). This wave is consumer-verifier: at
+      D2B2-CN-HK merge it adopts the owner result by reference (record the
+      immutable merge SHA here) and becomes BUILT_NOT_PROVEN; it flips to done
+      only after a natural production nightly demonstrates real China/HK nodes
+      flowing source -> canonical master -> GMI projection, with run ID and
+      measured CN/HK resolution delta recorded here.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -146,17 +163,22 @@ waves:
     status: todo
     depends_on: [l0, p1b]
 next_action: >
-  FREEZE EFFECTIVE (Sol post-merge final freeze acceptance GO, 2026-08-20;
-  accepted reconciliation receipt = main 49533d59b16076630ccd7d8bf48307f658db61da).
-  Execution now: PR-0B (builder) + RIGHTS-0 (researcher) + PR-0D (builder,
-  coordinated with WS:STOCK-IDENTITY) dispatched in parallel from their
-  frozen commission files — the commissions are the authority, never
-  broadened, and workers do not rediscover the architecture. P1 spawns ONLY
-  after the RIGHTS-0 verdict on the institutional visit source. Completion
+  ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication received;
+  freeze effective since Sol post-merge acceptance GO, receipt = main
+  49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b BUILT_NOT_PROVEN
+  (#6045 squash fdbf543b2333), rights0 done, p1 BUILT_NOT_PROVEN (#6050
+  squash c54d1b55f673), pr0d OWNER_ROUTED_WAIT on D2B2-CN-HK under
+  WS:PROPHET-US-V4-RECOVERY (DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK; no
+  China-lane identity builder). Next in this WS: (1) the PR-0B/P1
+  production-proof verification (bounded proof-only inspection of the first
+  qualifying NATURAL post-merge nightly/asia-close runs — never manufacture
+  a run; RECEIPT_NOT_YET_ACCRUED leaves waves BUILT_NOT_PROVEN); (2) adopt
+  the D2B2-CN-HK result by reference when the owner child merges. Completion
   law on every build wave: merge = BUILT_NOT_PROVEN; a real production
-  receipt (recorded here) = done — production proof, not green CI, advances
-  wave state. Later tracks (P3–P6, R3–R4, S-lobes, L3+) charter from the
-  masterplan at their wave boundaries.
+  receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B,
+  L0, R1, R2, or later verticals without a new Sol directive. Later tracks
+  (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave
+  boundaries.
 artifacts:
   - research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md
   - research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md
