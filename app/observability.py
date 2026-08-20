@@ -69,6 +69,37 @@ log = logging.getLogger("macro.observability")
 _INITIALIZED = False
 
 
+def _announce(message: str) -> None:
+    """Emit a startup line that actually SURVIVES to the journal.
+
+    FOUND LIVE (2026-08-20, immediately after #6115 deployed): the arm line was
+    a ``log.info`` and never appeared in ``journalctl -u macro-api`` — so the
+    runbook's documented verification step could not work, and "is Sentry on?"
+    had no cheap answer at the exact moment it was first asked.
+
+    Cause: uvicorn's LOGGING_CONFIG configures ONLY the ``uvicorn``,
+    ``uvicorn.error`` and ``uvicorn.access`` loggers and leaves the root logger
+    at its default WARNING. Verified on the box:
+
+        uvicorn configured loggers: ['uvicorn', 'uvicorn.error', 'uvicorn.access']
+        root logger level: 30 WARNING
+        macro.observability effective level: WARNING
+
+    So every ``log.info`` from this module is dropped, while the ``log.warning``
+    failure paths come through fine. Rather than have a library module reach in
+    and mutate the host application's logging config, the one-shot startup
+    banner goes to stdout — which systemd captures for the unit regardless of
+    any logging configuration. `flush` is load-bearing: stdout is block-buffered
+    when it is a pipe (which it is under systemd), so an unflushed banner sits
+    in the buffer instead of reaching the journal.
+
+    The line is still ALSO sent through the logger, so an operator who has
+    configured INFO-level logging gets it in structured form too.
+    """
+    print(message, flush=True)
+    log.info("%s", message)
+
+
 def _flag(name: str, default: bool) -> bool:
     """Read a 0/1-style env flag. Anything unparseable falls back to *default*."""
     raw = os.environ.get(name)
@@ -124,7 +155,7 @@ def init_sentry(component: str) -> bool:
 
     dsn = os.environ.get("SENTRY_DSN", "").strip()
     if not dsn:
-        log.info("observability: SENTRY_DSN unset; Sentry disabled for %s", component)
+        _announce("observability: SENTRY_DSN unset; Sentry disabled for %s" % component)
         return False
 
     try:
@@ -169,10 +200,13 @@ def init_sentry(component: str) -> bool:
         pass
 
     _INITIALIZED = True
-    log.info(
-        "observability: Sentry armed for %s (env=%s release=%s traces=%s profiles=%s)",
-        component, options["environment"], release or "-",
-        options.get("traces_sample_rate"), options.get("profile_session_sample_rate"),
+    _announce(
+        "observability: Sentry armed for %s (env=%s release=%s traces=%s profiles=%s)"
+        % (
+            component, options["environment"], release or "-",
+            options.get("traces_sample_rate"),
+            options.get("profile_session_sample_rate", "n/a"),
+        )
     )
     return True
 

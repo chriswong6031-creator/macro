@@ -129,6 +129,25 @@ Armed looks like:
 observability: Sentry armed for macro-api (env=production release=<sha> traces=0.1 profiles=0.0)
 ```
 
+**Why that banner goes to stdout rather than through the logger** (it was a
+`log.info` on first ship, and was invisible — fixed same day): uvicorn's
+`LOGGING_CONFIG` configures only the `uvicorn`, `uvicorn.error` and
+`uvicorn.access` loggers and leaves the root logger at its default `WARNING`.
+Verified on the box:
+
+```
+uvicorn configured loggers: ['uvicorn', 'uvicorn.error', 'uvicorn.access']
+root logger level: 30 WARNING
+macro.observability effective level: WARNING
+```
+
+So any `log.info` from `app/observability.py` is dropped, while its
+`log.warning` failure paths come through fine. The startup banner therefore
+prints to stdout (flushed — stdout is block-buffered under systemd), which the
+journal captures regardless of logging config. `tests/test_observability_sentry.py`
+asserts this via `capsys`, **not** `caplog`: a `caplog` assertion passes on the
+broken version, which is exactly how the gap shipped.
+
 Not armed prints exactly one of:
 
 - `observability: SENTRY_DSN unset; Sentry disabled for macro-api` → the env
