@@ -156,6 +156,18 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     if weekday and 14 <= hour <= 22:
         require_lane("bars", 90)
         _require_age(failures, checks, "flow_pulse", 90)
+        pulse = checks.get("flow_pulse")
+        if isinstance(pulse, dict):
+            n_tickers = int(pulse.get("n_tickers") or 0)
+            with_bars = int(pulse.get("with_bars") or 0)
+            if pulse.get("mode") != "fastpath" or n_tickers <= 0:
+                failures.append(
+                    f"flow_pulse: semantically unavailable (mode={pulse.get('mode') or 'missing'})"
+                )
+            elif with_bars / n_tickers < 0.80:
+                failures.append(
+                    f"flow_pulse: only {with_bars}/{n_tickers} tickers have current-session bars"
+                )
     return failures
 
 

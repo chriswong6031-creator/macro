@@ -1122,6 +1122,26 @@ def test_quote_snapshot_quality_rejects_empty_or_low_coverage(tmp_path: Path):
     ) is None
 
 
+def test_flow_pulse_quality_rejects_age_fresh_no_data(tmp_path: Path):
+    path = tmp_path / "flow_pulse.json"
+    path.write_text(json.dumps({
+        "mode": "no_data", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 0},
+            {"ticker": "AMD", "bars_today": 0},
+        ],
+    }))
+    assert "mode=no_data" in (vlo.flow_pulse_error(path, min_coverage=0.8) or "")
+    path.write_text(json.dumps({
+        "mode": "fastpath", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 4},
+            {"ticker": "AMD", "bars_today": 4},
+        ],
+    }))
+    assert vlo.flow_pulse_error(path, min_coverage=0.8) is None
+
+
 def test_command_can_publish_private_state_outside_public_root(tmp_path: Path):
     source = tmp_path / "stage" / "quotes_full.json"
     source.parent.mkdir()
@@ -1364,7 +1384,12 @@ def _healthy_vps_status() -> dict:
             "overlay": {"age_min": 2},
             "risk_state": {"age_min": 2},
             "china_risk_state": {"age_min": 2},
-            "flow_pulse": {"age_min": 30},
+            "flow_pulse": {
+                "age_min": 30,
+                "mode": "fastpath",
+                "n_tickers": 116,
+                "with_bars": 116,
+            },
         },
     }
 
@@ -1386,6 +1411,16 @@ def test_vps_health_contract_reports_failed_or_stale_lane():
     )
     assert "lane snapshot: last run was not healthy" in failures
     assert any("lane snapshot: stale" in failure for failure in failures)
+
+
+def test_vps_health_contract_rejects_age_fresh_no_data_pulse():
+    payload = _healthy_vps_status()
+    payload["checks"]["flow_pulse"].update({"mode": "no_data", "with_bars": 0})
+    failures = evaluate_live_health(
+        payload,
+        now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc),
+    )
+    assert "flow_pulse: semantically unavailable (mode=no_data)" in failures
 
 
 def test_vps_health_contract_reports_semantically_late_release():
@@ -1442,6 +1477,8 @@ def test_caddy_serves_live_store_without_cache():
     assert "@vps_public_live" in text
     assert "@vps_external" in text
     assert "handle /live/quotes.json" in text
+    assert "/live/intraday_quotes.json" in text
+    assert "/live/flow_pulse.json" in text
     assert "handle /live/release_publications.json" in text
     assert "root * /var/lib/macro-live/public" in text
     assert 'Cache-Control "no-store"' in text
