@@ -178,6 +178,18 @@
   .rs-neg { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 12%,transparent); }
   .rs-neu { color:var(--muted); background:var(--panel2); }
   .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
+  /* ── P1 institutional visits (glance-tier, descriptive only; no directional hue) ── */
+  .visit-glance { margin: 12px 0 18px; }
+  .visit-glance-lead { font-size:12px; color:var(--muted); margin:0 0 10px; }
+  .visit-row { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--line); }
+  .visit-row:last-child { border-bottom:none; }
+  .visit-state { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:6px; letter-spacing:.03em; text-transform:uppercase; background:var(--panel2); color:var(--muted); border:1px solid var(--line); white-space:nowrap; }
+  .visit-meta { font-size:11px; color:var(--muted); line-height:1.4; }
+  .visit-first-seen { font-size:10px; color:var(--muted); }
+  .visit-recent { font-size:11.5px; flex-basis:100%; }
+  @media (max-width: 640px) {
+    .visit-row { flex-direction:column; gap:4px; }
+  }
   .cmd-fals { font-size:10px; color:var(--ink-warn, var(--warn)); margin-top:2px; }
   .cmd-expander { font-size:11.5px; color:var(--ink-link, var(--link)); cursor:pointer; margin-top:8px; display:inline-block; }
   /* ── discovery queue ── */
@@ -694,6 +706,52 @@
     </div>
   </details>
   {%- endif %}
+  {%- endif %}
+
+
+  {# ── K2b. INSTITUTIONAL VISITS (P1; glance-tier; command.json / cmd_full path) ── #}
+  {# Descriptive only. Never a score/rank input. Honest typed states. Never "first ever". #}
+  {%- if cmd_full and cmd_full.command %}
+  <section class="visit-glance" id="institutional-visits" data-visit-plane="cmd_full">
+    <h2 class="sec">{{ t('Institutional visits','机构调研') }}</h2>
+    <p class="visit-glance-lead">
+      {{ t('CNInfo investor-relations activity records since coverage start. Glance-tier context only — not a score or rank input.','覆盖起始日后的投资者关系活动记录。一览层描述，不计入评分或排序。') }}
+    </p>
+    {%- for d in cmd_full.command %}
+    {%- set _v = (d.get('visits') if d is mapping else none) or {} %}
+    {%- set _st = _v.get('state') or 'no_coverage' %}
+    {%- set _lbl = {
+      'ok': ['observed', '已观测'],
+      'measured_no_event': ['none since coverage start', '覆盖起始日后无记录'],
+      'no_coverage': ['no coverage', '尚无覆盖'],
+      'stale': ['stale', '已过期'],
+      'source_failure': ['source failure', '源失败'],
+      'not_applicable': ['not applicable', '不适用'],
+    }.get(_st, [_st, _st]) %}
+    <div class="visit-row" data-ticker="{{ d.ticker }}" data-visit-state="{{ _st }}">
+      <span class="cmd-ticker">{{ d.ticker }}</span>
+      <span class="cmd-name">{{ d.name }}</span>
+      <span class="visit-state">{{ t(_lbl[0], _lbl[1]) }}</span>
+      {%- if _v.get('detail') %}<span class="visit-meta">{{ _v.get('detail') }}</span>{%- endif %}
+      {%- if _st in ['ok', 'stale'] and _v.get('recent') %}
+      <div class="visit-recent">
+        {%- for r in _v.get('recent') %}
+        <div>
+          <span class="visit-meta">{{ r.get('source_published_at') or '' }}</span>
+          <span>{{ r.get('title') or '' }}</span>
+          {%- if r.get('visitor_raw') and r.get('visitor_raw') != 'not_yet_available' %}
+          <span class="visit-meta">{{ r.get('visitor_raw') }}</span>
+          {%- endif %}
+          {%- if r.get('first_seen_since_coverage_start') %}
+          <span class="visit-first-seen">{{ t('first seen since coverage start','覆盖起始日后首次出现') }}</span>
+          {%- endif %}
+        </div>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </section>
   {%- endif %}
 
   {# ── K3. DISCOVERY QUEUE ── #}
