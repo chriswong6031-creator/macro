@@ -262,24 +262,24 @@ def _hero(tally: dict, gauge: dict | None, n_no_price: int = 0) -> dict:
         mkt_zh = f"全盘来看，{dw * 100:.0f}% 的成交金额发生在场外。"
     if total == 0:
         return {
-            "en": "No name is trading unusually far off its own off-exchange norm today."
+            "en": "No name traded unusually far from its own off-exchange norm in the settled session."
                   + mkt_en,
-            "zh": "今日没有个股的场外成交明显偏离自身常态。" + mkt_zh,
+            "zh": "本结算交易日没有个股的场外成交明显偏离自身常态。" + mkt_zh,
         }
     weak = tally.get("heavy_into_weakness", 0)
     strong = tally.get("heavy_into_strength", 0)
     flat = tally.get("heavy_price_flat", 0)
     lead = max(_PATTERN_KEYS, key=lambda k: tally.get(k, 0))
     if lead == "heavy_into_weakness":
-        body_en = (f"{total} names are trading unusually dark; in {weak} of them the "
+        body_en = (f"{total} names traded unusually dark in the settled session; in {weak} of them the "
                    f"hidden volume showed up while the price was falling.")
         body_zh = f"{total} 只个股场外成交异常偏重，其中 {weak} 只是在股价下跌时出现的。"
     elif lead == "heavy_into_strength":
-        body_en = (f"{total} names are trading unusually dark; in {strong} of them the "
+        body_en = (f"{total} names traded unusually dark in the settled session; in {strong} of them the "
                    f"hidden volume showed up while the price was rising.")
         body_zh = f"{total} 只个股场外成交异常偏重，其中 {strong} 只是在股价上涨时出现的。"
     else:
-        body_en = (f"{total} names are trading unusually dark; in {flat} of them large "
+        body_en = (f"{total} names traded unusually dark in the settled session; in {flat} of them large "
                    f"size changed hands without moving the quote.")
         body_zh = f"{total} 只个股场外成交异常偏重，其中 {flat} 只是在报价几乎未动的情况下完成的。"
     return {"en": body_en + mkt_en, "zh": body_zh + mkt_zh}
