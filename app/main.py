@@ -91,6 +91,15 @@ if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
 # above — `lib` lives at the repo root, not under app/. Pure stdlib, no app import cycle.
 from lib import user_prefs  # noqa: E402
 
+# Error/trace reporting. MUST run before `app = FastAPI(...)` below: the SDK's
+# FastAPI/Starlette integrations instrument the framework at init time, so an
+# app object built first is never wrapped. Hard no-op when SENTRY_DSN is absent
+# from /etc/macro-api.env or when sentry_sdk is not installed in the venv — it
+# can neither raise nor block startup (see app/observability.py).
+from app.observability import init_sentry  # noqa: E402
+
+init_sentry("macro-api")
+
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
 # VPS live artifacts live outside the git work-tree so a frequent
