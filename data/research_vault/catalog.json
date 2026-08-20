@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T07:31:35.679057+00:00",
-  "count": 1462,
+  "generated_at": "2026-08-20T08:23:38.496761+00:00",
+  "count": 1464,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1567,6 +1567,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2ynpshh0tha-058603",
+      "title": "Asia Pacific bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:04Z",
+      "summary_points": [
+        "**SGD Rate Drivers & Performance**: Geopolitical tensions (US-Iran), weak Fed meeting, and Singapore bond sale drove SGD rate rises; SGD bond picks delivered 0.5% avg return vs.",
+        "1.6% for index, highlighting fundamental outperformance via duration positioning and corporate perpetuals.",
+        "**Strategic Bond Adjustments**: Added Seatrium 2.95% 2031 bond (yield 2.8%) and Mapletree/AIMS REIT for yield/duration; strategy prioritizes lower-rated IG, corporate perpetuals, and foreign bank subordinated debt to capture yield pickup amid rising SGD yields.",
+        "**Subordinated Perpetuals Risk**: 12 issuers (e.g., Singapore Tech Telemedia) with NR/NR ratings and coupon resets tied to SG swaps expose portfolios to interest rate volatility and credit downgrade risk, critical for duration and credit risk management.",
+        "**Credit Risk Framework**: UBS CIO uses default probability thresholds (<2% Very Low, ≥20% High) and issuer outlooks (Improving/Stable/Deteriorating) to quantify default risk, with regulatory intervention as key loss trigger for portfolio construction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tlqi4lrg8nc-430b50",
+      "title": "UBS Equity Preference List European Consumer Discretionary 2026 08 18",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-18T21:32:02Z",
+      "summary_points": [
+        "**Sector fundamentals**: Near-cyclical low P/B valuations with improving earnings outlook driven by end-demand stabilization (US policy support, EU/China savings, corporate self-help), top picks Richemont, LVMH, Inditex - **China demand as pivotal risk/catalyst**: 2026 luxury rebound hinges on China stabilization (key risk for LVMH, Hermès, Kering); weak China recovery threatens earnings (e.g., Hermès 2026 outlook, LVMH China upside) - **Portfolio rotation signals**: Strategic shifts toward Amadeus (+3.0pp), Compass Group (+3.0pp), Prosus (+1.5pp) and away from Kering (-5.0pp), Hermès (-2.0pp), Richemont (-1.0pp), reflecting focus on newness/volumes and China stabilization - **UBS concentration risk**: 99.9% of European Consumer Discretionary assets rated \"Most Preferred\" by UBS CIO, indicating extreme bullish positioning and heightened overexposure risk - **Richemont's dual drivers**: Cartier's pricing power drives valuation appeal, but geopolitical volatility (terrorism, trade wars) and FX pose key risks - **Hermès' 2026 vulnerability**: High-margin resilience offset by weaker-than-expected 2026 earnings, China recovery concerns, and brand image risk (deterioration impacts demand)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
