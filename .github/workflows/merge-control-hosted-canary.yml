@@ -156,7 +156,9 @@ jobs:
               "python": sys.version.split()[0],
               "platform": platform.platform(),
               "phase1": "production_sparse_import_ok",
+              "phase2": "pending",
               "production_contract_parity": True,
+              "accepted": False,
           }
           path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
           path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -194,6 +196,22 @@ jobs:
           tests/test_runner_policy.py
           tests/test_ci_canary_tools.py
           tests/test_ci_canary_workflows.py
+
+      # This step is reached only when every preceding phase-2 step succeeded. A red
+      # run still uploads the phase-1 receipt, but that receipt remains accepted:false.
+      - name: finalize successful canary receipt
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "merge-control-hosted-canary.json"
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          receipt["phase2"] = "control_tests_ok"
+          receipt["accepted"] = True
+          path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, sort_keys=True))
+          PY
 
       - name: publish canary receipt
         if: always()
