@@ -2053,3 +2053,48 @@ def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition(
     assert stack.count("isElevatedGrade(") == 2, (
         "rules 1 and 3 are the two elevated-grade stack rules and both must read the "
         "shared definition; found %d call(s)" % stack.count("isElevatedGrade("))
+
+
+# ---------------------------------------------------------------------------
+# Serving-layer wiring: a script tag in watchlist.html.j2 is a PROMISE that the
+# asset actually loads for the page's audience. portfolio_state.js shipped in
+# #6098 referenced by the page but absent from app/deploy/Caddyfile's explicit
+# anonymous matchers, so production served it as regwall 401 — the page would
+# have silently run its PS-absent fallback for every anonymous visitor forever
+# (found in post-merge live verification, repaired in the follow-up PR that
+# added this test). Every ?v=-stamped script on the page must be either present
+# in EVERY Caddyfile matcher that names /watchlist.js (the funnel-shell set) or
+# named here as deliberately account-gated.
+# ---------------------------------------------------------------------------
+def test_every_watchlist_page_script_is_served_or_deliberately_gated():
+    import re
+
+    root = Path(__file__).resolve().parents[1]
+    j2 = (root / "templates" / "watchlist.html.j2").read_text(encoding="utf-8")
+    caddy = (root / "app" / "deploy" / "Caddyfile").read_text(encoding="utf-8")
+
+    # Deliberately account-gated page scripts (regwall 401 for anonymous BY
+    # DESIGN — the signed-in shell reloads once to pick them up). Adding a
+    # script here is an authority decision, not a convenience.
+    GATED = {"stockdata.js", "factor_exposure.js", "risk_core.js", "watchlist_risk.js"}
+
+    stamped = set(re.findall(r'<script src="([a-z_0-9]+\.js)\?v=\d+"', j2))
+    assert "watchlist.js" in stamped, "sentinel: the page must reference its own shell"
+
+    shell_lines = [ln for ln in caddy.splitlines() if "/watchlist.js" in ln]
+    assert len(shell_lines) >= 4, (
+        "expected the four Caddyfile matchers naming /watchlist.js "
+        f"(anonymous-open x2, public path, versioned cache); found {len(shell_lines)}"
+    )
+
+    missing = {}
+    for script in sorted(stamped - GATED):
+        absent = [i for i, ln in enumerate(shell_lines) if f"/{script}" not in ln]
+        if absent:
+            missing[script] = absent
+    assert not missing, (
+        "watchlist.html.j2 references scripts the Caddyfile does not serve "
+        "anonymously in every shell matcher (regwall will 401 them): "
+        f"{missing} — add each to every matcher naming /watchlist.js in "
+        "app/deploy/Caddyfile, or add it to GATED above if the 401 is intended."
+    )
