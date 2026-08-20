@@ -102,7 +102,13 @@ waves:
   - id: pr0b
     title: PR-0B v4 telemetry preservation — persist full intel_interest anatomy prospectively (merge = BUILT_NOT_PROVEN; done only on real-nightly receipt)
     status: in_progress
-    next_action: builder dispatched 2026-08-20 under the frozen commission (research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md)
+    pr: [6045]
+    next_action: >
+      BUILT_NOT_PROVEN — merged as PR #6045 (head 9f94f0b131787011ca9ee2e0f826d003dc7363cd);
+      done only on the real-nightly telemetry receipt. Follow-up verification session runs,
+      against a full (non-sparse) checkout: `git log --oneline -1 -- data/china_prophet_rank/`
+      then reads the newest rows and asserts intel_* columns are non-null for covered names and
+      intel_unavailable_reason is set for refused names.
   - id: rights0
     title: RIGHTS-0 source entitlement/rights audit (consumes CN-A #5945 matrix + CN-B #5947 resolver findings + CN-E #5951 license findings; residual only)
     status: done

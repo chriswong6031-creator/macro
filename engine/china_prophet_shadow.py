@@ -79,6 +79,13 @@ _OBJECT_COLUMNS = (
     "quality_band",
     "potential_tier",
     "alpha_entry",
+    "intel_basis",
+    "intel_definition",
+    "intel_signal_source",
+    "intel_falsifiers",
+    "intel_drivers",
+    "intel_excludes",
+    "intel_unavailable_reason",
 )
 
 _BOOL_COLUMNS = (
@@ -251,6 +258,7 @@ def _row_record(
     *,
     asof: str,
     assignment: Mapping[str, Any] | None,
+    intel: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     ticker = _text(row.get("ticker"))
     if not ticker:
@@ -468,6 +476,37 @@ def _row_record(
         "narrative_rel20": _finite(narrative.get("rel20")),
         "narrative_breadth": _finite(narrative.get("breadth")),
     }
+    # V4 — full board-independent intelligence-interest anatomy (engine/china_intel_interest.py
+    # ``interest_score()``). ``intel`` is the SAME record the board attach
+    # (china_board_rank._attach_intel) reads for this ticker — passed through by the caller
+    # from one shared per-nightly compute, never re-scored here (single-compute invariant,
+    # masterplan §13 PR-0B). A record absent from the map (the name was never requested, or the
+    # whole V4 compute failed) is distinguished from an in-map record that fell back to v3
+    # because a desk had no evidence: the former stamps ``no_intel_record``, the latter carries
+    # its own ``unavailable_reason`` (``no_desk_evidence`` / ``no_edge_evidence``). Neither case
+    # is ever a bare null with no explanation — a missing/refused intel read is never zero.
+    intel_record = intel if isinstance(intel, Mapping) else None
+    intel_reason = (
+        _text(intel_record.get("unavailable_reason")) if intel_record is not None
+        else "no_intel_record"
+    )
+    record.update({
+        "intel_score": _finite((intel_record or {}).get("score")),
+        "intel_basis": _text((intel_record or {}).get("basis")),
+        "intel_definition": _text((intel_record or {}).get("definition")),
+        "intel_signal_core": _finite((intel_record or {}).get("signal_core")),
+        "intel_signal_source": _text((intel_record or {}).get("signal_source")),
+        "intel_edge_remaining": _finite((intel_record or {}).get("edge_remaining")),
+        "intel_edge_components": _finite((intel_record or {}).get("edge_components")),
+        "intel_gap": _finite((intel_record or {}).get("gap")),
+        "intel_lead_up": _finite((intel_record or {}).get("lead_up")),
+        "intel_gap_mult": _finite((intel_record or {}).get("gap_mult")),
+        "intel_falsifier_penalty": _finite((intel_record or {}).get("falsifier_penalty")),
+        "intel_falsifiers": _reasons((intel_record or {}).get("falsifiers")),
+        "intel_drivers": _reasons((intel_record or {}).get("drivers")),
+        "intel_excludes": _reasons((intel_record or {}).get("excludes")),
+        "intel_unavailable_reason": intel_reason,
+    })
     for component in SCORE_COMPONENTS:
         value, points = _component(row, component)
         record[f"prophet_{component}"] = value
@@ -495,6 +534,7 @@ def append_candidates(
     lane: str | None = None,
     board_lanes: Mapping[str, Any] | None = None,
     lane_by_ticker: Mapping[str, str] | None = None,
+    intel_by: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> int:
     """Append one settled full-universe China Prophet candidate snapshot.
 
@@ -505,6 +545,16 @@ def append_candidates(
     ``lane_by_ticker`` mapping) so every raw-eligible row receives its exact
     ``featured``/``more_actionable``/``late_or_unfillable``/``forming`` lane.
     Raw-ineligible names are stamped ``not_raw_eligible`` automatically.
+
+    ``intel_by`` is the SAME ``{TICKER: interest record}`` map the caller already
+    built once via :func:`engine.china_intel_interest.build_interest_map` and fed
+    to :func:`engine.china_board_rank.enrich_and_score_rows` (as its own
+    ``intel_by``) — passing it here persists the FULL board-independent
+    intelligence-interest anatomy (score, basis, signal core/source, edge
+    components, gap, falsifiers, drivers, excludes) alongside every row without a
+    second ``interest_score()`` evaluation (single-compute invariant). Omitting it
+    persists every ``intel_*`` column as null/``no_intel_record`` and changes no
+    other behavior.
 
     Returns the total row count after the keep-first merge.  This telemetry is
     best-effort and returns ``0`` on a refused or failed append; it never changes
@@ -530,7 +580,11 @@ def append_candidates(
     try:
         assignments = _assignment_index(board_lanes, lane_by_ticker)
         records = [
-            _row_record(row, asof=board_date, assignment=assignments.get(_text(row.get("ticker"))))
+            _row_record(
+                row, asof=board_date,
+                assignment=assignments.get(_text(row.get("ticker"))),
+                intel=(intel_by or {}).get(str(row.get("ticker") or "")),
+            )
             for row in source_rows
         ]
         definitions = {record["board_definition"] for record in records}
