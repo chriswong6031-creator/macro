@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T16:20:55.397138+00:00",
-  "count": 1487,
+  "generated_at": "2026-08-20T17:20:31.755251+00:00",
+  "count": 1490,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,26 @@
   ],
   "items": [
     {
+      "id": "marketdesk-jspnc9epg81-d912a7",
+      "title": "GS Vol Views 19 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:40:18Z",
+      "summary_points": [
+        "**Volatility Compression**: SPX \"avg stock\" vol compressed from ~44v to ~33v (low volatility environment), necessitating SPX puts/lookback puts for protection despite strong 2Q earnings fundamentals.",
+        "**Key Data & Hedging**: Strong 2Q earnings backdrop with FOMC minutes implying low rate move probability (0.70%); recommend hedging near SPX ATHs amid path of least resistance higher.",
+        "**Gold Bullish Catalyst**: GLD rallied ~10% in August; GIR reaffirms $4,900/toz gold forecast (end-2026) with upside risks, signaling structural bullishness.",
+        "**Sector Rotation & Skew**: SPX put-call skew steepened to 36th%ile (10-yr lookback), driving demand for upside convexity; clients tilted toward Financials (XLF, BAC, WFC) and Energy due to flat skew."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xqjcyd78wka-1180c9",
       "title": "Snowflake Aug 20",
       "institution": "Deutsche Bank",
@@ -99,6 +119,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-chg2ygemn8f-2f2795",
+      "title": "Palantir Aug 20",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T15:57:04Z",
+      "summary_points": [
+        "**Sovereign AI Differentiation**: Palantir’s sovereign AI focus (customer data/workflow control) addresses inference costs/governance concerns; AIP Evolve enables model liquidity across frontier/open-weight models, a key fundamental for institutional adoption.",
+        "**Recommendation Shift & Upside**: Deutsche Bank upgraded from Sell to Buy (target $200, up from $11), with current price ($162.66) below target, signaling significant upside potential driven by AI demand conversion and mission-critical workflow expansion.",
+        "**MiFID Sell Pressure Risk**: Deutsche Bank’s MiFID-linked services show 67-89% Sell recommendations (vs.",
+        "0-26% for banking), indicating severe research bias risk for portfolio managers assessing coverage credibility and potential overhang."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vykb1yopxu1-fcff9a",
+      "title": "JPM US MARKET INTELL MACRO WEEK AHEAD WEEK OF AUGUST 24",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T15:56:05Z",
+      "summary_points": [
+        "**Fed Policy Catalyst**: Jackson Hole Symposium (Aug 27-29) with Warsh speech (Aug 28) to define rate cut expectations, driving immediate market positioning.",
+        "**NVDA Earnings Impact**: NVIDIA (Aug 26) dominates tech sentiment; earnings and delayed Google Gemini 3.5 Pro introduce critical sector momentum and timing risk.",
+        "**US-China Tech Policy Risks**: AI talks (Sep), Xi’s potential US visit (Sep 24), and trade truce expiration (Nov 1) amplify structural uncertainty for tech portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
