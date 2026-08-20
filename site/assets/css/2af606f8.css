@@ -1070,6 +1070,125 @@
   #us-standouts[data-stagef="basing"]     .sm-hidden[data-stage="basing"],
   #us-standouts[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
   #us-standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
+  /* P-MP1-SHELL §7 — the lifecycle ladder's filter, SAME idiom as data-stagef above
+     (one rule per value; the hide/reveal halves target disjoint sets), keyed on
+     data-life instead of data-stage. #us-life-grid is the migrated Setups grid
+     (dashboard.html.j2, "us-life-grid" id) — scoped narrower than #us-standouts
+     because the Candidates/Groups/Evidence sections on this same panel carry no
+     data-life attribute and must never be touched by this filter. */
+  #us-standouts[data-lifef="watch"]       #us-life-grid > [data-life]:not([data-life="watch"]),
+  #us-standouts[data-lifef="ready"]       #us-life-grid > [data-life]:not([data-life="ready"]),
+  #us-standouts[data-lifef="entered"]     #us-life-grid > [data-life]:not([data-life="entered"]),
+  #us-standouts[data-lifef="delivering"]  #us-life-grid > [data-life]:not([data-life="delivering"]),
+  #us-standouts[data-lifef="overtime"]    #us-life-grid > [data-life]:not([data-life="overtime"]),
+  #us-standouts[data-lifef="invalidated"] #us-life-grid > [data-life]:not([data-life="invalidated"]),
+  #us-standouts[data-lifef="resolved"]    #us-life-grid > [data-life]:not([data-life="resolved"]) { display: none !important; }
+  /* ruling §6 two-total law — "the unfiltered board is the LIVE board": a
+     resolved (graded-out) plan renders in the grid so its own terminal-cell
+     filter can reach it, but sits OUT of the default/unfiltered view — the
+     section total (live) and the grid population must reconcile without it. */
+  #us-standouts:not([data-lifef="resolved"]) #us-life-grid > [data-life="resolved"] { display: none !important; }
+  /* The reveal half — SAME reason data-stagef needs one above (:not([data-stagef=X])
+     alone leaves a matching card that also carries .sm-hidden, tier_preview.js's
+     `mx-tier-hidden`, or both hidden by that OTHER rule's own !important). A card the
+     ladder filter selects must win over show-more's collapse; it may NOT win over the
+     tier lock (a filter is not a paywall bypass), so only .sm-hidden is reversed here. */
+  #us-standouts[data-lifef="watch"]       #us-life-grid > .sm-hidden[data-life="watch"],
+  #us-standouts[data-lifef="ready"]       #us-life-grid > .sm-hidden[data-life="ready"],
+  #us-standouts[data-lifef="entered"]     #us-life-grid > .sm-hidden[data-life="entered"],
+  #us-standouts[data-lifef="delivering"]  #us-life-grid > .sm-hidden[data-life="delivering"],
+  #us-standouts[data-lifef="overtime"]    #us-life-grid > .sm-hidden[data-life="overtime"],
+  #us-standouts[data-lifef="invalidated"] #us-life-grid > .sm-hidden[data-life="invalidated"],
+  #us-standouts[data-lifef="resolved"]    #us-life-grid > .sm-hidden[data-life="resolved"] { display: flex !important; }
+  #us-standouts[data-lifef] #us-life-grid + .sm-bar { display: none !important; }
+  /* ── P-MP1-SHELL §5/§6 — THE LIFECYCLE FACT ROW (.pv-life) + `.pv-mark`
+     (template-scoped HERE, not in _prophet_card.html.j2's shared pv_css() —
+     that macro is called by hk/china/canada/intl too, and §7/§12 item 3
+     require those pages' bytes to stay byte-identical; keeping this CSS
+     out of the shared macro is what makes that non-negotiable rather than
+     merely tested for).
+     .pv-life REPLACES the 4-dot Bottoming/Turning/Ready/Trend rail
+     (.pv-stp/.pv-stl) on the lifecycle-sourced call path ONLY (pv_card's
+     `lifecycle` param, additive/OFF by default — every existing caller keeps
+     the 4-dot rail, §12 acceptance item 3). NAMED .pv-life, not .pv-live —
+     that is a DIFFERENT, pre-existing chip (the ◐ intraday chip, P1 spec);
+     the two strings are one character apart, do not conflate when editing.
+     .pv-mark is THE STATIC LANE CHIP (Amendment 1, P-B5 vocabulary
+     resolution) — a different primitive from `.mx-mark` (the six-weight
+     lifecycle glyph, theme.css) despite sharing the `mark` word. Keyed on
+     `lane` in {bottoming, continuation} ONLY (§12 acceptance item 5). Reuses
+     the marks row's established chip geometry (.pv-mk-i) without adopting
+     its per-`k` color grammar — a SHAPE fact, not a rank/recency/risk one. */
+  .pv-life{display:flex;align-items:center;gap:6px;margin:7px 1px 0;min-width:0}
+  .pv-life-w{font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap}
+  .pv-newer{font-size:9.5px;font-weight:700;color:var(--ink-link,var(--info));white-space:nowrap;text-decoration:none;overflow:hidden;text-overflow:ellipsis}
+  .pv-newer:hover{text-decoration:underline}
+  .pv-mark{display:inline-flex;align-items:center;font-size:9.5px;font-weight:700;line-height:1.45;padding:1px 6px;border-radius:6px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);cursor:help}
+  /* ── P-MP1-SHELL §4b/§10 — ladder headline/footer wrapper (template-scoped,
+     matches MP-1 §9 — theme.css owns only .mx-ladder--board/.mx-cell/.mx-cap/
+     .mx-mark/.skel/.mx-error; this surrounding prose chrome is this page's own,
+     same convention as .pv-mark/.pv-life above). Geometry ported verbatim from
+     the ratified reference (mockups/refs/institutionalize/us_stocks/board.css
+     :213-219,383-398,930-931) — gate G-C. */
+  .ladder-headline { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; }
+  .ladder-n { font-size: 30px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
+              font-variant-numeric: tabular-nums; color: var(--text); }
+  .ladder-nl { font-size: 14.5px; font-weight: 650; color: var(--text); }
+  .ladder-sub { font-size: 11.5px; color: var(--muted); margin-left: 2px; }
+  .ladder-absence { margin: 7px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+              display: flex; align-items: baseline; gap: 7px; }
+  .ladder-absence .mx-mark { display: inline-block; transform: translateY(-2px); }
+  .ladder-foot { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+              margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  .ladder-clear { border: 1px solid var(--line); background: transparent; color: var(--muted);
+              border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 11px;
+              font-weight: 650; cursor: pointer; }
+  .ladder-clear:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
+  .sk-n { height: 18px; width: 26px; display: inline-block; }
+  .sk-head { height: 30px; width: 62px; display: inline-block; }
+  @media (max-width: 720px) {
+    .ladder-n { font-size: 27px; }
+    .ladder-absence { margin-top: 5px; }
+    .ladder-foot { margin-top: 5px; font-size: 11px; }
+    .ladder-headline { margin-bottom: 5px; }
+  }
+  /* ── P-MP1-SHELL §3 — CANDIDATES section anatomy (commissioning follow-up,
+     gap 1). Template-scoped for the same reason as the ladder wrapper above:
+     the reference calls .mx-sec/.cand-* "NEW primitive, lands in DS-PR-0" but
+     it never actually shipped to theme.css. Geometry ported verbatim from
+     mockups/refs/institutionalize/us_stocks/board.css:145-161,780-800,1008,1152.
+     `.fig` (tabular-nums figure marker) is the reference's own utility class,
+     also never shipped to theme.css — ported here rather than left dangling. */
+  .fig { font-variant-numeric: tabular-nums; }
+  .mx-sec { margin: 24px 0 0; }
+  .mx-sec-hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+               padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .mx-sec-h2 { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .085em;
+               text-transform: uppercase; color: var(--text); }
+  .mx-sec-total { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .mx-sec-total b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mx-sec-link { margin-left: auto; font-size: 11.5px; color: var(--ink-link); text-decoration: none; font-weight: 650; }
+  .mx-sec-link:hover { text-decoration: underline; }
+  .mx-sec-note { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
+  .cand-shelves { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 13px; }
+  .cand-shelf { display: inline-flex; align-items: baseline; gap: 7px; padding: 6px 12px;
+                border: 1px solid var(--line); border-radius: 999px;
+                background: color-mix(in srgb, var(--panel2) 65%, transparent);
+                font-size: 11.5px; font-weight: 650; color: var(--muted); }
+  .cand-shelf b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  .cand-shelf i { font-style: normal; font-size: 10px; opacity: .8; }
+  .cand-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .cand-row { display: flex; align-items: baseline; gap: 8px; padding: 8px 11px;
+              border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+              font-size: 12px; min-width: 0; }
+  .cand-tk { font-weight: 800; font-size: 12.5px; flex: none; }
+  .cand-nm { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cand-px { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; flex: none; }
+  @media (max-width: 720px) {
+    .mx-sec { margin: 12px 0 0; }
+    .mx-sec-hd { padding-bottom: 5px; margin-bottom: 7px; }
+    .cand-rows { grid-template-columns: 1fr; }
+  }
   /* NOTE: the `.pbf-empty` rules that used to sit here were removed 2026-08-02 — no
      template, macro or script has ever emitted that class, so the "honest emptiness"
      note they styled never rendered. It cannot render either: a bucket with zero rows

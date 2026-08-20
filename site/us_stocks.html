@@ -81,7 +81,7 @@
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 
-<link rel="stylesheet" href="assets/css/39f40494.css?v=39f40494">
+<link rel="stylesheet" href="assets/css/2af606f8.css?v=2af606f8">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 <link rel="preload" as="style" href="assets/css/20d98c47.css?v=20d98c47">
@@ -1401,311 +1401,162 @@
       
       
       
-      
-      <div class="us-gate-note" id="us-gate-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span class="l-en">Filtering runs across the full 61-name board once you sign in. This preview shows the first 3.</span>
-        <span class="l-zh">登录后可对全部 61 只股票进行筛选。当前预览展示前 3 只。</span>
-      </div>
-      
-      <div class="pbf-bar gated" id="us-stage-filter" role="group" aria-label="Filter the board by entry stage">
-        <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">15</span></button>
-        <button type="button" data-stagepick="live" aria-pressed="false" data-tip-en="The entry window is open now. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="入场窗口现在已经打开。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。"><span class="l-en">Live now</span><span class="l-zh">现在可操作</span><span class="pbf-n">3</span></button>
-        
-        <button type="button" data-stagepick="setting_up" hidden aria-pressed="false" data-tip-en="The setup is taking shape, but the signals do not agree yet. Get ready; there is nothing to do now. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="形态正在形成，但信号尚未一致。做好准备，现在无需操作。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。"><span class="l-en">Setting up</span><span class="l-zh">形成中</span><span class="pbf-n">0</span></button>
-        
-        <button type="button" data-stagepick="ran" aria-pressed="false" data-tip-en="The move has already started and the original entry has passed. Wait for a new setup. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="行情已经启动，原有入场窗口已过。等待下一次机会。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。"><span class="l-en">Ran — don’t chase</span><span class="l-zh">已启动 — 勿追</span><span class="pbf-n">12</span></button>
-        
-        <button type="button" data-stagepick="basing" hidden aria-pressed="false" data-tip-en="These stocks may be building a low, but no entry has fired. Watch them; do not chase. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="这些股票可能正在筑底，但尚无入场信号。观察，勿追高。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。"><span class="l-en">Basing</span><span class="l-zh">筑底中</span><span class="pbf-n">0</span></button>
-        
-        <button type="button" data-stagepick="blocked" hidden aria-pressed="false" data-tip-en="The trend or entry is not healthy enough. Stand aside for now. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="趋势或入场条件还不够健康。暂时观望。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。"><span class="l-en">Blocked</span><span class="l-zh">受阻</span><span class="pbf-n">0</span></button>
-        
-      </div>
-      <span class="pbf-live" id="us-stage-status" aria-live="polite"></span>
-      <div class="nbgrid" data-showmore-rows="3">
-      
-        
-        
-        
-        <div class="nb-stage-hd sg-live" data-stage="live" data-tip-en="The entry window is open now. Higher Priority means the setup is more ready today, not more likely to win." data-tip-zh="入场窗口现在已经打开。 优先级越高，表示今天越接近可操作，并不代表更容易获胜。">
-          <span class="sh-l"><span class="l-en">Live now</span><span class="l-zh">现在可操作</span></span>
-          <span class="sh-n">15</span>
-          <span class="sh-s"><span class="l-en">entry window is open</span><span class="l-zh">入场窗口已打开</span></span>
-        </div>
-        
-      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        <a class="pvcard pv-buy pv-featured" href="stock.html#BIIB" data-ticker="BIIB" data-stage="live">
+      <div class="ladder-headline"><span class="ladder-n fig">236</span><span class="ladder-nl"><span class="l-en">live setups today</span><span class="l-zh">个跟踪中计划</span></span><span class="ladder-sub"><span class="l-en">the six published cells below add up to this number</span><span class="l-zh">下方 6 个已发布状态合计</span></span></div>
+<div class="mx-ladder mx-ladder--board" role="group" aria-label="Filter setups by lifecycle" id="us-life-ladder">
+  <button type="button" class="mx-cell" data-life="watch" aria-pressed="false" data-zero="1">
+    <span class="mx-cap mx-cap--watch" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">0</span>
+    <span class="mx-cell-l"><span class="l-en">Watch</span><span class="l-zh">观察</span></span>
+  </button>
+  <button type="button" class="mx-cell" data-life="ready" aria-pressed="false">
+    <span class="mx-cap mx-cap--ready" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">77</span>
+    <span class="mx-cell-l"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span>
+  </button>
+  <button type="button" class="mx-cell" data-life="entered" aria-pressed="false">
+    <span class="mx-cap mx-cap--entered" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">154</span>
+    <span class="mx-cell-l"><span class="l-en">Entered</span><span class="l-zh">入场</span></span>
+  </button>
+  <button type="button" class="mx-cell" data-life="delivering" aria-pressed="false">
+    <span class="mx-cap mx-cap--delivering" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">1</span>
+    <span class="mx-cell-l"><span class="l-en">Delivering</span><span class="l-zh">达标</span></span>
+  </button>
+  <button type="button" class="mx-cell" data-life="overtime" aria-pressed="false" data-zero="1">
+    <span class="mx-cap mx-cap--overtime" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">0</span>
+    <span class="mx-cell-l"><span class="l-en">Overtime</span><span class="l-zh">超时</span></span>
+  </button>
+  <button type="button" class="mx-cell mx-cell--last-live" data-life="invalidated" aria-pressed="false">
+    <span class="mx-cap mx-cap--invalidated" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">4</span>
+    <span class="mx-cell-l"><span class="l-en">Invalidated</span><span class="l-zh">失效</span></span>
+  </button>
+  
+  <div class="mx-ladder-gap" aria-hidden="true"></div>
+  <button type="button" class="mx-cell mx-cell--term" data-life="resolved" aria-pressed="false">
+    <span class="mx-cap mx-cap--resolved" aria-hidden="true"></span>
+    <span class="mx-cell-n fig">26</span>
+    <span class="mx-cell-l"><span class="l-en">Resolved</span><span class="l-zh">已结</span></span>
+  </button>
+  <div class="ladder-termnote"><span class="l-en">not in today’s count</span><span class="l-zh">不计入上方总数</span></div>
+</div>
+<div class="ladder-foot">
+  <span><span class="l-en">Sorted by priority — how ready a setup is today, not how likely it is to win.</span><span class="l-zh">按优先级排序 — 数值越高表示越接近可操作，并不代表胜率更高。</span>
+  <span class="help">?<span class="tip tip-wide"><span class="l-en">Each cell counts plan rows — one row per tracked commitment, so a name traded twice appears twice. Watch counts names with a live signal and no open plan yet. The six live cells add up to the headline; Resolved sits outside it, because a closed plan is record rather than inventory.</span><span class="l-zh">每一格统计的是「计划」条目——每条对应一次独立的跟踪，因此同一只股票若有两次操作，就会出现两次。「观察」统计的是已有信号、但尚未建立计划的股票。6 个状态相加等于标题数字；「已结」不计入其中，因为已平仓的计划属于历史战绩，不是当前持仓。</span></span></span></span>
+  <button type="button" class="ladder-clear" id="us-life-clear" data-life="" hidden><span class="l-en">Clear filter</span><span class="l-zh">清除筛选</span></button>
+</div>
+
+      <div class="nbgrid" data-showmore-rows="3" id="us-life-grid" data-mp1-grid="1"><a class="pvcard pv-hold" href="stock.html#GPCR" id="pv-GPCR-BULL-20260604" data-ticker="GPCR" data-life="entered" data-tip-en="Stance source: last recorded board read" data-tip-zh="依据来源：上次记录的看板读数">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="10.1" width="96.0" height="4.5" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="10.1" x2="240" y2="10.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="14.6" x2="240" y2="14.6" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,39.4 3.8,42.0 7.6,40.4 11.4,36.4 15.2,37.0 19.0,33.3 22.9,33.9 26.7,34.2 30.5,37.8 34.3,41.0 38.1,34.3 41.9,33.8 45.7,34.9 49.5,37.4 53.3,31.3 57.1,35.9 61.0,30.5 64.8,30.4 68.6,31.8 72.4,34.6 76.2,31.7 80.0,33.7 83.8,30.7 87.6,33.1 91.4,30.9 95.2,28.6 99.0,15.3 102.9,14.7 106.7,15.3 110.5,21.3 114.3,15.2 118.1,22.5 121.9,25.1 125.7,30.1 129.5,31.5 133.3,31.3 137.1,21.9 141.0,38.1 144.8,33.1 148.6,22.0 152.4,24.8 156.2,30.5 160.0,27.5 163.8,32.6 167.6,29.9 171.4,28.4 175.2,30.3 179.0,25.2 182.9,21.7 186.7,23.0 190.5,27.7 194.3,28.7 198.1,22.5 201.9,24.2 205.7,24.5 209.5,23.0 213.3,23.7 217.1,26.8 221.0,22.1 224.8,20.4 228.6,21.2 232.4,21.8 236.2,18.6 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.4 3.8,42.0 7.6,40.4 11.4,36.4 15.2,37.0 19.0,33.3 22.9,33.9 26.7,34.2 30.5,37.8 34.3,41.0 38.1,34.3 41.9,33.8 45.7,34.9 49.5,37.4 53.3,31.3 57.1,35.9 61.0,30.5 64.8,30.4 68.6,31.8 72.4,34.6 76.2,31.7 80.0,33.7 83.8,30.7 87.6,33.1 91.4,30.9 95.2,28.6 99.0,15.3 102.9,14.7 106.7,15.3 110.5,21.3 114.3,15.2 118.1,22.5 121.9,25.1 125.7,30.1 129.5,31.5 133.3,31.3 137.1,21.9 141.0,38.1 144.8,33.1 148.6,22.0 152.4,24.8 156.2,30.5 160.0,27.5 163.8,32.6 167.6,29.9 171.4,28.4 175.2,30.3 179.0,25.2 182.9,21.7 186.7,23.0 190.5,27.7 194.3,28.7 198.1,22.5 201.9,24.2 205.7,24.5 209.5,23.0 213.3,23.7 217.1,26.8 221.0,22.1 224.8,20.4 228.6,21.2 232.4,21.8 236.2,18.6 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
-      <span class="pv-trg" data-tip-en="Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don&#39;t chase." data-tip-zh="新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。">⚡ <span class="l-en">Triggered</span><span class="l-zh">已触发</span></span>
+    <div class="pv-nochart"></div>
+    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Hold</span><span class="l-zh">持有</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (3)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 3</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Accounting quality is worth a second look.</span><span class="l-zh">财务质量值得再核查一次。</span></span><span class="pv-cau-row"><span class="l-en">Its Big Pharma basket is crowded and stretched. Cap your size and do not add aggressively.</span><span class="l-zh">所属 大型药企 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is reduce. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为减配。个股信号，非板块判断。</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="BIIB" data-mkt="us">$221.56</span><span class="nb-chg pv-chg" data-sym="BIIB" data-mkt="us">—</span></span></span>
+    
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">BIIB</span><span class="pv-nm"><span class="l-en">Biogen</span><span class="l-zh">Biogen</span></span></span>
-      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">69</span></span>
+      <span class="pv-idw"><span class="pv-tk">GPCR</span></span>
+      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">90</span></span>
     </div>
-    <div class="pv-ind"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div><div class="pv-mk"><span class="pv-mk-i pv-mk-feat"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span><span class="pv-mk-i pv-mk-lane" data-tip-en="The shape of the setup: bottoming = turning up off a base · continuation = an existing uptrend resuming · trend / recovery = further along. It groups risk, it does not rank the name." data-tip-zh="形态类型：筑底＝自底部转强 · 延续＝原有上升趋势重启 · 趋势／复苏＝走得更远。它用于摆放风险，不决定排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span><span class="pv-mk-i pv-mk-theme" data-tip-en="This stock belongs to a theme that is strengthening. Use it to understand the story; it does not change this card’s Priority." data-tip-zh="该股属于正在转强的主题。可用来理解背景，但不会改变卡片的优先级。"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+    <div class="pv-mk"></div>
+    <div class="pv-life"><span class="mx-mark mx-mark--entered" aria-hidden="true"></span><span class="pv-life-w"><span class="l-en">Entered</span><span class="l-zh">入场</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$216.80–$221.60</span><span class="pv-dt"><span class="l-en">Aug 18</span><span class="l-zh">08-18</span></span>
+  <div class="pv-zn"><span class="pv-znm"><span class="l-en">No zone — stand aside</span><span class="l-zh">无买区 — 观望</span></span><span class="pv-dt"><span class="l-en">Aug 8</span><span class="l-zh">08-08</span></span>
   </div>
 </a>
 
-        
-      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        <a class="pvcard pv-buy pv-featured" href="stock.html#JNJ" data-ticker="JNJ" data-stage="live">
+<a class="pvcard pv-wait" href="stock.html#BWA" id="pv-BWA-BULL-20260813" data-ticker="BWA" data-life="entered" data-tip-en="Stance source: entry signal (fresh read)" data-tip-zh="依据来源：入场信号（最新判读）">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="10.1" width="96.0" height="2.1" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="10.1" x2="240" y2="10.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="12.2" x2="240" y2="12.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,38.3 3.8,38.8 7.6,37.3 11.4,35.6 15.2,37.4 19.0,36.7 22.9,37.0 26.7,40.5 30.5,41.6 34.3,42.0 38.1,41.8 41.9,38.7 45.7,35.8 49.5,36.1 53.3,33.1 57.1,32.1 61.0,32.2 64.8,30.6 68.6,33.9 72.4,34.2 76.2,34.9 80.0,38.5 83.8,36.7 87.6,31.8 91.4,30.6 95.2,28.1 99.0,21.9 102.9,19.5 106.7,22.4 110.5,22.4 114.3,16.6 118.1,19.0 121.9,14.0 125.7,16.4 129.5,19.1 133.3,20.5 137.1,20.0 141.0,22.4 144.8,26.8 148.6,24.9 152.4,23.0 156.2,25.6 160.0,24.5 163.8,21.3 167.6,19.0 171.4,16.4 175.2,14.8 179.0,14.3 182.9,15.1 186.7,21.2 190.5,20.9 194.3,22.1 198.1,21.8 201.9,20.1 205.7,20.5 209.5,19.0 213.3,17.4 217.1,18.7 221.0,18.0 224.8,17.2 228.6,18.3 232.4,17.1 236.2,11.5 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.3 3.8,38.8 7.6,37.3 11.4,35.6 15.2,37.4 19.0,36.7 22.9,37.0 26.7,40.5 30.5,41.6 34.3,42.0 38.1,41.8 41.9,38.7 45.7,35.8 49.5,36.1 53.3,33.1 57.1,32.1 61.0,32.2 64.8,30.6 68.6,33.9 72.4,34.2 76.2,34.9 80.0,38.5 83.8,36.7 87.6,31.8 91.4,30.6 95.2,28.1 99.0,21.9 102.9,19.5 106.7,22.4 110.5,22.4 114.3,16.6 118.1,19.0 121.9,14.0 125.7,16.4 129.5,19.1 133.3,20.5 137.1,20.0 141.0,22.4 144.8,26.8 148.6,24.9 152.4,23.0 156.2,25.6 160.0,24.5 163.8,21.3 167.6,19.0 171.4,16.4 175.2,14.8 179.0,14.3 182.9,15.1 186.7,21.2 190.5,20.9 194.3,22.1 198.1,21.8 201.9,20.1 205.7,20.5 209.5,19.0 213.3,17.4 217.1,18.7 221.0,18.0 224.8,17.2 228.6,18.3 232.4,17.1 236.2,11.5 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
-      <span class="pv-trg" data-tip-en="Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don&#39;t chase." data-tip-zh="新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。">⚡ <span class="l-en">Triggered</span><span class="l-zh">已触发</span></span>
+    <div class="pv-nochart"></div>
+    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (5)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 5</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Accounting quality is worth a second look.</span><span class="l-zh">财务质量值得再核查一次。</span></span><span class="pv-cau-row"><span class="l-en">Its Big Pharma basket is crowded and stretched. Cap your size and do not add aggressively.</span><span class="l-zh">所属 大型药企 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is reduce. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为减配。个股信号，非板块判断。</span></span><span class="pv-cau-row"><span class="l-en">Options ceiling 0.0% above (as of 2026-08-19) — price tends to stall where dealer hedging is heaviest</span><span class="l-zh">上方0.0%有期权天花板（截至2026-08-19） — 价格倾向在做市商对冲最重处停滞</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="JNJ" data-mkt="us">$273.41</span><span class="nb-chg pv-chg" data-sym="JNJ" data-mkt="us">—</span></span></span>
+    
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">JNJ</span><span class="pv-nm"><span class="l-en">Johnson + Johnson</span><span class="l-zh">Johnson + Johnson</span></span></span>
-      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">66</span></span>
+      <span class="pv-idw"><span class="pv-tk">BWA</span></span>
+      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">90</span></span>
     </div>
-    <div class="pv-ind"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div><div class="pv-mk"><span class="pv-mk-i pv-mk-feat"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span><span class="pv-mk-i pv-mk-lane" data-tip-en="The shape of the setup: bottoming = turning up off a base · continuation = an existing uptrend resuming · trend / recovery = further along. It groups risk, it does not rank the name." data-tip-zh="形态类型：筑底＝自底部转强 · 延续＝原有上升趋势重启 · 趋势／复苏＝走得更远。它用于摆放风险，不决定排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span><span class="pv-mk-i pv-mk-theme" data-tip-en="This stock belongs to a theme that is strengthening. Use it to understand the story; it does not change this card’s Priority." data-tip-zh="该股属于正在转强的主题。可用来理解背景，但不会改变卡片的优先级。"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+    <div class="pv-mk"></div>
+    <div class="pv-life"><span class="mx-mark mx-mark--entered" aria-hidden="true"></span><span class="pv-life-w"><span class="l-en">Entered</span><span class="l-zh">入场</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$270.00–$273.40</span><span class="pv-dt"><span class="l-en">Aug 18</span><span class="l-zh">08-18</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$65.05–$66.68</span><span class="pv-dt"><span class="l-en">Aug 13</span><span class="l-zh">08-13</span></span>
   </div>
 </a>
 
-        
-      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        <a class="pvcard pv-buy pv-featured" href="stock.html#TRGP" data-ticker="TRGP" data-stage="live">
+<a class="pvcard pv-wait" href="stock.html#FTI" id="pv-FTI-BULL-20260810" data-ticker="FTI" data-life="entered" data-tip-en="Stance source: entry signal (fresh read)" data-tip-zh="依据来源：入场信号（最新判读）">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="10.6" width="96.0" height="6.9" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="10.6" x2="240" y2="10.6" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="17.5" x2="240" y2="17.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,26.7 3.8,30.7 7.6,31.0 11.4,26.3 15.2,31.3 19.0,35.8 22.9,36.9 26.7,42.0 30.5,39.1 34.3,36.0 38.1,36.5 41.9,33.1 45.7,35.5 49.5,35.4 53.3,35.4 57.1,29.4 61.0,31.6 64.8,29.3 68.6,36.7 72.4,38.7 76.2,37.9 80.0,39.5 83.8,35.2 87.6,32.1 91.4,33.9 95.2,28.7 99.0,29.3 102.9,30.2 106.7,32.5 110.5,40.0 114.3,39.2 118.1,35.9 121.9,28.4 125.7,25.5 129.5,29.0 133.3,28.8 137.1,24.4 141.0,22.8 144.8,25.3 148.6,23.8 152.4,21.8 156.2,22.3 160.0,23.8 163.8,20.7 167.6,19.9 171.4,23.0 175.2,32.9 179.0,37.2 182.9,35.1 186.7,32.4 190.5,30.0 194.3,34.2 198.1,35.4 201.9,37.5 205.7,31.6 209.5,39.8 213.3,33.0 217.1,33.6 221.0,31.2 224.8,32.5 228.6,26.1 232.4,24.5 236.2,10.1 240.0,10.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.7 3.8,30.7 7.6,31.0 11.4,26.3 15.2,31.3 19.0,35.8 22.9,36.9 26.7,42.0 30.5,39.1 34.3,36.0 38.1,36.5 41.9,33.1 45.7,35.5 49.5,35.4 53.3,35.4 57.1,29.4 61.0,31.6 64.8,29.3 68.6,36.7 72.4,38.7 76.2,37.9 80.0,39.5 83.8,35.2 87.6,32.1 91.4,33.9 95.2,28.7 99.0,29.3 102.9,30.2 106.7,32.5 110.5,40.0 114.3,39.2 118.1,35.9 121.9,28.4 125.7,25.5 129.5,29.0 133.3,28.8 137.1,24.4 141.0,22.8 144.8,25.3 148.6,23.8 152.4,21.8 156.2,22.3 160.0,23.8 163.8,20.7 167.6,19.9 171.4,23.0 175.2,32.9 179.0,37.2 182.9,35.1 186.7,32.4 190.5,30.0 194.3,34.2 198.1,35.4 201.9,37.5 205.7,31.6 209.5,39.8 213.3,33.0 217.1,33.6 221.0,31.2 224.8,32.5 228.6,26.1 232.4,24.5 236.2,10.1 240.0,10.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.6" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
-      <span class="pv-trg" data-tip-en="Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don&#39;t chase." data-tip-zh="新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。">⚡ <span class="l-en">Triggered</span><span class="l-zh">已触发</span></span>
+    <div class="pv-nochart"></div>
+    <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (4)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 4</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Trades 30% above its long-term trend line. Buying here is chasing.</span><span class="l-zh">股价高于长期趋势线 30%。此价位买入属于追高。</span></span><span class="pv-cau-row"><span class="l-en">Its market cycle still argues for waiting (bottoming).</span><span class="l-zh">所处的市场周期仍建议等待（筑底中）。</span></span><span class="pv-cau-row"><span class="l-en">Its US Energy Complex basket is crowded and stretched. Cap your size and do not add aggressively.</span><span class="l-zh">所属 美国能源综合 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="TRGP" data-mkt="us">$297.09</span><span class="nb-chg pv-chg" data-sym="TRGP" data-mkt="us">—</span></span></span>
+    
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">TRGP</span><span class="pv-nm"><span class="l-en">Targa Resources Corp</span><span class="l-zh">Targa Resources Corp</span></span></span>
-      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">64</span></span>
+      <span class="pv-idw"><span class="pv-tk">FTI</span></span>
+      <span class="pv-edge"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">89</span></span>
     </div>
-    <div class="pv-ind"><span class="l-en">Energy</span><span class="l-zh">能源</span></div><div class="pv-mk"><span class="pv-mk-i pv-mk-feat"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span><span class="pv-mk-i pv-mk-lane" data-tip-en="The shape of the setup: bottoming = turning up off a base · continuation = an existing uptrend resuming · trend / recovery = further along. It groups risk, it does not rank the name." data-tip-zh="形态类型：筑底＝自底部转强 · 延续＝原有上升趋势重启 · 趋势／复苏＝走得更远。它用于摆放风险，不决定排名。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span></div>
-    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
-    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+    <div class="pv-mk"></div>
+    <div class="pv-life"><span class="mx-mark mx-mark--entered" aria-hidden="true"></span><span class="pv-life-w"><span class="l-en">Entered</span><span class="l-zh">入场</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$287.60–$297.10</span><span class="pv-dt"><span class="l-en">Aug 18</span><span class="l-zh">08-18</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$70.66–$72.35</span><span class="pv-dt"><span class="l-en">Aug 10</span><span class="l-zh">08-10</span></span>
   </div>
 </a>
 
-        
-      
-      
-      </div>
-      <div class="us-tier-wall" id="us-tier-wall">
+</div><div class="mx-empty" id="us-life-filter-zero" hidden>
+        <div class="mx-empty-line"><span class="l-en">No plans match this filter.</span><span class="l-zh">没有符合此筛选条件的计划。</span></div>
+        <div class="mx-empty-why"><span class="l-en">Try another lifecycle cell, or clear the filter.</span><span class="l-zh">请尝试其他状态，或清除筛选。</span></div>
+      </div><div class="us-tier-wall" id="us-life-wall">
         <div class="us-tw-h">
-          <span class="l-en">58 more names on tonight's board</span>
-          <span class="l-zh">今晚榜单还有 58 只股票</span>
+          <span class="l-en">259 more plan rows on tonight's board</span>
+          <span class="l-zh">今晚榜单还有 259 条计划</span>
         </div>
         <div class="us-tw-p">
-          <span class="l-en">You're seeing the first 3 of 61 names. Sign in to see the full ranked board, every entry stage, and the table view.</span>
-          <span class="l-zh">当前显示 61 只中的前 3 只。登录后可查看完整排名榜单、全部入场阶段与表格视图。</span>
+          <span class="l-en">You're seeing the first 3 of 262 plan rows. Sign in to see the full ranked board, every lifecycle state, and the table view.</span>
+          <span class="l-zh">当前显示 262 条计划中的前 3 条。登录后可查看完整排名榜单、全部生命周期状态与表格视图。</span>
         </div>
         <div class="us-tw-acts">
           <a class="us-tw-btn" href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a>
           <span class="us-tw-note"><span class="l-en">7-day Pro trial · cancel anytime</span><span class="l-zh">Pro 7 天试用 · 随时取消</span></span>
         </div>
-        <div class="us-tw-signed" id="us-tw-signin" hidden>
+        <div class="us-tw-signed" id="us-life-signin" hidden>
           <a href="#" data-act="signin"><span class="l-en">Already a member? Sign in</span><span class="l-zh">已是会员？登录</span></a>
         </div>
       </div>
-      
+      <div class="mx-sec" id="us-candidates">
+        <div class="mx-sec-hd">
+          <h2 class="mx-sec-h2"><span class="l-en">Candidates</span><span class="l-zh">候选</span></h2>
+          <span class="mx-sec-total"><span class="l-en">&lt;b&gt;73&lt;/b&gt; screened tonight</span><span class="l-zh">本次筛出 &lt;b&gt;73&lt;/b&gt; 只</span></span>
+          <a class="mx-sec-link" href="discovery.html"><span class="l-en">Open the screener</span><span class="l-zh">打开筛选器</span></a>
+        </div>
+        <p class="mx-sec-note"><span class="l-en">Names tonight’s screen surfaced. A candidate is not a setup: it becomes one only when a plan is written for it, which is what the board above counts.</span><span class="l-zh">本次筛选出的股票。候选不等于计划：只有为它建立计划后，才会计入上方看板。</span></p><div class="us-gate-note" id="us-gate-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span class="l-en">You're seeing the first 3 of 61 screened candidates. Sign in to see the full list.</span>
+          <span class="l-zh">当前显示今晚筛出的 61 只候选中的前 3 只。登录后可查看完整名单。</span>
+        </div>
+        <div class="cand-shelves">
+          <span class="cand-shelf"><b class="fig">15</b><span><span class="l-en">Live now</span><span class="l-zh">现在可操作</span></span><i><span class="l-en">entry window is open</span><span class="l-zh">入场窗口已打开</span></i></span>
+          
+          <span class="cand-shelf"><b class="fig">36</b><span><span class="l-en">Setting up</span><span class="l-zh">形成中</span></span><i><span class="l-en">not there yet — get ready</span><span class="l-zh">尚未触发 — 做好准备</span></i></span>
+          
+          <span class="cand-shelf"><b class="fig">19</b><span><span class="l-en">Ran — don’t chase</span><span class="l-zh">已启动 — 勿追</span></span><i><span class="l-en">the move already started</span><span class="l-zh">行情已经启动</span></i></span>
+          
+          <span class="cand-shelf"><b class="fig">1</b><span><span class="l-en">Basing</span><span class="l-zh">筑底中</span></span><i><span class="l-en">no entry signal yet — watch, don’t chase</span><span class="l-zh">尚无入场信号 — 观察，勿追高</span></i></span>
+          
+          <span class="cand-shelf"><b class="fig">2</b><span><span class="l-en">Blocked</span><span class="l-zh">受阻</span></span><i><span class="l-en">stand aside for now</span><span class="l-zh">暂时观望</span></i></span>
+          </div>
+        <div class="cand-rows">
+          <div class="cand-row"><span class="cand-tk">TRGP</span><span class="cand-nm"><span class="l-en">Targa Resources Corp</span><span class="l-zh">Targa Resources Corp</span></span><span class="cand-px fig">$297.09</span></div>
+          <div class="cand-row"><span class="cand-tk">NU</span><span class="cand-nm"><span class="l-en">Nu Holdings</span><span class="l-zh">Nu Holdings</span></span><span class="cand-px fig">$14.61</span></div>
+          <div class="cand-row"><span class="cand-tk">ANDE</span><span class="cand-nm"><span class="l-en">The Andersons, Inc.</span><span class="l-zh">The Andersons, Inc.</span></span><span class="cand-px fig">$67.73</span></div>
+        </div>
+        <p class="mx-sec-note" style="margin:12px 0 0"><span class="l-en">Showing 3 that carry no plan yet · &lt;b&gt;73&lt;/b&gt; screened 2026-08-19</span><span class="l-zh">显示其中 3 只尚未建立计划的 · 本次共筛出 &lt;b&gt;73&lt;/b&gt; 只 · 筛选日 2026-08-19</span></p>
+      </div>
       
       
 <details class="pvr">
@@ -3404,6 +3255,82 @@
         for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i] === btn ? 'true' : 'false');
         say(btn);
       });
+    })();
+    </script>
+    
+    <script>
+    (function () {
+      var box = document.getElementById('us-standouts');
+      var ladder = document.getElementById('us-life-ladder');
+      if (!box) return;
+      var VALID_LIFE = ['watch', 'ready', 'entered', 'delivering', 'overtime', 'invalidated', 'resolved'];
+      function setLife(life, opts) {
+        opts = opts || {};
+        if (life && VALID_LIFE.indexOf(life) === -1) life = null;
+        if (life) box.setAttribute('data-lifef', life); else box.removeAttribute('data-lifef');
+        if (ladder) {
+          var cells = ladder.querySelectorAll('[data-life]');
+          for (var i = 0; i < cells.length; i++) {
+            cells[i].setAttribute('aria-pressed', cells[i].getAttribute('data-life') === life ? 'true' : 'false');
+          }
+        }
+        var clearBtn = document.getElementById('us-life-clear');
+        if (clearBtn) clearBtn.hidden = !life;
+        /* Repair round, finding S9: a filter with zero matches used to render
+           a silent blank — the CSS hide/reveal rules above just leave nothing
+           visible, and the book-level .mx-empty guard only ever fires on a
+           truly empty book, never on a non-empty book filtered to nothing.
+           Read AFTER the attribute write above so the CSS has already
+           applied; getComputedStyle forces the synchronous style recalc that
+           makes that safe without a rAF/timeout. */
+        var zeroState = document.getElementById('us-life-filter-zero');
+        if (zeroState) {
+          if (!life) {
+            zeroState.hidden = true;
+          } else {
+            var grid = document.getElementById('us-life-grid');
+            var visible = 0;
+            if (grid) {
+              var matches = grid.querySelectorAll('[data-life="' + life + '"]');
+              for (var j = 0; j < matches.length; j++) {
+                if (window.getComputedStyle(matches[j]).display !== 'none') visible++;
+              }
+            }
+            zeroState.hidden = visible > 0;
+          }
+        }
+        if (opts.writeUrl !== false) {
+          var params = new URLSearchParams(location.search);
+          if (life) params.set('life', life); else params.delete('life');
+          var qs = params.toString();
+          /* Never write a fragment as this migration's own output — only ever
+             replace with the query-string form, dropping any inbound #life=
+             fragment the first write already consumed. */
+          var next = location.pathname + (qs ? '?' + qs : '');
+          try { history.replaceState(null, '', next); } catch (e) {}
+        }
+      }
+      if (ladder) {
+        ladder.addEventListener('click', function (e) {
+          var btn = e.target.closest('button[data-life]');
+          if (!btn) return;
+          var life = btn.getAttribute('data-life');
+          setLife(box.getAttribute('data-lifef') === life ? null : life);
+        });
+      }
+      var clearBtn = document.getElementById('us-life-clear');
+      if (clearBtn) clearBtn.addEventListener('click', function () { setLife(null); });
+      /* Initial state: query string wins outright. Only when it carries no
+         `life` param do we fall back, ONCE, to an inbound legacy #life=
+         fragment — read here and never again; the fragment is not re-read on
+         a later history change, and this script never writes one. */
+      var initial = null;
+      try {
+        var qp = new URLSearchParams(location.search);
+        if (qp.has('life')) initial = qp.get('life');
+        else if (/^#life=/.test(location.hash)) initial = decodeURIComponent(location.hash.slice(6));
+      } catch (e) {}
+      if (initial) setLife(initial, { writeUrl: true });
     })();
     </script>
     
@@ -6418,8 +6345,23 @@ function _pvcPaint(html){
   /* :not([data-provboard]) is load-bearing, not belt-and-braces: the provisional grid
      carries data-showmore-rows too AND is inserted BEFORE the nightly one, so it wins
      document order — a second paint that ran without a teardown first would otherwise
-     save the provisional grid as "the nightly board" and lose the real one for good. */
-  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]:not([data-provboard])'):null;
+     save the provisional grid as "the nightly board" and lose the real one for good.
+
+     :not([data-mp1-grid]) — P-MP1-SHELL W-L1 NEUTRALIZATION (Sol Day-4 ruling,
+     option b, FROZEN SPEC): the migrated Setups grid (id="us-life-grid",
+     data-mp1-grid="1", dashboard.html.j2) carries the plan-book/lifecycle
+     taxonomy; this function paints the CURRENT `_su.buy`/stage taxonomy. Two
+     taxonomy owners may never operate on the same surface (ruling text,
+     verbatim), so this selector is written to NEVER match that grid — `night`
+     resolves to null, and the whole paint (and the class-list write below,
+     the DOM insertBefore, everything) never runs. The poller (_plvFetch,
+     setInterval below) and the board-state stamp (_bsRender/_bsApply, which
+     never touches .nbgrid) are UNCHANGED — this selector is the entire guard.
+     tests/test_wl1_lifecycle_neutralization.py pins this selector string and
+     proves the four required properties (repaint cannot write into the
+     migrated grid; stamp still updates; no old-taxonomy fragment can land in
+     the migrated DOM; the poller itself still runs). */
+  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]:not([data-provboard]):not([data-mp1-grid])'):null;
   if(!night||!night.parentNode) return;
   var bar=night.nextElementSibling, g;
   if(!(bar&&bar.classList&&bar.classList.contains('sm-bar'))) bar=null;
@@ -6699,6 +6641,15 @@ function initStockTableView(){
     columns: cols,
     optionLabels: { lane: LANE_LABELS, sector: SECTOR_LABELS },
     searchPlaceholder: ['Search name…','搜索名称…'],
+    /* P-MP1-SHELL §6/§9/§8 (commissioning follow-up, gap 2) — retires the
+       Stage/阶段 filter dropdown AND its count chips (templates/stocktable.js
+       _buildFilterRow/_updateCountChips) on the US table ONLY. hk/china/canada
+       pass no such key and keep their current behavior byte-for-byte —
+       proven in tests/test_p_mp1_shell_nonus_byte_parity.py's extended
+       stocktable coverage. No replacement column: the lifecycle fact carried
+       on the card grid (.pv-life/.mx-mark) is where that meaning lives now,
+       per MP-1 §6's own disposition for this row. */
+    stageFilter: false,
   };
 
   /* Tier gate (docs/TIER_PREVIEW_PATTERN.md): merges the hydrated payload's
@@ -6740,7 +6691,11 @@ if (document.readyState === 'loading') {
      payload — either can be gated alone, so the fetch is driven by whichever
      is present and each hydrate step is independently guarded below. */
   var PGATE = {"actnow": {"locked": 29, "preview": 3, "total": 44}, "leaders": {"locked": 12, "preview": 3, "total": 15}, "payload": "/premiumdata/us_stocks.json", "plv_names": {"locked": 72}, "preview": 3, "ran": {"locked": 9, "preview": 3, "total": 12}, "tape": {"locked": 330}, "tier": "essential"};
-  var SRC = (GATE && GATE.payload) || (PGATE && PGATE.payload);
+  /* P-MP1-SHELL §8b: the Setups grid's OWN gate, over the plan book rather
+     than the candidate board GATE splits — same payload, same URL, a third
+     independent switch. */
+  var LIFE_GATE = {"locked": 259, "payload": "/premiumdata/us_stocks.json", "preview": 3, "tier": "essential", "total": 262};
+  var SRC = (GATE && GATE.payload) || (PGATE && PGATE.payload) || (LIFE_GATE && LIFE_GATE.payload);
   if (!SRC) return;
 
   /* Session trampoline: the shared cookie carries a ~1h access token, so a
@@ -6942,8 +6897,43 @@ if (document.readyState === 'loading') {
       throw new Error('invalid payload');
     }
     hydratePanels(payload);
-    var grid = document.querySelector('#us-standouts .nbgrid');
-    if (grid && payload.cards_html) mergeBoardCards(grid, payload.cards_html);
+    /* P-MP1-SHELL §8b — the migrated Setups grid's own locked remainder.
+       #us-life-grid holds the plan-book cards in PUBLISHED priority order
+       (never re-sorted here), so the locked rows are exactly the tail of
+       that order — a plain append preserves it. This is deliberately NOT
+       mergeBoardCards (below): that function's heading-aware insertion
+       exists for the candidate board's stage/lane headings, which this
+       grid does not have.
+
+       Repair round, finding S3: a blind `insertAdjacentHTML('beforeend', ...)`
+       into the SAME grid element left its show-more bar permanently stale —
+       initShowMore() is idempotent per element (data-smInit) and closes over
+       the children it saw at first init, so appending more children into
+       that same element is never seen by it again. Same documented pattern
+       _pvcPaint uses above ("a NEW grid element rather than new children in
+       the old one"): build a fresh element holding BOTH the existing preview
+       cards and the newly-hydrated ones, swap it in, drop the stale sm-bar
+       sibling, then re-run initShowMore() on an element it has never seen.
+       Repair round 2, R1+R3: the dense-cap re-apply that used to sit here is
+       REMOVED — see the template-body comment above #us-life-grid for why a
+       hard cap regressed the ladder filter. Every plan row this build knows
+       about (preview + hydrated) now stays in the DOM; show-more's own
+       progressive reveal is the density control. */
+    var lifeGrid = document.getElementById('us-life-grid');
+    if (lifeGrid && payload.plan_cards_html) {
+      var lifeOldBar = lifeGrid.nextElementSibling;
+      if (!(lifeOldBar && lifeOldBar.classList && lifeOldBar.classList.contains('sm-bar'))) lifeOldBar = null;
+      var freshLifeGrid = document.createElement('div');
+      freshLifeGrid.className = lifeGrid.className;
+      freshLifeGrid.id = 'us-life-grid';
+      freshLifeGrid.setAttribute('data-showmore-rows', '3');
+      freshLifeGrid.setAttribute('data-mp1-grid', '1');
+      freshLifeGrid.innerHTML = lifeGrid.innerHTML + payload.plan_cards_html;
+      lifeGrid.parentNode.insertBefore(freshLifeGrid, lifeGrid);
+      lifeGrid.parentNode.removeChild(lifeGrid);
+      if (lifeOldBar && lifeOldBar.parentNode) lifeOldBar.parentNode.removeChild(lifeOldBar);
+      if (window.initShowMore) window.initShowMore();
+    }
     /* Every card just spliced in carries a `.nb-px`/`.nb-chg` pill still holding
        its baked value. live.js re-queries the document each tick, so these WOULD
        paint on their own — in up to 60 seconds, during which the three preview
@@ -6955,8 +6945,16 @@ if (document.readyState === 'loading') {
         window.USStockTable && window.USStockTable._mergeRows){
       window.USStockTable._mergeRows(payload.rows);
     }
+    if (LIFE_GATE){
+      var lifeWall = document.getElementById('us-life-wall');
+      if (lifeWall) lifeWall.remove();
+    }
     if (!GATE) return;
-    var wall = document.getElementById('us-tier-wall');
+    /* Repair round, finding N3: this used to read the pre-migration id
+       'us-tier-wall' — the wall's actual id is 'us-life-wall' (removed under
+       LIFE_GATE above already; this second read stays as a harmless no-op
+       belt-and-braces for the case GATE is true while LIFE_GATE is false). */
+    var wall = document.getElementById('us-life-wall');
     if (wall) wall.remove();
     var note = document.getElementById('us-gate-note');
     if (note) note.remove();
