@@ -1785,6 +1785,27 @@
       return;
     }
 
+    /* Both branches below return WITHOUT calling renderRiskCenter(), and both are
+       correct — but only because the PAGE hides the panel in exactly those states,
+       which is a fact living in templates/watchlist.html.j2, not here. Read this file
+       alone and it looks like the anonymous funnel gets an empty Risk Center; that
+       reading was filed as a defect on 2026-08-20 off a console check of
+       `#rc_body.innerHTML`, which returns '' here and says nothing about whether the
+       panel is on screen. It is not:
+
+         anon-empty  -> `html[data-ws-state="anon-empty"] #ws_sec_rc { display:none }`
+         watchlists  -> #ws_sec_rc lives inside the `data-ws-mode="portfolio"`
+                        container, and `main.ws > [data-ws-mode]` is display:none
+                        unless it is the active mode
+
+       The lock shell IS reached for the audience it was written for: `anon-analyzed`
+       is the one anonymous state that SHOWS the panel, and renderAnonBook() calls
+       renderRiskCenter() on both of its exits (verified live, signed out, 2026-08-20).
+       Do not "fix" this by painting a lock shell into a hidden panel — that same
+       anon-empty rule hides three sibling sections too, so papering over one of the
+       four in JS would be arbitrary AND would mask the rule's deletion. The pairing is
+       pinned from both sides in tests/test_watchlist_workspace_js.py §12; if you move
+       either half, that suite tells you which one you broke. */
     if (state === 'anon-analyzed' && ENTERED) { renderAnonBook(); return; }
     if (state === 'anon-empty') { renderStarters(); return; }
     // signed in: portfolio.js owns the holdings table + the book read; it repaints

@@ -2226,3 +2226,201 @@ def test_entering_watchlists_mode_releases_auto_weights_back_to_manual():
     )
     assert out["mode"] == "watchlists"
     assert None in out["fxCalls"], out["fxCalls"]
+
+# ===========================================================================
+# 12. the ANONYMOUS Risk Center — the lock shell, and the CSS that is the
+#     other half of the two early returns in render()
+# ===========================================================================
+#
+# Reported 2026-08-20 as a defect: "render() returns before calling renderRiskCenter()
+# for anonymous visitors, so anon users get an EMPTY Risk Center body instead of the
+# lock shell; the lock-shell branch is unreachable for the audience it was written
+# for." The OBSERVATION behind that report is real and reproducible — reading
+# `#rc_body.innerHTML` in the console of a signed-out production page does return ''.
+# The CONCLUSION is not. In both states that skip renderRiskCenter() the panel is
+# display:none, and in the one anonymous state where the panel IS on screen
+# (`anon-analyzed`, portfolio mode) renderAnonBook() calls renderRiskCenter() and the
+# lock shell paints. Verified live 2026-08-20 on www.mastermind-x.com/watchlist.html,
+# signed out, RiskCore/SD absent (the gated scripts 401 by design):
+#
+#   anon-empty      -> #ws_sec_rc computed display 'none', not in the layout, rc_body ''
+#   after a paste   -> data-ws-state="anon-analyzed", display 'block', VISIBLE,
+#                      rc_body 551 chars carrying .lockshell + "Risk reads come with
+#                      a free account"
+#
+# So the shell is not dead and the JS needed no repair. What was missing is the PIN:
+# the correctness of those early returns lives in a DIFFERENT FILE from the returns
+# themselves. Delete one rule from templates/watchlist.html.j2 and the reported bug
+# becomes real — an empty, VISIBLE Risk Center on the anonymous funnel surface, which
+# is exactly the "empty box on the anonymous shell" regression labFallback() was
+# written to end. These tests pin both halves together, so the pairing cannot be
+# broken from either side, and so the next reader is not left re-deriving it from a
+# console that shows only one of the two facts.
+
+# The base SHIM answers every getElementById with null, which is correct for the pure
+# logic above: render() returns at hasUI() and nothing paints. These tests need the
+# opposite — the smallest real element registry that lets render() reach the panel.
+RC_IDS = [
+    "ws_modes",                    # isWorkspace(): the W2 workspace, not the legacy grid
+    "rc_body", "rc_tabs", "rc_lab",
+    "ws_entry_in", "ws_entry_err",  # runEntry(): the anonymous funnel's front door
+    "wl_starters",                 # renderStarters(): so the anon-empty branch does real work
+]
+
+DOM_PATCH = """
+var __REG = {};
+function __mk(id) {
+  return {
+    id: id, innerHTML: '', textContent: '', value: '', style: {}, _a: {},
+    getAttribute: function (k) { return this._a[k] === undefined ? null : this._a[k]; },
+    setAttribute: function (k, v) { this._a[k] = v; },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {}, appendChild: function () {},
+    closest: function () { return null; },
+    classList: { add: function () {}, remove: function () {}, toggle: function () {} }
+  };
+}
+__IDS.forEach(function (id) { __REG[id] = __mk(id); });
+var __ROOT = {};
+document.documentElement.setAttribute = function (k, v) { __ROOT[k] = v; };
+document.documentElement.getAttribute = function (k) {
+  return k === 'data-lang' ? 'en' : (__ROOT[k] === undefined ? null : __ROOT[k]);
+};
+document.getElementById = function (id) { return __REG[id] || null; };
+function EL(id) { return __REG[id]; }
+function ROOT_ATTR(k) { return __ROOT[k] === undefined ? null : __ROOT[k]; }
+"""
+
+
+def _wl_dom(js_body: str, ids: list[str] | None = None) -> dict:
+    """`_wl` with a DOM the workspace can paint into, so render() reaches the Risk
+    Center instead of returning at hasUI(). Anonymous by construction: neither
+    window.SD nor window.RiskCore is defined, which is what the 401'd gated scripts
+    leave behind on the real page.
+
+    The module surface binds as `WLM`, NOT as `WL`. `node -e` evaluates at global
+    scope, so a top-level `var WL = require(...)` writes global.WL — and this shim
+    aliases window to global, so that assignment CLOBBERS the browser export the file
+    installed as `window.WL`, taking `render` with it. `_wl` above can afford that
+    because it only ever touches the module surface; these tests need both."""
+    return _run(
+        "var __IDS = %s;\n" % json.dumps(ids or RC_IDS)
+        + DOM_PATCH
+        + "var WLM = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + js_body
+    )
+
+
+def _decl_block(css: str, selector: str) -> str:
+    """The `{...}` body of the rule whose selector LIST contains `selector`. Selectors
+    in a group are comma-separated with no braces between them, so the first `{` after
+    the selector opens that group's own block."""
+    i = css.index(selector)
+    lo = css.index("{", i)
+    return css[lo + 1:css.index("}", lo)]
+
+
+@needs_node
+def test_the_anonymous_risk_center_paints_the_lock_shell_not_an_empty_body():
+    """`anon-analyzed` is the ONE anonymous state where #ws_sec_rc is on screen, and
+    it is the state the lock shell was written for. renderAnonBook() -> 
+    renderRiskCenter() -> the `!window.RiskCore || !window.SD` branch must leave the
+    free-account shell in the body, and renderLab() must leave the Scenario Lab
+    fallback in #rc_lab rather than the empty box that fallback exists to end.
+
+    MUTATION CHECK: drop the `renderRiskCenter()` call from either exit of
+    renderAnonBook() and rc_body comes back ''."""
+    out = _wl_dom(
+        "EL('ws_entry_in').value = 'AAPL 40, MSFT 35, NVDA 25';\n"
+        "WLM.runEntry();\n"
+        "OUT({state: ROOT_ATTR('data-ws-state'),\n"
+        "     body: EL('rc_body').innerHTML,\n"
+        "     lab: EL('rc_lab').innerHTML});"
+    )
+    assert out["state"] == "anon-analyzed"
+    assert "lockshell" in out["body"], (
+        "the anonymous Risk Center painted no lock shell — an anonymous visitor with a "
+        f"pasted book sees an EMPTY but VISIBLE panel. body={out['body']!r}"
+    )
+    assert "rc_cta" in out["body"], "the lock shell lost its free-account CTA"
+    assert "lab-say" in out["lab"], (
+        "#rc_lab is empty on the anonymous shell — that is the #5463-class empty box "
+        f"labFallback() was written to prevent. lab={out['lab']!r}"
+    )
+
+
+@needs_node
+def test_the_lock_shell_survives_a_mode_switch_away_and_back():
+    """The reported repro switched modes and watched rc_body. Watchlists mode returns
+    before renderRiskCenter(), which is safe ONLY because the whole
+    `data-ws-mode="portfolio"` container is hidden there (pinned below) — and coming
+    back to Portfolio must repaint the shell rather than leave the panel blank."""
+    out = _wl_dom(
+        "EL('ws_entry_in').value = 'AAPL 40, MSFT 35, NVDA 25';\n"
+        "WLM.runEntry();\n"
+        "var painted = EL('rc_body').innerHTML;\n"
+        "WLM.setMode('watchlists', false); window.WL.render();\n"
+        "EL('rc_body').innerHTML = '';\n"
+        "WLM.setMode('portfolio', false); window.WL.render();\n"
+        "OUT({painted: painted, back: EL('rc_body').innerHTML});"
+    )
+    assert "lockshell" in out["painted"]
+    assert "lockshell" in out["back"], (
+        "returning to Portfolio mode left the Risk Center empty — the panel is visible "
+        f"in this state, so this is a blank box on the funnel. back={out['back']!r}"
+    )
+
+
+@needs_node
+def test_anon_empty_skips_the_panel_and_the_page_is_what_hides_it():
+    """The cross-file pairing, asserted in ONE place because neither half is safe
+    alone. render() returns at the `anon-empty` branch without painting the Risk
+    Center; that is honest ONLY while templates/watchlist.html.j2 hides #ws_sec_rc in
+    that state. If this test ever fails on the CSS half, the fix is NOT to delete the
+    assertion — it is that anonymous visitors are now being shown an empty panel.
+
+    MUTATION CHECK: remove the `html[data-ws-state="anon-empty"] #ws_sec_rc` selector
+    from the page and this fails while every JS test above still passes — which is
+    precisely the blind spot that produced the 2026-08-20 report."""
+    out = _wl_dom(
+        "window.WL.render();\n"
+        "OUT({state: ROOT_ATTR('data-ws-state'), body: EL('rc_body').innerHTML});"
+    )
+    # half 1 — the JS really does leave the body untouched here
+    assert out["state"] == "anon-empty"
+    assert out["body"] == ""
+
+    # half 2 — ...and the page really does keep that body off the screen
+    css = TEMPLATE.read_text(encoding="utf-8")
+    sel = 'html[data-ws-state="anon-empty"] #ws_sec_rc'
+    assert sel in css, (
+        "templates/watchlist.html.j2 no longer hides the Risk Center for "
+        "anon-empty, but render() still skips renderRiskCenter() in that state — "
+        "anonymous visitors now get an empty, visible Risk Center. Either restore the "
+        f"rule or make the anon-empty path paint the lock shell. missing: {sel}"
+    )
+    assert "display:none" in _decl_block(css, sel).replace(" ", ""), (
+        f"{sel} is present but no longer resolves to display:none"
+    )
+
+
+def test_the_watchlists_mode_return_is_safe_because_the_panel_is_portfolio_only():
+    """render() returns before renderRiskCenter() in watchlists mode. That is safe
+    only because #ws_sec_rc is nested inside the `data-ws-mode="portfolio"` container,
+    which the page hides whenever the active mode is not portfolio. Move the section
+    out of that container and the early return starts serving a blank panel."""
+    import re as _re
+
+    html = TEMPLATE.read_text(encoding="utf-8")
+    i = html.index('id="ws_sec_rc"')
+    owners = _re.findall(r'<div data-ws-mode="(\w+)"', html[:i])
+    assert owners and owners[-1] == "portfolio", (
+        "#ws_sec_rc is no longer inside the portfolio mode container, so watchlists "
+        f"mode would show it unpainted. enclosing mode containers seen: {owners}"
+    )
+    flat = " ".join(html.split())
+    assert "main.ws > [data-ws-mode] { display:none; }" in flat, (
+        "the mode containers are no longer hidden by default — watchlists mode would "
+        "render the Portfolio column, Risk Center included, with nothing painted in it"
+    )
