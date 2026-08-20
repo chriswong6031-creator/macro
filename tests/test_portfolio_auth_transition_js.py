@@ -880,7 +880,7 @@ global.window = global;
 global.window.addEventListener = function () {};
 global.fetch = function () {
   return Promise.resolve({ ok: true, json: function () { return Promise.resolve({
-    factors: [{ key: 'mkt', tier: 'reliable', scope: 'stock' }],
+    factors: [{ key: 'mkt', tier: 'reliable', scope: 'stock', label: 'Market' }],
     betas: { AAPL: { mkt: 1.1, idio_vol: 0.2 }, MSFT: { mkt: 1.0, idio_vol: 0.2 }, NVDA: { mkt: 1.6, idio_vol: 0.3 } },
     resid: { AAPL: 0.2, MSFT: 0.2, NVDA: 0.3 },
     factor_cov: { mkt: { mkt: 0.04 } }
@@ -1456,3 +1456,417 @@ def test_pushfxweights_still_pushes_when_ws_mode_is_absent_or_portfolio():
         {"USER": USER},
     )
     assert {} in out["fxCalls"], out["fxCalls"]
+
+
+# ===========================================================================
+# N1 (Sol post-review, MAJOR, freeze §5 — inverse of blocker 1) — watchlist_risk.js
+# publish() forwards EVERY payload to window.PF.setBookRisk() with no mode/universe
+# guard. Adapted from the review's proofF_bookrisk_crossmode.py / proofF2_copy.py.
+# ===========================================================================
+@needs_node
+def test_n1_foreign_watchlist_keyed_payload_never_repaints_portfolio_surfaces():
+    """MUTATION CHECK: delete the `payloadIsConsistentWithBook` guard from
+    setBookRisk() (portfolio.js) and this reds — a WATCHLIST-keyed payload would
+    repaint tbl_pf/pf_scope/pf_rowcount/ws_book_* /ws_att* even though none of its
+    names are in the portfolio's own open rows."""
+    out = _run(
+        """
+        boot();
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        // a real signed-in portfolio: AAPL + MSFT, both sized and priced
+        db.settleNext({ data: [
+          { id:'p1', ticker:'AAPL', shares:10, entry_price:100, entry_date:null, notes:null, status:'open', created_at:'1' },
+          { id:'p2', ticker:'MSFT', shares:5,  entry_price:200, entry_date:null, notes:null, status:'open', created_at:'2' }
+        ], error:null });
+        await drain(10);
+        var writesBefore = __writes.length;
+
+        // EXACTLY what watchlist_risk.js's publish() does when the reader is on
+        // the Watchlists tab under this branch (F2 made FX announce the WATCHLIST
+        // universe there for real) — a payload keyed to the WATCHLIST's names.
+        window.PF.setBookRisk({
+          shares: { WLONLY_TSLA: 0.71, WLONLY_META: 0.29 },
+          covered: { WLONLY_TSLA: 1, WLONLY_META: 1 },
+          bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: ''
+        });
+        await drain(4);
+        var writesAfter = __writes.length;
+        var tbl = node('tbl_pf').innerHTML;
+
+        // switching back to Portfolio explicitly forces a repaint — must never
+        // show the foreign payload's stale state
+        window.PF.render();
+        await drain(4);
+        var tblAfterSwitchBack = node('tbl_pf').innerHTML;
+
+        OUT({
+          portfolioRowsPresent: tbl.indexOf('AAPL') >= 0 && tbl.indexOf('MSFT') >= 0,
+          setBookRiskRepainted: writesAfter > writesBefore,
+          aaplStillCoveredAfterWatchlistPayload: tbl.indexOf('AAPL') >= 0,
+          tableAfterSwitchBack_hasAAPL: tblAfterSwitchBack.indexOf('AAPL') >= 0
+        });
+        """,
+        {"USER": USER},
+    )
+    assert out["portfolioRowsPresent"] is True
+    assert out["setBookRiskRepainted"] is False
+    assert out["aaplStillCoveredAfterWatchlistPayload"] is True
+    assert out["tableAfterSwitchBack_hasAAPL"] is True
+
+
+@needs_node
+def test_n1_foreign_payload_never_produces_the_false_coverage_sentence():
+    """MUTATION CHECK: same as above — with the guard removed, this reds because
+    a fully-modeled 2-position book would show 'positions sit outside the risk
+    model' after a watchlist-keyed payload lands."""
+    out = _run(
+        """
+        boot();
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [
+          { id:'p1', ticker:'AAPL', shares:10, entry_price:100, entry_date:null, notes:null, status:'open', created_at:'1' },
+          { id:'p2', ticker:'MSFT', shares:5,  entry_price:200, entry_date:null, notes:null, status:'open', created_at:'2' }
+        ], error:null });
+        await drain(10);
+        // a genuine PORTFOLIO-derived payload first
+        window.PF.setBookRisk({ shares: { AAPL: 0.6, MSFT: 0.4 }, covered: { AAPL: 1, MSFT: 1 },
+                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+        await drain(3);
+        var covPortfolio = node('ws_book_coverage').innerHTML;
+
+        // now the WATCHLIST-derived payload
+        window.PF.setBookRisk({ shares: { WLONLY_TSLA: 0.71, WLONLY_META: 0.29 },
+                                 covered: { WLONLY_TSLA: 1, WLONLY_META: 1 },
+                                 bets: null, modeledN: 2, regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+        await drain(3);
+        OUT({
+          coverage_portfolioPayload: covPortfolio,
+          coverage_watchlistPayload: node('ws_book_coverage').innerHTML
+        });
+        """,
+        {"USER": USER},
+    )
+    assert "outside the risk model" not in out["coverage_watchlistPayload"]
+    # the rejected payload leaves the coverage line UNCHANGED from before the attempt
+    assert out["coverage_watchlistPayload"] == out["coverage_portfolioPayload"]
+
+
+@needs_node
+def test_n1_empty_payload_is_still_accepted_as_a_clear():
+    """The validation must not become so strict it also blocks the honest S3/F2
+    'nothing to weight' signal — an empty payload (no per-name keys at all) is
+    always a legitimate clear."""
+    out = _run(
+        """
+        boot();
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [
+          { id:'p1', ticker:'AAPL', shares:10, entry_price:100, entry_date:null, notes:null, status:'open', created_at:'1' }
+        ], error:null });
+        await drain(10);
+        var writesBefore = __writes.length;
+        window.PF.setBookRisk({ shares: {}, covered: {}, bets: null, modeledN: 0,
+                                 regime: '', concHTML: '', rcTabs: null, labHTML: '' });
+        await drain(4);
+        OUT({ repainted: __writes.length > writesBefore });
+        """,
+        {"USER": USER},
+    )
+    assert out["repainted"] is True
+
+
+@needs_node
+def test_n1_mode_boundary_reset_prevents_stale_foreign_payload_on_switch_back():
+    """Drives the boundary reset via the REAL watchlist.js setMode() chain
+    (requires watchlist.js too, unlike the other N1 tests which call
+    window.PF.setBookRisk() directly) — proves resetBookRisk() is actually wired
+    into the mode-entry boundary, not just present as an unused function.
+
+    MUTATION CHECK: delete the `window.PF.resetBookRisk()` call from setMode()'s
+    `enteringPortfolio` branch (templates/watchlist.js) and this reds."""
+    script = (
+        WATCHLIST_RISK_LATCH_SHIM
+        + "\nvar pfCountVal = 2;\n"
+        + "\nvar WLT = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + "\nvar PORTFOLIO_SRC = require('fs').readFileSync(%s, 'utf8');\n" % json.dumps(str(PORTFOLIO))
+        + """
+        // a minimal real portfolio.js consumer stand-in is unnecessary here — this
+        // test only needs to prove the CALL happens, via a spy on window.PF.
+        var resetCalls = 0;
+        window.PF = { count: function () { return pfCountVal; }, render: function () {},
+                       resetBookRisk: function () { resetCalls++; } };
+        WLT.setMode('watchlists', false);
+        var callsAfterWatchlists = resetCalls;
+        WLT.setMode('portfolio', false);
+        OUT({ callsAfterWatchlists: callsAfterWatchlists, callsAfterPortfolio: resetCalls });
+        """
+    )
+    out = _run_node_script(script)
+    # entering watchlists does NOT touch portfolio.js's own book-risk latch
+    assert out["callsAfterWatchlists"] == 0
+    # entering portfolio DOES reset it
+    assert out["callsAfterPortfolio"] == 1
+
+
+# ===========================================================================
+# N2 (Sol post-review, MAJOR, re-opens F3) — sticky-failed leaks across identity.
+# writeState was never reset by onAuth(), and pfChipStateFor's sticky branch sat
+# BEFORE the authority guard — a signed-in write failure's account-scoped 'failed'
+# leaked onto the NEXT identity's first read. Adapted from proofG_sticky_failed_leak.py.
+# ===========================================================================
+@needs_node
+def test_n2_signout_after_a_failed_write_never_shows_the_account_scoped_chip():
+    """proofG scenario d2. MUTATION CHECK: drop the writeState reset from onAuth()
+    (portfolio.js) and this reds — the anonymous chip after sign-out would still
+    read 'failed' instead of 'local'."""
+    out = _run(
+        """
+        boot();
+        var chip = [];
+        document.addEventListener('pf-save', function (e) { chip.push(e.detail.state); });
+
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [], error: null });
+        await drain(8);
+
+        var failDb = { from: function () { return {
+          select: function () { return this; }, eq: function () { return this; }, order: function () { return this; },
+          insert: function () { return this; },
+          single: function () { return Promise.resolve({ data: null, error: { message: 'insert-fail' } }); }
+        }; } };
+        WSL._setTestSession(USER, failDb);
+        node('pfm_ticker').value = 'Y'; node('pfm_shares').value = '1'; node('pfm_price').value = '1';
+        node('pfm_save').dispatch('click', {});
+        await drain(8);
+        var afterFailure = chip.slice();
+
+        chip.length = 0;
+        WSL._setTestSession(null, null);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));
+        await drain(10);
+
+        OUT({ afterFailure: afterFailure, afterSignOut: chip.slice(),
+              anonAuthority: WSL.portfolio.readState().authority });
+        """,
+        {"USER": USER},
+    )
+    assert out["afterFailure"][-1] == "failed"
+    assert out["anonAuthority"] == "local"
+    assert "failed" not in out["afterSignOut"]
+    assert out["afterSignOut"] == ["local"]
+
+
+@needs_node
+def test_n2_second_user_first_healthy_read_never_inherits_the_prior_users_failed_chip():
+    """proofG scenario d3. MUTATION CHECK: same as above."""
+    out = _run(
+        """
+        boot();
+        var chip = [];
+        document.addEventListener('pf-save', function (e) { chip.push(e.detail.state); });
+
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [], error: null });
+        await drain(8);
+
+        var failDb = { from: function () { return {
+          select: function () { return this; }, eq: function () { return this; }, order: function () { return this; },
+          insert: function () { return this; },
+          single: function () { return Promise.resolve({ data: null, error: { message: 'insert-fail' } }); }
+        }; } };
+        WSL._setTestSession(USER, failDb);
+        node('pfm_ticker').value = 'Z'; node('pfm_shares').value = '1'; node('pfm_price').value = '1';
+        node('pfm_save').dispatch('click', {});
+        await drain(8);
+
+        chip.length = 0;
+        var dbB = makeDeferredDb();
+        WSL._setTestSession(USER_B, dbB.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER_B } }));
+        await drain(3);
+        dbB.settleNext({ data: [], error: null });
+        await drain(10);
+
+        OUT({ afterUserB: chip.slice() });
+        """,
+        {"USER": USER, "USER_B": {"id": "userB"}},
+    )
+    assert "failed" not in out["afterUserB"]
+    assert out["afterUserB"] == ["clean"]
+
+
+@needs_node
+def test_n2_anons_own_local_write_failure_still_shows_sticky_failed_local():
+    """The reorder must not throw out the honest half: an anonymous visitor's OWN
+    LOCAL write failure is still sticky (failed_local), never silently cleared by
+    an unrelated background read while still local authority."""
+    out = _run(
+        """
+        localStorage.setItem('mdash.pf.v1', JSON.stringify({v:1, rows:[]}));
+        boot();
+        await drain(8);
+
+        var realSet = localStorage.setItem;
+        localStorage.setItem = function () { throw new Error('QuotaExceededError'); };
+        var chip = [];
+        document.addEventListener('pf-save', function (e) { chip.push(e.detail.state); });
+        node('pfm_ticker').value = 'AAPL'; node('pfm_shares').value = '1'; node('pfm_price').value = '1';
+        node('pfm_save').dispatch('click', {});
+        await drain(8);
+        var afterFailure = chip.slice();
+
+        // restore storage and trigger an unrelated background reload — must NOT
+        // downgrade the sticky failed_local to 'local'
+        localStorage.setItem = realSet;
+        chip.length = 0;
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));
+        await drain(8);
+
+        OUT({ afterFailure: afterFailure, afterBackgroundRead: chip.slice() });
+        """
+    )
+    assert out["afterFailure"][-1] == "failed_local"
+    assert "failed_local" in out["afterBackgroundRead"] or out["afterBackgroundRead"] == []
+
+
+@needs_node
+def test_n2_reorder_isolated_stale_writestate_via_background_reload_without_fresh_wlauth():
+    """Isolates the reorder half of N2 from the writeState-reset half: forces
+    watchstore's underlying authority to flip to 'local' WITHOUT dispatching a
+    fresh 'wl-auth' event (so onAuth()'s identity-reset never runs), then drives
+    a plain background reload() (via 'pf-folded', which does not reset
+    writeState) — the ONLY thing that can suppress the stale account-scoped
+    'failed' here is pfChipStateFor's authority-guard-first ordering.
+
+    MUTATION CHECK: revert pfChipStateFor() to check the sticky writeState
+    BEFORE the authority guard and this reds."""
+    out = _run(
+        """
+        boot();
+        var chip = [];
+        document.addEventListener('pf-save', function (e) { chip.push(e.detail.state); });
+
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [], error: null });
+        await drain(8);
+
+        var failDb = { from: function () { return {
+          select: function () { return this; }, eq: function () { return this; }, order: function () { return this; },
+          insert: function () { return this; },
+          single: function () { return Promise.resolve({ data: null, error: { message: 'insert-fail' } }); }
+        }; } };
+        WSL._setTestSession(USER, failDb);
+        node('pfm_ticker').value = 'Y'; node('pfm_shares').value = '1'; node('pfm_price').value = '1';
+        node('pfm_save').dispatch('click', {});
+        await drain(8);
+        var afterFailure = chip.slice();
+
+        // flip watchstore's underlying authority to anonymous WITHOUT a fresh
+        // 'wl-auth' dispatch — onAuth()'s identity-reset (the OTHER half of N2)
+        // never runs for this transition
+        WSL._setTestSession(null, null);
+        chip.length = 0;
+        document.dispatchEvent(new CustomEvent('pf-folded', {}));
+        await drain(8);
+
+        OUT({ afterFailure: afterFailure, afterBackgroundReload: chip.slice() });
+        """,
+        {"USER": USER},
+    )
+    assert out["afterFailure"][-1] == "failed"
+    assert "failed" not in out["afterBackgroundReload"]
+
+
+# ===========================================================================
+# N3 (Sol post-review, MINOR) — stale deadline timer. clientFailed's late-settle
+# guard was uid-only, so a sign-out then a sign-in of the SAME uid let session 1's
+# client-gate timer fire into session 2's state (~30% early terminal + a spurious
+# offline pill). Adapted from proofI_deadline_races.py's C2 scene.
+# ===========================================================================
+@needs_node
+def test_n3_stale_deadline_timer_from_a_prior_same_uid_session_never_fires():
+    """MUTATION CHECK: revert clientReady()/clientFailed() to the uid-only guard
+    (`if ((user && user.id) !== uidAtCall) return;`, dropping the `authEpoch`
+    check) and this reds — session 1's 200ms timer would still land its terminal
+    'error'/'client-timeout' state into session 2 at ~142ms, well before session
+    2's own deadline."""
+    out = _run(
+        """
+        boot();
+        process.on('unhandledRejection', function () {});
+        var hung = new Promise(function () {});                  // never settles, shared
+        window.getSupabaseClient = function () { return hung; }; // theme.js caches _sbLoading
+        WSL._setCloudDeadlineMs(200);
+        WSL.onAuthUser(USER);                                     // session 1, timer T1 @200ms
+        await new Promise(function (r) { setTimeout(r, 60); });
+        WSL.onAuthUser(null);                                     // sign out
+        await new Promise(function (r) { setTimeout(r, 20); });
+        WSL.onAuthUser(USER);                                     // session 2 @~80ms, timer T2 @280ms
+        await new Promise(function (r) { setTimeout(r, 140); });  // ~220ms total: T1 fired, T2 has NOT
+        OUT({ session2ReadStateWhenT1Fired: WSL.portfolio.readState() });
+        """,
+        {"USER": USER},
+    )
+    # T1 (session 1's timer) must NOT have landed into session 2 — session 2's own
+    # read is still honestly 'loading' at this point (its own 200ms has not elapsed)
+    assert out["session2ReadStateWhenT1Fired"]["state"] == "loading"
+    assert out["session2ReadStateWhenT1Fired"]["warning"] is None
+
+
+# ===========================================================================
+# N5 (Sol post-review, NIT) — factor_exposure.js hid the panel without clearing
+# its innerHTML, leaving the prior book's factor bars sitting in the hidden DOM.
+# ===========================================================================
+@needs_node
+def test_n5_hiding_the_fx_panel_also_clears_its_innerhtml():
+    """MUTATION CHECK: drop the `panel.innerHTML = '';` clears from render()'s two
+    hide sites (factor_exposure.js) and this reds — the panel would still contain
+    the PRIOR (3-name) book's factor bars after it is hidden for a thin (1-name)
+    book."""
+    script = (
+        FACTOR_EXPOSURE_SHIM
+        + "\nrequire(%s);\n" % json.dumps(str(FACTOR_EXPOSURE))
+        + """
+        (async function () {
+          // a real 3-name book — panel renders and gets real content
+          window.FX.setAutoWeights({ AAPL: 1000, MSFT: 2000, NVDA: 3000 });
+          await drain(10);
+          var htmlAfterRealBook = panel.innerHTML;
+          var displayAfterRealBook = panel.style.display;
+
+          // now a THIN (1-name) book — aggregate() reports ok:false, panel hides
+          window.FX.setAutoWeights({ AAPL: 1000 });
+          await drain(10);
+
+          OUT({
+            htmlAfterRealBook_nonEmpty: htmlAfterRealBook.length > 0,
+            displayAfterRealBook: displayAfterRealBook,
+            displayAfterThinBook: panel.style.display,
+            htmlAfterThinBook: panel.innerHTML
+          });
+        })();
+        """
+    )
+    out = _run_node_script(script)
+    assert out["htmlAfterRealBook_nonEmpty"] is True
+    assert out["displayAfterRealBook"] == "block"
+    assert out["displayAfterThinBook"] == "none"
+    assert out["htmlAfterThinBook"] == ""

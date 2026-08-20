@@ -65,6 +65,16 @@
   }
   var user = null;         // current auth user
   var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
+  // N3 (Sol post-review, MINOR — proofI C2): incremented on EVERY accepted uid
+  // transition (onAuthUser's dedup check passing), including a sign-out then a
+  // SAME uid signing back in. `clientFailed`'s late-settle guard was uid-only
+  // (`uidAtCall`), which correctly refused a DIFFERENT uid's stale timer but let
+  // session 1's client-gate deadline fire straight into session 2 when the uid
+  // repeats (~30% early terminal state + a spurious offline pill). Every deadline
+  // timer captures its epoch at creation and no-ops if the epoch has since moved
+  // — a strict superset of the uid check (a uid change is always an epoch change,
+  // but a same-uid cycle is an epoch change the uid check alone cannot see).
+  var authEpoch = 0;
   var listsCache = [];     // [{id,name,position}] — last server read of the user's lists
   var wlId = null;         // ACTIVE (bound) list id — see resolveBoundList()
   var foldTargetId = null; // id of the list NAMED 'Watchlist' — resolved ON DEMAND by the fold
@@ -1291,6 +1301,7 @@
     var uid = (u && u.id) ? u.id : null;
     if (uid === lastAuthUid) return;
     lastAuthUid = uid;
+    authEpoch++;
 
     /* A1A (review finding B1 — cross-user private-holdings leak): the cached
        last-good cloud rows and read-state are PER-USER private data. Reset them on
@@ -1349,10 +1360,13 @@
     var getClient = window.getSupabaseClient;
     if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
     var uidAtCall = user && user.id;
+    var epochAtCall = authEpoch;
     function clientReady(c) {
-      // A late resolution after a different uid has since signed in must not
-      // resurrect a PRIOR session's client into the CURRENT one.
-      if ((user && user.id) !== uidAtCall) return;
+      // N3: a late resolution after ANY auth transition since this call started
+      // — a different uid, OR the SAME uid signing out and back in — must not
+      // resurrect (or misattribute) a PRIOR session's client into the CURRENT
+      // one. The epoch check subsumes the old uid-only check.
+      if (authEpoch !== epochAtCall || (user && user.id) !== uidAtCall) return;
       // Idempotency: `clientPromise` is listened to TWICE (the race below, and the
       // late-settle reconciliation further down) — on the normal fast path both
       // resolve to the SAME client, and this guard is what stops the second one
@@ -1373,7 +1387,8 @@
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     }
     function clientFailed(err, reason) {
-      if ((user && user.id) !== uidAtCall) return;
+      // N3 (proofI C2): the stale-timer guard — see clientReady()'s comment.
+      if (authEpoch !== epochAtCall || (user && user.id) !== uidAtCall) return;
       setPill('offline');
       warnOnce('client', 'getSupabaseClient ' + (reason === 'client-timeout' ? 'timed out' : 'failed') +
         ': ' + (err && err.message || err));

@@ -174,6 +174,15 @@
   // refreshSnapshot below) whenever the read authority itself is degraded/error and
   // no write is in flight; there is no authenticated outbox to call anything "clean".
   var writeState = 'clean';
+  // N2 (Sol post-review, MAJOR, re-opens F3 — proofG d2/d3): `writeState` used to
+  // survive an auth identity change untouched — a signed-in user's write FAILURE
+  // (the account-scoped 'failed' word) leaked onto the NEXT identity's very first
+  // read: an anonymous visitor who never wrote anything saw "Change not saved" the
+  // instant they signed out, and a SECOND user's first healthy read painted the
+  // same false disclosure for a write they never made. Tracked the same way
+  // watchlist.js tracks its own auth boundary (undefined = never seen a wl-auth
+  // yet, so no reset needed — writeState is already 'clean' at that point).
+  var lastAuthIdentity;
   // A1A blocker 2 decision (Sol): the ONE portfolio_snapshot.v1 this file consumes —
   // never a second, independently-derived mirror of the same population/read/write
   // facts. Refreshed by refreshSnapshot(); null whenever window.PS has not deployed
@@ -1422,10 +1431,43 @@
     MB().setFact('earn', n);
   }
 
+  /* N1 (Sol post-review, MAJOR, freeze §5 — inverse of blocker 1, proofF/proofF2):
+     watchlist_risk.js's publish() forwards EVERY payload it computes to this seam
+     with no mode/universe guard. F2's own fix made FX correctly announce the
+     WATCHLIST universe while the reader is on the Watchlists tab — which means
+     watchlist_risk.js can now genuinely compute a payload keyed to WATCHLIST
+     names and hand it here. Consumer-side validation: the payload's per-name maps
+     (shares/covered/cluster/ballast) must name ONLY tickers that are actually in
+     THIS book's own open rows. An empty payload (no per-name keys at all) is
+     always accepted as a clear — that is the honest S3/F2 "nothing to weight"
+     signal. A payload naming even ONE foreign ticker is rejected WHOLESALE —
+     never partially accepted, never repainted from. */
+  function payloadIsConsistentWithBook(payload) {
+    if (!payload) return true;
+    var maps = [payload.shares, payload.covered, payload.cluster, payload.ballast];
+    var seen = {}, any = false;
+    maps.forEach(function (m) {
+      if (!m) return;
+      for (var k in m) {
+        if (!Object.prototype.hasOwnProperty.call(m, k)) continue;
+        any = true;
+        seen[k] = true;
+      }
+    });
+    if (!any) return true;
+    var openTickers = {};
+    openRows().forEach(function (r) { if (r.ticker) openTickers[r.ticker] = true; });
+    for (var t in seen) {
+      if (Object.prototype.hasOwnProperty.call(seen, t) && !openTickers[t]) return false;
+    }
+    return true;
+  }
+
   /* The risk publisher's landing pad (watchlist_risk.js computes, this file composes).
      Everything here is DISPLAY of a number the model produced — nothing is derived,
      re-scaled or re-ranked on the way in. */
   function setBookRisk(payload) {
+    if (!payloadIsConsistentWithBook(payload)) return;
     BOOK = payload || null;
     RISK_SHARES = (payload && payload.shares) || {};
     RISK_COVERED = (payload && payload.covered) || {};
@@ -1615,7 +1657,17 @@
        clear it. Consulted via the tracked `writeState` — the same field
        refreshSnapshot() feeds into the snapshot's write_state, so this reads the
        ONE tracked fact rather than a second independent notion of "did the last
-       write fail". */
+       write fail".
+       N2 (Sol post-review, MAJOR, proofG d2/d3): the sticky check used to run
+       BEFORE the authority guard — a STALE account-scoped 'failed' surviving an
+       identity change (onAuth() now resets writeState on identity change, but
+       this is the belt-and-suspenders half) leaked into the very NEXT identity's
+       first read: an anonymous sign-out, or user B's first healthy read, both
+       painted "Change not saved" for a write that was never theirs. The
+       authority guard now runs FIRST — a local-authority view can only ever see
+       ITS OWN `failed_local` (still honest: this device's own write really did
+       fail), never the account-scoped `failed` a prior CLOUD identity left
+       behind. */
     // F5 (Sol post-review, MAJOR — real snapshot consumption): the write_state and
     // authority checks below read the ONE snapshot (PS-present), never the raw
     // `writeState`/`rs.authority` fields a second, independently-derived way.
@@ -1623,10 +1675,13 @@
     var chipSnap = refreshSnapshot();
     var chipWriteState = chipSnap ? chipSnap.write_state : writeState;
     var chipAuthority = chipSnap ? chipSnap.authority : (rs && rs.authority);
+    if (!rs || chipAuthority === 'local') {
+      if (!afterWrite && chipWriteState === 'failed_local') return 'failed_local';
+      return 'local';
+    }
     if (!afterWrite && (chipWriteState === 'failed' || chipWriteState === 'failed_local')) {
       return chipWriteState;
     }
-    if (!rs || chipAuthority === 'local') return 'local';
     // S6's brief cloud-loading window ('user' set, the shared Supabase client not yet
     // resolved) is NOT offline — 'saving' is the closest honest existing word for "a
     // read is in flight," and it self-corrects within the tick the re-fired 'wl-auth'
@@ -1774,6 +1829,18 @@
        truthy (sign-IN only) — a sign-OUT left A's rows/readState/FX weights
        standing through the exact same async gap, just on the local-list side. */
     var authedNow = !!(window.WatchStore.user && window.WatchStore.user());
+    /* N2 (Sol post-review, MAJOR): reset the write-failure disclosure on every
+       genuine identity change (sign-in, sign-out, or a DIFFERENT uid replacing
+       the previous one) — never on the S6 double-fire of the SAME identity,
+       which must not clear a write that is still legitimately in flight for
+       THIS session. `lastAuthIdentity === undefined` is the one-time "never
+       seen a wl-auth yet" state and needs no reset (writeState is already
+       'clean' at page load). */
+    var uidNow = authedNow ? window.WatchStore.user().id : null;
+    if (lastAuthIdentity !== undefined && uidNow !== lastAuthIdentity) {
+      writeState = 'clean';
+    }
+    lastAuthIdentity = uidNow;
     rows = null;
     readState = authedNow
       ? { authority: 'cloud', state: 'loading', last_good_at: null, warning: null }
@@ -1896,6 +1963,18 @@
     count: function () { return rows === null ? null : openRows().length; },
     repaintRow: repaintRow,
     setBookRisk: setBookRisk,
+    // N1 (Sol post-review, MAJOR): explicit reset seam for the mode/auth boundary
+    // — mirrors watchlist.js's own RISK reset (setMode()'s enteringPortfolio
+    // branch and the wl-auth identity-change listener) so a stale (possibly
+    // foreign-keyed) BOOK/RISK_SHARES/RISK_COVERED payload is cleared BEFORE the
+    // Portfolio's own publisher round-trip has a chance to replace it — never
+    // left painting until that async trip lands.
+    resetBookRisk: function () {
+      BOOK = null; RISK_SHARES = {}; RISK_COVERED = {};
+      if (section() && rows && wsState().indexOf('anon') !== 0) {
+        renderTable(); renderBookRead(); renderAttention();
+      }
+    },
     readState: function () { return readState; }
   };
 

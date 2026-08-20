@@ -281,7 +281,8 @@
     // N5 (Sol post-review, NIT): hiding the panel must also clear its innerHTML —
     // the pattern portfolio.js's showLoading()/showError() already follow. A
     // hidden-but-still-populated panel leaves the PRIOR book's factor bars sitting
-    // in the DOM; a hidden node is still a leak the moment anything un-hides it.
+    // in the DOM; a hidden node is still a leak the moment anything un-hides it
+    // (a CSS bug, a screen reader, view-source) without a repaint in between.
     if (!data || !data.factors) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
     // AUTO_W (from portfolio.js dollar values) takes precedence over manual editor weights.
     // When AUTO_W is active, use its keys as the universe (not the watchlist tickers arg)

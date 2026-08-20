@@ -747,6 +747,15 @@
     if (enteringPortfolio) {
       RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
                seamItems: null, coverage: null, headline: null };
+      /* N1 (Sol post-review, MAJOR, freeze §5): portfolio.js's OWN
+         BOOK/RISK_SHARES/RISK_COVERED are a SEPARATE latch from this file's RISK
+         — watchlist_risk.js's publish() can hand portfolio.js a WATCHLIST-keyed
+         payload while the reader is on the Watchlists tab (F2's own fix made that
+         payload real rather than the old vacuous no-op). Reset it the same way,
+         at the same boundary, so a stale foreign payload cannot keep painting
+         the Portfolio's own surfaces until the Portfolio's own publisher
+         round-trip lands. */
+      if (window.PF && window.PF.resetBookRisk) window.PF.resetBookRisk();
     }
     paintChip();   // the chip shows THIS mode's save state (A1A §13)
     render();
@@ -2267,6 +2276,11 @@
       if (uid !== lastAuthIdentity) {
         RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
                  seamItems: null, coverage: null, headline: null };
+        // N1 (Sol post-review, MAJOR): the SAME reset, on the SAME boundary, for
+        // portfolio.js's separate BOOK/RISK_SHARES/RISK_COVERED latch — a second
+        // user's first read must never inherit the previous identity's risk
+        // payload (foreign-keyed or not) via this file's mode render.
+        if (window.PF && window.PF.resetBookRisk) window.PF.resetBookRisk();
         render();
       }
       lastAuthIdentity = uid;
