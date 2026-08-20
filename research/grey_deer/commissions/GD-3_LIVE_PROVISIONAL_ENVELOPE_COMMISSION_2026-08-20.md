@@ -102,6 +102,37 @@ test file no `run:` step names reds `legacy-job-workflow-yaml`).
 - The settled artifact your overlay compares against: `site/riskdata/risk_envelope.json`
   (bundle id in the baked DOM binds page↔artifact; GD-2 Gate 8 receipts 2026-08-20).
 
+## §0b Sol clarifications (2026-08-20, next-wave authorization — BINDING, additive to §0)
+
+1. **No stage-ceiling promotion in GD-3.** Source competence is unchanged. With no
+   promoted Grey Deer expert, current live sources may not originate `TRANSMITTING` or
+   `BREAKDOWN`; raising any `SourceRead.stage_ceiling` is out of scope (test: the live
+   builder's mapped reads carry ceilings identical to the settled builder's).
+2. **One source-adapter authority.** Settled and live builders share the EXACT
+   source-native mappings, requiredness, and stage ceilings. If the settled adapters
+   live inside the settled builder, refactor them into a pure shared helper both
+   builders import; never duplicate them (test: shared-helper identity, not copied
+   tables).
+3. **Raw reads only.** Do not consume `site/live/risk_state.json` `.display` (or any
+   display-derived field) as evidence. Consume the raw live Market State / Risk Radar
+   reads. Grey Deer owns its own pending presentation metadata — no double-debounce.
+4. **Observed stage ≠ dwell state.** The pure composer produces the current descriptive
+   candidate. A `live_transition` block may carry `candidate_stage`, `stable_stage`,
+   `pending`, `ticks`, `needs`. Pending is visible immediately; neither field gains
+   rank/gate/size/execute authority.
+5. **Four clocks stay truthful.** Never substitute builder time for source event time;
+   unknown clock → `null`/`UNKNOWN`. Every live envelope binds to the settled
+   `bundle_id` it overlays.
+6. **Precedence law.** Stale, future-dated, or older-than-settled live evidence loses
+   overlay precedence and can never vote calm or loosen anything.
+7. **No new quote owner, timer, scheduler, Caddy/public-boundary change, forward-ledger
+   write, or policy authority** (re-affirms §0.3/§0.7 and the reject-if card).
+
+Production acceptance remains §0.8 (Gate-8-equivalent): real live source change → VPS
+live envelope within ≤2 fast fires → authenticated browser overlay, four-clock receipt
+(`event_time → observed_at → produced_at → browser_seen_at`), plus proof `data/` and all
+forward ledgers remained unchanged over the window.
+
 ## Non-goals / stop conditions
 
 NOT in this PR: GD-6/GD-7 (Prophet sidecar / CN entry safety), GD-8A alerts, GD-8B
