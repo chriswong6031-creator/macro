@@ -76,14 +76,32 @@ waves:
       (DSC:GOVREV-PUBLISHER-VINTAGE-LAG-IS-THE-ONLY-TRACE).
   - id: D3
     title: Temporal event v3 and Change Tape
-    status: todo
+    status: done
+    pr: [6048, 6059]
     depends_on: [D2]
     next_action: >
-      Unauthorized. Awaiting Sol D3 authorization review.
+      Done — Sol authorized 2026-08-20 and the bounded charter shipped the
+      same day: typed rail failure_state (source_unavailable /
+      projection_missing) emitted by the workspace read-model, dual-clock
+      tape rows + Late-discovery chip, inspector Clocks block with the
+      NAMED-NULL source-publication row, receipt-bound before/after +
+      successor line from prior_source_identity, budget mode's eternal
+      "loading" retired. Additive only — event contract stays v2
+      (DEC:D3-TEMPORAL-V3-IS-ADDITIVE); frozen spec
+      research/defense_intelligence/DEFENSE_D3_TEMPORAL_CONTRACT_AND_CHANGE_TAPE_SPEC.md.
+      Opus adversarial review found a real blocker (the first cut destroyed
+      the already-working module PROJECTION_MISSING verdict) — repaired same
+      PR chain: the real module's HTTP-receipt status is authoritative, the
+      typed fallback applies only when no module exists. #6059 fitted the
+      page under a ratcheted 296 KiB raw-byte budget after the D3 markup
+      left 65 bytes of headroom. All four D3 families production-proven
+      (browser proof 2026-08-20). Awaiting Sol acceptance; D4 unauthorized.
   - id: D4
     title: Company financial truth bridge
     status: todo
     depends_on: [D3]
+    next_action: >
+      Unauthorized. Awaiting Sol review of the D3 close.
   - id: D5
     title: Program, mission, capability, and product graph
     status: todo
@@ -97,6 +115,8 @@ landmines:
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "DNR:LAW-REVIEWED-MANIFEST-CENSUS — a reviewed recipient graph cannot re-time itself."
   - "SPR is not a live issuer (Boeing close 2025-12-08; absent from Stock Identity universe)."
+  - "government_revenue.html has a ratcheted RAW_HTML_BUDGET_BYTES fence (296 KiB since #6059). Template growth ships INLINE in the page — bake locally (scripts/build_government_revenue._write_site_projection) before merging template edits, or the shared render lane fails at the govrev step. D3's first cut left 65 bytes of headroom."
+  - "The real createGovernmentRevenueBudget module EXISTS in government-revenue-dossiers.js (BSD grep hides it — use grep -a). Its HTTP-receipt status is authoritative; the typed freshness.budget fallback applies only when no module loaded."
 do_not_redo:
   - "Do not start original D0. V2/D0 remain historical records only."
   - "Do not implement collectors, schemas, UI, Neural Web, or Prophet members in D0R."
@@ -127,11 +147,13 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol D3 authorization review. D0R/D1/D1.1/D2 are done and accepted; the D2
-  operational closure chain is #5932 + #5997 + #6004 + #6008, production-proven
-  2026-08-20. Do not merge #5424 (superseded by defense21-v1). Do not
-  re-baseline. Publisher-vintage alarm is a reliability follow-up, not a D3
-  prerequisite.
+  Sol D3 acceptance review. D0R/D1/D1.1/D2 done and accepted; D3 shipped
+  2026-08-20 under Sol's bounded charter (#6048 vertical + #6059 page-budget
+  fit) with all four families production-proven — award/action temporal truth
+  live, opportunities SOURCE_UNAVAILABLE and budget PROJECTION_MISSING as
+  honest typed states. D4 is unauthorized. Do not merge #5424 (superseded by
+  defense21-v1). Do not re-baseline. Publisher-vintage alarm remains a
+  reliability follow-up.
 ---
 
 ## Context
