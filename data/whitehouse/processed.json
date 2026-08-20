@@ -743,6 +743,30 @@
       "at": "2026-08-19T22:41:12.338614+00:00",
       "activated": true,
       "importance": 78
+    },
+    "https://www.whitehouse.gov/?p=48775": {
+      "id": "wh-2026-08-20-fact-sheet-president-donald-j-trump-launches-the-golden-age-of-space-transportat",
+      "at": "2026-08-20T22:45:07.228073+00:00",
+      "activated": true,
+      "importance": 66
+    },
+    "https://www.whitehouse.gov/?p=48794": {
+      "id": "wh-2026-08-20-national-security-presidential-memorandum-nspm-17",
+      "at": "2026-08-20T22:45:41.315566+00:00",
+      "activated": true,
+      "importance": 68
+    },
+    "https://www.whitehouse.gov/?p=48777": {
+      "id": "wh-2026-08-20-president-trumps-cabinet-champions-america-first-successes-nationwide",
+      "at": "2026-08-20T22:45:55.065371+00:00",
+      "activated": false,
+      "importance": 25
+    },
+    "https://www.whitehouse.gov/?p=48783": {
+      "id": "wh-2026-08-20-2-million-donation-expands-first-lady-melania-trumps-fostering-the-future-initia",
+      "at": "2026-08-20T22:46:06.588927+00:00",
+      "activated": false,
+      "importance": 8
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
