@@ -3240,3 +3240,10 @@
 {"id":"ob-2026-08-20-8bd771a9bd","from":"posting","to":"posted","at":"2026-08-20T13:37:08Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a87030412bf3aa46409c9c9","external_url":null,"at":"2026-08-20T13:36:20Z","booked_at":"2026-08-20T13:36:20Z"}}
 {"id":"ob-2026-08-20-d02d930007","from":"approved","to":"posting","at":"2026-08-20T13:37:16Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-20-d02d930007","from":"posting","to":"posted","at":"2026-08-20T13:37:16Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a87030c68a7e3add6f7d066","external_url":null,"at":"2026-08-20T13:36:20Z","booked_at":"2026-08-20T13:36:20Z"}}
+{"id":"ob-2026-08-20-1ba4f7f315","from":"queued","to":"approved","at":"2026-08-20T14:05:13Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-20-3f9eb9713e","from":"queued","to":"approved","at":"2026-08-20T14:05:13Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-20-7f3395b7c9","from":"queued","to":"approved","at":"2026-08-20T14:05:13Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-20-1ba4f7f315","from":"approved","to":"quarantined","at":"2026-08-20T14:05:13Z","actor":"publisher","note":"reads too technical / banned language: banned vocab: 'rsi'","receipt":null}
+{"id":"ob-2026-08-20-3f9eb9713e","from":"approved","to":"quarantined","at":"2026-08-20T14:05:13Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-20-7f3395b7c9","from":"approved","to":"posting","at":"2026-08-20T14:05:23Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-20-7f3395b7c9","from":"posting","to":"posted","at":"2026-08-20T14:05:24Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8709a4b40a3556113f1fff","external_url":null,"at":"2026-08-20T14:05:11Z","booked_at":"2026-08-20T14:05:11Z"}}
