@@ -14,8 +14,9 @@ class: research
 blast_radius: user_facing
 ambiguity: specified
 next_action: >
-  Sol review of the draft E2-D Macro dossier PR (hold + do-not-merge).
-  Do not merge or deploy until review. Do not start E3+. Do not reopen E2-T1.
+  Sol Round-2 re-review of draft PR #6021 after alias/404/projection/cache/CI
+  hardening (hold + do-not-merge). Do not merge, deploy, or start E3+.
+  Do not reopen E2-T1.
 owns_paths:
   - research/earnings_intelligence/**
   - research/EARNINGS_INTELLIGENCE_E0_FREEZE_ARCHAEOLOGY_AND_EXPERIENCE_HANDOFF_2026-08-16.md
@@ -76,8 +77,9 @@ waves:
     depends_on: [E2]
     pr: 6021
     next_action: >
-      Sol review of draft PR #6021 (hold + do-not-merge). Stop at review;
-      do not merge, deploy, or start E3+. Do not reopen E2-T1.
+      Sol Round-2 re-review of draft PR #6021 after the five hardening
+      findings in review 4980594142. Stop at review; do not merge, deploy,
+      or start E3+. Do not reopen E2-T1.
 ---
 
 E0 is research/design only. E1/E2 are the first vertical slice. Later waves E3–E15 live in the V2 masterplan and are out of this workstream's immediate next_action.

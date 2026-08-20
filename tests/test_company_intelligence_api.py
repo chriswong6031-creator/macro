@@ -400,7 +400,7 @@ _EXHIBIT = _FIXTURES / "aapl_fy2026_q3_ex99_1.htm"
 _TRANSCRIPT_GZ = _FIXTURES / "aapl_fy2026_q3.json.gz"
 _FILING_JSON = _FIXTURES / "aapl_fy2026_q3_filing.json"
 
-WORKSPACE_PRIVATE_CACHE = "private, no-store"
+WORKSPACE_PUBLIC_CACHE = "public, max-age=60, stale-while-revalidate=240"
 NOT_COVERED_WORKSPACE_NOTE = "Event workspace does not cover this ticker"
 
 
@@ -455,7 +455,7 @@ def test_event_workspace_glance_200_and_leak_denylist(client, monkeypatch, tmp_p
     response = client.get("/api/event-workspace/AAPL")
 
     assert response.status_code == 200, response.text
-    assert response.headers.get("cache-control") == WORKSPACE_PRIVATE_CACHE
+    assert response.headers.get("cache-control") == WORKSPACE_PUBLIC_CACHE
     assert v1_called == [], "v1 reader must not be called by event-workspace endpoint"
 
     payload = response.json()
@@ -490,6 +490,7 @@ def test_event_workspace_glance_200_and_leak_denylist(client, monkeypatch, tmp_p
         "miss",
         "bullish",
         '"summary"',
+        "claim_text",
     ):
         assert forbidden not in dumped, f"leak: {forbidden!r} found in 200 glance"
 
@@ -520,8 +521,11 @@ def test_event_workspace_glance_404_uncovered_ticker(client, monkeypatch) -> Non
     response = client.get("/api/event-workspace/TSLA")
 
     assert response.status_code == 404, response.text
-    assert response.headers.get("cache-control") == NO_STORE
-    assert response.json() == {"detail": "Event workspace is not available for TSLA."}
+    assert response.headers.get("cache-control") == WORKSPACE_PUBLIC_CACHE
+    assert response.json() == {
+        "code": "event_workspace_not_covered",
+        "ticker": "TSLA",
+    }
     assert v1_called == []
 
 

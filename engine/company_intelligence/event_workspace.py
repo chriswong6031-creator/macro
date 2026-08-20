@@ -334,6 +334,27 @@ def _strip_private(workspace: Mapping[str, Any]) -> dict[str, Any]:
     return {key: workspace[key] for key in WORKSPACE_KEYS}
 
 
+def _register_alias(alias_map: dict[str, str], alias: object, event_id: str) -> None:
+    """Bind one alias to a canonical event before marker promotion.
+
+    Same alias → same event is idempotent. Same alias → a different canonical
+    event raises ``WorkspaceError`` so dictionary assignment cannot silently
+    overwrite ownership.
+    """
+    key = str(alias or "").strip()
+    if not key:
+        return
+    existing = alias_map.get(key)
+    if existing is None:
+        alias_map[key] = event_id
+        return
+    if existing != event_id:
+        raise WorkspaceError(
+            f"alias {key!r} is already owned by {existing}; "
+            f"cannot reassign to {event_id}"
+        )
+
+
 def _generation_identity(
     workspaces: Mapping[str, Mapping[str, Any]],
     generated_at: str,
@@ -380,19 +401,20 @@ def write_workspace_generation(
         row["generated_at"] = str(generated)
         validate_event_workspace(row)
         stamped[event_id] = row
-        alias_map[event_id] = event_id
+        _register_alias(alias_map, event_id, event_id)
         for alias in row.get("aliases") or []:
-            alias_map[str(alias)] = event_id
+            _register_alias(alias_map, alias, event_id)
         private = workspaces[event_id]
         extra = private.get("_aliases") if isinstance(private, Mapping) else None
         if isinstance(extra, Mapping):
-            for group in (
+            _register_alias(alias_map, extra.get("canonical_event_id"), event_id)
+            for family in (
                 extra.get("company_intelligence_ids") or [],
                 extra.get("earnings_narrative_keys") or [],
                 extra.get("public_slugs") or [],
             ):
-                for alias in group:
-                    alias_map[str(alias)] = event_id
+                for alias in family:
+                    _register_alias(alias_map, alias, event_id)
 
     nest = Path(out_dir) / NEST
     generation_dir = nest / "generations" / generation_id

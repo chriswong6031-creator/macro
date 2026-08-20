@@ -3678,6 +3678,7 @@ on:
       - "app/company_intelligence.py"
       - "app/earnings.py"
       - "tests/test_company_intelligence_api.py"
+      - "tests/test_company_intelligence_dossier_js.py"
       - "site/assets/js/company-intelligence-dossier.js"
       - "templates/ticker.html.j2"
       - "engine/earnings_narrative/public_wire.py"

@@ -2,9 +2,11 @@
 
 The dossier JS is a self-contained IIFE that runs on page load. It requests
 GET /api/event-workspace/{ticker} as the current-event authority (v2) and only
-falls back to GET /api/company-intelligence/{ticker} on a genuine HTTP 404.
-Any other non-200 from v2 (503, 429, network reject, invalid payload) renders
-the "verified event temporarily unavailable" state without touching v1.
+falls back to GET /api/company-intelligence/{ticker} when the 404 body proves
+canonical coverage absence: code=event_workspace_not_covered AND ticker match.
+Generic FastAPI/Caddy/HTML 404s, malformed JSON, missing code, and ticker
+mismatch render unavailable and never touch v1. Any other non-200 from v2
+(503, 429, network reject, invalid payload) is the same unavailable path.
 
 These tests are DISCRIMINATING: the fetch mock is wired so that v1 returns
 data that would produce visually wrong output (bullish summary, 14 questions,
@@ -382,19 +384,22 @@ __fetchImpl = function (url) {{
 
 
 # ============================================================================
-# 2. v2 404 → v1 requested and legacy teaser renders; data-ci-mode=v1
+# 2. Canonical v2 404 → v1 requested and legacy teaser renders; data-ci-mode=v1
 # ============================================================================
 @needs_node
 def test_v2_404_falls_through_to_v1_and_sets_mode_v1():
-    """HTTP 404 from /api/event-workspace/ means no v2 coverage.
-    The module MUST then request v1 and render the legacy teaser.
-    """
+    """Canonical not-covered 404 (code + ticker) MUST request v1."""
     v1_payload = dict(V1_POISON_PAYLOAD)
     out = _run_ci(
         f"""
 __fetchImpl = function (url) {{
   if (url.indexOf('/api/event-workspace/') >= 0) {{
-    return Promise.resolve({{ok: false, status: 404, json: function () {{ return Promise.reject(); }}}});
+    return Promise.resolve({{
+      ok: false, status: 404,
+      json: function () {{
+        return Promise.resolve({{code: 'event_workspace_not_covered', ticker: 'AAPL'}});
+      }}
+    }});
   }}
   return Promise.resolve({{
     ok: true, status: 200,
@@ -409,7 +414,7 @@ __fetchImpl = function (url) {{
     )
     # v1 fetch followed
     assert any("/api/company-intelligence/" in u for u in out["fetchCalls"]), (
-        "v1 /api/company-intelligence/ was NOT requested after 404", out["fetchCalls"]
+        "v1 /api/company-intelligence/ was NOT requested after canonical 404", out["fetchCalls"]
     )
     # v2 before v1 in call order
     v2_idx = next(i for i, u in enumerate(out["fetchCalls"]) if "/api/event-workspace/" in u)
@@ -421,6 +426,91 @@ __fetchImpl = function (url) {{
     assert out["mode"] == "v1", out
     # v1 content rendered (content visible)
     assert out["contentHidden"] is False, out
+
+
+def _assert_404_does_not_call_v1(setup_js: str) -> dict:
+    out = _run_ci(setup_js)
+    assert any("/api/event-workspace/" in u for u in out["fetchCalls"]), out
+    assert not any("/api/company-intelligence/" in u for u in out["fetchCalls"]), (
+        "v1 was requested after a non-canonical 404 — fallback law violated",
+        out["fetchCalls"],
+    )
+    assert out["mode"] == "unavailable", out
+    return out
+
+
+@needs_node
+def test_v2_generic_json_404_does_not_call_v1():
+    """FastAPI {{detail: Not Found}} must not authorize the v1 teaser."""
+    _assert_404_does_not_call_v1(
+        """
+__fetchImpl = function (url) {
+  if (url.indexOf('/api/event-workspace/') >= 0) {
+    return Promise.resolve({
+      ok: false, status: 404,
+      json: function () { return Promise.resolve({detail: 'Not Found'}); }
+    });
+  }
+  return Promise.resolve({ok: true, status: 200, json: function () { return Promise.resolve({available: true}); }});
+};
+"""
+    )
+
+
+@needs_node
+def test_v2_html_404_does_not_call_v1():
+    """Caddy/HTML 404 (non-JSON body) must not authorize the v1 teaser."""
+    _assert_404_does_not_call_v1(
+        """
+__fetchImpl = function (url) {
+  if (url.indexOf('/api/event-workspace/') >= 0) {
+    return Promise.resolve({
+      ok: false, status: 404,
+      json: function () { return Promise.reject(new Error('Unexpected token <')); }
+    });
+  }
+  return Promise.resolve({ok: true, status: 200, json: function () { return Promise.resolve({available: true}); }});
+};
+"""
+    )
+
+
+@needs_node
+def test_v2_404_missing_code_does_not_call_v1():
+    """404 JSON without event_workspace_not_covered is unavailable, never v1."""
+    _assert_404_does_not_call_v1(
+        """
+__fetchImpl = function (url) {
+  if (url.indexOf('/api/event-workspace/') >= 0) {
+    return Promise.resolve({
+      ok: false, status: 404,
+      json: function () { return Promise.resolve({ticker: 'AAPL'}); }
+    });
+  }
+  return Promise.resolve({ok: true, status: 200, json: function () { return Promise.resolve({available: true}); }});
+};
+"""
+    )
+
+
+@needs_node
+def test_v2_404_mismatched_ticker_does_not_call_v1():
+    """Canonical code with the wrong ticker must not call v1."""
+    _assert_404_does_not_call_v1(
+        """
+__fetchImpl = function (url) {
+  if (url.indexOf('/api/event-workspace/') >= 0) {
+    return Promise.resolve({
+      ok: false, status: 404,
+      json: function () {
+        return Promise.resolve({code: 'event_workspace_not_covered', ticker: 'MSFT'});
+      }
+    });
+  }
+  return Promise.resolve({ok: true, status: 200, json: function () { return Promise.resolve({available: true}); }});
+};
+"""
+    )
 
 
 # ============================================================================

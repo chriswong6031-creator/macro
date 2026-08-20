@@ -7,9 +7,12 @@
  * Fetch order (frozen law):
  *   1. GET /api/event-workspace/{ticker}  — current-event authority (v2)
  *      200 + valid schema                 → renderV2; v1 never requested
- *      404                                → fetchV1 (genuine no-coverage)
- *      503 / 429 / error / invalid schema → showV2Unavailable; v1 NEVER fallback
- *   2. GET /api/company-intelligence/{ticker}  — legacy v1 teaser (404 fallback only)
+ *      404 + code=event_workspace_not_covered + ticker match
+ *                                         → fetchV1 (genuine no-coverage)
+ *      any other 404 / 503 / 429 / error / invalid schema
+ *                                         → showV2Unavailable; v1 NEVER fallback
+ *   2. GET /api/company-intelligence/{ticker}  — legacy v1 teaser
+ *      (canonical not-covered 404 only)
  */
 (function () {
   'use strict';
@@ -702,6 +705,18 @@
   }
 
   /* Primary fetch — /api/event-workspace/{ticker} is the current-event authority. */
+  function parseV2Body(response) {
+    return response.json().then(function (body) { return body; }).catch(function () { return null; });
+  }
+
+  function isCanonicalNotCovered(status, body) {
+    return status === 404
+      && body
+      && typeof body === 'object'
+      && body.code === 'event_workspace_not_covered'
+      && String(body.ticker || '').toUpperCase() === ticker;
+  }
+
   function doV2Fetch() {
     var v2Handled = false;
     var v2Controller = typeof AbortController === 'function' ? new AbortController() : null;
@@ -713,25 +728,22 @@
       headers: {'Accept': 'application/json'},
       signal: v2Controller ? v2Controller.signal : undefined
     }).then(function (response) {
-      if (response.status === 404) {
-        /* Genuine no-coverage: fall through to the v1 teaser. */
-        v2Handled = true;
-        window.clearTimeout(v2Timeout);
-        fetchV1();
-        return null;
-      }
-      if (!response.ok) {
-        /* 503 / 429 / any other non-200 non-404: unavailable, never v1. */
-        v2Handled = true;
-        window.clearTimeout(v2Timeout);
-        showV2Unavailable();
-        return null;
-      }
-      return response.json();
-    }).then(function (data) {
-      if (v2Handled) return;
+      return parseV2Body(response).then(function (body) {
+        return {status: response.status, ok: response.ok, body: body};
+      });
+    }).then(function (result) {
       window.clearTimeout(v2Timeout);
-      /* Validate schema; an invalid payload is treated as unavailable, not as a v1 cue. */
+      if (isCanonicalNotCovered(result.status, result.body)) {
+        v2Handled = true;
+        fetchV1();
+        return;
+      }
+      if (!result.ok) {
+        v2Handled = true;
+        showV2Unavailable();
+        return;
+      }
+      var data = result.body;
       if (!data ||
           data.schema !== 'event_workspace_public_glance.v1' ||
           data.available !== true ||
@@ -746,7 +758,7 @@
     });
   }
 
-  /* Legacy v1 path — only reached via genuine 404 from /api/event-workspace/. */
+  /* Legacy v1 path — only reached via canonical not-covered 404. */
   function fetchV1() {
     root.setAttribute('data-ci-mode', 'v1');
     root.setAttribute('data-ci-plane', 'company_intelligence.v1');

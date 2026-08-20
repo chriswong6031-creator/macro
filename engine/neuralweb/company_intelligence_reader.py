@@ -660,6 +660,52 @@ def read_company_intelligence(params: Mapping[str, Any] | None = None) -> dict[s
 _NOT_COVERED_NOTE = "Event workspace does not cover this ticker"
 
 
+def _verify_selected_workspace(
+    *,
+    ticker: str,
+    selected: Any,
+    workspace: Mapping[str, Any],
+) -> None:
+    """Cross-check ticker/period/alias after the workspace object is loaded.
+
+    A mismatch is a verification failure, never coverage-absence. The HTTP
+    layer maps these notes to 503, not 404.
+    """
+    issuer = workspace.get("issuer") if isinstance(workspace.get("issuer"), Mapping) else {}
+    listings = issuer.get("listings") or []
+    listed = {
+        str(item.get("ticker") or "").strip().upper()
+        for item in listings
+        if isinstance(item, Mapping)
+    }
+    if ticker not in listed:
+        raise CompanyIntelligenceReadError(
+            "event workspace issuer listings do not include the requested ticker"
+        )
+
+    fiscal = workspace.get("fiscal_period") if isinstance(workspace.get("fiscal_period"), Mapping) else {}
+    try:
+        year = int(fiscal.get("year"))
+        quarter = int(fiscal.get("quarter"))
+    except (TypeError, ValueError) as exc:
+        raise CompanyIntelligenceReadError(
+            "event workspace fiscal period does not match the selected alias period"
+        ) from exc
+    if year != selected.year or quarter != selected.quarter:
+        raise CompanyIntelligenceReadError(
+            "event workspace fiscal period does not match the selected alias period"
+        )
+
+    owned = {str(item) for item in (workspace.get("aliases") or [])}
+    owned.add(str(workspace.get("event_id") or ""))
+    if selected.alias not in owned:
+        raise CompanyIntelligenceReadError(
+            "selected alias does not belong to the loaded workspace"
+        )
+    if workspace.get("event_id") != selected.event_id:
+        raise CompanyIntelligenceReadError("event workspace identity mismatch")
+
+
 def read_current_event_workspace(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Return the current ``event_workspace.v1`` for *ticker* selected by alias.
 
@@ -737,6 +783,7 @@ def read_current_event_workspace(params: Mapping[str, Any] | None = None) -> dic
     # Fetch and hash-verify the selected workspace object.
     try:
         workspace, workspace_receipt = _load_event_workspace(base_url, selected.event_id)
+        _verify_selected_workspace(ticker=ticker, selected=selected, workspace=workspace)
     except CompanyIntelligenceReadError as exc:
         return {
             "available": False,

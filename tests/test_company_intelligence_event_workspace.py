@@ -536,8 +536,8 @@ def test_public_glance_leak_denylist_and_required_content(tmp_path) -> None:
     # warnings object must not appear in output
     assert '"warnings"' not in dumped
 
-    # beat / miss / bullish / v1 summary must not appear
-    for bad in ("beat", "miss", "bullish", '"summary"'):
+    # beat / miss / bullish / v1 summary / unbounded reported claim_text must not appear
+    for bad in ("beat", "miss", "bullish", '"summary"', "claim_text"):
         assert bad not in dumped, f"forbidden token {bad!r} found in glance"
 
 
@@ -553,6 +553,7 @@ def test_public_glance_revenue_formatted_correctly(tmp_path) -> None:
     assert item["label"] == "Revenue"
     assert item["value"] == "$109.4B \u00b7 +16%"
     assert item["receipt_state"] == "byte_replayed"
+    assert "claim_text" not in item
 
 
 def test_public_glance_guidance_formatted_correctly(tmp_path) -> None:
@@ -649,3 +650,162 @@ def test_public_glance_source_states_omit_private_fields(tmp_path) -> None:
     assert statuses.get("transcript") == "present"
     assert statuses.get("public_wire") == "absent"
     assert statuses.get("edgar_collector") == "not_joined"
+
+
+def test_write_workspace_generation_refuses_alias_collision_before_marker(tmp_path) -> None:
+    """Two valid canonical workspaces claiming the same AAPL/YYYYQn alias fail closed.
+
+    The collision must raise before ``event_workspaces/manifest.json`` advances.
+    """
+    import copy
+
+    first = _build_flagship()
+    second = copy.deepcopy(first)
+    second["event_id"] = "evt_cik0000320193_2026q3_alt"
+    second["aliases"] = [LIVE_NARRATIVE_ALIAS]
+    extra = dict(second.get("_aliases") or {})
+    extra["canonical_event_id"] = second["event_id"]
+    extra["company_intelligence_ids"] = []
+    extra["earnings_narrative_keys"] = [LIVE_NARRATIVE_ALIAS]
+    extra["public_slugs"] = []
+    extra["tickers"] = ["AAPL"]
+    second["_aliases"] = extra
+
+    out = tmp_path / "company_intelligence"
+    nest_manifest = out / "event_workspaces" / "manifest.json"
+    assert not nest_manifest.exists()
+    with pytest.raises(WorkspaceError, match="already owned"):
+        write_workspace_generation(out, {
+            first["event_id"]: first,
+            second["event_id"]: second,
+        })
+    assert not nest_manifest.exists()
+    generations = out / "event_workspaces" / "generations"
+    assert not generations.exists() or list(generations.iterdir()) == []
+
+
+def test_write_workspace_generation_same_alias_same_event_is_idempotent(tmp_path) -> None:
+    """AAPL/2026Q3 in both aliases[] and _aliases is one owner, not a collision."""
+    flagship = _build_flagship()
+    out = tmp_path / "company_intelligence"
+    generation = write_workspace_generation(out, {flagship["event_id"]: flagship})
+    manifest = json.loads((out / "event_workspaces" / "manifest.json").read_text())
+    assert manifest["aliases"][LIVE_NARRATIVE_ALIAS] == FLAGSHIP_EVENT_ID
+    assert (generation / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").is_file()
+
+
+def test_read_current_rejects_issuer_ticker_mismatch_as_verification(tmp_path, monkeypatch) -> None:
+    """Manifest alias for AAPL must not succeed if the loaded issuer listings omit AAPL."""
+    import copy
+
+    flagship = copy.deepcopy(_build_flagship())
+    listings = list(flagship["issuer"]["listings"])
+    listings[0] = {**listings[0], "ticker": "MSFT"}
+    flagship["issuer"]["listings"] = listings
+    files = _published_workspaces(tmp_path, flagship)
+    _wire_remote(monkeypatch, files)
+
+    result = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result["available"] is False
+    assert result["ticker"] == "AAPL"
+    assert result["note"] != "Event workspace does not cover this ticker"
+    assert "listings" in result["note"]
+
+
+def test_read_current_rejects_fiscal_period_mismatch_as_verification(tmp_path, monkeypatch) -> None:
+    """Selected AAPL/2026Q3 must not succeed if the loaded workspace is Q2."""
+    import copy
+
+    flagship = copy.deepcopy(_build_flagship())
+    flagship["fiscal_period"] = {**flagship["fiscal_period"], "quarter": 2}
+    files = _published_workspaces(tmp_path, flagship)
+    _wire_remote(monkeypatch, files)
+
+    result = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result["available"] is False
+    assert result["note"] != "Event workspace does not cover this ticker"
+    assert "fiscal period" in result["note"]
+
+
+def test_read_current_rejects_alias_not_owned_by_workspace_as_verification(tmp_path, monkeypatch) -> None:
+    """Manifest T/YYYYQn that is absent from the loaded workspace aliases is 503, not 404."""
+    import copy
+
+    flagship = copy.deepcopy(_build_flagship())
+    flagship["aliases"] = [alias for alias in flagship["aliases"] if alias != LIVE_NARRATIVE_ALIAS]
+    files = _published_workspaces(tmp_path, flagship)
+    _wire_remote(monkeypatch, files)
+
+    result = reader.read_current_event_workspace({"ticker": "AAPL"})
+    assert result["available"] is False
+    assert result["note"] != "Event workspace does not cover this ticker"
+    assert "selected alias" in result["note"]
+
+
+def test_public_glance_typed_absent_lede_omits_growth(tmp_path) -> None:
+    """Revenue dollars may publish; +16% must not if the lede loses exact evidence."""
+    result = _build_workspace_reader_result(tmp_path)
+    for claim in result["workspace"]["claims"]:
+        if claim.get("claim_id") == "claim_revenue_lede":
+            claim["source_span"] = {
+                "receipt_state": "typed_absence",
+                "rights_profile": "rp_public_primary_v1",
+            }
+    glance = _public_workspace_glance(result)
+    assert glance["reported"][0]["value"] == "$109.4B"
+    assert "+16%" not in glance["reported"][0]["value"]
+    assert "claim_text" not in glance["reported"][0]
+
+
+def test_public_glance_address_only_guidance_is_omitted(tmp_path) -> None:
+    result = _build_workspace_reader_result(tmp_path)
+    for item in result["workspace"]["guidance"]:
+        item["source_span"]["receipt_state"] = "address_only"
+    glance = _public_workspace_glance(result)
+    assert glance["guidance"] == []
+
+
+def test_public_glance_non_public_guidance_is_omitted(tmp_path) -> None:
+    result = _build_workspace_reader_result(tmp_path)
+    for item in result["workspace"]["guidance"]:
+        item["source_span"]["rights_profile"] = "rp_internal_v1"
+    glance = _public_workspace_glance(result)
+    assert glance["guidance"] == []
+
+
+def test_public_glance_watch_text_is_bounded(tmp_path) -> None:
+    result = _build_workspace_reader_result(tmp_path)
+    for claim in result["workspace"]["claims"]:
+        if claim.get("claim_id") == "claim_demand_vs_supply":
+            claim["text"] = "x" * 800
+    glance = _public_workspace_glance(result)
+    watch = next(item for item in glance["watch"] if item["id"] == "claim_demand_vs_supply")
+    assert len(watch["value"]) == 500
+    assert "x" * 501 not in json.dumps(glance)
+
+
+def test_public_glance_watch_list_is_capped(tmp_path) -> None:
+    result = _build_workspace_reader_result(tmp_path)
+    extras = []
+    for index in range(6):
+        extras.append({
+            "claim_id": f"claim_demand_extra_{index}",
+            "metric": "demand_vs_supply",
+            "kind": "quote",
+            "text": f"constraint {index}",
+            "source_span": {
+                "receipt_state": "byte_replayed",
+                "rights_profile": "rp_public_primary_v1",
+            },
+        })
+    result["workspace"]["claims"] = extras + list(result["workspace"]["claims"])
+    glance = _public_workspace_glance(result)
+    assert len(glance["watch"]) == 3
+
+
+def test_public_glance_reported_omits_claim_text(tmp_path) -> None:
+    result = _build_workspace_reader_result(tmp_path)
+    glance = _public_workspace_glance(result)
+    dumped = json.dumps(glance)
+    assert "claim_text" not in dumped
+    assert glance["reported"][0]["value"] == "$109.4B \u00b7 +16%"

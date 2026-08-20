@@ -20,6 +20,7 @@ import time
 from typing import Any, Mapping
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 
 from app import edge_client
 from engine.company_intelligence.contracts import ContractError, safe_ticker
@@ -74,16 +75,23 @@ _FIELD_LINEAGE_LIST_KEYS = (
 )
 _NOT_COVERED_NOTE = "Company Intelligence does not cover this ticker"
 _NOT_COVERED_WORKSPACE_NOTE = "Event workspace does not cover this ticker"
+_NOT_COVERED_WORKSPACE_CODE = "event_workspace_not_covered"
 
 # A teaser page can be CDN-cached safely because it contains no per-user data.
 # Errors deliberately remain under app.main's default ``private, no-store``.
 _PUBLIC_CACHE_CONTROL = "public, max-age=300, stale-while-revalidate=900"
 
-# The glance endpoint carries no per-user data but also must never be shared
-# across sessions via a CDN cache due to the authority: context_only bound.
-_WORKSPACE_GLANCE_CACHE_CONTROL = "private, no-store"
+# Anonymous public glance. Lifetime including SWR must not exceed the reader's
+# 300-second workspace snapshot horizon.
+_WORKSPACE_GLANCE_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=240"
+_WORKSPACE_NOT_COVERED_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=240"
 
 _GLANCE_SCHEMA = "event_workspace_public_glance.v1"
+_PUBLIC_PRIMARY_RIGHTS = frozenset({"rp_public_primary_v1", "public_primary"})
+_WATCH_MAX_ITEMS = 3
+_WATCH_TEXT_MAX_CHARS = 500
+_GUIDANCE_MAX_ITEMS = 4
+_SOURCE_STATES_MAX_ITEMS = 8
 
 # Closed label map for watch items keyed on metric or claim_id.
 _WATCH_LABEL_MAP: dict[str, str] = {
@@ -226,6 +234,20 @@ def _format_percent_range(low: float, high: float) -> str:
     return f"{_fmt(low)}\u2013{_fmt(high)}%"
 
 
+def _is_exact_public_evidence(span: object) -> bool:
+    """True only for a byte-replayed span with an approved public-primary profile."""
+    if not isinstance(span, Mapping):
+        return False
+    if span.get("receipt_state") != "byte_replayed":
+        return False
+    return str(span.get("rights_profile") or "") in _PUBLIC_PRIMARY_RIGHTS
+
+
+def _bound_public_text(value: object, *, limit: int = _WATCH_TEXT_MAX_CHARS) -> str:
+    text = str(value or "")
+    return text[:limit]
+
+
 def _extract_yoy_pct(text: str) -> str | None:
     """Return e.g. "+16%" from "up 16%" in lede text, or None."""
     m = _YOY_UP_RE.search(text)
@@ -249,7 +271,7 @@ def _glance_reported(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
          if isinstance(f, Mapping)
          and f.get("metric") == "revenue"
          and isinstance(f.get("value"), (int, float))
-         and isinstance(f.get("source_span"), Mapping)),
+         and _is_exact_public_evidence(f.get("source_span"))),
         None,
     )
     if revenue_fact is None:
@@ -259,24 +281,18 @@ def _glance_reported(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
     formatted = _format_usd_millions(value_raw)
     sp = revenue_fact["source_span"]
 
-    # YoY from claim_revenue_lede, then from any revenue metric claim.
+    # YoY is a separate claim-derived assertion. Append it only when the
+    # revenue-lede claim itself is exact-public. Typed-absent / address-only /
+    # non-public lede still allows the exact revenue dollar figure.
     yoy: str | None = None
-    lede_text: str | None = None
     for claim in claims:
         if not isinstance(claim, Mapping):
             continue
-        if claim.get("claim_id") == "claim_revenue_lede":
-            lede_text = claim.get("text") or None
-            yoy = _extract_yoy_pct(lede_text or "")
-            break
-    if yoy is None:
-        for claim in claims:
-            if not isinstance(claim, Mapping):
-                continue
-            if claim.get("metric") == "revenue":
-                yoy = _extract_yoy_pct(claim.get("text") or "")
-                if yoy:
-                    break
+        if claim.get("claim_id") != "claim_revenue_lede":
+            continue
+        if _is_exact_public_evidence(claim.get("source_span")):
+            yoy = _extract_yoy_pct(str(claim.get("text") or ""))
+        break
 
     display_value = f"{formatted} \u00b7 {yoy}" if yoy else formatted
     item: dict[str, Any] = {
@@ -289,8 +305,6 @@ def _glance_reported(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
     unit = revenue_fact.get("unit")
     if unit is not None:
         item["unit"] = unit
-    if lede_text is not None:
-        item["claim_text"] = lede_text
     return [item]
 
 
@@ -303,10 +317,12 @@ def _glance_guidance(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
 
     items: list[dict[str, Any]] = []
     for g in guidance:
+        if len(items) >= _GUIDANCE_MAX_ITEMS:
+            break
         if not isinstance(g, Mapping):
             continue
         sp = g.get("source_span")
-        if not isinstance(sp, Mapping):
+        if not _is_exact_public_evidence(sp):
             continue
         low = g.get("low")
         high = g.get("high")
@@ -343,6 +359,8 @@ def _glance_watch(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
 
     for claim in claims:
+        if len(items) >= _WATCH_MAX_ITEMS:
+            break
         if not isinstance(claim, Mapping):
             continue
         claim_id = claim.get("claim_id") or ""
@@ -353,13 +371,7 @@ def _glance_watch(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
         if claim_id == "claim_revenue_lede":
             continue
 
-        sp = claim.get("source_span")
-        if not isinstance(sp, Mapping):
-            continue
-        if sp.get("receipt_state") != "byte_replayed":
-            continue
-        rights = sp.get("rights_profile") or ""
-        if rights not in {"rp_public_primary_v1", "public_primary"}:
+        if not _is_exact_public_evidence(claim.get("source_span")):
             continue
 
         is_quote = kind == "quote"
@@ -379,8 +391,8 @@ def _glance_watch(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
             "id": claim_id,
             "metric": metric,
             "label": label,
-            "value": text,
-            "receipt_state": sp.get("receipt_state"),
+            "value": _bound_public_text(text),
+            "receipt_state": "byte_replayed",
         })
     return items
 
@@ -437,6 +449,8 @@ def _glance_source_states(workspace: Mapping[str, Any]) -> list[dict[str, Any]]:
             status = "absent"
 
         items.append({"kind": kind, "status": status})
+        if len(items) >= _SOURCE_STATES_MAX_ITEMS:
+            break
     return items
 
 
@@ -681,8 +695,8 @@ def event_workspace_glance(
     manifest and returns a stripped, deterministic projection.  All receipts,
     URLs, hashes, and raw workspace internals are omitted.
 
-    *   **200** — glance projection; ``Cache-Control: private, no-store``.
-    *   **404** — ticker not covered by the event-workspace generation.
+    *   **200** — glance projection; short public cache within the 300s snapshot.
+    *   **404** — machine-coded coverage absence (``event_workspace_not_covered``).
     *   **422** — ticker fails the safe-ticker contract.
     *   **429** — rate-limited.
     *   **503** — ambiguous selector, verification failure, or upstream error;
@@ -705,16 +719,18 @@ def event_workspace_glance(
         ) from None
 
     if result.get("available") is True:
-        # Never use the public CDN cache policy — the workspace carries
-        # context_only authority and must not be served from a shared cache.
         response.headers["Cache-Control"] = _WORKSPACE_GLANCE_CACHE_CONTROL
         return _public_workspace_glance(result)
 
     note = str(result.get("note") or "")
     if note == _NOT_COVERED_WORKSPACE_NOTE:
-        raise HTTPException(
+        return JSONResponse(
             status_code=404,
-            detail=f"Event workspace is not available for {normalized}.",
+            content={
+                "code": _NOT_COVERED_WORKSPACE_CODE,
+                "ticker": normalized,
+            },
+            headers={"Cache-Control": _WORKSPACE_NOT_COVERED_CACHE_CONTROL},
         )
 
     # Ambiguous selector, verification failure, or snapshot error — never
