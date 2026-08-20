@@ -1,0 +1,85 @@
+name: Dislocation P0 SEC FTS capacity census
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/dislocation_p0_fts_capacity.py"
+      - ".github/workflows/dislocation-p0-fts-capacity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capacity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout script-only blind workspace
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/research/dislocation_p0_fts_capacity.py
+
+      - name: Assert market-data firewall
+        run: |
+          set -euo pipefail
+          forbidden=(
+            data/yahoo data/stocks data/ohlc data/stockdata data/intraday
+            data/chinaohlc data/hkohlc data/canadaohlc data/intlohlc
+            data/price_pressure data/washout_turn
+          )
+          for p in "${forbidden[@]}"; do
+            test ! -e "$p" || { echo "FORBIDDEN_PATH_PRESENT=$p"; exit 1; }
+          done
+          echo "PRICE_FIREWALL=PASS"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install network dependency
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Compile and query official SEC FTS
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/research/dislocation_p0_fts_capacity.py
+          mkdir -p artifacts
+          python scripts/research/dislocation_p0_fts_capacity.py --root . --out artifacts/capacity.json
+          sha256sum artifacts/capacity.json | tee artifacts/capacity_sha256.txt
+
+      - name: Print capacity matrix
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/capacity.json').read_text())
+          print('=== BLIND BOUNDARY ===')
+          print(json.dumps(p['blind_boundary'],sort_keys=True))
+          print('=== QUERY CONTRACT ===')
+          print(json.dumps({
+            'endpoint':p['query_contract']['endpoint'],
+            'forms':p['query_contract']['forms'],
+            'windows':p['query_contract']['windows'],
+            'lexicon_sha256':p['query_contract']['lexicon_sha256'],
+          },sort_keys=True))
+          print('=== CAPACITY ===')
+          print(json.dumps(p['aggregate'],sort_keys=True))
+          print('=== ZERO/MISMATCH CELLS ===')
+          for r in p['results']:
+            if r['total_hits']==0 or r['form_filter_mismatches']:
+              print(json.dumps({k:r[k] for k in ('window','family','phrase','form','total_hits','form_filter_mismatches')},sort_keys=True))
+          PY
+
+      - name: Upload source-only query receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: dislocation-p0-fts-capacity
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7
