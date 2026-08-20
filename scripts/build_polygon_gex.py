@@ -15,6 +15,12 @@ Each run snapshots the configured underlyings' option chains via Polygon and:
      diagnosable REASON census instead of a bare empty snapshot. See _health_dir()
      for why it is a SIBLING of data/polygon_gex/ rather than nested inside it.
 
+AD-1C0.1 (Sol's FROZEN SPEC, Option B, 2026-08-20) replaces the retired same-ET-
+calendar-day replacement predicate with a bounded overnight CAPTURE LEASE plus an
+OI-INTERSECTION same-book proof, so a lawful post-midnight rescue retry of the
+same evening's settled book is no longer refused purely for crossing the ET
+calendar-day boundary. See _within_capture_lease / _same_book_overlap.
+
 STAMP = THE SESSION THE SNAPSHOT DESCRIBES, NOT THE RUN DATE (2026-08-06 repair).
 The accrual used to stamp ``datetime.now(timezone.utc).date()``. A nightly run that
 lands at 01:24 UTC carries the PREVIOUS ET session's closing chain, so the whole store
@@ -37,10 +43,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -437,15 +444,91 @@ def _append_health_attempt(session: date, *, decision: str, health: str,
     _write_receipt_attempts(session, attempts)
 
 
-def _et_calendar_date(instant: datetime) -> date:
-    """The RAW ET calendar date of `instant` — deliberately NO weekend/holiday
-    rollback (unlike nyse_calendar.session_date()). M7's same-day vintage guard
-    needs the literal calendar date: a Saturday capture must NOT count as "the
-    same day" as the Friday session it resolves to, or every weekend catch-up
-    run would look like a legitimate same-day recapture window."""
-    if instant.tzinfo is None:
-        instant = instant.replace(tzinfo=timezone.utc)
-    return instant.astimezone(nyse_calendar.ET).date()
+# AD-1C0.1 (Sol's FROZEN SPEC, Option B ruling, 2026-08-20) — the capture lease
+# that REPLACES the retired same-ET-day replacement predicate (the old
+# _et_calendar_date / M7 2026-07-29 guard). The shipped same-day rule refused a
+# lawful post-midnight repair: the production collect job measurably crosses
+# midnight ET on ordinary nights (observed accrual instants 18:20 ET -> 00:42
+# ET), so a partial evening capture followed by a post-midnight rescue retry of
+# the SAME settled book was rejected purely for having crossed the ET calendar-
+# day boundary. LEASE_END_ET_HOUR bounds the window to the overnight hours
+# contiguous with the session evening, BEFORE plausible next-day book mutation
+# — overnight OI propagation, and ~04:00 ET pre-market quoting resuming — so a
+# Sat/Sun/Mon-preopen recapture of a Friday session is still excluded: the
+# lease is "still the same overnight window", not "still the same session".
+LEASE_END_ET_HOUR = 3
+
+# The same-book proof's required overlap (below): an ABSOLUTE floor of 20
+# contracts, or a QUARTER of the stored capture's own contract count when that
+# is smaller (e.g. a thin single-symbol partial) — min(), never max(), so a
+# huge stored chain cannot demand a huge overlap out of a genuinely smaller
+# candidate. Below the floor there is not enough shared surface to trust an
+# agreement OR a disagreement either way.
+OI_OVERLAP_FLOOR_ABS = 20
+OI_OVERLAP_FLOOR_FRACTION = 0.25
+
+# The per-contract identity the same-book proof keys on — the parquet
+# schema's own columns (collectors.polygon_options.parse_chain writes these
+# per contract regardless of vendor ticker-string format), NOT strike_ticker:
+# a composite key never depends on one vendor's naming convention.
+_CONTRACT_KEY_COLS = ("underlying", "expiry", "K", "is_call")
+
+
+def _within_capture_lease(session: date, capture_instant: datetime) -> bool:
+    """FROZEN SPEC lease (AD-1C0.1): whether `capture_instant` may still
+    lawfully REPLACE a stored partial/unknown_write_interrupted capture for
+    `session`. Both prongs are required (AND, not OR):
+      (a) nyse_calendar.expected_last_session(capture_instant) == session --
+          the capture instant's own resolved session must still BE the
+          session it is attempting to replace. A capture instant that has
+          rolled onto a NEW session describes a different book entirely (and
+          is a first-write candidate for ITS OWN session, never a
+          replacement candidate for one that has already closed out).
+      (b) capture_instant, read in ET, is strictly before
+          LEASE_END_ET_HOUR:00 on the CALENDAR day AFTER `session`'s date --
+          a CALENDAR-day boundary, not a next-SESSION one: a session ahead of
+          a market holiday still leases only through the very next calendar
+          day's 03:00 ET, never rolling forward past the holiday.
+    Naive `capture_instant` values are taken as UTC (pipeline convention),
+    matching every other instant handled in this module.
+    """
+    if capture_instant.tzinfo is None:
+        capture_instant = capture_instant.replace(tzinfo=timezone.utc)
+    if nyse_calendar.expected_last_session(capture_instant) != session:
+        return False
+    lease_end_et = datetime.combine(
+        session + timedelta(days=1), time(LEASE_END_ET_HOUR, 0), tzinfo=nyse_calendar.ET)
+    return capture_instant.astimezone(nyse_calendar.ET) < lease_end_et
+
+
+def _same_book_overlap(stored: pd.DataFrame, candidate: pd.DataFrame) -> tuple[bool, int, int]:
+    """FROZEN SPEC same-book proof (AD-1C0.1): does `candidate` describe the
+    SAME settled book as `stored`, evaluated only over the contracts they
+    both hold (identity = _CONTRACT_KEY_COLS). Pure (no I/O) — the caller
+    reads both frames. Returns (agrees, overlap, floor):
+      * overlap -- the number of shared contracts.
+      * floor -- the required overlap: min(OI_OVERLAP_FLOOR_ABS,
+        ceil(OI_OVERLAP_FLOOR_FRACTION * stored's own contract count)); 0
+        when `stored` itself has no rows (never reached in practice — a
+        REPLACEABLE stored capture always has >0 rows, see _health_verdict).
+      * agrees -- True only when overlap >= floor AND every shared
+        contract's open_interest matches EXACTLY between the two captures.
+        Below the floor, `agrees` is False regardless of what the
+        (too-thin) intersection shows — an underpowered check must never
+        read as a pass.
+    """
+    cols = list(_CONTRACT_KEY_COLS)
+    s = stored[[*cols, "oi"]].drop_duplicates(subset=cols)
+    c = candidate[[*cols, "oi"]].drop_duplicates(subset=cols)
+    merged = s.merge(c, on=cols, how="inner", suffixes=("_stored", "_candidate"))
+    overlap = len(merged)
+    floor = (min(OI_OVERLAP_FLOOR_ABS, math.ceil(OI_OVERLAP_FLOOR_FRACTION * len(s)))
+            if len(s) else 0)
+    if overlap < floor:
+        return False, overlap, floor
+    agrees = bool((merged["oi_stored"].astype("float64")
+                  == merged["oi_candidate"].astype("float64")).all())
+    return agrees, overlap, floor
 
 
 def _drop_orphan_summary_rows(session: date, symbols: set[str]) -> None:
@@ -579,8 +662,8 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     """Snapshot + persist one SESSION. Returns a small status dict (logging/tests).
 
     `_now` is a private testing hook (the accrual INSTANT used for the health
-    receipt's capture_instant and M7's same-day vintage check) — defaults to the
-    real clock; production callers never pass it.
+    receipt's capture_instant and AD-1C0.1's capture-lease check) — defaults to
+    the real clock; production callers never pass it.
     """
     now = _now or datetime.now(timezone.utc)
     cfg = config.load().get("polygon")
@@ -623,8 +706,11 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
     # quota, same as before. A stored REPLACEABLE session (_REPLACEABLE_HEALTHS:
     # partial, or W1's unknown_write_interrupted — a trailing write_pending whose
     # on-disk parquet failed verification) is the one case that needs a fetch
-    # before deciding: only a STRICTLY better capture may replace it (see the
-    # decision block below), so control falls through instead of returning here. A
+    # before deciding: only a STRICTLY better capture, made inside the bounded
+    # overnight LEASE and proven to describe the SAME settled book via an OI-
+    # intersection check (AD-1C0.1 — see _within_capture_lease /
+    # _same_book_overlap), may replace it (see the decision block below), so
+    # control falls through instead of returning here. A
     # LEGACY chain file with no receipt at all is treated as healthy (immutable) —
     # it predates this sidecar and must never be retro-replaced. `--force` keeps
     # full override semantics regardless of any of the above. A CORRUPT receipt
@@ -805,19 +891,44 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
                                 or census["coverage_pct"] - stored_coverage >= 0.10))
         if not strictly_better:
             decision = "skipped_not_better"
-        elif _et_calendar_date(now) != asof:
-            # M7 ruling: a partial may be replaced ONLY inside the SAME-DAY
-            # capture window — the new capture_instant's ET calendar date must
-            # equal the session it is replacing. Saturday/Sunday/Monday-preopen
-            # runs all resolve to Friday's session but are NOT Friday; without
-            # this, a stale weekend re-run could keep "improving" a session days
-            # after its real capture window closed. The attempt is still
-            # recorded (skipped_wrong_day), never silently dropped.
-            decision = "skipped_wrong_day"
+        elif not _within_capture_lease(asof, now):
+            # AD-1C0.1 (Sol's FROZEN SPEC, Option B) — supersedes the retired
+            # M7 same-ET-day predicate. A partial may be replaced only inside
+            # the bounded overnight LEASE (see _within_capture_lease):
+            # Sat/Sun/Mon-preopen recapture of a Friday session, or any
+            # capture past LEASE_END_ET_HOUR:00 the next calendar day, is
+            # refused. The attempt is still recorded (skipped_outside_lease),
+            # never silently dropped.
+            decision = "skipped_outside_lease"
         else:
-            decision = "replaced_partial"
+            # Lease passed — the SAME-BOOK PROOF (the FROZEN SPEC's
+            # sufficient-evidence condition) still has to hold before the
+            # replacement is trusted: the candidate and the currently-stored
+            # capture must agree on per-contract OI over a big-enough shared
+            # surface (see _same_book_overlap). Read the stored parquet
+            # fresh — it has not been overwritten yet at this point.
+            try:
+                stored_chain_df = pd.read_parquet(path)
+            except Exception as e:  # noqa: BLE001 — an unreadable stored
+                # chain can never be proven same-book; degrade to
+                # unverifiable rather than crash the run.
+                log.warning("polygon: could not read stored chain %s for the "
+                            "same-book proof: %s — treating as unverifiable",
+                            path.name, e)
+                stored_chain_df = None
+            if stored_chain_df is None:
+                decision = "skipped_unverifiable_vintage"
+            else:
+                agrees, overlap, floor = _same_book_overlap(stored_chain_df, raw)
+                if overlap < floor:
+                    decision = "skipped_unverifiable_vintage"
+                elif not agrees:
+                    decision = "skipped_vintage_mismatch"
+                else:
+                    decision = "replaced_partial"
 
-    if decision in ("skipped_not_better", "skipped_wrong_day"):
+    if decision in ("skipped_not_better", "skipped_outside_lease",
+                    "skipped_vintage_mismatch", "skipped_unverifiable_vintage"):
         log.info("polygon: session %s new capture (%d ok, %.1f%% coverage) was not "
                  "applied (%s) — keeping the existing file",
                  asof, census["successful_underlyings"], census["coverage_pct"] * 100,
