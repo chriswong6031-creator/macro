@@ -12,6 +12,7 @@ dirs["policy"], fired early_edge, and inflated gap_mult.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -22,6 +23,7 @@ from engine.intel_hub import (  # noqa: E402
     _dossier,
     _leading_gap,
     _policy_usable,
+    _VOTING_DESKS,
     build_policy_index,
 )
 
@@ -262,3 +264,65 @@ def test_composite_and_source_mix_unchanged_by_low_conviction_policy():
     assert "policy tailwind" not in d_low["read"], (
         f"human read must not claim a policy tailwind for a low-conviction lean: {d_low['read']}"
     )
+
+
+# --------------------------------------------------------------------------- #
+# hero tooltip copy (XPV2-IH-T0 / DAC-008 Data-Authority review) — the visible
+# ranking-method popover must not describe policy as a voting desk. The tests
+# above prove the DATA layer excludes policy from every score; these prove the
+# visible COPY says so too, never the reverse. Production previously read
+# "Five desks vote on each name: news flow, alt-data, divergence radar,
+# buy-board, policy intent" — a false authority story the data never supported.
+# --------------------------------------------------------------------------- #
+_TEMPLATE = Path(__file__).resolve().parent.parent / "templates" / "intelligence_hub.html.j2"
+
+
+def _hero_tooltip() -> tuple[str, str]:
+    """(en, zh) text of the hero '?' popover that explains how the page ranks names."""
+    src = _TEMPLATE.read_text()
+    m = re.search(r'data-tip-en="([^"]*)"\s+data-tip-zh="([^"]*)">\?</button>', src)
+    assert m, "hero lens-q ranking-method tooltip not found in intelligence_hub.html.j2"
+    return m.group(1), m.group(2)
+
+
+def test_hero_tooltip_does_not_claim_policy_votes():
+    """DAC-008's exact defect: a sentence naming the voting desks must never also
+    name policy. Policy is display-only (excluded from _VOTING_DESKS — A7 /
+    DNR:KILL-LLM-ORIGINATION); the copy must say so, never imply the opposite."""
+    en, zh = _hero_tooltip()
+    for sentence in en.split(". "):
+        if "vote" in sentence.lower() and "never" not in sentence.lower():
+            assert "policy" not in sentence.lower(), (
+                f"a voting-desk sentence must not also name policy: {sentence!r}"
+            )
+    assert "never votes" in en, f"EN tooltip must state policy never votes: {en!r}"
+    assert "从不参与投票" in zh, f"ZH tooltip must state policy never votes: {zh!r}"
+
+
+def test_hero_tooltip_states_the_ranking_invariants():
+    """Observable end state (XPV2-IH-T0 handoff): rank rises with signal/edge/
+    timing; conviction only breaks a tie; a proven-wrong feeder can only
+    de-escalate a name's rank; policy is context and never votes; the page is
+    not a trade trigger. Checked in both languages so a future edit can't fix
+    one and silently drop the other. The voting-desk count is tied to
+    _VOTING_DESKS itself so a future change to that constant has to touch this
+    test rather than let the copy drift silently out of sync."""
+    en, zh = _hero_tooltip()
+    assert set(_VOTING_DESKS) == {"news", "alt", "radar", "standout"}
+    num_words = {4: "Four", 5: "Five", 6: "Six"}
+    want = f"{num_words[len(_VOTING_DESKS)]} desks vote"
+    assert want in en, f"tooltip must say {want!r} to match _VOTING_DESKS: {en!r}"
+    for label, desk in (("news flow", "新闻流"), ("alt-data", "另类数据"),
+                        ("divergence radar", "背离雷达"), ("buy-board", "买入榜")):
+        assert label in en, f"voting desk {label!r} missing from EN tooltip: {en!r}"
+        assert desk in zh, f"voting desk {desk!r} missing from ZH tooltip: {zh!r}"
+    assert "tie" in en, f"EN tooltip must state conviction is a tie-break: {en!r}"
+    assert "打破平局" in zh, f"ZH tooltip must state conviction is a tie-break: {zh!r}"
+    assert "never lift it" in en, (
+        f"EN tooltip must state a proven-wrong feeder can only de-escalate: {en!r}"
+    )
+    assert "绝不会拉高" in zh, (
+        f"ZH tooltip must state a proven-wrong feeder can only de-escalate: {zh!r}"
+    )
+    assert "never a trade trigger" in en, f"EN tooltip must keep the no-trade-trigger line: {en!r}"
+    assert "绝非交易触发" in zh, f"ZH tooltip must keep the no-trade-trigger line: {zh!r}"

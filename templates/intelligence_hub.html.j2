@@ -403,8 +403,8 @@
       <p class="deck">{{ t('What still has room to run — surfaced before the crowd arrives.',
                           '仍有上行空间的机会 —— 抢在人群之前浮出水面。') }}
         <button class="lens-q" type="button" aria-label="How this page ranks names"
-          data-tip-en="Ranked by genuine signal × how much of the move is still ahead × whether a leading desk fired before the crowd. Deliberately NOT ranked by how many desks agree — agreement is a lagging condition, so a crowd favourite that has already run is demoted. Five desks vote on each name: news flow, alt-data, divergence radar, buy-board, policy intent. Context only, never a trade trigger."
-          data-tip-zh="排序依据：真实信号 × 行情尚未走完的幅度 × 领先信号台是否抢在人群之前发动。刻意不按「多少台一致」排序 —— 一致性是滞后条件，因此已经跑完的人群宠儿会被下调。五台对每个标的投票：新闻流、另类数据、背离雷达、买入榜、政策意图。仅供参考，绝非交易触发。">?</button></p>
+          data-tip-en="Ranked by genuine signal × how much of the move is still ahead × whether a leading desk fired before the crowd; conviction only breaks a tie. Deliberately NOT ranked by how many desks agree — agreement is a lagging condition, so a crowd favourite that has already run is demoted. Four desks vote on each name — news flow, alt-data, divergence radar, buy-board. Policy intent is shown for context and never votes, and a feeder proven wrong by its own track record can only pull a name's rank down, never lift it. Context only, never a trade trigger."
+          data-tip-zh="排序依据：真实信号 × 行情尚未走完的幅度 × 领先信号台是否抢在人群之前发动；信念度仅用于打破平局。刻意不按「多少台一致」排序 —— 一致性是滞后条件，因此已经跑完的人群宠儿会被下调。四台对每个标的投票 —— 新闻流、另类数据、背离雷达、买入榜。政策意图仅作参考展示，从不参与投票；若某台被自身历史战绩证明判断有误，也只能拉低排名，绝不会拉高。仅供参考，绝非交易触发。">?</button></p>
     </div>
     <div class="state">
       {% if MC.regime %}<i class="hot">{{ t('Regime', '格局') }} <b>{{ MC.regime }}{% if MC.quad %} {{ MC.quad }}{% endif %}</b></i>{% endif %}
