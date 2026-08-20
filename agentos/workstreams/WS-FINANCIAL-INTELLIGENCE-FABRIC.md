@@ -44,9 +44,9 @@ decisions:
   - DEC:FIF-PACKET-GOVERNANCE-IS-CUTOFF-VISIBLE
   - DEC:FIF-1-V1-FROZEN
 next_action: >
-  FIF-2A on PR #5983 is BUILT_NOT_ACCEPTED pending Sol after the A–D
-  amendment. Do not merge until Sol accepts. Do not start FIF-2B. Native
-  auto-merge stays disarmed.
+  FIF-1 is DONE / FROZEN. FIF-2A is ACCEPTED / FIXTURE_PROVEN / ON_MAIN
+  (PR #5983). FIF-2 remains IN_PROGRESS. FIF-2B is UNLOCKED / NOT_STARTED.
+  Do not reopen A–D. Do not claim production issuer query coverage.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -74,7 +74,8 @@ do_not_redo:
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
   - Do not debug or replace the attested-history Wave 0B credential path.
   - Do not reopen frozen financial_intelligence_packet.v1 semantics; FIF-1 is DONE (DEC:FIF-1-V1-FROZEN).
-  - FIF-2A is the authenticated canonical query bridge only; do not start FIF-2B (statements, revisions, trace, packet-read, bulk).
+  - FIF-2A is ACCEPTED / FIXTURE_PROVEN; do not reopen A–D or add FIF-2A hardening.
+  - FIF-2B is UNLOCKED / NOT_STARTED; do not start statements/revisions/trace/packet-read/bulk from a FIF-2A landing session.
   - Do not claim production issuer coverage; FIF-2A is fixture-proven against FIP1. FIF-3 wires admitted issuer packages.
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
@@ -101,9 +102,11 @@ waves:
     title: Read-only financial query API
     status: in_progress
     depends_on: [FIF-1]
+    pr: 5983
     next_action: >
-      FIF-2A BUILT_NOT_ACCEPTED on PR #5983 pending Sol after A–D. FIF-2
-      remains in_progress. Do not start FIF-2B. Production issuer coverage is FIF-3.
+      FIF-2A ACCEPTED / FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is
+      UNLOCKED / NOT_STARTED. Production issuer coverage is FIF-3; default
+      provider remains unavailable/503.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -169,7 +172,11 @@ validation. FIF-1R3 closed those defects on PR #5889. Sol freeze-reviewed accept
 #5889 squash-merged as `f4183edade53603fad7a97f702eb4c6e5eabff5d`.
 `financial_intelligence_packet.v1` is FROZEN. FIF-1 is DONE. FIF-2A is
 the authenticated HTTP adapter over that frozen kernel
-(`POST /api/forensics/v1/financial/query`). Architecture accepted in
-direction; Sol A–D amendment is BUILT_NOT_ACCEPTED pending review.
-Do not start FIF-2B. Do not create FIF-1R4. Do not reopen accepted
-packet semantics.
+(`POST /api/forensics/v1/financial/query`). Sol source-reviewed amended
+head `1b7a65be23bc683706eb660c92f8fc26e81cc80e` as PASS /
+ACCEPTED_FOR_LANDING. A–D (mixed duration+instant, cutoff-governed
+unsupported metric, bounded streaming ingress, fail-closed
+canonical→source binding) are accepted. FIF-2A is ACCEPTED /
+FIXTURE_PROVEN / ON_MAIN via PR #5983. FIF-2B is UNLOCKED / NOT_STARTED.
+Do not create FIF-1R4. Do not reopen accepted packet semantics. Do not
+claim production issuer query coverage.
