@@ -922,7 +922,7 @@ Same as §1. Identity: `DEC:CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES` (supersede
 - Carry `evidence_id` (and child parent coordinates) on v2 rows so the key is checkable without R2. Do not invalidate v1 rows.
 - Do not put retrieval clocks, file-number interpretation, ticker/aliases, parser version, issuer mapping, or storage namespace into the `evidence_id` preimage.
 - Event compiler: historical `event_id`s unchanged (identity format 1, full-body hash). Post-W1 events stamp `version.identity_format: 2` and derive event-version identity from semantic state + `evidence_ids` + the correction chain, excluding `source.manifest_ids`, `evidence[].manifest_id`, and `point_in_time` clocks. Independent fresh compiles of the same occurrence+bytes+interpretation must share that post-W1 `event_id`.
-- Closed bundle persist (`DEC:CS-V2-CLOSED-BUNDLE-ATOMIC-PERSISTENCE`): re-observation appends zero rows; a revision appends the entire candidate bundle at the new accession-wide `document_version`, with every child pointing at the new complete-submission `manifest_id`. Classifier `changed` is diagnostic only.
+- Closed bundle persist (`DEC:CS-V2-CLOSED-BUNDLE-ATOMIC-PERSISTENCE`): re-observation appends zero rows and requires the same membership as the latest published closed bundle. Added, removed/deselected, newly resolvable, or interpretation-revised membership is a revision: append the entire candidate bundle at the new accession-wide `document_version`, with every surviving child pointing at the new complete-submission `manifest_id`. Do not copy a removed member into N+1. Classifier `changed` / `removed` are diagnostic only.
 - Queue receipt / health: evidence vs revision vs observation counts.
 
 ### 19.9 Time / null / correction

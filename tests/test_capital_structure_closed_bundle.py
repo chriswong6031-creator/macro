@@ -4,6 +4,7 @@ Hostile end-to-end coverage, not classifier-only:
 - complete unchanged + primary changes → whole N+1 bundle
 - complete changes + children unchanged → whole N+1 bundle
 - new child selected → whole N+1 bundle
+- previously current exhibit deselected → whole candidate N+1, no exhibit N+1
 - one exhibit changes → whole N+1 bundle
 - all unchanged → zero manifests + one verified re-observation
 - N+1 children reference the N+1 complete manifest
@@ -28,6 +29,7 @@ from collectors.sec_capital_structure import (
 from engine.capital_structure.source_identity import (
     child_occurrence,
     classify_bundle_against_published,
+    current_manifest_bundle,
     evidence_id_for,
     evidence_id_from_manifest,
     evidence_occurrence_from_manifest,
@@ -147,6 +149,32 @@ def _select_extra_child(monkeypatch) -> None:
         return selected
 
     monkeypatch.setattr(sec, "select_relevant_documents", _select)
+
+
+def _deselect_exhibits(monkeypatch) -> None:
+    real = sec.select_relevant_documents
+
+    def _select(form, documents):
+        return [
+            (role, doc)
+            for role, doc in real(form, documents)
+            if role != "exhibit"
+        ]
+
+    monkeypatch.setattr(sec, "select_relevant_documents", _select)
+
+
+def _spy_bundle_decisions(monkeypatch) -> list[dict[str, Any]]:
+    seen: list[dict[str, Any]] = []
+    real = sec.classify_bundle_against_published
+
+    def _classify(candidates, published):
+        decision = real(candidates, published)
+        seen.append(decision)
+        return decision
+
+    monkeypatch.setattr(sec, "classify_bundle_against_published", _classify)
+    return seen
 
 
 def _ledger(root: Path) -> list[dict]:
@@ -307,6 +335,91 @@ def test_new_child_selected_persists_whole_n1_bundle(tmp_path, monkeypatch):
         assert merged["events"][1]["version"]["correction_of"] == merged["events"][0]["event_id"]
 
 
+def test_deselected_exhibit_persists_candidate_n1_without_removed_member(
+    tmp_path, monkeypatch,
+):
+    adapter, root, clock, first_records = _first_fetch(tmp_path, monkeypatch)
+    v1 = _by_version(first_records, 1)
+    v1_roles = {
+        str((row.get("document") or {}).get("document_role")) for row in v1
+    }
+    assert v1_roles == {"complete_submission", "primary", "exhibit"}
+    v1_exhibit = next(
+        row for row in v1 if row["document"]["document_role"] == "exhibit"
+    )
+    prior = _compile(first_records, generated_at="2026-08-01T16:00:00Z")
+    decisions = _spy_bundle_decisions(monkeypatch)
+    _deselect_exhibits(monkeypatch)
+    _second_fetch(adapter, clock, monkeypatch)
+
+    assert decisions, "collector must classify the deselection refetch"
+    decision = decisions[-1]
+    assert decision["status"] == "revision"
+    persist_roles = [
+        str((row.get("document") or {}).get("document_role"))
+        for row in decision["persist"]
+    ]
+    assert persist_roles == ["complete_submission", "primary"]
+    assert not any(
+        str((row.get("document") or {}).get("document_role")) == "exhibit"
+        for row in decision["persist"]
+    )
+    removed_roles = {
+        str((row.get("document") or {}).get("document_role"))
+        for row in decision["removed"]
+    }
+    assert "exhibit" in removed_roles
+
+    records = _ledger(root)
+    v1_after, v2 = _by_version(records, 1), _by_version(records, 2)
+    assert v1_after == v1
+    complete, children = _assert_closed_bundle(records, 2)
+    assert len(v2) == 2
+    v2_roles = {
+        str((row.get("document") or {}).get("document_role")) for row in v2
+    }
+    assert v2_roles == {"complete_submission", "primary"}
+    assert all(row["document"]["parent_manifest_id"] == complete["manifest_id"] for row in children)
+    _assert_unchanged_evidence_ids(v1, v2)
+    surviving = {row["evidence_id"] for row in v2}
+    assert v1_exhibit["evidence_id"] not in surviving
+    assert all(
+        int((row.get("document") or {}).get("document_version") or 0) == 2
+        for row in v2
+    )
+
+    current = current_manifest_bundle(records, accession=ACCESSION)
+    assert {
+        str((row.get("document") or {}).get("document_role")) for row in current
+    } == {"complete_submission", "primary"}
+    assert v1_exhibit["manifest_id"] not in {row["manifest_id"] for row in current}
+
+    merged = _compile(
+        records, existing=prior["events"], generated_at="2026-08-02T16:00:00Z",
+    )
+    assert merged["telemetry"]["counts"]["compile_failures"] == 0
+    assert merged["events"][0]["event_id"] == prior["events"][0]["event_id"]
+    extra = merged["events"][len(prior["events"]):]
+    if extra:
+        assert extra[0]["version"]["correction_of"] == merged["events"][0]["event_id"]
+        assert extra[0]["event_id"] != merged["events"][0]["event_id"]
+
+    third_at = datetime(2026, 8, 3, 16, 0, tzinfo=timezone.utc)
+    clock["now"] = third_at
+    _force_requeue(monkeypatch)
+    adapter.fetch()
+    after_third = _ledger(root)
+    assert after_third == records
+    assert decisions[-1]["status"] == "re_observed"
+    assert decisions[-1]["persist"] == []
+    payload = json.loads((root / "ingestion_run.json").read_text())
+    assert int(payload["counters"]["re_observed"]) >= 1
+    third_compile = _compile(
+        after_third, existing=merged["events"], generated_at="2026-08-03T16:00:00Z",
+    )
+    _assert_no_duplicate_event(merged["events"], third_compile)
+
+
 def test_one_exhibit_change_persists_whole_n1_bundle(tmp_path, monkeypatch):
     adapter, root, clock, first_records = _first_fetch(tmp_path, monkeypatch)
     prior = _compile(first_records, generated_at="2026-08-01T16:00:00Z")
@@ -438,6 +551,56 @@ def test_classifier_persist_is_whole_bundle_on_revision():
     assert [row["evidence_id"] for row in decision["changed"]] == [later_child["evidence_id"]]
     assert decision["persist"] == [later_complete, later_child]
     assert decision["append"] is decision["persist"] or decision["append"] == decision["persist"]
+    assert decision["removed"] == []
+
+
+def test_classifier_deselected_member_is_revision_not_reobservation():
+    acc = "0001234567-26-000092"
+    complete = _compiler_manifest(
+        acc, document_role="complete_submission", document_version=1,
+        parent_manifest_id=None, content_marker="complete",
+        first_seen_at="2026-08-01T10:00:00Z", stamp_child_coords=True,
+    )
+    primary = _compiler_manifest(
+        acc, document_role="primary", document_version=1,
+        parent_manifest_id=complete["manifest_id"], content_marker="primary",
+        first_seen_at="2026-08-01T10:00:00Z", stamp_child_coords=True,
+    )
+    exhibit = _compiler_manifest(
+        acc, document_role="exhibit", document_version=1,
+        parent_manifest_id=complete["manifest_id"], content_marker="exhibit",
+        first_seen_at="2026-08-01T10:00:00Z", stamp_child_coords=True,
+        sequence="2", document_name="purchase.htm",
+    )
+    later_complete = _compiler_manifest(
+        acc, document_role="complete_submission", document_version=2,
+        parent_manifest_id=None, content_marker="complete",
+        first_seen_at="2026-08-02T10:00:00Z", stamp_child_coords=True,
+    )
+    later_primary = _compiler_manifest(
+        acc, document_role="primary", document_version=2,
+        parent_manifest_id=later_complete["manifest_id"], content_marker="primary",
+        first_seen_at="2026-08-02T10:00:00Z", stamp_child_coords=True,
+    )
+    decision = classify_bundle_against_published(
+        [later_complete, later_primary],
+        [complete, primary, exhibit],
+    )
+    assert decision["status"] == "revision"
+    assert decision["changed"] == []
+    assert [row["evidence_id"] for row in decision["removed"]] == [exhibit["evidence_id"]]
+    assert decision["persist"] == [later_complete, later_primary]
+    assert exhibit["evidence_id"] not in {
+        row["evidence_id"] for row in decision["persist"]
+    }
+
+    same_again = classify_bundle_against_published(
+        [later_complete, later_primary],
+        [complete, primary, exhibit, later_complete, later_primary],
+    )
+    assert same_again["status"] == "re_observed"
+    assert same_again["persist"] == []
+    assert same_again["removed"] == []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -454,13 +617,17 @@ def _compiler_manifest(
     content_marker: str,
     first_seen_at: str,
     stamp_child_coords: bool,
+    sequence: str | None = None,
+    document_name: str | None = None,
 ) -> dict[str, Any]:
     raw = f"{accession}|S-3|{document_role}|{content_marker}".encode()
     digest = sha256(raw).hexdigest()
-    sequence = "0" if document_role == "complete_submission" else "1"
-    document_name = (
-        "complete-submission.txt" if document_role == "complete_submission" else "primary.htm"
-    )
+    if sequence is None:
+        sequence = "0" if document_role == "complete_submission" else "1"
+    if document_name is None:
+        document_name = (
+            "complete-submission.txt" if document_role == "complete_submission" else "primary.htm"
+        )
     parent_digest = sha256(
         f"{accession}|S-3|complete_submission|{content_marker}".encode()
     ).hexdigest()

@@ -6,6 +6,7 @@ the online collector and offline compiler can enforce the same identity law.
 """
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 import copy
@@ -446,6 +447,118 @@ def latest_published_for_evidence(
     return latest
 
 
+def current_manifest_bundle(
+    records: Sequence[Mapping[str, Any]], *, accession: str
+) -> list[dict[str, Any]]:
+    """Select the current closed bundle for one accession.
+
+    Same accession-wide ``document_version`` / current-complete law the
+    event compiler enforces: latest complete version, every current child
+    at that version, exactly one complete, children parent that complete.
+    """
+    by_manifest: dict[str, dict[str, Any]] = {}
+    manifest_bytes: dict[str, bytes] = {}
+    for raw in records:
+        row = dict(_native(raw))
+        manifest_id = str(row.get("manifest_id") or "")
+        encoded = canonical_manifest_bytes(row)
+        if manifest_id in manifest_bytes and manifest_bytes[manifest_id] != encoded:
+            raise ValueError(f"immutable manifest collision for {manifest_id}")
+        manifest_bytes[manifest_id] = encoded
+        by_manifest.setdefault(manifest_id, row)
+
+    for row in by_manifest.values():
+        row_accession = str((row.get("filing") or {}).get("accession") or "")
+        if row_accession != accession:
+            raise ValueError(
+                f"manifest {row.get('manifest_id')} belongs to accession {row_accession!r}"
+            )
+
+    all_rows = list(by_manifest.values())
+    complete_versions = [
+        int((row.get("document") or {}).get("document_version") or 0)
+        for row in all_rows
+        if (row.get("document") or {}).get("document_role") == "complete_submission"
+    ]
+    if not complete_versions:
+        raise ValueError(f"{accession}: bundle has no complete_submission version")
+    bundle_version = max(complete_versions)
+    if any(
+        int((row.get("document") or {}).get("document_version") or 0) > bundle_version
+        for row in all_rows
+    ):
+        raise ValueError(
+            f"{accession}: child document version exceeds latest complete bundle version"
+        )
+    bundle_rows = [
+        row for row in all_rows
+        if int((row.get("document") or {}).get("document_version") or 0) == bundle_version
+    ]
+
+    by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in bundle_rows:
+        by_source[str(row.get("source_id") or "")].append(row)
+
+    current: list[dict[str, Any]] = []
+    for source_id, versions in by_source.items():
+        hashes = {
+            str((row.get("document") or {}).get("content_sha256") or "").lower()
+            for row in versions
+        }
+        if len(hashes) != 1:
+            raise ValueError(
+                f"source_id {source_id!r} has competing document version {bundle_version}"
+            )
+        versions.sort(
+            key=lambda row: (
+                str((row.get("retrieval") or {}).get("retrieved_at") or ""),
+                str(row.get("manifest_id") or ""),
+            )
+        )
+        current.append(versions[-1])
+
+    complete = [
+        row for row in current
+        if (row.get("document") or {}).get("document_role") == "complete_submission"
+    ]
+    if len(complete) != 1:
+        raise ValueError(
+            f"{accession}: bundle requires exactly one current complete_submission; found {len(complete)}"
+        )
+    complete_id = str(complete[0]["manifest_id"])
+    if (complete[0].get("document") or {}).get("parent_manifest_id") is not None:
+        raise ValueError(f"{accession}: complete_submission cannot have a parent_manifest_id")
+    primaries = [
+        row for row in current
+        if (row.get("document") or {}).get("document_role") == "primary"
+    ]
+    if len(primaries) > 1:
+        raise ValueError(f"{accession}: bundle has multiple current primary documents")
+    for row in current:
+        role = (row.get("document") or {}).get("document_role")
+        if role == "complete_submission":
+            continue
+        parent_id = str((row.get("document") or {}).get("parent_manifest_id") or "")
+        if parent_id != complete_id:
+            raise ValueError(
+                f"{accession}: {row.get('manifest_id')} parent must reference {complete_id}"
+            )
+    return sorted(current, key=lambda row: str(row.get("manifest_id") or ""))
+
+
+def _refined_membership_id(
+    record: Mapping[str, Any],
+    *,
+    accession: str,
+    universe: Sequence[Mapping[str, Any]],
+) -> str:
+    eid = evidence_id_from_manifest(record)
+    refined = refine_evidence_ids_for_semantic_compare(
+        [eid], accession=accession, records=universe
+    )
+    return refined[0] if refined else eid
+
+
 def classify_bundle_against_published(
     candidates: Sequence[Mapping[str, Any]],
     published: Sequence[Mapping[str, Any]],
@@ -453,15 +566,24 @@ def classify_bundle_against_published(
     """Adjudicate a retained filing bundle against the published ledger.
 
     ``re_observed`` only when every candidate occurrence+bytes is already
-    known and every relevant interpretation is unchanged — persist nothing.
-    A newly selected, newly resolvable, or interpretation-revised member is
-    a bundle revision: durable persistence is the entire candidate bundle at
-    the newly allocated accession-wide version, not the changed members alone.
-    ``changed`` is diagnostic; ``persist`` (and ``append``, an alias) is the
-    durable set.
+    known and interpretation-equivalent, *and* the candidate membership
+    equals the latest published closed bundle for that accession. Added,
+    removed/deselected, newly resolvable, or interpretation-revised
+    membership is a bundle revision: persist the entire candidate bundle
+    at the newly allocated accession-wide version. Do not copy a removed
+    member into that version. ``changed`` / ``removed`` are diagnostic;
+    ``persist`` (and ``append``, an alias) is the durable set.
     """
     if not candidates:
         raise EvidenceIdentityError("bundle classification requires candidates")
+    accessions = {
+        str((record.get("filing") or {}).get("accession") or "")
+        for record in candidates
+    }
+    if len(accessions) != 1 or not next(iter(accessions)):
+        raise EvidenceIdentityError("bundle classification requires one accession")
+    accession = next(iter(accessions))
+
     changed: list[Mapping[str, Any]] = []
     unchanged: list[Mapping[str, Any]] = []
     for candidate in candidates:
@@ -475,7 +597,32 @@ def classify_bundle_against_published(
             unchanged.append(candidate)
         else:
             changed.append(candidate)
-    status = "re_observed" if not changed and unchanged else "revision"
+
+    published_for_accession = [
+        record
+        for record in published
+        if str((record.get("filing") or {}).get("accession") or "") == accession
+    ]
+    removed: list[Mapping[str, Any]] = []
+    if published_for_accession:
+        published_current = current_manifest_bundle(
+            published_for_accession, accession=accession
+        )
+        universe = [*published_for_accession, *list(candidates)]
+        candidate_ids = {
+            _refined_membership_id(row, accession=accession, universe=universe)
+            for row in candidates
+        }
+        for row in published_current:
+            member_id = _refined_membership_id(
+                row, accession=accession, universe=universe
+            )
+            if member_id not in candidate_ids:
+                removed.append(row)
+
+    status = (
+        "re_observed" if not changed and not removed and unchanged else "revision"
+    )
     persist: list[Mapping[str, Any]] = (
         [] if status == "re_observed" else list(candidates)
     )
@@ -483,6 +630,7 @@ def classify_bundle_against_published(
         "status": status,
         "changed": changed,
         "unchanged": unchanged,
+        "removed": removed,
         "persist": persist,
         "append": persist,
     }

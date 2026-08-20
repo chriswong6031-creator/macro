@@ -61,9 +61,11 @@ do_not_redo:
   - "Hash source.manifest_ids or PIT clocks into post-W1 event identity"
   - "Shortcut re-observation on the complete row alone"
   - "Persist only the changed members of an N+1 closed bundle"
+  - "Treat a deselected/removed current member as re-observation when remaining members are unchanged"
 landmines:
   - "manifest_id_for hashes retrieval clocks (DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS)"
   - "Partial N+1 persist drops unchanged children from _current_manifest_bundle"
+  - "Candidate-only classify_bundle_against_published misses deselected current members"
   - "Subset-hashing v2 manifest_id fights validate_manifest_ledger one-id-one-body"
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
   - "Projection freshness is compiler age, not information horizon"
@@ -75,20 +77,22 @@ artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
 needs_ceo:
   question: >
-    Accept W1B so revision persistence is accession-wide closed-bundle
-    atomic, after W1A identity (#6012) is already merged? Hold W2 until
-    W1B merges and the first natural collector → Capital Structure chain
-    containing W1B is production-proven.
+    Accept W1B membership-subtraction amend on #6044 so a deselected
+    current member forces a whole-candidate-bundle revision, after the
+    original W1B persist law? Hold W2 until W1B merges and the first
+    natural collector → Capital Structure chain containing W1B is
+    production-proven.
   options:
-    - Accept W1B; authorize Wave 2 only after merge and natural CS-path proof
-    - Accept W1B with further named amendments
+    - Accept the W1B amend; authorize Wave 2 only after merge and natural CS-path proof
+    - Accept with further named amendments
     - Reject; name which closed-bundle ruling to reopen
   recommendation: >
-    Accept W1B. Do not start Wave 2 in this PR. Do not rewrite historical
-    event_ids or v1 manifests. Do not dispatch a second daily run.
+    Accept the W1B amend. Do not start Wave 2 in this PR. Do not rewrite
+    historical event_ids or v1 manifests. Do not dispatch a second daily run.
   by_when: 2026-08-25
 next_action: >
-  Sol review of W1B; do not merge until accepted; do not start W2.
+  Sol review of the W1B membership-subtraction amend on #6044; do not
+  merge until accepted; do not start W2; do not create W1C.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -117,7 +121,8 @@ waves:
     branch: claude/cs-v2-w1b-closed-bundle
     pr: 6044
     next_action: >
-      Sol review of the W1B PR. Do not merge until accepted. Do not start W2.
+      Sol review of the W1B membership-subtraction amend on #6044.
+      Do not merge until accepted. Do not start W2. Do not create W1C.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
