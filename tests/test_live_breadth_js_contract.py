@@ -242,6 +242,13 @@ def test_truth_boundary_contract():
         # J. built_at absent and asof unparseable -> NO mutation (same NaN class).
         {"dom": _DOM, "payload": {k: v for k, v in _payload(asof="").items()
                                   if k != "built_at"}},
+        # K. The EXACT production shape measured on 2026-08-20: Polygon STANDARD
+        #    stamps a CURRENT quote_ts on data whose prices are 15 minutes behind,
+        #    so source_age_min is 0.0 while delay_min is 15. The stamp must show
+        #    15, never 0 — "≈0-min delayed" over 15-minute-delayed prices claims
+        #    real-time data we do not have.
+        {"dom": _DOM, "payload": _payload(source_age_min=0.0, delay_min=15,
+                                          source_asof=_now_iso(0))},
     ]
     got = _run(cases)
     assert len(got) == len(cases)
@@ -256,7 +263,11 @@ def test_truth_boundary_contract():
     assert accepted["sbx-adv"]["html"] == "900"
     assert accepted["sbx-dec"]["html"] == "580"
     assert "live" in accepted["sbx-stamp"]["classes"]
-    assert "16-min delayed" in accepted["sbx-stamp"]["html"]
+    # delay_min (17) is the honest total the reader sees, not source_age_min (16):
+    # source_age_min measures how stale OUR snapshot is, while the vendor floor
+    # already sits underneath it. See case K for why this distinction is not
+    # cosmetic.
+    assert "17-min delayed" in accepted["sbx-stamp"]["html"]
 
     # D — stale SOURCE clock (120 > 25) rejects even a fresh build.
     _assert_no_mutation(got[3])
@@ -272,3 +283,14 @@ def test_truth_boundary_contract():
     # CLOSED on it rather than sail through the false NaN comparison.
     _assert_no_mutation(got[8])
     _assert_no_mutation(got[9])
+
+    # K — the production shape. Accepted (source is current), but the reader must
+    # be told the truth about the VENDOR delay, not our snapshot's staleness.
+    prod = got[10]
+    assert prod["sbx-adv"]["html"] == "900"
+    assert "live" in prod["sbx-stamp"]["classes"]
+    assert "15-min delayed" in prod["sbx-stamp"]["html"], prod["sbx-stamp"]["html"]
+    assert "0-min delayed" not in prod["sbx-stamp"]["html"], (
+        "stamping ≈0-min delayed over 15-minute-delayed prices claims real-time "
+        "data we do not have"
+    )

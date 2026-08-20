@@ -454,11 +454,23 @@
     var stamp = document.getElementById("sbx-stamp");
     if (stamp) {
       stamp.classList.add("live");
-      // Stamp reflects the ACCEPTED SOURCE age, never the build clock: the ET
-      // time shown comes from source_asof, and the delay number is the rounded
-      // source_age_min — both already gated above.
+      // The ET time comes from source_asof (the snapshot we actually read), never
+      // the build clock.
+      //
+      // The DELAY NUMBER is delay_min, not source_age_min, and the difference is
+      // user-facing honesty rather than pedantry. source_age_min measures how
+      // stale OUR snapshot is; on the Polygon STANDARD plan the vendor stamps a
+      // current quote_ts on data whose PRICES are 15 minutes behind, so
+      // source_age_min is ~0 while the tape the reader is looking at is a
+      // quarter-hour old. Stamping "≈0-min delayed" over 15-minute-delayed prices
+      // claims real-time data we do not have. delay_min is the producer's honest
+      // total (vendor floor + snapshot staleness), so it is what the reader sees.
+      // Measured on production 2026-08-20: source_age_min 0.0, delay_min 15.
+      // max() keeps it monotone if a future feed ever reports staleness the
+      // producer's floor does not already cover.
       var et = new Date(b.source_asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
-      var dm = Math.round(srcAge);
+      var dm = (typeof b.delay_min === "number" && isFinite(b.delay_min))
+        ? Math.max(b.delay_min, Math.round(srcAge)) : Math.round(srcAge);
       stamp.innerHTML = '<span class="sbx-dot"></span>' +
         sbxBi(["≈" + dm + "-min delayed · " + et + " ET", "约" + dm + "分钟延迟 · 美东 " + et]);
     }

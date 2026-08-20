@@ -4,9 +4,14 @@
 and its production ownership. **PR:** #6084 (`claude/us-live-breadth-truth-repair`).
 **Base at branch:** `origin/main` `c54d1b55f673` → rebased onto `36da0a3c7d8e`.
 
-**State: CODE MERGED / PRODUCTION PROOF OWED.** The repair is complete and proven
-in CI. The live RTH proof could not be taken in this session and is the single
-open item — see §6. The failure direction is safe by construction (§4).
+**State: MERGED + PRODUCTION-PROVEN LIVE.** #6084 merged as `d972484c6474`
+(2026-08-20 17:11Z) and the proof WAS taken during a live RTH session — see §5b.
+The canonical lane self-installed on the VPS and is producing `usable:true`
+payloads; the truth boundary was verified in both directions on real production
+bytes. Follow-up #6107 fixes a delay-stamp honesty defect that the live proof
+itself surfaced. ONE item remains and it needs a VPS shell: a pre-existing
+non-repo-managed writer still shares the artifact path, so `producer` flaps —
+see §5c. The failure direction is safe by construction (§4).
 
 ---
 
@@ -161,7 +166,90 @@ federalreserve.gov URLs; nothing in this PR touches that module.
 | holiday | `rth` by clock | `closed` via `nyse_calendar` |
 | stamp | `delay_min` + `asof` time | `round(source_age_min)` + `source_asof` time |
 
-## 6. NEXT ACTION — the one open item
+## 5b. PRODUCTION PROOF — TAKEN 2026-08-20 during a live RTH session
+
+#6084 merged as `d972484c6474` at 17:11Z (13:11 ET), i.e. mid-session, so the
+live proof this doc originally deferred was taken after all.
+
+**Canonical lane self-installed.** Within ~8 minutes of the merge the VPS pull
+ran `update.sh`, whose self-arming block installed and enabled
+`macro-live-breadth.timer`. First canonical write observed at 17:19:08Z:
+
+```
+built_at        2026-08-20T17:27:07Z   source_asof   2026-08-20T17:27:06Z
+source_age_min  0.0                    delay_min     15
+session         rth                    feed_status   ok
+usable          True                   unusable_reason  None
+producer        vps:macro-live-breadth
+coverage        {'n': 1503, 'expected': 1500, 'pct': 100.2}     tiers 3
+comp            553 adv / 950 dec / n=1503
+```
+
+**Truth boundary verified on real production bytes, both directions**, by
+evaluating the shipped gate in the page context against live payloads:
+
+- legacy payload (no `usable`, no source clock) → `REJECT: usable!=true; no
+  source clock` → board stayed at baked **848 / 651**, stamp `last close ·
+  2026-08-19`, no `live` class. Exactly the intended fallback.
+- canonical payload → `ACCEPT`, adv 551 / dec 952 / n 1503.
+
+The served asset is the new build: `live.js?v=b9357424` contains
+`SBX_MAX_SOURCE_AGE_MIN`, `b.usable !== true` and `isFinite(buildAge)`, and no
+longer contains the old `age > 25 || b.session` gate.
+
+**Health plane verified**, three consecutive runs of
+`scripts/check_vps_live_health.py --url https://www.mastermind-x.com/api/status`:
+`healthy` → `UNHEALTHY: breadth: not usable during the live window / missing or
+invalid source_asof / missing or invalid coverage_pct / missing producer
+(unowned)` → `healthy`. The dead-man now sees breadth at all, which it could not
+before this wave.
+
+**Defect found BY that proof and fixed in #6107:** the canonical payload carries
+`source_age_min 0.0` with `delay_min 15`, because Polygon STANDARD stamps a
+CURRENT `quote_ts` on 15-minute-delayed prices. #6084's stamp rendered
+`round(source_age_min)`, so it would have printed **"≈0-min delayed"** over
+quarter-hour-old prices. #6107 stamps `max(delay_min, round(source_age_min))`;
+gating still keys off `source_age_min` (unchanged). Contract case K pins it.
+
+## 5c. THE ONE REMAINING PRODUCTION ITEM — an operator act
+
+**`producer` is flapping, which is the two-writer signature.** Sampled every
+~75s at 17:17–17:26Z:
+
+```
+17:17:05Z producer=None                    usable=None
+17:19:08Z producer=vps:macro-live-breadth  usable=True
+17:20:16Z producer=None                    usable=None
+17:23:11Z producer=vps:macro-live-breadth  usable=True
+17:23:24Z producer=None                    usable=None
+17:25:24Z producer=vps:macro-live-breadth  usable=True
+```
+
+The pre-existing, non-repo-managed VPS writer of §2 is **still running** and
+overwrites the canonical lane's artifact within seconds. Consequence today: the
+scoreboard alternates between the live read and the baked nightly board. Both
+states are TRUTHFUL — the fallback is valid nightly data and the gate is doing
+its job — so this is not a user-facing correctness bug, but it is not the end
+state and the live enhancement is only intermittently visible.
+
+**This is the last step and it needs a VPS shell, which this session does not
+have.** On the box:
+
+```bash
+systemctl list-units --all 'macro-live*' 'live-breadth*'
+systemctl list-timers --all | grep -i breadth
+crontab -l | grep -i breadth
+launchctl list 2>/dev/null | grep -i breadth
+journalctl -u macro-live-breadth.service -n 30 --no-pager
+```
+
+Retire whatever writes `/var/lib/macro-live/public/live/breadth.json` that is
+**not** `macro-live-breadth.service`, then confirm `producer` stays pinned at
+`vps:macro-live-breadth` across ≥10 consecutive samples and
+`check_vps_live_health.py` stays healthy across the same window. Do not disable
+`macro-live-breadth.timer` to "stop the flapping" — that is the canonical owner.
+
+## 6. Original open item (now CLOSED by §5b, except §5c)
 
 **Production RTH proof is owed.** It could not be taken here: this session has no
 VPS shell, and at the time of the work the US market was **pre-market (~07:00 ET)**,
