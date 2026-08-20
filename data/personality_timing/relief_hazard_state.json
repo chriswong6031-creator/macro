@@ -38,10 +38,10 @@
   },
   "family": "pss_rh1_relief_hazard_prospective",
   "gate_open": true,
-  "generated_utc": "2026-08-20T02:38:21.335512+00:00",
+  "generated_utc": "2026-08-20T06:53:25.171393+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 4,
+    "appended_today": 0,
     "earliest_action": "2026-07-29",
     "events": 21,
     "latest_action": "2026-08-19",

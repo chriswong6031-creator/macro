@@ -327,9 +327,9 @@
     "streak_sessions": 1
   },
   "radar_xref": {
-    "state": "calm",
+    "state": "watch",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.34
+  "_timing_s": 2.37
 }

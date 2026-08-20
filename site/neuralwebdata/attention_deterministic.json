@@ -1,48 +1,32 @@
 {
   "as_of": "2026-08-20",
-  "item_count": 8,
+  "item_count": 6,
   "counts_by_severity": {
-    "P2": 6,
+    "P2": 4,
     "P3": 2
   },
   "items": [
     {
-      "kind": "contradiction_tension",
-      "severity": "P2",
-      "summary_en": "Tension: briefing-divergences",
-      "summary_zh": "矛盾张力：briefing-divergences",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json",
-      "as_of": "2026-08-20"
-    },
-    {
-      "kind": "contradiction_tension",
-      "severity": "P2",
-      "summary_en": "Tension: cross_asset_confirm-diverge",
-      "summary_zh": "矛盾张力：cross_asset_confirm-diverge",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json",
-      "as_of": "2026-08-20"
-    },
-    {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-graph' overdue: 53h old vs 30h SLA (1.8×)",
-      "summary_zh": "脉叶 'confluence-graph' 过期：53小时，SLA 30小时（1.8倍）",
+      "summary_en": "Lobe 'confluence-graph' overdue: 58h old vs 30h SLA (1.9×)",
+      "summary_zh": "脉叶 'confluence-graph' 过期：58小时，SLA 30小时（1.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
       "as_of": "2026-08-20"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-strength' overdue: 53h old vs 30h SLA (1.8×)",
-      "summary_zh": "脉叶 'confluence-strength' 过期：53小时，SLA 30小时（1.8倍）",
+      "summary_en": "Lobe 'confluence-strength' overdue: 58h old vs 30h SLA (1.9×)",
+      "summary_zh": "脉叶 'confluence-strength' 过期：58小时，SLA 30小时（1.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
       "as_of": "2026-08-20"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-confluence-graph' overdue: 77h old vs 30h SLA (2.6×)",
-      "summary_zh": "脉叶 'site-confluence-graph' 过期：77小时，SLA 30小时（2.6倍）",
+      "summary_en": "Lobe 'site-confluence-graph' overdue: 58h old vs 30h SLA (1.9×)",
+      "summary_zh": "脉叶 'site-confluence-graph' 过期：58小时，SLA 30小时（1.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
       "as_of": "2026-08-20"
     },
@@ -79,7 +63,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-08-20T05:08:35Z",
-  "inputs_hash": "sha256:a1a8a4aad5c37db326707c22ac5ae76ead7feb7e2631b67b493d6aca4357490b",
+  "produced_at": "2026-08-20T09:31:22Z",
+  "inputs_hash": "sha256:e0d93c6b82b3ba1d8b41370c2200db474bd272ed411a76aa7f87e97b9f4512c2",
   "tier": "display"
 }

@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.591,
-      "effective_factor_bets_pr": 2.5365,
+      "dominant_factor_pc_share": 0.5908,
+      "effective_factor_bets_pr": 2.5374,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",

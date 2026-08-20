@@ -2,7 +2,7 @@
   "schema": "stage_context.v1",
   "asof": "2026-08-20",
   "data_session": "2026-08-19",
-  "built": "2026-08-20T03:41:58Z",
+  "built": "2026-08-20T08:07:23Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -2888,13 +2888,17 @@
       "blackout": false,
       "arc_pos": 0.325,
       "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
+        "present": true,
+        "sentiment": 0.85,
+        "performance": 9.2,
+        "tone_word": "confident",
+        "tags": [
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration"
+        ],
+        "quarter": "Q2",
+        "summary": "Omada Health reported its strongest quarter ever with record revenue of $88 million (up 43% YoY) and GAAP gross margin expanding to 73%. The company achieved GAAP net income profitability for the second consecutive quarter, generating $5M in net income. Management raised full-…"
       },
       "why": [
         "Early in its climb — 6 weeks up so far",

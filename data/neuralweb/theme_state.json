@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
   "as_of": "2026-08-20",
-  "generated_at": "2026-08-20T05:07:57Z",
+  "generated_at": "2026-08-20T09:30:18Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -144,7 +144,7 @@
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
       "foresight": {
-        "stage": "RE-RATING",
+        "stage": "BROADENING (text)",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -693,7 +693,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 45.0,
+        "score": 38.8,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -796,7 +796,7 @@
       "foresight": {
         "stage": "BROADENING (fingerprint)",
         "tier": "P",
-        "score": 41.1,
+        "score": 51.5,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1162,7 +1162,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 43.5,
+        "score": 44.7,
         "entry_ready": false,
         "bottleneck_band": "LOOSE",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1390,7 +1390,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-20T05:07:57Z",
-  "inputs_hash": "sha256:83bd1d83a235c85239c05aac38fde6df4ffa481fa6dc8eb754fdd49f972a7432",
+  "produced_at": "2026-08-20T09:30:18Z",
+  "inputs_hash": "sha256:424a027540afc1dbf60f676a9c5577b6364aea7498cab049d4c88d9e73cd9b99",
   "tier": "display"
 }

@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-19",
-  "generated_at": "2026-08-20T04:52:18.914210+00:00",
+  "as_of": "2026-08-20",
+  "generated_at": "2026-08-20T09:17:32.605872+00:00",
   "is_context_only": true,
-  "n_snapshots": 178552,
+  "n_snapshots": 180490,
   "horizons": {
     "5": {
       "n_matured": 68660,
@@ -299,9 +299,9 @@
         }
       },
       "coverage": {
-        "n_eligible": 146637,
+        "n_eligible": 149656,
         "n_matured": 51517,
-        "coverage_pct": 35.13,
+        "coverage_pct": 34.42,
         "below_floor": true
       }
     },
@@ -355,7 +355,7 @@
     "n_missing": 10,
     "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
     "first_snapshot": "2026-06-21",
-    "last_snapshot": "2026-08-19"
+    "last_snapshot": "2026-08-20"
   },
   "coverage_pct": {
     "5": {
@@ -371,9 +371,9 @@
       "below_floor": true
     },
     "21": {
-      "n_eligible": 146637,
+      "n_eligible": 149656,
       "n_matured": 51517,
-      "coverage_pct": 35.13,
+      "coverage_pct": 34.42,
       "below_floor": true
     },
     "63": {

@@ -5,11 +5,11 @@
 | board | as_of | records | coverage | status |
 |---|---|---:|---:|---|
 | standouts (engine buy-board) | 2026-08-19 | 61 | 61 | ok |
-| briefing (Phase-5 priority queue) | 2026-08-19 | 25 | 25 | ok |
-| radar (divergence radar) | 2026-08-19 | 201 | 201 | ok |
+| briefing (Phase-5 priority queue) | 2026-08-20 | 25 | 25 | ok |
+| radar (divergence radar) | 2026-08-20 | 201 | 201 | ok |
 | altdata (alt-data desk) | 2026-08-20 | 30 | 30 | ok |
 | news (news flow) | 2026-08-20 | 251 | 10 | 🚨 fail |
-| intel_hub (5-desk command) | 2026-08-19 | 30 | 30 | ok |
+| intel_hub (5-desk command) | 2026-08-20 | 30 | 30 | ok |
 
 ## Failures (these block publish)
 

@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-08-19",
-    "built": "2026-08-20T03:42:04.787467+00:00",
+    "built": "2026-08-20T08:07:41.512752+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -720,42 +720,42 @@
       "gate": false,
       "escalate": false
     },
-    "market_state": "Credit stress: low",
+    "market_state": "Credit stress: rising",
     "themes": {
       "hyperscaler_credit": {
         "stance_en": "Watch",
         "stance_zh": "观望",
-        "accruing": true
+        "accruing": false
       },
       "neocloud_credit": {
         "stance_en": "Watch closely",
         "stance_zh": "密切观望",
-        "accruing": true
+        "accruing": false
       },
       "memory_credit": {
         "stance_en": "Watch",
         "stance_zh": "观望",
-        "accruing": true
+        "accruing": false
       },
       "ai_power_credit": {
         "stance_en": "Ignore",
         "stance_zh": "无需关注",
-        "accruing": true
+        "accruing": false
       },
       "dc_reit_credit": {
         "stance_en": "Ignore",
         "stance_zh": "无需关注",
-        "accruing": true
+        "accruing": false
       },
       "ai_hardware_credit": {
         "stance_en": "Ignore",
         "stance_zh": "无需关注",
-        "accruing": true
+        "accruing": false
       },
       "telecom_legacy": {
         "stance_en": "Context",
         "stance_zh": "对照参考",
-        "accruing": true
+        "accruing": false
       }
     },
     "breadth": {
@@ -764,10 +764,10 @@
       "source": "FINRA trade data"
     },
     "watch": {
-      "orcl_g_spread_bp": 158.0,
-      "orcl_premium_vs_ig_bp": 77.0
+      "orcl_g_spread_bp": 160.0,
+      "orcl_premium_vs_ig_bp": 79.0
     },
-    "divergence_accruing": true,
+    "divergence_accruing": false,
     "display_only": true
   }
 }

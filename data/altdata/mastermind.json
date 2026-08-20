@@ -1,9 +1,9 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-20",
-  "generated_utc": "2026-08-20T04:48:12.109893+00:00",
+  "generated_utc": "2026-08-20T09:14:20.633215+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "The pack is crowded with large-cap megacap tech names (MSFT, NVDA, AAPL, AMZN, GOOGL) where the dominant signal is disclosure-driven congressional positioning and broad affiliation rather than unusual activity \u2014 a picture of steady accumulation by insiders and politicians, not a tight catalyst. The most idiosyncratic convergence sits in MU (insider buying + unanimous analyst upgrade + patent cluster + StockTwits bull) and, to a lesser degree, AMD (8-Ks + analyst cluster + retail buzz), while LUV carries a rare Trump-linked activist buy.",
+  "regime_read": "Convergence is concentrated in AI platforms, semiconductors, and a few idiosyncratic situations rather than a broad market signal; MSFT has the widest channel breadth, while MU and LUV show narrower but more differentiated alignment. With no completed track-record observations, conviction remains modest across the desk [track_record].",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
@@ -11,7 +11,7 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-20",
-    "evaluated_at": "2026-08-20T04:46:59+00:00"
+    "evaluated_at": "2026-08-20T09:13:06+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -20,14 +20,14 @@
     "open": 14,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 92,
+  "n_signals": 94,
   "n_broken": 24,
   "signals": [
     {
       "ticker": "MSFT",
-      "signal_score": 68,
-      "conviction": "low",
-      "action": "WATCH",
+      "signal_score": 88,
+      "conviction": "medium",
+      "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
       "weighted_score": 2.25,
@@ -62,86 +62,23 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": "MSFT has the highest convergence score (6) and weighted score (2.25) in the pack, driven by six channels including app demand (4.77 rating, ~20M reviews), GitHub momentum (188,941 stars), HF model momentum (33.6M downloads/30d), patent cluster (318), and lobbying ($3.65M) [app_demand, github_momentum, hf_model_momentum, patent_cluster, lobbying]. The signal is broad affiliation (Sam Altman, Bill Ackman) plus steady congressional accumulation (~$1.05B position) [actor:Sam Altman, actor:Bill Ackman, congress_position_usd]. But this is a disclosure-heavy megacap read rather than unusual activity \u2014 every channel is already priced and consensus. Not extended (+12.3pp). WATCH, because there is no idiosyncratic catalyst to buy.",
+      "thesis": "The pack's strongest breadth combines measured application demand, developer activity, model-download momentum, patent formation, and lobbying, with the OpenAI partnership linking product demand to the AI ecosystem [app_demand] [github_momentum] [hf_model_momentum] [patent_cluster] [lobbying] [actor:Sam Altman]. The shares are not flagged extended, so the convergence remains actionable, though affiliation signals are weaker than disclosed purchases.",
       "second_order": [
-        "OpenAI-adjacent names \u2014 MSFT's Altman partnership is the clearest second-order AI read [actor:Sam Altman]",
-        "NVDA \u2014 the AI infra complex MSFT's capex supports",
-        "GOOGL \u2014 competing hyperscaler lifts with AI model momentum"
+        "NVDA \u2014 expanding AI workloads imply continued accelerator demand, subject to near-term earnings risk",
+        "ANET \u2014 cloud AI build-outs increase demand for high-speed data-center networking",
+        "Data-center power and cooling \u2014 broader model usage raises infrastructure intensity"
       ],
       "falsifier": {
-        "text": "MSFT guides Azure/AI growth below consensus, or its OpenAI partnership restructures in a way that removes exclusivity.",
+        "text": "Application demand and developer/model activity roll over while AI infrastructure spending fails to translate into stronger commercial adoption.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MSFT",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 60
         }
       },
-      "clamped": null
-    },
-    {
-      "ticker": "NVDA",
-      "signal_score": 64,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.7,
-      "convergence_score": 5,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "github_momentum",
-        "patent_cluster",
-        "retail_buzz"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -2.3,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -7.6,
-      "ret_20d": 2.6,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Jensen Huang",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Nancy Pelosi",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Michael McCaul",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Jim Cramer",
-          "rel": "TALKS_ABOUT",
-          "kind": "influencer"
-        },
-        {
-          "actor": "Paul Pelosi",
-          "rel": "AFFILIATES_WITH",
-          "kind": "influencer"
-        }
-      ],
-      "n_affiliated_actors": 6,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
       "clamped": null
     },
     {
@@ -177,59 +114,6 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "AMZN",
-      "signal_score": 61,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.7,
-      "convergence_score": 5,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "hf_model_momentum",
-        "lobbying",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -3.6,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -6.4,
-      "ret_20d": 8.6,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Nancy Pelosi",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Paul Pelosi",
-          "rel": "AFFILIATES_WITH",
-          "kind": "influencer"
-        },
-        {
-          "actor": "Dan Crenshaw",
-          "rel": "AFFILIATES_WITH",
-          "kind": "politician"
-        },
-        {
-          "actor": "Bill Ackman",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 4,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -395,6 +279,35 @@
       "clamped": null
     },
     {
+      "ticker": "RSG",
+      "signal_score": 48,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.5,
+      "convergence_score": 2,
+      "channels": [
+        "insider_cluster",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -0.3,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -5.3,
+      "ret_20d": -0.6,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "AXP",
       "signal_score": 44,
       "conviction": "medium",
@@ -540,6 +453,36 @@
       "off_high_252": null,
       "ret_20d": null,
       "above_50dma": null,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "SPCX",
+      "signal_score": 39,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 3,
+      "channels": [
+        "13f_add",
+        "congress_cluster",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -16.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -33.9,
+      "ret_20d": 21.2,
+      "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -773,26 +716,26 @@
       "clamped": null
     },
     {
-      "ticker": "SPCX",
+      "ticker": "CNC",
       "signal_score": 33,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.2,
+      "weighted_score": 0.9,
       "convergence_score": 2,
       "channels": [
-        "13f_add",
-        "congress_cluster"
+        "analyst_upgrade_cluster",
+        "material_8k"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": -16.6,
+      "rs_vs_spy_60d": 11.7,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -33.9,
-      "ret_20d": 21.2,
-      "above_50dma": false,
+      "off_high_252": -2.4,
+      "ret_20d": 0.7,
+      "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -920,6 +863,73 @@
       "clamped": null
     },
     {
+      "ticker": "AMZN",
+      "signal_score": 31,
+      "conviction": "low",
+      "action": "AVOID",
+      "direction": "short",
+      "source": "brain",
+      "weighted_score": 1.7,
+      "convergence_score": 5,
+      "channels": [
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "hf_model_momentum",
+        "lobbying",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -3.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -6.4,
+      "ret_20d": 8.6,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 4,
+      "thesis": "Model-download momentum, an analyst-upgrade cluster, lobbying activity, and a special-situation flag align with disclosed political and fund affiliations [hf_model_momentum] [analyst_upgrade_cluster] [lobbying] [special_situation] [actor:Nancy Pelosi] [actor:Bill Ackman]. The non-extended relative performance leaves room for convergence to matter, but the pack does not explain the special situation or distinguish AWS demand from general ecosystem activity, keeping conviction low.",
+      "second_order": [
+        "NVDA \u2014 AWS AI workload growth would support accelerator consumption",
+        "ANET \u2014 cloud capacity additions require higher-speed networking",
+        "Data-center power infrastructure \u2014 AWS expansion increases power and cooling requirements"
+      ],
+      "falsifier": {
+        "text": "Cloud and AI usage indicators remain active but AWS growth and infrastructure deployment fail to improve.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "AMZN",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
+    },
+    {
       "ticker": "BMY",
       "signal_score": 31,
       "conviction": "medium",
@@ -1035,50 +1045,20 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "CEG",
-      "signal_score": 30,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.05,
-      "convergence_score": 2,
-      "channels": [
-        "gov_grant",
-        "insider_mspr"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -10.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -31.7,
-      "ret_20d": -0.1,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
     }
   ],
   "broken_signals": [
     {
       "ticker": "MU",
-      "signal_score": 77,
-      "conviction": "low",
+      "signal_score": 80,
+      "conviction": "medium",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 1.95,
-      "convergence_score": 5,
+      "weighted_score": 1.6,
+      "convergence_score": 4,
       "channels": [
         "affiliation",
-        "analyst_upgrade_cluster",
         "insider_mspr",
         "patent_cluster",
         "stocktwits_bull"
@@ -1100,23 +1080,55 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": "MU has the cleanest unusual-activity convergence in the pack: insider MPI score of 100.0 with a 1.0 analyst-bull ratio and 1.0 StockTwits bull ratio [insider_mspr, analyst_upgrade_cluster, stocktwits_bull]. A disclosed affiliation from Rep. Ro Khanna [actor:Ro Khanna] plus 288 patents and a 3.81x gov-grant acceleration add a policy/subsidy tail. Relative strength of +21.4pp vs SPY is warm but not extended, so entry is not yet gone. This is an insider-cluster + analyst-cluster alignment rather than a macro catalyst.",
+      "thesis": "MU combines insider-purchase intensity with patent activity, accelerating government-grant data, and uniformly bullish analyst and social indicators [insider_mspr] [patent_cluster] [gov_grant_accel] [analyst_upgrade_cluster] [stocktwits_bull]. Insider behavior and grant acceleration are the differentiated components; analyst and retail optimism are supporting rather than decisive evidence. The name is not flagged extended.",
       "second_order": [
-        "NVDA \u2014 memory/HBM content is the tightest read-through for AI compute; MU is a key HBM supplier",
-        "AMD \u2014 same DRAM/HBM supply chain and AI accelerator buildout",
-        "SMH (semis theme) \u2014 a broad memory upcycle from MU would lift the sector"
+        "AMAT \u2014 memory-capacity expansion would support wafer-fabrication equipment demand",
+        "LRCX \u2014 higher memory investment would benefit deposition and etch intensity",
+        "AI-server memory supply chain \u2014 stronger high-bandwidth-memory demand can lift adjacent packaging and substrate activity"
       ],
       "falsifier": {
-        "text": "MU reports earnings or issues guidance showing DRAM/HBM pricing rolling over, or a disclosed insider sale reverses the insider-cluster signal.",
+        "text": "Insider buying stops and memory investment or demand weakens despite the patent and grant signals.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MU",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 45
+          "horizon_d": 60
         }
       },
+      "clamped": null
+    },
+    {
+      "ticker": "AMD",
+      "signal_score": 47,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.5,
+      "convergence_score": 5,
+      "channels": [
+        "analyst_upgrade_cluster",
+        "github_momentum",
+        "material_8k",
+        "retail_buzz",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -3.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -19.7,
+      "ret_20d": -15.6,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
       "clamped": null
     },
     {
@@ -1433,14 +1445,14 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": "LUV is the only Trump-linked buy in the pack [trump, trump_side=buy], with a disclosed affiliation from activist Paul Singer [actor:Paul Singer] and an unusually strong app-demand channel (4.84 rating, 7.16M reviews) [app_demand]. An activist 13D plus presidential-political alignment is a genuine convergence of two independent channels. Not extended (-1.6pp vs SPY). The missing piece is no insider or analyst confirmation, so this stays a WATCH until the activist thesis becomes public.",
+      "thesis": "LUV presents an idiosyncratic alignment between activist involvement, measured app demand, a policy-linked buy signal, and Paul Singer affiliation [activist_13d] [app_demand] [trump] [actor:Paul Singer]. These channels point toward operational or strategic change alongside intact customer engagement, and the stock is not extended. Conviction stays low because the pack supplies no operating or implementation evidence.",
       "second_order": [
-        "DAL \u2014 a LUV activist re-rating would lift the low-cost carrier complex broadly",
-        "UAL \u2014 same US domestic-airline beta",
-        "JETS (airlines ETF theme) \u2014 sector re-rating from a high-profile activist campaign"
+        "Airline suppliers \u2014 successful fleet utilization and operational improvement could lift maintenance and service demand",
+        "Domestic travel platforms \u2014 sustained customer engagement would support U.S. travel booking activity",
+        "Airport services \u2014 higher passenger throughput would benefit ground-handling and concession activity"
       ],
       "falsifier": {
-        "text": "Singer's 13D reveals a passive stake or an exit, or LUV guides down on unit revenue / fuel costs in the next earnings print.",
+        "text": "Customer engagement weakens or the activist campaign produces no measurable operational or strategic change.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "LUV",
@@ -1450,7 +1462,7 @@
           "horizon_d": 60
         }
       },
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)"
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
     },
     {
       "ticker": "DJT",
@@ -1631,52 +1643,6 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "AMD",
-      "signal_score": 17,
-      "conviction": "low",
-      "action": "AVOID",
-      "direction": "short",
-      "source": "brain",
-      "weighted_score": 1.5,
-      "convergence_score": 5,
-      "channels": [
-        "analyst_upgrade_cluster",
-        "github_momentum",
-        "material_8k",
-        "retail_buzz",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -3.6,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -19.7,
-      "ret_20d": -15.6,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": "AMD shows a retail-and-analyst alignment: three 8-K filings in 30 days [material_8k_30d], a 0.94 analyst-bull ratio [analyst_upgrade_cluster], rising GitHub momentum (6,811 stars) [github_momentum], and a 0.84 StockTwits bull ratio on a huge 563,282-watcher base [stocktwits_bull]. It is not extended (-3.6pp vs SPY) so there is no entry-chasing problem. Signals are several independent channels of attention, but the pack gives no fundamental catalyst, so this is a WATCH until the 8-Ks resolve into something concrete.",
-      "second_order": [
-        "NVDA \u2014 AMD's AI accelerator push is the most direct competitive read-through",
-        "MU \u2014 shared HBM/DDR5 supply chain",
-        "XLNX-adjacent FPGA/adaptive-compute peers (the 8-Ks may signal M&A or licensing)"
-      ],
-      "falsifier": {
-        "text": "The 8-K contents resolve into something negative (restatement, loss of a key customer, or an adverse legal/regulatory event), or analyst bull ratio drops below 0.7.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "AMD",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 45
-        }
-      },
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)"
     },
     {
       "ticker": "AVGO",

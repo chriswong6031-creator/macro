@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-20T04:47:53.982774+00:00",
+  "generated_utc": "2026-08-20T09:14:02.202313+00:00",
   "as_of": "2026-08-20",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -6587,6 +6587,14 @@
     ],
     "special_situations": [
       {
+        "ticker": "ARX",
+        "category": "Going-Private",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Going-Private"
+      },
+      {
         "ticker": "AIRI",
         "category": "Deal Terminations",
         "confidence": "high",
@@ -8691,6 +8699,14 @@
         "detail": "Strategic Reviews"
       },
       {
+        "ticker": "CSR",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "DMYD-B",
         "category": "Strategic Reviews",
         "confidence": "high",
@@ -10651,14 +10667,6 @@
         "detail": "Activist Campaigns"
       },
       {
-        "ticker": "DFH",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "KBR",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -11609,14 +11617,6 @@
         "activist": false,
         "filer": null,
         "detail": "Liquidations"
-      },
-      {
-        "ticker": "ZSTK",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "SNGX",
@@ -14537,6 +14537,14 @@
         "activist": false,
         "filer": null,
         "detail": "Tender Offers"
+      },
+      {
+        "ticker": "WS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "DMYS",
@@ -17763,14 +17771,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "MEDS",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "WES",
         "category": "Acquisitions",
         "confidence": "high",
@@ -18025,6 +18025,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SPCX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "TOON",
@@ -18366,14 +18374,6 @@
         "ticker": "INCY",
         "category": "Acquisitions",
         "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "NVACW",
-        "category": "Acquisitions",
-        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -19291,6 +19291,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "CORZR",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "LIMNW",
         "category": "Delistings",
         "confidence": "high",
@@ -19308,14 +19316,6 @@
       },
       {
         "ticker": "OLOX",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "OTLK",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -19460,6 +19460,14 @@
       },
       {
         "ticker": "AETN",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SILO",
         "category": "Acquisitions",
         "confidence": "medium",
         "activist": false,
@@ -19739,6 +19747,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SSYS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "VOXR",
         "category": "Divestitures",
         "confidence": "high",
@@ -19753,6 +19769,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "TMRC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "ZVSA",
@@ -19828,14 +19852,6 @@
       },
       {
         "ticker": "IVDAW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "NRDY",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -21115,14 +21131,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CETY",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "DFLIW",
         "category": "Acquisitions",
         "confidence": "high",
@@ -22011,14 +22019,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "ISPC",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "YGMZF",
         "category": "Delistings",
         "confidence": "high",
@@ -22109,7 +22109,7 @@
       {
         "ticker": "VWAVW",
         "category": "Deal Terminations",
-        "confidence": "medium",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Deal Terminations"
@@ -22747,6 +22747,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "KFY",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "CASIF",
         "category": "Delistings",
         "confidence": "high",
@@ -23137,6 +23145,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BEAT",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "PRSO",
@@ -24059,14 +24075,6 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "BIAFW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "DEFI",
         "category": "Delistings",
         "confidence": "high",
@@ -24379,6 +24387,22 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "STRRP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "WU",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "WKSP",
         "category": "Delistings",
         "confidence": "high",
@@ -24540,6 +24564,14 @@
       },
       {
         "ticker": "ETST",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "HHS",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -24727,17 +24759,6 @@
     ],
     "analyst": [
       {
-        "ticker": "NVDA",
-        "net_up_30d": 41,
-        "breadth": 0.95,
-        "est_chg_30d": 0.99,
-        "n_analysts": 43,
-        "bull_ratio": 0.98,
-        "rising": true,
-        "revision_delta": 41,
-        "hot": true
-      },
-      {
         "ticker": "FTNT",
         "net_up_30d": 39,
         "breadth": 1.0,
@@ -24771,6 +24792,17 @@
         "hot": true
       },
       {
+        "ticker": "MA",
+        "net_up_30d": 32,
+        "breadth": 0.94,
+        "est_chg_30d": 1.05,
+        "n_analysts": 34,
+        "bull_ratio": 0.97,
+        "rising": true,
+        "revision_delta": 32,
+        "hot": true
+      },
+      {
         "ticker": "AMD",
         "net_up_30d": 31,
         "breadth": 0.89,
@@ -24779,17 +24811,6 @@
         "bull_ratio": 0.94,
         "rising": true,
         "revision_delta": 31,
-        "hot": true
-      },
-      {
-        "ticker": "MU",
-        "net_up_30d": 30,
-        "breadth": 1.0,
-        "est_chg_30d": 3.96,
-        "n_analysts": 30,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 30,
         "hot": true
       },
       {
@@ -24947,6 +24968,17 @@
         "hot": true
       },
       {
+        "ticker": "MCO",
+        "net_up_30d": 20,
+        "breadth": 0.91,
+        "est_chg_30d": 1.56,
+        "n_analysts": 22,
+        "bull_ratio": 0.95,
+        "rising": true,
+        "revision_delta": 20,
+        "hot": true
+      },
+      {
         "ticker": "AMGN",
         "net_up_30d": 20,
         "breadth": 0.83,
@@ -24980,10 +25012,10 @@
         "hot": true
       },
       {
-        "ticker": "MS",
+        "ticker": "CDNS",
         "net_up_30d": 19,
         "breadth": 1.0,
-        "est_chg_30d": 5.99,
+        "est_chg_30d": 1.46,
         "n_analysts": 19,
         "bull_ratio": 1.0,
         "rising": true,
@@ -24991,10 +25023,10 @@
         "hot": true
       },
       {
-        "ticker": "CDNS",
+        "ticker": "CNC",
         "net_up_30d": 19,
         "breadth": 1.0,
-        "est_chg_30d": 1.46,
+        "est_chg_30d": 18.8,
         "n_analysts": 19,
         "bull_ratio": 1.0,
         "rising": true,
@@ -28982,18 +29014,6 @@
         "why": "insider_cluster: 19 insiders, $262,738,142 net \u00b7 trump: REPUBLIC SERVICES INC"
       },
       {
-        "ticker": "MU",
-        "score": 4,
-        "weighted_score": 1.45,
-        "channel_list": [
-          "analyst_upgrade_cluster",
-          "insider_mspr",
-          "patent_cluster",
-          "stocktwits_bull"
-        ],
-        "why": "analyst_upgrade_cluster: net upgrades +30 revision delta \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 288 grants, 24 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
-      },
-      {
         "ticker": "INTC",
         "score": 4,
         "weighted_score": 1.4,
@@ -29004,6 +29024,17 @@
           "stocktwits_bull"
         ],
         "why": "analyst_upgrade_cluster: net upgrades +32 revision delta \u00b7 gov_grant: $9,339,294 federal grant/loan \u00b7 patent_cluster: 357 grants, 45 IPC classes \u00b7 stocktwits_bull: 81% bull \u00b7 206,222 watching"
+      },
+      {
+        "ticker": "SPCX",
+        "score": 3,
+        "weighted_score": 1.4,
+        "channel_list": [
+          "13f_add",
+          "congress_cluster",
+          "special_situation"
+        ],
+        "why": "13f_add: ONTARIO TEACHERS PENSION PLAN BOARD +$8,658,544,075 \u00b7 congress_cluster: 4 members net +8 \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "BA",
@@ -29041,18 +29072,6 @@
         "why": "analyst_upgrade_cluster: net upgrades +34 revision delta \u00b7 hf_model_momentum: +18.9% model downloads \u00b7 lobbying: $5,010,000 lobbied \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "NVDA",
-        "score": 4,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "analyst_upgrade_cluster",
-          "github_momentum",
-          "patent_cluster",
-          "retail_buzz"
-        ],
-        "why": "analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 github_momentum: +0.35% stars \u00b7 patent_cluster: 159 grants, 20 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
-      },
-      {
         "ticker": "TXT",
         "score": 3,
         "weighted_score": 1.2,
@@ -29074,16 +29093,6 @@
         "why": "13f_add: Ascentis Wealth Management, LLC +$2,612,881,959 \u00b7 congress_cluster: 4 members net +11"
       },
       {
-        "ticker": "SPCX",
-        "score": 2,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "13f_add",
-          "congress_cluster"
-        ],
-        "why": "13f_add: ONTARIO TEACHERS PENSION PLAN BOARD +$8,658,544,075 \u00b7 congress_cluster: 4 members net +8"
-      },
-      {
         "ticker": "GD",
         "score": 2,
         "weighted_score": 1.2,
@@ -29102,6 +29111,17 @@
           "unusual_options"
         ],
         "why": "insider_mspr: MSPR 71.3 \u00b7 unusual_options: 4.65\u00d7 vol/OI, call-skew"
+      },
+      {
+        "ticker": "MU",
+        "score": 3,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "insider_mspr",
+          "patent_cluster",
+          "stocktwits_bull"
+        ],
+        "why": "insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 288 grants, 24 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
       },
       {
         "ticker": "AAPL",
@@ -29207,6 +29227,17 @@
           "material_8k"
         ],
         "why": "congress_buy: 2 member(s) net +7 \u00b7 material_8k: 7 material 8-Ks (items 1.01, 2.03, 5.02, 7.01, 8.01)"
+      },
+      {
+        "ticker": "UNP",
+        "score": 3,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "13f_add",
+          "analyst_upgrade_cluster",
+          "special_situation"
+        ],
+        "why": "13f_add: Curated Wealth Partners LLC +$2,030,517,264 \u00b7 analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 special_situation: Acquisitions"
       }
     ]
   }

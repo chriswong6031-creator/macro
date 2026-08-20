@@ -500,3 +500,15 @@
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T04:39:00+00:00","key_id":"deepseek_api_key","cycle_id":"","stage":"narrative_brain","est_tokens":2430,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T04:39:29+00:00","key_id":"deepseek_api_key","cycle_id":"","stage":"risk_brain","est_tokens":2317,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T04:47:53+00:00","key_id":"deepseek_api_key","cycle_id":"","stage":"altdata_brain","est_tokens":10321,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T06:52:51+00:00","key_id":"deepseek_api_key","cycle_id":"","stage":"altdata_brain","est_tokens":769,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T07:48:09+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":14255,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:03:10+00:00","key_id":"claude_code_oauth_7","cycle_id":"","stage":"cooling","est_tokens":0,"outcome":"auth_failed","cool_kind":"auth","reset_hint":"2026-08-21T09:03:10+00:00"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:03:36+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":13100,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:04:00+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":12698,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:04:24+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":13012,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:04:58+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":13003,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:05:25+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":12908,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:05:53+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":12947,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:06:15+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":13227,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:06:48+00:00","key_id":"codex_account","cycle_id":"","stage":"risk_brain","est_tokens":13655,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-08-20T09:14:01+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":21724,"outcome":"ok"}

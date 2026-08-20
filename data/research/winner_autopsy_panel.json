@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-08-20T05:07:55Z",
+  "generated_at": "2026-08-20T09:30:16Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -2070,7 +2070,7 @@
   },
   "watch": {
     "available": true,
-    "as_of": "2026-08-19",
+    "as_of": "2026-08-20",
     "state_counts": {
       "breakaway": 136,
       "emerging": 1958,

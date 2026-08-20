@@ -3631,3 +3631,5 @@
 {"date": "2026-08-19", "ticker": "CPRT", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-19", "ticker": "ROIV", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-19", "ticker": "PAYC", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-19", "ticker": "MC", "score": 49.0, "percentile": 49.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-19", "ticker": "ODFL", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}

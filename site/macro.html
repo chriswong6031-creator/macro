@@ -108,7 +108,7 @@
 <link rel="stylesheet" href="assets/css/39f40494.css?v=39f40494">
 
 <link rel="stylesheet" href="assets/css/7689f0db.css?v=7689f0db">
-<link rel="stylesheet" href="assets/css/4e57cf5b.css?v=4e57cf5b">
+<link rel="stylesheet" href="assets/css/bcef71ef.css?v=bcef71ef">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 <link rel="preload" as="style" href="assets/css/4e822d03.css?v=4e822d03">
@@ -1893,8 +1893,9 @@
 
   <div class="gde-head">
     <div>
-      <span class="gde-eyebrow"><span class="l-en">Three separate reads</span><span class="l-zh">三项独立判读</span></span>
-      <h2 class="gde-h2"><span class="l-en">Do the reads agree?</span><span class="l-zh">三项判读一致吗？</span></h2>
+      <span class="gde-eyebrow"><span class="l-en">Three reads, kept separate</span><span class="l-zh">三项判读，各自独立</span></span>
+      
+      <h2 class="gde-h2"><span class="l-en">Do the market reads agree?</span><span class="l-zh">市场判读一致吗？</span></h2>
     </div>
     <span class="gde-stamp tnum"
           data-tip-en="Settled session — the close these reads were taken from. Each source below also keeps its own clock."
@@ -1941,16 +1942,18 @@
     </div>
 
     
-    <div class="gde-read" style="--gde-c: var(--ink-act)">
+    <div class="gde-read" style="--gde-c: var(--ink-warn)">
      <div class="gde-row">
       <span class="gde-q"><span class="l-en">Is anything breaking?</span><span class="l-zh">有什么正在断裂？</span></span>
       <p class="gde-a">
-        <span class="l-en">Damage is spreading</span><span class="l-zh">损伤扩散</span>
+        <span class="l-en">Something&#39;s fragile</span><span class="l-zh">出现脆弱</span>
       </p>
       <p class="gde-c">
         
-          <span class="l-en">Leadership cohort has taken damage since 2026-07-07, while the trend read above hasn't moved.</span>
-          <span class="l-zh">龙头股群体已出现损伤（自 2026-07-07 起），而上方趋势判读未变。</span>
+          
+          
+          <span class="l-en">Leadership cohort is damaged while the index holds — its own read has said so since 2026-07-07.</span>
+          <span class="l-zh">龙头股群体受损，而指数仍在支撑——该来源自 2026-07-07 起即如此判读。</span>
         
       </p>
       
@@ -2027,39 +2030,34 @@
           
 
           <p class="gde-receipt tnum">
-            grey-deer-v1-2026-08-19 · bundle 90fdfad67e49dbdf ·
-            coverage FRESH · coherence CONTRADICTORY ·
-            stage TRANSMITTING (observed_settled_evidence) ·
+            grey-deer-v1-2026-08-19 · bundle fd9ccdbe47f7f008 ·
+            coverage FRESH ·
+            coherence CONTRADICTORY (scope market_reads) ·
+            stage FRAGILE (observed_settled_evidence) ·
+            stage_since null (no_episode_lifecycle_in_v0) ·
             engine/risk_envelope.py
           </p>
         </div>
       </details>
     </div>
 
-    
-    <div class="gde-read gde-read--quiet">
-     <div class="gde-row">
-      <span class="gde-q"><span class="l-en">What's being held back?</span><span class="l-zh">有什么被限制？</span></span>
-      <p class="gde-a">
-        <span class="l-en">Nothing held back</span><span class="l-zh">未做任何限制</span>
-      </p>
-      <p class="gde-c">
-        <span class="l-en">No limits are in force. This read describes the market; it doesn't restrict anything you do.</span>
-        <span class="l-zh">当前没有任何限制。此判读只描述市场，不会限制你的任何操作。</span>
-      </p>
-      <span class="gde-clock tnum">0 <span class="l-en">in force</span><span class="l-zh">项生效</span></span>
-     </div>
-    </div>
+  </div>
 
+  
+  <div class="gde-policy">
+    <span class="gde-policy-lbl"><span class="l-en">Capital policy</span><span class="l-zh">资金政策</span></span>
+    <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
+    <span class="gde-policy-note">
+      <span class="l-en">Nothing is restricted. This is a market read — it carries no instruction, and it is not part of the agreement above.</span>
+      <span class="l-zh">当前没有任何限制。这是一项市场判读——不含任何操作指示，也不参与上方的一致性比较。</span>
+    </span>
+    <span class="gde-policy-count tnum">0 <span class="l-en">active</span><span class="l-zh">项生效</span></span>
   </div>
 
   <div class="gde-foot">
-    
-      <span class="gde-stance" style="--gde-c: var(--ink-warn)"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追</span></span>
-    
     <span class="gde-note">
-      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm".</span>
-      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。</span>
+      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm". Agreement above compares the two market reads only.</span>
+      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。上方的一致性仅比较两项市场判读。</span>
     </span>
   </div>
 
@@ -4773,14 +4771,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          6 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">individual stocks</span><br>
+          4 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          6 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">个股</span><br>
+          4 条高影响信号
         </span>
         
       </div>
@@ -4856,8 +4854,8 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Intelligent Bio Solutions GAAP EPS of -$8.44, revenue of $4.22M</span>
-              <span class="l-zh">Intelligent Bio Solutions GAAP每股收益为-8.44美元，营收为422万美元</span>
+              <span class="l-en">Jefferson Security Bank raises dividend by 7% to $1.55</span>
+              <span class="l-zh">杰斐逊安全银行将股息提高7%至1.55美元</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -7230,8 +7228,8 @@
         
         
         <div class="isle-aibrief-body">
-          <span class="l-en">7 high-impact items today · dominant: <strong>earnings</strong></span>
-          <span class="l-zh">今日 7 条高影响信息 · 主导：<strong>业绩</strong></span>
+          <span class="l-en">4 high-impact items today · dominant: <strong>individual stocks</strong></span>
+          <span class="l-zh">今日 4 条高影响信息 · 主导：<strong>个股</strong></span>
         </div>
         
         <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></a></div>
@@ -7293,10 +7291,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4635219-intelligent-bio-solutions-gaap-eps-of-8_44-revenue-of-4_22m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635240-jefferson-security-bank-raises-dividend-by-7-to-155?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Intelligent Bio Solutions GAAP EPS of -$8.44, revenue of $4.22M</span><span class="l-zh">Intelligent Bio Solutions GAAP每股收益为-8.44美元，营收为422万美元</span></span>
+              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nbx-title"><span class="l-en">Jefferson Security Bank raises dividend by 7% to $1.55</span><span class="l-zh">杰斐逊安全银行将股息提高7%至1.55美元</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7314,7 +7312,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/20/sk-hynixs-south-korean-shares-surge-stock-buyback-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">SK Hynix shares surge over 12% in Seoul after announcing massive stock buyback</span><span class="l-zh">SK海力士宣布大规模股票回购，首尔股价飙升超12%</span></span>
+              <span class="nbx-title"><span class="l-en">SK Hynix shares surge over 12% in Seoul after announcing massive stock buyback</span><span class="l-zh">SK海力士股价在首尔飙升逾12%，此前宣布大规模股票回购</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7350,7 +7348,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/19/marvell-google-ai-chips.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Marvell&#39;s stock pops 10% on AI chip deal that lets Google buy up to $12.2 billion in shares</span><span class="l-zh">Marvell股价因AI芯片交易上涨10%，该交易允许谷歌购买高达122亿美元的股票</span></span>
+              <span class="nbx-title"><span class="l-en">Marvell&#39;s stock pops 10% on AI chip deal that lets Google buy up to $12.2 billion in shares</span><span class="l-zh">Marvell股价因AI芯片交易大涨10%，该交易允许谷歌购买至多122亿美元股份</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7365,10 +7363,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4635214-aegon-cfo-duncan-russell-to-step-down?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635235-sk-hynix-plans-to-pay-60-of-employee-bonuses-in-stock---report?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Aegon CFO Duncan Russell to step down</span><span class="l-zh">Aegon首席财务官Duncan Russell将卸任</span></span>
+              <span class="nbx-title"><span class="l-en">SK Hynix plans to pay 60% of employee bonuses in stock - report</span><span class="l-zh">SK海力士计划以股票形式支付60%的员工奖金——报道</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7383,10 +7381,28 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4635222-virtuix-holdings-inc-gaap-eps-of-0_22-misses-by-0_08-revenue-of-0_8m-misses-by-0_25m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.marketwatch.com/story/the-chip-stock-rally-hits-a-speed-bump-but-these-analysts-see-reason-to-be-hopeful-61821295?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Virtuix Holdings Inc. GAAP EPS of -$0.22 misses by $0.08, revenue of $0.8M misses by $0.25M</span><span class="l-zh">Virtuix Holdings Inc. GAAP每股收益为-0.22美元，低于预期0.08美元；营收为80万美元，低于预期25万美元</span></span>
+              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nbx-title"><span class="l-en">The chip-stock rally hits a speed bump — but these analysts see reason to be hopeful</span><span class="l-zh">芯片股涨势遭遇阻碍——但这些分析师认为仍有希望</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 19</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635207-andersen-announces-pricing-of-class-a-secondary-offering-at-44-per-share?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">Andersen announces pricing of Class A secondary offering at $44 per share</span><span class="l-zh">Andersen宣布A类二次发行定价为每股44美元</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7401,10 +7417,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4635220-regional-health-properties-gaap-eps-of-0_20-revenue-of-24_4m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4635213-raymond-james-reports-17-yy-growth-in-client-assets-for-july?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Regional Health Properties GAAP EPS of -$0.20, revenue of $24.4M</span><span class="l-zh">Regional Health Properties GAAP每股收益为-0.20美元，营收为2440万美元</span></span>
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Raymond James reports 17% Y/Y growth in client assets for July</span><span class="l-zh">Raymond James报告7月客户资产同比增长17%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7419,10 +7435,10 @@
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/walmart-q2-earnings-put-54-181241635.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.npr.org/2026/08/18/nx-s1-5935458/meta-child-safety-social-media-addiction-trial-opening" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Walmart Q2 Earnings Will Put Its 54-Year Dividend Streak to the Test</span><span class="l-zh">沃尔玛第二季度财报将考验其54年股息连增纪录</span></span>
+              <span class="nbx-title"><span class="l-en">&#39;Profits won.&#39; The child safety trial against Meta kicks off in federal court</span><span class="l-zh">“利润赢了。”针对Meta的儿童安全诉讼在联邦法院开庭</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7437,28 +7453,10 @@
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/the-chip-stock-rally-hits-a-speed-bump-but-these-analysts-see-reason-to-be-hopeful-61821295?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/18/home-depot-hd-q2-2026-earnings.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nbx-title"><span class="l-en">The chip-stock rally hits a speed bump — but these analysts see reason to be hopeful</span><span class="l-zh">芯片股涨势遇阻——但这些分析师认为仍有希望</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 19</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.npr.org/2026/08/18/nx-s1-5935458/meta-child-safety-social-media-addiction-trial-opening" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">&#39;Profits won.&#39; The child safety trial against Meta kicks off in federal court</span><span class="l-zh">“利润赢了。”针对Meta的儿童安全诉讼在联邦法院开庭</span></span>
+              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nbx-title"><span class="l-en">Home Depot reaffirms guidance amid &#39;frozen housing market conditions&#39;</span><span class="l-zh">家得宝在“冰冻住房市场环境”中重申业绩指引</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -11340,9 +11338,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-20 05:36 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-20 07:05 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-20 05:36 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-20 07:05 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

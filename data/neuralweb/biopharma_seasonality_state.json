@@ -1,9 +1,9 @@
 {
   "as_of": "2026-08-19",
   "gaps": [],
-  "generated_at": "2026-08-20T04:05:58Z",
-  "inputs_hash": "sha256:0e7c775575b363160dafb36e3e1ae917686d349cf4049671fb1f0e8935fb9992",
-  "produced_at": "2026-08-20T04:05:58Z",
+  "generated_at": "2026-08-20T08:10:44Z",
+  "inputs_hash": "sha256:6433d2bdac09e42d7348ba34d70f0a2cfce9e068e0d024fc2b75188c6bf0b2fb",
+  "produced_at": "2026-08-20T08:10:45Z",
   "produced_by": "scripts/build_seasonality_shadow_state.py",
   "schema": "neuralweb.biopharma_seasonality_state.file.v1",
   "schema_version": 1,
@@ -23,7 +23,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -66,7 +66,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -99,7 +99,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:247097e5a5174bce9762a6fcfa1c06da4cb0af7c74bc249ead449a07a453c920",
+        "data_snapshot": "sha256:add3bcf94051eb8e7edc6e630e26ad70da05fe30d3ab32cfdebafef2c66f395a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a09acc324b29243676c53913aca60a493223c2de02f8011bfd6193b9ee52323d"
       },
@@ -128,7 +128,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -171,7 +171,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -204,7 +204,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e6c44623177998c733098f8647e69682409e4be9f9e8d313977f776c8b93cc00",
+        "data_snapshot": "sha256:47c1376ff0afa49c28635e909861683914428de9bb5a42f3923fffdb81d504b9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:066ba6b80381314b0e7b761b65770b416baa750c6111935a9a96babcb9d9cad9"
       },
@@ -234,7 +234,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -277,7 +277,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -310,7 +310,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1c2b8d524787d1dc725ba30fafb9647047d83c5896f148872802d98219503603",
+        "data_snapshot": "sha256:dc6d6888a2986adfdb59aff6998157f5bcf56a451a1f6d405e104eed196b3f99",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fec0bc07012846694e848b453b1f3944bba74a518f9b5bcbdaaf04c7f75996a5"
       },
@@ -341,7 +341,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -384,7 +384,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -417,7 +417,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ee6b7ec7a5b02454091c7cd8caba5756b8f75594e6b51b8087b9b1643f803a3d",
+        "data_snapshot": "sha256:938ee516212242f7eede78abf759e6350a4b72a69256d91d9c0818aad71554f6",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d56994c51cafa5b6ad19ecf84064d6cdaa962204361aa136bc4b851bb157c2fb"
       },
@@ -448,7 +448,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -491,7 +491,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -524,7 +524,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2090c16d4a504512801eec5a0f18a2cf33a636cf3aff15a98fe060d7dc3a911b",
+        "data_snapshot": "sha256:ce849016dd55e13d8c0a3d87ddba7ed421d28d7b4763289ecbbd2107268f1f38",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:70c4c3903f47e420391e3f653f2b4a685f0e4aabed563f30c802777313edf89a"
       },
@@ -555,7 +555,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -598,7 +598,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -631,7 +631,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3090fcff327cb3bd1061077e110a6214591ed59af730ba010a6a4fdc69e6946c",
+        "data_snapshot": "sha256:bb2a7bd4844689cfa3f29834cfbfc4acc6204cadabdbebda03a7a14e9a95aebc",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3f75283d53619da402638eb76d3ff60750c93c8825384c920b28d2dcb9a6e993"
       },
@@ -662,7 +662,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -705,7 +705,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -738,7 +738,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0e47278bc19740e45519aa7c34e640cf9f1f3dfe6601128ffa7823aef716aa7c",
+        "data_snapshot": "sha256:7e9e68bc33cef67caeafc33c10118b94e1880c021411d2c1fa78d669246c8be6",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:febfeb9904f38de2fa3f2315e87e06de14900a61ea04c0c51384b4ca7738f924"
       },
@@ -767,7 +767,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -810,7 +810,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -843,7 +843,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0750a16424f4a0d1f8e41d0d2238e184657a1d497980b9e15e3f4f6b2041f3b2",
+        "data_snapshot": "sha256:48c3a23cbb4978830657f3c2f30c91ab4871e48509c9947498e5f07cd439b8a0",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ab44093d23e70e644d043b9b7baf6a1985d3fe78326a9487557e18bfdf6ab601"
       },
@@ -874,7 +874,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -917,7 +917,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -950,7 +950,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ddfbb8dcddb8c0b55f371aba08245eb83228e4e035129e6d830e3f40abd96570",
+        "data_snapshot": "sha256:bb23f20abfe8d173d27eaeec9b93b67e695627994d4a83a50e1a6d6470492b5c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:916d3d8bedbbb2e92d117e355e55209c7e38802a683025178d903b7ccb2c98ca"
       },
@@ -981,7 +981,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1024,7 +1024,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1057,7 +1057,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:16da4971b8a2fff934944b694a63d37b72c7c392eff01be409858af7313766a4",
+        "data_snapshot": "sha256:aad21fc8c4d8a05b038c98e8e7bd0951ed43e037dbaaa74bd4f563e19b899e95",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7b8961d27f84725b211f289ce145688986292186e7f8fea8a6d23154dbe1a16d"
       },
@@ -1088,7 +1088,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1131,7 +1131,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1164,7 +1164,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f38c3fca610d5d2e2e69a73074f166abd9f10e33a2448b04380650502a6b5d59",
+        "data_snapshot": "sha256:debe59bac8ae5407ffd0f0c79a742d90b731321c0576fb257e1fa6ad8470b9b5",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d2658a3db1c29c65c0ceafd538b234e4b5e647cef85a5e512875f3b35e5e2434"
       },
@@ -1193,7 +1193,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1236,7 +1236,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1269,7 +1269,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:269c87eed368e5289ea8303883a92bf2db225aa651b4aa68597e385c92d953a0",
+        "data_snapshot": "sha256:9b2013c81c985e37bc427fe5be7f9dcf5edda32801ffe1bdabfebc63712de586",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaaadd88ac528e6fe1aa334d4dcb462515d9b93f319be05cd53b3137cc758625"
       },
@@ -1300,7 +1300,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1343,7 +1343,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1376,7 +1376,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:5e6010857e7f21b23380cde7d6d5129620476ead4dc0d1246adaf1498c59d596",
+        "data_snapshot": "sha256:523eea18fe972a5cfc8e42259e33b35643d972369792549354340379d913c98c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:1f21a82db056d05660396aabd3e5783aad6c3e046acea3c67b94828c06ac390f"
       },
@@ -1406,7 +1406,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1449,7 +1449,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1482,7 +1482,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:793e837921031163782db3f4dab5d62f65fcdb1477e72fe170b61b564ff6e4eb",
+        "data_snapshot": "sha256:99c56ec9b30e700ab16ec7e7a10258b884e9cba8c2cd94820bd33182c7eac092",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e746a66676fce26c63eda779186a1d9401287443086f2f1ef3e8e2e4957d1915"
       },
@@ -1511,7 +1511,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1554,7 +1554,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1587,7 +1587,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:22db2c28875f895a89da4ec607baeb6d3524f3ff178294badff46f389923ca7d",
+        "data_snapshot": "sha256:0f93bb3718f24d73d54ae5ad9be1c4685e9ee48b8b44fed5e0e2c6b053f98ae0",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3cec85ea847b5391928f0689176a9ca7c1fec7d763b5512ea92a1903df533895"
       },
@@ -1617,7 +1617,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1660,7 +1660,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1693,7 +1693,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:36c99860d9d323356edf5b1054e28d62145744bee4fa3e507acb698f88f2e11e",
+        "data_snapshot": "sha256:2fd48e99142959382b3f5966e4101cd28bd263df2a736fd2fe0c637ece57f163",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:b1ad46cd377ce8b0d46c982b35f21635c19881b9fb03e1d07acc7a004f158332"
       },
@@ -1724,7 +1724,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1767,7 +1767,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1800,7 +1800,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:680cf7e2a707aa3b77de94ae587f61d90b6224478eabc1e8ccc6da1b3b01bfbb",
+        "data_snapshot": "sha256:5e454e80eec0ffc1065cb305e3051ae5bc29a918bbc60ee840a7ed8aad4d00bc",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d53a0013e65ab7f9777f4c6e9987a1ac74d97bab57a58189c6f6f1b421cc30f8"
       },
@@ -1830,7 +1830,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1873,7 +1873,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1906,7 +1906,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:5e7dfbcea4f92db6d0d2607cb2ec03c854d570e20ed5c74bcad18ba172676969",
+        "data_snapshot": "sha256:e9bd4bd8a29dd862a0befa4e24012eefe1998378a5d4e79c9e0e97358d386ae8",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3b1c1d68c02bffe583feaff014c07799c0a1efb3f22ec3173ad68161ec4db4c3"
       },
@@ -1934,7 +1934,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1977,7 +1977,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2010,7 +2010,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ee11a65e3326da9bc99419ed170386620206e14fb7b5d8d54294875e0540bbb1",
+        "data_snapshot": "sha256:f53a4df49dcf5dee66be2cc2cf3a43de03afe35090915e45762bff947db376ec",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c213ce279a0ad57fa4bddac5b3192521ee751436b8586ce967f498e47e39ae06"
       },
@@ -2039,7 +2039,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2082,7 +2082,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2115,7 +2115,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:9849602b903453b384fbb868bffcbc662001dffa55557e27791eea1f22bedaa6",
+        "data_snapshot": "sha256:48619c15fb656e79c6948bf3934450149fb61ed2df44039eee181fbf90c26754",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4e6411bee01a56921c36429b5607e69cb41187e36d8c369cb0b1d2723a9adedc"
       },
@@ -2145,7 +2145,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2188,7 +2188,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2221,7 +2221,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d6f5686e536b8df63da6bb972cf963a9f3d5b0de80d132eb6549f3718e672c11",
+        "data_snapshot": "sha256:c6a254d2a3cc2cde2fc6f39bee0b5a171496194434d7cbaf15af3a3c0bdf8bab",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3ec167739aa37ae9bd3180b97fe2b5590672c4e894064e1e000be2d3f0a14398"
       },
@@ -2251,7 +2251,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2294,7 +2294,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2327,7 +2327,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:06cd3d8f32d219704babfcb8e2387082dde47fe66d144dbd2fd7479bc27d5474",
+        "data_snapshot": "sha256:f0b4bd564847dca6604d3b788c1fbf329305d3744dd2cab6773bdeee7c70909a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:9a7194788f761833bead8e6c14682dc93634f4e5b94136ce46d50b3f338466cf"
       },
@@ -2356,7 +2356,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2399,7 +2399,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2432,7 +2432,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1c10849891008d99057f88f32940413eb7e447a7fc7137d124779dbdbe663468",
+        "data_snapshot": "sha256:f750f282713314ffbd8357c7a15ee948ed6325027244678120597e0e3f16dbd1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:29a4a53a6004ee7fd05583af0ceabec99d6e3f951c78cdbde225dfc464182e19"
       },
@@ -2461,7 +2461,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2504,7 +2504,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2537,7 +2537,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3b4e4309bd2597ab727ecfd1ad0607e45169e8807cb3dfa023381fd3eb01bb32",
+        "data_snapshot": "sha256:71432986d8b416b4fe220bb1cd8c29369deeb4ebb18a5910519ab7b6a0498839",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:98df9f7298a19634a2d30e912ad6e2c55709a117b452bf0206f0671f768dd94a"
       },
@@ -2567,7 +2567,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2610,7 +2610,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2643,7 +2643,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f7285e5cd6aba138cb1d530a66e81e2d4111ef9b7abb026a2c61ed48ade353fd",
+        "data_snapshot": "sha256:1057836303bd188bb2ff25d73e299e9ed5a6f1f8a0f9bb75b5fd11b1da920767",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0da93a6aa8f7f785a5c06637d1f29431cc6b22e8df80fbafab123dbb1f2c8e16"
       },
@@ -2673,7 +2673,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2716,7 +2716,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2749,7 +2749,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f47201ff812071cbf5ad8e3d4aa3ef7456c097207510c7897ee45021e81dfb18",
+        "data_snapshot": "sha256:ef7156c92f6feff2cffd5a2847ca9dbc07f3b269791dc130d59a55421f38c533",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:279961a0cb814efea25f9a80c7008d224e048b5281ec4ad0622eb59f8683ff4d"
       },
@@ -2779,7 +2779,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2822,7 +2822,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2855,7 +2855,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c6ddb872f893703ea3af020fbf540800896fca26f1bf6f6d26aed851fd5ab9ae",
+        "data_snapshot": "sha256:e544328efed6cf52874d28646665c002f6f2f2d0373ee4d7b076c5bf2d64b3d3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0069c4f1a28de4ddab550c3f2e051343d31504981664bf6149a7d79400e7f6e4"
       },
@@ -2885,7 +2885,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2928,7 +2928,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2961,7 +2961,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:332f4a70fc2dd8169ddee3652d73989cc94204ab361a34c25a9b49c48097885b",
+        "data_snapshot": "sha256:96d0464e5c4137d45004d16ea4d6e6162cbe94db92398dae932ea74597ecbf21",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:5ad10b413111ca136240f3f80d8b44e943ce27528ecd4486b9828bee1d0487d5"
       },
@@ -2991,7 +2991,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3034,7 +3034,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3067,7 +3067,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2f69d22dbb85e98b2e1d9a2eb7530269ed1ec6b87b1851b621e821d0bef1aa43",
+        "data_snapshot": "sha256:2c294e6f61dc18f976b93f357595322edd2054fc0e1a606193b9f3f8870ba294",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:5c40ec9dda99ef632c908bc5f0a81d36e8f59230e9cce26d1a9e7fb208d1b8c9"
       },
@@ -3097,7 +3097,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3140,7 +3140,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3173,7 +3173,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:29ab68cb70c3070ca8424be06633875ad86319335ebe9d7ec08b35cfac4ab1db",
+        "data_snapshot": "sha256:58e8c41adc1eeab78b6cd0dc24aab0451f61606e518848d27ec335bb740913e9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7753c88c05d7b9d6178820e1b8912b334e2a7b8476c7fbeb86d118912cf815da"
       },
@@ -3203,7 +3203,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3246,7 +3246,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3279,7 +3279,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:138c92f49139a8fde261c741fb09df16bbd373623a4e8465cc195de5ebb14e9e",
+        "data_snapshot": "sha256:f3fff579dc8e542a23beaa06f1dbb89b565268b56dfc10d86fadde49288e5455",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:759a38ba6e2f6b02177ca9113d58782c3639ea17ba56d86c128867bffbffb7e2"
       },
@@ -3309,7 +3309,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3352,7 +3352,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3385,7 +3385,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7a7272723a3b782d501c7d4a1731444840a20484bf06d62a80e4a6cb9ecb76ee",
+        "data_snapshot": "sha256:ed7530995da68f71ecaec40c32bc88f373551c22f56a7a6d32e78f773ba3b0ee",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bba42b897d08a442b5ece0e5d13cc01e66f8807ed9ad77dc14b0b68ae06b7063"
       },
@@ -3413,7 +3413,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3456,7 +3456,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3489,7 +3489,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a25f4b52c692c83747a7e067c88ecd4e7e5c204f6713c87980062cb798b775d0",
+        "data_snapshot": "sha256:e55cd1c307259c2ca87b6cde41c19b470c39a4973f79bbf9b084069283cd8769",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:65c80fde4b4ef43a690443f4bbd0cec953bb624dd5f6f8baaa3db52d4433e09a"
       },
@@ -3518,7 +3518,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3561,7 +3561,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3594,7 +3594,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e8349107ca5d1bb6d2eea073cbb48e5b60d68d47cf23ada2b4941a373ed03a81",
+        "data_snapshot": "sha256:c392a3eba34bda5c228b4d376ed976f26ad7451f450cac50eeaa98a6fd207289",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aa56be21eadda8bd6e13b734c16fbe1b1ee1f815f0beb0b7e4bf87e9236f49d8"
       },
@@ -3624,7 +3624,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3667,7 +3667,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3700,7 +3700,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:b2c6d4ab9762d2270fd21d2620e7e840206ecaecf879b887a180c44671568f78",
+        "data_snapshot": "sha256:6e6561efea28cb41c88774b522ac80c8f18c794ea2796d7e0f23b52fefbd5483",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7436d9211c7dbff33d3fabc5be27a5a3193fd8021cf5de549f2b8c08aa112f48"
       },
@@ -3730,7 +3730,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3773,7 +3773,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3806,7 +3806,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:77bed4332482271b6a4b9e4b3451de7189b77680b8ba139e89c47081e45951a3",
+        "data_snapshot": "sha256:a2d692e81db6f3d4ae2b359a985ec6b6a99fb0a6c71dcb1eb2e876b3b6f8f7fb",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4b6e281b375ce960e709b16db07d0e259bb221a0a8db3f57d6bf1f0329f76ac9"
       },
@@ -3836,7 +3836,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3879,7 +3879,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3912,7 +3912,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:debfc517ef75f9e3c2ea45b5dd4895a331c9fc86e7885578e963daff3cdb15dd",
+        "data_snapshot": "sha256:a213bebcfc0fd557cffa88d7d8a72f00e7f58ca32210e952ecf8bef0cbc88c9c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fe46209fe86de69aacdda108fdc7f493c68c9850049244766ffffae3a00200ec"
       },
@@ -3941,7 +3941,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3984,7 +3984,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4017,7 +4017,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c9acaa452fcd8235a0273e32b0c1d39d3e062dd945f1d94e5a08f46abc40bed9",
+        "data_snapshot": "sha256:ba34ccef5554016ed25c5c60e654dc71e7fc3b6e62b8303ce2e596c791092b79",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f962b060e0668d906ae17e690c11a8fddcc37cea18744f4d6e6bcce585696c49"
       },
@@ -4046,7 +4046,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4089,7 +4089,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4122,7 +4122,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:5e1aad95583dfcf25e5a4c0df23c16b17c4db2d8cad930253bf441a445dbe8b5",
+        "data_snapshot": "sha256:70b6c8815fa3b44dda1bcb5aeaed171325510196212b799278afa43761d86e81",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:11524d17171c22452d3aaf69fbbd454c7ea5b610e9f292a7b9b13f13f8f8a9ac"
       },
@@ -4152,7 +4152,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4195,7 +4195,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4228,7 +4228,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:cb003107262c1fca64e2061b6358c1f07a6fd4ce661d2b90fec698f3aca30bc9",
+        "data_snapshot": "sha256:767aef5887a5c9e7462d13ad195ed81ea0a9ef42fa8774de4eaf6908da2dc214",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4889d2d5ec0339d8cae43982cc2a7c658cd51b5f9fa38d2a036664c0a8ae6817"
       },
@@ -4258,7 +4258,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4301,7 +4301,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4334,7 +4334,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a67a629da7d6da757ef217ccd39cf8b3ef83e161ec829dfc6038f8cbf0ff85aa",
+        "data_snapshot": "sha256:a64489205b43d1a7f2b0fb70cd37ce833cb19006c70d0a4d94e8d9e154cd4bb9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:cfeecabd92b258a6c3bacf19d0ac30fc749b5cf29a955184824cd4ff10741e0a"
       },
@@ -4364,7 +4364,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4407,7 +4407,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4440,7 +4440,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e3a402435f3a71a1d4525e6032b409145cfe4d64478eafe0cecbd2d2f24af34e",
+        "data_snapshot": "sha256:225bafe44712b6f0434a6e4b001a989eda99aaf1196edc36d72a57e386ccb914",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3045006415fcb0b1423338ec2378097c0280233299072b17480d65b6fccfb9e7"
       },
@@ -4469,7 +4469,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4512,7 +4512,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4545,7 +4545,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:546f061c4a9d4c78202905bd8d5fc3e68e71946cc1d22394a155a405f080f691",
+        "data_snapshot": "sha256:51b245a07eab0c3a98cbc516402d3b068fe3ae30a330f869fe43f3209535661d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f943008638b11bedd6cc9f35cef49231ef2926fccbc21c9978060094973b5840"
       },
@@ -4575,7 +4575,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4618,7 +4618,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4651,7 +4651,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:fe4c9d01fcea728c1581710c443186b5866f9865ae282240941ee018ae830bbb",
+        "data_snapshot": "sha256:bebed9970937006955d30661a728ca57d20f788314d4c6cca8023060ded4d070",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaa6e2a1163b8212a8f68a91ac1b8b516f9ba7fb0e5eabf05cfa3da1f5979768"
       },
@@ -4680,7 +4680,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4723,7 +4723,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4756,7 +4756,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:06f2c03c34cc0caaabb941d12d35bba09a0d82a0ef8014c025abcc30add118f9",
+        "data_snapshot": "sha256:6116147323eb20e6f665e80cc87ede045f61e5d4fb1dcfd899618ee77019f316",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f3b237d2e08e55091b72107a271a41c29175ff484da77736f4953bc3dbb0e7d1"
       },
@@ -4786,7 +4786,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4829,7 +4829,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4862,7 +4862,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:9835dd0436845c3ce91b2752c36af4889307e62a6d53c9f9b7cb496d0159af86",
+        "data_snapshot": "sha256:349de871d2fc578ffd612bbb677e8061a08ce5aae6dd3f1cc04654c2133bd4c9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:07b6b22e8af3f0e4f108a6a7ba4cdd752b29983f5fb2368b49f1799a59be80b6"
       },
@@ -4892,7 +4892,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4935,7 +4935,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4968,7 +4968,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d9b6b37d543458865baf5410b3b677edaaf0c2876d6707b013a8117d997c43d7",
+        "data_snapshot": "sha256:64055a5f8d2f243a7c06bcbcdf6b8e710ee43ef13a4a536edbb42b690d7057a4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8e456f4106527f4c594eb7b97d29949ca430cdc609f1865a2de254213b51d8c9"
       },
@@ -4997,7 +4997,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5040,7 +5040,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5073,7 +5073,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c6a878d485259380ea8a09a6b22fa8c4c9156cddd1e50eda3319a321cb2f99d8",
+        "data_snapshot": "sha256:2fe150c1329ac69549a3772de17705a69b20ea7fcde3f28b14e71f7eed694ed3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:cbdeb4b281a2c1e4fd65df54445df99f42e83a256187a4a858e89ea1deb76205"
       },
@@ -5103,7 +5103,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5146,7 +5146,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5179,7 +5179,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:39c2e08def17f60cf2282eb859b7b18d36d65d139b8e52edb191302f5ad13d4d",
+        "data_snapshot": "sha256:22f447823a1f583ca7f86c86acb6c4c493406983416eddafa91ea7ffc5202930",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e911a07010f91b3af7db6ac5477ca03a4f6687c3f0482b297d2c19f01e59e860"
       },
@@ -5209,7 +5209,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5252,7 +5252,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5285,7 +5285,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7ccec5ac7e539050fb7e83efb62d44fe611c412bbc7e8dca573e3302c5fcb7aa",
+        "data_snapshot": "sha256:857b5efab3bb3a690aa5654fe919e05eaf089a2f0ffcf6219141cf388ce5c496",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:149604679b8d9c823f62637a4cd7de05cce4cdad8a5b88319d299e2e075100d5"
       },
@@ -5314,7 +5314,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5357,7 +5357,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5390,7 +5390,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f0f7f5892d9f21b070197c89dafac9dd0346aecc69a969754893e18019728cfa",
+        "data_snapshot": "sha256:638fbb0a6ad51efafd061a1f7cd4ae2361f004ff8f2b43595f5dbeb0751638f2",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fc42267a5a39a14e6924d629ab972a6c5504ff29b602fa0c0ecba70b1772e0af"
       },
@@ -5419,7 +5419,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5462,7 +5462,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5495,7 +5495,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:8bfe61e6b3a4407cff10b5656fecf1bb9e4a470607bbad0ab0eb1f0721e8d028",
+        "data_snapshot": "sha256:f8d292babb387f6b0448c4e0e5f81e917b2da9019804fb1adf60fa3f94d72199",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aa6f4b962e23e331e20320bfc1d7080c547659457a25b32ddbce67ff940ddf22"
       },
@@ -5525,7 +5525,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5568,7 +5568,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5601,7 +5601,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:748ee726993a07033ccafc0daaf1996ddf52c5d2552ace2c3a4a78f75d352482",
+        "data_snapshot": "sha256:a3a6a4a2dfd72297ed952cb5d9588e8cd9cbf2b9675bf8d0c7a8da3066cbfc34",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a531e9413158394f1512802a32d483b0e80852e44b5ff1f54b7513a47860f2ff"
       },
@@ -5631,7 +5631,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5674,7 +5674,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5707,7 +5707,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:cfac536936c083bc77605998e1e4371b1a28d42b305fafd8dee9cb900126102d",
+        "data_snapshot": "sha256:944a35e1bf9f86fd61d032596d1041defad6c264752fc9763992d2b78de0006b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ec2b4b82bf1b438d23db10da5703bbc13c201ea0cd2ecbaea16e6f91e5e35782"
       },
@@ -5737,7 +5737,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5780,7 +5780,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5813,7 +5813,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:33980ded02ca7f646419697010fa7a92f6ddab68c5e757cb699814ef2398a4ee",
+        "data_snapshot": "sha256:fd0456552c4f6f73fcbe7ac6b4efdb122f199dfb577288d4b12eb039ce9dcfcf",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:927f39a215a588c52b58dd719ad1a3ef2aa995c04b57f2a937bf9e04ca542a42"
       },
@@ -5843,7 +5843,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5886,7 +5886,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5919,7 +5919,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:de472be5b66d86618b9101ac7a564cd67c901c0ee768dfb34ef51ddd0d41cae3",
+        "data_snapshot": "sha256:7953b5ed3eb97c32e512bc34652bf2819e790228c9d969a92983540051e52fb1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:2fcc7f74e2f8061d58e1ad9cc3a76dc65978741ea7164282b85cf21bf2dac8fa"
       },
@@ -5949,7 +5949,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5992,7 +5992,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6025,7 +6025,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:8351184139724e8eaecb1b04349e36926065695de203b9b9939d975671088f07",
+        "data_snapshot": "sha256:e94bbdb92b6c8ae87e47c3def722f595b2e1289ed7babfba024cb9f24f41b8a7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:6fb8ee2e4e1d79957d7b731a09a4e7393f14ca30019722de4da4e29cbb6bc47b"
       },
@@ -6055,7 +6055,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6098,7 +6098,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6131,7 +6131,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d5296b71c20d012fc9f19b3beb795efba9a226cf0d3f8df79e296e9c5dc2b4b8",
+        "data_snapshot": "sha256:4951f850ff37f1359b59072f227b8576539d2feb49dca3e12cdcf8bed2c6434b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:46afab5a145b835df5c621b4cf96d95fff47c4297086bb09b460b4d25bdbc598"
       },
@@ -6161,7 +6161,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6204,7 +6204,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6237,7 +6237,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:6ea0eb2d5f9e63f072cd90ad799f6b9a4faad75117a4e2ad04db251910dc6784",
+        "data_snapshot": "sha256:e467ce5bcdd31a9e9de61502fe3bc3e15e4c6b8fd9d1e041a6be6360e0282c96",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4bf44491d990fd965001d72d4e459f1d09066fde3052b90fa65fc275f4301d6a"
       },
@@ -6266,7 +6266,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6309,7 +6309,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6342,7 +6342,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3616b4ed9fa3e4da630347a9c2c6f9a349b168f0f0b9b22eced2e49ca38f5783",
+        "data_snapshot": "sha256:21ee8c82fef8a7a8cf575305d16a5805d065d9680f1e45e0ba1c87b53097af16",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8dfcf8edc8f0c076f9b5aed590af8ca4af035808915f95ee6ac292b9c2daff98"
       },
@@ -6370,7 +6370,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6413,7 +6413,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6446,7 +6446,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c8faea0c16872a61406ae0a2ee42d9032f61d323c70fa34d37ceeaea1e865195",
+        "data_snapshot": "sha256:9c28a87fe0c24b87c57ba284ca5caf8106c1ae312b049cef1175e8a924b5a6e4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7a07f8ef65da9ce7ce1aeb802f64dd814d87fda7a504dea4d6e71046c6e3fd9a"
       },
@@ -6474,7 +6474,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6517,7 +6517,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6550,7 +6550,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c6675dc0a7375b2b760a1c1d13ae52e13356e5006b8dea4020e5ebfc307d2024",
+        "data_snapshot": "sha256:0ba453bb74fa040b6260cbc9c013843f407bec4774bc407ac222adabfd983e50",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaaca0708c1202415fe67dda2aa272a1db288636cd99c50f1d96e5159a48b8d9"
       },
@@ -6580,7 +6580,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6623,7 +6623,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6656,7 +6656,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1d1b98d0de22b07f327142b223191737d91eec1fbbed2e93def934295479557d",
+        "data_snapshot": "sha256:e45b84530b03f74043ab4b4f3c6cbecc3fc2487d023335e84a888ac9164f7cdd",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4f982cd86375feb2a006d4c818c8924c643ad84f615a59d7f32cbf9ab33c68f8"
       },
@@ -6686,7 +6686,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6729,7 +6729,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6762,7 +6762,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1fe5e8440a74074d5237f9adda9b3197a64c7aa8d18ac8b8c71322d3afdba0ce",
+        "data_snapshot": "sha256:e9057c4134026a0af98455465775274f271d1a555213b8dafd8064f9e455d257",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bab1c7b255bbeab0080a2a799215da00222f17fba92ea437a58e30ecf1483b9b"
       },
@@ -6792,7 +6792,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6835,7 +6835,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6868,7 +6868,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ae6dbcf93ce698905ba59e763cb5b70fce30e104cb18f07fd5aa6e876c28e4cc",
+        "data_snapshot": "sha256:c9b15b3b524a14c87041cd08ceb0ce2555c88a77661c1a7814894a7931ddf31b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:169f441f2176dd9adf79bd36a24340ccfd5b18ed404e4a732d6a7c05f340cd10"
       },
@@ -6898,7 +6898,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6941,7 +6941,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6974,7 +6974,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f7cef5270308082a45f1b560a8e0cc91aabd096c9d0badd559e8391d96021063",
+        "data_snapshot": "sha256:cfc2f9afff7e22f7644488a4b914fbb66791121f419b5ff62ac43ee1cb1aaeba",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c334f36f2b1b22e8632300c5e9948ae5cbe82fd2d38825cab552f4faf9947e44"
       },
@@ -7004,7 +7004,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7047,7 +7047,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7080,7 +7080,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f1ed803275b25db20cf2a15693aac4764da7a6fece03c9c2e1e03b3b0c5d391e",
+        "data_snapshot": "sha256:f03f975d26881621b781f82ff17019f708c3991bd9a11e224a5784a476918276",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f91753df2d5fb432b93758e9b9ce8e6c71f0c17ff0bf0adf129438a4d1f4ffdd"
       },
@@ -7110,7 +7110,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7153,7 +7153,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7186,7 +7186,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e4207414015cd22f0290eb69fed44ba2aa58493a0e5dc07791b1bd7603a0462e",
+        "data_snapshot": "sha256:6017c0cf99347968b0ac64cd61b8c324044f2067afa64216b7429ec794ba3a77",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e9c329249775f576b7091117b37f436fd1645ef9bb23fb02f752826947401fd5"
       },
@@ -7215,7 +7215,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7258,7 +7258,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7291,7 +7291,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:8529f9fe5118674f553452e99819dccfa30bd77498e77e28730d594ea86dc094",
+        "data_snapshot": "sha256:8e8345e91db4b8c6131ab84ab62b71b09a597924ee31a56c710647b989048f6b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:66f5ad8c556dedb0c5be0b4944498e64e6b423d6af7334c3fb20574e145d5693"
       },
@@ -7320,7 +7320,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7363,7 +7363,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7396,7 +7396,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3f1506f1fedef9f80d51749366af98b0042b67aa35998a70e59d8e9c8e8173f9",
+        "data_snapshot": "sha256:84138f6a1d3e7072e709a327bbfa6d8d5bb6c5182d3055845618193ebe17775f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d7b3bb8bccbdeef08a57c34c3ccbbe67f2556278a27771280da46d110cb25078"
       },
@@ -7425,7 +7425,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7468,7 +7468,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7501,7 +7501,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2df99bda941b5904c6f70b8dab01a48feb26cacf963bb48af8df6c8f2d50b034",
+        "data_snapshot": "sha256:b394463b50623d8a58d4fccf516f8fa2a1ee1ff19e01e683e0596558471466b4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ac2ef8d27c16b9b0f8c1f674d5b705fcd7af9f710c2a359649ec9979b47b3795"
       },
@@ -7531,7 +7531,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7574,7 +7574,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7607,7 +7607,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:9d5174a3df43c4984f9228cf85b8eafc2b0eb897fb0ddc05e6b963ab75e40f11",
+        "data_snapshot": "sha256:1e8c1973e75ab189f7528aafeff7e93874ecb1d03c01aaf37174c26d09700e2a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:000cfdeefa0e72b975b7fd15684684fa534327a544702b39f10d90016091b3de"
       },
@@ -7637,7 +7637,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7680,7 +7680,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7713,7 +7713,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7601886324e730efd0a410ac0f08778e11e9cf66259d05c03519b012bccb37f4",
+        "data_snapshot": "sha256:f4d5c04c1ed570a8f3da2e0bbcf378b413848c8ea0842a60f284035a35ec88a8",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8866ebddbd0626b153741bc0372484fc819f9e755e7c6ece8a8eb266b1214c9c"
       },
@@ -7743,7 +7743,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7786,7 +7786,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7819,7 +7819,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d79cf3d4e1599723f14e223046701519894d70b2bd69beec3573428dfffb2188",
+        "data_snapshot": "sha256:70ca0836cbab2ac1edb8b2d055d48a67968ba1908dd5bafabe098fc5e69d28ed",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:2b545b28eba57efe9913d519f150b1b9c096443df30b4c39e60d8a30585b92c8"
       },
@@ -7849,7 +7849,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7892,7 +7892,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7925,7 +7925,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f05a9d1e0341bcd78590054c26105e713325aca64790af3ad57f61db77135d0b",
+        "data_snapshot": "sha256:6a9203b3009fd17411fafdfe846df4ab105eb1127d93d069152d4d2ba87fe967",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c7e72ea296cdf1e18fa9ae2256df33115cec51a913b45065edca18be5ddf7091"
       },
@@ -7954,7 +7954,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7997,7 +7997,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8030,7 +8030,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1fdf6d4461058b5fecd2a38615f48f4acf20230ea6b2f353bc09b2cfc5a5c94c",
+        "data_snapshot": "sha256:5dbcf5b1292dfd2b14c5c964f3a5477ebdc45eba36cce14ced97f8fd3a854d5a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3efe9d814702eea366e210900e123c17bd0b0fb118bac789eb5801a2257bcedd"
       },
@@ -8060,7 +8060,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8103,7 +8103,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8136,7 +8136,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:4cea6dd0bd3f04359118079a76aac2b733dd7b04b10f9f6c39869816dcfd2531",
+        "data_snapshot": "sha256:5bb432309834723269bcfd4e8a044a2723d7c77d04a2d4e8992cf2b3063b70b8",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f5ad02409f33fb6a8c7dc0661b22bfbfbee970140debca0f96cb9a2016ef92e8"
       },
@@ -8165,7 +8165,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8208,7 +8208,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8241,7 +8241,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:6206605abfb6c39c168f57b21801618fdff5e2c507f5ae6e97b80876cce300e6",
+        "data_snapshot": "sha256:20abd4199c048ba78164aaafd413c1988653ca4da79caa6b08d5d5c615fce01c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a150edb8632aa17517fd2c8e3c793d1fd6dd9be65a8880bd14c553b877523077"
       },
@@ -8271,7 +8271,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8314,7 +8314,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8347,7 +8347,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e898988592b1b97ee9b24f26fe81a03596d09e69c659917e01661614986d8fad",
+        "data_snapshot": "sha256:5f54a542213a1fcd4e9fa731fed5b7c37671cc6cc9a85c718b13d1f588830631",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bc41cdf97aa7f0995dcab1734bb05946d3c44a5266f219065dd193c7d422fea7"
       },
@@ -8376,7 +8376,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8419,7 +8419,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8452,7 +8452,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0453d172f44eecbb8301008f04c0c24a37c5f3ba4c0ced4dc382d3bcdc2f6fbd",
+        "data_snapshot": "sha256:5d1f520aa236cbb8728afe8197dd0529c9b2e0312115cb58c09cc51614d163c4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:1862218e9362fb518a5ffcd9e45b3a06e0adb5268b2eddec4969eb312a1c52ad"
       },
@@ -8481,7 +8481,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-20T04:05:58Z",
+      "available_at": "2026-08-20T08:10:44Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8524,7 +8524,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-22T04:05:58Z",
+      "expires_at": "2026-08-22T08:10:44Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8557,7 +8557,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0d37868ce3e539d89037d2f72ba3787acd4fbb2f122ae7d6597f596e5ff96a39",
+        "data_snapshot": "sha256:f8f9fb89f2abccfc65c5bf1b90d41be1c61e6e0025281b27e94138589d5980d1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:97d300f9207c69c77886ccfd1c31de7a09d92ea8be26c12a6f89cc3408240472"
       },

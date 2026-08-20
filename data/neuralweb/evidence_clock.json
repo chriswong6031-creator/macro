@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-08-20",
-  "generated_utc": "2026-08-20T05:08:36Z",
+  "generated_utc": "2026-08-20T09:31:23Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 309,
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 16382,
-        "n_past_check_by": 12211
+        "n_open": 17202,
+        "n_past_check_by": 12558
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 16382,
-        "n_past_check_by": 12211
+        "n_open": 17202,
+        "n_past_check_by": 12558
       },
       "allowed_actions": [
         "inspect",
@@ -2693,8 +2693,11 @@
       "readiness": {
         "as_of": "2026-08-19",
         "stale_chips": [
+          "market",
           "reliability",
-          "contradictions"
+          "contradictions",
+          "bottom_sensors",
+          "cortex"
         ]
       },
       "allowed_actions": [
@@ -2774,8 +2777,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 54435,
-        "n_with_falsifier": 592,
+        "n_claims": 56092,
+        "n_with_falsifier": 596,
         "falsifier_coverage": "1.1%",
         "blocking_reason": "falsifier coverage 1.1%; not a promotion-grade substrate"
       },
@@ -9439,7 +9442,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 1,
+        "n_open": 2,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9471,7 +9474,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 35,
+        "n_open": 38,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9503,7 +9506,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 10524,
+        "n_open": 10525,
         "n_past_check_by": 0
       },
       "allowed_actions": [
