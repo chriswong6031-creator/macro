@@ -72,10 +72,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The repository keeps generated site releases in Git. The fences
-          # need the commit graph and current tree, not historical site blobs.
+          # The old fetch-depth:0 shape fetched every branch/tag in a repository
+          # with hundreds of stale agent refs, then materialized ~74.5k tracked
+          # paths. 2026-08-20 run 32381887910 spent about an hour here and died
+          # with early EOF / invalid index-pack before a single fence test ran.
+          #
+          # A fence needs only a bounded commit graph plus the files its four
+          # guards actually read. Depth 256 covers ordinary PR ancestry; the live
+          # self-mod step below derives the exact synthetic parents and FAILS
+          # CLOSED if their real merge base is outside this window. No mutable
+          # branch ref is fetched to repair an unprovable ancestry.
           filter: blob:none
-          fetch-depth: 0
+          fetch-depth: 256
+          sparse-checkout: |
+            /.github/
+            /config/
+            /engine/metabolism/
+            /engine/neuralweb/
+            /engine/foresight_leadlag.py
+            /engine/theme_placebo.py
+            /engine/qledger_falsifier.py
+            /lib/
+            /scripts/
+            /templates/
+            /tests/
+            /site/chat.html
+            /data/neuralweb/capability_audit.jsonl
+            /data/metabolism/key_ledger.jsonl
+            /data/metabolism/journal/
+            /data/ai_costs/usage.jsonl
+            /config.yml
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -96,13 +123,26 @@ jobs:
         continue-on-error: true
         # On push events there is no PR head/base; the selftest above already
         # proves the discriminating behaviour, so the live diff check only runs
-        # for pull_request events.
+        # for pull_request events. For a PR, GitHub's tested SHA is a synthetic
+        # two-parent merge. Those exact parents are immutable proof identity; do
+        # not re-fetch mutable main/head refs while making the attribution call.
         if: github.event_name == 'pull_request'
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
+          set -euo pipefail
+          read -r MERGE_SHA TESTED_BASE_SHA SUBJECT_HEAD_SHA EXTRA_PARENT \
+            < <(git rev-list --parents -n 1 "$GITHUB_SHA")
+          if [ "$MERGE_SHA" != "$GITHUB_SHA" ] || [ -z "$TESTED_BASE_SHA" ] || \
+             [ -z "$SUBJECT_HEAD_SHA" ] || [ -n "${EXTRA_PARENT:-}" ]; then
+            echo "::error::self-mod-fence: expected one synthetic merge with exactly two parents — fail-closed." >&2
+            exit 1
+          fi
+          if ! MERGE_BASE=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA"); then
+            echo "::error::self-mod-fence: could not establish exact PR ancestry inside the bounded checkout — fail-closed." >&2
+            exit 1
+          fi
           BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+          TRAILERS=$(git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA")
+          FILES=$(git diff --name-only "$MERGE_BASE" "$SUBJECT_HEAD_SHA")
           if [ -z "$FILES" ]; then
             echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
             exit 1
@@ -114,7 +154,7 @@ jobs:
       - name: self-mod-fence test suite
         id: self_mod_tests
         continue-on-error: true
-        run: python -m pytest tests/test_self_mod_fence.py -q
+        run: python -m pytest tests/test_self_mod_fence.py tests/test_fence_checkout_contract.py -q
 
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         id: capability_selftest
