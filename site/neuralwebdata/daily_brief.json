@@ -1,17 +1,24 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-20T09:31:21.395609+00:00",
+  "produced_at": "2026-08-20T11:45:14.071266+00:00",
   "as_of": "2026-08-19",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
-    "cortex_status": "degraded",
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "cortex_status": "fresh",
+    "tool_call_batches": 4,
+    "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex degraded — model_unavailable"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-08-20T11:39:08+00:00"
   },
   "what_changed": [
+    {
+      "kind": "cortex_status_changed",
+      "id": "cortex",
+      "summary": "cortex status changed: degraded → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
     {
       "kind": "lobe_status_changed",
       "id": "site-china-standouts",
@@ -164,14 +171,7 @@
     {
       "id": "",
       "summary": "contradiction ",
-      "severity": "watch",
-      "delta_vs_prior": "persisting",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json"
-    },
-    {
-      "id": "",
-      "summary": "contradiction ",
-      "severity": "watch",
+      "severity": "info",
       "delta_vs_prior": "persisting",
       "evidence_path": "site/neuralwebdata/confluence_graph.json"
     }
@@ -431,12 +431,6 @@
     ]
   },
   "operator_attention": [
-    {
-      "priority": 1,
-      "area": "cortex",
-      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
-      "action_type": "ops_fix"
-    },
     {
       "priority": 2,
       "area": "cortex-attention-firings",
@@ -796,7 +790,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-08-19T19:25:10Z",
+    "asof": "2026-08-20T10:24:09Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,
