@@ -134,20 +134,20 @@ waves:
     title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; OWNER-ROUTED to D2B2-CN-HK per DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK)
     status: in_progress
     next_action: >
-      OWNER_ROUTED_WAIT (Sol authority adjudication 2026-08-20,
-      DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK): the 2026-08-20 China-lane
-      builder correctly STOPPED at the D2B2 owner collision — its commission's
-      WS:STOCK-IDENTITY / engine/stock_identity/ seam pointer was mistaken, and
-      no China-lane builder runs again. Implementation is owned by the bounded
-      child D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY / Data OS identity
-      authority (frozen contract
-      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md; China/HK
-      slice only, US/Canada unauthorized). This wave is consumer-verifier: at
-      D2B2-CN-HK merge it adopts the owner result by reference (record the
-      immutable merge SHA here) and becomes BUILT_NOT_PROVEN; it flips to done
-      only after a natural production nightly demonstrates real China/HK nodes
-      flowing source -> canonical master -> GMI projection, with run ID and
-      measured CN/HK resolution delta recorded here.
+      BUILT_NOT_PROVEN 2026-08-20 (adopted by reference from the owner child):
+      D2B2-CN-HK (WS:PROPHET-US-V4-RECOVERY, frozen contract
+      research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md) admitted
+      984/1021 (96.4%) cn and 147/147 (100%) hk company nodes into the
+      canonical Data OS master via CNInfo + SFC/HKEX committed primary-source
+      evidence, then re-derived the GMI identity_resolution/v1 sidecar — real
+      China/HK company nodes now resolve through canonical Mastermind ids
+      (co:cn:601398.SS -> SEC:CN-XSHG-601398, co:hk:1398.HK ->
+      SEC:HK-XHKG-01398, etc). PR #6116, branch claude/d2b2-cn-hk (immutable
+      merge SHA to be recorded here once merged — see the owner WS's D2B2
+      handoff for full receipts). This wave flips to done only after a
+      natural production nightly demonstrates real China/HK nodes flowing
+      source -> canonical master -> GMI projection, with run ID and measured
+      CN/HK resolution delta recorded here (not yet observed).
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -178,13 +178,14 @@ next_action: >
   fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291,
   intel_* columns live), rights0 done, p1 BUILT_NOT_PROVEN (#6050 squash
   c54d1b55f673; page half proven live, zero real visit rows yet), pr0d
-  OWNER_ROUTED_WAIT on D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY
-  (DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK; no China-lane identity
-  builder). Next in this WS: (1) P1 data-half proof — the first asia-close
-  run persisting >=1 real institutional_visit row + production dossier
-  desktop/mobile crops (never manufacture a run; RECEIPT_NOT_YET_ACCRUED
-  leaves the wave BUILT_NOT_PROVEN); (2) adopt
-  the D2B2-CN-HK result by reference when the owner child merges. Completion
+  BUILT_NOT_PROVEN, adopted by reference from D2B2-CN-HK under
+  WS:PROPHET-US-V4-RECOVERY (PR #6116, branch claude/d2b2-cn-hk; CN 0->96.4%
+  / HK 0->100% GMI resolution). Next in this WS: (1) P1 data-half proof — the
+  first asia-close run persisting >=1 real institutional_visit row +
+  production dossier desktop/mobile crops (never manufacture a run;
+  RECEIPT_NOT_YET_ACCRUED leaves the wave BUILT_NOT_PROVEN); (2) record the
+  D2B2-CN-HK immutable merge SHA + the first natural nightly's proof (run id
+  + resolution delta) once observed, flipping pr0d to done. Completion
   law on every build wave: merge = BUILT_NOT_PROVEN; a real production
   receipt (recorded here, immutable merge SHAs) = done. Do NOT start P1B,
   L0, R1, R2, or later verticals without a new Sol directive. Later tracks

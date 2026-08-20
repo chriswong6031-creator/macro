@@ -98,6 +98,8 @@ from lib.dataos.identity import (  # noqa: E402
     ListingKey,
     VendorAliasTable,
     issuer_id,
+    normalize_cn_symbol,
+    normalize_hk_symbol,
     parse_listing_key,
     security_id,
 )
@@ -128,6 +130,22 @@ CIK_MAP_DIR = ROOT / "data" / "symbol_directory" / "cik_map"
 #: Operator-ratified CIKs allowed to form a NEW multi-member issuer group (V4-D2B1
 #: FIX 5 / M3) — see :func:`_load_issuer_group_allowlist`.
 ISSUER_GROUP_ALLOWLIST_PATH = ROOT / "config" / "issuer_group_allowlist.yml"
+
+#: V4-D2B2-CN-HK — the China/HK company-node TARGET POPULATION.  Read-only, upstream
+#: graph truth (never `data/theme_graph/identity_resolution.parquet`, the DERIVED
+#: sidecar — the master must stay upstream of that sidecar, and reading it here would
+#: invert the dependency).  See :func:`load_cn_hk_seeds`.
+THEME_GRAPH_NODES_PATH = ROOT / "data" / "theme_graph" / "nodes.parquet"
+#: China A-share primary-source EXISTENCE evidence — CNInfo (巨潮资讯网), the
+#: CSRC/exchange-designated official disclosure platform for SSE+SZSE
+#: (`collectors/china_filings.py`).  See :func:`load_cninfo_evidence`.
+CHINA_FILINGS_PATH = ROOT / "data" / "china_filings" / "filings.parquet"
+#: HK primary-source EXISTENCE evidence — SFC (Securities and Futures Commission,
+#: HK's statutory regulator) official Short Position Reports, and HKEX's own
+#: published turnover statistics (`collectors/hk_shorts.py`).  See
+#: :func:`load_hk_shorts_evidence`.
+HK_SHORTS_POSITIONS_PATH = ROOT / "data" / "hk_shorts" / "positions.parquet"
+HK_SHORTS_TURNOVER_PATH = ROOT / "data" / "hk_shorts" / "turnover.parquet"
 
 #: The exact column order written to each artifact.  These are the ``schema:`` keys of
 #: ``reference.security_master`` / ``reference.vendor_aliases`` in
@@ -277,6 +295,16 @@ VENDOR_YAHOO_FETCH = "yahoo_fetch"
 #: `data/baskets/ohlcv/` and `data/signal_archive/` rows written after a rename are all
 #: keyed here, which is why a dedup over the archive has to ask THIS space, not `ledger`.
 VENDOR_STORE = "store"
+
+#: V4-D2B2-CN-HK — current-catalog space carrying the GMI node's OWN suffix-qualified
+#: symbol spelling (``"000001.SZ"``, ``"1398.HK"``) exactly as ``source_native_symbol``
+#: carries it (``engine/theme_graph/identity_resolution.py::_best_effort_symbol``).
+#: The master's ``inception_code`` for CN/HK is always the BARE code (spec §3.1: CN 6
+#: digits no suffix, HK 5 digits zero-padded), which never string-equals the suffixed
+#: spelling — so every CN/HK resolution in ``gmi.identity_resolution/v1`` goes through
+#: D2A rule 6 (``join_method=vendor_alias``), never rule 5's exact inception-code
+#: match.  See :func:`mint_cn_hk_rows`.
+VENDOR_THEME_GRAPH_NATIVE = "theme_graph_native"
 
 # ── Venue authority ───────────────────────────────────────────────────────────
 #: otherlisted.txt single-character exchange codes, per the legend the collector that
@@ -1077,6 +1105,291 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
     for row in rows:
         unique[(row.vendor, row.vendor_symbol, row.security_id, row.valid_from, row.valid_to)] = row
     return [unique[k] for k in sorted(unique, key=lambda k: (k[0], k[1], k[2], str(k[3]), str(k[4])))]
+
+
+# ── V4-D2B2-CN-HK — China/HK canonical identity admission ──────────────────────
+# Sol (AI CEO) authorized exactly this one bounded child of V4-D2 (Data OS identity):
+# admit the current source-supported China/HK listing population into THIS canonical
+# builder, or return a typed refusal for every targeted object.
+# `research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md` is the binding
+# spec.  Deliberately a SEPARATE, additive stage rather than an extension of the
+# US-shaped `resolve_universe`/`mint_master_rows` pipeline above: CN/HK has no
+# membership.json-shaped universe seed, no rename-event history modelled (current-
+# identity semantics only, boundary 7) and — this era — no issuer-evidence class
+# (boundary 4/6: every new row mints `issuer_state=None`, exactly like a brand-new US
+# row, and is settled to `NO_ISSUER_EVIDENCE` by the EXISTING `apply_issuer_correction`
+# pass the caller already runs over the full row set; no CN/HK issuer-grouping
+# evidence is introduced, so A/H pairs and SOE siblings never get grouped absent
+# deterministic evidence — there is none here, by design).
+
+
+def _parse_cn_hk_company_node_id(node_id: str) -> tuple[str, str] | None:
+    """``"co:cn:000001.SZ"`` -> ``("cn", "000001.SZ")``; ``None`` if not a cn/hk
+    company node id.
+
+    Mirrors, but deliberately does NOT import, the D2A sidecar's own node-id split
+    (``engine/theme_graph/identity_resolution.py::_best_effort_market`` /
+    ``::_best_effort_symbol``, ``co:<market>:<SYMBOL>[#<epoch>]``): this builder is
+    UPSTREAM of that sidecar (master -> sidecar, never the reverse), so importing
+    from ``engine/theme_graph`` here would invert the dependency.  Same "no shared
+    parser exists, write ONE clean split" discipline the D2A spec itself states.
+    """
+    parts = str(node_id or "").split(":", 2)
+    if len(parts) != 3 or parts[0] != "co" or parts[1] not in ("cn", "hk"):
+        return None
+    symbol = parts[2].split("#", 1)[0].strip().upper()
+    return (parts[1], symbol) if symbol else None
+
+
+def load_cn_hk_seeds() -> list[dict]:
+    """The China/HK company-node TARGET POPULATION (V4-D2B2-CN-HK boundary 1: the
+    child's target N is its own start-pin census, not the 1,868-total observation).
+
+    Reads ``data/theme_graph/nodes.parquet`` — upstream graph truth, never
+    ``data/theme_graph/identity_resolution.parquet`` (the DERIVED sidecar; reading it
+    here would invert the master/sidecar dependency).  This is this stage's SEEDS,
+    parallel in role to :func:`load_universe` for the US stage, but sourced from the
+    graph's own company population: no CN/HK-shaped ``membership.json`` /
+    ``constituents.parquet`` universe seed exists in this repo.
+
+    Returns every ``kind == "company"`` node whose market is cn/hk, REGARDLESS of
+    current resolution state — mint-once idempotency in :func:`mint_cn_hk_rows`
+    (an already-minted listing key is skipped) makes it safe to pass the full
+    population on every run rather than re-deriving "still unresolved" here.
+    """
+    if not THEME_GRAPH_NODES_PATH.exists():
+        return []
+    import pandas as pd  # local import — this module otherwise has no pandas dep
+
+    df = pd.read_parquet(THEME_GRAPH_NODES_PATH, columns=["node_id", "kind", "market_scope"])
+    out: list[dict] = []
+    for node_id, kind, market_scope in zip(df["node_id"], df["kind"], df["market_scope"]):
+        if str(kind) != "company":
+            continue
+        parsed = _parse_cn_hk_company_node_id(str(node_id))
+        if parsed is None:
+            continue
+        market, symbol = parsed
+        if str(market_scope) != market:
+            continue  # defensive: node's own declared market_scope must agree
+        out.append({"node_id": str(node_id), "market": market, "symbol": symbol})
+    return sorted(out, key=lambda r: r["node_id"])
+
+
+def load_cninfo_evidence() -> tuple[dict[str, dict], str | None]:
+    """China A-share primary-source EXISTENCE evidence (boundary 5: primary sources
+    only — exchanges, CNInfo/HKEX, GLEIF, lawful official registries; explicitly no
+    Tushare/Qichacha/Tianyancha/Wind/purchased resolver, CN-B #5947 NO-BUY).
+
+    ``data/china_filings/filings.parquet`` is ``collectors/china_filings.py``'s
+    committed accrual of CNInfo (巨潮资讯网 — the CSRC/exchange-designated official
+    disclosure platform for SSE+SZSE) announcement metadata: ``sec_code``,
+    ``sec_name``, ``org_id`` (CNInfo's own stable registrant id; VERIFIED zero
+    multi-org_id codes in the committed data at the D2B2 pin) per announcement,
+    accruing forward since first collection.
+
+    This returns ONLY an EXISTENCE + observation-date fact per code — "CNInfo
+    carries at least one disclosure naming this code as of <date>" — NEVER a name.
+    ``security_master.parquet`` has no name column (:data:`MASTER_COLUMNS`) and this
+    builder mints no name/legal_name surface for CN/HK: CNInfo's ``sec_name`` is the
+    disclosure SHORT name, not a verified legal name, and it demonstrably changes
+    over time in this exact committed data (sec_code 000430: "ST张家界" through
+    2026-05-15, "张家界" from 2026-07-10 — a real ST-flag removal) — exactly why
+    current-identity-only semantics (boundary 7) keep it out of any stored identity
+    column rather than fabricating a historical name lineage.
+
+    The ``exchange`` column (``collectors/china_filings.py::_parse_announcement``)
+    records which CNInfo QUERY BATCH (``column=sse|szse``) returned the row, not a
+    verified venue — sampled at the D2B2 pin, SZSE-range codes (300xxx, 002xxx) were
+    filed under ``exchange="sse"``.  This function never reads it; venue (SH/SZ/BJ
+    board) is derived deterministically from the CODE ITSELF via
+    ``lib.dataos.identity.normalize_cn_symbol``/``cn_board`` (already spec-mandated,
+    never trusted from this collector's own labelling).
+
+    Returns ``({6-digit code: {"effective_at": "YYYY-MM-DD"}}, newest publish date
+    seen)``.  ``effective_at`` is the EARLIEST dated observation in this committed
+    window — the same "not a listing date" convention :func:`_effective_at` states
+    for the US stage — and the window itself is a forward-accruing recent slice
+    (the collector's own docstring: "forward-only"), so a code absent here is
+    "no evidence YET", never "not a real listing" (a coverage limitation, disclosed
+    in the receipt, never asserted as completeness — this module's own "Coverage is
+    a REPORTED NUMBER, never an asserted completeness").
+    """
+    if not CHINA_FILINGS_PATH.exists():
+        return {}, None
+    import pandas as pd
+
+    df = pd.read_parquet(CHINA_FILINGS_PATH, columns=["sec_code", "publish_ts"])
+    if df.empty:
+        return {}, None
+    df = df.dropna(subset=["sec_code", "publish_ts"])
+    df = df.assign(sec_code=df["sec_code"].astype(str).str.strip().str.zfill(6))
+    df = df.assign(publish_date=pd.to_datetime(df["publish_ts"], errors="coerce", utc=True).dt.date)
+    df = df.dropna(subset=["publish_date"])
+    evidence: dict[str, dict] = {}
+    newest = None
+    for code, group in df.groupby("sec_code"):
+        earliest = group["publish_date"].min()
+        latest = group["publish_date"].max()
+        evidence[code] = {"effective_at": earliest.isoformat()}
+        if newest is None or latest > newest:
+            newest = latest
+    return evidence, (newest.isoformat() if newest is not None else None)
+
+
+def load_hk_shorts_evidence() -> tuple[dict[str, dict], str | None]:
+    """HK primary-source EXISTENCE evidence (boundary 5) — SFC (Securities and
+    Futures Commission, HK's statutory regulator) official Short Position Reports
+    (``data/hk_shorts/positions.parquet``) and HKEX's OWN published turnover
+    statistics (``data/hk_shorts/turnover.parquet``,
+    ``collectors/hk_shorts.py::_HKEX_TURNOVER_URL`` = ``www.hkex.com.hk``) — both
+    lawful official sources.  Same existence-only, no-name-stored discipline as
+    :func:`load_cninfo_evidence`; see that docstring for the reasoning (this
+    builder's ``security_master.parquet`` schema has no name column at all).
+
+    5-digit zero-padded HK codes (the canonical form,
+    ``lib.dataos.identity.normalize_hk_symbol``).  Returns the same
+    ``({code: {"effective_at": ...}}, newest date seen)`` shape.
+    """
+    import pandas as pd
+
+    frames = []
+    for path, code_col, date_col in (
+        (HK_SHORTS_POSITIONS_PATH, "stock_code", "date"),
+        (HK_SHORTS_TURNOVER_PATH, "stock_code", "date"),
+    ):
+        if not path.exists():
+            continue
+        frame = pd.read_parquet(path, columns=[code_col, date_col])
+        frame = frame.rename(columns={code_col: "code", date_col: "date"})
+        frames.append(frame)
+    if not frames:
+        return {}, None
+    df = pd.concat(frames, ignore_index=True)
+    df = df.dropna(subset=["code", "date"])
+    df = df.assign(code=df["code"].astype(str).str.strip().str.zfill(5))
+    df = df.assign(date=pd.to_datetime(df["date"], errors="coerce").dt.date)
+    df = df.dropna(subset=["date"])
+    evidence: dict[str, dict] = {}
+    newest = None
+    for code, group in df.groupby("code"):
+        earliest = group["date"].min()
+        latest = group["date"].max()
+        evidence[code] = {"effective_at": earliest.isoformat()}
+        if newest is None or latest > newest:
+            newest = latest
+    return evidence, (newest.isoformat() if newest is not None else None)
+
+
+def mint_cn_hk_rows(
+    master_rows: list[dict],
+    seeds: list[dict],
+    cninfo_evidence: dict[str, dict],
+    hk_evidence: dict[str, dict],
+    now: str,
+) -> tuple[list[dict], list[AliasRow], dict]:
+    """V4-D2B2-CN-HK — admit China/HK company-node targets whose numeric code has
+    committed primary-source evidence (CNInfo for CN; SFC/HKEX for HK) into the
+    canonical master, via the SAME mint-once-by-listing-key law as
+    :func:`mint_master_rows` (boundary 3: canonical builder only, no parallel
+    allocator, no hand-written master rows).  Every target finishes RESOLVED (a new
+    master row + a current-catalog vendor-alias row) or a NAMED typed refusal
+    (``no_committed_primary_source_evidence`` / ``unparseable_symbol``) — boundary 8,
+    no silent drop.
+
+    ``listing_key``/``security_id`` are minted via ``lib.dataos.identity``'s
+    EXISTING, already-spec'd CN/HK grammars (``normalize_cn_symbol``,
+    ``normalize_hk_symbol``) — no new allocator, no new grammar (boundary 3).
+
+    Conservative by design (boundary 4, D2B1 issuer law preserved): every new row
+    mints with ``issuer_state=None`` (unstamped), exactly like a brand-new US row in
+    :func:`mint_master_rows`.  The CALLER's subsequent ``apply_issuer_correction``
+    pass (run unmodified, over the full accumulated row set) settles it to
+    ``NO_ISSUER_EVIDENCE`` — the US SEC CIK map has no CN/HK entries, so every one of
+    these rows lands there this era.  NO issuer-grouping evidence class is
+    introduced for CN/HK: CNInfo's ``org_id`` / HK's ``stock_name`` are consulted
+    only as EXISTENCE evidence to decide whether to mint at all, never for issuer
+    identity.  This trivially satisfies boundary 6 (A/H pairs — e.g. ICBC
+    ``SEC:CN-XSHG-601398`` / ``SEC:HK-XHKG-01398`` — stay separate securities,
+    sharing an issuer only on deterministic evidence; there is none here, so none is
+    ever inferred) and keeps boundary 4 fully intact (no foreign identifier —
+    USCC/org_id/exchange code — is ever promoted to canonical identity; Mastermind
+    ids remain canonical).
+
+    A vendor-alias row (``vendor=VENDOR_THEME_GRAPH_NATIVE``, open-bounded
+    current-catalog) is emitted for every minted row, carrying the GMI node's OWN
+    suffix-qualified symbol spelling — see :data:`VENDOR_THEME_GRAPH_NATIVE`'s
+    docstring for why this makes vendor-alias resolution (D2A rule 6) the ordinary
+    path for every admission here, not a special "alias-only" case.
+
+    Mint-once/idempotent: a seed whose rendered listing key already has a row in
+    ``master_rows`` (a prior run's mint, present via ``_read_existing``) is skipped
+    outright — this stage never touches, corrects or re-derives a previously-minted
+    CN/HK row (current-identity semantics only, boundary 7).
+
+    Returns ``(master_rows + new rows, new alias rows, coverage dict)``.
+    """
+    already_minted = {str(r["listing_key"]) for r in master_rows}
+    new_rows: list[dict] = []
+    alias_rows: list[AliasRow] = []
+    refusals: dict[str, list[dict]] = {"cn": [], "hk": []}
+    resolved_this_run: dict[str, int] = {"cn": 0, "hk": 0}
+
+    for seed in seeds:
+        market = seed["market"]
+        symbol = seed["symbol"]
+        node_id = seed["node_id"]
+        try:
+            listing_key = (
+                normalize_cn_symbol(symbol) if market == "cn" else normalize_hk_symbol(symbol)
+            )
+        except IdentityError as exc:
+            refusals[market].append({
+                "node_id": node_id, "symbol": symbol,
+                "reason": f"unparseable_symbol: {exc}",
+            })
+            continue
+        rendered = listing_key.render()
+        if rendered in already_minted:
+            continue  # already minted a prior run — mint-once, never re-touch
+        evidence_table = cninfo_evidence if market == "cn" else hk_evidence
+        evidence = evidence_table.get(listing_key.code)
+        if evidence is None:
+            refusals[market].append({
+                "node_id": node_id, "symbol": symbol, "listing_key": rendered,
+                "reason": "no_committed_primary_source_evidence",
+            })
+            continue
+        sec = security_id(listing_key)
+        new_rows.append({
+            "security_id": sec,
+            "issuer_id": None,
+            "issuer_state": None,
+            "issuer_cik": None,
+            "issuer_evidence_snapshot": None,
+            "listing_key": rendered,
+            "country": listing_key.country,
+            "mic": listing_key.mic,
+            "inception_code": listing_key.code,
+            "effective_at": f"{evidence['effective_at']}T00:00:00",
+            "ingested_at": now,
+            "security_state": None,
+            "superseded_by": None,
+        })
+        already_minted.add(rendered)
+        alias_rows.append(AliasRow(VENDOR_THEME_GRAPH_NATIVE, symbol, sec, None, None))
+        resolved_this_run[market] += 1
+
+    coverage = {
+        "target_n": {
+            "cn": sum(1 for s in seeds if s["market"] == "cn"),
+            "hk": sum(1 for s in seeds if s["market"] == "hk"),
+        },
+        "resolved_this_run": resolved_this_run,
+        "refused_this_run": {m: len(v) for m, v in refusals.items()},
+        "refusals_this_run": refusals,
+    }
+    return master_rows + new_rows, alias_rows, coverage
 
 
 # ── Mint-once-and-store ───────────────────────────────────────────────────────
@@ -2110,16 +2423,49 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
 
     seed_notes = unmodelled_renames(fixups, migrations)
 
+    # V4-D2B2-CN-HK: split the committed master BEFORE it reaches `mint_master_rows`.
+    # That function's `_compute_lost` (the pending-transition fence, V4-D2B1-R1 §5)
+    # treats every EXISTING active row not re-derived by a US `resolutions` entry as
+    # "lost" — correct for the US-only universe it was built for, but a CN/HK row is
+    # NEVER re-derived by a US resolution (there is no such thing), so feeding it
+    # `existing` rows from other markets would flag the ENTIRE CN/HK population as
+    # spuriously "lost" on every run after the first (VERIFIED while building this
+    # stage: a second run printed a 1,131-symbol `listing_continuity` ::warning with
+    # zero genuine US losses).  CN/HK rows are carried past this US-only pipeline
+    # unmodified and re-attached in :func:`mint_cn_hk_rows` below, which has its own
+    # market-scoped mint-once law.
+    existing_master_rows = _read_existing(
+        master_path, MASTER_COLUMNS, MASTER_DTYPES,
+        allow_missing=ISSUER_AXIS_COLUMNS | SECURITY_AXIS_COLUMNS,
+    )
+    existing_us_rows = [r for r in existing_master_rows if r.get("country") == "US"]
+    existing_cn_hk_rows = [r for r in existing_master_rows if r.get("country") in ("CN", "HK")]
+
     (master_rows, ids, notes, resurrection_refusals, pending_transition_refusals,
      lost_rows, exception_lost_rows) = mint_master_rows(
         resolutions,
-        _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES,
-                       allow_missing=ISSUER_AXIS_COLUMNS | SECURITY_AXIS_COLUMNS),
+        existing_us_rows,
         now,
         cik_map=cik_map,
         delisted=delisted,
         snapshot_date=cik_snapshot_date,
     )
+
+    # V4-D2B2-CN-HK — a SEPARATE, additive admission stage (see the module block
+    # above :func:`mint_cn_hk_rows`), folded into ``master_rows`` BEFORE the security-
+    # supersession / issuer-correction passes below so a freshly-minted CN/HK row is
+    # processed by the SAME idempotent pipeline as every US row from that point on
+    # (harmlessly: the US-only ``SECURITY_SUPERSESSIONS``/``RENAME_EVENTS`` registries
+    # never match a numeric CN/HK inception code, and the US CIK map never carries
+    # one, so these rows settle at ``issuer_state=NO_ISSUER_EVIDENCE`` exactly as
+    # designed).
+    cn_hk_seeds = load_cn_hk_seeds()
+    cninfo_evidence, cninfo_newest = load_cninfo_evidence()
+    hk_evidence, hk_newest = load_hk_shorts_evidence()
+    master_rows, cn_hk_alias_rows, cn_hk_coverage = mint_cn_hk_rows(
+        master_rows + existing_cn_hk_rows, cn_hk_seeds, cninfo_evidence, hk_evidence, now,
+    )
+
     # V4-D2B1-R1 §3 — correct any security minted as an independent row for a rename's
     # NEW symbol before this builder modelled the rename, BEFORE the issuer era stage
     # runs (so a freshly-tombstoned row is excluded from re-examination this same run,
@@ -2143,7 +2489,7 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         master_rows, cik_map, cik_snapshot_date, now, ambiguous_tickers=ambiguous_tickers
     )
 
-    fresh_aliases = build_alias_rows(resolutions, ids)
+    fresh_aliases = build_alias_rows(resolutions, ids) + cn_hk_alias_rows
     existing_aliases, alias_prunes = _prune_stale_aliases(
         _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES),
         fresh_aliases, superseded_ids,
@@ -2218,6 +2564,14 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             _relpath(CIK_MAP_DIR): (
                 _sha256(cik_map_path) if cik_map_path is not None else None
             ),
+            # V4-D2B2-CN-HK — the target-population seed + the two primary-source
+            # evidence inputs, named the same way every other rail is (present ->
+            # hash, absent -> null, never a dropped key).
+            **{
+                str(path.relative_to(ROOT)): _sha256(path)
+                for path in (THEME_GRAPH_NODES_PATH, CHINA_FILINGS_PATH,
+                            HK_SHORTS_POSITIONS_PATH, HK_SHORTS_TURNOVER_PATH)
+            },
         },
         "symbol_directory_snapshot": snapshot_date,
         "cik_map_snapshot": cik_snapshot_date,
@@ -2337,6 +2691,44 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "state_counts": _security_state_counts(master_rows),
             "migrations_this_run": len(freshly_superseded),
             "era_migrations_total": len(security_migration_rows),
+        },
+        # V4-D2B2-CN-HK — complete accounting (frozen contract boundary 8: every
+        # target finishes RESOLVED or a named typed refusal, no silent drop).
+        # `target_n` is THIS RUN's own start-pin census (boundary 1) — the child's
+        # target, never the historical 1,868-total observation. `resolved_total` is
+        # the CUMULATIVE count of CN/HK rows now in the master (mint-once across
+        # runs); `resolved_this_run`/`refused_this_run` are this build's own delta.
+        "china_hk_admission": {
+            "contract": "research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md",
+            "target_population_source": _relpath(THEME_GRAPH_NODES_PATH)
+                + " (kind=company, market_scope in cn/hk)",
+            "evidence_sources": {
+                "cn": {
+                    "dataset": _relpath(CHINA_FILINGS_PATH),
+                    "provenance": "CNInfo (巨潮资讯网) SSE+SZSE disclosure metadata "
+                                  "(collectors/china_filings.py)",
+                    "newest_observation": cninfo_newest,
+                },
+                "hk": {
+                    "dataset": f"{_relpath(HK_SHORTS_POSITIONS_PATH)} + "
+                               f"{_relpath(HK_SHORTS_TURNOVER_PATH)}",
+                    "provenance": "SFC official Short Position Reports + HKEX "
+                                  "official turnover statistics "
+                                  "(collectors/hk_shorts.py)",
+                    "newest_observation": hk_newest,
+                },
+            },
+            "target_n": cn_hk_coverage["target_n"],
+            "resolved_this_run": cn_hk_coverage["resolved_this_run"],
+            "refused_this_run": cn_hk_coverage["refused_this_run"],
+            "resolved_total": {
+                market: sum(
+                    1 for r in master_rows
+                    if r["country"] == country and not r.get("security_state")
+                )
+                for market, country in (("cn", "CN"), ("hk", "HK"))
+            },
+            "refusals_this_run": cn_hk_coverage["refusals_this_run"],
         },
     }
 
