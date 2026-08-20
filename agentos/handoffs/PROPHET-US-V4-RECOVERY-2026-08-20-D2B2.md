@@ -135,8 +135,9 @@ next_actions:
     resolution delta recorded in this WS's wave note and China Alpha's pr0d
     wave note. Neither wave flips to done before that.
   - >
-    Record the immutable squash-merge SHA (never a mutable branch-head SHA)
-    in both WS wave notes once this PR merges.
+    DONE (this follow-up commit): the immutable squash-merge SHA
+    (ed28d0d992a144aec5f0ef2616024e3e32d83b1a) is recorded in both WS wave
+    notes.
   - >
     The 37 CN refusals self-heal as CNInfo's committed accrual window
     widens (the collector is forward-only) — no action needed; a future
@@ -208,8 +209,13 @@ danger_areas:
 
 # V4-D2B2-CN-HK handoff — China/HK canonical identity admission
 
-PR #6116, branch `claude/d2b2-cn-hk`. Single-pass Sonnet builder session
-(ROUTE:build) under `DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`. Contract:
+PR #6116, branch `claude/d2b2-cn-hk`, squash-merged as
+`ed28d0d992a144aec5f0ef2616024e3e32d83b1a` (immutable merge SHA). Two
+`ci-pack` lanes (5, 8) hit a self-hosted-runner `git checkout` network/
+promisor-fetch infra flake mid-run (confirmed via job logs — neither ever
+reached test execution); both were re-run once the matrix concluded and
+came back green. Single-pass Sonnet builder session (ROUTE:build) under
+`DEC:CHINA-IDENTITY-OWNER-ROUTE-D2B2-CN-HK`. Contract:
 `research/prophet_v4/d2/D2B2_CN_HK_FROZEN_CONTRACT_2026-08-20.md`.
 
 Merge state: **BUILT_NOT_PROVEN**. `done` requires the first natural
