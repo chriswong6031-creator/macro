@@ -107,9 +107,9 @@ unresolved:
   - "FIF-7 two-owner overlap ('event workspace packet' / 'market reaction' in the FIF masterplan :1672-1685 vs Earnings G-lane routing) — named, parked at the K4-G commission gate; do not resolve silently."
   - "#5953 disposition request (drop or re-home its censuses/G0/ six + embedded C0G draft) — that lane responds; if it lands unchanged, the seat packet governs canonicity."
 next_actions:
-  - "Operator: dispatch FABLE-A with the c0 §5.1 rider appended verbatim."
-  - "Next session (K1 adjudication): receive FABLE-A's K1 packet; check the rider was honored clause-by-clause before accepting any freeze."
-  - "Watch #5955 and #5943 to merge (armed by the seat post-acceptance); the G0 content is main-state only after they land."
+  - "Sol dispatch FABLE-A. (With the c0 §5.1 rider appended verbatim — research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md §5.1. Not this seat: operator closed FABLE-00 on 2026-08-19 with p0/c0/c0g accepted as CLOSED and proven on origin/main.)"
+  - "A FRESH adjudication session reviews the resulting K1 packet, checking the rider clause-by-clause before accepting any freeze."
+  - "Sol authors K4-G carrying the seat-packet §6 preconditions unchanged (canonical sources per item in the body section 'K4-G preconditions — canonical sources' below)."
 do_not_redo:
   - "Do not re-adjudicate the five Wave-0 censuses — c0 verdicts and conditions are in the c0 packet; delta-check open-PR/freeze state instead."
   - "Do not re-verify lane-B perishability — closed with git-tree receipts in c0 §3.1; the only live follow-ups are owner-routed (collector gap-hardening, ARK/ProShares ToS side quests)."
@@ -130,7 +130,7 @@ discoveries:
   - DSC:EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION
 ---
 
-# c0 + c0g session handoff
+# c0 + c0g session handoff — FABLE-00 CLOSED
 
 Cold-stranger path: read the c0 packet
 (`research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md`) — the delta,
@@ -140,3 +140,41 @@ the lane table — then the c0g seat packet
 three-way G0 ruling, the venue DEC, the clock DSC, and the frozen K4-G
 preconditions. PASS-0 remains the estate baseline; c0 supersedes its §5–§7 lane
 rulings where they differ; c0g supersedes both on the G lane.
+
+Operator close-out (2026-08-19): p0 / c0 / c0g are CLOSED and proven on
+`origin/main` (#5910, #5933 squash `1a073430be14`); the `symbol_directory`
+backfill (`6f3fd8b3ea1f`) is the accepted production unblock; the merged
+dispositions for #5933 / #5943 / #5955 / #5953 are canonical. The stale
+`claude/alpha-intel-c0-adjudication` remote branch is housekeeping only.
+Authority boundary: this seat does NOT begin FABLE-A or K4-G.
+
+## K4-G preconditions — canonical sources
+
+The four items Sol's K4-G commission must carry unchanged, each with its exact
+governing file/section:
+
+1. **Clock-direction rule — never "fix" `source_available_at`.** Canonical:
+   `research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md` §2.a and
+   `agentos/discoveries/DSC-EVENT-WORKSPACE-CLOCKS-COLLAPSE-BY-CONSTRUCTION.md`
+   (claim + falsifier + the code receipts:
+   `engine/company_intelligence/event_workspace_build.py:150,449`;
+   `scripts/refresh_event_workspaces.py:352,362-363`).
+2. **Per-source-clock gap is the build surface** (frontier cannot derive from
+   lifecycle pairs). Canonical: seat packet §2.b, with the receipt pair — live
+   `sources[]` carry no clock fields while `SourceDocument` defines
+   `fetched_at/published_at/available_at`
+   (`engine/company_intelligence/documents.py:162-164`) — restated in the same
+   DSC.
+3. **FIF-7 boundary adjudication before any reaction/frontier build.**
+   Canonical: seat packet §2.c and §6.3; the overlap's source text is
+   `research/MASTERMIND_FINANCIAL_INTELLIGENCE_FABRIC_MASTERPLAN_2026-08-16.md:1672-1685`
+   ("event workspace packet", "market reaction"). Gate: Sol's pending FIF-1
+   ruling; do not resolve silently in either direction.
+4. **Venue-neutral CN-adapter sequencing behind E2.** Canonical:
+   `agentos/decisions/DEC-ALPHA-INTEL-EARNINGS-EVENT-TRUTH-IS-VENUE-NEUTRAL.md`
+   and seat packet §3–§4 (adapter delta = three identity-plane sites; no
+   `china_corporate_event.v1`; no independent G lane). E2 live state:
+   `agentos/workstreams/WS-EARNINGS-INTELLIGENCE-OS.md` waves (E2 `status: todo`,
+   unblocked, unstarted).
+
+Exact next action: **Sol dispatch FABLE-A.**
