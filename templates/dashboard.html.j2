@@ -963,10 +963,6 @@
               border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 11px;
               font-weight: 650; cursor: pointer; }
   .ladder-clear:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
-  /* Repair round, finding S3 — the grid-view dense cap's static disclosure
-     (never a "show more" control; the excess rows are not in the DOM at
-     all past the cap, see window.__usLifeDenseCap in the template body). */
-  .mx-dense-more { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); text-align: center; }
   .sk-n { height: 18px; width: 26px; display: inline-block; }
   .sk-head { height: 30px; width: 62px; display: inline-block; }
   @media (max-width: 720px) {
@@ -16251,20 +16247,25 @@ html[data-theme="light"] :is(
       <div class="nbgrid" data-showmore-rows="3" id="us-life-grid" data-mp1-grid="1">
       {%- with items=_upb.plans, cand_map=_cand_map, trg_map=_plan_trg_map, episode_map=(us_prophet_episodes or {}) %}{% include "_us_prophet_plan_cards.html.j2" %}{% endwith -%}
       </div>{# end #us-life-grid #}
-      {#- Repair round, finding S3 (dense state, MP-1 §10): "grid view caps at
-         40 cards with a `+{cell−shown} more` marker". Populated/toggled by
-         applyUsLifeDenseCap() below — baked hidden so a build under 40 cards
-         (every gated preview, and most ungated nights) never shows an empty
-         bar. NOTE: §10's other dense-state clause ("table view renders every
-         row of the active filter") does NOT apply to this grid — `.st-table-
-         mode` swaps in `#us-stocktable-wrap`, which is fed from the
-         CANDIDATE screener (`_su.buy`), not the plan book this grid renders;
-         there is no plan-book table view to route the +N to. Deferred as a
-         real architecture gap (a new plan-book table view is its own build),
-         not silently claimed here. -#}
-      <div class="mx-dense-more" id="us-life-dense-more" hidden>
-        <span class="l-en"></span><span class="l-zh"></span>
-      </div>
+      {#- Repair round 2, finding R1+R3 (COMMISSIONING ADJUDICATION, replaces
+         the round-1 S3 dense-cap attempt): a hard 40-card cap that physically
+         removed cards past the cap broke the ladder filter for every cell
+         whose members sort mostly past position 40 — on the real committed
+         book (site/prophet/index.json), Delivering(1)/Invalidated(4)/
+         Resolved(26) went DEAD for a signed-in (post-hydrate) viewer, and the
+         new S9 zero-state then printed "No plans match this filter" under a
+         ladder cell reading a nonzero count — a worse falsehood than no cap
+         at all. MP-1 §10's dense clause presumes a table-view escape hatch
+         for the overflow that cannot exist for this grid post-migration (the
+         round-1 disclosure above was right about that gap); shipping half
+         the clause (the cap, without a place to route the rest) regresses
+         the ladder's own count-agreement law instead of honoring it. The
+         §10 dense obligation is DEFERRED WHOLESALE to a follow-up wave that
+         builds a real plan-book table view — commissioning session records
+         that. The FRESH-GRID hydrate pattern below is KEPT (it correctly
+         fixed stale show-more, a real and separate defect); show-more's own
+         progressive "Show N more"/"Show all" reveal is the interim density
+         control until the table view lands. -#}
       {#- Repair round, finding S9: a ladder filter with zero matches used to
          render a silent blank (the CSS hide/reveal rules above just leave
          nothing visible; the .mx-empty guard only fires on a truly empty
@@ -16274,45 +16275,6 @@ html[data-theme="light"] :is(
         <div class="mx-empty-line">{{ t('No plans match this filter.', '没有符合此筛选条件的计划。') }}</div>
         <div class="mx-empty-why">{{ t('Try another lifecycle cell, or clear the filter.', '请尝试其他状态，或清除筛选。') }}</div>
       </div>
-      <script>
-      (function(){
-        /* Repair round, finding S3 (dense state — the other half, the hard
-           cap): runs SYNCHRONOUSLY here (before theme.js's DOMContentLoaded-
-           bound initShowMore() call) so the cap is already applied to the
-           DOM's real child list before that function ever snapshots it —
-           initShowMore reads `total` off `grid.children` once (idempotent
-           via data-smInit), so a cap applied AFTER that snapshot would
-           disagree with its own "Showing X of Y" bar. Exposed on `window` so
-           the hydrate() script further down can re-apply it after rebuilding
-           the grid with a FRESH element (same reason: an element show-more
-           has already initialized never re-triggers). */
-        var CAP = 40;
-        window.__usLifeDenseCap = function(){
-          var grid = document.getElementById('us-life-grid');
-          var marker = document.getElementById('us-life-dense-more');
-          if (!grid) return;
-          var cards = [].filter.call(grid.children, function(el){
-            return el.nodeType === 1 && el.hasAttribute('data-life');
-          });
-          if (cards.length > CAP){
-            for (var i = CAP; i < cards.length; i++){
-              if (cards[i].parentNode) cards[i].parentNode.removeChild(cards[i]);
-            }
-          }
-          var extra = cards.length - CAP;
-          if (!marker) return;
-          if (extra > 0){
-            marker.hidden = false;
-            var en = marker.querySelector('.l-en'), zh = marker.querySelector('.l-zh');
-            if (en) en.textContent = '+' + extra + ' more not shown in grid view';
-            if (zh) zh.textContent = '另有 ' + extra + ' 条未在卡片视图显示';
-          } else {
-            marker.hidden = true;
-          }
-        };
-        window.__usLifeDenseCap();
-      })();
-      </script>
       {%- endif %}
       {%- endif %}
       {#- ---- tier wall (gated build only) ----
@@ -16322,25 +16284,34 @@ html[data-theme="light"] :is(
           candidate wall this replaces, keyed on `life_gate`/`_split_us_prophet_board`
           instead of `gate`/`_split_us_board`. -#}
       {% if life_gate %}
-      {#- Repair round findings S7/S8: this wall counts PLAN ROWS (one row per
-         tracked commitment — a name traded twice appears twice, exactly the
-         law the ladder's own help text states, templates/_prophet_card.html.j2
-         "Each cell counts plan rows"), not distinct names, so "names"/"只"
-         overclaims precision the board never had (262 rows / 247 distinct
-         names on a real night). S8: the preview slice is taken BEFORE the
-         default-hidden `resolved` filter, so `life_gate.preview` can overstate
-         what a viewer actually sees when a resolved plan sorts into the top
-         preview_rows — `life_gate_visible_preview` (scripts/build_site.py::
-         _us_life_visible_preview_count) counts only the non-resolved rows
-         already in the shipped preview slice. -#}
+      {#- Repair round findings S7/S8/R4: this wall counts PLAN ROWS (one row
+         per tracked commitment — a name traded twice appears twice, exactly
+         the law the ladder's own help text states, templates/_prophet_card.
+         html.j2 "Each cell counts plan rows"), not distinct names, so
+         "names"/"只" overclaims precision the board never had (262 rows /
+         247 distinct names on a real night). S8: the preview slice is taken
+         BEFORE the default-hidden `resolved` filter, so `life_gate.preview`
+         can overstate what a viewer actually sees when a resolved plan sorts
+         into the top preview_rows. R4: once the "first N" figure is the
+         honest visible count, the "N more" figure must stay its arithmetic
+         complement or the two numbers stop summing to the quoted total
+         (round-1 shipped "first 2 of 262" beside "259 more" = 261, not 262).
+         `life_gate_visible_preview`/`life_gate_visible_locked`
+         (scripts/build_site.py::_us_life_repair_context) are computed
+         together so `visible + locked == life_gate.total` always holds;
+         `life_gate.preview`/`life_gate.locked` themselves are untouched
+         (§8b — `_split_us_prophet_board`'s own return is correct raw-slice
+         arithmetic, only this wall's DISPLAYED figures needed the fix). -#}
+      {%- set _life_visible_preview = (life_gate_visible_preview if (life_gate_visible_preview is defined and life_gate_visible_preview is not none) else life_gate.preview) -%}
+      {%- set _life_visible_locked = (life_gate_visible_locked if (life_gate_visible_locked is defined and life_gate_visible_locked is not none) else life_gate.locked) -%}
       <div class="us-tier-wall" id="us-life-wall">
         <div class="us-tw-h">
-          <span class="l-en">{{ life_gate.locked }} more plan rows on tonight's board</span>
-          <span class="l-zh">今晚榜单还有 {{ life_gate.locked }} 条计划</span>
+          <span class="l-en">{{ _life_visible_locked }} more plan rows on tonight's board</span>
+          <span class="l-zh">今晚榜单还有 {{ _life_visible_locked }} 条计划</span>
         </div>
         <div class="us-tw-p">
-          <span class="l-en">You're seeing the first {{ (life_gate_visible_preview if (life_gate_visible_preview is defined and life_gate_visible_preview is not none) else life_gate.preview) }} of {{ life_gate.total }} plan rows. Sign in to see the full ranked board, every lifecycle state, and the table view.</span>
-          <span class="l-zh">当前显示 {{ life_gate.total }} 条计划中的前 {{ (life_gate_visible_preview if (life_gate_visible_preview is defined and life_gate_visible_preview is not none) else life_gate.preview) }} 条。登录后可查看完整排名榜单、全部生命周期状态与表格视图。</span>
+          <span class="l-en">You're seeing the first {{ _life_visible_preview }} of {{ life_gate.total }} plan rows. Sign in to see the full ranked board, every lifecycle state, and the table view.</span>
+          <span class="l-zh">当前显示 {{ life_gate.total }} 条计划中的前 {{ _life_visible_preview }} 条。登录后可查看完整排名榜单、全部生命周期状态与表格视图。</span>
         </div>
         <div class="us-tw-acts">
           <a class="us-tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
@@ -16410,15 +16381,20 @@ html[data-theme="light"] :is(
         {#- Repair round, finding B4: computed SERVER-SIDE against the FULL
            (pre-slice) candidate board and the FULL plan book
            (scripts/build_site.py::_us_candidate_no_plan_sample, threaded as
-           `cand_no_plan`) — the old template-side computation built its pool
-           from `_board`, the gate-sliced preview, which on a gated build can
-           never reach the 6-row sample size; its fallback then silently
+           `cand_no_plan`, sample capped at the real preview_rows — round-2
+           finding R2: never a larger constant, so this section never bakes
+           more real candidate rows into the anonymous document than the
+           tier boundary allows) — the old template-side computation built
+           its pool from `_board`, the gate-sliced preview, which on a gated
+           build can never reach the sample size; its fallback then silently
            sampled ANY board row regardless of plan membership, so the
            "carries no plan yet" claim below could be — and was reproduced —
            false. `all_no_plan` makes the footer claim conditional on truth
            rather than asserted unconditionally. Falls back to the OLD
-           (bug-preserving) computation only when `cand_no_plan` is not
-           threaded at all (a render context that predates this fix). -#}
+           (bug-preserving, but not leak-widening — `_board` here is already
+           the gate-sliced array, same bound as `cand_no_plan`'s own cap)
+           computation only when `cand_no_plan` is not threaded at all (a
+           render context that predates this fix). -#}
         {%- set _cnp = (cand_no_plan if (cand_no_plan is defined and cand_no_plan) else none) -%}
         {%- if _cnp %}
         {%- set _cand_sample = _cnp.sample -%}
@@ -16427,8 +16403,8 @@ html[data-theme="light"] :is(
         {%- set _plan_tks = namespace(s=[]) -%}
         {%- if _upb %}{% for _p in (_upb.get('plans') or []) %}{% set _ = _plan_tks.s.append(_p.asset) %}{% endfor %}{% endif -%}
         {%- set _cand_pool = _board | rejectattr('ticker', 'in', _plan_tks.s) | list -%}
-        {%- set _cand_sample = (_cand_pool if _cand_pool|length >= 6 else _board)[:6] -%}
-        {%- set _cand_all_no_plan = (_cand_pool|length >= 6) -%}
+        {%- set _cand_sample = (_cand_pool if _cand_pool|length >= 3 else _board)[:3] -%}
+        {%- set _cand_all_no_plan = (_cand_pool|length >= 3) -%}
         {%- endif %}
         {%- if _cand_sample %}
         <div class="cand-rows">
@@ -19784,8 +19760,12 @@ if (document.readyState === 'loading') {
        _pvcPaint uses above ("a NEW grid element rather than new children in
        the old one"): build a fresh element holding BOTH the existing preview
        cards and the newly-hydrated ones, swap it in, drop the stale sm-bar
-       sibling, then re-apply the dense cap and re-run initShowMore() on an
-       element it has never seen. */
+       sibling, then re-run initShowMore() on an element it has never seen.
+       Repair round 2, R1+R3: the dense-cap re-apply that used to sit here is
+       REMOVED — see the template-body comment above #us-life-grid for why a
+       hard cap regressed the ladder filter. Every plan row this build knows
+       about (preview + hydrated) now stays in the DOM; show-more's own
+       progressive reveal is the density control. */
     var lifeGrid = document.getElementById('us-life-grid');
     if (lifeGrid && payload.plan_cards_html) {
       var lifeOldBar = lifeGrid.nextElementSibling;
@@ -19799,7 +19779,6 @@ if (document.readyState === 'loading') {
       lifeGrid.parentNode.insertBefore(freshLifeGrid, lifeGrid);
       lifeGrid.parentNode.removeChild(lifeGrid);
       if (lifeOldBar && lifeOldBar.parentNode) lifeOldBar.parentNode.removeChild(lifeOldBar);
-      if (window.__usLifeDenseCap) window.__usLifeDenseCap();
       if (window.initShowMore) window.initShowMore();
     }
     /* Every card just spliced in carries a `.nb-px`/`.nb-chg` pill still holding

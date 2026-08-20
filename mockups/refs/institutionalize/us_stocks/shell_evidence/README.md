@@ -22,10 +22,10 @@ synthetic row**, never presented as the night's true counts.
 | # | File | Source | What it proves |
 |---|---|---|---|
 | 1 | `01-main-{dark,light}-{en,zh}-{1440,390}.png` (8 files) | real | Main board, light+dark×EN+ZH at 1440 and 390px. |
-| 2 | `10-empty.png` | synthetic (empty `plans: []`) | §10 empty state: all-zero ladder still renders + `.mx-empty` message; Candidates/Recently-fired unaffected. |
+| 2 | `10-empty.png` **[recaptured, round 2]** | synthetic (empty `plans: []`) | §10 empty state: all-zero ladder still renders + `.mx-empty` message + the required `.mx-empty-why` cause line ("No qualifying rows today · refreshes after the next close" — added by repair-round finding S4, theme.css:1983-1988's law); Candidates/Recently-fired unaffected. |
 | 3 | `11-loading.png` | synthetic (`us_prophet_book=None`) | §10 loading: skeleton shimmer, no words, geometry intact. |
 | 4 | `12-error.png` | synthetic (`us_prophet_book_error=True`) | §10/Amendment 2 error state: `.mx-error`, the shipped three-section copy, ≥40px Retry — and Candidates/Recently-fired/footnote **do** stay current, proving the promise the copy makes. |
-| 5 | `13-watch-key-absence.png` | synthetic (`intake.early_turn_watch` key removed) | §6 fn.1 / §10: em dash + disclosure line, distinct from a zero. |
+| 5 | `13-watch-key-absence.png` **[recaptured, round 2]** | synthetic (`intake.early_turn_watch` key removed) | §6 fn.1 / §10: em dash + disclosure line, distinct from a zero. The ZH string is now the §10-ratified `观察档自下一次夜间构建起发布。` (repair-round finding S5 — the prior copy was a paraphrase); not visible in this EN-language shot (same single-language convention as this row's original capture) but pinned by `tests/test_p_mp1_shell_repair_round.py::test_s5_*`. |
 | 6 | `14-watch-present-at-zero.png` | real (tonight's actual payload state) | Amendment 1 P-K19: `early_turn_watch: []` present-and-empty renders the normal zero-count cell, no disclosure line. |
 | 7 | `20-filter-ready.png` | real | `?life=ready` — 77 real rows. |
 | 8 | `20-filter-entered.png` | real | `?life=entered` — 154 real rows. |
@@ -34,9 +34,25 @@ synthetic row**, never presented as the night's true counts.
 | 11 | `20-filter-resolved.png` | real | `?life=resolved` — 26 real rows, two-total law (0 leak into the default view). |
 | 12 | `20-filter-watch-SYNTH.png` | **synthetic** | N3: zero real Watch rows tonight — one synthetic row, filtered. |
 | 13 | `20-filter-overtime-SYNTH.png` | **synthetic** | N3: zero real Overtime rows tonight — one synthetic row, filtered. |
-| 14 | `30-two-episode-ticker.png` | real (FBRT, 2 of 13 real multi-episode tickers tonight) | The episode chip ("Episode 2 of 2 · 2026-08-10"), both cards visible. Captured with the client-side tier lock and show-more collapse temporarily neutralized via an injected `!important` override (episode-chip demo only — the lock states themselves are captured separately in #15/#16, unmodified). |
+| 14 | `30-two-episode-ticker.png` **[recaptured, round 2]** | real (FBRT, one of the real multi-episode tickers tonight) | The episode chip now reads "Episode 2 · opened Aug 10" — repair-round finding S6 dropped "of N" and formats the date (was "Episode 2 of 2 · 2026-08-10", a raw ISO string). Captured with the client-side tier lock and show-more collapse temporarily neutralized via an injected `!important` override (episode-chip demo only — the lock states themselves are captured separately in #15/#16, unmodified). |
 | 15 | `40-free-tier-lock.png` | real | Free tier (`MMXAccessPreview.tier()==='free'`, cap=3): 3 sharp cards + 2 blurred, simulated via a session-storage/cookie fixture consumed by `tier_preview.js`'s own real tier-resolution code — no product code changed for this shot. |
 | 16 | `41-anon-lock.png` | real | Anonymous tier (default, no session): 1 sharp card + 2 blurred — identical file to `01-main-dark-en-1440.png`, duplicated under this name for the lock-distinction pairing. |
+
+## Round-2 recapture (repair round 2, finding "Evidence recapture")
+
+`10-empty.png`, `13-watch-key-absence.png` and `30-two-episode-ticker.png`
+photographed superseded copy after repair-round findings S4/S5/S6 changed
+the rendered strings in those three states. Recaptured against the SAME
+committed payload (`site/prophet/index.json`/`us_standouts.json`/
+`setups.json`, unchanged since round 1 — the ladder/candidate counts in the
+table above are identical) using the committed tooling below, run through a
+throwaway local Playwright install (`python3 -m venv`, not a repo
+dependency — same external-tooling assumption `capture.py` already makes).
+The other 19 files were NOT recaptured: their underlying states render no
+byte this repair round touched, so re-shooting them would only add capture-
+time noise (live-quote pill jitter, timestamp drift) without proving
+anything — confirmed by inspecting the diff class-by-class before deciding
+which three actually needed a new shot.
 
 ## N3 (MP-1 §11) — still named, not resolved by this evidence
 

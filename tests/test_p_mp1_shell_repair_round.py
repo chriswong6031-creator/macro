@@ -17,6 +17,7 @@ scripts/build_site.py exactly.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -139,7 +140,7 @@ def test_b3_gate_note_disclosure_restored_only_when_gated():
 def test_b4_no_plan_sample_honest_when_pool_reaches_sample_size():
     full_buy = [{"ticker": f"T{i}"} for i in range(10)]
     plan_tickers = {"T0", "T1"}  # pool = 8 tickers without a plan, >= 6
-    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers)
+    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers, sample_size=6)
     assert out["all_no_plan"] is True
     assert len(out["sample"]) == 6
     assert all(r["ticker"] not in plan_tickers for r in out["sample"])
@@ -150,7 +151,7 @@ def test_b4_no_plan_sample_fallback_flags_dishonest_claim():
     # Every one of the first 6 board rows carries a plan -> the honest pool is
     # empty, so the fallback sample is ALL plan-carrying, and the flag must say so.
     plan_tickers = {"T0", "T1", "T2", "T3", "T4", "T5"}
-    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers)
+    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers, sample_size=6)
     assert out["all_no_plan"] is False
     assert len(out["sample"]) == 6
 
@@ -163,10 +164,48 @@ def test_b4_reproduces_the_finding_full_board_not_the_gated_slice():
     only 3 rows."""
     full_buy = [{"ticker": f"T{i}"} for i in range(20)]
     plan_tickers = {f"T{i}" for i in range(3)}  # only the preview-3 have plans
-    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers)
+    out = bs._us_candidate_no_plan_sample(full_buy, plan_tickers, sample_size=6)
     assert out["all_no_plan"] is True, (
         "against the full 20-name board, 17 names carry no plan — comfortably "
         "past the 6-row sample size, so the honest branch must fire")
+
+
+def test_r2_no_plan_sample_default_is_the_real_preview_cap_not_six():
+    """Repair round 2, finding R2: the round-1 fix baked up to SIX real
+    candidate rows into the anonymous-public document, relying on
+    tier_preview.js's CLIENT-SIDE cap to hide the rest — exactly what
+    config/site_access.yml's own law forbids ("a client-side hide is a
+    marketing wall, not a gate"; view-source still reads them). Pre-migration
+    and pre-repair both baked exactly 3 (the real `preview_rows`). The
+    function's own default must match that — never a bare 6 — independent of
+    what any call site remembers to pass."""
+    full_buy = [{"ticker": f"T{i}"} for i in range(10)]
+    out = bs._us_candidate_no_plan_sample(full_buy, set())
+    assert len(out["sample"]) == 3, (
+        f"default sample_size leaked {len(out['sample'])} rows — must default "
+        "to the real tier-boundary preview cap (3), not a larger constant")
+
+
+def test_r2_gated_render_bakes_exactly_preview_rows_cand_row_elements():
+    """The end-to-end regression: a gated build's rendered HTML must never
+    contain more than `gate.preview` real `.cand-row` elements, however
+    `cand_no_plan` was computed — tier_preview.js's client-side cap is a UX
+    funnel on top of this, never a substitute for it."""
+    full_buy = [_board_row(ticker=f"CAND{i}", name=f"Candidate {i}", stage=None,
+                            lane=None) for i in range(20)]
+    # Every candidate has no plan, so the honest branch fires — the leak this
+    # finding is about is specifically the SAMPLE SIZE, not the honesty flag.
+    cand_no_plan = bs._us_candidate_no_plan_sample(full_buy, set(), sample_size=3)
+    assert cand_no_plan["all_no_plan"] is True
+    html = _render_stocks({
+        "us_standouts": {"buy": full_buy, "ran": [], "eligible": len(full_buy)},
+        "gate": _DUMMY_GATE,
+        "us_prophet_book": _prophet_book(plans=[]),
+        "cand_no_plan": cand_no_plan,
+    })
+    assert html.count('class="cand-row"') == 3, (
+        f"expected exactly 3 baked .cand-row elements (gate.preview), found "
+        f"{html.count('class=\"cand-row\"')}")
 
 
 def test_b4_template_footer_is_conditional_on_the_flag():
@@ -261,7 +300,8 @@ def test_s2_plan_card_join_uses_the_full_candidate_map_when_threaded():
         "only the FULL server-side map (us_candidate_map) can supply its name")
 
 
-# ─────────────────────────── S3 — hydrate staleness + dense cap ───────────
+# ─────────────────────────── S3 — hydrate staleness ────────────────────────
+# (the round-1 dense-cap half of S3 is REMOVED — see R1/R3 below)
 
 def test_s3_hydrate_no_longer_blind_appends_into_the_initialized_grid():
     html = _render_stocks({"us_prophet_book": _prophet_book(), "gate": _DUMMY_GATE})
@@ -273,10 +313,66 @@ def test_s3_hydrate_no_longer_blind_appends_into_the_initialized_grid():
         "pattern as _pvcPaint's own W-L1 comment")
 
 
-def test_s3_dense_cap_marker_and_function_present():
-    html = _render_stocks({"us_prophet_book": _prophet_book()})
-    assert 'id="us-life-dense-more"' in html
-    assert "__usLifeDenseCap" in html
+# ─────────────────── R1+R3 — dense cap REMOVED (round-2 finding) ──────────
+# COMMISSIONING ADJUDICATION: a hard 40-card cap that physically removed
+# cards past the cap broke the ladder filter for every cell whose members
+# sort mostly past position 40 — on the real committed book, Delivering(1)/
+# Invalidated(4)/Resolved(26) went DEAD for a hydrated (signed-in) viewer,
+# and S9's new zero-state then printed "No plans match this filter" under a
+# ladder cell reading a nonzero count. MP-1 §10's dense clause is DEFERRED
+# WHOLESALE to a follow-up wave that builds a real plan-book table view.
+
+def test_r1_r3_dense_cap_machinery_fully_removed():
+    html = _render_stocks({"us_prophet_book": _prophet_book(), "gate": _DUMMY_GATE})
+    assert "__usLifeDenseCap" not in html
+    assert 'id="us-life-dense-more"' not in html
+    assert "mx-dense-more" not in html
+    # The fresh-grid swap legitimately removeChild()s the OLD container node
+    # and its stale sm-bar sibling (that part is kept — it fixed a real,
+    # separate defect). What must be gone is per-CARD removal past a cap.
+    assert "removeChild(cards[i])" not in html, (
+        "hydrate() must not remove any individual card it just merged in")
+    assert "CAP = 40" not in html and "cards.length > CAP" not in html
+
+
+def test_r1_r3_hydrate_preserves_every_plan_row_against_the_real_payload():
+    """Regression for the R1/R3 finding, against the REAL committed book
+    (site/prophet/index.json) rather than a synthetic fixture — the bug was
+    specifically about where Delivering/Invalidated/Resolved rows actually
+    SORT on a real night (first resolved row at index 63), which a small
+    synthetic fixture would not reproduce. After the fresh-grid hydrate merge
+    (shell preview HTML + hydrated locked-rows HTML, nothing removed), every
+    plan row must be present, and every ladder cell with a nonzero published
+    count must have at least one matching `data-life` card somewhere in the
+    combined DOM."""
+    payload_path = ROOT / "site" / "prophet" / "index.json"
+    if not payload_path.exists():
+        pytest.skip("site/prophet/index.json not present in this checkout")
+    book = json.loads(payload_path.read_text())
+    plans = book.get("plans") or []
+    counts = book.get("lifecycle_counts") or {}
+    if not plans or not any(counts.values()):
+        pytest.skip("real payload has no plans / no nonzero lifecycle cells to test against")
+
+    shell_book, life_gate, locked_plans = bs._split_us_prophet_board(book, 3, gated=True)
+    assert life_gate is not None and locked_plans, "fixture assumption: the real book is gated"
+    episodes = bs._us_prophet_episode_map(plans)
+
+    shell_html = _env().get_template("_us_prophet_plan_cards.html.j2").render(
+        items=shell_book["plans"], cand_map={}, trg_map={}, episode_map=episodes)
+    payload_html = _env().get_template("_us_prophet_plan_cards.html.j2").render(
+        items=locked_plans, cand_map={}, trg_map={}, episode_map=episodes)
+    combined = shell_html + payload_html
+
+    # Every plan row is present — the fresh-grid merge is a pure concatenation.
+    assert combined.count("data-life=") == len(plans)
+
+    # Every nonzero cell (Delivering/Invalidated/Resolved included) is reachable.
+    dead_cells = [k for k, n in counts.items() if n and f'data-life="{k}"' not in combined]
+    assert not dead_cells, (
+        f"ladder cell(s) {dead_cells} are nonzero in lifecycle_counts but have "
+        f"NO matching card in the hydrated DOM — this is exactly the R1/R3 "
+        f"regression (a cap or other filter silently dropped rows)")
 
 
 # ─────────────────────────── S4 — empty state cause line ──────────────────
@@ -357,6 +453,33 @@ def test_s8_wall_quotes_the_visible_count_when_a_resolved_row_sorts_top():
                             "life_gate_visible_preview": visible})
     assert "first 2 of" in html
     assert "first 3 of" not in html
+
+
+def test_r4_wall_arithmetic_stays_honest_when_a_resolved_row_sorts_top():
+    """Repair round 2, finding R4: once the wall's "first N" figure is the
+    honest visible count (S8), its "N more" figure must be that count's
+    arithmetic complement — round-1 shipped "first 2 of 262" beside "259
+    more" (2+259=261, not 262). visible_preview + visible_locked must equal
+    the quoted total."""
+    plans = ([_prophet_plan(id="R1", asset="R1", lifecycle_state="resolved", closed=True)]
+             + [_prophet_plan(id=f"A{i}", asset=f"A{i}", lifecycle_state="ready")
+                for i in range(4)])
+    book = _prophet_book(plans=plans)
+    shell_book, life_gate, _locked = bs._split_us_prophet_board(book, 3, gated=True)
+    ctx = bs._us_life_repair_context({"us_standouts": None, "us_prophet_book": book},
+                                      shell_book, life_gate, 3)
+    visible_preview = ctx["life_gate_visible_preview"]
+    visible_locked = ctx["life_gate_visible_locked"]
+    assert visible_preview == 2
+    assert visible_locked == life_gate["total"] - visible_preview
+    assert visible_preview + visible_locked == life_gate["total"] == len(plans)
+
+    html = _render_stocks({"us_prophet_book": shell_book, "life_gate": life_gate,
+                            **ctx})
+    assert f"first {visible_preview} of {life_gate['total']}" in html
+    assert f"{visible_locked} more plan rows" in html
+    # The two quoted numbers must literally sum to the quoted total.
+    assert visible_preview + visible_locked == 5
 
 
 # ─────────────────────────── S9 — silent zero-match filter ────────────────

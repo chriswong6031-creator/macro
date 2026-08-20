@@ -64,9 +64,30 @@ NON_US_TEMPLATES = [
 ]
 
 
+def _merge_base() -> str:
+    """Repair round 2, finding R5: this suite's job is proving THIS BRANCH'S
+    OWN commits never touched the non-US files — a diff against the LIVE
+    `origin/main` is the wrong comparison, because main keeps moving (nightly
+    pushes, other merged PRs) and any of those commits touching
+    hk.html.j2/canada.html.j2/etc. independently fails this suite for a
+    reason that has nothing to do with this branch's diff. Confirmed as a
+    standing false-positive landmine: `origin/main` had drifted ahead of this
+    branch's merge-base by the time of both the round-1 and round-2 review
+    (canada.html.j2/hk.html.j2 changed on main after this branch forked).
+    The merge-base is the fixed point this branch actually diverged from —
+    diffing against it answers the suite's real question and never moves
+    again for THIS branch."""
+    return subprocess.check_output(
+        ["git", "merge-base", "origin/main", "HEAD"], cwd=str(ROOT)
+    ).decode().strip()
+
+
+_MERGE_BASE = _merge_base()
+
+
 def _origin_main_text(rel_path: str) -> str:
     return subprocess.check_output(
-        ["git", "show", f"origin/main:{rel_path}"], cwd=str(ROOT)
+        ["git", "show", f"{_MERGE_BASE}:{rel_path}"], cwd=str(ROOT)
     ).decode()
 
 
@@ -74,7 +95,7 @@ def test_non_us_page_templates_are_untouched():
     """Confirms no file besides _prophet_card.html.j2 in this packet's diff
     can reach hk/china/canada/intl's rendered bytes at all."""
     out = subprocess.check_output(
-        ["git", "diff", "--stat", "origin/main", "HEAD", "--", *NON_US_TEMPLATES],
+        ["git", "diff", "--stat", _MERGE_BASE, "HEAD", "--", *NON_US_TEMPLATES],
         cwd=str(ROOT),
     ).decode()
     assert out.strip() == "", f"non-US template(s) changed:\n{out}"
@@ -171,7 +192,7 @@ def test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards():
     hunk is a genuine one-line MODIFICATION (a `+`/`-` pair), not an insertion,
     so a pure-subsequence check is the wrong shape for this diff."""
     diff = subprocess.check_output(
-        ["git", "diff", "-U0", "origin/main", "--", "templates/stocktable.js"],
+        ["git", "diff", "-U0", _MERGE_BASE, "--", "templates/stocktable.js"],
         cwd=str(ROOT),
     ).decode()
     hunk_count = diff.count("@@ -")
@@ -210,7 +231,7 @@ def test_non_us_stocktable_init_call_sites_are_byte_identical_to_origin_main():
     slice for each of the three markets, byte-for-byte."""
     for rel in NON_US_STOCKTABLE_CALLERS:
         orig_src = subprocess.check_output(
-            ["git", "show", f"origin/main:{rel}"], cwd=str(ROOT)
+            ["git", "show", f"{_MERGE_BASE}:{rel}"], cwd=str(ROOT)
         ).decode()
         cur_src = (ROOT / rel).read_text()
         orig_call = orig_src[orig_src.index("StockTable.init("):]

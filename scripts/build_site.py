@@ -5062,7 +5062,7 @@ def _us_life_gate_cfg() -> bool:
 
 
 def _us_candidate_no_plan_sample(full_buy: "list[dict]", plan_tickers: "set[str]",
-                                  sample_size: int = 6) -> dict:
+                                  sample_size: int = 3) -> dict:
     """P-MP1-SHELL repair round, finding B4: the Candidates shelf's "carries no
     plan yet" sample, computed against the FULL (pre-slice) candidate board —
     never the gate-sliced preview, which on a gated build (preview_rows=3) can
@@ -5071,13 +5071,26 @@ def _us_candidate_no_plan_sample(full_buy: "list[dict]", plan_tickers: "set[str]
     rendered as both Setups and Candidates under a "carries no plan yet"
     caption).
 
+    Round-2 fix, finding R2 (§8b-adjacent — a real tier-boundary leak, not a
+    display nicety): `sample_size` MUST be called with the actual preview cap
+    (`gate.preview`, i.e. `_us_gate_cfg["preview_rows"]` — 3 in production),
+    never a larger constant. The round-1 fix computed `all_no_plan` honestly
+    but then baked up to 6 real candidate rows (name/price) into the
+    anonymous-public document relying on tier_preview.js's CLIENT-SIDE cap to
+    hide the extra ones — exactly what config/site_access.yml's own law
+    forbids ("a client-side hide is a marketing wall, not a gate"; view-source
+    still reads them). Pre-migration and the round-1-repaired build both baked
+    3. The default here matches that; the caller still passes the real
+    preview_rows explicitly so a config change is never silently stale.
+
     Returns {'sample': [...], 'all_no_plan': bool}: `sample` is up to
-    `sample_size` rows (published order preserved, never re-sorted); when the
-    true no-plan pool is smaller than `sample_size`, the sample falls back to
-    the first `sample_size` board rows same as before, but `all_no_plan` is
-    computed HONESTLY against that actual sample rather than assumed true —
-    the template's footer copy must read this flag rather than assert the
-    claim unconditionally.
+    `sample_size` rows (published order preserved, never re-sorted) — the
+    ONLY rows threaded to the template, so nothing beyond the tier boundary
+    ever reaches the rendered HTML. `all_no_plan` is computed over the FULL
+    no-plan POOL (never just the truncated sample) so the honesty check does
+    not itself depend on the leak-safe truncation: a pool that reaches
+    `sample_size` is genuinely honest even though the pool itself may hold
+    many more no-plan names than are ever shown.
     """
     pool = [r for r in full_buy if r.get("ticker") and r.get("ticker") not in plan_tickers]
     if len(pool) >= sample_size:
@@ -5102,33 +5115,61 @@ def _us_life_visible_preview_count(shell_book: "dict | None") -> int:
                if (p.get("lifecycle_state") or "") != "resolved")
 
 
-def _us_life_repair_context(vm: dict, us_life_shell: "dict | None") -> dict:
-    """P-MP1-SHELL repair round: the B4/S2/S8 context pieces threaded into the
-    stocks-mode dashboard.html.j2 render call, computed once so the primary
-    render and the one-build-lag re-render in main() stay identical and never
-    drift. Reads only `vm["us_standouts"]`/`vm["us_prophet_book"]`, which are
-    NEVER mutated by _split_us_board/_split_us_prophet_board (both return a
-    shallow-copied shell), so `_full_buy`/plan tickers here are always the
-    TRUE full board regardless of gating — never re-derives or touches the
-    §8b split functions themselves.
+def _us_life_repair_context(vm: dict, us_life_shell: "dict | None",
+                             life_gate: "dict | None" = None,
+                             preview_rows: int = 3) -> dict:
+    """P-MP1-SHELL repair round: the B4/S2/S8/R2/R4 context pieces threaded
+    into the stocks-mode dashboard.html.j2 render call, computed once so the
+    primary render and the one-build-lag re-render in main() stay identical
+    and never drift. Reads only `vm["us_standouts"]`/`vm["us_prophet_book"]`,
+    which are NEVER mutated by _split_us_board/_split_us_prophet_board (both
+    return a shallow-copied shell), so `_full_buy`/plan tickers here are
+    always the TRUE full board regardless of gating — never re-derives or
+    touches the §8b split functions themselves.
 
-    Returns the three new vm keys:
-      us_candidate_map        — S2: ticker -> full us_standouts.buy row, the
-                                 SAME map _write_us_payload's payload builder
-                                 already uses, so a plan card's ticker not in
-                                 the (possibly gate-sliced) preview candidate
-                                 rows still gets its name/sector/price/spark.
-      cand_no_plan             — B4: {'sample', 'all_no_plan'}, see
-                                 _us_candidate_no_plan_sample().
-      life_gate_visible_preview — S8: see _us_life_visible_preview_count().
+    `preview_rows` MUST be the caller's real gate preview-row count
+    (`_us_gate_cfg["preview_rows"]`) — round-2 finding R2 threads it into
+    `_us_candidate_no_plan_sample` so the Candidates shelf never bakes more
+    real rows into the document than the tier boundary allows (see that
+    function's docstring). `life_gate` (round-2 finding R4) is the ALREADY
+    gate-sliced dict from `_split_us_prophet_board` — needed only to keep
+    the wall's "N more" figure arithmetically honest against the S8-fixed
+    visible-preview count; never re-derives its `total`/`preview`/`locked`.
+
+    Returns the vm keys:
+      us_candidate_map          — S2: ticker -> full us_standouts.buy row,
+                                 the SAME map _write_us_payload's payload
+                                 builder already uses, so a plan card's
+                                 ticker not in the (possibly gate-sliced)
+                                 preview candidate rows still gets its
+                                 name/sector/price/spark.
+      cand_no_plan               — B4/R2: {'sample', 'all_no_plan'}, see
+                                 _us_candidate_no_plan_sample(); `sample` is
+                                 capped at `preview_rows`.
+      life_gate_visible_preview  — S8: see _us_life_visible_preview_count().
+      life_gate_visible_locked   — R4: `life_gate['total'] - visible_preview`
+                                 when `life_gate` is present, else None — the
+                                 complement of what the wall actually claims
+                                 to show, so `visible_preview + this ==
+                                 life_gate['total']` always holds even on a
+                                 night a resolved plan sorts into the preview
+                                 slice (S8). `life_gate['locked']` itself is
+                                 untouched (it is `_split_us_prophet_board`'s
+                                 own, correct, RAW-slice arithmetic — the
+                                 wall's DISPLAYED "N more" is what needed the
+                                 honest complement, not the split's return).
     """
     _full_buy = (vm.get("us_standouts") or {}).get("buy") or []
     _full_plan_tickers = {p.get("asset") for p in ((vm.get("us_prophet_book") or {}).get("plans") or [])
                            if p.get("asset")}
+    _visible_preview = _us_life_visible_preview_count(us_life_shell)
     return {
         "us_candidate_map": {r.get("ticker"): r for r in _full_buy if r.get("ticker")},
-        "cand_no_plan": _us_candidate_no_plan_sample(_full_buy, _full_plan_tickers),
-        "life_gate_visible_preview": _us_life_visible_preview_count(us_life_shell),
+        "cand_no_plan": _us_candidate_no_plan_sample(_full_buy, _full_plan_tickers,
+                                                      sample_size=preview_rows),
+        "life_gate_visible_preview": _visible_preview,
+        "life_gate_visible_locked": ((life_gate["total"] - _visible_preview)
+                                      if life_gate else None),
     }
 
 
@@ -6916,8 +6957,9 @@ def main() -> int:
     _us_life_shell, _us_life_gate, _us_life_locked = _split_us_prophet_board(
         vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_life_gate_cfg())
     _us_life_episodes = _us_prophet_episode_map((vm.get("us_prophet_book") or {}).get("plans") or [])
-    # Repair round, findings B4/S2/S8 — see _us_life_repair_context().
-    _us_life_repair = _us_life_repair_context(vm, _us_life_shell)
+    # Repair round, findings B4/S2/S8/R2/R4 — see _us_life_repair_context().
+    _us_life_repair = _us_life_repair_context(vm, _us_life_shell, _us_life_gate,
+                                               _us_gate_cfg["preview_rows"])
     # The four panels ADJACENT to the board (fresh triggers, market leaders,
     # recently fired, act-now, theme tape) are fed by different artifacts, so the
     # board's split never reached them — they ride the same payload as extra
@@ -7353,8 +7395,9 @@ def main() -> int:
                     vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_life_gate_cfg())
                 _us_life_episodes2 = _us_prophet_episode_map(
                     (vm.get("us_prophet_book") or {}).get("plans") or [])
-                # Repair round, findings B4/S2/S8 — see _us_life_repair_context().
-                _us_life_repair2 = _us_life_repair_context(vm, _us_life_shell2)
+                # Repair round, findings B4/S2/S8/R2/R4 — see _us_life_repair_context().
+                _us_life_repair2 = _us_life_repair_context(vm, _us_life_shell2, _us_life_gate2,
+                                                            _us_gate_cfg["preview_rows"])
                 # Same for the adjacent panels: this pass replaced us_standouts,
                 # top_setups and theme_tape above, so re-split from THIS generation
                 # or the re-render bakes their full row sets back into the shell.
