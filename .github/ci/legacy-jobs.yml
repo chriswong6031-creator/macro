@@ -5955,6 +5955,12 @@ jobs:
       - "engine/ai_desk.py"
       - "engine/ai_desk_scorer.py"
       - "engine/alert_triage.py"
+      # engine/alert_triage.py imports engine/alert_time.py (the Alert Center
+      # three-clock / ET board-day contract, Wave 7 2026-08-20), so this curated
+      # scope's import closure reaches it. Declared here because a curated
+      # `scope: exclusive` job must cover its OWN closure — widening is always the
+      # safe direction (scripts/check_contract_delta.py).
+      - "engine/alert_time.py"
       - "engine/alerts.py"
       - "engine/altdata_confirmers.py"
       - "engine/altdata_ledger.py"
@@ -9332,6 +9338,12 @@ jobs:
       - "engine/ai_desk.py"
       - "engine/ai_desk_scorer.py"
       - "engine/alert_triage.py"
+      # engine/alert_triage.py imports engine/alert_time.py (the Alert Center
+      # three-clock / ET board-day contract, Wave 7 2026-08-20), so this curated
+      # scope's import closure reaches it. Declared here because a curated
+      # `scope: exclusive` job must cover its OWN closure — widening is always the
+      # safe direction (scripts/check_contract_delta.py).
+      - "engine/alert_time.py"
       - "engine/alerts.py"
       - "engine/alt_cycle.py"
       - "engine/altdata_ledger.py"
