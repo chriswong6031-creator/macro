@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T22:14:55.331173+00:00",
-  "count": 1496,
+  "generated_at": "2026-08-20T23:15:10.167758+00:00",
+  "count": 1500,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -122,6 +122,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-90pnt1taxil-bc2b14",
+      "title": "Top of Mind Assessing a less transparent Fed",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:09Z",
+      "summary_points": [
+        "**Fed Transparency Shift**: Warsh’s reduced transparency (shorter statements, no forward guidance) increases policy uncertainty but may enhance market signal quality; experts diverge on volatility impact (Hatzius: negative; Miran: positive).",
+        "**US Labor Market Weakness**: Job growth at 5k (below break-even), exacerbated by Strait of Hormuz closure and gas prices; Fed holds rates through year-end despite risks.",
+        "**Inflation Data Complexity**: Fed’s 2% target insufficient; require multi-data-point analysis (headline/core PCE, trimmed mean) to assess inflation sustainability for asset allocation.",
+        "**Japan BoJ Policy Risk**: Gradual hikes expected (next Jan 2027), but consumption tax cut worsens debt outlook; critical for FX and bond positioning.",
+        "**Fed Communication Evolution**: 2026 shift eliminates explicit forward guidance, SEP projections, and \"balance of risks\" content, forcing reliance on data releases over Fed narratives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-a6qsqdbtprn-5ef9fa",
       "title": "Opera Ltd. (OPRA) Q2'26 Earnings Review Query Based Monetization Drives Q2 Performance as Broader AI Strategy Takes Hold",
       "institution": "Goldman Sachs",
@@ -161,6 +182,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-nkfumve7bvy-90ad7d",
+      "title": "USA Philly Fed Manufacturing Highest Since 2021",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:31Z",
+      "summary_points": [
+        "**Philly Fed Manufacturing Index**: +47.4 (highest since April 2021), 6-month business conditions at 73.6 (highest since 1983), signaling robust forward-looking economic momentum despite softer new orders/ships/prices.",
+        "**Continuing Claims Trend**: Declining from 1,950k peak (mid-2025) to 1,750k (Jul-26), indicating potential labor market softening; above-forecast 1,799k reading suggests mixed signals for job growth and inflation trajectory.",
+        "**Portfolio Impact**: Declining continuing claims (lagging indicator) may reduce unemployment dependency but signal slowing job growth; critical for assessing inflation trajectory and interest rate expectations ahead of next data releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0cihcglmypc-071da5",
+      "title": "Oil Analyst Running Hard or Hardly Running Effect of Refinery Outages on Runs and Margins",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:29Z",
+      "summary_points": [
+        "**Refinery Runs vs.",
+        "Margins Divergence**: Global refinery runs down 7mb/d YoY despite record diesel margins ($100/bbl in US), driven by unprecedented supply constraints (Middle East/Russia outages at 60% capacity, China export quotas, elevated crude prices).",
+        "**Geopolitical Outage Impact**: Middle East/Russia refinery outages (Russia: +161% YoY) prevent supply response to margin rallies, creating negative supply-demand divergence (historical correlation -0.6) and sustaining elevated margins.",
+        "**Margin-Run Causal Dynamics**: A 1mb/d global run decline initially lowers diesel margins by $0.7/bbl but boosts them by $6/bbl after 12 months due to stock accumulation effects and limited spare capacity.",
+        "**Geopolitical Diesel Hedge Opportunity**: European diesel timespreads up 30% since July; persistent outages could drive 50-60% further upside, with deferred spreads and long natural gas positions as key hedges."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-l5ds7rhp1pd-77df09",
       "title": "Global Markets Daily Fed Communication And Term Premium",
       "institution": "Goldman Sachs",
@@ -195,6 +256,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gheqmsswphk-2f55ab",
+      "title": "Jack Henry & Associates Inc. (JKHY) FY4Q26 Takeaways Better than feared guidance drives relief rally",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:00Z",
+      "summary_points": [
+        "**Q4 Results & Guidance**: FYQ426 adjusted revenue +1% vs.",
+        "consensus, non-GAAP operating income beat; FY2027 guidance revenue $2.659m-$2.684m, GAAP EPS $7.33-$7.38, signaling strong execution amid margin pressures.",
+        "**Valuation & Rating**: 21x C2027 EPS valuation supports Neutral rating; market overreacted to guidance, with next catalyst expected in September.",
+        "**Margin Dynamics**: 1pt revenue headwind in F1Q offset by 1pt benefit in F2Q; 2H margin benefits from lapping elevated self-insured medical costs, GAAP tax rate 23% in FY27.",
+        "**Risk Profile**: Key risks include bank consolidation (upside/downside), regulation (upside/downside), macro environment (upside/downside), competition (downside); updated FY2027-2029 estimates to $7.36/$8.16/$9.86."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
