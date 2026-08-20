@@ -2,12 +2,17 @@ name: live-breadth
 # Backstop lane for the live intraday breadth poller (Phase 2 of the Live Tape
 # program — research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4, D6/D7).
 #
-# The PRIMARY producer is scripts/live_breadth_poller.py running as a persistent
-# loop on the VPS/Mac host (--rth-only --publish, 60-120s cadence — see
-# docs/live_breadth_runbook.md). GH cron cannot hold a 1-2 min cadence
+# The PRIMARY producer is the installed `macro-live-breadth` systemd timer
+# (app/deploy/macro-live-breadth.service/.timer, wired into
+# app/deploy/live-setup.sh — FROZEN CONTRACT §7), polling every ~2 min across
+# the US session on the VPS host. GH cron cannot hold a 1-2 min cadence
 # (best-effort ~15-45 min), so this workflow is only the COARSE floor: when the
-# host loop is down it still refreshes site/live/breadth.json every ~30 min
-# during RTH so the surface never goes fully stale.
+# host lane is down it still refreshes site/live/breadth.json every ~30 min
+# during RTH so the surface never goes fully stale. `VPS_LIVE_PRIMARY=true` may
+# only be set once production breadth (the systemd lane, not just the backstop)
+# is proven live — the truth boundary in engine/live_breadth.py's
+# `evaluate_usable` means a degraded/stale run from EITHER producer can never
+# overwrite the baked nightly board regardless of which one is primary.
 #
 # Runs ONE cycle with --publish (the same site/live/*.json commit-to-main path
 # the intraday-fastpath uses for overlay.json). site/live/ is gitignored and
@@ -52,13 +57,16 @@ jobs:
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
       - name: poll breadth once + publish
-        # RTH gate is inside session_tag/delay stamping; the poller always emits with
-        # an honest `session` value. Non-fatal: any failure leaves the last committed
-        # breadth.json untouched (tracked file) so the surface keeps the prior read.
+        # RTH/holiday gate is inside session_tag/delay stamping (lib.nyse_calendar); the
+        # poller always emits with an honest `session` value. A requested `--publish`
+        # that fails now REDS this run (FROZEN CONTRACT §2d/§8) — no more swallowed
+        # `|| echo "::warning"` green lie. A poll failure never corrupts the last
+        # committed breadth.json (it is a tracked file the poller only replaces on a
+        # successful write+commit), so a red run here means "investigate", not "outage".
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MACRO_LIVE_PRODUCER: gh:live-breadth-backstop
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          python -m scripts.live_breadth_poller --once --publish || \
-            echo "::warning::live-breadth poll failed (non-fatal; prior breadth.json retained)"
+          python -m scripts.live_breadth_poller --once --publish
