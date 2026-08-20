@@ -109,6 +109,48 @@ class TestCategorize:
         # buyback outranks holder_change_down per brief priority order
         assert cf.categorize("回购减持公告") == "buyback"
 
+    # ----------------------------------------------------------------- #
+    # institutional_visit (P1, RIGHTS-0 §1) — added alongside china_visits.py
+    # ----------------------------------------------------------------- #
+
+    def test_institutional_visit_activity_record(self):
+        assert cf.categorize("顺网科技：投资者关系活动记录表") == "institutional_visit"
+
+    def test_institutional_visit_specific_object_survey(self):
+        assert cf.categorize("关于接待特定对象调研的公告") == "institutional_visit"
+
+    def test_institutional_visit_analyst_meeting(self):
+        assert cf.categorize("2026年度分析师会议纪要") == "institutional_visit"
+
+    def test_institutional_visit_results_briefing(self):
+        assert cf.categorize("2026年半年度业绩说明会公告") == "institutional_visit"
+
+    def test_institutional_visit_generic_survey_keyword(self):
+        assert cf.categorize("机构调研情况登记表") == "institutional_visit"
+
+    def test_institutional_visit_is_lowest_priority_named_category(self):
+        # investigation still wins over a title that also mentions 调研
+        assert cf.categorize("立案调查暨调研接待公告") == "investigation"
+        # inquiry_letter still wins
+        assert cf.categorize("问询函回复：调研接待安排说明") == "inquiry_letter"
+        # buyback still wins
+        assert cf.categorize("回购股份实施结果暨调研接待公告") == "buyback"
+
+    def test_existing_categories_unchanged_by_the_new_bucket(self):
+        # Full existing-category regression, single assertion per family —
+        # the new institutional_visit entry must not shift any of these.
+        assert cf.categorize("公司收到证监会立案告知书") == "investigation"
+        assert cf.categorize("关于问询函的回复公告") == "inquiry_letter"
+        assert cf.categorize("关于可能退市风险的提示公告") == "delisting_risk"
+        assert cf.categorize("2023年年度业绩预告") == "earnings_preann"
+        assert cf.categorize("关于重大资产重组进展的公告") == "restructuring"
+        assert cf.categorize("公司中标政府采购合同公告") == "major_contract"
+        assert cf.categorize("关于回购公司股份的公告") == "buyback"
+        assert cf.categorize("股东股权质押公告") == "pledge"
+        assert cf.categorize("持股5%以上股东减持股份计划公告") == "holder_change_down"
+        assert cf.categorize("董事增持公司股份结果公告") == "holder_change_up"
+        assert cf.categorize("关于召开2024年度股东大会的通知") == "other"
+
 
 # --------------------------------------------------------------------------- #
 # classify_kind — inquiry-letter sub-kind

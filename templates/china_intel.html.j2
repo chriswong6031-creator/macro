@@ -696,6 +696,59 @@
   {%- endif %}
   {%- endif %}
 
+  {# ── K2c. INSTITUTIONAL VISITS (P1, China Alpha Intelligence, #6050) ── #}
+  {#- Reuses the discovery-queue card idiom below (.disc-queue/.disc-card/
+      .disc-ticker/.disc-name/.disc-reason) — zero new CSS. Descriptive only:
+      no score, no rank, no directional hue. Every command row's `visits`
+      block is rendered from its typed state (masterplan §9.3 ten-state
+      taxonomy) — a healthy "no event yet" or "not covered" read is shown,
+      never hidden and never presented as a bare zero. #}
+  {%- if cmd_full and cmd_full.command %}
+  {%- set _vcmd = cmd_full.command %}
+  {%- set _vshow = [15, _vcmd|length]|min %}
+  <h2 class="sec">{{ t('Institutional visits', '机构调研') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+    {{ t('Investor-relations visit filings','投资者关系活动调研备案') }}
+    {%- if cmd_full.visits_coverage_start %} · {{ t('coverage begins','覆盖始于') }} {{ cmd_full.visits_coverage_start }}{%- endif %}
+  </p>
+  <div class="disc-queue">
+    {%- for d in _vcmd[:_vshow] %}
+    {%- set _v = d.get('visits') or {'state': 'no_coverage'} %}
+    <div class="disc-card">
+      <div class="disc-ticker">{{ d.ticker }}</div>
+      <div class="disc-name">{{ d.name[:22] }}</div>
+      {%- if _v.state == 'ok' %}
+        {%- for r in (_v.recent or [])[:3] %}
+        <div class="disc-reason">{{ (r.source_published_at or '')[:10] }} · {{ t(r.kind_en or 'investor visit', r.kind_zh or '机构调研') }}</div>
+        {%- if r.first_seen_since_coverage_start %}
+        <div class="disc-reason">{{ t('first seen since coverage start','覆盖开始以来首次出现') }}{% if _v.coverage_start %} ({{ _v.coverage_start }}){% endif %}</div>
+        {%- endif %}
+        <div class="disc-reason">
+          {%- if r.visitor_class in ('not_yet_available', 'unresolved', none, '') %}
+            {{ t('Visitors not yet identified in the filing','拜访机构暂未识别') }}
+          {%- else %}
+            {{ r.visitor_raw }}
+          {%- endif %}
+        </div>
+        {%- endfor %}
+      {%- elif _v.state == 'measured_no_event' %}
+        <div class="disc-reason">{{ t('No investor-relations visit filings since coverage start','自覆盖开始以来无投资者关系调研备案') }}{% if _v.coverage_start %} ({{ _v.coverage_start }}){% endif %}.</div>
+      {%- elif _v.state == 'no_coverage' %}
+        <div class="disc-reason">{{ t('Visit records are not yet covered for this listing.','该股票的调研记录尚未纳入覆盖范围。') }}</div>
+      {%- elif _v.state == 'stale' %}
+        <div class="disc-reason">{{ t('Visit records last refreshed','调研记录最近一次刷新于') }} {{ _v.stale_days if _v.stale_days is not none else '?' }} {{ t('days ago — treat as out of date.','天前——请视为过期数据。') }}</div>
+      {%- elif _v.state == 'source_failure' %}
+        <div class="disc-reason">{{ t('Visit-record source unavailable — absence means nothing today.','调研记录来源当前不可用——今日的“无记录”不代表任何结论。') }}</div>
+      {%- elif _v.state == 'not_applicable' %}
+        <div class="disc-reason">{{ t('Visit-record disclosures do not apply to this listing.','调研披露规则不适用于该股票。') }}</div>
+      {%- else %}
+        <div class="disc-reason">{{ t('Visit records: status', '调研记录：状态') }} {{ _v.state }}</div>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
   {# ── K3. DISCOVERY QUEUE ── #}
   {%- if cmd_full and cmd_full.discovery %}
   <h2 class="sec">{{ t('Discovery Queue','发现队列') }}</h2>

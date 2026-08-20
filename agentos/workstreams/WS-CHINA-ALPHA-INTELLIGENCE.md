@@ -115,9 +115,9 @@ waves:
     next_action: "P1 verdict (research/china_alpha_intelligence/RIGHTS_REGISTRY.md section 10): do NOT build on Tushare stk_surv (UNKNOWN_RIGHTS, no collector, tier UNKNOWN(operator)); P1 builds on the CNInfo primary-source route instead (rights-clear metadata plane, china_filings.py) -- blocker is the missing 投资者关系活动记录表/调研 category bucket in CATEGORY_PRIORITY (collectors/china_filings.py:139-150), not rights. Family-2 (fund_portfolio) and Family-6 named-actor plane remain GAP with no rights-clear native alternative; spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md next."
   - id: p1
     title: P1 Institutional Visit Tape + dossier (producer, PIT clock, provisional actor ontology, coverage-start semantics, failure isolation; NO score; merge = BUILT_NOT_PROVEN, done only on real asia-close receipt + production dossier desktop/mobile proof)
-    status: todo
+    status: in_progress
     depends_on: [rights0]
-    next_action: spawn builder with research/china_alpha_intelligence/commissions/P1_institutional_visit_tape.md after rights0 verdict on the visit source
+    next_action: "BUILT_NOT_PROVEN -- merged as PR #6050; done only on the real asia-close receipt + production dossier desktop/mobile proof (collectors/china_visits.py derives the visit tape from china_filings' new institutional_visit category bucket; owner-native store data/china_visits/; dossier block in engine/china_intel_hub.py's _dossier(); fixture-driven receipts in the PR body). Follow-up verification session: (1) confirm a real asia-close.yml run has collected real visit rows end-to-end (record the run id), (2) capture desktop+mobile crops of the PRODUCTION dossier showing the visit block for a real company with honest failure states, then flip p1 to done."
   - id: pr0d
     title: PR-0D China exact identity extension (Data OS master + GMI bridge China resolution ONLY — never the Earnings event adapter; §0-ter.6 boundary; merge = BUILT_NOT_PROVEN)
     status: in_progress
