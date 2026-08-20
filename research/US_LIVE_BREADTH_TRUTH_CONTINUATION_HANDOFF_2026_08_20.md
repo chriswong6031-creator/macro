@@ -132,6 +132,18 @@ weekend demands no freshness, and the 14..20 UTC live window requires
 Green at merge: 47 (`test_live_breadth` + JS contract), 14 (ownership), 172
 (`test_market_packet`), `check_template_site_sync` 89 pairs OK.
 
+**`tests/test_live_breadth.py` was GRANDFATHERED DARK — it had never run in CI.**
+Caught by the `contract-delta` gate, which redded the PR for the *new* JS
+contract suite being "named by no `run:` step". Investigating that surfaced the
+bigger fact: `tests/test_live_breadth.py` sat in `config/unrun_test_baseline.json`'s
+893-row shrink-only grandfather list, so **every** live-breadth test — the
+pre-existing ones and the ones this wave added — would have been dark in CI.
+Both suites are now wired into the `.github/ci/legacy-jobs.yml` job that already
+owns `tests/test_vps_live_orchestration.py` (same subject family), and the row
+was removed from the grandfather list (893 → 892; shrinking is the allowed
+direction). `ci-pack` provides node 20 via `actions/setup-node@v4`, so the JS
+contract test genuinely executes there rather than raising.
+
 **Pre-existing, unrelated, NOT caused by this wave:** 3 failures in
 `tests/test_vps_live_orchestration.py` (`test_bea_known_feed_bound_state_repairs_only_from_successful_detail_page`,
 `test_aged_governed_pce_defect_forces_feed_and_detail_repair`,
