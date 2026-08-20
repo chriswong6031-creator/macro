@@ -1,0 +1,113 @@
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-turn3-r2
+role: product_regression
+artifact_sha: da83976ece01c54d5ab07307e68118693e100a58
+
+reviewer:
+  identity: codex-xpv2-product-regression-20260820
+  model: gpt-5.5
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user and business job
+    - production source, payloads, tests, and rendered artifacts
+    - frozen proposed HTML references
+    - Turn-3 section 9 capability-disposition ledger only
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-20T07:17:40-07:00"
+  verdict: BLOCK
+  findings:
+    - id: PRC-001
+      severity: blocker
+      capability: action_rows_and_detail_destinations
+      finding: >-
+        Operational rows use dead href targets and LENS links to a nonexistent method anchor,
+        while production preserves real row, trace, group, stock, and method destinations.
+    - id: PRC-002
+      severity: blocker
+      capability: tier_withholding
+      finding: >-
+        The candidate has no exact preview/full-count disclosure, premium hydration, or
+        access-failure contract and therefore does not preserve the current tier gate.
+    - id: PRC-003
+      severity: blocker
+      capability: legacy_hashes
+      finding: >-
+        The candidate router covers only a subset of current inbound hashes and loses
+        read-trace and theme-hash behavior guarded by the production shell tests.
+    - id: PRC-004
+      severity: blocker
+      capability: producer_owned_dynamic_state
+      finding: >-
+        Snapshot clocks, counts, rows, and universes are hardcoded without a carried
+        producer/correction contract, so dynamic product preservation is unproven.
+    - id: PRC-005
+      severity: blocker
+      capability: explore_and_history
+      finding: >-
+        Explore, performance, Time Machine, narratives, and track record collapse to a
+        seven-row sample and dead links rather than reachable current capabilities.
+    - id: PRC-006
+      severity: blocker
+      capability: confluence_universes_and_details
+      finding: >-
+        Confluence tabs only toggle visual state; they do not switch producer universes,
+        recompute coverage/distribution, or preserve group/member detail behavior.
+    - id: PRC-007
+      severity: blocker
+      capability: failure_and_freshness_states
+      finding: >-
+        Loading, stale, partial, unavailable, access-error, independent-clock, and honest
+        empty states are specified in prose but absent from the candidate surface.
+    - id: PRC-008
+      severity: blocker
+      capability: lens_method_destination
+      finding: >-
+        LENS copy is mostly authority-correct but its visible methodology link has no target.
+    - id: PRC-009
+      severity: major
+      capability: leadership_and_change_projection
+      finding: Leadership handoff and What changed are not proven payload-resident.
+    - id: PRC-010
+      severity: major
+      capability: bottoming_watch
+      finding: Early-turn compression loses current receipts and destinations.
+    - id: PRC-011
+      severity: major
+      capability: map_moving_money_organs
+      finding: Map, Moving, and Money/Breadth are visually present but capability completeness is unproven.
+    - id: PRC-012
+      severity: major
+      capability: exact_lane_labels
+      finding: The candidate changes the current ZH Stand aside label from 观望 to 暂时回避.
+    - id: PRC-013
+      severity: major
+      capability: shared_shell_and_components
+      finding: Copying the standalone shell literally would create a duplicate local component system.
+  strengths:
+    - EN action-lane labels and order now match current production.
+    - Snapshot action counts and the current S&P Confluence coverage reconcile.
+    - Rail order matches the current six-view workspace.
+    - LENS ranking copy is materially clearer and largely authority-correct.
+    - Visual compression improves scanability if every hidden capability remains reachable.
+
+second_pass:
+  amended_at: "2026-08-20T07:24:07-07:00"
+  amendments:
+    - {finding: PRC-001, action: upheld, note: "The packet itself requires complete destinations."}
+    - {finding: PRC-002, action: upheld, note: "The packet requires the existing access projection unchanged."}
+    - {finding: PRC-003, action: upheld, note: "The packet freezes exact legacy-hash behavior."}
+    - {finding: PRC-004, action: upheld, note: "Narrowed to an unproven reference contract, not an already-live authority change."}
+    - {finding: PRC-005, action: upheld, note: "The capability ledger requires the full Explore/history workflow."}
+    - {finding: PRC-006, action: upheld, note: "The packet requires exact universes and coverage."}
+    - {finding: PRC-007, action: upheld, note: "Sections 10 and 12.4 require the missing failure states."}
+    - {finding: PRC-008, action: downgraded, note: "Major: the packet provides the lawful hide-or-implement remedy."}
+    - {finding: PRC-009, action: upheld, note: "Producer ownership remains unproven."}
+    - {finding: PRC-010, action: upheld, note: "The ledger says improve, not sample-only."}
+    - {finding: PRC-011, action: upheld, note: "Later program waves do not make static impostors equivalent now."}
+    - {finding: PRC-012, action: upheld, note: "Exact label parity remains required absent a Chairman amendment."}
+    - {finding: PRC-013, action: upheld, note: "The packet explicitly retains the canonical shell and removes duplicate systems."}
+  verdict: BLOCK
