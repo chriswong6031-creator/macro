@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mastermind.dislocation_p0.source_candidate.v1",
+  "title": "Dislocation P0 price-blind source candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "candidate_id",
+    "query_provenance",
+    "selection",
+    "filing_receipt",
+    "documents",
+    "classification",
+    "audit",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "mastermind.dislocation_p0.source_candidate.v1"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^p0cand_[a-f0-9]{64}$"
+    },
+    "query_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query_cell_id",
+        "family_candidate",
+        "phrase",
+        "base_form",
+        "date_shard",
+        "query_receipt_sha256",
+        "sec_hit_ids"
+      ],
+      "properties": {
+        "query_cell_id": {"type": "string"},
+        "family_candidate": {"type": "string"},
+        "phrase": {"type": "string"},
+        "base_form": {"enum": ["8-K", "6-K"]},
+        "date_shard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": {"type": "string", "format": "date"},
+            "end": {"type": "string", "format": "date"}
+          }
+        },
+        "query_receipt_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sec_hit_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "partition",
+        "selection_key",
+        "rank",
+        "candidate_pool_sha256",
+        "review_state"
+      ],
+      "properties": {
+        "seed": {
+          "const": "DISLOCATION-P0-SOURCE-2026-08-20-v1"
+        },
+        "partition": {"type": "string"},
+        "selection_key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rank": {"type": "integer", "minimum": 1},
+        "candidate_pool_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "review_state": {
+          "enum": ["PENDING", "SOURCE_ACCEPTED", "REFUSED", "QUARANTINED"]
+        },
+        "refusal_reason": {"type": ["string", "null"]}
+      }
+    },
+    "filing_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cik",
+        "accession",
+        "form",
+        "accepted_at",
+        "filed_on",
+        "manifest_id",
+        "source_bytes_sha256",
+        "clock_quality"
+      ],
+      "properties": {
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "accession": {
+          "type": "string",
+          "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"
+        },
+        "form": {"enum": ["8-K", "8-K/A", "6-K", "6-K/A"]},
+        "accepted_at": {"type": ["string", "null"], "format": "date-time"},
+        "filed_on": {"type": ["string", "null"], "format": "date"},
+        "report_date": {"type": ["string", "null"], "format": "date"},
+        "manifest_id": {"type": "string"},
+        "source_bytes_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "amends_accession": {"type": ["string", "null"]},
+        "clock_quality": {
+          "enum": [
+            "EXACT_SEC_ACCEPTANCE",
+            "EXACT_EARLIER_FIRST_PARTY",
+            "DATE_ONLY_REFUSED",
+            "UNAVAILABLE"
+          ]
+        }
+      }
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document_id",
+          "role",
+          "archive_url",
+          "content_sha256",
+          "byte_length",
+          "retrieval_state",
+          "evidence_spans"
+        ],
+        "properties": {
+          "document_id": {"type": "string"},
+          "role": {"enum": ["primary", "exhibit", "other"]},
+          "archive_url": {"type": "string", "format": "uri"},
+          "content_sha256": {
+            "type": ["string", "null"],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "byte_length": {"type": ["integer", "null"], "minimum": 0},
+          "retrieval_state": {
+            "enum": [
+              "STORED",
+              "DECLARED",
+              "MISSING",
+              "RIGHTS_BLOCKED",
+              "QUARANTINED"
+            ]
+          },
+          "evidence_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "span_id",
+                "start",
+                "end",
+                "claim_field",
+                "excerpt",
+                "receipt_sha256"
+              ],
+              "properties": {
+                "span_id": {"type": "string"},
+                "start": {"type": "integer", "minimum": 0},
+                "end": {"type": "integer", "minimum": 0},
+                "claim_field": {"type": "string"},
+                "excerpt": {"type": "string", "maxLength": 500},
+                "receipt_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "event_family",
+        "new_adverse_information_at_t0",
+        "adverse_uncertainty_at_t0",
+        "recoverability_evidence_at_t0",
+        "structural_impairment_at_t0",
+        "intent_orchestration",
+        "proposed_by"
+      ],
+      "properties": {
+        "state": {"enum": ["UNCLASSIFIED", "PROPOSED", "AUDITED", "REFUSED"]},
+        "event_family": {"type": ["string", "null"]},
+        "new_adverse_information_at_t0": {
+          "enum": [true, false, "UNKNOWN"]
+        },
+        "adverse_uncertainty_at_t0": {
+          "enum": ["OPEN", "PARTIALLY_BOUNDED", "RESOLVED", "UNKNOWN"]
+        },
+        "recoverability_evidence_at_t0": {
+          "enum": [
+            "PHYSICAL_REPAIR",
+            "OPERATING_WORKAROUND",
+            "NEGOTIATED_RESOLUTION",
+            "TEMPORARY_ORDER",
+            "ONE_TIME_ACCOUNTING",
+            "NONE",
+            "UNKNOWN"
+          ]
+        },
+        "structural_impairment_at_t0": {
+          "enum": ["EVIDENCE_PRESENT", "EXPLICIT_NONE", "UNKNOWN"]
+        },
+        "intent_orchestration": {"const": "UNKNOWN"},
+        "proposed_by": {"type": ["string", "null"]}
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "auditor", "verdict", "audited_at", "corrections"],
+      "properties": {
+        "state": {"enum": ["PENDING", "AUDITED", "DISAGREEMENT", "REJECTED"]},
+        "auditor": {"type": ["string", "null"]},
+        "verdict": {"enum": ["PENDING", "ACCEPT", "REPAIR", "REJECT"]},
+        "audited_at": {"type": ["string", "null"], "format": "date-time"},
+        "corrections": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "can_rank",
+        "can_gate",
+        "can_size",
+        "can_originate_signal",
+        "can_escalate"
+      ],
+      "properties": {
+        "can_rank": {"const": false},
+        "can_gate": {"const": false},
+        "can_size": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    }
+  },
+  "x-forbidden-market-fields": [
+    "price",
+    "return",
+    "volume",
+    "market_cap",
+    "dollar_volume",
+    "relative_strength",
+    "forward_return",
+    "mfe",
+    "mae",
+    "outcome"
+  ]
+}
