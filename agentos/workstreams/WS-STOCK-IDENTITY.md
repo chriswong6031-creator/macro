@@ -50,14 +50,15 @@ waves:
       operator return that authorized W2 stands; identity overlay is now on main.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
-    status: in_progress
+    status: done
     pr: 5643
     depends_on: [W1]
     next_action: >
-      HEAL in flight 2026-08-16: rebase W2 onto merged W1-A1 (#5660). Keep expert
-      replay + provenance. Drop the duplicate `data/stock_identity/ohlcv/B.parquet`
-      plane and the sealed GOLD.md/svg rewrite — those belong to W1-A1 (baskets
-      B.parquet + disclosure-only GOLD envelope). Then merge #5643.
+      DONE — PR #5643 MERGED 2026-08-16T18:48:33Z (verified `gh pr view 5643
+      --json state,mergedAt`, IMCE-00 session 2026-08-20): 31,119 era-pinned
+      events over 22 names, all authority false, stopped before W3. Stale
+      `in_progress` state healed by the IMCE-00 reconciliation pass — this
+      record lagged the merge by four days.
   - id: W3
     title: Episode ruler engine + estimability census
     status: todo
@@ -97,9 +98,10 @@ artifacts:
   - research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md
   - data/stock_identity/amendments/w1a1_gold_wrong_issuer.json
 next_action: >
-  Land the #5643 heal: W2 expert replay onto merged W1-A1, without duplicating B
-  onto the program OHLCV plane or rewriting sealed GOLD. W3 still needs its own
-  operator go — no auto-roll.
+  W2 is merged (#5643, 2026-08-16). Next: W3 (episode ruler engine + estimability
+  census) — still needs its own operator go, no auto-roll. Identity_epoch proper
+  ships at W4 (todo); until then only a provisional epoch_0 placeholder exists
+  (engine/stock_identity/fingerprint.py).
 ---
 
 ## Context
