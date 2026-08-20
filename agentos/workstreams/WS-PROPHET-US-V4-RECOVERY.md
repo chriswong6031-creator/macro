@@ -293,7 +293,17 @@ waves:
       receipt authority decomposition; nightly refresh seam in daily.yml collect;
       frozen contract research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md)
       shipped as #5965 — live-refresh production proof gated on the first
-      post-#5936 listing snapshot (>2026-08-10). D2B2 (broad expansion: 1,868
+      post-#5936 listing snapshot (>2026-08-10). Child D2B1-R1 (Sol amendment
+      2026-08-20: the transition race fired on the first natural nightly —
+      duplicate SEC:US-XNYS-VMRK minted for the EQR→VMRK rename; PROVEN, then
+      repaired: dated RenameEvent from SEC 8-K 0001140361-26-033377, supersession
+      onto the continuing EQR identity via new security_state/superseded_by axis +
+      security_migrations receipts + authored SECURITY_SUPERSESSIONS registry,
+      AVB typed exit, general pending-transition fence with typed refusals;
+      contract research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md +
+      AMENDMENTS §1-§3) shipped as #6082 — Sol's D2B2 gate = the next natural
+      refresh proving one canonical identity survives (see the R1 handoff for
+      the expected first-night provenance churn). D2B2 (broad expansion: 1,868
       NOT_IN_MASTER queue), D2B3 (GMI GOLD/B + IBIT corrections), D2C
       (PIT vintages), D2D (ontology/probation), D2E (rights/acceptance) NOT
       authorized yet — Sol reviews after each child returns."

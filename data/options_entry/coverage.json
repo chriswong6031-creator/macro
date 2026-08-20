@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-20T01:07:22.060582+00:00",
+  "generated_at": "2026-08-20T14:20:49.007713+00:00",
   "as_of": "2026-08-20",
   "absent_stores": [],
   "feature_coverage": {
@@ -214,8 +214,8 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
@@ -224,7 +224,7 @@
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "zero cadence or zero cond_hit_share in post-W-C window",
-        "post_wc_fires": 647,
+        "post_wc_fires": 665,
         "post_wc_span_days": 33
       }
     },
@@ -239,13 +239,13 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 648,
-      "cond_hit_share": 0.8192,
+      "n_stamped_cond": 666,
+      "cond_hit_share": 0.8232,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 123
@@ -262,13 +262,13 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 614,
-      "cond_hit_share": 0.7762,
+      "n_stamped_cond": 629,
+      "cond_hit_share": 0.7775,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 135
@@ -285,13 +285,13 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 699,
-      "cond_hit_share": 0.8837,
+      "n_stamped_cond": 717,
+      "cond_hit_share": 0.8863,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 88
@@ -308,18 +308,18 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 719,
-      "cond_hit_share": 0.909,
+      "n_stamped_cond": 737,
+      "cond_hit_share": 0.911,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-20",
-        "basis": "n_cond=17/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.991 \u2192 1 days",
-        "post_wc_fires": 647,
+        "basis": "n_cond=17/30 needed; post-W-C cadence=20.152/day \u00d7 cond_hit_share=0.991 \u2192 1 days",
+        "post_wc_fires": 665,
         "post_wc_span_days": 33
       }
     },
@@ -334,13 +334,13 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 699,
-      "cond_hit_share": 0.8837,
+      "n_stamped_cond": 717,
+      "cond_hit_share": 0.8863,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 124
@@ -357,18 +357,18 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 732,
-      "cond_hit_share": 0.9254,
+      "n_stamped_cond": 750,
+      "cond_hit_share": 0.9271,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-20",
-        "basis": "n_cond=13/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.986 \u2192 1 days",
-        "post_wc_fires": 647,
+        "basis": "n_cond=13/30 needed; post-W-C cadence=20.152/day \u00d7 cond_hit_share=0.986 \u2192 1 days",
+        "post_wc_fires": 665,
         "post_wc_span_days": 33
       }
     },
@@ -383,18 +383,18 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
-      "n_stamped_cond": 614,
-      "cond_hit_share": 0.7762,
+      "n_stamped_cond": 629,
+      "cond_hit_share": 0.7775,
       "readiness_forecast": {
         "forecast": "date",
         "forecast_date": "2026-08-21",
-        "basis": "n_cond=0/30 needed; post-W-C cadence=19.606/day \u00d7 cond_hit_share=0.794 \u2192 2 days",
-        "post_wc_fires": 647,
+        "basis": "n_cond=0/30 needed; post-W-C cadence=20.152/day \u00d7 cond_hit_share=0.795 \u2192 2 days",
+        "post_wc_fires": 665,
         "post_wc_span_days": 33
       }
     },
@@ -409,8 +409,8 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
@@ -432,8 +432,8 @@
         "2026-W26": 41,
         "2026-W27": 78,
         "2026-W28": 93,
-        "2026-W29": 105,
-        "2026-W30": 100,
+        "2026-W29": 108,
+        "2026-W30": 115,
         "2026-W31": 302,
         "2026-W32": 47
       },
@@ -496,8 +496,8 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-19 16:43 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-08-20 04:44 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -510,18 +510,20 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-20T01:07:22.000349+00:00",
+      "generated_at": "2026-08-20T14:20:48.904863+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-08-13 (4 NYSE session(s) behind last_session=2026-08-19); threshold=1 \u2014 OI snapshot may have been missed",
         "CHAINS SESSION FAILED: session 2026-08-19 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-19.json)"
       ],
-      "warnings": []
+      "warnings": [
+        "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
+      ]
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-20T01:07:22.060575+00:00",
+    "generated_at_utc": "2026-08-20T14:20:49.007705+00:00",
     "as_of": "2026-08-20",
     "absent_stores": []
   }

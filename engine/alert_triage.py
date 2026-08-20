@@ -31,6 +31,30 @@ Honesty rules baked in (this repo's culture):
 
 Additive + graceful: every reader is wrapped so a missing feed degrades to an
 empty section, never a failed build.
+
+WHO RENDERS THIS PAGE (verified 2026-08-20 — there is no ``build_alerts.py``)
+----------------------------------------------------------------------------
+``build_triage()`` has exactly one page owner, and it is the shared site plane:
+
+    scripts/build_site.py :: build_alerts_page(env, site, generated)
+        payload = alert_triage.build_triage()
+        payload["generated_utc"] = generated          # aligned with the rest of the site
+        -> templates/alerts.html.j2  -> site/alerts.html
+        -> site/factordata/alerts_triage.json         (the whole payload, machine-readable)
+        -> site/alertsdata/feed.json                  (admin Alerts capture tab, RUL-8)
+
+Nothing else renders it.  The only OTHER consumer of this module is the push spine below
+(``push_priority_alerts`` / ``push_ops_alert``), which re-runs ``build_triage()`` itself.
+Extend that plane — do not add a parallel builder.
+
+TIME (see engine/alert_time.py for the full contract)
+-----------------------------------------------------
+Three clocks are kept separate and are NOT interchangeable: ``event_date`` / ``event_ts``
+(when the thing happened), ``source_asof`` (the observation it was derived from), and
+``recorded_at`` / ``generated_utc`` (when we processed it).  The board's "today" is the
+**America/New_York** day, because this is a US cross-asset desk — at 00:30Z New York is
+still on the previous afternoon, and a board that rolled over with UTC spent the whole
+nightly window mislabelling the prior session as "today".
 """
 from __future__ import annotations
 
@@ -42,6 +66,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from engine import alert_time
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -126,7 +151,14 @@ SOURCES = {
     # since the Sector Intelligence consolidation (#4237); the resolver lives on the
     # merged page (tests/test_theme_hash_deeplink.py pins both halves).
     "themes":    {"label": "Theme Rotation",  "label_zh": "主题轮动",   "icon": "🧺", "page": "sector_central.html"},
-    "emergence": {"label": "Forming Narratives","label_zh": "成形叙事", "icon": "🔥", "page": "baskets.html"},
+    # emergence: the alert carries a precise `#ne-<signature>` anchor and the card that
+    # anchor names is rendered by templates/forming_narratives.js, which is included by
+    # sector_central.html.j2 — NOT by baskets.html, a redirect stub since the Sector
+    # Intelligence consolidation (#4237).  That stub forwards only `#theme-*` and dumps
+    # everything else on `sector_central.html#actnow-section`, so routing here through
+    # baskets.html threw the reader onto a generic page section instead of the exact
+    # evidence the alert is about.  Point at the canonical evidence owner directly.
+    "emergence": {"label": "Forming Narratives","label_zh": "成形叙事", "icon": "🔥", "page": "sector_central.html"},
     "altdata":   {"label": "Alternative Data",  "label_zh": "替代数据",   "icon": "📊", "page": "alt_data.html"},
     "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},
     "rotation":  {"label": "Subsector Rotation","label_zh": "子行业轮动", "icon": "🌀", "page": "subsector_rotation.html"},
@@ -308,9 +340,16 @@ def cross_asset_tag(type_: str, ca_verdict: str | None) -> str:
     return "neutral"
 
 
-def priority(tier: str, band: str, age_days: float, ca_tag: str) -> tuple[int, dict]:
-    """Transparent 0-100 triage priority + its component breakdown."""
-    if age_days <= 2:
+def priority(tier: str, band: str, age_days: float | None, ca_tag: str) -> tuple[int, dict]:
+    """Transparent 0-100 triage priority + its component breakdown.
+
+    ``age_days`` is measured in BOARD days (America/New_York), and may be None when the
+    event time is unknown.  An unknown date earns ZERO recency credit — we will not hand a
+    freshness bonus to an alert that cannot prove it is fresh.
+    """
+    if age_days is None:
+        w_rec, rec_lbl = 0, "date unknown"
+    elif age_days <= 2:
         w_rec, rec_lbl = 20, "fresh (<2d)"
     elif age_days <= 7:
         w_rec, rec_lbl = 12, "<7d"
@@ -454,7 +493,20 @@ def _events(today: date, horizon_days: int = 14) -> dict:
     return {"items": items, "next": nxt}
 
 
-def _macro_raw(today: pd.Timestamp, cutoff: pd.Timestamp) -> list[dict]:
+def _window_date(clocks: dict, ev: dict) -> date | None:
+    """The date the WINDOW filter scans on — a store-scan bound, not an event claim.
+
+    Normally the event's board day.  When the event time is unknown the only handle we
+    have is the record clock, so we scan on that and the alert still renders with its date
+    disclosed as unknown (it earns no recency credit — see ``priority``).
+    """
+    bd = alert_time.parse_date(clocks.get("board_date"))
+    if bd is not None:
+        return bd
+    return alert_time.parse_date(ev.get("ts") or clocks.get("recorded_at"))
+
+
+def _macro_raw(today: date, cutoff: date) -> list[dict]:
     """Recent macro alerts from the parquet log, normalised + enriched via alert_view."""
     out: list[dict] = []
     p = config.data_dir() / "alerts" / "alerts_log.parquet"
@@ -463,12 +515,18 @@ def _macro_raw(today: pd.Timestamp, cutoff: pd.Timestamp) -> list[dict]:
     try:
         from engine.alerts import alert_href, alert_view
         mdf = pd.read_parquet(p)
-        mdf = mdf[pd.to_datetime(mdf["date"]) >= cutoff]
+        mdf = mdf[pd.to_datetime(mdf["date"]).dt.date >= cutoff]
         for _, r in mdf.iterrows():
             v = alert_view(r["rule"], r["severity"], r["message"])
+            # The macro log's `date` column is a market-SESSION date: it has no clock time
+            # and never gains a fabricated one.
+            sess = pd.Timestamp(r["date"]).date().isoformat()
             out.append({
                 "source": "macro", "type": r["rule"], "asset": "macro",
-                "ts": pd.Timestamp(r["date"]).isoformat(), "date_only": True,
+                "ts": sess, "date_only": True,
+                "event_date": sess, "event_ts": None, "source_asof": sess,
+                "recorded_at": None, "board_date": sess,
+                "date_precision": alert_time.PRECISION_DATE,
                 "raw_sev": r["severity"],
                 "tier": v.get("tier", "context"),
                 "headline": (v.get("icon", "") + " " + v.get("plain_en", r["message"])).strip(),
@@ -485,9 +543,15 @@ def _macro_raw(today: pd.Timestamp, cutoff: pd.Timestamp) -> list[dict]:
     return out
 
 
-def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
+def _jsonl_raw(source: str, today: date, cutoff: date,
                tier_map: dict) -> list[dict]:
-    """Recent events from a jsonl alert engine, with a per-(source,type) tier."""
+    """Recent events from a jsonl alert engine, with a per-(source,type) tier.
+
+    Time handling goes through ``engine.alert_time``: a session date stays a session date,
+    an offset-aware instant KEEPS its offset (the old ``tz_localize(None)`` destroyed that
+    provenance), and an event with no usable time is carried with its date disclosed as
+    unknown rather than silently dated to the build.
+    """
     out: list[dict] = []
     try:
         mod = {
@@ -502,18 +566,22 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
         }[source]
         m = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
-            ts = pd.Timestamp(e["ts"])
-            if ts.tzinfo is not None:
-                ts = ts.tz_localize(None)
-            if ts < cutoff:
+            clocks = alert_time.normalize_event(e)
+            wd = _window_date(clocks, e)
+            if wd is not None and wd < cutoff:
                 continue
             type_ = e.get("type", "")
             # BTC carries its own conviction tier; others use the per-source map.
             tier = e.get("tier") or tier_map.get(type_, "context")
             out.append({
                 "source": source, "type": type_, "asset": e.get("asset") or source,
-                "ts": ts.isoformat(),
-                "date_only": (ts.hour == 0 and ts.minute == 0),
+                # `ts` is the event stamp the rest of the board sorts and hashes on: the
+                # offset-aware instant when there is one, else the session date.
+                "ts": clocks["event_ts"] or clocks["event_date"] or str(e.get("ts") or ""),
+                "date_only": clocks["date_precision"] == alert_time.PRECISION_DATE,
+                **{k: clocks[k] for k in
+                   ("event_date", "event_ts", "source_asof", "recorded_at",
+                    "board_date", "date_precision")},
                 "raw_sev": e.get("severity", "info"), "tier": tier,
                 "headline": e.get("headline", ""),
                 "headline_zh": e.get("headline_zh") or e.get("headline", ""),
@@ -638,25 +706,55 @@ _PERSIST_MIN_FIRES = 3
 _PERSIST_MIN_DAYS = 3
 
 
+def _fire_board_date(e: dict) -> date | None:
+    """The board day one raw fire belongs to (normalising on the fly if needed)."""
+    bd = alert_time.parse_date(e.get("board_date"))
+    if bd is not None:
+        return bd
+    return alert_time.parse_date(alert_time.normalize_event(e).get("board_date"))
+
+
+def _fire_sort_key(e: dict) -> tuple:
+    """Order fires without ever comparing a tz-aware stamp to a naive one.
+
+    Since the time contract stopped stripping offsets, one group can hold both a session
+    date ("2026-08-19") and an offset-aware instant ("2026-08-20T00:30:00+00:00"), and
+    ``pd.Timestamp`` raises on that comparison.  We sort on the BOARD day first (the unit
+    the board actually reasons in), then on the instant within the day where one exists.
+    """
+    bd = _fire_board_date(e) or date.min
+    inst = alert_time.parse_instant(e.get("event_ts"))
+    return (bd, inst.timestamp() if inst is not None else 0.0, str(e.get("ts") or ""))
+
+
 def _persistence(instances: list[dict]) -> dict:
     """Aggregate same-key raw fires into persistence stats.  A re-fire pattern is
-    a FACT (not a forecast): the old keep-best dedup discarded it entirely."""
-    ts = sorted(pd.Timestamp(e["ts"]) for e in instances)
-    first, last = ts[0], ts[-1]
-    return {"fire_count": len(instances), "first_ts": first.isoformat(),
-            "last_ts": last.isoformat(), "streak_days": int((last - first).days)}
+    a FACT (not a forecast): the old keep-best dedup discarded it entirely.
+
+    Span is measured in BOARD days between the first and last fire."""
+    ordered = sorted(instances, key=_fire_sort_key)
+    first, last = ordered[0], ordered[-1]
+    fd, ld = _fire_board_date(first), _fire_board_date(last)
+    span = int((ld - fd).days) if (fd is not None and ld is not None) else 0
+    return {"fire_count": len(instances),
+            "first_ts": str(first.get("ts") or ""),
+            "last_ts": str(last.get("ts") or ""),
+            "first_board_date": fd.isoformat() if fd else None,
+            "last_board_date": ld.isoformat() if ld else None,
+            "streak_days": span}
 
 
-def lifecycle_of(fire_count: int, streak_days: int, age_days: float) -> str:
+def lifecycle_of(fire_count: int, streak_days: int, age_days: float | None) -> str:
     """Descriptive lifecycle stage from the fire pattern (never a prediction):
       persisting — re-fired repeatedly across days AND still firing now;
       fading     — was persistent but has gone quiet (last fire aging out);
       new        — first appeared in the last two days;
       aging      — an older one-off still inside the window."""
     persistent = fire_count >= _PERSIST_MIN_FIRES and streak_days >= _PERSIST_MIN_DAYS
+    fresh = age_days is not None and age_days <= 2   # an unknown date is never "fresh"
     if persistent:
-        return "persisting" if age_days <= 2 else "fading"
-    return "new" if age_days <= 2 else "aging"
+        return "persisting" if fresh else "fading"
+    return "new" if fresh else "aging"
 
 
 def corroborated_severity(band: str, tier: str, ca_tag: str, validation: dict,
@@ -744,13 +842,20 @@ def _board_read(kept: list[dict], ctx: dict) -> dict:
             "drivers": drivers, "one_liner": one, "one_liner_zh": one_zh}
 
 
-def _volume_context(raw: list[dict], today_ts: pd.Timestamp, days: int) -> dict:
+def _volume_context(raw: list[dict], today: date, days: int) -> dict:
     """How busy the last week has been vs the window's own trailing weekly rate — so
-    a user can tell a genuinely loud week from ambient chatter.  Descriptive stat."""
+    a user can tell a genuinely loud week from ambient chatter.  Descriptive stat.
+
+    Counted in BOARD days: a fire stamped 2026-08-20T00:30Z belongs to the Aug-19 desk
+    session, so it lands in the same bucket the card shows."""
     if not raw:
         return {}
-    fires = [pd.Timestamp(e["ts"]).normalize() for e in raw]
-    last7 = sum(1 for t in fires if 0 <= (today_ts - t).days <= 7)
+    # callers historically passed a pd.Timestamp here; accept either and reason in dates
+    today = alert_time.parse_date(today) or today
+    fires = [d for d in (_fire_board_date(e) for e in raw) if d is not None]
+    if not fires:
+        return {}
+    last7 = sum(1 for t in fires if 0 <= (today - t).days <= 7)
     weeks = max(1.0, days / 7.0)
     baseline_wk = len(fires) / weeks
     ratio = (last7 / baseline_wk) if baseline_wk > 0 else 1.0
@@ -800,40 +905,58 @@ def _storylines(kept: list[dict]) -> list[dict]:
 
 
 def build_triage(days: int = 30, today: date | None = None,
-                 per_source_context_cap: int = 6, max_items: int = 60) -> dict:
+                 per_source_context_cap: int = 6, max_items: int = 60,
+                 now: datetime | None = None) -> dict:
     """Assemble the full Alert Command Center payload. Pure assembler, graceful.
 
     days                    look-back window (the board shows what is *live now*)
     per_source_context_cap  cap context-tier alerts per source so a noisy feed
                             (forex per-pair) can't drown the actionable ones
     max_items               global cap after ranking
+    today                   explicit BOARD day override (tests / replay)
+    now                     injected wall clock; the board day is derived from it in
+                            America/New_York.  Used only when ``today`` is not given.
+
+    BOARD DAY: this is a US cross-asset desk, so "today" is the New York day, not UTC's.
+    At 2026-08-20T00:30Z New York is still 2026-08-19 20:30 — the board must not have
+    rolled over.  Everything downstream (recency points, "today / 1d ago", new_today, the
+    catalyst countdown, the 7-day fire volume) reads THIS date.
     """
-    today = today or datetime.now(timezone.utc).date()
-    today_ts = pd.Timestamp(today)
-    cutoff = today_ts - pd.Timedelta(days=days)
+    today = today or alert_time.board_date(now)
+    cutoff = today - timedelta(days=days)
     reg = _registry_index()
     rule_sc = _rule_scorecard()
     ctx = _load_context()
     ca_verdict = (ctx.get("cross_asset") or {}).get("verdict")
 
     raw: list[dict] = []
-    raw += _macro_raw(today_ts, cutoff)
-    raw += _jsonl_raw("bonds", today_ts, cutoff, _BONDS_TIER)
-    raw += _jsonl_raw("forex", today_ts, cutoff, _FOREX_TIER)
-    raw += _jsonl_raw("vector", today_ts, cutoff, {})       # tier inline on events
-    raw += _jsonl_raw("commodity", today_ts, cutoff, _COMMODITY_TIER)
-    raw += _jsonl_raw("themes", today_ts, cutoff, _THEMES_TIER)
-    raw += _jsonl_raw("emergence", today_ts, cutoff, _EMERGENCE_TIER)
-    raw += _jsonl_raw("altdata", today_ts, cutoff, _ALTDATA_TIER)
-    raw += _jsonl_raw("demand", today_ts, cutoff, _DEMAND_TIER)
-    raw += _jsonl_raw("rotation", today_ts, cutoff, _ROTATION_TIER)
-    raw += _jsonl_raw("oracle", today_ts, cutoff, _ORACLE_TIER)
-    raw += _jsonl_raw("watchlist", today_ts, cutoff, _WATCHLIST_TIER)
+    raw += _macro_raw(today, cutoff)
+    raw += _jsonl_raw("bonds", today, cutoff, _BONDS_TIER)
+    raw += _jsonl_raw("forex", today, cutoff, _FOREX_TIER)
+    raw += _jsonl_raw("vector", today, cutoff, {})       # tier inline on events
+    raw += _jsonl_raw("commodity", today, cutoff, _COMMODITY_TIER)
+    raw += _jsonl_raw("themes", today, cutoff, _THEMES_TIER)
+    raw += _jsonl_raw("emergence", today, cutoff, _EMERGENCE_TIER)
+    raw += _jsonl_raw("altdata", today, cutoff, _ALTDATA_TIER)
+    raw += _jsonl_raw("demand", today, cutoff, _DEMAND_TIER)
+    raw += _jsonl_raw("rotation", today, cutoff, _ROTATION_TIER)
+    raw += _jsonl_raw("oracle", today, cutoff, _ORACLE_TIER)
+    raw += _jsonl_raw("watchlist", today, cutoff, _WATCHLIST_TIER)
 
     # ---- persistence-aware grouping (v2) -----------------------------------
     # Collapse re-fires of the same (source, type, asset) BEFORE enriching, but keep
     # the fire pattern instead of discarding it.  The representative is the newest
     # fire (freshest headline + timestamp); its persistence stats summarise the rest.
+    # A row claiming a board day AFTER today is either a scheduled catalyst that leaked
+    # into the fired-alert feed or a clock defect.  Either way it is not evidence that
+    # something HAS happened, so it is quarantined out of the ranked board rather than
+    # handed the top of it by the recency term.
+    quarantined = [a for a in raw if alert_time.is_future(a, today)]
+    if quarantined:
+        log.warning("triage: quarantined %d future-dated alert(s): %s", len(quarantined),
+                    sorted({f"{a['source']}:{a['type']}" for a in quarantined}))
+    raw = [a for a in raw if not alert_time.is_future(a, today)]
+
     groups: dict[tuple, list[dict]] = {}
     for a in raw:
         groups.setdefault((a["source"], a["type"], a.get("asset") or a["source"]), []).append(a)
@@ -841,8 +964,7 @@ def build_triage(days: int = 30, today: date | None = None,
     enriched: list[dict] = []
     for key, instances in groups.items():
         pers = _persistence(instances)
-        rep = max(instances, key=lambda e: pd.Timestamp(e["ts"]))  # newest fire
-        rep = {**rep, "ts": pers["last_ts"]}                        # anchor to last fire
+        rep = max(instances, key=_fire_sort_key)                    # newest fire
         tier = rep["tier"]
         band = severity_band(tier, rep["raw_sev"])
         # #42: measured-IC severity — the hardcoded band is a prior; a spine-measured null /
@@ -855,14 +977,20 @@ def build_triage(days: int = 30, today: date | None = None,
         # sit at the same volume as a persisting / confirmed / backtested signal.
         band, corr_reason = corroborated_severity(
             band, tier, ca_tag, validation, pers["fire_count"], pers["streak_days"])
-        age = max(0.0, (today_ts - pd.Timestamp(rep["ts"]).normalize()).days)
+        # Age is in BOARD days off the representative (latest) fire.  None when that fire
+        # has no usable event time — then no recency credit and no "today" wording.
+        rep_board = pers["last_board_date"]
+        age = alert_time.age_days({"board_date": rep_board}, today)
         score, comp = priority(tier, band, age, ca_tag)
         act_en, act_zh = action_for(tier, band, ca_tag)
         life = lifecycle_of(pers["fire_count"], pers["streak_days"], age)
         smeta = SOURCES.get(rep["source"], {})
-        # Stable content-hash ID: (source, type, asset, date-part).  Truncated to 12
-        # hex chars — collision-probability negligible for the ~60-alert board.
-        _id_key = f"{rep['source']}|{rep['type']}|{rep.get('asset', '')}|{rep['ts'][:10]}"
+        # Stable content-hash ID: (source, type, asset, BOARD date).  Truncated to 12 hex
+        # chars — collision-probability negligible for the ~60-alert board.  Keyed on the
+        # board date so the id names the day the card shows; a row whose event date this
+        # repair corrected (rotation) legitimately re-keys, everything else is unchanged.
+        _id_key = (f"{rep['source']}|{rep['type']}|{rep.get('asset', '')}|"
+                   f"{rep_board or str(rep.get('ts') or '')[:10]}")
         alert_id = hashlib.sha256(_id_key.encode()).hexdigest()[:12]
         enriched.append({
             **rep,
@@ -871,7 +999,10 @@ def build_triage(days: int = 30, today: date | None = None,
             "detail": _scrub(rep.get("detail", "")),
             "detail_zh": _scrub(rep.get("detail_zh", "")),
             "alert_id": alert_id,
-            "severity": band, "age_days": int(age),
+            "severity": band,
+            "age_days": None if age is None else int(age),
+            "board_date": rep_board,
+            "date_precision": rep.get("date_precision", alert_time.PRECISION_UNKNOWN),
             "priority": score, "priority_components": comp,
             "cross_asset_tag": ca_tag,
             "action": act_en, "action_zh": act_zh,
@@ -879,6 +1010,8 @@ def build_triage(days: int = 30, today: date | None = None,
             "lifecycle": life,
             "fire_count": pers["fire_count"], "streak_days": pers["streak_days"],
             "first_ts": pers["first_ts"], "last_ts": pers["last_ts"],
+            "first_board_date": pers["first_board_date"],
+            "last_board_date": pers["last_board_date"],
             "severity_capped": corr_reason,
             "source_label": smeta.get("label", rep["source"]),
             "source_label_zh": smeta.get("label_zh", rep["source"]),
@@ -918,6 +1051,11 @@ def build_triage(days: int = 30, today: date | None = None,
 
     return {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        # The desk's day, in New York.  Distinct from generated_utc on purpose: one is
+        # when we built the page, the other is the session the board is reading.
+        "board_date": today.isoformat(),
+        "board_tz": alert_time.BOARD_TZ_NAME,
+        "quarantined": len(quarantined),
         "asof": ctx.get("asof"),
         "window_days": days,
         "regime": ctx.get("regime") or {},
@@ -926,7 +1064,7 @@ def build_triage(days: int = 30, today: date | None = None,
         "events": _events(today),
         "summary": summary,
         "board_read": _board_read(kept, ctx),
-        "volume": _volume_context(raw, today_ts, days),
+        "volume": _volume_context(raw, today, days),
         "storylines": _storylines(kept),
         "alerts": kept,
         "weights": {"tier": W_TIER, "severity": W_SEVERITY, "confirm": W_CONFIRM},

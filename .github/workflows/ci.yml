@@ -375,6 +375,19 @@ on:
       - "engine/stock_desk.py"
       - "tests/test_stock_desk.py"
       - "engine/alert_triage.py"
+      # Alert Command Center TIME CONTRACT (Wave 7, 2026-08-20). The board's three clocks
+      # — event / observation / system-recorded — and its America/New_York board day live
+      # in engine/alert_time.py; its suite is the guard. Both need explicit entries: the
+      # module is new, and tests/test_alert_triage.py sat in the unrun grandfather list
+      # (config/unrun_test_baseline.json) since 2026-08-09, so the suite that pins this
+      # page's ranking honesty ran nowhere. A guard the guarded change cannot trigger is
+      # not a guard (#3488), so the producer whose event-time defect started this wave is
+      # listed too.
+      - "engine/alert_time.py"
+      - "engine/subsector_rotation_alerts.py"
+      - "engine/rotation_events.py"
+      - "tests/test_alert_time_contract.py"
+      - "tests/test_alert_triage.py"
       - "engine/altdata_signals.py"
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"

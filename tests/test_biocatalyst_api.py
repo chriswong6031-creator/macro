@@ -749,13 +749,15 @@ def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_cli
 
 
 def _count_generation_loads(monkeypatch: pytest.MonkeyPatch, sink: list[str]) -> None:
-    orig = PublicGenerationPublisher._load_generation_manifest
+    orig = PublicGenerationPublisher._materialize_validated_generation
 
-    def wrapped(self: PublicGenerationPublisher, generation_id: str) -> dict[str, Any]:
+    def wrapped(self: PublicGenerationPublisher, generation_id: str):
         sink.append(generation_id)
         return orig(self, generation_id)
 
-    monkeypatch.setattr(PublicGenerationPublisher, "_load_generation_manifest", wrapped)
+    monkeypatch.setattr(
+        PublicGenerationPublisher, "_materialize_validated_generation", wrapped
+    )
 
 
 def test_unchanged_product_bundle_loads_generation_once(

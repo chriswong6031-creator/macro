@@ -452,3 +452,71 @@ def test_identity_resolution_non_null_issuer_breaches_when_master_not_resolved(
         "country": "US", "mic": "XNAS", "inception_code": "DISPUTED",
     }])
     assert any("state<->ids biconditional" in x for x in _breaches(root, breaks))
+
+
+# ---------------------------------------------------------------------------
+# 7. AMENDMENT §1 ruling 8 (m1/m2) — the §6.2 superseded-reference guard clause,
+# as an actual pytest test (independently built, same house pattern this file
+# uses throughout) rather than only reachable via `--selftest`.
+# ---------------------------------------------------------------------------
+
+def test_r1_section_6_2_a_resolution_row_referencing_a_superseded_master_row_breaches(
+    tmp_path, breaks,
+):
+    """A sidecar row whose security_id EXISTS in the committed master but that
+    master row is security-axis-superseded (a tombstone): a DISTINCT violation
+    class from "absent entirely" — every consumer join index must exclude it."""
+    root = _write_store(tmp_path / "idres_r1_superseded")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNYS-VMRK", issuer_id=None,
+        listing_key="US-XNYS-VMRK", refusal_reason=None,
+        source_receipts='{"security_id":"SEC:US-XNYS-VMRK"}',
+    )])
+    _write_master(root, [
+        {
+            "security_id": "SEC:US-XNYS-EQR", "issuer_id": "ISS:US-XNYS-EQR",
+            "issuer_state": "RESOLVED", "listing_key": "US-XNYS-EQR",
+            "country": "US", "mic": "XNYS", "inception_code": "EQR",
+            "security_state": None, "superseded_by": None,
+        },
+        {
+            "security_id": "SEC:US-XNYS-VMRK", "issuer_id": None,
+            "issuer_state": "NO_ISSUER_EVIDENCE", "listing_key": "US-XNYS-VMRK",
+            "country": "US", "mic": "XNYS", "inception_code": "VMRK",
+            "security_state": "SUPERSEDED_DUPLICATE_MINT",
+            "superseded_by": "SEC:US-XNYS-EQR",
+        },
+    ])
+    assert any("security-axis-superseded" in x for x in _breaches(root, breaks))
+
+
+def test_r1_section_6_2_a_resolution_row_referencing_the_canonical_row_does_not_breach(
+    tmp_path, breaks,
+):
+    """The mirror case: a sidecar row pointing at the CANONICAL (active) row the
+    tombstone was corrected onto must pass cleanly — the guard targets the
+    superseded id specifically, never the whole master."""
+    root = _write_store(tmp_path / "idres_r1_canonical_ok")
+    _write_idres(root, [_idres_row(
+        resolution_state="RESOLVED", join_method="master_inception_exact",
+        security_id="SEC:US-XNYS-EQR", issuer_id="ISS:US-XNYS-EQR",
+        listing_key="US-XNYS-EQR", refusal_reason=None,
+        source_receipts='{"security_id":"SEC:US-XNYS-EQR"}',
+    )])
+    _write_master(root, [
+        {
+            "security_id": "SEC:US-XNYS-EQR", "issuer_id": "ISS:US-XNYS-EQR",
+            "issuer_state": "RESOLVED", "listing_key": "US-XNYS-EQR",
+            "country": "US", "mic": "XNYS", "inception_code": "EQR",
+            "security_state": None, "superseded_by": None,
+        },
+        {
+            "security_id": "SEC:US-XNYS-VMRK", "issuer_id": None,
+            "issuer_state": "NO_ISSUER_EVIDENCE", "listing_key": "US-XNYS-VMRK",
+            "country": "US", "mic": "XNYS", "inception_code": "VMRK",
+            "security_state": "SUPERSEDED_DUPLICATE_MINT",
+            "superseded_by": "SEC:US-XNYS-EQR",
+        },
+    ])
+    assert not any("security-axis-superseded" in x for x in _breaches(root, breaks))
