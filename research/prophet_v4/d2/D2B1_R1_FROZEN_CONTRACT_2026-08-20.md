@@ -231,6 +231,77 @@ price/breadth stores; the snapshot/CIK collectors and their manifests (NEVER res
 `.github/workflows/*`; any D2B2 expansion (the 1,868 NOT_IN_MASTER queue is untouched);
 new test files; new timers/schedulers/control planes.
 
+## AMENDMENTS
+
+### AMENDMENT §1 (2026-08-20, post-review adjudication — binding for the fix pass)
+
+The Opus adversarial review returned FAIL (B1 + M1-M6 + m1-m4 + n1-n3). Orchestrator
+rulings, superseding the base text where they conflict:
+
+1. **B1 (fence crash).** A refused mint (pending-transition or resurrection) must leave
+   `build()` fully functional: refused resolutions are excluded from EVERY downstream
+   stage (alias derivation included), the receipt blocks land, and the artifacts write.
+   §7 gains **H10**: an end-to-end `build()` run through BOTH refusal classes on a
+   fixture — receipt discloses, `::warning` emitted, no exception, artifacts complete.
+   Mutation control 2 is re-scoped to this end-to-end surface.
+2. **M2 (null-CIK fail-open).** §5.2's independence clause is amended: a mint proceeds
+   only if the candidate's symbol has a CIK in the current map AND every fence-scoped
+   lost row carries a NON-NULL `issuer_cik` differing from it. A null anywhere makes
+   independence unprovable → refuse. (Fail-closed; the incident's own row class was
+   null-CIK.)
+3. **M1 (lost-set scope).** §5.1 is amended: the FENCE-scoped lost set excludes only
+   rows whose inception code is a REGISTERED identity exception (GOLD/B class — those
+   identities are already quarantined fail-closed at their own layer, and their
+   permanently-null CIKs would otherwise jam all future minting under ruling 2). The
+   `listing_continuity` census NEVER silently drops them: exception losses appear as
+   typed entries `{code, explained: "identity_exception"}`. §8's expectation is
+   corrected: post-repair `listing_continuity` = exactly one explained GOLD entry, not
+   `[]`. The `rename_new_symbols` exclusion is REMOVED — superseded rows are excluded
+   via `security_state`, with evaluation ordered after supersession. **Documented
+   accepted residual:** a rename of an exception-quarantined listing (e.g. GOLD→GLDC)
+   can mint a new id without a fence refusal; this cannot corrupt a clean identity
+   (the quarantined row is not the newcomer's identity) and the adjacent explained
+   census line keeps it visible. Test-pinned in both directions.
+4. **M3 (supersession gate).** §3 is amended: supersession is executed ONLY from an
+   authored `SECURITY_SUPERSESSIONS` registry in the builder (same evidence-string law
+   as `RENAME_EVENTS`), each entry naming the exact superseded listing key, canonical
+   security_id, evidence, and date. This era's registry: exactly
+   (`US-XNYS-VMRK` → `SEC:US-XNYS-EQR`, E1). RenameEvents NEVER auto-tombstone; a
+   rename-implied duplicate that is not in the registry is a receipt disclosure, not an
+   execution. The same-venue invariant the docstring claims is enforced structurally
+   (exact listing-key match). The reviewer's cross-MIC scenario must yield no
+   supersession and a disclosure. Test-pinned.
+5. **M4 (dead collision note).** The dedup/collision discriminator is the CURRENT
+   symbol: two resolutions rendering one listing key dedup lawfully iff their seeds'
+   `_current_symbol` values are identical (the H2 shape); differing current symbols =
+   genuine reuse collision → the receipt note (restoring `run_nightly_refresh`'s
+   collision arm). Both directions test-pinned.
+6. **M5 (alias pruning).** Committed alias rows may be deleted ONLY when they point at
+   a superseded security_id, and every deletion is receipted in a new
+   `vendor_alias_prunes` block plus a `::warning`. A fresh row overlapping a committed
+   row that points at an ACTIVE id is a fail-closed build error, never a silent
+   replacement. Append-only semantics otherwise unchanged.
+7. **M6 (store receipt).** `config.yml` gains `breadth.ticker_fixups: {VMRK: EQR}`
+   (the MMC→MRSH precedent: store stays keyed at the inception code; consistent with
+   `YAHOO_FETCH_ALIASES["EQR"]="VMRK"` under `unmodelled_renames()`). The
+   `data/stocks/EQR.parquet` + `data/stocks/VMRK.parquet` double store is OUT OF SCOPE
+   to edit (§10 forbids price stores) but must be named in the PR body and the handoff
+   as an owed breadth-lane retirement. The per-store receipt is corrected to include
+   `data/stocks`.
+8. **m1/m2 (pinning).** §6.1's four sidecar assertions get a test in
+   `tests/test_theme_graph_identity_resolution.py`; the §6.2 guard clause gets a
+   fixture test in `tests/test_theme_graph_contracts.py`.
+9. **m3 (store alias).** The `store` vendor space keeps a dated answer for `VMRK`
+   pointing at the continuing id, per the same derivation rules as the yahoo family.
+10. **m4/n1/n2 (artifact provenance).** The final artifact regeneration runs AFTER the
+    last code commit and is committed separately, so the receipt's `code_version`
+    names a commit whose code produces the artifacts. The sidecar is re-derived once
+    on that final code (single final epoch appended). If `issuer_master.parquet` /
+    `issuer_migrations.parquet` regenerate content-identical, their original committed
+    bytes are restored to keep the diff content-true.
+11. **n3.** The parent-contract AMENDMENTS pointer is owned by the orchestrator, in
+    this PR.
+
 ## §11 Builder return
 
 STATUS / RESULT / EVIDENCE / GAPS / DEVIATIONS packet; PR opened but NOT self-merged (the
