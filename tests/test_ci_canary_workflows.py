@@ -19,11 +19,92 @@ def triggers(document: dict) -> set[str]:
 
 
 def test_canaries_are_dispatch_only_and_not_merge_authority() -> None:
-    for name in ("selfhosted-ci-canary.yml", "m1-runner-canary.yml"):
+    for name in (
+        "selfhosted-ci-canary.yml",
+        "m1-runner-canary.yml",
+        "merge-control-hosted-canary.yml",
+    ):
         document = workflow(name)
         assert triggers(document) == {"workflow_dispatch"}
         published = {job.get("name", job_id) for job_id, job in document["jobs"].items()}
-        assert not published & {"ci-gate", "fence-pack", "self-mod-fence", "capability-broker", "grader-manifest"}
+        assert not published & {
+            "ci-gate",
+            "fence-pack",
+            "self-mod-fence",
+            "capability-broker",
+            "grader-manifest",
+        }
+
+
+def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -> None:
+    document = workflow("merge-control-hosted-canary.yml")
+    assert document["permissions"] == {"contents": "read"}
+    assert set(document["jobs"]) == {"trust-gate", "hosted-environment"}
+    trust = document["jobs"]["trust-gate"]
+    probe = document["jobs"]["hosted-environment"]
+    assert trust["runs-on"] == "ubuntu-latest"
+    assert probe["runs-on"] == "ubuntu-latest"
+    assert probe["needs"] == "trust-gate"
+    assert "refs/heads/main" in str(trust)
+
+    rendered = str(document)
+    for forbidden in (
+        "self-hosted",
+        "merge-control\"]",
+        "ADMIN_GH_TOKEN",
+        "MERGE_TOKEN",
+        "gh pr merge",
+        "python3 scripts/merge_on_green.py",
+    ):
+        assert forbidden not in rendered
+
+    steps = probe["steps"]
+    exact = next(step for step in steps if step.get("name") == "exact production sparse checkout")
+    assert exact["uses"] == "actions/checkout@v4"
+    options = exact["with"]
+    assert options["filter"] == "blob:none"
+    assert options["persist-credentials"] is False
+    assert options["sparse-checkout-cone-mode"] is False
+    assert set(str(options["sparse-checkout"]).split()) == {
+        "scripts/merge_on_green.py",
+        "scripts/ci_semantic_proof.py",
+        "scripts/ci_authority_paths.py",
+        "scripts/gh_path_filter.py",
+        "scripts/run_ci_pack.py",
+        ".github/workflows",
+    }
+
+    production_probe = next(
+        step
+        for step in steps
+        if step.get("name") == "prove the production system-Python dependency contract"
+    )
+    command = production_probe["run"]
+    assert 'python3 -c "import yaml"' in command
+    assert "python3 -m py_compile" in command
+    assert "import scripts.merge_on_green as mog" in command
+    assert "mog.main" in command
+
+    broad = next(step for step in steps if step.get("name") == "expand to the hosted control test surface")
+    broad_options = broad["with"]
+    assert broad_options["persist-credentials"] is False
+    assert "/*" in broad_options["sparse-checkout"]
+    assert "!/site/" in broad_options["sparse-checkout"]
+    assert "!/data/" in broad_options["sparse-checkout"]
+
+    tests = next(
+        step
+        for step in steps
+        if step.get("name") == "run existing merge-control and runner-boundary suites"
+    )["run"]
+    for suite in (
+        "tests/test_ci_pack.py",
+        "tests/test_merge_on_green.py",
+        "tests/test_runner_policy.py",
+        "tests/test_ci_canary_tools.py",
+        "tests/test_ci_canary_workflows.py",
+    ):
+        assert suite in tests
 
 
 def test_normal_ci_and_fences_remain_hosted() -> None:
