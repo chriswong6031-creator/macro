@@ -9,7 +9,7 @@
     "trade_authority": "none"
   },
   "cik_map_snapshot": "2026-08-18",
-  "code_version": "cff76abbff615255602bad3cc54b670bcbec1d4c",
+  "code_version": "953b52f18bddc17ba1bb062296131bae7a772a68",
   "coverage": {
     "resolved": 704,
     "total": 713,
@@ -33,7 +33,7 @@
     "reference.issuer_migrations",
     "reference.security_migrations"
   ],
-  "generated_at": "2026-08-20T12:47:29",
+  "generated_at": "2026-08-20T13:33:20",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
