@@ -475,6 +475,50 @@ def test_retail_and_auto_are_adjacent_industries():
         "headquartered in New Braunfels, Texas.") is True
 
 
+def test_child_entity_pages_are_rejected():
+    """A subsidiary, brand or product line is NOT the listed issuer. Four of these
+    were live in the committed cache under the previous rule."""
+    for title, name, extract in (
+        ("PriceSmart Foods", "PRICESMART INC",
+         "PriceSmart Foods is a chain of Asian supermarkets located in British "
+         "Columbia. It is a wholly owned subsidiary of the Overwaitea Food Group."),
+        ("Lincoln Financial Media", "Lincoln Financial",
+         "Lincoln Financial Media was a subsidiary of Lincoln National Corporation "
+         "that owned radio stations in the United States."),
+        ("Del Monte Foods", "Del Monte Corporation",
+         "Del Monte Foods Inc. is an American food company and subsidiary of NutriAsia."),
+        ("Texas Instruments Power", "TEXAS INSTRUMENTS INC",
+         "Texas Instruments Power, known as TIP, is a series of bipolar junction "
+         "transistors manufactured by Texas Instruments."),
+    ):
+        page = _page(title, "American company", extract)
+        assert not EP._accept_page(page, None, name)[0], f"{title!r} must be withheld"
+
+
+def test_child_entity_rule_needs_BOTH_signals():
+    """Either half alone over-fires: correct pages mention subsidiaries, and a
+    fused spelling adds a token without adding a word."""
+    # a fused title, no parent declared -> published (EagleBank is Eagle Bancorp)
+    bank = _page("EagleBank", "American bank",
+                 "EagleBank is an American bank headquartered in Bethesda, Maryland.")
+    assert EP._accept_page(bank, "State Commercial Banks", "Eagle Bancorp, Inc.")[0]
+    # the declared parent IS the issuer -> its own operating bank, published
+    assert not EP._declares_foreign_parent(
+        None, "Old National Bank is an American regional bank operated by "
+              "Old National Bancorp.", "OLD NATIONAL BANCORP /IN/")
+    # ... but a DIFFERENT parent is disqualifying
+    assert EP._declares_foreign_parent(
+        None, "PriceSmart Foods is a wholly owned subsidiary of the "
+              "Overwaitea Food Group.", "PRICESMART INC")
+
+
+def test_title_adds_a_word_ignores_fused_spellings():
+    assert EP._title_adds_a_word("PriceSmart Foods", "PRICESMART INC")
+    assert EP._title_adds_a_word("Lincoln Financial Media", "Lincoln Financial")
+    assert not EP._title_adds_a_word("Apple Inc.", "Apple Inc.")
+    assert not EP._title_adds_a_word("Redwood Trust", "Redwood Trust Inc")
+
+
 def test_parenthetical_qualifier_is_not_corroboration():
     """"(company)" says "the company one" and corroborates. "(benefits company)"
     says "the BENEFITS one" — Wikipedia distinguishing one namesake from another,
