@@ -27,6 +27,8 @@ owns_paths:
   - scripts/build_hk_library.py
   - tests/test_canada_build.py
   - tests/test_board_ledger.py
+  - engine/track_ledger.py
+  - tests/test_track_ledger_emitters.py
   - research/PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md
 artifacts:
   - research/PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md
@@ -92,16 +94,35 @@ waves:
     title: Era-clean HK/CA scorecard semantics
     status: in_progress
     depends_on: [ca-truth]
+    pr: 6072
     next_action: >
-      Definition-scope the scorecard group metrics (n/n_buy/hit_rate_21d/
-      by_group currently pooled all-era in engine/board_ledger.scorecard —
-      only rank_ic is fenced); add an explicit historical_context block
-      keeping the legacy pool queryable as labeled context; legacy-only
-      ledgers (definition None) keep pooled behavior unchanged. Packet §7
-      required tests + mutation kills. Consumers censused 2026-08-20:
-      build_hk.py horizons table (scored-only), build_canada.py board_track +
-      track_ledger.from_board_ledger_grade, prophet_governor status fields,
-      build_hk_library status only.
+      MERGED 273883182d9b 2026-08-20 (bytes verified on origin/main; covering
+      render pending at the merge SHA). Owed-session receipt after the first
+      nightly on/after the merge — verify on production: (1)
+      factordata/ca_track_ledger.json carries prior_record (legacy pool,
+      newest-first rows, own summary with win_pct/n_matured) and era-scoped
+      rows/summary; (2) scorecard block in canada_standouts.json board_track
+      has metrics_scope=current_definition + historical_context with
+      counts_source=raw_ledger, legacy_rows==raw ledger legacy count; (3)
+      hk_track_ledger.json fenced the same way (build_hk_library now passes
+      board_definition into its synthetic scorecard dict); (4) the
+      board-ledger-era-empty ::warning, if it fired, self-cleared once the
+      first stamped CA session graded. Then mark this wave done and open
+      shadow-contract.
+    scope_delta: >
+      Wave scope extended during adversarial review (packet §7.3 "scorecard
+      consumers only if needed"): engine/track_ledger.from_board_ledger_grade
+      published a COMPETING pooled hit rate beside the era-scoped one (dialog
+      invariant "eras never mix in one view" was broken for HK/CA; CN's
+      prior_record pattern was never ported) — now era-fenced with a
+      prior_record block, one fix covering HK+CA. Also fixed in the same PR:
+      _latest_definition whitespace normalization (a trailing-space stamp
+      silently blanked the whole published record — reviewer's executed A1
+      attack), raw-parquet historical_context counts (graded-frame estimate
+      undercounted delisted names) with counts_source marker, prior rows
+      newest-first before cap, and the scored-branch card caption ("of —
+      finished trades") now carries the era-scoped buy-lane denominator on
+      canada.html.j2 + hk.html.j2.
   - id: shadow-contract
     title: Rank/discovery shadow substrate
     status: todo
@@ -135,10 +156,11 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  Land LEDGER-ERA (era-clean scorecard fencing in engine/board_ledger.py;
-  spec in the ledger-era wave entry + packet §7). CA-TRUTH settlement receipt
-  PASSED 2026-08-20 — receipt recorded in the ca-truth wave entry. No HK/CA
-  challenger work before LEDGER-ERA lands.
+  Execute the LEDGER-ERA owed-session receipt (spec in the ledger-era wave
+  entry) after the first nightly on/after merge 273883182d9b; on a clean
+  receipt mark ledger-era done and open shadow-contract (packet §9). CA-TRUTH
+  settled 2026-08-20 (receipt in the ca-truth wave entry). No HK discovery /
+  CA intel / challenger work before shadow-contract exists.
 ---
 
 # HK + Canada Prophet revamp

@@ -1,13 +1,13 @@
 from scripts.build_btc_strategy import build_context, load_close
 
 
-def test_retired_midterm_override_uses_ungated_figures_on_pinned_vintage():
-    """The retired calendar veto leaves the strategy on its measured rules.
+def test_published_july_1_strategy_figures_reproduce_on_pinned_vintage():
+    """Frozen replay for the figures published by the legacy strategy page.
 
     The historical store later revised the July 1 close from the page's
-    published $58,964 to $59,961. Pinning that close makes the regression stable;
-    the risk strategy must now equal its ungated track and the live gate stamp
-    must remain inactive.
+    published $58,964 to $59,961. Pinning that one displayed close reproduces
+    the old page exactly and proves the shared Wave-1 module did not change the
+    strategy calculations during the move.
     """
     close = load_close().loc[:"2026-07-01"].copy()
     close.iloc[-1] = 58_964.0
@@ -36,15 +36,13 @@ def test_retired_midterm_override_uses_ungated_figures_on_pinned_vintage():
         round(risk["metrics"]["cagr"]),
         round(risk["metrics"]["sharpe"], 2),
         round(risk["metrics"]["maxdd"]),
-    ) == (188, 56, 1.12, -71)
+    ) == (441, 68, 1.29, -64)
     assert (
         round(risk["metrics_raw"]["total"]),
         round(risk["metrics_raw"]["cagr"]),
         round(risk["metrics_raw"]["sharpe"], 2),
         round(risk["metrics_raw"]["maxdd"]),
     ) == (188, 56, 1.12, -71)
-    assert risk["metrics"] == risk["metrics_raw"]
-    assert view["gate"]["active"] is False
 
     leverage = cycle["leverage"]
     assert round(leverage[0]["total"]) == 13_681

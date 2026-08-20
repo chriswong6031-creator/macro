@@ -19,11 +19,13 @@ owns_paths:
   - engine/neuralweb/market_memory_technical_store.py
 needs_ceo:
   question: >
-    Ratify DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY: v2 source =
+    Ratify DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY plus
+    DEC:W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE: v2 source =
     GET /v2/aggs/ticker/SPY/range/1/day/{D}/{D}?adjusted=false, 04:30Z window
-    preserved, technical feature versioned to raw_unadjusted_rth_daily_aggregate,
-    credentials in a new source owner, disjoint experience-v2/technicals-v2,
-    no public SPY R2 publisher, v1 untouched?
+    preserved, technical contract versioned as RTH price rungs + full-day
+    activity counters (not a single RTH aggregate), credentials in a new source
+    owner, disjoint experience-v2/technicals-v2, no public SPY R2 publisher,
+    v1 untouched?
   options:
     - "Ratify as written and authorize M0D implementation slice"
     - "Amend source object (grouped daily or open-close) then implement"
@@ -71,10 +73,13 @@ next_action: >
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
   - "DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY"
+  - "DEC:W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE"
 discoveries:
   - "DSC:MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z"
   - "DSC:SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC"
   - "DSC:MASSIVE-GROUPED-DAILY-AVAILABLE-AT-XNYS-CLOSE"
+  - "DSC:SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY"
+  - "DSC:W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -87,9 +92,12 @@ do_not_redo:
   - Do not move massive_stock_day collect into the 04:30 window, retune technicals :53, or add a SPY-only R2 publisher against frozen v1.
   - Do not infer Massive first-availability from when a collector happened to look.
   - Do not call REST the same unauthenticated full-market-day feature; version it.
-  - Do not digest REST request_id as source identity.
+  - Do not name the v2 profile as if volume and n were RTH.
+  - Do not switch the sealed v2 source to grouped daily.
+  - Do not digest REST request_id or the raw HTTP body as source identity.
   - Do not host REST bytes in the CPI ALFRED source store.
   - Do not share technicals-v1 or experience-v1 with v2.
+  - Do not edit _expected_registration_spec in place to describe v2.
   - Do not repair v1 abstentions with v2 evidence.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
@@ -99,19 +107,26 @@ landmines:
   - Session 2026-08-18 also lacked a trusted same-session pin; that is concurrent with, not a substitute for, the technical lag.
   - Massive stocks day_aggs LastModified lives in the 04:30Z band. The 22:30 UTC nightly cannot see session D.
   - 2026-08-19 ticker-count then publish-last tears delayed coherent 08-18 capture to 22:57Z; they did not delay the 08-19 S3 object past 04:45Z — that object was itself 04:54Z.
-  - accrue_market_memory_spy_experience.py and _expected_registration_spec() are v1-hardcoded.
+  - accrue_market_memory_spy_experience.py and _expected_registration_spec() are v1-hardcoded. Editing that dict in place changes v1's registration_id and rejects every sealed v1 row.
   - Single-ticker bar.t is midnight ET; session identity is the request date.
+  - REST captures in technicals-v1 make remaining v1 windows missed, not abstained.
+  - v1 trusted generation grew +3 captures/window on the first three windows against a 256 reader pin budget (DSC:W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW).
+  - Two experience oneshots at the same 04:30:00Z second contend for the 900s window; v2 starts at 04:32Z.
 artifacts:
   - agentos/handoffs/MARKET_MEMORY_M0A_CLOSEOUT_2026-08-16.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0b.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c-addendum.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
+  - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md
   - agentos/discoveries/DSC-MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z.md
   - agentos/discoveries/DSC-SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC.md
   - agentos/discoveries/DSC-MASSIVE-GROUPED-DAILY-AVAILABLE-AT-XNYS-CLOSE.md
+  - agentos/discoveries/DSC-SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY.md
+  - agentos/discoveries/DSC-W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW.md
 ---
 
 M0A first-cause repair: PR #5805, merged as `e1ec8865ac92`.

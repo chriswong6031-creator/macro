@@ -584,8 +584,11 @@ def _grade_dict(market: str) -> dict:
     }
 
 
-def _scorecard(status="accruing"):
-    return {"market": "HK", "status": status, "first_read_est": "2026-08-24"}
+def _scorecard(status="accruing", definition=None):
+    sc = {"market": "HK", "status": status, "first_read_est": "2026-08-24"}
+    if definition is not None:
+        sc["board_definition"] = definition
+    return sc
 
 
 class TestFromBoardLedgerGrade:
@@ -679,6 +682,140 @@ class TestFromBoardLedgerGrade:
         assert d["schema"] == "track_ledger/v1"
         assert d["rows"] == []
         assert d["state"] == "accruing"
+
+
+# ===========================================================================
+# 3b. LEDGER-ERA track_ledger fence (2026-08-20 adversarial review, BLOCKER-1)
+#
+# from_board_ledger_grade used to pool EVERY era into `rows`/`summary` with no
+# board_definition filter at all — a COMPETING, uncorrected win rate published
+# right beside board_ledger.scorecard()'s newly era-scoped one (LEDGER-ERA,
+# same date). scorecard['board_definition'] now fences `rows`/`summary` to the
+# current era; excluded rows surface under a new top-level `prior_record` key,
+# same block shape as scripts/build_china_library._cn_era_block produces for
+# CN, so _track_record_dlg.html.j2's existing hasLegacy()/era-chip JS (already
+# shipped for CN) lights up for HK/CA with zero template changes.
+# ===========================================================================
+def _grade_dict_zero_current(market: str) -> dict:
+    """One current-era row that has NOT matured yet (CA's real state until
+    ~late Sept — the stamp exists, no board fired under it has finished 21d),
+    beside one legacy row that HAS a real graded record."""
+    return {
+        "market": market, "available": True, "n_calls": 2, "n_graded": 1, "n_suspended": 0,
+        "survivorship": "no_dead_name_store",
+        "by_horizon": {
+            "5d": [], "10d": [], "63d": [],
+            "21d": [
+                {"date": "2026-08-19", "ticker": "9999.HK", "board_pos": 1,
+                 "group": "entry_open", "edge_z": 0.4, "fwd_ret": None,
+                 "bench_ret": None, "excess_ret": None, "suspended": False,
+                 "board_definition": "hk_prophet_fixture_v1",
+                 "entry_date": "2026-08-20"},               # current era, unmatured
+                {"date": "2026-06-01", "ticker": "0700.HK", "board_pos": 1,
+                 "group": "entry_open", "edge_z": 1.2, "fwd_ret": 0.08,
+                 "bench_ret": 0.02, "excess_ret": 0.06, "suspended": False},
+                # ^ no board_definition key at all → legacy, matured beat
+            ],
+        },
+    }
+
+
+class TestFromBoardLedgerGradeEraFence:
+    def _doc(self, grade_dict=None, definition="hk_prophet_fixture_v1"):
+        return tl.from_board_ledger_grade(
+            "HK", grade_dict if grade_dict is not None else _grade_dict("HK"),
+            _scorecard(definition=definition),
+            bench={"code": "_HSI", "en": "Hang Seng", "zh": "恒生指数"},
+        )
+
+    # ---- (i) mixed-era fixture: rows/summary current-only, prior_record legacy ----
+    def test_current_rows_exclude_legacy(self):
+        """`rows` must carry ONLY 0700.HK (the stamped hk_prophet_fixture_v1 row) —
+        not the three unstamped legacy rows _grade_dict also carries."""
+        d = self._doc()
+        assert {r["t"] for r in d["rows"]} == {"0700.HK"}
+
+    def test_current_summary_matches_current_rows_only(self):
+        """VALUE assertions, not shape: these numbers must FLIP if pooling ever
+        creeps back in — n_matured/n_beat/n_lag/hit_matured/win_pct all read 1
+        row's worth of truth, not 2 rows' (0700.HK beat + the legacy 0005.HK lag)."""
+        d = self._doc()
+        s = d["summary"]
+        assert s["n_matured"] == 1
+        assert s["n_beat"] == 1
+        assert s["n_lag"] == 0
+        assert s["hit_matured"] == 1.0
+        assert s["win_pct"] == 100.0
+        assert s["n_calls"] == 1 and s["n_logged"] == 1
+
+    def test_prior_record_carries_every_legacy_row(self):
+        """The three rows excluded from `rows` above must ALL surface under
+        prior_record — disclosure, never deletion (packet §7.3 Must-not-change)."""
+        d = self._doc()
+        pr = d["prior_record"]
+        assert {r["t"] for r in pr["rows"]} == {"0005.HK", "9988.HK", "3690.HK"}
+
+    def test_prior_record_summary_is_its_own_not_pooled(self):
+        """prior_record's summary must describe ONLY the legacy rows: 0005.HK
+        (matured lag) counted, 9988.HK (early) not, 3690.HK (suspended) counted
+        only in n_suspended — the exact same rules from_board_ledger_grade
+        already applied to the pre-LEDGER-ERA pooled summary, now scoped."""
+        d = self._doc()
+        ps = d["prior_record"]["summary"]
+        assert ps["n_matured"] == 1
+        assert ps["n_beat"] == 0
+        assert ps["n_lag"] == 1
+        assert ps["n_suspended"] == 1
+        assert ps["hit_matured"] == 0.0
+        assert ps["win_pct"] == 0.0
+
+    def test_prior_record_shape_matches_cn_era_block(self):
+        """Same top-level keys scripts/build_china_library._cn_era_block emits,
+        so _track_record_dlg.html.j2's existing prior_record JS (hasLegacy(),
+        the era-chip swap, the ribbon at line ~1052 reading label_en/label_zh/
+        summary.win_pct/summary.n_matured) needs no HK/CA-specific branch."""
+        d = self._doc()
+        pr = d["prior_record"]
+        for key in ("label_en", "label_zh", "board_definition", "date_from",
+                    "date_to", "state", "summary", "rows", "meta"):
+            assert key in pr, f"prior_record missing {key!r}"
+        assert pr["label_en"].startswith("previous board definition")
+        assert "meta" in pr and "n_total" in pr["meta"] and "grain" in pr["meta"]
+
+    # ---- (ii) legacy-only ledger: byte-identical, no prior_record ----
+    def test_legacy_only_ledger_is_byte_identical_no_prior_record(self):
+        """scorecard carries NO board_definition (a ledger that never stamps) →
+        every row must land in `rows` exactly as before LEDGER-ERA, and
+        prior_record must be entirely ABSENT (never an empty/None placeholder)."""
+        d = self._doc(definition=None)   # _scorecard(definition=None) → no key at all
+        assert {r["t"] for r in d["rows"]} == {"0700.HK", "0005.HK", "9988.HK", "3690.HK"}
+        assert "prior_record" not in d
+        assert d["summary"]["n_matured"] == 2   # 0700.HK beat + 0005.HK lag, pooled
+        assert d["summary"]["n_beat"] == 1 and d["summary"]["n_lag"] == 1
+
+    # ---- (iii) zero-graded current era: honest empty stats, legacy still real ----
+    def test_zero_graded_current_era_renders_honestly(self):
+        d = self._doc(grade_dict=_grade_dict_zero_current("HK"))
+        assert {r["t"] for r in d["rows"]} == {"9999.HK"}
+        assert d["rows"][0]["m"] is False and d["rows"][0]["st"] == "early"
+        assert d["summary"]["n_matured"] == 0
+        assert d["summary"]["hit_matured"] is None
+        assert d["summary"]["win_pct"] is None
+
+    def test_zero_graded_current_era_still_populates_prior_record(self):
+        d = self._doc(grade_dict=_grade_dict_zero_current("HK"))
+        pr = d["prior_record"]
+        assert {r["t"] for r in pr["rows"]} == {"0700.HK"}
+        assert pr["summary"]["n_matured"] == 1
+        assert pr["summary"]["win_pct"] == 100.0
+
+    # ---- misc: JSON round-trip + no key collisions on the new shape ----
+    def test_json_round_trip_with_prior_record(self):
+        s = json.dumps(self._doc())
+        assert "NaN" not in s
+        doc = json.loads(s)
+        assert doc["schema"] == "track_ledger/v1"
+        assert "prior_record" in doc
 
 
 # ===========================================================================

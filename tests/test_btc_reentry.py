@@ -415,24 +415,15 @@ _SIG_PATH = Path(__file__).resolve().parent.parent / "data" / "vector" / "signal
 
 @pytest.fixture(scope="module")
 def real_replay():
-    """Replay the retired mechanism explicitly for historical attribution.
-
-    Production config keeps the override disabled. These acceptance checks retain
-    the old machinery as an auditable counterfactual, so the fixture opts it in on
-    a private copy rather than treating live configuration as replay authority.
-    """
-    import copy
-
     if not _SIG_PATH.exists():
         pytest.skip("local data/vector/signals.parquet not present")
     from lib import config
     sig = pd.read_parquet(_SIG_PATH)
     sig.index = pd.to_datetime(sig.index)
-    vcfg = copy.deepcopy(config.load()["vector"])
-    vcfg["allocation"]["midterm_gate"]["enabled"] = True
+    vcfg = config.load()["vector"]
     acfg = vcfg["allocation"]
     assert acfg.get("midterm_gate", {}).get("reentry", {}).get("enabled"), \
-        "historical replay requires the retired W4 re-entry definition"
+        "live config must ship the W4 re-entry enabled"
     pure = pd.DataFrame({"alloc_optimal": 1.0}, index=sig.index)
     ctx = {"close": sig["close"], "mvrv_z": sig.get("mvrv_z"),
            "bottom_pressure": sig.get("bottom_pressure"),

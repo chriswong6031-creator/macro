@@ -47,8 +47,14 @@
   .dp-brand .gn { background:linear-gradient(96deg,var(--acc),var(--dpb) 60%,var(--unc)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .dp-sub { color:var(--muted); font-size:14px; margin:5px 0 0; max-width:640px; }
   .dp-verdict { font-size:clamp(20px,3vw,28px); font-weight:800; color:var(--ink); letter-spacing:-.022em; line-height:1.3; margin:18px 0 4px; max-width:900px; }
-  .dp-asof { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-top:8px; }
+  .dp-asof { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px 8px; font-size:12px; line-height:1.45; color:var(--muted); margin-top:8px; }
+  .dp-asof .l-en,.dp-asof .l-zh { white-space:nowrap; }
   .dp-dot { width:7px; height:7px; border-radius:50%; background:var(--up); animation:dpBreathe 2.8s ease-in-out infinite; flex:none; }
+  .dp-census { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; font-size:11.5px; color:var(--muted); }
+  .dp-census span { padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:var(--panel); }
+  .dp-census b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .session-badge { display:inline-flex; margin-left:7px; padding:2px 6px; border-radius:999px; border:1px solid color-mix(in srgb,var(--unc) 45%,var(--line)); color:var(--unc); font-size:9.5px; font-weight:750; white-space:nowrap; vertical-align:middle; }
+  tr.is-stale td { color:color-mix(in srgb,var(--muted) 86%,transparent); }
 
   /* ---------- market gauge ---------- */
   .dp-gauge { margin:16px 0 2px; }
@@ -225,11 +231,18 @@
     <span class="dp-mark"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--dpb)" stroke-width="1.4" opacity=".5"/><path d="M15 2a13 13 0 0 0 0 26z" fill="var(--acc)" opacity=".9"/><circle cx="15" cy="15" r="4.4" fill="var(--bg)"/></svg></span>
     <span class="gn">{{ t('Dark Pool', '暗池') }}</span>
   </div>
-  <p class="dp-sub">{{ t("How much of each stock's volume traded away from the public tape today — and what the price was doing while it did.", '今日每只个股有多少成交发生在公开报价带之外——以及成交发生时股价的表现。') }}</p>
+  <p class="dp-sub">{{ t("How much of each stock's volume traded away from the public tape in the latest settled session — and what the price was doing while it did.", '最近结算交易日中，每只个股有多少成交发生在公开报价带之外——以及成交发生时股价的表现。') }}</p>
   {% if dp and dp.hero %}<div class="dp-verdict">{{ bl(dp.hero) }}</div>{% endif %}
   <div class="dp-asof"><span class="dp-dot"></span>{{ t('As of', '截至') }} {{ panel_latest }}
     {% if below_floor %}· <span style="color:var(--ink-warn, var(--warn))">{{ t('thin history (' ~ panel_dates ~ ' dates)', '历史较短（' ~ panel_dates ~ ' 天）') }}</span>{% endif %}
     · {{ t('settled off-exchange tape · positioning context, not trade calls', '结算后的场外成交 · 仅为仓位背景，非交易信号') }}</div>
+{% if coverage %}
+  <div class="dp-census" aria-label="Current-session coverage">
+    <span><b>{{ coverage.current_session_rows }}</b> / <b>{{ coverage.tracked_universe }}</b> {{ t('current-session names', '只当前交易日个股') }} · {{ coverage.current_session_pct }}%</span>
+    <span><b>{{ coverage.stale_rows }}</b> {{ t('older-session rows', '只较早交易日记录') }}</span>
+    <span><b>{{ coverage.missing_rows }}</b> {{ t('missing', '只缺失') }}</span>
+  </div>
+{% endif %}
 
   {# Market gauge — dollar-weighted, so a $3 name and a $300 name do not count the same. #}
   {% if gauge and gauge.participation_dollar_wtd is not none %}
@@ -280,9 +293,9 @@
 </div>
 
 <!-- ═════════════════════════ STANDOUTS BOARD ═════════════════════════ -->
-<div class="sec"><span class="sd" style="--sc:var(--unc)"></span><h2>{{ t('Standouts today', '今日焦点个股') }}</h2>
+<div class="sec"><span class="sd" style="--sc:var(--unc)"></span><h2>{{ t('Standouts this settled session', '本结算交易日焦点个股') }}</h2>
   <span class="cnt">{{ dp.standouts|length }} {{ t('of', '/') }} {{ dp.n_standouts }} {{ t('names with unusual dark activity', '只出现异常暗池活动') }}</span></div>
-<p class="sec-sub">{{ t("The names trading furthest from their OWN off-exchange norm right now — ranked by how unusual they are, not by how dark they always are. The complete desk is one click below.", '当前最偏离自身场外成交常态的个股——按异常程度排序，而非按其一贯的暗池占比。完整数据台见下方一键展开。') }}</p>
+<p class="sec-sub">{{ t("The names furthest from their OWN off-exchange norm in this settled session — ranked by how unusual they were, not by how dark they usually are. The complete desk is one click below.", '本结算交易日中最偏离自身场外成交常态的个股——按异常程度排序，而非按其一贯的暗池占比。完整数据台见下方一键展开。') }}</p>
 <div class="board">
   {% for s in dp.standouts %}
   <div class="name {{ LC[s.pattern] }}">
@@ -309,7 +322,7 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="dp-quiet">{{ t("Off-exchange activity is quiet today — no names are trading unusually heavily in the dark versus their own history. The full desk is still available below.", '今日场外活动平静——没有个股相对自身历史出现异常沉重的暗池成交。完整数据台仍可在下方查看。') }}</div>
+<div class="dp-quiet">{{ t("Off-exchange activity was quiet in this settled session — no names traded unusually heavily in the dark versus their own history. The full desk is still available below.", '本结算交易日场外活动平静——没有个股相对自身历史出现异常沉重的暗池成交。完整数据台仍可在下方查看。') }}</div>
 {% endif %}
 
 <!-- ═══════════════════════════ VENUE FLOW ════════════════════════════ -->
@@ -339,7 +352,7 @@
 <!-- Full desk (demoted) -->
 <div class="shelf">
   <details>
-    <summary><span class="si">▦</span>{{ t('Browse all', '浏览全部') }} {{ n_with_oe }} {{ t('names — sortable desk', '只 — 可排序数据台') }}<span class="sh">{{ t('off-exchange share · trend · vs-norm · short ratio · venue', '场外占比 · 趋势 · vs常态 · 融券比率 · 场所') }}</span><span class="sc">▶</span></summary>
+    <summary><span class="si">▦</span>{{ t('Browse all', '浏览全部') }} {{ n_tickers_total }} {{ t('tracked rows — sortable desk', '条跟踪记录 — 可排序数据台') }}<span class="sh">{{ t('current rows rank first · older rows retain exact dates', '当前记录优先 · 较早记录保留准确日期') }}</span><span class="sc">▶</span></summary>
     <div class="sb">
       {# JSON data payload — consumed by client-side table renderer #}
       <script id="dp-data" type="application/json">{{ table_json | safe }}</script>
@@ -381,7 +394,7 @@
               <th data-col="participation_trend_pp" data-type="num">{{ t('OE trend pp','场外趋势pp') }}
                 {{ tip('5-day mean off-exchange share minus 40-day mean, in percentage points. Positive = off-exchange share rising recently vs its own longer-term level.','近5日平均场外占比减去40日平均，单位百分点。正值=场外占比近期相对自身较长期水平上升。') }}</th>
               <th data-col="participation_z" data-type="num">{{ t('vs norm','对比基准') }}
-                {{ tip('Today\'s off-exchange share against this name\'s OWN trailing baseline (median/MAD over up to 252 sessions, EXCLUDING today, ≥40 obs required). Blank means not enough comparable history — never a substituted zero. A baseline is restarted after a share split, because the vendor re-bases its volume history and FINRA does not.','当日场外占比相对该股自身滚动基准的Z值（最多252个交易日的中位数/MAD，不含当日，需≥40个观测值）。空白表示可比历史不足——绝不以0代替。股票拆分后基准将重新起算，因为数据商会追溯调整成交量历史而FINRA不会。') }}</th>
+                {{ tip('This session\'s off-exchange share against this name\'s OWN trailing baseline (median/MAD over up to 252 prior sessions, ≥40 obs required). Blank means not enough comparable history — never a substituted zero. A baseline is restarted after a share split, because the vendor re-bases its volume history and FINRA does not.','本交易日场外占比相对该股自身滚动基准的Z值（最多252个此前交易日的中位数/MAD，需≥40个观测值）。空白表示可比历史不足——绝不以0代替。股票拆分后基准将重新起算，因为数据商会追溯调整成交量历史而FINRA不会。') }}</th>
               <th data-col="short_rate" data-type="num">{{ t('Short Ratio','融券比率') }}
                 {{ tip('Short-sale volume ÷ FINRA-facility total volume for this session. NOT the NYSE/Nasdaq consolidated tape ratio.','卖空成交量÷当日FINRA设施总成交量，非NYSE/纳斯达克综合报价带比率。') }}</th>
               <th data-col="short_trend_pp" data-type="num" class="sc-hide-sm">{{ t('SR trend pp','融券趋势pp') }}
@@ -419,8 +432,8 @@
         {{ t('Off-exchange volume hides who is trading and which side initiated, so it cannot call direction on its own — and roughly half of it is short-marked by default, which is a feature of how market makers hedge rather than evidence of bearish intent. This desk therefore reports what was observed: how far a name\'s off-exchange share ran from its OWN norm, how long the run has lasted, where it printed, and what the price did over the same stretch. It does not tell you which way the stock goes next.',
            '场外成交隐藏了交易方身份与主动方，因此本身无法判断方向——且其中约一半默认被标记为卖空，这是做市商对冲机制的特征，而非看空意图的证据。因此本数据台只报告观察到的事实：个股场外占比偏离自身常态的幅度、已持续多久、成交发生在哪里，以及同期股价的表现。它不预测股价接下来的走向。') }}</p>
       <p><b>{{ t('How a name gets on the board.', '个股如何进入焦点板。') }}</b>
-        {{ t('Its off-exchange share must be both well above its own norm (≥1.5σ against a trailing baseline that EXCLUDES the day being measured) and material (≥40% of that day\'s volume). Ranking is by distance from each name\'s own norm, not by raw level — a stock that always prints 55% off-exchange is not news, a stock that normally prints 28% and printed 42% today is. Names without enough comparable history show no score at all rather than a made-up one.',
-           '其场外占比必须既明显高于自身常态（相对于一个不含当日的滚动基准 ≥1.5σ），又足够显著（≥当日成交量的40%）。排序依据是偏离自身常态的程度，而非绝对水平——一只长期场外占比55%的个股并非新闻，而一只常态28%、今日却达42%的个股才是。历史可比数据不足的个股不显示评分，而非给出杜撰的数值。') }}</p>
+        {{ t('Its off-exchange share must be both well above its own norm (≥1.5σ against a trailing baseline that EXCLUDES the session being measured) and material (≥40% of that session\'s volume). Ranking is by distance from each name\'s own norm, not by raw level — a stock that always prints 55% off-exchange is not news, while one that normally prints 28% and printed 42% in the measured session is. Names without enough comparable history show no score at all rather than a made-up one.',
+           '其场外占比必须既明显高于自身常态（相对于一个不含本次测量交易日的滚动基准 ≥1.5σ），又足够显著（≥该交易日成交量的40%）。排序依据是偏离自身常态的程度，而非绝对水平——一只长期场外占比55%的个股并非新闻，而一只常态28%、本次测量交易日却达42%的个股才是。历史可比数据不足的个股不显示评分，而非给出杜撰的数值。') }}</p>
       <p><b>{{ t('Dark pools are the smaller half.', '暗池只是较小的一半。') }}</b>
         {{ t('Off-exchange volume is registered dark pools (ATS) PLUS wholesaler internalisation — broker-dealers filling order flow, largely retail, against their own book. The second is the bigger half: across large names only about 17–31% of off-exchange volume actually reaches a dark pool. Each card shows that split, so "trading in the dark" is never confused with "institutions are accumulating".',
            '场外成交由注册暗池（ATS）与批发商内部化两部分构成——后者是券商以自有账簿承接订单流（多为散户订单）。后者才是较大的一半：在大型个股中，实际进入暗池的场外成交通常仅占约17–31%。每张卡片都显示这一构成，以免将「暗池成交」误读为「机构在吸筹」。') }}</p>
@@ -434,11 +447,15 @@
   </details>
 </div>
 
-{# Printed nulls — house doctrine. What the desk could NOT see today, stated plainly. #}
+{# Printed nulls — house doctrine. What the settled read could not see, stated plainly. #}
 {% if coverage %}
 <div class="dp-limits">
-  <div class="lh">{{ t('What this read could not see today', '今日数据未能覆盖的部分') }}</div>
+  <div class="lh">{{ t('What this settled-session read could not see', '本结算交易日数据未能覆盖的部分') }}</div>
   <ul>
+    <li><b>{{ coverage.current_session_rows }}</b> / <b>{{ coverage.tracked_universe }}</b>
+        {{ t('tracked names have an observation for ' ~ panel_latest ~ ';', '只跟踪个股具有 ' ~ panel_latest ~ ' 的观测；') }}
+        <b>{{ coverage.stale_rows }}</b> {{ t('have only an older observation and', '只仅有较早观测，') }}
+        <b>{{ coverage.missing_rows }}</b> {{ t('have no qualifying stored row. Older rows remain in Browse All but carry no current rank authority.', '只没有符合条件的存储记录。较早记录保留在「浏览全部」中，但不具备当前排名权威。') }}</li>
     <li>{{ t('Off-exchange share computed for', '已计算场外占比的个股') }}
         <b>{{ coverage.n_with_participation }}</b> / <b>{{ coverage.n_total }}</b>
         {{ t('names; the rest have no matching consolidated-volume record.', '只；其余个股无匹配的综合成交量记录。') }}</li>
@@ -519,8 +536,11 @@
   function renderRow(r) {
     var tc = trendCls(r.participation_trend_pp);
     var sc = srTrendCls(r.short_trend_pp);
-    return '<tr>' +
-      '<td>' + esc(r.ticker) + '</td>' +
+    var stale = r.session_status === 'stale';
+    var lang = document.documentElement.getAttribute('data-lang') || 'en';
+    var older = stale ? '<span class="session-badge">' + (lang === 'zh' ? '较早 ' : 'Older ') + esc(r.asof || '') + '</span>' : '';
+    return '<tr' + (stale ? ' class="is-stale"' : '') + '>' +
+      '<td>' + esc(r.ticker) + older + '</td>' +
       '<td class="muted sc-hide-sm">' + esc(r.asof || '') + '</td>' +
       '<td>' + (r.participation !== null && r.participation !== undefined ? fmtPct(r.participation) : '<span class="muted">—</span>') + '</td>' +
       '<td class="spark-cell sc-hide">' + sparkSVG(r.spark20) + '</td>' +
