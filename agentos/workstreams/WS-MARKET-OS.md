@@ -165,6 +165,8 @@ artifacts:
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-blocker.md
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md
+  - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
+  - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
 next_action: >
   Return the complete privacy-safe final authenticated production matrix in
   agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md to Sol
