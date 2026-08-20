@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-08-19T18:03:23+00:00",
+  "as_of": "2026-08-20T07:48:00+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -16,13 +16,13 @@
       ],
       "maturity_state": "accruing",
       "retro_grades": {
-        "total_rows": 4623,
-        "matured_rows": 4623,
+        "total_rows": 4712,
+        "matured_rows": 4712,
         "graded_col_counts": {
-          "excess_spy": 4623,
-          "mae_close_excess_spy": 4623,
-          "excess_sector": 4620,
-          "mae_close_excess_sector": 4620
+          "excess_spy": 4712,
+          "mae_close_excess_spy": 4712,
+          "excess_sector": 4709,
+          "mae_close_excess_sector": 4709
         },
         "note": "one-grader law (SA-R14); win_rate from committed scoreboard only"
       },
@@ -33,7 +33,7 @@
         "horizons_available": []
       },
       "board_outcomes": {
-        "as_of": "2026-08-18",
+        "as_of": "2026-08-19",
         "n_picks": null,
         "status": null
       },
@@ -50,7 +50,7 @@
         "process_integrity": null
       },
       "track_history": {
-        "as_of": "2026-08-19",
+        "as_of": "2026-08-20",
         "n_cohorts": null,
         "status": null
       },
@@ -107,7 +107,7 @@
       "data_gaps": [],
       "maturity_state": "accruing",
       "scorecard": {
-        "status": "scored",
+        "status": "accruing",
         "n_matured": null,
         "as_of": null,
         "survivorship_note": null
@@ -178,21 +178,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "stale",
-          "age_hours": 282.1,
+          "age_hours": 295.8,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 18.1,
+          "age_hours": 7.8,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
           "status": "ok",
-          "age_hours": 42.1,
+          "age_hours": 31.8,
           "sla_hours": 48
         }
       ],
@@ -205,13 +205,13 @@
         {
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
-          "status": "ok",
-          "age_hours": 18.1,
+          "status": "stale",
+          "age_hours": 31.8,
           "sla_hours": 30.0
         }
       ],
       "data_gap_count": 0,
-      "overall_health": "ok"
+      "overall_health": "degraded"
     },
     "hk": {
       "market": "hk",
@@ -220,7 +220,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 7.5,
+          "age_hours": 21.7,
           "sla_hours": 48
         }
       ],
@@ -234,7 +234,7 @@
           "artifact": "ca-board-ledger",
           "path": "data/board_ledger/ca_board.parquet",
           "status": "ok",
-          "age_hours": 1.6,
+          "age_hours": 2.5,
           "sla_hours": 48
         }
       ],
@@ -261,26 +261,26 @@
     "note": "Cross-connected Mastermind-Charts lane. Prophet manages US buy-lane \u2192 trade-plan envelopes. Display-only crosslink; Prophet reads, never writes these stores (PR-R2).",
     "data_gaps": [],
     "ledger": {
-      "total_rows_sampled": 25,
+      "total_rows_sampled": 26,
       "open_count": 0,
-      "closed_count": 25,
+      "closed_count": 26,
       "outcome_mix": {
         "INVALIDATED": 11,
         "EXPIRED": 1,
         "T1_HIT": 12,
-        "T2_HIT": 1
+        "T2_HIT": 2
       }
     },
     "index": {
       "as_of": null,
-      "plan_count": 250
+      "plan_count": 262
     }
   },
   "pick_lab": {
     "block_id": "pick_lab",
     "data_gaps": [],
     "us_lab": {
-      "as_of": "2026-08-18",
+      "as_of": "2026-08-19",
       "book_count": null,
       "fire_count": 0,
       "status": null
