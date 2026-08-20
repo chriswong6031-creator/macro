@@ -2277,6 +2277,63 @@ def test_nightly_restores_last_good_on_an_unmodelled_rename(
     assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt
 
 
+def test_nightly_restores_last_good_on_a_vendor_alias_prune_conflict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+) -> None:
+    """AMENDMENT §3 (2026-08-20, re-verification) — MAJOR regression fix.
+
+    ``VendorAliasPruneConflict`` used to subclass ``SystemExit`` (a ``BaseException``
+    sibling to ``Exception``), so it ESCAPED :func:`BUILD.run_nightly_refresh`'s
+    ``except Exception`` handler entirely: the seam's "always returns 0" invariant
+    broke, ``_restore_artifacts`` never ran, and NOT ONE ``::warning`` was printed —
+    silent process-exit-1, on exactly the future dated-rename path AMENDMENT §2
+    documents will fire (the `store` space has no VMRK answer until the same-id
+    refinement carve-out lands, and ANY future dated RenameEvent on a name whose
+    committed alias rows are still open-bounded now hits this same conflict).
+
+    Forces it the way the reviewer did: a NEW dated RenameEvent on AAPL (a real
+    committed security whose `yahoo`/`membership` alias rows are open-bounded,
+    valid_from=valid_to=None) — the fresh build tries to date-split those open rows,
+    which collides with the committed open rows under AMENDMENT ruling 6 (M5)'s
+    fail-closed law.
+    """
+    assert BUILD.run_nightly_refresh(tmp_path) == 0
+    before = {name: (tmp_path / name).read_bytes() for name in BUILD._NIGHTLY_ARTIFACT_NAMES}
+    before_receipt = (tmp_path / BUILD.RECEIPT_NAME).read_bytes()
+
+    fake_event = BUILD.RenameEvent(
+        old="AAPL", new="ZZZFUTURENAME", on=date(2099, 1, 1),
+        vendors=(BUILD.VENDOR_YAHOO, BUILD.VENDOR_MEMBERSHIP),
+        evidence="fixture: forcing a vendor_alias_prune_conflict on a stable security",
+    )
+    monkeypatch.setattr(BUILD, "RENAME_EVENTS", BUILD.RENAME_EVENTS + (fake_event,))
+
+    assert BUILD.run_nightly_refresh(tmp_path) == 0, (
+        "the nightly seam must ALWAYS return 0 — a VendorAliasPruneConflict is a "
+        "curation-required refusal, never a crash"
+    )
+    out = capsys.readouterr().out
+    assert "::warning" in out, "a silent escape must never happen again"
+    assert "security-master-nightly-prune-conflict" in out, (
+        "the DEDICATED warning title, not the generic build-failure one"
+    )
+    assert "curation required" in out
+    for name in BUILD._NIGHTLY_ARTIFACT_NAMES:
+        assert (tmp_path / name).read_bytes() == before[name], (
+            f"{name} must be byte-restored to last-good"
+        )
+    assert (tmp_path / BUILD.RECEIPT_NAME).read_bytes() == before_receipt, (
+        "generated_at must NOT be re-stamped"
+    )
+
+
+def test_vendor_alias_prune_conflict_is_a_plain_exception_not_systemexit() -> None:
+    """The exact defect class, pinned directly: SystemExit is a BaseException
+    sibling to Exception and is NEVER caught by `except Exception`."""
+    assert issubclass(BUILD.VendorAliasPruneConflict, Exception)
+    assert not issubclass(BUILD.VendorAliasPruneConflict, SystemExit)
+
+
 def test_nightly_refuses_on_a_missing_cik_map_evidence_rail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
 ) -> None:

@@ -1831,7 +1831,7 @@ def _build_issuer_master_rows(master_rows: list[dict],
     return sorted(out, key=lambda r: r["issuer_id"])
 
 
-class VendorAliasPruneConflict(SystemExit):
+class VendorAliasPruneConflict(Exception):
     """Raised by :func:`_prune_stale_aliases` (AMENDMENT ruling 6 / M5) when a fresh
     alias row overlaps a committed row that points at an ACTIVE (non-superseded)
     ``security_id``. Fail-closed by design: the pre-amendment code silently dropped
@@ -1839,6 +1839,18 @@ class VendorAliasPruneConflict(SystemExit):
     which is an undisclosed last-write-wins replacement on an append-only dataset —
     exactly the M5 defect. A genuine correction to an ACTIVE row's alias history is a
     curation act (a new RENAME_EVENTS/SECURITY_SUPERSESSIONS entry, or an operator
+
+    AMENDMENT ruling 11 (§3): a plain ``Exception``, NEVER ``SystemExit`` — the
+    pre-amendment class subclassed ``SystemExit``, which is a ``BaseException``
+    sibling to ``Exception`` and therefore escaped :func:`run_nightly_refresh`'s
+    ``except Exception`` handler entirely (a real MAJOR regression: the nightly seam's
+    "always returns 0" invariant broke, ``_restore_artifacts`` never ran, and NOT ONE
+    ``::warning`` was emitted — silent process-exit-1 on exactly the future
+    dated-rename path AMENDMENT §2 documents will fire). :func:`run_nightly_refresh`
+    catches this class EXPLICITLY, before its generic handler (see there); the CLI
+    path (:func:`main`) still stays fail-closed because nothing there catches it at
+    all — an uncaught ``Exception`` propagating out of ``main()`` is still a non-zero
+    exit, exactly like before this rebase.
     resolving the conflict by hand), never something this builder silently resolves.
     """
 
@@ -2470,6 +2482,22 @@ def run_nightly_refresh(out_dir: Path) -> int:
 
     try:
         receipt = build(out_dir, dry_run=False)
+    except VendorAliasPruneConflict as exc:
+        # AMENDMENT ruling 11 (§3) — a DEDICATED handler, BEFORE the generic one
+        # below: a fresh alias row conflicting with a committed ACTIVE-id row
+        # (ruling 6 / M5, and — until the AMENDMENT §2 same-id-refinement
+        # carve-out lands — every future dated rename on the `store` space) is a
+        # curation-required refusal, not a build defect. Same restore-and-continue
+        # shape as the generic handler, but its own named ::warning so the nightly
+        # log says WHAT needs curating rather than a bare "read/parse failure".
+        _restore_artifacts(out_dir, before, before_receipt)
+        print(
+            f"::warning title=security-master-nightly-prune-conflict::{exc} — "
+            "curation required (a new RENAME_EVENTS/SECURITY_SUPERSESSIONS entry, "
+            "or an operator resolving the conflict by hand); keeping last-good "
+            "artifacts, generated_at not re-stamped", flush=True,
+        )
+        return 0
     except Exception as exc:  # noqa: BLE001 — any read/parse failure refuses, never half-writes
         # FIX 4 (M2): a mid-build failure can leave PARTIAL writes on disk (build()
         # writes master -> aliases -> issuer_master -> issuer_migrations -> receipt in
