@@ -42,6 +42,17 @@ templates/portfolio.js and templates/watchstore.js by this same commit):
        `_isClientUnavailable()` branch that answers degraded (last-good) or error
        (none) with `warning: 'client-unavailable'` — never a local-book substitution,
        never a stuck loading placeholder.
+
+Also pins Sol A1A blocker 1 (Risk Center residue, root-caused by the parallel
+debugger): window.FX's universe + templates/watchlist.js's retained RISK payload
+form a latch nobody invalidates at the Watchlists->Portfolio mode boundary. Two
+confirmed producer paths, both in this file's portfolio.js: (c) PS-absent
+pushFxWeights() pushing `null` for a resolved-but-thin book (null falls FX back to
+manual mode over the retained WATCHLIST universe), and (d) the rows===null early
+return never calling pushFxWeights() at all. The module SHIM below gained a
+`window.FX` call recorder (`__fxCalls`) for exactly this; the setMode()-side half of
+the fix (resetting the RISK payload itself) is pinned behaviorally in
+tests/test_watchlist_workspace_js.py::test_setmode_into_portfolio_clears_a_watchlists_derived_risk_payload_first.
 """
 from __future__ import annotations
 
@@ -195,6 +206,18 @@ global.WS = {
   stageOf: function () { return null; },
   scopeLine: function (shown, all) { return shown + ' / ' + all; },
   seam: function () {}
+};
+
+// ---- window.FX call recorder: Sol blocker 1 (Risk Center residue) — pushFxWeights()
+// and render()'s rows===null branch both call window.FX.setAutoWeights(); this stub
+// records EVERY call's argument (a plain value snapshot, never a live reference a
+// later mutation could retroactively change) so a test can assert the honest-empty
+// `{}` was pushed and `null` never was.
+global.__fxCalls = [];
+global.FX = {
+  setAutoWeights: function (w) {
+    global.__fxCalls.push(w === null ? null : (w === undefined ? undefined : Object.assign({}, w)));
+  }
 };
 
 // ---- a deferred/controllable fake Supabase client (portfolio_positions only) ------
@@ -646,3 +669,80 @@ def test_anonymous_visitor_never_touches_cloud_and_chip_stays_local():
     # untouched by any of this commissioning's authenticated-authority fixes
     assert out["writeResult"] is not None
     assert out["localHasNewRow"] is True
+
+
+# ===========================================================================
+# Sol blocker 1 (Risk Center residue) — root-caused by the parallel debugger:
+# window.FX's universe + watchlist.js's retained RISK payload form a latch nobody
+# invalidates at the mode boundary. Two confirmed producer paths, both in
+# portfolio.js: (c) PS-absent pushFxWeights() pushing `null` for a resolved-but-thin
+# book (null falls FX back to manual mode over the retained WATCHLIST universe), and
+# (d) the rows===null early return never calling pushFxWeights() at all (FX is told
+# nothing, so watchlist.js repaints whatever RISK it last retained). Fixed at their
+# own source in portfolio.js; these tests extend the auth-transition harness with a
+# window.FX call recorder (added to the module SHIM above) to pin both mechanisms
+# behaviorally against the REAL portfolio.js.
+# ===========================================================================
+@needs_node
+def test_producer_c_ps_absent_thin_book_pushes_honest_empty_never_null():
+    """MUTATION CHECK: revert the final ternary in pushFxWeights() (portfolio.js
+    ~line 365) from `keys.length >= 2 ? w : {}` back to `keys.length >= 2 ? w : null`
+    and this reds — a PS-absent, resolved-but-thin (zero-position) authenticated book
+    must push the honest-empty `{}`, never `null` (null falls FX back to manual mode
+    over the retained Watchlist universe — producer path (c))."""
+    out = _run(
+        """
+        boot();
+        // PS-absent (split-deploy window, B2) — simulate portfolio_state.js never
+        // having deployed by clearing the live binding pushFxWeights() reads.
+        window.PS = undefined;
+        __fxCalls.length = 0;
+
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        await drain(3);
+        db.settleNext({ data: [], error: null });   // ZERO positions, a resolved read
+        await drain(8);
+
+        OUT({ fxCalls: __fxCalls });
+        """,
+        {"USER": USER},
+    )
+    assert None not in out["fxCalls"], out["fxCalls"]
+    assert {} in out["fxCalls"], out["fxCalls"]
+
+
+@needs_node
+def test_producer_d_rows_unknown_clears_fx_before_the_early_return():
+    """MUTATION CHECK: remove the `if (window.FX && window.FX.setAutoWeights)
+    window.FX.setAutoWeights({});` line from render()'s rows===null branch
+    (portfolio.js) and this reds — render() used to return from this branch without
+    ever calling FX, so watchlist.js's mode render simply repainted whatever RISK
+    payload it last retained under 'positions unknown' (producer path (d))."""
+    out = _run(
+        """
+        boot();
+        __fxCalls.length = 0;
+
+        var db = makeDeferredDb();
+        WSL._setTestSession(USER, db.client);
+        document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: USER } }));
+        // onAuth()'s SYNCHRONOUS rows=null + 'loading' render already ran INLINE,
+        // above, before this line — fix 3's FX clear happens IN that render pass,
+        // strictly before any drain/tick.
+        var fxCallsDuringLoading = __fxCalls.slice();
+
+        await drain(3);
+        db.settleNext({ data: null, error: { message: 'boom' } });   // no last-good -> terminal 'error'
+        await drain(8);
+        var fxCallsFinal = __fxCalls.slice();
+
+        OUT({ fxCallsDuringLoading: fxCallsDuringLoading, fxCallsFinal: fxCallsFinal });
+        """,
+        {"USER": USER},
+    )
+    # the honest-empty was pushed AT/BEFORE the synchronous loading-state return —
+    # never left for FX to keep whatever it last had
+    assert {} in out["fxCallsDuringLoading"], out["fxCallsDuringLoading"]
+    assert None not in out["fxCallsFinal"], out["fxCallsFinal"]

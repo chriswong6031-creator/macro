@@ -719,6 +719,7 @@
   };
 
   function setMode(next, remember) {
+    var enteringPortfolio = (next !== 'watchlists') && mode !== 'portfolio';
     mode = (next === 'watchlists') ? 'watchlists' : 'portfolio';
     document.documentElement.setAttribute('data-ws-mode', mode);
     var modes = el('ws_modes');
@@ -730,6 +731,23 @@
     var p = el('ws_purpose');
     if (p) p.innerHTML = te(PURPOSE[mode][0], PURPOSE[mode][1]);
     if (remember !== false) { try { localStorage.setItem(MODE_KEY, mode); } catch (e) {} }
+    /* A1A Sol blocker 1 (Risk Center residue, root-caused by parallel debugger): a RISK
+       payload derived from window.FX's WATCHLIST universe is retained across a mode
+       switch — nothing invalidates it at the boundary. Two confirmed producer paths
+       (executed browser proofs): PS-absent pushFxWeights() pushing null for a
+       resolved-but-thin Portfolio book falls FX back to manual mode over the retained
+       Watchlist universe; and portfolio.js's rows===null early return never calling
+       pushFxWeights at all, so the LAST-published (Watchlists-mode) RISK payload is
+       simply never invalidated. Both are fixed at their own source (portfolio.js), but
+       the fix here closes the mechanism itself: reset RISK to the same empty default
+       literal setRisk() uses BEFORE render(), so a payload derived in Watchlists mode
+       can never be repainted by renderRiskCenter() once the reader has switched into
+       Portfolio. Asymmetric on purpose — switching BACK into watchlists re-announces
+       via the watchlist render itself, which has its own live publisher. */
+    if (enteringPortfolio) {
+      RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+               seamItems: null, coverage: null, headline: null };
+    }
     paintChip();   // the chip shows THIS mode's save state (A1A §13)
     render();
   }

@@ -2029,6 +2029,84 @@ def test_portfolio_mode_does_not_feed_the_watchlist_blob_to_fx():
     assert out["pf"] == 1, out
 
 
+@needs_node
+def test_setmode_into_portfolio_clears_a_watchlists_derived_risk_payload_first():
+    """Sol A1A blocker 1 (Risk Center residue), root-caused by the parallel debugger:
+    window.FX's universe + this file's own retained RISK payload form a latch nobody
+    invalidates at the mode boundary — a RISK payload set while in Watchlists mode
+    (e.g. a Concentration read keyed to the WATCHLIST'S names) survived a switch into
+    Portfolio and renderRiskCenter() happily repainted it there, even with 0 Portfolio
+    positions. FROZEN FIX: setMode() resets RISK to the same empty default literal
+    setRisk()/the module init use, BEFORE calling render() — so a Watchlists-mode
+    payload can never be the one renderRiskCenter() paints once the reader has
+    switched into Portfolio.
+
+    Behavioral (not source-pinned): this drives the REAL setMode()/setRisk()/
+    renderRiskCenter() chain end to end and reads the painted `#rc_body` DOM, the same
+    shape test_portfolio_mode_does_not_feed_the_watchlist_blob_to_fx above already
+    uses for this exact defect family — a full DOM shim with real innerHTML capture
+    is not impractical here, so no structural-only fallback was needed.
+
+    MUTATION CHECK: delete the `if (enteringPortfolio) { RISK = {...}; }` reset block
+    from setMode() (portfolio.js's `templates/watchlist.js`) and this reds — the
+    'WATCHLIST_RESIDUE_MARKER' string, published to RISK.concHTML/rcTabs.conc while
+    in Watchlists mode, then leaks straight into rc_body after the switch."""
+    out = _run(
+        """
+        var nodes = {};
+        function node(id) {
+          if (!nodes[id]) nodes[id] = {
+            id: id, innerHTML: '', textContent: '', style: {}, className: '',
+            _attrs: {},
+            classList: { contains: function () { return false; }, toggle: function () {},
+                         add: function () {}, remove: function () {} },
+            setAttribute: function (k, v) { this._attrs[k] = v; },
+            getAttribute: function (k) { return this._attrs[k] != null ? this._attrs[k] : null; },
+            querySelector: function () { return null; },
+            querySelectorAll: function () { return []; },
+            addEventListener: function () {}
+          };
+          return nodes[id];
+        }
+        document.getElementById = function (id) { return node(id); };
+        // rc_tabs.querySelectorAll needs to return an array so renderRiskCenter's
+        // aria-selected loop is a no-op rather than a throw
+        node('rc_tabs').querySelectorAll = function () { return []; };
+        window.SD = {};          // wsState() -> 'signed' (the gated shell only boots signed-in)
+        window.RiskCore = {};    // renderRiskCenter()'s anon-lockshell gate: present -> real path
+        window.PF = { count: function () { return 0; }, render: function () {} };
+        var WLT = require(%s);
+
+        // start in Watchlists mode and publish a RISK payload keyed to the WATCHLIST'S
+        // names — exactly what watchlist_risk.js would compute while mode==='watchlists'
+        WLT.setMode('watchlists', false);
+        window.WS.setRisk({
+          shares: null,
+          concHTML: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>',
+          rcTabs: { conc: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>' },
+          labHTML: '', seamItems: null, coverage: null, headline: null
+        });
+        var duringWatchlists = node('rc_body').innerHTML;   // setRisk() does not paint
+                                                             // while mode !== 'portfolio'
+
+        // switch into Portfolio (0 positions) — the RISK payload above must never
+        // survive to be painted here
+        WLT.setMode('portfolio', false);
+        var afterSwitch = node('rc_body').innerHTML;
+
+        OUT({ duringWatchlists: duringWatchlists, afterSwitch: afterSwitch, mode: window.WS.mode() });
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["mode"] == "portfolio"
+    # sanity: setRisk() genuinely did NOT paint while still in Watchlists mode (a
+    # broken seed would make the assertion below pass for the wrong reason)
+    assert out["duringWatchlists"] == ""
+    assert "WATCHLIST_RESIDUE_MARKER" not in out["afterSwitch"]
+    # the honest thin-book placeholder painted instead — never a blank panel either
+    assert "Concentration" in out["afterSwitch"]
+    assert "Add at least two positions" in out["afterSwitch"]
+
+
 def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition():
     """PR #5575 structural half: elevated is named once and read by all three sites.
 

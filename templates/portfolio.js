@@ -361,8 +361,17 @@
        RiskCore. W3 fixed that at the mechanism (factor_exposure.js: the auto path's
        universe is the weight map, never `LAST`), so the seeding call is retired rather
        than left as a second, silent guarantee of the same property. One owner for the
-       auto path means the regression test pins the path production actually takes. */
-    window.FX.setAutoWeights(keys.length >= 2 ? w : null);
+       auto path means the regression test pins the path production actually takes.
+       Sol blocker 1 (Risk Center residue, producer (c), PS-absent): `null` here means
+       "fall back to manual mode over LAST" in factor_exposure.js — LAST is whatever
+       watchlist.js most recently fed FX.update(), i.e. the WATCHLIST universe. A
+       resolved-but-thin Portfolio book (keys.length < 2) used to push exactly that
+       null, actively re-rendering a Watchlist-derived read into the Concentration tab
+       while Portfolio mode shows 0/1 positions. The honest-empty `{}` (the same
+       signal the S3 abstain branch above already uses) keeps `autoMode` true and the
+       universe empty — an honest absence, never a fallback to someone else's data.
+       `null` must stay unreachable from a resolved portfolio state. */
+    window.FX.setAutoWeights(keys.length >= 2 ? w : {});
   }
 
   // =========================================================================
@@ -1219,7 +1228,15 @@
          below) — the previous authority's rows were cleared and the real read has not
          settled yet. Each gets its own explicit, honest paint; NEVER a silent zero
          and NEVER a PRIOR authority's rows (anonymous local, or a previous user's
-         cloud book, B1) left standing or substituted in. */
+         cloud book, B1) left standing or substituted in.
+         Sol blocker 1 (Risk Center residue, root-caused by parallel debugger, producer
+         (d)): this branch used to return without ever calling pushFxWeights() below —
+         FX was told NOTHING, so watchlist.js's mode render simply repainted whatever
+         RISK payload it last retained (a Watchlist-derived read, or a stale prior
+         Portfolio one) under "positions unknown". Clearing FX's own weights here,
+         honest-empty and before ANY return in this block, closes that gap at its
+         source — "unknown" can never render as someone else's risk. */
+      if (window.FX && window.FX.setAutoWeights) window.FX.setAutoWeights({});
       if (readState.state === 'error' && wsState().indexOf('anon') !== 0) { showError(); return; }
       if (readState.state === 'loading' && wsState().indexOf('anon') !== 0) { showLoading(); return; }
       return;
