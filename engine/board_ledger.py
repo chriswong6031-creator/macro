@@ -1006,6 +1006,37 @@ def grade(market: str) -> dict:
 # ---------------------------------------------------------------------------
 # scorecard
 # ---------------------------------------------------------------------------
+def _selection_metrics(frame: pd.DataFrame, horizon: int) -> dict:
+    """Group-level selection metrics (n, n_buy, hit_rate_21d, by_group) for ONE
+    already-filtered (non-suspended) row frame, at ONE horizon.
+
+    Shared by scorecard()'s era-scoped frame and its legacy-pool frame so the two
+    can never silently diverge in METHOD (buy-lane groups, the n_buy>=5 hit-rate
+    floor, the MIN_NAMES_PER_DATE by-group floor) — only in which rows they see.
+    """
+    buy_mask = frame["group"].isin(["entry_open", "setting_up"])
+    buy_graded = frame[buy_mask & frame["excess_ret"].notna()]
+    n_buy = int(len(buy_graded))
+    hit_rate = (
+        round(float((buy_graded["excess_ret"] > 0).mean()), 3)
+        if n_buy >= 5 else None
+    )
+    by_group: dict = {}
+    for grp_name, sub in frame[frame["excess_ret"].notna()].groupby("group"):
+        if len(sub) >= MIN_NAMES_PER_DATE:
+            by_group[grp_name] = {
+                "n": int(len(sub)),
+                "mean_excess": round(float(sub["excess_ret"].mean()), 4),
+                "pos_rate": round(float((sub["excess_ret"] > 0).mean()), 3),
+            }
+    return {
+        "n": int(len(frame)),
+        "n_buy": n_buy,
+        "hit_rate_21d": hit_rate if horizon == 21 else None,
+        "by_group": by_group,
+    }
+
+
 def scorecard(market: str) -> dict:
     """Per-group hit-rate + Spearman rank-IC of board_pos vs forward excess at each
     horizon. Returns an 'accruing' status dict until the min-IC-dates gate is met.
@@ -1024,23 +1055,42 @@ def scorecard(market: str) -> dict:
         'setting_up' groups with positive 21d excess.
       * Both computed ONLY on non-suspended rows.
 
-    ERA FENCE (CN G5 pattern, ported 2026-08-03).  ``rank_ic`` and the IC-eligible
-    date count are computed ONLY over rows carrying the ledger's newest
-    ``board_definition``.  ``board_pos`` is a rank inside one selection instrument;
-    HK's hk_prophet_v1 buy-lane re-sort changed the instrument mid-ledger, so an IC
-    pooled across the two eras would be measuring two different boards at once.
-    A ledger where nothing is stamped (CA today, and every HK row written before
-    the stamp existed) has definition None and pools exactly as it always did.
-    The group-level statistics — ``n``, ``n_buy``, ``hit_rate_21d``, ``by_group`` —
-    are NOT scoped: they key on ``group``, not on ``board_pos``, so the definition
-    change does not make them incommensurable, and the historical pool stays
-    readable.  ``n_scoped`` prints how many rows the fence kept.
+    ERA FENCE (CN G5 pattern, ported 2026-08-03; WIDENED 2026-08-20, LEDGER-ERA,
+    packet PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md §7).  When the
+    ledger carries a stamped ``board_definition``, EVERY current-scope selection
+    metric — ``rank_ic`` (fenced since 2026-08-03) AND, as of this change, ``n``,
+    ``n_buy``, ``hit_rate_21d``, ``by_group`` — is computed ONLY over rows
+    carrying that newest definition (the scoped/``ic_frame`` rows).  ``board_pos``
+    AND ``group`` both live inside one selection instrument; HK's hk_prophet_v1
+    buy-lane re-sort and Canada's ca_prophet_branch_b_v1 stamp each changed the
+    instrument mid-ledger, so a hit rate or by-group breakdown pooled across the
+    old and new instrument would misrepresent the CURRENT model's track record
+    with the OLD model's calls — the same contamination the rank_ic fence was
+    built to prevent, now closed for the group metrics too.  A ledger where
+    nothing is stamped (every HK row written before the stamp existed, and any
+    ledger that never adopts one) has ``definition`` None and pools exactly as
+    it always did — see ``metrics_scope``.  Excluded legacy rows are NEVER
+    dropped or restamped: they stay fully queryable, graded under the identical
+    rules, inside the top-level ``historical_context`` block.  ``n`` and
+    ``n_scoped`` now always agree (``n`` used to report the all-era row count
+    even when scoped; keeping both is a consumed-interface guarantee, not a
+    live distinction — see FROZEN SPEC on the LEDGER-ERA wave).
 
     Returns dict with:
         market, status ('accruing'|'scored'), board_definition
+        metrics_scope       — 'current_definition' when the ledger carries a
+                               stamped board_definition, else 'all_history_pooled'
         first_read_est     — estimated date for stable read (first_write + 21td from today)
         by_horizon: {h: {n, n_scoped, n_ic_dates, rank_ic, n_buy, hit_rate_21d,
-                         by_group: {...}}}
+                         by_group: {...}}}  — era-scoped when metrics_scope is
+                         'current_definition', pooled when 'all_history_pooled'
+        historical_context  — present only when metrics_scope is
+                               'current_definition' AND at least one ledger row
+                               does not carry the current definition:
+                               {legacy_rows, definitions, unstamped_rows, note,
+                               by_horizon: {h: {n, n_buy, hit_rate_21d (21d
+                               only), by_group}}} computed over the legacy pool
+                               with the SAME rules as the scoped metrics
         note               — human-readable status summary
     """
     m = market.upper()
@@ -1049,24 +1099,47 @@ def scorecard(market: str) -> dict:
         return {"market": m, "status": "accruing",
                 "note": g.get("note", "no data yet"),
                 "board_definition": None,
+                "metrics_scope": "all_history_pooled",
                 "first_read_est": _est_first_read()}
 
     definition = g.get("board_definition")
     by_h: dict = {}
+    # Legacy-pool facts (LEDGER-ERA, 2026-08-20): 'legacy_rows'/'definitions'/
+    # 'unstamped_rows' are ledger-level, not horizon-level — every matured call is
+    # appended to ALL FOUR horizon lists in grade() with identical board_definition/
+    # suspended metadata (only fwd_ret/excess_ret differ by maturity), so these
+    # counts are invariant across horizons.  Capture once, from the first horizon
+    # with rows, instead of recomputing (and risking drift) every iteration.
+    legacy_top: dict | None = None
+    historical_by_h: dict = {}
     for h in _HORIZONS_D:
         key = f"{h}d"
         rows = [r for r in g["by_horizon"].get(key, []) if not r.get("suspended", True)]
         if not rows:
             by_h[key] = {"n": 0, "n_scoped": 0, "n_ic_dates": 0, "rank_ic": None,
                          "n_buy": 0, "hit_rate_21d": None, "by_group": {}}
+            if definition is not None:
+                historical_by_h[key] = {"n": 0, "n_buy": 0, "hit_rate_21d": None, "by_group": {}}
             continue
 
         gf = pd.DataFrame(rows)
-        # ERA FENCE: the rank statistics see one definition only (see docstring).
+        # ERA FENCE (see docstring): scoped statistics see one definition only.
         if definition is not None:
             ic_frame = gf[gf["board_definition"] == definition]
+            legacy_frame = gf.drop(ic_frame.index)
         else:
             ic_frame = gf
+            legacy_frame = gf.iloc[0:0]
+
+        if legacy_top is None and definition is not None and not legacy_frame.empty:
+            legacy_top = {
+                "legacy_rows": int(len(legacy_frame)),
+                "definitions": sorted(
+                    legacy_frame["board_definition"].dropna().unique().tolist()
+                ),
+                "unstamped_rows": int(legacy_frame["board_definition"].isna().sum()),
+            }
+
         # count matured dates with enough names for IC
         date_counts = ic_frame[ic_frame["excess_ret"].notna()].groupby("date")["ticker"].count()
         ic_eligible_dates = date_counts[date_counts >= MIN_NAMES_PER_DATE].index.tolist()
@@ -1093,40 +1166,31 @@ def scorecard(market: str) -> dict:
             if ics:
                 rank_ic = round(float(np.mean(ics)), 4)
 
-        # hit rate: entry_open + setting_up groups, excess > 0
-        buy_mask = gf["group"].isin(["entry_open", "setting_up"])
-        buy_graded = gf[buy_mask & gf["excess_ret"].notna()]
-        n_buy = int(len(buy_graded))
-        hit_rate = (
-            round(float((buy_graded["excess_ret"] > 0).mean()), 3)
-            if n_buy >= 5 else None
-        )
-
-        # by-group breakdown
-        by_group: dict = {}
-        for grp_name, sub in gf[gf["excess_ret"].notna()].groupby("group"):
-            if len(sub) >= MIN_NAMES_PER_DATE:
-                by_group[grp_name] = {
-                    "n": int(len(sub)),
-                    "mean_excess": round(float(sub["excess_ret"].mean()), 4),
-                    "pos_rate": round(float((sub["excess_ret"] > 0).mean()), 3),
-                }
+        # Selection metrics (n, n_buy, hit_rate_21d, by_group): era-scoped as of
+        # LEDGER-ERA — computed from ic_frame (== gf when unscoped), never gf
+        # directly, so a current-definition read never sees a prior instrument's
+        # calls.  n and n_scoped therefore always agree now (see docstring).
+        scoped = _selection_metrics(ic_frame, h)
 
         by_h[key] = {
-            "n": int(len(rows)),
+            "n": scoped["n"],
             "n_scoped": int(len(ic_frame)),
             "n_ic_dates": n_ic_dates,
             "rank_ic": rank_ic,
-            "n_buy": n_buy,
-            "hit_rate_21d": hit_rate if h == 21 else None,
-            "by_group": by_group,
+            "n_buy": scoped["n_buy"],
+            "hit_rate_21d": scoped["hit_rate_21d"],
+            "by_group": scoped["by_group"],
         }
+
+        if definition is not None:
+            historical_by_h[key] = _selection_metrics(legacy_frame, h)
 
     # overall gate: scored only when 21d horizon meets MIN_IC_DATES
     gate_met = by_h.get("21d", {}).get("n_ic_dates", 0) >= MIN_IC_DATES
     status = "scored" if gate_met else "accruing"
 
     n_unstamped = g.get("n_unstamped", 0)
+    metrics_scope = "current_definition" if definition is not None else "all_history_pooled"
     note_parts = [
         f"n_calls={g['n_calls']}",
         f"n_graded={g['n_graded']}",
@@ -1136,13 +1200,15 @@ def scorecard(market: str) -> dict:
     ]
     if definition:
         note_parts.append(f"board_definition={definition}")
+        note_parts.append("metrics_scope=current_definition")
     if status == "accruing":
         note_parts.append(f"first_stable_read≈{_est_first_read()}")
 
-    return {
+    out = {
         "market": m,
         "status": status,
         "board_definition": definition,
+        "metrics_scope": metrics_scope,
         "n_calls": g["n_calls"],
         "n_graded": g["n_graded"],
         "n_suspended": g["n_suspended"],
@@ -1152,6 +1218,15 @@ def scorecard(market: str) -> dict:
         "by_horizon": by_h,
         "note": "; ".join(note_parts),
     }
+    # historical_context: only when scoped AND at least one row falls outside the
+    # current era (legacy_top is None otherwise) — see docstring / FROZEN SPEC.
+    if legacy_top is not None:
+        out["historical_context"] = {
+            **legacy_top,
+            "note": "historical context only; not current-model track record",
+            "by_horizon": historical_by_h,
+        }
+    return out
 
 
 # ---------------------------------------------------------------------------

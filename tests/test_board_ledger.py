@@ -1149,14 +1149,22 @@ class TestBucketingEraFences:
 
 
 class TestBoardDefinitionEraFence:
-    """The CN G5 era fence, ported (HK board resurrection review, 2026-08-03).
+    """The CN G5 era fence, ported (HK board resurrection review, 2026-08-03),
+    WIDENED by LEDGER-ERA (2026-08-20, packet
+    PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md §7).
 
-    `board_pos` is a rank inside ONE selection instrument.  hk_prophet_v1 re-sorted
-    the HK buy lane mid-ledger, so a rank-IC pooled across the two eras measures two
-    different boards at once.  scorecard() therefore scopes rank_ic and the
-    IC-eligible date count to the NEWEST stamped definition; everything unstamped
-    (CA today, and every HK row written before the stamp existed) keeps its exact
-    historical pooled behaviour.
+    `board_pos` AND `group` both live inside ONE selection instrument.
+    hk_prophet_v1 re-sorted the HK buy lane mid-ledger, and Canada's
+    ca_prophet_branch_b_v1 stamp does the same for Canada, so a rank-IC OR a
+    hit-rate/by-group breakdown pooled across the old and new instrument measures
+    two different boards at once.  scorecard() therefore scopes rank_ic (fenced
+    since 2026-08-03) AND n/n_buy/hit_rate_21d/by_group (fenced as of LEDGER-ERA)
+    to the NEWEST stamped definition; everything unstamped (every HK row written
+    before the stamp existed, and any ledger — CA's 400-row legacy pool — that
+    never adopts one) keeps its exact historical pooled behaviour under
+    metrics_scope='all_history_pooled'.  The excluded legacy rows are never
+    dropped: they surface read-only under the top-level historical_context key
+    (see TestLedgerEraSelectionMetrics below for the CA-specific coverage).
     """
 
     def _ledger(self, tmp_path, monkeypatch, *, legacy_dates, v1_dates,
@@ -1225,8 +1233,17 @@ class TestBoardDefinitionEraFence:
         assert bl._definition_or_none("hk_prophet_v1") == "hk_prophet_v1"
 
     # ---- the scoping -------------------------------------------------------
-    def test_legacy_rows_do_not_pollute_the_v1_ic(self, tmp_path, monkeypatch):
-        """The fence: 20 legacy sessions must not buy the v1 board an IC read."""
+    def test_rank_ic_definition_fence_still_holds(self, tmp_path, monkeypatch):
+        """The fence: 20 legacy sessions must not buy the v1 board an IC read.
+
+        LEDGER-ERA (2026-08-20) pin: this is the original
+        test_legacy_rows_do_not_pollute_the_v1_ic, renamed to the packet §7.3
+        required name and updated for the widened fence — n now reads the
+        SCOPED (v1-only) count rather than the pooled one, so n == n_scoped
+        universally (see scorecard() docstring), not n > n_scoped as before
+        LEDGER-ERA.  The pooled sample is still there — see historical_context —
+        it is scoped out of the CURRENT read, not deleted.
+        """
         self._ledger(tmp_path, monkeypatch,
                      legacy_dates=20, v1_dates=bl.MIN_IC_DATES - 1)
         sc = bl.scorecard("HK")
@@ -1236,9 +1253,10 @@ class TestBoardDefinitionEraFence:
             "IC dates must count the v1 era only, not the pooled ledger")
         assert h21["rank_ic"] is None
         assert sc["status"] == "accruing"
-        # the pooled sample is still THERE — it is scoped out of the rank read,
-        # not deleted (historical stats stay available under their own definition)
-        assert h21["n"] > h21["n_scoped"]
+        assert h21["n"] == h21["n_scoped"], (
+            "n and n_scoped must agree once selection metrics are era-scoped too")
+        assert sc["historical_context"]["legacy_rows"] == 20 * (bl.MIN_NAMES_PER_DATE + 2), (
+            "the pooled legacy sample is retained under historical_context, not dropped")
 
     def test_the_v1_era_scores_on_its_own_dates(self, tmp_path, monkeypatch):
         self._ledger(tmp_path, monkeypatch,
@@ -1280,15 +1298,30 @@ class TestBoardDefinitionEraFence:
         assert sc["status"] == "scored", (
             "the pooled sample DOES score — so the fenced result above is the fence")
 
-    def test_group_statistics_are_not_scoped(self, tmp_path, monkeypatch):
-        """hit_rate/by_group key on `group`, not on board_pos — they stay pooled."""
+    def test_group_statistics_are_now_era_scoped(self, tmp_path, monkeypatch):
+        """LEDGER-ERA (2026-08-20): hit_rate/by_group are keyed on `group`, but as
+        of this wave that no longer means pooled — they are computed from the
+        SAME scoped (ic_frame) rows as rank_ic, so a v1-era read never sees the
+        8 legacy sessions.  (Supersedes the pre-LEDGER-ERA
+        test_group_statistics_are_not_scoped, which pinned the opposite: that
+        group stats stayed pooled while only rank_ic was fenced — packet
+        PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md §7.1 closes
+        exactly that gap.)
+        """
+        legacy_dates, v1_dates = 8, bl.MIN_IC_DATES
+        n_names = bl.MIN_NAMES_PER_DATE + 2
         self._ledger(tmp_path, monkeypatch,
-                     legacy_dates=8, v1_dates=bl.MIN_IC_DATES)
+                     legacy_dates=legacy_dates, v1_dates=v1_dates)
         sc = bl.scorecard("HK")
         h21 = sc["by_horizon"]["21d"]
-        assert h21["n_buy"] == h21["n"], (
-            "the buy hit-rate reads the whole graded pool, as it always did")
+        # still true post-widening: every row here is group='entry_open' and matures,
+        # so within the (now smaller) scoped pool buy count still equals total count.
+        assert h21["n_buy"] == h21["n"]
         assert h21["hit_rate_21d"] is not None
+        # the widened fence: n must be the v1-only count, not the pooled
+        # (legacy_dates + v1_dates) total — proves group stats are scoped now.
+        assert h21["n"] == v1_dates * n_names
+        assert h21["n"] < (legacy_dates + v1_dates) * n_names
 
     def test_an_unstamped_ledger_behaves_exactly_as_before(self, tmp_path,
                                                            monkeypatch):
@@ -1309,6 +1342,263 @@ class TestBoardDefinitionEraFence:
         defs = {r.get("board_definition") for r in g["by_horizon"]["21d"]}
         assert defs == {None, "hk_prophet_v1"}, defs
         assert g["board_definition"] == "hk_prophet_v1"
+
+
+# ---------------------------------------------------------------------------
+# LEDGER-ERA (2026-08-20): era-clean group selection metrics + historical_context
+#
+# Packet PROPHET_HK_CANADA_REVAMP_EXECUTION_PACKET_2026_08_18.md §7 ("Canada P0B
+# — era-clean evaluation"): board_ledger.scorecard() fenced rank_ic to the newest
+# board_definition since 2026-08-03, but left n/n_buy/hit_rate_21d/by_group
+# pooled across eras.  Canada's ledger stamped a first era
+# (ca_prophet_branch_b_v1, first stamped session 2026-08-19) over a ~400-row
+# unstamped legacy pool, so a "clean" new Canada board could still quote a hit
+# rate contaminated by the old ambiguous era.  This class pins the fix: current-
+# definition reads are scoped to the new era; the legacy pool is retained,
+# unmodified, and readable under `historical_context`.
+# ---------------------------------------------------------------------------
+class TestLedgerEraSelectionMetrics:
+    def _ca_ledger(self, tmp_path, monkeypatch, *, legacy_dates, cur_dates,
+                    n_names=None, start="2026-05-01"):
+        """Write `legacy_dates` UNSTAMPED sessions (ticker prefix LEG, price path
+        strictly RISING — extreme positive excess) then `cur_dates` sessions
+        stamped `ca_prophet_branch_b_v1` (ticker prefix CUR, price path strictly
+        FALLING — extreme negative excess).  Distinguishing eras by TICKER
+        (rather than by call date, as TestBoardDefinitionEraFence._ledger does)
+        lets every call's forward window carry an unambiguous, date-independent
+        sign — the legacy pool would swing a pooled hit-rate to 1.0, the current
+        era would swing it to 0.0, so any accidental pooling in the scoped read
+        is impossible to miss.
+        """
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = n_names if n_names is not None else bl.MIN_NAMES_PER_DATE + 2
+        leg_tickers = [f"LEG{i:03d}.TO" for i in range(n_names)]
+        cur_tickers = [f"CUR{i:03d}.TO" for i in range(n_names)]
+        dates = pd.bdate_range(start=start, periods=legacy_dates + cur_dates)
+        for i, d in enumerate(dates):
+            stamped = i >= legacy_dates
+            tickers = cur_tickers if stamped else leg_tickers
+            calls = []
+            for j, t in enumerate(tickers):
+                call = {"ticker": t, "group": "entry_open", "edge_z": float(j),
+                        "close_asof": 100.0}
+                if stamped:
+                    call["board_definition"] = "ca_prophet_branch_b_v1"
+                calls.append(call)
+            bl.append_board(calls, "CA", asof=str(d.date()))
+
+        def fake_close(m, t, ca_cache=None):
+            if t.startswith("LEG"):
+                return _make_close(start, 140, step=5.0)          # rising: positive excess
+            return _make_close(start, 140, val=500.0, step=-1.0)  # falling: negative excess
+
+        monkeypatch.setattr(bl, "_name_close", fake_close)
+        monkeypatch.setattr(bl, "_bench_close",
+                            lambda m: _make_bench(start, 140, step=0.0))
+        return n_names, leg_tickers, cur_tickers
+
+    def test_ca_current_definition_hit_rate_excludes_legacy(self, tmp_path, monkeypatch):
+        """MUTATION KILL (a) 'use all-era frame for current hit rate': the legacy
+        pool here is ALL-positive (would push hit_rate to 1.0 if pooled in); the
+        current era is ALL-negative.  A pooled read cannot land on 0.0."""
+        self._ca_ledger(tmp_path, monkeypatch, legacy_dates=8, cur_dates=bl.MIN_IC_DATES)
+        sc = bl.scorecard("CA")
+        assert sc["board_definition"] == "ca_prophet_branch_b_v1"
+        assert sc["metrics_scope"] == "current_definition"
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["hit_rate_21d"] == 0.0, (
+            "current-era hit rate must reflect ONLY the (all-losing) current era")
+
+    def test_ca_current_definition_by_group_excludes_legacy(self, tmp_path, monkeypatch):
+        n_names, _, _ = self._ca_ledger(
+            tmp_path, monkeypatch, legacy_dates=8, cur_dates=bl.MIN_IC_DATES)
+        sc = bl.scorecard("CA")
+        h21 = sc["by_horizon"]["21d"]
+        grp = h21["by_group"]["entry_open"]
+        assert grp["n"] == bl.MIN_IC_DATES * n_names, (
+            "by_group n must be the current-era count, not legacy+current")
+        assert grp["mean_excess"] < 0, (
+            "by_group must read the current (losing) era, not the extreme-positive legacy pool")
+        assert grp["pos_rate"] == 0.0
+
+    def test_ca_current_definition_n_excludes_legacy(self, tmp_path, monkeypatch):
+        legacy_dates, cur_dates = 8, bl.MIN_IC_DATES
+        n_names, _, _ = self._ca_ledger(
+            tmp_path, monkeypatch, legacy_dates=legacy_dates, cur_dates=cur_dates)
+        sc = bl.scorecard("CA")
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n"] == cur_dates * n_names
+        assert h21["n"] == h21["n_scoped"], "n and n_scoped must converge when scoped"
+        assert h21["n"] < (legacy_dates + cur_dates) * n_names, (
+            "MUTATION KILL (a)/(c): n must exclude the legacy rows, not merely relabel them")
+
+    def test_ca_historical_context_keeps_legacy(self, tmp_path, monkeypatch):
+        """MUTATION KILLS (b) 'restamp legacy rows' and (c) 'drop legacy rows':
+        the raw parquet must still hold every row, legacy rows must still read
+        board_definition-null (never restamped to the current era), and the
+        legacy pool must surface, in full, under historical_context."""
+        legacy_dates, cur_dates = 8, bl.MIN_IC_DATES
+        n_names, leg_tickers, cur_tickers = self._ca_ledger(
+            tmp_path, monkeypatch, legacy_dates=legacy_dates, cur_dates=cur_dates)
+        sc = bl.scorecard("CA")
+
+        hc = sc["historical_context"]
+        assert hc["legacy_rows"] == legacy_dates * n_names
+        assert hc["definitions"] == [], "this ledger's legacy pool was never stamped"
+        assert hc["unstamped_rows"] == legacy_dates * n_names
+        assert hc["note"] == "historical context only; not current-model track record"
+        h21_hist = hc["by_horizon"]["21d"]
+        assert h21_hist["n"] == legacy_dates * n_names
+        assert h21_hist["hit_rate_21d"] == 1.0, (
+            "the legacy (LEG-ticker, rising) pool must still read as fully positive")
+        assert h21_hist["by_group"]["entry_open"]["n"] == legacy_dates * n_names
+
+        # (b)+(c): the STORED ledger is untouched — nothing restamped, nothing dropped.
+        raw = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert len(raw) == (legacy_dates + cur_dates) * n_names, (
+            "MUTATION KILL (c): no row may be dropped from the stored ledger")
+        leg_rows = raw[raw["ticker"].isin(leg_tickers)]
+        assert len(leg_rows) == legacy_dates * n_names
+        assert leg_rows["board_definition"].isna().all(), (
+            "MUTATION KILL (b): legacy rows must NOT be restamped to the current definition")
+        cur_rows = raw[raw["ticker"].isin(cur_tickers)]
+        assert (cur_rows["board_definition"] == "ca_prophet_branch_b_v1").all()
+
+    def test_hk_existing_definition_behavior_does_not_regress(self, tmp_path, monkeypatch):
+        """An HK-style ledger (legacy + stamped v1 era, plus one suspended v1-era
+        row) keeps its existing status gate, rank_ic fence, and suspension
+        exclusion after LEDGER-ERA widens the fence to n/n_buy/hit_rate_21d/
+        by_group.  All by_horizon keys stay present (consumed-interface shape,
+        FROZEN SPEC #2)."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.HK" for i in range(n_names)]
+        start = "2026-05-01"
+        legacy_dates, v1_dates = 8, bl.MIN_IC_DATES
+        dates = pd.bdate_range(start=start, periods=legacy_dates + v1_dates)
+        for i, d in enumerate(dates):
+            stamped = i >= legacy_dates
+            calls = []
+            for j, t in enumerate(tickers):
+                call = {"ticker": t, "group": "entry_open", "edge_z": float(j),
+                        "close_asof": 100.0}
+                if stamped:
+                    call["board_definition"] = "hk_prophet_v1"
+                calls.append(call)
+            bl.append_board(calls, "HK", asof=str(d.date()))
+        susp_date = dates[-1]
+        bl.append_board(
+            [{"ticker": "SUSP.HK", "group": "entry_open", "edge_z": 9.0,
+              "board_definition": "hk_prophet_v1", "close_asof": 100.0}],
+            "HK", asof=str(susp_date.date()))
+
+        steps = {t: (i + 1) * 0.5 for i, t in enumerate(tickers)}
+
+        def fake_close(m, t, ca_cache=None):
+            if t == "SUSP.HK":
+                return _make_close(str(susp_date.date()), n=2, step=1.0)
+            return _make_close(start, 140, step=steps.get(t, 1.0))
+
+        monkeypatch.setattr(bl, "_name_close", fake_close)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: _make_bench(start, 140, step=0.0))
+
+        sc = bl.scorecard("HK")
+        assert sc["board_definition"] == "hk_prophet_v1"
+        assert sc["metrics_scope"] == "current_definition"
+        assert sc["status"] == "scored"
+        h21 = sc["by_horizon"]["21d"]
+        for key in ("n", "n_scoped", "n_ic_dates", "rank_ic", "n_buy",
+                    "hit_rate_21d", "by_group"):
+            assert key in h21, f"consumed-interface key {key!r} missing from by_horizon"
+        assert h21["n"] == h21["n_scoped"] == v1_dates * n_names, (
+            "MUTATION KILL (d): the suspended v1-era row must not inflate scoped n")
+        assert h21["rank_ic"] is not None
+        assert h21["hit_rate_21d"] == 1.0
+
+    def test_legacy_only_ledger_pooling_unchanged(self, tmp_path, monkeypatch):
+        """definition None (never stamped, e.g. a fresh/legacy-only ledger) →
+        metrics stay pooled exactly as before LEDGER-ERA; metrics_scope reports
+        'all_history_pooled'; no historical_context key is added."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.HK" for i in range(n_names)]
+        start = "2026-06-01"
+        dates = pd.bdate_range(start=start, periods=bl.MIN_IC_DATES)
+        for d in dates:
+            calls = [{"ticker": t, "group": "entry_open", "edge_z": float(j),
+                      "close_asof": 100.0} for j, t in enumerate(tickers)]
+            bl.append_board(calls, "HK", asof=str(d.date()))
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close(start, 140, step=1.0))
+        monkeypatch.setattr(bl, "_bench_close", lambda m: _make_bench(start, 140, step=0.0))
+
+        sc = bl.scorecard("HK")
+        assert sc["board_definition"] is None
+        assert sc["metrics_scope"] == "all_history_pooled"
+        assert "historical_context" not in sc
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n"] == h21["n_scoped"] == bl.MIN_IC_DATES * n_names
+        assert h21["n_buy"] == h21["n"]
+        assert h21["hit_rate_21d"] == 1.0
+
+    def test_scoped_metrics_exclude_suspended(self, tmp_path, monkeypatch):
+        """A suspended CURRENT-era row must stay out of n/n_buy/hit_rate_21d/
+        by_group even though it carries the current board_definition —
+        MUTATION KILL (d) 'include suspended rows'."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.TO" for i in range(n_names)]
+        start = "2026-06-01"
+        dates = pd.bdate_range(start=start, periods=bl.MIN_IC_DATES)
+        for d in dates:
+            calls = [{"ticker": t, "group": "entry_open", "edge_z": float(j),
+                      "board_definition": "ca_prophet_branch_b_v1", "close_asof": 100.0}
+                     for j, t in enumerate(tickers)]
+            bl.append_board(calls, "CA", asof=str(d.date()))
+        susp_date = dates[-1]
+        bl.append_board(
+            [{"ticker": "SUSP.TO", "group": "entry_open", "edge_z": 9.0,
+              "board_definition": "ca_prophet_branch_b_v1", "close_asof": 100.0}],
+            "CA", asof=str(susp_date.date()))
+
+        def fake_close(m, t, ca_cache=None):
+            if t == "SUSP.TO":
+                return _make_close(str(susp_date.date()), n=2, step=1.0)
+            return _make_close(start, 140, step=1.0)
+
+        monkeypatch.setattr(bl, "_name_close", fake_close)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: _make_bench(start, 140, step=0.0))
+
+        sc = bl.scorecard("CA")
+        h21 = sc["by_horizon"]["21d"]
+        expected_n = bl.MIN_IC_DATES * n_names
+        assert h21["n"] == expected_n
+        assert h21["n_buy"] == expected_n
+        assert h21["hit_rate_21d"] == 1.0
+        assert h21["by_group"]["entry_open"]["n"] == expected_n
+
+    def test_keep_first_date_ticker_still_holds(self, tmp_path, monkeypatch):
+        """append_board's keep-FIRST (date,ticker) identity is OUT OF SCOPE for
+        LEDGER-ERA (a scorecard()-only change) — re-pin per packet §7.3 so a
+        future scorecard edit cannot silently widen its blast radius."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board(
+            [{"ticker": "SHOP.TO", "group": "entry_open", "edge_z": 1.0,
+              "board_definition": "ca_prophet_branch_b_v1"}],
+            "CA", asof="2026-08-19")
+        bl.append_board(
+            [{"ticker": "SHOP.TO", "group": "entry_open", "edge_z": 99.0,
+              "board_definition": "ca_prophet_branch_b_v1"}],
+            "CA", asof="2026-08-19")
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert len(df) == 1
+        assert df.iloc[0]["edge_z"] == 1.0, (
+            "second append for the same (date,ticker) must be dropped, keep-FIRST")
 
 
 class TestNCallsCountsOnlyWhatWasLogged:
