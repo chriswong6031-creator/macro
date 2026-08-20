@@ -315,7 +315,25 @@ waves:
       adopts the child's result by reference. The full D2B2 US/Canada
       backlog, D2B3 (GMI GOLD/B + IBIT corrections), D2C (PIT vintages), D2D
       (ontology/probation), D2E (rights/acceptance) remain NOT authorized —
-      Sol reviews after each child returns."
+      Sol reviews after each child returns. D2B2-CN-HK BUILT_NOT_PROVEN
+      2026-08-20: start-pin census 1,021 cn + 147 hk (target N 1,168);
+      admitted via the EXISTING canonical builder (no lib/dataos edits, no
+      new evidence class, no CN/HK issuer grouping) using committed
+      primary-source evidence (CN: CNInfo data/china_filings/filings.parquet,
+      984/1021 = 96.4%; HK: SFC+HKEX data/hk_shorts/{positions,turnover}.parquet,
+      147/147 = 100%; 37 CN refused, named in the receipt, no silent drop);
+      GMI sidecar re-derived with zero code changes to
+      engine/theme_graph/identity_resolution.py (already market-agnostic);
+      US coverage byte-identical (702/533/2/1 unchanged); 5 hostile fixtures
+      on real committed data (A/H ICBC, renamed 300223, SOE-naming-collision
+      601988/601601, unresolved issuer, alias-only vendor id — CN/HK never
+      resolves via rule 5, only rule 6); PR #6116, branch
+      claude/d2b2-cn-hk (merge SHA pending — see the next handoff for the
+      immutable pointer once merged). China pr0d wave adopts this result by
+      reference (WS-CHINA-ALPHA-INTELLIGENCE.md). Done requires a natural
+      production nightly proving source -> master -> GMI projection with a
+      recorded run id and the measured CN/HK resolution delta, per Sol's
+      completion law — not yet observed."
     status: in_progress
   - id: d3
     depends_on: [d2]
