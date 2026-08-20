@@ -948,7 +948,7 @@
      .mx-mark/.skel/.mx-error; this surrounding prose chrome is this page's own,
      same convention as .pv-mark/.pv-life above). Geometry ported verbatim from
      the ratified reference (mockups/refs/institutionalize/us_stocks/board.css
-     :213-219,383-398,930-931) — gate G-C. #}
+     :213-219,383-398,930-931) — gate G-C. */
   .ladder-headline { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; }
   .ladder-n { font-size: 30px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
               font-variant-numeric: tabular-nums; color: var(--text); }
@@ -970,6 +970,43 @@
     .ladder-absence { margin-top: 5px; }
     .ladder-foot { margin-top: 5px; font-size: 11px; }
     .ladder-headline { margin-bottom: 5px; }
+  }
+  /* ── P-MP1-SHELL §3 — CANDIDATES section anatomy (commissioning follow-up,
+     gap 1). Template-scoped for the same reason as the ladder wrapper above:
+     the reference calls .mx-sec/.cand-* "NEW primitive, lands in DS-PR-0" but
+     it never actually shipped to theme.css. Geometry ported verbatim from
+     mockups/refs/institutionalize/us_stocks/board.css:145-161,780-800,1008,1152.
+     `.fig` (tabular-nums figure marker) is the reference's own utility class,
+     also never shipped to theme.css — ported here rather than left dangling. */
+  .fig { font-variant-numeric: tabular-nums; }
+  .mx-sec { margin: 24px 0 0; }
+  .mx-sec-hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+               padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .mx-sec-h2 { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .085em;
+               text-transform: uppercase; color: var(--text); }
+  .mx-sec-total { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .mx-sec-total b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mx-sec-link { margin-left: auto; font-size: 11.5px; color: var(--ink-link); text-decoration: none; font-weight: 650; }
+  .mx-sec-link:hover { text-decoration: underline; }
+  .mx-sec-note { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
+  .cand-shelves { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 13px; }
+  .cand-shelf { display: inline-flex; align-items: baseline; gap: 7px; padding: 6px 12px;
+                border: 1px solid var(--line); border-radius: 999px;
+                background: color-mix(in srgb, var(--panel2) 65%, transparent);
+                font-size: 11.5px; font-weight: 650; color: var(--muted); }
+  .cand-shelf b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  .cand-shelf i { font-style: normal; font-size: 10px; opacity: .8; }
+  .cand-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .cand-row { display: flex; align-items: baseline; gap: 8px; padding: 8px 11px;
+              border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+              font-size: 12px; min-width: 0; }
+  .cand-tk { font-weight: 800; font-size: 12.5px; flex: none; }
+  .cand-nm { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cand-px { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; flex: none; }
+  @media (max-width: 720px) {
+    .mx-sec { margin: 12px 0 0; }
+    .mx-sec-hd { padding-bottom: 5px; margin-bottom: 7px; }
+    .cand-rows { grid-template-columns: 1fr; }
   }
   /* NOTE: the `.pbf-empty` rules that used to sit here were removed 2026-08-02 — no
      template, macro or script has ever emitted that class, so the "honest emptiness"
@@ -16174,8 +16211,9 @@ html[data-theme="light"] :is(
         {%- for _tr in top_setups.buy -%}{%- if _tr.get('ticker') -%}{%- set _ = _plan_trg_map.update({_tr.ticker: _tr}) -%}{%- endif -%}{%- endfor -%}
       {%- endif -%}
       {%- set _upb = us_prophet_book if us_prophet_book else none -%}
-      {{ pv.mx_ladder(_upb) }}
-      {%- if _upb %}
+      {%- set _upb_err = us_prophet_book_error if us_prophet_book_error else false -%}
+      {{ pv.mx_ladder(_upb, error=_upb_err) }}
+      {%- if _upb and not _upb_err %}
       {%- if not _upb.get('plans') %}
       <div class="mx-empty">
         <div class="mx-empty-line">{{ t('No live setups today — the board refreshes after the next close.', '今日暂无在场计划——下个收盘后刷新。') }}</div>
@@ -16211,6 +16249,55 @@ html[data-theme="light"] :is(
         </div>
       </div>
       {% endif %}
+      {#- ═══ P-MP1-SHELL — §3 CANDIDATES (commissioning follow-up, gap 1) ═══════════
+         MP-1 §3/§6 + the R4.2 reference's own candidates() (mockups/refs/
+         institutionalize/us_stocks/board.js:1082-1135, board.css:145-161,780-800):
+         "A second population. Different noun, different form (pill shelves, no
+         weight marks), its own printed-once total, and NO lifecycle cell word —
+         in either language — anywhere inside this section." Sourced from the
+         SAME candidate screener (_board = us_standouts.buy) the OLD card grid
+         used to render as cards — that population is UNCHANGED; only its own
+         section is new. `.mx-sec`/`.cand-shelf`/`.cand-row` etc. are named
+         "NEW primitive, lands in DS-PR-0" in the reference's own comment, but
+         never actually shipped to theme.css (grepped: absent) — rather than
+         open a DS-PR mid-packet, this implements them template-scoped here,
+         same convention as the ladder wrapper / .pv-life / .pv-mark above
+         (disclosed choice, MP-1 §9's "this page's own chrome" pattern).
+         `href="#screener"` in the reference is a mockup-only anchor; production
+         links to discovery.html (the closest real screener-shaped page) —
+         disclosed choice, no ruling names a target. Guarded on `_su` (never
+         set unless the candidate board loaded) — same fail-soft-to-nothing
+         law as the ran-lane/footnote sections below, since `_board`/`_sc`/
+         `_ran_rows` all come from the SAME `{% if _su %}` block above. -#}
+      {%- if _su %}
+      <div class="mx-sec" id="us-candidates">
+        <div class="mx-sec-hd">
+          <h2 class="mx-sec-h2">{{ t('Candidates', '候选') }}</h2>
+          <span class="mx-sec-total">{{ t('<b>' ~ (_board|length + _ran_rows|length) ~ '</b> screened tonight', '本次筛出 <b>' ~ (_board|length + _ran_rows|length) ~ '</b> 只')|safe }}</span>
+          <a class="mx-sec-link" href="discovery.html">{{ t('Open the screener', '打开筛选器') }}</a>
+        </div>
+        <p class="mx-sec-note">{{ t('Names tonight’s screen surfaced. A candidate is not a setup: it becomes one only when a plan is written for it, which is what the board above counts.', '本次筛选出的股票。候选不等于计划：只有为它建立计划后，才会计入上方看板。') }}</p>
+        {%- if _sg.any %}
+        <div class="cand-shelves">
+          {%- for _sk in _stage_order %}{% if _sc[_sk] %}
+          <span class="cand-shelf"><b class="fig">{{ _sc[_sk] }}</b><span>{{ t(_stage_en[_sk], _stage_zh[_sk]) }}</span><i>{{ t(_stage_sub_en[_sk], _stage_sub_zh[_sk]) }}</i></span>
+          {% endif %}{% endfor -%}
+        </div>
+        {%- endif %}
+        {%- set _plan_tks = namespace(s=[]) -%}
+        {%- if _upb %}{% for _p in (_upb.get('plans') or []) %}{% set _ = _plan_tks.s.append(_p.asset) %}{% endfor %}{% endif -%}
+        {%- set _cand_pool = _board | rejectattr('ticker', 'in', _plan_tks.s) | list -%}
+        {%- set _cand_sample = (_cand_pool if _cand_pool|length >= 6 else _board)[:6] -%}
+        {%- if _cand_sample %}
+        <div class="cand-rows">
+          {%- for _cn in _cand_sample %}
+          <div class="cand-row"><span class="cand-tk">{{ _cn.ticker }}</span><span class="cand-nm">{{ t(_cn.name or _cn.sector or '', _cn.name or tr(_cn.sector) or '') }}</span><span class="cand-px fig">{{ ('$' ~ '%.2f'|format(_cn.price)) if _cn.get('price') is not none else '—' }}</span></div>
+          {%- endfor %}
+        </div>
+        {%- endif %}
+        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' that carry no plan yet · <b>' ~ (_board|length + _ran_rows|length) ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只尚未建立计划的 · 本次共筛出 <b>' ~ (_board|length + _ran_rows|length) ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+      </div>{# end #us-candidates #}
+      {%- endif %}
       {# ═══ PASSED ON TONIGHT (ANTICIPATION §6.9 R5) — the per-name "why not" shelf.
            BELOW the plans, never between them: the cards are what to act on, this is the
            accounting for everything the same intake looked at and put down. A closed
@@ -19247,6 +19334,15 @@ function initStockTableView(){
     columns: cols,
     optionLabels: { lane: LANE_LABELS, sector: SECTOR_LABELS },
     searchPlaceholder: ['Search name…','搜索名称…'],
+    /* P-MP1-SHELL §6/§9/§8 (commissioning follow-up, gap 2) — retires the
+       Stage/阶段 filter dropdown AND its count chips (templates/stocktable.js
+       _buildFilterRow/_updateCountChips) on the US table ONLY. hk/china/canada
+       pass no such key and keep their current behavior byte-for-byte —
+       proven in tests/test_p_mp1_shell_nonus_byte_parity.py's extended
+       stocktable coverage. No replacement column: the lifecycle fact carried
+       on the card grid (.pv-life/.mx-mark) is where that meaning lives now,
+       per MP-1 §6's own disposition for this row. */
+    stageFilter: false,
   };
 
   /* Tier gate (docs/TIER_PREVIEW_PATTERN.md): merges the hydrated payload's

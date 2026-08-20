@@ -5719,13 +5719,23 @@ def main() -> int:
     # Fail-soft like every other board load above: an absent/unreadable artifact leaves
     # `us_prophet_book` None and the Setups region falls back to its loading/empty state
     # rather than raising the build.
+    # us_prophet_book_error (MP-1 §10, Amendment 1 V-B4) distinguishes the
+    # ladder's two non-live states by CAUSE, not just by "book is falsy":
+    #   - not yet published (file absent) -> loading (the build hasn't caught
+    #     up to a nightly that hasn't run/published yet — normal, wordless).
+    #   - published but unreadable (file present, JSON/read failure) -> error
+    #     (§10's ".mx-error" state, names what failed, offers Retry).
+    # Both leave us_prophet_book None; only the flag differs, and only the
+    # flag decides which of the two non-live states the ladder renders.
     us_prophet_book = None
+    us_prophet_book_error = False
     _pbk = site / "prophet" / "index.json"
     if _pbk.exists():
         try:
             us_prophet_book = json.loads(_pbk.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("prophet/index.json unreadable (%s)", e)
+            us_prophet_book_error = True
 
     # THEME TAPE (W2) — the hottest themes reconciled against the board above, so a
     # heating theme the board is SILENT on still prints a line saying so. Pure
@@ -6801,7 +6811,8 @@ def main() -> int:
         **{**vm, **_us_pov, "us_standouts": _us_shell_su,
            "gate": _us_gate, "pgate": _us_pgate,
            "us_prophet_book": _us_life_shell, "life_gate": _us_life_gate,
-           "us_prophet_episodes": _us_life_episodes}, mode="stocks"))
+           "us_prophet_episodes": _us_life_episodes,
+           "us_prophet_book_error": us_prophet_book_error}, mode="stocks"))
     _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
@@ -7234,7 +7245,8 @@ def main() -> int:
                     **{**vm, **_us_pov2, "us_standouts": _us_shell_su2,
                        "gate": _us_gate2, "pgate": _us_pgate2,
                        "us_prophet_book": _us_life_shell2, "life_gate": _us_life_gate2,
-                       "us_prophet_episodes": _us_life_episodes2}, mode="stocks"))
+                       "us_prophet_episodes": _us_life_episodes2,
+                       "us_prophet_book_error": us_prophet_book_error}, mode="stocks"))
                 log.info(
                     "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
                     "(as_of %s -> %s, delayed %s -> %s)",

@@ -32,6 +32,21 @@ is NOT attempted here — building synthetic view-models for four more
 templates of this size is out of this suite's scope. Given (1) — no other
 touched file — the shared-macro proof above is the complete surface by
 construction: nothing else in the diff can reach those four pages' bytes.
+
+STOCKTABLE.JS COVERAGE (commissioning follow-up, gap 2): templates/stocktable.js
+is a SECOND shared file this packet touches (retiring the US-only Stage/阶段
+filter dropdown + its count chips, MP-1 §6/§9/§8). hk.html.j2/china.html.j2/
+canada.html.j2 each call `StockTable.init({...})` with no `stageFilter` key —
+the new guard (`cfg.stageFilter !== false` / `cfg.stageFilter === false`) is
+mathematically a no-op for any caller that never sets that key (`undefined
+!== false` is `true`; `undefined === false` is `false`), so this is proven
+by (a) diffing stocktable.js against origin/main and asserting the ONLY
+change is the two additive guard hunks, and (b) grepping every non-US
+`StockTable.init({...})` call site's own source text for the literal string
+`stageFilter` — its absence in all three is what makes the guard inert there.
+intl.html.j2 never calls StockTable.init at all and is unaffected by
+construction. Same no-DOM-execution limitation as the page templates above:
+this is a static-source proof, not a rendered/executed one.
 """
 from __future__ import annotations
 
@@ -116,3 +131,137 @@ def test_pv_card_is_byte_identical_across_representative_non_us_calls():
         out_orig = str(orig.pv_card(cx))
         out_cur = str(cur.pv_card(cx))
         assert out_orig == out_cur, f"pv_card diverged for variant {label!r}"
+
+
+# --------------------------------------------------------------------------- #
+# stocktable.js — Stage/阶段 filter + count-chip retirement (gap 2)
+# --------------------------------------------------------------------------- #
+
+NON_US_STOCKTABLE_CALLERS = [
+    "templates/hk.html.j2",
+    "templates/china.html.j2",
+    "templates/canada.html.j2",
+]
+
+
+def _init_call_source(template_rel_path: str) -> str:
+    """The literal `StockTable.init({ ... });` call-site text out of one
+    market template — everything between the call and its matching close,
+    found by bracket balance (the object literal itself may contain nested
+    braces, e.g. optionLabels: {...})."""
+    src = (ROOT / template_rel_path).read_text()
+    start = src.index("StockTable.init(")
+    depth = 0
+    i = start
+    for i in range(start, len(src)):
+        if src[i] == "(":
+            depth += 1
+        elif src[i] == ")":
+            depth -= 1
+            if depth == 0:
+                break
+    return src[start:i + 1]
+
+
+def test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards():
+    """`git diff --numstat` for the ONE line that gained a condition (dropdown
+    gate: `stageOpts.length > 0` -> `cfg.stageFilter !== false && stageOpts.length
+    > 0`) plus two pure-insertion comment/early-return blocks. Asserted by
+    hunk count and content rather than a line-subsequence check — the dropdown
+    hunk is a genuine one-line MODIFICATION (a `+`/`-` pair), not an insertion,
+    so a pure-subsequence check is the wrong shape for this diff."""
+    diff = subprocess.check_output(
+        ["git", "diff", "-U0", "origin/main", "--", "templates/stocktable.js"],
+        cwd=str(ROOT),
+    ).decode()
+    hunk_count = diff.count("@@ -")
+    assert hunk_count == 2, f"expected exactly 2 hunks, found {hunk_count}:\n{diff}"
+    removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
+    added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
+    # exactly one line removed (the un-gated dropdown condition) ...
+    assert removed == [
+        "      if (stageOpts.length > 0) { var ddStage = _makeDD('stage', stageOpts); if (ddStage) bar.appendChild(ddStage); }"
+    ], removed
+    # ... and every added line is either that SAME line with the guard
+    # prepended, or pure comment/early-return — never a removal of anything
+    # else, never a change to a DIFFERENT line.
+    assert any("cfg.stageFilter !== false && stageOpts.length > 0" in l for l in added)
+    cur = (ROOT / "templates" / "stocktable.js").read_text()
+    orig = _origin_main_text("templates/stocktable.js")
+    assert "cfg.stageFilter !== false && stageOpts.length > 0" in cur
+    assert "cfg.stageFilter === false" in cur
+    assert "cfg.stageFilter !== false && stageOpts.length > 0" not in orig
+    assert "cfg.stageFilter === false" not in orig
+
+
+def test_non_us_stocktable_init_calls_never_set_stagefilter():
+    """The guard is `cfg.stageFilter !== false` / `=== false`. Neither branch
+    changes behavior unless the CALLER sets the key — so a caller's source
+    text containing no `stageFilter` substring at all is a complete proof
+    that this retirement is invisible to it, independent of what the guard's
+    JS semantics happen to be."""
+    for rel in NON_US_STOCKTABLE_CALLERS:
+        call = _init_call_source(rel)
+        assert "stageFilter" not in call, f"{rel} unexpectedly sets stageFilter"
+
+
+def test_non_us_stocktable_init_call_sites_are_byte_identical_to_origin_main():
+    """Belt-and-braces beyond the whole-file diff above: the exact call-site
+    slice for each of the three markets, byte-for-byte."""
+    for rel in NON_US_STOCKTABLE_CALLERS:
+        orig_src = subprocess.check_output(
+            ["git", "show", f"origin/main:{rel}"], cwd=str(ROOT)
+        ).decode()
+        cur_src = (ROOT / rel).read_text()
+        orig_call = orig_src[orig_src.index("StockTable.init("):]
+        cur_call = cur_src[cur_src.index("StockTable.init("):]
+        # Compare only up to the length of the shorter (origin/main) text at
+        # this call site — a downstream unrelated edit elsewhere in either
+        # file must not fail this specific assertion.
+        n = len(orig_call[:2000])
+        assert orig_call[:n] == cur_call[:n], f"{rel}: StockTable.init call site changed"
+
+
+def test_intl_never_calls_stocktable_init():
+    src = (ROOT / "templates" / "intl.html.j2").read_text()
+    assert "StockTable.init(" not in src
+
+
+def test_us_call_site_sets_stagefilter_false():
+    """Unlike hk/china/canada (which pass an inline object literal straight to
+    StockTable.init(...)), dashboard.html.j2 builds a named `STINIT` object
+    first and calls `StockTable.init(STINIT)` — so the config to inspect is
+    the `var STINIT = { ... };` literal, not the call site itself."""
+    dash = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    assert "StockTable.init(STINIT)" in dash
+    start = dash.index("var STINIT = {")
+    depth = 0
+    end = start
+    for end in range(start, len(dash)):
+        if dash[end] == "{":
+            depth += 1
+        elif dash[end] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+    stinit_literal = dash[start:end + 1]
+    assert "'us-stocktable-data'" in stinit_literal or '"us-stocktable-data"' in stinit_literal
+    assert "stageFilter: false" in stinit_literal
+
+
+def test_no_user_facing_stage_word_reachable_when_stagefilter_is_false():
+    """The retirement mechanism itself: `_makeDD('stage', ...)` is the ONLY
+    reader of FILTER_LABELS['stage']/FILTER_TITLES['stage'] (the 'Stage'/'阶段'
+    strings) anywhere in stocktable.js, and its one call site is gated by the
+    same flag the US init sets. This does not execute the guard (no DOM here
+    — see module docstring); it proves the STRUCTURE that makes the ban hold:
+    there is exactly one path from cfg to that label text, and it is gated."""
+    js = (ROOT / "templates" / "stocktable.js").read_text()
+    makedd_stage_calls = js.count("_makeDD('stage'")
+    assert makedd_stage_calls == 1, (
+        f"expected exactly one _makeDD('stage', ...) call site to reason about, found {makedd_stage_calls}"
+    )
+    call_line = next(line for line in js.splitlines() if "_makeDD('stage'" in line)
+    assert "cfg.stageFilter !== false" in call_line, (
+        "the sole _makeDD('stage', ...) call site is not gated by cfg.stageFilter"
+    )

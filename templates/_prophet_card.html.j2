@@ -99,12 +99,29 @@
    `.ladder-absence` disclosure line. `early_turn_watch` present (even empty,
    Amendment 1 P-K19) → Watch renders its normal zero-count cell like every
    other live cell, no disclosure line. #}
-{% macro mx_ladder(book) %}
+{% macro mx_ladder(book, error=false) %}
 {%- set _CELLS_LIVE = ['watch','ready','entered','delivering','overtime','invalidated'] -%}
 {%- set _LEX_EN = {'watch':'Watch','ready':'Ready','entered':'Entered','delivering':'Delivering','overtime':'Overtime','invalidated':'Invalidated','resolved':'Resolved'} -%}
 {%- set _LEX_ZH = {'watch':'观察','ready':'就绪','entered':'入场','delivering':'达标','overtime':'超时','invalidated':'失效','resolved':'已结'} -%}
 {%- set _NUMWORD = {1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven'} -%}
-{%- if not book %}
+{%- if error %}
+{#- §10 error state, Amendment 2's C8-B shipped three-section string (supersedes
+   Amendment 1's two-section draft — the trading-record strip is a third
+   surviving section the promise must cover). `.mx-error` is the DS-PR-0
+   primitive (theme.css). Retry reloads the page — this is a static-build
+   artifact-read failure, not a client-side fetch, so the only "retry" that
+   means anything is asking the browser for the page again (the NEXT render
+   is what actually fixes it; this button just gives the reader something to
+   press rather than a dead end). -#}
+<div class="mx-error" role="alert">
+  <b>!</b>
+  <span>
+    <span class="l-en">The board didn’t load. Candidates, Groups and the record below are current.</span>
+    <span class="l-zh">看板未能加载。下方的候选、板块与战绩仍是最新。</span>
+    <button type="button" class="ladder-clear" style="min-height:40px;min-width:40px;margin-top:6px" onclick="location.reload()">{{ t('Retry', '重试') }}</button>
+  </span>
+</div>
+{%- elif not book %}
 <div class="ladder-headline"><span class="skel sk-head" aria-hidden="true"></span><span class="ladder-nl">{{ t('live setups today','个跟踪中计划') }}</span></div>
 <div class="mx-ladder mx-ladder--board" role="group" aria-busy="true" aria-label="Lifecycle counts loading">
   {% for k in _CELLS_LIVE %}
