@@ -1641,6 +1641,92 @@ class TestLedgerEraSelectionMetrics:
         assert df.iloc[0]["edge_z"] == 1.0, (
             "second append for the same (date,ticker) must be dropped, keep-FIRST")
 
+    def test_a1_whitespace_suffixed_definition_scopes_correctly(self, tmp_path, monkeypatch):
+        """MAJOR-1 (review, 2026-08-20), executed proof of the reviewer's A1 attack.
+
+        _latest_definition() used to return the newest stamp UNSTRIPPED while
+        every graded by_horizon row's board_definition is stripped by
+        _definition_or_none — so a trailing-space stamp
+        ('ca_prophet_branch_b_v1 ') made scorecard()'s exact-equality era
+        comparison match ZERO rows at every horizon: n/n_scoped=0, hit_rate
+        None, and the live board's own rows silently filed under
+        historical_context as "previous board definition". This ledger stores
+        the whitespace-suffixed stamp exactly as append_board would write it
+        (str(), no strip — board_ledger.py:424-425) and asserts the fix scopes
+        it correctly end-to-end.
+        """
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.TO" for i in range(n_names)]
+        start = "2026-06-01"
+        dates = pd.bdate_range(start=start, periods=bl.MIN_IC_DATES)
+        for d in dates:
+            calls = [{"ticker": t, "group": "entry_open", "edge_z": float(j),
+                      "board_definition": "ca_prophet_branch_b_v1 ",  # trailing space
+                      "close_asof": 100.0} for j, t in enumerate(tickers)]
+            bl.append_board(calls, "CA", asof=str(d.date()))
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close(start, 140, step=1.0))
+        monkeypatch.setattr(bl, "_bench_close", lambda m: _make_bench(start, 140, step=0.0))
+
+        # Confirm the raw store really does carry the whitespace-suffixed stamp —
+        # this test would be meaningless against a fixture that got normalised
+        # on write.
+        raw = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert raw["board_definition"].iloc[0] == "ca_prophet_branch_b_v1 "
+
+        sc = bl.scorecard("CA")
+        assert sc["board_definition"] == "ca_prophet_branch_b_v1", (
+            "MAJOR-1: _latest_definition must strip the trailing space")
+        assert sc["metrics_scope"] == "current_definition"
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n"] == bl.MIN_IC_DATES * n_names, (
+            "MAJOR-1: whitespace must not silently zero out the scoped count")
+        assert h21["n_scoped"] == h21["n"]
+        assert h21["hit_rate_21d"] is not None, (
+            "MAJOR-1: whitespace must not silently blank the hit rate")
+        assert "historical_context" not in sc, (
+            "every row carries the (stripped-equal) current definition — "
+            "nothing should be misfiled as legacy")
+
+    def test_zero_graded_rows_for_named_definition_emits_annotation(
+            self, tmp_path, monkeypatch, capsys):
+        """MAJOR-1 part 2 (review, 2026-08-20): a defensive backstop, independent
+        of the whitespace root cause just fixed — if a named definition EVER
+        matches zero graded rows at every horizon again (any future cause),
+        scorecard() must emit a loud, CI-visible annotation rather than fail
+        silently. Forces the symptom directly (rather than re-deriving the
+        whitespace bug) by monkeypatching _latest_definition to name a
+        definition absent from every stored row.
+        """
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.HK" for i in range(n_names)]
+        start = "2026-06-01"
+        dates = pd.bdate_range(start=start, periods=bl.MIN_IC_DATES)
+        for d in dates:
+            calls = [{"ticker": t, "group": "entry_open", "edge_z": float(j),
+                      "close_asof": 100.0} for j, t in enumerate(tickers)]
+            bl.append_board(calls, "HK", asof=str(d.date()))
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close(start, 140, step=1.0))
+        monkeypatch.setattr(bl, "_bench_close", lambda m: _make_bench(start, 140, step=0.0))
+        monkeypatch.setattr(bl, "_latest_definition", lambda df: "definitely_not_present_v99")
+
+        capsys.readouterr()  # clear any prior output
+        sc = bl.scorecard("HK")
+        assert sc["board_definition"] == "definitely_not_present_v99"
+        out = capsys.readouterr().out
+        lines = [ln for ln in out.splitlines() if ln.startswith("::")]
+        assert any("board-ledger-era-empty" in ln for ln in lines), (
+            f"expected a ::warning title=board-ledger-era-empty:: annotation, got: {out!r}")
+        warn_line = next(ln for ln in lines if "board-ledger-era-empty" in ln)
+        assert warn_line.startswith("::warning"), "GitHub annotations must start the line"
+        assert "HK" in warn_line
+        assert "zero graded rows" in warn_line
+
 
 class TestNCallsCountsOnlyWhatWasLogged:
     """The dialog's "N calls logged" reads scorecard()['n_calls'].

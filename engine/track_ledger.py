@@ -244,24 +244,33 @@ def _board_ledger_row(gr: dict, name_lookup: dict) -> tuple[dict, bool, bool, bo
 
 def _board_ledger_era_summary(state: str, rows: list[dict], n_susp: int,
                                n_matured: int, n_beat: int, n_lag: int,
-                               first_read_est: str | None = None) -> dict:
+                               first_read_est: str | None = None,
+                               n_calls_override: int | None = None) -> dict:
     """The summary shape shared by from_board_ledger_grade's CURRENT-era summary
     and its prior_record's own summary (LEDGER-ERA track_ledger fence, 2026-08-20
     review). Carries this module's existing hit_matured/wilson_* vocabulary AND
     win_pct (0-100 scale) — the field _track_record_dlg.html.j2's prior-era
     ribbon actually reads (templates/_track_record_dlg.html.j2:1052-1064),
     mirroring engine.track_scoring.summarize's vocabulary (the CN producer;
-    see scripts/build_china_library._cn_era_block). n_calls/n_logged are the
-    ROW count of the era this summary describes, not the whole-ledger raw
-    parquet count grade() reports — a pooled ledger-wide number has no place
-    inside an era-scoped summary block (review 2026-08-20).
+    see scripts/build_china_library._cn_era_block).
+
+    n_calls/n_logged (MINOR-2, review 2026-08-20): `n_logged` is always
+    `len(rows)` — the ROW count of the era this summary describes. `n_calls`
+    is ALSO `len(rows)` by default (era-logged GRADED rows; a delisted name
+    grade() could never price is not counted here — the raw-ledger truth,
+    including delisted names, lives in board_ledger.scorecard()'s
+    historical_context, not in this per-era summary), UNLESS the caller passes
+    `n_calls_override` — used ONLY on the unscoped (no board_definition) path,
+    to restore byte-identical behavior with the pre-LEDGER-ERA-track_ledger-
+    fence artifact: n_calls used to read grade()'s whole-ledger raw parquet
+    count (which can exceed len(rows) when a name was never fillable/graded).
     """
     hit = round(n_beat / n_matured, 3) if n_matured else None
     wl, wh = wilson_ci(n_beat, n_matured)
     win_pct = round(hit * 100.0, 1) if hit is not None else None
     out = {
         "state": state,
-        "n_calls": len(rows),
+        "n_calls": n_calls_override if n_calls_override is not None else len(rows),
         "n_logged": len(rows),
         "n_matured": n_matured,
         "n_beat": n_beat,
@@ -329,8 +338,13 @@ def from_board_ledger_grade(
     hasLegacy()/era-chip/prior-ribbon JS (already shipped for CN) lights up for
     HK/CA with zero template changes. When scorecard carries no definition (a
     ledger that never stamps, e.g. every legacy HK row, or any market pre-stamp)
-    behavior is BYTE-IDENTICAL to before this fix: every row goes to `rows`, no
-    `prior_record` key is added.
+    every row goes to `rows` and no `prior_record` key is added — TRUE
+    byte-identity with the pre-fix artifact modulo the one additive key
+    `summary.win_pct` (MINOR-2, review 2026-08-20: n_calls on this unscoped
+    path is restored to grade()'s whole-ledger raw parquet count, the same
+    source it always read; only the SCOPED path's summary.n_calls counts
+    era-logged graded rows instead — see _board_ledger_era_summary's
+    docstring).
 
     name_lookup: {ticker: {"nm": .., "sec": .., "grp": ..}} display map (optional).
     """
@@ -392,9 +406,17 @@ def from_board_ledger_grade(
                     else:
                         legacy_n_lag += 1
 
+    # MINOR-2 (review, 2026-08-20): on the UNSCOPED path (no board_definition —
+    # every row is "current"), restore the pre-fix n_calls source
+    # (grade()'s whole-ledger raw parquet count) for TRUE byte-identity —
+    # it can exceed len(cur_rows) when a name was never fillable/graded.
+    _unscoped_n_calls = (
+        grade.get("n_calls") if current_definition is None and isinstance(grade, dict)
+        else None
+    )
     summary = _board_ledger_era_summary(
         state, cur_rows, cur_n_susp, cur_n_matured, cur_n_beat, cur_n_lag,
-        first_read_est=first_read_est,
+        first_read_est=first_read_est, n_calls_override=_unscoped_n_calls,
     )
 
     doc_as_of = as_of
@@ -419,15 +441,32 @@ def from_board_ledger_grade(
             legacy_n_beat, legacy_n_lag,
         )
         dates = sorted(r["d"] for r in legacy_rows if r.get("d"))
+        # MINOR-3 (review, 2026-08-20): sort newest-first before capping — grade()
+        # emits rows in date-ASCENDING order, so an uncapped slice kept the
+        # OLDEST legacy rows.  _cn_era_block sorts newest-first before its own
+        # cap, and build_shell's own docstring says the cap "keeps the most
+        # recent episodes" — match that comparator here too.
+        legacy_rows_newest_first = sorted(
+            legacy_rows, key=lambda r: (r.get("d") or ""), reverse=True)
         doc["prior_record"] = pyify({
             "label_en": label_en,
             "label_zh": label_zh,
             "board_definition": None,  # legacy pool may span several/no stamps
             "date_from": dates[0] if dates else None,
             "date_to": dates[-1] if dates else None,
+            # NIT-4 (review, 2026-08-20): this inherits the CURRENT era's `state`,
+            # unlike CN's _cn_era_block, which passes the PRIOR era's own
+            # independently-graded state. CN can do that cheaply because
+            # _cn_grade_era() already re-runs its whole grading+publish_state
+            # pipeline per era. board_ledger.scorecard()'s status gate
+            # (n_ic_dates >= MIN_IC_DATES per date, per horizon) is computed
+            # inline inside scorecard() over ONE frame, not exposed as a
+            # function this module could re-run cheaply over legacy_rows alone
+            # — doing so correctly would mean duplicating that gate's grouping
+            # logic here. Left inherited rather than silently wrong.
             "state": state,
             "summary": legacy_summary,
-            "rows": legacy_rows[:MAX_ROWS],
+            "rows": legacy_rows_newest_first[:MAX_ROWS],
             "meta": {
                 "n_total": len(legacy_rows),
                 "truncated": max(0, len(legacy_rows) - MAX_ROWS),

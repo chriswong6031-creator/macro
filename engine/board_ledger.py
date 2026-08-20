@@ -647,7 +647,18 @@ def _latest_definition(df: pd.DataFrame) -> str | None:
     newest_rows = dated[dated["_d"] == newest]
     if newest_rows.empty:            # malformed legacy dates: append order is the fallback
         newest_rows = dated
-    return str(newest_rows.iloc[-1]["board_definition"])
+    # MAJOR-1 (review, 2026-08-20, executed proof of an A1 whitespace attack):
+    # strip AND re-apply the nullish check, aligned with _definition_or_none's
+    # per-row normalisation.  Before this fix, a trailing-space stamp
+    # ('ca_prophet_branch_b_v1 ') returned UNSTRIPPED here while every graded
+    # by_horizon row's board_definition is stripped by _definition_or_none —
+    # scorecard()'s exact-equality era comparison then matched ZERO graded
+    # rows at every horizon: n/n_scoped=0, hit_rate=None, the live board's
+    # own rows filed under historical_context as "previous board definition",
+    # silently and with no error.  A stamp that is all-whitespace must also
+    # collapse to None here, exactly as _definition_or_none already does.
+    stripped = str(newest_rows.iloc[-1]["board_definition"]).strip()
+    return stripped if stripped and stripped not in _NULLISH_STR else None
 
 
 # ---------------------------------------------------------------------------
@@ -1133,14 +1144,17 @@ def scorecard(market: str) -> dict:
                                'current_definition' AND at least one ledger row
                                does not carry the current definition:
                                {legacy_rows, definitions, unstamped_rows, note,
-                               survivorship, by_horizon: {h: {n, n_buy,
-                               hit_rate_21d (21d only), by_group}}}.
+                               survivorship, counts_source, by_horizon: {h: {n,
+                               n_buy, hit_rate_21d (21d only), by_group}}}.
                                legacy_rows/definitions/unstamped_rows are read
                                from the RAW ledger parquet (not grade()'s
                                matured-row set, which drops delisted/unfilled
-                               rows — MAJOR-2 review fix, 2026-08-20); the
-                               by_horizon block is still graded and follows the
-                               SAME rules as the scoped metrics.
+                               rows — MAJOR-2 review fix, 2026-08-20);
+                               counts_source names which ('raw_ledger' normally,
+                               'graded_estimate' only if that raw read failed —
+                               NIT-6 review fix, 2026-08-20). The by_horizon
+                               block is still graded and follows the SAME rules
+                               as the scoped metrics.
         note               — human-readable status summary (n_unstamped prints
                                under the token regime_unstamped= — MINOR-3
                                review fix, 2026-08-20 — see grade()'s comment at
@@ -1252,6 +1266,18 @@ def scorecard(market: str) -> dict:
     gate_met = by_h.get("21d", {}).get("n_ic_dates", 0) >= MIN_IC_DATES
     status = "scored" if gate_met else "accruing"
 
+    # MAJOR-1 part 2 (review, 2026-08-20): a named definition that matches ZERO
+    # graded rows at EVERY horizon is exactly the symptom the whitespace bug
+    # above produced (silently — n/hit_rate all read empty, no exception, no
+    # log). This is a defensive backstop for that class of failure generally,
+    # not only the one root cause just fixed. Bare print, never the logger —
+    # `::` must start the line (tests/test_gh_annotation_line_start.py); flush
+    # is load-bearing (stdout is block-buffered when piped in CI).
+    if (definition is not None and g.get("n_calls", 0) > 0
+            and all(h.get("n_scoped", 0) == 0 for h in by_h.values())):
+        print(f"::warning title=board-ledger-era-empty::{m} board_definition "
+              f"names an era with zero graded rows", flush=True)
+
     n_unstamped = g.get("n_unstamped", 0)
     metrics_scope = "current_definition" if definition is not None else "all_history_pooled"
     note_parts = [
@@ -1297,6 +1323,13 @@ def scorecard(market: str) -> dict:
             # historical_context sees the same caveat inline (MAJOR-2 review,
             # 2026-08-20) rather than needing to cross-reference the outer dict.
             "survivorship": g.get("survivorship"),
+            # NIT-6 (review, 2026-08-20): the fallback to the graded-frame
+            # estimate (when the raw-parquet read fails) is otherwise
+            # UNDETECTABLE from the output alone — this names which source
+            # actually produced legacy_rows/definitions/unstamped_rows above,
+            # so a consumer can tell ledger-truth from the known-undercounting
+            # estimate rather than silently trusting a degraded number.
+            "counts_source": "raw_ledger" if _raw_legacy is not None else "graded_estimate",
             "by_horizon": historical_by_h,
         }
     return out
