@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T13:37:54.751810+00:00",
-  "count": 1479,
+  "generated_at": "2026-08-20T14:24:07.047376+00:00",
+  "count": 1481,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -82,6 +82,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-uq917jnpkeb-f0b524",
+      "title": "LONG EM CARRY",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-20T13:53:18Z",
+      "summary_points": [
+        "**Fed Hawkishness Easing**: Weaker US labor data (3.2% avg hourly earnings) and retail sales decline reduce Fed hiking urgency, intensifying dollar weakness; structural dollar bear case persists due to US allies' alienation and diversification trends.",
+        "**EM FX Basket Trade**: Added long positions in IDR, ZAR, HUF, BRL, MXN, COP, CLP vs USD, supported by resilient EM carry regime, improved EM FX carry indicator (z-score 0.6), and manageable oil surge risk.",
+        "**China Oil Import Structural Shift**: Crude oil imports fell to 35.7 million tons (2026), signaling structural energy strategy change with implications for global oil demand, supply chains, and energy transition investments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-axptu59jdvw-087e67",
       "title": "GS Johnstone TMT Spec Sales 20 Aug 2026",
       "institution": "S&T",
@@ -97,6 +116,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dpbgm2ozthk-941c3a",
+      "title": "GS Crook GS Morning 20 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T12:35:31Z",
+      "summary_points": [
+        "**UST Buyback Scale & Impact**: Treasury to increase long-end buybacks by $2bn+ per operation ($72bn/year), reducing 20y/30y supply by 16% (vs.",
+        "$111bn/quarter issuance), anchoring long-end volatility but deficits/AI supply capping rally depth.",
+        "**Duration Management Signal**: Treasury actively stabilizes long end via buybacks/issuance, signaling duration management across funding program; dollar/gold bullish as supply/demand balance remains marginal, with market reaction to tightening likely shifting Treasury's approach.",
+        "**EURUSD Technical Breakout & Positioning**: EURUSD spot (1.1693) breaks above 200d MVA (1.163), supported by low volatility and implied vol breakouts; 1m ATM EUR call shows 60bps terminal break even, indicating sustained breakout momentum.",
+        "**Treasury's Backend Calming Signals USD Weakness**: Treasury's backend yield curve calming triggers broad USD sell-off (signal vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
