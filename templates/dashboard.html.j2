@@ -963,6 +963,10 @@
               border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 11px;
               font-weight: 650; cursor: pointer; }
   .ladder-clear:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
+  /* Repair round, finding S3 — the grid-view dense cap's static disclosure
+     (never a "show more" control; the excess rows are not in the DOM at
+     all past the cap, see window.__usLifeDenseCap in the template body). */
+  .mx-dense-more { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); text-align: center; }
   .sk-n { height: 18px; width: 26px; display: inline-block; }
   .sk-head { height: 30px; width: 62px; display: inline-block; }
   @media (max-width: 720px) {
@@ -16176,9 +16180,20 @@ html[data-theme="light"] :is(
       {# Chip counts are computed from the RENDERED rows, not read from lane_counts:
          a filter chip whose number disagrees with what filtering shows is a defect,
          and the ran bucket spans two artifact arrays (buy-lane ran rows + the separate
-         `ran` array), which no single artifact counter covers. #}
+         `ran` array), which no single artifact counter covers.
+         Repair round, finding B3: on a GATED build `_board` is the preview slice
+         (as few as `preview_rows` rows), so counting straight off `_board` here
+         undercounted every bucket the same way the headline fix above already
+         guards against — source the TRUE full-board counts from `gate.stage_counts`
+         (computed over the unsliced board, scripts/build_site.py::
+         _us_board_stage_counts) when gated, exactly the idiom the heading path
+         above already uses. #}
       {%- set _sc = {'live':0,'setting_up':0,'ran':0,'basing':0,'blocked':0} -%}
-      {%- for _n in _board -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
+      {%- if gate %}
+        {%- for _sk2 in _stage_order %}{%- set _ = _sc.update({_sk2: gate.stage_counts.get(_sk2, 0)}) -%}{%- endfor -%}
+      {%- else %}
+        {%- for _n in _board -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
+      {%- endif %}
       {%- set _ = _sc.update({'ran': _sc['ran'] + (_ran_rows|length)}) -%}
       {# ── stage filter chips (G0.6). Empty buckets render NO chip (China precedent) —
            a chip you can press into a void is worse than no chip. #}
@@ -16204,8 +16219,17 @@ html[data-theme="light"] :is(
          repaint guard below (search WL1-PROVCARD-CONTRACT) checks so W-L1's
          live card-injection cannot select or write into it. The poller and the
          board-state stamp above (unchanged, lines ~15769-15848) are untouched. -#}
-      {%- set _cand_map = {} -%}
-      {%- if _su and _su.buy -%}{%- for _cn in _su.buy -%}{%- if _cn.get('ticker') -%}{%- set _ = _cand_map.update({_cn.ticker: _cn}) -%}{%- endif -%}{%- endfor -%}{%- endif -%}
+      {#- Repair round, finding S2: `_su.buy` here is the (possibly gate-sliced)
+         SHELL board, so a plan card's ticker misses this map whenever it isn't
+         also one of the first `preview_rows` candidate rows — losing its
+         name/sector/price/spark join. scripts/build_site.py already builds
+         the FULL, unsliced version of this exact map for the paid payload
+         (_us_life_repair_context -> us_candidate_map); use it when threaded,
+         falling back to the old sliced computation only in a render context
+         that predates it (e.g. a direct-template test lacking the new key). -#}
+      {%- set _cand_map_local = {} -%}
+      {%- if _su and _su.buy -%}{%- for _cn in _su.buy -%}{%- if _cn.get('ticker') -%}{%- set _ = _cand_map_local.update({_cn.ticker: _cn}) -%}{%- endif -%}{%- endfor -%}{%- endif -%}
+      {%- set _cand_map = (us_candidate_map if (us_candidate_map is defined and us_candidate_map) else _cand_map_local) -%}
       {%- set _plan_trg_map = {} -%}
       {%- if top_setups and top_setups.buy is defined and top_setups.buy -%}
         {%- for _tr in top_setups.buy -%}{%- if _tr.get('ticker') -%}{%- set _ = _plan_trg_map.update({_tr.ticker: _tr}) -%}{%- endif -%}{%- endfor -%}
@@ -16215,13 +16239,80 @@ html[data-theme="light"] :is(
       {{ pv.mx_ladder(_upb, error=_upb_err) }}
       {%- if _upb and not _upb_err %}
       {%- if not _upb.get('plans') %}
+      {#- Repair round, finding S4: theme.css:1983-1988 states the law —
+         ".mx-empty-why is REQUIRED alongside .mx-empty". The line above was
+         missing it; the cause line below matches the specimen's own pattern
+         (mockups/design_system/specimen.html:449-450). -#}
       <div class="mx-empty">
         <div class="mx-empty-line">{{ t('No live setups today — the board refreshes after the next close.', '今日暂无在场计划——下个收盘后刷新。') }}</div>
+        <div class="mx-empty-why">{{ t('No qualifying rows today · refreshes after the next close', '今日无符合条件的条目 · 下一收盘后刷新') }}</div>
       </div>
       {%- else %}
       <div class="nbgrid" data-showmore-rows="3" id="us-life-grid" data-mp1-grid="1">
       {%- with items=_upb.plans, cand_map=_cand_map, trg_map=_plan_trg_map, episode_map=(us_prophet_episodes or {}) %}{% include "_us_prophet_plan_cards.html.j2" %}{% endwith -%}
       </div>{# end #us-life-grid #}
+      {#- Repair round, finding S3 (dense state, MP-1 §10): "grid view caps at
+         40 cards with a `+{cell−shown} more` marker". Populated/toggled by
+         applyUsLifeDenseCap() below — baked hidden so a build under 40 cards
+         (every gated preview, and most ungated nights) never shows an empty
+         bar. NOTE: §10's other dense-state clause ("table view renders every
+         row of the active filter") does NOT apply to this grid — `.st-table-
+         mode` swaps in `#us-stocktable-wrap`, which is fed from the
+         CANDIDATE screener (`_su.buy`), not the plan book this grid renders;
+         there is no plan-book table view to route the +N to. Deferred as a
+         real architecture gap (a new plan-book table view is its own build),
+         not silently claimed here. -#}
+      <div class="mx-dense-more" id="us-life-dense-more" hidden>
+        <span class="l-en"></span><span class="l-zh"></span>
+      </div>
+      {#- Repair round, finding S9: a ladder filter with zero matches used to
+         render a silent blank (the CSS hide/reveal rules above just leave
+         nothing visible; the .mx-empty guard only fires on a truly empty
+         book, never on a non-empty book filtered to nothing). Baked hidden;
+         toggled by setLife() in the ladder-filter script below. -#}
+      <div class="mx-empty" id="us-life-filter-zero" hidden>
+        <div class="mx-empty-line">{{ t('No plans match this filter.', '没有符合此筛选条件的计划。') }}</div>
+        <div class="mx-empty-why">{{ t('Try another lifecycle cell, or clear the filter.', '请尝试其他状态，或清除筛选。') }}</div>
+      </div>
+      <script>
+      (function(){
+        /* Repair round, finding S3 (dense state — the other half, the hard
+           cap): runs SYNCHRONOUSLY here (before theme.js's DOMContentLoaded-
+           bound initShowMore() call) so the cap is already applied to the
+           DOM's real child list before that function ever snapshots it —
+           initShowMore reads `total` off `grid.children` once (idempotent
+           via data-smInit), so a cap applied AFTER that snapshot would
+           disagree with its own "Showing X of Y" bar. Exposed on `window` so
+           the hydrate() script further down can re-apply it after rebuilding
+           the grid with a FRESH element (same reason: an element show-more
+           has already initialized never re-triggers). */
+        var CAP = 40;
+        window.__usLifeDenseCap = function(){
+          var grid = document.getElementById('us-life-grid');
+          var marker = document.getElementById('us-life-dense-more');
+          if (!grid) return;
+          var cards = [].filter.call(grid.children, function(el){
+            return el.nodeType === 1 && el.hasAttribute('data-life');
+          });
+          if (cards.length > CAP){
+            for (var i = CAP; i < cards.length; i++){
+              if (cards[i].parentNode) cards[i].parentNode.removeChild(cards[i]);
+            }
+          }
+          var extra = cards.length - CAP;
+          if (!marker) return;
+          if (extra > 0){
+            marker.hidden = false;
+            var en = marker.querySelector('.l-en'), zh = marker.querySelector('.l-zh');
+            if (en) en.textContent = '+' + extra + ' more not shown in grid view';
+            if (zh) zh.textContent = '另有 ' + extra + ' 条未在卡片视图显示';
+          } else {
+            marker.hidden = true;
+          }
+        };
+        window.__usLifeDenseCap();
+      })();
+      </script>
       {%- endif %}
       {%- endif %}
       {#- ---- tier wall (gated build only) ----
@@ -16231,14 +16322,25 @@ html[data-theme="light"] :is(
           candidate wall this replaces, keyed on `life_gate`/`_split_us_prophet_board`
           instead of `gate`/`_split_us_board`. -#}
       {% if life_gate %}
+      {#- Repair round findings S7/S8: this wall counts PLAN ROWS (one row per
+         tracked commitment — a name traded twice appears twice, exactly the
+         law the ladder's own help text states, templates/_prophet_card.html.j2
+         "Each cell counts plan rows"), not distinct names, so "names"/"只"
+         overclaims precision the board never had (262 rows / 247 distinct
+         names on a real night). S8: the preview slice is taken BEFORE the
+         default-hidden `resolved` filter, so `life_gate.preview` can overstate
+         what a viewer actually sees when a resolved plan sorts into the top
+         preview_rows — `life_gate_visible_preview` (scripts/build_site.py::
+         _us_life_visible_preview_count) counts only the non-resolved rows
+         already in the shipped preview slice. -#}
       <div class="us-tier-wall" id="us-life-wall">
         <div class="us-tw-h">
-          <span class="l-en">{{ life_gate.locked }} more names on tonight's board</span>
-          <span class="l-zh">今晚榜单还有 {{ life_gate.locked }} 只股票</span>
+          <span class="l-en">{{ life_gate.locked }} more plan rows on tonight's board</span>
+          <span class="l-zh">今晚榜单还有 {{ life_gate.locked }} 条计划</span>
         </div>
         <div class="us-tw-p">
-          <span class="l-en">You're seeing the first {{ life_gate.preview }} of {{ life_gate.total }} names. Sign in to see the full ranked board, every lifecycle state, and the table view.</span>
-          <span class="l-zh">当前显示 {{ life_gate.total }} 只中的前 {{ life_gate.preview }} 只。登录后可查看完整排名榜单、全部生命周期状态与表格视图。</span>
+          <span class="l-en">You're seeing the first {{ (life_gate_visible_preview if (life_gate_visible_preview is defined and life_gate_visible_preview is not none) else life_gate.preview) }} of {{ life_gate.total }} plan rows. Sign in to see the full ranked board, every lifecycle state, and the table view.</span>
+          <span class="l-zh">当前显示 {{ life_gate.total }} 条计划中的前 {{ (life_gate_visible_preview if (life_gate_visible_preview is defined and life_gate_visible_preview is not none) else life_gate.preview) }} 条。登录后可查看完整排名榜单、全部生命周期状态与表格视图。</span>
         </div>
         <div class="us-tw-acts">
           <a class="us-tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
@@ -16270,13 +16372,34 @@ html[data-theme="light"] :is(
          law as the ran-lane/footnote sections below, since `_board`/`_sc`/
          `_ran_rows` all come from the SAME `{% if _su %}` block above. -#}
       {%- if _su %}
+      {#- Repair round, finding B3: "screened tonight" is a global-total claim,
+         so it must quote the TRUE full-board figure (gate.total, the same
+         published number the board's own subtitle already quotes at
+         :15918's `(gate.total if gate else _su.buy|length)` idiom) rather
+         than `_board|length`, which is the gate-sliced preview on a gated
+         build (as few as `preview_rows` rows) — reproduced: "8 screened
+         tonight" against a true 66. `_ran_rows` is already the FULL `ran`
+         array in both gated and ungated builds (_split_us_board only slices
+         the `buy` key), so it needs no such fix. -#}
+      {%- set _cand_total = (gate.total if gate else _board|length) + _ran_rows|length -%}
       <div class="mx-sec" id="us-candidates">
         <div class="mx-sec-hd">
           <h2 class="mx-sec-h2">{{ t('Candidates', '候选') }}</h2>
-          <span class="mx-sec-total">{{ t('<b>' ~ (_board|length + _ran_rows|length) ~ '</b> screened tonight', '本次筛出 <b>' ~ (_board|length + _ran_rows|length) ~ '</b> 只')|safe }}</span>
+          <span class="mx-sec-total">{{ t('<b>' ~ _cand_total ~ '</b> screened tonight', '本次筛出 <b>' ~ _cand_total ~ '</b> 只')|safe }}</span>
           <a class="mx-sec-link" href="discovery.html">{{ t('Open the screener', '打开筛选器') }}</a>
         </div>
         <p class="mx-sec-note">{{ t('Names tonight’s screen surfaced. A candidate is not a setup: it becomes one only when a plan is written for it, which is what the board above counts.', '本次筛选出的股票。候选不等于计划：只有为它建立计划后，才会计入上方看板。') }}</p>
+        {%- if gate %}
+        {#- Repair round, finding B3: restores the honest-preview disclosure the
+           old (retired) stage-filter bar carried as #us-gate-note — this
+           section now sources the same idea for the Candidates shelf, whose
+           rows are also tier-capped (finding B2, templates/tier_preview.js). -#}
+        <div class="us-gate-note" id="us-gate-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span class="l-en">You're seeing the first {{ gate.preview }} of {{ gate.total }} screened candidates. Sign in to see the full list.</span>
+          <span class="l-zh">当前显示今晚筛出的 {{ gate.total }} 只候选中的前 {{ gate.preview }} 只。登录后可查看完整名单。</span>
+        </div>
+        {%- endif %}
         {%- if _sg.any %}
         <div class="cand-shelves">
           {%- for _sk in _stage_order %}{% if _sc[_sk] %}
@@ -16284,10 +16407,29 @@ html[data-theme="light"] :is(
           {% endif %}{% endfor -%}
         </div>
         {%- endif %}
+        {#- Repair round, finding B4: computed SERVER-SIDE against the FULL
+           (pre-slice) candidate board and the FULL plan book
+           (scripts/build_site.py::_us_candidate_no_plan_sample, threaded as
+           `cand_no_plan`) — the old template-side computation built its pool
+           from `_board`, the gate-sliced preview, which on a gated build can
+           never reach the 6-row sample size; its fallback then silently
+           sampled ANY board row regardless of plan membership, so the
+           "carries no plan yet" claim below could be — and was reproduced —
+           false. `all_no_plan` makes the footer claim conditional on truth
+           rather than asserted unconditionally. Falls back to the OLD
+           (bug-preserving) computation only when `cand_no_plan` is not
+           threaded at all (a render context that predates this fix). -#}
+        {%- set _cnp = (cand_no_plan if (cand_no_plan is defined and cand_no_plan) else none) -%}
+        {%- if _cnp %}
+        {%- set _cand_sample = _cnp.sample -%}
+        {%- set _cand_all_no_plan = _cnp.all_no_plan -%}
+        {%- else %}
         {%- set _plan_tks = namespace(s=[]) -%}
         {%- if _upb %}{% for _p in (_upb.get('plans') or []) %}{% set _ = _plan_tks.s.append(_p.asset) %}{% endfor %}{% endif -%}
         {%- set _cand_pool = _board | rejectattr('ticker', 'in', _plan_tks.s) | list -%}
         {%- set _cand_sample = (_cand_pool if _cand_pool|length >= 6 else _board)[:6] -%}
+        {%- set _cand_all_no_plan = (_cand_pool|length >= 6) -%}
+        {%- endif %}
         {%- if _cand_sample %}
         <div class="cand-rows">
           {%- for _cn in _cand_sample %}
@@ -16295,7 +16437,11 @@ html[data-theme="light"] :is(
           {%- endfor %}
         </div>
         {%- endif %}
-        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' that carry no plan yet · <b>' ~ (_board|length + _ran_rows|length) ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只尚未建立计划的 · 本次共筛出 <b>' ~ (_board|length + _ran_rows|length) ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+        {%- if _cand_all_no_plan %}
+        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' that carry no plan yet · <b>' ~ _cand_total ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只尚未建立计划的 · 本次共筛出 <b>' ~ _cand_total ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+        {%- else %}
+        <p class="mx-sec-note" style="margin:12px 0 0">{{ t('Showing ' ~ (_cand_sample|length) ~ ' recent candidates (some already carry a plan) · <b>' ~ _cand_total ~ '</b> screened' ~ (' ' ~ _su.as_of if _su and _su.get('as_of') else ''), '显示其中 ' ~ (_cand_sample|length) ~ ' 只近期候选（部分已建立计划）· 本次共筛出 <b>' ~ _cand_total ~ '</b> 只' ~ (' · 筛选日 ' ~ _su.as_of if _su and _su.get('as_of') else ''))|safe }}</p>
+        {%- endif %}
       </div>{# end #us-candidates #}
       {%- endif %}
       {# ═══ PASSED ON TONIGHT (ANTICIPATION §6.9 R5) — the per-name "why not" shelf.
@@ -16639,6 +16785,29 @@ html[data-theme="light"] :is(
         }
         var clearBtn = document.getElementById('us-life-clear');
         if (clearBtn) clearBtn.hidden = !life;
+        /* Repair round, finding S9: a filter with zero matches used to render
+           a silent blank — the CSS hide/reveal rules above just leave nothing
+           visible, and the book-level .mx-empty guard only ever fires on a
+           truly empty book, never on a non-empty book filtered to nothing.
+           Read AFTER the attribute write above so the CSS has already
+           applied; getComputedStyle forces the synchronous style recalc that
+           makes that safe without a rAF/timeout. */
+        var zeroState = document.getElementById('us-life-filter-zero');
+        if (zeroState) {
+          if (!life) {
+            zeroState.hidden = true;
+          } else {
+            var grid = document.getElementById('us-life-grid');
+            var visible = 0;
+            if (grid) {
+              var matches = grid.querySelectorAll('[data-life="' + life + '"]');
+              for (var j = 0; j < matches.length; j++) {
+                if (window.getComputedStyle(matches[j]).display !== 'none') visible++;
+              }
+            }
+            zeroState.hidden = visible > 0;
+          }
+        }
         if (opts.writeUrl !== false) {
           var params = new URLSearchParams(location.search);
           if (life) params.set('life', life); else params.delete('life');
@@ -19605,9 +19774,34 @@ if (document.readyState === 'loading') {
        that order — a plain append preserves it. This is deliberately NOT
        mergeBoardCards (below): that function's heading-aware insertion
        exists for the candidate board's stage/lane headings, which this
-       grid does not have. */
+       grid does not have.
+
+       Repair round, finding S3: a blind `insertAdjacentHTML('beforeend', ...)`
+       into the SAME grid element left its show-more bar permanently stale —
+       initShowMore() is idempotent per element (data-smInit) and closes over
+       the children it saw at first init, so appending more children into
+       that same element is never seen by it again. Same documented pattern
+       _pvcPaint uses above ("a NEW grid element rather than new children in
+       the old one"): build a fresh element holding BOTH the existing preview
+       cards and the newly-hydrated ones, swap it in, drop the stale sm-bar
+       sibling, then re-apply the dense cap and re-run initShowMore() on an
+       element it has never seen. */
     var lifeGrid = document.getElementById('us-life-grid');
-    if (lifeGrid && payload.plan_cards_html) lifeGrid.insertAdjacentHTML('beforeend', payload.plan_cards_html);
+    if (lifeGrid && payload.plan_cards_html) {
+      var lifeOldBar = lifeGrid.nextElementSibling;
+      if (!(lifeOldBar && lifeOldBar.classList && lifeOldBar.classList.contains('sm-bar'))) lifeOldBar = null;
+      var freshLifeGrid = document.createElement('div');
+      freshLifeGrid.className = lifeGrid.className;
+      freshLifeGrid.id = 'us-life-grid';
+      freshLifeGrid.setAttribute('data-showmore-rows', '3');
+      freshLifeGrid.setAttribute('data-mp1-grid', '1');
+      freshLifeGrid.innerHTML = lifeGrid.innerHTML + payload.plan_cards_html;
+      lifeGrid.parentNode.insertBefore(freshLifeGrid, lifeGrid);
+      lifeGrid.parentNode.removeChild(lifeGrid);
+      if (lifeOldBar && lifeOldBar.parentNode) lifeOldBar.parentNode.removeChild(lifeOldBar);
+      if (window.__usLifeDenseCap) window.__usLifeDenseCap();
+      if (window.initShowMore) window.initShowMore();
+    }
     /* Every card just spliced in carries a `.nb-px`/`.nb-chg` pill still holding
        its baked value. live.js re-queries the document each tick, so these WOULD
        paint on their own — in up to 60 seconds, during which the three preview
@@ -19624,7 +19818,11 @@ if (document.readyState === 'loading') {
       if (lifeWall) lifeWall.remove();
     }
     if (!GATE) return;
-    var wall = document.getElementById('us-tier-wall');
+    /* Repair round, finding N3: this used to read the pre-migration id
+       'us-tier-wall' — the wall's actual id is 'us-life-wall' (removed under
+       LIFE_GATE above already; this second read stays as a harmless no-op
+       belt-and-braces for the case GATE is true while LIFE_GATE is false). */
+    var wall = document.getElementById('us-life-wall');
     if (wall) wall.remove();
     var note = document.getElementById('us-gate-note');
     if (note) note.remove();

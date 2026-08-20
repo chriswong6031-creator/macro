@@ -156,7 +156,10 @@
   <div class="ladder-termnote">{{ t('not in today’s count', '不计入上方总数') }}</div>
 </div>
 {%- if not _watch_present %}
-<p class="ladder-absence"><span class="mx-mark mx-mark--watch" aria-hidden="true"></span>{{ t('Watch tier publishes from the next nightly.', '「观察」将在下一次收盘更新后发布。') }}</p>
+{#- Repair round, finding S5: the ZH string must be MP-1 §10's ratified
+   string VERBATIM — the previous copy ("「观察」将在下一次收盘更新后发布。")
+   was a paraphrase, not the ruled text. -#}
+<p class="ladder-absence"><span class="mx-mark mx-mark--watch" aria-hidden="true"></span>{{ t('Watch tier publishes from the next nightly.', '观察档自下一次夜间构建起发布。') }}</p>
 {%- endif %}
 <div class="ladder-foot">
   <span>{{ t('Sorted by priority — how ready a setup is today, not how likely it is to win.', '按优先级排序 — 数值越高表示越接近可操作，并不代表胜率更高。') }}

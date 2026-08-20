@@ -88,9 +88,15 @@
 {%- set _mk = namespace(rows=[]) -%}
 {%- if cand and cand.get('featured') -%}{%- set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选'}] -%}{%- endif -%}
 {%- if cand and cand.get('new') -%}{%- set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新'}] -%}{%- endif -%}
-{%- if _epi -%}{%- set _dopen = p.get('entry_date') or p.get('recorded_at') -%}
-  {%- set _mk.rows = _mk.rows + [{'k':'lane','en':('Episode ' ~ _epi.ep ~ ' of ' ~ _epi.eps ~ (' · ' ~ _dopen if _dopen else '')),
-                                   'zh':('第 ' ~ _epi.ep ~ ' 轮（共 ' ~ _epi.eps ~ ' 轮）' ~ ('· ' ~ _dopen if _dopen else ''))}] -%}
+{#- Repair round, finding S6 (commissioning RULING, settles §10's mockup-gate
+   item): EN "Episode 2 · opened Aug 5" / ZH "第 2 轮 · 8月5日启动" — a
+   FORMATTED date (MMM D / M月D日), never the raw ISO string the old copy
+   concatenated verbatim, and "of N" is dropped. `_epi.dopen_en`/`dopen_zh`
+   are computed server-side (scripts/build_site.py::_fmt_episode_open_date)
+   so this partial never formats a date itself. -#}
+{%- if _epi -%}
+  {%- set _mk.rows = _mk.rows + [{'k':'lane','en':('Episode ' ~ _epi.ep ~ (' · opened ' ~ _epi.dopen_en if _epi.get('dopen_en') else '')),
+                                   'zh':('第 ' ~ _epi.ep ~ ' 轮' ~ (' · ' ~ _epi.dopen_zh ~ '启动' if _epi.get('dopen_zh') else ''))}] -%}
 {%- endif -%}
 {{ pv.pv_card({
   'href': 'stock.html#' ~ p.asset, 'tk': p.asset, 'mkt': 'us', 'id': p.id,

@@ -69,7 +69,11 @@
     var rows = Array.prototype.slice.call(root.children || []);
     return rows.filter(function (row) {
       if (row.matches && row.matches("tr")) return !!row.querySelector("td");
-      return !!(row.matches && row.matches(".actitem,[data-theme-id],.pvcard,.nbcard,.nb-card,.ts-row,.sbx-tile,.dash-tw-row,.pbr-r"));
+      // .cand-row: P-MP1-SHELL repair round, finding B2 — the us_stocks.html
+      // Candidates shelf (#us-candidates .cand-rows, dashboard.html.j2) ships
+      // ticker/name/price rows with no gating of its own; without this, an
+      // anonymous visitor reads every baked candidate row in plain text.
+      return !!(row.matches && row.matches(".actitem,[data-theme-id],.pvcard,.nbcard,.nb-card,.ts-row,.sbx-tile,.dash-tw-row,.pbr-r,.cand-row"));
     });
   }
   function groups() {
@@ -83,6 +87,16 @@
     add("#action-board .actbody");
     add("#us-standouts .nbgrid");
     add("#us-standouts .topsetups tbody");
+    // P-MP1-SHELL repair round, finding B2: the Candidates shelf
+    // (#us-candidates .cand-rows) is a SECOND population inside the same
+    // #us-standouts panel as the Setups grid above — surfaceFor() already
+    // resolves anything under #us-standouts to the "prophet" surface, so
+    // this joins the SAME shared gate banner rather than opening a third
+    // lock (MP-1 §7's "max two locks" law is unaffected). Before this line,
+    // every candidate row baked into the page (up to 6) was fully visible to
+    // an anonymous visitor — reproduced as "anonymous tier gains 2 tickers +
+    // 3 names + 3 prices vs pre-migration".
+    add("#us-candidates .cand-rows");
     // The `ran` list is quieter markup than the cards, but it is the SAME board:
     // ticker, name and move, one row per name. It sat inside #us-standouts ungated,
     // so an anonymous visitor read the full roster in plain text directly under a

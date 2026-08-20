@@ -5034,6 +5034,120 @@ def _split_us_prophet_board(book: "dict | None", preview_rows: int, *, gated: bo
     return shell_book, life_gate, locked
 
 
+def _us_life_gate_cfg() -> bool:
+    """P-MP1-SHELL repair round, finding S1: fail-CLOSED sibling of
+    _us_board_gate_cfg(), for the PLAN-BOOK split only.
+
+    _us_board_gate_cfg() (above) is deliberately fail-OPEN (`gated: False` on
+    a config-load exception or on the `gated` key being absent) — modelled on
+    _etf_gated()'s "a config read must never fail the render" law, and that
+    default is left untouched here (candidate-board behavior, §8b out of this
+    finding's scope). But the SAME fail-open default applied to the plan
+    book's own split (_split_us_prophet_board) silently bakes the full plan
+    book — up to 262 rows, each carrying an entry-zone/price target — into
+    anonymous-public us_stocks.html on a config hiccup: a revenue and trust
+    surface (§8b), not a display nicety. This reader is used ONLY for that
+    split's `gated` argument; `preview_rows` still comes from
+    _us_board_gate_cfg() (§8b: "preview-row COUNT are identical to the
+    candidate board's own gate config" — unchanged by this finding).
+
+    Absence of the `gated` key, or a config-load exception, both default to
+    True (gated) here — the opposite of _us_board_gate_cfg()'s default.
+    """
+    try:
+        cfg = config.load().get("us_board_gate") or {}
+        return bool(cfg.get("gated", True))
+    except Exception:  # noqa: BLE001 — a config read must never fail the render
+        return True
+
+
+def _us_candidate_no_plan_sample(full_buy: "list[dict]", plan_tickers: "set[str]",
+                                  sample_size: int = 6) -> dict:
+    """P-MP1-SHELL repair round, finding B4: the Candidates shelf's "carries no
+    plan yet" sample, computed against the FULL (pre-slice) candidate board —
+    never the gate-sliced preview, which on a gated build (preview_rows=3) can
+    never reach `sample_size` and forced the template's old fallback to sample
+    ANY board row regardless of plan membership (reproduced: GPCR/BWA/FTI
+    rendered as both Setups and Candidates under a "carries no plan yet"
+    caption).
+
+    Returns {'sample': [...], 'all_no_plan': bool}: `sample` is up to
+    `sample_size` rows (published order preserved, never re-sorted); when the
+    true no-plan pool is smaller than `sample_size`, the sample falls back to
+    the first `sample_size` board rows same as before, but `all_no_plan` is
+    computed HONESTLY against that actual sample rather than assumed true —
+    the template's footer copy must read this flag rather than assert the
+    claim unconditionally.
+    """
+    pool = [r for r in full_buy if r.get("ticker") and r.get("ticker") not in plan_tickers]
+    if len(pool) >= sample_size:
+        return {"sample": pool[:sample_size], "all_no_plan": True}
+    sample = [r for r in full_buy if r.get("ticker")][:sample_size]
+    all_no_plan = all(r.get("ticker") not in plan_tickers for r in sample)
+    return {"sample": sample, "all_no_plan": all_no_plan}
+
+
+def _us_life_visible_preview_count(shell_book: "dict | None") -> int:
+    """P-MP1-SHELL repair round, finding S8: the plan-book preview slice is
+    taken BEFORE the default-hidden `resolved` lifecycle filter (CSS hides
+    `[data-life="resolved"]` rows outside the Resolved filter — ruling §6
+    two-total law), so a night where a resolved plan sorts into the top
+    `preview_rows` renders FEWER visible cards than `life_gate.preview`
+    claims. Counts only the non-resolved rows already present in the
+    (already-sliced) shell book — the honest "first N" the tier wall should
+    quote instead of the raw slice count."""
+    if not shell_book:
+        return 0
+    return sum(1 for p in (shell_book.get("plans") or [])
+               if (p.get("lifecycle_state") or "") != "resolved")
+
+
+def _us_life_repair_context(vm: dict, us_life_shell: "dict | None") -> dict:
+    """P-MP1-SHELL repair round: the B4/S2/S8 context pieces threaded into the
+    stocks-mode dashboard.html.j2 render call, computed once so the primary
+    render and the one-build-lag re-render in main() stay identical and never
+    drift. Reads only `vm["us_standouts"]`/`vm["us_prophet_book"]`, which are
+    NEVER mutated by _split_us_board/_split_us_prophet_board (both return a
+    shallow-copied shell), so `_full_buy`/plan tickers here are always the
+    TRUE full board regardless of gating — never re-derives or touches the
+    §8b split functions themselves.
+
+    Returns the three new vm keys:
+      us_candidate_map        — S2: ticker -> full us_standouts.buy row, the
+                                 SAME map _write_us_payload's payload builder
+                                 already uses, so a plan card's ticker not in
+                                 the (possibly gate-sliced) preview candidate
+                                 rows still gets its name/sector/price/spark.
+      cand_no_plan             — B4: {'sample', 'all_no_plan'}, see
+                                 _us_candidate_no_plan_sample().
+      life_gate_visible_preview — S8: see _us_life_visible_preview_count().
+    """
+    _full_buy = (vm.get("us_standouts") or {}).get("buy") or []
+    _full_plan_tickers = {p.get("asset") for p in ((vm.get("us_prophet_book") or {}).get("plans") or [])
+                           if p.get("asset")}
+    return {
+        "us_candidate_map": {r.get("ticker"): r for r in _full_buy if r.get("ticker")},
+        "cand_no_plan": _us_candidate_no_plan_sample(_full_buy, _full_plan_tickers),
+        "life_gate_visible_preview": _us_life_visible_preview_count(us_life_shell),
+    }
+
+
+def _fmt_episode_open_date(raw: "str | None") -> "tuple[str | None, str | None]":
+    """P-MP1-SHELL repair round, finding S6: format an ISO-ish date string as
+    the MP-1 §10-ratified episode-chip pair ('Aug 5', '8月5日') — never the
+    raw ISO string the template used to concatenate verbatim. Returns
+    (None, None) when `raw` is absent or unparseable, so the caller drops the
+    date clause entirely (fail-soft) rather than print a malformed fragment.
+    """
+    if not raw:
+        return None, None
+    try:
+        d = datetime.fromisoformat(str(raw)[:10])
+    except Exception:  # noqa: BLE001 — never fail the render over a date string
+        return None, None
+    return f"{d.strftime('%b')} {d.day}", f"{d.month}月{d.day}日"
+
+
 def _us_prophet_episode_map(plans: "list[dict]") -> dict:
     """Per-plan {id: {'ep', 'eps', 'newer'}} for the multi-episode chip (MP-1
     §10 "Episode chip"), computed over the FULL (unsliced) plan book so a
@@ -5074,11 +5188,19 @@ def _us_prophet_episode_map(plans: "list[dict]") -> dict:
         tk = r.get("asset")
         if tk not in multi:
             continue
+        # S6 (P-MP1-SHELL repair round): the MP-1 §10-ratified chip text is
+        # "Episode N · opened Aug 5" — a formatted date, never the raw ISO
+        # string, and "of N" is dropped. Computed once here (server-side,
+        # over the same `_opened(r)` value the episode ordering already
+        # uses) so the template never re-derives or re-formats a date.
+        _dopen_en, _dopen_zh = _fmt_episode_open_date(_opened(r))
         out[pid] = {
             "ep": episode_of.get(pid),
             "eps": len(by_ticker[tk]),
             "newer": (newest_open.get(tk)
                       if (r.get("closed") is True and newest_open.get(tk) != pid) else None),
+            "dopen_en": _dopen_en,
+            "dopen_zh": _dopen_zh,
         }
     return out
 
@@ -6786,9 +6908,16 @@ def main() -> int:
     # Ladder counts are NEVER affected by this split (life_gate carries no
     # count fields — see _split_us_prophet_board docstring); only which CARD
     # ROWS render past the preview slice moves.
+    # Repair round, finding S1: the plan book's OWN `gated` switch is a
+    # fail-CLOSED read (_us_life_gate_cfg), not the fail-open
+    # _us_board_gate_cfg()["gated"] the candidate split above still uses —
+    # `preview_rows` itself stays shared (§8b: identical to the candidate
+    # board's own gate config).
     _us_life_shell, _us_life_gate, _us_life_locked = _split_us_prophet_board(
-        vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+        vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_life_gate_cfg())
     _us_life_episodes = _us_prophet_episode_map((vm.get("us_prophet_book") or {}).get("plans") or [])
+    # Repair round, findings B4/S2/S8 — see _us_life_repair_context().
+    _us_life_repair = _us_life_repair_context(vm, _us_life_shell)
     # The four panels ADJACENT to the board (fresh triggers, market leaders,
     # recently fired, act-now, theme tape) are fed by different artifacts, so the
     # board's split never reached them — they ride the same payload as extra
@@ -6801,8 +6930,7 @@ def main() -> int:
                        pgate=_us_pgate,
                        panel_blocks=_render_us_panel_payload(env, _us_pgate, _us_plocked, vm),
                        life_gate=_us_life_gate, locked_plans=_us_life_locked,
-                       cand_map={r.get("ticker"): r for r in ((vm.get("us_standouts") or {}).get("buy") or [])
-                                 if r.get("ticker")},
+                       cand_map=_us_life_repair["us_candidate_map"],
                        trg_map={r.get("ticker"): r for r in ((vm.get("top_setups") or {}).get("buy") or [])
                                 if r.get("ticker")},
                        episode_map=_us_life_episodes)
@@ -6812,7 +6940,8 @@ def main() -> int:
            "gate": _us_gate, "pgate": _us_pgate,
            "us_prophet_book": _us_life_shell, "life_gate": _us_life_gate,
            "us_prophet_episodes": _us_life_episodes,
-           "us_prophet_book_error": us_prophet_book_error}, mode="stocks"))
+           "us_prophet_book_error": us_prophet_book_error,
+           **_us_life_repair}, mode="stocks"))
     _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
@@ -7218,10 +7347,14 @@ def main() -> int:
                 # so re-splitting it here is idempotent — done anyway so this
                 # render call is self-contained rather than reaching back into
                 # the first pass's locals.
+                # Repair round, finding S1: fail-CLOSED plan-book gate, same
+                # reader as the first pass — see _us_life_gate_cfg().
                 _us_life_shell2, _us_life_gate2, _us_life_locked2 = _split_us_prophet_board(
-                    vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_gate_cfg["gated"])
+                    vm.get("us_prophet_book"), _us_gate_cfg["preview_rows"], gated=_us_life_gate_cfg())
                 _us_life_episodes2 = _us_prophet_episode_map(
                     (vm.get("us_prophet_book") or {}).get("plans") or [])
+                # Repair round, findings B4/S2/S8 — see _us_life_repair_context().
+                _us_life_repair2 = _us_life_repair_context(vm, _us_life_shell2)
                 # Same for the adjacent panels: this pass replaced us_standouts,
                 # top_setups and theme_tape above, so re-split from THIS generation
                 # or the re-render bakes their full row sets back into the shell.
@@ -7234,8 +7367,7 @@ def main() -> int:
                                    panel_blocks=_render_us_panel_payload(
                                        env, _us_pgate2, _us_plocked2, vm),
                                    life_gate=_us_life_gate2, locked_plans=_us_life_locked2,
-                                   cand_map={r.get("ticker"): r for r in ((vm.get("us_standouts") or {}).get("buy") or [])
-                                             if r.get("ticker")},
+                                   cand_map=_us_life_repair2["us_candidate_map"],
                                    trg_map={r.get("ticker"): r for r in ((vm.get("top_setups") or {}).get("buy") or [])
                                             if r.get("ticker")},
                                    episode_map=_us_life_episodes2)
@@ -7246,7 +7378,8 @@ def main() -> int:
                        "gate": _us_gate2, "pgate": _us_pgate2,
                        "us_prophet_book": _us_life_shell2, "life_gate": _us_life_gate2,
                        "us_prophet_episodes": _us_life_episodes2,
-                       "us_prophet_book_error": us_prophet_book_error}, mode="stocks"))
+                       "us_prophet_book_error": us_prophet_book_error,
+                       **_us_life_repair2}, mode="stocks"))
                 log.info(
                     "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
                     "(as_of %s -> %s, delayed %s -> %s)",
