@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-20T17:20:31.755251+00:00",
-  "count": 1490,
+  "generated_at": "2026-08-20T18:21:21.076543+00:00",
+  "count": 1493,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -98,6 +98,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2jt2xgwgrrb-e2ee80",
+      "title": "Japan July Trade Crude Oil Import Volume Swings Back to Positive YoY, but Crude Oil Import Prices Remain High",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:39:57Z",
+      "summary_points": [
+        "**Semiconductor Export Surge**: Export value growth driven by semiconductors (+49.1% YoY) and transport equipment (+20.7% YoY), exceeding forecasts (23.2% vs 20.0% YoY), signaling robust global demand fundamentals.",
+        "**Crude Oil Supply Disruption**: Japan's crude oil imports plummeted in Apr 2026, indicating strategic pivot to LNG or supply chain disruption, critical for energy security and cost management.",
+        "**Pricing Volatility Risk**: Oil/LNG prices diverge from global benchmarks (Dubai/JMK) until Jul 2026, creating heightened exposure to energy cost volatility and margin pressure.",
+        "**Tech Demand Confirmation**: Semiconductor/electronic component imports surged +79.7% YoY, validating strong underlying tech sector demand driving export performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tfeng5wlgfg-7f4e03",
+      "title": "Germany Federal Spending Slightly Below Expectations in July, Federal Deficit YTD Remains Above Our Expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:38:47Z",
+      "summary_points": [
+        "**Fiscal Deficit Widening**: July deficit at EUR -21.5bn (vs -20.8bn expected), cumulative deficit EUR -90.2bn (0.3% GDP) wider than forecast, signaling accelerated fiscal expansion risk for 2026.",
+        "**Military Spending Acceleration**: 2026 military fund execution at 80%+ by month 12, exceeding historical norms amid geopolitical tensions, creating fiscal strain risk.",
+        "**Climate Fund Transparency Gap**: Main budget fiscal balance projected at -147.1B (109% vs 2025) while climate fund assumes 0 balance (no monthly data), introducing execution uncertainty and sector allocation risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lnvzjjws1dd-f9c2ae",
+      "title": "Genesis Minerals Ltd. (GMD)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-20T16:37:31Z",
+      "summary_points": [
+        "**FY26 EBITDA Surge & Dividend**: Underlying EBITDA up 109% to A$952mn (55% margin), maiden A$5cps dividend declared early, reflecting robust cash flow (A$488mn cash, A$589mn liquidity) and offsetting VAU merger cash component.",
+        "**Merger-Driven Growth Targets**: VAU merger to lift production 30-80kozpa (690-780kozpa FY27-28E) and EBITDA 15-25% (vs baseline), with strategic review targeting 2027 production uplifts.",
+        "**Significant Valuation Discount**: Trades at 6.5x FY27E EV/EBITDA (vs peer avg 9x), implying ~US$3,845/oz LT gold (vs peers’ ~US$4,180/oz), supporting 10-20% FCF yields from FY30E despite elevated capex/opex.",
+        "**FCF Yield & Dividend Expansion**: Near-term operating FCF yields to rise 5-10% (to 10-15%) via cost-saving measures (avoiding Tower Hill mill, deferring Laverton), driving dividend yield from 0.6% (2026) to 3.6% (2031E).",
+        "**Critical Risk Exposure**: Construction/commissioning delays, cost inflation (cash costs above consensus), and commodity price volatility threaten merger execution and margin expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
