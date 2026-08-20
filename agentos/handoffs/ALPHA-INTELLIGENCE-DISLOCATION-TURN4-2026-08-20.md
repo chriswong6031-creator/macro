@@ -1,12 +1,12 @@
 ---
 workstream: WS:ALPHA-INTELLIGENCE-INTEGRATION
 session: sol/exk-turn4-canonical-replay-and-p0-freeze
-model: gpt-5.6-pro
+model: fable
 ended_because: complete
 prs: [6057]
 mission: >
   Adjudicate the frozen EXK H0-H4/H1B/H4B rules on canonical repository prices,
-  stop any contaminated or underpowered inference, and freeze the first untouched
+  stop contaminated or underpowered inference, and freeze the first untouched
   cross-issuer Dislocation P0 program without creating production authority.
 state_before: >
   Turn 3 had a compiled replay engine, 23-transition EXK census and February 2026
@@ -26,15 +26,20 @@ changed:
     what: "Records canonical tape coverage, SLV absence and zero untouched confirmation entries."
 verified:
   - claim: "Canonical replay v1.2 ran twice byte-identically."
-    result: "output sha256 aa2a11691be2f982f368a17562fd4dcf81397cc1072dfbbf3abd68e0479eb9ff"
+    command: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log | grep aa2a11691be2f982f368a17562fd4dcf81397cc1072dfbbf3abd68e0479eb9ff"
+    result: "Both replay outputs carried SHA-256 aa2a11691be2f982f368a17562fd4dcf81397cc1072dfbbf3abd68e0479eb9ff."
   - claim: "Common EXK/SIL coverage is 2023-01-03 through 2026-08-05, 900 sessions."
-    result: "read from canonical Parquets in PR #6057 workflow"
+    command: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log | grep 'first_common_session'"
+    result: "Workflow printed first_common_session=2023-01-03, last_common_session=2026-08-05 and n_common_sessions=900."
   - claim: "Boundary correction refuses pre-store and post-store events."
-    result: "10 before-store transitions and 1 after-store transition refused; synthetic boundary self-test PASS"
+    command: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log | grep -E 'before_store_start|after_store_end'"
+    result: "Ten before-store transitions and one after-store transition were refused; the synthetic boundary self-test passed."
   - claim: "SLV was not silently substituted."
-    result: "canonical file absent; typed UNAVAILABLE"
+    command: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log | grep 'canonical_file_absent'"
+    result: "The canonical SLV file was absent and the replay emitted typed UNAVAILABLE."
   - claim: "No confirmation arm has untouched entered N."
-    result: "H2/H3/H4/H4B confirmatory_episode_n = 0"
+    command: "gh run view 32350307307 --repo mastermindx-market-intelligence/macro --log | grep 'confirmatory_episode_n'"
+    result: "H2, H3, H4 and H4B each printed confirmatory_episode_n=0."
 unverified:
   - claim: "P0 cross-issuer temporary-impairment plus confirmation policy adds value."
     what_would_verify: "Blind manifest freeze, source audit, canonical matched-k/sc-nnls replay, placebos/controls and Sol adjudication."
