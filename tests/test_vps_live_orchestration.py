@@ -7,10 +7,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import pandas as pd
 
 from engine.release_actuals import receipts_from_payload
+from scripts import build_intraday_flow as bif
 from scripts import vps_live_orchestrator as vlo
 from scripts import watch_release_publications as wrp
+from scripts.build_intraday_flow_quotes import build_payload as build_flow_quotes
 from scripts.check_vps_live_health import evaluate as evaluate_live_health
 
 FOMC_STATEMENT = """
@@ -1122,6 +1125,77 @@ def test_quote_snapshot_quality_rejects_empty_or_low_coverage(tmp_path: Path):
     ) is None
 
 
+def test_board_quote_filter_keeps_only_leaders_with_real_prices():
+    payload = build_flow_quotes(
+        {"leaders": [{"ticker": "AMD"}, {"ticker": "AAPL"}, {"ticker": "MISS"}]},
+        {
+            "ts": 123,
+            "asof": "2026-08-20T16:00:00+00:00",
+            "source": "snapshot",
+            "quotes": {
+                "AAPL": {"price": 200.0},
+                "AMD": {"price": "150.25"},
+                "MISS": {"price": None},
+                "SPY": {"price": 700.0},
+            },
+            "meta": {"requested": 2000, "resolved": 1900},
+        },
+    )
+    assert set(payload["quotes"]) == {"AAPL", "AMD"}
+    assert payload["meta"]["requested"] == 3
+    assert payload["meta"]["resolved"] == 2
+    assert payload["meta"]["upstream_resolved"] == 1900
+
+
+def test_datetime_index_named_ts_is_normalized_for_today_bars(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    now_et = pd.Timestamp.now(tz="America/New_York").normalize()
+    index = pd.DatetimeIndex(
+        [now_et + pd.Timedelta(hours=10), now_et + pd.Timedelta(hours=11)],
+        name="ts",
+    ).tz_convert("UTC")
+    frame = pd.DataFrame(
+        {
+            "open": [100.0, 101.0],
+            "high": [102.0, 103.0],
+            "low": [99.0, 100.0],
+            "close": [101.0, 102.0],
+            "volume": [1000.0, 2000.0],
+        },
+        index=index,
+    )
+    intraday = tmp_path / "intraday"
+    intraday.mkdir()
+    (intraday / "AAPL.parquet").touch()
+    monkeypatch.setattr(bif.pd, "read_parquet", lambda _: frame.copy())
+
+    rows = bif._today_bars("AAPL", tmp_path)
+
+    assert len(rows) == 2
+    assert rows[-1]["close"] == 102.0
+
+
+def test_flow_pulse_quality_rejects_age_fresh_no_data(tmp_path: Path):
+    path = tmp_path / "flow_pulse.json"
+    path.write_text(json.dumps({
+        "mode": "no_data", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 0},
+            {"ticker": "AMD", "bars_today": 0},
+        ],
+    }))
+    assert "mode=no_data" in (vlo.flow_pulse_error(path, min_coverage=0.8) or "")
+    path.write_text(json.dumps({
+        "mode": "fastpath", "n_tickers": 2,
+        "tickers": [
+            {"ticker": "AAPL", "bars_today": 4},
+            {"ticker": "AMD", "bars_today": 4},
+        ],
+    }))
+    assert vlo.flow_pulse_error(path, min_coverage=0.8) is None
+
+
 def test_command_can_publish_private_state_outside_public_root(tmp_path: Path):
     source = tmp_path / "stage" / "quotes_full.json"
     source.parent.mkdir()
@@ -1364,7 +1438,12 @@ def _healthy_vps_status() -> dict:
             "overlay": {"age_min": 2},
             "risk_state": {"age_min": 2},
             "china_risk_state": {"age_min": 2},
-            "flow_pulse": {"age_min": 30},
+            "flow_pulse": {
+                "age_min": 30,
+                "mode": "fastpath",
+                "n_tickers": 116,
+                "with_bars": 116,
+            },
         },
     }
 
@@ -1386,6 +1465,16 @@ def test_vps_health_contract_reports_failed_or_stale_lane():
     )
     assert "lane snapshot: last run was not healthy" in failures
     assert any("lane snapshot: stale" in failure for failure in failures)
+
+
+def test_vps_health_contract_rejects_age_fresh_no_data_pulse():
+    payload = _healthy_vps_status()
+    payload["checks"]["flow_pulse"].update({"mode": "no_data", "with_bars": 0})
+    failures = evaluate_live_health(
+        payload,
+        now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc),
+    )
+    assert "flow_pulse: semantically unavailable (mode=no_data)" in failures
 
 
 def test_vps_health_contract_reports_semantically_late_release():
@@ -1666,6 +1755,8 @@ def test_caddy_serves_live_store_without_cache():
     assert "@vps_public_live" in text
     assert "@vps_external" in text
     assert "handle /live/quotes.json" in text
+    assert "/live/intraday_quotes.json" in text
+    assert "/live/flow_pulse.json" in text
     assert "handle /live/release_publications.json" in text
     assert "root * /var/lib/macro-live/public" in text
     assert 'Cache-Control "no-store"' in text

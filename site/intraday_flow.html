@@ -542,7 +542,7 @@ var STANCE_META = {
 };
 
 // ── URL helpers ────────────────────────────────────────────────────────────
-function snapUrl() { return window.LIVE_SNAPSHOT_URL || 'live/quotes.json'; }
+function snapUrl() { return window.LIVE_SNAPSHOT_URL || 'live/intraday_quotes.json'; }
 function pulseUrl() { return 'live/flow_pulse.json'; }
 function r2Url(path) {
   var base = (window.DATA_BASE || '').replace(/\/+$/, '');
@@ -557,6 +557,12 @@ function _etMinutes() {
   return h*60 + m;
 }
 function isMarketHours() { var e=_etMinutes(); return e >= (9*60+25) && e <= (16*60+5); }
+function flowMetaFresh(meta) {
+  if (!isMarketHours()) return true;
+  if (!meta || meta.schema !== 'live_flow.meta/v2' || !meta.asof) return false;
+  var stamped = Date.parse(meta.asof);
+  return Number.isFinite(stamped) && Date.now() - stamped <= 15*60*1000;
+}
 // session phase: pre | live | post | closed  (weekday check is intentionally omitted —
 // off-hours simply renders the nightly skeleton, which is correct on weekends too)
 function sessionPhase() {
@@ -643,18 +649,22 @@ function quotePx(quote) {
   var n = Number(quote.price);
   return Number.isFinite(n) ? n : null;
 }
-function boardHasPrice() {
+function boardPriceCoverage() {
+  if (!leaders.length) return 0;
+  var resolved = 0;
   for (var i = 0; i < leaders.length; i++) {
-    if (quotePx(quoteState[leaders[i].ticker]) != null) return true;
+    if (quotePx(quoteState[leaders[i].ticker]) != null) resolved++;
   }
-  return false;
+  return resolved / leaders.length;
 }
-function boardHasPulse() {
+function boardPulseCoverage() {
+  if (!leaders.length) return 0;
+  var resolved = 0;
   for (var i = 0; i < leaders.length; i++) {
     var p = pulseState[leaders[i].ticker];
-    if (p && typeof p === 'object') return true;
+    if (p && typeof p === 'object' && Number(p.bars_today || 0) > 0) resolved++;
   }
-  return false;
+  return resolved / leaders.length;
 }
 function feedWord(status, zh) {
   if (zh) {
@@ -765,7 +775,7 @@ function fetchQuotes() {
   }).then(function(data){
     var q = data.quotes || {};
     Object.keys(q).forEach(function(tk){ if (q[tk] && typeof q[tk] === 'object') quoteState[tk] = q[tk]; });
-    quotesStatus = boardHasPrice() ? 'live' : 'unavailable';
+    quotesStatus = boardPriceCoverage() >= 0.90 ? 'live' : 'unavailable';
     quotesInflight = false;
     updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
@@ -789,7 +799,7 @@ function fetchPulse() {
     return r.json();
   }).then(function(data){
     (data.tickers || []).forEach(function(t){ if (t && t.ticker) pulseState[t.ticker] = t; });
-    pulseStatus = boardHasPulse() ? 'live' : 'unavailable';
+    pulseStatus = boardPulseCoverage() >= 0.80 ? 'live' : 'unavailable';
     pulseInflight = false;
     updateFlowStamp(flowAsof, flowMeta);
     scheduleRender();
@@ -871,7 +881,7 @@ function fetchFlow() {
       }
     }
     flowMeta = meta; flowAsof = asof; flowRTH = isMarketHours();
-    flowStatus = (tide || enrich || meta) ? 'live' : 'unavailable';
+    flowStatus = (tide || enrich) && flowMetaFresh(meta) ? 'live' : 'unavailable';
     flowInflight = false;
     updateFlowStamp(asof, meta);
     // Deepen the board's own names — the per-root payload is the only source of the

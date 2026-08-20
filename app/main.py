@@ -618,6 +618,19 @@ def status() -> dict:
                             "resolved": meta.get("resolved"),
                         }
                     )
+                elif key == "flow_pulse":
+                    rows = data.get("tickers") or []
+                    checks[key].update(
+                        {
+                            "mode": data.get("mode"),
+                            "n_tickers": data.get("n_tickers"),
+                            "with_bars": sum(
+                                1 for row in rows
+                                if isinstance(row, dict)
+                                and int(row.get("bars_today") or 0) > 0
+                            ),
+                        }
+                    )
                 elif key == "release_publications":
                     event_status: dict[str, int] = {}
                     max_lag_min = 0.0

@@ -464,6 +464,19 @@ def test_flow_copy_makes_no_fixed_cadence_or_unstamped_live_claim(path):
     assert "上一交易时段来源截至" in src
 
 
+@PAGES
+def test_live_labels_require_board_coverage_and_a_fresh_source_clock(path):
+    src = path.read_text(encoding="utf-8")
+    assert "live/intraday_quotes.json" in src
+    assert "boardPriceCoverage() >= 0.90" in src
+    assert "boardPulseCoverage() >= 0.80" in src
+    assert "p.bars_today || 0" in src
+    assert "function flowMetaFresh(meta)" in src
+    assert "Date.now() - stamped <= 15*60*1000" in src
+    assert "(tide || enrich) && flowMetaFresh(meta)" in src
+    assert "(tide || enrich || meta) ? 'live'" not in src
+
+
 @needs_node
 def test_template_and_site_copies_agree():
     """site/intraday_flow.html is rendered from the template by scripts/build_intraday_flow.py;
