@@ -12075,7 +12075,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pyyaml pytest
+        # jinja2 is needed ONLY for the XPV2-SC-R3A step below, which imports
+        # scripts.build_sector_central::split_actnow (a pure function -- no
+        # site/data I/O) to recompute the premium-split panel from the frozen
+        # fixture instead of hand-typing the expected counts (S3 fix,
+        # 2026-08-20 adversarial review). build_sector_central.py does
+        # `from jinja2 import Environment, FileSystemLoader` at module scope,
+        # so importing any name from it -- even a pure helper -- requires
+        # jinja2 in this job's venv even though the RIG steps above never use it.
+        run: pip install pyyaml pytest jinja2
       - name: reference-integrity selftest (gate fires on synthetic violations)
         run: python3 scripts/check_reference_integrity.py --selftest
       - name: RIG artifact integrity across the checkout (hard gate)
@@ -12085,11 +12093,12 @@ jobs:
       # XPV2-SC-R3A binding pack (research/reference_integrity/mastermind-xpv2-sector-r3/):
       # attack tests over the frozen Sector Central fixture + code constants
       # (_ACTNOW_LANES, LEGACY_ANCHORS, thin-but-listed wording, premium
-      # preview/locked/total split). Per ADJUDICATIONS.md SS A10, this suite
-      # asserts ONLY against the frozen fixture and code constants -- never
-      # live site/ or data/ -- so it sits with this job's own reference-
-      # integrity mandate (a frozen reference used faithfully, not a moving
-      # target). Unscoped job, no `paths:` needed -- runs on every PR.
+      # preview/locked/total split, the Overview stale guard, split_actnow
+      # imported live). Per ADJUDICATIONS.md SS A10, this suite asserts ONLY
+      # against the frozen fixture and code constants -- never live site/ or
+      # data/ -- so it sits with this job's own reference-integrity mandate
+      # (a frozen reference used faithfully, not a moving target). Unscoped
+      # job, no `paths:` needed -- runs on every PR.
       - name: XPV2-SC-R3A binding pack — fixture/routing/access mutation-armor
         run: python -m pytest tests/test_xpv2_sector_r3_fixture.py -q
   dataos-foundation:
