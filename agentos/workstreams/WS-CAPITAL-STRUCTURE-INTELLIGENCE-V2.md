@@ -41,6 +41,7 @@ decisions:
   - DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE
   - DEC:CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG
   - DEC:CS-V2-SIX-QUESTION-ONTOLOGY
+  - DEC:CS-V2-W1B-SOL-ACCEPTED-NATURAL-PROOF-GATE
 discoveries:
   - DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS
   - DSC:CS-SOURCE-MANIFEST-UNSPECIFIED-MERGE
@@ -62,6 +63,8 @@ do_not_redo:
   - "Shortcut re-observation on the complete row alone"
   - "Persist only the changed members of an N+1 closed bundle"
   - "Treat a deselected/removed current member as re-observation when remaining members are unchanged"
+  - "Re-review whether Sol accepted W1B #6044; the accepted PR body records PASS and the merge is on main"
+  - "Dispatch a second daily run merely to accelerate the W1B production receipt"
 landmines:
   - "manifest_id_for hashes retrieval clocks (DSC:CS-MANIFEST-ID-HASHES-RETRIEVAL-CLOCKS)"
   - "Partial N+1 persist drops unchanged children from _current_manifest_bundle"
@@ -70,29 +73,21 @@ landmines:
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
   - "Projection freshness is compiler age, not information horizon"
   - "Share-count v2 and Company Facts are default-off / unprovisioned — not live"
+  - "W1B merge is not its production receipt: wait for the first natural scheduled collector -> Capital Structure chain on a descendant containing #6044; never manufacture that proof with a duplicate daily dispatch"
 artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
   - docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md
   - research/CAPITAL_STRUCTURE_ISSUER_STATE_W3_BUILD_DOCKET.md
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md
-needs_ceo:
-  question: >
-    Accept W1B membership-subtraction amend on #6044 so a deselected
-    current member forces a whole-candidate-bundle revision, after the
-    original W1B persist law? Hold W2 until W1B merges and the first
-    natural collector → Capital Structure chain containing W1B is
-    production-proven.
-  options:
-    - Accept the W1B amend; authorize Wave 2 only after merge and natural CS-path proof
-    - Accept with further named amendments
-    - Reject; name which closed-bundle ruling to reopen
-  recommendation: >
-    Accept the W1B amend. Do not start Wave 2 in this PR. Do not rewrite
-    historical event_ids or v1 manifests. Do not dispatch a second daily run.
-  by_when: 2026-08-25
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20-w1b-sol-acceptance-reconciliation.md
 next_action: >
-  Sol review of the W1B membership-subtraction amend on #6044; do not
-  merge until accepted; do not start W2; do not create W1C.
+  W1B #6044 is Sol-accepted and merged as
+  ec388d963190fe149f1cdb4d0847136ec2eb3c38. Wait for the first NATURAL
+  scheduled collector -> Capital Structure chain containing that merge and
+  record the production receipt. Do not dispatch a second daily run merely to
+  obtain proof. W2 stays unauthorized until the natural receipt passes; after
+  that, W2 is only eligible for a separate Sol commission and does not auto-start.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -121,14 +116,20 @@ waves:
     branch: claude/cs-v2-w1b-closed-bundle
     pr: 6044
     next_action: >
-      Sol review of the W1B membership-subtraction amend on #6044.
-      Do not merge until accepted. Do not start W2. Do not create W1C.
+      Sol PASS recorded on accepted head 3ba55c6d68778e29b6bf8b238a1cab39b5ada2f4;
+      #6044 merged as ec388d963190fe149f1cdb4d0847136ec2eb3c38.
+      Implementation/review hold is closed. Keep W1B in_progress only until the
+      first natural scheduled collector -> Capital Structure chain containing
+      the merge is proven. Do not dispatch a second daily. Do not start W2 or
+      create W1C.
   - id: W2
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: todo
     depends_on: [W1B]
     next_action: >
-      Start only after W1B merge and the first natural post-W1B CS chain is proven.
+      Start only after W1B's first natural post-merge CS chain is proven AND Sol
+      separately commissions W2. Natural proof makes W2 eligible; it does not
+      start it automatically.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
@@ -154,5 +155,6 @@ waves:
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
 fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
 this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
-owner, not the executor of this freeze. Implementation starts at W1 only
-after Sol/Chairman acceptance.
+owner. W1/W1A are done. W1B is accepted and merged but deliberately remains
+open until its first natural production chain is proven. No W2 implementation
+is authorized by the W1B merge or by this records reconciliation.
