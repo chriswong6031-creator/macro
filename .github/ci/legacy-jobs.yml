@@ -12082,6 +12082,16 @@ jobs:
         run: python3 scripts/check_reference_integrity.py
       - name: reference-integrity mutation / anti-vacuity suite
         run: python -m pytest tests/test_check_reference_integrity.py -q
+      # XPV2-SC-R3A binding pack (research/reference_integrity/mastermind-xpv2-sector-r3/):
+      # attack tests over the frozen Sector Central fixture + code constants
+      # (_ACTNOW_LANES, LEGACY_ANCHORS, thin-but-listed wording, premium
+      # preview/locked/total split). Per ADJUDICATIONS.md SS A10, this suite
+      # asserts ONLY against the frozen fixture and code constants -- never
+      # live site/ or data/ -- so it sits with this job's own reference-
+      # integrity mandate (a frozen reference used faithfully, not a moving
+      # target). Unscoped job, no `paths:` needed -- runs on every PR.
+      - name: XPV2-SC-R3A binding pack — fixture/routing/access mutation-armor
+        run: python -m pytest tests/test_xpv2_sector_r3_fixture.py -q
   dataos-foundation:
     scope: exclusive
     # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
