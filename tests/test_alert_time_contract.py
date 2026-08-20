@@ -199,9 +199,14 @@ def test_rotation_producer_refuses_to_invent_a_date_without_asof():
 # --- 4. the assembled board ---------------------------------------------------
 
 def _fake_feed(monkeypatch, rows):
-    """Drive build_triage off a controlled feed (no data/ dependency, no wall clock)."""
-    monkeypatch.setattr(at, "_macro_raw", lambda today, cutoff: [])
-    monkeypatch.setattr(at, "_load_context", lambda: {})
+    """Drive build_triage off a controlled feed (no data/ dependency, no wall clock).
+
+    Readers return a TYPED read (source / state / events) — a crashed feed is missing
+    evidence, never "zero alerts" (see tests/test_alert_coverage_recurrence.py).
+    """
+    monkeypatch.setattr(at, "_macro_raw",
+                        lambda today, cutoff: at._read("macro", at.READ_OK_ZERO, []))
+    monkeypatch.setattr(at, "_load_context", lambda: {"_state": at.READ_OK})
 
     def _fake_jsonl(source, today, cutoff, tier_map):
         out = []
@@ -224,7 +229,7 @@ def _fake_feed(monkeypatch, rows):
                 "detail": "", "detail_zh": "",
                 "anchor": r.get("anchor", "#timeline"), "edge": "", "edge_zh": "",
             })
-        return out
+        return at._read(source, at.READ_OK if out else at.READ_OK_ZERO, out)
 
     monkeypatch.setattr(at, "_jsonl_raw", _fake_jsonl)
 
@@ -321,7 +326,7 @@ def test_future_dated_rows_are_quarantined_not_ranked(monkeypatch):
     assert [a["asset"] for a in p["alerts"]] == ["silver"]
 
 
-def test_persistence_span_is_measured_in_board_days(monkeypatch):
+def test_recurrence_span_is_measured_in_board_days(monkeypatch):
     """Mixed date-only and offset-aware fires must not raise, and must span board days."""
     _fake_feed(monkeypatch, [
         {"source": "vector", "type": "risk_regime", "asset": "BTC",

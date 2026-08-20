@@ -185,11 +185,18 @@ def test_corroboration_cap_is_demote_only():
     # uncorroborated major drops to minor; a corroborated one is untouched.
     reg = at._registry_index()
     doc = at._validation("altdata", "convergence", "", "", reg)   # documented, not backtested
-    # isolated one-off, no cross-asset confirm, not persisting → demoted
-    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=1, streak_days=0)
+    # isolated one-off, no cross-asset confirm → demoted
+    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=1, span_days=0)
     assert band == "minor" and why == "uncorroborated"
-    # a persisting flag keeps its band (persistence corroborates)
-    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=5, streak_days=6)
+    # RECURRENCE IS NOT CORROBORATION (2026-08-20).  This case used to KEEP its band:
+    # a bare fire pattern was accepted as evidence, so three sparse re-fires across a
+    # month could decline a demotion and hold `major` (60 vs 48 on a watch-tier alert,
+    # which is also the outbound push floor).  An event log cannot show a condition held.
+    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=5, span_days=6)
+    assert band == "minor" and why == "uncorroborated"
+    # ...unless the SOURCE verifies current-state continuity, which no producer does yet
+    band, why = at.corroborated_severity("major", "watch", "neutral", doc, 5, 6,
+                                         continuity_verified=True)
     assert band == "major" and why is None
     # cross-asset confirm corroborates → band untouched (even as a one-off)
     band, why = at.corroborated_severity("critical", "watch", "confirm", doc, 1, 0)
@@ -206,21 +213,34 @@ def test_corroboration_cap_is_demote_only():
     assert at.corroborated_severity("minor", "context", "neutral", doc, 1, 0) == ("minor", None)
 
 
-def test_persistence_recovers_the_fire_pattern():
+def test_recurrence_recovers_the_fire_pattern_as_a_span_not_a_streak():
     inst = [{"ts": "2026-06-01T00:00:00"}, {"ts": "2026-06-05T00:00:00"},
             {"ts": "2026-06-03T00:00:00"}]
-    p = at._persistence(inst)
+    p = at._recurrence(inst)
     assert p["fire_count"] == 3
-    assert p["first_ts"].startswith("2026-06-01") and p["last_ts"].startswith("2026-06-05")
-    assert p["streak_days"] == 4
+    assert p["first_event_at"].startswith("2026-06-01")
+    assert p["last_event_at"].startswith("2026-06-05")
+    # elapsed first->last distance.  It is NOT called a streak: three firings four days
+    # apart are not four days of a continuously-active condition.
+    assert p["span_days"] == 4
+    assert p["continuity_verified"] is False
 
 
 def test_lifecycle_stages_are_descriptive():
-    # persisting = re-fired across days AND still fresh; fading = same history, gone quiet
-    assert at.lifecycle_of(fire_count=5, streak_days=6, age_days=0) == "persisting"
-    assert at.lifecycle_of(fire_count=5, streak_days=6, age_days=9) == "fading"
-    assert at.lifecycle_of(fire_count=1, streak_days=0, age_days=0) == "new"
-    assert at.lifecycle_of(fire_count=1, streak_days=0, age_days=9) == "aging"
+    # A generic event log earns new / recurring / aging — never "persisting", which
+    # asserts a continuity the log cannot show.
+    assert at.lifecycle_of(fire_count=5, span_days=6, age_days=0) == "recurring"
+    assert at.lifecycle_of(fire_count=5, span_days=6, age_days=9) == "recurring"
+    assert at.lifecycle_of(fire_count=1, span_days=0, age_days=0) == "new"
+    assert at.lifecycle_of(fire_count=1, span_days=0, age_days=9) == "aging"
+    # "new" is about the FIRST appearance, not the latest one: a flag that also fired
+    # 29 days ago is not new, however fresh its most recent firing is.
+    assert at.lifecycle_of(fire_count=2, span_days=29, age_days=0) == "recurring"
+    # an unknown date can never be fresh
+    assert at.lifecycle_of(fire_count=1, span_days=0, age_days=None) == "aging"
+    # "persisting" / "fading" require a source-verified continuity contract
+    assert at.lifecycle_of(5, 6, 0, continuity_verified=True) == "persisting"
+    assert at.lifecycle_of(5, 6, 9, continuity_verified=True) == "fading"
 
 
 def test_clustering_maps_related_alerts_together():
@@ -244,10 +264,15 @@ def test_new_payload_keys_and_alert_fields_present():
     for k in ("board_read", "volume", "storylines"):
         assert k in p
     for a in p["alerts"]:
-        for k in ("cluster", "lifecycle", "fire_count", "streak_days", "first_ts", "last_ts"):
+        for k in ("cluster", "lifecycle", "fire_count", "span_days",
+                  "first_event_at", "last_event_at", "board_date", "date_precision"):
             assert k in a
         assert a["fire_count"] >= 1
-        assert a["lifecycle"] in ("new", "persisting", "fading", "aging")
+        assert a["lifecycle"] in ("new", "recurring", "persisting", "fading", "aging")
+        # "persisting" asserts a continuity a generic event log cannot show — it is only
+        # reachable when a source explicitly verifies current-state continuity.
+        if a["lifecycle"] in ("persisting", "fading"):
+            assert a["continuity_verified"] is True
 
 
 def test_storylines_do_not_reorder_the_feed():

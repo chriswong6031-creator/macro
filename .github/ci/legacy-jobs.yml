@@ -10650,8 +10650,14 @@ jobs:
       # a clean venv holding EXACTLY this job's install line runs both green — the time
       # suite is hermetic (monkeypatched feed, injected clock, zero wall-clock reads) and
       # the triage suite needs only the committed data/ + templates/ this checkout has.
+      # tests/test_alert_coverage_recurrence.py (Wave 7 PR B) rides the same lane: a
+      # failed source read must be recorded as MISSING EVIDENCE rather than as zero
+      # alerts (otherwise an outage lowers the pressure score and buys a more
+      # constructive headline), and sparse re-fires must not impersonate persistence
+      # — the fake corroborator that held a `major` band at priority 60, which is also
+      # the outbound push floor. Hermetic: monkeypatched readers, injected clock.
       - name: Alert Command Center — three clocks, ET board day, and exact evidence links
-        run: python -m pytest tests/test_alert_time_contract.py tests/test_alert_triage.py -q
+        run: python -m pytest tests/test_alert_time_contract.py tests/test_alert_triage.py tests/test_alert_coverage_recurrence.py -q
 
   # ── RED-ON-ARRIVAL SWEEP, BATCH C (2026-07-27) ─────────────────────────────
   # The PIT / frozen-tape share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on
