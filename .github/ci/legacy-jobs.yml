@@ -2061,6 +2061,8 @@ jobs:
           tests/test_china_alpha_w2b.py
           tests/test_china_act_now.py
           tests/test_us_act_now.py
+          tests/test_p_mp1_shell_groundwork.py
+          tests/test_p_mp1_shell_stance_projection.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
