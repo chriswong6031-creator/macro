@@ -2,7 +2,7 @@
 workstream: WS:AGENT-OS
 session: sol/mas48-ceo-ingress-accepted-pr-a
 model: local
-ended_because: handoff
+ended_because: ci_handoff
 mission: >
   Reconcile durable Agent OS memory with the accepted Mastermind PR #91 parent
   architecture and merged PR #96 PR-A implementation law, and leave one exact
