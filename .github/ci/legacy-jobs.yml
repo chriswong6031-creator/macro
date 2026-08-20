@@ -2013,6 +2013,8 @@ jobs:
           tests/test_fundamental_forensics_attested_history_reader.py
           tests/test_sec_document_spine.py
           tests/test_fundamental_forensics_filing_package.py
+          tests/test_fundamental_forensics_financial_query_service.py
+          tests/test_fundamental_forensics_financial_query_api.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
