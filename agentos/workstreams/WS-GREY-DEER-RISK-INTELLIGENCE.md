@@ -83,8 +83,10 @@ waves:
     # See DEC:GD1-ACCEPTED-NO-PROMOTION.
   - id: GD-1C
     title: leadership_crack.v1 design-era reconstruction + GD-H1/GD-H2 interaction test (research-only prerequisite for GD-5)
-    status: in_progress
+    status: done
     pr: 6038
+    # CLOSED 2026-08-20: #6038 MERGED (583b5a27f714), verdict
+    # DONE / BLOCKED_NO_PROMOTION (Fable-accepted). GD-5A/B/C remain CLOSED.
     # Relayed to the Grok operator 2026-08-19 (Sol: "relay now"; operator
     # carried GROK_GD1C_DESIGN_ERA_RECONSTRUCTION_PACKET_2026-08-19.md into
     # the AionUI session; canonical commission is the in-repo file below).
@@ -114,18 +116,35 @@ waves:
     # access, only if Fable judges the recovery worth pursuing.
   - id: GD-2
     title: Settled Risk Envelope + three-answer Macro hero
-    status: in_progress
+    status: done
     pr: 6026
     depends_on: [GD-0A]
     # PR #6026 MERGED 2026-08-19T23:15:52Z (e6a3fcd6e094) on a fully green
     # full-manifest re-run; Fable design review PASS. Sol post-merge review
-    # 2026-08-19: Gate 8 (production acceptance) is BLOCKED until GD-2R1
-    # merges, and then runs on the REPAIRED production render. Birth authority
-    # DESCRIPTIVE ONLY unchanged.
+    # 2026-08-19: Gate 8 (production acceptance) BLOCKED until GD-2R1.
+    # GATE 8 PASSED 2026-08-20 (Fable, owning session): first production
+    # publish of the repaired band = fae690766555 (dashboard-bot regime-update
+    # lane 09:33:43Z, descendant of GD-2R1 merge e23fdcdceae3; the 07:27Z
+    # scope=all render predates the merge and the 08:46Z render-public restamp
+    # rebuilds no bodies). Live https://www.mastermind-x.com/macro.html
+    # byte-identical to origin/main site/macro.html (sha256 4d90cb2c88c6);
+    # DOM bundle fd9ccdbe47f7f008 binds page to the committed artifact whose
+    # bytes prove stage FRAGILE, stage_since null, coherence
+    # {scope: market_reads, state: CONTRADICTORY} on the RISK_ON-81-vs-BROKEN
+    # dual-read (policy_summary excluded), policies [] / policy_count 0 /
+    # posture NORMAL, authority rank/gate/size/execute ALL false. Live DOM
+    # verified at 390/768/1440: markers present, zero page-level horizontal
+    # overflow (evidence table scrolls in its own tbl-scroll container),
+    # EN/ZH, no falsifier language. /riskdata/risk_envelope.json anonymous
+    # 401 is the intended default-deny payload gate, not a defect.
   - id: GD-2R1
     title: Semantic-correctness repair of the settled envelope (pre-acceptance)
-    status: in_progress
+    status: done
+    pr: 6037
     depends_on: [GD-2]
+    # PR #6037 MERGED 2026-08-20T06:25:58Z (e23fdcdceae3); the two derived
+    # envelope artifacts were regenerated on the merged tree. Gate 8 receipts
+    # live on the GD-2 wave above.
     # Sol post-merge commission 2026-08-19; packet:
     # research/grey_deer/commissions/GD-2R1_SEMANTIC_CORRECTNESS_REPAIR_2026-08-19.md.
     # (1) LC BROKEN alone -> FRAGILE never TRANSMITTING (transmission needs an
@@ -142,15 +161,35 @@ waves:
     status: todo
     depends_on: [GD-2]
     # Sol rulings 2026-08-19 (x2): do NOT start GD-3 until Gate 8 passes on
-    # the GD-2R1-REPAIRED production render.
+    # the GD-2R1-REPAIRED production render. Gate 8 PASSED 2026-08-20 —
+    # GD-3 unblocked and COMMISSIONED (packet:
+    # research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md;
+    # display/advisory only, same pure composer, site/live/ plane, no new
+    # quote owner/scheduler, public boundary unchanged). Build not started.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
-    status: in_progress
+    status: done
     pr: 6022
+    # PRODUCTION PROOF PASSED 2026-08-20: real settled run 32348780228
+    # (asia job 13:29->15:20Z SUCCESS) advanced each ledger EXACTLY once —
+    # one CN row asof 2026-08-20 (caution) + one HK row (calm), commit
+    # baf4cf7c9291; no July-August backfill (tails ..07-16, 08-20); zero
+    # intraday advancement all day. Duplicate-session idempotence proven on
+    # production substrate: full rerun 32372312243 (16:15->17:54Z SUCCESS)
+    # appended NOTHING — census identical, no new ledger commit.
     depends_on: [GD-0A]
     # PR #6022 MERGED (7d203ee2862f); Sol post-merge review 2026-08-19:
     # implementation ACCEPTED pending the real Asia-close production proof
     # (one current CN row + one current HK row, idempotent, zero intraday).
+    # 2026-08-20 proof-day incident: the settled asia job could not run ALL
+    # DAY — the gate's real-run classifier (run-level duration >= 10m)
+    # counted QUEUE LATENCY as execution during a ~4h macstudio runner
+    # starvation, classified two gate-skip runs (#287/#288, asia SKIPPED) as
+    # real successes, and every later fire skipped with "a real run already
+    # succeeded today" (receipt: run 32346400300 gate log 12:06:48Z). Failing
+    # real path REPAIRED per the closeout mandate: PR #6089 moves the
+    # classifier to job-level truth (asia job conclusion via the jobs API).
+    # Proof event = the next real settled run after #6089.
     # Sol-commissioned 2026-08-19 as its own PR; packet:
     # research/grey_deer/commissions/GD-4A_CNHK_LEDGER_REPAIR_COMMISSION_2026-08-19.md.
     # COLLECT_LANE=nightly ONLY on the exact settled forward-ledger advancement
@@ -215,13 +254,14 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  Merge GD-2R1 (semantic-correctness repair, commissioned); then run Gate 8
-  on the repaired production render; verify GD-4A's Asia-close row proof;
-  Merge GD-2R1 (#6037, conflict reconciliation in flight) then run Gate 8 on
-  the repaired production render; verify GD-4A's real Asia-close row proof.
-  GD-1C is DONE / BLOCKED_NO_PROMOTION — GD-5A/B/C stay closed; the only
-  lawful H1/H2 continuation is the named membership+vintage recovery under a
-  new prereg, not commissioned. GD-3 starts only after Gate 8 passes.
+  Closeout 2026-08-20 complete: GD-2 DONE (Gate 8 passed on production),
+  GD-2R1 DONE, GD-4A DONE (real settled run + idempotent rerun proven),
+  GD-1C DONE / BLOCKED_NO_PROMOTION. Next build = GD-3 against
+  research/grey_deer/commissions/GD-3_LIVE_PROVISIONAL_ENVELOPE_COMMISSION_2026-08-20.md
+  (builder lane). GD-5A/B/C stay closed (only lawful continuation = the
+  named membership+vintage recovery under a NEW prereg, not commissioned).
+  GD-4B/4C open and uncommissioned. GD-6/7, GD-8/9, Portfolio cutover: not
+  authorized.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
